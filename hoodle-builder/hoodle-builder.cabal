@@ -26,7 +26,7 @@ Library
                    hoodle-types >= 0.3,
                    lens >= 2.5,
                    strict >= 0.3, 
-                   text > 1
+                   text > 0.11
                  
   Exposed-Modules: 
                    Text.Hoodle.Builder

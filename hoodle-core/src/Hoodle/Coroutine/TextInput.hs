@@ -521,11 +521,17 @@ linePosLoop = do
 -- | insert text 
 laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
 laTeXInputFromSource (x0,y0) = do
+    liftIO $ putStrLn "HELLO"
     runMaybeT $ do 
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
       lift $ modify (tempQueue %~ enqueue keywordDialog)  
       keyword <- MaybeT keywordLoop
+      subpart <- (MaybeT . return . getKeywordContent keyword) txtsrc
+      liftIO $ putStrLn " keyword = "
       liftIO $ print keyword
+      liftIO $ putStrLn " subpart = " 
+      liftIO $ print subpart 
+      -- liftIO $ print keyword
       {- 
       let txt = getLinesFromText (l1,l2) txtsrc
       lift $ deleteSelection

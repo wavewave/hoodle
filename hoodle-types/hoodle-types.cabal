@@ -27,7 +27,7 @@ Library
                    lens >= 2.5,
                    mtl > 2, 
                    strict > 0.3, 
-                   text > 1, 
+                   text > 0.11, 
                    uuid >= 1.2.6
   Exposed-Modules: 
                    Data.Hoodle.BBox

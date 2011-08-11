@@ -1,0 +1,27 @@
+Name:		xournal-render
+Version:	0.1
+Synopsis:       Xournal file renderer
+Description: 	Xournal file renderer
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Build-Type: 	Simple
+Cabal-Version:  >= 1.8
+
+
+
+Library
+  hs-source-dirs: src
+  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: base>4, mtl>2, containers, xournal-parser, cairo > 0.12
+
+  Exposed-Modules: 
+                   Graphics.Xournal.Render
+
+
+
+
+ 
+		 

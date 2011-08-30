@@ -14,13 +14,13 @@ drawOneStroke s = do
     Nothing -> setSourceRGBA 0 0 0 1
   setLineWidth (stroke_width s) 
   drawOneStrokeCurve (stroke_data s)
-  stroke
+--  stroke
 
 drawOneStrokeCurve :: [(Double,Double)] -> Render ()
 drawOneStrokeCurve ((x0,y0) : xs) = do 
-  moveTo x0 y0
+  x0 `seq` y0 `seq` moveTo x0 y0
   mapM_ f xs 
-    where f (x,y) = lineTo x y 
+    where f (x,y) = x `seq` y `seq` lineTo x y 
 
 cairoDrawBackground :: Page -> Render () 
 cairoDrawBackground page = do 

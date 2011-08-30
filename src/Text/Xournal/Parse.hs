@@ -7,7 +7,8 @@ import Control.Applicative hiding (many)
 import Debug.Trace
 
 import qualified Data.Attoparsec as P 
-import Data.Attoparsec.Char8 
+import Data.Attoparsec
+import Data.Attoparsec.Char8 (char, double, anyChar, skipSpace, isHorizontalSpace, notChar, isAlpha_ascii)
 import qualified Data.ByteString.Char8 as B hiding (map) 
 import Data.ByteString.Internal (c2w,w2c)
 import Data.ByteString.Lex.Double
@@ -19,17 +20,41 @@ import qualified Data.ListLike as LL
 
 import qualified Data.Attoparsec.Iteratee as AI
 import Data.Word (Word8)
+import Data.Char 
 
 import Control.Monad.IO.Class
 
 import Text.Xournal.Type
 
+import Data.Strict.Tuple
+
+import Prelude hiding (takeWhile)
+
 skipSpaces :: Parser () 
-skipSpaces = P.satisfy isHorizontalSpace *> P.skipWhile isHorizontalSpace
+skipSpaces = satisfy isHorizontalSpace *> skipWhile isHorizontalSpace
+
+{-
+getSpaces :: Parser B.ByteString
+getSpaces = (many . satisfy) $ \w->w==13 || w == 32
+
+getUntilSpaces :: Parser B.ByteString
+getUntilSpaces = (many . satisfy) $ \w->w/=13 && w /= 32
+
+getUntil :: String -> Parser B.ByteString
+getUntil str = 
+  let f :: Char -> Word8 -> Bool
+      f c = (/= fromIntegral (digitToInt c))
+      test = and (map f str)
+  in  (many . satisfy) test 
+
+-}
 
 trim_starting_space :: Parser ()
 trim_starting_space = do try endOfInput
-                         <|> (many . satisfy . inClass ) " \n" *> return () 
+                         <|> takeWhile (inClass " \n") *> return ()
+
+
+--                         <|> (many . satisfy . inClass ) " \n" *> return () 
                 
 langle :: Parser Char 
 langle = char '<'
@@ -37,25 +62,37 @@ langle = char '<'
 rangle :: Parser Char 
 rangle = char '>'
 
-xmlheader :: Parser String
-xmlheader = string "<?" *> (many . satisfy . notInClass) "?>" <* string "?>"
- 
-            
-oneelem = try (string "?>" >> return Nothing )
-          <|> (many1 (notChar '?') >>= return . Just ) 
-          <|> do a <- anyChar
-                 return (Just [a])
-                 
-headercontent :: Parser String 
-headercontent = mymaybeWhile oneelem >>= return . concat 
+xmlheader :: Parser B.ByteString
+xmlheader = string "<?" *> takeTill (inClass "?>") <* string "?>"
 
-mymaybeWhile :: Parser (Maybe a) -> Parser [a]
+
+-- (many . satisfy . notInClass) "?>" <* string "?>"
+ 
+{-
+oneelem :: Parser (Maybe B.ByteString)            
+oneelem = try (string "?>" >> return Nothing )
+          <|> takeWhile1 (notInClass "?") >>= return . Just ) 
+          <|> do anyWord8 >>= return . Just . B.singleton  -}
+                 
+headercontentWorker :: B.ByteString -> Parser B.ByteString 
+headercontentWorker  bstr = do 
+  h <- takeWhile1 (notInClass "?>") 
+  ((string "?>" >>= return . (bstr `B.append` h `B.append`))
+   <|> headercontentWorker (bstr `B.append` h))
+
+headercontent :: Parser B.ByteString 
+headercontent = headercontentWorker B.empty
+                 
+
+
+{- mymaybeWhile oneelem >>= return . concat 
+
+mymaybeWhile :: Parser (Maybe B.ByteString) -> Parser B.ByteString 
 mymaybeWhile oneelem = do x <- oneelem
                           case x of 
                             Just t -> do ts <- mymaybeWhile oneelem
                                          return (t:ts)  
-                            Nothing -> return []
-                            
+                            Nothing -> return B.empty -}
               
 
 stroketagopen :: Parser Stroke --  B.ByteString 
@@ -84,11 +121,6 @@ stroketagopen = do
 stroketagclose :: Parser B.ByteString 
 stroketagclose = string "</stroke>"
 
-{-
-my_double :: Parser Double 
-my_double = do x <- (many1 . satisfy . inClass) "0123456789.+-" 
-               return $ read x 
--}   
 
 onestroke :: Parser Stroke 
 onestroke =  do trim
@@ -98,7 +130,7 @@ onestroke =  do trim
                                        skipSpace 
                                        y <- double
                                        skipSpace 
-                                       return (x,y)  
+                                       return (x :!: y)  
                 stroketagclose
                 return $ strokeinit { stroke_data = coordlist } 
 
@@ -121,7 +153,6 @@ xournal = do trim
              pgs <- many1 page
              trim
              xournalclose
-             
              return $ Xournal  t pgs
              
 page :: Parser Page 
@@ -146,10 +177,10 @@ layer = do trim
            return $ Layer strokes
 
 
-title :: Parser String 
+title :: Parser B.ByteString 
 title = do trim 
            titleheader
-           str <- (many . satisfy . notInClass ) "<"
+           str <- takeTill (inClass "<") -- (many . satisfy . notInClass ) "<"
            titleclose
            return str 
           
@@ -157,7 +188,8 @@ titleheader = string "<title>"
 titleclose = string "</title>"
 
 
-xournalheader = xournalheaderstart *> (many . satisfy . notInClass ) ">" <* xournalheaderend
+xournalheader = xournalheaderstart *> takeTill (inClass ">") <* xournalheaderend
+-- (many . satisfy . notInClass ) ">" <* xournalheaderend
 xournalheaderstart = string "<xournal"
 xournalheaderend = char '>'
 xournalclose =  string "</xournal>"
@@ -174,7 +206,7 @@ pageheader = do pageheaderstart
                 char '"' 
                 h <- double 
                 char '"'
-                ( many . satisfy . notInClass ) ">" 
+                takeTill (inClass ">") -- ( many . satisfy . notInClass ) ">" 
                 pageheaderend
                 return $ Dim w h
                  
@@ -207,12 +239,13 @@ background = do trim
                 sty <- alphabet 
                 char '"' 
                 trim 
-                ( many . satisfy . notInClass ) "/>"
+                takeTill (inClass "/>") -- ( many . satisfy . notInClass ) "/>"
                 backgroundclose
                 return $ Background typ col sty 
     
 
-alphabet = many1 ( satisfy  isAlpha_ascii ) 
+alphabet = takeWhile1 (\w -> (w >= 65 && w <= 90) || (w >= 97 && w <= 122)) 
+-- isAlpha_ascii 
             
 backgroundheader = string "<background"
 backgroundclose = string "/>"

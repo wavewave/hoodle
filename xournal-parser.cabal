@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.1.0.999
+Version:	0.1.1.999
 Synopsis:       Xournal file parser
 Description: 	Xournal file parser
 License: 	BSD3
@@ -19,7 +19,7 @@ Library
                  attoparsec-iteratee, ListLike,
                  iteratee, bytestring-lexing, bytestring, 
                  containers, xml-enumerator, enumerator, 
-                 blaze-builder-enumerator
+                 blaze-builder-enumerator, strict
 
   Exposed-Modules: 
                    Text.Xournal.Type

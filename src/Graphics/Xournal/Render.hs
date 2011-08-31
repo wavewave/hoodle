@@ -1,11 +1,16 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Graphics.Xournal.Render where 
 
 import Graphics.Rendering.Cairo
+
+import Data.Strict.Tuple
 
 import Text.Xournal.Type 
 import Text.Xournal.Predefined 
 
 import qualified Data.Map as M
+import qualified Data.ByteString.Char8 as S
 
 drawOneStroke :: Stroke -> Render ()
 drawOneStroke s = do 
@@ -16,11 +21,11 @@ drawOneStroke s = do
   drawOneStrokeCurve (stroke_data s)
 --  stroke
 
-drawOneStrokeCurve :: [(Double,Double)] -> Render ()
-drawOneStrokeCurve ((x0,y0) : xs) = do 
+drawOneStrokeCurve :: [Pair Double Double] -> Render ()
+drawOneStrokeCurve ((x0 :!: y0) : xs) = do 
   x0 `seq` y0 `seq` moveTo x0 y0
   mapM_ f xs 
-    where f (x,y) = x `seq` y `seq` lineTo x y 
+    where f (x :!: y) = x `seq` y `seq` lineTo x y 
 
 cairoDrawBackground :: Page -> Render () 
 cairoDrawBackground page = do 
@@ -34,7 +39,7 @@ cairoDrawBackground page = do
   fill
   cairoDrawRuling w h sty
 
-cairoDrawRuling :: Double -> Double ->  String -> Render () 
+cairoDrawRuling :: Double -> Double -> S.ByteString -> Render () 
 cairoDrawRuling w h style = do
   let drawHorizRules = do 
       let (r,g,b,a) = predefined_RULING_COLOR         

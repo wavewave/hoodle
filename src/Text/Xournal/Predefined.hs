@@ -1,7 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Text.Xournal.Predefined where
 
 import qualified Data.Map as M
-
+import qualified Data.ByteString.Char8 as B
 
 hexToRGBA :: Integer -> (Double,Double,Double,Double) 
 hexToRGBA n = 
@@ -12,7 +14,7 @@ hexToRGBA n =
   in  (fromIntegral r/255.0,fromIntegral g/255.0,fromIntegral b/255.0,fromIntegral a/255.0)
 
 
-predefined_pencolor :: M.Map String (Double,Double,Double,Double)
+predefined_pencolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_pencolor = 
   M.fromList [ ("black"     , hexToRGBA 0x000000ff)
              , ("blue"      , hexToRGBA 0x3333ccff)
@@ -27,7 +29,7 @@ predefined_pencolor =
              , ("white"     , hexToRGBA 0xffffffff) ] 
 
 
-predefined_bkgcolor :: M.Map String (Double,Double,Double,Double)
+predefined_bkgcolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_bkgcolor = 
   M.fromList [ (""      , hexToRGBA 0xffffffff) 
              , ("blue"  , hexToRGBA 0xa0e8ffff)

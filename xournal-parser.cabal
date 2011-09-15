@@ -18,7 +18,7 @@ Library
   Build-Depends: base>4, mtl>2, transformers, attoparsec, 
                  attoparsec-iteratee, ListLike,
                  iteratee, bytestring-lexing, bytestring, 
-                 containers, xml-enumerator, enumerator, 
+                 containers, xml-enumerator < 0.4, enumerator, 
                  blaze-builder-enumerator, strict
 
   Exposed-Modules: 

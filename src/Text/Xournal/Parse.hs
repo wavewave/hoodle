@@ -33,22 +33,6 @@ import Prelude hiding (takeWhile)
 skipSpaces :: Parser () 
 skipSpaces = satisfy isHorizontalSpace *> skipWhile isHorizontalSpace
 
-{-
-getSpaces :: Parser B.ByteString
-getSpaces = (many . satisfy) $ \w->w==13 || w == 32
-
-getUntilSpaces :: Parser B.ByteString
-getUntilSpaces = (many . satisfy) $ \w->w/=13 && w /= 32
-
-getUntil :: String -> Parser B.ByteString
-getUntil str = 
-  let f :: Char -> Word8 -> Bool
-      f c = (/= fromIntegral (digitToInt c))
-      test = and (map f str)
-  in  (many . satisfy) test 
-
--}
-
 trim_starting_space :: Parser ()
 trim_starting_space = do try endOfInput
                          <|> takeWhile (inClass " \n") *> return ()
@@ -64,15 +48,6 @@ rangle = char '>'
 
 xmlheader :: Parser B.ByteString
 xmlheader = string "<?" *> takeTill (inClass "?>") <* string "?>"
-
-
--- (many . satisfy . notInClass) "?>" <* string "?>"
- 
-{-
-oneelem :: Parser (Maybe B.ByteString)            
-oneelem = try (string "?>" >> return Nothing )
-          <|> takeWhile1 (notInClass "?") >>= return . Just ) 
-          <|> do anyWord8 >>= return . Just . B.singleton  -}
                  
 headercontentWorker :: B.ByteString -> Parser B.ByteString 
 headercontentWorker  bstr = do 
@@ -83,18 +58,6 @@ headercontentWorker  bstr = do
 headercontent :: Parser B.ByteString 
 headercontent = headercontentWorker B.empty
                  
-
-
-{- mymaybeWhile oneelem >>= return . concat 
-
-mymaybeWhile :: Parser (Maybe B.ByteString) -> Parser B.ByteString 
-mymaybeWhile oneelem = do x <- oneelem
-                          case x of 
-                            Just t -> do ts <- mymaybeWhile oneelem
-                                         return (t:ts)  
-                            Nothing -> return B.empty -}
-              
-
 stroketagopen :: Parser Stroke --  B.ByteString 
 stroketagopen = do 
   string "<stroke"
@@ -116,11 +79,8 @@ stroketagopen = do
   char '>'
   return $ Stroke tool color width []  
 
---  *> trim_starting_space *> P.takeWhile (/= (c2w '>')) <* char '>'
-
 stroketagclose :: Parser B.ByteString 
 stroketagclose = string "</stroke>"
-
 
 onestroke :: Parser Stroke 
 onestroke =  do trim
@@ -189,7 +149,6 @@ titleclose = string "</title>"
 
 
 xournalheader = xournalheaderstart *> takeTill (inClass ">") <* xournalheaderend
--- (many . satisfy . notInClass ) ">" <* xournalheaderend
 xournalheaderstart = string "<xournal"
 xournalheaderend = char '>'
 xournalclose =  string "</xournal>"
@@ -206,7 +165,7 @@ pageheader = do pageheaderstart
                 char '"' 
                 h <- double 
                 char '"'
-                takeTill (inClass ">") -- ( many . satisfy . notInClass ) ">" 
+                takeTill (inClass ">")
                 pageheaderend
                 return $ Dim w h
                  
@@ -245,32 +204,16 @@ background = do trim
     
 
 alphabet = takeWhile1 (\w -> (w >= 65 && w <= 90) || (w >= 97 && w <= 122)) 
--- isAlpha_ascii 
             
 backgroundheader = string "<background"
 backgroundclose = string "/>"
 
---- Parser to Iteratee 
-
 iter_xournal :: Iter.Iteratee B.ByteString IO Xournal
 iter_xournal = AI.parserToIteratee parser_xournal 
 
-
 read_xournal :: String -> IO Xournal 
 read_xournal str =  Iter.fileDriver iter_xournal str 
-{-
-  bytestr <- B.readFile str
-  
-  let r = parse parser_xournal bytestr
-  case r of 
-    Partial _  -> return $ onlyresult (feed r B.empty)
-    Done _  _  -> return $ onlyresult r
-    Fail x y z -> do print x 
-                     print y 
-                     print z
-                     return undefined  
--}
-  
+ 
   
 onlyresult (Done _ r) = r 
 

@@ -17,15 +17,18 @@ Library
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: base>4, mtl>2, transformers, attoparsec, 
                  attoparsec-iteratee, ListLike,
-                 iteratee, bytestring-lexing, bytestring, 
+                 iteratee, iteratee-util, bytestring-lexing, bytestring, 
                  containers, xml-enumerator < 0.4, enumerator, 
-                 blaze-builder-enumerator, strict
+                 blaze-builder-enumerator, strict,
+                 iteratee-compress==0.2.1.*
 
   Exposed-Modules: 
                    Text.Xournal.Type
                    Text.Xournal.Parse
                    Text.Xournal.Predefined
                    Text.Xournal.Parse.Enumerator
+                   Text.Xournal.Parse.Zlib
+
 
 
 

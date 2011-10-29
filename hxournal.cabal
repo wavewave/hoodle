@@ -1,0 +1,37 @@
+Name:		hxournal
+Version:	0.0
+Synopsis:	
+Description: 	
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Build-Type: 	Simple
+Cabal-Version:  >= 1.8
+data-files:     
+
+
+Executable hxournal
+  Main-is: hxournal.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: 
+                   base>4, mtl>2, directory, filepath,
+                   cmdargs, hxournal
+
+Library
+  hs-source-dirs: lib
+  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: 
+                   base>4, mtl>2, directory, filepath,
+                   cmdargs
+  Exposed-Modules: 
+                   Application.HXournal.Type
+                   Application.HXournal.Job
+                   Application.HXournal.Command
+  Other-Modules: 
+
+ 
+		 

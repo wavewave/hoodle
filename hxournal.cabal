@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.0.1.0
+Version:	0.0.2.0
 Synopsis:	
 Description: 	
 License: 	BSD3
@@ -36,6 +36,7 @@ Library
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
                    Application.HXournal.Iteratee
+                   Application.HXournal.Util
   Other-Modules: 
 
  

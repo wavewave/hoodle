@@ -2,6 +2,7 @@ module Application.HXournal.Job where
 
 import Application.HXournal.Coroutine
 import Application.HXournal.GUI
+import Application.HXournal.Iteratee 
 import Data.IORef
 import Control.Monad.Coroutine
 import Control.Monad.State

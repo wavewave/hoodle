@@ -33,7 +33,7 @@ startGUI tref sref = do
   boxPackEnd vbox hbox   PackNatural 0 
   boxPackEnd vbox canvas PackGrow 0 
   canvas `on` sizeRequest $ return (Requisition 40 40)
-  onClicked buttonquit    mainQuit           
+ 
   widgetShowAll window
   onClicked buttonleft    $ do putStrLn "<"
                                bouncecallback tref sref ButtonLeft
@@ -44,8 +44,9 @@ startGUI tref sref = do
   onClicked buttonrefresh $ do putStrLn "R"
                                bouncecallback tref sref ButtonRefresh
                                return ()
-
-
+  onClicked buttonquit    $ do putStrLn "Q" 
+                               bouncecallback tref sref ButtonQuit
+                               mainQuit          
   onDestroy window mainQuit
   mainGUI 
   return ()

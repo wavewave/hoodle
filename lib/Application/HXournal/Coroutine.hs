@@ -14,8 +14,8 @@ import Data.IORef
 
 import System.Random
 
-
 import Application.HXournal.Type
+import Application.HXournal.Util
 
 pause :: Monad m => Trampoline m () 
 pause = suspend (Identity $ return ())
@@ -39,51 +39,12 @@ tram = do lift (putStr "Yielding one, ")
           lift (putStr "return three: ") 
           pause 
 
-iter :: Iteratee MyEvent MyStateIO () 
-iter = do liftIO (putStrLn "I am waiting first result") 
-          changepage
-          changepage
-          changepage
-          changepage
---          r1 <- await 
---           waitUntil (==5) check 
-          r2 <- await 
-          liftIO (putStrLn ("yeah... I got r2 = " ++ show r2))
-          return ()
-
-
-changepage :: Iteratee MyEvent MyStateIO ()
-changepage = do 
-  r1 <- await 
-  case r1 of 
-    ButtonLeft -> do 
-      st <- lift get 
-      lift (put (st-1))
-      liftIO . putStrLn $ "changing " ++ show st ++ " to " ++ show (st-1)
-    ButtonRight -> do 
-      st <- lift get 
-      lift (put (st+1))
-      liftIO . putStrLn $ "changing " ++ show st ++ " to " ++ show (st-1)
-    _ -> return ()   
-
-
-
 check :: Iteratee Int MyStateIO Int 
 check = do
   r1 <- await 
   liftIO (putStrLn ("yeah... I got r1 = " ++ show r1))
   return r1
 
-waitUntil :: (Monad m) => (a -> Bool) -> m a -> m ()
-waitUntil p act = do 
-  a <- act
-  if p a
-    then return ()
-    else waitUntil p act  
-
-atestcallback :: IO () 
-atestcallback = do 
-  putStrLn "I am event processor"
 
 bouncecallback :: IORef (Await MyEvent (Iteratee MyEvent MyStateIO ())) 
                -> IORef Int 
@@ -102,6 +63,8 @@ bouncecallback tref sref input = do
   putStrLn "one step"
   return ()  
 
+
+{-
 rollDice :: IO Int 
 rollDice = getStdRandom (randomR (1,6))
 
@@ -113,3 +76,10 @@ eventprocessor callback = do
   threadDelay 5000000
   eventprocessor callback 
 
+-}
+
+{-
+atestcallback :: IO () 
+atestcallback = do 
+  putStrLn "I am event processor"
+-}

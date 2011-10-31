@@ -29,11 +29,13 @@ Library
                    cmdargs, gtk, cairo, monad-control, 
                    monad-coroutine, transformers, random
   Exposed-Modules: 
-                   Application.HXournal.Type
+                   Application.HXournal.ProgType
                    Application.HXournal.Job
                    Application.HXournal.Command 
-                   Application.HXournal.Coroutine
+                   Application.HXournal.Type
+                   Application.HXournal.Coroutine 
                    Application.HXournal.GUI
+                   Application.HXournal.Iteratee
   Other-Modules: 
 
  

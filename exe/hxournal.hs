@@ -2,7 +2,7 @@ module Main where
 
 import System.Console.CmdArgs
 
-import Application.HXournal.Type
+import Application.HXournal.ProgType
 import Application.HXournal.Command
 
 main :: IO () 

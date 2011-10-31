@@ -1,18 +1,15 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+module Application.HXournal.Type where
 
-module Application.HXournal.Type where 
+import Control.Monad.Coroutine 
+import Control.Monad.Coroutine.SuspensionFunctors
+import Data.Functor.Identity (Identity(..))
+import Control.Monad.State
 
-import System.Console.CmdArgs
+type Trampoline m x = Coroutine Identity m x 
+type Generator a m x = Coroutine (Yield a) m x
+type Iteratee a m x = Coroutine (Await a) m x
 
-data Hxournal = Test 
-              | CoroutineTest
-              deriving (Show,Data,Typeable)
+type MyStateIO = StateT Int IO 
 
-test :: Hxournal
-test = Test 
-
-coroutineTest :: Hxournal
-coroutineTest = CoroutineTest
-
-mode = modes [test, coroutineTest]
-
+data MyEvent = ButtonLeft | ButtonRight | ButtonRefresh | ButtonQuit
+             deriving (Show,Eq,Ord)

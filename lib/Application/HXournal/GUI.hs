@@ -1,14 +1,21 @@
 module Application.HXournal.GUI where
 
-import Control.Monad.State
-import Control.Monad.IO.Control
+
+import Application.HXournal.Type 
+import Application.HXournal.Coroutine
+
 
 import Graphics.UI.Gtk hiding (get)
 
-type MyStateIO = StateT Int IO 
+import Control.Monad.Coroutine.SuspensionFunctors
+import Data.IORef
 
-startGUI :: IO () 
-startGUI = do 
+
+
+startGUI :: IORef (Await MyEvent (Iteratee MyEvent MyStateIO ())) 
+         -> IORef Int
+         -> IO () 
+startGUI tref sref = do 
   initGUI
   window <- windowNew 
   hbox <- hBoxNew False 0 
@@ -28,38 +35,18 @@ startGUI = do
   canvas `on` sizeRequest $ return (Requisition 40 40)
   onClicked buttonquit    mainQuit           
   widgetShowAll window
+  onClicked buttonleft    $ do putStrLn "<"
+                               bouncecallback tref sref ButtonLeft
+                               return ()
+  onClicked buttonright   $ do putStrLn ">"
+                               bouncecallback tref sref ButtonRight
+                               return () 
+  onClicked buttonrefresh $ do putStrLn "R"
+                               bouncecallback tref sref ButtonRefresh
+                               return ()
+
+
   onDestroy window mainQuit
-  runStateT (sequence_ (repeat (foo' buttonleft buttonright buttonrefresh myaction))) 0  
-  return () 
-
-foo :: IO (MyStateIO ()) -> IO (MyStateIO ())
-foo action = action 
-
-foo' :: ( ButtonClass b1
-        , ButtonClass b2
-        , ButtonClass b3 ) 
-       => b1 -> b2 -> b3 -> MyStateIO () -> MyStateIO () 
-foo' w1 w2 w3 a = do
-  
-                     liftControlIO $ \run -> do 
-                       onClicked w1 $ do putStrLn "<"
-                                         run $ do { a ; a } 
-                                         return ()
-                       onClicked w2 $ do putStrLn ">"
-                                         run a 
-                                         return () 
-                       onClicked w3 $ do putStrLn "R"
-                                         run a
-                                         return ()
-                       mainIterationDo True
-                       return ()
-
-
-myaction :: MyStateIO () 
-myaction = do 
-  st <- get
-  liftIO $ putStrLn ("myaction " ++ show st)
-  put (st+1)
-
--- liftedmyaction = foo' myaction 
+  mainGUI 
+  return ()
 

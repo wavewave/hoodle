@@ -7,3 +7,6 @@ commandLineProcess :: Hxournal -> IO ()
 commandLineProcess Test = do 
   putStrLn "test called"
   startJob
+commandLineProcess CoroutineTest = do 
+  putStrLn "coroutine test is called"
+  startCoroutineTest

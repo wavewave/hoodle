@@ -2,21 +2,13 @@
 
 module Application.HXournal.Coroutine where
 
---import Data.Functor.Identity (Identity(..))
-import Control.Monad.Identity
 import Control.Monad.Coroutine 
-import Control.Monad.Trans
 import Control.Monad.State
-import Control.Concurrent hiding (yield)
 import Control.Monad.Coroutine.SuspensionFunctors
-
 import Data.IORef
-
-import System.Random
-
 import Application.HXournal.Type
-import Application.HXournal.Util
 
+{-
 pause :: Monad m => Trampoline m () 
 pause = suspend (Identity $ return ())
 
@@ -39,14 +31,14 @@ tram = do lift (putStr "Yielding one, ")
           lift (putStr "return three: ") 
           pause 
 
-check :: Iteratee Int MyStateIO Int 
+check :: Iteratee Int XournalStateIO Int 
 check = do
   r1 <- await 
   liftIO (putStrLn ("yeah... I got r1 = " ++ show r1))
   return r1
+-}
 
-
-bouncecallback :: IORef (Await MyEvent (Iteratee MyEvent MyStateIO ())) 
+bouncecallback :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
                -> IORef Int 
                -> MyEvent 
                -> IO () 
@@ -63,23 +55,3 @@ bouncecallback tref sref input = do
   putStrLn "one step"
   return ()  
 
-
-{-
-rollDice :: IO Int 
-rollDice = getStdRandom (randomR (1,6))
-
-eventprocessor :: (Int -> IO ()) -> IO () 
-eventprocessor callback = do 
-  r <- rollDice
-  putStrLn ("rollDice r = " ++ show r)
-  callback r
-  threadDelay 5000000
-  eventprocessor callback 
-
--}
-
-{-
-atestcallback :: IO () 
-atestcallback = do 
-  putStrLn "I am event processor"
--}

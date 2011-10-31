@@ -1,18 +1,12 @@
 module Application.HXournal.GUI where
 
-
 import Application.HXournal.Type 
 import Application.HXournal.Coroutine
-
-
 import Graphics.UI.Gtk hiding (get)
-
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
 
-
-
-startGUI :: IORef (Await MyEvent (Iteratee MyEvent MyStateIO ())) 
+startGUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
          -> IORef Int
          -> IO () 
 startGUI tref sref = do 

@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, OverloadedStrings #-}
 
 module Text.Xournal.Type where
 
@@ -27,9 +27,12 @@ data Background = Background { bkg_type :: !S.ByteString
 
 data Xournal = Xournal { xoj_title :: !Title, xoj_pages :: ![Page] }
              deriving Show 
+
 data Page = Page { page_dim :: !Dimension
                  , page_bkg :: !Background 
                  , page_layers :: ![Layer] }
           deriving Show 
 data Layer = Layer { layer_strokes :: ![Stroke] } 
            deriving Show 
+
+emptyXournal = Xournal "" [] 

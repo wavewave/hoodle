@@ -4,12 +4,23 @@ import Application.HXournal.Type
 import Application.HXournal.Coroutine
 import Graphics.UI.Gtk hiding (get)
 import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.State
+import Control.Monad.Coroutine
+
+import Application.HXournal.Iteratee
+import Application.HXournal.Draw
 import Data.IORef
 
-startGUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
-         -> IORef Int
-         -> IO () 
-startGUI tref sref = do 
+import Text.Xournal.Type
+import Text.Xournal.Parse
+
+-- startGUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
+--          -> IORef XournalState
+--          -> IO () 
+startGUI :: IO () 
+-- startGUI tref sref = do 
+startGUI = do 
+
   initGUI
   window <- windowNew 
   hbox <- hBoxNew False 0 
@@ -29,6 +40,22 @@ startGUI tref sref = do
   canvas `on` sizeRequest $ return (Requisition 40 40)
  
   widgetShowAll window
+  
+
+  xojcontent <- read_xojgz "test.xoj" 
+  let st = emptyXournalState { xoj = xojcontent, wdw = buttonrefresh, darea = canvas } 
+  (r,st') <- runStateT (resume iter) st
+  sref <- newIORef st'
+
+  tref <- case r of 
+            Left aw -> do 
+              newIORef aw 
+            Right _ -> error "what?"
+
+  onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
+
+-- const (updateCanvas canvas (xoj st) (currpage st) >> return True)
+
   onClicked buttonleft    $ do putStrLn "<"
                                bouncecallback tref sref ButtonLeft
                                return ()

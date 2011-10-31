@@ -39,7 +39,7 @@ check = do
 -}
 
 bouncecallback :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
-               -> IORef Int 
+               -> IORef XournalState
                -> MyEvent 
                -> IO () 
 bouncecallback tref sref input = do 

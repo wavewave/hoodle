@@ -5,6 +5,7 @@ import Application.HXournal.GUI
 
 import Data.IORef
 
+import Control.Monad.Coroutine
 
 startJob :: IO () 
 startJob = do 
@@ -13,11 +14,17 @@ startJob = do
 
 
 startCoroutineTest = do 
-  putStrLn "generator test"
+  {-  putStrLn "generator test"
   r <- run tram 
-  print r 
+  print r -}
   --
   -- eventprocessor atestcallback 
-  tref <- newIORef tram
-  eventprocessor (bouncecallback tref)
+
+  r <- resume iter
+
+  case r of 
+    Left aw -> do 
+      tref <- newIORef aw -- (Await (\_ -> iter))
+      eventprocessor (bouncecallback tref)
+    Right _ -> error "what?"
 

@@ -4,6 +4,9 @@ import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Functor.Identity (Identity(..))
 import Control.Monad.State
+import Data.Sequence
+
+import Data.IORef
 
 import Text.Xournal.Type
 
@@ -15,16 +18,38 @@ type Iteratee a m x = Coroutine (Await a) m x
 
 type XournalStateIO = StateT XournalState IO 
 
-data XournalState = XournalState { xoj :: Xournal 
-                                 , wdw :: Button
-                                 , darea :: DrawingArea
-                                 , currpage :: Int } 
---                    deriving Show
+data PenDrawing = PenDrawing { penDrawingPoints :: Seq (Double,Double)
+                             } 
+
+data XournalState = 
+  XournalState 
+  { xoj :: Xournal 
+  , wdw :: Button
+  , darea :: DrawingArea
+  , currpage :: Int 
+  , currpendrawing :: PenDrawing 
+  , x_tref :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
+  , x_sref :: IORef (XournalState)
+  } 
                       
 
-data MyEvent = ButtonLeft | ButtonRight | ButtonRefresh | ButtonQuit | UpdateCanvas
+data MyEvent = ButtonLeft 
+             | ButtonRight 
+             | ButtonRefresh 
+             | ButtonQuit 
+             | UpdateCanvas
+             | PenDown (Double,Double)
+             | PenMove (Double,Double)
+             | PenUp   (Double,Double)
              deriving (Show,Eq,Ord)
 
 
 emptyXournalState :: XournalState
-emptyXournalState = XournalState { xoj = emptyXournal, wdw = undefined, darea = undefined, currpage = 0 } 
+emptyXournalState = 
+  XournalState 
+  { xoj = emptyXournal
+  , wdw = undefined
+  , darea = undefined
+  , currpage = 0 
+  , currpendrawing = PenDrawing empty 
+  } 

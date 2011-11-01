@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.0.2.0
+Version:	0.0.3.0
 Synopsis:	
 Description: 	
 License: 	BSD3
@@ -29,7 +29,7 @@ Library
                    cmdargs, gtk, cairo, monad-control, 
                    monad-coroutine, transformers, random, 
                    xournal-parser >= 0.1.2, 
-                   xournal-render
+                   xournal-render, containers
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job

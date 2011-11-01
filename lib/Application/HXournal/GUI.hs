@@ -52,6 +52,8 @@ startGUI = do
               newIORef aw 
             Right _ -> error "what?"
 
+  writeIORef sref st' {x_sref = sref, x_tref = tref }
+
   onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
 
 -- const (updateCanvas canvas (xoj st) (currpage st) >> return True)
@@ -68,6 +70,12 @@ startGUI = do
   onClicked buttonquit    $ do putStrLn "Q" 
                                bouncecallback tref sref ButtonQuit
                                mainQuit          
+  canvas `on` buttonPressEvent $ tryEvent $ do 
+    (x,y) <- eventCoordinates
+    liftIO (bouncecallback tref sref (PenDown (x,y)) )
+
+
+
   onDestroy window mainQuit
   mainGUI 
   return ()

@@ -9,13 +9,6 @@ import Text.Xournal.Type
 import Text.Xournal.Parse
 import Graphics.Xournal.Render 
 
-{-
-refresh_xournal :: FilePath -> IO Xournl
-refresh_xournal xojref str = do 
-  xoj <- read_xojgz str 
-  writeIORef xojref $! xoj
--}
-
 updateCanvas :: DrawingArea -> Xournal -> Int -> IO ()
 updateCanvas canvas xoj pagenum = do 
   let totalnumofpages = (length . xoj_pages) xoj

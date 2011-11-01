@@ -52,7 +52,7 @@ startGUI = do
               newIORef aw 
             Right _ -> error "what?"
 
-  writeIORef sref st' {x_sref = sref, x_tref = tref }
+  writeIORef sref st' {callback = bouncecallback tref sref }
 
   onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
 
@@ -73,7 +73,7 @@ startGUI = do
   canvas `on` buttonPressEvent $ tryEvent $ do 
     (x,y) <- eventCoordinates
     liftIO (bouncecallback tref sref (PenDown (x,y)) )
-
+  widgetAddEvents canvas [Button1MotionMask]
 
 
   onDestroy window mainQuit

@@ -1,6 +1,6 @@
 module Application.HXournal.Iteratee where 
 
-import Control.Applicative
+import Control.Applicative hiding (empty)
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Coroutine
@@ -15,6 +15,23 @@ import Application.HXournal.Coroutine
 import Text.Xournal.Type 
 
 import Graphics.UI.Gtk hiding (get)
+
+import Data.Sequence hiding (length)
+
+
+connPenMove :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
+connPenMove c = do 
+  callbk <- lift ( callback <$> get )
+  liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
+            (x,y) <- eventCoordinates
+            liftIO (callbk (PenMove (x,y))))  
+
+connPenUp :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
+connPenUp c = do 
+  callbk <- lift ( callback <$> get )
+  liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
+            (x,y) <- eventCoordinates
+            liftIO (callbk (PenUp (x,y))))  
 
 iter :: Iteratee MyEvent XournalStateIO () 
 iter = do liftIO (putStrLn "I am waiting first result") 
@@ -31,10 +48,8 @@ changePage modifyfn = do
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
   lift (put (xstate { currpage = newpage}))
-  liftIO (updateCanvas <$> darea <*> xoj <*> return newpage $ xstate)
+  liftIO (updateCanvas <$> darea <*> xoj <*> pure newpage $ xstate)
   liftIO . putStrLn $ "changing " ++ show oldpage ++ " to " ++ show newpage
-
-
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
 eventProcess = do 
@@ -50,37 +65,28 @@ eventProcess = do
       liftIO . putStrLn $ "quit"
     PenDown (x,y) -> do 
       liftIO . putStrLn $ "down " ++ show (x,y)
-      canvas <- lift ( get >>= return . darea )
-      sref <- lift (get >>= return . x_sref )
-      tref <- lift (get >>= return . x_tref )
-      liftIO (widgetAddEvents canvas [Button1MotionMask])
-      connidmove <- liftIO (canvas `on` motionNotifyEvent $ tryEvent $ do 
-                              (x,y) <- eventCoordinates
-                              liftIO (bouncecallback tref sref (PenMove (x,y))))
-      connidup   <- liftIO (canvas `on` buttonReleaseEvent $ tryEvent $ do 
-                              (x,y) <- eventCoordinates
-                              liftIO (bouncecallback tref sref (PenUp (x,y)) ))
-      penProcess connidmove connidup
+      canvas <- lift ( darea <$> get )
+      connidmove <- connPenMove canvas
+      connidup <- connPenUp canvas
+      pdraw <- penProcess connidmove connidup (empty |> (x,y)) 
+      liftIO (print pdraw) 
     _ -> defaultEventProcess r1
 
-
 penProcess :: ConnectId DrawingArea -> ConnectId DrawingArea 
-           -> Iteratee MyEvent XournalStateIO ()
-penProcess connidmove connidup = do 
+           -> Seq (Double,Double)
+           -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
+penProcess connidmove connidup pdraw = do 
   r <- await 
   case r of 
     PenMove (x,y) -> do 
       liftIO . putStrLn $ "move " ++ show (x,y)
-      penProcess connidmove connidup 
+      penProcess connidmove connidup (pdraw |> (x,y)) 
     PenUp (x,y) -> do 
       liftIO . putStrLn $ "up " ++ show (x,y)
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
-      return () 
-    _ -> penProcess connidmove connidup
-
-
-
+      return (pdraw |> (x,y)) 
+    _ -> penProcess connidmove connidup pdraw 
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = do 

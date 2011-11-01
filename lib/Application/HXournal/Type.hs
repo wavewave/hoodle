@@ -28,8 +28,9 @@ data XournalState =
   , darea :: DrawingArea
   , currpage :: Int 
   , currpendrawing :: PenDrawing 
-  , x_tref :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
-  , x_sref :: IORef (XournalState)
+  , callback :: MyEvent -> IO ()
+--  , x_tref :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
+--  , x_sref :: IORef (XournalState)
   } 
                       
 

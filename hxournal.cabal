@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.0.3.0
+Version:	0.0.3.999
 Synopsis:	
 Description: 	
 License: 	BSD3
@@ -8,7 +8,7 @@ Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
-data-files:     
+data-files:     template/*.html.st
 
 
 Executable hxournal
@@ -29,7 +29,9 @@ Library
                    cmdargs, gtk, cairo, monad-control, 
                    monad-coroutine, transformers, random, 
                    xournal-parser >= 0.1.2, 
-                   xournal-render, containers
+                   xournal-render, containers, 
+                   HStringTemplate,
+                   HStringTemplateHelpersIW
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job
@@ -41,6 +43,7 @@ Library
                    Application.HXournal.Util 
                    Application.HXournal.Draw
   Other-Modules: 
+                   Paths_hxournal
 
  
 		 

@@ -14,12 +14,8 @@ import Data.IORef
 import Text.Xournal.Type
 import Text.Xournal.Parse
 
--- startGUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
---          -> IORef XournalState
---          -> IO () 
-startGUI :: IO () 
--- startGUI tref sref = do 
-startGUI = do 
+startGUI :: FilePath -> IO () 
+startGUI fname = do 
 
   initGUI
   window <- windowNew 
@@ -42,7 +38,7 @@ startGUI = do
   widgetShowAll window
   
 
-  xojcontent <- read_xojgz "test.xoj" 
+  xojcontent <- read_xojgz fname 
   let st = emptyXournalState { xoj = xojcontent, wdw = buttonrefresh, darea = canvas } 
   (r,st') <- runStateT (resume iter) st
   sref <- newIORef st'

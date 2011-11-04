@@ -4,9 +4,9 @@ import Application.HXournal.ProgType
 import Application.HXournal.Job
 
 commandLineProcess :: Hxournal -> IO ()
-commandLineProcess Test = do 
+commandLineProcess (Test fname) = do 
   putStrLn "test called"
-  startJob
+  startJob fname
 {-
 commandLineProcess CoroutineTest = do 
   putStrLn "coroutine test is called"

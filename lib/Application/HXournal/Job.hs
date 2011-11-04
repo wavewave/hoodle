@@ -7,7 +7,7 @@ import Data.IORef
 import Control.Monad.Coroutine
 import Control.Monad.State
 
-startJob :: IO () 
-startJob = do 
+startJob :: FilePath -> IO () 
+startJob fname = do 
   putStrLn "job started"
-  startGUI
+  startGUI fname

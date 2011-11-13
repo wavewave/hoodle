@@ -19,7 +19,7 @@ drawOneStroke s = do
     Nothing -> setSourceRGBA 0 0 0 1
   setLineWidth (stroke_width s) 
   drawOneStrokeCurve (stroke_data s)
---  stroke
+  stroke
 
 drawOneStrokeCurve :: [Pair Double Double] -> Render ()
 drawOneStrokeCurve ((x0 :!: y0) : xs) = do 

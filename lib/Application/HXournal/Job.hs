@@ -51,24 +51,24 @@ startMakeSVG fname = do
 
   mapM_ svgoutfn namePages
 
-  makeHtmlJavascriptPage "index.html" (map fst namePages)
+  makeHtmlJavascriptPage "index.html" $ zip [1..] (map fst namePages)
    
   putStrLn "test ended"
 
-onePageTemplate = "<p><div class=\"page\"> <img src=\"$filename$\" width=100% /> </div> </p>\n\n"
+onePageTemplate = "<p><div class=\"page\"> <a name=\"$page$\"> <img src=\"$filename$\" width=100% /> </a> </div> </p>\n\n"
 onerule = "<hr /> \n"
 
-makeHtmlJavascriptPage :: FilePath -> [String] -> IO ()
+makeHtmlJavascriptPage :: FilePath -> [(Int,String)] -> IO ()
 makeHtmlJavascriptPage fname names = do
   putStrLn $ "writing  " ++ fname
+  putStrLn $ show names 
   templateDir <- getDataDir >>= return . (</> "template")
   (templates :: STGroup String) <- directoryGroup templateDir 
 
-  let mkstr :: String -> String 
-      mkstr n = flip render1 onePageTemplate [ ("filename", n) ]
+  let mkstr :: (Int,String) -> String 
+      mkstr (p,n) = flip render1 onePageTemplate [ ("filename", "." </> n) 
+                                             , ("page", show p) ]
       bodystr = intercalate onerule . map mkstr $ names
-
-
 
   let str = renderTemplateGroup 
               templates 

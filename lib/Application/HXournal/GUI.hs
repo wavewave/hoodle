@@ -33,7 +33,7 @@ startGUI fname = do
   boxPackStart hbox buttonquit    PackGrow 0 
   boxPackEnd vbox hbox   PackNatural 0 
   boxPackEnd vbox canvas PackGrow 0 
-  canvas `on` sizeRequest $ return (Requisition 40 40)
+  canvas `on` sizeRequest $ return (Requisition 480 640)
  
   widgetShowAll window
   
@@ -69,6 +69,11 @@ startGUI fname = do
   canvas `on` buttonPressEvent $ tryEvent $ do 
     (x,y) <- eventCoordinates
     liftIO (bouncecallback tref sref (PenDown (x,y)) )
+  
+  canvas `on` buttonReleaseEvent $ tryEvent $ do 
+    (x,y) <- eventCoordinates
+    liftIO (bouncecallback tref sref (PenUp (x,y)) )
+
   widgetAddEvents canvas [Button1MotionMask]
 
 

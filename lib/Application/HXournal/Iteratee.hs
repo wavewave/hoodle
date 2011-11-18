@@ -66,27 +66,30 @@ eventProcess = do
     PenDown (x,y) -> do 
       liftIO . putStrLn $ "down " ++ show (x,y)
       canvas <- lift ( darea <$> get )
+      -- liftIO $ penMoveTo canvas (x,y)
+      connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
-      connidup <- connPenUp canvas
-      pdraw <- penProcess connidmove connidup (empty |> (x,y)) 
+      pdraw <- penProcess connidmove connidup (empty |> (x,y)) (x,y) 
       liftIO (print pdraw) 
     _ -> defaultEventProcess r1
 
 penProcess :: ConnectId DrawingArea -> ConnectId DrawingArea 
-           -> Seq (Double,Double)
+           -> Seq (Double,Double) -> (Double,Double) 
            -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
-penProcess connidmove connidup pdraw = do 
+penProcess connidmove connidup pdraw (x0,y0) = do 
   r <- await 
   case r of 
     PenMove (x,y) -> do 
       liftIO . putStrLn $ "move " ++ show (x,y)
-      penProcess connidmove connidup (pdraw |> (x,y)) 
+      canvas <- lift ( darea <$> get )
+      liftIO $ penLineTo canvas (x0,y0) (x,y)
+      penProcess connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp (x,y) -> do 
       liftIO . putStrLn $ "up " ++ show (x,y)
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
       return (pdraw |> (x,y)) 
-    _ -> penProcess connidmove connidup pdraw 
+    _ -> penProcess connidmove connidup pdraw (x0,y0) 
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = do 

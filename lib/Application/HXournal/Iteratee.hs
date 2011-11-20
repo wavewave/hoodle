@@ -18,20 +18,31 @@ import Graphics.UI.Gtk hiding (get)
 
 import Data.Sequence hiding (length)
 
+import Application.HXournal.Device
 
 connPenMove :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenMove c = do 
-  callbk <- lift ( callback <$> get )
+  callbk <- lift $ callback <$> get 
+  dev <- lift $ device <$> get 
   liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
+             p <- getPointer dev
+             liftIO (callbk (PenMove p)))
+            {- 
             (x,y) <- eventCoordinates
             liftIO (callbk (PenMove (x,y))))  
-
+            -}
 connPenUp :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenUp c = do 
-  callbk <- lift ( callback <$> get )
+  callbk <- lift $ callback <$> get 
+  dev <- lift $ device <$> get 
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
-            (x,y) <- eventCoordinates
+             p <- getPointer dev
+             liftIO (callbk (PenMove p)))
+             
+{-             
+              (x,y) <- eventCoordinates
             liftIO (callbk (PenUp (x,y))))  
+-}
 
 iter :: Iteratee MyEvent XournalStateIO () 
 iter = do liftIO (putStrLn "I am waiting first result") 
@@ -63,9 +74,10 @@ eventProcess = do
       liftIO . putStrLn $ "refresh"
     ButtonQuit -> do  
       liftIO . putStrLn $ "quit"
-    PenDown (x,y) -> do 
+    PenDown pcoord -> do 
+      canvas <- lift ( darea <$> get )  
+      (x,y) <- liftIO ( wacomPConvert canvas pcoord )
       liftIO . putStrLn $ "down " ++ show (x,y)
-      canvas <- lift ( darea <$> get )
       -- liftIO $ penMoveTo canvas (x,y)
       connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
@@ -79,12 +91,15 @@ penProcess :: ConnectId DrawingArea -> ConnectId DrawingArea
 penProcess connidmove connidup pdraw (x0,y0) = do 
   r <- await 
   case r of 
-    PenMove (x,y) -> do 
-      liftIO . putStrLn $ "move " ++ show (x,y)
+    PenMove pcoord -> do 
       canvas <- lift ( darea <$> get )
+      (x,y) <- liftIO ( wacomPConvert canvas pcoord )      
+      liftIO . putStrLn $ "move " ++ show (x,y)
       liftIO $ penLineTo canvas (x0,y0) (x,y)
       penProcess connidmove connidup (pdraw |> (x,y)) (x,y) 
-    PenUp (x,y) -> do 
+    PenUp pcoord -> do 
+      canvas <- lift ( darea <$> get )
+      (x,y) <- liftIO ( wacomPConvert canvas pcoord )      
       liftIO . putStrLn $ "up " ++ show (x,y)
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup

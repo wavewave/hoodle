@@ -1,7 +1,11 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Application.HXournal.GUI where
 
 import Application.HXournal.Type 
 import Application.HXournal.Coroutine
+import Application.HXournal.Device
+
 import Graphics.UI.Gtk hiding (get)
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.State
@@ -9,15 +13,26 @@ import Control.Monad.Coroutine
 
 import Application.HXournal.Iteratee
 import Application.HXournal.Draw
+import Application.HXournal.Device
 import Data.IORef
 
 import Text.Xournal.Type
 import Text.Xournal.Parse
 
+import Foreign.Marshal.Utils
+import Foreign.Storable
+import Foreign.C
+import Foreign.Ptr
+
 startGUI :: FilePath -> IO () 
 startGUI fname = do 
-
+  -- (stylusdevptr :: Ptr CInt) <- new 0 
+  -- (eraserdevptr :: Ptr CInt) <- new 0 
+  
   initGUI
+  dev <- initDevice 
+  print dev
+  
   window <- windowNew 
   hbox <- hBoxNew False 0 
   vbox <- vBoxNew False 0 
@@ -39,7 +54,7 @@ startGUI fname = do
   
 
   xojcontent <- read_xojgz fname 
-  let st = emptyXournalState { xoj = xojcontent, wdw = buttonrefresh, darea = canvas } 
+  let st = emptyXournalState { xoj = xojcontent, wdw = buttonrefresh, darea = canvas, device = dev} 
   (r,st') <- runStateT (resume iter) st
   sref <- newIORef st'
 
@@ -51,8 +66,6 @@ startGUI fname = do
   writeIORef sref st' {callback = bouncecallback tref sref }
 
   onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
-
--- const (updateCanvas canvas (xoj st) (currpage st) >> return True)
 
   onClicked buttonleft    $ do putStrLn "<"
                                bouncecallback tref sref ButtonLeft
@@ -67,17 +80,29 @@ startGUI fname = do
                                bouncecallback tref sref ButtonQuit
                                mainQuit          
   canvas `on` buttonPressEvent $ tryEvent $ do 
-    (x,y) <- eventCoordinates
-    liftIO (bouncecallback tref sref (PenDown (x,y)) )
+    st <- liftIO (readIORef sref)
+    let callbk = callback st
+        dev = device st 
+    p <- getPointer dev
+    liftIO (callbk (PenDown p))
+    
+{- (x,y) <- eventCoordinates
+    liftIO (bouncecallback tref sref (PenDown (x,y)) ) -}
   
   canvas `on` buttonReleaseEvent $ tryEvent $ do 
+    st <- liftIO (readIORef sref)
+    let callbk = callback st
+        dev = device st 
+    p <- getPointer dev
+    liftIO (callbk (PenUp p))
+    
+{-    
     (x,y) <- eventCoordinates
-    liftIO (bouncecallback tref sref (PenUp (x,y)) )
+    liftIO (bouncecallback tref sref (PenUp (x,y)) ) -}
 
-  widgetAddEvents canvas [Button1MotionMask]
-
-
+  widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
+  widgetSetExtensionEvents canvas [ExtensionEventsAll]
   onDestroy window mainQuit
   mainGUI 
   return ()
-
+  

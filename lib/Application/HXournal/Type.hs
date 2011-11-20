@@ -1,5 +1,6 @@
 module Application.HXournal.Type where
 
+import Application.HXournal.Device
 import Control.Monad.Coroutine 
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Functor.Identity (Identity(..))
@@ -29,6 +30,7 @@ data XournalState =
   , currpage :: Int 
   , currpendrawing :: PenDrawing 
   , callback :: MyEvent -> IO ()
+  , device :: DeviceList 
 --  , x_tref :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
 --  , x_sref :: IORef (XournalState)
   } 
@@ -39,9 +41,9 @@ data MyEvent = ButtonLeft
              | ButtonRefresh 
              | ButtonQuit 
              | UpdateCanvas
-             | PenDown (Double,Double)
-             | PenMove (Double,Double)
-             | PenUp   (Double,Double)
+             | PenDown PointerCoord
+             | PenMove PointerCoord
+             | PenUp   PointerCoord 
              deriving (Show,Eq,Ord)
 
 
@@ -53,4 +55,6 @@ emptyXournalState =
   , darea = undefined
   , currpage = 0 
   , currpendrawing = PenDrawing empty 
+  , callback = undefined 
+  , device = undefined
   } 

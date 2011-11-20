@@ -42,8 +42,13 @@ Library
                    Application.HXournal.Iteratee
                    Application.HXournal.Util 
                    Application.HXournal.Draw
+                   Application.HXournal.Device
   Other-Modules: 
                    Paths_hxournal
-
+  c-sources: 
+                   csrc/c_initdevice.c
+  include-dirs:    csrc
+  install-includes: 
+                   c_initdevice.h
  
 		 

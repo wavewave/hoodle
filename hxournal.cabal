@@ -9,6 +9,7 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
+                resource/*.png
 
 
 Executable hxournal

@@ -43,15 +43,27 @@ startGUI fname = do
 
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
-                  (Just x) -> x 
+                  Just x  -> x 
                   Nothing -> error "cannot get menubar from string"
                   
+  maybeToolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
+  let toolbar1 = case maybeToolbar1 of 
+                   Just x  -> x     
+                   Nothing -> error "cannot get toolbar from string"
+                
+  maybeToolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
+  let toolbar2 = case maybeToolbar2 of 
+                   Just x  -> x     
+                   Nothing -> error "cannot get toolbar from string" 
+
   --set window [containerChild := vbox ]
   containerAdd window vbox 
   canvas <- drawingAreaNew
 
 
   boxPackStart vbox menubar PackNatural 0 
+  boxPackStart vbox toolbar1 PackNatural 0
+  boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox canvas PackGrow 0 
   canvas `on` sizeRequest $ return (Requisition 480 640)
 

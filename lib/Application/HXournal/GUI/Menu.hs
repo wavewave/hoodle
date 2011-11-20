@@ -5,6 +5,9 @@ module Application.HXournal.GUI.Menu where
 import Application.HXournal.Util.Verbatim
 import Graphics.UI.Gtk
 
+import System.FilePath
+import Paths_hxournal
+
 uiDecl :: String 
 uiDecl = [verbatim|<ui> 
   <menubar>
@@ -40,7 +43,7 @@ uiDecl = [verbatim|<ui>
        <menuitem action="ZOOMA" />
        <separator />
        <menuitem action="FSTPAGEA" />
-       <menuitem action="SNDPAGEA" />
+       <menuitem action="PRVPAGEA" />
        <menuitem action="NXTPAGEA" />
        <menuitem action="LSTPAGEA" />
        <separator />
@@ -117,11 +120,119 @@ uiDecl = [verbatim|<ui>
        <menuitem action="ABOUTA" />
     </menu>
   </menubar>
-</ui>
+  <toolbar name="toolbar1" > 
+    <toolitem action="SAVEA" />
+    <toolitem action="NEWA" />
+    <toolitem action="OPENA" />
+    <separator />
+    <toolitem action="CUTA" />
+    <toolitem action="COPYA" />
+    <toolitem action="PASTEA" />
+    <separator /> 
+    <toolitem action="UNDOA" /> 
+    <toolitem action="REDOA" /> 
+    <separator /> 
+    <toolitem action="FSTPAGEA" />
+    <toolitem action="PRVPAGEA" />
+    <toolitem action="NXTPAGEA" />
+    <toolitem action="LSTPAGEA" />
+    <separator />
+    <toolitem action="FSCRA" />
+  </toolbar>
+  <toolbar name="toolbar2" > 
+    <toolitem action="PENA" />
+    <toolitem action="ERASERA" />                     
+    <toolitem action="HIGHLTA" />                     
+    <toolitem action="TEXTA" />                     
+    <toolitem action="SHPRECA" />   
+    <toolitem action="RULERA" />                     
+    <separator />
+    <toolitem action="SELREGNA" />    
+    <toolitem action="SELRECTA" />                     
+    <toolitem action="VERTSPA" />                     
+    <toolitem action="HANDA" />                     
+    <separator />     
+    <toolitem action="DEFAULTA" />    
+    <toolitem action="DEFPENA" />                     
+    <separator />                     
+    <toolitem action="PEN1A" />    
+    <toolitem action="PEN2A" />                     
+    <toolitem action="PEN3A" />   
+    <separator />
+    <toolitem action="BLACKA" />                     
+    <toolitem action="BLUEA" />                     
+    <toolitem action="REDA" />                     
+    <toolitem action="GREENA" />                     
+    <toolitem action="GRAYA" />                     
+    <toolitem action="LIGHTBLUEA" />                      
+    <toolitem action="LIGHTGREENA" />                     
+    <toolitem action="MAGENTA" />                     
+    <toolitem action="ORANGEA" />                     
+    <toolitem action="YELLOWA" />                     
+    <toolitem action="WHITEA" />                     
+  </toolbar>
+
+  </ui>
 |]
+
+iconList = [ ("fullscreen.png" , "myfullscreen")
+           , ("pencil.png"     , "mypen")
+           , ("eraser.png"     , "myeraser")
+           , ("highlighter.png", "myhighlighter") 
+           , ("text-tool.png"  , "mytext")
+           , ("shapes.png"     , "myshapes")
+           , ("ruler.png"      , "myruler")
+           , ("lasso.png"      , "mylasso")
+           , ("rect-select.png", "myrectselect")
+           , ("stretch.png"    , "mystretch")
+           , ("hand.png"       , "myhand")
+           , ("recycled.png"   , "mydefault")
+           , ("default-pen.png", "mydefaultpen")
+           , ("thin.png"       , "mythin")
+           , ("medium.png"     , "mymedium")
+           , ("thick.png"      , "mythick")
+           , ("black.png"      , "myblack") 
+           , ("blue.png"       , "myblue")
+           , ("red.png"        , "myred")
+           , ("green.png"      , "mygreen")
+           , ("gray.png"       , "mygray")
+           , ("lightblue.png"  , "mylightblue")
+           , ("lightgreen.png" , "mylightgreen")
+           , ("magenta.png"    , "mymagenta")
+           , ("orange.png"     , "myorange")
+           , ("yellow.png"     , "myyellow")
+           , ("white.png"      , "mywhite")
+           ]
+
+viewmods :: [RadioActionEntry] 
+viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
+           , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
+           ]
+           
+penmods :: [RadioActionEntry] 
+penmods = [ RadioActionEntry "PENA" "Pen" (Just "mypen") Nothing Nothing 0
+          , RadioActionEntry "ERASERA" "Eraser" (Just "myeraser") Nothing Nothing 1
+          , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
+          , RadioActionEntry "TEXTA" "Text" (Just "mytext") Nothing Nothing 3 ]            
+
+
+iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
+                   -> IO ()
+iconResourceAdd iconfac resdir (fp,stid) = do 
+  myimage <- imageNewFromFile (resdir </> fp)
+  myIconSet <- iconSetNewFromPixbuf =<< imageGetPixbuf myimage 
+  iconFactoryAdd iconfac stid myIconSet
+  
 
 getMenuUI :: IO UIManager
 getMenuUI = do 
+  -- icons   
+  myiconfac <- iconFactoryNew 
+  iconFactoryAddDefault myiconfac 
+  
+  resDir <- getDataDir >>= return . (</> "resource") 
+  mapM_ (iconResourceAdd myiconfac resDir) iconList 
+  
   fma     <- actionNew "FMA"   "File" Nothing Nothing 
   ema     <- actionNew "EMA"   "Edit" Nothing Nothing 
   vma     <- actionNew "VMA"   "View" Nothing Nothing 
@@ -142,20 +253,20 @@ getMenuUI = do
   quita   <- actionNew "QUITA" "Quit" (Just "Just a Stub") (Just stockQuit)
   
   -- edit menu
-  undoa   <- actionNew "UNDOA"   "Undo" (Just "Just a Stub") Nothing
-  redoa   <- actionNew "REDOA"   "Redo" (Just "Just a Stub") Nothing
-  cuta    <- actionNew "CUTA"    "Cut" (Just "Just a Stub") Nothing
-  copya   <- actionNew "COPYA"   "Copy" (Just "Just a Stub") Nothing
-  pastea  <- actionNew "PASTEA"  "Paste" (Just "Just a Stub") Nothing
-  deletea <- actionNew "DELETEA" "Delete" (Just "Just a Stub") Nothing
+  undoa   <- actionNew "UNDOA"   "Undo" (Just "Just a Stub") (Just stockUndo)
+  redoa   <- actionNew "REDOA"   "Redo" (Just "Just a Stub") (Just stockRedo)
+  cuta    <- actionNew "CUTA"    "Cut" (Just "Just a Stub")  (Just stockCut)
+  copya   <- actionNew "COPYA"   "Copy" (Just "Just a Stub") (Just stockCopy)
+  pastea  <- actionNew "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste)
+  deletea <- actionNew "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete)
   
   -- view menu
   -- conta     <- actionNew "CONTA"     "Continuous" (Just "Just a Stub") Nothing
   -- onepagea  <- actionNew "ONEPAGEA"  "One Page" (Just "Just a Stub") Nothing
-  fscra     <- actionNew "FSCRA"     "Full Screen" (Just "Just a Stub") Nothing
+  fscra     <- actionNew "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen")
   zooma     <- actionNew "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing
   fstpagea  <- actionNew "FSTPAGEA"  "First Page" (Just "Just a Stub") Nothing
-  sndpagea  <- actionNew "SNDPAGEA"  "Second Page" (Just "Just a Stub") Nothing
+  prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") Nothing
   nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") Nothing
   lstpagea  <- actionNew "LSTPAGEA"  "Last Page" (Just "Just a Stub") Nothing
   shwlayera <- actionNew "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing
@@ -178,12 +289,12 @@ getMenuUI = do
   setdefppa <- actionNew "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing
   
   -- tools menu
-  shpreca   <- actionNew "SHPRECA" "Shape Recognizer" (Just "Just a Stub") Nothing
-  rulera    <- actionNew "RULERA" "Ruler" (Just "Just a Stub") Nothing
-  selregna  <- actionNew "SELREGNA" "Select Region" (Just "Just a Stub") Nothing
-  selrecta  <- actionNew "SELRECTA" "Select Rectangle" (Just "Just a Stub") Nothing
-  vertspa   <- actionNew "VERTSPA" "Vertical Space" (Just "Just a Stub") Nothing
-  handa     <- actionNew "HANDA" "Hand Tool" (Just "Just a Stub") Nothing
+  shpreca   <- actionNew "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes")
+  rulera    <- actionNew "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler")
+  selregna  <- actionNew "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso")
+  selrecta  <- actionNew "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect")
+  vertspa   <- actionNew "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch")
+  handa     <- actionNew "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand")
   clra      <- actionNew "CLRA" "Color" (Just "Just a Stub") Nothing
   penopta   <- actionNew "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing
   erasropta <- actionNew "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing
@@ -213,18 +324,17 @@ getMenuUI = do
   autosaveprefa <- actionNew "AUTOSAVEPREFA" "Auto-Save Preferences" (Just "Just a Stub") Nothing
   saveprefa <- actionNew "SAVEPREFA" "Save Preferences" (Just "Just a Stub") Nothing
   
-  
   -- help menu 
   abouta <- actionNew "ABOUTA" "About" (Just "Just a Stub") Nothing 
-  
-  
+
+
   agr <- actionGroupNew "AGR"
   mapM_ (actionGroupAddAction agr) 
         [fma,ema,vma,jma,tma,oma,hma]
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
         [ newa, annpdfa, opena, savea, saveasa, recenta, printa, exporta, quita
         , undoa, redoa, cuta, copya, pastea, deletea
-        , fscra, zooma, fstpagea, sndpagea, nxtpagea, lstpagea, shwlayera, hidlayera
+        , fscra, zooma, fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera, selregna, selrecta, vertspa, handa, clra, penopta
@@ -245,13 +355,3 @@ getMenuUI = do
   return ui   
 
 
-viewmods :: [RadioActionEntry] 
-viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
-           , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
-           ]
-           
-penmods :: [RadioActionEntry] 
-penmods = [ RadioActionEntry "PENA" "Pen" Nothing Nothing Nothing 0
-          , RadioActionEntry "ERASERA" "Eraser" Nothing Nothing Nothing 1
-          , RadioActionEntry "HIGHLTA" "Highlighter" Nothing Nothing Nothing 2
-          , RadioActionEntry "TEXTA" "Text" Nothing Nothing Nothing 3 ]            

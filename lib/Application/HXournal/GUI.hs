@@ -5,6 +5,7 @@ module Application.HXournal.GUI where
 import Application.HXournal.Type 
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
+import Application.HXournal.GUI.Menu
 
 import Graphics.UI.Gtk hiding (get)
 import Control.Monad.Coroutine.SuspensionFunctors
@@ -32,25 +33,42 @@ startGUI fname = do
   initGUI
   dev <- initDevice 
   print dev
+  putStrLn uiDecl 
   
   window <- windowNew 
   hbox <- hBoxNew False 0 
   vbox <- vBoxNew False 0 
+  
+  ui <- getMenuUI   
+
+  maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
+  let menubar = case maybeMenubar of 
+                  (Just x) -> x 
+                  Nothing -> error "cannot get menubar from string"
+                  
+  --set window [containerChild := vbox ]
+  containerAdd window vbox 
+  canvas <- drawingAreaNew
+
+
+  boxPackStart vbox menubar PackNatural 0 
+  boxPackEnd vbox canvas PackGrow 0 
+  canvas `on` sizeRequest $ return (Requisition 480 640)
+
+  
+  {-
   buttonleft    <- buttonNewWithLabel "<"
   buttonright   <- buttonNewWithLabel ">"
   buttonrefresh <- buttonNewWithLabel "Refresh"  
   buttonquit    <- buttonNewWithLabel "Quit"
-  canvas <- drawingAreaNew
   set window [containerChild := vbox ]
   boxPackStart hbox buttonleft    PackGrow 0 
   boxPackStart hbox buttonright   PackGrow 0
   boxPackStart hbox buttonrefresh PackGrow 0
   boxPackStart hbox buttonquit    PackGrow 0 
   boxPackEnd vbox hbox   PackNatural 0 
-  boxPackEnd vbox canvas PackGrow 0 
-  canvas `on` sizeRequest $ return (Requisition 480 640)
  
-  widgetShowAll window
+
   
 
   xojcontent <- read_xojgz fname 
@@ -85,10 +103,7 @@ startGUI fname = do
         dev = device st 
     p <- getPointer dev
     liftIO (callbk (PenDown p))
-    
-{- (x,y) <- eventCoordinates
-    liftIO (bouncecallback tref sref (PenDown (x,y)) ) -}
-  
+ 
   canvas `on` buttonReleaseEvent $ tryEvent $ do 
     st <- liftIO (readIORef sref)
     let callbk = callback st
@@ -96,13 +111,14 @@ startGUI fname = do
     p <- getPointer dev
     liftIO (callbk (PenUp p))
     
-{-    
-    (x,y) <- eventCoordinates
-    liftIO (bouncecallback tref sref (PenUp (x,y)) ) -}
 
   widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
   widgetSetExtensionEvents canvas [ExtensionEventsAll]
+
+  -}
   onDestroy window mainQuit
+  
+  widgetShowAll window
   mainGUI 
   return ()
   

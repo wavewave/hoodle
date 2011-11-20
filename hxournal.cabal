@@ -31,7 +31,8 @@ Library
                    xournal-parser >= 0.1.2, 
                    xournal-render, containers, 
                    HStringTemplate,
-                   HStringTemplateHelpersIW
+                   HStringTemplateHelpersIW, 
+                   template-haskell
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job
@@ -39,8 +40,10 @@ Library
                    Application.HXournal.Type
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
+                   Application.HXournal.GUI.Menu
                    Application.HXournal.Iteratee
-                   Application.HXournal.Util 
+                   Application.HXournal.Util
+                   Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw
                    Application.HXournal.Device
   Other-Modules: 

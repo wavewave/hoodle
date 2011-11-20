@@ -27,19 +27,31 @@ import Foreign.Ptr
 
 startGUI :: FilePath -> IO () 
 startGUI fname = do 
-  -- (stylusdevptr :: Ptr CInt) <- new 0 
-  -- (eraserdevptr :: Ptr CInt) <- new 0 
-  
   initGUI
   dev <- initDevice 
   print dev
   putStrLn uiDecl 
   
+  canvas <- drawingAreaNew
+  
+  xojcontent <- read_xojgz fname 
+  let st = emptyXournalState { xoj = xojcontent, darea = canvas, device = dev} 
+  (r,st') <- runStateT (resume iter) st
+  sref <- newIORef st'
+
+  tref <- case r of 
+            Left aw -> do 
+              newIORef aw 
+            Right _ -> error "what?"
+
+  writeIORef sref st' {callback = bouncecallback tref sref }
+  
+  
   window <- windowNew 
   -- hbox <- hBoxNew False 0 
   vbox <- vBoxNew False 0 
   
-  ui <- getMenuUI   
+  ui <- getMenuUI tref sref  
 
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
@@ -57,51 +69,13 @@ startGUI fname = do
                    Nothing -> error "cannot get toolbar from string" 
 
   containerAdd window vbox 
-  canvas <- drawingAreaNew
 
 
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox canvas PackGrow 0 
-  --  canvas `on` sizeRequest $ return (Requisition 480 640)
-
-  
-  {- buttonleft    <- buttonNewWithLabel "<"
-  buttonright   <- buttonNewWithLabel ">"
-  buttonrefresh <- buttonNewWithLabel "Refresh"  
-  buttonquit    <- buttonNewWithLabel "Quit" 
-  set window [containerChild := vbox ]
-  boxPackStart hbox buttonleft    PackGrow 0 
-  boxPackStart hbox buttonright   PackGrow 0
-  boxPackStart hbox buttonrefresh PackGrow 0
-  boxPackStart hbox buttonquit    PackGrow 0  
-  boxPackEnd vbox hbox   PackNatural 0  
-  onClicked buttonleft    $ do putStrLn "<"
-                               bouncecallback tref sref ButtonLeft
-                               return ()
-  onClicked buttonright   $ do putStrLn ">"
-                               bouncecallback tref sref ButtonRight
-                               return () 
-  onClicked buttonrefresh $ do putStrLn "R"
-                               bouncecallback tref sref ButtonRefresh
-                               return ()
-  onClicked buttonquit    $ do putStrLn "Q" 
-                               bouncecallback tref sref ButtonQuit
-                               mainQuit          
-  -}
-
-  xojcontent <- read_xojgz fname 
-  let st = emptyXournalState { xoj = xojcontent, darea = canvas, device = dev} 
-  (r,st') <- runStateT (resume iter) st
-  sref <- newIORef st'
-
-  tref <- case r of 
-            Left aw -> do 
-              newIORef aw 
-            Right _ -> error "what?"
-
-  writeIORef sref st' {callback = bouncecallback tref sref }
+  canvas `on` sizeRequest $ return (Requisition 480 400)
 
   onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
 

@@ -3,6 +3,13 @@
 module Application.HXournal.GUI.Menu where
 
 import Application.HXournal.Util.Verbatim
+import Application.HXournal.Coroutine
+import Application.HXournal.Type
+
+import Control.Monad.IO.Class
+import Control.Monad.Coroutine.SuspensionFunctors
+import Data.IORef
+
 import Graphics.UI.Gtk
 
 import System.FilePath
@@ -262,11 +269,11 @@ colormods = [ RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
                    -> IO ()
 iconResourceAdd iconfac resdir (fp,stid) = do 
-  myimage <- imageNewFromFile (resdir </> fp)
+  -- myimage <- imageNewFromFile (resdir </> fp)
   -- myIconSet <- iconSetNewFromPixbuf =<< imageGetPixbuf myimage 
   myIconSource <- iconSourceNew 
-  --iconSourceSetFilename myIconSource (resdir </> fp)
-  iconSourceSetPixbuf myIconSource =<< imageGetPixbuf myimage
+  iconSourceSetFilename myIconSource (resdir </> fp)
+  --iconSourceSetPixbuf myIconSource =<< imageGetPixbuf myimage
   iconSourceSetSize myIconSource IconSizeLargeToolbar
   myIconSet <- iconSetNew 
   iconSetAddSource myIconSet myIconSource 
@@ -274,8 +281,10 @@ iconResourceAdd iconfac resdir (fp,stid) = do
   
   
 
-getMenuUI :: IO UIManager
-getMenuUI = do 
+getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
+             -> IORef XournalState 
+             -> IO UIManager
+getMenuUI tref sref = do 
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
@@ -322,7 +331,14 @@ getMenuUI = do
   setzma    <- actionNew "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind)
   fstpagea  <- actionNew "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst)
   prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack)
+  prvpagea `on` actionActivated $ do 
+    bouncecallback tref sref ButtonLeft
+  
   nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward)
+  nxtpagea `on` actionActivated $ do 
+    bouncecallback tref sref ButtonRight
+    
+
   lstpagea  <- actionNew "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast)
   shwlayera <- actionNew "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing
   hidlayera <- actionNew "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing
@@ -416,4 +432,9 @@ getMenuUI = do
   uiManagerInsertActionGroup ui agr 0 
   return ui   
 
-
+{-
+setActions :: IO () 
+setAction x  = do 
+  prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack)
+  nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward)
+-}

@@ -10,4 +10,7 @@ commandLineProcess (Test fname) = do
 commandLineProcess (MakeSVG fname) = do 
   putStrLn "makeSVG is called"
   startMakeSVG fname
-
+commandLineProcess (TestBuilder fname) = do 
+  putStrLn "testbuilder is called"
+  startTestBuilder fname 
+  

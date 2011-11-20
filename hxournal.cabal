@@ -33,7 +33,8 @@ Library
                    xournal-render, containers, 
                    HStringTemplate,
                    HStringTemplateHelpersIW, 
-                   template-haskell
+                   template-haskell, blaze-builder, 
+                   bytestring == 0.9.*
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job
@@ -47,6 +48,7 @@ Library
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw
                    Application.HXournal.Device
+                   Application.HXournal.Builder 
   Other-Modules: 
                    Paths_hxournal
   c-sources: 

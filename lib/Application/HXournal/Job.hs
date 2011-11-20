@@ -5,7 +5,11 @@ module Application.HXournal.Job where
 import Application.HXournal.GUI
 import Application.HXournal.Iteratee 
 import Application.HXournal.Type 
+import Application.HXournal.Builder
+
 import Data.IORef
+import qualified Data.ByteString.Lazy as L
+
 import Control.Monad.Coroutine
 import Control.Monad.State
 
@@ -78,3 +82,11 @@ makeHtmlJavascriptPage fname names = do
   withFile fname WriteMode $ \h -> do 
     hPutStr h str
     
+
+startTestBuilder :: FilePath -> IO () 
+startTestBuilder fname = do 
+  putStrLn fname
+
+  xojcontent <- read_xojgz fname 
+
+  L.writeFile "mytest.xoj" $ builder xojcontent

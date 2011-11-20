@@ -8,6 +8,7 @@ data Hxournal = Test    { xojfile :: FilePath
                         }  
               | MakeSVG { xojfile :: FilePath
                         }
+              | TestBuilder { xojfile :: FilePath }
               deriving (Show,Data,Typeable)
 
 test :: Hxournal
@@ -18,7 +19,11 @@ makeSVG :: Hxournal
 makeSVG = MakeSVG { xojfile = "test.xoj" &= typ "FILENAME" &= argPos 0 
                   }
 
+testbuilder :: Hxournal 
+testbuilder = TestBuilder { xojfile = "test.xoj" &= typ "FILENAME" &= argPos 0 
+                          } 
+
 mode :: Hxournal
-mode = modes [test, makeSVG]
+mode = modes [test, makeSVG, testbuilder]
 
 

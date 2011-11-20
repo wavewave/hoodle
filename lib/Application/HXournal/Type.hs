@@ -25,7 +25,6 @@ data PenDrawing = PenDrawing { penDrawingPoints :: Seq (Double,Double)
 data XournalState = 
   XournalState 
   { xoj :: Xournal 
-  , wdw :: Button
   , darea :: DrawingArea
   , currpage :: Int 
   , currpendrawing :: PenDrawing 
@@ -51,7 +50,6 @@ emptyXournalState :: XournalState
 emptyXournalState = 
   XournalState 
   { xoj = emptyXournal
-  , wdw = undefined
   , darea = undefined
   , currpage = 0 
   , currpendrawing = PenDrawing empty 

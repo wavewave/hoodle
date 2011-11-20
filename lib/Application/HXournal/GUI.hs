@@ -36,7 +36,7 @@ startGUI fname = do
   putStrLn uiDecl 
   
   window <- windowNew 
-  hbox <- hBoxNew False 0 
+  -- hbox <- hBoxNew False 0 
   vbox <- vBoxNew False 0 
   
   ui <- getMenuUI   
@@ -56,7 +56,6 @@ startGUI fname = do
                    Just x  -> x     
                    Nothing -> error "cannot get toolbar from string" 
 
-  --set window [containerChild := vbox ]
   containerAdd window vbox 
   canvas <- drawingAreaNew
 
@@ -68,35 +67,16 @@ startGUI fname = do
   canvas `on` sizeRequest $ return (Requisition 480 640)
 
   
-  {-
-  buttonleft    <- buttonNewWithLabel "<"
+  {- buttonleft    <- buttonNewWithLabel "<"
   buttonright   <- buttonNewWithLabel ">"
   buttonrefresh <- buttonNewWithLabel "Refresh"  
-  buttonquit    <- buttonNewWithLabel "Quit"
+  buttonquit    <- buttonNewWithLabel "Quit" 
   set window [containerChild := vbox ]
   boxPackStart hbox buttonleft    PackGrow 0 
   boxPackStart hbox buttonright   PackGrow 0
   boxPackStart hbox buttonrefresh PackGrow 0
-  boxPackStart hbox buttonquit    PackGrow 0 
-  boxPackEnd vbox hbox   PackNatural 0 
- 
-
-  
-
-  xojcontent <- read_xojgz fname 
-  let st = emptyXournalState { xoj = xojcontent, wdw = buttonrefresh, darea = canvas, device = dev} 
-  (r,st') <- runStateT (resume iter) st
-  sref <- newIORef st'
-
-  tref <- case r of 
-            Left aw -> do 
-              newIORef aw 
-            Right _ -> error "what?"
-
-  writeIORef sref st' {callback = bouncecallback tref sref }
-
-  onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
-
+  boxPackStart hbox buttonquit    PackGrow 0  
+  boxPackEnd vbox hbox   PackNatural 0  
   onClicked buttonleft    $ do putStrLn "<"
                                bouncecallback tref sref ButtonLeft
                                return ()
@@ -109,6 +89,22 @@ startGUI fname = do
   onClicked buttonquit    $ do putStrLn "Q" 
                                bouncecallback tref sref ButtonQuit
                                mainQuit          
+  -}
+
+  xojcontent <- read_xojgz fname 
+  let st = emptyXournalState { xoj = xojcontent, darea = canvas, device = dev} 
+  (r,st') <- runStateT (resume iter) st
+  sref <- newIORef st'
+
+  tref <- case r of 
+            Left aw -> do 
+              newIORef aw 
+            Right _ -> error "what?"
+
+  writeIORef sref st' {callback = bouncecallback tref sref }
+
+  onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
+
   canvas `on` buttonPressEvent $ tryEvent $ do 
     st <- liftIO (readIORef sref)
     let callbk = callback st
@@ -127,7 +123,7 @@ startGUI fname = do
   widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
   widgetSetExtensionEvents canvas [ExtensionEventsAll]
 
-  -}
+  
   onDestroy window mainQuit
   
   widgetShowAll window

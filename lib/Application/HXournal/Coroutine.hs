@@ -22,6 +22,6 @@ bouncecallback tref sref input = do
     Right val -> do putStrLn $ show val 
                     writeIORef tref (Await (\_ -> return ()))
                     writeIORef sref st'
-  putStrLn "one step"
+  -- putStrLn "one step"
   return ()  
 

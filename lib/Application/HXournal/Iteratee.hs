@@ -60,7 +60,7 @@ changePage modifyfn = do
               | otherwise = modifyfn oldpage 
   lift (put (xstate { currpage = newpage}))
   liftIO (updateCanvas <$> darea <*> xoj <*> pure newpage $ xstate)
-  liftIO . putStrLn $ "changing " ++ show oldpage ++ " to " ++ show newpage
+  -- liftIO . putStrLn $ "changing " ++ show oldpage ++ " to " ++ show newpage
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
 eventProcess = do 
@@ -77,12 +77,13 @@ eventProcess = do
     PenDown pcoord -> do 
       canvas <- lift ( darea <$> get )  
       (x,y) <- liftIO ( wacomPConvert canvas pcoord )
-      liftIO . putStrLn $ "down " ++ show (x,y)
+      -- liftIO . putStrLn $ "down " ++ show (x,y)
       -- liftIO $ penMoveTo canvas (x,y)
       connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
-      pdraw <- penProcess connidmove connidup (empty |> (x,y)) (x,y) 
-      liftIO (print pdraw) 
+      penProcess connidmove connidup (empty |> (x,y)) (x,y) 
+      return ()
+      -- liftIO (print pdraw) 
     _ -> defaultEventProcess r1
 
 penProcess :: ConnectId DrawingArea -> ConnectId DrawingArea 
@@ -94,13 +95,13 @@ penProcess connidmove connidup pdraw (x0,y0) = do
     PenMove pcoord -> do 
       canvas <- lift ( darea <$> get )
       (x,y) <- liftIO ( wacomPConvert canvas pcoord )      
-      liftIO . putStrLn $ "move " ++ show (x,y)
+      -- liftIO . putStrLn $ "move " ++ show (x,y)
       liftIO $ penLineTo canvas (x0,y0) (x,y)
       penProcess connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp pcoord -> do 
       canvas <- lift ( darea <$> get )
       (x,y) <- liftIO ( wacomPConvert canvas pcoord )      
-      liftIO . putStrLn $ "up " ++ show (x,y)
+      -- liftIO . putStrLn $ "up " ++ show (x,y)
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
       return (pdraw |> (x,y)) 

@@ -40,7 +40,13 @@ uiDecl = [verbatim|<ui>
        <separator />
        <menuitem action="FSCRA" />
        <separator />
-       <menuitem action="ZOOMA" />
+       <menu action="ZOOMA" >
+         <menuitem action="ZMINA" />
+         <menuitem action="ZMOUTA" />                          
+         <menuitem action="NRMSIZEA" />                          
+         <menuitem action="PGWDTHA" />                          
+         <menuitem action="SETZMA" />                          
+       </menu>
        <separator />
        <menuitem action="FSTPAGEA" />
        <menuitem action="PRVPAGEA" />
@@ -84,7 +90,19 @@ uiDecl = [verbatim|<ui>
        <menuitem action="VERTSPA" />
        <menuitem action="HANDA" />
        <separator />
-       <menuitem action="CLRA" />
+       <menu action="CLRA"> 
+         <menuitem action="BLACKA" />     
+         <menuitem action="BLUEA" />                          
+         <menuitem action="REDA" />                          
+         <menuitem action="GREENA" />                          
+         <menuitem action="GRAYA" />                          
+         <menuitem action="LIGHTBLUEA" />                          
+         <menuitem action="LIGHTGREENA" />                          
+         <menuitem action="MAGENTAA" />
+         <menuitem action="ORANGEA" />
+         <menuitem action="YELLOWA" />
+         <menuitem action="WHITEA" />
+       </menu> 
        <menuitem action="PENOPTA" />
        <menuitem action="ERASROPTA" />                        
        <menuitem action="HILTROPTA" />                        
@@ -137,42 +155,46 @@ uiDecl = [verbatim|<ui>
     <toolitem action="NXTPAGEA" />
     <toolitem action="LSTPAGEA" />
     <separator />
+    <toolitem action="ZMOUTA" />      
+    <toolitem action="NRMSIZEA" />                                        
+    <toolitem action="ZMINA" />
+    <toolitem action="PGWDTHA" />                          
+    <toolitem action="SETZMA" />
     <toolitem action="FSCRA" />
   </toolbar>
   <toolbar name="toolbar2" > 
-    <toolitem action="PENA" />
-    <toolitem action="ERASERA" />                     
-    <toolitem action="HIGHLTA" />                     
-    <toolitem action="TEXTA" />                     
-    <toolitem action="SHPRECA" />   
-    <toolitem action="RULERA" />                     
+    <toolitem action="PENA"        />
+    <toolitem action="ERASERA"     />                     
+    <toolitem action="HIGHLTA"     />                     
+    <toolitem action="TEXTA"       />                     
+    <toolitem action="SHPRECA"     />   
+    <toolitem action="RULERA"      />                     
     <separator />
-    <toolitem action="SELREGNA" />    
-    <toolitem action="SELRECTA" />                     
-    <toolitem action="VERTSPA" />                     
-    <toolitem action="HANDA" />                     
+    <toolitem action="SELREGNA"    />    
+    <toolitem action="SELRECTA"    />                     
+    <toolitem action="VERTSPA"     />                     
+    <toolitem action="HANDA"       />                     
     <separator />     
-    <toolitem action="DEFAULTA" />    
-    <toolitem action="DEFPENA" />                     
+    <toolitem action="DEFAULTA"    />    
+    <toolitem action="DEFPENA"     />                     
     <separator />                     
-    <toolitem action="PEN1A" />    
-    <toolitem action="PEN2A" />                     
-    <toolitem action="PEN3A" />   
+    <toolitem action="PENFINEA"       />    
+    <toolitem action="PENMEDIUMA"       />                     
+    <toolitem action="PENTHICKA"       />   
     <separator />
-    <toolitem action="BLACKA" />                     
-    <toolitem action="BLUEA" />                     
-    <toolitem action="REDA" />                     
-    <toolitem action="GREENA" />                     
-    <toolitem action="GRAYA" />                     
-    <toolitem action="LIGHTBLUEA" />                      
+    <toolitem action="BLACKA"      />                     
+    <toolitem action="BLUEA"       />                     
+    <toolitem action="REDA"        />                     
+    <toolitem action="GREENA"      />                     
+    <toolitem action="GRAYA"       />                     
+    <toolitem action="LIGHTBLUEA"  />                      
     <toolitem action="LIGHTGREENA" />                     
-    <toolitem action="MAGENTA" />                     
-    <toolitem action="ORANGEA" />                     
-    <toolitem action="YELLOWA" />                     
-    <toolitem action="WHITEA" />                     
+    <toolitem action="MAGENTAA"    />                     
+    <toolitem action="ORANGEA"     />                     
+    <toolitem action="YELLOWA"     />                     
+    <toolitem action="WHITEA"      />                     
   </toolbar>
-
-  </ui>
+</ui>
 |]
 
 iconList = [ ("fullscreen.png" , "myfullscreen")
@@ -209,19 +231,47 @@ viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
            , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
            ]
            
-penmods :: [RadioActionEntry] 
-penmods = [ RadioActionEntry "PENA" "Pen" (Just "mypen") Nothing Nothing 0
-          , RadioActionEntry "ERASERA" "Eraser" (Just "myeraser") Nothing Nothing 1
-          , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
-          , RadioActionEntry "TEXTA" "Text" (Just "mytext") Nothing Nothing 3 ]            
+pointmods :: [RadioActionEntry] 
+pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothing 0
+            , RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
+            , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2
+            , RadioActionEntry "PENTHICKA" "Thick" (Just "mythick") Nothing Nothing 3 
+            , RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4                
+            ]            
 
+penmods :: [RadioActionEntry] 
+penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0
+          , RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
+          , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
+          , RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
+          ]            
+
+colormods = [ RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0
+            , RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
+            , RadioActionEntry "REDA"        "Red"        (Just "myred")        Nothing Nothing 2
+            , RadioActionEntry "GREENA"      "Green"      (Just "mygreen")      Nothing Nothing 3
+            , RadioActionEntry "GRAYA"       "Gray"       (Just "mygray")       Nothing Nothing 4
+            , RadioActionEntry "LIGHTBLUEA"  "Lightblue"  (Just "mylightblue")  Nothing Nothing 5     
+            , RadioActionEntry "LIGHTGREENA" "Lightgreen" (Just "mylightgreen") Nothing Nothing 6
+            , RadioActionEntry "MAGENTAA"    "Magenta"    (Just "mymagenta")    Nothing Nothing 7
+            , RadioActionEntry "ORANGEA"     "Orange"     (Just "myorange")     Nothing Nothing 8
+            , RadioActionEntry "YELLOWA"     "Yellow"     (Just "myyellow")     Nothing Nothing 9
+            , RadioActionEntry "WHITEA"      "White"      (Just "mywhite")      Nothing Nothing 10
+            ]
 
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
                    -> IO ()
 iconResourceAdd iconfac resdir (fp,stid) = do 
   myimage <- imageNewFromFile (resdir </> fp)
-  myIconSet <- iconSetNewFromPixbuf =<< imageGetPixbuf myimage 
+  -- myIconSet <- iconSetNewFromPixbuf =<< imageGetPixbuf myimage 
+  myIconSource <- iconSourceNew 
+  --iconSourceSetFilename myIconSource (resdir </> fp)
+  iconSourceSetPixbuf myIconSource =<< imageGetPixbuf myimage
+  iconSourceSetSize myIconSource IconSizeLargeToolbar
+  myIconSet <- iconSetNew 
+  iconSetAddSource myIconSet myIconSource 
   iconFactoryAdd iconfac stid myIconSet
+  
   
 
 getMenuUI :: IO UIManager
@@ -265,10 +315,15 @@ getMenuUI = do
   -- onepagea  <- actionNew "ONEPAGEA"  "One Page" (Just "Just a Stub") Nothing
   fscra     <- actionNew "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen")
   zooma     <- actionNew "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing
-  fstpagea  <- actionNew "FSTPAGEA"  "First Page" (Just "Just a Stub") Nothing
-  prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") Nothing
-  nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") Nothing
-  lstpagea  <- actionNew "LSTPAGEA"  "Last Page" (Just "Just a Stub") Nothing
+  zmina     <- actionNew "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn)
+  zmouta    <- actionNew "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut )
+  nrmsizea  <- actionNew "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100)
+  pgwdtha   <- actionNew "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit)
+  setzma    <- actionNew "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind)
+  fstpagea  <- actionNew "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst)
+  prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack)
+  nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward)
+  lstpagea  <- actionNew "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast)
   shwlayera <- actionNew "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing
   hidlayera <- actionNew "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing
   
@@ -300,7 +355,7 @@ getMenuUI = do
   erasropta <- actionNew "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing
   hiltropta <- actionNew "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing
   txtfnta   <- actionNew "TXTFNTA" "Text Font" (Just "Just a Stub") Nothing
-  defpena   <- actionNew "DEFPENA" "Default Pen" (Just "Just a Stub") Nothing
+  defpena   <- actionNew "DEFPENA" "Default Pen" (Just "Just a Stub") (Just "mydefaultpen")
   defersra  <- actionNew "DEFERSRA" "Default Eraser" (Just "Just a Stub") Nothing
   defhiltra <- actionNew "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing
   deftxta   <- actionNew "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing
@@ -327,6 +382,10 @@ getMenuUI = do
   -- help menu 
   abouta <- actionNew "ABOUTA" "About" (Just "Just a Stub") Nothing 
 
+  -- others
+  defaulta <- actionNew "DEFAULTA" "Default" (Just "Default") (Just "mydefault")
+  
+
 
   agr <- actionGroupNew "AGR"
   mapM_ (actionGroupAddAction agr) 
@@ -334,7 +393,8 @@ getMenuUI = do
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
         [ newa, annpdfa, opena, savea, saveasa, recenta, printa, exporta, quita
         , undoa, redoa, cuta, copya, pastea, deletea
-        , fscra, zooma, fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
+        , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, setzma
+        , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera, selregna, selrecta, vertspa, handa, clra, penopta
@@ -344,10 +404,12 @@ getMenuUI = do
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
         , abouta 
-        
+        , defaulta         
         ] 
   actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
+  actionGroupAddRadioActions agr pointmods 0 (\_ -> return ())
   actionGroupAddRadioActions agr penmods 0 (\_ -> return ())  
+  actionGroupAddRadioActions agr colormods 0 (\_ -> return ())  
   
   ui <- uiManagerNew 
   uiManagerAddUiFromString ui uiDecl 

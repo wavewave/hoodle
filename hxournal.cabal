@@ -26,7 +26,7 @@ Library
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base>4, mtl>2, directory, filepath,
+                   base>4, mtl>2, directory, filepath, strict,
                    cmdargs, gtk, cairo, monad-control, 
                    monad-coroutine, transformers, random, 
                    xournal-parser >= 0.1.2, 

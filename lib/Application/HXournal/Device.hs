@@ -26,6 +26,7 @@ data PointerCoord = PointerCoord { pointerType :: PointerType
                                  , pointerY :: Double } 
                     deriving (Show,Eq,Ord)
 
+
 foreign import ccall "c_initdevice.h initdevice" c_initdevice
   :: Ptr CInt -> Ptr CInt -> Ptr CInt -> IO ()
 
@@ -82,3 +83,4 @@ wacomPConvert canvas pcoord = do
    Core -> return (px,py)
    _ -> do 
      wacomCoordConvert canvas (px,py)
+

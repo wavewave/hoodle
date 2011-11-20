@@ -64,7 +64,7 @@ startGUI fname = do
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox canvas PackGrow 0 
-  canvas `on` sizeRequest $ return (Requisition 480 640)
+  --  canvas `on` sizeRequest $ return (Requisition 480 640)
 
   
   {- buttonleft    <- buttonNewWithLabel "<"

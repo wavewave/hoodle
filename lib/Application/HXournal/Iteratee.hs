@@ -1,5 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Application.HXournal.Iteratee where 
 
+-- import Prelude hiding (uncurry)
 import Control.Applicative hiding (empty)
 import Control.Monad
 import Control.Monad.State
@@ -16,7 +19,9 @@ import Text.Xournal.Type
 
 import Graphics.UI.Gtk hiding (get)
 
-import Data.Sequence hiding (length)
+import Data.Foldable (toList)
+import Data.Sequence hiding (length,drop,take)
+import Data.Strict.Tuple hiding (uncurry)
 
 import Application.HXournal.Device
 
@@ -27,10 +32,7 @@ connPenMove c = do
   liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
              p <- getPointer dev
              liftIO (callbk (PenMove p)))
-            {- 
-            (x,y) <- eventCoordinates
-            liftIO (callbk (PenMove (x,y))))  
-            -}
+
 connPenUp :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenUp c = do 
   callbk <- lift $ callback <$> get 
@@ -38,11 +40,6 @@ connPenUp c = do
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
              p <- getPointer dev
              liftIO (callbk (PenMove p)))
-             
-{-             
-              (x,y) <- eventCoordinates
-            liftIO (callbk (PenUp (x,y))))  
--}
 
 iter :: Iteratee MyEvent XournalStateIO () 
 iter = do liftIO (putStrLn "I am waiting first result") 
@@ -76,36 +73,45 @@ eventProcess = do
       liftIO . putStrLn $ "quit"
     PenDown pcoord -> do 
       canvas <- lift ( darea <$> get )  
-      (x,y) <- liftIO ( wacomPConvert canvas pcoord )
+      win <- liftIO $ widgetGetDrawWindow canvas
+      pagenum <- lift (currpage <$> get )
+      page <- lift ( (!!pagenum) . xoj_pages . xoj <$> get ) 
+      geometry <- liftIO (getCanvasPageGeometry canvas page)
+      let (x,y) = device2pageCoord geometry pcoord 
       -- liftIO . putStrLn $ "down " ++ show (x,y)
       -- liftIO $ penMoveTo canvas (x,y)
       connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
-      penProcess connidmove connidup (empty |> (x,y)) (x,y) 
+      pdraw <- penProcess win geometry connidmove connidup (empty |> (x,y)) (x,y) 
+      xstate <- lift get 
+      let currxoj = xoj xstate
+          pgnum = currpage xstate 
+      let newxoj = addPDraw currxoj pgnum pdraw
+      lift $ put (xstate { xoj = newxoj }) 
       return ()
       -- liftIO (print pdraw) 
     _ -> defaultEventProcess r1
 
-penProcess :: ConnectId DrawingArea -> ConnectId DrawingArea 
+penProcess :: DrawWindow 
+           -> CanvasPageGeometry
+           -> ConnectId DrawingArea -> ConnectId DrawingArea 
            -> Seq (Double,Double) -> (Double,Double) 
            -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
-penProcess connidmove connidup pdraw (x0,y0) = do 
+penProcess win cpg connidmove connidup pdraw (x0,y0) = do 
   r <- await 
   case r of 
     PenMove pcoord -> do 
       canvas <- lift ( darea <$> get )
-      (x,y) <- liftIO ( wacomPConvert canvas pcoord )      
-      -- liftIO . putStrLn $ "move " ++ show (x,y)
-      liftIO $ penLineTo canvas (x0,y0) (x,y)
-      penProcess connidmove connidup (pdraw |> (x,y)) (x,y) 
+      let (x,y) = device2pageCoord cpg pcoord
+      liftIO $ renderWithDrawable win $ drawSegment cpg 1.0 (0,0,0,1) (x0,y0) (x,y)
+      penProcess win cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp pcoord -> do 
       canvas <- lift ( darea <$> get )
-      (x,y) <- liftIO ( wacomPConvert canvas pcoord )      
-      -- liftIO . putStrLn $ "up " ++ show (x,y)
+      let (x,y) = device2pageCoord cpg pcoord 
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
       return (pdraw |> (x,y)) 
-    _ -> penProcess connidmove connidup pdraw (x0,y0) 
+    _ -> penProcess win cpg connidmove connidup pdraw (x0,y0) 
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = do 
@@ -113,3 +119,29 @@ defaultEventProcess UpdateCanvas = do
   liftIO (updateCanvas <$> darea <*> xoj <*> currpage $ xstate )
 defaultEventProcess _ = return ()
   
+addPDraw :: Xournal -> Int -> Seq (Double,Double) -> Xournal
+addPDraw xoj pgnum pdraw = 
+  let pagesbefore = take pgnum $ xoj_pages xoj  
+      pagesafter  = drop (pgnum+1) $ xoj_pages xoj
+      currpage = ((!!pgnum).xoj_pages) xoj 
+      currlayer = head (page_layers currpage)
+      otherlayers = tail (page_layers currpage)
+      newstroke = Stroke { stroke_tool = "pen" 
+                         , stroke_color = "black"   
+                         , stroke_width = 1.0 
+                         , stroke_data = map (uncurry (:!:)) . toList $ pdraw
+                         } 
+      newlayer = currlayer {layer_strokes = layer_strokes currlayer ++ [newstroke]}
+      newpage = currpage {page_layers = newlayer : otherlayers }
+      newxoj = xoj { xoj_pages =  pagesbefore ++ [newpage] ++ pagesafter }  
+  in  newxoj
+
+
+
+
+
+
+
+
+
+

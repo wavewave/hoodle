@@ -52,15 +52,19 @@ iter = do liftIO (putStrLn "I am waiting first result")
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
   xstate <- lift get 
-
   let totalnumofpages = (length . xoj_pages) (xoj xstate)
       oldpage = currpage xstate
   let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
   lift (put (xstate { currpage = newpage}))
-  liftIO (updateCanvas <$> darea <*> xoj <*> pure newpage $ xstate)
+  invalidate   
   -- liftIO . putStrLn $ "changing " ++ show oldpage ++ " to " ++ show newpage
+
+invalidate :: Iteratee MyEvent XournalStateIO () 
+invalidate = do 
+  xstate <- lift get  
+  liftIO (updateCanvas <$> darea <*> xoj <*> currpage <*> vm_zmmode . viewMode $ xstate )
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
 eventProcess = do 
@@ -68,27 +72,39 @@ eventProcess = do
   case r1 of 
     ButtonLeft -> changePage (\x->x-1)
     ButtonRight -> changePage (+1)
-    ButtonRefresh -> do 
-      xstate <- lift get
-      liftIO (updateCanvas <$> darea <*> xoj <*> currpage $ xstate)
-      liftIO . putStrLn $ "refresh"
+    ButtonRefresh -> invalidate 
     ButtonQuit -> do  
       liftIO . putStrLn $ "quit"
     MenuSave -> do 
       xojcontent <- lift ( xoj <$> get )  
       liftIO $ L.writeFile "mytest.xoj" $ builder xojcontent
+    MenuNormalSize -> do 
+      liftIO $ putStrLn "NormalSize clicked"
+      xstate <- lift get 
+      let vm = viewMode xstate
+          vm' = vm { vm_zmmode = Original }
+      lift ( put xstate { viewMode = vm' } )
+      invalidate       
+    MenuPageWidth -> do 
+      liftIO $ putStrLn "PageWidth clicked"
+      xstate <- lift get 
+      let vm = viewMode xstate
+          vm' = vm { vm_zmmode = FitWidth }
+      lift ( put xstate { viewMode = vm' } )
+      invalidate       
+
+
     PenDown pcoord -> do 
       canvas <- lift ( darea <$> get )  
       win <- liftIO $ widgetGetDrawWindow canvas
       pagenum <- lift (currpage <$> get )
       page <- lift ( (!!pagenum) . xoj_pages . xoj <$> get ) 
       geometry <- liftIO (getCanvasPageGeometry canvas page)
-      let (x,y) = device2pageCoord geometry pcoord 
-      -- liftIO . putStrLn $ "down " ++ show (x,y)
-      -- liftIO $ penMoveTo canvas (x,y)
+      zmode <- lift ( vm_zmmode . viewMode <$> get )
+      let (x,y) = device2pageCoord geometry zmode pcoord 
       connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
-      pdraw <- penProcess win geometry connidmove connidup (empty |> (x,y)) (x,y) 
+      pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
       xstate <- lift get 
       let currxoj = xoj xstate
           pgnum = currpage xstate 
@@ -98,33 +114,32 @@ eventProcess = do
       -- liftIO (print pdraw) 
     _ -> defaultEventProcess r1
 
-penProcess :: DrawWindow 
-           -> CanvasPageGeometry
+penProcess :: CanvasPageGeometry
            -> ConnectId DrawingArea -> ConnectId DrawingArea 
            -> Seq (Double,Double) -> (Double,Double) 
            -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
-penProcess win cpg connidmove connidup pdraw (x0,y0) = do 
+penProcess cpg connidmove connidup pdraw (x0,y0) = do 
   r <- await 
   case r of 
     PenMove pcoord -> do 
       canvas <- lift ( darea <$> get )
-      let (x,y) = device2pageCoord cpg pcoord
-      liftIO $ renderWithDrawable win $ drawSegment cpg 1.0 (0,0,0,1) (x0,y0) (x,y)
-      penProcess win cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
+      zmode <- lift ( vm_zmmode . viewMode <$> get )
+      let (x,y) = device2pageCoord cpg zmode pcoord 
+      liftIO $ drawSegment canvas cpg zmode 1.0 (0,0,0,1) (x0,y0) (x,y)
+      penProcess cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp pcoord -> do 
       canvas <- lift ( darea <$> get )
-      let (x,y) = device2pageCoord cpg pcoord 
+      zmode <- lift ( vm_zmmode . viewMode <$> get )      
+      let (x,y) = device2pageCoord cpg zmode pcoord 
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
       return (pdraw |> (x,y)) 
     other -> do
       defaultEventProcess other        
-      penProcess win cpg connidmove connidup pdraw (x0,y0) 
+      penProcess cpg connidmove connidup pdraw (x0,y0) 
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
-defaultEventProcess UpdateCanvas = do 
-  xstate <- lift get
-  liftIO (updateCanvas <$> darea <*> xoj <*> currpage $ xstate )
+defaultEventProcess UpdateCanvas = invalidate   
 defaultEventProcess _ = return ()
   
 addPDraw :: Xournal -> Int -> Seq (Double,Double) -> Xournal

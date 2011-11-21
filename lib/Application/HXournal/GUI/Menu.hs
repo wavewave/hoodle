@@ -330,7 +330,15 @@ getMenuUI tref sref = do
   zmina     <- actionNew "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn)
   zmouta    <- actionNew "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut )
   nrmsizea  <- actionNew "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100)
+  nrmsizea `on` actionActivated $ do 
+    bouncecallback tref sref MenuNormalSize
+  
+
   pgwdtha   <- actionNew "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit)
+  pgwdtha `on` actionActivated $ do 
+    bouncecallback tref sref MenuPageWidth
+  
+  
   setzma    <- actionNew "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind)
   fstpagea  <- actionNew "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst)
   prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack)

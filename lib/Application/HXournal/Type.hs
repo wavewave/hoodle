@@ -21,6 +21,16 @@ type XournalStateIO = StateT XournalState IO
 
 data PenDrawing = PenDrawing { penDrawingPoints :: Seq (Double,Double)
                              } 
+                  
+data PageMode = Continous | OnePage
+              deriving (Show,Eq) 
+
+data ZoomMode = Original | FitWidth | Zoom Double 
+              deriving (Show,Eq)
+
+data ViewMode = ViewMode { vm_pgmode :: PageMode 
+                         , vm_zmmode :: ZoomMode } 
+              deriving (Show,Eq)
 
 data XournalState = 
   XournalState 
@@ -30,8 +40,7 @@ data XournalState =
   , currpendrawing :: PenDrawing 
   , callback :: MyEvent -> IO ()
   , device :: DeviceList 
---  , x_tref :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
---  , x_sref :: IORef (XournalState)
+  , viewMode :: ViewMode
   } 
                       
 
@@ -41,6 +50,8 @@ data MyEvent = ButtonLeft
              | ButtonQuit 
              | UpdateCanvas
              | MenuSave
+             | MenuNormalSize
+             | MenuPageWidth
              | PenDown PointerCoord
              | PenMove PointerCoord
              | PenUp   PointerCoord 
@@ -56,4 +67,7 @@ emptyXournalState =
   , currpendrawing = PenDrawing empty 
   , callback = undefined 
   , device = undefined
+  , viewMode = ViewMode OnePage Original
   } 
+  
+  

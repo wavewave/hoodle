@@ -9,6 +9,7 @@ import Text.Xournal.Type
 import Text.Xournal.Parse
 import Graphics.Xournal.Render 
 
+import Application.HXournal.Type 
 import Application.HXournal.Device
 import Control.Applicative 
 
@@ -19,15 +20,6 @@ data CanvasPageGeometry =
                      , page_size :: (Double,Double)
                      , canvas_origin :: (Double,Double) 
                      }
-
-
-{-
-canvasCoord2xournalCoord :: (Double,Double) -> (Double,Double) 
-                            -> (Double,Double) 
-                            -> IO (Double,Double)
-canvasCoord2xournalCoord (w',h') (w,h) (x,y) = do 
-  return (x * w / realToFrac w', y * h / realToFrac h')
--}
   
 getCanvasPageGeometry :: DrawingArea -> Page -> IO CanvasPageGeometry
 getCanvasPageGeometry canvas page = do 
@@ -42,54 +34,81 @@ getCanvasPageGeometry canvas page = do
                               (w,h) 
                               (fromIntegral x0,fromIntegral y0)
 
-core2pageCoord :: CanvasPageGeometry -> (Double,Double) -> (Double,Double)
-core2pageCoord (CanvasPageGeometry _ (w',h') (w,h) _) (px,py) = 
-  (px * w / w', py * h / h')
+core2pageCoord :: CanvasPageGeometry -> ZoomMode 
+                  -> (Double,Double) -> (Double,Double)
+core2pageCoord (CanvasPageGeometry _ (w',h') (w,h) _) zmode (px,py) = 
+  let s = case zmode of 
+            Original -> 1.0 
+            FitWidth -> (w/w')
+  in (px * s, py * s)
   
 wacom2pageCoord :: CanvasPageGeometry 
+                   -> ZoomMode 
                    -> (Double,Double) 
                    -> (Double,Double)
-wacom2pageCoord (CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0)) (px,py) 
+wacom2pageCoord (CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0)) 
+                zmode 
+                (px,py) 
   = let (x1,y1) = (ws*px-x0,hs*py-y0)
-    in  (x1 * w / w', y1 * h / h')
+        s = case zmode of
+              Original -> 1.0
+              FitWidth -> w/w'
+    in  (x1*s, y1*s)
 
 device2pageCoord :: CanvasPageGeometry 
+                 -> ZoomMode 
                  -> PointerCoord  
                  -> (Double,Double)
-device2pageCoord cpg pcoord = 
+device2pageCoord cpg zmode pcoord = 
  let (px,py) = (,) <$> pointerX <*> pointerY $ pcoord  
  in case pointerType pcoord of 
-      Core -> core2pageCoord  cpg (px,py)
-      _    -> wacom2pageCoord cpg (px,py)
+      Core -> core2pageCoord  cpg zmode (px,py)
+      _    -> wacom2pageCoord cpg zmode (px,py)
 
 
 
-updateCanvas :: DrawingArea -> Xournal -> Int -> IO ()
-updateCanvas canvas xoj pagenum = do 
+updateCanvas :: DrawingArea -> Xournal -> Int -> ZoomMode -> IO ()
+updateCanvas canvas xoj pagenum zmode = do 
   let totalnumofpages = (length . xoj_pages) xoj
   let currpage = ((!!pagenum).xoj_pages) xoj
   win <- widgetGetDrawWindow canvas
   (w',h') <- widgetGetSize canvas
   let (Dim w h) = page_dim currpage
   renderWithDrawable win $ do
-    scale (realToFrac w' / w) (realToFrac h' / h)
+    case zmode of 
+      FitWidth -> do 
+        let s = realToFrac w' / w 
+        scale s s 
+        -- scale (realToFrac w' / w) (realToFrac h' / h)
+        return ()
+      Original -> return () 
+      Zoom factor -> do 
+        scale factor factor
+        return ()
     cairoDrawPage currpage
   return ()
 
-drawSegment :: CanvasPageGeometry 
+drawSegment :: DrawingArea
+               -> CanvasPageGeometry 
+               -> ZoomMode 
                -> Double 
                -> (Double,Double,Double,Double) 
                -> (Double,Double) 
                -> (Double,Double) 
-               -> Render () 
-drawSegment cpg wdth (r,g,b,a) (x0,y0) (x,y) = do 
-  let (w,h) = page_size cpg 
-      (w',h') = canvas_size cpg 
-  setLineWidth wdth
-  scale (w'/w) (h'/h)
-  moveTo x0 y0
-  lineTo x y
-  stroke
+               -> IO () 
+drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do 
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    let (w,h) = page_size cpg 
+        (w',h') = canvas_size cpg 
+        s = case zmode of 
+              Original -> 1.0 
+              FitWidth -> w'/w
+    scale s s 
+    setLineWidth wdth
+    moveTo x0 y0
+    lineTo x y
+    stroke
   
 penMoveTo :: DrawingArea -> (Double,Double) -> IO ()
 penMoveTo canvas (x,y) = do

@@ -10,10 +10,13 @@ import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.IO.Class
 
+import qualified Data.ByteString.Lazy as L
+
 import Application.HXournal.Type
 import Application.HXournal.Util
 import Application.HXournal.Draw
 import Application.HXournal.Coroutine
+import Application.HXournal.Builder
 
 import Text.Xournal.Type 
 
@@ -71,6 +74,9 @@ eventProcess = do
       liftIO . putStrLn $ "refresh"
     ButtonQuit -> do  
       liftIO . putStrLn $ "quit"
+    MenuSave -> do 
+      xojcontent <- lift ( xoj <$> get )  
+      liftIO $ L.writeFile "mytest.xoj" $ builder xojcontent
     PenDown pcoord -> do 
       canvas <- lift ( darea <$> get )  
       win <- liftIO $ widgetGetDrawWindow canvas
@@ -111,7 +117,9 @@ penProcess win cpg connidmove connidup pdraw (x0,y0) = do
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
       return (pdraw |> (x,y)) 
-    _ -> penProcess win cpg connidmove connidup pdraw (x0,y0) 
+    other -> do
+      defaultEventProcess other        
+      penProcess win cpg connidmove connidup pdraw (x0,y0) 
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = do 

@@ -305,6 +305,9 @@ getMenuUI tref sref = do
   annpdfa <- actionNew "ANNPDFA" "Annotate PDf" (Just "Just a Stub") Nothing
   opena   <- actionNew "OPENA" "Open" (Just "Just a Stub") (Just stockOpen)
   savea   <- actionNew "SAVEA" "Save" (Just "Just a Stub") (Just stockSave)
+  savea `on` actionActivated $ do 
+    bouncecallback tref sref MenuSave
+    
   saveasa <- actionNew "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs)
   recenta <- actionNew "RECENTA" "Recent Document" (Just "Just a Stub") Nothing
   printa  <- actionNew "PRINTA" "Print" (Just "Just a Stub") Nothing

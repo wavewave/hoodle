@@ -84,3 +84,19 @@ wacomPConvert canvas pcoord = do
    _ -> do 
      wacomCoordConvert canvas (px,py)
 
+{-
+data Csr = Csr
+type CsrPtr = Ptr Csr
+
+foreign import ccall "gdk_window_set_cursor" gdkWindowSetCursor 
+  :: Ptr DrawWindow -> CsrPtr -> IO ()
+
+foreign import ccall "gdk_cursor_new" gdkCursorNew 
+  :: Int -> IO CsrPtr
+
+setCursor :: DrawWindow -> IO ()
+setCursor window = do
+  c <- gdkCursorNew 34 -- the 'crosshair' cursor
+  d <- widgetGetDrawWindow window
+  withForeignPtr (toDrawWindow d) $ \ptr -> gdkWindowSetCursor ptr c
+-}

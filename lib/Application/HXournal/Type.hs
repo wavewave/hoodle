@@ -40,6 +40,7 @@ data MyEvent = ButtonLeft
              | ButtonRefresh 
              | ButtonQuit 
              | UpdateCanvas
+             | MenuSave
              | PenDown PointerCoord
              | PenMove PointerCoord
              | PenUp   PointerCoord 

@@ -33,6 +33,9 @@ startGUI fname = do
   putStrLn uiDecl 
   
   canvas <- drawingAreaNew
+  scrwin <- scrolledWindowNew Nothing Nothing 
+  containerAdd scrwin canvas
+  
   
   xojcontent <- read_xojgz fname 
   let st = emptyXournalState { xoj = xojcontent, darea = canvas, device = dev} 
@@ -46,23 +49,18 @@ startGUI fname = do
 
   writeIORef sref st' {callback = bouncecallback tref sref }
   
-  
   window <- windowNew 
   -- hbox <- hBoxNew False 0 
   vbox <- vBoxNew False 0 
-  
   ui <- getMenuUI tref sref  
-
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
                   Just x  -> x 
                   Nothing -> error "cannot get menubar from string"
-                  
   maybeToolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   let toolbar1 = case maybeToolbar1 of 
                    Just x  -> x     
                    Nothing -> error "cannot get toolbar from string"
-                
   maybeToolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   let toolbar2 = case maybeToolbar2 of 
                    Just x  -> x     
@@ -70,15 +68,21 @@ startGUI fname = do
 
   containerAdd window vbox 
 
-
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
-  boxPackEnd vbox canvas PackGrow 0 
+  boxPackEnd vbox scrwin PackGrow 0 
   canvas `on` sizeRequest $ return (Requisition 480 400)
 
-  onExpose canvas $ const (bouncecallback tref sref UpdateCanvas >> return True)
+  cursorDot <- cursorNew BlankCursor
+  canvas `on` enterNotifyEvent $ tryEvent $ do 
+    win <- liftIO $ widgetGetDrawWindow canvas
+    liftIO $ drawWindowSetCursor win (Just cursorDot)
+    return ()
 
+  canvas `on` exposeEvent $ tryEvent $ do 
+    liftIO $ bouncecallback tref sref UpdateCanvas 
+  
   canvas `on` buttonPressEvent $ tryEvent $ do 
     st <- liftIO (readIORef sref)
     let callbk = callback st

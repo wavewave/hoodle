@@ -278,13 +278,27 @@ iconResourceAdd iconfac resdir (fp,stid) = do
   myIconSet <- iconSetNew 
   iconSetAddSource myIconSet myIconSource 
   iconFactoryAdd iconfac stid myIconSet
-  
-  
+
+
 
 getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
              -> IORef XournalState 
              -> IO UIManager
 getMenuUI tref sref = do 
+  let actionNewAndRegister :: String -> String 
+                           -> Maybe String -> Maybe StockId
+                           -> Maybe MyEvent 
+                           -> IO Action
+      actionNewAndRegister name label tooltip stockId myevent = do 
+        a <- actionNew name label tooltip stockId 
+        case myevent of 
+          Nothing -> return a 
+          Just ev -> do 
+            a `on` actionActivated $ do 
+              bouncecallback tref sref ev
+            return a
+
+
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
@@ -292,125 +306,105 @@ getMenuUI tref sref = do
   resDir <- getDataDir >>= return . (</> "resource") 
   mapM_ (iconResourceAdd myiconfac resDir) iconList 
   
-  fma     <- actionNew "FMA"   "File" Nothing Nothing 
-  ema     <- actionNew "EMA"   "Edit" Nothing Nothing 
-  vma     <- actionNew "VMA"   "View" Nothing Nothing 
-  jma     <- actionNew "JMA"   "Journal" Nothing Nothing 
-  tma     <- actionNew "TMA"   "Tools" Nothing Nothing 
-  oma     <- actionNew "OMA"   "Options" Nothing Nothing
-  hma     <- actionNew "HMA"   "Help" Nothing Nothing 
+  fma     <- actionNewAndRegister "FMA"   "File" Nothing Nothing Nothing
+  ema     <- actionNewAndRegister "EMA"   "Edit" Nothing Nothing Nothing
+  vma     <- actionNewAndRegister "VMA"   "View" Nothing Nothing Nothing
+  jma     <- actionNewAndRegister "JMA"   "Journal" Nothing Nothing Nothing
+  tma     <- actionNewAndRegister "TMA"   "Tools" Nothing Nothing Nothing
+  oma     <- actionNewAndRegister "OMA"   "Options" Nothing Nothing Nothing
+  hma     <- actionNewAndRegister "HMA"   "Help" Nothing Nothing Nothing
   
   -- file menu
-  newa    <- actionNew "NEWA"  "New" (Just "Just a Stub") (Just stockNew)
-  annpdfa <- actionNew "ANNPDFA" "Annotate PDf" (Just "Just a Stub") Nothing
-  opena   <- actionNew "OPENA" "Open" (Just "Just a Stub") (Just stockOpen)
-  savea   <- actionNew "SAVEA" "Save" (Just "Just a Stub") (Just stockSave)
-  savea `on` actionActivated $ do 
-    bouncecallback tref sref MenuSave
-    
-  saveasa <- actionNew "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs)
-  recenta <- actionNew "RECENTA" "Recent Document" (Just "Just a Stub") Nothing
-  printa  <- actionNew "PRINTA" "Print" (Just "Just a Stub") Nothing
-  exporta <- actionNew "EXPORTA" "Export" (Just "Just a Stub") Nothing
-  quita   <- actionNew "QUITA" "Quit" (Just "Just a Stub") (Just stockQuit)
+  newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (Just MenuNew)
+  annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDf" (Just "Just a Stub") Nothing (Just MenuAnnotatePDF)
+  opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (Just MenuOpen)
+  savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (Just MenuSave)
+  saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (Just MenuSaveAs)
+  recenta <- actionNewAndRegister "RECENTA" "Recent Document" (Just "Just a Stub") Nothing (Just MenuRecentDocument)
+  printa  <- actionNewAndRegister "PRINTA" "Print" (Just "Just a Stub") Nothing (Just MenuPrint)
+  exporta <- actionNewAndRegister "EXPORTA" "Export" (Just "Just a Stub") Nothing (Just MenuExport)
+  quita   <- actionNewAndRegister "QUITA" "Quit" (Just "Just a Stub") (Just stockQuit) (Just MenuQuit)
   
   -- edit menu
-  undoa   <- actionNew "UNDOA"   "Undo" (Just "Just a Stub") (Just stockUndo)
-  redoa   <- actionNew "REDOA"   "Redo" (Just "Just a Stub") (Just stockRedo)
-  cuta    <- actionNew "CUTA"    "Cut" (Just "Just a Stub")  (Just stockCut)
-  copya   <- actionNew "COPYA"   "Copy" (Just "Just a Stub") (Just stockCopy)
-  pastea  <- actionNew "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste)
-  deletea <- actionNew "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete)
+  undoa   <- actionNewAndRegister "UNDOA"   "Undo" (Just "Just a Stub") (Just stockUndo) (Just MenuUndo)
+  redoa   <- actionNewAndRegister "REDOA"   "Redo" (Just "Just a Stub") (Just stockRedo) (Just MenuRedo)
+  cuta    <- actionNewAndRegister "CUTA"    "Cut" (Just "Just a Stub")  (Just stockCut) (Just MenuCut)
+  copya   <- actionNewAndRegister "COPYA"   "Copy" (Just "Just a Stub") (Just stockCopy) (Just MenuCopy)
+  pastea  <- actionNewAndRegister "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste) (Just MenuPaste)
+  deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete) (Just MenuDelete)
   
   -- view menu
-  -- conta     <- actionNew "CONTA"     "Continuous" (Just "Just a Stub") Nothing
-  -- onepagea  <- actionNew "ONEPAGEA"  "One Page" (Just "Just a Stub") Nothing
-  fscra     <- actionNew "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen")
-  zooma     <- actionNew "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing
-  zmina     <- actionNew "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn)
-  zmouta    <- actionNew "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut )
-  nrmsizea  <- actionNew "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100)
-  nrmsizea `on` actionActivated $ do 
-    bouncecallback tref sref MenuNormalSize
-  
-
-  pgwdtha   <- actionNew "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit)
-  pgwdtha `on` actionActivated $ do 
-    bouncecallback tref sref MenuPageWidth
-  
-  
-  setzma    <- actionNew "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind)
-  fstpagea  <- actionNew "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst)
-  prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack)
-  prvpagea `on` actionActivated $ do 
-    bouncecallback tref sref ButtonLeft
-  
-  nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward)
-  nxtpagea `on` actionActivated $ do 
-    bouncecallback tref sref ButtonRight
-    
-
-  lstpagea  <- actionNew "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast)
-  shwlayera <- actionNew "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing
-  hidlayera <- actionNew "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing
+  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (Just MenuFullScreen)
+  zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing (Just MenuZoom)
+  zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (Just MenuZoomIn)
+  zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (Just MenuZoomOut)
+  nrmsizea  <- actionNewAndRegister "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100) (Just MenuNormalSize)
+  pgwdtha   <- actionNewAndRegister "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit) (Just MenuPageWidth)
+  setzma    <- actionNewAndRegister "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind) (Just MenuSetZoom)
+  fstpagea  <- actionNewAndRegister "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst) (Just MenuFirstPage)
+  prvpagea  <- actionNewAndRegister "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack) (Just MenuPreviousPage)
+  nxtpagea  <- actionNewAndRegister "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward) (Just MenuNextPage)
+  lstpagea  <- actionNewAndRegister "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast) (Just MenuLastPage)
+  shwlayera <- actionNewAndRegister "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing (Just MenuShowLayer)
+  hidlayera <- actionNewAndRegister "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing (Just MenuHideLayer)
   
   -- journal menu 
-  newpgba <- actionNew "NEWPGBA" "New Page Before" (Just "Just a Stub") Nothing
-  newpgaa <- actionNew "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing
-  newpgea <- actionNew "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing
-  delpga  <- actionNew "DELPGA"  "Delete Page"     (Just "Just a Stub") Nothing
-  newlyra <- actionNew "NEWLYRA" "New Layer"       (Just "Just a Stub") Nothing
-  dellyra <- actionNew "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing
-  ppsizea <- actionNew "PPSIZEA" "Paper Size"      (Just "Just a Stub") Nothing
-  ppclra  <- actionNew "PPCLRA"  "Paper Color"     (Just "Just a Stub") Nothing
-  ppstya  <- actionNew "PPSTYA"  "Paper Style"     (Just "Just a Stub") Nothing
-  apallpga<- actionNew "APALLPGA" "Apply To All Pages" (Just "Just a Stub") Nothing
-  ldbkga  <- actionNew "LDBKGA"  "Load Background" (Just "Just a Stub") Nothing
-  bkgscrshta <- actionNew "BKGSCRSHTA" "Background Screenshot" (Just "Just a Stub") Nothing
-  defppa  <- actionNew "DEFPPA"  "Default Paper" (Just "Just a Stub") Nothing
-  setdefppa <- actionNew "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing
+  newpgba <- actionNewAndRegister "NEWPGBA" "New Page Before" (Just "Just a Stub") Nothing (Just MenuNewPageBefore)
+  newpgaa <- actionNewAndRegister "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing (Just MenuNewPageAfter)
+  newpgea <- actionNewAndRegister "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing (Just MenuNewPageAtEnd)
+  delpga  <- actionNewAndRegister "DELPGA"  "Delete Page"     (Just "Just a Stub") Nothing (Just MenuDeletePage)
+  newlyra <- actionNewAndRegister "NEWLYRA" "New Layer"       (Just "Just a Stub") Nothing (Just MenuNewLayer)
+  dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (Just MenuDeleteLayer)
+  ppsizea <- actionNewAndRegister "PPSIZEA" "Paper Size"      (Just "Just a Stub") Nothing (Just MenuPaperSize)
+  ppclra  <- actionNewAndRegister "PPCLRA"  "Paper Color"     (Just "Just a Stub") Nothing (Just MenuPaperColor)
+  ppstya  <- actionNewAndRegister "PPSTYA"  "Paper Style"     (Just "Just a Stub") Nothing (Just MenuPaperStyle)
+  apallpga<- actionNewAndRegister "APALLPGA" "Apply To All Pages" (Just "Just a Stub") Nothing (Just MenuApplyToAllPages)
+  ldbkga  <- actionNewAndRegister "LDBKGA"  "Load Background" (Just "Just a Stub") Nothing (Just MenuLoadBackground)
+  bkgscrshta <- actionNewAndRegister "BKGSCRSHTA" "Background Screenshot" (Just "Just a Stub") Nothing (Just MenuBackgroundScreenshot)
+  defppa  <- actionNewAndRegister "DEFPPA"  "Default Paper" (Just "Just a Stub") Nothing (Just MenuDefaultPaper)
+  setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (Just MenuSetAsDefaultPaper)
   
   -- tools menu
-  shpreca   <- actionNew "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes")
-  rulera    <- actionNew "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler")
-  selregna  <- actionNew "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso")
-  selrecta  <- actionNew "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect")
-  vertspa   <- actionNew "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch")
-  handa     <- actionNew "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand")
-  clra      <- actionNew "CLRA" "Color" (Just "Just a Stub") Nothing
-  penopta   <- actionNew "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing
-  erasropta <- actionNew "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing
-  hiltropta <- actionNew "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing
-  txtfnta   <- actionNew "TXTFNTA" "Text Font" (Just "Just a Stub") Nothing
-  defpena   <- actionNew "DEFPENA" "Default Pen" (Just "Just a Stub") (Just "mydefaultpen")
-  defersra  <- actionNew "DEFERSRA" "Default Eraser" (Just "Just a Stub") Nothing
-  defhiltra <- actionNew "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing
-  deftxta   <- actionNew "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing
-  setdefopta <- actionNew "SETDEFOPTA" "Set As Default" (Just "Just a Stub") Nothing
+  shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (Just MenuShapeRecognizer)
+  rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (Just MenuRuler)
+  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (Just MenuSelectRegion)
+  selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (Just MenuSelectRectangle)
+  vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (Just MenuVerticalSpace)
+  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (Just MenuHandTool)
+  clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
+  penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (Just MenuPenOptions)
+  erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (Just MenuEraserOptions)
+  hiltropta <- actionNewAndRegister "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing (Just MenuHighlighterOptions)
+  txtfnta   <- actionNewAndRegister "TXTFNTA" "Text Font" (Just "Just a Stub") Nothing (Just MenuTextFont)
+  defpena   <- actionNewAndRegister "DEFPENA" "Default Pen" (Just "Just a Stub") (Just "mydefaultpen") (Just MenuDefaultPen)
+  defersra  <- actionNewAndRegister "DEFERSRA" "Default Eraser" (Just "Just a Stub") Nothing (Just MenuDefaultEraser)
+  defhiltra <- actionNewAndRegister "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing (Just MenuDefaultHighlighter)
+  deftxta   <- actionNewAndRegister "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing (Just MenuDefaultText)
+  setdefopta <- actionNewAndRegister "SETDEFOPTA" "Set As Default" (Just "Just a Stub") Nothing (Just MenuSetAsDefaultOption)
   
   -- options menu 
-  uxinputa <- actionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing
-  dcrdcorea <- actionNew "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing
-  ersrtipa <- actionNew "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing
-  pressrsensa <- actionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing
-  pghilta <- actionNew "PGHILTA" "Page Highlight" (Just "Just a Stub") Nothing
-  mltpgvwa <- actionNew "MLTPGVWA" "Multiple Page View" (Just "Just a Stub") Nothing
-  mltpga <- actionNew "MLTPGA" "Multiple Pages" (Just "Just a Stub") Nothing
-  btn2mapa <- actionNew "BTN2MAPA" "Button 2 Mapping" (Just "Just a Stub") Nothing
-  btn3mapa <- actionNew "BTN3MAPA" "Button 3 Mapping" (Just "Just a Stub") Nothing
-  antialiasbmpa <- actionNew "ANTIALIASBMPA" "Antialiased Bitmaps" (Just "Just a Stub") Nothing
-  prgrsbkga <- actionNew "PRGRSBKGA" "Progressive Backgrounds" (Just "Just a Stub") Nothing
-  prntpprulea <- actionNew "PRNTPPRULEA" "Print Paper Ruling" (Just "Just a Stub") Nothing
-  lfthndscrbra <- actionNew "LFTHNDSCRBRA" "Left-Handed Scrollbar" (Just "Just a Stub") Nothing
-  shrtnmenua <- actionNew "SHRTNMENUA" "Shorten Menus" (Just "Just a Stub") Nothing
-  autosaveprefa <- actionNew "AUTOSAVEPREFA" "Auto-Save Preferences" (Just "Just a Stub") Nothing
-  saveprefa <- actionNew "SAVEPREFA" "Save Preferences" (Just "Just a Stub") Nothing
+  uxinputa <- actionNewAndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (Just MenuUseXInput)
+  dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (Just MenuDiscardCoreEvents)
+  ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (Just MenuEraserTip)
+  pressrsensa <- actionNewAndRegister "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing (Just MenuPressureSensitivity)
+  pghilta <- actionNewAndRegister "PGHILTA" "Page Highlight" (Just "Just a Stub") Nothing (Just MenuPageHighlight)
+  mltpgvwa <- actionNewAndRegister "MLTPGVWA" "Multiple Page View" (Just "Just a Stub") Nothing (Just MenuMultiplePageView) 
+  mltpga <- actionNewAndRegister "MLTPGA" "Multiple Pages" (Just "Just a Stub") Nothing (Just MenuMultiplePages)
+  btn2mapa <- actionNewAndRegister "BTN2MAPA" "Button 2 Mapping" (Just "Just a Stub") Nothing (Just MenuButton2Mapping)
+  btn3mapa <- actionNewAndRegister "BTN3MAPA" "Button 3 Mapping" (Just "Just a Stub") Nothing (Just MenuButton3Mapping)
+  antialiasbmpa <- actionNewAndRegister "ANTIALIASBMPA" "Antialiased Bitmaps" (Just "Just a Stub") Nothing (Just MenuAntialiasedBitmaps)
+  prgrsbkga <- actionNewAndRegister "PRGRSBKGA" "Progressive Backgrounds" (Just "Just a Stub") Nothing (Just MenuProgressiveBackgrounds)
+  prntpprulea <- actionNewAndRegister "PRNTPPRULEA" "Print Paper Ruling" (Just "Just a Stub") Nothing (Just MenuPrintPaperRuling)
+  lfthndscrbra <- actionNewAndRegister "LFTHNDSCRBRA" "Left-Handed Scrollbar" (Just "Just a Stub") Nothing (Just MenuLeftHandedScrollbar)
+  shrtnmenua <- actionNewAndRegister "SHRTNMENUA" "Shorten Menus" (Just "Just a Stub") Nothing (Just MenuShortenMenus)
+  autosaveprefa <- actionNewAndRegister "AUTOSAVEPREFA" "Auto-Save Preferences" (Just "Just a Stub") Nothing (Just MenuAutoSavePreferences)
+  saveprefa <- actionNewAndRegister "SAVEPREFA" "Save Preferences" (Just "Just a Stub") Nothing (Just MenuSavePreferences)
   
   -- help menu 
-  abouta <- actionNew "ABOUTA" "About" (Just "Just a Stub") Nothing 
+  abouta <- actionNewAndRegister "ABOUTA" "About" (Just "Just a Stub") Nothing (Just MenuAbout)
 
   -- others
-  defaulta <- actionNew "DEFAULTA" "Default" (Just "Default") (Just "mydefault")
+  defaulta <- actionNewAndRegister "DEFAULTA" "Default" (Just "Default") (Just "mydefault") (Just MenuDefault)
   
 
 
@@ -442,10 +436,3 @@ getMenuUI tref sref = do
   uiManagerAddUiFromString ui uiDecl 
   uiManagerInsertActionGroup ui agr 0 
   return ui   
-
-{-
-setActions :: IO () 
-setAction x  = do 
-  prvpagea  <- actionNew "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack)
-  nxtpagea  <- actionNew "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward)
--}

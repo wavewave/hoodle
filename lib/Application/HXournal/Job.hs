@@ -38,6 +38,7 @@ startJob fname = do
   putStrLn "job started"
   startGUI fname
 
+{-
 startMakeSVG :: FilePath -> IO () 
 startMakeSVG fname = do 
   xojcontent <- read_xournal fname 
@@ -81,7 +82,7 @@ makeHtmlJavascriptPage fname names = do
 
   withFile fname WriteMode $ \h -> do 
     hPutStr h str
-    
+-}    
 
 startTestBuilder :: FilePath -> IO () 
 startTestBuilder fname = do 

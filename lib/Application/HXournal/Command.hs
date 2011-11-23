@@ -7,9 +7,9 @@ commandLineProcess :: Hxournal -> IO ()
 commandLineProcess (Test fname) = do 
   putStrLn "test called"
   startJob fname
-commandLineProcess (MakeSVG fname) = do 
+{- commandLineProcess (MakeSVG fname) = do 
   putStrLn "makeSVG is called"
-  startMakeSVG fname
+  startMakeSVG fname -}
 commandLineProcess (TestBuilder fname) = do 
   putStrLn "testbuilder is called"
   startTestBuilder fname 

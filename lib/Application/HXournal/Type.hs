@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 
 module Application.HXournal.Type where
 
@@ -17,6 +17,8 @@ import Text.Xournal.Predefined
 import Graphics.UI.Gtk
 
 import Data.Maybe
+import Data.Label 
+
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B
 
@@ -29,6 +31,10 @@ type XournalStateIO = StateT XournalState IO
 data PenDrawing = PenDrawing { penDrawingPoints :: Seq (Double,Double)
                              } 
                   
+data PenDraw = PenDraw { _points :: Seq (Double,Double) } 
+             deriving (Show)
+
+
 data PageMode = Continous | OnePage
               deriving (Show,Eq) 
 
@@ -41,6 +47,15 @@ data ViewMode = ViewMode { vm_pgmode :: PageMode
                          , vm_pagedim :: (Double,Double)
                          } 
               deriving (Show,Eq)
+
+
+data ViewInfo = ViewInfo { _pageMode :: PageMode
+                         , _zoomMode :: ZoomMode
+                         , _viewPortOrigin :: (Double,Double)
+                         , _pageDim :: (Double,Double) 
+                         }
+              deriving (Show)
+
 
 data PenType = PenWork | HighlighterWork | EraserWork 
              deriving (Show,Eq)
@@ -64,6 +79,11 @@ data PenMode = PenMode { pm_pentype :: PenType
                        , pm_pencolor :: PenColor
                        } 
              deriving (Show)
+
+data PenInfo = PenInfo { _penType :: PenType
+                       , _penWidth :: Double
+                       , _penColor :: Double } 
+             deriving (Show) 
 
 penColorNameMap :: M.Map PenColor B.ByteString                        
 penColorNameMap = M.fromList [ (ColorBlack, "black")
@@ -101,6 +121,18 @@ data XournalState =
   , vscrolladj :: Adjustment 
   } 
                       
+data HXournalState = HXournalState { _xournal :: Xournal 
+                                   , _drawArea :: DrawingArea
+                                   , _currentPageNum :: Int
+                                   , _currentPenDraw :: PenDraw
+                                   , _callBack ::  MyEvent -> IO ()
+                                   , _deviceList :: DeviceList
+                                   , _viewInfo :: ViewInfo 
+                                   , _penInfo :: PenInfo
+                                   , _horizAdjustment :: Adjustment
+                                   , _vertAdjustment :: Adjustment 
+                                   } 
+
 
 data MyEvent = Initialized
              | CanvasConfigure Double Double 
@@ -191,6 +223,9 @@ data MyEvent = Initialized
              | VScrollBarMoved Double 
              deriving (Show,Eq,Ord)
 
+
+
+$(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''HXournalState]) 
 
 emptyXournalState :: XournalState
 emptyXournalState = 

@@ -34,7 +34,8 @@ Library
                    HStringTemplate,
                    HStringTemplateHelpersIW, 
                    template-haskell, blaze-builder, 
-                   bytestring == 0.9.*
+                   bytestring == 0.9.*, 
+                   fclabels == 1.0.*
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job

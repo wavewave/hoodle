@@ -416,8 +416,6 @@ getMenuUI tref sref = do
   -- others
   defaulta <- actionNewAndRegister "DEFAULTA" "Default" (Just "Default") (Just "mydefault") (Just MenuDefault)
   
-
-
   agr <- actionGroupNew "AGR"
   mapM_ (actionGroupAddAction agr) 
         [fma,ema,vma,jma,tma,oma,hma]
@@ -439,34 +437,38 @@ getMenuUI tref sref = do
         ] 
   actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
-  actionGroupAddRadioActions agr penmods 0 (\_ -> return ())  
+  actionGroupAddRadioActions agr penmods   0 (assignPenMode sref)
   actionGroupAddRadioActions agr colormods 0 (assignColor sref)
-
   ui <- uiManagerNew 
   uiManagerAddUiFromString ui uiDecl 
   uiManagerInsertActionGroup ui agr 0 
   return ui   
 
+assignPenMode :: IORef XournalState -> RadioAction -> IO ()
+assignPenMode sref a = do 
+    v <- radioActionGetCurrentValue a
+    let t = int2PenType v
+    st <- readIORef sref 
+    let pm = penMode st 
+        pmNew = pm { pm_pentype = t }
+        stNew = st { penMode = pmNew } 
+    print $ pm
+    writeIORef sref stNew 
 
 assignColor :: IORef XournalState -> RadioAction -> IO () 
 assignColor sref a = do 
     v <- radioActionGetCurrentValue a
-    putStrLn $ show v
     let c = int2Color v
-    -- pcolname = fromJust (M.lookup c penColorNameMap)
     st <- readIORef sref 
     let pm = penMode st 
         pmNew = pm { pm_pencolor = c }
         stNew = st { penMode = pmNew } 
     print $ pm
     writeIORef sref stNew 
-    -- print $ rgbaToHEX (r,g,b,a) 
-    return () 
 
 assignPoint :: IORef XournalState -> RadioAction -> IO () 
 assignPoint sref a = do 
     v <- radioActionGetCurrentValue a
-    putStrLn $ show v
     let w = int2Point v
     st <- readIORef sref 
     let pm = penMode st 
@@ -474,7 +476,13 @@ assignPoint sref a = do
         stNew = st { penMode = pmNew } 
     print $ pm
     writeIORef sref stNew 
-    return () 
+
+
+int2PenType :: Int -> PenType 
+int2PenType 0 = PenWork
+int2PenType 1 = EraserWork
+int2PenType 2 = HighlighterWork
+int2PenType 3 = PenWork -- TextWork 
 
 int2Point :: Int -> Double 
 int2Point 0 = predefined_veryfine 

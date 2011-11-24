@@ -42,8 +42,7 @@ data ViewMode = ViewMode { vm_pgmode :: PageMode
                          } 
               deriving (Show,Eq)
 
-data PenType = Pen 
-               -- | Highlighter | Eraser 
+data PenType = PenWork | HighlighterWork | EraserWork 
              deriving (Show,Eq)
                       
 data PenColor = ColorBlack
@@ -203,7 +202,7 @@ emptyXournalState =
   , callback = undefined 
   , device = undefined
   , viewMode = ViewMode OnePage Original (0,0) undefined 
-  , penMode = PenMode Pen predefined_medium ColorBlack
+  , penMode = PenMode PenWork predefined_medium ColorBlack
   , hscrolladj = undefined             
   , vscrolladj = undefined 
   } 

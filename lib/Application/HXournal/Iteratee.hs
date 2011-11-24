@@ -18,6 +18,7 @@ import Application.HXournal.Util
 import Application.HXournal.Draw
 import Application.HXournal.Coroutine
 import Application.HXournal.Builder
+import Application.HXournal.Accessor
 
 import Text.Xournal.Type 
 import Text.Xournal.Predefined 
@@ -31,6 +32,16 @@ import Data.Sequence hiding (length,drop,take)
 import Data.Strict.Tuple hiding (uncurry,fst,snd)
 
 import Application.HXournal.Device
+
+guiProcess :: Iteratee MyEvent XournalStateIO () 
+guiProcess = do initialize
+                changePage (const 0)
+                canvas <- lift ( darea <$> get )  
+                (w',h') <- liftIO $ widgetGetSize canvas
+                defaultEventProcess (CanvasConfigure (fromIntegral w') 
+                                                     (fromIntegral h')) 
+                sequence_ (repeat eventProcess)
+                return ()
 
 connPenMove :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenMove c = do 
@@ -48,15 +59,6 @@ connPenUp c = do
              p <- getPointer dev
              liftIO (callbk (PenMove p)))
 
-iter :: Iteratee MyEvent XournalStateIO () 
-iter = do initialize
-          changePage (const 0)
-          canvas <- lift ( darea <$> get )  
-          (w',h') <- liftIO $ widgetGetSize canvas
-          defaultEventProcess (CanvasConfigure (fromIntegral w') 
-                                               (fromIntegral h')) 
-          sequence_ (repeat eventProcess)
-          return ()
 
 initialize :: Iteratee MyEvent XournalStateIO ()
 initialize = do ev <- await 
@@ -91,30 +93,39 @@ invalidate = do
   xstate <- lift get  
   liftIO (updateCanvas <$> darea <*> xoj <*> currpage <*> viewMode $ xstate )
 
+
 eventProcess :: Iteratee MyEvent XournalStateIO ()
 eventProcess = do 
   r1 <- await 
   case r1 of 
     PenDown pcoord -> do 
-      canvas <- lift ( darea <$> get )  
-      win <- liftIO $ widgetGetDrawWindow canvas
-      pagenum <- lift (currpage <$> get )
-      page <- lift ( (!!pagenum) . xoj_pages . xoj <$> get ) 
-      (x0,y0) <- lift ( vm_viewportOrigin . viewMode <$> get ) 
-      geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
-      zmode <- lift ( vm_zmmode . viewMode <$> get )
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      connidup <- connPenUp canvas      
-      connidmove <- connPenMove canvas
-      pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
-      xstate <- lift get 
-      let currxoj = xoj xstate
-          pgnum = currpage xstate 
-          pmode = penMode xstate
-      let newxoj = addPDraw pmode currxoj pgnum pdraw
-      lift $ put (xstate { xoj = newxoj }) 
-      return ()
+      ptype <- getPenType 
+      case ptype of 
+        PenWork         -> penStart pcoord 
+        EraserWork      -> eraserStart pcoord 
+        HighlighterWork -> highlighterStart pcoord 
     _ -> defaultEventProcess r1
+
+penStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
+penStart pcoord = do 
+    canvas <- lift ( darea <$> get )  
+    win <- liftIO $ widgetGetDrawWindow canvas
+    pagenum <- lift (currpage <$> get )
+    page <- lift ( (!!pagenum) . xoj_pages . xoj <$> get ) 
+    (x0,y0) <- lift ( vm_viewportOrigin . viewMode <$> get ) 
+    geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
+    zmode <- lift ( vm_zmmode . viewMode <$> get )
+    let (x,y) = device2pageCoord geometry zmode pcoord 
+    connidup <- connPenUp canvas      
+    connidmove <- connPenMove canvas
+    pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
+    xstate <- lift get 
+    let currxoj = xoj xstate
+        pgnum = currpage xstate 
+        pmode = penMode xstate
+    let newxoj = addPDraw pmode currxoj pgnum pdraw
+    lift $ put (xstate { xoj = newxoj }) 
+    return ()
 
 penProcess :: CanvasPageGeometry
            -> ConnectId DrawingArea -> ConnectId DrawingArea 
@@ -142,6 +153,16 @@ penProcess cpg connidmove connidup pdraw (x0,y0) = do
     other -> do
       defaultEventProcess other        
       penProcess cpg connidmove connidup pdraw (x0,y0) 
+
+eraserStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
+eraserStart pcoord = do 
+  liftIO $ putStrLn "eraser started"
+
+
+highlighterStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
+highlighterStart pcoord = do 
+  liftIO $ putStrLn "highlighter started"
+
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = invalidate   
@@ -179,8 +200,6 @@ defaultEventProcess MenuPageWidth = do
         Dim w h = page_dim page 
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
     let (w',h') = canvas_size cpg 
-    -- (w',h') <- liftIO $ widgetGetSize canvas
-    -- let Dim w h =  page_dim.(!! (currpage xstate)).xoj_pages.xoj $ xstate     
     let vm = viewMode xstate
         vm' = vm { vm_zmmode = FitWidth, vm_viewportOrigin = (0,0) }
         hadj = hscrolladj xstate
@@ -216,22 +235,6 @@ defaultEventProcess (CanvasConfigure w' h') = do
         vm = viewMode xstate
         (w,h) = vm_pagedim vm 
     cpg <- liftIO (getCanvasPageGeometry  canvas page (0,0))
-    {-    
-    (xorig,yorig) <- liftIO ((,) <$> adjustmentGetValue (hscrolladj xstate) 
-                                 <*> adjustmentGetValue (vscrolladj xstate)) 
-    win <- liftIO (widgetGetDrawWindow canvas)
-    (x0,y0) <- liftIO (drawWindowGetOrigin win)
-    screen  <- liftIO (widgetGetScreen canvas)
-    (ws,hs) <- liftIO ((,) <$> screenGetWidth screen 
-                           <*> screenGetHeight screen)
-    let cpg = CanvasPageGeometry 
-              { screen_size = (fromIntegral ws,fromIntegral hs)
-              , canvas_size = (w',h')
-              , page_size = (w,h)
-              , canvas_origin = (fromIntegral x0,fromIntegral y0)
-              , page_origin = (xorig,yorig) }
-    liftIO (print vm)
-    liftIO (print cpg) -}
     let factor = getRatioFromPageToCanvas cpg (vm_zmmode vm)
         hadj = hscrolladj xstate
         vadj = vscrolladj xstate

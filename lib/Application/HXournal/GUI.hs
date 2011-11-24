@@ -43,8 +43,6 @@ startGUI fname = do
   scrolledWindowSetVAdjustment scrwin vadj 
   
   xojcontent <- read_xournal fname 
-  -- let width = getLargestWidth xojcontent
-  --     height = getLargestHeight xojcontent 
   let Dim w h = page_dim . (!! 0) .  xoj_pages $ xojcontent
   let st = emptyXournalState 
            { xoj = xojcontent, darea = canvas, device = dev
@@ -52,7 +50,7 @@ startGUI fname = do
            , hscrolladj = hadj 
            , vscrolladj = vadj 
            } 
-  (r,st') <- runStateT (resume iter) st
+  (r,st') <- runStateT (resume guiProcess) st
   sref <- newIORef st'
 
   tref <- case r of 
@@ -63,7 +61,6 @@ startGUI fname = do
   writeIORef sref st' {callback = bouncecallback tref sref }
   
   window <- windowNew 
-  -- hbox <- hBoxNew False 0 
   vbox <- vBoxNew False 0 
   ui <- getMenuUI tref sref  
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
@@ -85,11 +82,6 @@ startGUI fname = do
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox scrwin PackGrow 0 
-  
-  -- putStrLn $ show width
-  -- putStrLn $ show height 
-  -- error "error"
-  
   
   afterValueChanged hadj $ do 
     v <- adjustmentGetValue hadj 
@@ -129,15 +121,13 @@ startGUI fname = do
     p <- getPointer dev
     liftIO (callbk (PenUp p))
     
-
   widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
   widgetSetExtensionEvents canvas [ExtensionEventsAll]
-
   
   onDestroy window mainQuit
 
   widgetShowAll window
-
+  
   -- initialized
   bouncecallback tref sref Initialized     
   

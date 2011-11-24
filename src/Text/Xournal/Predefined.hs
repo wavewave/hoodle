@@ -1,9 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 module Text.Xournal.Predefined where
 
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B
+
+import Text.Printf 
 
 hexToRGBA :: Integer -> (Double,Double,Double,Double) 
 hexToRGBA n = 
@@ -13,6 +15,10 @@ hexToRGBA n =
       a = n-r*256*256*256-g*256*256-b*256  
   in  (fromIntegral r/255.0,fromIntegral g/255.0,fromIntegral b/255.0,fromIntegral a/255.0)
 
+rgbaToHEX :: (Double,Double,Double,Double) -> String
+rgbaToHEX (r,g,b,a) = 
+  let i :: Integer = round (256*a) + round (256*256*b) + round (256*256*256*g) + round (256*256*256*256*r) 
+  in printf "0x%08x" i
 
 predefined_pencolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_pencolor = 

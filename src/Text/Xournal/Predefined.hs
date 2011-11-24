@@ -17,8 +17,8 @@ hexToRGBA n =
 
 rgbaToHEX :: (Double,Double,Double,Double) -> String
 rgbaToHEX (r,g,b,a) = 
-  let i :: Integer = round (256*a) + round (256*256*b) + round (256*256*256*g) + round (256*256*256*256*r) 
-  in printf "0x%08x" i
+  let i :: Integer = round (255*a) + round (256*255*b) + round (256*256*255*g) + round (256*256*256*255*r) 
+  in printf "#%08x" i
 
 predefined_pencolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_pencolor = 
@@ -34,6 +34,12 @@ predefined_pencolor =
              , ("yellow"    , hexToRGBA 0xffff00ff)
              , ("white"     , hexToRGBA 0xffffffff) ] 
 
+{-
+getPenColor :: B.ByteString -> Maybe (Double,Double,Double,Double) 
+getPenColor b | (not . B.null) b = 
+  case B.head b of 
+    '#' -> B.tail b 
+-}
 
 predefined_bkgcolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_bkgcolor = 
@@ -45,8 +51,20 @@ predefined_bkgcolor =
              , ("yellow", hexToRGBA 0xffff80ff)
              , ("white" , hexToRGBA 0xffffffff) ]
 
+predefined_veryfine :: Double
+predefined_veryfine = 0.42 
 
+predefined_fine :: Double
+predefined_fine = 0.85
 
+predefined_medium :: Double
+predefined_medium = 1.41
+
+predefined_thick :: Double
+predefined_thick = 2.26
+
+predefined_verythick :: Double 
+predefined_verythick = 5.67
 
 predefined_RULING_MARGIN_COLOR = hexToRGBA 0xff0080ff
 predefined_RULING_COLOR = hexToRGBA 0x40a0ffff

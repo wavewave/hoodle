@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.0.999
+Version:	0.1
 Synopsis:	
 Description: 	
 License: 	BSD3
@@ -49,6 +49,7 @@ Library
                    Application.HXournal.Draw
                    Application.HXournal.Device
                    Application.HXournal.Builder 
+                   Application.HXournal.HitTest
   Other-Modules: 
                    Paths_hxournal
   c-sources: 

@@ -22,6 +22,7 @@ data CanvasPageGeometry =
                      , page_origin :: (Double,Double)
                      }
   deriving (Show)  
+
 getCanvasPageGeometry :: DrawingArea -> Page -> (Double,Double) 
                          -> IO CanvasPageGeometry
 getCanvasPageGeometry canvas page (xorig,yorig) = do 
@@ -39,24 +40,23 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
 
 core2pageCoord :: CanvasPageGeometry -> ZoomMode 
                   -> (Double,Double) -> (Double,Double)
-core2pageCoord (CanvasPageGeometry _ (w',h') (w,h)  _ _) zmode (px,py) = 
-  let s = case zmode of 
-            Original -> 1.0 
-            FitWidth -> (w/w')
+core2pageCoord cpg zmode (px,py) = 
+  let s =  1.0 / getRatioFromPageToCanvas cpg zmode 
   in (px * s, py * s)
   
 wacom2pageCoord :: CanvasPageGeometry 
                    -> ZoomMode 
                    -> (Double,Double) 
                    -> (Double,Double)
-wacom2pageCoord (CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yorig)) 
+wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yorig)) 
                 zmode 
                 (px,py) 
   = let (x1,y1) = (ws*px-x0,hs*py-y0)
-        (sx,sy,xo,yo) = case zmode of
-                          Original -> (1.0,1.0,xorig,yorig)
-                          FitWidth -> (w/w',w/w',0,yorig)
-    in  (x1*sx+xo,y1*sy+yo)
+        s = 1.0 / getRatioFromPageToCanvas cpg zmode
+        (xo,yo) = case zmode of
+                    Original -> (xorig,yorig)
+                    FitWidth -> (0,yorig)
+    in  (x1*s+xo,y1*s+yo)
 
 device2pageCoord :: CanvasPageGeometry 
                  -> ZoomMode 
@@ -70,12 +70,8 @@ device2pageCoord cpg zmode pcoord =
 
 transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
 transformForPageCoord cpg zmode = do 
-  let (w',_) = canvas_size cpg
-      (w,_) = page_size cpg
-      (xo,yo) = page_origin cpg
-  let s = case zmode of 
-            Original -> 1.0 
-            FitWidth -> w'/w
+  let (xo,yo) = page_origin cpg
+  let s = getRatioFromPageToCanvas cpg zmode  
   scale s s
   translate (-xo) (-yo)      
   
@@ -86,7 +82,6 @@ updateCanvas canvas xoj pagenum vmode = do
   let totalnumofpages = (length . xoj_pages) xoj
   let currpage = ((!!pagenum).xoj_pages) xoj
   geometry <- getCanvasPageGeometry canvas currpage origin
-      
   win <- widgetGetDrawWindow canvas
   (w',h') <- widgetGetSize canvas
   let (Dim w h) = page_dim currpage
@@ -121,6 +116,7 @@ drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do
     lineTo x y
     stroke
   
+{-
 penMoveTo :: DrawingArea -> (Double,Double) -> IO ()
 penMoveTo canvas (x,y) = do
   win <- widgetGetDrawWindow canvas
@@ -129,7 +125,9 @@ penMoveTo canvas (x,y) = do
     setSourceRGBA 0.1 0.1 0.1 1
     moveTo x y
   return ()
+-}
 
+{-
 penLineTo canvas (x0,y0) (x,y) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do 
@@ -139,4 +137,4 @@ penLineTo canvas (x0,y0) (x,y) = do
     lineTo x y
     stroke
   return ()
-  
+-}

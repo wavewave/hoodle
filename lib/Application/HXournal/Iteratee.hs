@@ -49,8 +49,7 @@ connPenUp c = do
              liftIO (callbk (PenMove p)))
 
 iter :: Iteratee MyEvent XournalStateIO () 
-iter = do liftIO (putStrLn "I am waiting first result") 
-          initialize
+iter = do initialize
           changePage (const 0)
           canvas <- lift ( darea <$> get )  
           (w',h') <- liftIO $ widgetGetSize canvas
@@ -74,7 +73,6 @@ changePage modifyfn = do
   let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
-      
       Dim w h =  page_dim . (!! newpage) . xoj_pages . xoj $ xstate   
       vm = viewMode xstate
       vm' = vm { vm_viewportOrigin = (0,0), vm_pagedim = (w,h) }
@@ -87,7 +85,6 @@ changePage modifyfn = do
     adjustmentSetValue vadj 0
   lift (put (xstate { currpage = newpage, viewMode = vm' }))
   invalidate   
-  -- liftIO . putStrLn $ "changing " ++ show oldpage ++ " to " ++ show newpage
 
 invalidate :: Iteratee MyEvent XournalStateIO () 
 invalidate = do 
@@ -107,7 +104,6 @@ eventProcess = do
       geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
       zmode <- lift ( vm_zmmode . viewMode <$> get )
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      liftIO $ print pcoord
       connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
       pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
@@ -179,19 +175,24 @@ defaultEventProcess MenuPageWidth = do
     liftIO $ putStrLn "PageWidth clicked"
     xstate <- lift get 
     let canvas = darea xstate 
-    (w',h') <- liftIO $ widgetGetSize canvas
-    let Dim w h =  page_dim.(!! (currpage xstate)).xoj_pages.xoj $ xstate     
+        page = (!! (currpage xstate)) . xoj_pages . xoj $ xstate
+        Dim w h = page_dim page 
+    cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
+    let (w',h') = canvas_size cpg 
+    -- (w',h') <- liftIO $ widgetGetSize canvas
+    -- let Dim w h =  page_dim.(!! (currpage xstate)).xoj_pages.xoj $ xstate     
     let vm = viewMode xstate
         vm' = vm { vm_zmmode = FitWidth, vm_viewportOrigin = (0,0) }
         hadj = hscrolladj xstate
         vadj = vscrolladj xstate
+        s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 
       adjustmentSetValue hadj 0 
       adjustmentSetValue vadj 0 
-      adjustmentSetPageSize hadj w
-      adjustmentSetPageSize vadj ((w/fromIntegral w')*fromIntegral h')
+      adjustmentSetPageSize hadj (w'*s)
+      adjustmentSetPageSize vadj (h'*s)
     lift ( put xstate { viewMode = vm' } )
     invalidate       
 defaultEventProcess (HScrollBarMoved v) = do 
@@ -211,15 +212,18 @@ defaultEventProcess (VScrollBarMoved v) = do
 defaultEventProcess (CanvasConfigure w' h') = do 
     xstate <- lift get 
     let canvas = darea xstate
+        page = (!! (currpage xstate)) . xoj_pages . xoj $ xstate        
         vm = viewMode xstate
         (w,h) = vm_pagedim vm 
+    cpg <- liftIO (getCanvasPageGeometry  canvas page (0,0))
+    {-    
+    (xorig,yorig) <- liftIO ((,) <$> adjustmentGetValue (hscrolladj xstate) 
+                                 <*> adjustmentGetValue (vscrolladj xstate)) 
     win <- liftIO (widgetGetDrawWindow canvas)
     (x0,y0) <- liftIO (drawWindowGetOrigin win)
     screen  <- liftIO (widgetGetScreen canvas)
     (ws,hs) <- liftIO ((,) <$> screenGetWidth screen 
                            <*> screenGetHeight screen)
-    (xorig,yorig) <- liftIO ((,) <$> adjustmentGetValue (hscrolladj xstate) 
-                                 <*> adjustmentGetValue (vscrolladj xstate)) 
     let cpg = CanvasPageGeometry 
               { screen_size = (fromIntegral ws,fromIntegral hs)
               , canvas_size = (w',h')
@@ -227,7 +231,7 @@ defaultEventProcess (CanvasConfigure w' h') = do
               , canvas_origin = (fromIntegral x0,fromIntegral y0)
               , page_origin = (xorig,yorig) }
     liftIO (print vm)
-    liftIO (print cpg)
+    liftIO (print cpg) -}
     let factor = getRatioFromPageToCanvas cpg (vm_zmmode vm)
         hadj = hscrolladj xstate
         vadj = vscrolladj xstate
@@ -236,21 +240,13 @@ defaultEventProcess (CanvasConfigure w' h') = do
       adjustmentSetUpper vadj h 
       adjustmentSetLower hadj 0
       adjustmentSetLower vadj 0
-      print (w,h)
-      print (w',h')
-      print (factor)
-      print (h'/factor)
       adjustmentSetValue hadj 0
       adjustmentSetValue vadj 0 
       adjustmentSetPageSize hadj (w'/factor)
       adjustmentSetPageSize vadj (h'/factor)
     invalidate 
     return () 
-                                              
 defaultEventProcess _ = return ()
-    -- ButtonRefresh -> invalidate 
-    -- ButtonQuit -> do  
-      -- liftIO . putStrLn $ "quit"
   
 
 

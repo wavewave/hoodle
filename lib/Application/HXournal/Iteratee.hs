@@ -5,10 +5,15 @@ module Application.HXournal.Iteratee where
 -- import Prelude hiding (uncurry)
 import Control.Applicative hiding (empty)
 import Control.Monad
-import Control.Monad.State
+import qualified Control.Monad.State as St 
+import Control.Monad.Trans 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.IO.Class
+
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
 
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as S
@@ -23,7 +28,7 @@ import Application.HXournal.Accessor
 import Text.Xournal.Type 
 import Text.Xournal.Predefined 
 
-import Graphics.UI.Gtk hiding (get)
+import Graphics.UI.Gtk hiding (get,set)
 
 import Data.Maybe
 import qualified Data.Map as M
@@ -36,7 +41,7 @@ import Application.HXournal.Device
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do initialize
                 changePage (const 0)
-                canvas <- lift ( darea <$> get )  
+                canvas <- get drawArea <$> lift St.get   
                 (w',h') <- liftIO $ widgetGetSize canvas
                 defaultEventProcess (CanvasConfigure (fromIntegral w') 
                                                      (fromIntegral h')) 
@@ -45,16 +50,16 @@ guiProcess = do initialize
 
 connPenMove :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenMove c = do 
-  callbk <- lift $ callback <$> get 
-  dev <- lift $ device <$> get 
+  callbk <- get callBack <$> lift St.get 
+  dev <- get deviceList <$> lift St.get 
   liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
              p <- getPointer dev
              liftIO (callbk (PenMove p)))
 
 connPenUp :: (WidgetClass w) => w -> Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenUp c = do 
-  callbk <- lift $ callback <$> get 
-  dev <- lift $ device <$> get 
+  callbk <- get callBack <$> lift St.get 
+  dev <- get deviceList <$> lift St.get 
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
              p <- getPointer dev
              liftIO (callbk (PenMove p)))
@@ -69,29 +74,40 @@ initialize = do ev <- await
 
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
-  xstate <- lift get 
-  let totalnumofpages = (length . xoj_pages) (xoj xstate)
-      oldpage = currpage xstate
+  xstate <- lift St.get 
+  let xoj = get xournal xstate 
+      totalnumofpages = length . xoj_pages $ xoj
+      oldpage = get currentPageNum xstate
   let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
-      Dim w h =  page_dim . (!! newpage) . xoj_pages . xoj $ xstate   
-      vm = viewMode xstate
-      vm' = vm { vm_viewportOrigin = (0,0), vm_pagedim = (w,h) }
-      hadj = hscrolladj xstate  
-      vadj = vscrolladj xstate
+      Dim w h = page_dim . (!! newpage) . xoj_pages $ xoj 
+      -- vm = viewInfo xstate
+      -- vm'= vm { vm_viewportOrigin = (0,0), vm_pagedim = (w,h) }
+      hadj = get horizAdjustment xstate  
+      vadj = get vertAdjustment xstate
   liftIO $ do 
     adjustmentSetUpper hadj w 
     adjustmentSetUpper vadj h 
     adjustmentSetValue hadj 0
     adjustmentSetValue vadj 0
-  lift (put (xstate { currpage = newpage, viewMode = vm' }))
+  
+  let xstate' = set (viewPortOrigin.viewInfo) (0,0) 
+              . set (pageDim.viewInfo) (w,h) 
+              . set currentPageNum newpage
+              $ xstate 
+  lift . St.put $ xstate' 
+  -- (xstate { currpage = newpage, viewMode = vm' }))
   invalidate   
 
 invalidate :: Iteratee MyEvent XournalStateIO () 
 invalidate = do 
-  xstate <- lift get  
-  liftIO (updateCanvas <$> darea <*> xoj <*> currpage <*> viewMode $ xstate )
+  xstate <- lift St.get  
+  liftIO (updateCanvas <$> get drawArea 
+                       <*> get xournal 
+                       <*> get currentPageNum 
+                       <*> get viewInfo 
+                       $ xstate )
 
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
@@ -108,23 +124,22 @@ eventProcess = do
 
 penStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
 penStart pcoord = do 
-    canvas <- lift ( darea <$> get )  
+    xstate <- lift St.get 
+    let canvas = get drawArea xstate   
     win <- liftIO $ widgetGetDrawWindow canvas
-    pagenum <- lift (currpage <$> get )
-    page <- lift ( (!!pagenum) . xoj_pages . xoj <$> get ) 
-    (x0,y0) <- lift ( vm_viewportOrigin . viewMode <$> get ) 
+    let pagenum = get currentPageNum xstate 
+        page = (!!pagenum) . xoj_pages . get xournal $  xstate 
+        (x0,y0) = get (viewPortOrigin.viewInfo) xstate 
+        currxoj = get xournal xstate
+        pinfo = get penInfo xstate
+        zmode = get (zoomMode.viewInfo) xstate 
     geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
-    zmode <- lift ( vm_zmmode . viewMode <$> get )
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup <- connPenUp canvas      
     connidmove <- connPenMove canvas
     pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
-    xstate <- lift get 
-    let currxoj = xoj xstate
-        pgnum = currpage xstate 
-        pmode = penMode xstate
-    let newxoj = addPDraw pmode currxoj pgnum pdraw
-    lift $ put (xstate { xoj = newxoj }) 
+    let newxoj = addPDraw pinfo currxoj pagenum pdraw
+    lift . St.put . set xournal newxoj $ xstate 
     return ()
 
 penProcess :: CanvasPageGeometry
@@ -133,19 +148,20 @@ penProcess :: CanvasPageGeometry
            -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
 penProcess cpg connidmove connidup pdraw (x0,y0) = do 
   r <- await 
+  xstate <- lift St.get
   case r of 
     PenMove pcoord -> do 
-      canvas <- lift ( darea <$> get )
-      zmode <- lift ( vm_zmmode . viewMode <$> get )
-      pcolor <- lift ( pm_pencolor . penMode <$> get )
-      pwidth <- lift ( pm_penwidth . penMode <$> get )
+      let canvas = get drawArea xstate 
+          zmode  = get (zoomMode.viewInfo) xstate
+          pcolor = get (penColor.penInfo) xstate 
+          pwidth = get (penWidth.penInfo) xstate 
       let (x,y) = device2pageCoord cpg zmode pcoord 
           pcolRGBA = fromJust (M.lookup pcolor penColorRGBAmap) 
       liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)
       penProcess cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp pcoord -> do 
-      canvas <- lift ( darea <$> get )
-      zmode <- lift ( vm_zmmode . viewMode <$> get )      
+      let canvas = get drawArea xstate 
+          zmode = get (zoomMode.viewInfo) xstate 
       let (x,y) = device2pageCoord cpg zmode pcoord 
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
@@ -171,18 +187,19 @@ defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuSave = do 
-    xojcontent <- lift ( xoj <$> get )  
+    xojcontent <- get xournal <$> lift St.get   
     liftIO $ L.writeFile "mytest.xoj" $ builder xojcontent
 defaultEventProcess MenuNormalSize = do 
     liftIO $ putStrLn "NormalSize clicked"
-    xstate <- lift get 
-    let canvas = darea xstate 
+    xstate <- lift St.get 
+    let canvas = get drawArea xstate 
     (w',h') <- liftIO $ widgetGetSize canvas
-    let Dim w h =  page_dim.(!! (currpage xstate)).xoj_pages.xoj $ xstate     
-    let vm = viewMode xstate
-        vm' = vm { vm_zmmode = Original, vm_viewportOrigin = (0,0) }
-        hadj = hscrolladj xstate
-        vadj = vscrolladj xstate
+    let cpn = get currentPageNum xstate 
+    let Dim w h = page_dim . (!! cpn) . xoj_pages . get xournal $ xstate     
+    let -- vm = viewMode xstate
+        -- vm' = vm { vm_zmmode = Original, vm_viewportOrigin = (0,0) }
+        hadj = get horizAdjustment xstate
+        vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 
@@ -190,20 +207,24 @@ defaultEventProcess MenuNormalSize = do
       adjustmentSetValue vadj 0 
       adjustmentSetPageSize hadj (fromIntegral w')
       adjustmentSetPageSize vadj (fromIntegral h')
-    lift ( put xstate { viewMode = vm' } )
+    lift . St.put . set (zoomMode.viewInfo) Original
+                  . set (viewPortOrigin.viewInfo) (0,0)
+                  $ xstate
+    -- lift ( put xstate { viewMode = vm' } )
     invalidate       
 defaultEventProcess MenuPageWidth = do 
     liftIO $ putStrLn "PageWidth clicked"
-    xstate <- lift get 
-    let canvas = darea xstate 
-        page = (!! (currpage xstate)) . xoj_pages . xoj $ xstate
+    xstate <- lift St.get 
+    let canvas = get drawArea xstate 
+        cpn = get currentPageNum xstate
+        page = (!! cpn) . xoj_pages . get xournal $ xstate
         Dim w h = page_dim page 
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
     let (w',h') = canvas_size cpg 
-    let vm = viewMode xstate
-        vm' = vm { vm_zmmode = FitWidth, vm_viewportOrigin = (0,0) }
-        hadj = hscrolladj xstate
-        vadj = vscrolladj xstate
+    let -- vm = viewMode xstate
+        -- vm' = vm { vm_zmmode = FitWidth, vm_viewportOrigin = (0,0) }
+        hadj = get horizAdjustment xstate
+        vadj = get vertAdjustment xstate
         s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
     liftIO $ do 
       adjustmentSetUpper hadj w 
@@ -212,32 +233,41 @@ defaultEventProcess MenuPageWidth = do
       adjustmentSetValue vadj 0 
       adjustmentSetPageSize hadj (w'*s)
       adjustmentSetPageSize vadj (h'*s)
-    lift ( put xstate { viewMode = vm' } )
+    lift . St.put . set (zoomMode.viewInfo) FitWidth          
+                  . set (viewPortOrigin.viewInfo) (0,0) 
+                  $ xstate 
+    -- lift ( put xstate { viewMode = vm' } )
     invalidate       
 defaultEventProcess (HScrollBarMoved v) = do 
-    xstate <- lift get 
-    let vm = viewMode xstate
+    xstate <- lift St.get 
+    {- let vm = viewMode xstate
         vm_orig = vm_viewportOrigin vm 
         vm' = vm { vm_viewportOrigin = (v,snd vm_orig) }
-    lift ( put xstate { viewMode = vm' } )
+    lift ( put xstate { viewMode = vm' } ) -}
+    let vm_orig = get (viewPortOrigin.viewInfo) xstate 
+    lift . St.put . set (viewPortOrigin.viewInfo) (v,snd vm_orig) $ xstate 
     invalidate
 defaultEventProcess (VScrollBarMoved v) = do 
-    xstate <- lift get 
-    let vm = viewMode xstate
+    xstate <- lift St.get 
+    {-  let vm = viewMode xstate
         vm_orig = vm_viewportOrigin vm 
-        vm' = vm { vm_viewportOrigin = (fst vm_orig,v) }
+        vm' = vm { vm_viewportOrigin = (fst vm_orig,v) } 
     lift ( put xstate { viewMode = vm' } )
+    -}
+    let vm_orig = get (viewPortOrigin.viewInfo) xstate 
+    lift . St.put . set (viewPortOrigin.viewInfo) (fst vm_orig,v) $ xstate 
     invalidate
 defaultEventProcess (CanvasConfigure w' h') = do 
-    xstate <- lift get 
-    let canvas = darea xstate
-        page = (!! (currpage xstate)) . xoj_pages . xoj $ xstate        
-        vm = viewMode xstate
-        (w,h) = vm_pagedim vm 
+    xstate <- lift St.get 
+    let canvas = get drawArea xstate
+        cpn = get currentPageNum xstate 
+        page = (!! cpn) . xoj_pages . get xournal $ xstate        
+        (w,h) = get (pageDim.viewInfo) xstate 
+        zmode = get (zoomMode.viewInfo) xstate 
     cpg <- liftIO (getCanvasPageGeometry  canvas page (0,0))
-    let factor = getRatioFromPageToCanvas cpg (vm_zmmode vm)
-        hadj = hscrolladj xstate
-        vadj = vscrolladj xstate
+    let factor = getRatioFromPageToCanvas cpg zmode
+        hadj = get horizAdjustment xstate
+        vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 
@@ -252,12 +282,11 @@ defaultEventProcess (CanvasConfigure w' h') = do
 defaultEventProcess _ = return ()
   
 
-
-addPDraw :: PenMode -> Xournal -> Int -> Seq (Double,Double) -> Xournal
-addPDraw pmode xoj pgnum pdraw = 
-  let pcolor = pm_pencolor pmode 
+addPDraw :: PenInfo -> Xournal -> Int -> Seq (Double,Double) -> Xournal
+addPDraw pinfo xoj pgnum pdraw = 
+  let pcolor = get penColor pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
-      pwidth = pm_penwidth pmode
+      pwidth = get penWidth pinfo
       pagesbefore = take pgnum $ xoj_pages xoj  
       pagesafter  = drop (pgnum+1) $ xoj_pages xoj
       currpage = ((!!pgnum).xoj_pages) xoj 
@@ -272,13 +301,4 @@ addPDraw pmode xoj pgnum pdraw =
       newpage = currpage {page_layers = newlayer : otherlayers }
       newxoj = xoj { xoj_pages =  pagesbefore ++ [newpage] ++ pagesafter }  
   in  newxoj
-
-
-
-
-
-
-
-
-
 

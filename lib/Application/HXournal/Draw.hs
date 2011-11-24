@@ -1,9 +1,13 @@
 module Application.HXournal.Draw where
 
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
 
 import Data.IORef
+
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
 
 import Text.Xournal.Type
 import Text.Xournal.Parse
@@ -75,10 +79,10 @@ transformForPageCoord cpg zmode = do
   scale s s
   translate (-xo) (-yo)      
   
-updateCanvas :: DrawingArea -> Xournal -> Int -> ViewMode -> IO ()
-updateCanvas canvas xoj pagenum vmode = do 
-  let zmode = vm_zmmode vmode
-      origin = vm_viewportOrigin vmode
+updateCanvas :: DrawingArea -> Xournal -> Int -> ViewInfo -> IO ()
+updateCanvas canvas xoj pagenum vinfo = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
   let totalnumofpages = (length . xoj_pages) xoj
   let currpage = ((!!pagenum).xoj_pages) xoj
   geometry <- getCanvasPageGeometry canvas currpage origin

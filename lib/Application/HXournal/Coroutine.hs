@@ -9,7 +9,7 @@ import Data.IORef
 import Application.HXournal.Type
 
 bouncecallback :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
-               -> IORef XournalState
+               -> IORef HXournalState
                -> MyEvent 
                -> IO () 
 bouncecallback tref sref input = do 
@@ -22,6 +22,5 @@ bouncecallback tref sref input = do
     Right val -> do putStrLn $ show val 
                     writeIORef tref (Await (\_ -> return ()))
                     writeIORef sref st'
-  -- putStrLn "one step"
   return ()  
 

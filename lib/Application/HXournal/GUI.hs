@@ -8,9 +8,10 @@ import Application.HXournal.Device
 import Application.HXournal.Util 
 import Application.HXournal.GUI.Menu
 
-import Graphics.UI.Gtk hiding (get)
+import Graphics.UI.Gtk hiding (get,set)
 import Control.Monad.Coroutine.SuspensionFunctors
-import Control.Monad.State
+import qualified Control.Monad.State as St
+import Control.Monad.IO.Class
 import Control.Monad.Coroutine
 
 import Application.HXournal.Iteratee
@@ -18,8 +19,12 @@ import Application.HXournal.Draw
 import Application.HXournal.Device
 import Data.IORef
 
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
+
 import Text.Xournal.Type
-import Text.Xournal.Parse
+import qualified Text.Xournal.Parse as P
 
 import Foreign.Marshal.Utils
 import Foreign.Storable
@@ -42,15 +47,22 @@ startGUI fname = do
   scrolledWindowSetHAdjustment scrwin hadj 
   scrolledWindowSetVAdjustment scrwin vadj 
   
-  xojcontent <- read_xournal fname 
+  xojcontent <- P.read_xournal fname 
   let Dim w h = page_dim . (!! 0) .  xoj_pages $ xojcontent
-  let st = emptyXournalState 
-           { xoj = xojcontent, darea = canvas, device = dev
-           , viewMode = ViewMode OnePage Original (0,0) (w,h)
-           , hscrolladj = hadj 
-           , vscrolladj = vadj 
-           } 
-  (r,st') <- runStateT (resume guiProcess) st
+  let st = set xournal xojcontent  
+           . set drawArea canvas
+           . set deviceList dev
+           . set viewInfo (ViewInfo OnePage Original (0,0) (w,h))
+           . set horizAdjustment hadj 
+           . set vertAdjustment vadj 
+           $ emptyHXournalState
+           {- emptyXournalState  
+              { xoj = xojcontent, darea = canvas, device = dev
+              , viewMode = ViewMode OnePage Original (0,0) (w,h)
+              , hscrolladj = hadj 
+              , vscrolladj = vadj 
+              } -} 
+  (r,st') <- St.runStateT (resume guiProcess) st
   sref <- newIORef st'
 
   tref <- case r of 
@@ -58,7 +70,7 @@ startGUI fname = do
               newIORef aw 
             Right _ -> error "what?"
 
-  writeIORef sref st' {callback = bouncecallback tref sref }
+  writeIORef sref . set callBack (bouncecallback tref sref) $ st'
   
   window <- windowNew 
   vbox <- vBoxNew False 0 
@@ -109,15 +121,17 @@ startGUI fname = do
   
   canvas `on` buttonPressEvent $ tryEvent $ do 
     st <- liftIO (readIORef sref)
-    let callbk = callback st
-        dev = device st 
+    liftIO $ putStrLn "hello, I'm here"
+    let callbk = get callBack st
+        dev = get deviceList st 
     p <- getPointer dev
+    liftIO $ putStrLn $ "p = " ++ show p 
     liftIO (callbk (PenDown p))
  
   canvas `on` buttonReleaseEvent $ tryEvent $ do 
     st <- liftIO (readIORef sref)
-    let callbk = callback st
-        dev = device st 
+    let callbk = get callBack st
+        dev = get deviceList st 
     p <- getPointer dev
     liftIO (callbk (PenUp p))
     

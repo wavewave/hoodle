@@ -17,7 +17,10 @@ import Text.Xournal.Predefined
 import Graphics.UI.Gtk
 
 import Data.Maybe
+
+import Control.Category
 import Data.Label 
+import Prelude hiding ((.), id)
 
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B
@@ -26,10 +29,12 @@ type Trampoline m x = Coroutine Identity m x
 type Generator a m x = Coroutine (Yield a) m x
 type Iteratee a m x = Coroutine (Await a) m x
 
-type XournalStateIO = StateT XournalState IO 
+type XournalStateIO = StateT HXournalState IO 
 
+{-
 data PenDrawing = PenDrawing { penDrawingPoints :: Seq (Double,Double)
                              } 
+-}
                   
 data PenDraw = PenDraw { _points :: Seq (Double,Double) } 
              deriving (Show)
@@ -41,13 +46,14 @@ data PageMode = Continous | OnePage
 data ZoomMode = Original | FitWidth | Zoom Double 
               deriving (Show,Eq)
 
+{-
 data ViewMode = ViewMode { vm_pgmode :: PageMode 
                          , vm_zmmode :: ZoomMode 
                          , vm_viewportOrigin :: (Double,Double) 
                          , vm_pagedim :: (Double,Double)
                          } 
               deriving (Show,Eq)
-
+-}
 
 data ViewInfo = ViewInfo { _pageMode :: PageMode
                          , _zoomMode :: ZoomMode
@@ -74,15 +80,17 @@ data PenColor = ColorBlack
               | ColorRGBA Double Double Double Double 
               deriving (Show,Eq,Ord)
       
+{-                       
 data PenMode = PenMode { pm_pentype :: PenType 
                        , pm_penwidth :: Double 
                        , pm_pencolor :: PenColor
                        } 
              deriving (Show)
+-}
 
 data PenInfo = PenInfo { _penType :: PenType
                        , _penWidth :: Double
-                       , _penColor :: Double } 
+                       , _penColor :: PenColor } 
              deriving (Show) 
 
 penColorNameMap :: M.Map PenColor B.ByteString                        
@@ -106,7 +114,7 @@ convertPenColorToRGBA :: PenColor -> (Double,Double,Double,Double)
 convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
 convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
 
-
+{-
 data XournalState = 
   XournalState 
   { xoj :: Xournal 
@@ -120,7 +128,8 @@ data XournalState =
   , hscrolladj :: Adjustment
   , vscrolladj :: Adjustment 
   } 
-                      
+-}                      
+
 data HXournalState = HXournalState { _xournal :: Xournal 
                                    , _drawArea :: DrawingArea
                                    , _currentPageNum :: Int
@@ -227,6 +236,22 @@ data MyEvent = Initialized
 
 $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''HXournalState]) 
 
+emptyHXournalState :: HXournalState 
+emptyHXournalState = 
+  HXournalState  
+  { _xournal = emptyXournal
+  , _drawArea = undefined
+  , _currentPageNum = 0 
+  , _currentPenDraw = PenDraw empty 
+  , _callBack = undefined 
+  , _deviceList = undefined
+  , _viewInfo = ViewInfo OnePage Original (0,0) undefined 
+  , _penInfo = PenInfo PenWork predefined_medium ColorBlack
+  , _horizAdjustment = undefined             
+  , _vertAdjustment = undefined 
+  }
+
+{-
 emptyXournalState :: XournalState
 emptyXournalState = 
   XournalState 
@@ -241,5 +266,5 @@ emptyXournalState =
   , hscrolladj = undefined             
   , vscrolladj = undefined 
   } 
-  
+-}
   

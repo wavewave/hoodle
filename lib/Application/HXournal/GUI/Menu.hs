@@ -2,6 +2,7 @@
 
 module Application.HXournal.GUI.Menu where
 
+
 import Application.HXournal.Util.Verbatim
 import Application.HXournal.Coroutine
 import Application.HXournal.Type
@@ -12,7 +13,11 @@ import Data.IORef
 import qualified Data.Map as M
 import Data.Maybe
 
-import Graphics.UI.Gtk
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
+
+import Graphics.UI.Gtk hiding (set)
 
 import System.FilePath
 
@@ -292,7 +297,7 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 
 
 getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
-             -> IORef XournalState 
+             -> IORef HXournalState 
              -> IO UIManager
 getMenuUI tref sref = do 
   let actionNewAndRegister :: String -> String 
@@ -444,37 +449,37 @@ getMenuUI tref sref = do
   uiManagerInsertActionGroup ui agr 0 
   return ui   
 
-assignPenMode :: IORef XournalState -> RadioAction -> IO ()
+assignPenMode :: IORef HXournalState -> RadioAction -> IO ()
 assignPenMode sref a = do 
     v <- radioActionGetCurrentValue a
     let t = int2PenType v
     st <- readIORef sref 
-    let pm = penMode st 
+    let stNew = set (penType.penInfo) t st 
+        {- pm = penMode st 
         pmNew = pm { pm_pentype = t }
-        stNew = st { penMode = pmNew } 
-    print $ pm
+        stNew = st { penMode = pmNew } -}
     writeIORef sref stNew 
 
-assignColor :: IORef XournalState -> RadioAction -> IO () 
+assignColor :: IORef HXournalState -> RadioAction -> IO () 
 assignColor sref a = do 
     v <- radioActionGetCurrentValue a
     let c = int2Color v
     st <- readIORef sref 
-    let pm = penMode st 
+    let stNew = set (penColor.penInfo) c st 
+        {- pm = penMode st 
         pmNew = pm { pm_pencolor = c }
-        stNew = st { penMode = pmNew } 
-    print $ pm
+        stNew = st { penMode = pmNew } -}
     writeIORef sref stNew 
 
-assignPoint :: IORef XournalState -> RadioAction -> IO () 
+assignPoint :: IORef HXournalState -> RadioAction -> IO () 
 assignPoint sref a = do 
     v <- radioActionGetCurrentValue a
     let w = int2Point v
     st <- readIORef sref 
-    let pm = penMode st 
+    let stNew = set (penWidth.penInfo) w st 
+        {- pm = penMode st 
         pmNew = pm { pm_penwidth = w }
-        stNew = st { penMode = pmNew } 
-    print $ pm
+        stNew = st { penMode = pmNew } -}
     writeIORef sref stNew 
 
 

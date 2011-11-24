@@ -5,8 +5,13 @@ import Application.HXournal.Coroutine
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.State
+import qualified Control.Monad.State as S
 import Control.Monad.Trans
 
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
+
 getPenType :: Iteratee MyEvent XournalStateIO PenType
-getPenType = lift (pm_pentype . penMode <$> get)
+getPenType = get (penType.penInfo) <$> lift (S.get)
+             -- lift (pm_pentype . penMode <$> get)

@@ -37,7 +37,7 @@ data ZoomMode = Original | FitWidth | Zoom Double
 
 data ViewMode = ViewMode { vm_pgmode :: PageMode 
                          , vm_zmmode :: ZoomMode 
-                         , vm_viewportarea :: (Double,Double) } 
+                         , vm_viewportOrigin :: (Double,Double) } 
               deriving (Show,Eq)
 
 data PenType = Pen 
@@ -96,10 +96,13 @@ data XournalState =
   , device :: DeviceList 
   , viewMode :: ViewMode
   , penMode :: PenMode 
+  , hscrolladj :: Adjustment
+  , vscrolladj :: Adjustment 
   } 
                       
 
-data MyEvent = ButtonLeft 
+data MyEvent = Initialized
+             | ButtonLeft 
              | ButtonRight 
              | ButtonRefresh 
              | ButtonQuit 
@@ -182,6 +185,8 @@ data MyEvent = ButtonLeft
              | PenDown PointerCoord
              | PenMove PointerCoord
              | PenUp   PointerCoord 
+             | HScrollBarMoved Double
+             | VScrollBarMoved Double 
              deriving (Show,Eq,Ord)
 
 

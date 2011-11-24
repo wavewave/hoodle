@@ -37,13 +37,20 @@ startGUI fname = do
   scrwin <- scrolledWindowNew Nothing Nothing 
   containerAdd scrwin canvas
   
+  hadj <- adjustmentNew 0 0 500 100 200 200 
+  vadj <- adjustmentNew 0 0 500 100 200 200 
+  scrolledWindowSetHAdjustment scrwin hadj 
+  scrolledWindowSetVAdjustment scrwin vadj 
   
   xojcontent <- read_xojgz fname 
-  let width = getLargestWidth xojcontent
-      height = getLargestHeight xojcontent 
+  -- let width = getLargestWidth xojcontent
+  --     height = getLargestHeight xojcontent 
   let st = emptyXournalState 
            { xoj = xojcontent, darea = canvas, device = dev
-           , viewMode = ViewMode OnePage Original (width,height) } 
+           , viewMode = ViewMode OnePage Original (0,0) 
+           , hscrolladj = hadj 
+           , vscrolladj = vadj 
+           } 
   (r,st') <- runStateT (resume iter) st
   sref <- newIORef st'
 
@@ -78,15 +85,21 @@ startGUI fname = do
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox scrwin PackGrow 0 
   
-  putStrLn $ show width
-  putStrLn $ show height 
+  -- putStrLn $ show width
+  -- putStrLn $ show height 
   -- error "error"
   
-  hadj <- adjustmentNew 0 0 width 100 200 200 
-  vadj <- adjustmentNew 0 0 height 100 200 200 
-  scrolledWindowSetHAdjustment scrwin hadj 
-  scrolledWindowSetVAdjustment scrwin vadj 
   
+  afterValueChanged hadj $ do 
+    v <- adjustmentGetValue hadj 
+    bouncecallback tref sref (HScrollBarMoved v)
+    putStrLn $ "value changed"
+    
+  afterValueChanged vadj $ do 
+    putStrLn $ "vadj value changed"
+    v <- adjustmentGetValue vadj     
+    bouncecallback tref sref (VScrollBarMoved v)
+
   canvas `on` sizeRequest $ return (Requisition 480 400)
 
   cursorDot <- cursorNew BlankCursor
@@ -118,8 +131,12 @@ startGUI fname = do
 
   
   onDestroy window mainQuit
-  
+
   widgetShowAll window
+
+  -- initialized
+  bouncecallback tref sref Initialized     
+  
   mainGUI 
   return ()
   

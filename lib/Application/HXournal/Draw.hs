@@ -19,10 +19,12 @@ data CanvasPageGeometry =
                      , canvas_size :: (Double,Double)
                      , page_size :: (Double,Double)
                      , canvas_origin :: (Double,Double) 
+                     , page_origin :: (Double,Double)
                      }
   
-getCanvasPageGeometry :: DrawingArea -> Page -> IO CanvasPageGeometry
-getCanvasPageGeometry canvas page = do 
+getCanvasPageGeometry :: DrawingArea -> Page -> (Double,Double) 
+                         -> IO CanvasPageGeometry
+getCanvasPageGeometry canvas page (xorig,yorig) = do 
   win <- widgetGetDrawWindow canvas
   (w',h') <- widgetGetSize canvas
   screen <- widgetGetScreen canvas
@@ -33,10 +35,11 @@ getCanvasPageGeometry canvas page = do
                               (fromIntegral w', fromIntegral h') 
                               (w,h) 
                               (fromIntegral x0,fromIntegral y0)
+                              (xorig, yorig)
 
 core2pageCoord :: CanvasPageGeometry -> ZoomMode 
                   -> (Double,Double) -> (Double,Double)
-core2pageCoord (CanvasPageGeometry _ (w',h') (w,h) _) zmode (px,py) = 
+core2pageCoord (CanvasPageGeometry _ (w',h') (w,h)  _ _) zmode (px,py) = 
   let s = case zmode of 
             Original -> 1.0 
             FitWidth -> (w/w')
@@ -46,14 +49,14 @@ wacom2pageCoord :: CanvasPageGeometry
                    -> ZoomMode 
                    -> (Double,Double) 
                    -> (Double,Double)
-wacom2pageCoord (CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0)) 
+wacom2pageCoord (CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yorig)) 
                 zmode 
                 (px,py) 
   = let (x1,y1) = (ws*px-x0,hs*py-y0)
-        s = case zmode of
-              Original -> 1.0
-              FitWidth -> w/w'
-    in  (x1*s, y1*s)
+        (s,xo,yo) = case zmode of
+                      Original -> (1.0,xorig,yorig)
+                      FitWidth -> (w/w',0,yorig)
+    in  ((x1-xo)*s, (y1-yo)*s)
 
 device2pageCoord :: CanvasPageGeometry 
                  -> ZoomMode 
@@ -65,17 +68,31 @@ device2pageCoord cpg zmode pcoord =
       Core -> core2pageCoord  cpg zmode (px,py)
       _    -> wacom2pageCoord cpg zmode (px,py)
 
-
-
-updateCanvas :: DrawingArea -> Xournal -> Int -> ZoomMode -> IO ()
-updateCanvas canvas xoj pagenum zmode = do 
+transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
+transformForPageCoord cpg zmode = do 
+  let (w',_) = canvas_size cpg
+      (w,_) = screen_size cpg
+      (xo,yo) = page_origin cpg
+  let s = case zmode of 
+            Original -> 1.0 
+            FitWidth -> w/w'
+  translate (-xo) (-yo)    
+  scale s s
+  
+  
+updateCanvas :: DrawingArea -> Xournal -> Int -> ViewMode -> IO ()
+updateCanvas canvas xoj pagenum vmode = do 
+  let zmode = vm_zmmode vmode
+      origin = vm_viewportOrigin vmode
   let totalnumofpages = (length . xoj_pages) xoj
   let currpage = ((!!pagenum).xoj_pages) xoj
+  geometry <- getCanvasPageGeometry canvas currpage origin
+      
   win <- widgetGetDrawWindow canvas
   (w',h') <- widgetGetSize canvas
   let (Dim w h) = page_dim currpage
   renderWithDrawable win $ do
-    case zmode of 
+  {-  case zmode of 
       FitWidth -> do 
         let s = realToFrac w' / w 
         scale s s 
@@ -84,7 +101,8 @@ updateCanvas canvas xoj pagenum zmode = do
       Original -> return () 
       Zoom factor -> do 
         scale factor factor
-        return ()
+        return () -}
+    transformForPageCoord geometry zmode
     cairoDrawPage currpage
   return ()
 

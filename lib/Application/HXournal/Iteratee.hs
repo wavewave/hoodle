@@ -28,7 +28,7 @@ import Data.Maybe
 import qualified Data.Map as M
 import Data.Foldable (toList)
 import Data.Sequence hiding (length,drop,take)
-import Data.Strict.Tuple hiding (uncurry)
+import Data.Strict.Tuple hiding (uncurry,fst,snd)
 
 import Application.HXournal.Device
 
@@ -50,8 +50,17 @@ connPenUp c = do
 
 iter :: Iteratee MyEvent XournalStateIO () 
 iter = do liftIO (putStrLn "I am waiting first result") 
+          initialize
+          changePage (const 0)
           sequence_ (repeat eventProcess)
           return ()
+
+initialize :: Iteratee MyEvent XournalStateIO ()
+initialize = do ev <- await 
+                liftIO $ putStrLn $ show ev 
+                case ev of 
+                  Initialized -> return () 
+                  _ -> initialize
 
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
@@ -61,6 +70,16 @@ changePage modifyfn = do
   let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
+      
+      Dim w h =  page_dim . (!! newpage) . xoj_pages . xoj $ xstate                            
+      -- vm = viewMode xstate
+      hadj = hscrolladj xstate  
+      vadj = vscrolladj xstate
+  liftIO $ do 
+    adjustmentSetUpper hadj w 
+    adjustmentSetUpper vadj h 
+    adjustmentSetValue hadj 0
+    adjustmentSetValue vadj 0
   lift (put (xstate { currpage = newpage}))
   invalidate   
   -- liftIO . putStrLn $ "changing " ++ show oldpage ++ " to " ++ show newpage
@@ -68,42 +87,19 @@ changePage modifyfn = do
 invalidate :: Iteratee MyEvent XournalStateIO () 
 invalidate = do 
   xstate <- lift get  
-  liftIO (updateCanvas <$> darea <*> xoj <*> currpage <*> vm_zmmode . viewMode $ xstate )
+  liftIO (updateCanvas <$> darea <*> xoj <*> currpage <*> viewMode $ xstate )
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
 eventProcess = do 
   r1 <- await 
   case r1 of 
-    MenuPreviousPage -> changePage (\x->x-1)
-    MenuNextPage-> changePage (+1)
-    MenuFirstPage -> changePage (const 0)
-    MenuLastPage -> changePage (const 10000)
-    ButtonRefresh -> invalidate 
-    ButtonQuit -> do  
-      liftIO . putStrLn $ "quit"
-    MenuSave -> do 
-      xojcontent <- lift ( xoj <$> get )  
-      liftIO $ L.writeFile "mytest.xoj" $ builder xojcontent
-    MenuNormalSize -> do 
-      liftIO $ putStrLn "NormalSize clicked"
-      xstate <- lift get 
-      let vm = viewMode xstate
-          vm' = vm { vm_zmmode = Original }
-      lift ( put xstate { viewMode = vm' } )
-      invalidate       
-    MenuPageWidth -> do 
-      liftIO $ putStrLn "PageWidth clicked"
-      xstate <- lift get 
-      let vm = viewMode xstate
-          vm' = vm { vm_zmmode = FitWidth }
-      lift ( put xstate { viewMode = vm' } )
-      invalidate       
     PenDown pcoord -> do 
       canvas <- lift ( darea <$> get )  
       win <- liftIO $ widgetGetDrawWindow canvas
       pagenum <- lift (currpage <$> get )
       page <- lift ( (!!pagenum) . xoj_pages . xoj <$> get ) 
-      geometry <- liftIO (getCanvasPageGeometry canvas page)
+      (x0,y0) <- lift ( vm_viewportOrigin . viewMode <$> get ) 
+      geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
       zmode <- lift ( vm_zmmode . viewMode <$> get )
       let (x,y) = device2pageCoord geometry zmode pcoord 
       connidup <- connPenUp canvas      
@@ -148,8 +144,49 @@ penProcess cpg connidmove connidup pdraw (x0,y0) = do
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = invalidate   
+defaultEventProcess MenuPreviousPage = changePage (\x->x-1)
+defaultEventProcess MenuNextPage =  changePage (+1)
+defaultEventProcess MenuFirstPage = changePage (const 0)
+defaultEventProcess MenuLastPage = changePage (const 10000)
+defaultEventProcess MenuSave = do 
+    xojcontent <- lift ( xoj <$> get )  
+    liftIO $ L.writeFile "mytest.xoj" $ builder xojcontent
+defaultEventProcess MenuNormalSize = do 
+    liftIO $ putStrLn "NormalSize clicked"
+    xstate <- lift get 
+    let vm = viewMode xstate
+        vm' = vm { vm_zmmode = Original }
+    lift ( put xstate { viewMode = vm' } )
+    invalidate       
+defaultEventProcess MenuPageWidth = do 
+    liftIO $ putStrLn "PageWidth clicked"
+    xstate <- lift get 
+    let vm = viewMode xstate
+        vm' = vm { vm_zmmode = FitWidth }
+    lift ( put xstate { viewMode = vm' } )
+    invalidate       
+defaultEventProcess (HScrollBarMoved v) = do 
+    xstate <- lift get 
+    let vm = viewMode xstate
+        vm_orig = vm_viewportOrigin vm 
+        vm' = vm { vm_viewportOrigin = (v,snd vm_orig) }
+    lift ( put xstate { viewMode = vm' } )
+    invalidate
+defaultEventProcess (VScrollBarMoved v) = do 
+    xstate <- lift get 
+    let vm = viewMode xstate
+        vm_orig = vm_viewportOrigin vm 
+        vm' = vm { vm_viewportOrigin = (fst vm_orig,v) }
+    lift ( put xstate { viewMode = vm' } )
+    invalidate
+
 defaultEventProcess _ = return ()
+    -- ButtonRefresh -> invalidate 
+    -- ButtonQuit -> do  
+      -- liftIO . putStrLn $ "quit"
   
+
+
 addPDraw :: PenMode -> Xournal -> Int -> Seq (Double,Double) -> Xournal
 addPDraw pmode xoj pgnum pdraw = 
   let pcolor = pm_pencolor pmode 

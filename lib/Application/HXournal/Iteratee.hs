@@ -107,7 +107,7 @@ eventProcess = do
       geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
       zmode <- lift ( vm_zmmode . viewMode <$> get )
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      liftIO $ print (x,y)    
+      liftIO $ print pcoord
       connidup <- connPenUp canvas      
       connidmove <- connPenMove canvas
       pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
@@ -118,7 +118,6 @@ eventProcess = do
       let newxoj = addPDraw pmode currxoj pgnum pdraw
       lift $ put (xstate { xoj = newxoj }) 
       return ()
-      -- liftIO (print pdraw) 
     _ -> defaultEventProcess r1
 
 penProcess :: CanvasPageGeometry

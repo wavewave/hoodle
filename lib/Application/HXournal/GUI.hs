@@ -42,7 +42,7 @@ startGUI fname = do
   scrolledWindowSetHAdjustment scrwin hadj 
   scrolledWindowSetVAdjustment scrwin vadj 
   
-  xojcontent <- read_xojgz fname 
+  xojcontent <- read_xournal fname 
   -- let width = getLargestWidth xojcontent
   --     height = getLargestHeight xojcontent 
   let Dim w h = page_dim . (!! 0) .  xoj_pages $ xojcontent

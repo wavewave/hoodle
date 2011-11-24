@@ -5,6 +5,7 @@ module Application.HXournal.GUI where
 import Application.HXournal.Type 
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
+import Application.HXournal.Util 
 import Application.HXournal.GUI.Menu
 
 import Graphics.UI.Gtk hiding (get)
@@ -38,7 +39,11 @@ startGUI fname = do
   
   
   xojcontent <- read_xojgz fname 
-  let st = emptyXournalState { xoj = xojcontent, darea = canvas, device = dev} 
+  let width = getLargestWidth xojcontent
+      height = getLargestHeight xojcontent 
+  let st = emptyXournalState 
+           { xoj = xojcontent, darea = canvas, device = dev
+           , viewMode = ViewMode OnePage Original (width,height) } 
   (r,st') <- runStateT (resume iter) st
   sref <- newIORef st'
 
@@ -72,6 +77,16 @@ startGUI fname = do
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox scrwin PackGrow 0 
+  
+  putStrLn $ show width
+  putStrLn $ show height 
+  -- error "error"
+  
+  hadj <- adjustmentNew 0 0 width 100 200 200 
+  vadj <- adjustmentNew 0 0 height 100 200 200 
+  scrolledWindowSetHAdjustment scrwin hadj 
+  scrolledWindowSetVAdjustment scrwin vadj 
+  
   canvas `on` sizeRequest $ return (Requisition 480 400)
 
   cursorDot <- cursorNew BlankCursor

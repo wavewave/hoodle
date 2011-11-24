@@ -105,6 +105,7 @@ drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do
               Original -> 1.0 
               FitWidth -> w'/w
     scale s s 
+    setSourceRGBA r g b a
     setLineWidth wdth
     moveTo x0 y0
     lineTo x y

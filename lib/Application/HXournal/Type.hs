@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Application.HXournal.Type where
 
 import Application.HXournal.Device
@@ -10,8 +12,13 @@ import Data.Sequence
 import Data.IORef
 
 import Text.Xournal.Type
+import Text.Xournal.Predefined 
 
 import Graphics.UI.Gtk
+
+import Data.Maybe
+import qualified Data.Map as M
+import qualified Data.ByteString.Char8 as B
 
 type Trampoline m x = Coroutine Identity m x 
 type Generator a m x = Coroutine (Yield a) m x
@@ -29,8 +36,55 @@ data ZoomMode = Original | FitWidth | Zoom Double
               deriving (Show,Eq)
 
 data ViewMode = ViewMode { vm_pgmode :: PageMode 
-                         , vm_zmmode :: ZoomMode } 
+                         , vm_zmmode :: ZoomMode 
+                         , vm_viewportarea :: (Double,Double) } 
               deriving (Show,Eq)
+
+data PenType = Pen 
+               -- | Highlighter | Eraser 
+             deriving (Show,Eq)
+                      
+data PenColor = ColorBlack
+              | ColorBlue 
+              | ColorRed
+              | ColorGreen
+              | ColorGray
+              | ColorLightBlue 
+              | ColorLightGreen 
+              | ColorMagenta
+              | ColorOrange
+              | ColorYellow
+              | ColorWhite
+              | ColorRGBA Double Double Double Double 
+              deriving (Show,Eq,Ord)
+      
+data PenMode = PenMode { pm_pentype :: PenType 
+                       , pm_penwidth :: Double 
+                       , pm_pencolor :: PenColor
+                       } 
+             deriving (Show)
+
+penColorNameMap :: M.Map PenColor B.ByteString                        
+penColorNameMap = M.fromList [ (ColorBlack, "black")
+                             , (ColorBlue , "blue")
+                             , (ColorRed  , "red") 
+                             , (ColorGreen, "green")
+                             , (ColorGray,  "gray")
+                             , (ColorLightBlue, "lightblue")
+                             , (ColorLightGreen, "lightgreen")
+                             , (ColorMagenta, "magenta")
+                             , (ColorOrange, "orange")
+                             , (ColorYellow, "yellow")
+                             , (ColorWhite, "white") ]
+
+penColorRGBAmap :: M.Map PenColor (Double,Double,Double,Double)
+penColorRGBAmap = M.fromList $ map (\x->(fst x,fromJust (M.lookup (snd x) predefined_pencolor))) 
+                             $ M.toList penColorNameMap 
+
+convertPenColorToRGBA :: PenColor -> (Double,Double,Double,Double)
+convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
+convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
+
 
 data XournalState = 
   XournalState 
@@ -41,6 +95,7 @@ data XournalState =
   , callback :: MyEvent -> IO ()
   , device :: DeviceList 
   , viewMode :: ViewMode
+  , penMode :: PenMode 
   } 
                       
 
@@ -139,7 +194,8 @@ emptyXournalState =
   , currpendrawing = PenDrawing empty 
   , callback = undefined 
   , device = undefined
-  , viewMode = ViewMode OnePage Original
+  , viewMode = ViewMode OnePage Original (0,0) 
+  , penMode = PenMode Pen predefined_medium ColorBlack
   } 
   
   

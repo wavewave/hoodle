@@ -9,10 +9,14 @@ import Application.HXournal.Type
 import Control.Monad.IO.Class
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
+import qualified Data.Map as M
+import Data.Maybe
 
 import Graphics.UI.Gtk
 
 import System.FilePath
+
+import Text.Xournal.Predefined 
 import Paths_hxournal
 
 uiDecl :: String 
@@ -110,7 +114,13 @@ uiDecl = [verbatim|<ui>
          <menuitem action="YELLOWA" />
          <menuitem action="WHITEA" />
        </menu> 
-       <menuitem action="PENOPTA" />
+       <menu action="PENOPTA"> 
+         <menuitem action="PENVERYFINEA" />     
+         <menuitem action="PENFINEA" />                          
+         <menuitem action="PENMEDIUMA" />                          
+         <menuitem action="PENTHICKA" />                          
+         <menuitem action="PENVERYTHICKA" />                          
+       </menu>
        <menuitem action="ERASROPTA" />                        
        <menuitem action="HILTROPTA" />                        
        <menuitem action="TXTFNTA" />                        
@@ -428,11 +438,62 @@ getMenuUI tref sref = do
         , defaulta         
         ] 
   actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
-  actionGroupAddRadioActions agr pointmods 0 (\_ -> return ())
+  actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods 0 (\_ -> return ())  
-  actionGroupAddRadioActions agr colormods 0 (\_ -> return ())  
-  
+  actionGroupAddRadioActions agr colormods 0 (assignColor sref)
+
   ui <- uiManagerNew 
   uiManagerAddUiFromString ui uiDecl 
   uiManagerInsertActionGroup ui agr 0 
   return ui   
+
+
+assignColor :: IORef XournalState -> RadioAction -> IO () 
+assignColor sref a = do 
+    v <- radioActionGetCurrentValue a
+    putStrLn $ show v
+    let c = int2Color v
+    -- pcolname = fromJust (M.lookup c penColorNameMap)
+    st <- readIORef sref 
+    let pm = penMode st 
+        pmNew = pm { pm_pencolor = c }
+        stNew = st { penMode = pmNew } 
+    print $ pm
+    writeIORef sref stNew 
+    -- print $ rgbaToHEX (r,g,b,a) 
+    return () 
+
+assignPoint :: IORef XournalState -> RadioAction -> IO () 
+assignPoint sref a = do 
+    v <- radioActionGetCurrentValue a
+    putStrLn $ show v
+    let w = int2Point v
+    st <- readIORef sref 
+    let pm = penMode st 
+        pmNew = pm { pm_penwidth = w }
+        stNew = st { penMode = pmNew } 
+    print $ pm
+    writeIORef sref stNew 
+    return () 
+
+int2Point :: Int -> Double 
+int2Point 0 = predefined_veryfine 
+int2Point 1 = predefined_fine
+int2Point 2 = predefined_medium
+int2Point 3 = predefined_thick
+int2Point 4 = predefined_verythick
+
+
+int2Color :: Int -> PenColor
+int2Color 0  = ColorBlack 
+int2Color 1  = ColorBlue
+int2Color 2  = ColorRed
+int2Color 3  = ColorGreen
+int2Color 4  = ColorGray
+int2Color 5  = ColorLightBlue
+int2Color 6  = ColorLightGreen
+int2Color 7  = ColorMagenta
+int2Color 8  = ColorOrange
+int2Color 9  = ColorYellow
+int2Color 10 = ColorWhite
+int2Color _ = error "No such color"

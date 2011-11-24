@@ -2,7 +2,6 @@
 
 module Application.HXournal.Iteratee where 
 
--- import Prelude hiding (uncurry)
 import Control.Applicative hiding (empty)
 import Control.Monad
 import qualified Control.Monad.State as St 
@@ -82,8 +81,6 @@ changePage modifyfn = do
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
       Dim w h = page_dim . (!! newpage) . xoj_pages $ xoj 
-      -- vm = viewInfo xstate
-      -- vm'= vm { vm_viewportOrigin = (0,0), vm_pagedim = (w,h) }
       hadj = get horizAdjustment xstate  
       vadj = get vertAdjustment xstate
   liftIO $ do 
@@ -97,7 +94,6 @@ changePage modifyfn = do
               . set currentPageNum newpage
               $ xstate 
   lift . St.put $ xstate' 
-  -- (xstate { currpage = newpage, viewMode = vm' }))
   invalidate   
 
 invalidate :: Iteratee MyEvent XournalStateIO () 
@@ -196,9 +192,7 @@ defaultEventProcess MenuNormalSize = do
     (w',h') <- liftIO $ widgetGetSize canvas
     let cpn = get currentPageNum xstate 
     let Dim w h = page_dim . (!! cpn) . xoj_pages . get xournal $ xstate     
-    let -- vm = viewMode xstate
-        -- vm' = vm { vm_zmmode = Original, vm_viewportOrigin = (0,0) }
-        hadj = get horizAdjustment xstate
+    let hadj = get horizAdjustment xstate
         vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
@@ -210,7 +204,6 @@ defaultEventProcess MenuNormalSize = do
     lift . St.put . set (zoomMode.viewInfo) Original
                   . set (viewPortOrigin.viewInfo) (0,0)
                   $ xstate
-    -- lift ( put xstate { viewMode = vm' } )
     invalidate       
 defaultEventProcess MenuPageWidth = do 
     liftIO $ putStrLn "PageWidth clicked"
@@ -221,9 +214,7 @@ defaultEventProcess MenuPageWidth = do
         Dim w h = page_dim page 
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
     let (w',h') = canvas_size cpg 
-    let -- vm = viewMode xstate
-        -- vm' = vm { vm_zmmode = FitWidth, vm_viewportOrigin = (0,0) }
-        hadj = get horizAdjustment xstate
+    let hadj = get horizAdjustment xstate
         vadj = get vertAdjustment xstate
         s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
     liftIO $ do 
@@ -236,24 +227,14 @@ defaultEventProcess MenuPageWidth = do
     lift . St.put . set (zoomMode.viewInfo) FitWidth          
                   . set (viewPortOrigin.viewInfo) (0,0) 
                   $ xstate 
-    -- lift ( put xstate { viewMode = vm' } )
     invalidate       
 defaultEventProcess (HScrollBarMoved v) = do 
     xstate <- lift St.get 
-    {- let vm = viewMode xstate
-        vm_orig = vm_viewportOrigin vm 
-        vm' = vm { vm_viewportOrigin = (v,snd vm_orig) }
-    lift ( put xstate { viewMode = vm' } ) -}
     let vm_orig = get (viewPortOrigin.viewInfo) xstate 
     lift . St.put . set (viewPortOrigin.viewInfo) (v,snd vm_orig) $ xstate 
     invalidate
 defaultEventProcess (VScrollBarMoved v) = do 
     xstate <- lift St.get 
-    {-  let vm = viewMode xstate
-        vm_orig = vm_viewportOrigin vm 
-        vm' = vm { vm_viewportOrigin = (fst vm_orig,v) } 
-    lift ( put xstate { viewMode = vm' } )
-    -}
     let vm_orig = get (viewPortOrigin.viewInfo) xstate 
     lift . St.put . set (viewPortOrigin.viewInfo) (fst vm_orig,v) $ xstate 
     invalidate

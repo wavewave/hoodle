@@ -284,17 +284,12 @@ colormods = [ RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
                    -> IO ()
 iconResourceAdd iconfac resdir (fp,stid) = do 
-  -- myimage <- imageNewFromFile (resdir </> fp)
-  -- myIconSet <- iconSetNewFromPixbuf =<< imageGetPixbuf myimage 
   myIconSource <- iconSourceNew 
   iconSourceSetFilename myIconSource (resdir </> fp)
-  --iconSourceSetPixbuf myIconSource =<< imageGetPixbuf myimage
   iconSourceSetSize myIconSource IconSizeLargeToolbar
   myIconSet <- iconSetNew 
   iconSetAddSource myIconSet myIconSource 
   iconFactoryAdd iconfac stid myIconSet
-
-
 
 getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
              -> IORef HXournalState 
@@ -312,8 +307,7 @@ getMenuUI tref sref = do
             a `on` actionActivated $ do 
               bouncecallback tref sref ev
             return a
-
-
+  
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
@@ -328,7 +322,7 @@ getMenuUI tref sref = do
   tma     <- actionNewAndRegister "TMA"   "Tools" Nothing Nothing Nothing
   oma     <- actionNewAndRegister "OMA"   "Options" Nothing Nothing Nothing
   hma     <- actionNewAndRegister "HMA"   "Help" Nothing Nothing Nothing
-  
+
   -- file menu
   newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (Just MenuNew)
   annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDf" (Just "Just a Stub") Nothing (Just MenuAnnotatePDF)
@@ -455,9 +449,6 @@ assignPenMode sref a = do
     let t = int2PenType v
     st <- readIORef sref 
     let stNew = set (penType.penInfo) t st 
-        {- pm = penMode st 
-        pmNew = pm { pm_pentype = t }
-        stNew = st { penMode = pmNew } -}
     writeIORef sref stNew 
 
 assignColor :: IORef HXournalState -> RadioAction -> IO () 
@@ -466,9 +457,6 @@ assignColor sref a = do
     let c = int2Color v
     st <- readIORef sref 
     let stNew = set (penColor.penInfo) c st 
-        {- pm = penMode st 
-        pmNew = pm { pm_pencolor = c }
-        stNew = st { penMode = pmNew } -}
     writeIORef sref stNew 
 
 assignPoint :: IORef HXournalState -> RadioAction -> IO () 
@@ -477,11 +465,7 @@ assignPoint sref a = do
     let w = int2Point v
     st <- readIORef sref 
     let stNew = set (penWidth.penInfo) w st 
-        {- pm = penMode st 
-        pmNew = pm { pm_penwidth = w }
-        stNew = st { penMode = pmNew } -}
     writeIORef sref stNew 
-
 
 int2PenType :: Int -> PenType 
 int2PenType 0 = PenWork
@@ -495,7 +479,6 @@ int2Point 1 = predefined_fine
 int2Point 2 = predefined_medium
 int2Point 3 = predefined_thick
 int2Point 4 = predefined_verythick
-
 
 int2Color :: Int -> PenColor
 int2Color 0  = ColorBlack 

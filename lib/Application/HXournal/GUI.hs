@@ -56,12 +56,6 @@ startGUI fname = do
            . set horizAdjustment hadj 
            . set vertAdjustment vadj 
            $ emptyHXournalState
-           {- emptyXournalState  
-              { xoj = xojcontent, darea = canvas, device = dev
-              , viewMode = ViewMode OnePage Original (0,0) (w,h)
-              , hscrolladj = hadj 
-              , vscrolladj = vadj 
-              } -} 
   (r,st') <- St.runStateT (resume guiProcess) st
   sref <- newIORef st'
 
@@ -98,10 +92,8 @@ startGUI fname = do
   afterValueChanged hadj $ do 
     v <- adjustmentGetValue hadj 
     bouncecallback tref sref (HScrollBarMoved v)
-    putStrLn $ "value changed"
     
   afterValueChanged vadj $ do 
-    putStrLn $ "vadj value changed"
     v <- adjustmentGetValue vadj     
     bouncecallback tref sref (VScrollBarMoved v)
 
@@ -121,11 +113,9 @@ startGUI fname = do
   
   canvas `on` buttonPressEvent $ tryEvent $ do 
     st <- liftIO (readIORef sref)
-    liftIO $ putStrLn "hello, I'm here"
     let callbk = get callBack st
         dev = get deviceList st 
     p <- getPointer dev
-    liftIO $ putStrLn $ "p = " ++ show p 
     liftIO (callbk (PenDown p))
  
   canvas `on` buttonReleaseEvent $ tryEvent $ do 

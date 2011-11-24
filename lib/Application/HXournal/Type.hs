@@ -31,10 +31,6 @@ type Iteratee a m x = Coroutine (Await a) m x
 
 type XournalStateIO = StateT HXournalState IO 
 
-{-
-data PenDrawing = PenDrawing { penDrawingPoints :: Seq (Double,Double)
-                             } 
--}
                   
 data PenDraw = PenDraw { _points :: Seq (Double,Double) } 
              deriving (Show)
@@ -46,14 +42,6 @@ data PageMode = Continous | OnePage
 data ZoomMode = Original | FitWidth | Zoom Double 
               deriving (Show,Eq)
 
-{-
-data ViewMode = ViewMode { vm_pgmode :: PageMode 
-                         , vm_zmmode :: ZoomMode 
-                         , vm_viewportOrigin :: (Double,Double) 
-                         , vm_pagedim :: (Double,Double)
-                         } 
-              deriving (Show,Eq)
--}
 
 data ViewInfo = ViewInfo { _pageMode :: PageMode
                          , _zoomMode :: ZoomMode
@@ -80,14 +68,6 @@ data PenColor = ColorBlack
               | ColorRGBA Double Double Double Double 
               deriving (Show,Eq,Ord)
       
-{-                       
-data PenMode = PenMode { pm_pentype :: PenType 
-                       , pm_penwidth :: Double 
-                       , pm_pencolor :: PenColor
-                       } 
-             deriving (Show)
--}
-
 data PenInfo = PenInfo { _penType :: PenType
                        , _penWidth :: Double
                        , _penColor :: PenColor } 
@@ -113,22 +93,6 @@ penColorRGBAmap = M.fromList $ map (\x->(fst x,fromJust (M.lookup (snd x) predef
 convertPenColorToRGBA :: PenColor -> (Double,Double,Double,Double)
 convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
 convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
-
-{-
-data XournalState = 
-  XournalState 
-  { xoj :: Xournal 
-  , darea :: DrawingArea
-  , currpage :: Int 
-  , currpendrawing :: PenDrawing 
-  , callback :: MyEvent -> IO ()
-  , device :: DeviceList 
-  , viewMode :: ViewMode
-  , penMode :: PenMode 
-  , hscrolladj :: Adjustment
-  , vscrolladj :: Adjustment 
-  } 
--}                      
 
 data HXournalState = HXournalState { _xournal :: Xournal 
                                    , _drawArea :: DrawingArea
@@ -251,20 +215,4 @@ emptyHXournalState =
   , _vertAdjustment = undefined 
   }
 
-{-
-emptyXournalState :: XournalState
-emptyXournalState = 
-  XournalState 
-  { xoj = emptyXournal
-  , darea = undefined
-  , currpage = 0 
-  , currpendrawing = PenDrawing empty 
-  , callback = undefined 
-  , device = undefined
-  , viewMode = ViewMode OnePage Original (0,0) undefined 
-  , penMode = PenMode PenWork predefined_medium ColorBlack
-  , hscrolladj = undefined             
-  , vscrolladj = undefined 
-  } 
--}
   

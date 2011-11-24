@@ -37,7 +37,9 @@ data ZoomMode = Original | FitWidth | Zoom Double
 
 data ViewMode = ViewMode { vm_pgmode :: PageMode 
                          , vm_zmmode :: ZoomMode 
-                         , vm_viewportOrigin :: (Double,Double) } 
+                         , vm_viewportOrigin :: (Double,Double) 
+                         , vm_pagedim :: (Double,Double)
+                         } 
               deriving (Show,Eq)
 
 data PenType = Pen 
@@ -102,6 +104,7 @@ data XournalState =
                       
 
 data MyEvent = Initialized
+             | CanvasConfigure Double Double 
              | ButtonLeft 
              | ButtonRight 
              | ButtonRefresh 
@@ -199,8 +202,10 @@ emptyXournalState =
   , currpendrawing = PenDrawing empty 
   , callback = undefined 
   , device = undefined
-  , viewMode = ViewMode OnePage Original (0,0) 
+  , viewMode = ViewMode OnePage Original (0,0) undefined 
   , penMode = PenMode Pen predefined_medium ColorBlack
+  , hscrolladj = undefined             
+  , vscrolladj = undefined 
   } 
   
   

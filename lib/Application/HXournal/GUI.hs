@@ -45,9 +45,10 @@ startGUI fname = do
   xojcontent <- read_xojgz fname 
   -- let width = getLargestWidth xojcontent
   --     height = getLargestHeight xojcontent 
+  let Dim w h = page_dim . (!! 0) .  xoj_pages $ xojcontent
   let st = emptyXournalState 
            { xoj = xojcontent, darea = canvas, device = dev
-           , viewMode = ViewMode OnePage Original (0,0) 
+           , viewMode = ViewMode OnePage Original (0,0) (w,h)
            , hscrolladj = hadj 
            , vscrolladj = vadj 
            } 
@@ -101,7 +102,10 @@ startGUI fname = do
     bouncecallback tref sref (VScrollBarMoved v)
 
   canvas `on` sizeRequest $ return (Requisition 480 400)
-
+  canvas `on` configureEvent $ tryEvent $ do 
+    (w,h) <- eventSize 
+    liftIO $ bouncecallback tref sref 
+                            (CanvasConfigure (fromIntegral w) (fromIntegral h))
   cursorDot <- cursorNew BlankCursor
   canvas `on` enterNotifyEvent $ tryEvent $ do 
     win <- liftIO $ widgetGetDrawWindow canvas

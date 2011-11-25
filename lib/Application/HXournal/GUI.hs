@@ -3,6 +3,7 @@
 module Application.HXournal.GUI where
 
 import Application.HXournal.Type 
+import Application.HXournal.Type.Event
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
 import Application.HXournal.Util 

@@ -41,6 +41,8 @@ Library
                    Application.HXournal.Job
                    Application.HXournal.Command 
                    Application.HXournal.Type
+                   Application.HXournal.Type.Event 
+                   Application.HXournal.Type.XournalBBox
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu

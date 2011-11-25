@@ -18,6 +18,7 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as S
 
 import Application.HXournal.Type
+import Application.HXournal.Type.Event
 import Application.HXournal.Util
 import Application.HXournal.Draw
 import Application.HXournal.Coroutine

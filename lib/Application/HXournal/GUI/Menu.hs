@@ -2,10 +2,11 @@
 
 module Application.HXournal.GUI.Menu where
 
-
 import Application.HXournal.Util.Verbatim
 import Application.HXournal.Coroutine
 import Application.HXournal.Type
+import Application.HXournal.Type.Event 
+
 
 import Control.Monad.IO.Class
 import Control.Monad.Coroutine.SuspensionFunctors

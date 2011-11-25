@@ -7,6 +7,7 @@ import Control.Monad.State
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
 import Application.HXournal.Type
+import Application.HXournal.Type.Event 
 
 bouncecallback :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
                -> IORef HXournalState

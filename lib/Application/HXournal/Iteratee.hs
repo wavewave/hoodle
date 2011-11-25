@@ -25,6 +25,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Coroutine
 import Application.HXournal.Builder
 import Application.HXournal.Accessor
+import Application.HXournal.HitTest 
 
 import Text.Xournal.Type 
 import Text.Xournal.Predefined 
@@ -34,7 +35,7 @@ import Graphics.UI.Gtk hiding (get,set)
 import Data.Maybe
 import qualified Data.Map as M
 import Data.Foldable (toList)
-import Data.Sequence hiding (length,drop,take)
+import Data.Sequence hiding (length,drop,take,filter)
 import Data.Strict.Tuple hiding (uncurry,fst,snd)
 
 import Application.HXournal.Device
@@ -185,13 +186,15 @@ eraserStart pcoord = do
   let (x,y) = device2pageCoord geometry zmode pcoord 
   connidup <- connPenUp canvas
   connidmove <- connPenMove canvas 
-  eraserProcess geometry connidup connidmove (x,y)
+  strs <- getAllStrokeBBoxInCurrentPage
+  eraserProcess geometry connidup connidmove strs (x,y)
   
 eraserProcess :: CanvasPageGeometry
               -> ConnectId DrawingArea -> ConnectId DrawingArea 
+              -> [StrokeBBox] 
               -> (Double,Double)
               -> Iteratee MyEvent XournalStateIO ()
-eraserProcess cpg connidmove connidup (x0,y0) = do 
+eraserProcess cpg connidmove connidup strs (x0,y0) = do 
   r <- await 
   xstate <- lift St.get 
   case r of 
@@ -201,10 +204,12 @@ eraserProcess cpg connidmove connidup (x0,y0) = do
           pcolor = get (penColor.penInfo) xstate 
           pwidth = get (penWidth.penInfo) xstate 
       let (x,y) = device2pageCoord cpg zmode pcoord 
-      liftIO $ putStrLn $ show (x,y)    
+      let hitted = filter (\s-> hitTestBBoxPoint (strokebbox_bbox s) (x,y)) strs 
+      liftIO $ print (length hitted) 
+      -- liftIO $ putStrLn $ show (x,y)    
       -- when ( x > 200) $ 
-      liftIO (showBBox canvas cpg zmode (BBox (100,100) (300,300)))
-      eraserProcess cpg connidmove connidup (x,y) 
+      -- liftIO (showBBox canvas cpg zmode (BBox (100,100) (300,300)))
+      eraserProcess cpg connidmove connidup strs (x,y) 
     PenUp pcoord -> do 
       liftIO $ signalDisconnect connidmove 
       liftIO $ signalDisconnect connidup 

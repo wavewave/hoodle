@@ -15,15 +15,16 @@ data PageBBox = PageBBox { pagebbox_dim :: Dimension
 
 data LayerBBox = LayerBBox { layerbbox_strokes :: [StrokeBBox] } 
 
-data StrokeBBox= StrokeBBox { strokebbox_tool :: ByteString
-                            , strokebbox_color :: ByteString 
-                            , strokebbox_width :: Double
-                            , strokebbox_data :: [Pair Double Double] 
-                            , strokebbox_bbox :: BBox }
-
+data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
+                             , strokebbox_color :: ByteString 
+                             , strokebbox_width :: Double
+                             , strokebbox_data :: [Pair Double Double] 
+                             , strokebbox_bbox :: BBox }
+                deriving (Show)
+                         
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
-            
+          deriving (Show)
 mkXournalBBoxFromXournal :: Xournal -> XournalBBox 
 mkXournalBBoxFromXournal xoj = 
   XournalBBox { xojbbox_pages = map mkPageBBoxFromPage (xoj_pages xoj) } 
@@ -52,3 +53,19 @@ mkbbox lst = let xs = map fst lst
              in  BBox { bbox_upperleft = (minimum xs, minimum ys)
                       , bbox_lowerright = (maximum xs, maximum ys) } 
  
+pageFromPageBBox :: PageBBox -> Page 
+pageFromPageBBox pgbbox = 
+  Page { page_dim = pagebbox_dim pgbbox 
+       , page_bkg = pagebbox_bkg pgbbox
+       , page_layers = map layerFromLayerBBox (pagebbox_layers pgbbox) } 
+  
+layerFromLayerBBox :: LayerBBox -> Layer 
+layerFromLayerBBox lybbox = 
+  Layer { layer_strokes = map strokeFromStrokeBBox (layerbbox_strokes lybbox) }
+  
+strokeFromStrokeBBox :: StrokeBBox -> Stroke 
+strokeFromStrokeBBox strbbox = 
+  Stroke { stroke_tool = strokebbox_tool strbbox
+         , stroke_color = strokebbox_color strbbox
+         , stroke_width= strokebbox_width strbbox
+         , stroke_data = strokebbox_data strbbox } 

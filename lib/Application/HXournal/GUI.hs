@@ -4,6 +4,7 @@ module Application.HXournal.GUI where
 
 import Application.HXournal.Type 
 import Application.HXournal.Type.Event
+import Application.HXournal.Type.XournalBBox
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
 import Application.HXournal.Util 
@@ -49,8 +50,10 @@ startGUI fname = do
   scrolledWindowSetVAdjustment scrwin vadj 
   
   xojcontent <- P.read_xournal fname 
+  let xojWbbox = mkXournalBBoxFromXournal xojcontent 
   let Dim w h = page_dim . (!! 0) .  xoj_pages $ xojcontent
   let st = set xournal xojcontent  
+           . set xournalbbox xojWbbox
            . set drawArea canvas
            . set deviceList dev
            . set viewInfo (ViewInfo OnePage Original (0,0) (w,h))

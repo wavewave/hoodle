@@ -19,6 +19,7 @@ import qualified Data.ByteString.Char8 as S
 
 import Application.HXournal.Type
 import Application.HXournal.Type.Event
+import Application.HXournal.Type.XournalBBox
 import Application.HXournal.Util
 import Application.HXournal.Draw
 import Application.HXournal.Coroutine
@@ -170,6 +171,45 @@ penProcess cpg connidmove connidup pdraw (x0,y0) = do
 eraserStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
 eraserStart pcoord = do 
   liftIO $ putStrLn "eraser started"
+  xstate <- lift St.get 
+  let canvas = get drawArea xstate 
+      xojbbox = get xournalbbox xstate
+      pagenum = get currentPageNum xstate 
+      page = (!!pagenum) . xoj_pages . get xournal $ xstate 
+      zmode = get (zoomMode.viewInfo) xstate 
+      cpn = get currentPageNum xstate 
+      vinfo = get viewInfo xstate
+      (x0,y0) = get (viewPortOrigin.viewInfo) xstate 
+  liftIO $ showXournalBBox canvas xojbbox cpn vinfo
+  geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
+  let (x,y) = device2pageCoord geometry zmode pcoord 
+  connidup <- connPenUp canvas
+  connidmove <- connPenMove canvas 
+  eraserProcess geometry connidup connidmove (x,y)
+  
+eraserProcess :: CanvasPageGeometry
+              -> ConnectId DrawingArea -> ConnectId DrawingArea 
+              -> (Double,Double)
+              -> Iteratee MyEvent XournalStateIO ()
+eraserProcess cpg connidmove connidup (x0,y0) = do 
+  r <- await 
+  xstate <- lift St.get 
+  case r of 
+    PenMove pcoord -> do 
+      let canvas = get drawArea xstate 
+          zmode  = get (zoomMode.viewInfo) xstate
+          pcolor = get (penColor.penInfo) xstate 
+          pwidth = get (penWidth.penInfo) xstate 
+      let (x,y) = device2pageCoord cpg zmode pcoord 
+      liftIO $ putStrLn $ show (x,y)    
+      -- when ( x > 200) $ 
+      liftIO (showBBox canvas cpg zmode (BBox (100,100) (300,300)))
+      eraserProcess cpg connidmove connidup (x,y) 
+    PenUp pcoord -> do 
+      liftIO $ signalDisconnect connidmove 
+      liftIO $ signalDisconnect connidup 
+      invalidate 
+
 
 
 highlighterStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()

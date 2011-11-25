@@ -1,5 +1,6 @@
 module Application.HXournal.Draw where
 
+import Application.HXournal.Type.XournalBBox 
 import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
 
@@ -83,7 +84,7 @@ updateCanvas :: DrawingArea -> Xournal -> Int -> ViewInfo -> IO ()
 updateCanvas canvas xoj pagenum vinfo = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-  let totalnumofpages = (length . xoj_pages) xoj
+  -- let totalnumofpages = (length . xoj_pages) xoj
   let currpage = ((!!pagenum).xoj_pages) xoj
   geometry <- getCanvasPageGeometry canvas currpage origin
   win <- widgetGetDrawWindow canvas
@@ -120,25 +121,40 @@ drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do
     lineTo x y
     stroke
   
-{-
-penMoveTo :: DrawingArea -> (Double,Double) -> IO ()
-penMoveTo canvas (x,y) = do
+showXournalBBox :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
+showXournalBBox canvas xojbbox pagenum vinfo = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+  -- let totalnumofpages = (length . xoj_pages) xoj
+  let currpagebbox = ((!!pagenum).xojbbox_pages) xojbbox
+      currpage = pageFromPageBBox currpagebbox
+      strs = do 
+        l <- pagebbox_layers currpagebbox 
+        s <- layerbbox_strokes l
+        return s 
+  geometry <- getCanvasPageGeometry canvas currpage origin
+  win <- widgetGetDrawWindow canvas
+  (w',h') <- widgetGetSize canvas
+  let (Dim w h) = page_dim currpage
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    setSourceRGBA 1.0 0 0 1.0 
+    setLineWidth  0.5 
+    let f str = do 
+          let BBox (ulx,uly) (lrx,lry) = strokebbox_bbox str 
+          rectangle ulx uly (lrx-ulx) (lry-uly)
+          stroke 
+    mapM_ f strs 
+    -- cairoDrawPage currpage
+  return ()
+
+showBBox :: DrawingArea -> CanvasPageGeometry -> ZoomMode -> BBox -> IO ()
+showBBox canvas cpg zmode (BBox (ulx,uly) (lrx,lry)) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
-    setLineWidth 1.0
-    setSourceRGBA 0.1 0.1 0.1 1
-    moveTo x y
-  return ()
--}
-
-{-
-penLineTo canvas (x0,y0) (x,y) = do 
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do 
-    setLineWidth 1.0
-    setSourceRGBA 0.1 0.1 0.1 1
-    moveTo x0 y0 
-    lineTo x y
+    transformForPageCoord cpg zmode
+    setSourceRGBA 0.0 1.0 0.0 1.0 
+    setLineWidth  1.0 
+    rectangle ulx uly (lrx-ulx) (lry-uly)    
     stroke
   return ()
--}

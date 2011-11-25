@@ -117,6 +117,7 @@ emptyHXournalState :: HXournalState
 emptyHXournalState = 
   HXournalState  
   { _xournal = emptyXournal
+  , _xournalbbox = mkXournalBBoxFromXournal emptyXournal 
   , _drawArea = undefined
   , _currentPageNum = 0 
   , _currentPenDraw = PenDraw empty 

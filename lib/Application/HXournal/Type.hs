@@ -49,7 +49,7 @@ data ZoomMode = Original | FitWidth | Zoom Double
 data ViewInfo = ViewInfo { _pageMode :: PageMode
                          , _zoomMode :: ZoomMode
                          , _viewPortOrigin :: (Double,Double)
-                         , _pageDim :: (Double,Double) 
+                         , _pageDimension :: (Double,Double) 
                          }
               deriving (Show)
 
@@ -97,8 +97,8 @@ convertPenColorToRGBA :: PenColor -> (Double,Double,Double,Double)
 convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
 convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
 
-data HXournalState = HXournalState { _xournal :: Xournal 
-                                   , _xournalbbox :: XournalBBox 
+data HXournalState = HXournalState { _xournalbbox :: XournalBBox
+                                   -- , _xournalbbox :: XournalBBox 
                                    , _drawArea :: DrawingArea
                                    , _currentPageNum :: Int
                                    , _currentPenDraw :: PenDraw
@@ -116,8 +116,8 @@ $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''HXournalState])
 emptyHXournalState :: HXournalState 
 emptyHXournalState = 
   HXournalState  
-  { _xournal = emptyXournal
-  , _xournalbbox = mkXournalBBoxFromXournal emptyXournal 
+  { _xournalbbox = mkXournalBBoxFromXournal emptyXournal
+  -- , _xournalbbox = mkXournalBBoxFromXournal emptyXournal 
   , _drawArea = undefined
   , _currentPageNum = 0 
   , _currentPenDraw = PenDraw empty 

@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Application.HXournal.Type.XournalBBox where
 
 import Text.Xournal.Type 
@@ -6,6 +8,10 @@ import Data.ByteString hiding (map, minimum, maximum)
 
 
 import Prelude hiding (fst,snd,curry,uncurry)
+
+data BBox = BBox { bbox_upperleft :: (Double,Double) 
+                 , bbox_lowerright :: (Double,Double) } 
+          deriving (Show)
 
 data XournalBBox = XournalBBox { xojbbox_pages :: [PageBBox] }
 
@@ -22,19 +28,28 @@ data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
                              , strokebbox_bbox :: BBox }
                 deriving (Show)
                          
-class IStroke a where
-  strokeData :: a -> [Pair Double Double]
 
-instance IStroke Stroke where
-  strokeData = stroke_data
 
 instance IStroke StrokeBBox where 
+  strokeTool = strokebbox_tool
+  strokeColor = strokebbox_color
+  strokeWidth = strokebbox_width
   strokeData = strokebbox_data
- 
+  
+instance ILayer LayerBBox where 
+  type TStroke LayerBBox = StrokeBBox 
+  layerStrokes = layerbbox_strokes 
 
-data BBox = BBox { bbox_upperleft :: (Double,Double) 
-                 , bbox_lowerright :: (Double,Double) } 
-          deriving (Show)
+instance IPage PageBBox where
+  type TLayer PageBBox = LayerBBox
+  pageDim = pagebbox_dim
+  pageBkg = pagebbox_bkg 
+  pageLayers = pagebbox_layers
+
+instance IXournal XournalBBox where
+  type TPage XournalBBox = PageBBox 
+  xournalPages = xojbbox_pages 
+  
 mkXournalBBoxFromXournal :: Xournal -> XournalBBox 
 mkXournalBBoxFromXournal xoj = 
   XournalBBox { xojbbox_pages = map mkPageBBoxFromPage (xoj_pages xoj) } 
@@ -63,6 +78,10 @@ mkbbox lst = let xs = map fst lst
              in  BBox { bbox_upperleft = (minimum xs, minimum ys)
                       , bbox_lowerright = (maximum xs, maximum ys) } 
  
+xournalFromXournalBBox :: XournalBBox -> Xournal 
+xournalFromXournalBBox xojbbox = 
+  emptyXournal { xoj_pages = map pageFromPageBBox (xojbbox_pages xojbbox) }
+
 pageFromPageBBox :: PageBBox -> Page 
 pageFromPageBBox pgbbox = 
   Page { page_dim = pagebbox_dim pgbbox 

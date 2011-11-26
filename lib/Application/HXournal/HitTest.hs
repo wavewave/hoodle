@@ -3,6 +3,8 @@
 module Application.HXournal.HitTest where
 
 import Data.Strict.Tuple
+import Text.Xournal.Type 
+
 import Application.HXournal.Type
 import Application.HXournal.Type.XournalBBox 
 import Application.HXournal.Util.AlterList 

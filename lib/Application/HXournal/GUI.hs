@@ -51,9 +51,8 @@ startGUI fname = do
   
   xojcontent <- P.read_xournal fname 
   let xojWbbox = mkXournalBBoxFromXournal xojcontent 
-  let Dim w h = page_dim . (!! 0) .  xoj_pages $ xojcontent
-  let st = set xournal xojcontent  
-           . set xournalbbox xojWbbox
+  let Dim w h = pageDim . (!! 0) .  xournalPages $ xojcontent
+  let st = set xournalbbox xojWbbox
            . set drawArea canvas
            . set deviceList dev
            . set viewInfo (ViewInfo OnePage Original (0,0) (w,h))

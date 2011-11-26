@@ -78,13 +78,13 @@ initialize = do ev <- await
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
   xstate <- lift St.get 
-  let xoj = get xournal xstate 
-      totalnumofpages = length . xoj_pages $ xoj
+  let xoj = get xournalbbox xstate 
+      totalnumofpages = length . xournalPages $ xoj
       oldpage = get currentPageNum xstate
   let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
-      Dim w h = page_dim . (!! newpage) . xoj_pages $ xoj 
+      Dim w h = pageDim . (!! newpage) . xournalPages $ xoj 
       hadj = get horizAdjustment xstate  
       vadj = get vertAdjustment xstate
   liftIO $ do 
@@ -94,7 +94,7 @@ changePage modifyfn = do
     adjustmentSetValue vadj 0
   
   let xstate' = set (viewPortOrigin.viewInfo) (0,0) 
-              . set (pageDim.viewInfo) (w,h) 
+              . set (pageDimension.viewInfo) (w,h) 
               . set currentPageNum newpage
               $ xstate 
   lift . St.put $ xstate' 
@@ -104,7 +104,7 @@ invalidate :: Iteratee MyEvent XournalStateIO ()
 invalidate = do 
   xstate <- lift St.get  
   liftIO (updateCanvas <$> get drawArea 
-                       <*> get xournal 
+                       <*> get xournalbbox 
                        <*> get currentPageNum 
                        <*> get viewInfo 
                        $ xstate )
@@ -128,9 +128,9 @@ penStart pcoord = do
     let canvas = get drawArea xstate   
     win <- liftIO $ widgetGetDrawWindow canvas
     let pagenum = get currentPageNum xstate 
-        page = (!!pagenum) . xoj_pages . get xournal $  xstate 
+        page = (!!pagenum) . xournalPages . get xournalbbox $  xstate 
         (x0,y0) = get (viewPortOrigin.viewInfo) xstate 
-        currxoj = get xournal xstate
+        currxoj = get xournalbbox xstate
         pinfo = get penInfo xstate
         zmode = get (zoomMode.viewInfo) xstate 
     geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
@@ -139,7 +139,7 @@ penStart pcoord = do
     connidmove <- connPenMove canvas
     pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
     let newxoj = addPDraw pinfo currxoj pagenum pdraw
-    lift . St.put . set xournal newxoj $ xstate 
+    lift . St.put . set xournalbbox newxoj $ xstate 
     return ()
 
 penProcess :: CanvasPageGeometry
@@ -177,7 +177,7 @@ eraserStart pcoord = do
   let canvas = get drawArea xstate 
       xojbbox = get xournalbbox xstate
       pagenum = get currentPageNum xstate 
-      page = (!!pagenum) . xoj_pages . get xournal $ xstate 
+      page = (!!pagenum) . xournalPages $ xojbbox
       zmode = get (zoomMode.viewInfo) xstate 
       cpn = get currentPageNum xstate 
       vinfo = get viewInfo xstate
@@ -234,15 +234,16 @@ defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuSave = do 
-    xojcontent <- get xournal <$> lift St.get   
-    liftIO $ L.writeFile "mytest.xoj" $ builder xojcontent
+    xojcontent <- get xournalbbox <$> lift St.get   
+    liftIO $ L.writeFile "mytest.xoj" . builder . xournalFromXournalBBox 
+           $ xojcontent
 defaultEventProcess MenuNormalSize = do 
     liftIO $ putStrLn "NormalSize clicked"
     xstate <- lift St.get 
     let canvas = get drawArea xstate 
     (w',h') <- liftIO $ widgetGetSize canvas
     let cpn = get currentPageNum xstate 
-    let Dim w h = page_dim . (!! cpn) . xoj_pages . get xournal $ xstate     
+    let Dim w h = pageDim . (!! cpn) . xournalPages . get xournalbbox $ xstate
     let hadj = get horizAdjustment xstate
         vadj = get vertAdjustment xstate
     liftIO $ do 
@@ -261,8 +262,8 @@ defaultEventProcess MenuPageWidth = do
     xstate <- lift St.get 
     let canvas = get drawArea xstate 
         cpn = get currentPageNum xstate
-        page = (!! cpn) . xoj_pages . get xournal $ xstate
-        Dim w h = page_dim page 
+        page = (!! cpn) . xournalPages . get xournalbbox $ xstate
+        Dim w h = pageDim page 
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
     let (w',h') = canvas_size cpg 
     let hadj = get horizAdjustment xstate
@@ -293,8 +294,8 @@ defaultEventProcess (CanvasConfigure w' h') = do
     xstate <- lift St.get 
     let canvas = get drawArea xstate
         cpn = get currentPageNum xstate 
-        page = (!! cpn) . xoj_pages . get xournal $ xstate        
-        (w,h) = get (pageDim.viewInfo) xstate 
+        page = (!! cpn) . xournalPages . get xournalbbox $ xstate        
+        (w,h) = get (pageDimension.viewInfo) xstate 
         zmode = get (zoomMode.viewInfo) xstate 
     cpg <- liftIO (getCanvasPageGeometry  canvas page (0,0))
     let factor = getRatioFromPageToCanvas cpg zmode
@@ -314,23 +315,30 @@ defaultEventProcess (CanvasConfigure w' h') = do
 defaultEventProcess _ = return ()
   
 
-addPDraw :: PenInfo -> Xournal -> Int -> Seq (Double,Double) -> Xournal
+addPDraw :: PenInfo -> XournalBBox -> Int -> Seq (Double,Double) 
+            -> XournalBBox
 addPDraw pinfo xoj pgnum pdraw = 
   let pcolor = get penColor pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get penWidth pinfo
-      pagesbefore = take pgnum $ xoj_pages xoj  
-      pagesafter  = drop (pgnum+1) $ xoj_pages xoj
-      currpage = ((!!pgnum).xoj_pages) xoj 
-      currlayer = head (page_layers currpage)
-      otherlayers = tail (page_layers currpage)
+      pages = xournalPages xoj
+      pagesbefore = take pgnum pages 
+      pagesafter  = drop (pgnum+1) pages 
+      currpage = pages !! pgnum
+      currlayer = head (pageLayers currpage)
+      otherlayers = tail (pageLayers currpage)
       newstroke = Stroke { stroke_tool = "pen" 
                          , stroke_color = pcolname 
                          , stroke_width = pwidth
                          , stroke_data = map (uncurry (:!:)) . toList $ pdraw
                          } 
-      newlayer = currlayer {layer_strokes = layer_strokes currlayer ++ [newstroke]}
-      newpage = currpage {page_layers = newlayer : otherlayers }
-      newxoj = xoj { xoj_pages =  pagesbefore ++ [newpage] ++ pagesafter }  
-  in  newxoj
+      newstrokebbox = mkStrokeBBoxFromStroke newstroke
+      newlayerbbox = currlayer {layerbbox_strokes = layerStrokes currlayer 
+                                                    ++ [newstrokebbox] }
+      newpagebbox = currpage {pagebbox_layers = newlayerbbox : otherlayers }
+      newxojbbox = xoj { xojbbox_pages =  pagesbefore 
+                                          ++ [newpagebbox] 
+                                          ++ pagesafter }  
+
+  in  newxojbbox
 

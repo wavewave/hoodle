@@ -28,14 +28,17 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
-getCanvasPageGeometry :: DrawingArea -> Page -> (Double,Double) 
+getCanvasPageGeometry :: IPage a => 
+                         DrawingArea 
+                         -> a 
+                         -> (Double,Double) 
                          -> IO CanvasPageGeometry
 getCanvasPageGeometry canvas page (xorig,yorig) = do 
   win <- widgetGetDrawWindow canvas
   (w',h') <- widgetGetSize canvas
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> screenGetWidth screen <*> screenGetHeight screen
-  let (Dim w h) = page_dim page
+  let (Dim w h) = pageDim page
   (x0,y0) <- drawWindowGetOrigin win
   return $ CanvasPageGeometry (fromIntegral ws, fromIntegral hs) 
                               (fromIntegral w', fromIntegral h') 
@@ -80,15 +83,15 @@ transformForPageCoord cpg zmode = do
   scale s s
   translate (-xo) (-yo)      
   
-updateCanvas :: DrawingArea -> Xournal -> Int -> ViewInfo -> IO ()
+updateCanvas :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
 updateCanvas canvas xoj pagenum vinfo = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-  let currpage = ((!!pagenum).xoj_pages) xoj
+  let currpage = ((!!pagenum).xournalPages) xoj
   geometry <- getCanvasPageGeometry canvas currpage origin
   win <- widgetGetDrawWindow canvas
   (w',h') <- widgetGetSize canvas
-  let (Dim w h) = page_dim currpage
+  let (Dim w h) = pageDim currpage
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     cairoDrawPage currpage

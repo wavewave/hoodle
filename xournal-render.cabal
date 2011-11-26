@@ -1,5 +1,5 @@
 Name:		xournal-render
-Version:	0.1.0.1
+Version:	0.1.2.999
 Synopsis:       Xournal file renderer
 Description: 	Xournal file renderer
 License: 	BSD3
@@ -15,7 +15,10 @@ Library
   hs-source-dirs: src
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
-  Build-Depends: base>4, mtl>2, containers, xournal-parser, cairo > 0.12, strict>0.3, bytestring>0.9
+  Build-Depends: base>4, mtl>2, containers, 
+                 xournal-parser >= 0.1.2.999, 
+                 cairo > 0.12, 
+                 strict>0.3, bytestring>0.9
 
   Exposed-Modules: 
                    Graphics.Xournal.Render

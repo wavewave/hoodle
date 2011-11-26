@@ -12,13 +12,13 @@ import Text.Xournal.Predefined
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 
-drawOneStroke :: Stroke -> Render ()
+drawOneStroke :: IStroke a => a -> Render ()
 drawOneStroke s = do 
-  case M.lookup (stroke_color s) predefined_pencolor of
+  case M.lookup (strokeColor s) predefined_pencolor of
     Just (r,g,b,a) -> setSourceRGBA r g b a 
     Nothing -> setSourceRGBA 0 0 0 1
-  setLineWidth (stroke_width s) 
-  drawOneStrokeCurve (stroke_data s)
+  setLineWidth (strokeWidth s) 
+  drawOneStrokeCurve (strokeData s)
   stroke
 
 drawOneStrokeCurve :: [Pair Double Double] -> Render ()
@@ -27,10 +27,10 @@ drawOneStrokeCurve ((x0 :!: y0) : xs) = do
   mapM_ f xs 
     where f (x :!: y) = x `seq` y `seq` lineTo x y 
 
-cairoDrawBackground :: Page -> Render () 
+cairoDrawBackground :: IPage a => a -> Render () 
 cairoDrawBackground page = do 
-  let Background typ col sty = page_bkg page
-      Dim w h = page_dim page  
+  let Background typ col sty = pageBkg page
+      Dim w h = pageDim page  
   let c = M.lookup col predefined_bkgcolor  
   case c of 
     Just (r,g,b,a) -> setSourceRGB r g b 
@@ -49,10 +49,10 @@ cairoDrawRuling w h style = do
             moveTo 0 y 
             lineTo w y
             stroke  
-      mapM_ drawonerule [predefined_RULING_TOPMARGIN
-                        ,predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
-                        ..
-                        h-1]
+      mapM_ drawonerule [ predefined_RULING_TOPMARGIN 
+                        , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
+                        .. 
+                        h-1 ]
   case style of 
     "plain" -> return () 
     "lined" -> do 
@@ -80,10 +80,10 @@ cairoDrawRuling w h style = do
       mapM_ drawonegraphhoriz [0,predefined_RULING_GRAPHSPACING..h-1]
     _ -> return ()     
 
-cairoDrawPage :: Page -> Render ()
+cairoDrawPage :: IPage a => a -> Render ()
 cairoDrawPage page = do 
-  let strokes = (layer_strokes . (!!0) . page_layers ) page 
-      (Dim w h) = page_dim page
+  let strokes = (layerStrokes . (!!0) . pageLayers) page 
+      (Dim w h) = pageDim page
   cairoDrawBackground page
   setSourceRGB 0 0 0
   setLineWidth 1

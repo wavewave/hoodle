@@ -6,10 +6,7 @@ import Text.Xournal.Type
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 
-import Data.ByteString.Char8 hiding (map)
-
 import Blaze.ByteString.Builder
-import Blaze.ByteString.Builder.ByteString
 import Blaze.ByteString.Builder.Char8 (fromString, fromChar)
 
 import Data.Monoid

@@ -12,8 +12,6 @@ import Data.Functor.Identity (Identity(..))
 import Control.Monad.State
 import Data.Sequence
 
-import Data.IORef
-
 import Text.Xournal.Type
 import Text.Xournal.Predefined 
 
@@ -21,7 +19,6 @@ import Graphics.UI.Gtk
 
 import Data.Maybe
 
-import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
 

@@ -1,23 +1,19 @@
 module Application.HXournal.Draw where
 
-import Application.HXournal.Type.XournalBBox 
 import Graphics.UI.Gtk hiding (get)
+import Graphics.Xournal.Render 
 import Graphics.Rendering.Cairo
 
-import Data.IORef
-
+import Control.Applicative 
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
 import Text.Xournal.Type
-import Text.Xournal.Parse
-import Graphics.Xournal.Render 
 
+import Application.HXournal.Type.XournalBBox 
 import Application.HXournal.Type 
 import Application.HXournal.Device
-import Control.Applicative 
-
 
 data CanvasPageGeometry = 
   CanvasPageGeometry { screen_size :: (Double,Double) 
@@ -56,7 +52,7 @@ wacom2pageCoord :: CanvasPageGeometry
                    -> ZoomMode 
                    -> (Double,Double) 
                    -> (Double,Double)
-wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yorig)) 
+wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig,yorig)) 
                 zmode 
                 (px,py) 
   = let (x1,y1) = (ws*px-x0,hs*py-y0)
@@ -64,6 +60,7 @@ wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yor
         (xo,yo) = case zmode of
                     Original -> (xorig,yorig)
                     FitWidth -> (0,yorig)
+                    _ -> error "not implemented wacom2pageCoord"
     in  (x1*s+xo,y1*s+yo)
 
 device2pageCoord :: CanvasPageGeometry 
@@ -90,8 +87,6 @@ updateCanvas canvas xoj pagenum vinfo = do
   let currpage = ((!!pagenum).xournalPages) xoj
   geometry <- getCanvasPageGeometry canvas currpage origin
   win <- widgetGetDrawWindow canvas
-  (w',h') <- widgetGetSize canvas
-  let (Dim w h) = pageDim currpage
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     cairoDrawPage currpage
@@ -103,7 +98,6 @@ updateCanvasBBox canvas page vinfo bbox = do
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
-  (w',h') <- widgetGetSize canvas
   renderWithDrawable win $ do
     setSourceRGBA 1.0 1.0 1.0 1.0
     transformForPageCoord geometry zmode
@@ -111,18 +105,16 @@ updateCanvasBBox canvas page vinfo bbox = do
         (x2,y2) = bbox_lowerright bbox
     rectangle x1 y1 (x2-x1) (y2-y1)
     fill
-    
-    -- cairoDrawPage currpage
   return ()
 
 
 getRatioFromPageToCanvas :: CanvasPageGeometry -> ZoomMode -> Double 
-getRatioFromPageToCanvas cpg Original = 1.0 
+getRatioFromPageToCanvas _cpg Original = 1.0 
 getRatioFromPageToCanvas cpg FitWidth = 
   let (w,_)  = page_size cpg 
       (w',_) = canvas_size cpg 
   in  w'/w
-getRatioFromPageToCanvas cpg (Zoom s) = s 
+getRatioFromPageToCanvas _cpg (Zoom s) = s 
 
 drawSegment :: DrawingArea
                -> CanvasPageGeometry 
@@ -154,8 +146,6 @@ showXournalBBox canvas xojbbox pagenum vinfo = do
         return s 
   geometry <- getCanvasPageGeometry canvas currpage origin
   win <- widgetGetDrawWindow canvas
-  (w',h') <- widgetGetSize canvas
-  let (Dim w h) = page_dim currpage
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     setSourceRGBA 1.0 0 0 1.0 

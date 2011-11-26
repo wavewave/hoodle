@@ -4,7 +4,6 @@ module Application.HXournal.Device where
 
 import Control.Applicative 
 import Control.Monad.Reader
-import Control.Monad.IO.Class
 
 import Foreign.Marshal.Utils
 import Foreign.Ptr
@@ -63,6 +62,7 @@ getPointer dev = do
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             return $ PointerCoord Eraser wacomx wacomy 
+          | otherwise = error "no such device"
 
 wacomCoordConvert :: WidgetClass self => self 
                      -> (Double,Double) 

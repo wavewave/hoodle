@@ -6,30 +6,23 @@ import Control.Applicative hiding (empty)
 import Control.Monad
 import qualified Control.Monad.State as St 
 import Control.Monad.Trans 
-import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
-import Control.Monad.IO.Class
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import qualified Data.ByteString.Lazy as L
-import qualified Data.ByteString.Char8 as S
 
 import Application.HXournal.Type
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.XournalBBox
-import Application.HXournal.Util
 import Application.HXournal.Util.AlterList 
 import Application.HXournal.Draw
-import Application.HXournal.Coroutine
 import Application.HXournal.Builder
 import Application.HXournal.Accessor
 import Application.HXournal.HitTest 
+import Application.HXournal.Device
 
 import Text.Xournal.Type 
-import Text.Xournal.Predefined 
 
 import Graphics.UI.Gtk hiding (get,set)
 
@@ -39,7 +32,6 @@ import Data.Foldable (toList)
 import Data.Sequence hiding (length,drop,take,filter)
 import Data.Strict.Tuple hiding (uncurry,fst,snd)
 
-import Application.HXournal.Device
 
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do initialize
@@ -86,8 +78,6 @@ changePage modifyfn = do
               | otherwise = modifyfn oldpage 
       Dim w h = pageDim . (!! newpage) . xournalPages $ xoj 
       (hadj,vadj) = get adjustments xstate 
-      -- hadj = get horizAdjustment xstate  
-      -- vadj = get vertAdjustment xstate
   liftIO $ do 
     adjustmentSetUpper hadj w 
     adjustmentSetUpper vadj h 
@@ -139,7 +129,7 @@ penStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
 penStart pcoord = do 
     xstate <- lift St.get 
     let canvas = get drawArea xstate   
-    win <- liftIO $ widgetGetDrawWindow canvas
+    -- win <- liftIO $ widgetGetDrawWindow canvas
     let pagenum = get currentPageNum xstate 
         page = (!!pagenum) . xournalPages . get xournalbbox $  xstate 
         (x0,y0) = get (viewPortOrigin.viewInfo) xstate 
@@ -168,14 +158,13 @@ penProcess cpg connidmove connidup pdraw (x0,y0) = do
           zmode  = get (zoomMode.viewInfo) xstate
           pcolor = get (penColor.penInfo) xstate 
           pwidth = get (penWidth.penInfo) xstate 
-      let (x,y) = device2pageCoord cpg zmode pcoord 
+          (x,y) = device2pageCoord cpg zmode pcoord 
           pcolRGBA = fromJust (M.lookup pcolor penColorRGBAmap) 
       liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)
       penProcess cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp pcoord -> do 
-      let canvas = get drawArea xstate 
-          zmode = get (zoomMode.viewInfo) xstate 
-      let (x,y) = device2pageCoord cpg zmode pcoord 
+      let zmode = get (zoomMode.viewInfo) xstate 
+          (x,y) = device2pageCoord cpg zmode pcoord 
       liftIO $ signalDisconnect connidmove
       liftIO $ signalDisconnect connidup
       return (pdraw |> (x,y)) 
@@ -192,10 +181,7 @@ eraserStart pcoord = do
       pagenum = get currentPageNum xstate 
       page = (!!pagenum) . xournalPages $ xojbbox
       zmode = get (zoomMode.viewInfo) xstate 
-      cpn = get currentPageNum xstate 
-      vinfo = get viewInfo xstate
       (x0,y0) = get (viewPortOrigin.viewInfo) xstate 
-  -- liftIO $ showXournalBBox canvas xojbbox cpn vinfo
   geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
   let (x,y) = device2pageCoord geometry zmode pcoord 
   connidup <- connPenUp canvas
@@ -213,18 +199,12 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
   xstate <- lift St.get 
   case r of 
     PenMove pcoord -> do 
-      let canvas = get drawArea xstate 
-          zmode  = get (zoomMode.viewInfo) xstate
-          pcolor = get (penColor.penInfo) xstate 
-          pwidth = get (penWidth.penInfo) xstate 
-      let (x,y) = device2pageCoord cpg zmode pcoord 
+      let zmode  = get (zoomMode.viewInfo) xstate
+          (x,y) = device2pageCoord cpg zmode pcoord 
           line = ((x0,y0),(x,y))
-      let hittestbbox = mkHitTestBBox line strs   
+          hittestbbox = mkHitTestBBox line strs   
           (hitteststroke,hitState) = 
             St.runState (hitTestStrokes line hittestbbox) False
-          -- printfunc = fmapAL (length.unNotHitted) (length.unHitted)
-          -- len_of_hittest = fmapAL (length.unNotHitted) printfunc hitteststroke
-          bboxes = map strokebbox_bbox strs 
       if hitState 
         then do 
           let currxoj     = get xournalbbox xstate 
@@ -243,30 +223,29 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
                                                      ++ [newpagebbox]
                                                      ++ pagesafter } 
           lift $ St.put (set xournalbbox newxojbbox xstate)
-          -- liftIO $ print bbox
           case maybebbox of 
             Just bbox -> invalidateBBox bbox
-              -- liftIO $ showBBox canvas cpg zmode bbox 
             Nothing -> return ()
           newstrs <- getAllStrokeBBoxInCurrentPage
           eraserProcess cpg connidup connidmove newstrs (x,y)
         else       
           eraserProcess cpg connidmove connidup strs (x,y) 
-    PenUp pcoord -> do 
+    PenUp _pcoord -> do 
       liftIO $ signalDisconnect connidmove 
       liftIO $ signalDisconnect connidup 
       invalidate 
-
+    _ -> return ()
+    
 eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
                -> St.State (Maybe BBox) [StrokeBBox]
+eraseHitted Empty = error "something wrong in eraseHitted"
 eraseHitted (n :-Empty) = return (unNotHitted n)
 eraseHitted (n:-h:-rest) = do 
   mid <- elimHitted h 
   return . (unNotHitted n ++) . (mid ++) =<< eraseHitted rest
 
-
 highlighterStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
-highlighterStart pcoord = do 
+highlighterStart _pcoord = do 
   liftIO $ putStrLn "highlighter started"
 
 
@@ -289,8 +268,6 @@ defaultEventProcess MenuNormalSize = do
     let cpn = get currentPageNum xstate 
     let Dim w h = pageDim . (!! cpn) . xournalPages . get xournalbbox $ xstate
     let (hadj,vadj) = get adjustments xstate 
-        -- hadj = get horizAdjustment xstate
-        -- vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 
@@ -312,8 +289,6 @@ defaultEventProcess MenuPageWidth = do
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
     let (w',h') = canvas_size cpg 
     let (hadj,vadj) = get adjustments xstate 
-        -- hadj = get horizAdjustment xstate
-        -- vadj = get vertAdjustment xstate
         s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
     liftIO $ do 
       adjustmentSetUpper hadj w 
@@ -346,8 +321,6 @@ defaultEventProcess (CanvasConfigure w' h') = do
     cpg <- liftIO (getCanvasPageGeometry  canvas page (0,0))
     let factor = getRatioFromPageToCanvas cpg zmode
         (hadj,vadj) = get adjustments xstate 
-        -- hadj = get horizAdjustment xstate
-        -- vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 

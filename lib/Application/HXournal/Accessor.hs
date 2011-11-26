@@ -3,24 +3,19 @@
 module Application.HXournal.Accessor where
 
 import Application.HXournal.Type
-import Application.HXournal.Coroutine
+import Application.HXournal.Type.Event 
+import Application.HXournal.Type.XournalBBox
 
 import Control.Applicative
 import Control.Monad
 import qualified Control.Monad.State as St
 
-import Control.Applicative
 import Control.Monad.Trans
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-import Text.Xournal.Type 
 import Graphics.UI.Gtk hiding (get,set)
-
-import Application.HXournal.Type.Event 
-import Application.HXournal.Type.XournalBBox
 
 adjustments :: HXournalState :-> (Adjustment,Adjustment) 
 adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)

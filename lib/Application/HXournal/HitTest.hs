@@ -5,16 +5,11 @@ module Application.HXournal.HitTest where
 import Data.Strict.Tuple
 import Text.Xournal.Type 
 
-import Application.HXournal.Type
 import Application.HXournal.Type.XournalBBox 
 import Application.HXournal.Util.AlterList 
 
 import Control.Applicative
 import Control.Monad.State
-
-import Debug.Trace
-
--- eps = 1e-5
 
 newtype NotHitted = NotHitted { unNotHitted :: [StrokeBBox] } 
                   deriving (Show)
@@ -35,7 +30,7 @@ hitTestLineLine ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) =
         x43 = x4-x3 
         y21 = y2-y1 
         y43 = y4-y3
-        denom = y21*x43-y43*x21 
+        -- denom = y21*x43-y43*x21 
         xc = (x21*x43*(y3-y1)+y21*x43*x1-y43*x21*x3)/(y21*x43-y43*x21)
         
 hitTestLineStroke :: (IStroke a) => 
@@ -44,7 +39,7 @@ hitTestLineStroke :: (IStroke a) =>
                      -> Bool
 hitTestLineStroke line1 str = test (strokeData str) 
   where test [] = False
-        test ((x:!:y):[]) = False
+        test ((_:!:_):[]) = False
         test ((x0:!:y0):(x:!:y):rest) 
           = hitTestLineLine line1 ((x0,y0),(x,y))
             || test ((x:!:y) : rest)
@@ -95,6 +90,7 @@ hitTestStrokes line (n:-h:-rest) = do
   (n:-) . (h':-) <$> hitTestStrokes line rest
   
 elimHitted :: AlterList NotHitted Hitted -> State (Maybe BBox) [StrokeBBox]
+elimHitted Empty = error "something wrong in elimHitted"
 elimHitted (n:-Empty) = return (unNotHitted n)
 elimHitted (n:-h:-rest) = do  
   bbox <- get

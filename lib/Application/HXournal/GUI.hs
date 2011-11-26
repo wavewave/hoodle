@@ -7,18 +7,15 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.XournalBBox
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
-import Application.HXournal.Util 
+import Application.HXournal.Iteratee
 import Application.HXournal.GUI.Menu
 
 import Graphics.UI.Gtk hiding (get,set)
-import Control.Monad.Coroutine.SuspensionFunctors
+
 import qualified Control.Monad.State as St
 import Control.Monad.IO.Class
 import Control.Monad.Coroutine
 
-import Application.HXournal.Iteratee
-import Application.HXournal.Draw
-import Application.HXournal.Device
 import Data.IORef
 
 import Control.Category
@@ -28,17 +25,10 @@ import Prelude hiding ((.),id)
 import Text.Xournal.Type
 import qualified Text.Xournal.Parse as P
 
-import Foreign.Marshal.Utils
-import Foreign.Storable
-import Foreign.C
-import Foreign.Ptr
-
 startGUI :: FilePath -> IO () 
 startGUI fname = do 
   initGUI
-  dev <- initDevice 
-  print dev
-  putStrLn uiDecl 
+  devlst <- initDevice 
   
   canvas <- drawingAreaNew
   scrwin <- scrolledWindowNew Nothing Nothing 
@@ -51,11 +41,11 @@ startGUI fname = do
   
   xojcontent <- P.read_xournal fname 
   let xojWbbox = mkXournalBBoxFromXournal xojcontent 
-  let Dim w h = pageDim . (!! 0) .  xournalPages $ xojcontent
+  let Dim width height = pageDim . (!! 0) .  xournalPages $ xojcontent
   let st = set xournalbbox xojWbbox
            . set drawArea canvas
-           . set deviceList dev
-           . set viewInfo (ViewInfo OnePage Original (0,0) (w,h))
+           . set deviceList devlst
+           . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
            . set horizAdjustment hadj 
            . set vertAdjustment vadj 
            $ emptyHXournalState
@@ -115,16 +105,16 @@ startGUI fname = do
     liftIO $ bouncecallback tref sref UpdateCanvas 
   
   canvas `on` buttonPressEvent $ tryEvent $ do 
-    st <- liftIO (readIORef sref)
-    let callbk = get callBack st
-        dev = get deviceList st 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+        dev = get deviceList xstate 
     p <- getPointer dev
     liftIO (callbk (PenDown p))
  
   canvas `on` buttonReleaseEvent $ tryEvent $ do 
-    st <- liftIO (readIORef sref)
-    let callbk = get callBack st
-        dev = get deviceList st 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+        dev = get deviceList xstate 
     p <- getPointer dev
     liftIO (callbk (PenUp p))
     

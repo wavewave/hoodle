@@ -7,11 +7,9 @@ import Application.HXournal.Coroutine
 import Application.HXournal.Type
 import Application.HXournal.Type.Event 
 
-
-import Control.Monad.IO.Class
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
-import qualified Data.Map as M
+
 import Data.Maybe
 
 import Control.Category
@@ -19,7 +17,6 @@ import Data.Label
 import Prelude hiding ((.),id)
 
 import Graphics.UI.Gtk hiding (set,get)
-import qualified Graphics.UI.Gtk as Gtk (set,get)
 
 import System.FilePath
 
@@ -221,6 +218,7 @@ uiDecl = [verbatim|<ui>
 </ui>
 |]
 
+iconList :: [ (String,String) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
            , ("pencil.png"     , "mypen")
            , ("eraser.png"     , "myeraser")
@@ -271,6 +269,7 @@ penmods = [ RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Noth
           , RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0            
           ]            
 
+colormods :: [RadioActionEntry]
 colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
             , RadioActionEntry "REDA"        "Red"        (Just "myred")        Nothing Nothing 2
             , RadioActionEntry "GREENA"      "Green"      (Just "mygreen")      Nothing Nothing 3
@@ -507,6 +506,7 @@ int2PenType 0 = PenWork
 int2PenType 1 = EraserWork
 int2PenType 2 = HighlighterWork
 int2PenType 3 = PenWork -- TextWork 
+int2PenType _ = error "No such pentype"
 
 int2Point :: Int -> Double 
 int2Point 0 = predefined_veryfine 
@@ -514,6 +514,7 @@ int2Point 1 = predefined_fine
 int2Point 2 = predefined_medium
 int2Point 3 = predefined_thick
 int2Point 4 = predefined_verythick
+int2Point _ = error "No such point"
 
 int2Color :: Int -> PenColor
 int2Color 0  = ColorBlack 

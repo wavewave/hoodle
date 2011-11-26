@@ -445,7 +445,7 @@ getMenuUI tref sref = do
   let disabledActions = 
         [ newa, annpdfa, opena, saveasa, recenta, printa, exporta
         , undoa, redoa, cuta, copya, pastea, deletea
-        , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, setzma
+        , fscra,  zmina, zmouta, setzma
         , shwlayera, hidlayera
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
@@ -460,7 +460,7 @@ getMenuUI tref sref = do
         ] 
       enabledActions = 
         [ savea, quita, fstpagea, prvpagea, nxtpagea, lstpagea
-        , clra, penopta
+        , clra, penopta, zooma, nrmsizea, pgwdtha
         ]
   
   mapM_ (\x->actionSetSensitive x True) enabledActions  

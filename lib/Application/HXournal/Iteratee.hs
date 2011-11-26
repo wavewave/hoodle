@@ -207,13 +207,15 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
       let (x,y) = device2pageCoord cpg zmode pcoord 
           line = ((x0,y0),(x,y))
       let hittestbbox = mkHitTestBBox line strs   
-          hitteststroke = hitTestStrokes line hittestbbox
+          (hitteststroke,hitState) = 
+            St.runState (hitTestStrokes line hittestbbox) False
           printfunc = fmapAL (length.unNotHitted) (length.unHitted)
           len_of_hittest = fmapAL (length.unNotHitted) printfunc hitteststroke
           bboxes = map strokebbox_bbox strs 
       -- liftIO $ print bboxes 
       -- liftIO $ print ((x0,y0),(x,y))
-      liftIO $ print len_of_hittest
+      -- liftIO $ print len_of_hittest
+      liftIO $ print hitState
       eraserProcess cpg connidmove connidup strs (x,y) 
     PenUp pcoord -> do 
       liftIO $ signalDisconnect connidmove 

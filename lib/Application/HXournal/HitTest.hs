@@ -9,6 +9,9 @@ import Application.HXournal.Type
 import Application.HXournal.Type.XournalBBox 
 import Application.HXournal.Util.AlterList 
 
+import Control.Applicative
+import Control.Monad.State
+
 import Debug.Trace
 
 -- eps = 1e-5
@@ -49,12 +52,26 @@ hitTestLineStroke line1 str = test (strokeData str)
 mkHitTestAL :: (StrokeBBox -> Bool) 
             -> [StrokeBBox]
             -> AlterList NotHitted Hitted 
-mkHitTestAL test strs = 
-  let (nhit,rest) = break test  strs
+mkHitTestAL test strs = evalState (mkHitTestALState test strs) False
+{-  let (nhit,rest) = break test  strs
       (hit,rest') = break (not.test) rest 
   in if null rest' 
        then NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty 
        else NotHitted nhit :- Hitted hit :- mkHitTestAL test rest' 
+-}
+
+mkHitTestALState :: (StrokeBBox -> Bool) 
+                 -> [StrokeBBox]
+                 -> State Bool (AlterList NotHitted Hitted)
+mkHitTestALState test strs = do 
+  let (nhit,rest) = break test  strs
+      (hit,rest') = break (not.test) rest 
+  st <- get
+  put (st || (not.null) hit) 
+  if null rest' 
+    then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
+    else return (NotHitted nhit :- Hitted hit :- mkHitTestAL test rest')
+
 
 mkHitTestBBox :: ((Double,Double),(Double,Double))
                  -> [StrokeBBox]
@@ -65,17 +82,17 @@ mkHitTestBBox (p1,p2) = mkHitTestAL boxhittest
 
 mkHitTestStroke :: ((Double,Double),(Double,Double))
                 -> [StrokeBBox]
-                -> AlterList NotHitted Hitted  
-mkHitTestStroke line = mkHitTestAL (hitTestLineStroke line)
+                -> State Bool (AlterList NotHitted Hitted)
+mkHitTestStroke line = mkHitTestALState (hitTestLineStroke line)
   
 hitTestStrokes :: ((Double,Double),(Double,Double))
                -> AlterList NotHitted Hitted 
-               -> AlterList NotHitted StrokeHitted
+               -> State Bool (AlterList NotHitted StrokeHitted)
 hitTestStrokes _ Empty = error "something is wrong, invariant broken"
-hitTestStrokes _ (n:-Empty) = n:-Empty
-hitTestStrokes line (n:-h:-rest) =
-  let h' = mkHitTestStroke line (unHitted h)
-  in  n:-h':-(hitTestStrokes line rest)
+hitTestStrokes _ (n:-Empty) = return (n:-Empty)
+hitTestStrokes line (n:-h:-rest) = do 
+  h' <- mkHitTestStroke line (unHitted h)
+  (n:-) . (h':-) <$> hitTestStrokes line rest
   
 
                  

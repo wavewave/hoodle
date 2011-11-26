@@ -1,10 +1,23 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Application.HXournal.HitTest where
 
 import Data.Strict.Tuple
+import Application.HXournal.Type
 import Application.HXournal.Type.XournalBBox 
+import Application.HXournal.Util.AlterList 
+
 import Debug.Trace
 
 -- eps = 1e-5
+
+newtype NotHitted = NotHitted { unNotHitted :: [StrokeBBox] } 
+                  deriving (Show)
+
+newtype Hitted = Hitted { unHitted :: [StrokeBBox] } 
+                 deriving (Show)
+
+type StrokeHitted = AlterList NotHitted Hitted 
 
 hitTestBBoxPoint :: BBox -> (Double,Double) -> Bool  
 hitTestBBoxPoint (BBox (ulx,uly) (lrx,lry)) (x,y) 
@@ -30,9 +43,40 @@ hitTestLineStroke line1 str = test (strokeData str)
         test ((x0:!:y0):(x:!:y):rest) 
           = hitTestLineLine line1 ((x0,y0),(x,y))
             || test ((x:!:y) : rest)
+            
+mkHitTestAL :: (StrokeBBox -> Bool) 
+            -> [StrokeBBox]
+            -> AlterList NotHitted Hitted 
+mkHitTestAL test strs = 
+  let (nhit,rest) = break test  strs
+      (hit,rest') = break (not.test) rest 
+  in if null rest' 
+       then NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty 
+       else NotHitted nhit :- Hitted hit :- mkHitTestAL test rest' 
 
+mkHitTestBBox :: ((Double,Double),(Double,Double))
+                 -> [StrokeBBox]
+                 -> AlterList NotHitted Hitted 
+mkHitTestBBox (p1,p2) = mkHitTestAL boxhittest 
+  where boxhittest s = hitTestBBoxPoint (strokebbox_bbox s) p1
+                       || hitTestBBoxPoint (strokebbox_bbox s) p2
 
+mkHitTestStroke :: ((Double,Double),(Double,Double))
+                -> [StrokeBBox]
+                -> AlterList NotHitted Hitted  
+mkHitTestStroke line = mkHitTestAL (hitTestLineStroke line)
+  
+hitTestStrokes :: ((Double,Double),(Double,Double))
+               -> AlterList NotHitted Hitted 
+               -> AlterList NotHitted StrokeHitted
+hitTestStrokes _ Empty = error "something is wrong, invariant broken"
+hitTestStrokes _ (n:-Empty) = n:-Empty
+hitTestStrokes line (n:-h:-rest) =
+  let h' = mkHitTestStroke line (unHitted h)
+  in  n:-h':-(hitTestStrokes line rest)
+  
 
+                 
 
 
 

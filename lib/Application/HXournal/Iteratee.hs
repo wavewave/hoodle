@@ -21,6 +21,7 @@ import Application.HXournal.Type
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.XournalBBox
 import Application.HXournal.Util
+import Application.HXournal.Util.AlterList 
 import Application.HXournal.Draw
 import Application.HXournal.Coroutine
 import Application.HXournal.Builder
@@ -204,19 +205,15 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
           pcolor = get (penColor.penInfo) xstate 
           pwidth = get (penWidth.penInfo) xstate 
       let (x,y) = device2pageCoord cpg zmode pcoord 
-          
-      let boxhittest s = hitTestBBoxPoint (strokebbox_bbox s) (x0,y0)
-                         || hitTestBBoxPoint (strokebbox_bbox s) (x,y)
-          boxHitStrs = filter boxhittest strs 
-          hitted = filter (hitTestLineStroke ((x0,y0),(x,y))) boxHitStrs 
-            
-      -- when b $ liftIO (putStrLn "hitted") 
-      liftIO $ print (length hitted) 
-      
-      
-      -- liftIO $ putStrLn $ show (x,y)    
-      -- when ( x > 200) $ 
-      -- liftIO (showBBox canvas cpg zmode (BBox (100,100) (300,300)))
+          line = ((x0,y0),(x,y))
+      let hittestbbox = mkHitTestBBox line strs   
+          hitteststroke = hitTestStrokes line hittestbbox
+          printfunc = fmapAL (length.unNotHitted) (length.unHitted)
+          len_of_hittest = fmapAL (length.unNotHitted) printfunc hitteststroke
+          bboxes = map strokebbox_bbox strs 
+      -- liftIO $ print bboxes 
+      -- liftIO $ print ((x0,y0),(x,y))
+      liftIO $ print len_of_hittest
       eraserProcess cpg connidmove connidup strs (x,y) 
     PenUp pcoord -> do 
       liftIO $ signalDisconnect connidmove 

@@ -84,7 +84,6 @@ updateCanvas :: DrawingArea -> Xournal -> Int -> ViewInfo -> IO ()
 updateCanvas canvas xoj pagenum vinfo = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-  -- let totalnumofpages = (length . xoj_pages) xoj
   let currpage = ((!!pagenum).xoj_pages) xoj
   geometry <- getCanvasPageGeometry canvas currpage origin
   win <- widgetGetDrawWindow canvas
@@ -125,7 +124,6 @@ showXournalBBox :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
 showXournalBBox canvas xojbbox pagenum vinfo = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-  -- let totalnumofpages = (length . xoj_pages) xoj
   let currpagebbox = ((!!pagenum).xojbbox_pages) xojbbox
       currpage = pageFromPageBBox currpagebbox
       strs = do 

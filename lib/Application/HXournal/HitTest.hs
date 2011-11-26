@@ -94,6 +94,9 @@ hitTestStrokes line (n:-h:-rest) = do
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
   
+elimHitted :: AlterList NotHitted Hitted -> [StrokeBBox]
+elimHitted (n:-Empty) = unNotHitted n 
+elimHitted (n:-h:-rest) = unNotHitted n ++ elimHitted rest
 
                  
 

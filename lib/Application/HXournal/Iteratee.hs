@@ -182,7 +182,7 @@ eraserStart pcoord = do
       cpn = get currentPageNum xstate 
       vinfo = get viewInfo xstate
       (x0,y0) = get (viewPortOrigin.viewInfo) xstate 
-  liftIO $ showXournalBBox canvas xojbbox cpn vinfo
+  -- liftIO $ showXournalBBox canvas xojbbox cpn vinfo
   geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
   let (x,y) = device2pageCoord geometry zmode pcoord 
   connidup <- connPenUp canvas
@@ -212,15 +212,42 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
           printfunc = fmapAL (length.unNotHitted) (length.unHitted)
           len_of_hittest = fmapAL (length.unNotHitted) printfunc hitteststroke
           bboxes = map strokebbox_bbox strs 
+      if hitState 
+        then do 
+          let currxoj     = get xournalbbox xstate 
+              pgnum       = get currentPageNum xstate
+              pages       = xournalPages currxoj 
+              currpage    = pages !! pgnum
+              pagesbefore = take pgnum pages 
+              pagesafter  = drop (pgnum+1) pages 
+              currlayer   = head (pageLayers currpage) 
+              otherlayers = tail (pageLayers currpage) 
+              newstrokes = eraseHitted hitteststroke
+              newlayerbbox = currlayer { layerbbox_strokes = newstrokes }    
+              newpagebbox = currpage { pagebbox_layers = newlayerbbox : otherlayers } 
+              newxojbbox = currxoj { xojbbox_pages = pagesbefore
+                                                     ++ [newpagebbox]
+                                                     ++ pagesafter } 
+          lift $ St.put (set xournalbbox newxojbbox xstate)
+          invalidate 
+          newstrs <- getAllStrokeBBoxInCurrentPage
+          eraserProcess cpg connidup connidmove newstrs (x,y)
+        else       
+          eraserProcess cpg connidmove connidup strs (x,y) 
       -- liftIO $ print bboxes 
       -- liftIO $ print ((x0,y0),(x,y))
       -- liftIO $ print len_of_hittest
       liftIO $ print hitState
-      eraserProcess cpg connidmove connidup strs (x,y) 
+
     PenUp pcoord -> do 
       liftIO $ signalDisconnect connidmove 
       liftIO $ signalDisconnect connidup 
       invalidate 
+
+eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
+               -> [StrokeBBox]
+eraseHitted (n :-Empty) = unNotHitted n
+eraseHitted (n:-h:-rest) = unNotHitted n ++ elimHitted h ++ eraseHitted rest
 
 
 

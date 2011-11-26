@@ -94,11 +94,25 @@ hitTestStrokes line (n:-h:-rest) = do
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
   
-elimHitted :: AlterList NotHitted Hitted -> [StrokeBBox]
-elimHitted (n:-Empty) = unNotHitted n 
-elimHitted (n:-h:-rest) = unNotHitted n ++ elimHitted rest
+elimHitted :: AlterList NotHitted Hitted -> State (Maybe BBox) [StrokeBBox]
+elimHitted (n:-Empty) = return (unNotHitted n)
+elimHitted (n:-h:-rest) = do  
+  bbox <- get
+  let bbox2 = getTotalBBox (unHitted h) 
+  put (merge bbox bbox2) 
+  return . (unNotHitted n ++) =<< elimHitted rest
 
                  
+merge :: Maybe BBox -> Maybe BBox -> Maybe BBox    
+merge Nothing Nothing = Nothing
+merge Nothing (Just b) = Just b
+merge (Just b) Nothing = Just b 
+merge (Just (BBox (x1,y1) (x2,y2))) (Just (BBox (x3,y3) (x4,y4))) 
+  = Just (BBox (min x1 x3, min y1 y3) (max x2 x4,max y2 y4))  
+    
+getTotalBBox :: [StrokeBBox] -> Maybe BBox 
+getTotalBBox = foldl f Nothing 
+  where f acc = merge acc . Just . strokebbox_bbox
 
 
 

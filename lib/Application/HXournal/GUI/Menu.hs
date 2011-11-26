@@ -18,7 +18,8 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-import Graphics.UI.Gtk hiding (set)
+import Graphics.UI.Gtk hiding (set,get)
+import qualified Graphics.UI.Gtk as Gtk (set,get)
 
 import System.FilePath
 
@@ -250,27 +251,27 @@ iconList = [ ("fullscreen.png" , "myfullscreen")
            ]
 
 viewmods :: [RadioActionEntry] 
-viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
-           , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
+viewmods = [ RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
+           , RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
            ]
            
 pointmods :: [RadioActionEntry] 
 pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothing 0
             , RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
-            , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2
+            
             , RadioActionEntry "PENTHICKA" "Thick" (Just "mythick") Nothing Nothing 3 
             , RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4                
+            , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2              
             ]            
 
 penmods :: [RadioActionEntry] 
-penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0
-          , RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
+penmods = [ RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
           , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
           , RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
+          , RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0            
           ]            
 
-colormods = [ RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0
-            , RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
+colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
             , RadioActionEntry "REDA"        "Red"        (Just "myred")        Nothing Nothing 2
             , RadioActionEntry "GREENA"      "Green"      (Just "mygreen")      Nothing Nothing 3
             , RadioActionEntry "GRAYA"       "Gray"       (Just "mygray")       Nothing Nothing 4
@@ -280,6 +281,7 @@ colormods = [ RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      
             , RadioActionEntry "ORANGEA"     "Orange"     (Just "myorange")     Nothing Nothing 8
             , RadioActionEntry "YELLOWA"     "Yellow"     (Just "myyellow")     Nothing Nothing 9
             , RadioActionEntry "WHITEA"      "White"      (Just "mywhite")      Nothing Nothing 10
+            , RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0              
             ]
 
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
@@ -439,9 +441,41 @@ getMenuUI tref sref = do
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode sref)
   actionGroupAddRadioActions agr colormods 0 (assignColor sref)
+  
+  
+  let disabledActions = 
+        [ newa, annpdfa, opena, saveasa, recenta, printa, exporta
+        , undoa, redoa, cuta, copya, pastea, deletea
+        , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, setzma
+        , shwlayera, hidlayera
+        , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
+        , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
+        , shpreca, rulera, selregna, selrecta, vertspa, handa
+        , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
+        , setdefopta
+        , uxinputa, dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
+        , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
+        , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
+        , abouta 
+        , defaulta         
+        ] 
+      enabledActions = 
+        [ savea, quita, fstpagea, prvpagea, nxtpagea, lstpagea
+        , clra, penopta
+        ]
+  
+  mapM_ (\x->actionSetSensitive x True) enabledActions  
+  mapM_ (\x->actionSetSensitive x False) disabledActions
+  
   ui <- uiManagerNew 
   uiManagerAddUiFromString ui uiDecl 
   uiManagerInsertActionGroup ui agr 0 
+
+  -- Just ra <- uiManagerGetAction ui "ONEPAGEA"
+  -- Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 0]
+  -- Gtk.set (head pointmods) [radioActionCurrentValue := 2]
+  
+  
   return ui   
 
 assignPenMode :: IORef HXournalState -> RadioAction -> IO ()

@@ -85,8 +85,9 @@ changePage modifyfn = do
               | modifyfn oldpage < 0  = 0 
               | otherwise = modifyfn oldpage 
       Dim w h = pageDim . (!! newpage) . xournalPages $ xoj 
-      hadj = get horizAdjustment xstate  
-      vadj = get vertAdjustment xstate
+      (hadj,vadj) = get adjustments xstate 
+      -- hadj = get horizAdjustment xstate  
+      -- vadj = get vertAdjustment xstate
   liftIO $ do 
     adjustmentSetUpper hadj w 
     adjustmentSetUpper vadj h 
@@ -108,6 +109,18 @@ invalidate = do
                        <*> get currentPageNum 
                        <*> get viewInfo 
                        $ xstate )
+
+
+invalidateBBox :: BBox -> Iteratee MyEvent XournalStateIO () 
+invalidateBBox bbox = do 
+  xstate <- lift St.get  
+  let pagenum = get currentPageNum xstate 
+  let page = (!!pagenum) . xournalPages . get xournalbbox $ xstate
+  liftIO (updateCanvasBBox <$> get drawArea 
+                           <*> pure page 
+                           <*> get viewInfo 
+                           <*> pure bbox
+                           $ xstate )
 
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
@@ -209,8 +222,8 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
       let hittestbbox = mkHitTestBBox line strs   
           (hitteststroke,hitState) = 
             St.runState (hitTestStrokes line hittestbbox) False
-          printfunc = fmapAL (length.unNotHitted) (length.unHitted)
-          len_of_hittest = fmapAL (length.unNotHitted) printfunc hitteststroke
+          -- printfunc = fmapAL (length.unNotHitted) (length.unHitted)
+          -- len_of_hittest = fmapAL (length.unNotHitted) printfunc hitteststroke
           bboxes = map strokebbox_bbox strs 
       if hitState 
         then do 
@@ -222,33 +235,34 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
               pagesafter  = drop (pgnum+1) pages 
               currlayer   = head (pageLayers currpage) 
               otherlayers = tail (pageLayers currpage) 
-              newstrokes = eraseHitted hitteststroke
+              (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
               newlayerbbox = currlayer { layerbbox_strokes = newstrokes }    
-              newpagebbox = currpage { pagebbox_layers = newlayerbbox : otherlayers } 
+              newpagebbox = currpage 
+                            { pagebbox_layers = newlayerbbox : otherlayers } 
               newxojbbox = currxoj { xojbbox_pages = pagesbefore
                                                      ++ [newpagebbox]
                                                      ++ pagesafter } 
           lift $ St.put (set xournalbbox newxojbbox xstate)
-          invalidate 
+          -- liftIO $ print bbox
+          case maybebbox of 
+            Just bbox -> invalidateBBox bbox
+              -- liftIO $ showBBox canvas cpg zmode bbox 
+            Nothing -> return ()
           newstrs <- getAllStrokeBBoxInCurrentPage
           eraserProcess cpg connidup connidmove newstrs (x,y)
         else       
           eraserProcess cpg connidmove connidup strs (x,y) 
-      -- liftIO $ print bboxes 
-      -- liftIO $ print ((x0,y0),(x,y))
-      -- liftIO $ print len_of_hittest
-      liftIO $ print hitState
-
     PenUp pcoord -> do 
       liftIO $ signalDisconnect connidmove 
       liftIO $ signalDisconnect connidup 
       invalidate 
 
 eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
-               -> [StrokeBBox]
-eraseHitted (n :-Empty) = unNotHitted n
-eraseHitted (n:-h:-rest) = unNotHitted n ++ elimHitted h ++ eraseHitted rest
-
+               -> St.State (Maybe BBox) [StrokeBBox]
+eraseHitted (n :-Empty) = return (unNotHitted n)
+eraseHitted (n:-h:-rest) = do 
+  mid <- elimHitted h 
+  return . (unNotHitted n ++) . (mid ++) =<< eraseHitted rest
 
 
 highlighterStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
@@ -258,6 +272,7 @@ highlighterStart pcoord = do
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess UpdateCanvas = invalidate   
+defaultEventProcess MenuQuit = liftIO $ mainQuit
 defaultEventProcess MenuPreviousPage = changePage (\x->x-1)
 defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
@@ -273,8 +288,9 @@ defaultEventProcess MenuNormalSize = do
     (w',h') <- liftIO $ widgetGetSize canvas
     let cpn = get currentPageNum xstate 
     let Dim w h = pageDim . (!! cpn) . xournalPages . get xournalbbox $ xstate
-    let hadj = get horizAdjustment xstate
-        vadj = get vertAdjustment xstate
+    let (hadj,vadj) = get adjustments xstate 
+        -- hadj = get horizAdjustment xstate
+        -- vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 
@@ -295,8 +311,9 @@ defaultEventProcess MenuPageWidth = do
         Dim w h = pageDim page 
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
     let (w',h') = canvas_size cpg 
-    let hadj = get horizAdjustment xstate
-        vadj = get vertAdjustment xstate
+    let (hadj,vadj) = get adjustments xstate 
+        -- hadj = get horizAdjustment xstate
+        -- vadj = get vertAdjustment xstate
         s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
     liftIO $ do 
       adjustmentSetUpper hadj w 
@@ -328,8 +345,9 @@ defaultEventProcess (CanvasConfigure w' h') = do
         zmode = get (zoomMode.viewInfo) xstate 
     cpg <- liftIO (getCanvasPageGeometry  canvas page (0,0))
     let factor = getRatioFromPageToCanvas cpg zmode
-        hadj = get horizAdjustment xstate
-        vadj = get vertAdjustment xstate
+        (hadj,vadj) = get adjustments xstate 
+        -- hadj = get horizAdjustment xstate
+        -- vadj = get vertAdjustment xstate
     liftIO $ do 
       adjustmentSetUpper hadj w 
       adjustmentSetUpper vadj h 

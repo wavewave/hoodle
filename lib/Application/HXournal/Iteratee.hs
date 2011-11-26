@@ -204,8 +204,16 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
           pcolor = get (penColor.penInfo) xstate 
           pwidth = get (penWidth.penInfo) xstate 
       let (x,y) = device2pageCoord cpg zmode pcoord 
-      let hitted = filter (\s-> hitTestBBoxPoint (strokebbox_bbox s) (x,y)) strs 
+          
+      let boxhittest s = hitTestBBoxPoint (strokebbox_bbox s) (x0,y0)
+                         || hitTestBBoxPoint (strokebbox_bbox s) (x,y)
+          boxHitStrs = filter boxhittest strs 
+          hitted = filter (hitTestLineStroke ((x0,y0),(x,y))) boxHitStrs 
+            
+      -- when b $ liftIO (putStrLn "hitted") 
       liftIO $ print (length hitted) 
+      
+      
       -- liftIO $ putStrLn $ show (x,y)    
       -- when ( x > 200) $ 
       -- liftIO (showBBox canvas cpg zmode (BBox (100,100) (300,300)))

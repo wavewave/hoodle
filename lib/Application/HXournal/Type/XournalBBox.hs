@@ -22,6 +22,16 @@ data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
                              , strokebbox_bbox :: BBox }
                 deriving (Show)
                          
+class IStroke a where
+  strokeData :: a -> [Pair Double Double]
+
+instance IStroke Stroke where
+  strokeData = stroke_data
+
+instance IStroke StrokeBBox where 
+  strokeData = strokebbox_data
+ 
+
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
           deriving (Show)

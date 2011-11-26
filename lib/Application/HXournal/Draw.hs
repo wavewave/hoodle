@@ -145,7 +145,6 @@ showXournalBBox canvas xojbbox pagenum vinfo = do
           rectangle ulx uly (lrx-ulx) (lry-uly)
           stroke 
     mapM_ f strs 
-    -- cairoDrawPage currpage
   return ()
 
 showBBox :: DrawingArea -> CanvasPageGeometry -> ZoomMode -> BBox -> IO ()

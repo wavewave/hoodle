@@ -9,15 +9,16 @@ import Application.HXournal.Type.XournalBBox
 import Control.Applicative
 import Control.Monad
 import qualified Control.Monad.State as St
-
 import Control.Monad.Trans
 import Control.Category
+
+import qualified Data.Map as M
 import Data.Label
 import Prelude hiding ((.),id)
 
 import Graphics.UI.Gtk hiding (get,set)
 
-adjustments :: HXournalState :-> (Adjustment,Adjustment) 
+adjustments :: CanvasInfo :-> (Adjustment,Adjustment) 
 adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
                          <*> (snd `for` vertAdjustment)
 
@@ -27,10 +28,16 @@ getPenType = get (penType.penInfo) <$> lift (St.get)
 getAllStrokeBBoxInCurrentPage :: Iteratee MyEvent XournalStateIO [StrokeBBox]
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- lift St.get 
-  let pagenum = get currentPageNum xstate 
-      pagebbox = (!!pagenum) . xojbbox_pages . get xournalbbox $ xstate 
-  let strs = do 
-        l <- pagebbox_layers pagebbox 
-        s <- layerbbox_strokes l
-        return s 
-  return strs 
+  let currCvsId = get currentCanvas xstate 
+      maybeCurrCvs = M.lookup currCvsId (get canvasInfoMap xstate)
+  case maybeCurrCvs of 
+    Nothing -> return [] 
+    Just currCvsInfo -> do 
+      let pagenum = get currentPageNum currCvsInfo
+          pagebbox = (!!pagenum) . xojbbox_pages . get xournalbbox $ xstate 
+      let strs = do 
+            l <- pagebbox_layers pagebbox 
+            s <- layerbbox_strokes l
+            return s 
+      return strs 
+      

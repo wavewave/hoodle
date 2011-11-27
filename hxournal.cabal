@@ -1,7 +1,7 @@
 Name:		hxournal
-Version:	0.2
-Synopsis:	
-Description: 	
+Version:	0.2.999
+Synopsis:	haskell clone of xournal 
+Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -43,11 +43,21 @@ Library
                    Application.HXournal.Command 
                    Application.HXournal.Type
                    Application.HXournal.Type.Event 
+                   Application.HXournal.Type.Enum
+                   Application.HXournal.Type.Canvas
+                   Application.HXournal.Type.XournalState
                    Application.HXournal.Type.XournalBBox
+                   Application.HXournal.ModelAction.Pen 
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu
                    Application.HXournal.Iteratee
+                   Application.HXournal.Iteratee.Draw
+                   Application.HXournal.Iteratee.EventConnect
+                   Application.HXournal.Iteratee.Default
+                   Application.HXournal.Iteratee.Pen
+                   Application.HXournal.Iteratee.Eraser
+                   Application.HXournal.Iteratee.Highlighter
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Util.AlterList

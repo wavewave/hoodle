@@ -1,5 +1,8 @@
 {-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 
+#include <gtk/gtk.h>
+#include "template-hsc-gtk2hs.h"
+
 module Application.HXournal.Device where
 
 import Control.Applicative 
@@ -11,6 +14,9 @@ import Foreign.C
 import Foreign.Storable
 
 import Graphics.UI.Gtk
+import Graphics.UI.Gtk.Gdk.EventM
+
+import Data.Int
 
 data PointerType = Core | Stylus | Eraser
                  deriving (Show,Eq,Ord)
@@ -41,28 +47,64 @@ initDevice =
         return $ DeviceList core_val stylus_val eraser_val
                  
 
-getPointer :: DeviceList 
-              -> EventM t PointerCoord
-getPointer dev = do 
+getPointer :: DeviceList -> EventM t PointerCoord
+getPointer devlst = do 
     ptr <- ask 
-    liftIO $ do 
-      (x :: Double) <- peekByteOff ptr 16
-      (y :: Double) <- peekByteOff ptr 24
-      (device :: CInt ) <- peekByteOff ptr 44
-      coord ptr x y device 
-  where coord ptr x y device 
-          | device == dev_core dev = return $ PointerCoord Core x y 
-          | device == dev_stylus dev = do 
-            (ptrax :: Ptr CDouble ) <- peekByteOff ptr 32
+    (ty,x,y,mdev,maxf) <- liftIO (getInfo ptr)
+    case mdev of 
+      Nothing -> return (PointerCoord Core x y)
+      Just dev -> case maxf of 
+                    Nothing -> return (PointerCoord Core x y)
+                    Just axf -> liftIO $ coord ptr x y dev axf     
+  where 
+    getInfo ptr = do 
+      (ty :: #{gtk2hs_type GdkEventType}) <- peek (castPtr ptr)
+      if ty `elem` [ #{const GDK_BUTTON_PRESS}
+                   , #{const GDK_2BUTTON_PRESS}
+                   , #{const GDK_3BUTTON_PRESS}
+                   , #{const GDK_BUTTON_RELEASE}] 
+        then do 
+          (x :: #{gtk2hs_type gdouble}) <- #{peek GdkEventButton, x} ptr 
+          (y :: #{gtk2hs_type gdouble}) <- #{peek GdkEventButton, y} ptr
+          (dev :: CInt) <- #{peek GdkEventButton, device} ptr
+          let axisfunc = #{peek GdkEventButton, axes}
+          return (ty,realToFrac x,realToFrac y,Just dev,Just axisfunc)
+        else if ty `elem` [ #{const GDK_SCROLL} ] 
+        then do
+          (x :: #{gtk2hs_type gdouble}) <- #{peek GdkEventScroll, x} ptr
+          (y :: #{gtk2hs_type gdouble}) <- #{peek GdkEventScroll, y} ptr
+          (dev :: CInt) <- #{peek GdkEventScroll, device} ptr
+          return (ty,realToFrac x, realToFrac y,Just dev,Nothing)
+        else if ty `elem` [ #{const GDK_MOTION_NOTIFY} ] 
+        then do
+          (x :: #{gtk2hs_type gdouble}) <- #{peek GdkEventMotion, x} ptr
+          (y :: #{gtk2hs_type gdouble}) <- #{peek GdkEventMotion, y} ptr
+          (dev :: CInt) <- #{peek GdkEventMotion, device} ptr
+          let axisfunc = #{peek GdkEventMotion, axes}          
+          return (ty,realToFrac x, realToFrac y,Just dev,Just axisfunc)
+        else if ty `elem` [ #{const GDK_ENTER_NOTIFY},
+                            #{const GDK_LEAVE_NOTIFY}] 
+        then do
+          (x :: #{gtk2hs_type gdouble}) <- #{peek GdkEventCrossing, x} ptr
+          (y :: #{gtk2hs_type gdouble}) <- #{peek GdkEventCrossing, y} ptr
+          return (ty, realToFrac x, realToFrac y,Nothing,Nothing)
+        else error ("eventCoordinates: none for event type "++show ty)
+
+    coord ptr x y device axf 
+          | device == dev_core devlst = return $ PointerCoord Core x y 
+          | device == dev_stylus devlst = do 
+            (ptrax :: Ptr CDouble ) <- axf ptr 
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             return $ PointerCoord Stylus wacomx wacomy 
-          | device == dev_eraser dev = do 
-            (ptrax :: Ptr CDouble ) <- peekByteOff ptr 32
+          | device == dev_eraser devlst = do 
+            (ptrax :: Ptr CDouble ) <- axf ptr 
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             return $ PointerCoord Eraser wacomx wacomy 
-          | otherwise = error "no such device"
+          | otherwise = error "no such device" 
+
+
 
 wacomCoordConvert :: WidgetClass self => self 
                      -> (Double,Double) 

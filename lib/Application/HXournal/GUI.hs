@@ -17,6 +17,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Coroutine
 
 import Data.IORef
+import qualified Data.Map as M
+
 
 import Control.Category
 import Data.Label
@@ -42,13 +44,20 @@ startGUI fname = do
   xojcontent <- P.read_xournal fname 
   let xojWbbox = mkXournalBBoxFromXournal xojcontent 
   let Dim width height = pageDim . (!! 0) .  xournalPages $ xojcontent
+      cinfo1 = set canvasId 1 
+             . set drawArea canvas
+             . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
+             . set currentPageNum 0 
+             . set horizAdjustment hadj 
+             . set vertAdjustment vadj 
+             $ emptyCanvasInfo
+      cinfoMap = M.insert (get canvasId cinfo1) cinfo1
+               $ M.empty 
   let st = set xournalbbox xojWbbox
-           . set drawArea canvas
-           . set deviceList devlst
-           . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
-           . set horizAdjustment hadj 
-           . set vertAdjustment vadj 
-           $ emptyHXournalState
+         . set canvasInfoMap cinfoMap 
+         . set currentCanvas (get canvasId cinfo1)
+         . set deviceList devlst 
+         $ emptyHXournalState
   (r,st') <- St.runStateT (resume guiProcess) st
   sref <- newIORef st'
 

@@ -45,6 +45,7 @@ Library
                    Application.HXournal.Type.Event 
                    Application.HXournal.Type.Enum
                    Application.HXournal.Type.Canvas
+                   Application.HXournal.Type.Coroutine
                    Application.HXournal.Type.XournalState
                    Application.HXournal.Type.XournalBBox
                    Application.HXournal.ModelAction.Pen 

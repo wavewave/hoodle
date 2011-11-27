@@ -37,6 +37,9 @@ data CanvasInfo = CanvasInfo { _canvasId :: Int
                              , _vertAdjustment :: Adjustment 
                              }
 
+emptyCanvasInfo :: CanvasInfo
+emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined 
+
 type CanvasInfoMap = M.Map Int CanvasInfo
 
 data PenType = PenWork | HighlighterWork | EraserWork 

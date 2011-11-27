@@ -52,6 +52,7 @@ getPointer :: DeviceList -> EventM t PointerCoord
 getPointer devlst = do 
     ptr <- ask 
     (ty,x,y,mdev,maxf) <- liftIO (getInfo ptr)
+    -- liftIO $ print (ty,x,y,mdev)
     case mdev of 
       Nothing -> return (PointerCoord Core x y)
       Just dev -> case maxf of 
@@ -103,7 +104,7 @@ getPointer devlst = do
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             return $ PointerCoord Eraser wacomx wacomy 
-          | otherwise = error "no such device"
+          | otherwise = return $ PointerCoord Core x y
 
 wacomCoordConvert :: WidgetClass self => self 
                      -> (Double,Double) 

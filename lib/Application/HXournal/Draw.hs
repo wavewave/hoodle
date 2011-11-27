@@ -67,11 +67,13 @@ device2pageCoord :: CanvasPageGeometry
                  -> ZoomMode 
                  -> PointerCoord  
                  -> (Double,Double)
-device2pageCoord cpg zmode pcoord = 
+device2pageCoord cpg zmode pcoord@(PointerCoord _ _ _)  = 
  let (px,py) = (,) <$> pointerX <*> pointerY $ pcoord  
  in case pointerType pcoord of 
       Core -> core2pageCoord  cpg zmode (px,py)
       _    -> wacom2pageCoord cpg zmode (px,py)
+device2pageCoord _ _ NoPointerCoord = (-100,-100)
+
 
 transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
 transformForPageCoord cpg zmode = do 

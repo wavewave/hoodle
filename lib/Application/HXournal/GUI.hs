@@ -86,6 +86,7 @@ startGUI fname = do
   
   window <- windowNew 
   vbox <- vBoxNew False 0 
+  vpaned <- vPanedNew 
   ui <- getMenuUI tref sref  
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
@@ -100,13 +101,15 @@ startGUI fname = do
                    Just x  -> x     
                    Nothing -> error "cannot get toolbar from string" 
 
-  containerAdd window vbox 
-
+  containerAdd window vpaned
+  
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
-  boxPackStart vbox scrwin PackGrow 0 
-  boxPackEnd   vbox scrwin2 PackGrow 0
+  boxPackEnd vbox scrwin PackGrow 0 
+  
+  panedPack1 vpaned vbox True False 
+  panedPack2 vpaned scrwin2 True False 
  
   cursorDot <- cursorNew BlankCursor  
   
@@ -178,10 +181,6 @@ startGUI fname = do
     liftIO $ drawWindowSetCursor win (Just cursorDot)
     return ()
 
-
-
-  {-
-  -}  
   
   widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
   widgetAddEvents canvas2 [PointerMotionMask,Button1MotionMask]  

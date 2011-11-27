@@ -29,7 +29,8 @@ data DeviceList = DeviceList { dev_core :: CInt
 data PointerCoord = PointerCoord { pointerType :: PointerType 
                                  , pointerX :: Double 
                                  , pointerY :: Double } 
-                    deriving (Show,Eq,Ord)
+                  | NoPointerCoord
+                  deriving (Show,Eq,Ord)
 
 
 foreign import ccall "c_initdevice.h initdevice" c_initdevice
@@ -102,9 +103,7 @@ getPointer devlst = do
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             return $ PointerCoord Eraser wacomx wacomy 
-          | otherwise = error "no such device" 
-
-
+          | otherwise = error "no such device"
 
 wacomCoordConvert :: WidgetClass self => self 
                      -> (Double,Double) 

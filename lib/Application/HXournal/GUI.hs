@@ -168,17 +168,25 @@ startGUI fname = do
     liftIO $ bouncecallback tref sref (UpdateCanvas 1)
   canvas2 `on` exposeEvent $ tryEvent $ do 
     liftIO $ bouncecallback tref sref (UpdateCanvas 2)
-
-
-  {-
+  
   canvas `on` enterNotifyEvent $ tryEvent $ do 
     win <- liftIO $ widgetGetDrawWindow canvas
     liftIO $ drawWindowSetCursor win (Just cursorDot)
     return ()
+  canvas2 `on` enterNotifyEvent $ tryEvent $ do 
+    win <- liftIO $ widgetGetDrawWindow canvas
+    liftIO $ drawWindowSetCursor win (Just cursorDot)
+    return ()
+
+
+
+  {-
   -}  
   
   widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
+  widgetAddEvents canvas2 [PointerMotionMask,Button1MotionMask]  
   widgetSetExtensionEvents canvas [ExtensionEventsAll]
+  widgetSetExtensionEvents canvas2 [ExtensionEventsAll]  
   
   onDestroy window mainQuit
 

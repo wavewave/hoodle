@@ -39,10 +39,8 @@ guiProcess = do
   initialize
   changePage (const 0)
   xstate <- lift St.get
-  let -- currCvsId = get currentCanvas xstate
-      cinfoMap  = get canvasInfoMap xstate
+  let cinfoMap  = get canvasInfoMap xstate
       assocs = M.toList cinfoMap 
-      -- maybeCurrCvs = M.lookup currCvsId cinfoMap 
       f (cid,cinfo) = do let canvas = get drawArea cinfo
                          (w',h') <- liftIO $ widgetGetSize canvas
                          defaultEventProcess (CanvasConfigure cid
@@ -98,8 +96,8 @@ eventProcess = do
     PenDown cid pcoord -> do 
       ptype <- getPenType 
       case ptype of 
-        PenWork         -> penStart pcoord 
-        EraserWork      -> eraserStart pcoord 
+        PenWork         -> penStart cid pcoord 
+        EraserWork      -> eraserStart cid pcoord 
         HighlighterWork -> highlighterStart pcoord 
     _ -> defaultEventProcess r1
 
@@ -126,7 +124,8 @@ defaultEventProcess MenuNormalSize = do
         let canvas = get drawArea currCvsInfo
         (w',h') <- liftIO $ widgetGetSize canvas
         let cpn = get currentPageNum currCvsInfo
-        let Dim w h = pageDim . (!! cpn) . xournalPages . get xournalbbox $ xstate
+        let Dim w h = pageDim . (!! cpn) . xournalPages . get xournalbbox 
+                    $ xstate
         let (hadj,vadj) = get adjustments currCvsInfo 
         liftIO $ do 
           adjustmentSetUpper hadj w 
@@ -175,8 +174,7 @@ defaultEventProcess MenuPageWidth = do
         invalidate currCvsId    
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- lift St.get 
-    let -- currCvsId = get currentCanvas xstate
-        cinfoMap = get canvasInfoMap xstate
+    let cinfoMap = get canvasInfoMap xstate
         maybeCvs = M.lookup cid cinfoMap 
     case maybeCvs of 
       Nothing -> return ()
@@ -185,13 +183,14 @@ defaultEventProcess (HScrollBarMoved cid v) = do
         let cvsInfo' = set (viewPortOrigin.viewInfo) (v,snd vm_orig) 
                          $ cvsInfo
             cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
-            xstate' = set canvasInfoMap cinfoMap' xstate
+            xstate' = set canvasInfoMap cinfoMap' 
+                    . set currentCanvas cid 
+                    $ xstate
         lift . St.put $ xstate'
         invalidate cid
 defaultEventProcess (VScrollBarMoved cid v) = do 
     xstate <- lift St.get 
-    let -- currCvsId = get currentCanvas xstate
-        cinfoMap = get canvasInfoMap xstate
+    let cinfoMap = get canvasInfoMap xstate
         maybeCvs = M.lookup cid cinfoMap 
     case maybeCvs of 
       Nothing -> return ()
@@ -200,7 +199,9 @@ defaultEventProcess (VScrollBarMoved cid v) = do
         let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
                          $ cvsInfo 
             cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
-            xstate' = set canvasInfoMap cinfoMap' xstate
+            xstate' = set canvasInfoMap cinfoMap' 
+                    . set currentCanvas cid
+                    $ xstate
         lift . St.put $ xstate'
         invalidate cid
 defaultEventProcess (CanvasConfigure cid w' h') = do 

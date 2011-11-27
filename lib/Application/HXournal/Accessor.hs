@@ -18,6 +18,13 @@ import Prelude hiding ((.),id)
 
 import Graphics.UI.Gtk hiding (get,set)
 
+getSt :: Iteratee MyEvent XournalStateIO HXournalState
+getSt = lift St.get
+
+putSt :: HXournalState -> Iteratee MyEvent XournalStateIO ()
+putSt = lift . St.put
+
+
 adjustments :: CanvasInfo :-> (Adjustment,Adjustment) 
 adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
                          <*> (snd `for` vertAdjustment)

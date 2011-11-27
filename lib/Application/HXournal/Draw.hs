@@ -99,12 +99,14 @@ updateCanvasBBox canvas page vinfo bbox = do
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
-    setSourceRGBA 1.0 1.0 1.0 1.0
+    setLineWidth 0.5 
+    setSourceRGBA 1.0 0.0 0.0 1.0
     transformForPageCoord geometry zmode
     let (x1,y1) = bbox_upperleft bbox
         (x2,y2) = bbox_lowerright bbox
     rectangle x1 y1 (x2-x1) (y2-y1)
-    fill
+    stroke
+    --fill
   return ()
 
 

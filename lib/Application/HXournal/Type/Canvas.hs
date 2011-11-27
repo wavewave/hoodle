@@ -10,6 +10,8 @@ import Prelude hiding ((.), id)
 
 import Graphics.UI.Gtk
 
+type CanvasId = Int 
+
 data PenDraw = PenDraw { _points :: Seq (Double,Double) } 
              deriving (Show)
                       
@@ -29,7 +31,7 @@ data ViewInfo = ViewInfo { _pageMode :: PageMode
                          }
               deriving (Show)
 
-data CanvasInfo = CanvasInfo { _canvasId :: Int 
+data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _drawArea :: DrawingArea
                              , _viewInfo :: ViewInfo 
                              , _currentPageNum :: Int
@@ -40,7 +42,7 @@ data CanvasInfo = CanvasInfo { _canvasId :: Int
 emptyCanvasInfo :: CanvasInfo
 emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined 
 
-type CanvasInfoMap = M.Map Int CanvasInfo
+type CanvasInfoMap = M.Map CanvasId CanvasInfo
 
 data PenType = PenWork | HighlighterWork | EraserWork 
              deriving (Show,Eq)

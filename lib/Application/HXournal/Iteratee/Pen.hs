@@ -47,8 +47,8 @@ penStart pcoord = do
             zmode = get (zoomMode.viewInfo) currCvsInfo
         geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
         let (x,y) = device2pageCoord geometry zmode pcoord 
-        connidup <- connPenUp canvas      
-        connidmove <- connPenMove canvas
+        connidup <- connPenUp canvas currCvsId      
+        connidmove <- connPenMove canvas currCvsId
         pdraw <- penProcess geometry connidmove connidup (empty |> (x,y)) (x,y) 
         let newxoj = addPDraw pinfo currxoj pagenum pdraw
         lift . St.put . set xournalbbox newxoj $ xstate 
@@ -67,7 +67,7 @@ penProcess cpg connidmove connidup pdraw (x0,y0) = do
     Nothing -> error "something wrong" 
     Just currCvsInfo -> do 
       case r of 
-        PenMove pcoord -> do 
+        PenMove cid pcoord -> do 
           let canvas = get drawArea currCvsInfo
               zmode  = get (zoomMode.viewInfo) currCvsInfo
               pcolor = get (penColor.penInfo) xstate 
@@ -76,7 +76,7 @@ penProcess cpg connidmove connidup pdraw (x0,y0) = do
               pcolRGBA = fromJust (M.lookup pcolor penColorRGBAmap) 
           liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)
           penProcess cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
-        PenUp pcoord -> do 
+        PenUp cid pcoord -> do 
           let zmode = get (zoomMode.viewInfo) currCvsInfo
               (x,y) = device2pageCoord cpg zmode pcoord 
           liftIO $ signalDisconnect connidmove

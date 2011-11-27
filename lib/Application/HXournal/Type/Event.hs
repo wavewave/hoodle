@@ -3,12 +3,8 @@ module Application.HXournal.Type.Event where
 import Application.HXournal.Device 
 
 data MyEvent = Initialized
-             | CanvasConfigure Double Double 
-             | ButtonLeft 
-             | ButtonRight 
-             | ButtonRefresh 
-             | ButtonQuit 
-             | UpdateCanvas
+             | CanvasConfigure Int Double Double 
+             | UpdateCanvas Int
              | MenuNew 
              | MenuAnnotatePDF
              | MenuOpen 
@@ -84,10 +80,10 @@ data MyEvent = Initialized
              | MenuSavePreferences
              | MenuAbout
              | MenuDefault
-             | PenDown PointerCoord
-             | PenMove PointerCoord
-             | PenUp   PointerCoord 
-             | HScrollBarMoved Double
-             | VScrollBarMoved Double 
+             | PenDown Int PointerCoord
+             | PenMove Int PointerCoord
+             | PenUp   Int PointerCoord 
+             | HScrollBarMoved Int Double
+             | VScrollBarMoved Int Double 
              deriving (Show,Eq,Ord)
 

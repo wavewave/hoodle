@@ -35,12 +35,19 @@ startGUI fname = do
   canvas <- drawingAreaNew
   scrwin <- scrolledWindowNew Nothing Nothing 
   containerAdd scrwin canvas
-  
   hadj <- adjustmentNew 0 0 500 100 200 200 
   vadj <- adjustmentNew 0 0 500 100 200 200 
   scrolledWindowSetHAdjustment scrwin hadj 
   scrolledWindowSetVAdjustment scrwin vadj 
   
+  canvas2 <- drawingAreaNew 
+  scrwin2 <- scrolledWindowNew Nothing Nothing 
+  containerAdd scrwin2 canvas2
+  hadj2 <- adjustmentNew 0 0 500 100 200 200
+  vadj2 <- adjustmentNew 0 0 500 100 200 200
+  scrolledWindowSetHAdjustment scrwin2 hadj2
+  scrolledWindowSetVAdjustment scrwin2 vadj2
+
   xojcontent <- P.read_xournal fname 
   let xojWbbox = mkXournalBBoxFromXournal xojcontent 
   let Dim width height = pageDim . (!! 0) .  xournalPages $ xojcontent
@@ -51,7 +58,16 @@ startGUI fname = do
              . set horizAdjustment hadj 
              . set vertAdjustment vadj 
              $ emptyCanvasInfo
-      cinfoMap = M.insert (get canvasId cinfo1) cinfo1
+      cinfo2 = set canvasId 2 
+             . set drawArea canvas2
+             . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
+             . set currentPageNum 0 
+             . set horizAdjustment hadj2 
+             . set vertAdjustment vadj2 
+             $ emptyCanvasInfo
+             
+      cinfoMap = M.insert (get canvasId cinfo2) cinfo2
+               $ M.insert (get canvasId cinfo1) cinfo1
                $ M.empty 
   let st = set xournalbbox xojWbbox
          . set canvasInfoMap cinfoMap 
@@ -89,44 +105,78 @@ startGUI fname = do
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
-  boxPackEnd vbox scrwin PackGrow 0 
+  boxPackStart vbox scrwin PackGrow 0 
+  boxPackEnd   vbox scrwin2 PackGrow 0
+ 
+  cursorDot <- cursorNew BlankCursor  
   
   afterValueChanged hadj $ do 
     v <- adjustmentGetValue hadj 
-    bouncecallback tref sref (HScrollBarMoved v)
-    
+    bouncecallback tref sref (HScrollBarMoved 1 v)
   afterValueChanged vadj $ do 
     v <- adjustmentGetValue vadj     
-    bouncecallback tref sref (VScrollBarMoved v)
+    bouncecallback tref sref (VScrollBarMoved 1 v)
+  
+  afterValueChanged hadj2 $ do 
+    v <- adjustmentGetValue hadj2 
+    bouncecallback tref sref (HScrollBarMoved 2 v)
+  afterValueChanged vadj2 $ do 
+    v <- adjustmentGetValue vadj2     
+    bouncecallback tref sref (VScrollBarMoved 2 v)
+
+
 
   canvas `on` sizeRequest $ return (Requisition 480 400)
-  canvas `on` configureEvent $ tryEvent $ do 
-    (w,h) <- eventSize 
-    liftIO $ bouncecallback tref sref 
-                            (CanvasConfigure (fromIntegral w) (fromIntegral h))
-  cursorDot <- cursorNew BlankCursor
-  canvas `on` enterNotifyEvent $ tryEvent $ do 
-    win <- liftIO $ widgetGetDrawWindow canvas
-    liftIO $ drawWindowSetCursor win (Just cursorDot)
-    return ()
-
-  canvas `on` exposeEvent $ tryEvent $ do 
-    liftIO $ bouncecallback tref sref UpdateCanvas 
+  canvas2 `on` sizeRequest $ return (Requisition 480 400)
   
   canvas `on` buttonPressEvent $ tryEvent $ do 
     xstate <- liftIO (readIORef sref)
     let callbk = get callBack xstate
         dev = get deviceList xstate 
     p <- getPointer dev
-    liftIO (callbk (PenDown p))
- 
+    liftIO (callbk (PenDown 1 p))
+  canvas2 `on` buttonPressEvent $ tryEvent $ do 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+        dev = get deviceList xstate 
+    p <- getPointer dev
+    liftIO (callbk (PenDown 2 p))
+    
+  canvas `on` configureEvent $ tryEvent $ do 
+    (w,h) <- eventSize 
+    liftIO $ bouncecallback tref sref 
+                            (CanvasConfigure 1 (fromIntegral w) (fromIntegral h))
+  canvas2 `on` configureEvent $ tryEvent $ do 
+    (w,h) <- eventSize 
+    liftIO $ bouncecallback tref sref 
+                            (CanvasConfigure 2 (fromIntegral w) (fromIntegral h))
+
   canvas `on` buttonReleaseEvent $ tryEvent $ do 
     xstate <- liftIO (readIORef sref)
     let callbk = get callBack xstate
         dev = get deviceList xstate 
     p <- getPointer dev
-    liftIO (callbk (PenUp p))
+    liftIO (callbk (PenUp 1 p))
+  canvas2 `on` buttonReleaseEvent $ tryEvent $ do 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+        dev = get deviceList xstate 
+    p <- getPointer dev
+    liftIO (callbk (PenUp 2 p))
     
+  canvas `on` exposeEvent $ tryEvent $ do 
+    liftIO $ bouncecallback tref sref (UpdateCanvas 1)
+  canvas2 `on` exposeEvent $ tryEvent $ do 
+    liftIO $ bouncecallback tref sref (UpdateCanvas 2)
+
+
+  {-
+  canvas `on` enterNotifyEvent $ tryEvent $ do 
+    win <- liftIO $ widgetGetDrawWindow canvas
+    liftIO $ drawWindowSetCursor win (Just cursorDot)
+    return ()
+  -}  
+  
   widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]
   widgetSetExtensionEvents canvas [ExtensionEventsAll]
   

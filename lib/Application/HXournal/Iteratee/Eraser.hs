@@ -48,8 +48,8 @@ eraserStart pcoord = do
           (x0,y0) = get (viewPortOrigin.viewInfo) currCvsInfo
       geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      connidup <- connPenUp canvas
-      connidmove <- connPenMove canvas 
+      connidup <- connPenUp canvas currCvsId
+      connidmove <- connPenMove canvas currCvsId
       strs <- getAllStrokeBBoxInCurrentPage
       eraserProcess geometry connidup connidmove strs (x,y)
   
@@ -67,7 +67,7 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
     Nothing -> return ()
     Just currCvsInfo -> do   
       case r of 
-        PenMove pcoord -> do 
+        PenMove cid pcoord -> do 
           let zmode  = get (zoomMode.viewInfo) currCvsInfo
               (x,y) = device2pageCoord cpg zmode pcoord 
               line = ((x0,y0),(x,y))
@@ -93,16 +93,16 @@ eraserProcess cpg connidmove connidup strs (x0,y0) = do
                                                          ++ pagesafter } 
               lift $ St.put (set xournalbbox newxojbbox xstate)
               case maybebbox of 
-                Just bbox -> invalidateBBox bbox
+                Just bbox -> invalidateBBox currCvsId bbox
                 Nothing -> return ()
               newstrs <- getAllStrokeBBoxInCurrentPage
               eraserProcess cpg connidup connidmove newstrs (x,y)
             else       
               eraserProcess cpg connidmove connidup strs (x,y) 
-        PenUp _pcoord -> do 
+        PenUp cid _pcoord -> do 
           liftIO $ signalDisconnect connidmove 
           liftIO $ signalDisconnect connidup 
-          invalidate 
+          invalidate currCvsId
         _ -> return ()
     
 eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 

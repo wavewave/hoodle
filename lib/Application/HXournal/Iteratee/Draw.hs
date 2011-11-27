@@ -21,33 +21,33 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-invalidate :: Iteratee MyEvent XournalStateIO () 
-invalidate = do 
+invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+invalidate cid = do 
   xstate <- lift St.get  
-  let currCvsId = get currentCanvas xstate
-      maybeCurrCvs = M.lookup currCvsId (get canvasInfoMap xstate)
-  case maybeCurrCvs of 
+  let -- currCvsId = get currentCanvas xstate
+      maybeCvs = M.lookup cid (get canvasInfoMap xstate)
+  case maybeCvs of 
     Nothing -> return ()
-    Just currCvsInfo -> do 
+    Just cvsInfo -> do 
       let xojbbox = get xournalbbox xstate
       liftIO (updateCanvas <$> get drawArea 
                            <*> pure xojbbox
                            <*> get currentPageNum 
                            <*> get viewInfo 
-                           $ currCvsInfo )
+                           $ cvsInfo )
 
-invalidateBBox :: BBox -> Iteratee MyEvent XournalStateIO () 
-invalidateBBox bbox = do 
+invalidateBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO () 
+invalidateBBox cid bbox = do 
   xstate <- lift St.get  
-  let currCvsId = get currentCanvas xstate
-      maybeCurrCvs = M.lookup currCvsId (get canvasInfoMap xstate)
-  case maybeCurrCvs of 
+  let -- currCvsId = get currentCanvas xstate
+      maybeCvs = M.lookup cid (get canvasInfoMap xstate)
+  case maybeCvs of 
     Nothing -> return ()
-    Just currCvsInfo -> do 
-      let pagenum = get currentPageNum currCvsInfo
+    Just cvsInfo -> do 
+      let pagenum = get currentPageNum cvsInfo
       let page = (!!pagenum) . xournalPages . get xournalbbox $ xstate
       liftIO (updateCanvasBBox <$> get drawArea 
                                <*> pure page 
                                <*> get viewInfo 
                                <*> pure bbox
-                               $ currCvsInfo )
+                               $ cvsInfo )

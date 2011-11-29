@@ -470,6 +470,13 @@ getMenuUI tref sref = do
   uiManagerAddUiFromString ui uiDecl 
   uiManagerInsertActionGroup ui agr 0 
 
+  Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
+  toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
+
+  Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
+  toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
+
+
   -- Just ra <- uiManagerGetAction ui "ONEPAGEA"
   -- Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 0]
   -- Gtk.set (head pointmods) [radioActionCurrentValue := 2]

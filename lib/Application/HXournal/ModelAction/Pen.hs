@@ -2,7 +2,7 @@
 
 module Application.HXournal.ModelAction.Pen where
 
-import Application.HXournal.Type.XournalBBox
+import Graphics.Xournal.Render.BBox
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Enum
 

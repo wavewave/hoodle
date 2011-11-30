@@ -4,7 +4,7 @@ module Application.HXournal.GUI where
 
 import Application.HXournal.Type 
 import Application.HXournal.Type.Event
-import Application.HXournal.Type.XournalBBox
+import Graphics.Xournal.Render.BBox
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
 import Application.HXournal.Iteratee

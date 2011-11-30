@@ -5,7 +5,7 @@ module Application.HXournal.HitTest where
 import Data.Strict.Tuple
 import Text.Xournal.Type 
 
-import Application.HXournal.Type.XournalBBox 
+import Graphics.Xournal.Render.BBox 
 import Application.HXournal.Util.AlterList 
 
 import Control.Applicative

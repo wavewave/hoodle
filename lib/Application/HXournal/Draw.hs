@@ -11,7 +11,7 @@ import Prelude hiding ((.),id)
 
 import Text.Xournal.Type
 
-import Application.HXournal.Type.XournalBBox 
+import Graphics.Xournal.Render.BBox 
 import Application.HXournal.Type 
 import Application.HXournal.Device
 

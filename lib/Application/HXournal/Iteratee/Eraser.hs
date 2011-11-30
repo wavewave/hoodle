@@ -6,7 +6,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Application.HXournal.Type.XournalBBox
+import Graphics.Xournal.Render.BBox
 import Application.HXournal.Type.Event
 import Application.HXournal.Device
 import Application.HXournal.HitTest

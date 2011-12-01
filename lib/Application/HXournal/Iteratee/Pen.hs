@@ -40,7 +40,7 @@ penStart cid pcoord = do
     case maybeCvs of 
       Nothing -> error "penStart wrong"
       Just cvsInfo -> do 
-        let currxoj = get xournalbbox xstate        
+        let currxoj = unView . get xournalstate $ xstate        
             canvas = get drawArea cvsInfo   
             pagenum = get currentPageNum cvsInfo
             page = (!!pagenum) . xournalPages $ currxoj
@@ -55,7 +55,7 @@ penStart cid pcoord = do
                            (empty |> (x,y)) (x,y) 
         let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
             bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
-            xstate' = set xournalbbox newxoj $ xstate
+            xstate' = set xournalstate (ViewAppendState newxoj) $ xstate
         putSt xstate'
         -- invalidateOther
         let cinfoMap = get canvasInfoMap xstate'

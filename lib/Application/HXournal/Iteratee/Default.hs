@@ -16,6 +16,7 @@ import Application.HXournal.Iteratee.Eraser
 import Application.HXournal.Iteratee.Highlighter
 import Application.HXournal.Iteratee.Scroll
 import Application.HXournal.Iteratee.Page
+import Application.HXournal.Iteratee.Select
 
 import Application.HXournal.Builder 
 
@@ -78,7 +79,7 @@ defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuSave = do 
-    xojcontent <- get xournalbbox <$> lift St.get   
+    xojcontent <- unView . get xournalstate <$> lift St.get   
     liftIO $ L.writeFile "mytest.xoj" . builder . xournalFromXournalBBox 
            $ xojcontent
 defaultEventProcess MenuNormalSize = do 
@@ -93,7 +94,8 @@ defaultEventProcess MenuNormalSize = do
         let canvas = get drawArea currCvsInfo
         (w',h') <- liftIO $ widgetGetSize canvas
         let cpn = get currentPageNum currCvsInfo
-        let Dim w h = pageDim . (!! cpn) . xournalPages . get xournalbbox 
+        let Dim w h = pageDim . (!! cpn) . xournalPages . unView 
+                    . get xournalstate 
                     $ xstate
         let (hadj,vadj) = get adjustments currCvsInfo 
         liftIO $ do 
@@ -121,7 +123,7 @@ defaultEventProcess MenuPageWidth = do
       Just currCvsInfo -> do 
         let canvas = get drawArea currCvsInfo
             cpn = get currentPageNum currCvsInfo
-            page = (!! cpn) . xournalPages . get xournalbbox $ xstate
+            page = (!! cpn) . xournalPages . unView . get xournalstate $ xstate
             Dim w h = pageDim page 
         cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
         let (w',h') = canvas_size cpg 
@@ -141,6 +143,10 @@ defaultEventProcess MenuPageWidth = do
             xstate' = set canvasInfoMap cinfoMap' xstate
         lift . St.put $ xstate'             
         invalidate currCvsId    
+defaultEventProcess MenuSelectRectangle = do 
+    xstate <- lift St.get 
+    let currCvsId = get currentCanvas xstate
+    selectStart currCvsId 
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
@@ -186,7 +192,7 @@ defaultEventProcess (CanvasConfigure cid w' h') = do
       Just cvsInfo -> do 
         let canvas = get drawArea cvsInfo
             cpn = get currentPageNum cvsInfo
-            page = (!! cpn) . xournalPages . get xournalbbox $ xstate        
+            page = (!! cpn) . xournalPages . unView . get xournalstate $ xstate
             (w,h) = get (pageDimension.viewInfo) cvsInfo
             zmode = get (zoomMode.viewInfo) cvsInfo
         cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))

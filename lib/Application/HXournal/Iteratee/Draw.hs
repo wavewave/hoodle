@@ -50,7 +50,7 @@ invalidate cid = do
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do 
-      let xojbbox = get xournalbbox xstate
+      let xojbbox = unView . get xournalstate $ xstate
       liftIO (updateCanvas <$> get drawArea 
                            <*> pure xojbbox
                            <*> get currentPageNum 
@@ -65,7 +65,8 @@ invalidateInBBox cid bbox = do
     Nothing -> return ()
     Just cvsInfo -> do 
       let pagenum = get currentPageNum cvsInfo
-      let page = (!!pagenum) . xournalPages . get xournalbbox $ xstate
+      let page = (!!pagenum) . xournalPages . unView . get xournalstate 
+               $ xstate
       liftIO (updateCanvasInBBox <$> get drawArea 
                                  <*> pure page 
                                  <*> get viewInfo 
@@ -81,7 +82,8 @@ invalidateDrawBBox cid bbox = do
     Nothing -> return ()
     Just cvsInfo -> do 
       let pagenum = get currentPageNum cvsInfo
-      let page = (!!pagenum) . xournalPages . get xournalbbox $ xstate
+      let page = (!!pagenum) . xournalPages . unView . get xournalstate 
+               $ xstate
       liftIO (drawBBox <$> get drawArea 
                        <*> pure page 
                        <*> get viewInfo 
@@ -96,7 +98,7 @@ invalidateBBoxOnly cid = do
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do 
-      let xojbbox = get xournalbbox xstate
+      let xojbbox = unView . get xournalstate $ xstate
       liftIO (updateCanvasBBoxOnly <$> get drawArea 
                                    <*> pure xojbbox
                                    <*> get currentPageNum 

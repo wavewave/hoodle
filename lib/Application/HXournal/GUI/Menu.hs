@@ -449,7 +449,7 @@ getMenuUI tref sref = do
         , shwlayera, hidlayera
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
-        , shpreca, rulera, selregna, selrecta, vertspa, handa
+        , shpreca, rulera, selregna, vertspa, handa
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , uxinputa, dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
@@ -460,7 +460,7 @@ getMenuUI tref sref = do
         ] 
       enabledActions = 
         [ savea, quita, fstpagea, prvpagea, nxtpagea, lstpagea
-        , clra, penopta, zooma, nrmsizea, pgwdtha
+        , clra, penopta, zooma, nrmsizea, pgwdtha, selrecta
         ]
   
   mapM_ (\x->actionSetSensitive x True) enabledActions  

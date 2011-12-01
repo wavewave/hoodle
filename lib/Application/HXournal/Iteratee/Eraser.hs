@@ -46,7 +46,7 @@ eraserStart cid pcoord = do
       Nothing -> return ()
       Just cvsInfo -> do  
         let canvas = get drawArea cvsInfo
-            xojbbox = get xournalbbox xstate
+            xojbbox = unView . get xournalstate $ xstate
             pagenum = get currentPageNum cvsInfo
             page = (!!pagenum) . xournalPages $ xojbbox
             zmode = get (zoomMode.viewInfo) cvsInfo
@@ -81,7 +81,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                 St.runState (hitTestStrokes line hittestbbox) False
           if hitState 
             then do 
-              let currxoj     = get xournalbbox xstate 
+              let currxoj     = unView . get xournalstate $ xstate 
                   pgnum       = get currentPageNum cvsInfo
                   pages       = xournalPages currxoj 
                   currpage    = pages !! pgnum
@@ -96,7 +96,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                   newxojbbox = currxoj { xojbbox_pages = pagesbefore
                                                          ++ [newpagebbox]
                                                          ++ pagesafter } 
-              lift $ St.put (set xournalbbox newxojbbox xstate)
+              lift $ St.put (set xournalstate (ViewAppendState newxojbbox) xstate)
               case maybebbox of 
                 Just bbox -> invalidateDrawBBox cid bbox
                 Nothing -> return ()

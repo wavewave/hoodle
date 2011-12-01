@@ -1,0 +1,54 @@
+module Application.HXournal.Iteratee.Select where
+
+import Graphics.UI.Gtk hiding (get,set)
+
+import Application.HXournal.Type.Event 
+
+import Application.HXournal.Type.Coroutine
+import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.XournalState
+
+import Application.HXournal.Iteratee.Draw
+
+import qualified Data.Map as M
+
+import Control.Monad.Trans
+import qualified Control.Monad.State as St
+import Control.Monad.Coroutine.SuspensionFunctors
+
+import Control.Category
+import Data.Label
+import Prelude hiding ((.), id)
+
+selectStart :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+selectStart cid = do    
+    liftIO $ putStrLn "selectStart"
+    selectProcess cid 
+        
+selectProcess :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+selectProcess cid = do    
+  ev <- await 
+  liftIO $ putStrLn "selectProcess"
+  return ()
+{-  case ev of
+   VScrollBarMoved cid' v -> do 
+      xstate <- lift St.get 
+      let cinfoMap = get canvasInfoMap xstate
+          maybeCvs = M.lookup cid cinfoMap 
+      case maybeCvs of 
+        Nothing -> return ()
+        Just cvsInfo -> do 
+          let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
+          let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
+                         $ cvsInfo 
+              cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
+              xstate' = set canvasInfoMap cinfoMap' 
+                        . set currentCanvas cid
+                        $ xstate
+          lift . St.put $ xstate'
+          invalidateBBoxOnly cid
+          vscrollMove cid 
+    VScrollBarEnd cid v -> do 
+      invalidate cid 
+      return ()
+-}    

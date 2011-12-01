@@ -71,7 +71,7 @@ startGUI fname = do
       cinfoMap = M.insert (get canvasId cinfo2) cinfo2
                $ M.insert (get canvasId cinfo1) cinfo1
                $ M.empty 
-  let st = set xournalbbox xojWbbox
+  let st = set xournalstate (ViewAppendState xojWbbox)
          . set canvasInfoMap cinfoMap 
          . set currentCanvas (get canvasId cinfo1)
          . set deviceList devlst 

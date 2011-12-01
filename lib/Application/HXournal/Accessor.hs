@@ -43,7 +43,8 @@ getAllStrokeBBoxInCurrentPage = do
     Nothing -> return [] 
     Just currCvsInfo -> do 
       let pagenum = get currentPageNum currCvsInfo
-          pagebbox = (!!pagenum) . xojbbox_pages . get xournalbbox $ xstate 
+          pagebbox = (!!pagenum) . xojbbox_pages . unView .  get xournalstate
+                   $ xstate 
       let strs = do 
             l <- pagebbox_layers pagebbox 
             s <- layerbbox_strokes l

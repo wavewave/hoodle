@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.3.0.1
+Version:	0.3.0.999
 Synopsis:	haskell clone of xournal 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
@@ -61,6 +61,7 @@ Library
                    Application.HXournal.Iteratee.Highlighter
                    Application.HXournal.Iteratee.Scroll
                    Application.HXournal.Iteratee.Page
+                   Application.HXournal.Iteratee.Select
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw

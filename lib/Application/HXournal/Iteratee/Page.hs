@@ -38,7 +38,7 @@ changePage modifyfn = do
   case maybeCurrCvs of 
     Nothing -> return ()
     Just currCvsInfo -> do 
-      let xoj = get xournalbbox xstate 
+      let xoj = unView . get xournalstate $ xstate 
           pages = xournalPages xoj 
           totalnumofpages = length pages
           oldpage = get currentPageNum currCvsInfo
@@ -50,7 +50,7 @@ changePage modifyfn = do
                              . pageFromPageBBox $ lpage
                        npages = pages ++ [npage] 
                        newxoj = xoj { xojbbox_pages = npages } 
-                       xstate' = set xournalbbox newxoj xstate
+                       xstate' = set xournalstate (ViewAppendState newxoj) xstate
                    putSt xstate'
                    return (xstate',newxoj,npages,totalnumofpages+1,totalnumofpages)
            else if modifyfn oldpage < 0 

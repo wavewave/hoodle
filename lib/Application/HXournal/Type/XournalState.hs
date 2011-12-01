@@ -10,6 +10,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 
 import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Select
 import Graphics.Xournal.Render.BBox 
 
 
@@ -17,6 +18,7 @@ import Control.Monad.State
 
 import Text.Xournal.Type
 import Text.Xournal.Predefined 
+
 
 import Graphics.UI.Gtk
 
@@ -31,7 +33,10 @@ import qualified Data.ByteString.Char8 as B
 
 type XournalStateIO = StateT HXournalState IO 
 
-data HXournalState = HXournalState { _xournalbbox :: XournalBBox
+data XournalState = ViewAppendState { unView :: XournalBBox }
+                  | SelectState XournalSelect
+
+data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _canvasInfoMap :: CanvasInfoMap 
                                    , _currentCanvas :: Int
                                    , _currentPenDraw :: PenDraw
@@ -46,7 +51,7 @@ $(mkLabels [''HXournalState])
 emptyHXournalState :: HXournalState 
 emptyHXournalState = 
   HXournalState  
-  { _xournalbbox = mkXournalBBoxFromXournal emptyXournal
+  { _xournalstate = ViewAppendState (mkXournalBBoxFromXournal emptyXournal)
   , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"
   , _currentCanvas = error "emtpyHxournalState.currentCanvas"
   , _currentPenDraw = emptyPenDraw 

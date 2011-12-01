@@ -20,7 +20,7 @@ import Data.Strict.Tuple hiding (uncurry)
 import Text.Xournal.Type
 
 addPDraw :: PenInfo -> XournalBBox -> Int -> Seq (Double,Double) 
-            -> XournalBBox
+            -> (XournalBBox,BBox)
 addPDraw pinfo xoj pgnum pdraw = 
   let pcolor = get penColor pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
@@ -44,4 +44,4 @@ addPDraw pinfo xoj pgnum pdraw =
                                           ++ [newpagebbox] 
                                           ++ pagesafter }  
 
-  in  newxojbbox
+  in  (newxojbbox,strokebbox_bbox newstrokebbox)

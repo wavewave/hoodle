@@ -22,27 +22,11 @@ import Prelude hiding ((.), id)
 
 vscrollStart :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 vscrollStart cid = do    
-{-    xstate1 <- getSt 
-    let xstate = set currentCanvas cid xstate1 
-    putSt xstate
-    let maybeCvs = M.lookup cid (get canvasInfoMap xstate) 
-    case maybeCvs of 
-      Nothing -> error "scrollStart wrong"
-      Just cvsInfo -> do 
-        let currxoj = get xournalbbox xstate        
-            canvas = get drawArea cvsInfo   
-            pagenum = get currentPageNum cvsInfo
-            page = (!!pagenum) . xournalPages $ currxoj
-            (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
-            pinfo = get penInfo xstate
-            zmode = get (zoomMode.viewInfo) cvsInfo
-        geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) ) -}
-        liftIO $ putStrLn "vscrollStart"
-        vscrollMove cid 
+    liftIO $ putStrLn "vscrollStart"
+    vscrollMove cid 
         
 vscrollMove :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 vscrollMove cid = do    
-  liftIO $ putStrLn "vscrollMove"
   ev <- await 
   case ev of
     VScrollBarMoved cid' v -> do 

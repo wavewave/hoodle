@@ -63,11 +63,9 @@ Library
                    Application.HXournal.Iteratee.Page
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
-                   Application.HXournal.Util.AlterList
                    Application.HXournal.Draw
                    Application.HXournal.Device
                    Application.HXournal.Builder 
-                   Application.HXournal.HitTest
                    Application.HXournal.Accessor
   Other-Modules: 
                    Paths_hxournal

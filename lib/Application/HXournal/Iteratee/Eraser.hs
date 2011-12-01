@@ -9,14 +9,16 @@ import Application.HXournal.Type.XournalState
 import Graphics.Xournal.Render.BBox
 import Application.HXournal.Type.Event
 import Application.HXournal.Device
-import Application.HXournal.HitTest
-import Application.HXournal.Util.AlterList
 import Application.HXournal.Draw
 
 import Application.HXournal.Iteratee.EventConnect
 import Application.HXournal.Iteratee.Draw
 
 import Application.HXournal.Accessor
+
+import Graphics.Xournal.HitTest
+import Graphics.Xournal.AlterList
+
 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
@@ -95,7 +97,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                                                          ++ pagesafter } 
               lift $ St.put (set xournalbbox newxojbbox xstate)
               case maybebbox of 
-                Just bbox -> invalidateBBox cid bbox
+                Just bbox -> invalidateDrawBBox cid bbox
                 Nothing -> return ()
               newstrs <- getAllStrokeBBoxInCurrentPage
               eraserProcess cid cpg connidup connidmove newstrs (x,y)

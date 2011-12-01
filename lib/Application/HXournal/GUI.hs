@@ -130,20 +130,35 @@ startGUI fname = do
     v <- adjustmentGetValue vadj2     
     bouncecallback tref sref (VScrollBarMoved 2 v)
   
-  {-
+  
   Just vscrbar <- scrolledWindowGetVScrollbar scrwin
-  vscrbar `on` buttonPressEvent $ tryEvent $ do 
+  vscrbar `on` buttonPressEvent $ do 
     v <- liftIO $ adjustmentGetValue vadj 
     xstate <- liftIO (readIORef sref)
     let callbk = get callBack xstate
     liftIO (callbk (VScrollBarStart 1 v))
-
-  vscrbar `on` buttonReleaseEvent $ tryEvent $ do 
+    return False
+  vscrbar `on` buttonReleaseEvent $ do 
     v <- liftIO $ adjustmentGetValue vadj 
     xstate <- liftIO (readIORef sref)
     let callbk = get callBack xstate
     liftIO (callbk (VScrollBarEnd 1 v))
-  -}
+    return False
+  
+  Just vscrbar2 <- scrolledWindowGetVScrollbar scrwin2
+  vscrbar2 `on` buttonPressEvent $ do 
+    v <- liftIO $ adjustmentGetValue vadj2 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+    liftIO (callbk (VScrollBarStart 2 v))
+    return False
+
+  vscrbar2 `on` buttonReleaseEvent $ do 
+    v <- liftIO $ adjustmentGetValue vadj2 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+    liftIO (callbk (VScrollBarEnd 2 v))
+    return False
 
   canvas `on` sizeRequest $ return (Requisition 480 400)
   canvas2 `on` sizeRequest $ return (Requisition 480 400)

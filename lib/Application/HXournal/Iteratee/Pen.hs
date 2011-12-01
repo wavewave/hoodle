@@ -20,7 +20,7 @@ import Control.Monad.Trans
 import qualified Control.Monad.State as St
 import Control.Monad.Coroutine.SuspensionFunctors
 
-import Data.Sequence
+import Data.Sequence hiding (filter)
 import qualified Data.Map as M
 import Data.Maybe 
 
@@ -29,6 +29,7 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Text.Xournal.Type 
+import Graphics.Xournal.Render.BBox
 
 penStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO ()
 penStart cid pcoord = do 
@@ -52,9 +53,14 @@ penStart cid pcoord = do
         connidmove <- connPenMove canvas cid
         pdraw <-penProcess cid geometry connidmove connidup 
                            (empty |> (x,y)) (x,y) 
-        let newxoj = addPDraw pinfo currxoj pagenum pdraw
+        let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
+            bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
         putSt . set xournalbbox newxoj $ xstate 
-        invalidateOther
+        -- invalidateOther
+        let cinfoMap = get canvasInfoMap xstate
+            keys = M.keys cinfoMap 
+        mapM_ (flip invalidateInBBox bbox') (filter (/=cid) keys) 
+        
         return ()
 
 penProcess :: CanvasId

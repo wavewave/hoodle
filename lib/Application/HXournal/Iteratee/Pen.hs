@@ -55,9 +55,10 @@ penStart cid pcoord = do
                            (empty |> (x,y)) (x,y) 
         let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
             bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
-        putSt . set xournalbbox newxoj $ xstate 
+            xstate' = set xournalbbox newxoj $ xstate
+        putSt xstate'
         -- invalidateOther
-        let cinfoMap = get canvasInfoMap xstate
+        let cinfoMap = get canvasInfoMap xstate'
             keys = M.keys cinfoMap 
         mapM_ (flip invalidateInBBox bbox') (filter (/=cid) keys) 
         

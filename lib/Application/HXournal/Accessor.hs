@@ -4,6 +4,8 @@ module Application.HXournal.Accessor where
 
 import Application.HXournal.Type
 import Application.HXournal.Type.Event 
+
+import Graphics.Xournal.Type 
 import Graphics.Xournal.Render.BBox
 
 import Control.Applicative

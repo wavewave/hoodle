@@ -6,9 +6,12 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Graphics.Xournal.Render.BBox
+
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
+
+import Graphics.Xournal.Type
+import Graphics.Xournal.Render.BBox
 
 import Text.Xournal.Type 
 

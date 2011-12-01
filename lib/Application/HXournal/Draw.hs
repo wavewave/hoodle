@@ -1,7 +1,6 @@
 module Application.HXournal.Draw where
 
 import Graphics.UI.Gtk hiding (get)
-import Graphics.Xournal.Render 
 import Graphics.Rendering.Cairo
 
 import Control.Applicative 
@@ -11,6 +10,8 @@ import Prelude hiding ((.),id)
 
 import Text.Xournal.Type
 
+import Graphics.Xournal.Type 
+import Graphics.Xournal.Render 
 import Graphics.Xournal.Render.BBox 
 import Application.HXournal.Type 
 import Application.HXournal.Device

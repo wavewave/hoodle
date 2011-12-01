@@ -16,8 +16,9 @@ import Application.HXournal.Iteratee.Draw
 
 import Application.HXournal.Accessor
 
+import Graphics.Xournal.Type
 import Graphics.Xournal.HitTest
-import Graphics.Xournal.AlterList
+
 
 
 import Control.Monad.Coroutine

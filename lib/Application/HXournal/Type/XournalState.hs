@@ -3,10 +3,15 @@
 module Application.HXournal.Type.XournalState where
 
 import Application.HXournal.Device
-import Graphics.Xournal.Render.BBox 
+
+
 import Application.HXournal.Type.Event 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
+
+import Graphics.Xournal.Type
+import Graphics.Xournal.Render.BBox 
+
 
 import Control.Monad.State
 

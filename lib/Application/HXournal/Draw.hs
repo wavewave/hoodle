@@ -94,8 +94,21 @@ updateCanvas canvas xoj pagenum vinfo = do
     cairoDrawPage currpage
   return ()
 
-updateCanvasBBox :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
-updateCanvasBBox canvas page vinfo bbox = do 
+updateCanvasBBoxOnly :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
+updateCanvasBBoxOnly canvas xoj pagenum vinfo = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+  let currpage = ((!!pagenum).xournalPages) xoj
+  geometry <- getCanvasPageGeometry canvas currpage origin
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoDrawPageBBoxOnly currpage
+  return ()
+
+
+drawBBox :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
+drawBBox canvas page vinfo bbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin

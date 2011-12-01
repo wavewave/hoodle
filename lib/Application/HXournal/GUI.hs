@@ -39,6 +39,7 @@ startGUI fname = do
   vadj <- adjustmentNew 0 0 500 100 200 200 
   scrolledWindowSetHAdjustment scrwin hadj 
   scrolledWindowSetVAdjustment scrwin vadj 
+  scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
   
   canvas2 <- drawingAreaNew 
   scrwin2 <- scrolledWindowNew Nothing Nothing 
@@ -47,6 +48,7 @@ startGUI fname = do
   vadj2 <- adjustmentNew 0 0 500 100 200 200
   scrolledWindowSetHAdjustment scrwin2 hadj2
   scrolledWindowSetVAdjustment scrwin2 vadj2
+  scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
 
   xojcontent <- P.read_xournal fname 
   let xojWbbox = mkXournalBBoxFromXournal xojcontent 
@@ -113,6 +115,7 @@ startGUI fname = do
  
   cursorDot <- cursorNew BlankCursor  
   
+  
   afterValueChanged hadj $ do 
     v <- adjustmentGetValue hadj 
     bouncecallback tref sref (HScrollBarMoved 1 v)
@@ -126,8 +129,21 @@ startGUI fname = do
   afterValueChanged vadj2 $ do 
     v <- adjustmentGetValue vadj2     
     bouncecallback tref sref (VScrollBarMoved 2 v)
+  
+  {-
+  Just vscrbar <- scrolledWindowGetVScrollbar scrwin
+  vscrbar `on` buttonPressEvent $ tryEvent $ do 
+    v <- liftIO $ adjustmentGetValue vadj 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+    liftIO (callbk (VScrollBarStart 1 v))
 
-
+  vscrbar `on` buttonReleaseEvent $ tryEvent $ do 
+    v <- liftIO $ adjustmentGetValue vadj 
+    xstate <- liftIO (readIORef sref)
+    let callbk = get callBack xstate
+    liftIO (callbk (VScrollBarEnd 1 v))
+  -}
 
   canvas `on` sizeRequest $ return (Requisition 480 400)
   canvas2 `on` sizeRequest $ return (Requisition 480 400)

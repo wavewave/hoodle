@@ -85,5 +85,7 @@ data MyEvent = Initialized
              | PenUp   Int PointerCoord 
              | HScrollBarMoved Int Double
              | VScrollBarMoved Int Double 
+             | VScrollBarStart Int Double
+             | VScrollBarEnd   Int Double
              deriving (Show,Eq,Ord)
 

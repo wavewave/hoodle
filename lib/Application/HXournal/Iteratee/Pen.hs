@@ -8,7 +8,6 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Application.HXournal.Type.Event
 
 import Application.HXournal.Iteratee.Draw
 import Application.HXournal.Iteratee.EventConnect

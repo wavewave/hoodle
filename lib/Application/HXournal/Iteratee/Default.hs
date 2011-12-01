@@ -14,6 +14,8 @@ import Application.HXournal.Iteratee.Draw
 import Application.HXournal.Iteratee.Pen 
 import Application.HXournal.Iteratee.Eraser
 import Application.HXournal.Iteratee.Highlighter
+import Application.HXournal.Iteratee.Scroll
+import Application.HXournal.Iteratee.Page
 
 import Application.HXournal.Builder 
 
@@ -55,39 +57,6 @@ initialize = do ev <- await
                 case ev of 
                   Initialized -> return () 
                   _ -> initialize
-
-changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
-changePage modifyfn = do 
-  xstate <- lift St.get 
-  let currCvsId = get currentCanvas xstate
-      cinfoMap = get canvasInfoMap xstate
-      maybeCurrCvs = M.lookup currCvsId cinfoMap 
-  case maybeCurrCvs of 
-    Nothing -> return ()
-    Just currCvsInfo -> do 
-      let xoj = get xournalbbox xstate 
-          pages = xournalPages xoj 
-          totalnumofpages = length pages
-          oldpage = get currentPageNum currCvsInfo
-      let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
-                  | modifyfn oldpage < 0  = 0 
-                  | otherwise = modifyfn oldpage 
-          Dim w h = pageDim . (!! newpage) $ pages
-          (hadj,vadj) = get adjustments currCvsInfo
-      liftIO $ do 
-        adjustmentSetUpper hadj w 
-        adjustmentSetUpper vadj h 
-        adjustmentSetValue hadj 0
-        adjustmentSetValue vadj 0
-  
-      let currCvsInfo' = set (viewPortOrigin.viewInfo) (0,0) 
-                       . set (pageDimension.viewInfo) (w,h) 
-                       . set currentPageNum newpage
-                       $ currCvsInfo
-          cinfoMap' = M.adjust (\_ -> currCvsInfo') currCvsId cinfoMap  
-          xstate' = set canvasInfoMap cinfoMap' xstate
-      lift . St.put $ xstate' 
-      invalidate currCvsId 
 
 eventProcess :: Iteratee MyEvent XournalStateIO ()
 eventProcess = do 
@@ -204,6 +173,9 @@ defaultEventProcess (VScrollBarMoved cid v) = do
                     $ xstate
         lift . St.put $ xstate'
         invalidate cid
+defaultEventProcess (VScrollBarStart cid v) = do 
+  vscrollStart cid 
+
 defaultEventProcess (CanvasConfigure cid w' h') = do 
     xstate <- lift St.get 
     let -- currCvsId = get currentCanvas xstate

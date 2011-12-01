@@ -59,6 +59,8 @@ Library
                    Application.HXournal.Iteratee.Pen
                    Application.HXournal.Iteratee.Eraser
                    Application.HXournal.Iteratee.Highlighter
+                   Application.HXournal.Iteratee.Scroll
+                   Application.HXournal.Iteratee.Page
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Util.AlterList

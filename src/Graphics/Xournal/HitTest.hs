@@ -5,8 +5,7 @@ module Graphics.Xournal.HitTest where
 import Data.Strict.Tuple
 import Text.Xournal.Type 
 
-import Graphics.Xournal.Render.BBox 
-import Graphics.Xournal.AlterList 
+import Graphics.Xournal.Type
 
 import Control.Applicative
 import Control.Monad.State
@@ -48,12 +47,6 @@ mkHitTestAL :: (StrokeBBox -> Bool)
             -> [StrokeBBox]
             -> AlterList NotHitted Hitted 
 mkHitTestAL test strs = evalState (mkHitTestALState test strs) False
-{-  let (nhit,rest) = break test  strs
-      (hit,rest') = break (not.test) rest 
-  in if null rest' 
-       then NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty 
-       else NotHitted nhit :- Hitted hit :- mkHitTestAL test rest' 
--}
 
 mkHitTestALState :: (StrokeBBox -> Bool) 
                  -> [StrokeBBox]
@@ -74,6 +67,21 @@ mkHitTestBBox :: ((Double,Double),(Double,Double))
 mkHitTestBBox (p1,p2) = mkHitTestAL boxhittest 
   where boxhittest s = hitTestBBoxPoint (strokebbox_bbox s) p1
                        || hitTestBBoxPoint (strokebbox_bbox s) p2
+
+mkHitTestBBoxBBox :: BBox -> [StrokeBBox] -> AlterList NotHitted Hitted 
+mkHitTestBBoxBBox b = mkHitTestAL (hitTestBBoxBBox b . strokebbox_bbox) 
+
+ 
+hitTestBBoxBBox :: BBox -> BBox -> Bool  
+hitTestBBoxBBox b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lry2))
+  = hitTestBBoxPoint b2 (ulx1,uly1)
+    || hitTestBBoxPoint b2 (lrx1,lry1)
+    || hitTestBBoxPoint b2 (lrx1,uly1)
+    || hitTestBBoxPoint b2 (ulx1,lry1)
+    || hitTestBBoxPoint b1 (lrx2,lry2)
+    || hitTestBBoxPoint b1 (ulx2,uly2)
+ 
+
 
 mkHitTestStroke :: ((Double,Double),(Double,Double))
                 -> [StrokeBBox]

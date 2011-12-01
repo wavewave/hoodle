@@ -24,7 +24,7 @@ Library
                    Graphics.Xournal.Render
                    Graphics.Xournal.Render.BBox
                    Graphics.Xournal.HitTest
-                   Graphics.Xournal.AlterList
+                   Graphics.Xournal.Type
 
 
 

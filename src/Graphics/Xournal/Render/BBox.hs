@@ -1,9 +1,11 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Graphics.Xournal.Render.BBox where
 
 import Graphics.Rendering.Cairo
 import Graphics.Xournal.Render
+import Graphics.Xournal.HitTest
+import Graphics.Xournal.Type 
 
 import Text.Xournal.Type 
 import Text.Xournal.Predefined 
@@ -11,51 +13,11 @@ import Text.Xournal.Predefined
 import qualified Data.Map as M
 
 import Data.Strict.Tuple
-import Data.ByteString hiding (map, minimum, maximum)
+import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter )
 
 
 import Prelude hiding (fst,snd,curry,uncurry)
 
-data BBox = BBox { bbox_upperleft :: (Double,Double) 
-                 , bbox_lowerright :: (Double,Double) } 
-          deriving (Show)
-
-data XournalBBox = XournalBBox { xojbbox_pages :: [PageBBox] }
-
-data PageBBox = PageBBox { pagebbox_dim :: Dimension
-                         , pagebbox_bkg :: Background
-                         , pagebbox_layers :: [LayerBBox] } 
-
-data LayerBBox = LayerBBox { layerbbox_strokes :: [StrokeBBox] } 
-
-data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
-                             , strokebbox_color :: ByteString 
-                             , strokebbox_width :: Double
-                             , strokebbox_data :: [Pair Double Double] 
-                             , strokebbox_bbox :: BBox }
-                deriving (Show)
-                         
-
-
-instance IStroke StrokeBBox where 
-  strokeTool = strokebbox_tool
-  strokeColor = strokebbox_color
-  strokeWidth = strokebbox_width
-  strokeData = strokebbox_data
-  
-instance ILayer LayerBBox where 
-  type TStroke LayerBBox = StrokeBBox 
-  layerStrokes = layerbbox_strokes 
-
-instance IPage PageBBox where
-  type TLayer PageBBox = LayerBBox
-  pageDim = pagebbox_dim
-  pageBkg = pagebbox_bkg 
-  pageLayers = pagebbox_layers
-
-instance IXournal XournalBBox where
-  type TPage XournalBBox = PageBBox 
-  xournalPages = xojbbox_pages 
   
 mkXournalBBoxFromXournal :: Xournal -> XournalBBox 
 mkXournalBBoxFromXournal xoj = 
@@ -151,12 +113,67 @@ cairoDrawPageBBox bbox page = do
 
 
 cairoDrawLayerBBox :: BBox -> LayerBBox -> Render () 
-cairoDrawLayerBBox (BBox (x1,y1) (x2,y2)) layer = do  
-  return () 
+cairoDrawLayerBBox bbox layer = do  
+  let hittestbbox = mkHitTestBBoxBBox bbox (layerbbox_strokes layer)
+  mapM_ drawOneStroke . concatMap unHitted  . getB $ hittestbbox
+
 
 cairoDrawBackgroundBBox :: BBox -> Dimension -> Background -> Render ()
-cairoDrawBackgroundBBox (BBox (x1,y1) (x2,y2)) (Dim w h) _ = do 
-  setSourceRGBA 1.0 1.0 1.0 1.0 
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  fill
+cairoDrawBackgroundBBox bbox@(BBox (x1,y1) (x2,y2)) (Dim w h) (Background typ col sty) 
+  = do let c = M.lookup col predefined_bkgcolor  
+       case c of 
+         Just (r,g,b,a) -> setSourceRGB r g b 
+         Nothing        -> setSourceRGB 1 1 1 
+       rectangle x1 y1 (x2-x1) (y2-y1)
+       fill
+       cairoDrawRulingBBox bbox w h sty
+
+cairoDrawRulingBBox :: BBox -> Double -> Double -> ByteString -> Render () 
+cairoDrawRulingBBox bbox@(BBox (x1,y1) (x2,y2)) w h style = do
+  let drawonerule y = do 
+        moveTo x1 y 
+        lineTo x2 y
+        stroke  
+  let drawonegraphvert x = do 
+        moveTo x y1 
+        lineTo x y2
+        stroke  
+  let drawonegraphhoriz y = do 
+        moveTo x1 y
+        lineTo x2 y
+        stroke
+      fullRuleYs = [ predefined_RULING_TOPMARGIN 
+                   , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
+                   .. 
+                   h-1 ]
+      ruleYs = filter (\y-> (y <= y2) && (y >= y1)) fullRuleYs
+      fullGraphXs = [0,predefined_RULING_GRAPHSPACING..w-1]          
+      fullGraphYs = [0,predefined_RULING_GRAPHSPACING..h-1]
+      graphXs = filter (\x->(x<=x2)&&(x>=x1)) fullGraphXs
+      graphYs = filter (\y->(y<=y2)&&(y>=y1)) fullGraphYs 
   
+  let drawHorizRules = do 
+      let (r,g,b,a) = predefined_RULING_COLOR         
+      setSourceRGBA r g b a 
+      setLineWidth predefined_RULING_THICKNESS
+      mapM_ drawonerule ruleYs
+  
+  
+  case style of 
+    "plain" -> return () 
+    "lined" -> do 
+      drawHorizRules
+      let (r2,g2,b2,a2) = predefined_RULING_MARGIN_COLOR
+      setSourceRGBA r2 g2 b2 a2 
+      setLineWidth predefined_RULING_THICKNESS
+      moveTo predefined_RULING_LEFTMARGIN 0 
+      lineTo predefined_RULING_LEFTMARGIN h
+      stroke
+    "ruled" -> drawHorizRules 
+    "graph" -> do 
+      let (r3,g3,b3,a3) = predefined_RULING_COLOR 
+      setSourceRGBA r3 g3 b3 a3 
+      setLineWidth predefined_RULING_THICKNESS
+      mapM_ drawonegraphvert  graphXs 
+      mapM_ drawonegraphhoriz graphYs
+    _ -> return ()     

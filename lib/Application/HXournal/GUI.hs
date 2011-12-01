@@ -94,6 +94,7 @@ startGUI fname = do
   let menubar = case maybeMenubar of 
                   Just x  -> x 
                   Nothing -> error "cannot get menubar from string"
+  
   maybeToolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   let toolbar1 = case maybeToolbar1 of 
                    Just x  -> x     
@@ -102,7 +103,7 @@ startGUI fname = do
   let toolbar2 = case maybeToolbar2 of 
                    Just x  -> x     
                    Nothing -> error "cannot get toolbar from string" 
-
+  
   containerAdd window vpaned
   
   boxPackStart vbox menubar PackNatural 0 

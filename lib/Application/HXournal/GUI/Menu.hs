@@ -17,11 +17,25 @@ import Data.Label
 import Prelude hiding ((.),id)
 
 import Graphics.UI.Gtk hiding (set,get)
+import qualified Graphics.UI.Gtk as Gtk (set,get)
 
 import System.FilePath
 
 import Text.Xournal.Predefined 
 import Paths_hxournal
+
+uiDeclTest :: String 
+uiDeclTest = [verbatim|<ui> 
+  <menubar>
+    <menu action="VMA">
+       <menuitem action="CONTA" />
+       <menuitem action="ONEPAGEA" />
+       <separator />
+       <menuitem action="FSCRA" />
+       <separator />
+    </menu>
+  </menubar>
+</ui>|]
 
 uiDecl :: String 
 uiDecl = [verbatim|<ui> 
@@ -249,8 +263,8 @@ iconList = [ ("fullscreen.png" , "myfullscreen")
            ]
 
 viewmods :: [RadioActionEntry] 
-viewmods = [ RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
-           , RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
+viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
+           , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
            ]
            
 pointmods :: [RadioActionEntry] 
@@ -297,6 +311,7 @@ getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
              -> IORef HXournalState 
              -> IO UIManager
 getMenuUI tref sref = do 
+
   let actionNewAndRegister :: String -> String 
                            -> Maybe String -> Maybe StockId
                            -> Maybe MyEvent 
@@ -345,7 +360,9 @@ getMenuUI tref sref = do
   deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete) (Just MenuDelete)
   
   -- view menu
-  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (Just MenuFullScreen)
+
+
+  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") Nothing (Just MenuFullScreen) -- (Just "myfullscreen") (Just MenuFullScreen)
   zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing (Just MenuZoom)
   zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (Just MenuZoomIn)
   zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (Just MenuZoomOut)
@@ -376,18 +393,18 @@ getMenuUI tref sref = do
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (Just MenuSetAsDefaultPaper)
   
   -- tools menu
-  shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (Just MenuShapeRecognizer)
-  rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (Just MenuRuler)
-  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (Just MenuSelectRegion)
-  selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (Just MenuSelectRectangle)
-  vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (Just MenuVerticalSpace)
-  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (Just MenuHandTool)
+  shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") Nothing (Just MenuShapeRecognizer)-- (Just "myshapes") (Just MenuShapeRecognizer)
+  rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") Nothing (Just MenuRuler) -- (Just "myruler") (Just MenuRuler)
+  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") Nothing (Just MenuSelectRegion) -- (Just "mylasso") (Just MenuSelectRegion)
+  selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") Nothing (Just MenuSelectRectangle) -- (Just "myrectselect") (Just MenuSelectRectangle)
+  vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") Nothing (Just MenuVerticalSpace) -- (Just "mystretch") (Just MenuVerticalSpace)
+  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") Nothing (Just MenuHandTool) -- (Just "myhand") (Just MenuHandTool)
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (Just MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (Just MenuEraserOptions)
   hiltropta <- actionNewAndRegister "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing (Just MenuHighlighterOptions)
   txtfnta   <- actionNewAndRegister "TXTFNTA" "Text Font" (Just "Just a Stub") Nothing (Just MenuTextFont)
-  defpena   <- actionNewAndRegister "DEFPENA" "Default Pen" (Just "Just a Stub") (Just "mydefaultpen") (Just MenuDefaultPen)
+  defpena   <- actionNewAndRegister "DEFPENA" "Default Pen" (Just "Just a Stub") Nothing  (Just MenuDefaultPen) -- (Just "mydefaultpen") (Just MenuDefaultPen)
   defersra  <- actionNewAndRegister "DEFERSRA" "Default Eraser" (Just "Just a Stub") Nothing (Just MenuDefaultEraser)
   defhiltra <- actionNewAndRegister "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing (Just MenuDefaultHighlighter)
   deftxta   <- actionNewAndRegister "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing (Just MenuDefaultText)
@@ -439,9 +456,10 @@ getMenuUI tref sref = do
   actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode sref)
-  actionGroupAddRadioActions agr colormods 0 (assignColor sref)
-  
-  
+  actionGroupAddRadioActions agr colormods 0 (assignColor sref) 
+
+
+ 
   let disabledActions = 
         [ newa, annpdfa, opena, saveasa, recenta, printa, exporta
         , undoa, redoa, cuta, copya, pastea, deletea
@@ -467,19 +485,22 @@ getMenuUI tref sref = do
   mapM_ (\x->actionSetSensitive x False) disabledActions
   
   ui <- uiManagerNew 
-  uiManagerAddUiFromString ui uiDecl 
+  uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
 
+  Just ra <- actionGroupGetAction agr "ONEPAGEA"
+  Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 1]  
+
+  Just ra <- actionGroupGetAction agr "PENFINEA"
+  Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 2]
+
+
+  
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
 
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
-
-
-  -- Just ra <- uiManagerGetAction ui "ONEPAGEA"
-  -- Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 0]
-  -- Gtk.set (head pointmods) [radioActionCurrentValue := 2]
   
   
   return ui   

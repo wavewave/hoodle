@@ -2,7 +2,14 @@
 
 module Graphics.Xournal.Render.BBox where
 
+import Graphics.Rendering.Cairo
+import Graphics.Xournal.Render
+
 import Text.Xournal.Type 
+import Text.Xournal.Predefined 
+
+import qualified Data.Map as M
+
 import Data.Strict.Tuple
 import Data.ByteString hiding (map, minimum, maximum)
 
@@ -99,4 +106,57 @@ strokeFromStrokeBBox strbbox =
          , stroke_width= strokebbox_width strbbox
          , stroke_data = strokebbox_data strbbox } 
   
+----
+
+emptyLayer :: Layer 
+emptyLayer = Layer { layer_strokes = [] }
+
+newPageFromOld :: Page -> Page
+newPageFromOld page = 
+  Page { page_dim = page_dim page 
+       , page_bkg = page_bkg page 
+       , page_layers = [emptyLayer] } 
+                   
+----
+
+cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
+cairoOneStrokeBBoxOnly s = do  
+  case M.lookup (strokeColor s) predefined_pencolor of 
+    Just (r,g,b,a) -> setSourceRGBA r g b a
+    Nothing -> setSourceRGBA 0 0 0 1 
+  setLineWidth (strokeWidth s) 
+  let BBox (x1,y1) (x2,y2) = strokebbox_bbox s
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+  
+cairoDrawPageBBoxOnly :: PageBBox -> Render ()  
+cairoDrawPageBBoxOnly page = do
+    let strokes = (layerStrokes . (!!0) . pageLayers) page
+        (Dim w h) = pageDim page
+    cairoDrawBackground page 
+    mapM_ cairoOneStrokeBBoxOnly strokes
+    
+
+----
+
+inflate :: BBox -> Double -> BBox 
+inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
+
+----
+
+cairoDrawPageBBox :: BBox -> PageBBox -> Render ()
+cairoDrawPageBBox bbox page = do 
+  cairoDrawBackgroundBBox bbox (pagebbox_dim page) (pagebbox_bkg page) 
+  mapM_ (cairoDrawLayerBBox bbox) (pagebbox_layers page)
+
+
+cairoDrawLayerBBox :: BBox -> LayerBBox -> Render () 
+cairoDrawLayerBBox (BBox (x1,y1) (x2,y2)) layer = do  
+  return () 
+
+cairoDrawBackgroundBBox :: BBox -> Dimension -> Background -> Render ()
+cairoDrawBackgroundBBox (BBox (x1,y1) (x2,y2)) (Dim w h) _ = do 
+  setSourceRGBA 1.0 1.0 1.0 1.0 
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  fill
   

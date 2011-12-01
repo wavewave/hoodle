@@ -85,8 +85,8 @@ cairoDrawPage page = do
   let strokes = (layerStrokes . (!!0) . pageLayers) page 
       (Dim w h) = pageDim page
   cairoDrawBackground page
-  setSourceRGB 0 0 0
-  setLineWidth 1
+  -- setSourceRGB 0 0 0
+  -- setLineWidth 1
   setLineCap LineCapRound
   setLineJoin LineJoinRound
 

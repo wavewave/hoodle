@@ -45,9 +45,13 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
 
 core2pageCoord :: CanvasPageGeometry -> ZoomMode 
                   -> (Double,Double) -> (Double,Double)
-core2pageCoord cpg zmode (px,py) = 
+core2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig,yorig))
+               zmode (px,py) = 
   let s =  1.0 / getRatioFromPageToCanvas cpg zmode 
-  in (px * s, py * s)
+      (xo,yo) = case zmode of
+                  Original -> (xorig,yorig)
+                  FitWidth -> (0,yorig)
+  in (px*s+xo, py*s+yo)
   
 wacom2pageCoord :: CanvasPageGeometry 
                    -> ZoomMode 
@@ -133,7 +137,6 @@ drawBBox canvas page vinfo bbox = do
         (x2,y2) = bbox_lowerright bbox
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
-    --fill
   return ()
 
 

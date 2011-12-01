@@ -52,7 +52,6 @@ getPointer :: DeviceList -> EventM t PointerCoord
 getPointer devlst = do 
     ptr <- ask 
     (ty,x,y,mdev,maxf) <- liftIO (getInfo ptr)
-    -- liftIO $ print (ty,x,y,mdev)
     case mdev of 
       Nothing -> return (PointerCoord Core x y)
       Just dev -> case maxf of 
@@ -126,19 +125,3 @@ wacomPConvert canvas pcoord = do
    _ -> do 
      wacomCoordConvert canvas (px,py)
 
-{-
-data Csr = Csr
-type CsrPtr = Ptr Csr
-
-foreign import ccall "gdk_window_set_cursor" gdkWindowSetCursor 
-  :: Ptr DrawWindow -> CsrPtr -> IO ()
-
-foreign import ccall "gdk_cursor_new" gdkCursorNew 
-  :: Int -> IO CsrPtr
-
-setCursor :: DrawWindow -> IO ()
-setCursor window = do
-  c <- gdkCursorNew 34 -- the 'crosshair' cursor
-  d <- widgetGetDrawWindow window
-  withForeignPtr (toDrawWindow d) $ \ptr -> gdkWindowSetCursor ptr c
--}

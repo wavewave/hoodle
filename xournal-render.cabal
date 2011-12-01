@@ -1,5 +1,5 @@
 Name:		xournal-render
-Version:	0.1.4
+Version:	0.1.999
 Synopsis:       Xournal file renderer
 Description: 	Xournal file renderer
 License: 	BSD3
@@ -25,6 +25,7 @@ Library
                    Graphics.Xournal.Render.BBox
                    Graphics.Xournal.HitTest
                    Graphics.Xournal.Type
+                   Graphics.Xournal.Type.Select
 
 
 

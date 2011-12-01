@@ -10,13 +10,6 @@ import Graphics.Xournal.Type
 import Control.Applicative
 import Control.Monad.State
 
-newtype NotHitted = NotHitted { unNotHitted :: [StrokeBBox] } 
-                  deriving (Show)
-
-newtype Hitted = Hitted { unHitted :: [StrokeBBox] } 
-                 deriving (Show)
-
-type StrokeHitted = AlterList NotHitted Hitted 
 
 hitTestBBoxPoint :: BBox -> (Double,Double) -> Bool  
 hitTestBBoxPoint (BBox (ulx,uly) (lrx,lry)) (x,y) 

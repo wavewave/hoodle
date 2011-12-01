@@ -12,6 +12,15 @@ data AlterList a b = Empty | a :- AlterList b a
 
 infixr 6 :-
 
+newtype NotHitted = NotHitted { unNotHitted :: [StrokeBBox] } 
+                  deriving (Show)
+
+newtype Hitted = Hitted { unHitted :: [StrokeBBox] } 
+                 deriving (Show)
+
+type StrokeHitted = AlterList NotHitted Hitted 
+
+
 fmapAL :: (a -> c) -> (b -> d) -> AlterList a b -> AlterList c d
 fmapAL _ _ Empty = Empty 
 fmapAL f g (x :- ys) = f x :- fmapAL g f ys 
@@ -67,4 +76,5 @@ instance IPage PageBBox where
 instance IXournal XournalBBox where
   type TPage XournalBBox = PageBBox 
   xournalPages = xojbbox_pages 
+
 

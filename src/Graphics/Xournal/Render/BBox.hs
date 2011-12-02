@@ -106,27 +106,34 @@ inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
 
 ----
 
-cairoDrawPageBBox :: BBox -> PageBBox -> Render ()
-cairoDrawPageBBox bbox page = do 
-  cairoDrawBackgroundBBox bbox (pagebbox_dim page) (pagebbox_bkg page) 
-  mapM_ (cairoDrawLayerBBox bbox) (pagebbox_layers page)
+cairoDrawPageBBox :: Maybe BBox -> PageBBox -> Render ()
+cairoDrawPageBBox mbbox page = do 
+  cairoDrawBackgroundBBox mbbox (pagebbox_dim page) (pagebbox_bkg page) 
+  mapM_ (cairoDrawLayerBBox mbbox) (pagebbox_layers page)
 
 
-cairoDrawLayerBBox :: BBox -> LayerBBox -> Render () 
-cairoDrawLayerBBox bbox layer = do  
-  let hittestbbox = mkHitTestBBoxBBox bbox (layerbbox_strokes layer)
+cairoDrawLayerBBox :: Maybe BBox -> LayerBBox -> Render () 
+cairoDrawLayerBBox mbbox layer = do  
+  let hittestbbox = case mbbox of 
+                       Nothing -> NotHitted [] 
+                                  :- Hitted (layerbbox_strokes layer) 
+                                  :- Empty 
+                       Just bbox -> mkHitTestBBoxBBox bbox (layerbbox_strokes layer)
   mapM_ drawOneStroke . concatMap unHitted  . getB $ hittestbbox
 
 
-cairoDrawBackgroundBBox :: BBox -> Dimension -> Background -> Render ()
-cairoDrawBackgroundBBox bbox@(BBox (x1,y1) (x2,y2)) (Dim w h) (Background typ col sty) 
-  = do let c = M.lookup col predefined_bkgcolor  
-       case c of 
-         Just (r,g,b,a) -> setSourceRGB r g b 
-         Nothing        -> setSourceRGB 1 1 1 
-       rectangle x1 y1 (x2-x1) (y2-y1)
-       fill
-       cairoDrawRulingBBox bbox w h sty
+cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()
+cairoDrawBackgroundBBox mbbox (Dim w h) (Background typ col sty) = 
+    case mbbox of 
+      Nothing -> cairoDrawBkg (Dim w h) (Background typ col sty)
+      Just bbox@(BBox (x1,y1) (x2,y2)) -> do 
+        let c = M.lookup col predefined_bkgcolor  
+        case c of 
+          Just (r,g,b,a) -> setSourceRGB r g b 
+          Nothing        -> setSourceRGB 1 1 1 
+        rectangle x1 y1 (x2-x1) (y2-y1)
+        fill
+        cairoDrawRulingBBox bbox w h sty
 
 cairoDrawRulingBBox :: BBox -> Double -> Double -> ByteString -> Render () 
 cairoDrawRulingBBox bbox@(BBox (x1,y1) (x2,y2)) w h style = do

@@ -31,6 +31,17 @@ cairoDrawBackground :: IPage a => a -> Render ()
 cairoDrawBackground page = do 
   let Background typ col sty = pageBkg page
       Dim w h = pageDim page  
+  cairoDrawBkg (Dim w h) (Background typ col sty)
+{-  let c = M.lookup col predefined_bkgcolor  
+  case c of 
+    Just (r,g,b,a) -> setSourceRGB r g b 
+    Nothing        -> setSourceRGB 1 1 1 
+  rectangle 0 0 w h 
+  fill
+  cairoDrawRuling w h sty -}
+
+cairoDrawBkg :: Dimension -> Background -> Render () 
+cairoDrawBkg (Dim w h) (Background typ col sty) = do 
   let c = M.lookup col predefined_bkgcolor  
   case c of 
     Just (r,g,b,a) -> setSourceRGB r g b 
@@ -38,6 +49,7 @@ cairoDrawBackground page = do
   rectangle 0 0 w h 
   fill
   cairoDrawRuling w h sty
+
 
 cairoDrawRuling :: Double -> Double -> S.ByteString -> Render () 
 cairoDrawRuling w h style = do

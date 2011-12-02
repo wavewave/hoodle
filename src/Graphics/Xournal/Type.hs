@@ -34,6 +34,10 @@ getB :: AlterList a b -> [b]
 getB Empty = [] 
 getB (x :- xs) = getA xs 
 
+interleave :: (a->c) -> (b->c) -> AlterList a b -> [c]
+interleave fa fb Empty = [] 
+interleave fa fb (x :- xs) = fa x : (interleave fb fa xs) 
+
 ----
 
 data BBox = BBox { bbox_upperleft :: (Double,Double) 

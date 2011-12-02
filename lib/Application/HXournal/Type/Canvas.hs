@@ -44,7 +44,10 @@ emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined
 
 type CanvasInfoMap = M.Map CanvasId CanvasInfo
 
-data PenType = PenWork | HighlighterWork | EraserWork 
+data PenType = PenWork 
+             | HighlighterWork 
+             | EraserWork 
+             | TextWork 
              deriving (Show,Eq)
 
 data PenInfo = PenInfo { _penType :: PenType
@@ -52,4 +55,14 @@ data PenInfo = PenInfo { _penType :: PenType
                        , _penColor :: PenColor } 
              deriving (Show) 
 
-$(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''CanvasInfo])
+data SelectType = SelectRegionWork 
+                | SelectRectangleWork 
+                | SelectVerticalSpaceWork
+                | SelectHandToolWork 
+                deriving (Show,Eq) 
+
+data SelectInfo = SelectInfo { _selectType :: SelectType
+                             }
+             deriving (Show) 
+
+$(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''SelectInfo, ''CanvasInfo])

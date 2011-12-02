@@ -50,7 +50,8 @@ guiProcess = do
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
   mapM_ f assocs
-  sequence_ (repeat eventProcess)
+  sequence_ (repeat dispatchMode)
+  -- sequence_ (repeat switchMode)
 
 initialize :: Iteratee MyEvent XournalStateIO ()
 initialize = do ev <- await 
@@ -59,8 +60,35 @@ initialize = do ev <- await
                   Initialized -> return () 
                   _ -> initialize
 
-eventProcess :: Iteratee MyEvent XournalStateIO ()
-eventProcess = do 
+
+dispatchMode :: Iteratee MyEvent XournalStateIO ()
+dispatchMode = do 
+  xojstate <- return . get xournalstate =<< lift St.get
+  case xojstate of 
+    ViewAppendState _ -> viewAppendMode
+    SelectState _ -> selectMode
+
+modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
+modeChange ToViewAppendMode = do 
+  xstate <- lift St.get
+  let xojstate = get xournalstate xstate
+  case xojstate of 
+    ViewAppendState _ -> return () 
+    SelectState xoj -> do 
+      liftIO $ putStrLn "to view append mode"
+      lift . St.put . set xournalstate (ViewAppendState xoj) $ xstate 
+modeChange ToSelectMode = do 
+  xstate <- lift St.get  
+  let xojstate = get xournalstate xstate
+  case xojstate of 
+    ViewAppendState xoj -> do 
+      liftIO $ putStrLn "to select mode"
+      lift . St.put . set xournalstate (SelectState xoj) $ xstate 
+    SelectState _ -> return ()
+modeChange _ = return ()
+
+viewAppendMode :: Iteratee MyEvent XournalStateIO ()
+viewAppendMode = do 
   r1 <- await 
   case r1 of 
     PenDown cid pcoord -> do 
@@ -69,6 +97,18 @@ eventProcess = do
         PenWork         -> penStart cid pcoord 
         EraserWork      -> eraserStart cid pcoord 
         HighlighterWork -> highlighterStart pcoord 
+    _ -> defaultEventProcess r1
+
+selectMode :: Iteratee MyEvent XournalStateIO ()
+selectMode = do 
+  liftIO $ putStrLn "selectMode"
+  r1 <- await 
+  case r1 of 
+    PenDown cid pcoord -> do 
+      ptype <- return . get (selectType.selectInfo) =<< lift St.get 
+      case ptype of 
+        SelectRectangleWork -> selectRectStart cid pcoord 
+        _ -> return () 
     _ -> defaultEventProcess r1
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
@@ -143,10 +183,11 @@ defaultEventProcess MenuPageWidth = do
             xstate' = set canvasInfoMap cinfoMap' xstate
         lift . St.put $ xstate'             
         invalidate currCvsId    
-defaultEventProcess MenuSelectRectangle = do 
+{- defaultEventProcess MenuSelectRectangle = do 
     xstate <- lift St.get 
     let currCvsId = get currentCanvas xstate
-    selectStart currCvsId 
+    -- selectStart currCvsId 
+-}
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
@@ -209,4 +250,6 @@ defaultEventProcess (CanvasConfigure cid w' h') = do
           adjustmentSetPageSize vadj (h'/factor)
         invalidate cid
         return () 
+defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
+defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()

@@ -7,6 +7,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Device
 
 import Application.HXournal.Iteratee.Draw
 
@@ -20,35 +21,19 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 
-selectStart :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-selectStart cid = do    
-    liftIO $ putStrLn "selectStart"
-    selectProcess cid 
+selectRectStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
+selectRectStart cid pcoord = do    
+    liftIO $ putStrLn "selectRectStart"
+    ev <- await 
+    case ev of 
+      PenDown cid pcoord -> selectRectProcess cid pcoord  
+      _ -> return ()
         
-selectProcess :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-selectProcess cid = do    
-  ev <- await 
-  liftIO $ putStrLn "selectProcess"
-  return ()
-{-  case ev of
-   VScrollBarMoved cid' v -> do 
-      xstate <- lift St.get 
-      let cinfoMap = get canvasInfoMap xstate
-          maybeCvs = M.lookup cid cinfoMap 
-      case maybeCvs of 
-        Nothing -> return ()
-        Just cvsInfo -> do 
-          let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
-          let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
-                         $ cvsInfo 
-              cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
-              xstate' = set canvasInfoMap cinfoMap' 
-                        . set currentCanvas cid
-                        $ xstate
-          lift . St.put $ xstate'
-          invalidateBBoxOnly cid
-          vscrollMove cid 
-    VScrollBarEnd cid v -> do 
-      invalidate cid 
-      return ()
--}    
+selectRectProcess :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
+selectRectProcess cid pcoord = do    
+    ev <- await 
+    liftIO $ putStrLn "selectRectProcess"
+    case ev of 
+      PenUp cid' pcoord' -> return ()
+      _ -> selectRectProcess cid pcoord 
+

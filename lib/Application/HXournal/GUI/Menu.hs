@@ -202,6 +202,9 @@ uiDecl = [verbatim|<ui>
     <toolitem action="ERASERA"     />                     
     <toolitem action="HIGHLTA"     />                     
     <toolitem action="TEXTA"       />                     
+    <separator />     
+    <toolitem action="DEFAULTA"    />    
+    <toolitem action="DEFPENA"     />                     
     <toolitem action="SHPRECA"     />   
     <toolitem action="RULERA"      />                     
     <separator />
@@ -209,9 +212,6 @@ uiDecl = [verbatim|<ui>
     <toolitem action="SELRECTA"    />                     
     <toolitem action="VERTSPA"     />                     
     <toolitem action="HANDA"       />                     
-    <separator />     
-    <toolitem action="DEFAULTA"    />    
-    <toolitem action="DEFPENA"     />                     
     <separator />                     
     <toolitem action="PENFINEA"       />    
     <toolitem action="PENMEDIUMA"       />                     
@@ -277,10 +277,14 @@ pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothin
             ]            
 
 penmods :: [RadioActionEntry] 
-penmods = [ RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
+penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0 
+          , RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
           , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
           , RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
-          , RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0            
+          , RadioActionEntry "SELREGNA" "Select Region"     (Just "mylasso")        Nothing Nothing 4
+          , RadioActionEntry "SELRECTA" "Select Rectangle" (Just "myrectselect")        Nothing Nothing 5
+          , RadioActionEntry "VERTSPA" "Vertical Space"    (Just "mystretch")        Nothing Nothing 6
+          , RadioActionEntry "HANDA"   "Hand Tool"         (Just "myhand")        Nothing Nothing 7
           ]            
 
 colormods :: [RadioActionEntry]
@@ -395,10 +399,10 @@ getMenuUI tref sref = do
   -- tools menu
   shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") Nothing (Just MenuShapeRecognizer)-- (Just "myshapes") (Just MenuShapeRecognizer)
   rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") Nothing (Just MenuRuler) -- (Just "myruler") (Just MenuRuler)
-  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") Nothing (Just MenuSelectRegion) -- (Just "mylasso") (Just MenuSelectRegion)
+{-  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") Nothing (Just MenuSelectRegion) -- (Just "mylasso") (Just MenuSelectRegion)
   selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") Nothing (Just MenuSelectRectangle) -- (Just "myrectselect") (Just MenuSelectRectangle)
   vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") Nothing (Just MenuVerticalSpace) -- (Just "mystretch") (Just MenuVerticalSpace)
-  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") Nothing (Just MenuHandTool) -- (Just "myhand") (Just MenuHandTool)
+  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") Nothing (Just MenuHandTool) -- (Just "myhand") (Just MenuHandTool) -}
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (Just MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (Just MenuEraserOptions)
@@ -444,7 +448,7 @@ getMenuUI tref sref = do
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
-        , shpreca, rulera, selregna, selrecta, vertspa, handa, clra, penopta
+        , shpreca, rulera, clra, penopta  {- selregna, selrecta, vertspa, handa, -}
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , uxinputa, dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
@@ -455,7 +459,7 @@ getMenuUI tref sref = do
         ] 
   actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
-  actionGroupAddRadioActions agr penmods   0 (assignPenMode sref)
+  actionGroupAddRadioActions agr penmods   0 (assignPenMode tref sref)
   actionGroupAddRadioActions agr colormods 0 (assignColor sref) 
 
 
@@ -467,7 +471,7 @@ getMenuUI tref sref = do
         , shwlayera, hidlayera
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
-        , shpreca, rulera, selregna, vertspa, handa
+        , shpreca, rulera {- ,  selregna, vertspa, handa -}
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , uxinputa, dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
@@ -478,7 +482,7 @@ getMenuUI tref sref = do
         ] 
       enabledActions = 
         [ savea, quita, fstpagea, prvpagea, nxtpagea, lstpagea
-        , clra, penopta, zooma, nrmsizea, pgwdtha, selrecta
+        , clra, penopta, zooma, nrmsizea, pgwdtha  -- , selrecta
         ]
   
   mapM_ (\x->actionSetSensitive x True) enabledActions  
@@ -505,13 +509,22 @@ getMenuUI tref sref = do
   
   return ui   
 
-assignPenMode :: IORef HXournalState -> RadioAction -> IO ()
-assignPenMode sref a = do 
+assignPenMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
+                 -> IORef HXournalState -> RadioAction -> IO ()
+assignPenMode tref sref a = do 
     v <- radioActionGetCurrentValue a
     let t = int2PenType v
     st <- readIORef sref 
-    let stNew = set (penType.penInfo) t st 
-    writeIORef sref stNew 
+    case t of 
+      Left pm -> do 
+        let stNew = set (penType.penInfo) pm st 
+        writeIORef sref stNew 
+        bouncecallback tref sref ToViewAppendMode
+      Right sm -> do 
+        let stNew = set (selectType.selectInfo) sm st 
+        writeIORef sref stNew 
+        bouncecallback tref sref ToSelectMode
+        
 
 assignColor :: IORef HXournalState -> RadioAction -> IO () 
 assignColor sref a = do 
@@ -529,11 +542,15 @@ assignPoint sref a = do
     let stNew = set (penWidth.penInfo) w st 
     writeIORef sref stNew 
 
-int2PenType :: Int -> PenType 
-int2PenType 0 = PenWork
-int2PenType 1 = EraserWork
-int2PenType 2 = HighlighterWork
-int2PenType 3 = PenWork -- TextWork 
+int2PenType :: Int -> Either PenType SelectType 
+int2PenType 0 = Left PenWork
+int2PenType 1 = Left EraserWork
+int2PenType 2 = Left HighlighterWork
+int2PenType 3 = Left TextWork 
+int2PenType 4 = Right SelectRegionWork
+int2PenType 5 = Right SelectRectangleWork
+int2PenType 6 = Right SelectVerticalSpaceWork
+int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
 
 int2Point :: Int -> Double 

@@ -87,5 +87,7 @@ data MyEvent = Initialized
              | VScrollBarMoved Int Double 
              | VScrollBarStart Int Double
              | VScrollBarEnd   Int Double
+             | ToViewAppendMode
+             | ToSelectMode
              deriving (Show,Eq,Ord)
 

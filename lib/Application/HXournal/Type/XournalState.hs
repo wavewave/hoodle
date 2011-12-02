@@ -19,22 +19,19 @@ import Control.Monad.State
 import Text.Xournal.Type
 import Text.Xournal.Predefined 
 
-
 import Graphics.UI.Gtk
 
 import Data.Maybe
-
 import Data.Label 
 import Prelude hiding ((.), id)
-
 import qualified Data.Map as M
-
 import qualified Data.ByteString.Char8 as B
 
 type XournalStateIO = StateT HXournalState IO 
 
 data XournalState = ViewAppendState { unView :: XournalBBox }
-                  | SelectState XournalSelect
+                  | SelectState { unView :: XournalBBox } 
+                     -- SelectState XournalSelect
 
 data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _canvasInfoMap :: CanvasInfoMap 
@@ -43,6 +40,7 @@ data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _callBack ::  MyEvent -> IO ()
                                    , _deviceList :: DeviceList
                                    , _penInfo :: PenInfo
+                                   , _selectInfo :: SelectInfo 
                                    } 
 
 
@@ -58,6 +56,7 @@ emptyHXournalState =
   , _callBack = error "emtpyHxournalState.callBack"
   , _deviceList = error "emtpyHxournalState.deviceList"
   , _penInfo = PenInfo PenWork predefined_medium ColorBlack
+  , _selectInfo = SelectInfo SelectRectangleWork 
   }
 
   

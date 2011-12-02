@@ -6,7 +6,6 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Graphics.Xournal.Render.BBox
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
@@ -35,7 +34,8 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Text.Xournal.Type 
-
+import Graphics.Xournal.Type.Select
+import Graphics.Xournal.Render.BBox
 
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do 
@@ -51,7 +51,6 @@ guiProcess = do
                                                 (fromIntegral h')) 
   mapM_ f assocs
   sequence_ (repeat dispatchMode)
-  -- sequence_ (repeat switchMode)
 
 initialize :: Iteratee MyEvent XournalStateIO ()
 initialize = do ev <- await 
@@ -76,14 +75,20 @@ modeChange ToViewAppendMode = do
     ViewAppendState _ -> return () 
     SelectState xoj -> do 
       liftIO $ putStrLn "to view append mode"
-      lift . St.put . set xournalstate (ViewAppendState xoj) $ xstate 
+      lift 
+        . St.put 
+        . set xournalstate (ViewAppendState (xournalBBoxFromXournalSelect xoj))
+        $ xstate 
 modeChange ToSelectMode = do 
   xstate <- lift St.get  
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState xoj -> do 
       liftIO $ putStrLn "to select mode"
-      lift . St.put . set xournalstate (SelectState xoj) $ xstate 
+      lift 
+        . St.put 
+        . set xournalstate (SelectState (xournalSelectFromXournalBBox xoj)) 
+        $ xstate 
     SelectState _ -> return ()
 modeChange _ = return ()
 

@@ -25,6 +25,9 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
+type PageDrawF = DrawingArea -> PageBBox -> ViewInfo -> Maybe BBox 
+                 -> IO ()
+
 getCanvasPageGeometry :: IPage a => 
                          DrawingArea 
                          -> a 
@@ -99,32 +102,35 @@ updateCanvas canvas xoj pagenum vinfo = do
     cairoDrawPage currpage
   return ()
 
-updateCanvasBBoxOnly :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
-updateCanvasBBoxOnly canvas xoj pagenum vinfo = do 
-  let zmode  = get zoomMode vinfo
-      origin = get viewPortOrigin vinfo
-  let currpage = ((!!pagenum).xournalPages) xoj
-  geometry <- getCanvasPageGeometry canvas currpage origin
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    cairoDrawPageBBoxOnly currpage
-  return ()
-
-updateCanvasInBBox :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
-updateCanvasInBBox canvas page vinfo bbox = do 
+drawBBoxOnly :: PageDrawF
+   -- :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
+drawBBoxOnly canvas page vinfo _mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoDrawPageBBox bbox page
+    cairoDrawPageBBoxOnly page
+  return ()
+
+drawPageInBBox :: PageDrawF 
+                -- :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
+drawPageInBBox canvas page vinfo mbbox = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+  geometry <- getCanvasPageGeometry canvas page origin
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoDrawPageBBox mbbox page
     return ()
   return ()
 
-drawBBox :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
-drawBBox canvas page vinfo bbox = do 
+drawBBox :: PageDrawF 
+         -- :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
+drawBBox _ _ _ Nothing = return ()
+drawBBox canvas page vinfo (Just bbox) = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin

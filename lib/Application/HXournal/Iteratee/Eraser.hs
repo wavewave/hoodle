@@ -41,23 +41,18 @@ eraserStart :: CanvasId
                -> PointerCoord 
                -> Iteratee MyEvent XournalStateIO ()
 eraserStart cid pcoord = do 
-    -- xstate1 <- getSt
-    -- let xstate = set currentCanvas cid xstate1 
-    -- putSt xstate
     xstate <- changeCurrentCanvasId cid 
-    -- let maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-    -- case maybeCvs of 
-    --   Nothing -> return ()
-    --   Just cvsInfo -> do  
     let cvsInfo = getCanvasInfo cid xstate
-    let canvas = get drawArea cvsInfo
-        page = getPage cvsInfo
+    -- let canvas = get drawArea cvsInfo
+    --     page = getPage cvsInfo
         zmode = get (zoomMode.viewInfo) cvsInfo
-        (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
-    geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
+    --    (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
+    geometry <- getCanvasGeometry cvsInfo 
+      -- liftIO (getCanvasPageGeometry canvas page (x0,y0))
     let (x,y) = device2pageCoord geometry zmode pcoord 
-    connidup <- connPenUp canvas cid
-    connidmove <- connPenMove canvas cid
+        
+    connidup   <- connectPenUp cvsInfo     -- connPenUp canvas cid
+    connidmove <- connectPenMove cvsInfo   -- connPenMove canvas cid
     strs <- getAllStrokeBBoxInCurrentPage
     eraserProcess cid geometry connidup connidmove strs (x,y)
   
@@ -70,11 +65,6 @@ eraserProcess :: CanvasId
 eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
   r <- await 
   xstate <- getSt
-  -- let  cinfoMap = get canvasInfoMap xstate
-  -- let  maybeCvs = M.lookup cid cinfoMap
-  -- case maybeCvs of 
-  --   Nothing -> return ()
-  --   Just cvsInfo -> do   
   let cvsInfo = getCanvasInfo cid xstate 
   case r of 
     PenMove cid' pcoord -> do 

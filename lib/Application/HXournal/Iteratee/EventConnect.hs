@@ -1,6 +1,6 @@
 module Application.HXournal.Iteratee.EventConnect where
 
-import Graphics.UI.Gtk hiding (get,set)
+import Graphics.UI.Gtk hiding (get,set,disconnect)
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
@@ -11,8 +11,25 @@ import qualified Control.Monad.State as St
 import Control.Applicative
 import Control.Monad.Trans
 
+import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
+
+disconnect :: (WidgetClass w) => ConnectId w 
+              -> Iteratee MyEvent XournalStateIO ()
+disconnect = liftIO . signalDisconnect
+
+connectPenUp :: CanvasInfo -> Iteratee MyEvent XournalStateIO (ConnectId DrawingArea)
+connectPenUp cinfo = do 
+  let cid = get canvasId cinfo
+      canvas = get drawArea cinfo 
+  connPenUp canvas cid 
+
+connectPenMove :: CanvasInfo -> Iteratee MyEvent XournalStateIO (ConnectId DrawingArea)
+connectPenMove cinfo = do 
+  let cid = get canvasId cinfo
+      canvas = get drawArea cinfo 
+  connPenMove canvas cid 
 
 connPenMove :: (WidgetClass w) => 
                w 

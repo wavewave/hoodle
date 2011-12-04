@@ -36,10 +36,6 @@ changePage modifyfn = do
     xstate <- lift St.get 
     let currCvsId = get currentCanvas xstate
         cinfoMap = get canvasInfoMap xstate
-        -- maybeCurrCvs = M.lookup currCvsId cinfoMap 
-        --  case maybeCurrCvs of 
-        --  Nothing -> return ()
-        --  Just currCvsInfo -> do 
         currCvsInfo = getCanvasInfo currCvsId xstate   
     let xojst = get xournalstate $ xstate 
     case xojst of 

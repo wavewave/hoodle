@@ -1,6 +1,6 @@
 module Application.HXournal.Iteratee.Pen where
 
-import Graphics.UI.Gtk hiding (get,set)
+import Graphics.UI.Gtk hiding (get,set,disconnect)
 
 import Application.HXournal.Device 
 import Application.HXournal.Type.Event
@@ -34,26 +34,20 @@ import Graphics.Xournal.Render.BBox
 
 penStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO ()
 penStart cid pcoord = do 
-    -- xstate1 <- getSt 
-    -- let xstate = set currentCanvas cid xstate1     
-    -- putSt xstate
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
-    -- let maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-    -- case maybeCvs of 
-    --   Nothing -> error "penStart wrong"
-    --   Just cvsInfo -> do 
     let currxoj = unView . get xournalstate $ xstate        
-        canvas = get drawArea cvsInfo   
+        -- canvas = get drawArea cvsInfo   
         page = getPage cvsInfo 
         pagenum = get currentPageNum cvsInfo
         (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
         pinfo = get penInfo xstate
         zmode = get (zoomMode.viewInfo) cvsInfo
-    geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
+    geometry <- getCanvasGeometry cvsInfo 
+      -- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
     let (x,y) = device2pageCoord geometry zmode pcoord 
-    connidup <- connPenUp canvas cid      
-    connidmove <- connPenMove canvas cid
+    connidup   <- connectPenUp   cvsInfo -- connPenUp canvas cid      
+    connidmove <- connectPenMove cvsInfo -- canvas cid
     pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
     let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
         bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
@@ -73,10 +67,6 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
   r <- await 
   xstate <- lift St.get
   let cvsInfo = getCanvasInfo cid xstate
-  -- let maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  -- case maybeCvs of 
-  --   Nothing -> error "something wrong" 
-  --   Just cvsInfo -> do 
   case r of 
     PenMove cid' pcoord -> do 
       let canvas = get drawArea cvsInfo
@@ -90,8 +80,8 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
     PenUp cid' pcoord -> do 
       let zmode = get (zoomMode.viewInfo) cvsInfo
           (x,y) = device2pageCoord cpg zmode pcoord 
-      liftIO $ signalDisconnect connidmove
-      liftIO $ signalDisconnect connidup
+      disconnect connidmove
+      disconnect connidup
       return (pdraw |> (x,y)) 
     other -> do
       penProcess cid cpg connidmove connidup pdraw (x0,y0) 

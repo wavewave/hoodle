@@ -26,6 +26,8 @@ selectRectStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO (
 selectRectStart cid pcoord = do    
     -- liftIO $ putStrLn "selectRectStart"
     xstate <- changeCurrentCanvasId cid 
+    let cvsInfo = getCanvasInfo cid xstate
+        
     ev <- await 
     case ev of 
       PenDown cid pcoord -> selectRectProcess cid pcoord  

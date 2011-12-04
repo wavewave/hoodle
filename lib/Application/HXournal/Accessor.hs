@@ -4,6 +4,8 @@ module Application.HXournal.Accessor where
 
 import Application.HXournal.Type
 import Application.HXournal.Type.Event 
+import Application.HXournal.Draw 
+import Application.HXournal.ModelAction.Page
 
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Render.BBox
@@ -76,3 +78,11 @@ getCanvasInfo cid xstate =
   in  case maybeCvs of 
         Nothing -> error $ "no canvas with id = " ++ show cid 
         Just cvsInfo -> cvsInfo
+
+getCanvasGeometry :: CanvasInfo -> Iteratee MyEvent XournalStateIO CanvasPageGeometry
+getCanvasGeometry cinfo = do 
+    let canvas = get drawArea cinfo
+        page = getPage cinfo
+        zmode = get (zoomMode.viewInfo) cinfo
+        (x0,y0) = get (viewPortOrigin.viewInfo) cinfo
+    liftIO (getCanvasPageGeometry canvas page (x0,y0))

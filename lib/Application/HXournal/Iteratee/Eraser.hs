@@ -1,6 +1,6 @@
 module Application.HXournal.Iteratee.Eraser where
 
-import Graphics.UI.Gtk hiding (get,set)
+import Graphics.UI.Gtk hiding (get,set,disconnect)
 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
@@ -17,6 +17,7 @@ import Application.HXournal.Iteratee.Draw
 import Application.HXournal.Accessor
 
 import Application.HXournal.ModelAction.Page
+import Application.HXournal.ModelAction.Eraser
 
 import Graphics.Xournal.Type
 import Graphics.Xournal.Render.BBox
@@ -43,16 +44,11 @@ eraserStart :: CanvasId
 eraserStart cid pcoord = do 
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
-    -- let canvas = get drawArea cvsInfo
-    --     page = getPage cvsInfo
         zmode = get (zoomMode.viewInfo) cvsInfo
-    --    (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
     geometry <- getCanvasGeometry cvsInfo 
-      -- liftIO (getCanvasPageGeometry canvas page (x0,y0))
     let (x,y) = device2pageCoord geometry zmode pcoord 
-        
-    connidup   <- connectPenUp cvsInfo     -- connPenUp canvas cid
-    connidmove <- connectPenMove cvsInfo   -- connPenMove canvas cid
+    connidup   <- connectPenUp cvsInfo     
+    connidmove <- connectPenMove cvsInfo   
     strs <- getAllStrokeBBoxInCurrentPage
     eraserProcess cid geometry connidup connidmove strs (x,y)
   
@@ -102,15 +98,8 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
           eraserProcess cid cpg connidup connidmove newstrs (x,y)
         else eraserProcess cid cpg connidmove connidup strs (x,y) 
     PenUp cid' _pcoord -> do 
-      liftIO $ signalDisconnect connidmove 
-      liftIO $ signalDisconnect connidup 
+      disconnect connidmove 
+      disconnect connidup 
       invalidateAll
     _ -> return ()
     
-eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
-               -> St.State (Maybe BBox) [StrokeBBox]
-eraseHitted Empty = error "something wrong in eraseHitted"
-eraseHitted (n :-Empty) = return (unNotHitted n)
-eraseHitted (n:-h:-rest) = do 
-  mid <- elimHitted h 
-  return . (unNotHitted n ++) . (mid ++) =<< eraseHitted rest

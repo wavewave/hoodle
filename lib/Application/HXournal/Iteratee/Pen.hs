@@ -37,17 +37,15 @@ penStart cid pcoord = do
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
     let currxoj = unView . get xournalstate $ xstate        
-        -- canvas = get drawArea cvsInfo   
         page = getPage cvsInfo 
         pagenum = get currentPageNum cvsInfo
         (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
         pinfo = get penInfo xstate
         zmode = get (zoomMode.viewInfo) cvsInfo
     geometry <- getCanvasGeometry cvsInfo 
-      -- liftIO (getCanvasPageGeometry canvas page (x0,y0) )
     let (x,y) = device2pageCoord geometry zmode pcoord 
-    connidup   <- connectPenUp   cvsInfo -- connPenUp canvas cid      
-    connidmove <- connectPenMove cvsInfo -- canvas cid
+    connidup   <- connectPenUp   cvsInfo 
+    connidmove <- connectPenMove cvsInfo 
     pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
     let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
         bbox' = inflate bbox (get (penWidth.penInfo) xstate) 

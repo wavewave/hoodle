@@ -38,20 +38,15 @@ getPenType = get (penType.penInfo) <$> lift (St.get)
       
 getAllStrokeBBoxInCurrentPage :: Iteratee MyEvent XournalStateIO [StrokeBBox]
 getAllStrokeBBoxInCurrentPage = do 
-  xstate <- lift St.get 
-  let currCvsId = get currentCanvas xstate 
-      maybeCurrCvs = M.lookup currCvsId (get canvasInfoMap xstate)
-  case maybeCurrCvs of 
-    Nothing -> return [] 
-    Just currCvsInfo -> do 
-      let pagenum = get currentPageNum currCvsInfo
-          pagebbox = (!!pagenum) . xojbbox_pages . unView .  get xournalstate
-                   $ xstate 
-      let strs = do 
-            l <- pagebbox_layers pagebbox 
-            s <- layerbbox_strokes l
-            return s 
-      return strs 
+  xstate <- getSt 
+  let currCvsInfo  = getCurrentCanvasInfo xstate 
+  let pagenum = get currentPageNum currCvsInfo
+      pagebbox = getPage currCvsInfo
+      strs = do 
+        l <- pagebbox_layers pagebbox 
+        s <- layerbbox_strokes l
+        return s 
+  return strs 
       
       
 updateCanvasInfo :: CanvasInfo -> HXournalState -> HXournalState
@@ -78,6 +73,10 @@ getCanvasInfo cid xstate =
   in  case maybeCvs of 
         Nothing -> error $ "no canvas with id = " ++ show cid 
         Just cvsInfo -> cvsInfo
+
+getCurrentCanvasInfo :: HXournalState -> CanvasInfo 
+getCurrentCanvasInfo xstate = getCanvasInfo (get currentCanvas xstate) xstate
+      
 
 getCanvasGeometry :: CanvasInfo -> Iteratee MyEvent XournalStateIO CanvasPageGeometry
 getCanvasGeometry cinfo = do 

@@ -50,6 +50,8 @@ Library
                    --Application.HXournal.Type.XournalBBox
                    Application.HXournal.ModelAction.Pen 
                    Application.HXournal.ModelAction.Page
+                   Application.HXournal.ModelAction.Eraser
+                   Application.HXournal.ModelAction.Select
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu

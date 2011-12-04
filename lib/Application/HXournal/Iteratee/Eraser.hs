@@ -6,7 +6,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Graphics.Xournal.Render.BBox
+
 import Application.HXournal.Type.Event
 import Application.HXournal.Device
 import Application.HXournal.Draw
@@ -16,7 +16,10 @@ import Application.HXournal.Iteratee.Draw
 
 import Application.HXournal.Accessor
 
+import Application.HXournal.ModelAction.Page
+
 import Graphics.Xournal.Type
+import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.HitTest
 
 
@@ -46,9 +49,12 @@ eraserStart cid pcoord = do
       Nothing -> return ()
       Just cvsInfo -> do  
         let canvas = get drawArea cvsInfo
-            xojbbox = unView . get xournalstate $ xstate
-            pagenum = get currentPageNum cvsInfo
-            page = (!!pagenum) . xournalPages $ xojbbox
+            page = getPage cvsInfo
+            -- xojbbox = unView . get xournalstate $ xstate
+            
+            
+            -- pagenum = get currentPageNum cvsInfo
+            -- page = (!!pagenum) . xournalPages $ xojbbox
             zmode = get (zoomMode.viewInfo) cvsInfo
             (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
         geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
@@ -67,7 +73,8 @@ eraserProcess :: CanvasId
 eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
   r <- await 
   xstate <- lift St.get 
-  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
+  let  cinfoMap = get canvasInfoMap xstate
+  let  maybeCvs = M.lookup cid cinfoMap
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do   
@@ -84,7 +91,8 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
               let currxoj     = unView . get xournalstate $ xstate 
                   pgnum       = get currentPageNum cvsInfo
                   pages       = xournalPages currxoj 
-                  currpage    = pages !! pgnum
+                  -- currpage    = pages !! pgnum
+                  currpage = getPage cvsInfo
                   pagesbefore = take pgnum pages 
                   pagesafter  = drop (pgnum+1) pages 
                   currlayer   = head (pageLayers currpage) 
@@ -96,10 +104,17 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                   newxojbbox = currxoj { xojbbox_pages = pagesbefore
                                                          ++ [newpagebbox]
                                                          ++ pagesafter } 
-              lift $ St.put (set xournalstate (ViewAppendState newxojbbox) xstate)
+                  newxojstate = ViewAppendState newxojbbox
+                  cvsInfo' = updatePage newxojstate cvsInfo
+                  cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap
+                  xstate' = set xournalstate newxojstate
+                          . set canvasInfoMap cinfoMap'
+                          $ xstate
+              lift $ St.put xstate' 
               case maybebbox of 
                 Just bbox -> invalidateDrawBBox cid bbox
                 Nothing -> return ()
+
               newstrs <- getAllStrokeBBoxInCurrentPage
               eraserProcess cid cpg connidup connidmove newstrs (x,y)
             else       

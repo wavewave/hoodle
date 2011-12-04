@@ -138,33 +138,25 @@ defaultEventProcess MenuNormalSize = do
       Just currCvsInfo -> do 
         let canvas = get drawArea currCvsInfo
         (w',h') <- liftIO $ widgetGetSize canvas
-        case get currentPage currCvsInfo of 
-          Right _ -> error "error in MenuNormalSize"
-          Left pg -> do         
-            let Dim w h = pageDim pg 
-            let (hadj,vadj) = get adjustments currCvsInfo 
-            liftIO $ do 
-              adjustmentSetUpper hadj w 
-              adjustmentSetUpper vadj h 
-              adjustmentSetValue hadj 0 
-              adjustmentSetValue vadj 0 
-              adjustmentSetPageSize hadj (fromIntegral w')
-              adjustmentSetPageSize vadj (fromIntegral h')
-            let currCvsInfo' = set (zoomMode.viewInfo) Original
-                             . set (viewPortOrigin.viewInfo) (0,0)
-                             $ currCvsInfo 
-                cinfoMap' = M.adjust (\_ -> currCvsInfo') currCvsId cinfoMap  
-                xstate' = set canvasInfoMap cinfoMap' xstate
-            lift . St.put $ xstate' 
-            invalidate currCvsId       
-        
---  let cpn = get currentPageNum currCvsInfo
---   . (!! cpn) . xournalPages . unView 
-                  --   . get xournalstate 
-                  --   $ xstate
---            cpn = get currentPageNum currCvsInfo
---      page = (!! cpn) . xournalPages . unView . get xournalstate $ xstate
-        
+        let page = case get currentPage currCvsInfo of 
+                     Right pgselect -> pageBBoxFromPageSelect pgselect
+                     Left pg -> pg
+        let Dim w h = pageDim page
+        let (hadj,vadj) = get adjustments currCvsInfo 
+        liftIO $ do 
+          adjustmentSetUpper hadj w 
+          adjustmentSetUpper vadj h 
+          adjustmentSetValue hadj 0 
+          adjustmentSetValue vadj 0 
+          adjustmentSetPageSize hadj (fromIntegral w')
+          adjustmentSetPageSize vadj (fromIntegral h')
+        let currCvsInfo' = set (zoomMode.viewInfo) Original
+                         . set (viewPortOrigin.viewInfo) (0,0)
+                         $ currCvsInfo 
+            cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
+            xstate' = set canvasInfoMap cinfoMap' xstate
+        lift . St.put $ xstate' 
+        invalidate currCvsId       
 defaultEventProcess MenuPageWidth = do 
     liftIO $ putStrLn "PageWidth clicked"
     xstate <- lift St.get 
@@ -175,28 +167,28 @@ defaultEventProcess MenuPageWidth = do
       Nothing -> return ()
       Just currCvsInfo -> do 
         let canvas = get drawArea currCvsInfo
-        case get currentPage currCvsInfo of
-          Right _ -> error "error in MenuPageWidth "     
-          Left pg -> do 
-            let Dim w h = pageDim pg 
-            cpg <- liftIO (getCanvasPageGeometry canvas pg (0,0))
-            let (w',h') = canvas_size cpg 
-            let (hadj,vadj) = get adjustments currCvsInfo 
-                s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
-            liftIO $ do 
-              adjustmentSetUpper hadj w 
-              adjustmentSetUpper vadj h 
-              adjustmentSetValue hadj 0 
-              adjustmentSetValue vadj 0 
-              adjustmentSetPageSize hadj (w'*s)
-              adjustmentSetPageSize vadj (h'*s)
-            let currCvsInfo' = set (zoomMode.viewInfo) FitWidth          
-                             . set (viewPortOrigin.viewInfo) (0,0) 
-                             $ currCvsInfo
-                cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
-                xstate' = set canvasInfoMap cinfoMap' xstate
-            lift . St.put $ xstate'             
-            invalidate currCvsId    
+        let page = case get currentPage currCvsInfo of
+                     Right pgselect -> pageBBoxFromPageSelect pgselect
+                     Left pg -> pg
+        let Dim w h = pageDim page 
+        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
+        let (w',h') = canvas_size cpg 
+        let (hadj,vadj) = get adjustments currCvsInfo 
+            s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
+        liftIO $ do 
+          adjustmentSetUpper hadj w 
+          adjustmentSetUpper vadj h 
+          adjustmentSetValue hadj 0 
+          adjustmentSetValue vadj 0 
+          adjustmentSetPageSize hadj (w'*s)
+          adjustmentSetPageSize vadj (h'*s)
+        let currCvsInfo' = set (zoomMode.viewInfo) FitWidth          
+                         . set (viewPortOrigin.viewInfo) (0,0) 
+                         $ currCvsInfo
+            cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
+            xstate' = set canvasInfoMap cinfoMap' xstate
+        lift . St.put $ xstate'             
+        invalidate currCvsId    
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
@@ -207,7 +199,7 @@ defaultEventProcess (HScrollBarMoved cid v) = do
         let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
         let cvsInfo' = set (viewPortOrigin.viewInfo) (v,snd vm_orig) 
                          $ cvsInfo
-            cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
+            cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
             xstate' = set canvasInfoMap cinfoMap' 
                     . set currentCanvas cid 
                     $ xstate
@@ -223,15 +215,13 @@ defaultEventProcess (VScrollBarMoved cid v) = do
         let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
         let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
                          $ cvsInfo 
-            cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
+            cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
             xstate' = set canvasInfoMap cinfoMap' 
                     . set currentCanvas cid
                     $ xstate
         lift . St.put $ xstate'
         invalidate cid
-defaultEventProcess (VScrollBarStart cid v) = do 
-  vscrollStart cid 
-
+defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure cid w' h') = do 
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
@@ -240,24 +230,24 @@ defaultEventProcess (CanvasConfigure cid w' h') = do
       Nothing -> return ()
       Just cvsInfo -> do 
         let canvas = get drawArea cvsInfo
-        case get currentPage cvsInfo of
-          Right _ -> error "error in CanvasConfigure"
-          Left page -> do 
-            let (w,h) = get (pageDimension.viewInfo) cvsInfo
-                zmode = get (zoomMode.viewInfo) cvsInfo
-            cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
-            let factor = getRatioFromPageToCanvas cpg zmode
-                (hadj,vadj) = get adjustments cvsInfo
-            liftIO $ do 
-              adjustmentSetUpper hadj w 
-              adjustmentSetUpper vadj h 
-              adjustmentSetLower hadj 0
-              adjustmentSetLower vadj 0
-              adjustmentSetValue hadj 0
-              adjustmentSetValue vadj 0 
-              adjustmentSetPageSize hadj (w'/factor)
-              adjustmentSetPageSize vadj (h'/factor)
-            invalidate cid
+        let page = case get currentPage cvsInfo of
+                     Right pageselect -> pageBBoxFromPageSelect pageselect
+                     Left pg -> pg 
+            (w,h) = get (pageDimension.viewInfo) cvsInfo
+            zmode = get (zoomMode.viewInfo) cvsInfo
+        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
+        let factor = getRatioFromPageToCanvas cpg zmode
+            (hadj,vadj) = get adjustments cvsInfo
+        liftIO $ do 
+          adjustmentSetUpper hadj w 
+          adjustmentSetUpper vadj h 
+          adjustmentSetLower hadj 0
+          adjustmentSetLower vadj 0
+          adjustmentSetValue hadj 0
+          adjustmentSetValue vadj 0 
+          adjustmentSetPageSize hadj (w'/factor)
+          adjustmentSetPageSize vadj (h'/factor)
+        invalidate cid
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()

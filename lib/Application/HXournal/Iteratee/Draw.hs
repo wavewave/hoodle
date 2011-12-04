@@ -11,6 +11,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
 import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Select
 import Graphics.Xournal.Render.BBox
 
 import Text.Xournal.Type 
@@ -37,18 +38,23 @@ invalidateSelSingle cid mbbox drawf drawfsel = do
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do 
-      let pagenum = get currentPageNum cvsInfo
-          xojst = get xournalstate xstate
+      let -- pagenum = get currentPageNum cvsInfo
+          -- xojst = get xournalstate xstate
+          page = case get currentPage cvsInfo of  
+                   Right pgselect -> pageBBoxFromPageSelect pgselect
+                   Left pg -> pg 
+      liftIO (drawf <$> get drawArea 
+                    <*> pure page 
+                    <*> get viewInfo 
+                    <*> pure mbbox
+                    $ cvsInfo )
+{-
       case xojst of
         ViewAppendState xoj -> do 
           let page = (!!pagenum) . xournalPages $ xoj
-          liftIO (drawf <$> get drawArea 
-                        <*> pure page 
-                        <*> get viewInfo 
-                        <*> pure mbbox
-                        $ cvsInfo )
         SelectState xoj -> do 
           return ()
+-}
 
 invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
                     -> Iteratee MyEvent XournalStateIO ()
@@ -58,9 +64,10 @@ invalidateGenSingle cid mbbox drawf = do
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do 
-      let pagenum = get currentPageNum cvsInfo
-      let page = (!!pagenum) . xournalPages . unView . get xournalstate 
-               $ xstate
+      -- let pagenum = get currentPageNum cvsInfo
+      let page = case get currentPage cvsInfo of
+                   Right pgselect -> pageBBoxFromPageSelect pgselect
+                   Left pg -> pg
       liftIO (drawf <$> get drawArea 
                     <*> pure page 
                     <*> get viewInfo 
@@ -100,84 +107,3 @@ invalidateDrawBBox cid bbox = invalidateGenSingle cid (Just bbox) drawBBox
 invalidateBBoxOnly :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 invalidateBBoxOnly cid = invalidateGenSingle cid Nothing drawBBoxOnly
 
-
-{-
-invalidateAll :: Iteratee MyEvent XournalStateIO ()
-invalidateAll = do 
-  xstate <- getSt
-  let cinfoMap  = get canvasInfoMap xstate
-      keys = M.keys cinfoMap 
-  mapM_ invalidate keys
-
-invalidateOther :: Iteratee MyEvent XournalStateIO ()
-invalidateOther = do 
-  xstate <- getSt
-  let currCvsId = get currentCanvas xstate
-      cinfoMap  = get canvasInfoMap xstate
-      keys = M.keys cinfoMap 
-  mapM_ invalidate (filter (/=currCvsId) keys)
-
-
-invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidate cid = do 
-  xstate <- lift St.get  
-  let -- currCvsId = get currentCanvas xstate
-      maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do 
-      let xojbbox = unView . get xournalstate $ xstate
-      liftIO (updateCanvas <$> get drawArea 
-                           <*> pure xojbbox
-                           <*> get currentPageNum 
-                           <*> get viewInfo 
-                           $ cvsInfo )
-
-invalidateInBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO ()
-invalidateInBBox cid bbox = do 
-  xstate <- lift St.get  
-  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do 
-      let pagenum = get currentPageNum cvsInfo
-      let page = (!!pagenum) . xournalPages . unView . get xournalstate 
-               $ xstate
-      liftIO (updateCanvasInBBox <$> get drawArea 
-                                 <*> pure page 
-                                 <*> get viewInfo 
-                                 <*> pure bbox
-                                 $ cvsInfo )
-
-  
-invalidateDrawBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO () 
-invalidateDrawBBox cid bbox = do 
-  xstate <- lift St.get  
-  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do 
-      let pagenum = get currentPageNum cvsInfo
-      let page = (!!pagenum) . xournalPages . unView . get xournalstate 
-               $ xstate
-      liftIO (drawBBox <$> get drawArea 
-                       <*> pure page 
-                       <*> get viewInfo 
-                       <*> pure bbox
-                       $ cvsInfo )
-
-
-invalidateBBoxOnly :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidateBBoxOnly cid = do 
-  xstate <- lift St.get  
-  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do 
-      let xojbbox = unView . get xournalstate $ xstate
-      liftIO (updateCanvasBBoxOnly <$> get drawArea 
-                                   <*> pure xojbbox
-                                   <*> get currentPageNum 
-                                   <*> get viewInfo 
-                                   $ cvsInfo )
--}

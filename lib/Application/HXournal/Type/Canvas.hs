@@ -5,10 +5,15 @@ module Application.HXournal.Type.Canvas where
 import Application.HXournal.Type.Enum 
 import Data.Sequence
 import qualified Data.Map as M
+
+import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
 
-import Graphics.UI.Gtk
+import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Select
+
+import Graphics.UI.Gtk hiding (get,set)
 
 type CanvasId = Int 
 
@@ -29,18 +34,21 @@ data ViewInfo = ViewInfo { _pageMode :: PageMode
                          , _viewPortOrigin :: (Double,Double)
                          , _pageDimension :: (Double,Double) 
                          }
-              deriving (Show)
+                deriving (Show)
 
 data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _drawArea :: DrawingArea
                              , _viewInfo :: ViewInfo 
                              , _currentPageNum :: Int
+                             , _currentPage :: Either PageBBox PageSelect
                              , _horizAdjustment :: Adjustment
                              , _vertAdjustment :: Adjustment 
                              }
 
 emptyCanvasInfo :: CanvasInfo
-emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined 
+emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined undefined
+
+
 
 type CanvasInfoMap = M.Map CanvasId CanvasInfo
 

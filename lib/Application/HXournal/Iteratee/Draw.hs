@@ -27,6 +27,29 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
+invalidateSelSingle :: CanvasId -> Maybe BBox 
+                       -> PageDrawF
+                       -> PageDrawFSel 
+                       -> Iteratee MyEvent XournalStateIO ()
+invalidateSelSingle cid mbbox drawf drawfsel = do
+  xstate <- lift St.get  
+  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
+  case maybeCvs of 
+    Nothing -> return ()
+    Just cvsInfo -> do 
+      let pagenum = get currentPageNum cvsInfo
+          xojst = get xournalstate xstate
+      case xojst of
+        ViewAppendState xoj -> do 
+          let page = (!!pagenum) . xournalPages $ xoj
+          liftIO (drawf <$> get drawArea 
+                        <*> pure page 
+                        <*> get viewInfo 
+                        <*> pure mbbox
+                        $ cvsInfo )
+        SelectState xoj -> do 
+          return ()
+
 invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
                     -> Iteratee MyEvent XournalStateIO ()
 invalidateGenSingle cid mbbox drawf = do
@@ -48,7 +71,7 @@ invalidateGenSingle cid mbbox drawf = do
 invalidateGen  :: [CanvasId] -> Maybe BBox -> PageDrawF
                -> Iteratee MyEvent XournalStateIO ()
 invalidateGen cids mbbox drawf = do                
-  forM_ cids $ \x -> invalidateGenSingle x mbbox drawf
+  forM_ cids $ \x -> invalidateSelSingle x mbbox drawf dummyDraw
 
 invalidateAll :: Iteratee MyEvent XournalStateIO ()
 invalidateAll = do

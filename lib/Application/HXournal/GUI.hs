@@ -9,6 +9,7 @@ import Application.HXournal.Coroutine
 import Application.HXournal.Device
 import Application.HXournal.Iteratee
 import Application.HXournal.GUI.Menu
+import Application.HXournal.ModelAction.Page
 
 import Graphics.UI.Gtk hiding (get,set)
 
@@ -53,6 +54,7 @@ startGUI fname = do
   xojcontent <- P.read_xournal fname 
   let xojWbbox = mkXournalBBoxFromXournal xojcontent 
   let Dim width height = pageDim . (!! 0) .  xournalPages $ xojcontent
+      startingxojstate = ViewAppendState xojWbbox
       cinfo1 = set canvasId 1 
              . set drawArea canvas
              . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
@@ -67,13 +69,14 @@ startGUI fname = do
              . set horizAdjustment hadj2 
              . set vertAdjustment vadj2 
              $ emptyCanvasInfo
-             
-      cinfoMap = M.insert (get canvasId cinfo2) cinfo2
-               $ M.insert (get canvasId cinfo1) cinfo1
+      startingcinfo1 = setPage startingxojstate 0 cinfo1
+      startingcinfo2 = setPage startingxojstate 0 cinfo2
+      cinfoMap = M.insert (get canvasId startingcinfo2) startingcinfo2
+               $ M.insert (get canvasId startingcinfo1) startingcinfo1
                $ M.empty 
-  let st = set xournalstate (ViewAppendState xojWbbox)
+  let st = set xournalstate startingxojstate
          . set canvasInfoMap cinfoMap 
-         . set currentCanvas (get canvasId cinfo1)
+         . set currentCanvas (get canvasId startingcinfo1)
          . set deviceList devlst 
          $ emptyHXournalState
   (r,st') <- St.runStateT (resume guiProcess) st

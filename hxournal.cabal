@@ -49,6 +49,7 @@ Library
                    Application.HXournal.Type.XournalState
                    --Application.HXournal.Type.XournalBBox
                    Application.HXournal.ModelAction.Pen 
+                   Application.HXournal.ModelAction.Page
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu

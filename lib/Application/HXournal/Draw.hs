@@ -11,6 +11,7 @@ import Prelude hiding ((.),id)
 import Text.Xournal.Type
 
 import Graphics.Xournal.Type 
+import Graphics.Xournal.Type.Select
 import Graphics.Xournal.Render 
 import Graphics.Xournal.Render.BBox 
 import Application.HXournal.Type 
@@ -27,6 +28,10 @@ data CanvasPageGeometry =
 
 type PageDrawF = DrawingArea -> PageBBox -> ViewInfo -> Maybe BBox 
                  -> IO ()
+
+type PageDrawFSel = DrawingArea -> PageSelect -> ViewInfo -> Maybe BBox 
+                    -> IO ()
+
 
 getCanvasPageGeometry :: IPage a => 
                          DrawingArea 
@@ -205,3 +210,6 @@ showBBox canvas cpg zmode (BBox (ulx,uly) (lrx,lry)) = do
     rectangle ulx uly (lrx-ulx) (lry-uly)    
     stroke
   return ()
+
+dummyDraw :: PageDrawFSel 
+dummyDraw _canvas _pgslct _vinfo _mbbox = return ()

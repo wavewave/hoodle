@@ -15,6 +15,8 @@ import Graphics.Xournal.Render.BBox
 
 import Graphics.UI.Gtk hiding (get,set)
 
+import Application.HXournal.ModelAction.Page
+
 import Control.Applicative 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
@@ -56,9 +58,6 @@ changePage modifyfn = do
            else if modifyfn oldpage < 0 
                   then return (xstate,xoj,pages,totalnumofpages,0)
                   else return (xstate,xoj,pages,totalnumofpages,modifyfn oldpage)
-      {- let newpage | modifyfn oldpage >= totalnumofpages = totalnumofpages - 1
-                  | modifyfn oldpage < 0  = 0 
-                  | otherwise = modifyfn oldpage -}
       let Dim w h = pageDim . (!! newpage) $ pages'
           (hadj,vadj) = get adjustments currCvsInfo
       liftIO $ do 
@@ -66,12 +65,17 @@ changePage modifyfn = do
         adjustmentSetUpper vadj h 
         adjustmentSetValue hadj 0
         adjustmentSetValue vadj 0
-  
-      let currCvsInfo' = set (viewPortOrigin.viewInfo) (0,0) 
-                       . set (pageDimension.viewInfo) (w,h) 
-                       . set currentPageNum newpage
-                       $ currCvsInfo
+      let currCvsInfo' = setPage (ViewAppendState xoj') newpage currCvsInfo 
           cinfoMap' = M.adjust (\_ -> currCvsInfo') currCvsId cinfoMap  
           xstate'' = set canvasInfoMap cinfoMap' xstate'
       lift . St.put $ xstate'' 
       invalidate currCvsId 
+
+            
+            
+{-        
+  = set (viewPortOrigin.viewInfo) (0,0) 
+   . set (pageDimension.viewInfo) (w,h) 
+   . set currentPageNum newpage
+   $ currCvsInfo -}
+                        

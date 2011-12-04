@@ -62,3 +62,17 @@ updateCanvasInfo cinfo xstate =
  
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . get canvasInfoMap 
+
+changeCurrentCanvasId :: CanvasId -> Iteratee MyEvent XournalStateIO HXournalState
+changeCurrentCanvasId cid = do xstate1 <- getSt 
+                               let xstate = set currentCanvas cid xstate1
+                               putSt xstate
+                               return xstate
+                               
+getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfo 
+getCanvasInfo cid xstate = 
+  let cinfoMap = get canvasInfoMap xstate
+      maybeCvs = M.lookup cid cinfoMap
+  in  case maybeCvs of 
+        Nothing -> error $ "no canvas with id = " ++ show cid 
+        Just cvsInfo -> cvsInfo

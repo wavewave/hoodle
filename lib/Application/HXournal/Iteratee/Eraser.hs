@@ -41,23 +41,25 @@ eraserStart :: CanvasId
                -> PointerCoord 
                -> Iteratee MyEvent XournalStateIO ()
 eraserStart cid pcoord = do 
-    xstate1 <- getSt
-    let xstate = set currentCanvas cid xstate1 
-    putSt xstate
-    let maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-    case maybeCvs of 
-      Nothing -> return ()
-      Just cvsInfo -> do  
-        let canvas = get drawArea cvsInfo
-            page = getPage cvsInfo
-            zmode = get (zoomMode.viewInfo) cvsInfo
-            (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
-        geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
-        let (x,y) = device2pageCoord geometry zmode pcoord 
-        connidup <- connPenUp canvas cid
-        connidmove <- connPenMove canvas cid
-        strs <- getAllStrokeBBoxInCurrentPage
-        eraserProcess cid geometry connidup connidmove strs (x,y)
+    -- xstate1 <- getSt
+    -- let xstate = set currentCanvas cid xstate1 
+    -- putSt xstate
+    xstate <- changeCurrentCanvasId cid 
+    -- let maybeCvs = M.lookup cid (get canvasInfoMap xstate)
+    -- case maybeCvs of 
+    --   Nothing -> return ()
+    --   Just cvsInfo -> do  
+    let cvsInfo = getCanvasInfo cid xstate
+    let canvas = get drawArea cvsInfo
+        page = getPage cvsInfo
+        zmode = get (zoomMode.viewInfo) cvsInfo
+        (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
+    geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
+    let (x,y) = device2pageCoord geometry zmode pcoord 
+    connidup <- connPenUp canvas cid
+    connidmove <- connPenMove canvas cid
+    strs <- getAllStrokeBBoxInCurrentPage
+    eraserProcess cid geometry connidup connidmove strs (x,y)
   
 eraserProcess :: CanvasId
               -> CanvasPageGeometry
@@ -67,55 +69,53 @@ eraserProcess :: CanvasId
               -> Iteratee MyEvent XournalStateIO ()
 eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
   r <- await 
-  xstate <- lift St.get 
-  let  cinfoMap = get canvasInfoMap xstate
-  let  maybeCvs = M.lookup cid cinfoMap
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do   
-      case r of 
-        PenMove cid' pcoord -> do 
-          let zmode  = get (zoomMode.viewInfo) cvsInfo
-              (x,y) = device2pageCoord cpg zmode pcoord 
-              line = ((x0,y0),(x,y))
-              hittestbbox = mkHitTestBBox line strs   
-              (hitteststroke,hitState) = 
-                St.runState (hitTestStrokes line hittestbbox) False
-          if hitState 
-            then do 
-              let currxoj     = unView . get xournalstate $ xstate 
-                  pgnum       = get currentPageNum cvsInfo
-                  pages       = xournalPages currxoj 
-                  currpage    = getPage cvsInfo
-                  pagesbefore = take pgnum pages 
-                  pagesafter  = drop (pgnum+1) pages 
-                  currlayer   = head (pageLayers currpage) 
-                  otherlayers = tail (pageLayers currpage) 
-                  (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
-                  newlayerbbox = currlayer { layerbbox_strokes = newstrokes }    
-                  newpagebbox = currpage 
-                                { pagebbox_layers = newlayerbbox : otherlayers } 
-                  newxojbbox = currxoj { xojbbox_pages = pagesbefore
-                                                         ++ [newpagebbox]
-                                                         ++ pagesafter } 
-                  newxojstate = ViewAppendState newxojbbox
-                  -- cvsInfo' = updatePage newxojstate cvsInfo
-                  xstate' = set xournalstate newxojstate 
-                          . updatePageAll newxojstate $ xstate 
-              lift $ St.put xstate' 
-              case maybebbox of 
-                Just bbox -> invalidateDrawBBox cid bbox
-                Nothing -> return ()
-
-              newstrs <- getAllStrokeBBoxInCurrentPage
-              eraserProcess cid cpg connidup connidmove newstrs (x,y)
-            else       
-              eraserProcess cid cpg connidmove connidup strs (x,y) 
-        PenUp cid' _pcoord -> do 
-          liftIO $ signalDisconnect connidmove 
-          liftIO $ signalDisconnect connidup 
-          invalidateAll
-        _ -> return ()
+  xstate <- getSt
+  -- let  cinfoMap = get canvasInfoMap xstate
+  -- let  maybeCvs = M.lookup cid cinfoMap
+  -- case maybeCvs of 
+  --   Nothing -> return ()
+  --   Just cvsInfo -> do   
+  let cvsInfo = getCanvasInfo cid xstate 
+  case r of 
+    PenMove cid' pcoord -> do 
+      let zmode  = get (zoomMode.viewInfo) cvsInfo
+          (x,y) = device2pageCoord cpg zmode pcoord 
+          line = ((x0,y0),(x,y))
+          hittestbbox = mkHitTestBBox line strs   
+          (hitteststroke,hitState) = 
+            St.runState (hitTestStrokes line hittestbbox) False
+      if hitState 
+        then do 
+          let currxoj     = unView . get xournalstate $ xstate 
+              pgnum       = get currentPageNum cvsInfo
+              pages       = xournalPages currxoj 
+              currpage    = getPage cvsInfo
+              pagesbefore = take pgnum pages 
+              pagesafter  = drop (pgnum+1) pages 
+              currlayer   = head (pageLayers currpage) 
+              otherlayers = tail (pageLayers currpage) 
+              (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
+              newlayerbbox = currlayer { layerbbox_strokes = newstrokes }    
+              newpagebbox = currpage 
+                              { pagebbox_layers = newlayerbbox : otherlayers } 
+              newxojbbox = currxoj { xojbbox_pages = pagesbefore
+                                                     ++ [newpagebbox]
+                                                     ++ pagesafter } 
+              newxojstate = ViewAppendState newxojbbox
+              xstate' = set xournalstate newxojstate 
+                        . updatePageAll newxojstate $ xstate 
+          lift $ St.put xstate' 
+          case maybebbox of 
+            Just bbox -> invalidateDrawBBox cid bbox
+            Nothing -> return ()
+          newstrs <- getAllStrokeBBoxInCurrentPage
+          eraserProcess cid cpg connidup connidmove newstrs (x,y)
+        else eraserProcess cid cpg connidmove connidup strs (x,y) 
+    PenUp cid' _pcoord -> do 
+      liftIO $ signalDisconnect connidmove 
+      liftIO $ signalDisconnect connidup 
+      invalidateAll
+    _ -> return ()
     
 eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
                -> St.State (Maybe BBox) [StrokeBBox]

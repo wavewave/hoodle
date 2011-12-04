@@ -7,6 +7,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Accessor
 import Application.HXournal.Device
 
 import Application.HXournal.Iteratee.Draw
@@ -23,7 +24,8 @@ import Prelude hiding ((.), id)
 
 selectRectStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
 selectRectStart cid pcoord = do    
-    liftIO $ putStrLn "selectRectStart"
+    -- liftIO $ putStrLn "selectRectStart"
+    xstate <- changeCurrentCanvasId cid 
     ev <- await 
     case ev of 
       PenDown cid pcoord -> selectRectProcess cid pcoord  

@@ -153,8 +153,9 @@ defaultEventProcess MenuNormalSize = do
         let currCvsInfo' = set (zoomMode.viewInfo) Original
                          . set (viewPortOrigin.viewInfo) (0,0)
                          $ currCvsInfo 
-            cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
-            xstate' = set canvasInfoMap cinfoMap' xstate
+            xstate' = updateCanvasInfo currCvsInfo' xstate
+            -- cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
+            -- xstate' = set canvasInfoMap cinfoMap' xstate
         lift . St.put $ xstate' 
         invalidate currCvsId       
 defaultEventProcess MenuPageWidth = do 
@@ -185,8 +186,9 @@ defaultEventProcess MenuPageWidth = do
         let currCvsInfo' = set (zoomMode.viewInfo) FitWidth          
                          . set (viewPortOrigin.viewInfo) (0,0) 
                          $ currCvsInfo
-            cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
-            xstate' = set canvasInfoMap cinfoMap' xstate
+            xstate' =  updateCanvasInfo currCvsInfo' xstate 
+            -- cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
+            -- xstate' = set canvasInfoMap cinfoMap' xstate
         lift . St.put $ xstate'             
         invalidate currCvsId    
 defaultEventProcess (HScrollBarMoved cid v) = do 
@@ -199,10 +201,13 @@ defaultEventProcess (HScrollBarMoved cid v) = do
         let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
         let cvsInfo' = set (viewPortOrigin.viewInfo) (v,snd vm_orig) 
                          $ cvsInfo
-            cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
-            xstate' = set canvasInfoMap cinfoMap' 
-                    . set currentCanvas cid 
+            xstate' = set currentCanvas cid 
+                    . updateCanvasInfo cvsInfo' 
                     $ xstate
+            -- cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
+            -- xstate' = set canvasInfoMap cinfoMap' 
+            --         . set currentCanvas cid 
+            --         $ xstate
         lift . St.put $ xstate'
         invalidate cid
 defaultEventProcess (VScrollBarMoved cid v) = do 
@@ -215,10 +220,12 @@ defaultEventProcess (VScrollBarMoved cid v) = do
         let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
         let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
                          $ cvsInfo 
-            cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
-            xstate' = set canvasInfoMap cinfoMap' 
-                    . set currentCanvas cid
-                    $ xstate
+            xstate' = set currentCanvas cid 
+                    . updateCanvasInfo cvsInfo' $ xstate
+            -- cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
+            -- xstate' = set canvasInfoMap cinfoMap' 
+            --        . set currentCanvas cid
+            --        $ xstate
         lift . St.put $ xstate'
         invalidate cid
 defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid 

@@ -51,3 +51,14 @@ getAllStrokeBBoxInCurrentPage = do
             return s 
       return strs 
       
+      
+updateCanvasInfo :: CanvasInfo -> HXournalState -> HXournalState
+updateCanvasInfo cinfo xstate = 
+  let cid = get canvasId cinfo
+      cmap = get canvasInfoMap xstate
+      cmap' = M.adjust (const cinfo) cid cmap 
+      xstate' = set canvasInfoMap cmap' xstate
+  in xstate' 
+ 
+otherCanvas :: HXournalState -> [Int] 
+otherCanvas = M.keys . get canvasInfoMap 

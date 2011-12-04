@@ -50,11 +50,6 @@ eraserStart cid pcoord = do
       Just cvsInfo -> do  
         let canvas = get drawArea cvsInfo
             page = getPage cvsInfo
-            -- xojbbox = unView . get xournalstate $ xstate
-            
-            
-            -- pagenum = get currentPageNum cvsInfo
-            -- page = (!!pagenum) . xournalPages $ xojbbox
             zmode = get (zoomMode.viewInfo) cvsInfo
             (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
         geometry <- liftIO (getCanvasPageGeometry canvas page (x0,y0))
@@ -91,8 +86,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
               let currxoj     = unView . get xournalstate $ xstate 
                   pgnum       = get currentPageNum cvsInfo
                   pages       = xournalPages currxoj 
-                  -- currpage    = pages !! pgnum
-                  currpage = getPage cvsInfo
+                  currpage    = getPage cvsInfo
                   pagesbefore = take pgnum pages 
                   pagesafter  = drop (pgnum+1) pages 
                   currlayer   = head (pageLayers currpage) 
@@ -105,11 +99,9 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                                                          ++ [newpagebbox]
                                                          ++ pagesafter } 
                   newxojstate = ViewAppendState newxojbbox
-                  cvsInfo' = updatePage newxojstate cvsInfo
-                  cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap
-                  xstate' = set xournalstate newxojstate
-                          . set canvasInfoMap cinfoMap'
-                          $ xstate
+                  -- cvsInfo' = updatePage newxojstate cvsInfo
+                  xstate' = set xournalstate newxojstate 
+                          . updatePageAll newxojstate $ xstate 
               lift $ St.put xstate' 
               case maybebbox of 
                 Just bbox -> invalidateDrawBBox cid bbox

@@ -13,6 +13,7 @@ import Application.HXournal.Iteratee.Draw
 import Application.HXournal.Iteratee.EventConnect
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Pen
+import Application.HXournal.ModelAction.Page
 
 import Application.HXournal.Draw
 
@@ -42,8 +43,9 @@ penStart cid pcoord = do
       Just cvsInfo -> do 
         let currxoj = unView . get xournalstate $ xstate        
             canvas = get drawArea cvsInfo   
+            page = getPage cvsInfo 
             pagenum = get currentPageNum cvsInfo
-            page = (!!pagenum) . xournalPages $ currxoj
+            -- page = (!!pagenum) . xournalPages $ currxoj
             (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
             pinfo = get penInfo xstate
             zmode = get (zoomMode.viewInfo) cvsInfo
@@ -55,12 +57,14 @@ penStart cid pcoord = do
                            (empty |> (x,y)) (x,y) 
         let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
             bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
-            xstate' = set xournalstate (ViewAppendState newxoj) $ xstate
+            -- cvsInfo' = updatePage (ViewAppendState newxoj) cvsInfo
+            xstate' = set xournalstate (ViewAppendState newxoj) 
+                    . updatePageAll (ViewAppendState newxoj)
+                    $ xstate
         putSt xstate'
-        -- invalidateOther
-        let cinfoMap = get canvasInfoMap xstate'
-            keys = M.keys cinfoMap 
-        mapM_ (flip invalidateInBBox bbox') (filter (/=cid) keys) 
+        -- let cinfoMap = get canvasInfoMap xstate'
+        --     keys = M.keys cinfoMap 
+        mapM_ (flip invalidateInBBox bbox') . filter (/=cid) $ otherCanvas xstate' 
         
         return ()
 
@@ -94,5 +98,4 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
           liftIO $ signalDisconnect connidup
           return (pdraw |> (x,y)) 
         other -> do
-          -- defaultEventProcess other        
           penProcess cid cpg connidmove connidup pdraw (x0,y0) 

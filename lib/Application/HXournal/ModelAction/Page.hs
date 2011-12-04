@@ -11,6 +11,13 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
+updatePageAll :: XournalState 
+                 -> HXournalState 
+                 -> HXournalState
+updatePageAll xst xstate = let cmap = get canvasInfoMap xstate
+                               cmap' = fmap (updatePage xst) cmap
+                           in  set canvasInfoMap cmap' xstate 
+
 updatePage :: XournalState -> CanvasInfo -> CanvasInfo 
 updatePage (ViewAppendState xojbbox) cinfo = 
   let pgs = xournalPages xojbbox 

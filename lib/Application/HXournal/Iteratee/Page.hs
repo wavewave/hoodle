@@ -40,7 +40,6 @@ changePage modifyfn = do
         currCvsInfo = getCanvasInfo currCvsId xstate   
     let xojst = get xournalstate $ xstate 
     case xojst of 
-      -- SelectState _ -> error "not implemented yet : changePage" 
       ViewAppendState xoj -> do 
         let pages = xbm_pages xoj 
             totalnumofpages = IM.size pages
@@ -76,5 +75,8 @@ changePage modifyfn = do
                        $ xstate'
         lift . St.put $ xstate'' 
         invalidate currCvsId 
+      SelectState _ -> do 
+        error "not implemented yet : changePage" 
+      
 
             

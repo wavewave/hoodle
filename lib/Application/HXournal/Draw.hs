@@ -15,6 +15,7 @@ import Graphics.Xournal.Type.Select
 import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Render 
 import Graphics.Xournal.Render.BBox 
+import Graphics.Xournal.HitTest
 import Application.HXournal.Type 
 import Application.HXournal.Device
 
@@ -30,7 +31,7 @@ data CanvasPageGeometry =
 type PageDrawF = DrawingArea -> PageBBoxMap -> ViewInfo -> Maybe BBox 
                  -> IO ()
 
-type PageDrawFSel = DrawingArea -> PageSelect -> ViewInfo -> Maybe BBox 
+type PageDrawFSel = DrawingArea -> TempPageSelect -> ViewInfo -> Maybe BBox 
                     -> IO ()
 
 
@@ -120,6 +121,8 @@ drawBBoxOnly canvas page vinfo _mbbox = do
     cairoDrawPageBBoxOnly page
   return ()
 
+
+
 drawPageInBBox :: PageDrawF 
                 -- :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
 drawPageInBBox canvas page vinfo mbbox = do 
@@ -134,9 +137,26 @@ drawPageInBBox canvas page vinfo mbbox = do
   return ()
 
 drawBBox :: PageDrawF 
-         -- :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
 drawBBox _ _ _ Nothing = return ()
 drawBBox canvas page vinfo (Just bbox) = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+  geometry <- getCanvasPageGeometry canvas page origin
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    setLineWidth 0.5 
+    setSourceRGBA 1.0 0.0 0.0 1.0
+    transformForPageCoord geometry zmode
+    let (x1,y1) = bbox_upperleft bbox
+        (x2,y2) = bbox_lowerright bbox
+    rectangle x1 y1 (x2-x1) (y2-y1)
+    stroke
+  return ()
+
+drawBBoxSel :: PageDrawFSel 
+drawBBoxSel _ _ _ Nothing = return ()
+drawBBoxSel canvas tpg vinfo (Just bbox) = do 
+  let page = pageBBoxMapFromTempPageSelect tpg
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
@@ -213,4 +233,46 @@ showBBox canvas cpg zmode (BBox (ulx,uly) (lrx,lry)) = do
   return ()
 
 dummyDraw :: PageDrawFSel 
-dummyDraw _canvas _pgslct _vinfo _mbbox = return ()
+dummyDraw _canvas _pgslct _vinfo _mbbox = do 
+  putStrLn "dummy draw"
+  return ()
+  
+  
+drawSelectionInBBox :: PageDrawFSel 
+drawSelectionInBBox canvas tpg vinfo mbbox = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+      page = pageBBoxMapFromTempPageSelect tpg
+  putStrLn "In drawSelectionInBBox"
+  geometry <- getCanvasPageGeometry canvas page origin
+  win <- widgetGetDrawWindow canvas
+  
+  boxdrawaction <-  
+    case strokes (tp_firstlayer tpg) of
+      Right alist -> do 
+        putStrLn "right"
+        return $ do 
+          setSourceRGBA 0.0 0.0 1.0 1.0
+          let hitstrs = concatMap unHitted (getB alist)
+              oneboxdraw str = do 
+                let bbox@(BBox (x1,y1) (x2,y2)) = strokebbox_bbox str
+                    drawbox = do { rectangle x1 y1 (x2-x1) (y2-y1); stroke }
+                case mbbox of 
+                  Just bboxarg -> if hitTestBBoxBBox bbox bboxarg 
+                                    then drawbox
+                                    else return () 
+                  Nothing -> drawbox 
+          mapM_ oneboxdraw hitstrs                       
+      Left _ -> return $ return ()  
+  
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoDrawPageBBox mbbox page
+    boxdrawaction 
+      
+
+
+  
+
+  
+  

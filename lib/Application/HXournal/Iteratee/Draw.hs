@@ -38,17 +38,21 @@ invalidateSelSingle cid mbbox drawf drawfsel = do
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do 
-      let -- pagenum = get currentPageNum cvsInfo
-          -- xojst = get xournalstate xstate
-          page = case get currentPage cvsInfo of  
+      case get currentPage cvsInfo of 
+        Left page ->  liftIO (drawf <$> get drawArea 
+                                    <*> pure page 
+                                    <*> get viewInfo 
+                                    <*> pure mbbox
+                                    $ cvsInfo )
+        Right tpage -> liftIO (drawfsel <$> get drawArea 
+                                        <*> pure tpage
+                                        <*> get viewInfo
+                                        <*> pure mbbox
+                                        $ cvsInfo )
+{- let  page = case get currentPage cvsInfo of  
                    -- Right pgselect -> pageBBoxFromPageSelect pgselect
                    Right _ -> error "not yet implemented in invalidateSelSingle"
-                   Left pg -> pg 
-      liftIO (drawf <$> get drawArea 
-                    <*> pure page 
-                    <*> get viewInfo 
-                    <*> pure mbbox
-                    $ cvsInfo )
+                   Left pg -> pg -}
 
 invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
                     -> Iteratee MyEvent XournalStateIO ()
@@ -58,7 +62,6 @@ invalidateGenSingle cid mbbox drawf = do
   case maybeCvs of 
     Nothing -> return ()
     Just cvsInfo -> do 
-      -- let pagenum = get currentPageNum cvsInfo
       let page = case get currentPage cvsInfo of
                    -- Right pgselect -> pageBBoxFromPageSelect pgselect
                    Right _ -> error "no invalidateGenSingle implementation yet"
@@ -73,7 +76,7 @@ invalidateGenSingle cid mbbox drawf = do
 invalidateGen  :: [CanvasId] -> Maybe BBox -> PageDrawF
                -> Iteratee MyEvent XournalStateIO ()
 invalidateGen cids mbbox drawf = do                
-  forM_ cids $ \x -> invalidateSelSingle x mbbox drawf dummyDraw
+  forM_ cids $ \x -> invalidateSelSingle x mbbox drawf drawSelectionInBBox
 
 invalidateAll :: Iteratee MyEvent XournalStateIO ()
 invalidateAll = do
@@ -90,15 +93,18 @@ invalidateOther = do
       keys = M.keys cinfoMap 
   invalidateGen (filter (/=currCvsId) keys) Nothing drawPageInBBox
 
+-- invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+-- invalidate cid = invalidateGenSingle cid Nothing drawPageInBBox 
+  
 invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidate cid = invalidateGenSingle cid Nothing drawPageInBBox 
+invalidate cid = invalidateSelSingle cid Nothing drawPageInBBox drawSelectionInBBox
 
 invalidateInBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO ()
-invalidateInBBox cid bbox = invalidateGenSingle cid (Just bbox) drawPageInBBox
+invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox drawSelectionInBBox
 
 invalidateDrawBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO () 
-invalidateDrawBBox cid bbox = invalidateGenSingle cid (Just bbox) drawBBox
+invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
 invalidateBBoxOnly :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidateBBoxOnly cid = invalidateGenSingle cid Nothing drawBBoxOnly
+invalidateBBoxOnly cid = invalidateSelSingle cid Nothing drawBBoxOnly drawSelectionInBBox
 

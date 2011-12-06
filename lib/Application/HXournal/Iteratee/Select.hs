@@ -14,6 +14,8 @@ import Application.HXournal.Iteratee.EventConnect
 
 import Application.HXournal.Iteratee.Draw
 
+import Application.HXournal.ModelAction.Page
+
 import qualified Data.Map as M
 
 import Control.Monad.Trans
@@ -25,6 +27,7 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Select
 import Graphics.Xournal.HitTest
 import Graphics.Xournal.Render.BBox
 
@@ -68,24 +71,27 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       let (x,y) = device2pageCoord geometry zmode pcoord 
           
       let epage = get currentPage cinfo 
+          cpn = get currentPageNum cinfo 
           
       let bbox = BBox orig (x,y)
           prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox
-{-          newlayer = LayerSelect (Right selectstr) 
-          newlayers = case p 
-            
-            
-            [] :- [newlayer] :- 
-          newpage = case epage of  
-                      Left p -> PageSelect (pgm_dim p) (pgm_bkg p) -}
-{-          
-          hittedstrs = concat . map unHitted . getB $ hittestbbox
-      invalidateInBBox cid (fromJust (Just bbox `merge` Just prevbbox))
-      mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
--}
-    
+          
+      xstate <- getSt    
+      let SelectState txoj = get xournalstate xstate
+          newlayer = LayerSelect (Right selectstrs)
+          newpage = case epage of 
+                      Left pagebbox -> 
+                        let tpg = tempPageSelectFromPageBBoxMap pagebbox
+                        in  tpg { tp_firstlayer = newlayer }
+                      Right tpage -> tpage { tp_firstlayer = newlayer } 
+          newtxoj = txoj { tx_selectpage = Just (cpn,newpage) } 
+          
+      putSt (set xournalstate (SelectState newtxoj) 
+             . updatePageAll (SelectState newtxoj)
+             $ xstate)
+      liftIO $ putStrLn "selected"
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
@@ -101,3 +107,18 @@ selectRectProcess cid pcoord = do
 
 
 
+          --  case epage of
+            
+{-          newlayer = LayerSelect (Right selectstr) 
+          newlayers = case p 
+            
+            
+            [] :- [newlayer] :- 
+          newpage = case epage of  
+                      Left p -> PageSelect (pgm_dim p) (pgm_bkg p) -}
+{-          
+          hittedstrs = concat . map unHitted . getB $ hittestbbox
+      invalidateInBBox cid (fromJust (Just bbox `merge` Just prevbbox))
+      mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
+-}
+    

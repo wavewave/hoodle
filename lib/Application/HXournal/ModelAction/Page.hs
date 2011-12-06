@@ -33,14 +33,15 @@ updatePage (ViewAppendState xojbbox) cinfo =
   let pagenum = get currentPageNum cinfo 
       pg = getPageFromXojBBoxMap pagenum xojbbox 
   in set currentPage (Left pg) cinfo 
-{-
 updatePage (SelectState xojselect) cinfo = 
   let pagenum = get currentPageNum cinfo 
   in case pages xojselect of
-       Left pgs -> let pg = pgs !! pagenum 
+       Left pgs -> let pg = case M.lookup pagenum pgs of
+                              Nothing -> error "error in SetPage"
+                              Just p -> p
                    in  set currentPage (Left pg) cinfo 
        Right _ -> error "not yet defined here"
--}  
+  
 
 setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
@@ -51,9 +52,11 @@ setPage (ViewAppendState xojbbox) pagenum cinfo =
       . set (pageDimension.viewInfo) (w,h)       
       . set currentPage (Left pg)
       $ cinfo 
-{- setPage (SelectState xojselect) pagenum cinfo = 
+setPage (SelectState xojselect) pagenum cinfo = 
   case pages xojselect of
-    Left pgs -> let pg = pgs !! pagenum 
+    Left pgs -> let pg = case M.lookup pagenum pgs of
+                           Nothing -> error "error in SetPage"
+                           Just p -> p 
                     Dim w h = pageDim pg 
                 in set currentPageNum pagenum 
                    . set (viewPortOrigin.viewInfo) (0,0) 
@@ -61,11 +64,11 @@ setPage (ViewAppendState xojbbox) pagenum cinfo =
                    . set currentPage (Left pg)
                    $ cinfo 
     Right _ -> error "not yet defined here"
--}
+
 
 getPage :: CanvasInfo -> PageBBoxMap
 getPage cinfo = case get currentPage cinfo of 
---                   Right pgselect -> pageBBoxFromPageSelect pgselect
-                  Right _ -> error "not implemented yet in getPage"
+                  Right pgselect -> pageBBoxMapFromPageSelect $ pgselect
+                  -- Right _ -> error "not implemented yet in getPage"
                   Left pg -> pg 
                   

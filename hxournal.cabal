@@ -47,7 +47,7 @@ Library
                    Application.HXournal.Type.Canvas
                    Application.HXournal.Type.Coroutine
                    Application.HXournal.Type.XournalState
-                   --Application.HXournal.Type.XournalBBox
+                   Application.HXournal.ModelAction.Adjustment
                    Application.HXournal.ModelAction.Pen 
                    Application.HXournal.ModelAction.Page
                    Application.HXournal.ModelAction.Eraser

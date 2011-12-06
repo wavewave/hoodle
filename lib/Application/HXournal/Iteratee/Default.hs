@@ -17,6 +17,8 @@ import Application.HXournal.Iteratee.Scroll
 import Application.HXournal.Iteratee.Page
 import Application.HXournal.Iteratee.Select
 
+import Application.HXournal.ModelAction.Adjustment
+import Application.HXournal.ModelAction.Page
 import Application.HXournal.Builder 
 
 import Control.Applicative 
@@ -67,7 +69,7 @@ dispatchMode = do
   xojstate <- return . get xournalstate =<< lift St.get
   case xojstate of 
     ViewAppendState _ -> viewAppendMode
-    -- SelectState _ -> selectMode
+    SelectState _ -> selectMode
 
 modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
 modeChange ToViewAppendMode = do 
@@ -75,23 +77,23 @@ modeChange ToViewAppendMode = do
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState _ -> return () 
-{-    SelectState xoj -> do 
+    SelectState xoj -> do 
       liftIO $ putStrLn "to view append mode"
       lift 
         . St.put 
-        . set xournalstate (ViewAppendState (xournalBBoxFromXournalSelect xoj))
-        $ xstate  -}
+        . set xournalstate (ViewAppendState (xournalBBoxMapFromXournalSelect xoj))
+        $ xstate  
 modeChange ToSelectMode = do 
   xstate <- lift St.get  
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState xoj -> do 
       liftIO $ putStrLn "to select mode"
-{-      lift 
+      lift 
         . St.put 
-        . set xournalstate (SelectState (xournalSelectFromXournalBBox xoj)) 
-        $ xstate  -}
-  --   SelectState _ -> return ()
+        . set xournalstate (SelectState (xournalSelectFromXournalBBoxMap xoj)) 
+        $ xstate  
+    SelectState _ -> return ()
 modeChange _ = return ()
 
 viewAppendMode :: Iteratee MyEvent XournalStateIO ()
@@ -126,45 +128,38 @@ defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuSave = do 
-    xojcontent <- unView . get xournalstate <$> lift St.get   
-    liftIO $ L.writeFile "mytest.xoj" . builder 
-             . xournalFromXournalBBoxMap
-             $ xojcontent
+    xstate <- getSt 
+    let xojstate = get xournalstate xstate
+    let xoj = case xojstate of 
+                 ViewAppendState xojmap -> xournalFromXournalBBoxMap xojmap 
+                 SelectState xojslt -> xournalFromXournalBBoxMap 
+                                       . xournalBBoxMapFromXournalSelect 
+                                       $ xojslt 
+    liftIO . L.writeFile "mytest.xoj" . builder $ xoj
 defaultEventProcess MenuNormalSize = do 
     liftIO $ putStrLn "NormalSize clicked"
-    xstate <- lift St.get 
+    xstate <- getSt 
     let currCvsId = get currentCanvas xstate
         cinfoMap = get canvasInfoMap xstate
-        maybeCurrCvs = M.lookup currCvsId cinfoMap 
-    case maybeCurrCvs of 
-      Nothing -> return ()
-      Just currCvsInfo -> do 
-        let canvas = get drawArea currCvsInfo
-        (w',h') <- liftIO $ widgetGetSize canvas
-        let page = case get currentPage currCvsInfo of 
-                     -- Right pgselect -> pageBBoxFromPageSelect pgselect
-                     Right _ -> error "not implemented in defaultEventProcess"
-                     Left pg -> pg
-        let Dim w h = pageDim page
-        let (hadj,vadj) = get adjustments currCvsInfo 
-        liftIO $ do 
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
-          adjustmentSetValue hadj 0 
-          adjustmentSetValue vadj 0 
-          adjustmentSetPageSize hadj (fromIntegral w')
-          adjustmentSetPageSize vadj (fromIntegral h')
-        let currCvsInfo' = set (zoomMode.viewInfo) Original
-                         . set (viewPortOrigin.viewInfo) (0,0)
-                         $ currCvsInfo 
-            xstate' = updateCanvasInfo currCvsInfo' xstate
-            -- cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
-            -- xstate' = set canvasInfoMap cinfoMap' xstate
-        lift . St.put $ xstate' 
-        invalidate currCvsId       
+        currCvsInfo = case M.lookup currCvsId cinfoMap of 
+                        Nothing -> error " no such cvsinfo in defaultEventProcess"  
+                        Just cinfo -> cinfo 
+    let canvas = get drawArea currCvsInfo
+    (w',h') <- liftIO $ widgetGetSize canvas
+    let page = getPage currCvsInfo 
+    let Dim w h = pageDim page
+    let (hadj,vadj) = get adjustments currCvsInfo 
+    liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
+                           (fromIntegral w', fromIntegral h')
+    let currCvsInfo' = set (zoomMode.viewInfo) Original
+                       . set (viewPortOrigin.viewInfo) (0,0)
+                       $ currCvsInfo 
+        xstate' = updateCanvasInfo currCvsInfo' xstate
+    putSt xstate' 
+    invalidate currCvsId       
 defaultEventProcess MenuPageWidth = do 
     liftIO $ putStrLn "PageWidth clicked"
-    xstate <- lift St.get 
+    xstate <- getSt
     let currCvsId = get currentCanvas xstate
         cinfoMap = get canvasInfoMap xstate
         maybeCurrCvs = M.lookup currCvsId cinfoMap 
@@ -172,10 +167,7 @@ defaultEventProcess MenuPageWidth = do
       Nothing -> return ()
       Just currCvsInfo -> do 
         let canvas = get drawArea currCvsInfo
-        let page = case get currentPage currCvsInfo of
-                     Right _ -> error "not implemented in defaultEventProcess"
-                     --  Right pgselect -> pageBBoxFromPageSelect pgselect
-                     Left pg -> pg
+        let page = getPage currCvsInfo
         let Dim w h = pageDim page 
         cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
         let (w',h') = canvas_size cpg 
@@ -192,8 +184,6 @@ defaultEventProcess MenuPageWidth = do
                          . set (viewPortOrigin.viewInfo) (0,0) 
                          $ currCvsInfo
             xstate' =  updateCanvasInfo currCvsInfo' xstate 
-            -- cinfoMap' = M.adjust (const currCvsInfo') currCvsId cinfoMap  
-            -- xstate' = set canvasInfoMap cinfoMap' xstate
         lift . St.put $ xstate'             
         invalidate currCvsId    
 defaultEventProcess (HScrollBarMoved cid v) = do 
@@ -209,58 +199,88 @@ defaultEventProcess (HScrollBarMoved cid v) = do
             xstate' = set currentCanvas cid 
                     . updateCanvasInfo cvsInfo' 
                     $ xstate
-            -- cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
-            -- xstate' = set canvasInfoMap cinfoMap' 
-            --         . set currentCanvas cid 
-            --         $ xstate
         lift . St.put $ xstate'
         invalidate cid
 defaultEventProcess (VScrollBarMoved cid v) = do 
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
-        maybeCvs = M.lookup cid cinfoMap 
-    case maybeCvs of 
-      Nothing -> return ()
-      Just cvsInfo -> do 
-        let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
-        let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
-                         $ cvsInfo 
-            xstate' = set currentCanvas cid 
-                    . updateCanvasInfo cvsInfo' $ xstate
-            -- cinfoMap' = M.adjust (const cvsInfo') cid cinfoMap  
-            -- xstate' = set canvasInfoMap cinfoMap' 
-            --        . set currentCanvas cid
-            --        $ xstate
-        lift . St.put $ xstate'
-        invalidate cid
+        cvsInfo = case M.lookup cid cinfoMap of 
+                     Nothing -> error "No such canvas in defaultEventProcess" 
+                     Just cvs -> cvs
+    let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
+    let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
+                   $ cvsInfo 
+        xstate' = set currentCanvas cid 
+                  . updateCanvasInfo cvsInfo' $ xstate
+    lift . St.put $ xstate'
+    invalidate cid
 defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure cid w' h') = do 
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
-        maybeCvs = M.lookup cid cinfoMap 
-    case maybeCvs of 
-      Nothing -> return ()
-      Just cvsInfo -> do 
-        let canvas = get drawArea cvsInfo
-        let page = case get currentPage cvsInfo of
-                     Right _ -> error "not implemented in defaultEventProcess"
-                     --  Right pageselect -> pageBBoxFromPageSelect pageselect
-                     Left pg -> pg 
-            (w,h) = get (pageDimension.viewInfo) cvsInfo
-            zmode = get (zoomMode.viewInfo) cvsInfo
-        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
-        let factor = getRatioFromPageToCanvas cpg zmode
-            (hadj,vadj) = get adjustments cvsInfo
-        liftIO $ do 
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
-          adjustmentSetLower hadj 0
-          adjustmentSetLower vadj 0
-          adjustmentSetValue hadj 0
-          adjustmentSetValue vadj 0 
-          adjustmentSetPageSize hadj (w'/factor)
-          adjustmentSetPageSize vadj (h'/factor)
-        invalidate cid
+        cvsInfo = case M.lookup cid cinfoMap of 
+                    Nothing -> error "No such canvas in defaultEventProcess"
+                    Just cvs -> cvs
+    let canvas = get drawArea cvsInfo
+    let page = getPage cvsInfo 
+        (w,h) = get (pageDimension.viewInfo) cvsInfo
+        zmode = get (zoomMode.viewInfo) cvsInfo
+    cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
+    let factor = getRatioFromPageToCanvas cpg zmode
+        (hadj,vadj) = get adjustments cvsInfo
+    liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
+                            (w'/factor,h'/factor)
+    invalidate cid
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()
+
+
+       {- liftIO $ do 
+          adjustmentSetUpper hadj w 
+          adjustmentSetUpper vadj h 
+          adjustmentSetValue hadj 0 
+          adjustmentSetValue vadj 0 
+          adjustmentSetPageSize hadj (fromIntegral w')
+          adjustmentSetPageSize vadj (fromIntegral h') -}
+   {- liftIO $ do 
+      adjustmentSetUpper hadj w 
+      adjustmentSetUpper vadj h 
+      adjustmentSetLower hadj 0
+      adjustmentSetLower vadj 0
+      adjustmentSetValue hadj 0
+      adjustmentSetValue vadj 0 
+      adjustmentSetPageSize hadj (w'/factor)
+      adjustmentSetPageSize vadj (h'/factor) -}
+      {-
+                   case get currentPage currCvsInfo of 
+                     Right pgselect -> mkPageBBoxMapFromPageBBox 
+                                       . pageBBoxFromPageSelect $ pgselect
+                     -- Right _ -> error "not implemented in defaultEventProcess"
+                     Left pg -> pg
+      -}
+                        
+                        {-           case get currentPage currCvsInfo of
+                     Right pgselect -> mkPageBBoxMapFromPageBBox 
+                                       . pageBBoxFromPageSelect $ pgselect
+              
+                     -- Right _ -> error "not implemented in defaultEventProcess"
+                     Left pg -> pg -}
+{-  case get currentPage cvsInfo of
+                 -- Right _ -> error "not implemented in defaultEventProcess"
+                 Right pageselect -> mkPageBBoxMapFromPageBBox
+                                     . pageBBoxFromPageSelect $ pageselect
+                 Left pg -> pg  -}
+{-                . xournalFromXournalBBoxMap
+                $ xoj
+      SelectState xojselect -> do 
+        
+        liftIO $ L.writeFile "mytest.xoj" . builder 
+                . xournalFromXournalBBoxMap
+                $ xoj
+-}        
+          
+    --      maybeCurrCvs = M.lookup currCvsId cinfoMap 
+    --    case maybeCurrCvs of 
+    --   Nothing -> return ()
+    --   Just currCvsInfo -> do 

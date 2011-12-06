@@ -31,7 +31,7 @@ import qualified Data.ByteString.Char8 as B
 type XournalStateIO = StateT HXournalState IO 
 
 data XournalState = ViewAppendState { unView :: XournalBBoxMap }
-                  -- | SelectState { unSelect :: XournalSelectMap }
+                  | SelectState { unSelect :: XournalSelect }
 
 data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _canvasInfoMap :: CanvasInfoMap 

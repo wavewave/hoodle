@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.3.0.999
+Version:	0.3.999
 Synopsis:	haskell clone of xournal 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3

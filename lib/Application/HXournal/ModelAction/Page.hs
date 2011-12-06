@@ -34,41 +34,7 @@ updatePage xojstate cinfo =
   let pagenum = get currentPageNum cinfo 
   in setPage xojstate pagenum cinfo 
 
-  
-  {-updatePage (ViewAppendState xojbbox) cinfo = 
-  let pagenum = get currentPageNum cinfo 
-      pg = getPageFromXojBBoxMap pagenum xojbbox 
-  in set currentPage (Left pg) cinfo 
-updatePage (SelectState txoj) cinfo = 
-  let pagenum = get currentPageNum cinfo 
-  in setPage (SelectState txoj) pagenum cinfo 
 
--}
-{-      pageFromArg = case M.lookup pagenum (tx_pages txoj) of 
-                      Nothing -> error "no such page in setPage"
-                      Just p -> p
-
-  let mspage = tx_selectpage txoj 
-      (newpage,Dim w h) = 
-        case mspage of 
-          Nothing -> (Left pageFromArg, pageDim pageFromArg)
-          Just (spagenum,page) -> 
-            if spagenum == pagenum 
-              then (Right page, tp_dim page) 
-              else (Left pageFromArg, pageDim pageFromArg)
-  in set currentPageNum pagenum 
-     . set (viewPortOrigin.viewInfo) (0,0) 
-     . set (pageDimension.viewInfo) (w,h)       
-     . set currentPage newpage
-     $ cinfo -}
-                            
-{-   case pages xojselect of
-       Left pgs -> let pg = case M.lookup pagenum pgs of
-                              Nothing -> error "error in SetPage"
-                              Just p -> p
-                   in  set currentPage (Left pg) cinfo 
-       Right _ -> error "not yet defined here" -}
-  
 
 setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
@@ -97,24 +63,8 @@ setPage (SelectState txoj) pagenum cinfo =
      . set currentPage newpage
      $ cinfo 
                             
-  
-   {-                         
-   case tx_pages xojselect of
-    Left pgs -> let pg = case M.lookup pagenum pgs of
-                           Nothing -> error "error in SetPage"
-                           Just p -> p 
-                    Dim w h = pageDim pg 
-                in set currentPageNum pagenum 
-                   . set (viewPortOrigin.viewInfo) (0,0) 
-                   . set (pageDimension.viewInfo) (w,h)       
-                   . set currentPage (Left pg)
-                   $ cinfo 
-    Right _ -> error "not yet defined here" -}
-
-
 getPage :: CanvasInfo -> PageBBoxMap
 getPage cinfo = case get currentPage cinfo of 
                   Right tpgs -> pageBBoxMapFromTempPageSelect tpgs
-                  -- Right _ -> error "not implemented yet in getPage"
                   Left pg -> pg 
                   

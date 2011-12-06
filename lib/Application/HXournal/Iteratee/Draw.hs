@@ -49,10 +49,6 @@ invalidateSelSingle cid mbbox drawf drawfsel = do
                                         <*> get viewInfo
                                         <*> pure mbbox
                                         $ cvsInfo )
-{- let  page = case get currentPage cvsInfo of  
-                   -- Right pgselect -> pageBBoxFromPageSelect pgselect
-                   Right _ -> error "not yet implemented in invalidateSelSingle"
-                   Left pg -> pg -}
 
 invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
                     -> Iteratee MyEvent XournalStateIO ()

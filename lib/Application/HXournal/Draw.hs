@@ -243,14 +243,12 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
       page = pageBBoxMapFromTempPageSelect tpg
-  putStrLn "In drawSelectionInBBox"
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   
   boxdrawaction <-  
     case strokes (tp_firstlayer tpg) of
       Right alist -> do 
-        putStrLn "right"
         return $ do 
           setSourceRGBA 0.0 0.0 1.0 1.0
           let hitstrs = concatMap unHitted (getB alist)

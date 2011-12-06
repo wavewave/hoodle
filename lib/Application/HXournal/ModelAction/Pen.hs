@@ -54,12 +54,3 @@ addPDraw pinfo xoj pgnum pdraw =
   in  (newxojbbox,strokebbox_bbox newstrokebbox)
 
 
-      -- currlayer = head (pageLayers currpage)
-      -- otherlayers = tail (pageLayers currpage)
-
-      -- pages = xournalPages xoj
-      -- pagesbefore = take pgnum pages 
-      -- pagesafter  = drop (pgnum+1) pages 
-
-      -- pagebbox_layers = newlayerbbox : otherlayers }        
-      -- xojbbox_pages =  pagesbefore ++ [newpagebbox]  ++ pagesafter }  

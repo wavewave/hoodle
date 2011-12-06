@@ -25,6 +25,7 @@ Library
                    Graphics.Xournal.Render.BBox
                    Graphics.Xournal.HitTest
                    Graphics.Xournal.Type
+                   Graphics.Xournal.Type.Map
                    Graphics.Xournal.Type.Select
 
 

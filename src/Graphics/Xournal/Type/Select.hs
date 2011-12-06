@@ -3,6 +3,7 @@ module Graphics.Xournal.Type.Select where
 import Text.Xournal.Type
 import Graphics.Xournal.Type
 
+import qualified Data.IntMap as M
 
 type WholeOrPart a b = Either a (AlterList a b)
 
@@ -52,5 +53,4 @@ xournalBBoxFromXournalSelect xoj =
                           $ alpgs
   in  XournalBBox newpgs
 
-                         
-
+------------------

@@ -30,12 +30,32 @@ getPageFromXojBBoxMap pagenum xojbbox  =
     Just p -> p
 
 updatePage :: XournalState -> CanvasInfo -> CanvasInfo 
-updatePage xojstate cinfo = 
+updatePage (ViewAppendState xojbbox) cinfo = 
   let pagenum = get currentPageNum cinfo 
-  in setPage xojstate pagenum cinfo 
-
-
-
+      pg = getPageFromXojBBoxMap pagenum xojbbox 
+      Dim w h = pageDim pg
+  in  set currentPageNum pagenum 
+      . set (pageDimension.viewInfo) (w,h)       
+      . set currentPage (Left pg)
+      $ cinfo 
+updatePage (SelectState txoj) cinfo = 
+  let pagenum = get currentPageNum cinfo
+      mspage = tx_selectpage txoj 
+      pageFromArg = case M.lookup pagenum (tx_pages txoj) of 
+                      Nothing -> error "no such page in updatePage"
+                      Just p -> p
+      (newpage,Dim w h) = 
+        case mspage of 
+          Nothing -> (Left pageFromArg, pageDim pageFromArg)
+          Just (spagenum,page) -> 
+            if spagenum == pagenum 
+              then (Right page, tp_dim page) 
+              else (Left pageFromArg, pageDim pageFromArg)
+  in set currentPageNum pagenum 
+     . set (pageDimension.viewInfo) (w,h)       
+     . set currentPage newpage
+     $ cinfo 
+  
 setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
   let pg = getPageFromXojBBoxMap pagenum xojbbox 

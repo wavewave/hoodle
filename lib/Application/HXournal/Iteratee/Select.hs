@@ -48,7 +48,7 @@ selectRectStart cid pcoord = do
     case get currentPage cvsInfo of 
       Right tpage -> if hitInSelection tpage (x,y)
                        then do 
-                         liftIO $ putStrLn "HITTED"
+                         -- liftIO $ putStrLn "HITTED"
                          moveSelectRectangle cvsInfo 
                                              geometry 
                                              zmode 

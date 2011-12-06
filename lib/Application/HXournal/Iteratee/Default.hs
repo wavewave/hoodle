@@ -114,7 +114,7 @@ viewAppendMode = do
 
 selectMode :: Iteratee MyEvent XournalStateIO ()
 selectMode = do 
-  liftIO $ putStrLn "selectMode"
+  -- liftIO $ putStrLn "selectMode"
   r1 <- await 
   case r1 of 
     PenDown cid pcoord -> do 

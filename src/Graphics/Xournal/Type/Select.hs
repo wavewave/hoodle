@@ -47,6 +47,16 @@ tempXournalSelectFromXournalBBoxMap xoj =
   TempXournalSelect { tx_pages = xbm_pages xoj 
                     , tx_selectpage = Nothing } 
 
+tempPageSelectFromPageBBoxMap :: PageBBoxMap -> TempPageSelect 
+tempPageSelectFromPageBBoxMap pbox = 
+   TempPageSelect { tp_dim = pageDim pbox
+                  , tp_bkg = pageBkg pbox
+                  , tp_firstlayer = LayerSelect . Left . layerStrokes 
+                                    . head . pageLayers $ pbox
+                  , tp_otherlayer = tail (pageLayers pbox)
+                  }
+
+
 pageBBoxMapFromTempPageSelect :: TempPageSelect -> PageBBoxMap
 pageBBoxMapFromTempPageSelect (TempPageSelect dim bkg flayer olayers)
   = PageBBoxMap dim bkg lmap 

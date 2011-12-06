@@ -41,7 +41,7 @@ data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _drawArea :: DrawingArea
                              , _viewInfo :: ViewInfo 
                              , _currentPageNum :: Int
-                             , _currentPage :: Either PageBBoxMap PageSelect
+                             , _currentPage :: Either PageBBoxMap TempPageSelect -- PageSelect
                              , _horizAdjustment :: Adjustment
                              , _vertAdjustment :: Adjustment 
                              }

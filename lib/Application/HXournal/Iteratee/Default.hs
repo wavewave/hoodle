@@ -77,12 +77,14 @@ modeChange ToViewAppendMode = do
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState _ -> return () 
-    SelectState xoj -> do 
+    SelectState txoj -> do 
       liftIO $ putStrLn "to view append mode"
       lift 
         . St.put 
-        . set xournalstate (ViewAppendState (xournalBBoxMapFromXournalSelect xoj))
+        . set xournalstate (ViewAppendState (XournalBBoxMap <$> tx_pages $ txoj))
         $ xstate  
+--                               xournalBBoxMapFromXournalSelect xoj))
+
 modeChange ToSelectMode = do 
   xstate <- lift St.get  
   let xojstate = get xournalstate xstate
@@ -91,8 +93,10 @@ modeChange ToSelectMode = do
       liftIO $ putStrLn "to select mode"
       lift 
         . St.put 
-        . set xournalstate (SelectState (xournalSelectFromXournalBBoxMap xoj)) 
+        . set xournalstate (SelectState (tempXournalSelectFromXournalBBoxMap xoj))
         $ xstate  
+ --                            (xournalSelectFromXournalBBoxMap xoj)) 
+        
     SelectState _ -> return ()
 modeChange _ = return ()
 
@@ -132,9 +136,8 @@ defaultEventProcess MenuSave = do
     let xojstate = get xournalstate xstate
     let xoj = case xojstate of 
                  ViewAppendState xojmap -> xournalFromXournalBBoxMap xojmap 
-                 SelectState xojslt -> xournalFromXournalBBoxMap 
-                                       . xournalBBoxMapFromXournalSelect 
-                                       $ xojslt 
+                 SelectState txoj -> xournalFromXournalBBoxMap 
+                                     $ XournalBBoxMap <$> tx_pages $ txoj 
     liftIO . L.writeFile "mytest.xoj" . builder $ xoj
 defaultEventProcess MenuNormalSize = do 
     liftIO $ putStrLn "NormalSize clicked"

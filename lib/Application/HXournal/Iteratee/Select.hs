@@ -66,15 +66,25 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
     PenUp cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
+          
+      let epage = get currentPage cinfo 
+          
       let bbox = BBox orig (x,y)
           prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox
-          
+{-          newlayer = LayerSelect (Right selectstr) 
+          newlayers = case p 
+            
+            
+            [] :- [newlayer] :- 
+          newpage = case epage of  
+                      Left p -> PageSelect (pgm_dim p) (pgm_bkg p) -}
+{-          
           hittedstrs = concat . map unHitted . getB $ hittestbbox
       invalidateInBBox cid (fromJust (Just bbox `merge` Just prevbbox))
       mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
-
+-}
     
       disconnect connidmove
       disconnect connidup 

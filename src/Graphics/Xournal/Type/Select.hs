@@ -8,23 +8,51 @@ import qualified Data.IntMap as M
 
 -- type WholeOrPart a b = Either a (AlterList a b)
 
-data XournalSelect = XournalSelect 
-                     { pages :: Either (M.IntMap PageBBoxMap) (AlterList [PageBBox] [PageSelect])
-                     }
+data XournalSelect = 
+  XournalSelect 
+  { pages :: Either (M.IntMap PageBBoxMap) (AlterList [PageBBox] [PageSelect])
+  }
 
-data PageSelect = PageSelect 
-                  { dimension :: Dimension
-                  , background :: Background
-                  , layers :: Either (M.IntMap LayerBBox) (AlterList [LayerBBox] [LayerSelect]) 
-                  } 
+data PageSelect = 
+  PageSelect 
+  { dimension :: Dimension
+  , background :: Background
+  , layers :: Either (M.IntMap LayerBBox) (AlterList [LayerBBox] [LayerSelect]) 
+  } 
 
-data LayerSelect = LayerSelect { strokes :: Either [StrokeBBox] (AlterList [StrokeBBox] Hitted)
-                               } 
+data TempXournalSelect = 
+  TempXournalSelect 
+  { tx_pages :: M.IntMap PageBBoxMap 
+  , tx_selectpage :: Maybe (Int, TempPageSelect)
+  }
+
+data TempPageSelect = 
+  TempPageSelect 
+  { tp_dim :: Dimension 
+  , tp_bkg :: Background
+  , tp_firstlayer :: LayerSelect
+  , tp_otherlayer :: [LayerBBox] 
+  }
+
+data LayerSelect = 
+  LayerSelect { strokes :: Either [StrokeBBox] (AlterList [StrokeBBox] Hitted)
+              } 
 
 xournalSelectFromXournalBBoxMap :: XournalBBoxMap -> XournalSelect 
 xournalSelectFromXournalBBoxMap xoj = 
   XournalSelect { pages = Left (xbm_pages xoj) } 
   
+tempXournalSelectFromXournalBBoxMap :: XournalBBoxMap -> TempXournalSelect 
+tempXournalSelectFromXournalBBoxMap xoj = 
+  TempXournalSelect { tx_pages = xbm_pages xoj 
+                    , tx_selectpage = Nothing } 
+
+pageBBoxMapFromTempPageSelect :: TempPageSelect -> PageBBoxMap
+pageBBoxMapFromTempPageSelect (TempPageSelect dim bkg flayer olayers)
+  = PageBBoxMap dim bkg lmap 
+  where l = layerBBoxFromLayerSelect flayer 
+        lmap = M.fromList $ zip [0..] (l:olayers)
+
 
 layerBBoxFromLayerSelect :: LayerSelect -> LayerBBox 
 layerBBoxFromLayerSelect layer = 

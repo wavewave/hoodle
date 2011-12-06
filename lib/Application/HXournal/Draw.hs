@@ -12,6 +12,7 @@ import Text.Xournal.Type
 
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Type.Select
+import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Render 
 import Graphics.Xournal.Render.BBox 
 import Application.HXournal.Type 
@@ -26,7 +27,7 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
-type PageDrawF = DrawingArea -> PageBBox -> ViewInfo -> Maybe BBox 
+type PageDrawF = DrawingArea -> PageBBoxMap -> ViewInfo -> Maybe BBox 
                  -> IO ()
 
 type PageDrawFSel = DrawingArea -> PageSelect -> ViewInfo -> Maybe BBox 

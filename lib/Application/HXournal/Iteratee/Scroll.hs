@@ -11,6 +11,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Iteratee.Draw
 
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
@@ -32,14 +33,14 @@ vscrollMove cid = do
     VScrollBarMoved cid' v -> do 
       xstate <- lift St.get 
       let cinfoMap = get canvasInfoMap xstate
-          maybeCvs = M.lookup cid cinfoMap 
+          maybeCvs = IM.lookup cid cinfoMap 
       case maybeCvs of 
         Nothing -> return ()
         Just cvsInfo -> do 
           let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
           let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
                          $ cvsInfo 
-              cinfoMap' = M.adjust (\_ -> cvsInfo') cid cinfoMap  
+              cinfoMap' = IM.adjust (const cvsInfo') cid cinfoMap  
               xstate' = set canvasInfoMap cinfoMap' 
                         . set currentCanvas cid
                         $ xstate

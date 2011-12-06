@@ -10,6 +10,7 @@ import Application.HXournal.Accessor
 import Application.HXournal.Iteratee.Draw
 
 import Graphics.Xournal.Type 
+import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Render.BBox
 
 
@@ -29,7 +30,7 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Text.Xournal.Type
-import qualified Data.Map as M
+import qualified Data.IntMap as IM
 
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
@@ -39,27 +40,30 @@ changePage modifyfn = do
         currCvsInfo = getCanvasInfo currCvsId xstate   
     let xojst = get xournalstate $ xstate 
     case xojst of 
-      SelectState _ -> error "not implemented yet : changePage" 
+      -- SelectState _ -> error "not implemented yet : changePage" 
       ViewAppendState xoj -> do 
-        let pages = xournalPages xoj 
-            totalnumofpages = length pages
+        let pages = xbm_pages xoj 
+            totalnumofpages = IM.size pages
             oldpage = get currentPageNum currCvsInfo
+            lpage = case IM.lookup (totalnumofpages-1) pages of
+                      Nothing -> error "error in changePage"
+                      Just p -> p            
         (xstate',xoj',pages',totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let lpage = last pages
-                npage = mkPageBBoxFromPage 
+            let npage = mkPageBBoxMapFromPageBBox 
+                        . mkPageBBoxFromPage
                         . newPageFromOld 
-                        . pageFromPageBBox $ lpage
-                npages = pages ++ [npage] 
-                newxoj = xoj { xojbbox_pages = npages } 
+                        . pageFromPageBBoxMap $ lpage
+                npages = IM.insert totalnumofpages npage pages 
+                newxoj = xoj { xbm_pages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
             putSt xstate'
             return (xstate',newxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
                  then return (xstate,xoj,pages,totalnumofpages,0)
                  else return (xstate,xoj,pages,totalnumofpages,modifyfn oldpage)
-        let Dim w h = pageDim . (!! newpage) $ pages'
+        let Dim w h = pageDim lpage
             (hadj,vadj) = get adjustments currCvsInfo
         liftIO $ do 
           adjustmentSetUpper hadj w 

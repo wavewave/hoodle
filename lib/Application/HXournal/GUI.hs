@@ -3,8 +3,6 @@
 module Application.HXournal.GUI where
 
 import Application.HXournal.Type 
-import Application.HXournal.Type.Event
-import Graphics.Xournal.Render.BBox
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
 import Application.HXournal.Iteratee
@@ -18,7 +16,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Coroutine
 
 import Data.IORef
-import qualified Data.Map as M
+import qualified Data.IntMap as M
 
 
 import Control.Category
@@ -26,6 +24,7 @@ import Data.Label
 import Prelude hiding ((.),id)
 
 import Text.Xournal.Type
+import Graphics.Xournal.Type.Map
 import qualified Text.Xournal.Parse as P
 
 startGUI :: FilePath -> IO () 
@@ -52,7 +51,7 @@ startGUI fname = do
   scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
 
   xojcontent <- P.read_xournal fname 
-  let xojWbbox = mkXournalBBoxFromXournal xojcontent 
+  let xojWbbox = mkXournalBBoxMapFromXournal xojcontent 
   let Dim width height = pageDim . (!! 0) .  xournalPages $ xojcontent
       startingxojstate = ViewAppendState xojWbbox
       cinfo1 = set canvasId 1 

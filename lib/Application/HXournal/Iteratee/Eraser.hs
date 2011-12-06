@@ -20,6 +20,7 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
 
 import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.HitTest
 
@@ -32,7 +33,9 @@ import qualified Control.Monad.State as St
 
 import Control.Category
 import Data.Label
+
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 
 import Prelude hiding ((.), id)
 
@@ -74,19 +77,15 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
         then do 
           let currxoj     = unView . get xournalstate $ xstate 
               pgnum       = get currentPageNum cvsInfo
-              pages       = xournalPages currxoj 
               currpage    = getPage cvsInfo
-              pagesbefore = take pgnum pages 
-              pagesafter  = drop (pgnum+1) pages 
-              currlayer   = head (pageLayers currpage) 
-              otherlayers = tail (pageLayers currpage) 
+              currlayer = case IM.lookup 0 (pbm_layers currpage) of
+                            Nothing -> error "something wrong in eraserProcess"
+                            Just l -> l
+              
               (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
               newlayerbbox = currlayer { layerbbox_strokes = newstrokes }    
-              newpagebbox = currpage 
-                              { pagebbox_layers = newlayerbbox : otherlayers } 
-              newxojbbox = currxoj { xojbbox_pages = pagesbefore
-                                                     ++ [newpagebbox]
-                                                     ++ pagesafter } 
+              newpagebbox = currpage { pbm_layers = IM.adjust (const newlayerbbox) 0 (pbm_layers currpage) } 
+              newxojbbox = currxoj { xbm_pages= IM.adjust (const newpagebbox) pgnum (xbm_pages currxoj) }
               newxojstate = ViewAppendState newxojbbox
               xstate' = set xournalstate newxojstate 
                         . updatePageAll newxojstate $ xstate 
@@ -103,3 +102,13 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
       invalidateAll
     _ -> return ()
     
+
+
+              -- pagesbefore = take pgnum pages 
+              -- pagesafter  = drop (pgnum+1) pages 
+              -- currlayer   = head (pageLayers currpage) 
+              -- otherlayers = tail (pageLayers currpage) 
+              -- pages       = xournalPages currxoj 
+  --              xojbbox_pages = pagesbefore
+  --                                                   ++ [newpagebbox]
+  --                                                   ++ pagesafter } 

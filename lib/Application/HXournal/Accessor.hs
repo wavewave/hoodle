@@ -7,7 +7,9 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Draw 
 import Application.HXournal.ModelAction.Page
 
+import Text.Xournal.Type
 import Graphics.Xournal.Type 
+import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Render.BBox
 
 import Control.Applicative
@@ -16,7 +18,7 @@ import qualified Control.Monad.State as St
 import Control.Monad.Trans
 import Control.Category
 
-import qualified Data.Map as M
+import qualified Data.IntMap as M
 import Data.Label
 import Prelude hiding ((.),id)
 
@@ -43,7 +45,7 @@ getAllStrokeBBoxInCurrentPage = do
   let pagenum = get currentPageNum currCvsInfo
       pagebbox = getPage currCvsInfo
       strs = do 
-        l <- pagebbox_layers pagebbox 
+        l <- pageLayers pagebbox 
         s <- layerbbox_strokes l
         return s 
   return strs 

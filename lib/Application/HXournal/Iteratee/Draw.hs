@@ -22,7 +22,7 @@ import Control.Monad
 import Control.Monad.Trans
 
 import qualified Control.Monad.State as St
-import qualified Data.Map as M
+import qualified Data.IntMap as M
 
 import Control.Category
 import Data.Label
@@ -41,20 +41,14 @@ invalidateSelSingle cid mbbox drawf drawfsel = do
       let -- pagenum = get currentPageNum cvsInfo
           -- xojst = get xournalstate xstate
           page = case get currentPage cvsInfo of  
-                   Right pgselect -> pageBBoxFromPageSelect pgselect
+                   -- Right pgselect -> pageBBoxFromPageSelect pgselect
+                   Right _ -> error "not yet implemented in invalidateSelSingle"
                    Left pg -> pg 
       liftIO (drawf <$> get drawArea 
                     <*> pure page 
                     <*> get viewInfo 
                     <*> pure mbbox
                     $ cvsInfo )
-{-
-      case xojst of
-        ViewAppendState xoj -> do 
-          let page = (!!pagenum) . xournalPages $ xoj
-        SelectState xoj -> do 
-          return ()
--}
 
 invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
                     -> Iteratee MyEvent XournalStateIO ()
@@ -66,7 +60,8 @@ invalidateGenSingle cid mbbox drawf = do
     Just cvsInfo -> do 
       -- let pagenum = get currentPageNum cvsInfo
       let page = case get currentPage cvsInfo of
-                   Right pgselect -> pageBBoxFromPageSelect pgselect
+                   -- Right pgselect -> pageBBoxFromPageSelect pgselect
+                   Right _ -> error "no invalidateGenSingle implementation yet"
                    Left pg -> pg
       liftIO (drawf <$> get drawArea 
                     <*> pure page 

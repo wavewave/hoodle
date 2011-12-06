@@ -30,7 +30,9 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Text.Xournal.Type 
+
 import Graphics.Xournal.Render.BBox
+import Graphics.Xournal.Type.Map
 
 penStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO ()
 penStart cid pcoord = do 

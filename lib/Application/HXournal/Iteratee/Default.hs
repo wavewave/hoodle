@@ -26,7 +26,7 @@ import qualified Control.Monad.State as St
 
 import Control.Monad.Trans
 
-import qualified Data.Map as M
+import qualified Data.IntMap as M
 import Data.Maybe
 import qualified Data.ByteString.Lazy as L
 import Control.Category
@@ -34,8 +34,10 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Text.Xournal.Type 
+import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Type.Select
-import Graphics.Xournal.Render.BBox
+-- import Graphics.Xournal.Render.BBox
 
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do 
@@ -65,7 +67,7 @@ dispatchMode = do
   xojstate <- return . get xournalstate =<< lift St.get
   case xojstate of 
     ViewAppendState _ -> viewAppendMode
-    SelectState _ -> selectMode
+    -- SelectState _ -> selectMode
 
 modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
 modeChange ToViewAppendMode = do 
@@ -73,23 +75,23 @@ modeChange ToViewAppendMode = do
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState _ -> return () 
-    SelectState xoj -> do 
+{-    SelectState xoj -> do 
       liftIO $ putStrLn "to view append mode"
       lift 
         . St.put 
         . set xournalstate (ViewAppendState (xournalBBoxFromXournalSelect xoj))
-        $ xstate 
+        $ xstate  -}
 modeChange ToSelectMode = do 
   xstate <- lift St.get  
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState xoj -> do 
       liftIO $ putStrLn "to select mode"
-      lift 
+{-      lift 
         . St.put 
         . set xournalstate (SelectState (xournalSelectFromXournalBBox xoj)) 
-        $ xstate 
-    SelectState _ -> return ()
+        $ xstate  -}
+  --   SelectState _ -> return ()
 modeChange _ = return ()
 
 viewAppendMode :: Iteratee MyEvent XournalStateIO ()
@@ -125,8 +127,9 @@ defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuSave = do 
     xojcontent <- unView . get xournalstate <$> lift St.get   
-    liftIO $ L.writeFile "mytest.xoj" . builder . xournalFromXournalBBox 
-           $ xojcontent
+    liftIO $ L.writeFile "mytest.xoj" . builder 
+             . xournalFromXournalBBoxMap
+             $ xojcontent
 defaultEventProcess MenuNormalSize = do 
     liftIO $ putStrLn "NormalSize clicked"
     xstate <- lift St.get 
@@ -139,7 +142,8 @@ defaultEventProcess MenuNormalSize = do
         let canvas = get drawArea currCvsInfo
         (w',h') <- liftIO $ widgetGetSize canvas
         let page = case get currentPage currCvsInfo of 
-                     Right pgselect -> pageBBoxFromPageSelect pgselect
+                     -- Right pgselect -> pageBBoxFromPageSelect pgselect
+                     Right _ -> error "not implemented in defaultEventProcess"
                      Left pg -> pg
         let Dim w h = pageDim page
         let (hadj,vadj) = get adjustments currCvsInfo 
@@ -169,7 +173,8 @@ defaultEventProcess MenuPageWidth = do
       Just currCvsInfo -> do 
         let canvas = get drawArea currCvsInfo
         let page = case get currentPage currCvsInfo of
-                     Right pgselect -> pageBBoxFromPageSelect pgselect
+                     Right _ -> error "not implemented in defaultEventProcess"
+                     --  Right pgselect -> pageBBoxFromPageSelect pgselect
                      Left pg -> pg
         let Dim w h = pageDim page 
         cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
@@ -238,7 +243,8 @@ defaultEventProcess (CanvasConfigure cid w' h') = do
       Just cvsInfo -> do 
         let canvas = get drawArea cvsInfo
         let page = case get currentPage cvsInfo of
-                     Right pageselect -> pageBBoxFromPageSelect pageselect
+                     Right _ -> error "not implemented in defaultEventProcess"
+                     --  Right pageselect -> pageBBoxFromPageSelect pageselect
                      Left pg -> pg 
             (w,h) = get (pageDimension.viewInfo) cvsInfo
             zmode = get (zoomMode.viewInfo) cvsInfo

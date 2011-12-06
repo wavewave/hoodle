@@ -30,6 +30,7 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 import Text.Xournal.Type
+import Graphics.Xournal.Type.Select
 import qualified Data.IntMap as IM
 
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
@@ -75,8 +76,41 @@ changePage modifyfn = do
                        $ xstate'
         lift . St.put $ xstate'' 
         invalidate currCvsId 
-      SelectState _ -> do 
-        error "not implemented yet : changePage" 
+      SelectState txoj -> do 
+        let pages = tx_pages txoj 
+            totalnumofpages = IM.size pages
+            oldpage = get currentPageNum currCvsInfo
+            lpage = case IM.lookup (totalnumofpages-1) pages of
+                      Nothing -> error "error in changePage"
+                      Just p -> p            
+        (xstate',txoj',pages',totalnumofpages',newpage) <-
+          if (modifyfn oldpage >= totalnumofpages) 
+          then do 
+            let npage = mkPageBBoxMapFromPageBBox 
+                        . mkPageBBoxFromPage
+                        . newPageFromOld 
+                        . pageFromPageBBoxMap $ lpage
+                npages = IM.insert totalnumofpages npage pages 
+                newtxoj = txoj { tx_pages = npages } 
+                xstate' = set xournalstate (SelectState newtxoj) xstate
+            putSt xstate'
+            return (xstate',newtxoj,npages,totalnumofpages+1,totalnumofpages)
+          else if modifyfn oldpage < 0 
+                 then return (xstate,txoj,pages,totalnumofpages,0)
+                 else return (xstate,txoj,pages,totalnumofpages,modifyfn oldpage)
+        let Dim w h = pageDim lpage
+            (hadj,vadj) = get adjustments currCvsInfo
+        liftIO $ do 
+          adjustmentSetUpper hadj w 
+          adjustmentSetUpper vadj h 
+          adjustmentSetValue hadj 0
+          adjustmentSetValue vadj 0
+        let currCvsInfo' = setPage (SelectState txoj') newpage currCvsInfo 
+            xstate'' = updatePageAll (SelectState txoj')
+                       . updateCanvasInfo currCvsInfo' 
+                       $ xstate'
+        lift . St.put $ xstate'' 
+        invalidate currCvsId 
       
 
             

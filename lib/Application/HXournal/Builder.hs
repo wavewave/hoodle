@@ -9,6 +9,8 @@ import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char8 (fromString, fromChar)
 
+import Data.Double.Conversion.ByteString 
+
 import Data.Monoid
 import Data.Strict.Tuple
 
@@ -34,9 +36,9 @@ fromTitle title = fromByteString "<title>"
   
 fromPage :: Page -> Builder 
 fromPage page = fromByteString "<page width=\""
-                <> fromString (show w)
+                <> fromByteString (toFixed 2 w)
                 <> fromByteString "\" height=\""
-                <> fromString (show h)
+                <> fromByteString (toFixed 2 h)
                 <> fromByteString "\">\n"   
                 <> fromBackground (page_bkg page)
                 <> mconcat (map fromLayer (page_layers page))
@@ -64,13 +66,13 @@ fromStroke stroke = fromByteString "<stroke tool=\""
                     <> fromByteString "\" color=\""
                     <> fromByteString (stroke_color stroke)
                     <> fromByteString "\" width=\""
-                    <> fromString (show (stroke_width stroke))
+                    <> fromByteString (toFixed 2 (stroke_width stroke))
                     <> fromByteString "\">\n"
                     <> mconcat (map fromCoord (stroke_data stroke))
                     <> fromByteString "\n</stroke>\n"
 
 fromCoord :: Pair Double Double -> Builder 
-fromCoord (x :!: y) = fromString (show x) 
+fromCoord (x :!: y) = fromByteString (toFixed 2 x) 
                       <> fromChar ' ' 
-                      <> fromString (show y) 
+                      <> fromByteString (toFixed 2 y) 
                       <> fromChar ' ' 

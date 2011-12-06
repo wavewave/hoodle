@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.4
+Version:	0.4.0.0.999
 Synopsis:	haskell clone of xournal 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
@@ -35,7 +35,7 @@ Library
                    HStringTemplate,
                    HStringTemplateHelpersIW, 
                    template-haskell, blaze-builder, 
-                   bytestring == 0.9.*, 
+                   bytestring == 0.9.*, double-conversion >= 0.2,
                    fclabels == 1.0.*
   Exposed-Modules: 
                    Application.HXournal.ProgType

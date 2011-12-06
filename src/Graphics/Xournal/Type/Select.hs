@@ -2,27 +2,28 @@ module Graphics.Xournal.Type.Select where
 
 import Text.Xournal.Type
 import Graphics.Xournal.Type
+import Graphics.Xournal.Type.Map
 
 import qualified Data.IntMap as M
 
-type WholeOrPart a b = Either a (AlterList a b)
+-- type WholeOrPart a b = Either a (AlterList a b)
 
 data XournalSelect = XournalSelect 
-                     { pages :: WholeOrPart [PageBBox] [PageSelect]
+                     { pages :: Either (M.IntMap PageBBoxMap) (AlterList [PageBBox] [PageSelect])
                      }
 
 data PageSelect = PageSelect 
                   { dimension :: Dimension
                   , background :: Background
-                  , layers :: WholeOrPart [LayerBBox] [LayerSelect] 
+                  , layers :: Either (M.IntMap LayerBBox) (AlterList [LayerBBox] [LayerSelect]) 
                   } 
 
-data LayerSelect = LayerSelect { strokes :: WholeOrPart [StrokeBBox] Hitted
+data LayerSelect = LayerSelect { strokes :: Either [StrokeBBox] (AlterList [StrokeBBox] Hitted)
                                } 
 
-xournalSelectFromXournalBBox :: XournalBBox -> XournalSelect 
-xournalSelectFromXournalBBox xoj = 
-  XournalSelect { pages = Left (xournalPages xoj) } 
+xournalSelectFromXournalBBoxMap :: XournalBBoxMap -> XournalSelect 
+xournalSelectFromXournalBBoxMap xoj = 
+  XournalSelect { pages = Left (xbm_pages xoj) } 
   
 
 layerBBoxFromLayerSelect :: LayerSelect -> LayerBBox 
@@ -32,25 +33,30 @@ layerBBoxFromLayerSelect layer =
                   Right alstrs -> concat $ interleave id unHitted $ alstrs
   in  LayerBBox newstrs 
       
-pageBBoxFromPageSelect :: PageSelect -> PageBBox      
-pageBBoxFromPageSelect page = 
+pageBBoxMapFromPageSelect :: PageSelect -> PageBBoxMap
+pageBBoxMapFromPageSelect page = 
   let newlyrs = case layers page of  
                   Left ls -> ls   
                   Right allyrs -> 
-                    concat $ interleave id (map layerBBoxFromLayerSelect) 
-                           $ allyrs 
-  in  PageBBox { pagebbox_dim = dimension page  
-               , pagebbox_bkg = background page
-               , pagebbox_layers = newlyrs }
+                    let layerlst = concat 
+                                   . interleave id 
+                                                (map layerBBoxFromLayerSelect) 
+                                   $ allyrs 
+                    in  M.fromList $ zip [0..] layerlst 
+  in  PageBBoxMap { pbm_dim = dimension page  
+                  , pbm_bkg = background page
+                  , pbm_layers = newlyrs }
       
-
-xournalBBoxFromXournalSelect :: XournalSelect -> XournalBBox 
-xournalBBoxFromXournalSelect xoj = 
+xournalBBoxMapFromXournalSelect :: XournalSelect -> XournalBBoxMap
+xournalBBoxMapFromXournalSelect xoj = 
   let newpgs = case pages xoj of 
                  Left ps -> ps 
                  Right alpgs -> 
-                   concat $ interleave id (map pageBBoxFromPageSelect) 
-                          $ alpgs
-  in  XournalBBox newpgs
+                   let pglst = concat 
+                               . interleave (map mkPageBBoxMapFromPageBBox) 
+                                            (map pageBBoxMapFromPageSelect) 
+                               $ alpgs
+                   in  M.fromList $ zip [0..] pglst 
+  in  XournalBBoxMap newpgs
 
 ------------------

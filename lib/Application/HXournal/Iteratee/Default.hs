@@ -132,16 +132,9 @@ defaultEventProcess MenuPreviousPage = changePage (\x->x-1)
 defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
-defaultEventProcess MenuOpen = do 
-    fileOpen
-defaultEventProcess MenuSave = do 
-    xstate <- getSt 
-    let xojstate = get xournalstate xstate
-    let xoj = case xojstate of 
-                 ViewAppendState xojmap -> xournalFromXournalBBoxMap xojmap 
-                 SelectState txoj -> xournalFromXournalBBoxMap 
-                                     $ XournalBBoxMap <$> tx_pages $ txoj 
-    liftIO . L.writeFile "mytest.xoj" . builder $ xoj
+defaultEventProcess MenuOpen = fileOpen
+defaultEventProcess MenuSave = fileSave 
+defaultEventProcess MenuSaveAs = fileSaveAs
 defaultEventProcess MenuNormalSize = do 
     liftIO $ putStrLn "NormalSize clicked"
     xstate <- getSt 
@@ -242,51 +235,3 @@ defaultEventProcess ToSelectMode = modeChange ToSelectMode
 defaultEventProcess _ = return ()
 
 
-       {- liftIO $ do 
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
-          adjustmentSetValue hadj 0 
-          adjustmentSetValue vadj 0 
-          adjustmentSetPageSize hadj (fromIntegral w')
-          adjustmentSetPageSize vadj (fromIntegral h') -}
-   {- liftIO $ do 
-      adjustmentSetUpper hadj w 
-      adjustmentSetUpper vadj h 
-      adjustmentSetLower hadj 0
-      adjustmentSetLower vadj 0
-      adjustmentSetValue hadj 0
-      adjustmentSetValue vadj 0 
-      adjustmentSetPageSize hadj (w'/factor)
-      adjustmentSetPageSize vadj (h'/factor) -}
-      {-
-                   case get currentPage currCvsInfo of 
-                     Right pgselect -> mkPageBBoxMapFromPageBBox 
-                                       . pageBBoxFromPageSelect $ pgselect
-                     -- Right _ -> error "not implemented in defaultEventProcess"
-                     Left pg -> pg
-      -}
-                        
-                        {-           case get currentPage currCvsInfo of
-                     Right pgselect -> mkPageBBoxMapFromPageBBox 
-                                       . pageBBoxFromPageSelect $ pgselect
-              
-                     -- Right _ -> error "not implemented in defaultEventProcess"
-                     Left pg -> pg -}
-{-  case get currentPage cvsInfo of
-                 -- Right _ -> error "not implemented in defaultEventProcess"
-                 Right pageselect -> mkPageBBoxMapFromPageBBox
-                                     . pageBBoxFromPageSelect $ pageselect
-                 Left pg -> pg  -}
-{-                . xournalFromXournalBBoxMap
-                $ xoj
-      SelectState xojselect -> do 
-        
-        liftIO $ L.writeFile "mytest.xoj" . builder 
-                . xournalFromXournalBBoxMap
-                $ xoj
--}        
-          
-    --      maybeCurrCvs = M.lookup currCvsId cinfoMap 
-    --    case maybeCurrCvs of 
-    --   Nothing -> return ()
-    --   Just currCvsInfo -> do 

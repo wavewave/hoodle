@@ -469,7 +469,7 @@ getMenuUI tref sref = do
 
  
   let disabledActions = 
-        [ newa, annpdfa, saveasa, recenta, printa, exporta
+        [ newa, annpdfa, recenta, printa, exporta
         , undoa, redoa, cuta, copya, pastea, deletea
         , fscra,  zmina, zmouta, setzma
         , shwlayera, hidlayera
@@ -485,7 +485,7 @@ getMenuUI tref sref = do
         , defaulta         
         ] 
       enabledActions = 
-        [ savea, quita, fstpagea, prvpagea, nxtpagea, lstpagea
+        [ opena, savea, saveasa, quita, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha  -- , selrecta
         ]
   

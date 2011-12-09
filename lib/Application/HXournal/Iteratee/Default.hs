@@ -16,6 +16,7 @@ import Application.HXournal.Iteratee.Highlighter
 import Application.HXournal.Iteratee.Scroll
 import Application.HXournal.Iteratee.Page
 import Application.HXournal.Iteratee.Select
+import Application.HXournal.Iteratee.File
 
 import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page
@@ -131,6 +132,8 @@ defaultEventProcess MenuPreviousPage = changePage (\x->x-1)
 defaultEventProcess MenuNextPage =  changePage (+1)
 defaultEventProcess MenuFirstPage = changePage (const 0)
 defaultEventProcess MenuLastPage = changePage (const 10000)
+defaultEventProcess MenuOpen = do 
+    fileOpen
 defaultEventProcess MenuSave = do 
     xstate <- getSt 
     let xojstate = get xournalstate xstate

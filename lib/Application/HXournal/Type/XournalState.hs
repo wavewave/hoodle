@@ -35,6 +35,7 @@ data XournalState = ViewAppendState { unView :: XournalBBoxMap }
                   | SelectState { tempSelect :: TempXournalSelect }
 
 data HXournalState = HXournalState { _xournalstate :: XournalState
+                                   , _currFileName :: Maybe FilePath
                                    , _canvasInfoMap :: CanvasInfoMap 
                                    , _currentCanvas :: Int
                                    , _currentPenDraw :: PenDraw
@@ -51,6 +52,7 @@ emptyHXournalState :: HXournalState
 emptyHXournalState = 
   HXournalState  
   { _xournalstate = ViewAppendState (mkXournalBBoxMapFromXournal emptyXournal)
+  , _currFileName = Nothing 
   , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"
   , _currentCanvas = error "emtpyHxournalState.currentCanvas"
   , _currentPenDraw = emptyPenDraw 

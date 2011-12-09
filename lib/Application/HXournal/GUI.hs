@@ -74,6 +74,7 @@ startGUI fname = do
                $ M.insert (get canvasId startingcinfo1) startingcinfo1
                $ M.empty 
   let st = set xournalstate startingxojstate
+         . set currFileName (Just fname)
          . set canvasInfoMap cinfoMap 
          . set currentCanvas (get canvasId startingcinfo1)
          . set deviceList devlst 

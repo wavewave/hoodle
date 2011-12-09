@@ -307,8 +307,12 @@ iconResourceAdd iconfac resdir (fp,stid) = do
   myIconSource <- iconSourceNew 
   iconSourceSetFilename myIconSource (resdir </> fp)
   iconSourceSetSize myIconSource IconSizeLargeToolbar
+  myIconSourceSmall <- iconSourceNew 
+  iconSourceSetFilename myIconSourceSmall (resdir </> fp)
+  iconSourceSetSize myIconSource IconSizeMenu
   myIconSet <- iconSetNew 
   iconSetAddSource myIconSet myIconSource 
+  iconSetAddSource myIconSet myIconSourceSmall
   iconFactoryAdd iconfac stid myIconSet
 
 getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
@@ -366,7 +370,7 @@ getMenuUI tref sref = do
   -- view menu
 
 
-  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") Nothing (Just MenuFullScreen) -- (Just "myfullscreen") (Just MenuFullScreen)
+  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (Just MenuFullScreen)
   zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing (Just MenuZoom)
   zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (Just MenuZoomIn)
   zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (Just MenuZoomOut)
@@ -397,18 +401,18 @@ getMenuUI tref sref = do
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (Just MenuSetAsDefaultPaper)
   
   -- tools menu
-  shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") Nothing (Just MenuShapeRecognizer)-- (Just "myshapes") (Just MenuShapeRecognizer)
-  rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") Nothing (Just MenuRuler) -- (Just "myruler") (Just MenuRuler)
-{-  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") Nothing (Just MenuSelectRegion) -- (Just "mylasso") (Just MenuSelectRegion)
-  selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") Nothing (Just MenuSelectRectangle) -- (Just "myrectselect") (Just MenuSelectRectangle)
-  vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") Nothing (Just MenuVerticalSpace) -- (Just "mystretch") (Just MenuVerticalSpace)
-  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") Nothing (Just MenuHandTool) -- (Just "myhand") (Just MenuHandTool) -}
+  shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (Just MenuShapeRecognizer)
+  rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (Just MenuRuler)
+  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (Just MenuSelectRegion)
+  selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (Just MenuSelectRectangle)
+  vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (Just MenuVerticalSpace)
+  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (Just MenuHandTool) 
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (Just MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (Just MenuEraserOptions)
   hiltropta <- actionNewAndRegister "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing (Just MenuHighlighterOptions)
   txtfnta   <- actionNewAndRegister "TXTFNTA" "Text Font" (Just "Just a Stub") Nothing (Just MenuTextFont)
-  defpena   <- actionNewAndRegister "DEFPENA" "Default Pen" (Just "Just a Stub") Nothing  (Just MenuDefaultPen) -- (Just "mydefaultpen") (Just MenuDefaultPen)
+  defpena   <- actionNewAndRegister "DEFPENA" "Default Pen" (Just "Just a Stub") (Just "mydefaultpen") (Just MenuDefaultPen)
   defersra  <- actionNewAndRegister "DEFERSRA" "Default Eraser" (Just "Just a Stub") Nothing (Just MenuDefaultEraser)
   defhiltra <- actionNewAndRegister "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing (Just MenuDefaultHighlighter)
   deftxta   <- actionNewAndRegister "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing (Just MenuDefaultText)

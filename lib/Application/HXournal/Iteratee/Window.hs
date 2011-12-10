@@ -62,3 +62,41 @@ eitherSplit stype = do
 deleteCanvas :: Iteratee MyEvent XournalStateIO ()
 deleteCanvas = do 
     liftIO $ putStrLn "deleteCanvas"  
+    xstate <- getSt
+    let cmap = get canvasInfoMap xstate
+        currcid = get currentCanvas xstate
+        -- newcid = newCanvasId cmap 
+        fstate = get frameState xstate
+        xojstate = get xournalstate xstate
+        enewfstate = removeWindow currcid fstate 
+    case enewfstate of 
+      Left _ -> return ()
+      Right Nothing -> return ()
+      Right (Just fstate') -> do 
+        let oldcinfo = case M.lookup currcid cmap of
+                         Nothing -> error "noway! in deleteCanvas " 
+                         Just c -> c 
+        liftIO $ removePanes fstate 
+
+        let cmap' = M.delete currcid cmap
+            newcurrcid = maximum (M.keys cmap')
+        xstate' <- changeCurrentCanvasId newcurrcid 
+        liftIO $ putStrLn $ "in window " ++ show (M.keys cmap')
+        let rtwin = get rootWindow xstate'
+            rtcntr = get rootContainer xstate' 
+            xstate'' = set canvasInfoMap cmap'
+                       . set frameState fstate'
+                       $ xstate'
+        putSt xstate''
+        liftIO $ containerRemove rtcntr rtwin
+
+        (win,fstate'') <- liftIO $ constructFrame fstate' cmap'         
+        let xstate''' = set frameState fstate'' 
+                        . set rootWindow win $ xstate''
+        putSt xstate'''
+        liftIO $ boxPackEnd rtcntr win PackGrow 0 
+        liftIO $ widgetShowAll rtcntr 
+
+        liftIO $ widgetDestroy (get scrolledWindow oldcinfo)
+        liftIO $ widgetDestroy (get drawArea oldcinfo)
+        

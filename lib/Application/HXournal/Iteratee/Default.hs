@@ -9,6 +9,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
+import Application.HXournal.Coroutine 
 import Application.HXournal.Iteratee.Draw 
 import Application.HXournal.Iteratee.Pen 
 import Application.HXournal.Iteratee.Eraser
@@ -18,10 +19,16 @@ import Application.HXournal.Iteratee.Page
 import Application.HXournal.Iteratee.Select
 import Application.HXournal.Iteratee.File
 import Application.HXournal.Iteratee.Mode
+import Application.HXournal.Iteratee.Window 
 
 import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page
+import Application.HXournal.ModelAction.Window 
 import Application.HXournal.Builder 
+
+import Application.HXournal.Type.Window 
+import Application.HXournal.Device
+
 
 import Control.Applicative 
 import Control.Monad.Coroutine
@@ -43,11 +50,13 @@ import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Type.Select
 -- import Graphics.Xournal.Render.BBox
 
+import Data.IORef
+
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do 
   initialize
   changePage (const 0)
-  xstate <- lift St.get
+  xstate <- getSt
   let cinfoMap  = get canvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfo) = do let canvas = get drawArea cinfo
@@ -57,6 +66,27 @@ guiProcess = do
                                                 (fromIntegral h')) 
   mapM_ f assocs
   sequence_ (repeat dispatchMode)
+
+initCoroutine :: DeviceList -> IO (TRef,SRef)
+initCoroutine devlst = do 
+  let st0 = (emptyHXournalState :: HXournalState)
+  sref <- newIORef st0
+  tref <- newIORef (undefined :: SusAwait)
+  let st1 = set deviceList devlst  
+            . set callBack (bouncecallback tref sref) $ st0 
+  initcvs <- initCanvasInfo st1 1 
+  let initcmap = M.insert (get canvasId initcvs) initcvs M.empty
+  let startingXstate = set currentCanvas (get canvasId initcvs)
+                       . set canvasInfoMap initcmap 
+                       . set frameState (Node 1)
+                       $ st1
+  (r,st') <- St.runStateT (resume guiProcess) startingXstate 
+  writeIORef sref st' 
+  case r of 
+    Left aw -> do 
+      writeIORef tref aw 
+    Right _ -> error "what?"
+  return (tref,sref)
 
 initialize :: Iteratee MyEvent XournalStateIO ()
 initialize = do ev <- await 
@@ -157,14 +187,9 @@ defaultEventProcess MenuPageWidth = do
             xstate' =  updateCanvasInfo currCvsInfo' xstate 
         lift . St.put $ xstate'             
         invalidate currCvsId    
-defaultEventProcess (MenuHSplit) = do
-    liftIO $ putStrLn "HSplit"
-defaultEventProcess (MenuVSplit) = do
-    liftIO $ putStrLn "VSplit"
-defaultEventProcess (MenuDelCanvas) = do
-    liftIO $ putStrLn "DelCanvas"
- 
-
+defaultEventProcess (MenuHSplit) = horizontalSplit 
+defaultEventProcess (MenuVSplit) = verticalSplit
+defaultEventProcess (MenuDelCanvas) = deleteCanvas
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- getSt 
     let cinfoMap = get canvasInfoMap xstate
@@ -195,21 +220,21 @@ defaultEventProcess (VScrollBarMoved cid v) = do
     invalidate cid
 defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure cid w' h') = do 
-    xstate <- lift St.get 
+    xstate <- getSt
     let cinfoMap = get canvasInfoMap xstate
-        cvsInfo = case M.lookup cid cinfoMap of 
-                    Nothing -> error "No such canvas in defaultEventProcess"
-                    Just cvs -> cvs
-    let canvas = get drawArea cvsInfo
-    let page = getPage cvsInfo 
-        (w,h) = get (pageDimension.viewInfo) cvsInfo
-        zmode = get (zoomMode.viewInfo) cvsInfo
-    cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
-    let factor = getRatioFromPageToCanvas cpg zmode
-        (hadj,vadj) = get adjustments cvsInfo
-    liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
-                            (w'/factor,h'/factor)
-    invalidate cid
+    case M.lookup cid cinfoMap of 
+      Nothing -> return () -- error $ show ( M.keys cinfoMap) ++ "No such canvas when CanvasConfigure in defaultEventProcess" ++ show cid 
+      Just cvsInfo -> do 
+        let canvas = get drawArea cvsInfo
+        let page = getPage cvsInfo 
+            (w,h) = get (pageDimension.viewInfo) cvsInfo
+            zmode = get (zoomMode.viewInfo) cvsInfo
+        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
+        let factor = getRatioFromPageToCanvas cpg zmode
+            (hadj,vadj) = get adjustments cvsInfo
+        liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
+                                (w'/factor,h'/factor)
+        invalidate cid
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()

@@ -5,8 +5,10 @@ import Application.HXournal.Type.Canvas
 data WindowConfig = Node CanvasId 
                   | HSplit WindowConfig WindowConfig
                   | VSplit WindowConfig WindowConfig 
+                  deriving (Show)
 
 data SplitType = SplitHorizontal | SplitVertical 
+               deriving (Show)
 
 -- | split window in the place of cidold 
 

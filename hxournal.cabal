@@ -70,6 +70,7 @@ Library
                    Application.HXournal.Iteratee.Select
                    Application.HXournal.Iteratee.File
                    Application.HXournal.Iteratee.Mode
+                   Application.HXournal.Iteratee.Window
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw

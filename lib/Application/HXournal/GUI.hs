@@ -20,6 +20,7 @@ import Graphics.UI.Gtk hiding (get,set)
 import qualified Control.Monad.State as St
 import Control.Monad.IO.Class
 import Control.Monad.Coroutine
+import Control.Applicative 
 
 import Data.IORef
 import qualified Data.IntMap as M
@@ -40,12 +41,16 @@ startGUI fname = do
   (tref,sref) <- initCoroutine devlst 
   st0 <- readIORef sref 
   st1 <- getFileContent fname st0
-  let st2 = set callBack (bouncecallback tref sref) st1
-  writeIORef sref st2
-  winCvsArea <- constructFrame (Node 1) (get canvasInfoMap st2)  
+  -- let st2 = set callBack (bouncecallback tref sref) st1
+  writeIORef sref st1
+  winCvsArea <- constructFrame <$> get frameState <*> get canvasInfoMap $ st1
   
   window <- windowNew 
   vbox <- vBoxNew False 0 
+  
+  let st2 = set rootWindow winCvsArea 
+            . set rootContainer (castToBox vbox) $ st1 
+  writeIORef sref st2
   
   -- vpaned <- vPanedNew 
   ui <- getMenuUI tref sref  

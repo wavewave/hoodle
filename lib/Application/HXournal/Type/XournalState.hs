@@ -4,10 +4,10 @@ module Application.HXournal.Type.XournalState where
 
 import Application.HXournal.Device
 
-
 import Application.HXournal.Type.Event 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.Window 
 
 import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Select
@@ -38,6 +38,9 @@ data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _currFileName :: Maybe FilePath
                                    , _canvasInfoMap :: CanvasInfoMap 
                                    , _currentCanvas :: Int
+                                   , _frameState :: WindowConfig 
+                                   , _rootWindow :: Widget
+                                   , _rootContainer :: Box
                                    , _currentPenDraw :: PenDraw
                                    , _callBack ::  MyEvent -> IO ()
                                    , _deviceList :: DeviceList
@@ -55,6 +58,9 @@ emptyHXournalState =
   , _currFileName = Nothing 
   , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"
   , _currentCanvas = error "emtpyHxournalState.currentCanvas"
+  , _frameState = error "emptyHXournalState.frameState" 
+  , _rootWindow = error "emtpyHXournalState.rootWindow"
+  , _rootContainer = error "emptyHXournalState.rootContainer"
   , _currentPenDraw = emptyPenDraw 
   , _callBack = error "emtpyHxournalState.callBack"
   , _deviceList = error "emtpyHxournalState.deviceList"

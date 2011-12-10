@@ -6,7 +6,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Device
-import Application.HXournal.Iteratee.Default
+-- import Application.HXournal.Iteratee.Default
 import Application.HXournal.Coroutine
 
 import Graphics.UI.Gtk hiding (get,set)
@@ -22,26 +22,16 @@ import Prelude hiding ((.),id)
 import qualified Data.IntMap as M
 import Data.IORef 
 
-initCoroutine :: DeviceList -> IO (TRef,SRef)
-initCoroutine devlst = do 
-  sref <- newIORef (emptyHXournalState :: HXournalState)
-  tref <- newIORef (undefined :: SusAwait)
-  initcvs <- initCanvasInfo tref sref 1 
-  let initcmap = M.insert (get canvasId initcvs) initcvs M.empty
-  let startingXstate = set deviceList devlst 
-                       . set currentCanvas (get canvasId initcvs)
-                       . set canvasInfoMap initcmap 
-                       $ emptyHXournalState
-  (r,st') <- St.runStateT (resume guiProcess) startingXstate 
-  writeIORef sref st' 
-  case r of 
-    Left aw -> do 
-      writeIORef tref aw 
-    Right _ -> error "what?"
-  return (tref,sref)
+newCanvasId :: CanvasInfoMap -> CanvasId 
+newCanvasId cmap = 
+  let cids = M.keys cmap 
+  in  (maximum cids) + 1  
 
-initCanvasInfo :: TRef -> SRef -> CanvasId -> IO CanvasInfo 
-initCanvasInfo tref sref cid = do 
+
+initCanvasInfo :: HXournalState -> CanvasId -> IO CanvasInfo 
+initCanvasInfo xstate cid = do 
+    let callback = get callBack xstate
+        dev = get deviceList xstate 
     canvas <- drawingAreaNew
     scrwin <- scrolledWindowNew Nothing Nothing 
     containerAdd scrwin canvas
@@ -53,23 +43,24 @@ initCanvasInfo tref sref cid = do
     
     canvas `on` sizeRequest $ return (Requisition 480 400)    
     canvas `on` buttonPressEvent $ tryEvent $ do 
-      xstate <- liftIO (readIORef sref)
-      let callbk = get callBack xstate
-          dev = get deviceList xstate 
+      -- xstate <- liftIO (readIORef sref)
+      -- let callbk = get callBack xstate
+      --     dev = get deviceList xstate 
       p <- getPointer dev
-      liftIO (callbk (PenDown cid p))
+      liftIO (callback (PenDown cid p))
     canvas `on` configureEvent $ tryEvent $ do 
       (w,h) <- eventSize 
-      liftIO $ bouncecallback tref sref 
+      liftIO $ callback -- bouncecallback tref sref 
                  (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
     canvas `on` buttonReleaseEvent $ tryEvent $ do 
-      xstate <- liftIO (readIORef sref)
-      let callbk = get callBack xstate
-          dev = get deviceList xstate 
+      -- xstate <- liftIO (readIORef sref)
+      -- let callbk = get callBack xstate
+      --     dev = get deviceList xstate 
       p <- getPointer dev
-      liftIO (callbk (PenUp cid p))
+      liftIO (callback (PenUp cid p))
     canvas `on` exposeEvent $ tryEvent $ do 
-      liftIO $ bouncecallback tref sref (UpdateCanvas cid)
+      liftIO $ callback (UpdateCanvas cid) 
+        -- bouncecallback tref sref (UpdateCanvas cid)
     {-
     canvas `on` enterNotifyEvent $ tryEvent $ do 
       win <- liftIO $ widgetGetDrawWindow canvas
@@ -82,22 +73,24 @@ initCanvasInfo tref sref cid = do
 
     afterValueChanged hadj $ do 
       v <- adjustmentGetValue hadj 
-      bouncecallback tref sref (HScrollBarMoved cid v)
+      callback (HScrollBarMoved cid v)
+      -- bouncecallback tref sref (HScrollBarMoved cid v)
     afterValueChanged vadj $ do 
       v <- adjustmentGetValue vadj     
-      bouncecallback tref sref (VScrollBarMoved cid v)
+      callback (VScrollBarMoved cid v)
+      -- bouncecallback tref sref (VScrollBarMoved cid v)
     Just vscrbar <- scrolledWindowGetVScrollbar scrwin
     vscrbar `on` buttonPressEvent $ do 
       v <- liftIO $ adjustmentGetValue vadj 
-      xstate <- liftIO (readIORef sref)
-      let callbk = get callBack xstate
-      liftIO (callbk (VScrollBarStart 1 v))
+      -- xstate <- liftIO (readIORef sref)
+      -- let callbk = get callBack xstate
+      liftIO (callback (VScrollBarStart cid v))
       return False
     vscrbar `on` buttonReleaseEvent $ do 
       v <- liftIO $ adjustmentGetValue vadj 
-      xstate <- liftIO (readIORef sref)
-      let callbk = get callBack xstate
-      liftIO (callbk (VScrollBarEnd 1 v))
+      -- xstate <- liftIO (readIORef sref)
+      -- let callbk = get callBack xstate
+      liftIO (callback (VScrollBarEnd cid v))
       return False
   
     return $ CanvasInfo cid canvas scrwin (error "no viewInfo") 0 (error "No page")  hadj vadj 
@@ -113,6 +106,7 @@ constructFrame (HSplit wconf1 wconf2) cmap = do
   hpaned <- hPanedNew 
   panedPack1 hpaned win1 True False
   panedPack2 hpaned win2 True False
+  widgetShowAll hpaned 
   return (castToWidget hpaned)
 constructFrame (VSplit wconf1 wconf2) cmap = do  
   win1 <- constructFrame wconf1 cmap
@@ -120,4 +114,5 @@ constructFrame (VSplit wconf1 wconf2) cmap = do
   vpaned <- vPanedNew 
   panedPack1 vpaned win1 True False
   panedPack2 vpaned win2 True False
+  widgetShowAll vpaned 
   return (castToWidget vpaned)

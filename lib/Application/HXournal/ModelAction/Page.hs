@@ -60,6 +60,7 @@ setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
   let pg = getPageFromXojBBoxMap pagenum xojbbox 
       Dim w h = pageDim pg
+      -- newViewInfo = ViewInfo OnePage Original (0,0) (w,h)
   in  set currentPageNum pagenum 
       . set (viewPortOrigin.viewInfo) (0,0) 
       . set (pageDimension.viewInfo) (w,h)       
@@ -77,6 +78,7 @@ setPage (SelectState txoj) pagenum cinfo =
             if spagenum == pagenum 
               then (Right page, tp_dim page) 
               else (Left pageFromArg, pageDim pageFromArg)
+      -- newViewInfo = ViewInfo OnePage Original (0,0) (w,h)                   
   in set currentPageNum pagenum 
      . set (viewPortOrigin.viewInfo) (0,0) 
      . set (pageDimension.viewInfo) (w,h)       

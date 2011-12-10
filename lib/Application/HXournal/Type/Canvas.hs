@@ -47,9 +47,6 @@ data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _vertAdjustment :: Adjustment 
                              }
 
--- emptyCanvasInfo :: CanvasInfo
--- emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined undefined
-
 
 type CanvasInfoMap = M.IntMap CanvasInfo
 

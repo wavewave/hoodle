@@ -187,8 +187,8 @@ defaultEventProcess MenuPageWidth = do
             xstate' =  updateCanvasInfo currCvsInfo' xstate 
         lift . St.put $ xstate'             
         invalidate currCvsId    
-defaultEventProcess (MenuHSplit) = horizontalSplit 
-defaultEventProcess (MenuVSplit) = verticalSplit
+defaultEventProcess (MenuHSplit) = eitherSplit SplitHorizontal
+defaultEventProcess (MenuVSplit) = eitherSplit SplitVertical
 defaultEventProcess (MenuDelCanvas) = deleteCanvas
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- getSt 

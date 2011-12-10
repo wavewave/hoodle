@@ -24,22 +24,20 @@ import qualified Data.IntMap as M
 newCanvas cid = do 
   tref getSt -}
 
-
-horizontalSplit :: Iteratee MyEvent XournalStateIO ()
-horizontalSplit = do 
-    liftIO $ putStrLn "horizontalSplit"
+eitherSplit :: SplitType -> Iteratee MyEvent XournalStateIO ()
+eitherSplit stype = do
     xstate <- getSt
     let cmap = get canvasInfoMap xstate
         currcid = get currentCanvas xstate
         newcid = newCanvasId cmap 
         fstate = get frameState xstate
         xojstate = get xournalstate xstate
-        enewfstate = splitWindow currcid (newcid,SplitHorizontal) fstate 
+        enewfstate = splitWindow currcid (newcid,stype) fstate 
     case enewfstate of 
       Left _ -> return ()
       Right fstate' -> do 
         let oldcinfo = case M.lookup currcid cmap of
-                         Nothing -> error "noway! in horizontalSplit " 
+                         Nothing -> error "noway! in eitherSplit " 
                          Just c -> c 
         cinfo <- liftIO $ initCanvasInfo xstate newcid 
         let cinfo' = set viewInfo (get viewInfo oldcinfo)
@@ -53,29 +51,26 @@ horizontalSplit = do
             xstate' = set canvasInfoMap cmap'
                       . set frameState fstate'
                       $ xstate
-        liftIO $ putStrLn $ "test2 :" ++ show (M.keys (get canvasInfoMap xstate'))          
         putSt xstate'
-        -- liftIO $ threadDelay 1000000
         liftIO $ containerRemove rtcntr rtwin
-        -- liftIO $ print fstate 
         win <- liftIO $ constructFrame fstate' cmap'         
         let xstate'' = set rootWindow win xstate'
-        liftIO $ putStrLn $ "test:" ++ show (M.keys (get canvasInfoMap xstate''))
         putSt xstate''
-
-
-
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr 
-                     
- --         widgetDestroy rtwin
- --         boxPackEnd rtcntr win PackGrow 0
 
+{-
+
+horizontalSplit :: Iteratee MyEvent XournalStateIO ()
+horizontalSplit = do 
+    liftIO $ putStrLn "horizontalSplit"
 
 
 verticalSplit :: Iteratee MyEvent XournalStateIO ()
 verticalSplit = do 
     liftIO $ putStrLn "verticalSplit"
+
+-}
 
 deleteCanvas :: Iteratee MyEvent XournalStateIO ()
 deleteCanvas = do 

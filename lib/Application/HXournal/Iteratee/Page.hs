@@ -8,6 +8,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
 import Application.HXournal.Iteratee.Draw
+import Application.HXournal.ModelAction.Adjustment
 
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Type.Map
@@ -112,5 +113,28 @@ changePage modifyfn = do
         lift . St.put $ xstate'' 
         invalidate currCvsId 
       
+
+pageZoomChange :: ZoomMode -> Iteratee MyEvent XournalStateIO () 
+pageZoomChange zmode = do 
+    xstate <- getSt 
+    let currCvsId = get currentCanvas xstate
+        cinfoMap = get canvasInfoMap xstate
+        currCvsInfo = case IM.lookup currCvsId cinfoMap of 
+                        Nothing -> error " no such cvsinfo in pageZoomChange"  
+                        Just cinfo -> cinfo 
+    let canvas = get drawArea currCvsInfo
+    let page = getPage currCvsInfo 
+    let Dim w h = pageDim page
+    cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))        
+    let (w',h') = canvas_size cpg 
+    let (hadj,vadj) = get adjustments currCvsInfo 
+        s = 1.0 / getRatioFromPageToCanvas cpg zmode
+    liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0) (w'*s,h'*s)
+    let currCvsInfo' = set (zoomMode.viewInfo) zmode
+                       . set (viewPortOrigin.viewInfo) (0,0)
+                       $ currCvsInfo 
+        xstate' = updateCanvasInfo currCvsInfo' xstate
+    putSt xstate' 
+    invalidate currCvsId       
 
             

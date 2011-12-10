@@ -26,6 +26,7 @@ data MyEvent = Initialized
              | MenuZoomOut 
              | MenuNormalSize
              | MenuPageWidth
+             | MenuPageHeight
              | MenuSetZoom
              | MenuFirstPage
              | MenuPreviousPage 

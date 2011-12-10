@@ -27,7 +27,7 @@ emptyPenDraw = PenDraw empty
 data PageMode = Continous | OnePage
               deriving (Show,Eq) 
 
-data ZoomMode = Original | FitWidth | Zoom Double 
+data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
               deriving (Show,Eq)
 
 data ViewInfo = ViewInfo { _pageMode :: PageMode

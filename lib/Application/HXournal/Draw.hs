@@ -61,6 +61,7 @@ core2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig,
       (xo,yo) = case zmode of
                   Original -> (xorig,yorig)
                   FitWidth -> (0,yorig)
+                  FitHeight -> (xorig,0)
   in (px*s+xo, py*s+yo)
   
 wacom2pageCoord :: CanvasPageGeometry 
@@ -75,6 +76,7 @@ wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig
         (xo,yo) = case zmode of
                     Original -> (xorig,yorig)
                     FitWidth -> (0,yorig)
+                    FitHeight -> (xorig,0)
                     _ -> error "not implemented wacom2pageCoord"
     in  (x1*s+xo,y1*s+yo)
 
@@ -178,6 +180,10 @@ getRatioFromPageToCanvas cpg FitWidth =
   let (w,_)  = page_size cpg 
       (w',_) = canvas_size cpg 
   in  w'/w
+getRatioFromPageToCanvas cpg FitHeight = 
+  let (_,h)  = page_size cpg 
+      (_,h') = canvas_size cpg 
+  in  h'/h
 getRatioFromPageToCanvas _cpg (Zoom s) = s 
 
 drawSegment :: DrawingArea

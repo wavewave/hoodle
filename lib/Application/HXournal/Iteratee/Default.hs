@@ -137,56 +137,9 @@ defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuOpen = fileOpen
 defaultEventProcess MenuSave = fileSave 
 defaultEventProcess MenuSaveAs = fileSaveAs
-defaultEventProcess MenuNormalSize = do 
-    liftIO $ putStrLn "NormalSize clicked"
-    xstate <- getSt 
-    let currCvsId = get currentCanvas xstate
-        cinfoMap = get canvasInfoMap xstate
-        currCvsInfo = case M.lookup currCvsId cinfoMap of 
-                        Nothing -> error " no such cvsinfo in defaultEventProcess"  
-                        Just cinfo -> cinfo 
-    let canvas = get drawArea currCvsInfo
-    (w',h') <- liftIO $ widgetGetSize canvas
-    let page = getPage currCvsInfo 
-    let Dim w h = pageDim page
-    let (hadj,vadj) = get adjustments currCvsInfo 
-    liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
-                           (fromIntegral w', fromIntegral h')
-    let currCvsInfo' = set (zoomMode.viewInfo) Original
-                       . set (viewPortOrigin.viewInfo) (0,0)
-                       $ currCvsInfo 
-        xstate' = updateCanvasInfo currCvsInfo' xstate
-    putSt xstate' 
-    invalidate currCvsId       
-defaultEventProcess MenuPageWidth = do 
-    liftIO $ putStrLn "PageWidth clicked"
-    xstate <- getSt
-    let currCvsId = get currentCanvas xstate
-        cinfoMap = get canvasInfoMap xstate
-        maybeCurrCvs = M.lookup currCvsId cinfoMap 
-    case maybeCurrCvs of 
-      Nothing -> return ()
-      Just currCvsInfo -> do 
-        let canvas = get drawArea currCvsInfo
-        let page = getPage currCvsInfo
-        let Dim w h = pageDim page 
-        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
-        let (w',h') = canvas_size cpg 
-        let (hadj,vadj) = get adjustments currCvsInfo 
-            s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
-        liftIO $ do 
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
-          adjustmentSetValue hadj 0 
-          adjustmentSetValue vadj 0 
-          adjustmentSetPageSize hadj (w'*s)
-          adjustmentSetPageSize vadj (h'*s)
-        let currCvsInfo' = set (zoomMode.viewInfo) FitWidth          
-                         . set (viewPortOrigin.viewInfo) (0,0) 
-                         $ currCvsInfo
-            xstate' =  updateCanvasInfo currCvsInfo' xstate 
-        lift . St.put $ xstate'             
-        invalidate currCvsId    
+defaultEventProcess MenuNormalSize = pageZoomChange Original  
+defaultEventProcess MenuPageWidth = pageZoomChange FitWidth 
+defaultEventProcess MenuPageHeight = pageZoomChange FitHeight
 defaultEventProcess (MenuHSplit) = eitherSplit SplitHorizontal
 defaultEventProcess (MenuVSplit) = eitherSplit SplitVertical
 defaultEventProcess (MenuDelCanvas) = deleteCanvas
@@ -240,3 +193,37 @@ defaultEventProcess ToSelectMode = modeChange ToSelectMode
 defaultEventProcess _ = return ()
 
 
+{-  
+  do 
+    liftIO $ putStrLn "PageWidth clicked"
+    xstate <- getSt
+    let currCvsId = get currentCanvas xstate
+        cinfoMap = get canvasInfoMap xstate
+        maybeCurrCvs = case M.lookup currCvsId cinfoMap of 
+                        Nothing -> error " no such cvsinfo in pageZoomChange"  
+                        Just cinfo -> cinfo 
+
+
+    case maybeCurrCvs of 
+      Nothing -> return ()
+      Just currCvsInfo -> do 
+        let canvas = get drawArea currCvsInfo
+        let page = getPage currCvsInfo
+        let Dim w h = pageDim page 
+        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
+        let (w',h') = canvas_size cpg 
+        let (hadj,vadj) = get adjustments currCvsInfo 
+            s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
+        liftIO $ do 
+          adjustmentSetUpper hadj w 
+          adjustmentSetUpper vadj h 
+          adjustmentSetValue hadj 0 
+          adjustmentSetValue vadj 0 
+          adjustmentSetPageSize hadj (w'*s)
+          adjustmentSetPageSize vadj (h'*s)
+        let currCvsInfo' = set (zoomMode.viewInfo) FitWidth          
+                         . set (viewPortOrigin.viewInfo) (0,0) 
+                         $ currCvsInfo
+            xstate' =  updateCanvasInfo currCvsInfo' xstate 
+        lift . St.put $ xstate'             
+        invalidate currCvsId    -}

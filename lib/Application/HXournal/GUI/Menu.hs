@@ -74,6 +74,7 @@ uiDecl = [verbatim|<ui>
          <menuitem action="ZMOUTA" />                          
          <menuitem action="NRMSIZEA" />                          
          <menuitem action="PGWDTHA" />                          
+         <menuitem action="PGHEIGHTA" />
          <menuitem action="SETZMA" />                          
        </menu>
        <separator />
@@ -380,6 +381,7 @@ getMenuUI tref sref = do
   zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (Just MenuZoomOut)
   nrmsizea  <- actionNewAndRegister "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100) (Just MenuNormalSize)
   pgwdtha   <- actionNewAndRegister "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit) (Just MenuPageWidth)
+  pgheighta <- actionNewAndRegister "PGHEIGHTA" "Page Height" (Just "Page Height") Nothing (Just MenuPageHeight)
   setzma    <- actionNewAndRegister "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind) (Just MenuSetZoom)
   fstpagea  <- actionNewAndRegister "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst) (Just MenuFirstPage)
   prvpagea  <- actionNewAndRegister "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack) (Just MenuPreviousPage)
@@ -455,7 +457,7 @@ getMenuUI tref sref = do
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
         [ newa, annpdfa, opena, savea, saveasa, recenta, printa, exporta, quita
         , undoa, redoa, cuta, copya, pastea, deletea
-        , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, setzma
+        , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra

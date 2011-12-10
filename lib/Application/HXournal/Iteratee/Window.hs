@@ -20,10 +20,6 @@ import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Data.IntMap as M
 
-{- newCanvas :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-newCanvas cid = do 
-  tref getSt -}
-
 eitherSplit :: SplitType -> Iteratee MyEvent XournalStateIO ()
 eitherSplit stype = do
     xstate <- getSt
@@ -39,6 +35,7 @@ eitherSplit stype = do
         let oldcinfo = case M.lookup currcid cmap of
                          Nothing -> error "noway! in eitherSplit " 
                          Just c -> c 
+        liftIO $ removePanes fstate 
         cinfo <- liftIO $ initCanvasInfo xstate newcid 
         let cinfo' = set viewInfo (get viewInfo oldcinfo)
                      . set currentPageNum (get currentPageNum oldcinfo)
@@ -53,24 +50,14 @@ eitherSplit stype = do
                       $ xstate
         putSt xstate'
         liftIO $ containerRemove rtcntr rtwin
-        win <- liftIO $ constructFrame fstate' cmap'         
-        let xstate'' = set rootWindow win xstate'
+
+        (win,fstate'') <- liftIO $ constructFrame fstate' cmap'         
+        let xstate'' = set frameState fstate'' 
+                       . set rootWindow win $ xstate'
         putSt xstate''
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr 
 
-{-
-
-horizontalSplit :: Iteratee MyEvent XournalStateIO ()
-horizontalSplit = do 
-    liftIO $ putStrLn "horizontalSplit"
-
-
-verticalSplit :: Iteratee MyEvent XournalStateIO ()
-verticalSplit = do 
-    liftIO $ putStrLn "verticalSplit"
-
--}
 
 deleteCanvas :: Iteratee MyEvent XournalStateIO ()
 deleteCanvas = do 

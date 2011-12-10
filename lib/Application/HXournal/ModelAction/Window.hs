@@ -95,24 +95,60 @@ initCanvasInfo xstate cid = do
   
     return $ CanvasInfo cid canvas scrwin (error "no viewInfo") 0 (error "No page")  hadj vadj 
   
-constructFrame :: WindowConfig -> CanvasInfoMap -> IO Widget
+constructFrame :: WindowConfig -> CanvasInfoMap -> IO (Widget,WindowConfig)
 constructFrame (Node cid) cmap = do 
-  case (M.lookup cid cmap) of
-    Nothing -> error $ "no such cid = " ++ show cid ++ " in constructFrame"
-    Just cinfo -> return . castToWidget . get scrolledWindow $ cinfo
-constructFrame (HSplit wconf1 wconf2) cmap = do  
-  win1 <- constructFrame wconf1 cmap
-  win2 <- constructFrame wconf2 cmap 
-  hpaned <- hPanedNew 
-  panedPack1 hpaned win1 True False
-  panedPack2 hpaned win2 True False
-  widgetShowAll hpaned 
-  return (castToWidget hpaned)
-constructFrame (VSplit wconf1 wconf2) cmap = do  
-  win1 <- constructFrame wconf1 cmap
-  win2 <- constructFrame wconf2 cmap 
-  vpaned <- vPanedNew 
-  panedPack1 vpaned win1 True False
-  panedPack2 vpaned win2 True False
-  widgetShowAll vpaned 
-  return (castToWidget vpaned)
+    case (M.lookup cid cmap) of
+      Nothing -> error $ "no such cid = " ++ show cid ++ " in constructFrame"
+      Just cinfo -> return (castToWidget . get scrolledWindow $ cinfo, Node cid)
+constructFrame (HSplit hpane wconf1 wconf2) cmap = do  
+    (win1,wconf1') <- constructFrame wconf1 cmap
+    (win2,wconf2') <- constructFrame wconf2 cmap 
+    hpane' <- case hpane of
+                Nothing -> hPanedNew 
+                Just h -> return h
+    panedPack1 hpane' win1 True False
+    panedPack2 hpane' win2 True False
+    widgetShowAll hpane' 
+    return (castToWidget hpane', HSplit (Just hpane') wconf1' wconf2')
+constructFrame (VSplit vpane wconf1 wconf2) cmap = do  
+    (win1,wconf1') <- constructFrame wconf1 cmap
+    (win2,wconf2') <- constructFrame wconf2 cmap 
+    vpane' <- case vpane of 
+                Nothing -> vPanedNew 
+                Just v -> return v
+    panedPack1 vpane' win1 True False
+    panedPack2 vpane' win2 True False
+    widgetShowAll vpane' 
+    return (castToWidget vpane', VSplit (Just vpane') wconf1' wconf2')
+  
+  
+removePanes :: WindowConfig -> IO WindowConfig
+removePanes n@(Node _) = return n
+removePanes (HSplit hpane wconf1 wconf2) = do 
+    case hpane of 
+      Just h -> do 
+        panedGetChild1 h >>= \x -> case x of 
+          Just c1 -> containerRemove h c1
+          Nothing -> return ()
+        panedGetChild2 h >>= \x -> case x of 
+          Just c2 -> containerRemove h c2
+          Nothing -> return ()
+        widgetDestroy h
+      Nothing -> return ()
+    wconf1' <- removePanes wconf1   
+    wconf2' <- removePanes wconf2 
+    return (HSplit Nothing wconf1' wconf2')
+removePanes (VSplit vpane wconf1 wconf2) = do 
+    case vpane of 
+      Just v -> do 
+        panedGetChild1 v >>= \x -> case x of 
+          Just c1 -> containerRemove v c1
+          Nothing -> return ()
+        panedGetChild2 v >>= \x -> case x of 
+          Just c2 -> containerRemove v c2
+          Nothing -> return ()
+        widgetDestroy v
+      Nothing -> return ()
+    wconf1' <- removePanes wconf1 
+    wconf2' <- removePanes wconf2 
+    return (VSplit Nothing wconf1' wconf2')  

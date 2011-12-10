@@ -43,12 +43,15 @@ startGUI fname = do
   st1 <- getFileContent fname st0
   -- let st2 = set callBack (bouncecallback tref sref) st1
   writeIORef sref st1
-  winCvsArea <- constructFrame <$> get frameState <*> get canvasInfoMap $ st1
+  (winCvsArea, wconf) <- constructFrame 
+                         <$> get frameState 
+                         <*> get canvasInfoMap $ st1
   
   window <- windowNew 
   vbox <- vBoxNew False 0 
   
-  let st2 = set rootWindow winCvsArea 
+  let st2 = set frameState wconf 
+            . set rootWindow winCvsArea 
             . set rootContainer (castToBox vbox) $ st1 
   writeIORef sref st2
   

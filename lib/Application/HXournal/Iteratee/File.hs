@@ -52,27 +52,25 @@ fileOpen = do
           Just filename -> do 
             liftIO $ putStrLn $ show filename 
             xstate <- getSt 
-            let devlst = get deviceList xstate
+            let {- devlst = get deviceList xstate
                 cinfo1 = getCanvasInfo 1 xstate
                 cinfo2 = getCanvasInfo 2 xstate
                 canvas = get drawArea cinfo1
                 canvas2 = get drawArea cinfo2
                 (hadj,vadj) = get adjustments cinfo1
                 (hadj2,vadj2) = get adjustments cinfo2
-                callbackfunc = get callBack xstate 
-            xstateNew <- liftIO $ getFileContent 
-                                    devlst 
+                callbackfunc = get callBack xstate  -}
+            xstateNew <- liftIO $ getFileContent filename xstate
+{-                                    devlst 
                                     (canvas,hadj,vadj) 
                                     (canvas2,hadj2,vadj2) 
                                     callbackfunc 
-                                    filename
+                                    filename -}
             putSt xstateNew 
             invalidateAll 
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
     return ()
-
-
 
 fileSaveAs :: Iteratee MyEvent XournalStateIO ()
 fileSaveAs = do 

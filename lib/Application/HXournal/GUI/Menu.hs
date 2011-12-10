@@ -84,6 +84,10 @@ uiDecl = [verbatim|<ui>
        <separator />
        <menuitem action="SHWLAYERA" />
        <menuitem action="HIDLAYERA" />
+       <separator />
+       <menuitem action="HSPLITA" />
+       <menuitem action="VSPLITA" />
+       <menuitem action="DELCVSA" />
     </menu>
     <menu action="JMA">
        <menuitem action="NEWPGBA" />
@@ -383,7 +387,10 @@ getMenuUI tref sref = do
   lstpagea  <- actionNewAndRegister "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast) (Just MenuLastPage)
   shwlayera <- actionNewAndRegister "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing (Just MenuShowLayer)
   hidlayera <- actionNewAndRegister "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing (Just MenuHideLayer)
-  
+  hsplita <- actionNewAndRegister "HSPLITA" "Horizontal Split" (Just "horizontal split") Nothing (Just MenuHSplit)
+  vsplita <- actionNewAndRegister "VSPLITA" "Vertical Split" (Just "vertical split") Nothing (Just MenuVSplit)
+  delcvsa <- actionNewAndRegister "DELCVSA" "Delete Current Canvas" (Just "delete current canvas") Nothing (Just MenuDelCanvas)
+
   -- journal menu 
   newpgba <- actionNewAndRegister "NEWPGBA" "New Page Before" (Just "Just a Stub") Nothing (Just MenuNewPageBefore)
   newpgaa <- actionNewAndRegister "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing (Just MenuNewPageAfter)
@@ -450,6 +457,7 @@ getMenuUI tref sref = do
         , undoa, redoa, cuta, copya, pastea, deletea
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
+        , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera, clra, penopta  {- selregna, selrecta, vertspa, handa, -}

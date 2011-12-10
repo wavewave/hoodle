@@ -17,6 +17,7 @@ import Application.HXournal.Iteratee.Scroll
 import Application.HXournal.Iteratee.Page
 import Application.HXournal.Iteratee.Select
 import Application.HXournal.Iteratee.File
+import Application.HXournal.Iteratee.Mode
 
 import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page
@@ -71,35 +72,6 @@ dispatchMode = do
   case xojstate of 
     ViewAppendState _ -> viewAppendMode
     SelectState _ -> selectMode
-
-modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
-modeChange ToViewAppendMode = do 
-  xstate <- lift St.get
-  let xojstate = get xournalstate xstate
-  case xojstate of 
-    ViewAppendState _ -> return () 
-    SelectState txoj -> do 
-      liftIO $ putStrLn "to view append mode"
-      lift 
-        . St.put 
-        . set xournalstate (ViewAppendState (XournalBBoxMap <$> tx_pages $ txoj))
-        $ xstate  
---                               xournalBBoxMapFromXournalSelect xoj))
-
-modeChange ToSelectMode = do 
-  xstate <- lift St.get  
-  let xojstate = get xournalstate xstate
-  case xojstate of 
-    ViewAppendState xoj -> do 
-      liftIO $ putStrLn "to select mode"
-      lift 
-        . St.put 
-        . set xournalstate (SelectState (tempXournalSelectFromXournalBBoxMap xoj))
-        $ xstate  
- --                            (xournalSelectFromXournalBBoxMap xoj)) 
-        
-    SelectState _ -> return ()
-modeChange _ = return ()
 
 viewAppendMode :: Iteratee MyEvent XournalStateIO ()
 viewAppendMode = do 
@@ -185,8 +157,16 @@ defaultEventProcess MenuPageWidth = do
             xstate' =  updateCanvasInfo currCvsInfo' xstate 
         lift . St.put $ xstate'             
         invalidate currCvsId    
+defaultEventProcess (MenuHSplit) = do
+    liftIO $ putStrLn "HSplit"
+defaultEventProcess (MenuVSplit) = do
+    liftIO $ putStrLn "VSplit"
+defaultEventProcess (MenuDelCanvas) = do
+    liftIO $ putStrLn "DelCanvas"
+ 
+
 defaultEventProcess (HScrollBarMoved cid v) = do 
-    xstate <- lift St.get 
+    xstate <- getSt 
     let cinfoMap = get canvasInfoMap xstate
         maybeCvs = M.lookup cid cinfoMap 
     case maybeCvs of 

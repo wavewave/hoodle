@@ -39,16 +39,16 @@ data ViewInfo = ViewInfo { _pageMode :: PageMode
 
 data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _drawArea :: DrawingArea
+                             , _scrolledWindow :: ScrolledWindow
                              , _viewInfo :: ViewInfo 
                              , _currentPageNum :: Int
-                             , _currentPage :: Either PageBBoxMap TempPageSelect -- PageSelect
+                             , _currentPage :: Either PageBBoxMap TempPageSelect 
                              , _horizAdjustment :: Adjustment
                              , _vertAdjustment :: Adjustment 
                              }
 
-emptyCanvasInfo :: CanvasInfo
-emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined undefined
-
+-- emptyCanvasInfo :: CanvasInfo
+-- emptyCanvasInfo = CanvasInfo 0 undefined undefined 0 undefined undefined undefined
 
 
 type CanvasInfoMap = M.IntMap CanvasInfo

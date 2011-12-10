@@ -54,6 +54,7 @@ Library
                    Application.HXournal.ModelAction.Eraser
                    Application.HXournal.ModelAction.Select
                    Application.HXournal.ModelAction.File
+                   Application.HXournal.ModelAction.Window
                    Application.HXournal.Coroutine 
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu
@@ -68,6 +69,7 @@ Library
                    Application.HXournal.Iteratee.Page
                    Application.HXournal.Iteratee.Select
                    Application.HXournal.Iteratee.File
+                   Application.HXournal.Iteratee.Mode
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw

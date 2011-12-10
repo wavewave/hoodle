@@ -22,9 +22,7 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 vscrollStart :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-vscrollStart cid = do    
-    liftIO $ putStrLn "vscrollStart"
-    vscrollMove cid 
+vscrollStart cid = vscrollMove cid 
         
 vscrollMove :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 vscrollMove cid = do    

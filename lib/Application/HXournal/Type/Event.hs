@@ -33,6 +33,9 @@ data MyEvent = Initialized
              | MenuLastPage 
              | MenuShowLayer
              | MenuHideLayer
+             | MenuHSplit  
+             | MenuVSplit
+             | MenuDelCanvas
              | MenuNewPageBefore
              | MenuNewPageAfter 
              | MenuNewPageAtEnd 

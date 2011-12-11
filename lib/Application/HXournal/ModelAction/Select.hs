@@ -4,6 +4,8 @@ import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Select
 import Graphics.Xournal.HitTest
 
+import Graphics.UI.Gtk hiding (get,set)
+
 import Data.Strict.Tuple
 import qualified Data.IntMap as M
 
@@ -49,4 +51,18 @@ takeHittedStrokes :: AlterList [StrokeBBox] Hitted -> [StrokeBBox]
 takeHittedStrokes = concatMap unHitted . getB 
 
 isAnyHitted :: AlterList [StrokeBBox] Hitted -> Bool 
-isAnyHitted = null . takeHittedStrokes
+isAnyHitted = not . null . takeHittedStrokes
+
+toggleCutCopyDelete :: UIManager -> Bool -> IO ()
+toggleCutCopyDelete ui b = do 
+    agr <- uiManagerGetActionGroups ui >>= \x -> 
+      case x of
+        [] -> error "No action group?"
+        y:ys -> return y
+    -- liftIO $ putStrLn . show $ getB selectstrs
+    Just deletea <- actionGroupGetAction agr "DELETEA"
+    Just copya <- actionGroupGetAction agr "COPYA"
+    Just cuta <- actionGroupGetAction agr "CUTA"
+    let copycutdeletea = [copya,cuta,deletea] 
+    mapM_ (flip actionSetSensitive b) copycutdeletea
+

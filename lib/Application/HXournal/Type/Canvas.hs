@@ -61,14 +61,5 @@ data PenInfo = PenInfo { _penType :: PenType
                        , _penColor :: PenColor } 
              deriving (Show) 
 
-data SelectType = SelectRegionWork 
-                | SelectRectangleWork 
-                | SelectVerticalSpaceWork
-                | SelectHandToolWork 
-                deriving (Show,Eq) 
 
-data SelectInfo = SelectInfo { _selectType :: SelectType
-                             }
-             deriving (Show) 
-
-$(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''SelectInfo, ''CanvasInfo])
+$(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''CanvasInfo])

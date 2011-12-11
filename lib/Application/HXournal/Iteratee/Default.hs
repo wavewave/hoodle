@@ -6,6 +6,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Type.Clipboard
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
@@ -137,6 +138,7 @@ defaultEventProcess MenuLastPage = changePage (const 10000)
 defaultEventProcess MenuOpen = fileOpen
 defaultEventProcess MenuSave = fileSave 
 defaultEventProcess MenuSaveAs = fileSaveAs
+defaultEventProcess MenuDelete = deleteSelection
 defaultEventProcess MenuNormalSize = pageZoomChange Original  
 defaultEventProcess MenuPageWidth = pageZoomChange FitWidth 
 defaultEventProcess MenuPageHeight = pageZoomChange FitHeight

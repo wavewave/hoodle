@@ -17,7 +17,7 @@ import Application.HXournal.Iteratee.Draw
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 
-import qualified Data.Map as M
+import qualified Data.IntMap as M
 
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
@@ -119,21 +119,23 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
                       Right tpage -> tpage { tp_firstlayer = newlayer } 
           newtxoj = txoj { tx_selectpage = Just (cpn,newpage) } 
       let ui = get gtkUIManager xstate
+      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
+      {-    
       agr <- liftIO $ uiManagerGetActionGroups ui >>= \x -> 
                         case x of
                         [] -> error "No action group?"
                         y:ys -> return y
-      liftIO $ putStrLn . show $ getB selectstrs
+      -- liftIO $ putStrLn . show $ getB selectstrs
       Just deletea <- liftIO $ actionGroupGetAction agr "DELETEA"
       Just copya <- liftIO $ actionGroupGetAction agr "COPYA"
       Just cuta <- liftIO $ actionGroupGetAction agr "CUTA"
       let copycutdeletea = [copya,cuta,deletea] 
       if isAnyHitted  selectstrs
         then liftIO $ mapM_ (flip actionSetSensitive False) copycutdeletea
-        else liftIO $ mapM_ (flip actionSetSensitive True)  copycutdeletea
+        else liftIO $ mapM_ (flip actionSetSensitive True)  copycutdeletea -}
       putSt (set xournalstate (SelectState newtxoj) 
              . updatePageAll (SelectState newtxoj)
-             $ xstate)
+             $ xstate) 
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
@@ -177,7 +179,31 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) prev =
 deleteSelection :: Iteratee MyEvent XournalStateIO () 
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
-
+  xstate <- getSt
+  let cinfo = getCurrentCanvasInfo xstate 
+      SelectState txoj = get xournalstate xstate 
+      Just (n,tpage) = tx_selectpage txoj
+  case strokes (tp_firstlayer tpage) of 
+    Left _ -> liftIO $ putStrLn "no stroke selection 2 "
+    Right alist -> do 
+      let newlayer = Left . concat . getA $ alist
+          newpage = pageBBoxMapFromTempPageSelect 
+                    $ tpage {tp_firstlayer = LayerSelect newlayer} 
+          newpages = M.adjust (const newpage) n (tx_pages txoj)
+          newtxoj = TempXournalSelect newpages Nothing       
+          newxstate = set xournalstate (SelectState newtxoj) xstate
+          newxstate' = updatePageAll (SelectState newtxoj) newxstate 
+      putSt newxstate' 
+      let ui = get gtkUIManager newxstate'
+      liftIO $ toggleCutCopyDelete ui False 
+      invalidateAll 
+          
+     
+  {-    
+  case ecpage of 
+    Left _ -> liftIO $ putStrLn "no stroke selection"
+    Right tpage -> do -}
+    
 
 {- 
 selectRectProcess :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 

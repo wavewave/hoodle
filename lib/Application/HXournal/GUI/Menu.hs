@@ -6,6 +6,7 @@ import Application.HXournal.Util.Verbatim
 import Application.HXournal.Coroutine
 import Application.HXournal.Type
 import Application.HXournal.Type.Event 
+import Application.HXournal.Type.Clipboard
 
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef

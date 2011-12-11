@@ -2,6 +2,8 @@ module Application.HXournal.ModelAction.Select where
 
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Type.Select
+import Graphics.Xournal.HitTest
+
 import Data.Strict.Tuple
 import qualified Data.IntMap as M
 
@@ -34,4 +36,17 @@ updateTempXournalSelect txoj tpage pagenum =
   in TempXournalSelect pages' (Just (pagenum,tpage)) 
     
     
+hitInSelection :: TempPageSelect -> (Double,Double) -> Bool 
+hitInSelection tpage point = 
+  let activelayer = tp_firstlayer tpage
+  in case strokes activelayer of 
+       Left _ -> False   
+       Right alist -> 
+         let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
+         in  any (flip hitTestBBoxPoint point) bboxes 
     
+takeHittedStrokes :: AlterList [StrokeBBox] Hitted -> [StrokeBBox] 
+takeHittedStrokes = concatMap unHitted . getB 
+
+isAnyHitted :: AlterList [StrokeBBox] Hitted -> Bool 
+isAnyHitted = null . takeHittedStrokes

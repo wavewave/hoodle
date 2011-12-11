@@ -34,6 +34,10 @@ import Graphics.Xournal.Render.BBox
 
 import Data.Maybe
 
+-- | main mouse pointer click entrance in rectangular selection mode. 
+--   choose either starting new rectangular selection or move previously 
+--   selected selection. 
+
 selectRectStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
 selectRectStart cid pcoord = do    
     xstate <- changeCurrentCanvasId cid 
@@ -41,14 +45,12 @@ selectRectStart cid pcoord = do
         zmode = get (zoomMode.viewInfo) cvsInfo     
     geometry <- getCanvasGeometry cvsInfo
     let (x,y) = device2pageCoord geometry zmode pcoord 
-    
     connidup   <- connectPenUp cvsInfo 
     connidmove <- connectPenMove cvsInfo
     strs <- getAllStrokeBBoxInCurrentPage
     case get currentPage cvsInfo of 
       Right tpage -> if hitInSelection tpage (x,y)
                        then do 
-                         -- liftIO $ putStrLn "HITTED"
                          moveSelectRectangle cvsInfo 
                                              geometry 
                                              zmode 
@@ -99,7 +101,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
     PenUp cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
-          
       let epage = get currentPage cinfo 
           cpn = get currentPageNum cinfo 
           
@@ -117,7 +118,19 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
                         in  tpg { tp_firstlayer = newlayer }
                       Right tpage -> tpage { tp_firstlayer = newlayer } 
           newtxoj = txoj { tx_selectpage = Just (cpn,newpage) } 
-          
+      let ui = get gtkUIManager xstate
+      agr <- liftIO $ uiManagerGetActionGroups ui >>= \x -> 
+                        case x of
+                        [] -> error "No action group?"
+                        y:ys -> return y
+      liftIO $ putStrLn . show $ getB selectstrs
+      Just deletea <- liftIO $ actionGroupGetAction agr "DELETEA"
+      Just copya <- liftIO $ actionGroupGetAction agr "COPYA"
+      Just cuta <- liftIO $ actionGroupGetAction agr "CUTA"
+      let copycutdeletea = [copya,cuta,deletea] 
+      if isAnyHitted  selectstrs
+        then liftIO $ mapM_ (flip actionSetSensitive False) copycutdeletea
+        else liftIO $ mapM_ (flip actionSetSensitive True)  copycutdeletea
       putSt (set xournalstate (SelectState newtxoj) 
              . updatePageAll (SelectState newtxoj)
              $ xstate)
@@ -126,16 +139,7 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       invalidateAll 
     _ -> return ()
       
-
-hitInSelection :: TempPageSelect -> (Double,Double) -> Bool 
-hitInSelection tpage point = 
-  let activelayer = tp_firstlayer tpage
-  in case strokes activelayer of 
-       Left _ -> False   
-       Right alist -> 
-         let bboxes = map strokebbox_bbox . concatMap unHitted . getB $ alist
-         in  any (flip hitTestBBoxPoint point) bboxes 
-                      
+         
 moveSelectRectangle :: CanvasInfo
                     -> CanvasPageGeometry
                     -> ZoomMode
@@ -151,14 +155,9 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) prev =
   case r of 
     PenMove cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      -- liftIO $ putStrLn $ "original = " ++ show orig
-      -- liftIO $ putStrLn $ "new = " ++ show (x,y)
       moveSelectRectangle cinfo geometry zmode connidmove connidup orig (x,y) 
     PenUp cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      -- liftIO $ putStrLn $ "original = " ++ show orig
-      -- liftIO $ putStrLn $ "final = " ++ show (x,y)
-      
       let offset = (x-x0,y-y0)
           SelectState txoj = get xournalstate xstate
           epage = get currentPage cinfo 
@@ -171,12 +170,16 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) prev =
                  . updatePageAll (SelectState newtxoj) 
                  $ xstate )
         Left _ -> error "this is impossible, in moveSelectRectangle" 
-      
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
 
+deleteSelection :: Iteratee MyEvent XournalStateIO () 
+deleteSelection = do 
+  liftIO $ putStrLn "delete selection is called"
 
+
+{- 
 selectRectProcess :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
 selectRectProcess cid pcoord = do    
     ev <- await 
@@ -184,5 +187,5 @@ selectRectProcess cid pcoord = do
     case ev of 
       PenUp cid' pcoord' -> return ()
       _ -> selectRectProcess cid pcoord 
-
+-}
 

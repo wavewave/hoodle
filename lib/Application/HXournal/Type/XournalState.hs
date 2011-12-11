@@ -7,6 +7,7 @@ import Application.HXournal.Device
 import Application.HXournal.Type.Event 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 
 import Graphics.Xournal.Type
@@ -20,7 +21,7 @@ import Control.Monad.State
 import Text.Xournal.Type
 import Text.Xournal.Predefined 
 
-import Graphics.UI.Gtk
+import Graphics.UI.Gtk hiding (Clipboard)
 
 import Data.Maybe
 import Data.Label 
@@ -42,10 +43,12 @@ data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _rootWindow :: Widget
                                    , _rootContainer :: Box
                                    , _currentPenDraw :: PenDraw
+                                   , _clipboard :: Clipboard
                                    , _callBack ::  MyEvent -> IO ()
                                    , _deviceList :: DeviceList
                                    , _penInfo :: PenInfo
                                    , _selectInfo :: SelectInfo 
+                                   , _gtkUIManager :: UIManager 
                                    } 
 
 
@@ -62,10 +65,12 @@ emptyHXournalState =
   , _rootWindow = error "emtpyHXournalState.rootWindow"
   , _rootContainer = error "emptyHXournalState.rootContainer"
   , _currentPenDraw = emptyPenDraw 
+  , _clipboard = emptyClipboard
   , _callBack = error "emtpyHxournalState.callBack"
   , _deviceList = error "emtpyHxournalState.deviceList"
   , _penInfo = PenInfo PenWork predefined_medium ColorBlack
   , _selectInfo = SelectInfo SelectRectangleWork 
+  , _gtkUIManager = error "emptyHXournalState.gtkUIManager"
   }
 
   

@@ -44,6 +44,7 @@ Library
                    Application.HXournal.Type
                    Application.HXournal.Type.Event 
                    Application.HXournal.Type.Enum
+                   Application.HXournal.Type.Clipboard
                    Application.HXournal.Type.Canvas
                    Application.HXournal.Type.Coroutine
                    Application.HXournal.Type.XournalState

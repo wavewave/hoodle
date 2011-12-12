@@ -63,12 +63,20 @@ toggleCutCopyDelete ui b = do
       case x of
         [] -> error "No action group?"
         y:ys -> return y
-    -- liftIO $ putStrLn . show $ getB selectstrs
     Just deletea <- actionGroupGetAction agr "DELETEA"
     Just copya <- actionGroupGetAction agr "COPYA"
     Just cuta <- actionGroupGetAction agr "CUTA"
     let copycutdeletea = [copya,cuta,deletea] 
     mapM_ (flip actionSetSensitive b) copycutdeletea
+
+togglePaste :: UIManager -> Bool -> IO ()
+togglePaste ui b = do 
+    agr <- uiManagerGetActionGroups ui >>= \x -> 
+      case x of
+        [] -> error "No action group?"
+        y:ys -> return y
+    Just pastea <- actionGroupGetAction agr "PASTEA"
+    actionSetSensitive pastea b
 
 
 changeStrokeColor :: PenColor -> StrokeBBox -> StrokeBBox

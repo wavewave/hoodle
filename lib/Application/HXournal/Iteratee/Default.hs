@@ -132,21 +132,7 @@ selectMode = do
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
-defaultEventProcess (Menu MenuQuit) = liftIO $ mainQuit
-defaultEventProcess (Menu MenuPreviousPage) = changePage (\x->x-1)
-defaultEventProcess (Menu MenuNextPage) =  changePage (+1)
-defaultEventProcess (Menu MenuFirstPage) = changePage (const 0)
-defaultEventProcess (Menu MenuLastPage) = changePage (const 10000)
-defaultEventProcess (Menu MenuOpen) = fileOpen
-defaultEventProcess (Menu MenuSave) = fileSave 
-defaultEventProcess (Menu MenuSaveAs) = fileSaveAs
-defaultEventProcess (Menu MenuDelete) = deleteSelection
-defaultEventProcess (Menu MenuNormalSize) = pageZoomChange Original  
-defaultEventProcess (Menu MenuPageWidth) = pageZoomChange FitWidth 
-defaultEventProcess (Menu MenuPageHeight) = pageZoomChange FitHeight
-defaultEventProcess (Menu MenuHSplit) = eitherSplit SplitHorizontal
-defaultEventProcess (Menu MenuVSplit) = eitherSplit SplitVertical
-defaultEventProcess (Menu MenuDelCanvas) = deleteCanvas
+defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- getSt 
     let cinfoMap = get canvasInfoMap xstate
@@ -197,37 +183,24 @@ defaultEventProcess ToSelectMode = modeChange ToSelectMode
 defaultEventProcess _ = return ()
 
 
-{-  
-  do 
-    liftIO $ putStrLn "PageWidth clicked"
-    xstate <- getSt
-    let currCvsId = get currentCanvas xstate
-        cinfoMap = get canvasInfoMap xstate
-        maybeCurrCvs = case M.lookup currCvsId cinfoMap of 
-                        Nothing -> error " no such cvsinfo in pageZoomChange"  
-                        Just cinfo -> cinfo 
 
-
-    case maybeCurrCvs of 
-      Nothing -> return ()
-      Just currCvsInfo -> do 
-        let canvas = get drawArea currCvsInfo
-        let page = getPage currCvsInfo
-        let Dim w h = pageDim page 
-        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
-        let (w',h') = canvas_size cpg 
-        let (hadj,vadj) = get adjustments currCvsInfo 
-            s = 1.0 / getRatioFromPageToCanvas cpg FitWidth 
-        liftIO $ do 
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
-          adjustmentSetValue hadj 0 
-          adjustmentSetValue vadj 0 
-          adjustmentSetPageSize hadj (w'*s)
-          adjustmentSetPageSize vadj (h'*s)
-        let currCvsInfo' = set (zoomMode.viewInfo) FitWidth          
-                         . set (viewPortOrigin.viewInfo) (0,0) 
-                         $ currCvsInfo
-            xstate' =  updateCanvasInfo currCvsInfo' xstate 
-        lift . St.put $ xstate'             
-        invalidate currCvsId    -}
+menuEventProcess :: MenuEvent -> Iteratee MyEvent XournalStateIO ()
+menuEventProcess MenuQuit = liftIO $ mainQuit
+menuEventProcess MenuPreviousPage = changePage (\x->x-1)
+menuEventProcess MenuNextPage =  changePage (+1)
+menuEventProcess MenuFirstPage = changePage (const 0)
+menuEventProcess MenuLastPage = changePage (const 10000)
+menuEventProcess MenuOpen = fileOpen
+menuEventProcess MenuSave = fileSave 
+menuEventProcess MenuSaveAs = fileSaveAs
+menuEventProcess MenuCut = cutSelection
+menuEventProcess MenuCopy = copySelection
+menuEventProcess MenuPaste = pasteToSelection
+menuEventProcess MenuDelete = deleteSelection
+menuEventProcess MenuNormalSize = pageZoomChange Original  
+menuEventProcess MenuPageWidth = pageZoomChange FitWidth 
+menuEventProcess MenuPageHeight = pageZoomChange FitHeight
+menuEventProcess MenuHSplit = eitherSplit SplitHorizontal
+menuEventProcess MenuVSplit = eitherSplit SplitVertical
+menuEventProcess MenuDelCanvas = deleteCanvas
+menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 

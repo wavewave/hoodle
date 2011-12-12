@@ -6,6 +6,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.Device
@@ -174,10 +175,11 @@ deleteSelection = do
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
-          newpage = pageBBoxMapFromTempPageSelect 
-                    $ tpage {tp_firstlayer = LayerSelect newlayer} 
-          newpages = M.adjust (const newpage) n (tx_pages txoj)
-          newtxoj = TempXournalSelect newpages Nothing       
+          newpage = {- pageBBoxMapFromTempPageSelect $ -} 
+                    tpage {tp_firstlayer = LayerSelect newlayer} 
+          -- newpages = M.adjust (const newpage) n (tx_pages txoj)
+          -- newtxoj = TempXournalSelect newpages Nothing       
+          newtxoj = updateTempXournalSelect txoj newpage n          
           newxstate = set xournalstate (SelectState newtxoj) xstate
           newxstate' = updatePageAll (SelectState newtxoj) newxstate 
       putSt newxstate' 
@@ -185,8 +187,37 @@ deleteSelection = do
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
+cutSelection :: Iteratee MyEvent XournalStateIO ()  
+cutSelection = liftIO $ putStrLn "cutSelection called"
 
-    
+copySelection :: Iteratee MyEvent XournalStateIO ()
+copySelection = do 
+  liftIO $ putStrLn "copySelection called"
+  xstate <- getSt
+  let cinfo = getCurrentCanvasInfo xstate 
+      etpage = get currentPage cinfo 
+  case etpage of
+    Left _ -> return ()
+    Right tpage -> do 
+      case (strokes . tp_firstlayer) tpage of 
+        Left _ -> return ()
+        Right alist -> do 
+          let strs = takeHittedStrokes alist 
+          if null strs 
+            then return () 
+            else do 
+              let newclip = Clipboard strs
+                  xstate' = set clipboard newclip xstate 
+              liftIO $ putStrLn $ "newclipboard with " ++ show strs 
+              let ui = get gtkUIManager xstate'
+              liftIO $ togglePaste ui True 
+              putSt xstate'
+              invalidateAll 
+
+pasteToSelection :: Iteratee MyEvent XournalStateIO () 
+pasteToSelection = liftIO $ putStrLn "pasteToSelection called" 
+
+
 selectPenColorChanged :: PenColor ->  Iteratee MyEvent XournalStateIO () 
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
@@ -197,19 +228,17 @@ selectPenColorChanged pcolor = do
   case strokes (tp_firstlayer tpage) of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
-      let -- newlayer = Left . concat . getA $ alist
-          alist' = fmapAL id 
+      let alist' = fmapAL id 
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
-          newpage = pageBBoxMapFromTempPageSelect 
-                    $ tpage {tp_firstlayer = LayerSelect newlayer} 
-          newpages = M.adjust (const newpage) n (tx_pages txoj)
-          newtxoj = TempXournalSelect newpages Nothing       
+          newpage = tpage {tp_firstlayer = LayerSelect newlayer} 
+            -- pageBBoxMapFromTempPageSelect 
+          -- newpages = M.adjust (const newpage) n (tx_pages txoj)
+          -- newtxoj = TempXournalSelect newpages Nothing       
+          newtxoj = updateTempXournalSelect txoj newpage n
           newxstate = set xournalstate (SelectState newtxoj) xstate
           newxstate' = updatePageAll (SelectState newtxoj) newxstate 
       putSt newxstate' 
-      -- let ui = get gtkUIManager newxstate'
-      -- liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
 selectPenWidthChanged :: Double ->  Iteratee MyEvent XournalStateIO () 
@@ -225,10 +254,11 @@ selectPenWidthChanged pwidth = do
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
-          newpage = pageBBoxMapFromTempPageSelect 
-                    $ tpage {tp_firstlayer = LayerSelect newlayer} 
-          newpages = M.adjust (const newpage) n (tx_pages txoj)
-          newtxoj = TempXournalSelect newpages Nothing       
+          newpage = {- pageBBoxMapFromTempPageSelect $ -}
+                    tpage {tp_firstlayer = LayerSelect newlayer} 
+          -- newpages = M.adjust (const newpage) n (tx_pages txoj)
+          -- newtxoj = TempXournalSelect newpages Nothing       
+          newtxoj = updateTempXournalSelect txoj newpage n          
           newxstate = set xournalstate (SelectState newtxoj) xstate
           newxstate' = updatePageAll (SelectState newtxoj) newxstate 
       putSt newxstate' 

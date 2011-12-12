@@ -12,8 +12,8 @@ import Application.HXournal.Accessor
 import Application.HXournal.Device
 import Application.HXournal.Draw
 import Application.HXournal.Iteratee.EventConnect
-
 import Application.HXournal.Iteratee.Draw
+import Application.HXournal.Iteratee.Mode
 
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
@@ -188,7 +188,11 @@ deleteSelection = do
       invalidateAll 
           
 cutSelection :: Iteratee MyEvent XournalStateIO ()  
-cutSelection = liftIO $ putStrLn "cutSelection called"
+cutSelection = do
+  liftIO $ putStrLn "cutSelection called"
+  copySelection 
+  deleteSelection
+  
 
 copySelection :: Iteratee MyEvent XournalStateIO ()
 copySelection = do 
@@ -215,8 +219,38 @@ copySelection = do
               invalidateAll 
 
 pasteToSelection :: Iteratee MyEvent XournalStateIO () 
-pasteToSelection = liftIO $ putStrLn "pasteToSelection called" 
+pasteToSelection = do 
+  liftIO $ putStrLn "pasteToSelection called" 
+  modeChange ToSelectMode    
+  xstate <- getSt
+  let SelectState txoj = get xournalstate xstate
+      clipstrs = getClipContents . get clipboard $ xstate
+      cinfo = getCurrentCanvasInfo xstate 
+      pagenum = get currentPageNum cinfo 
+      tpage = case get currentPage cinfo of 
+                Left pbbox -> tempPageSelectFromPageBBoxMap pbbox
+                Right tp -> tp 
+      layerselect = tp_firstlayer tpage 
+      newlayerselect = 
+        case strokes layerselect of 
+          Left strs -> (LayerSelect . Right) (strs :- Hitted clipstrs :- Empty)
+          Right alist -> (LayerSelect . Right) 
+                           (concat (interleave id unHitted alist) 
+                            :- Hitted clipstrs 
+                            :- Empty )
+      tpage' = tpage { tp_firstlayer = newlayerselect }
+      txoj' = updateTempXournalSelect txoj tpage' pagenum 
+      xstate' = updatePageAll (SelectState txoj') 
+                . set xournalstate (SelectState txoj') 
+                $ xstate 
+  putSt xstate' 
+  let ui = get gtkUIManager xstate' 
+  liftIO $ toggleCutCopyDelete ui True
+  invalidateAll 
+  
 
+  
+  
 
 selectPenColorChanged :: PenColor ->  Iteratee MyEvent XournalStateIO () 
 selectPenColorChanged pcolor = do 

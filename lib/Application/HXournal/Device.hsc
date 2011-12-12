@@ -51,7 +51,7 @@ initDevice =
 getPointer :: DeviceList -> EventM t PointerCoord
 getPointer devlst = do 
     ptr <- ask 
-    (ty,x,y,mdev,maxf) <- liftIO (getInfo ptr)
+    (_ty,x,y,mdev,maxf) <- liftIO (getInfo ptr)
     case mdev of 
       Nothing -> return (PointerCoord Core x y)
       Just dev -> case maxf of 

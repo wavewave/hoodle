@@ -55,13 +55,14 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
 
 core2pageCoord :: CanvasPageGeometry -> ZoomMode 
                   -> (Double,Double) -> (Double,Double)
-core2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig,yorig))
+core2pageCoord cpg@(CanvasPageGeometry (_ws,_hs) (_w',_h') (_w,_h) (_x0,_y0) (xorig,yorig))
                zmode (px,py) = 
   let s =  1.0 / getRatioFromPageToCanvas cpg zmode 
       (xo,yo) = case zmode of
                   Original -> (xorig,yorig)
                   FitWidth -> (0,yorig)
                   FitHeight -> (xorig,0)
+                  _ -> error "not implemented yet in core2pageCoord"
   in (px*s+xo, py*s+yo)
   
 wacom2pageCoord :: CanvasPageGeometry 

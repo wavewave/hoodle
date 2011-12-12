@@ -36,10 +36,10 @@ changeSelectionByOffset tpage off =
 updateTempXournalSelect :: TempXournalSelect -> TempPageSelect -> Int 
                            -> TempXournalSelect
 updateTempXournalSelect txoj tpage pagenum =                
-  let pages = tx_pages txoj 
-      pages' = M.adjust (const (pageBBoxMapFromTempPageSelect tpage))
-                        pagenum pages
-  in TempXournalSelect pages' (Just (pagenum,tpage)) 
+  let pgs = tx_pages txoj 
+      pgs' = M.adjust (const (pageBBoxMapFromTempPageSelect tpage))
+                        pagenum pgs
+  in TempXournalSelect pgs' (Just (pagenum,tpage)) 
     
     
 hitInSelection :: TempPageSelect -> (Double,Double) -> Bool 
@@ -62,7 +62,7 @@ toggleCutCopyDelete ui b = do
     agr <- uiManagerGetActionGroups ui >>= \x -> 
       case x of
         [] -> error "No action group?"
-        y:ys -> return y
+        y:_ -> return y
     Just deletea <- actionGroupGetAction agr "DELETEA"
     Just copya <- actionGroupGetAction agr "COPYA"
     Just cuta <- actionGroupGetAction agr "CUTA"
@@ -74,7 +74,7 @@ togglePaste ui b = do
     agr <- uiManagerGetActionGroups ui >>= \x -> 
       case x of
         [] -> error "No action group?"
-        y:ys -> return y
+        y:_ -> return y
     Just pastea <- actionGroupGetAction agr "PASTEA"
     actionSetSensitive pastea b
 

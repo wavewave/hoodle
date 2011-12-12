@@ -69,7 +69,7 @@ startGUI mfname = do
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox winCvsArea PackGrow 0 
-  cursorDot <- cursorNew BlankCursor  
+  -- cursorDot <- cursorNew BlankCursor  
   onDestroy window mainQuit
   widgetShowAll window
   

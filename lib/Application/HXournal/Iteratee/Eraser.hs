@@ -48,7 +48,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
   xstate <- getSt
   let cvsInfo = getCanvasInfo cid xstate 
   case r of 
-    PenMove cid' pcoord -> do 
+    PenMove _cid' pcoord -> do 
       let zmode  = get (zoomMode.viewInfo) cvsInfo
           (x,y) = device2pageCoord cpg zmode pcoord 
           line = ((x0,y0),(x,y))
@@ -78,7 +78,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
           newstrs <- getAllStrokeBBoxInCurrentPage
           eraserProcess cid cpg connidup connidmove newstrs (x,y)
         else eraserProcess cid cpg connidmove connidup strs (x,y) 
-    PenUp cid' _pcoord -> do 
+    PenUp _cid' _pcoord -> do 
       disconnect connidmove 
       disconnect connidup 
       invalidateAll

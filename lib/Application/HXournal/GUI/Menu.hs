@@ -18,6 +18,7 @@ import System.FilePath
 import Text.Xournal.Predefined 
 import Paths_hxournal
 
+justMenu :: MenuEvent -> Maybe MyEvent
 justMenu = Just . Menu 
 
 uiDeclTest :: String 
@@ -408,10 +409,10 @@ getMenuUI tref sref = do
   -- tools menu
   shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
   rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
-  selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
-  selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (justMenu MenuSelectRectangle)
-  vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
-  handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (justMenu MenuHandTool) 
+  -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
+  -- selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (justMenu MenuSelectRectangle)
+  -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
+  -- handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (justMenu MenuHandTool) 
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (justMenu MenuEraserOptions)
@@ -502,11 +503,20 @@ getMenuUI tref sref = do
   uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
 
-  Just ra <- actionGroupGetAction agr "ONEPAGEA"
-  Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 1]  
+  Just ra1 <- actionGroupGetAction agr "ONEPAGEA"
+  Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1]  
 
-  Just ra <- actionGroupGetAction agr "PENFINEA"
-  Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 2]
+  Just ra2 <- actionGroupGetAction agr "PENFINEA"
+  Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
+
+  Just ra3 <- actionGroupGetAction agr "SELREGNA"
+  actionSetSensitive ra3 False
+
+  Just ra4 <- actionGroupGetAction agr "VERTSPA"
+  actionSetSensitive ra4 False
+
+  Just ra5 <- actionGroupGetAction agr "HANDA"
+  actionSetSensitive ra5 False
 
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 

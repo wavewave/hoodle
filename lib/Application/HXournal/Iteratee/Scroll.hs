@@ -20,7 +20,7 @@ vscrollMove :: CanvasId -> Iteratee MyEvent XournalStateIO ()
 vscrollMove cid = do    
   ev <- await 
   case ev of
-    VScrollBarMoved cid' v -> do 
+    VScrollBarMoved _cid' v -> do 
       xstate <- lift St.get 
       let cinfoMap = get canvasInfoMap xstate
           maybeCvs = IM.lookup cid cinfoMap 
@@ -37,8 +37,8 @@ vscrollMove cid = do
           lift . St.put $ xstate'
           invalidateBBoxOnly cid
           vscrollMove cid 
-    VScrollBarEnd cid v -> do 
-      invalidate cid 
+    VScrollBarEnd cid' _v -> do 
+      invalidate cid' 
       return ()
     _ -> return ()       
     

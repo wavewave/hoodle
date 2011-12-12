@@ -24,12 +24,12 @@ getFileContent (Just fname) xstate = do
     let Dim width height = pageDim . (!! 0) .  xournalPages $ xojcontent
         startingxojstate = ViewAppendState xojWbbox
         cids = M.keys cmap 
-        update x cinfo = 
-          let changefunc cinfo = 
+        update x _cinfo = 
+          let changefunc c = 
                 setPage startingxojstate 0 
                 . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
                 . set currentPageNum 0 
-                $ cinfo 
+                $ c 
           in  M.adjust changefunc x cmap  
         cmap' = foldr update cmap cids   
     let newxstate = set xournalstate startingxojstate

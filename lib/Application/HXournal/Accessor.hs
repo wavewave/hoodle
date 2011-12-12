@@ -35,7 +35,7 @@ getAllStrokeBBoxInCurrentPage :: Iteratee MyEvent XournalStateIO [StrokeBBox]
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
   let currCvsInfo  = getCurrentCanvasInfo xstate 
-  let pagenum = get currentPageNum currCvsInfo
+  let -- pagenum = get currentPageNum currCvsInfo
       pagebbox = getPage currCvsInfo
       strs = do 
         l <- pageLayers pagebbox 
@@ -77,6 +77,6 @@ getCanvasGeometry :: CanvasInfo -> Iteratee MyEvent XournalStateIO CanvasPageGeo
 getCanvasGeometry cinfo = do 
     let canvas = get drawArea cinfo
         page = getPage cinfo
-        zmode = get (zoomMode.viewInfo) cinfo
+        -- zmode = get (zoomMode.viewInfo) cinfo
         (x0,y0) = get (viewPortOrigin.viewInfo) cinfo
     liftIO (getCanvasPageGeometry canvas page (x0,y0))

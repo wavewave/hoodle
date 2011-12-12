@@ -21,7 +21,7 @@ eitherSplit stype = do
         currcid = get currentCanvas xstate
         newcid = newCanvasId cmap 
         fstate = get frameState xstate
-        xojstate = get xournalstate xstate
+        -- xojstate = get xournalstate xstate
         enewfstate = splitWindow currcid (newcid,stype) fstate 
     case enewfstate of 
       Left _ -> return ()
@@ -60,7 +60,7 @@ deleteCanvas = do
     let cmap = get canvasInfoMap xstate
         currcid = get currentCanvas xstate
         fstate = get frameState xstate
-        xojstate = get xournalstate xstate
+        -- xojstate = get xournalstate xstate
         enewfstate = removeWindow currcid fstate 
     case enewfstate of 
       Left _ -> return ()

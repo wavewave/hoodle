@@ -23,34 +23,34 @@ import qualified Data.IntMap as IM
 
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
-    xstate <- lift St.get 
+    xstate <- getSt 
     let currCvsId = get currentCanvas xstate
-        cinfoMap = get canvasInfoMap xstate
+        -- cinfoMap = get canvasInfoMap xstate
         currCvsInfo = getCanvasInfo currCvsId xstate   
     let xojst = get xournalstate $ xstate 
     case xojst of 
       ViewAppendState xoj -> do 
-        let pages = xbm_pages xoj 
-            totalnumofpages = IM.size pages
+        let pgs = xbm_pages xoj 
+            totalnumofpages = IM.size pgs
             oldpage = get currentPageNum currCvsInfo
-            lpage = case IM.lookup (totalnumofpages-1) pages of
+            lpage = case IM.lookup (totalnumofpages-1) pgs of
                       Nothing -> error "error in changePage"
                       Just p -> p            
-        (xstate',xoj',pages',totalnumofpages',newpage) <-
+        (xstate',xoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
             let npage = mkPageBBoxMapFromPageBBox 
                         . mkPageBBoxFromPage
                         . newPageFromOld 
                         . pageFromPageBBoxMap $ lpage
-                npages = IM.insert totalnumofpages npage pages 
+                npages = IM.insert totalnumofpages npage pgs 
                 newxoj = xoj { xbm_pages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
             putSt xstate'
             return (xstate',newxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
-                 then return (xstate,xoj,pages,totalnumofpages,0)
-                 else return (xstate,xoj,pages,totalnumofpages,modifyfn oldpage)
+                 then return (xstate,xoj,pgs,totalnumofpages,0)
+                 else return (xstate,xoj,pgs,totalnumofpages,modifyfn oldpage)
         let Dim w h = pageDim lpage
             (hadj,vadj) = get adjustments currCvsInfo
         liftIO $ do 
@@ -65,27 +65,27 @@ changePage modifyfn = do
         lift . St.put $ xstate'' 
         invalidate currCvsId 
       SelectState txoj -> do 
-        let pages = tx_pages txoj 
-            totalnumofpages = IM.size pages
+        let pgs = tx_pages txoj 
+            totalnumofpages = IM.size pgs
             oldpage = get currentPageNum currCvsInfo
-            lpage = case IM.lookup (totalnumofpages-1) pages of
+            lpage = case IM.lookup (totalnumofpages-1) pgs of
                       Nothing -> error "error in changePage"
                       Just p -> p            
-        (xstate',txoj',pages',totalnumofpages',newpage) <-
+        (xstate',txoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
             let npage = mkPageBBoxMapFromPageBBox 
                         . mkPageBBoxFromPage
                         . newPageFromOld 
                         . pageFromPageBBoxMap $ lpage
-                npages = IM.insert totalnumofpages npage pages 
+                npages = IM.insert totalnumofpages npage pgs 
                 newtxoj = txoj { tx_pages = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate
             putSt xstate'
             return (xstate',newtxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
-                 then return (xstate,txoj,pages,totalnumofpages,0)
-                 else return (xstate,txoj,pages,totalnumofpages,modifyfn oldpage)
+                 then return (xstate,txoj,pgs,totalnumofpages,0)
+                 else return (xstate,txoj,pgs,totalnumofpages,modifyfn oldpage)
         let Dim w h = pageDim lpage
             (hadj,vadj) = get adjustments currCvsInfo
         liftIO $ do 

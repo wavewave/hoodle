@@ -30,9 +30,9 @@ penStart cid pcoord = do
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
     let currxoj = unView . get xournalstate $ xstate        
-        page = getPage cvsInfo 
+        -- page = getPage cvsInfo 
         pagenum = get currentPageNum cvsInfo
-        (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
+        -- (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
         pinfo = get penInfo xstate
         zmode = get (zoomMode.viewInfo) cvsInfo
     geometry <- getCanvasGeometry cvsInfo 
@@ -59,7 +59,7 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
   xstate <- lift St.get
   let cvsInfo = getCanvasInfo cid xstate
   case r of 
-    PenMove cid' pcoord -> do 
+    PenMove _cid' pcoord -> do 
       let canvas = get drawArea cvsInfo
           zmode  = get (zoomMode.viewInfo) cvsInfo
           pcolor = get (penColor.penInfo) xstate 
@@ -68,11 +68,11 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
           pcolRGBA = fromJust (M.lookup pcolor penColorRGBAmap) 
       liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)
       penProcess cid cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
-    PenUp cid' pcoord -> do 
+    PenUp _cid' pcoord -> do 
       let zmode = get (zoomMode.viewInfo) cvsInfo
           (x,y) = device2pageCoord cpg zmode pcoord 
       disconnect connidmove
       disconnect connidup
       return (pdraw |> (x,y)) 
-    other -> do
+    _ -> do
       penProcess cid cpg connidmove connidup pdraw (x0,y0) 

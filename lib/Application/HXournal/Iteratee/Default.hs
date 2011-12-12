@@ -37,6 +37,8 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 import Data.IORef
+import Graphics.Xournal.Type.Map
+import Graphics.Xournal.Type.Select
 
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do 
@@ -99,7 +101,8 @@ viewAppendMode = do
       case ptype of 
         PenWork         -> penStart cid pcoord 
         EraserWork      -> eraserStart cid pcoord 
-        HighlighterWork -> highlighterStart pcoord 
+        HighlighterWork -> highlighterStart pcoord
+        _ -> return () 
     _ -> defaultEventProcess r1
 
 selectMode :: Iteratee MyEvent XournalStateIO ()
@@ -148,7 +151,7 @@ defaultEventProcess (VScrollBarMoved cid v) = do
                   . updateCanvasInfo cvsInfo' $ xstate
     lift . St.put $ xstate'
     invalidate cid
-defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid 
+defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure cid w' h') = do 
     xstate <- getSt
     let cinfoMap = get canvasInfoMap xstate
@@ -176,7 +179,12 @@ menuEventProcess MenuQuit = liftIO $ mainQuit
 menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
-menuEventProcess MenuLastPage = changePage (const 10000)
+menuEventProcess MenuLastPage = do 
+  xstate <- getSt
+  let totalnumofpages = case get xournalstate xstate of 
+                          ViewAppendState xoj ->  M.size . xbm_pages $ xoj
+                          SelectState txoj    -> M.size . tx_pages $ txoj
+  changePage (const (totalnumofpages-1))
 menuEventProcess MenuNew  = fileNew 
 menuEventProcess MenuOpen = fileOpen
 menuEventProcess MenuSave = fileSave 

@@ -31,7 +31,7 @@ fileSave :: Iteratee MyEvent XournalStateIO ()
 fileSave = do 
     xstate <- getSt 
     case get currFileName xstate of
-      Nothing -> fileSaveAs -- "mytest.xoj"
+      Nothing -> fileSaveAs 
       Just filename -> do     
         let xojstate = get xournalstate xstate
         let xoj = case xojstate of 
@@ -47,9 +47,9 @@ fileOpen = do
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
-    response <- liftIO $ dialogRun dialog
-    liftIO $ putStrLn $ show response
-    case response of 
+    res <- liftIO $ dialogRun dialog
+    -- liftIO $ putStrLn $ show res
+    case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
       ResponseOk ->  do
         mfilename <- liftIO $ fileChooserGetFilename dialog 
@@ -74,9 +74,9 @@ fileSaveAs = do
                                             FileChooserActionSave 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
-    response <- liftIO $ dialogRun dialog
-    liftIO $ putStrLn $ show response
-    case response of 
+    res <- liftIO $ dialogRun dialog
+    -- liftIO $ putStrLn $ show response
+    case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
       ResponseOk -> do
         mfilename <- liftIO $ fileChooserGetFilename dialog 

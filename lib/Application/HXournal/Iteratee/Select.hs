@@ -82,7 +82,7 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
   let cid = get canvasId cinfo  
   r <- await 
   case r of 
-    PenMove cid' pcoord -> do 
+    PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let bbox = BBox orig (x,y)
           prevbbox = BBox orig prev
@@ -92,13 +92,13 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       invalidateDrawBBox cid bbox
       mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
-    PenUp cid' pcoord -> do 
+    PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let epage = get currentPage cinfo 
           cpn = get currentPageNum cinfo 
           
       let bbox = BBox orig (x,y)
-          prevbbox = BBox orig prev
+          -- prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox
           
@@ -129,15 +129,15 @@ moveSelectRectangle :: CanvasInfo
                     -> (Double,Double)
                     -> (Double,Double)
                     -> Iteratee MyEvent XournalStateIO ()
-moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) prev = do
+moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev = do
   xstate <- getSt
-  let cid = get canvasId cinfo 
+  -- let cid = get canvasId cinfo 
   r <- await 
   case r of 
-    PenMove cid' pcoord -> do 
+    PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       moveSelectRectangle cinfo geometry zmode connidmove connidup orig (x,y) 
-    PenUp cid' pcoord -> do 
+    PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let offset = (x-x0,y-y0)
           SelectState txoj = get xournalstate xstate
@@ -154,12 +154,13 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) prev =
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
-
+    _ -> return ()
+ 
 deleteSelection :: Iteratee MyEvent XournalStateIO () 
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
   xstate <- getSt
-  let cinfo = getCurrentCanvasInfo xstate 
+  let -- cinfo = getCurrentCanvasInfo xstate 
       SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = tx_selectpage txoj
   case strokes (tp_firstlayer tpage) of 
@@ -239,7 +240,7 @@ selectPenColorChanged :: PenColor ->  Iteratee MyEvent XournalStateIO ()
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
   xstate <- getSt
-  let cinfo = getCurrentCanvasInfo xstate 
+  let -- cinfo = getCurrentCanvasInfo xstate 
       SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = tx_selectpage txoj
   case strokes (tp_firstlayer tpage) of 
@@ -259,7 +260,7 @@ selectPenWidthChanged :: Double ->  Iteratee MyEvent XournalStateIO ()
 selectPenWidthChanged pwidth = do 
   liftIO $ putStrLn "selectPenWidthChanged called"
   xstate <- getSt
-  let cinfo = getCurrentCanvasInfo xstate 
+  let -- cinfo = getCurrentCanvasInfo xstate 
       SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = tx_selectpage txoj
   case strokes (tp_firstlayer tpage) of 

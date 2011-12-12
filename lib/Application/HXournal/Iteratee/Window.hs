@@ -7,7 +7,6 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
 
 import Control.Monad.Trans
--- import Control.Concurrent 
 
 import Application.HXournal.ModelAction.Window
 import Application.HXournal.Accessor

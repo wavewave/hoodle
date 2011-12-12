@@ -126,25 +126,27 @@ selectMode = do
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
         _ -> return () 
+    PenColorChanged c -> liftIO $ putStrLn "pencolor changed"
+    
     _ -> defaultEventProcess r1
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
-defaultEventProcess MenuQuit = liftIO $ mainQuit
-defaultEventProcess MenuPreviousPage = changePage (\x->x-1)
-defaultEventProcess MenuNextPage =  changePage (+1)
-defaultEventProcess MenuFirstPage = changePage (const 0)
-defaultEventProcess MenuLastPage = changePage (const 10000)
-defaultEventProcess MenuOpen = fileOpen
-defaultEventProcess MenuSave = fileSave 
-defaultEventProcess MenuSaveAs = fileSaveAs
-defaultEventProcess MenuDelete = deleteSelection
-defaultEventProcess MenuNormalSize = pageZoomChange Original  
-defaultEventProcess MenuPageWidth = pageZoomChange FitWidth 
-defaultEventProcess MenuPageHeight = pageZoomChange FitHeight
-defaultEventProcess (MenuHSplit) = eitherSplit SplitHorizontal
-defaultEventProcess (MenuVSplit) = eitherSplit SplitVertical
-defaultEventProcess (MenuDelCanvas) = deleteCanvas
+defaultEventProcess (Menu MenuQuit) = liftIO $ mainQuit
+defaultEventProcess (Menu MenuPreviousPage) = changePage (\x->x-1)
+defaultEventProcess (Menu MenuNextPage) =  changePage (+1)
+defaultEventProcess (Menu MenuFirstPage) = changePage (const 0)
+defaultEventProcess (Menu MenuLastPage) = changePage (const 10000)
+defaultEventProcess (Menu MenuOpen) = fileOpen
+defaultEventProcess (Menu MenuSave) = fileSave 
+defaultEventProcess (Menu MenuSaveAs) = fileSaveAs
+defaultEventProcess (Menu MenuDelete) = deleteSelection
+defaultEventProcess (Menu MenuNormalSize) = pageZoomChange Original  
+defaultEventProcess (Menu MenuPageWidth) = pageZoomChange FitWidth 
+defaultEventProcess (Menu MenuPageHeight) = pageZoomChange FitHeight
+defaultEventProcess (Menu MenuHSplit) = eitherSplit SplitHorizontal
+defaultEventProcess (Menu MenuVSplit) = eitherSplit SplitVertical
+defaultEventProcess (Menu MenuDelCanvas) = deleteCanvas
 defaultEventProcess (HScrollBarMoved cid v) = do 
     xstate <- getSt 
     let cinfoMap = get canvasInfoMap xstate

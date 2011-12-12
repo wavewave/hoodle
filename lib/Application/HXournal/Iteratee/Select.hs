@@ -120,19 +120,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           newtxoj = txoj { tx_selectpage = Just (cpn,newpage) } 
       let ui = get gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      {-    
-      agr <- liftIO $ uiManagerGetActionGroups ui >>= \x -> 
-                        case x of
-                        [] -> error "No action group?"
-                        y:ys -> return y
-      -- liftIO $ putStrLn . show $ getB selectstrs
-      Just deletea <- liftIO $ actionGroupGetAction agr "DELETEA"
-      Just copya <- liftIO $ actionGroupGetAction agr "COPYA"
-      Just cuta <- liftIO $ actionGroupGetAction agr "CUTA"
-      let copycutdeletea = [copya,cuta,deletea] 
-      if isAnyHitted  selectstrs
-        then liftIO $ mapM_ (flip actionSetSensitive False) copycutdeletea
-        else liftIO $ mapM_ (flip actionSetSensitive True)  copycutdeletea -}
       putSt (set xournalstate (SelectState newtxoj) 
              . updatePageAll (SelectState newtxoj)
              $ xstate) 
@@ -199,19 +186,5 @@ deleteSelection = do
       invalidateAll 
           
      
-  {-    
-  case ecpage of 
-    Left _ -> liftIO $ putStrLn "no stroke selection"
-    Right tpage -> do -}
     
-
-{- 
-selectRectProcess :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
-selectRectProcess cid pcoord = do    
-    ev <- await 
-    liftIO $ putStrLn "selectRectProcess"
-    case ev of 
-      PenUp cid' pcoord' -> return ()
-      _ -> selectRectProcess cid pcoord 
--}
 

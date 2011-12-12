@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Highlighter where
+module Application.HXournal.Coroutine.Highlighter where
 
 import Application.HXournal.Device 
 import Application.HXournal.Type.Event

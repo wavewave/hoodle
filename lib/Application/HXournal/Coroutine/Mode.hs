@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Mode where
+module Application.HXournal.Coroutine.Mode where
 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine

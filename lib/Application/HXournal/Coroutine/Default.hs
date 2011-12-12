@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Default where
+module Application.HXournal.Coroutine.Default where
 
 import Graphics.UI.Gtk hiding (get,set)
 
@@ -10,17 +10,17 @@ import Application.HXournal.Type.Clipboard
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
-import Application.HXournal.Coroutine 
-import Application.HXournal.Iteratee.Draw 
-import Application.HXournal.Iteratee.Pen 
-import Application.HXournal.Iteratee.Eraser
-import Application.HXournal.Iteratee.Highlighter
-import Application.HXournal.Iteratee.Scroll
-import Application.HXournal.Iteratee.Page
-import Application.HXournal.Iteratee.Select
-import Application.HXournal.Iteratee.File
-import Application.HXournal.Iteratee.Mode
-import Application.HXournal.Iteratee.Window 
+import Application.HXournal.Coroutine.Callback
+import Application.HXournal.Coroutine.Draw
+import Application.HXournal.Coroutine.Pen
+import Application.HXournal.Coroutine.Eraser
+import Application.HXournal.Coroutine.Highlighter
+import Application.HXournal.Coroutine.Scroll
+import Application.HXournal.Coroutine.Page
+import Application.HXournal.Coroutine.Select
+import Application.HXournal.Coroutine.File
+import Application.HXournal.Coroutine.Mode
+import Application.HXournal.Coroutine.Window
 
 import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page

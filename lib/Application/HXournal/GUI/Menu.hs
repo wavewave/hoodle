@@ -3,7 +3,7 @@
 module Application.HXournal.GUI.Menu where
 
 import Application.HXournal.Util.Verbatim
-import Application.HXournal.Coroutine
+import Application.HXournal.Coroutine.Callback
 import Application.HXournal.Type
 import Application.HXournal.Type.Clipboard
 import Control.Monad.Coroutine.SuspensionFunctors

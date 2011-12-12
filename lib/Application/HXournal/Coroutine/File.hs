@@ -1,11 +1,11 @@
-module Application.HXournal.Iteratee.File where
+module Application.HXournal.Coroutine.File where
 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.File 
-import Application.HXournal.Iteratee.Draw
+import Application.HXournal.Coroutine.Draw
 import Application.HXournal.ModelAction.Window
 import Application.HXournal.Builder 
 import Control.Monad.Trans

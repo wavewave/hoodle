@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Draw where
+module Application.HXournal.Coroutine.Draw where
 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine

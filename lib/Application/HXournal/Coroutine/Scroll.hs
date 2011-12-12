@@ -1,10 +1,10 @@
-module Application.HXournal.Iteratee.Scroll where
+module Application.HXournal.Coroutine.Scroll where
 
 import Application.HXournal.Type.Event 
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Application.HXournal.Iteratee.Draw
+import Application.HXournal.Coroutine.Draw
 import qualified Data.IntMap as IM
 import Control.Monad.Trans
 import qualified Control.Monad.State as St

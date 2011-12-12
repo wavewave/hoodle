@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.4.9999
+Version:	0.5
 Synopsis:	haskell clone of xournal 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
@@ -56,22 +56,22 @@ Library
                    Application.HXournal.ModelAction.Select
                    Application.HXournal.ModelAction.File
                    Application.HXournal.ModelAction.Window
-                   Application.HXournal.Coroutine 
+                   Application.HXournal.Coroutine.Callback
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu
-                   Application.HXournal.Iteratee
-                   Application.HXournal.Iteratee.Draw
-                   Application.HXournal.Iteratee.EventConnect
-                   Application.HXournal.Iteratee.Default
-                   Application.HXournal.Iteratee.Pen
-                   Application.HXournal.Iteratee.Eraser
-                   Application.HXournal.Iteratee.Highlighter
-                   Application.HXournal.Iteratee.Scroll
-                   Application.HXournal.Iteratee.Page
-                   Application.HXournal.Iteratee.Select
-                   Application.HXournal.Iteratee.File
-                   Application.HXournal.Iteratee.Mode
-                   Application.HXournal.Iteratee.Window
+                   Application.HXournal.Coroutine
+                   Application.HXournal.Coroutine.Draw
+                   Application.HXournal.Coroutine.EventConnect
+                   Application.HXournal.Coroutine.Default
+                   Application.HXournal.Coroutine.Pen
+                   Application.HXournal.Coroutine.Eraser
+                   Application.HXournal.Coroutine.Highlighter
+                   Application.HXournal.Coroutine.Scroll
+                   Application.HXournal.Coroutine.Page
+                   Application.HXournal.Coroutine.Select
+                   Application.HXournal.Coroutine.File
+                   Application.HXournal.Coroutine.Mode
+                   Application.HXournal.Coroutine.Window
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw

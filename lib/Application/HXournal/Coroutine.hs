@@ -1,27 +1,16 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-module Application.HXournal.Coroutine where
+module Application.HXournal.Coroutine 
+( module Application.HXournal.Coroutine.EventConnect
+, module Application.HXournal.Coroutine.Default
+, module Application.HXournal.Coroutine.Pen
+, module Application.HXournal.Coroutine.Eraser
+, module Application.HXournal.Coroutine.Highlighter
+) where 
 
-import Control.Monad.Coroutine 
-import Control.Monad.State
-import Control.Monad.Coroutine.SuspensionFunctors
-import Data.IORef
-import Application.HXournal.Type.Coroutine
-import Application.HXournal.Type.Event 
-
-dummycallback :: MyEvent -> IO ()
-dummycallback = const (return ())
-
-bouncecallback :: TRef -> SRef -> MyEvent -> IO () 
-bouncecallback tref sref input = do 
-  Await cont <- readIORef tref 
-  st <- readIORef sref
-  (nr,st') <- runStateT (resume (cont input)) st 
-  case nr of  
-    Left  naw -> do writeIORef tref naw 
-                    writeIORef sref st'
-    Right val -> do putStrLn $ show val 
-                    writeIORef tref (Await (\_ -> return ()))
-                    writeIORef sref st'
-  return ()  
+import Application.HXournal.Coroutine.EventConnect
+import Application.HXournal.Coroutine.Default
+import Application.HXournal.Coroutine.Pen
+import Application.HXournal.Coroutine.Eraser
+import Application.HXournal.Coroutine.Highlighter
 

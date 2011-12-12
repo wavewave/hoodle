@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Window where
+module Application.HXournal.Coroutine.Window where
 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Canvas

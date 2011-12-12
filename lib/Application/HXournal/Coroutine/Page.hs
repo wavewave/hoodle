@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Page where
+module Application.HXournal.Coroutine.Page where
 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
@@ -6,7 +6,7 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
-import Application.HXournal.Iteratee.Draw
+import Application.HXournal.Coroutine.Draw
 import Application.HXournal.ModelAction.Adjustment
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Type.Map

@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.EventConnect where
+module Application.HXournal.Coroutine.EventConnect where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 import Application.HXournal.Type.Event

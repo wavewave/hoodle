@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Eraser where
+module Application.HXournal.Coroutine.Eraser where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 import Application.HXournal.Type.Event
@@ -7,8 +7,8 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Device
 import Application.HXournal.Draw
-import Application.HXournal.Iteratee.EventConnect
-import Application.HXournal.Iteratee.Draw
+import Application.HXournal.Coroutine.EventConnect
+import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser

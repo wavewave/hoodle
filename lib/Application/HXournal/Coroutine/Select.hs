@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Select where
+module Application.HXournal.Coroutine.Select where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 import Application.HXournal.Type.Event 
@@ -10,9 +10,9 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.Device
 import Application.HXournal.Draw
-import Application.HXournal.Iteratee.EventConnect
-import Application.HXournal.Iteratee.Draw
-import Application.HXournal.Iteratee.Mode
+import Application.HXournal.Coroutine.EventConnect
+import Application.HXournal.Coroutine.Draw
+import Application.HXournal.Coroutine.Mode
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 import Control.Monad.Trans

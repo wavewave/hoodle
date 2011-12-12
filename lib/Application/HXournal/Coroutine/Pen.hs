@@ -1,4 +1,4 @@
-module Application.HXournal.Iteratee.Pen where
+module Application.HXournal.Coroutine.Pen where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 import Application.HXournal.Device 
@@ -7,8 +7,8 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-import Application.HXournal.Iteratee.Draw
-import Application.HXournal.Iteratee.EventConnect
+import Application.HXournal.Coroutine.Draw
+import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page

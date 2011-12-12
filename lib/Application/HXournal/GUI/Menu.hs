@@ -559,7 +559,9 @@ assignPoint sref a = do
     let w = int2Point v
     st <- readIORef sref 
     let stNew = set (penWidth.penInfo) w st 
+    let callback = get callBack st        
     writeIORef sref stNew 
+    callback (PenWidthChanged w)
 
 int2PenType :: Int -> Either PenType SelectType 
 int2PenType 0 = Left PenWork

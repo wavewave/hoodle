@@ -125,7 +125,10 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         _ -> return () 
     PenColorChanged c -> selectPenColorChanged c
+    PenWidthChanged w -> selectPenWidthChanged w
     _ -> defaultEventProcess r1
+
+
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   

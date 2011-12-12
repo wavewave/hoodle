@@ -1,5 +1,7 @@
 module Application.HXournal.ModelAction.Select where
 
+import Application.HXournal.Type.Enum
+
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Type.Select
 import Graphics.Xournal.HitTest
@@ -8,6 +10,8 @@ import Graphics.UI.Gtk hiding (get,set)
 
 import Data.Strict.Tuple
 import qualified Data.IntMap as M
+import qualified Data.Map as Map 
+
 
 changeStrokeByOffset :: (Double,Double) -> StrokeBBox -> StrokeBBox 
 changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) = 
@@ -66,3 +70,13 @@ toggleCutCopyDelete ui b = do
     let copycutdeletea = [copya,cuta,deletea] 
     mapM_ (flip actionSetSensitive b) copycutdeletea
 
+
+changeStrokeColor :: PenColor -> StrokeBBox -> StrokeBBox
+changeStrokeColor pcolor str =
+  let Just cname = Map.lookup pcolor penColorNameMap 
+  in  str { strokebbox_color = cname } 
+      
+
+changeStrokeWidth :: Double -> StrokeBBox -> StrokeBBox
+changeStrokeWidth pwidth str = str { strokebbox_width = pwidth } 
+      

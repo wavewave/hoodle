@@ -18,7 +18,6 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 
 import qualified Data.IntMap as M
-import qualified Data.Map as Map 
 
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
@@ -213,9 +212,25 @@ selectPenColorChanged pcolor = do
       -- liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
+selectPenWidthChanged :: Double ->  Iteratee MyEvent XournalStateIO () 
+selectPenWidthChanged pwidth = do 
+  liftIO $ putStrLn "selectPenWidthChanged called"
+  xstate <- getSt
+  let cinfo = getCurrentCanvasInfo xstate 
+      SelectState txoj = get xournalstate xstate 
+      Just (n,tpage) = tx_selectpage txoj
+  case strokes (tp_firstlayer tpage) of 
+    Left _ -> liftIO $ putStrLn "no stroke selection 2 "
+    Right alist -> do 
+      let alist' = fmapAL id 
+                     (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
+          newlayer = Right alist'
+          newpage = pageBBoxMapFromTempPageSelect 
+                    $ tpage {tp_firstlayer = LayerSelect newlayer} 
+          newpages = M.adjust (const newpage) n (tx_pages txoj)
+          newtxoj = TempXournalSelect newpages Nothing       
+          newxstate = set xournalstate (SelectState newtxoj) xstate
+          newxstate' = updatePageAll (SelectState newtxoj) newxstate 
+      putSt newxstate' 
+      invalidateAll 
 
-changeStrokeColor :: PenColor -> StrokeBBox -> StrokeBBox
-changeStrokeColor pcolor str =
-  let Just cname = Map.lookup pcolor penColorNameMap 
-  in  str { strokebbox_color = cname } 
-      

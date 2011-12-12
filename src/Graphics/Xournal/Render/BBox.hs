@@ -14,7 +14,6 @@ import Text.Xournal.Predefined
 
 import qualified Data.Map as M
 
-import Data.Strict.Tuple
 import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter )
 
 

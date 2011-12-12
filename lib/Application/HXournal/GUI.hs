@@ -2,38 +2,26 @@
 
 module Application.HXournal.GUI where
 
-import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState 
-import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Event
 
 import Application.HXournal.Coroutine
 import Application.HXournal.Device
 import Application.HXournal.Iteratee
 import Application.HXournal.GUI.Menu
-import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.File 
 import Application.HXournal.ModelAction.Window
 
 import Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (get,set)
 
-import qualified Control.Monad.State as St
-import Control.Monad.IO.Class
-import Control.Monad.Coroutine
 import Control.Applicative 
 
 import Data.IORef
-import qualified Data.IntMap as M
-
 
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-import Text.Xournal.Type
-import Graphics.Xournal.Type.Map
-import qualified Text.Xournal.Parse as P
 
 startGUI :: Maybe FilePath -> IO () 
 startGUI mfname = do 

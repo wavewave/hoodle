@@ -5,12 +5,9 @@ module Application.HXournal.Builder where
 import Text.Xournal.Type
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
-
 import Blaze.ByteString.Builder
-import Blaze.ByteString.Builder.Char8 (fromString, fromChar)
-
+import Blaze.ByteString.Builder.Char8 (fromChar)
 import Data.Double.Conversion.ByteString 
-
 import Data.Monoid
 import Data.Strict.Tuple
 

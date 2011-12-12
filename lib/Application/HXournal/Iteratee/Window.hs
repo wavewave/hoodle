@@ -5,17 +5,12 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
-
 import Control.Monad.Trans
-
 import Application.HXournal.ModelAction.Window
 import Application.HXournal.Accessor
-import Application.HXournal.ModelAction.Page
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Data.IntMap as M
 

@@ -3,23 +3,18 @@
 module Application.HXournal.ModelAction.Pen where
 
 import Application.HXournal.ModelAction.Page
-
 import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Render.BBox
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Enum
-
 import Data.Foldable
 import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
-
 import Control.Category
 import Data.Sequence hiding (take, drop)
 import Data.Label
 import Prelude hiding ((.), id)
-
 import Data.Strict.Tuple hiding (uncurry)
 import Text.Xournal.Type
 

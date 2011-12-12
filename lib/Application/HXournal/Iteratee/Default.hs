@@ -25,31 +25,17 @@ import Application.HXournal.Iteratee.Window
 import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Window 
-import Application.HXournal.Builder 
-
 import Application.HXournal.Type.Window 
 import Application.HXournal.Device
-
-
-import Control.Applicative 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import qualified Control.Monad.State as St 
-
 import Control.Monad.Trans
-
 import qualified Data.IntMap as M
 import Data.Maybe
-import qualified Data.ByteString.Lazy as L
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-
-import Text.Xournal.Type 
-import Graphics.Xournal.Type
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Type.Select
-
 import Data.IORef
 
 guiProcess :: Iteratee MyEvent XournalStateIO () 

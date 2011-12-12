@@ -5,15 +5,10 @@ module Application.HXournal.Type.Canvas where
 import Application.HXournal.Type.Enum 
 import Data.Sequence
 import qualified Data.IntMap as M
-
-import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
-
-import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Type.Select
-
 import Graphics.UI.Gtk hiding (get,set)
 
 type CanvasId = Int 

@@ -1,45 +1,27 @@
 module Application.HXournal.Iteratee.Eraser where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
-
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-
-import Application.HXournal.Type.Event
 import Application.HXournal.Device
 import Application.HXournal.Draw
-
 import Application.HXournal.Iteratee.EventConnect
 import Application.HXournal.Iteratee.Draw
-
 import Application.HXournal.Accessor
-
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
-
 import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.HitTest
-
-
-
-import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
-
 import Control.Category
 import Data.Label
-
-import qualified Data.Map as M
 import qualified Data.IntMap as IM
-
 import Prelude hiding ((.), id)
-
-import Text.Xournal.Type
 
 eraserStart :: CanvasId 
                -> PointerCoord 

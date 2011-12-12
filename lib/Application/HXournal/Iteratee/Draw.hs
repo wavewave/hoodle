@@ -1,30 +1,17 @@
 module Application.HXournal.Iteratee.Draw where
 
-import Graphics.UI.Gtk hiding (get,set)
-
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
-
 import Graphics.Xournal.Type
-import Graphics.Xournal.Type.Select
-import Graphics.Xournal.Render.BBox
-
-import Text.Xournal.Type 
-
 import Control.Applicative 
-
 import Control.Monad
 import Control.Monad.Trans
-
 import qualified Control.Monad.State as St
 import qualified Data.IntMap as M
-
-import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 

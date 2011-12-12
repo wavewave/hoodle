@@ -6,9 +6,7 @@ import Control.Monad.Coroutine
 import Control.Monad.State
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
-
 import Application.HXournal.Type.Coroutine
-import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Event 
 
 dummycallback :: MyEvent -> IO ()

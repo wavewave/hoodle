@@ -1,7 +1,6 @@
 module Application.HXournal.Iteratee.Select where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
-
 import Application.HXournal.Type.Event 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
@@ -14,20 +13,13 @@ import Application.HXournal.Draw
 import Application.HXournal.Iteratee.EventConnect
 import Application.HXournal.Iteratee.Draw
 import Application.HXournal.Iteratee.Mode
-
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
-
-import qualified Data.IntMap as M
-
 import Control.Monad.Trans
-import qualified Control.Monad.State as St
 import Control.Monad.Coroutine.SuspensionFunctors
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-
 import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Select
 import Graphics.Xournal.HitTest

@@ -14,7 +14,7 @@ import Foreign.C
 import Foreign.Storable
 
 import Graphics.UI.Gtk
-import Graphics.UI.Gtk.Gdk.EventM
+
 
 import Data.Int
 

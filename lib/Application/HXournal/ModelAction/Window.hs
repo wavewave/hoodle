@@ -1,28 +1,17 @@
 module Application.HXournal.ModelAction.Window where
 
-import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Device
--- import Application.HXournal.Iteratee.Default
-import Application.HXournal.Coroutine
-
 import Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (get,set)
-
-import Control.Monad.Coroutine
+import qualified Graphics.UI.Gtk as Gtk (set)
 import Control.Monad.Trans 
-import qualified Control.Monad.State as St
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import qualified Data.IntMap as M
-import Data.IORef 
-
 import System.FilePath
 
 setTitleFromFileName :: HXournalState -> IO () 

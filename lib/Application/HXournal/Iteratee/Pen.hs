@@ -1,38 +1,29 @@
 module Application.HXournal.Iteratee.Pen where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
-
 import Application.HXournal.Device 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
-
 import Application.HXournal.Iteratee.Draw
 import Application.HXournal.Iteratee.EventConnect
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
-
 import Application.HXournal.Draw
-
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
 import Control.Monad.Coroutine.SuspensionFunctors
-
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
 import Data.Maybe 
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-
-import Text.Xournal.Type 
-
 import Graphics.Xournal.Render.BBox
-import Graphics.Xournal.Type.Map
+
 
 penStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO ()
 penStart cid pcoord = do 

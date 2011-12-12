@@ -6,29 +6,17 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
-
 import Application.HXournal.Iteratee.Draw
 import Application.HXournal.ModelAction.Adjustment
-
 import Graphics.Xournal.Type 
 import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Render.BBox
-
 import Graphics.UI.Gtk hiding (get,set)
-
 import Application.HXournal.ModelAction.Page
-
-import Control.Applicative 
-import Control.Monad.Coroutine
-import Control.Monad.Coroutine.SuspensionFunctors
 import qualified Control.Monad.State as St 
-
 import Control.Monad.Trans
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-
 import Text.Xournal.Type
 import Graphics.Xournal.Type.Select
 import qualified Data.IntMap as IM

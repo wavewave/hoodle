@@ -1,11 +1,8 @@
 module Application.HXournal.ModelAction.Eraser where
 
 import Control.Monad.State 
-
 import Graphics.Xournal.Type 
 import Graphics.Xournal.HitTest
-import Graphics.Xournal.Render.BBox
-
 
 eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
                -> State (Maybe BBox) [StrokeBBox]

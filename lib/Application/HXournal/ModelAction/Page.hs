@@ -2,17 +2,12 @@ module Application.HXournal.ModelAction.Page where
 
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
-
 import Text.Xournal.Type
-import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Type.Select
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
-import Data.Maybe
 import qualified Data.IntMap as M 
 
 updatePageAll :: XournalState 

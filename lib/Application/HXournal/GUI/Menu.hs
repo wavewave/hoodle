@@ -5,23 +5,16 @@ module Application.HXournal.GUI.Menu where
 import Application.HXournal.Util.Verbatim
 import Application.HXournal.Coroutine
 import Application.HXournal.Type
-import Application.HXournal.Type.Event 
 import Application.HXournal.Type.Clipboard
-
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
-
 import Data.Maybe
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import Graphics.UI.Gtk hiding (set,get)
-import qualified Graphics.UI.Gtk as Gtk (set,get)
-
+import qualified Graphics.UI.Gtk as Gtk (set)
 import System.FilePath
-
 import Text.Xournal.Predefined 
 import Paths_hxournal
 

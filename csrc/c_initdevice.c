@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
+#include <string.h>
 
 void initdevice( int* core, int* stylus, int* eraser )
 {

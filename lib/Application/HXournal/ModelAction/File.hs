@@ -2,18 +2,11 @@ module Application.HXournal.ModelAction.File where
 
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
-import Application.HXournal.Type.Event 
-import Application.HXournal.Device
 import Application.HXournal.ModelAction.Page
-
 import Graphics.Xournal.Type.Map
-
-import Graphics.UI.Gtk hiding (get,set)
 import Text.Xournal.Type
 import qualified Text.Xournal.Parse as P
-
 import qualified Data.IntMap as M
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)

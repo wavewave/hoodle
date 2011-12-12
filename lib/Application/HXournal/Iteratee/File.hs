@@ -1,31 +1,22 @@
 module Application.HXournal.Iteratee.File where
 
 import Application.HXournal.Type.Event
-import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.File 
 import Application.HXournal.Iteratee.Draw
-import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Window
 import Application.HXournal.Builder 
-
 import Control.Monad.Trans
 import Control.Applicative
-
-import Text.Xournal.Type
 import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Type.Select
 import Graphics.UI.Gtk hiding (get,set)
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import qualified Data.ByteString.Lazy as L
-import qualified Data.IntMap as M
-
 
 fileNew :: Iteratee MyEvent XournalStateIO ()
 fileNew = do 

@@ -14,7 +14,6 @@ import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Render.BBox
 
-
 import Graphics.UI.Gtk hiding (get,set)
 
 import Application.HXournal.ModelAction.Page
@@ -137,4 +136,3 @@ pageZoomChange zmode = do
     putSt xstate' 
     invalidate currCvsId       
 
-            

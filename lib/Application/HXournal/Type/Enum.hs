@@ -42,3 +42,4 @@ penColorRGBAmap = M.fromList $ map (\x->(fst x,fromJust (M.lookup (snd x) predef
 convertPenColorToRGBA :: PenColor -> (Double,Double,Double,Double)
 convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
 convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
+

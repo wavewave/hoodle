@@ -14,3 +14,4 @@ type Iteratee a m x = Coroutine (Await a) m x
 type SusAwait =  Await MyEvent (Iteratee MyEvent XournalStateIO ())
 type TRef = IORef SusAwait 
 type SRef = IORef HXournalState
+

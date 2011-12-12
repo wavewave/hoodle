@@ -112,7 +112,6 @@ updateCanvas canvas xoj pagenum vinfo = do
   return ()
 
 drawBBoxOnly :: PageDrawF
-   -- :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
 drawBBoxOnly canvas page vinfo _mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
@@ -126,7 +125,6 @@ drawBBoxOnly canvas page vinfo _mbbox = do
 
 
 drawPageInBBox :: PageDrawF 
-                -- :: DrawingArea -> PageBBox -> ViewInfo -> BBox -> IO ()
 drawPageInBBox canvas page vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo

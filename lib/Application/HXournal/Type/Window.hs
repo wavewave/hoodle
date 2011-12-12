@@ -7,7 +7,6 @@ import Graphics.UI.Gtk hiding (get,set)
 data WindowConfig = Node CanvasId 
                   | HSplit (Maybe HPaned) WindowConfig WindowConfig
                   | VSplit (Maybe VPaned) WindowConfig WindowConfig 
---                   deriving (Show)
 
 data SplitType = SplitHorizontal | SplitVertical 
                deriving (Show)

@@ -18,40 +18,6 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-{-                
-DeviceList 
--> (DrawingArea,Adjustment,Adjustment) 
-               -> (DrawingArea,Adjustment,Adjustment) 
-               -> (MyEvent -> IO ()) 
-
--}
-{-                      
-      cinfo1 = set canvasId 1 
-             . set drawArea canvas
-             . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
-             . set currentPageNum 0 
-             . set horizAdjustment hadj 
-             . set vertAdjustment vadj 
-             $ emptyCanvasInfo
-      cinfo2 = set canvasId 2 
-             . set drawArea canvas2
-             . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
-             . set currentPageNum 0 
-             . set horizAdjustment hadj2 
-             . set vertAdjustment vadj2 
-             $ emptyCanvasInfo
-
-      -- startingcinfo1 = setPage startingxojstate 0 cinfo1
-      -- startingcinfo2 = setPage startingxojstate 0 cinfo2
-      --  cinfoMap = M.insert (get canvasId startingcinfo2) startingcinfo2
-      --         $ M.insert (get canvasId startingcinfo1) startingcinfo1
-      --          $ M.empty 
-
--}
-
-{- getFileContentInit :: Maybe FilePath -> HXournalState -> IO HXournalState
-getFileContentInit (Just fname) xstate = getFileContent -}
-
 -- | get file content from xournal file and update xournal state 
 
 getFileContent :: Maybe FilePath 

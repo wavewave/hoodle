@@ -102,13 +102,3 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
       invalidateAll
     _ -> return ()
     
-
-
-              -- pagesbefore = take pgnum pages 
-              -- pagesafter  = drop (pgnum+1) pages 
-              -- currlayer   = head (pageLayers currpage) 
-              -- otherlayers = tail (pageLayers currpage) 
-              -- pages       = xournalPages currxoj 
-  --              xojbbox_pages = pagesbefore
-  --                                                   ++ [newpagebbox]
-  --                                                   ++ pagesafter } 

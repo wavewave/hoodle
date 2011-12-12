@@ -63,3 +63,4 @@ data PenInfo = PenInfo { _penType :: PenType
 
 
 $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''CanvasInfo])
+

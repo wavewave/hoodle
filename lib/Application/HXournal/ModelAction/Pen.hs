@@ -2,7 +2,6 @@
 
 module Application.HXournal.ModelAction.Pen where
 
-
 import Application.HXournal.ModelAction.Page
 
 import Graphics.Xournal.Type
@@ -15,7 +14,6 @@ import Data.Foldable
 import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
-
 
 import Control.Category
 import Data.Sequence hiding (take, drop)
@@ -50,7 +48,6 @@ addPDraw pinfo xoj pgnum pdraw =
       newxojbbox = xoj { 
         xbm_pages = IM.adjust (const newpagebbox) pgnum (xbm_pages xoj) 
       }
-
   in  (newxojbbox,strokebbox_bbox newstrokebbox)
 
 

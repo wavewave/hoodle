@@ -40,3 +40,4 @@ data SelectInfo = SelectInfo { _selectType :: SelectType
              deriving (Show) 
 
 $(mkLabels [''SelectInfo])
+

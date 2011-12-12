@@ -59,7 +59,6 @@ invalidateGenSingle cid mbbox drawf = do
     Nothing -> return ()
     Just cvsInfo -> do 
       let page = case get currentPage cvsInfo of
-                   -- Right pgselect -> pageBBoxFromPageSelect pgselect
                    Right _ -> error "no invalidateGenSingle implementation yet"
                    Left pg -> pg
       liftIO (drawf <$> get drawArea 

@@ -49,8 +49,6 @@ startGUI mfname = do
                          <$> get frameState 
                          <*> get canvasInfoMap $ st1
   
-
-  -- Gtk.set window [ windowTitle := "test" ] 
   setTitleFromFileName st1
   vbox <- vBoxNew False 0 
   

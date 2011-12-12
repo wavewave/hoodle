@@ -1,8 +1,5 @@
 module Application.HXournal.Type.Event where
 
--- import Application.HXournal.Type.Canvas
-
--- import Graphics.Xournal.Type
 import Application.HXournal.Type.Enum
 import Application.HXournal.Device 
 

@@ -54,9 +54,6 @@ initCanvasInfo xstate cid = do
     
     canvas `on` sizeRequest $ return (Requisition 480 400)    
     canvas `on` buttonPressEvent $ tryEvent $ do 
-      -- xstate <- liftIO (readIORef sref)
-      -- let callbk = get callBack xstate
-      --     dev = get deviceList xstate 
       p <- getPointer dev
       liftIO (callback (PenDown cid p))
     canvas `on` configureEvent $ tryEvent $ do 
@@ -64,14 +61,11 @@ initCanvasInfo xstate cid = do
       liftIO $ callback -- bouncecallback tref sref 
                  (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
     canvas `on` buttonReleaseEvent $ tryEvent $ do 
-      -- xstate <- liftIO (readIORef sref)
-      -- let callbk = get callBack xstate
-      --     dev = get deviceList xstate 
       p <- getPointer dev
       liftIO (callback (PenUp cid p))
     canvas `on` exposeEvent $ tryEvent $ do 
       liftIO $ callback (UpdateCanvas cid) 
-        -- bouncecallback tref sref (UpdateCanvas cid)
+
     {-
     canvas `on` enterNotifyEvent $ tryEvent $ do 
       win <- liftIO $ widgetGetDrawWindow canvas
@@ -80,30 +74,22 @@ initCanvasInfo xstate cid = do
     -}  
     widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
     widgetSetExtensionEvents canvas [ExtensionEventsAll]
-    
 
     afterValueChanged hadj $ do 
       v <- adjustmentGetValue hadj 
       callback (HScrollBarMoved cid v)
-      -- bouncecallback tref sref (HScrollBarMoved cid v)
     afterValueChanged vadj $ do 
       v <- adjustmentGetValue vadj     
       callback (VScrollBarMoved cid v)
-      -- bouncecallback tref sref (VScrollBarMoved cid v)
     Just vscrbar <- scrolledWindowGetVScrollbar scrwin
     vscrbar `on` buttonPressEvent $ do 
       v <- liftIO $ adjustmentGetValue vadj 
-      -- xstate <- liftIO (readIORef sref)
-      -- let callbk = get callBack xstate
       liftIO (callback (VScrollBarStart cid v))
       return False
     vscrbar `on` buttonReleaseEvent $ do 
       v <- liftIO $ adjustmentGetValue vadj 
-      -- xstate <- liftIO (readIORef sref)
-      -- let callbk = get callBack xstate
       liftIO (callback (VScrollBarEnd cid v))
       return False
-  
     return $ CanvasInfo cid canvas scrwin (error "no viewInfo") 0 (error "No page")  hadj vadj 
   
 constructFrame :: WindowConfig -> CanvasInfoMap -> IO (Widget,WindowConfig)
@@ -163,3 +149,4 @@ removePanes (VSplit vpane wconf1 wconf2) = do
     wconf1' <- removePanes wconf1 
     wconf2' <- removePanes wconf2 
     return (VSplit Nothing wconf1' wconf2')  
+   

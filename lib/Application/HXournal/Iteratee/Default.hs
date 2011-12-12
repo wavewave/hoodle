@@ -167,7 +167,7 @@ defaultEventProcess (CanvasConfigure cid w' h') = do
     xstate <- getSt
     let cinfoMap = get canvasInfoMap xstate
     case M.lookup cid cinfoMap of 
-      Nothing -> return () -- error $ show ( M.keys cinfoMap) ++ "No such canvas when CanvasConfigure in defaultEventProcess" ++ show cid 
+      Nothing -> return () 
       Just cvsInfo -> do 
         let canvas = get drawArea cvsInfo
         let page = getPage cvsInfo 

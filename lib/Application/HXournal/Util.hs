@@ -12,10 +12,6 @@ getLargestHeight xoj =
   let hs = map (dim_height . page_dim) (xoj_pages xoj)  
   in  maximum hs 
 
-
-
-
-
 waitUntil :: (Monad m) => (a -> Bool) -> m a -> m ()
 waitUntil p act = do 
   a <- act

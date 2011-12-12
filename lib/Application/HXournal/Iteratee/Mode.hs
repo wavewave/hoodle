@@ -15,8 +15,6 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-
-
 modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
 modeChange ToViewAppendMode = do 
   xstate <- getSt

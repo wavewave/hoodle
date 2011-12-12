@@ -64,7 +64,6 @@ deleteCanvas = do
     xstate <- getSt
     let cmap = get canvasInfoMap xstate
         currcid = get currentCanvas xstate
-        -- newcid = newCanvasId cmap 
         fstate = get frameState xstate
         xojstate = get xournalstate xstate
         enewfstate = removeWindow currcid fstate 

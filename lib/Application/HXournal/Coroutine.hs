@@ -14,9 +14,6 @@ import Application.HXournal.Type.Event
 dummycallback :: MyEvent -> IO ()
 dummycallback = const (return ())
 
--- IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ())) 
---                -> IORef HXournalState
-
 bouncecallback :: TRef -> SRef -> MyEvent -> IO () 
 bouncecallback tref sref input = do 
   Await cont <- readIORef tref 

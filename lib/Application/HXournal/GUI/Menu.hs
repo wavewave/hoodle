@@ -515,14 +515,11 @@ getMenuUI tref sref = do
   Just ra <- actionGroupGetAction agr "PENFINEA"
   Gtk.set (castToRadioAction ra) [radioActionCurrentValue := 2]
 
-
-  
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
 
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
-  
   
   return ui   
 

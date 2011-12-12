@@ -1,16 +1,18 @@
 Name:		hxournal
-Version:	0.5
+Version:	0.5.0.0
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 7.0.3
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
                 resource/*.png
-
+                CHANGES
 
 Executable hxournal
   Main-is: hxournal.hs
@@ -20,7 +22,7 @@ Executable hxournal
   Build-Depends: 
                  base>4, 
                  cmdargs >= 0.7 && <= 0.10, 
-                 hxournal == 0.5
+                 hxournal 
 
 Library
   hs-source-dirs: lib
@@ -92,6 +94,6 @@ Library
                    csrc/c_initdevice.c
   include-dirs:    csrc
   install-includes: 
-                   c_initdevice.h
-
+                   csrc/c_initdevice.h
+                   csrc/template-hsc-gtk2hs.h
 		 

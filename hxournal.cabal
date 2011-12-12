@@ -1,6 +1,6 @@
 Name:		hxournal
 Version:	0.5
-Synopsis:	haskell clone of xournal 
+Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
 License-file:	LICENSE
@@ -18,25 +18,33 @@ Executable hxournal
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base>4, mtl>2, directory, filepath,
-                   cmdargs, hxournal
+                 base>4, 
+                 cmdargs >= 0.7 && <= 0.10, 
+                 hxournal == 0.5
 
 Library
   hs-source-dirs: lib
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
-  Build-Depends: 
-                   base>4, mtl>2, directory, filepath, strict,
-                   cmdargs, gtk, cairo, monad-control, 
-                   monad-coroutine, transformers, random, 
-                   xournal-parser > 0.1.3,
-                   xournal-render >= 0.2, 
-                   containers, 
-                   HStringTemplate,
-                   HStringTemplateHelpersIW, 
-                   template-haskell, blaze-builder, 
-                   bytestring == 0.9.*, double-conversion >= 0.2,
-                   fclabels == 1.0.*
+  Build-Depends:   
+                     base == 4.*, 
+                     mtl == 2.*,
+                     directory == 1.*,
+                     filepath == 1.*, 
+                     strict == 0.3.*,
+                     gtk == 0.12.*, 
+                     cairo == 0.12.*,  
+                     monad-coroutine == 0.7.*, 
+                     transformers == 0.2.*,
+                     xournal-parser == 0.1.*,
+                     xournal-render == 0.2.*,
+                     containers == 0.4.*,
+                     template-haskell == 2.*,
+                     blaze-builder == 0.3.*, 
+                     bytestring == 0.9.*, 
+                     double-conversion == 0.2.*,
+                     fclabels == 1.0.*,
+                     cmdargs >= 0.7 && <= 0.10
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job

@@ -518,6 +518,9 @@ getMenuUI tref sref = do
   Just ra5 <- actionGroupGetAction agr "HANDA"
   actionSetSensitive ra5 False
 
+  Just ra6 <- actionGroupGetAction agr "CONTA"
+  actionSetSensitive ra6 False 
+
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
 

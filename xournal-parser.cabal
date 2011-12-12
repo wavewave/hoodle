@@ -1,7 +1,7 @@
 Name:		xournal-parser
-Version:	0.1.3.999
+Version:	0.1.4
 Synopsis:       Xournal file parser
-Description: 	Xournal file parser
+Description: 	Define Xournal type and parser for xournal xml file
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -9,19 +9,23 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 
-
-
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
-  Build-Depends: base>4, mtl>2, transformers, attoparsec, 
-                 attoparsec-iteratee, ListLike,
-                 iteratee, iteratee-util, bytestring-lexing, bytestring, 
-                 containers, xml-enumerator < 0.4, enumerator, 
-                 blaze-builder-enumerator, strict,
-                 iteratee-compress==0.2.1.*
-
+  Build-Depends: base == 4.*, 
+                 mtl == 2.*, 
+                 transformers == 0.2.*, 
+                 attoparsec == 0.9.*, 
+                 attoparsec-iteratee == 0.3.*, 
+                 iteratee >= 0.7 && < 0.9, 
+                 bytestring == 0.9.*, 
+                 containers == 0.4.*, 
+                 xml-enumerator < 0.4, 
+                 enumerator >= 0.4.13 && < 0.5, 
+                 blaze-builder-enumerator == 0.2.*, 
+                 strict == 0.3.*, 
+                 iteratee-compress == 0.2.1.*
   Exposed-Modules: 
                    Text.Xournal.Type
                    Text.Xournal.Parse

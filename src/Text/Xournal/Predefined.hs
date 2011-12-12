@@ -66,11 +66,26 @@ predefined_thick = 2.26
 predefined_verythick :: Double 
 predefined_verythick = 5.67
 
+predefined_RULING_MARGIN_COLOR :: (Double,Double,Double,Double)
 predefined_RULING_MARGIN_COLOR = hexToRGBA 0xff0080ff
+
+predefined_RULING_COLOR :: (Double,Double,Double,Double)
 predefined_RULING_COLOR = hexToRGBA 0x40a0ffff
+
+predefined_RULING_THICKNESS :: Double
 predefined_RULING_THICKNESS = 0.5
+
+predefined_RULING_LEFTMARGIN :: Double
 predefined_RULING_LEFTMARGIN = 72.0
+
+predefined_RULING_TOPMARGIN :: Double
 predefined_RULING_TOPMARGIN = 80.0
+
+predefined_RULING_SPACING :: Double
 predefined_RULING_SPACING = 24.0
+
+predefined_RULING_BOTTOMMARGIN :: Double 
 predefined_RULING_BOTTOMMARGIN = predefined_RULING_SPACING
+
+predefined_RULING_GRAPHSPACING :: Double
 predefined_RULING_GRAPHSPACING = 14.17

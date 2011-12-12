@@ -4,27 +4,18 @@ module Text.Xournal.Parse where
 
 import Control.Applicative hiding (many)
 
-import Debug.Trace
 
-import qualified Data.Attoparsec as P 
 import Data.Attoparsec
-import Data.Attoparsec.Char8 (char, double, anyChar, skipSpace, isHorizontalSpace, notChar, isAlpha_ascii)
+import Data.Attoparsec.Char8 (char, double, skipSpace, isHorizontalSpace)
 import qualified Data.ByteString.Char8 as B hiding (map) 
-import Data.ByteString.Internal (c2w,w2c)
-import Data.ByteString.Lex.Double
 
--- import Data.Attoparsec.Incremental.Char8
 
 import qualified Data.Iteratee as Iter
-import qualified Data.ListLike as LL
-import Data.Iteratee.Util
 import Data.Iteratee.Char
 
 import qualified Data.Attoparsec.Iteratee as AI
-import Data.Word (Word8)
 import Data.Char 
 
-import Control.Monad.IO.Class
 
 import Text.Xournal.Type
 import Text.Xournal.Parse.Zlib
@@ -98,7 +89,7 @@ onestroke =  do trim
                 stroketagclose 
                 return $ strokeinit { stroke_data = coordlist } 
 
-
+trim :: Parser ()
 trim = trim_starting_space
 
 parser_xournal :: Parser Xournal
@@ -149,8 +140,11 @@ title = do trim
            str <- takeTill (inClass "<") -- (many . satisfy . notInClass ) "<"
            titleclose
            return str 
-          
+
+titleheader :: Parser B.ByteString          
 titleheader = string "<title>"
+
+titleclose :: Parser B.ByteString
 titleclose = string "</title>"
 
 preview :: Parser ()
@@ -160,12 +154,22 @@ preview = do trim
              previewclose
              trim
 
+previewheader :: Parser B.ByteString 
 previewheader = string "<preview>"
+
+previewclose :: Parser B.ByteString 
 previewclose = string "</preview>"
 
+xournalheader :: Parser B.ByteString
 xournalheader = xournalheaderstart *> takeTill (inClass ">") <* xournalheaderend
+
+xournalheaderstart :: Parser B.ByteString 
 xournalheaderstart = string "<xournal"
+
+xournalheaderend :: Parser Char
 xournalheaderend = char '>'
+
+xournalclose :: Parser B.ByteString
 xournalclose =  string "</xournal>"
 
 pageheader :: Parser Dimension 
@@ -184,13 +188,19 @@ pageheader = do pageheaderstart
                 pageheaderend
                 return $ Dim w h
                  
+pageheaderstart :: Parser B.ByteString
 pageheaderstart = string "<page"
+
+pageheaderend :: Parser Char
 pageheaderend = char '>'
-                  
+
+pageclose :: Parser B.ByteString                  
 pageclose = string "</page>"
 
+layerheader :: Parser B.ByteString
 layerheader = string "<layer>"
 
+layerclose :: Parser B.ByteString
 layerclose = string "</layer>"
 
 background :: Parser Background 
@@ -217,15 +227,19 @@ background = do trim
                 backgroundclose
                 return $ Background typ col sty 
     
-
+alphabet :: Parser B.ByteString
 alphabet = takeWhile1 (\w -> (w >= 65 && w <= 90) || (w >= 97 && w <= 122)) 
-            
+
+alphanumsharp :: Parser B.ByteString            
 alphanumsharp = takeWhile1 (\w -> (w >= 65 && w <= 90) 
                                   || (w >= 97 && w <= 122) 
                                   || ( w >= 48 && w<= 57 ) 
                                   || ( w== 35) ) 
 
+backgroundheader :: Parser B.ByteString
 backgroundheader = string "<background"
+
+backgroundclose :: Parser B.ByteString
 backgroundclose = string "/>"
 
 iter_xournal :: Iter.Iteratee B.ByteString IO Xournal

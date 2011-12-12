@@ -36,7 +36,7 @@ Library
                      cairo == 0.12.*,  
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-parser == 0.1.*,
+                     xournal-parser == 0.2.*,
                      xournal-render == 0.2.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,

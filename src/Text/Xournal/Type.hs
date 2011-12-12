@@ -53,10 +53,30 @@ data Page = Page { page_dim :: !Dimension
                  , page_bkg :: !Background 
                  , page_layers :: ![Layer] }
           deriving Show 
+
 data Layer = Layer { layer_strokes :: ![Stroke] } 
            deriving Show 
 
+emptyXournal :: Xournal
 emptyXournal = Xournal "" [] 
+
+defaultBackground :: Background
+defaultBackground = Background { bkg_type = "solid"
+                               , bkg_color = "white"
+                               , bkg_style = "lined" 
+                               }
+
+defaultLayer :: Layer
+defaultLayer = Layer { layer_strokes  = [] } 
+
+defaultPage :: Page
+defaultPage = Page { page_dim = Dim  612.0 792.0 
+                   , page_bkg = defaultBackground
+                   , page_layers = [ defaultLayer ] 
+                   } 
+
+defaultXournal :: Xournal 
+defaultXournal = Xournal "untitled" [ defaultPage  ] 
 
 instance IStroke Stroke where
   strokeTool = stroke_tool

@@ -29,7 +29,7 @@ Library
                    base>4, mtl>2, directory, filepath, strict,
                    cmdargs, gtk, cairo, monad-control, 
                    monad-coroutine, transformers, random, 
-                   xournal-parser >= 0.1.3,
+                   xournal-parser > 0.1.3,
                    xournal-render >= 0.2, 
                    containers, 
                    HStringTemplate,

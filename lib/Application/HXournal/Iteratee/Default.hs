@@ -190,6 +190,7 @@ menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = changePage (const 10000)
+menuEventProcess MenuNew  = fileNew 
 menuEventProcess MenuOpen = fileOpen
 menuEventProcess MenuSave = fileSave 
 menuEventProcess MenuSaveAs = fileSaveAs

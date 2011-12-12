@@ -128,7 +128,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       disconnect connidup 
       invalidateAll 
     _ -> return ()
-      
          
 moveSelectRectangle :: CanvasInfo
                     -> CanvasPageGeometry
@@ -175,10 +174,7 @@ deleteSelection = do
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
-          newpage = {- pageBBoxMapFromTempPageSelect $ -} 
-                    tpage {tp_firstlayer = LayerSelect newlayer} 
-          -- newpages = M.adjust (const newpage) n (tx_pages txoj)
-          -- newtxoj = TempXournalSelect newpages Nothing       
+          newpage = tpage {tp_firstlayer = LayerSelect newlayer} 
           newtxoj = updateTempXournalSelect txoj newpage n          
           newxstate = set xournalstate (SelectState newtxoj) xstate
           newxstate' = updatePageAll (SelectState newtxoj) newxstate 
@@ -192,7 +188,6 @@ cutSelection = do
   liftIO $ putStrLn "cutSelection called"
   copySelection 
   deleteSelection
-  
 
 copySelection :: Iteratee MyEvent XournalStateIO ()
 copySelection = do 
@@ -248,10 +243,6 @@ pasteToSelection = do
   liftIO $ toggleCutCopyDelete ui True
   invalidateAll 
   
-
-  
-  
-
 selectPenColorChanged :: PenColor ->  Iteratee MyEvent XournalStateIO () 
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
@@ -266,9 +257,6 @@ selectPenColorChanged pcolor = do
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
           newpage = tpage {tp_firstlayer = LayerSelect newlayer} 
-            -- pageBBoxMapFromTempPageSelect 
-          -- newpages = M.adjust (const newpage) n (tx_pages txoj)
-          -- newtxoj = TempXournalSelect newpages Nothing       
           newtxoj = updateTempXournalSelect txoj newpage n
           newxstate = set xournalstate (SelectState newtxoj) xstate
           newxstate' = updatePageAll (SelectState newtxoj) newxstate 
@@ -288,10 +276,7 @@ selectPenWidthChanged pwidth = do
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
-          newpage = {- pageBBoxMapFromTempPageSelect $ -}
-                    tpage {tp_firstlayer = LayerSelect newlayer} 
-          -- newpages = M.adjust (const newpage) n (tx_pages txoj)
-          -- newtxoj = TempXournalSelect newpages Nothing       
+          newpage = tpage {tp_firstlayer = LayerSelect newlayer} 
           newtxoj = updateTempXournalSelect txoj newpage n          
           newxstate = set xournalstate (SelectState newtxoj) xstate
           newxstate' = updatePageAll (SelectState newtxoj) newxstate 

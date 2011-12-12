@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.1.4
+Version:	0.2
 Synopsis:       Xournal file parser
 Description: 	Define Xournal type and parser for xournal xml file
 License: 	BSD3
@@ -23,7 +23,6 @@ Library
                  containers == 0.4.*, 
                  xml-enumerator < 0.4, 
                  enumerator >= 0.4.13 && < 0.5, 
-                 blaze-builder-enumerator == 0.2.*, 
                  strict == 0.3.*, 
                  iteratee-compress == 0.2.1.*
   Exposed-Modules: 

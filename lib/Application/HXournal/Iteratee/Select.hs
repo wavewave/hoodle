@@ -3,7 +3,7 @@ module Application.HXournal.Iteratee.Select where
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 
 import Application.HXournal.Type.Event 
-
+import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
@@ -18,6 +18,7 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 
 import qualified Data.IntMap as M
+import qualified Data.Map as Map 
 
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
@@ -185,6 +186,36 @@ deleteSelection = do
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
-     
-    
 
+    
+selectPenColorChanged :: PenColor ->  Iteratee MyEvent XournalStateIO () 
+selectPenColorChanged pcolor = do 
+  liftIO $ putStrLn "selectPenColorChanged called"
+  xstate <- getSt
+  let cinfo = getCurrentCanvasInfo xstate 
+      SelectState txoj = get xournalstate xstate 
+      Just (n,tpage) = tx_selectpage txoj
+  case strokes (tp_firstlayer tpage) of 
+    Left _ -> liftIO $ putStrLn "no stroke selection 2 "
+    Right alist -> do 
+      let -- newlayer = Left . concat . getA $ alist
+          alist' = fmapAL id 
+                     (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
+          newlayer = Right alist'
+          newpage = pageBBoxMapFromTempPageSelect 
+                    $ tpage {tp_firstlayer = LayerSelect newlayer} 
+          newpages = M.adjust (const newpage) n (tx_pages txoj)
+          newtxoj = TempXournalSelect newpages Nothing       
+          newxstate = set xournalstate (SelectState newtxoj) xstate
+          newxstate' = updatePageAll (SelectState newtxoj) newxstate 
+      putSt newxstate' 
+      -- let ui = get gtkUIManager newxstate'
+      -- liftIO $ toggleCutCopyDelete ui False 
+      invalidateAll 
+          
+
+changeStrokeColor :: PenColor -> StrokeBBox -> StrokeBBox
+changeStrokeColor pcolor str =
+  let Just cname = Map.lookup pcolor penColorNameMap 
+  in  str { strokebbox_color = cname } 
+      

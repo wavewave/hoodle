@@ -49,7 +49,6 @@ import Text.Xournal.Type
 import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Map
 import Graphics.Xournal.Type.Select
--- import Graphics.Xournal.Render.BBox
 
 import Data.IORef
 
@@ -118,7 +117,6 @@ viewAppendMode = do
 
 selectMode :: Iteratee MyEvent XournalStateIO ()
 selectMode = do 
-  -- liftIO $ putStrLn "selectMode"
   r1 <- await 
   case r1 of 
     PenDown cid pcoord -> do 
@@ -126,8 +124,7 @@ selectMode = do
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
         _ -> return () 
-    PenColorChanged c -> liftIO $ putStrLn "pencolor changed"
-    
+    PenColorChanged c -> selectPenColorChanged c
     _ -> defaultEventProcess r1
 
 defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 

@@ -10,6 +10,7 @@ import Application.HXournal.Device
 import Application.HXournal.Coroutine
 
 import Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk (get,set)
 
 import Control.Monad.Coroutine
 import Control.Monad.Trans 
@@ -21,6 +22,16 @@ import Prelude hiding ((.),id)
 
 import qualified Data.IntMap as M
 import Data.IORef 
+
+import System.FilePath
+
+setTitleFromFileName :: HXournalState -> IO () 
+setTitleFromFileName xstate = do 
+  case get currFileName xstate of
+    Nothing -> Gtk.set (get rootOfRootWindow xstate) 
+                       [ windowTitle := "untitled" ]
+    Just filename -> Gtk.set (get rootOfRootWindow xstate) 
+                             [ windowTitle := takeFileName filename] 
 
 newCanvasId :: CanvasInfoMap -> CanvasId 
 newCanvasId cmap = 

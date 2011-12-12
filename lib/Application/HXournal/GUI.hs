@@ -50,7 +50,8 @@ startGUI mfname = do
                          <*> get canvasInfoMap $ st1
   
 
-  Gtk.set window [ windowTitle := "test" ] 
+  -- Gtk.set window [ windowTitle := "test" ] 
+  setTitleFromFileName st1
   vbox <- vBoxNew False 0 
   
   let st2 = set frameState wconf 

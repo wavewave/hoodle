@@ -8,6 +8,7 @@ import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.File 
 import Application.HXournal.Iteratee.Draw
 import Application.HXournal.ModelAction.Page
+import Application.HXournal.ModelAction.Window
 import Application.HXournal.Builder 
 
 import Control.Monad.Trans
@@ -30,17 +31,9 @@ fileNew :: Iteratee MyEvent XournalStateIO ()
 fileNew = do 
     liftIO $ putStrLn "fileNew called"
     xstate <- getSt 
-    {-
-    let newxoj = mkXournalBBoxMapFromXournal defaultXournal 
-        newxojstate = ViewAppendState newxoj 
-    let xstate' = set currFileName Nothing 
-                  . set xournalstate newxojstate
-                  $ xstate 
-        cmap = get canvasInfoMap xstate'
-        cmap' = M.map (setPage newxojstate 0) cmap
-        xstate'' = set canvasInfoMap cmap' xstate' -}
     xstate' <- liftIO $ getFileContent Nothing xstate 
     putSt xstate' 
+    liftIO $ setTitleFromFileName xstate'
     invalidateAll 
 
 fileSave :: Iteratee MyEvent XournalStateIO () 
@@ -76,6 +69,7 @@ fileOpen = do
             xstate <- getSt 
             xstateNew <- liftIO $ getFileContent (Just filename) xstate
             putSt xstateNew 
+            liftIO $ setTitleFromFileName xstateNew             
             invalidateAll 
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
@@ -108,10 +102,12 @@ fileSaveAs = do
                                             $ XournalBBoxMap <$> tx_pages $ txoj 
             liftIO . L.writeFile filename . builder $ xoj
             putSt xstateNew                                     
+            liftIO $ setTitleFromFileName xstateNew 
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileSaveAs"
     return ()
+
 
 
 

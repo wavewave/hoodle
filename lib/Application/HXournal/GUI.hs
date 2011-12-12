@@ -16,6 +16,7 @@ import Application.HXournal.ModelAction.File
 import Application.HXournal.ModelAction.Window
 
 import Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk (get,set)
 
 import qualified Control.Monad.State as St
 import Control.Monad.IO.Class
@@ -34,19 +35,22 @@ import Text.Xournal.Type
 import Graphics.Xournal.Type.Map
 import qualified Text.Xournal.Parse as P
 
-startGUI :: FilePath -> IO () 
-startGUI fname = do 
+startGUI :: Maybe FilePath -> IO () 
+startGUI mfname = do 
   initGUI
+  window <- windowNew   
+  
   devlst <- initDevice 
-  (tref,sref) <- initCoroutine devlst 
+  (tref,sref) <- initCoroutine devlst window
   st0 <- readIORef sref 
-  st1 <- getFileContent fname st0
+  st1 <- getFileContent mfname st0
   writeIORef sref st1
   (winCvsArea, wconf) <- constructFrame 
                          <$> get frameState 
                          <*> get canvasInfoMap $ st1
   
-  window <- windowNew 
+
+  Gtk.set window [ windowTitle := "test" ] 
   vbox <- vBoxNew False 0 
   
   let st2 = set frameState wconf 

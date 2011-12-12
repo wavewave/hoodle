@@ -30,6 +30,7 @@ fileNew :: Iteratee MyEvent XournalStateIO ()
 fileNew = do 
     liftIO $ putStrLn "fileNew called"
     xstate <- getSt 
+    {-
     let newxoj = mkXournalBBoxMapFromXournal defaultXournal 
         newxojstate = ViewAppendState newxoj 
     let xstate' = set currFileName Nothing 
@@ -37,8 +38,9 @@ fileNew = do
                   $ xstate 
         cmap = get canvasInfoMap xstate'
         cmap' = M.map (setPage newxojstate 0) cmap
-        xstate'' = set canvasInfoMap cmap' xstate'
-    putSt xstate'' 
+        xstate'' = set canvasInfoMap cmap' xstate' -}
+    xstate' <- liftIO $ getFileContent Nothing xstate 
+    putSt xstate' 
     invalidateAll 
 
 fileSave :: Iteratee MyEvent XournalStateIO () 
@@ -72,7 +74,7 @@ fileOpen = do
           Just filename -> do 
             liftIO $ putStrLn $ show filename 
             xstate <- getSt 
-            xstateNew <- liftIO $ getFileContent filename xstate
+            xstateNew <- liftIO $ getFileContent (Just filename) xstate
             putSt xstateNew 
             invalidateAll 
         liftIO $ widgetDestroy dialog

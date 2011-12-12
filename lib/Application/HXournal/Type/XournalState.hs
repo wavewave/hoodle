@@ -41,6 +41,7 @@ data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _frameState :: WindowConfig 
                                    , _rootWindow :: Widget
                                    , _rootContainer :: Box
+                                   , _rootOfRootWindow :: Window
                                    , _currentPenDraw :: PenDraw
                                    , _clipboard :: Clipboard
                                    , _callBack ::  MyEvent -> IO ()
@@ -63,6 +64,7 @@ emptyHXournalState =
   , _frameState = error "emptyHXournalState.frameState" 
   , _rootWindow = error "emtpyHXournalState.rootWindow"
   , _rootContainer = error "emptyHXournalState.rootContainer"
+  , _rootOfRootWindow = error "emptyHXournalState.rootOfRootWindow"
   , _currentPenDraw = emptyPenDraw 
   , _clipboard = emptyClipboard
   , _callBack = error "emtpyHxournalState.callBack"

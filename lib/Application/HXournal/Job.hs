@@ -7,10 +7,10 @@ import Application.HXournal.Builder
 import qualified Data.ByteString.Lazy as L
 import Text.Xournal.Parse
 
-startJob :: FilePath -> IO () 
-startJob fname = do 
+startJob :: Maybe FilePath -> IO () 
+startJob mfname = do 
   putStrLn "job started"
-  startGUI fname
+  startGUI mfname
 
 startTestBuilder :: FilePath -> IO () 
 startTestBuilder fname = do 

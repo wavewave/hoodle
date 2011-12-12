@@ -4,13 +4,10 @@ import Application.HXournal.ProgType
 import Application.HXournal.Job
 
 commandLineProcess :: Hxournal -> IO ()
-commandLineProcess (Test fname) = do 
+commandLineProcess (Test mfname) = do 
   putStrLn "test called"
-  startJob fname
-{- commandLineProcess (MakeSVG fname) = do 
-  putStrLn "makeSVG is called"
-  startMakeSVG fname -}
-commandLineProcess (TestBuilder fname) = do 
+  startJob mfname
+{- commandLineProcess (TestBuilder fname) = do 
   putStrLn "testbuilder is called"
-  startTestBuilder fname 
+  startTestBuilder fname -}
   

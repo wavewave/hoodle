@@ -67,12 +67,13 @@ guiProcess = do
   mapM_ f assocs
   sequence_ (repeat dispatchMode)
 
-initCoroutine :: DeviceList -> IO (TRef,SRef)
-initCoroutine devlst = do 
+initCoroutine :: DeviceList -> Window -> IO (TRef,SRef)
+initCoroutine devlst window = do 
   let st0 = (emptyHXournalState :: HXournalState)
   sref <- newIORef st0
   tref <- newIORef (undefined :: SusAwait)
   let st1 = set deviceList devlst  
+            . set rootOfRootWindow window 
             . set callBack (bouncecallback tref sref) $ st0 
   initcvs <- initCanvasInfo st1 1 
   let initcmap = M.insert (get canvasId initcvs) initcvs M.empty

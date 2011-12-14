@@ -6,6 +6,8 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Event
 
 import Application.HXournal.Coroutine.Callback
+
+import Application.HXournal.Config 
 import Application.HXournal.Device
 import Application.HXournal.Coroutine
 import Application.HXournal.GUI.Menu
@@ -27,8 +29,8 @@ startGUI :: Maybe FilePath -> IO ()
 startGUI mfname = do 
   initGUI
   window <- windowNew   
-  
-  devlst <- initDevice 
+  cfg <- loadConfigFile   
+  devlst <- initDevice cfg 
   (tref,sref) <- initCoroutine devlst window
   st0 <- readIORef sref 
   st1 <- getFileContent mfname st0

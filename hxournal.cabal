@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.5.0.0
+Version:	0.5.0.999
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 License: 	BSD3
@@ -35,10 +35,10 @@ Library
                      filepath == 1.*, 
                      strict == 0.3.*,
                      gtk == 0.12.*, 
-                     cairo == 0.12.*,  
+                     cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-parser == 0.2.*,
+                     xournal-parser == 0.2.*, 
                      xournal-render == 0.2.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -46,7 +46,10 @@ Library
                      bytestring == 0.9.*, 
                      double-conversion == 0.2.*,
                      fclabels == 1.0.*,
-                     cmdargs >= 0.7 && <= 0.10
+                     cmdargs >= 0.7 && <= 0.10,
+                     configurator == 0.1.*
+
+                     -- >= 0.1 && < 0.3
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job
@@ -88,6 +91,7 @@ Library
                    Application.HXournal.Device
                    Application.HXournal.Builder 
                    Application.HXournal.Accessor
+                   Application.HXournal.Config
   Other-Modules: 
                    Paths_hxournal
   c-sources: 

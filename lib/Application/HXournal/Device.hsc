@@ -5,12 +5,17 @@
 
 module Application.HXournal.Device where
 
+import Application.HXournal.Config
+import Data.Configurator.Types
+
+
 import Control.Applicative 
 import Control.Monad.Reader
 
 import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.C
+import Foreign.C.String 
 import Foreign.Storable
 
 import Graphics.UI.Gtk
@@ -34,14 +39,27 @@ data PointerCoord = PointerCoord { pointerType :: PointerType
 
 
 foreign import ccall "c_initdevice.h initdevice" c_initdevice
-  :: Ptr CInt -> Ptr CInt -> Ptr CInt -> IO ()
+  :: Ptr CInt -> Ptr CInt -> Ptr CInt -> CString -> CString -> CString -> IO ()
 
-initDevice :: IO DeviceList  
-initDevice = 
+initDevice :: Config -> IO DeviceList  
+initDevice cfg = do 
+  (mcore,mstylus,meraser) <- getPenDevConfig cfg 
+  putStrLn $ show mstylus 
   with 0 $ \pcore -> 
-  with 0 $ \pstylus -> 
-  with 0 $ \peraser -> do 
-        c_initdevice pcore pstylus peraser
+    with 0 $ \pstylus -> 
+      with 0 $ \peraser -> do 
+        pcorename <- case mcore of 
+                       Nothing -> newCString "Core Pointer"
+                       Just core -> newCString core
+        pstylusname <- case mstylus of 
+                         Nothing -> newCString "stylus"
+                         Just spen -> newCString spen
+        perasername <- case meraser of 
+                         Nothing -> newCString "eraser"
+                         Just seraser -> newCString seraser 
+                         
+        c_initdevice pcore pstylus peraser pcorename pstylusname perasername
+        
         core_val <- peek pcore
         stylus_val <- peek pstylus
         eraser_val <- peek peraser

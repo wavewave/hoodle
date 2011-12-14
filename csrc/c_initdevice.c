@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
-void initdevice( int* core, int* stylus, int* eraser )
+void initdevice( int* core, int* stylus, int* eraser, 
+                 char* corepointername, char* stylusname, char* erasername
+               )
 {
   GList* dev_list;
   GdkDevice* device;
@@ -19,15 +21,21 @@ void initdevice( int* core, int* stylus, int* eraser )
       // #endif
       gdk_device_set_mode(device, GDK_MODE_SCREEN);
 
-      printf("   yeah this is xinput device %s \n", device -> name);
-      if( !strcmp (device->name, "stylus") )
+      printf("This is xinput device %s \n", device -> name);
+      if( !strcmp (device->name, stylusname) ) {
+        printf("got stylus\n");   
         (*stylus) = (int) device; 
-      if( !strcmp (device->name, "eraser") )
+      } 
+      if( !strcmp (device->name, erasername) ) { 
+        printf("got eraser\n");
         (*eraser) = (int) device;
+      } 
     } 
     else { 
-      if( !strcmp (device->name, "Core Pointer") )
+      if( !strcmp (device->name, corepointername) ) { 
+        printf("got Core Pointer\n"); 
         (*core) = (int) device; 
+      } 
     } 
     dev_list = dev_list->next; 
   }

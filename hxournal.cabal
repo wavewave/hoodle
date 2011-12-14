@@ -2,6 +2,7 @@ Name:		hxournal
 Version:	0.5.0.999
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
+Homepage:       http://ianwookim.org/hxournal
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -13,6 +14,10 @@ Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
                 resource/*.png
                 CHANGES
+Source-repository head
+  type: git
+  location: https://www.github.com/wavewave/hxournal
+
 
 Executable hxournal
   Main-is: hxournal.hs

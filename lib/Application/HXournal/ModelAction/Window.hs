@@ -62,7 +62,19 @@ initCanvasInfo xstate cid = do
       return ()
     -}  
     widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
-    widgetSetExtensionEvents canvas [ExtensionEventsAll]
+    -- widgetSetExtensionEvents canvas [ExtensionEventsAll]
+    -- widgetSetExtensionEvents canvas 
+    let ui = get gtkUIManager xstate 
+    agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                      case x of 
+                        [] -> error "No action group? "
+                        y:_ -> return y )
+    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                          return (castToToggleAction x) )
+    b <- liftIO $ toggleActionGetActive uxinputa
+    if b
+      then widgetSetExtensionEvents canvas [ExtensionEventsAll]
+      else widgetSetExtensionEvents canvas [ExtensionEventsNone]
 
     afterValueChanged hadj $ do 
       v <- adjustmentGetValue hadj 

@@ -10,6 +10,7 @@ import Application.HXournal.Type.Clipboard
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
 
+import Application.HXournal.GUI.Menu
 import Application.HXournal.Coroutine.Callback
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Pen
@@ -60,21 +61,29 @@ initCoroutine devlst window = do
   let st0 = (emptyHXournalState :: HXournalState)
   sref <- newIORef st0
   tref <- newIORef (undefined :: SusAwait)
-  let st1 = set deviceList devlst  
+  (r,st') <- St.runStateT (resume guiProcess) st0 
+  writeIORef sref st' 
+  case r of 
+    Left aw -> do 
+      writeIORef tref aw 
+    Right _ -> error "what?"
+
+  let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
-            . set callBack (bouncecallback tref sref) $ st0 
+            . set callBack (bouncecallback tref sref) 
+            $ st' 
+  writeIORef sref st0new            
+  ui <- getMenuUI tref sref    
+  putStrLn "hi"  
+  let st1 = set gtkUIManager ui st0new
+
   initcvs <- initCanvasInfo st1 1 
   let initcmap = M.insert (get canvasId initcvs) initcvs M.empty
   let startingXstate = set currentCanvas (get canvasId initcvs)
                        . set canvasInfoMap initcmap 
                        . set frameState (Node 1)
                        $ st1
-  (r,st') <- St.runStateT (resume guiProcess) startingXstate 
-  writeIORef sref st' 
-  case r of 
-    Left aw -> do 
-      writeIORef tref aw 
-    Right _ -> error "what?"
+  writeIORef sref startingXstate   
   return (tref,sref)
 
 initialize :: Iteratee MyEvent XournalStateIO ()
@@ -199,4 +208,23 @@ menuEventProcess MenuPageHeight = pageZoomChange FitHeight
 menuEventProcess MenuHSplit = eitherSplit SplitHorizontal
 menuEventProcess MenuVSplit = eitherSplit SplitVertical
 menuEventProcess MenuDelCanvas = deleteCanvas
+menuEventProcess MenuUseXInput = do 
+  -- putStrLn "Use X Input clicked" 
+  xstate <- getSt 
+  let ui = get gtkUIManager xstate 
+  agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                    case x of 
+                      [] -> error "No action group? "
+                      y:_ -> return y )
+  uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                        return (castToToggleAction x) )
+  b <- liftIO $ toggleActionGetActive uxinputa
+  -- liftIO $ putStrLn $ "bool = " ++ show b 
+  let cmap = get canvasInfoMap xstate
+      canvases = map (get drawArea) . M.elems $ cmap 
+  
+  if b
+    then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
+    else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
+         
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 

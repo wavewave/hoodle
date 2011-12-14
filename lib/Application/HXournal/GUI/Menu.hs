@@ -425,7 +425,10 @@ getMenuUI tref sref = do
   setdefopta <- actionNewAndRegister "SETDEFOPTA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultOption)
   
   -- options menu 
-  uxinputa <- actionNewAndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
+  uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
+  uxinputa `on` actionToggled $ do 
+    bouncecallback tref sref (Menu MenuUseXInput)
+--               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- actionNewAndRegister "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing (justMenu MenuPressureSensitivity)
@@ -462,12 +465,15 @@ getMenuUI tref sref = do
         , shpreca, rulera, clra, penopta  {- selregna, selrecta, vertspa, handa, -}
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , uxinputa, dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
+        {- , uxinputa, -} 
+        , dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
         , abouta 
         , defaulta         
         ] 
+    
+  actionGroupAddAction agr uxinputa 
   actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode tref sref)
@@ -485,7 +491,8 @@ getMenuUI tref sref = do
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , uxinputa, dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
+        {- , uxinputa -} 
+        , dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
         , abouta 
@@ -494,6 +501,7 @@ getMenuUI tref sref = do
       enabledActions = 
         [ opena, savea, saveasa, quita, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha  -- , selrecta
+        -- , uxinputa 
         ]
   
   mapM_ (\x->actionSetSensitive x True) enabledActions  

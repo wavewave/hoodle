@@ -44,6 +44,11 @@ data Background = Background { bkg_type :: !S.ByteString
                              , bkg_color :: !S.ByteString 
                              , bkg_style :: !S.ByteString 
                              }
+                | BackgroundPdf { bkg_type :: S.ByteString 
+                                , bkg_domain :: Maybe S.ByteString
+                                , bkg_filename :: Maybe S.ByteString
+                                , bkg_pageno :: Int
+                                }
                 deriving Show 
 
 data Xournal = Xournal { xoj_title :: !Title, xoj_pages :: ![Page] }

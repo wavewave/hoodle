@@ -6,7 +6,8 @@ import Control.Applicative hiding (many)
 
 
 import Data.Attoparsec
-import Data.Attoparsec.Char8 (char, double, skipSpace, isHorizontalSpace)
+import Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
+                             , isHorizontalSpace)
 import qualified Data.ByteString.Char8 as B hiding (map) 
 
 
@@ -94,20 +95,20 @@ trim = trim_starting_space
 
 parser_xournal :: Parser Xournal
 parser_xournal = do trim
-                    xmlheader
+                    xmlheader <?> "xmlheader"
                     trim
-                    xournal
+                    xournal <?> "xournal"
                   
 
 xournal :: Parser Xournal 
 xournal = do trim 
-             xournalheader
+             xournalheader <?> "xournalheader"
              trim
-             t <- title
+             t <- title <?> "title"
              trim
              (try (preview >> return ())
               <|> return ()) 
-             pgs <- many1 page
+             pgs <- many1 (page <?> "page")
              trim
              xournalclose 
              return $ Xournal  t pgs 
@@ -116,7 +117,7 @@ page :: Parser Page
 page = do trim 
           dim <- pageheader
           trim 
-          bkg <- background 
+          bkg <- background <?> "background"
           trim 
           layers <- many1 layer
           trim
@@ -204,29 +205,59 @@ layerclose :: Parser B.ByteString
 layerclose = string "</layer>"
 
 background :: Parser Background 
-background = do trim
-                backgroundheader
-                trim 
-                string "type=" 
-                char '"'
-                typ <- alphabet
-                char '"'
-                trim 
-                string "color="
-                char '"' 
-                col <- alphanumsharp 
-                char '"'
-                trim 
-                string "style="
-                trim 
-                char '"'
-                sty <- alphabet 
-                char '"' 
-                trim 
-                takeTill (inClass "/>") -- ( many . satisfy . notInClass ) "/>"
-                backgroundclose
-                return $ Background typ col sty 
-    
+background = do 
+    trim
+    backgroundheader
+    trim 
+    string "type=" 
+    char '"'
+    typ <- alphabet
+    char '"'
+    case typ of 
+      "solid" -> do 
+        trim 
+        string "color="
+        char '"' 
+        col <- alphanumsharp 
+        char '"'
+        trim 
+        string "style="
+        trim 
+        char '"'
+        sty <- alphabet 
+        char '"' 
+        trim 
+        takeTill (inClass "/>") -- ( many . satisfy . notInClass ) "/>"
+        backgroundclose
+        return $ Background typ col sty 
+      "pdf" -> do     
+        trim <?> "trim0"
+        (mdomain,mfilename) <- (try $ do  
+                                 string "domain="
+                                 char '"' 
+                                 domain <- alphabet 
+                                 char '"'
+                                 trim <?> "trim1"
+                                 string "filename="
+                                 trim <?> "trim2"
+                                 char '"'
+                                 filename <- parseFileName <?> "filename parse"
+                                 char '"' 
+                                 return (Just domain, Just filename))
+                               <|> return (Nothing,Nothing)
+        trim <?> "trim3"
+        string "pageno="
+        trim <?> "trim4"
+        char '"' 
+        pnum <- decimal <?> "decimal"
+        char '"'
+        trim 
+        takeTill (inClass "/>")  <?> "here takeTill"
+        backgroundclose
+        return $ BackgroundPdf typ mdomain mfilename pnum 
+        
+        
+        
 alphabet :: Parser B.ByteString
 alphabet = takeWhile1 (\w -> (w >= 65 && w <= 90) || (w >= 97 && w <= 122)) 
 
@@ -235,6 +266,14 @@ alphanumsharp = takeWhile1 (\w -> (w >= 65 && w <= 90)
                                   || (w >= 97 && w <= 122) 
                                   || ( w >= 48 && w<= 57 ) 
                                   || ( w== 35) ) 
+
+-- | need to be reimplemented
+parseFileName :: Parser B.ByteString
+parseFileName = takeTill (inClass ['"'])
+                -- takeWhilw1 (\w -> (w >= 65 && w <= 90) 
+                --                   || (w >= 97 && w <= 122)
+                --                   || (w >= 48 && w <= 57)
+                --                   || (w == 35) 
 
 backgroundheader :: Parser B.ByteString
 backgroundheader = string "<background"

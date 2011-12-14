@@ -27,18 +27,24 @@ drawOneStrokeCurve ((x0 :!: y0) : xs) = do
   mapM_ f xs 
     where f (x :!: y) = x `seq` y `seq` lineTo x y 
 
+-- | general background drawing (including pdf file)
+
 cairoDrawBackground :: IPage a => a -> Render () 
 cairoDrawBackground page = do 
-  let Background typ col sty = pageBkg page
-      Dim w h = pageDim page  
-  cairoDrawBkg (Dim w h) (Background typ col sty)
-{-  let c = M.lookup col predefined_bkgcolor  
-  case c of 
-    Just (r,g,b,a) -> setSourceRGB r g b 
-    Nothing        -> setSourceRGB 1 1 1 
-  rectangle 0 0 w h 
-  fill
-  cairoDrawRuling w h sty -}
+  let Dim w h = pageDim page 
+  case pageBkg page of 
+    Background typ col sty -> cairoDrawBkg (Dim w h) (Background typ col sty)
+    bpdf@(BackgroundPdf _ mdomain mfilename pagenum) -> 
+      cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
+
+
+cairoDrawPdfBkg :: Dimension -> Maybe S.ByteString 
+                   -> Maybe S.ByteString -> Int 
+                   -> Render () 
+cairoDrawPdfBkg = do 
+  error "pdf bkg is not implemented"
+
+
 
 cairoDrawBkg :: Dimension -> Background -> Render () 
 cairoDrawBkg (Dim w h) (Background typ col sty) = do 

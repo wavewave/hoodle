@@ -1,5 +1,5 @@
 Name:		xournal-render
-Version:	0.2.0.0
+Version:	0.2.0.999
 Synopsis:       Xournal file renderer
 Description: 	Xournal file renderer
 License: 	BSD3
@@ -19,10 +19,11 @@ Library
                  base == 4.*, 
                  mtl == 2.*, 
                  containers == 0.4.*, 
-                 xournal-parser == 0.2.*, 
+                 xournal-parser >= 0.2.0.999 && < 0.3, 
                  cairo == 0.12.*, 
                  strict == 0.3.*, 
-                 bytestring == 0.9.*
+                 bytestring == 0.9.*,
+                 poppler == 0.12.*
   Exposed-Modules: 
                    Graphics.Xournal.Render
                    Graphics.Xournal.Render.BBox
@@ -30,9 +31,5 @@ Library
                    Graphics.Xournal.Type
                    Graphics.Xournal.Type.Map
                    Graphics.Xournal.Type.Select
+                   Graphics.Xournal.Type.Generic
 
-
-
-
- 
-		 

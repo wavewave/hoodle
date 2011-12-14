@@ -61,7 +61,6 @@ data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
                 deriving (Show)
                          
 
-
 instance IStroke StrokeBBox where 
   strokeTool = strokebbox_tool
   strokeColor = strokebbox_color

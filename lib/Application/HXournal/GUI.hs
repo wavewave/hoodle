@@ -4,6 +4,9 @@ module Application.HXournal.GUI where
 
 import Application.HXournal.Type.XournalState 
 import Application.HXournal.Type.Event
+import Application.HXournal.Type.Canvas
+
+import qualified Data.IntMap as M
 
 import Application.HXournal.Coroutine.Callback
 
@@ -51,6 +54,20 @@ startGUI mfname = do
             . set rootContainer (castToBox vbox) $ st2
   writeIORef sref st3
   
+  xinputbool <- getXInputConfig cfg 
+  agr <- uiManagerGetActionGroups ui >>= \x ->
+           case x of 
+             [] -> error "No action group? "
+             y:_ -> return y 
+  uxinputa <- actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                return (castToToggleAction x) 
+  toggleActionSetActive uxinputa xinputbool
+  let canvases = map (get drawArea) . M.elems . get canvasInfoMap $ st3
+  if xinputbool
+      then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
+      else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
+  
+
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
                   Just x  -> x 

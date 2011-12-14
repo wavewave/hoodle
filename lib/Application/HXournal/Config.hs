@@ -31,4 +31,14 @@ getPenDevConfig c = do
   meraser <- C.lookup c "eraser"
   return (mcore,mstylus,meraser)
   
+getXInputConfig :: Config -> IO Bool 
+getXInputConfig c = do 
+  (mxinput :: Maybe String) <- C.lookup c "xinput"
+  case mxinput of
+    Nothing -> return False
+    Just str -> case str of 
+                  "true" -> return True
+                  "false" -> return False 
+                  _ -> error "cannot understand xinput in configfile"
+
 

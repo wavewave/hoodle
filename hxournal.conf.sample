@@ -1,0 +1,7 @@
+# configuration sample
+
+core = "Core Pointer"
+stylus = "stylus"
+eraser = "eraser"
+
+xinput = "true"

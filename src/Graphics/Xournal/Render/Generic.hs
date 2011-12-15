@@ -12,7 +12,6 @@ import Graphics.Rendering.Cairo
 import Graphics.Xournal.Render 
 import Graphics.Xournal.Render.BBox
 
-
 class Renderable a where 
   cairoRender :: a -> Render ()
                  
@@ -83,8 +82,8 @@ cairoOptionPage :: ( RenderOptionable (b,Dimension)
                    -> GPage b s a 
                    -> Render ()
 cairoOptionPage (optb,opta) p = do 
-  cairoRenderOption optb (gbackground p, gdimension p)
-  mapM_ (cairoRenderOption opta) (glayers p)
+    cairoRenderOption optb (gbackground p, gdimension p)
+    mapM_ (cairoRenderOption opta) (glayers p)
   
 instance ( RenderOptionable (b,Dimension)
          , RenderOptionable a

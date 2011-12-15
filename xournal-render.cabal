@@ -28,9 +28,11 @@ Library
                    Graphics.Xournal.Render
                    Graphics.Xournal.Render.BBox
                    Graphics.Xournal.Render.Generic
+                   Graphics.Xournal.Render.PDFBackground
                    Graphics.Xournal.HitTest
                    Graphics.Xournal.Type
                    Graphics.Xournal.Type.Map
                    Graphics.Xournal.Type.Select
                    Graphics.Xournal.Type.Generic
+                  
 

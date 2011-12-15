@@ -44,8 +44,6 @@ cairoDrawPdfBkg :: Dimension -> Maybe S.ByteString
 cairoDrawPdfBkg = do 
   error "pdf bkg is not implemented"
 
-
-
 cairoDrawBkg :: Dimension -> Background -> Render () 
 cairoDrawBkg (Dim w h) (Background typ col sty) = do 
   let c = M.lookup col predefined_bkgcolor  
@@ -55,7 +53,10 @@ cairoDrawBkg (Dim w h) (Background typ col sty) = do
   rectangle 0 0 w h 
   fill
   cairoDrawRuling w h sty
-
+cairoDrawBkg (Dim w h) (BackgroundPdf typ mdomain mfilename pagenum) = do 
+  setSourceRGBA 1 1 1 1
+  rectangle 0 0 w h 
+  fill
 
 cairoDrawRuling :: Double -> Double -> S.ByteString -> Render () 
 cairoDrawRuling w h style = do

@@ -35,9 +35,9 @@ type TPageBBoxMap = GPage Background IntMap TLayerBBox
 
 type TXournalBBoxMap = GXournal IntMap TPageBBoxMap
 
-type TPageBBoxMapBuffer b = GPage (GBackground b) IntMap TLayerBBox
+type TPageBBoxMapBkg b = GPage (GBackground b) IntMap TLayerBBox
 
-type TXournalBBoxMapBuffer b = GXournal IntMap (TPageBBoxMapBuffer b)
+type TXournalBBoxMapBkg b = GXournal IntMap (TPageBBoxMapBkg b)
 
 
 

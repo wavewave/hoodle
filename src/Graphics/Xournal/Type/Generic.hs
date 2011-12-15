@@ -71,12 +71,58 @@ gbackground (GPage _ b _) = b
 glayers :: GPage b s a -> s a 
 glayers (GPage _ _ lst) = lst
 
+gstrokes :: GLayer s a -> s a 
+gstrokes (GLayer lst) = lst 
+
 gbkgbuffer :: GBackground b -> b 
 gbkgbuffer (GBackground buf) = buf
 
 gselectGetAll :: GSelect a b -> a 
-gselectGetAll (GSelect all _) = all 
+gselectGetAll (GSelect xs _) = xs 
 
 gselectGetSelected :: GSelect a b -> b 
 gselectGetSelected (GSelect _ sel) = sel
 
+class GStrokeable a where
+  gFromStroke :: Stroke -> a 
+  gToStroke :: a -> Stroke 
+  
+instance GStrokeable Stroke where
+  gFromStroke = id
+  gToStroke = id 
+  
+instance GStrokeable StrokeBBox where  
+  gFromStroke = mkStrokeBBoxFromStroke 
+  gToStroke = strokeFromStrokeBBox
+  
+class GListable s where  
+  gFromList :: [a] -> s a 
+  gToList :: s a -> [a]
+  
+instance GListable [] where
+  gFromList = id 
+  gToList = id 
+  
+instance GListable IntMap where 
+  gFromList = Data.IntMap.fromList . zip [0..] 
+  gToList = Data.IntMap.elems 
+  
+class GBackgroundable b where
+  gFromBackground :: Background -> b 
+  gToBackground :: b -> Background
+  
+instance GBackgroundable Background where  
+  gFromBackground = id 
+  gToBackground = id
+  
+fromLayer :: (GStrokeable a, GListable s) => Layer -> GLayer s a 
+fromLayer = GLayer . gFromList . Prelude.map gFromStroke . layer_strokes 
+
+fromPage :: (GStrokeable a, GBackgroundable b, 
+             GListable s, GListable s') => 
+            Page -> GPage b s' (GLayer s a)  
+fromPage p = let bkg = gFromBackground $ page_bkg p 
+                 dim = page_dim p 
+                 ls =  gFromList . Prelude.map fromLayer . page_layers $ p 
+             in  GPage dim bkg ls 
+                 

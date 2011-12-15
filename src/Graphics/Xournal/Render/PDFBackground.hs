@@ -1,5 +1,6 @@
 {-# LANGUAGE ExistentialQuantification, OverloadedStrings, 
-             FlexibleInstances, FlexibleContexts #-}
+             FlexibleInstances, FlexibleContexts,  
+             TypeFamilies #-}
 
 module Graphics.Xournal.Render.PDFBackground where
 
@@ -17,8 +18,6 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 
 import Graphics.Rendering.Cairo
--- import Control.Monad.Trans
--- import Prelude -- hiding (putStrLn)
 
 data BackgroundPDFDrawable = 
   BkgPDFSolid { bkgpdf_color :: ByteString
@@ -88,21 +87,8 @@ mkBkgPDF bkg = do
             Just doc -> do 
               popplerGetPageFromDoc doc pn
             Nothing -> return Nothing 
-          return $ BkgPDFPDF (Just oldd) (Just oldf) pn mpage
-
+          return $ BkgPDFPDF md mf pn mpage
             
-      -- not finished yet
-            
-            
-      -- return (newbkgpdf)
-
-          -- not supporting changing file. 
-            --let (nd,nf) = case (md,mf) of 
-            --               (Nothing,Nothing) -> (oldd,oldf)
-            --                (Just d,Nothing)  -> (oldd,oldf)
-            --                (Nothing,Just f)  -> (oldd,oldf)
-            --                (Just d,Just f)   -> (oldd,oldf)
-            -- put $ Just (Context nd nf olddoc)
 popplerGetDocFromFile :: (MonadIO m) => 
                          ByteString -> m (Maybe Poppler.Document)
 popplerGetDocFromFile fp = 
@@ -136,3 +122,27 @@ cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p,dim) = do
 instance Renderable (BackgroundPDFDrawable,Dimension) where
   cairoRender = cairoRenderBackgroundPDFDrawable
   
+data BkgPDFOption = DrawBkgPDF | DrawWhite
+
+instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
+  type RenderOption (BackgroundPDFDrawable,Dimension) = BkgPDFOption 
+  cairoRenderOption DrawBkgPDF (b,dim) = cairoRenderBackgroundPDFDrawable (b,dim)
+  cairoRenderOption DrawWhite (_,Dim w h) = do 
+    setSourceRGBA 1 1 1 1
+    rectangle 0 0 w h 
+    fill 
+    
+instance (RenderOptionable (b,Dimension)) => 
+         RenderOptionable (GBackground b,Dimension) where
+  type RenderOption (GBackground b,Dimension) = RenderOption (b,Dimension)
+  cairoRenderOption opt (GBackground b,dim)= cairoRenderOption opt (b,dim)
+
+
+
+
+
+
+
+
+
+

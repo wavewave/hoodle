@@ -1,32 +1,39 @@
-{-# LANGUAGE ExistentialQuantification, OverloadedStrings #-}
+{-# LANGUAGE ExistentialQuantification, OverloadedStrings, 
+             FlexibleInstances, FlexibleContexts #-}
 
 module Graphics.Xournal.Render.PDFBackground where
 
 import Control.Monad.State
 
-import Data.ByteString
-import Data.ByteString.Char8
+import Data.Monoid 
+import Data.ByteString hiding (putStrLn)
+import qualified Data.ByteString.Char8 as C
 import Graphics.Xournal.Type.Generic
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+import Graphics.Xournal.Render.Generic
+
 import Text.Xournal.Type
 
-import Control.Monad.Trans
-import Prelude hiding (putStrLn)
+import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+
+import Graphics.Rendering.Cairo
+-- import Control.Monad.Trans
+-- import Prelude -- hiding (putStrLn)
 
 data BackgroundPDFDrawable = 
   BkgPDFSolid { bkgpdf_color :: ByteString
               , bkgpdf_style :: ByteString
               }
-  | forall p. (Poppler.PageClass p) => 
+  | -- (Poppler.PageClass p) => 
     BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
               , bkgpdf_filename :: Maybe ByteString
               , bkgpdf_pageno :: Int 
-              , bkgpdf_popplerpage :: Maybe p 
+              , bkgpdf_popplerpage :: Maybe Poppler.Page -- Maybe p 
               } 
   
 data Context = Context { ctxt_domain :: ByteString
                        , ctxt_filename :: ByteString 
---                       , ctxt_doc :: Poppler.Document
+                       , ctxt_doc :: Maybe Poppler.Document
                        }
     
 type TPageBBoxMapBkgPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
@@ -64,22 +71,68 @@ mkBkgPDF bkg = do
     BkgPDFSolid _ _ -> return bkgpdf 
     BkgPDFPDF md mf pn _ -> do 
       mctxt <- get 
-      newbkgpdf <- case mctxt of
-                     Nothing -> do 
-                       case (md,mf) of 
-                         (Just d, Just f) -> do 
-                           put $ Just (Context d f)
-                           liftIO $ putStrLn "hey"
-                         _ -> return ()
-                       return bkgpdf
-                     Just (Context oldd oldf) -> do 
-                       -- not supporting changing file. 
-                       let (nd,nf) = case (md,mf) of 
-                                       (Nothing,Nothing) -> (oldd,oldf)
-                                       (Just d,Nothing)  -> (oldd,oldf)
-                                       (Nothing,Just f)  -> (oldd,oldf)
-                                       (Just d,Just f)   -> (oldd,oldf)
-                       put $ Just (Context nd nf)
-                       return $ BkgPDFPDF (Just nd) (Just nf) pn (Nothing :: Maybe Poppler.Page )  
+      case mctxt of
+        Nothing -> do 
+          case (md,mf) of 
+            (Just d, Just f) -> do 
+              liftIO $ putStrLn "hey"
+              mdoc <- popplerGetDocFromFile f
+              put $ Just (Context d f mdoc)
+              case mdoc of 
+                Just doc -> do  
+                  mpg <- popplerGetPageFromDoc doc pn 
+                  return (bkgpdf {bkgpdf_popplerpage = mpg}) 
+            _ -> return bkgpdf 
+        Just (Context oldd oldf olddoc) -> do 
+          mpage <- case olddoc of 
+            Just doc -> do 
+              popplerGetPageFromDoc doc pn
+            Nothing -> return Nothing 
+          return $ BkgPDFPDF (Just oldd) (Just oldf) pn mpage
+
+            
       -- not finished yet
-      return (newbkgpdf)
+            
+            
+      -- return (newbkgpdf)
+
+          -- not supporting changing file. 
+            --let (nd,nf) = case (md,mf) of 
+            --               (Nothing,Nothing) -> (oldd,oldf)
+            --                (Just d,Nothing)  -> (oldd,oldf)
+            --                (Nothing,Just f)  -> (oldd,oldf)
+            --                (Just d,Just f)   -> (oldd,oldf)
+            -- put $ Just (Context nd nf olddoc)
+popplerGetDocFromFile :: (MonadIO m) => 
+                         ByteString -> m (Maybe Poppler.Document)
+popplerGetDocFromFile fp = 
+  liftIO $ Poppler.documentNewFromFile 
+             (C.unpack ("file://localhost" `mappend` fp)) Nothing 
+             
+             
+popplerGetPageFromDoc :: (MonadIO m) => 
+                         Poppler.Document -> Int -> m (Maybe Poppler.Page)
+popplerGetPageFromDoc doc pn = do   
+  n <- liftIO $ Poppler.documentGetNPages doc  
+  liftIO $ putStrLn $ "pages : " ++ (show n)
+  liftIO $ putStrLn $ "current page = " ++ show pn
+  pg <- liftIO $ Poppler.documentGetPage doc (pn-1) 
+  return (Just pg)
+
+
+instance (Renderable (b,Dimension)) => 
+         Renderable (GBackground b,Dimension) where
+  cairoRender (GBackground b,dim) = cairoRender (b,dim)
+
+cairoRenderBackgroundPDFDrawable :: (BackgroundPDFDrawable,Dimension) 
+                                    -> Render ()
+cairoRenderBackgroundPDFDrawable (BkgPDFSolid c s,dim) = 
+  cairoRender (Background "solid" c s,dim)
+cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p,dim) = do
+  case p of 
+    Nothing -> return () 
+    Just pg -> PopplerPage.pageRender pg
+    
+instance Renderable (BackgroundPDFDrawable,Dimension) where
+  cairoRender = cairoRenderBackgroundPDFDrawable
+  

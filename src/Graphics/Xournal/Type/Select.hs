@@ -35,7 +35,7 @@ data TempPageSelect =
   }
 
 data LayerSelect = 
-  LayerSelect { strokes :: Either [StrokeBBox] (AlterList [StrokeBBox] Hitted)
+  LayerSelect { strokes :: Either [StrokeBBox] (AlterList [StrokeBBox] (Hitted StrokeBBox) )
               } 
 
 xournalSelectFromXournalBBoxMap :: XournalBBoxMap -> XournalSelect 

@@ -23,7 +23,8 @@ Library
                  cairo == 0.12.*, 
                  strict == 0.3.*, 
                  bytestring == 0.9.*,
-                 poppler == 0.12.*
+                 poppler == 0.12.*, 
+                 fclabels == 1.0.*
   Exposed-Modules: 
                    Graphics.Xournal.Render
                    Graphics.Xournal.Render.BBox
@@ -34,5 +35,6 @@ Library
                    Graphics.Xournal.Type.Map
                    Graphics.Xournal.Type.Select
                    Graphics.Xournal.Type.Generic
+                   Graphics.Xournal.Type.BBoxMapPDF
                   
 

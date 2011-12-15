@@ -40,11 +40,6 @@ instance (Renderable (b,Dimension), Renderable a, Foldable s)
          => Renderable (GPage b s a) where
   cairoRender = cairoPage 
 
-{-
-cairoXournal :: (Renderable a, Foldable s) =>
-                GXournal s a -> Render ()
-cairoXournal = mapM_ cairoRender . gpages 
--}
 
 class RenderOptionable a where   
   type RenderOption a :: *
@@ -58,13 +53,13 @@ instance RenderOptionable Stroke where
   type RenderOption Stroke = () 
   cairoRenderOption () = cairoRender
   
-data StrokeBBoxOption = DrawFull | DrawBoxOnly  
+data StrokeBBoxOption = DrawFull | DrawBoxOnly
+
 
 instance RenderOptionable StrokeBBox where
   type RenderOption StrokeBBox = StrokeBBoxOption
   cairoRenderOption DrawFull = cairoRender 
   cairoRenderOption DrawBoxOnly = cairoOneStrokeBBoxOnly
-
 
 cairoOptionLayer :: (RenderOptionable a, Foldable s) => 
                     RenderOption a -> GLayer s a -> Render () 
@@ -92,3 +87,14 @@ instance ( RenderOptionable (b,Dimension)
   type RenderOption (GPage b s a) = (RenderOption (b,Dimension), RenderOption a)
   cairoRenderOption = cairoOptionPage
             
+{-
+instance (Renderable (b,Dimension)) => 
+         Renderable (GBackground b,Dimension) where
+  cairoRender (GBackground b,dim) = cairoRender (b,dim)
+
+instance (RenderOptionable (b,Dimension)) => 
+         RenderOptionable (GBackground b,Dimension) where
+  type RenderOption (GBackground b,Dimension) = RenderOption (b,Dimension)
+  cairoRenderOption opt (GBackground b,dim)= cairoRenderOption opt (b,dim)
+-}
+

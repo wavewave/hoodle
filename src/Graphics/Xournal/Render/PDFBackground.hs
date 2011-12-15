@@ -9,7 +9,10 @@ import Control.Monad.State
 import Data.Monoid 
 import Data.ByteString hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C
+import Graphics.Xournal.Type
 import Graphics.Xournal.Type.Generic
+import Graphics.Xournal.Type.BBoxMapPDF
+
 import Graphics.Xournal.Render.Generic
 
 import Text.Xournal.Type
@@ -19,44 +22,30 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 
 import Graphics.Rendering.Cairo
 
-data BackgroundPDFDrawable = 
-  BkgPDFSolid { bkgpdf_color :: ByteString
-              , bkgpdf_style :: ByteString
-              }
-  | -- (Poppler.PageClass p) => 
-    BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
-              , bkgpdf_filename :: Maybe ByteString
-              , bkgpdf_pageno :: Int 
-              , bkgpdf_popplerpage :: Maybe Poppler.Page -- Maybe p 
-              } 
   
 data Context = Context { ctxt_domain :: ByteString
                        , ctxt_filename :: ByteString 
                        , ctxt_doc :: Maybe Poppler.Document
                        }
-    
-type TPageBBoxMapBkgPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
 
-type TXournalBBoxMapBkgPDF = TXournalBBoxMapBkg BackgroundPDFDrawable
 
-mkTXournalBBoxMapBkgPDF :: Xournal -> IO TXournalBBoxMapBkgPDF
-mkTXournalBBoxMapBkgPDF xoj = do 
+mkTXournalBBoxMapPDF :: Xournal -> IO TXournalBBoxMapPDF
+mkTXournalBBoxMapPDF xoj = do 
   let pgs = xoj_pages xoj 
-  npgs <- mkAllTPageBBoxMapBkgPDF pgs 
+  npgs <- mkAllTPageBBoxMapPDF pgs 
   return $ GXournal (gFromList npgs)
   
-mkAllTPageBBoxMapBkgPDF :: [Page] -> IO [TPageBBoxMapBkgPDF]
-mkAllTPageBBoxMapBkgPDF pgs = evalStateT (mapM mkPagePDF pgs) Nothing 
+mkAllTPageBBoxMapPDF :: [Page] -> IO [TPageBBoxMapPDF]
+mkAllTPageBBoxMapPDF pgs = evalStateT (mapM mkPagePDF pgs) Nothing 
 
 
-mkPagePDF :: Page -> StateT (Maybe Context) IO TPageBBoxMapBkgPDF
+mkPagePDF :: Page -> StateT (Maybe Context) IO TPageBBoxMapPDF
 mkPagePDF pg = do  
   let bkg = page_bkg pg
       dim = page_dim pg 
       ls = page_layers pg
   newbkg <- mkBkgPDF bkg
-  return $ GPage dim (GBackground newbkg) 
-                     (gFromList . Prelude.map fromLayer $ ls)
+  return $ GPage dim newbkg (gFromList . Prelude.map fromLayer $ ls)
   
 translateBkg :: Background -> BackgroundPDFDrawable
 translateBkg (Background _t c s) = BkgPDFSolid c s
@@ -106,10 +95,6 @@ popplerGetPageFromDoc doc pn = do
   return (Just pg)
 
 
-instance (Renderable (b,Dimension)) => 
-         Renderable (GBackground b,Dimension) where
-  cairoRender (GBackground b,dim) = cairoRender (b,dim)
-
 cairoRenderBackgroundPDFDrawable :: (BackgroundPDFDrawable,Dimension) 
                                     -> Render ()
 cairoRenderBackgroundPDFDrawable (BkgPDFSolid c s,dim) = 
@@ -119,10 +104,12 @@ cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p,dim) = do
     Nothing -> return () 
     Just pg -> PopplerPage.pageRender pg
     
+  
+
+
 instance Renderable (BackgroundPDFDrawable,Dimension) where
   cairoRender = cairoRenderBackgroundPDFDrawable
-  
-data BkgPDFOption = DrawBkgPDF | DrawWhite
+
 
 instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
   type RenderOption (BackgroundPDFDrawable,Dimension) = BkgPDFOption 
@@ -131,13 +118,21 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
     setSourceRGBA 1 1 1 1
     rectangle 0 0 w h 
     fill 
+
+
+
+cairoDrawPageBBoxPDF :: Maybe BBox -> TPageBBoxMapPDF -> Render ()
+cairoDrawPageBBoxPDF mbbox page = do 
+  cairoRender page 
+{-  case gbackground page of 
+    BkgPDFSolid c s -> do 
+      let bkg = Background "solid" c s 
+          bkg 
+      
+      page
+-}    
     
-instance (RenderOptionable (b,Dimension)) => 
-         RenderOptionable (GBackground b,Dimension) where
-  type RenderOption (GBackground b,Dimension) = RenderOption (b,Dimension)
-  cairoRenderOption opt (GBackground b,dim)= cairoRenderOption opt (b,dim)
-
-
+  
 
 
 

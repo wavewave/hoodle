@@ -38,12 +38,12 @@ hitTestLineStroke line1 str = test (strokeData str)
             
 mkHitTestAL :: (StrokeBBox -> Bool) 
             -> [StrokeBBox]
-            -> AlterList NotHitted Hitted 
+            -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 mkHitTestAL test strs = evalState (mkHitTestALState test strs) False
 
 mkHitTestALState :: (StrokeBBox -> Bool) 
                  -> [StrokeBBox]
-                 -> State Bool (AlterList NotHitted Hitted)
+                 -> State Bool (AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox))
 mkHitTestALState test strs = do 
   let (nhit,rest) = break test  strs
       (hit,rest') = break (not.test) rest 
@@ -56,15 +56,15 @@ mkHitTestALState test strs = do
 
 mkHitTestBBox :: ((Double,Double),(Double,Double))
                  -> [StrokeBBox]
-                 -> AlterList NotHitted Hitted 
+                 -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 mkHitTestBBox (p1,p2) = mkHitTestAL boxhittest 
   where boxhittest s = hitTestBBoxPoint (strokebbox_bbox s) p1
                        || hitTestBBoxPoint (strokebbox_bbox s) p2
 
-mkHitTestBBoxBBox :: BBox -> [StrokeBBox] -> AlterList NotHitted Hitted 
+mkHitTestBBoxBBox :: BBox -> [StrokeBBox] -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 mkHitTestBBoxBBox b = mkHitTestAL (hitTestBBoxBBox b . strokebbox_bbox) 
 
-mkHitTestInsideBBox :: BBox -> [StrokeBBox] -> AlterList NotHitted Hitted  
+mkHitTestInsideBBox :: BBox -> [StrokeBBox] -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 mkHitTestInsideBBox b = mkHitTestAL (hitTestInsideBBox b . strokebbox_bbox)
 
 hitTestInsideBBox :: BBox -> BBox -> Bool 
@@ -86,19 +86,19 @@ hitTestBBoxBBox b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lry
 
 mkHitTestStroke :: ((Double,Double),(Double,Double))
                 -> [StrokeBBox]
-                -> State Bool (AlterList NotHitted Hitted)
+                -> State Bool (AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox))
 mkHitTestStroke line = mkHitTestALState (hitTestLineStroke line)
   
 hitTestStrokes :: ((Double,Double),(Double,Double))
-               -> AlterList NotHitted Hitted 
-               -> State Bool (AlterList NotHitted StrokeHitted)
+               -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
+               -> State Bool (AlterList (NotHitted StrokeBBox) StrokeHitted)
 hitTestStrokes _ Empty = error "something is wrong, invariant broken"
 hitTestStrokes _ (n:-Empty) = return (n:-Empty)
 hitTestStrokes line (n:-h:-rest) = do 
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
   
-elimHitted :: AlterList NotHitted Hitted -> State (Maybe BBox) [StrokeBBox]
+elimHitted :: AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) -> State (Maybe BBox) [StrokeBBox]
 elimHitted Empty = error "something wrong in elimHitted"
 elimHitted (n:-Empty) = return (unNotHitted n)
 elimHitted (n:-h:-rest) = do  

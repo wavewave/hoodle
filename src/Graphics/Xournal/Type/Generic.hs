@@ -1,19 +1,45 @@
+{-# LANGUAGE TypeFamilies #-}
+
 module Graphics.Xournal.Type.Generic where
 
 import Data.IntMap 
 import Text.Xournal.Type
 import Graphics.Xournal.Type 
 
-data GXournal s a = GXournal (s a)  
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
 
-data GPage b s a = GPage Dimension b (s a)  
+import Data.Functor
 
-data GLayer s a = GLayer (s a)
+data GXournal s a = GXournal { gpages :: s a }  
 
-data GBackground b = GBackground b
+data GPage b s a = GPage { gdimension :: Dimension 
+                         , gbackground :: b 
+                         , glayers :: s a }  
 
-data GSelect a b = GSelect a b
+data GLayer s a = GLayer { gstrokes :: s a } 
 
+instance (Functor s) => Functor (GLayer s) where
+  fmap f (GLayer strs) = GLayer (fmap f strs)
+  
+instance (Functor s) => Functor (GPage b s) where
+  fmap f (GPage d b ls) = GPage d b (fmap f ls)
+  
+instance (Functor s) => Functor (GXournal s) where
+  fmap f (GXournal ps) = GXournal (fmap f ps)
+
+bkgchange :: (b -> b') -> GPage b s a -> GPage b' s a 
+bkgchange f p = p { gbackground = f (gbackground p) } 
+
+
+-- data GBackground b = GBackground b
+
+data GSelect a b = GSelect { gselectAll :: a 
+                           , gselectSelected :: b
+                           }
+
+-- $(mkLabels [''GXournal, ''GPage, ''GLayer, ''GSelect])
 
 type TLayerSimple = GLayer [] Stroke 
 
@@ -35,13 +61,13 @@ type TPageBBoxMap = GPage Background IntMap TLayerBBox
 
 type TXournalBBoxMap = GXournal IntMap TPageBBoxMap
 
-type TPageBBoxMapBkg b = GPage (GBackground b) IntMap TLayerBBox
+type TPageBBoxMapBkg b = GPage b IntMap TLayerBBox
 
 type TXournalBBoxMapBkg b = GXournal IntMap (TPageBBoxMapBkg b)
 
 
 
-type TAlterHitted a = AlterList [a] [a]
+type TAlterHitted a = AlterList [a] (Hitted a)
 
 newtype TEitherAlterHitted a = 
           TEitherAlterHitted { 
@@ -49,16 +75,24 @@ newtype TEitherAlterHitted a =
           }
 
 
-type TLayerSelect a = GLayer TEitherAlterHitted a 
+type TLayerSelect a = GLayer TEitherAlterHitted (StrokeTypeFromLayer a) 
 
-data TLayerSelectInPage s a = TLayerSelectInPage (TLayerSelect a) (s a)
+type family StrokeTypeFromLayer a  :: * 
+     
+type instance StrokeTypeFromLayer TLayerBBox = StrokeBBox
+ 
+
+data TLayerSelectInPage s a = TLayerSelectInPage 
+                              { gselectedlayer :: TLayerSelect a 
+                              , gotherlayers :: s a
+                              }
 
 type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
                        
 type TTempXournalSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))
 
 
-
+{-
 gpages :: GXournal s a -> s a 
 gpages (GXournal lst) = lst
 
@@ -74,14 +108,19 @@ glayers (GPage _ _ lst) = lst
 gstrokes :: GLayer s a -> s a 
 gstrokes (GLayer lst) = lst 
 
+-}
+{-
 gbkgbuffer :: GBackground b -> b 
 gbkgbuffer (GBackground buf) = buf
+-}
+{-
+gselectAll :: GSelect a b -> a 
+gselectAll (GSelect xs _) = xs 
 
-gselectGetAll :: GSelect a b -> a 
-gselectGetAll (GSelect xs _) = xs 
+gselectSelected :: GSelect a b -> b 
+gselectSelected (GSelect _ sel) = sel
+-}
 
-gselectGetSelected :: GSelect a b -> b 
-gselectGetSelected (GSelect _ sel) = sel
 
 class GStrokeable a where
   gFromStroke :: Stroke -> a 
@@ -126,3 +165,7 @@ fromPage p = let bkg = gFromBackground $ page_bkg p
                  ls =  gFromList . Prelude.map fromLayer . page_layers $ p 
              in  GPage dim bkg ls 
                  
+
+
+
+

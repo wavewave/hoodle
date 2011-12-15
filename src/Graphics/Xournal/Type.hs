@@ -13,13 +13,13 @@ data AlterList a b = Empty | a :- AlterList b a
 
 infixr 6 :-
 
-newtype NotHitted = NotHitted { unNotHitted :: [StrokeBBox] } 
-                  deriving (Show)
+newtype NotHitted a = NotHitted { unNotHitted :: [a] } 
+                    deriving (Show)
 
-newtype Hitted = Hitted { unHitted :: [StrokeBBox] } 
-                 deriving (Show)
+newtype Hitted a = Hitted { unHitted :: [a] } 
+                   deriving (Show)
 
-type StrokeHitted = AlterList NotHitted Hitted 
+type StrokeHitted = AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) 
 
 
 fmapAL :: (a -> c) -> (b -> d) -> AlterList a b -> AlterList c d

@@ -48,7 +48,6 @@ inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
 
 cairoDrawPageBBox :: Maybe BBox -> PageBBoxMap -> Render ()
 cairoDrawPageBBox mbbox page = do 
-  trace "in cairoDrawPageBBox" $ do  
     cairoDrawBackgroundBBox mbbox (pageDim page) (pageBkg page) 
     mapM_ (cairoDrawLayerBBox mbbox) (pageLayers page)
 

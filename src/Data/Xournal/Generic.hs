@@ -36,7 +36,8 @@ instance (Functor s) => Functor (GXournal s) where
 
 -- data GBackground b = GBackground b
 
-data GSelect a b = GSelect { gselectAll :: a 
+data GSelect a b = GSelect { gselectTitle :: ByteString 
+                           , gselectAll :: a 
                            , gselectSelected :: b
                            }
 

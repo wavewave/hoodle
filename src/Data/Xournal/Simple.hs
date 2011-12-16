@@ -70,6 +70,10 @@ data Layer = Layer { layer_strokes :: ![Stroke] }
 emptyXournal :: Xournal
 emptyXournal = Xournal "" [] 
 
+emptyLayer :: Layer 
+emptyLayer = Layer { layer_strokes = [] }
+
+
 defaultBackground :: Background
 defaultBackground = Background { bkg_type = "solid"
                                , bkg_color = "white"
@@ -87,6 +91,15 @@ defaultPage = Page { page_dim = Dim  612.0 792.0
 
 defaultXournal :: Xournal 
 defaultXournal = Xournal "untitled" [ defaultPage  ] 
+
+
+newPageFromOld :: Page -> Page
+newPageFromOld page = 
+  Page { page_dim = page_dim page 
+       , page_bkg = page_bkg page 
+       , page_layers = [emptyLayer] } 
+                   
+
 
 {-
 instance IStroke Stroke where

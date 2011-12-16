@@ -15,10 +15,17 @@ Library
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base>4, bytestring == 0.9.*, strict == 0.3.*
+                   base>4, 
+                   bytestring == 0.9.*, 
+                   strict == 0.3.*, 
+                   containers == 0.4.*
   Exposed-Modules: 
                    Data.Xournal.Generic
                    Data.Xournal.Simple
+                   Data.Xournal.BBox
+                   Data.Xournal.Map
+--                    Data.Xournal.Select
+                   Data.Xournal.Predefined 
   Other-Modules: 
 
  

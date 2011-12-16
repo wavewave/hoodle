@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.2.0.999
+Version:	0.2.999
 Synopsis:       Xournal file parser
 Description: 	Define Xournal type and parser for xournal xml file
 Homepage:       http://ianwookim.org/hxournal
@@ -29,14 +29,14 @@ Library
                  xml-enumerator < 0.4, 
                  enumerator >= 0.4.13 && < 0.5, 
                  strict == 0.3.*, 
-                 iteratee-compress == 0.2.1.*
+                 iteratee-compress == 0.2.1.*, 
+                 xournal-types == 0.1.*
   Exposed-Modules: 
-                   Text.Xournal.Type
                    Text.Xournal.Parse
                    Text.Xournal.Predefined
                    Text.Xournal.Parse.Enumerator
                    Text.Xournal.Parse.Zlib
-
+                   -- Text.Xournal.Type
 
 
 

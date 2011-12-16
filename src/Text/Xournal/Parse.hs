@@ -18,7 +18,7 @@ import qualified Data.Attoparsec.Iteratee as AI
 import Data.Char 
 
 
-import Text.Xournal.Type
+import Data.Xournal.Simple
 import Text.Xournal.Parse.Zlib
 
 import Data.Strict.Tuple

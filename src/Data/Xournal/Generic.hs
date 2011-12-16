@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, TypeOperators #-}
 
 module Data.Xournal.Generic where
 
@@ -10,6 +10,10 @@ import Data.ByteString hiding (map,zip)
 import Control.Applicative
 import Data.Functor
 
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
+
 data GXournal s a = GXournal { gtitle :: ByteString 
                              , gpages :: s a }  
 
@@ -17,7 +21,7 @@ data GPage b s a = GPage { gdimension :: Dimension
                          , gbackground :: b 
                          , glayers :: s a }  
 
-data GLayer s a = GLayer { gstrokes :: s a } 
+newtype GLayer s a = GLayer { gstrokes :: s a } 
 
 instance (Functor s) => Functor (GLayer s) where
   fmap f (GLayer strs) = GLayer (fmap f strs)
@@ -91,15 +95,31 @@ class SListable m where
 instance SListable GLayer where
   chgStreamToList (GLayer xs) = GLayer (gToList xs)
 
--- layerChangeStreamToList :: (GListable s) => GLayer s a -> GLayer [] a
--- layerChangeStreamToList (GLayer xs) = GLayer (gToList xs)
- 
 instance SListable (GPage b) where
   chgStreamToList (GPage d b ls) = GPage d b (gToList ls)
   
 instance SListable GXournal where
   chgStreamToList (GXournal t ps) = GXournal t (gToList ps)
   
+g_title :: GXournal s a :-> ByteString 
+g_title = lens gtitle (\a f -> f { gtitle = a } )
+
+g_pages :: GXournal s a :-> s a 
+g_pages = lens gpages (\a f -> f { gpages = a } )
+
+g_dimension :: GPage b s a :-> Dimension 
+g_dimension = lens gdimension (\a f -> f { gdimension = a } )
+
+g_background :: GPage b s a :-> b 
+g_background = lens gbackground (\a f -> f { gbackground = a } ) 
+
+g_layers :: GPage b s a :-> s a 
+g_layers = lens glayers (\a f -> f { glayers = a } ) 
+
+g_strokes :: GLayer s a :-> s a 
+g_strokes = lens gstrokes (\a f -> f { gstrokes = a } )
+
+
 
 
 toLayer :: (GStrokeable a, GListable s) => GLayer s a -> Layer

@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, OverloadedStrings, 
+{-# LANGUAGE BangPatterns, OverloadedStrings,  TypeOperators, 
              TypeFamilies, FlexibleContexts  #-}
 
 module Data.Xournal.Simple where
@@ -7,31 +7,13 @@ import qualified Data.ByteString as S
 import Data.ByteString.Char8
 import Data.Strict.Tuple
 
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id,putStrLn)
+
+
+
 import Prelude hiding (fst,snd,curry,uncurry)
-
-{-
-class IStroke a where
-  strokeTool :: a -> S.ByteString 
-  strokeColor :: a -> S.ByteString
-  strokeWidth :: a -> Double 
-  strokeData :: a -> [Pair Double Double]
--}
-
-{-
-class (IStroke (TStroke a)) => ILayer a where
-  type TStroke a :: * 
-  layerStrokes :: a -> [TStroke a]
-
-class (ILayer (TLayer a)) => IPage a where   
-  type TLayer a :: * 
-  pageDim :: a -> Dimension
-  pageBkg :: a -> Background 
-  pageLayers :: a -> [TLayer a] 
-
-class (IPage (TPage a)) => IXournal a where
-  type TPage a :: *
-  xournalPages :: a -> [TPage a]
--}
 
 type Title = S.ByteString
 
@@ -67,11 +49,46 @@ data Page = Page { page_dim :: !Dimension
 data Layer = Layer { layer_strokes :: ![Stroke] } 
            deriving Show 
 
+s_tool :: Stroke :-> ByteString
+s_tool = lens stroke_tool (\a f -> f { stroke_tool = a })  
+
+s_color :: Stroke :-> ByteString 
+s_color = lens stroke_color (\a f -> f { stroke_color = a } )
+
+s_width :: Stroke :-> Double 
+s_width = lens stroke_width (\a f -> f { stroke_width = a } )
+
+s_data :: Stroke :-> [Pair Double Double] 
+s_data = lens stroke_data (\a f -> f { stroke_data = a } )
+
+s_title :: Xournal :-> Title
+s_title = lens xoj_title (\a f -> f { xoj_title = a } )
+
+s_pages :: Xournal :-> [Page]
+s_pages = lens xoj_pages (\a f -> f { xoj_pages = a } )
+
+s_dim :: Page :-> Dimension 
+s_dim = lens page_dim (\a f -> f { page_dim = a } )
+
+s_bkg :: Page :-> Background 
+s_bkg = lens page_bkg (\a f -> f { page_bkg = a } )
+
+s_layers :: Page :-> [Layer] 
+s_layers = lens page_layers (\a f -> f { page_layers = a } )
+
+s_strokes :: Layer :-> [Stroke]
+s_strokes = lens layer_strokes (\a f -> f { layer_strokes = a } )
+
+
+
 emptyXournal :: Xournal
 emptyXournal = Xournal "" [] 
 
 emptyLayer :: Layer 
 emptyLayer = Layer { layer_strokes = [] }
+
+emptyStroke :: Stroke 
+emptyStroke = Stroke "pen" "black" 1.4 []
 
 
 defaultBackground :: Background

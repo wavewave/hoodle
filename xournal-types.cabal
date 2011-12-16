@@ -18,7 +18,8 @@ Library
                    base>4, 
                    bytestring == 0.9.*, 
                    strict == 0.3.*, 
-                   containers == 0.4.*
+                   containers == 0.4.*, 
+                   fclabels == 1.0.*
   Exposed-Modules: 
                    Data.Xournal.Generic
                    Data.Xournal.Simple

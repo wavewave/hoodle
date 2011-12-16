@@ -17,8 +17,8 @@ Library
   Build-Depends: 
                    base>4, bytestring == 0.9.*, strict == 0.3.*
   Exposed-Modules: 
-                   Graphics.Xournal.Type.Generic
-                   Graphics.Xournal.Type.Simple
+                   Data.Xournal.Generic
+                   Data.Xournal.Simple
   Other-Modules: 
 
  

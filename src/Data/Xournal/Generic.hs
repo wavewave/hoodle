@@ -1,14 +1,17 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Graphics.Xournal.Type.Generic where
+module Data.Xournal.Generic where
 
 -- import Data.IntMap 
 -- import Text.Xournal.Type
-import Graphics.Xournal.Type.Simple
+import Data.Xournal.Simple
+import Data.ByteString hiding (map)
 
+import Control.Applicative
 import Data.Functor
 
-data GXournal s a = GXournal { gpages :: s a }  
+data GXournal s a = GXournal { gtitle :: ByteString 
+                             , gpages :: s a }  
 
 data GPage b s a = GPage { gdimension :: Dimension 
                          , gbackground :: b 
@@ -23,10 +26,8 @@ instance (Functor s) => Functor (GPage b s) where
   fmap f (GPage d b ls) = GPage d b (fmap f ls)
   
 instance (Functor s) => Functor (GXournal s) where
-  fmap f (GXournal ps) = GXournal (fmap f ps)
+  fmap f (GXournal t ps) = GXournal t (fmap f ps)
 
-bkgchange :: (b -> b') -> GPage b s a -> GPage b' s a 
-bkgchange f p = p { gbackground = f (gbackground p) } 
 
 
 -- data GBackground b = GBackground b
@@ -34,6 +35,34 @@ bkgchange f p = p { gbackground = f (gbackground p) }
 data GSelect a b = GSelect { gselectAll :: a 
                            , gselectSelected :: b
                            }
+
+
+type TLayerSimple = GLayer [] Stroke 
+
+type TPageSimple = GPage Background [] TLayerSimple 
+
+type TXournalSimple = GXournal [] TPageSimple 
+
+bkgchange :: (b -> b') -> GPage b s a -> GPage b' s a 
+bkgchange f p = p { gbackground = f (gbackground p) } 
+
+mkTLayerSimpleFromLayer :: Layer -> TLayerSimple
+mkTLayerSimpleFromLayer = GLayer <$> layer_strokes
+
+mkTPageSimpleFromPage :: Page -> TPageSimple 
+mkTPageSimpleFromPage = GPage <$> page_dim <*> page_bkg <*> map mkTLayerSimpleFromLayer . page_layers 
+
+mkTXournalSimpleFromXournal :: Xournal -> TXournalSimple 
+mkTXournalSimpleFromXournal = GXournal <$> xoj_title <*> map mkTPageSimpleFromPage . xoj_pages
+
+layerFromTLayerSimple :: TLayerSimple -> Layer
+layerFromTLayerSimple = Layer <$> gstrokes
+
+pageFromTPageSimple :: TPageSimple -> Page
+pageFromTPageSimple = Page <$> gdimension <*> gbackground <*> map layerFromTLayerSimple . glayers
+
+xournalFromTXournalSimple :: TXournalSimple -> Xournal 
+xournalFromTXournalSimple = Xournal <$> gtitle <*> map pageFromTPageSimple . gpages 
 
 -- $(mkLabels [''GXournal, ''GPage, ''GLayer, ''GSelect])
 

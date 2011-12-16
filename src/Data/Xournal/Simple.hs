@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings, 
              TypeFamilies, FlexibleContexts  #-}
 
-module Graphics.Xournal.Type.Simple where
+module Data.Xournal.Simple where
 
 import qualified Data.ByteString as S
 import Data.ByteString.Char8

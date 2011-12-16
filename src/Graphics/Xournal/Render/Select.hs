@@ -1,8 +1,8 @@
-module Graphics.Xournal.Type.Select where
+module Data.Xournal.Select where
 
-import Text.Xournal.Type
-import Graphics.Xournal.Type
-import Graphics.Xournal.Type.Map
+import Data.Xournal.Simple
+-- import Graphics.Xournal.Type
+import Data.Xournal.Map
 
 import qualified Data.IntMap as M
 

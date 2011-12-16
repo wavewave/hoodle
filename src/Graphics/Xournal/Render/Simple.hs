@@ -1,24 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Graphics.Xournal.Render where 
+module Graphics.Xournal.Render.Simple where 
 
 import Graphics.Rendering.Cairo
 
 import Data.Strict.Tuple
 
-import Text.Xournal.Type 
-import Text.Xournal.Predefined 
+import Data.Xournal.Simple
+import Data.Xournal.Predefined 
 
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 
-drawOneStroke :: IStroke a => a -> Render ()
+drawOneStroke :: Stroke -> Render ()
 drawOneStroke s = do 
-  case M.lookup (strokeColor s) predefined_pencolor of
+  case M.lookup (stroke_color s) predefined_pencolor of
     Just (r,g,b,a) -> setSourceRGBA r g b a 
     Nothing -> setSourceRGBA 0 0 0 1
-  setLineWidth (strokeWidth s) 
-  drawOneStrokeCurve (strokeData s)
+  setLineWidth . stroke_width $ s 
+  drawOneStrokeCurve . stroke_data $ s
   stroke
 
 drawOneStrokeCurve :: [Pair Double Double] -> Render ()
@@ -29,10 +29,10 @@ drawOneStrokeCurve ((x0 :!: y0) : xs) = do
 
 -- | general background drawing (including pdf file)
 
-cairoDrawBackground :: IPage a => a -> Render () 
+cairoDrawBackground :: Page -> Render () 
 cairoDrawBackground page = do 
-  let Dim w h = pageDim page 
-  case pageBkg page of 
+  let Dim w h = page_dim page 
+  case page_bkg page of 
     Background typ col sty -> cairoDrawBkg (Dim w h) (Background typ col sty)
     bpdf@(BackgroundPdf _ mdomain mfilename pagenum) -> 
       cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
@@ -99,13 +99,11 @@ cairoDrawRuling w h style = do
       mapM_ drawonegraphhoriz [0,predefined_RULING_GRAPHSPACING..h-1]
     _ -> return ()     
 
-cairoDrawPage :: IPage a => a -> Render ()
+cairoDrawPage :: Page -> Render ()
 cairoDrawPage page = do 
-  let strokes = (layerStrokes . (!!0) . pageLayers) page 
-      (Dim w h) = pageDim page
+  let strokes = (layer_strokes . (!!0) . page_layers) page 
+      (Dim w h) = page_dim page
   cairoDrawBackground page
-  -- setSourceRGB 0 0 0
-  -- setLineWidth 1
   setLineCap LineCapRound
   setLineJoin LineJoinRound
 

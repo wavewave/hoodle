@@ -3,41 +3,45 @@
 module Graphics.Xournal.Render.BBox where
 
 import Graphics.Rendering.Cairo
-import Graphics.Xournal.Render
-import Graphics.Xournal.HitTest
-import Graphics.Xournal.Type 
+import Graphics.Xournal.Render.Simple
+import Graphics.Xournal.Render.HitTest
+import Graphics.Xournal.Render.Type 
 
-import Graphics.Xournal.Type.Map
+import Data.Xournal.Generic
+import Data.Xournal.Map
+import Data.Xournal.Simple
+import Data.Xournal.BBox
+import Data.Xournal.Predefined 
 
-import Text.Xournal.Type 
-import Text.Xournal.Predefined 
+import Data.Foldable
 
 import qualified Data.Map as M
 
 import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter )
 
 import Debug.Trace
-import Prelude hiding (fst,snd,curry,uncurry)
+import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
 
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
-cairoOneStrokeBBoxOnly s = do  
-  case M.lookup (strokeColor s) predefined_pencolor of 
+cairoOneStrokeBBoxOnly sbbox = do  
+  let s = gToStroke sbbox
+  case M.lookup (stroke_color s) predefined_pencolor of 
     Just (r,g,b,a) -> setSourceRGBA r g b a
     Nothing -> setSourceRGBA 0 0 0 1 
-  setLineWidth (strokeWidth s) 
-  let BBox (x1,y1) (x2,y2) = strokebbox_bbox s
+  setLineWidth (stroke_width s) 
+  let BBox (x1,y1) (x2,y2) = strokebbox_bbox sbbox
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
   
-cairoDrawPageBBoxOnly :: PageBBoxMap -> Render ()  
+cairoDrawPageBBoxOnly :: TPageBBoxMap -> Render ()  
 cairoDrawPageBBoxOnly page = do
-    let layers =  pageLayers page
-    cairoDrawBackground page 
+    let layers =  glayers page
+    cairoDrawBackground (toPage id page)
     mapM_ cairoDrawLayerBBoxOnly layers
 
-cairoDrawLayerBBoxOnly :: LayerBBox -> Render () 
-cairoDrawLayerBBoxOnly  = mapM_ cairoOneStrokeBBoxOnly . layerStrokes 
+cairoDrawLayerBBoxOnly :: TLayerBBox -> Render () 
+cairoDrawLayerBBoxOnly  = mapM_ cairoOneStrokeBBoxOnly . gstrokes 
 
 ----
 
@@ -46,20 +50,20 @@ inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
 
 ----
 
-cairoDrawPageBBox :: Maybe BBox -> PageBBoxMap -> Render ()
+cairoDrawPageBBox :: Maybe BBox -> TPageBBoxMap -> Render ()
 cairoDrawPageBBox mbbox page = do 
-    cairoDrawBackgroundBBox mbbox (pageDim page) (pageBkg page) 
-    mapM_ (cairoDrawLayerBBox mbbox) (pageLayers page)
+    cairoDrawBackgroundBBox mbbox (gdimension page) (gbackground page) 
+    mapM_ (cairoDrawLayerBBox mbbox) (glayers page)
 
 
-cairoDrawLayerBBox :: Maybe BBox -> LayerBBox -> Render () 
+cairoDrawLayerBBox :: Maybe BBox -> TLayerBBox -> Render () 
 cairoDrawLayerBBox mbbox layer = do  
   let hittestbbox = case mbbox of 
                        Nothing -> NotHitted [] 
-                                  :- Hitted (layerbbox_strokes layer) 
+                                  :- Hitted (gstrokes layer) 
                                   :- Empty 
-                       Just bbox -> mkHitTestBBoxBBox bbox (layerbbox_strokes layer)
-  mapM_ drawOneStroke . concatMap unHitted  . getB $ hittestbbox
+                       Just bbox -> mkHitTestBBoxBBox bbox (gstrokes layer)
+  mapM_ drawOneStroke . map gToStroke . concatMap unHitted  . getB $ hittestbbox
 
 
 cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()

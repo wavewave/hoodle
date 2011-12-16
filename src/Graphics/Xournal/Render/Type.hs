@@ -1,12 +1,17 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Graphics.Xournal.Type where
+module Graphics.Xournal.Render.Type where
 
 import Prelude hiding (fst,snd)
 import Data.Strict.Tuple 
 import Data.ByteString hiding (map, minimum, maximum)
 
-import Text.Xournal.Type 
+import Data.Xournal.Simple 
+import Data.Xournal.Generic
+import Data.Xournal.BBox
+import Data.Xournal.Map
+
+import Data.IntMap hiding (map)
 
 data AlterList a b = Empty | a :- AlterList b a
                    deriving (Show)
@@ -41,25 +46,31 @@ interleave fa fb (x :- xs) = fa x : (interleave fb fa xs)
 
 ----
 
-data BBox = BBox { bbox_upperleft :: (Double,Double) 
-                 , bbox_lowerright :: (Double,Double) } 
-          deriving (Show)
 
-data XournalBBox = XournalBBox { xojbbox_pages :: [PageBBox] }
+type TAlterHitted a = AlterList [a] (Hitted a)
 
-data PageBBox = PageBBox { pagebbox_dim :: Dimension
-                         , pagebbox_bkg :: Background
-                         , pagebbox_layers :: [LayerBBox] } 
+newtype TEitherAlterHitted a = 
+          TEitherAlterHitted { 
+            unTEitherAlterHitted :: Either [a] (TAlterHitted a)
+          }
+type TLayerSelect a = GLayer TEitherAlterHitted (StrokeTypeFromLayer a) 
 
-data LayerBBox = LayerBBox { layerbbox_strokes :: [StrokeBBox] } 
+type family StrokeTypeFromLayer a  :: * 
+     
+type instance StrokeTypeFromLayer TLayerBBox = StrokeBBox
+ 
 
-data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
-                             , strokebbox_color :: ByteString 
-                             , strokebbox_width :: Double
-                             , strokebbox_data :: [Pair Double Double] 
-                             , strokebbox_bbox :: BBox }
-                deriving (Show)
-                         
+data TLayerSelectInPage s a = TLayerSelectInPage 
+                              { gselectedlayer :: TLayerSelect a 
+                              , gotherlayers :: s a
+                              }
+
+type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
+                       
+type TTempXournalSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))
+
+
+{-                         
 
 instance IStroke StrokeBBox where 
   strokeTool = strokebbox_tool
@@ -97,20 +108,9 @@ mkLayerBBoxFromLayer :: Layer -> LayerBBox
 mkLayerBBoxFromLayer ly = 
   LayerBBox { layerbbox_strokes = map mkStrokeBBoxFromStroke (layer_strokes ly) } 
   
-mkStrokeBBoxFromStroke :: Stroke -> StrokeBBox
-mkStrokeBBoxFromStroke str = 
-  StrokeBBox { strokebbox_tool = stroke_tool str 
-             , strokebbox_color = stroke_color str 
-             , strokebbox_width = stroke_width str 
-             , strokebbox_data = stroke_data str 
-             , strokebbox_bbox = mkbbox (stroke_data str) } 
-  
-mkbbox :: [Pair Double Double] -> BBox 
-mkbbox lst = let xs = map fst lst 
-                 ys = map snd lst
-             in  BBox { bbox_upperleft = (minimum xs, minimum ys)
-                      , bbox_lowerright = (maximum xs, maximum ys) } 
+-}
  
+{-
 xournalFromXournalBBox :: XournalBBox -> Xournal 
 xournalFromXournalBBox xojbbox = 
   emptyXournal { xoj_pages = map pageFromPageBBox (xojbbox_pages xojbbox) }
@@ -125,23 +125,8 @@ layerFromLayerBBox :: LayerBBox -> Layer
 layerFromLayerBBox lybbox = 
   Layer { layer_strokes = map strokeFromStrokeBBox (layerbbox_strokes lybbox) }
   
-strokeFromStrokeBBox :: StrokeBBox -> Stroke 
-strokeFromStrokeBBox strbbox = 
-  Stroke { stroke_tool = strokebbox_tool strbbox
-         , stroke_color = strokebbox_color strbbox
-         , stroke_width= strokebbox_width strbbox
-         , stroke_data = strokebbox_data strbbox } 
-  
+-}  
 ----
 
-emptyLayer :: Layer 
-emptyLayer = Layer { layer_strokes = [] }
-
-newPageFromOld :: Page -> Page
-newPageFromOld page = 
-  Page { page_dim = page_dim page 
-       , page_bkg = page_bkg page 
-       , page_layers = [emptyLayer] } 
-                   
 
 

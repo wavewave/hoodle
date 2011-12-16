@@ -9,13 +9,13 @@ import Control.Monad.State
 import Data.Monoid 
 import Data.ByteString hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C
-import Graphics.Xournal.Type
-import Graphics.Xournal.Type.Generic
-import Graphics.Xournal.Type.BBoxMapPDF
-
+import Data.Xournal.Generic
+import Data.Xournal.Simple
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.Generic
+import Graphics.Xournal.Render.Type
 
-import Text.Xournal.Type
 
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -33,7 +33,7 @@ mkTXournalBBoxMapPDF :: Xournal -> IO TXournalBBoxMapPDF
 mkTXournalBBoxMapPDF xoj = do 
   let pgs = xoj_pages xoj 
   npgs <- mkAllTPageBBoxMapPDF pgs 
-  return $ GXournal (gFromList npgs)
+  return $ GXournal (xoj_title xoj) (gFromList npgs)
   
 mkAllTPageBBoxMapPDF :: [Page] -> IO [TPageBBoxMapPDF]
 mkAllTPageBBoxMapPDF pgs = evalStateT (mapM mkPagePDF pgs) Nothing 

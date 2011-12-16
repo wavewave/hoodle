@@ -5,11 +5,13 @@ module Graphics.Xournal.Render.Generic where
 import Data.Foldable
 import Prelude hiding (mapM_)
 
-import Text.Xournal.Type
-import Graphics.Xournal.Type 
-import Graphics.Xournal.Type.Generic
+-- import Text.Xournal.Type
+import Graphics.Xournal.Render.Type 
+import Data.Xournal.Generic
+import Data.Xournal.Simple
+import Data.Xournal.BBox
 import Graphics.Rendering.Cairo
-import Graphics.Xournal.Render 
+import Graphics.Xournal.Render.Simple
 import Graphics.Xournal.Render.BBox
 
 class Renderable a where 

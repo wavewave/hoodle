@@ -1,7 +1,11 @@
-module Graphics.Xournal.Type.BBoxMapPDF where
+{-# LANGUAGE OverloadedStrings #-}
 
-import Graphics.Xournal.Type 
-import Graphics.Xournal.Type.Generic
+module Graphics.Xournal.Render.BBoxMapPDF where
+
+import Graphics.Xournal.Render.Type 
+import Data.Xournal.Generic
+import Data.Xournal.Map
+import Data.Xournal.BBox
 import Data.IntMap
 
 import Data.ByteString hiding (putStrLn, empty)
@@ -12,8 +16,7 @@ data BackgroundPDFDrawable =
   BkgPDFSolid { bkgpdf_color :: ByteString
               , bkgpdf_style :: ByteString
               }
-  | -- (Poppler.PageClass p) => 
-    BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
+  | BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
               , bkgpdf_filename :: Maybe ByteString
               , bkgpdf_pageno :: Int 
               , bkgpdf_popplerpage :: Maybe Poppler.Page -- Maybe p 
@@ -31,7 +34,7 @@ type TTempXournalSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTemp
 
 
 emptyTXournalBBoxMapPDF :: TXournalBBoxMapPDF
-emptyTXournalBBoxMapPDF = GXournal empty
+emptyTXournalBBoxMapPDF = GXournal "" empty
 
 
 tlayerBBoxFromTLayerSelect :: TLayerSelect TLayerBBox -> TLayerBBox 

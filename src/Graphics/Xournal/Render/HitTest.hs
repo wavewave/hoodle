@@ -1,11 +1,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Graphics.Xournal.HitTest where
+module Graphics.Xournal.Render.HitTest where
 
 import Data.Strict.Tuple
-import Text.Xournal.Type 
+import Data.Xournal.Simple 
+import Data.Xournal.BBox 
+import Data.Xournal.Generic
 
-import Graphics.Xournal.Type
+import Graphics.Xournal.Render.Type
 
 import Control.Applicative
 import Control.Monad.State
@@ -25,11 +27,10 @@ hitTestLineLine ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) =
         -- denom = y21*x43-y43*x21 
         xc = (x21*x43*(y3-y1)+y21*x43*x1-y43*x21*x3)/(y21*x43-y43*x21)
         
-hitTestLineStroke :: (IStroke a) => 
-                     ((Double,Double),(Double,Double)) 
-                     -> a
+hitTestLineStroke :: ((Double,Double),(Double,Double)) 
+                     -> Stroke
                      -> Bool
-hitTestLineStroke line1 str = test (strokeData str) 
+hitTestLineStroke line1 str = test (stroke_data str) 
   where test [] = False
         test ((_:!:_):[]) = False
         test ((x0:!:y0):(x:!:y):rest) 
@@ -87,7 +88,7 @@ hitTestBBoxBBox b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lry
 mkHitTestStroke :: ((Double,Double),(Double,Double))
                 -> [StrokeBBox]
                 -> State Bool (AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox))
-mkHitTestStroke line = mkHitTestALState (hitTestLineStroke line)
+mkHitTestStroke line = mkHitTestALState (hitTestLineStroke line . gToStroke)
   
 hitTestStrokes :: ((Double,Double),(Double,Double))
                -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)

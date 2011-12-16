@@ -33,10 +33,10 @@ Library
                  xournal-types == 0.1.*
   Exposed-Modules: 
                    Text.Xournal.Parse
-                   Text.Xournal.Predefined
                    Text.Xournal.Parse.Enumerator
                    Text.Xournal.Parse.Zlib
                    -- Text.Xournal.Type
+                   -- Text.Xournal.Predefined
 
 
 

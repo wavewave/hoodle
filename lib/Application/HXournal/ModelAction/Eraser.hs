@@ -1,10 +1,12 @@
 module Application.HXournal.ModelAction.Eraser where
 
 import Control.Monad.State 
-import Graphics.Xournal.Type 
-import Graphics.Xournal.HitTest
 
-eraseHitted :: AlterList NotHitted (AlterList NotHitted Hitted) 
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.Type 
+import Graphics.Xournal.Render.HitTest
+
+eraseHitted :: AlterList (NotHitted StrokeBBox) (AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)) 
                -> State (Maybe BBox) [StrokeBBox]
 eraseHitted Empty = error "something wrong in eraseHitted"
 eraseHitted (n :-Empty) = return (unNotHitted n)

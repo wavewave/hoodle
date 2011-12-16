@@ -7,8 +7,9 @@ import Data.Sequence
 import qualified Data.IntMap as M
 import Data.Label 
 import Prelude hiding ((.), id)
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Type.Select
+import Graphics.Xournal.Render.BBoxMapPDF
+import Data.Xournal.Map
+-- import Data.Xournal.Select
 import Graphics.UI.Gtk hiding (get,set)
 
 type CanvasId = Int 
@@ -37,7 +38,7 @@ data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _scrolledWindow :: ScrolledWindow
                              , _viewInfo :: ViewInfo 
                              , _currentPageNum :: Int
-                             , _currentPage :: Either PageBBoxMap TempPageSelect 
+                             , _currentPage :: Either TPageBBoxMapPDF TTempPageSelectPDF 
                              , _horizAdjustment :: Adjustment
                              , _vertAdjustment :: Adjustment 
                              }

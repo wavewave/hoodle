@@ -10,13 +10,17 @@ import Application.HXournal.ModelAction.Window
 import Application.HXournal.Builder 
 import Control.Monad.Trans
 import Control.Applicative
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Type.Select
+import Data.Xournal.Generic
+import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.UI.Gtk hiding (get,set)
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 import qualified Data.ByteString.Lazy as L
+
+import Data.Xournal.Simple
+import Data.Xournal.Map
+
 
 fileNew :: Iteratee MyEvent XournalStateIO ()
 fileNew = do 
@@ -35,9 +39,8 @@ fileSave = do
       Just filename -> do     
         let xojstate = get xournalstate xstate
         let xoj = case xojstate of 
-                    ViewAppendState xojmap -> xournalFromXournalBBoxMap xojmap 
-                    SelectState txoj -> xournalFromXournalBBoxMap 
-                                        $ XournalBBoxMap <$> tx_pages $ txoj 
+              ViewAppendState xojmap -> Xournal <$> get g_title <*> gToList . fmap (toPage gToBackground) . get g_pages $ xojmap 
+              SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
         liftIO . L.writeFile filename . builder $ xoj
 
 fileOpen :: Iteratee MyEvent XournalStateIO ()
@@ -48,7 +51,6 @@ fileOpen = do
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
     res <- liftIO $ dialogRun dialog
-    -- liftIO $ putStrLn $ show res
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
       ResponseOk ->  do
@@ -88,9 +90,11 @@ fileSaveAs = do
             let xstateNew = set currFileName (Just filename) xstate 
             let xojstate = get xournalstate xstateNew
             let xoj = case xojstate of 
-                        ViewAppendState xojmap -> xournalFromXournalBBoxMap xojmap 
-                        SelectState txoj -> xournalFromXournalBBoxMap 
-                                            $ XournalBBoxMap <$> tx_pages $ txoj 
+                  ViewAppendState xojmap -> Xournal 
+                                            <$> get g_title 
+                                            <*> gToList . fmap (toPage gToBackground) . get g_pages 
+                                            $ xojmap 
+                  SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
             liftIO . L.writeFile filename . builder $ xoj
             putSt xstateNew                                     
             liftIO $ setTitleFromFileName xstateNew 

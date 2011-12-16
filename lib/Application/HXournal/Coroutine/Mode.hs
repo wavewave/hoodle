@@ -5,8 +5,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Type.Select
+import Data.Xournal.Map
 
 import Control.Monad.Trans
 
@@ -14,6 +13,9 @@ import Control.Applicative
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
+
+import Data.Xournal.Generic
+import Graphics.Xournal.Render.BBoxMapPDF
 
 modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
 modeChange ToViewAppendMode = do 
@@ -24,7 +26,7 @@ modeChange ToViewAppendMode = do
     SelectState txoj -> do 
       liftIO $ putStrLn "to view append mode"
       putSt 
-        . set xournalstate (ViewAppendState (XournalBBoxMap <$> tx_pages $ txoj))
+        . set xournalstate (ViewAppendState (GXournal (gselectTitle txoj) (gselectAll txoj)))
         $ xstate  
 modeChange ToSelectMode = do 
   xstate <- getSt
@@ -33,7 +35,7 @@ modeChange ToSelectMode = do
     ViewAppendState xoj -> do 
       liftIO $ putStrLn "to select mode"
       putSt
-        . set xournalstate (SelectState (tempXournalSelectFromXournalBBoxMap xoj))
+        . set xournalstate (SelectState (GSelect (get g_title xoj) (gpages xoj) Nothing))
         $ xstate  
     SelectState _ -> return ()
 modeChange _ = return ()

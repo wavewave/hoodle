@@ -1,6 +1,6 @@
 module Application.HXournal.Util where
 
-import Text.Xournal.Type
+import Data.Xournal.Simple
 
 getLargestWidth :: Xournal -> Double 
 getLargestWidth xoj = 

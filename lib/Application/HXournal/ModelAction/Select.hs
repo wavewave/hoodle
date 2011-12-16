@@ -2,9 +2,12 @@ module Application.HXournal.ModelAction.Select where
 
 import Application.HXournal.Type.Enum
 
-import Graphics.Xournal.Type 
-import Graphics.Xournal.Type.Select
-import Graphics.Xournal.HitTest
+import Data.Xournal.Simple
+import Data.Xournal.Generic
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.Type
+import Graphics.Xournal.Render.BBoxMapPDF
+import Graphics.Xournal.Render.HitTest
 
 import Graphics.UI.Gtk hiding (get,set)
 
@@ -21,40 +24,41 @@ changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) =
       newbbox = BBox (x1+offx,y1+offy) (x2+offx,y2+offy)
   in  StrokeBBox t c w newds newbbox
 
-changeSelectionByOffset :: TempPageSelect -> (Double,Double) -> TempPageSelect
+changeSelectionByOffset :: TTempPageSelectPDF -> (Double,Double) -> TTempPageSelectPDF
 changeSelectionByOffset tpage off = 
-  let activelayer = tp_firstlayer tpage 
-  in case strokes activelayer of 
+  let ls = glayers tpage
+      activelayer = unTEitherAlterHitted . gstrokes . gselectedlayer $ ls
+  in case activelayer of 
        Left _ -> tpage 
        Right alist -> 
          let alist' =fmapAL id 
                             (Hitted . map (changeStrokeByOffset off) . unHitted) 
                             alist 
-             layer' = LayerSelect (Right alist')
-         in tpage { tp_firstlayer = layer' }
+             layer' = GLayer . TEitherAlterHitted . Right $ alist'
+         in tpage { glayers = ls { gselectedlayer = layer' }}
 
-updateTempXournalSelect :: TempXournalSelect -> TempPageSelect -> Int 
-                           -> TempXournalSelect
+updateTempXournalSelect :: TTempXournalSelectPDF -> TTempPageSelectPDF -> Int 
+                           -> TTempXournalSelectPDF
 updateTempXournalSelect txoj tpage pagenum =                
-  let pgs = tx_pages txoj 
-      pgs' = M.adjust (const (pageBBoxMapFromTempPageSelect tpage))
+  let pgs = gselectAll txoj 
+      pgs' = M.adjust (const (tpageBBoxMapPDFFromTTempPageSelectPDF tpage))
                         pagenum pgs
-  in TempXournalSelect pgs' (Just (pagenum,tpage)) 
+  in GSelect { gselectAll = pgs', gselectSelected = Just (pagenum,tpage) } 
     
     
-hitInSelection :: TempPageSelect -> (Double,Double) -> Bool 
+hitInSelection :: TTempPageSelectPDF -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
-  let activelayer = tp_firstlayer tpage
-  in case strokes activelayer of 
+  let activelayer = unTEitherAlterHitted . gstrokes .  gselectedlayer . glayers $ tpage
+  in case activelayer of 
        Left _ -> False   
        Right alist -> 
          let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
          in  any (flip hitTestBBoxPoint point) bboxes 
     
-takeHittedStrokes :: AlterList [StrokeBBox] Hitted -> [StrokeBBox] 
+takeHittedStrokes :: AlterList [StrokeBBox] (Hitted StrokeBBox) -> [StrokeBBox] 
 takeHittedStrokes = concatMap unHitted . getB 
 
-isAnyHitted :: AlterList [StrokeBBox] Hitted -> Bool 
+isAnyHitted :: AlterList [StrokeBBox] (Hitted StrokeBBox) -> Bool 
 isAnyHitted = not . null . takeHittedStrokes
 
 toggleCutCopyDelete :: UIManager -> Bool -> IO ()

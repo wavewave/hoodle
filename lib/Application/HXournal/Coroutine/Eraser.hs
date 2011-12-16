@@ -12,9 +12,11 @@ import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
-import Graphics.Xournal.Type
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.HitTest
+import Data.Xournal.Simple
+import Data.Xournal.Generic
+import Data.Xournal.Map
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.HitTest
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
@@ -60,14 +62,14 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
           let currxoj     = unView . get xournalstate $ xstate 
               pgnum       = get currentPageNum cvsInfo
               currpage    = getPage cvsInfo
-              currlayer = case IM.lookup 0 (pbm_layers currpage) of
+              currlayer = case IM.lookup 0 (glayers currpage) of
                             Nothing -> error "something wrong in eraserProcess"
                             Just l -> l
               
               (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
-              newlayerbbox = currlayer { layerbbox_strokes = newstrokes }    
-              newpagebbox = currpage { pbm_layers = IM.adjust (const newlayerbbox) 0 (pbm_layers currpage) } 
-              newxojbbox = currxoj { xbm_pages= IM.adjust (const newpagebbox) pgnum (xbm_pages currxoj) }
+              newlayerbbox = currlayer { gstrokes = newstrokes }    
+              newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
+              newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
               newxojstate = ViewAppendState newxojbbox
               xstate' = set xournalstate newxojstate 
                         . updatePageAll newxojstate $ xstate 

@@ -6,7 +6,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import Data.Maybe 
 
-import Text.Xournal.Predefined
+import Data.Xournal.Predefined
 
 data PenColor = ColorBlack
               | ColorBlue 

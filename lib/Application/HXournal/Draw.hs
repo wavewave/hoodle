@@ -8,16 +8,21 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-import Text.Xournal.Type
-
-import Graphics.Xournal.Type 
-import Graphics.Xournal.Type.Select
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Render 
+import Data.Xournal.Simple
+import Data.Xournal.Generic
+import Data.Xournal.Map
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.Type
+import Graphics.Xournal.Render.Simple
 import Graphics.Xournal.Render.BBox 
-import Graphics.Xournal.HitTest
+import Graphics.Xournal.Render.BBoxMapPDF 
+import Graphics.Xournal.Render.PDFBackground
+import Graphics.Xournal.Render.Generic
+import Graphics.Xournal.Render.HitTest
 import Application.HXournal.Type 
 import Application.HXournal.Device
+
+import qualified Data.IntMap as M
 
 data CanvasPageGeometry = 
   CanvasPageGeometry { screen_size :: (Double,Double) 
@@ -28,16 +33,15 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
-type PageDrawF = DrawingArea -> PageBBoxMap -> ViewInfo -> Maybe BBox 
+type PageDrawF = DrawingArea -> TPageBBoxMapPDF -> ViewInfo -> Maybe BBox 
                  -> IO ()
 
-type PageDrawFSel = DrawingArea -> TempPageSelect -> ViewInfo -> Maybe BBox 
+type PageDrawFSel = DrawingArea -> TTempPageSelectPDF -> ViewInfo -> Maybe BBox 
                     -> IO ()
 
 
-getCanvasPageGeometry :: IPage a => 
-                         DrawingArea 
-                         -> a 
+getCanvasPageGeometry :: DrawingArea 
+                         -> GPage b s a
                          -> (Double,Double) 
                          -> IO CanvasPageGeometry
 getCanvasPageGeometry canvas page (xorig,yorig) = do 
@@ -45,7 +49,7 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
   (w',h') <- widgetGetSize canvas
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> screenGetWidth screen <*> screenGetHeight screen
-  let (Dim w h) = pageDim page
+  let (Dim w h) = gdimension page
   (x0,y0) <- drawWindowGetOrigin win
   return $ CanvasPageGeometry (fromIntegral ws, fromIntegral hs) 
                               (fromIntegral w', fromIntegral h') 
@@ -100,16 +104,19 @@ transformForPageCoord cpg zmode = do
   scale s s
   translate (-xo) (-yo)      
   
-updateCanvas :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
+updateCanvas :: DrawingArea -> TXournalBBoxMapPDF -> Int -> ViewInfo -> IO ()
 updateCanvas canvas xoj pagenum vinfo = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-  let currpage = ((!!pagenum).xournalPages) xoj
+  let currpage = case M.lookup pagenum (gpages xoj) of 
+                   Nothing -> error "updateCanvas"
+                   Just  p -> p 
   geometry <- getCanvasPageGeometry canvas currpage origin
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoDrawPage currpage
+    -- cairoDrawPage currpage
+    cairoRenderOption (DrawBkgPDF,DrawFull) currpage
   return ()
 
 drawBBoxOnly :: PageDrawF
@@ -120,7 +127,8 @@ drawBBoxOnly canvas page vinfo _mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoDrawPageBBoxOnly page
+    -- cairoDrawPageBBoxOnly page
+    cairoRenderOption (DrawWhite,DrawBoxOnly) page 
   return ()
 
 
@@ -133,7 +141,8 @@ drawPageInBBox canvas page vinfo mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoDrawPageBBox mbbox page
+    -- cairoDrawPageBBox mbbox page
+    cairoRenderOption (DrawBkgPDF,DrawFull) page
     return ()
   return ()
 
@@ -157,7 +166,7 @@ drawBBox canvas page vinfo (Just bbox) = do
 drawBBoxSel :: PageDrawFSel 
 drawBBoxSel _ _ _ Nothing = return ()
 drawBBoxSel canvas tpg vinfo (Just bbox) = do 
-  let page = pageBBoxMapFromTempPageSelect tpg
+  let page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
@@ -203,11 +212,14 @@ drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do
     lineTo x y
     stroke
   
-showXournalBBox :: DrawingArea -> XournalBBox -> Int -> ViewInfo -> IO ()
-showXournalBBox canvas xojbbox pagenum vinfo = do 
+{- 
+showTXournalBBoxMapPDF :: DrawingArea -> TXournalBBoxMapPDF -> Int -> ViewInfo -> IO ()
+showTXournalBBoxMapPDF canvas xoj pagenum vinfo = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-  let currpagebbox = ((!!pagenum).xojbbox_pages) xojbbox
+  let currpagebbox = case ( M.lookup pagenum . gpages) xoj of 
+                       Nothing -> error "no such page in showTXournalBBoxMapPDF"
+                       Just p -> p 
       currpage = pageFromPageBBox currpagebbox
       strs = do 
         l <- pagebbox_layers currpagebbox 
@@ -225,6 +237,7 @@ showXournalBBox canvas xojbbox pagenum vinfo = do
           stroke 
     mapM_ f strs 
   return ()
+-}
 
 showBBox :: DrawingArea -> CanvasPageGeometry -> ZoomMode -> BBox -> IO ()
 showBBox canvas cpg zmode (BBox (ulx,uly) (lrx,lry)) = do 
@@ -247,12 +260,12 @@ drawSelectionInBBox :: PageDrawFSel
 drawSelectionInBBox canvas tpg vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-      page = pageBBoxMapFromTempPageSelect tpg
+      page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   
   boxdrawaction <-  
-    case strokes (tp_firstlayer tpg) of
+    case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpg of
       Right alist -> do 
         return $ do 
           setSourceRGBA 0.0 0.0 1.0 1.0
@@ -270,7 +283,7 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoDrawPageBBox mbbox page
+    cairoDrawPageBBoxPDF mbbox page
     boxdrawaction 
       
 

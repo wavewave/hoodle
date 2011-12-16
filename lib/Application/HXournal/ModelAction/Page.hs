@@ -2,9 +2,12 @@ module Application.HXournal.ModelAction.Page where
 
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
-import Text.Xournal.Type
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Type.Select
+import Data.Xournal.Simple
+import Data.Xournal.Map
+import Data.Xournal.Generic
+import Graphics.Xournal.Render.Generic
+import Graphics.Xournal.Render.BBoxMapPDF
+
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
@@ -18,34 +21,34 @@ updatePageAll xst xstate = let cmap = get canvasInfoMap xstate
                            in  set canvasInfoMap cmap' xstate 
 
 
-getPageFromXojBBoxMap :: Int -> XournalBBoxMap -> PageBBoxMap
-getPageFromXojBBoxMap pagenum xojbbox  = 
-  case M.lookup pagenum (xbm_pages xojbbox) of 
+getPageFromXojBBoxMapPDF :: Int -> TXournalBBoxMapPDF -> TPageBBoxMapPDF
+getPageFromXojBBoxMapPDF pagenum xoj  = 
+  case M.lookup pagenum (gpages xoj) of 
     Nothing -> error "something wrong in updatePage"
     Just p -> p
 
 updatePage :: XournalState -> CanvasInfo -> CanvasInfo 
 updatePage (ViewAppendState xojbbox) cinfo = 
   let pagenum = get currentPageNum cinfo 
-      pg = getPageFromXojBBoxMap pagenum xojbbox 
-      Dim w h = pageDim pg
+      pg = getPageFromXojBBoxMapPDF pagenum xojbbox 
+      Dim w h = gdimension pg
   in  set currentPageNum pagenum 
       . set (pageDimension.viewInfo) (w,h)       
       . set currentPage (Left pg)
       $ cinfo 
 updatePage (SelectState txoj) cinfo = 
   let pagenum = get currentPageNum cinfo
-      mspage = tx_selectpage txoj 
-      pageFromArg = case M.lookup pagenum (tx_pages txoj) of 
+      mspage = gselectSelected txoj 
+      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
                       Nothing -> error "no such page in updatePage"
                       Just p -> p
       (newpage,Dim w h) = 
         case mspage of 
-          Nothing -> (Left pageFromArg, pageDim pageFromArg)
+          Nothing -> (Left pageFromArg, gdimension pageFromArg)
           Just (spagenum,page) -> 
             if spagenum == pagenum 
-              then (Right page, tp_dim page) 
-              else (Left pageFromArg, pageDim pageFromArg)
+              then (Right page, gdimension page) 
+              else (Left pageFromArg, gdimension pageFromArg)
   in set currentPageNum pagenum 
      . set (pageDimension.viewInfo) (w,h)       
      . set currentPage newpage
@@ -53,33 +56,36 @@ updatePage (SelectState txoj) cinfo =
   
 setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
-  let pg = getPageFromXojBBoxMap pagenum xojbbox 
-      Dim w h = pageDim pg
+  let pg = getPageFromXojBBoxMapPDF pagenum xojbbox 
+      Dim w h = gdimension pg
   in  set currentPageNum pagenum 
       . set (viewPortOrigin.viewInfo) (0,0) 
       . set (pageDimension.viewInfo) (w,h)       
       . set currentPage (Left pg)
       $ cinfo 
 setPage (SelectState txoj) pagenum cinfo = 
-  let mspage = tx_selectpage txoj 
-      pageFromArg = case M.lookup pagenum (tx_pages txoj) of 
+  let mspage = gselectSelected  txoj 
+               -- tx_selectpage 
+      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
                       Nothing -> error "no such page in setPage"
                       Just p -> p
       (newpage,Dim w h) = 
         case mspage of 
-          Nothing -> (Left pageFromArg, pageDim pageFromArg)
+          Nothing -> (Left pageFromArg, gdimension pageFromArg)
           Just (spagenum,page) -> 
             if spagenum == pagenum 
-              then (Right page, tp_dim page) 
-              else (Left pageFromArg, pageDim pageFromArg)
+              then (Right page, gdimension page) 
+              else (Left pageFromArg, gdimension pageFromArg)
   in set currentPageNum pagenum 
      . set (viewPortOrigin.viewInfo) (0,0) 
      . set (pageDimension.viewInfo) (w,h)       
      . set currentPage newpage
      $ cinfo 
                             
-getPage :: CanvasInfo -> PageBBoxMap
+getPage :: CanvasInfo -> TPageBBoxMapPDF
 getPage cinfo = case get currentPage cinfo of 
-                  Right tpgs -> pageBBoxMapFromTempPageSelect tpgs
+                  Right tpgs -> tpageBBoxMapPDFFromTTempPageSelectPDF tpgs
+                    
+                    -- pageBBoxMapFromTempPageSelect tpgs
                   Left pg -> pg 
                   

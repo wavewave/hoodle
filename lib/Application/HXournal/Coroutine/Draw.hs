@@ -6,7 +6,10 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
-import Graphics.Xournal.Type
+
+import Data.Xournal.Simple
+import Data.Xournal.BBox
+
 import Control.Applicative 
 import Control.Monad
 import Control.Monad.Trans

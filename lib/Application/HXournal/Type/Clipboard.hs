@@ -13,7 +13,7 @@ import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
 
-import Graphics.Xournal.Type
+import Data.Xournal.BBox
 
 newtype Clipboard = Clipboard { unClipboard :: [StrokeBBox] }
 

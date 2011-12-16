@@ -8,11 +8,15 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
-import Graphics.Xournal.Type.Select
-import Graphics.Xournal.Type.Map
+
+-- import Graphics.Xournal.Render.Select
+import Data.Xournal.Map
+
+import Graphics.Xournal.Render.BBoxMapPDF
+
 import Control.Monad.State
-import Text.Xournal.Type
-import Text.Xournal.Predefined 
+import Data.Xournal.Simple
+import Data.Xournal.Predefined 
 import Graphics.UI.Gtk hiding (Clipboard)
 import Data.Maybe
 import Data.Label 
@@ -20,8 +24,8 @@ import Prelude hiding ((.), id)
 
 type XournalStateIO = StateT HXournalState IO 
 
-data XournalState = ViewAppendState { unView :: XournalBBoxMap }
-                  | SelectState { tempSelect :: TempXournalSelect }
+data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDF }
+                  | SelectState { tempSelect :: TTempXournalSelectPDF }
 
 data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _currFileName :: Maybe FilePath
@@ -46,7 +50,8 @@ $(mkLabels [''HXournalState])
 emptyHXournalState :: HXournalState 
 emptyHXournalState = 
   HXournalState  
-  { _xournalstate = ViewAppendState (mkXournalBBoxMapFromXournal emptyXournal)
+  { _xournalstate = ViewAppendState emptyTXournalBBoxMapPDF
+                    -- (mkXournalBBoxMapFromXournal emptyXournal)
   , _currFileName = Nothing 
   , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"
   , _currentCanvas = error "emtpyHxournalState.currentCanvas"

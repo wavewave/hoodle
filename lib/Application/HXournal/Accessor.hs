@@ -5,8 +5,8 @@ module Application.HXournal.Accessor where
 import Application.HXournal.Type
 import Application.HXournal.Draw 
 import Application.HXournal.ModelAction.Page
-import Text.Xournal.Type
-import Graphics.Xournal.Type 
+
+
 import Control.Applicative
 import Control.Monad
 import qualified Control.Monad.State as St
@@ -16,6 +16,10 @@ import qualified Data.IntMap as M
 import Data.Label
 import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
+
+import Data.Xournal.BBox
+import Data.Xournal.Simple
+import Data.Xournal.Generic
 
 getSt :: Iteratee MyEvent XournalStateIO HXournalState
 getSt = lift St.get
@@ -35,11 +39,10 @@ getAllStrokeBBoxInCurrentPage :: Iteratee MyEvent XournalStateIO [StrokeBBox]
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
   let currCvsInfo  = getCurrentCanvasInfo xstate 
-  let -- pagenum = get currentPageNum currCvsInfo
-      pagebbox = getPage currCvsInfo
+  let pagebbox = getPage currCvsInfo
       strs = do 
-        l <- pageLayers pagebbox 
-        s <- layerbbox_strokes l
+        l <- gToList (glayers pagebbox)
+        s <- gstrokes l
         return s 
   return strs 
       
@@ -77,6 +80,5 @@ getCanvasGeometry :: CanvasInfo -> Iteratee MyEvent XournalStateIO CanvasPageGeo
 getCanvasGeometry cinfo = do 
     let canvas = get drawArea cinfo
         page = getPage cinfo
-        -- zmode = get (zoomMode.viewInfo) cinfo
         (x0,y0) = get (viewPortOrigin.viewInfo) cinfo
     liftIO (getCanvasPageGeometry canvas page (x0,y0))

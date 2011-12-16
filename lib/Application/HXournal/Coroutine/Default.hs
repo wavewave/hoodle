@@ -38,8 +38,9 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 import Data.IORef
-import Graphics.Xournal.Type.Map
-import Graphics.Xournal.Type.Select
+import Data.Xournal.Map
+
+import Data.Xournal.Generic
 
 guiProcess :: Iteratee MyEvent XournalStateIO () 
 guiProcess = do 
@@ -191,8 +192,8 @@ menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do 
   xstate <- getSt
   let totalnumofpages = case get xournalstate xstate of 
-                          ViewAppendState xoj ->  M.size . xbm_pages $ xoj
-                          SelectState txoj    -> M.size . tx_pages $ txoj
+                          ViewAppendState xoj ->  M.size . get g_pages $ xoj
+                          SelectState txoj    -> M.size . gselectAll $ txoj
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNew  = fileNew 
 menuEventProcess MenuOpen = fileOpen

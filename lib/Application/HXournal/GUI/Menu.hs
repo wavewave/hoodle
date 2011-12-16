@@ -15,7 +15,7 @@ import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import System.FilePath
-import Text.Xournal.Predefined 
+import Data.Xournal.Predefined 
 import Paths_hxournal
 
 justMenu :: MenuEvent -> Maybe MyEvent

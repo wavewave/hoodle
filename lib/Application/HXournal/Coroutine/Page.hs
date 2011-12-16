@@ -8,8 +8,9 @@ import Application.HXournal.Draw
 import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.ModelAction.Adjustment
-import Graphics.Xournal.Type 
-import Graphics.Xournal.Type.Map
+import Graphics.Xournal.Render.Type 
+import Data.Xournal.Generic
+import Data.Xournal.Map
 import Graphics.UI.Gtk hiding (get,set)
 import Application.HXournal.ModelAction.Page
 import qualified Control.Monad.State as St 
@@ -17,8 +18,7 @@ import Control.Monad.Trans
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-import Text.Xournal.Type
-import Graphics.Xournal.Type.Select
+import Data.Xournal.Simple
 import qualified Data.IntMap as IM
 
 changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
@@ -30,7 +30,7 @@ changePage modifyfn = do
     let xojst = get xournalstate $ xstate 
     case xojst of 
       ViewAppendState xoj -> do 
-        let pgs = xbm_pages xoj 
+        let pgs = gpages xoj 
             totalnumofpages = IM.size pgs
             oldpage = get currentPageNum currCvsInfo
             lpage = case IM.lookup (totalnumofpages-1) pgs of
@@ -39,19 +39,20 @@ changePage modifyfn = do
         (xstate',xoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = mkPageBBoxMapFromPageBBox 
-                        . mkPageBBoxFromPage
-                        . newPageFromOld 
-                        . pageFromPageBBoxMap $ lpage
+            let npage = -- mkPageBBoxMapFromPageBBox 
+                        -- . mkPageBBoxFromPage
+                        -- . newPageFromOld 
+                        -- . pageFromPageBBoxMap $ lpage
+                        lpage { glayers = IM.insert 0 (GLayer []) IM.empty }                   
                 npages = IM.insert totalnumofpages npage pgs 
-                newxoj = xoj { xbm_pages = npages } 
+                newxoj = xoj { gpages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
             putSt xstate'
             return (xstate',newxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
                  then return (xstate,xoj,pgs,totalnumofpages,0)
                  else return (xstate,xoj,pgs,totalnumofpages,modifyfn oldpage)
-        let Dim w h = pageDim lpage
+        let Dim w h = gdimension lpage
             (hadj,vadj) = get adjustments currCvsInfo
         liftIO $ do 
           adjustmentSetUpper hadj w 
@@ -65,7 +66,7 @@ changePage modifyfn = do
         lift . St.put $ xstate'' 
         invalidate currCvsId 
       SelectState txoj -> do 
-        let pgs = tx_pages txoj 
+        let pgs = gselectAll txoj 
             totalnumofpages = IM.size pgs
             oldpage = get currentPageNum currCvsInfo
             lpage = case IM.lookup (totalnumofpages-1) pgs of
@@ -74,19 +75,21 @@ changePage modifyfn = do
         (xstate',txoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = mkPageBBoxMapFromPageBBox 
-                        . mkPageBBoxFromPage
-                        . newPageFromOld 
-                        . pageFromPageBBoxMap $ lpage
+            let npage = -- mkPageBBoxMapFromPageBBox 
+                        -- . mkPageBBoxFromPage
+                        -- . newPageFromOld 
+                        -- . pageFromPageBBoxMap $ lpage
+                        lpage { glayers = IM.insert 0 (GLayer []) IM.empty } 
+                  
                 npages = IM.insert totalnumofpages npage pgs 
-                newtxoj = txoj { tx_pages = npages } 
+                newtxoj = txoj { gselectAll = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate
             putSt xstate'
             return (xstate',newtxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
                  then return (xstate,txoj,pgs,totalnumofpages,0)
                  else return (xstate,txoj,pgs,totalnumofpages,modifyfn oldpage)
-        let Dim w h = pageDim lpage
+        let Dim w h = gdimension lpage
             (hadj,vadj) = get adjustments currCvsInfo
         liftIO $ do 
           adjustmentSetUpper hadj w 
@@ -111,7 +114,7 @@ pageZoomChange zmode = do
                         Just cinfo -> cinfo 
     let canvas = get drawArea currCvsInfo
     let page = getPage currCvsInfo 
-    let Dim w h = pageDim page
+    let Dim w h = gdimension page
     cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))        
     let (w',h') = canvas_size cpg 
     let (hadj,vadj) = get adjustments currCvsInfo 

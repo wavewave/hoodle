@@ -2,7 +2,7 @@
 
 module Application.HXournal.Builder where
 
-import Text.Xournal.Type
+import Data.Xournal.Simple
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder

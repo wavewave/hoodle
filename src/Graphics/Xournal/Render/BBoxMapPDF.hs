@@ -3,6 +3,7 @@
 module Graphics.Xournal.Render.BBoxMapPDF where
 
 import Graphics.Xournal.Render.Type 
+import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.Map
 import Data.Xournal.BBox
@@ -19,7 +20,7 @@ data BackgroundPDFDrawable =
   | BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
               , bkgpdf_filename :: Maybe ByteString
               , bkgpdf_pageno :: Int 
-              , bkgpdf_popplerpage :: Maybe Poppler.Page -- Maybe p 
+              , bkgpdf_popplerpage :: Maybe Poppler.Page 
               } 
 
 data BkgPDFOption = DrawBkgPDF | DrawWhite
@@ -33,6 +34,20 @@ type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TL
 type TTempXournalSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTempPageSelectPDF))
 
 
+instance GBackgroundable BackgroundPDFDrawable where 
+  gFromBackground = bkgPDFFromBkg 
+  gToBackground = bkgFromBkgPDF
+
+bkgFromBkgPDF :: BackgroundPDFDrawable -> Background 
+bkgFromBkgPDF (BkgPDFSolid c s) = Background "solid" c s 
+bkgFromBkgPDF (BkgPDFPDF d f n _ ) = BackgroundPdf "pdf" d f n 
+
+bkgPDFFromBkg :: Background -> BackgroundPDFDrawable
+bkgPDFFromBkg (Background _t c s) = BkgPDFSolid c s
+bkgPDFFromBkg (BackgroundPdf _t md mf pn) = BkgPDFPDF md mf pn (Nothing :: Maybe Poppler.Page)
+
+
+  
 emptyTXournalBBoxMapPDF :: TXournalBBoxMapPDF
 emptyTXournalBBoxMapPDF = GXournal "" empty
 
@@ -55,3 +70,5 @@ ttempPageSelectPDFFromTPageBBoxMapPDF p =
   let (x:xs) = gToList (glayers p)
       l = GLayer . TEitherAlterHitted . Left . gToList . gstrokes $ x
   in  GPage (gdimension p) (gbackground p) (TLayerSelectInPage l xs)
+      
+      

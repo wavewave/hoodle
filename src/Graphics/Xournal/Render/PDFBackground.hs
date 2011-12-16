@@ -47,14 +47,10 @@ mkPagePDF pg = do
   newbkg <- mkBkgPDF bkg
   return $ GPage dim newbkg (gFromList . Prelude.map fromLayer $ ls)
   
-translateBkg :: Background -> BackgroundPDFDrawable
-translateBkg (Background _t c s) = BkgPDFSolid c s
-translateBkg (BackgroundPdf _t md mf pn) = BkgPDFPDF md mf pn (Nothing :: Maybe Poppler.Page)
-
 mkBkgPDF :: Background 
             -> StateT (Maybe Context) IO BackgroundPDFDrawable
 mkBkgPDF bkg = do  
-  let bkgpdf = translateBkg bkg
+  let bkgpdf = bkgPDFFromBkg bkg
   case bkgpdf of 
     BkgPDFSolid _ _ -> return bkgpdf 
     BkgPDFPDF md mf pn _ -> do 

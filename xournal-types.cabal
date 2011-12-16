@@ -1,5 +1,5 @@
 Name:		xournal-types
-Version:	0.0
+Version:	0.1
 Synopsis:	
 Description: 	
 License: 	BSD3
@@ -10,27 +10,14 @@ Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 data-files:     
 
-
-Executable xournal-types
-  Main-is: xournal-types.hs
-  hs-source-dirs: exe
-  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
-  Build-Depends: 
-                   base>4, mtl>2, directory, filepath,
-                   cmdargs, xournal-types
-
 Library
-  hs-source-dirs: lib
+  hs-source-dirs: src
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base>4, mtl>2, directory, filepath,
-                   cmdargs
+                   base>4, mtl>2
   Exposed-Modules: 
-                   Graphics.Xournal.Type.Type
-                   Graphics.Xournal.Type.Job
-                   Graphics.Xournal.Type.Command
+                   Graphics.Xournal.Type.Generic
   Other-Modules: 
 
  

@@ -30,15 +30,16 @@ getFileContent (Just fname) xstate = do
                              Nothing -> error "no first page in getFileContent" 
                              Just p -> gdimension p 
         startingxojstate = ViewAppendState xoj
-        cids = M.keys cmap 
-        update x _cinfo = 
-          let changefunc c = 
-                setPage startingxojstate 0 
-                . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
-                . set currentPageNum 0 
-                $ c 
-          in  M.adjust changefunc x cmap  
-        cmap' = foldr update cmap cids   
+        -- cids = M.keys cmap 
+        -- update x _cinfo = 
+    let changefunc c = 
+          setPage startingxojstate 0 
+          . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
+          . set currentPageNum 0 
+          $ c 
+          -- in  M.adjust changefunc x cmap  
+        cmap' = fmap changefunc cmap
+        -- foldr update cmap cids   
     let newxstate = set xournalstate startingxojstate
                     . set currFileName (Just fname)
                     . set canvasInfoMap cmap'

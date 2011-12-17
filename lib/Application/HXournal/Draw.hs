@@ -116,7 +116,7 @@ updateCanvas canvas xoj pagenum vinfo = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPage currpage
-    cairoRenderOption (DrawBkgPDF,DrawFull) currpage
+    cairoRenderOption (DrawBuffer,DrawFull) currpage
   return ()
 
 drawBBoxOnly :: PageDrawF
@@ -128,7 +128,7 @@ drawBBoxOnly canvas page vinfo _mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPageBBoxOnly page
-    cairoRenderOption (DrawWhite,DrawBoxOnly) page 
+    cairoRenderOption (DrawBuffer,DrawBoxOnly) page 
   return ()
 
 
@@ -142,7 +142,7 @@ drawPageInBBox canvas page vinfo mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPageBBox mbbox page
-    cairoRenderOption (DrawBkgPDF,DrawFull) page
+    cairoRenderOption (DrawBuffer,DrawFull) page
     return ()
   return ()
 
@@ -278,7 +278,7 @@ drawSelectionInBBoxOnly canvas tpg vinfo mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoRenderOption (DrawWhite,DrawBoxOnly) page
+    cairoRenderOption (DrawBuffer,DrawBoxOnly) page
     -- cairoDrawPageBBoxPDF mbbox page
     cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
 

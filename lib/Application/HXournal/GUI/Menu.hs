@@ -352,7 +352,7 @@ getMenuUI tref sref = do
 
   -- file menu
   newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (justMenu MenuNew)
-  annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDf" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
+  annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDF" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
   opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)
   savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (justMenu MenuSave)
   saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (justMenu MenuSaveAs)
@@ -482,7 +482,7 @@ getMenuUI tref sref = do
 
  
   let disabledActions = 
-        [ annpdfa, recenta, printa, exporta
+        [ recenta, printa, exporta
         , undoa, redoa, cuta, copya, pastea, deletea
         , fscra,  zmina, zmouta, setzma
         , shwlayera, hidlayera

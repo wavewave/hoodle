@@ -54,7 +54,8 @@ Library
                      double-conversion == 0.2.*,
                      fclabels == 1.0.*,
                      cmdargs >= 0.7 && <= 0.10,
-                     configurator == 0.1.*
+                     configurator == 0.1.*, 
+                     poppler == 0.12.*
 
                      -- >= 0.1 && < 0.3
                      -- blaze-builder == 0.3.*, 

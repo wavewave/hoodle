@@ -105,3 +105,31 @@ fileSaveAs = do
 
 
 
+fileAnnotatePDF :: Iteratee MyEvent XournalStateIO ()
+fileAnnotatePDF = do 
+    xstate <- getSt
+    liftIO $ putStrLn "file annotate PDf clicked"
+    dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
+                                            FileChooserActionOpen 
+                                            [ ("OK", ResponseOk) 
+                                            , ("Cancel", ResponseCancel) ]
+    res <- liftIO $ dialogRun dialog
+    case res of 
+      ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
+      ResponseOk ->  do
+        mfilename <- liftIO $ fileChooserGetFilename dialog 
+        case mfilename of 
+          Nothing -> return () 
+          Just filename -> do 
+            liftIO $ putStrLn $ show filename 
+            mxoj <- liftIO $ makeNewXojWithPDF filename 
+            flip (maybe (return ())) mxoj $ \xoj -> do 
+              xstateNew <- return . set currFileName Nothing 
+                           =<< (liftIO $ constructNewHXournalStateFromXournal xoj xstate)
+              putSt xstateNew 
+              liftIO $ setTitleFromFileName xstateNew             
+              invalidateAll  
+        liftIO $ widgetDestroy dialog
+      ResponseCancel -> liftIO $ widgetDestroy dialog
+      _ -> error "??? in fileOpen " 
+    return ()

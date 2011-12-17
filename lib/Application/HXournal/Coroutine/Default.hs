@@ -196,6 +196,7 @@ menuEventProcess MenuLastPage = do
                           SelectState txoj    -> M.size . gselectAll $ txoj
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNew  = fileNew 
+menuEventProcess MenuAnnotatePDF = fileAnnotatePDF
 menuEventProcess MenuOpen = fileOpen
 menuEventProcess MenuSave = fileSave 
 menuEventProcess MenuSaveAs = fileSaveAs

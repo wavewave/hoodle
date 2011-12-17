@@ -13,6 +13,8 @@ import Data.ByteString hiding (putStrLn, empty)
 import qualified Data.ByteString.Char8 as C hiding (empty)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 
+import Graphics.Rendering.Cairo
+
 data BackgroundPDFDrawable = 
   BkgPDFSolid { bkgpdf_color :: ByteString
               , bkgpdf_style :: ByteString
@@ -21,9 +23,10 @@ data BackgroundPDFDrawable =
               , bkgpdf_filename :: Maybe ByteString
               , bkgpdf_pageno :: Int 
               , bkgpdf_popplerpage :: Maybe Poppler.Page 
+              , bkgpdf_cairosurface :: Maybe Surface
               } 
 
-data BkgPDFOption = DrawBkgPDF | DrawWhite
+data BkgPDFOption = DrawBkgPDF | DrawWhite | DrawBuffer
 
 type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
 
@@ -40,11 +43,11 @@ instance GBackgroundable BackgroundPDFDrawable where
 
 bkgFromBkgPDF :: BackgroundPDFDrawable -> Background 
 bkgFromBkgPDF (BkgPDFSolid c s) = Background "solid" c s 
-bkgFromBkgPDF (BkgPDFPDF d f n _ ) = BackgroundPdf "pdf" d f n 
+bkgFromBkgPDF (BkgPDFPDF d f n _ _ ) = BackgroundPdf "pdf" d f n 
 
 bkgPDFFromBkg :: Background -> BackgroundPDFDrawable
 bkgPDFFromBkg (Background _t c s) = BkgPDFSolid c s
-bkgPDFFromBkg (BackgroundPdf _t md mf pn) = BkgPDFPDF md mf pn (Nothing :: Maybe Poppler.Page)
+bkgPDFFromBkg (BackgroundPdf _t md mf pn) = BkgPDFPDF md mf pn Nothing Nothing
 
 
   

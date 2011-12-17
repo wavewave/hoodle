@@ -53,7 +53,7 @@ mkBkgPDF bkg = do
   let bkgpdf = bkgPDFFromBkg bkg
   case bkgpdf of 
     BkgPDFSolid _ _ -> return bkgpdf 
-    BkgPDFPDF md mf pn _ -> do 
+    BkgPDFPDF md mf pn _ _ -> do 
       mctxt <- get 
       case mctxt of
         Nothing -> do 
@@ -64,15 +64,15 @@ mkBkgPDF bkg = do
               put $ Just (Context d f mdoc)
               case mdoc of 
                 Just doc -> do  
-                  mpg <- popplerGetPageFromDoc doc pn 
-                  return (bkgpdf {bkgpdf_popplerpage = mpg}) 
+                  (mpg,msfc) <- popplerGetPageFromDoc doc pn 
+                  return (bkgpdf {bkgpdf_popplerpage = mpg, bkgpdf_cairosurface = msfc}) 
             _ -> return bkgpdf 
         Just (Context oldd oldf olddoc) -> do 
-          mpage <- case olddoc of 
+          (mpage,msfc) <- case olddoc of 
             Just doc -> do 
               popplerGetPageFromDoc doc pn
-            Nothing -> return Nothing 
-          return $ BkgPDFPDF md mf pn mpage
+            Nothing -> return (Nothing,Nothing) 
+          return $ BkgPDFPDF md mf pn mpage msfc
             
 popplerGetDocFromFile :: (MonadIO m) => 
                          ByteString -> m (Maybe Poppler.Document)
@@ -82,20 +82,27 @@ popplerGetDocFromFile fp =
              
              
 popplerGetPageFromDoc :: (MonadIO m) => 
-                         Poppler.Document -> Int -> m (Maybe Poppler.Page)
+                         Poppler.Document -> Int -> m (Maybe Poppler.Page, Maybe Surface)
 popplerGetPageFromDoc doc pn = do   
   n <- liftIO $ Poppler.documentGetNPages doc  
   liftIO $ putStrLn $ "pages : " ++ (show n)
   liftIO $ putStrLn $ "current page = " ++ show pn
   pg <- liftIO $ Poppler.documentGetPage doc (pn-1) 
-  return (Just pg)
+  (w,h) <- liftIO $ PopplerPage.pageGetSize pg
+  sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
+  renderWith sfc $ do   
+    setSourceRGBA 1 1 1 1
+    rectangle 0 0 w h 
+    fill
+    PopplerPage.pageRender pg
+  return (Just pg, Just sfc)
 
 
 cairoRenderBackgroundPDFDrawable :: (BackgroundPDFDrawable,Dimension) 
                                     -> Render ()
 cairoRenderBackgroundPDFDrawable (BkgPDFSolid c s,dim) = 
   cairoRender (Background "solid" c s,dim)
-cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p,dim) = do
+cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p _,dim) = do
   case p of 
     Nothing -> return () 
     Just pg -> do 
@@ -119,8 +126,16 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
     setSourceRGBA 1 1 1 1
     rectangle 0 0 w h 
     fill 
-
-
+  cairoRenderOption DrawBuffer (b,dim) = do 
+    case b of 
+      BkgPDFSolid _ _ -> cairoRenderOption DrawBkgPDF (b,dim)
+      BkgPDFPDF _ _ _ _ msfc -> do 
+        case bkgpdf_cairosurface b of 
+          Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
+          Just sfc -> do 
+            setSourceSurface sfc 0 0 
+            paint 
+      
 
 cairoDrawPageBBoxPDF :: Maybe BBox -> TPageBBoxMapPDF -> Render ()
 cairoDrawPageBBoxPDF mbbox page = do 

@@ -98,7 +98,12 @@ cairoRenderBackgroundPDFDrawable (BkgPDFSolid c s,dim) =
 cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p,dim) = do
   case p of 
     Nothing -> return () 
-    Just pg -> PopplerPage.pageRender pg
+    Just pg -> do 
+      let Dim w h = dim 
+      setSourceRGBA 1 1 1 1
+      rectangle 0 0 w h 
+      fill
+      PopplerPage.pageRender pg
     
   
 

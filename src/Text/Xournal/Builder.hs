@@ -6,7 +6,7 @@ import Data.Xournal.Simple
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
-import Blaze.ByteString.Builder.Char8 (fromChar)
+import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import Data.Double.Conversion.ByteString 
 import Data.Monoid
 import Data.Strict.Tuple
@@ -43,14 +43,31 @@ fromPage page = fromByteString "<page width=\""
   where Dim w h = page_dim page
   
 fromBackground :: Background -> Builder 
-fromBackground bkg = fromByteString "<background type=\""
-                     <> fromByteString (bkg_type bkg)
-                     <> fromByteString "\" color=\""
-                     <> fromByteString (bkg_color bkg)
-                     <> fromByteString "\" style=\""
-                     <> fromByteString (bkg_style bkg)
-                     <> fromByteString "\"/>\n"
-                     
+fromBackground bkg = 
+  case bkg of  
+    Background typ col sty -> 
+      fromByteString "<background type=\""
+      <> fromByteString typ
+      <> fromByteString "\" color=\""
+      <> fromByteString col
+      <> fromByteString "\" style=\""
+      <> fromByteString sty
+      <> fromByteString "\"/>\n"
+    BackgroundPdf typ mdom mfile pageno -> 
+      fromByteString "<background type=\""
+      <> fromByteString typ
+      <> case mdom of 
+           Nothing -> fromByteString  S.empty 
+           Just dom -> fromByteString "\" domain=\""
+                       <> fromByteString dom
+      <> case mfile of 
+           Nothing -> fromByteString S.empty 
+           Just file ->  fromByteString "\" filename=\""
+                         <> fromByteString file
+      <> fromByteString "\" pageno=\""
+      <> fromString (show pageno)
+      <> fromByteString "\"/>\n"
+      
 
 fromLayer :: Layer -> Builder
 fromLayer layer = fromByteString "<layer>\n"

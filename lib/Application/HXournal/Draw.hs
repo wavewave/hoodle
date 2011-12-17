@@ -263,7 +263,48 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
       page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoDrawPageBBoxPDF mbbox page
+    cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
+--     boxdrawaction 
+      
+drawSelectionInBBoxOnly :: PageDrawFSel 
+drawSelectionInBBoxOnly canvas tpg vinfo mbbox = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+      page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
+  geometry <- getCanvasPageGeometry canvas page origin
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoRenderOption (DrawWhite,DrawBoxOnly) page
+    -- cairoDrawPageBBoxPDF mbbox page
+    cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
+
+
   
+cairoHittedBoxDraw :: TTempPageSelectPDF -> Maybe BBox -> Render () 
+cairoHittedBoxDraw tpg mbbox = do   
+  case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpg of
+    Right alist -> do 
+      setSourceRGBA 0.0 0.0 1.0 1.0
+      let hitstrs = concatMap unHitted (getB alist)
+          oneboxdraw str = do 
+            let bbox@(BBox (x1,y1) (x2,y2)) = strokebbox_bbox str
+                drawbox = do { rectangle x1 y1 (x2-x1) (y2-y1); stroke }
+            case mbbox of 
+              Just bboxarg -> if hitTestBBoxBBox bbox bboxarg 
+                              then drawbox
+                              else return () 
+              Nothing -> drawbox 
+      mapM_ oneboxdraw hitstrs                       
+    Left _ -> return ()  
+
+
+
+
+  {-
   boxdrawaction <-  
     case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpg of
       Right alist -> do 
@@ -279,16 +320,4 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
                                     else return () 
                   Nothing -> drawbox 
           mapM_ oneboxdraw hitstrs                       
-      Left _ -> return $ return ()  
-  
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    cairoDrawPageBBoxPDF mbbox page
-    boxdrawaction 
-      
-
-
-  
-
-  
-  
+      Left _ -> return $ return ()  -}

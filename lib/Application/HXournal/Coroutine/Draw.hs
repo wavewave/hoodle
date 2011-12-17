@@ -91,5 +91,5 @@ invalidateDrawBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO ()
 invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
 invalidateBBoxOnly :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidateBBoxOnly cid = invalidateSelSingle cid Nothing drawBBoxOnly drawSelectionInBBox
+invalidateBBoxOnly cid = invalidateSelSingle cid Nothing drawBBoxOnly drawSelectionInBBoxOnly
 

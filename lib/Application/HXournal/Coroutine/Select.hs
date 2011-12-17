@@ -91,7 +91,9 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
-      invalidateInBBox cid (inflate (fromJust (Just bbox `merge` Just prevbbox)) 2)
+      -- for the time being (until double buffer)
+      -- invalidateInBBox cid (inflate (fromJust (Just bbox `merge` Just prevbbox)) 2)
+      invalidateBBoxOnly cid 
       invalidateDrawBBox cid bbox
       mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 

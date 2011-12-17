@@ -1,5 +1,5 @@
 Name:		xournal-builder
-Version:	0.0
+Version:	0.1
 Synopsis:	
 Description: 	
 License: 	BSD3
@@ -10,27 +10,20 @@ Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 data-files:     
 
-
-Executable xournal-builder
-  Main-is: xournal-builder.hs
-  hs-source-dirs: exe
-  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
-  Build-Depends: 
-                   base>4, mtl>2, directory, filepath,
-                   cmdargs, xournal-builder
-
 Library
-  hs-source-dirs: lib
+  hs-source-dirs: src
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base>4, mtl>2, directory, filepath,
-                   cmdargs
+                   base == 4.*,
+                   xournal-types == 0.1.*, 
+                   blaze-builder == 0.3.*, 
+                   strict == 0.3.*, 
+                   double-conversion == 0.2.*, 
+                   bytestring == 0.9.*
+                 
   Exposed-Modules: 
-                   Text.Xournal.Builder.Type
-                   Text.Xournal.Builder.Job
-                   Text.Xournal.Builder.Command
+                   Text.Xournal.Builder
   Other-Modules: 
 
  

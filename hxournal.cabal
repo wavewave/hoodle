@@ -9,11 +9,12 @@ Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
 Tested-with:    GHC == 7.0.3
-Build-Type: 	Simple
+Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
                 resource/*.png
                 CHANGES
+                Config.hs
 Source-repository head
   type: git
   location: https://www.github.com/wavewave/hxournal
@@ -46,9 +47,9 @@ Library
                      xournal-types == 0.1.*,
                      xournal-parser >= 0.2.999 && < 0.4, 
                      xournal-render >= 0.2.999 && < 0.4,
+                     xournal-builder == 0.1.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,
-                     blaze-builder == 0.3.*, 
                      bytestring == 0.9.*, 
                      double-conversion == 0.2.*,
                      fclabels == 1.0.*,
@@ -56,6 +57,7 @@ Library
                      configurator == 0.1.*
 
                      -- >= 0.1 && < 0.3
+                     -- blaze-builder == 0.3.*, 
   Exposed-Modules: 
                    Application.HXournal.ProgType
                    Application.HXournal.Job
@@ -95,9 +97,12 @@ Library
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw
                    Application.HXournal.Device
-                   Application.HXournal.Builder 
                    Application.HXournal.Accessor
                    Application.HXournal.Config
+
+                   -- Application.HXournal.Builder 
+
+
   Other-Modules: 
                    Paths_hxournal
   c-sources: 

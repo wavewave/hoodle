@@ -7,7 +7,7 @@ import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.File 
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.ModelAction.Window
-import Application.HXournal.Builder 
+import Text.Xournal.Builder 
 import Control.Monad.Trans
 import Control.Applicative
 import Data.Xournal.Generic

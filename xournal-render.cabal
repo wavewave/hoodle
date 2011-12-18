@@ -1,13 +1,18 @@
 Name:		xournal-render
-Version:	0.2.999
+Version:	0.3
 Synopsis:       Xournal file renderer
-Description: 	Xournal file renderer
+Description: 	Rendering library using cairo for xournal file format
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Graphics
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
+data-files:     CHANGES
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/xournal-render
 
 
 

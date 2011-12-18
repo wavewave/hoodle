@@ -89,3 +89,4 @@ getPage cinfo = case get currentPage cinfo of
                     -- pageBBoxMapFromTempPageSelect tpgs
                   Left pg -> pg 
                   
+

@@ -163,11 +163,12 @@ defaultEventProcess (VScrollBarMoved cid v) = do
     invalidate cid
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure cid w' h') = do 
-    xstate <- getSt
-    let cinfoMap = get canvasInfoMap xstate
-    case M.lookup cid cinfoMap of 
-      Nothing -> return () 
-      Just cvsInfo -> do 
+--    xstate <- getSt
+--    let cinfoMap = get canvasInfoMap xstate
+    canvasZoomUpdate Nothing cid 
+
+{-      
+      
         let canvas = get drawArea cvsInfo
         let page = getPage cvsInfo 
             (w,h) = get (pageDimension.viewInfo) cvsInfo
@@ -177,7 +178,7 @@ defaultEventProcess (CanvasConfigure cid w' h') = do
             (hadj,vadj) = get adjustments cvsInfo
         liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
                                 (w'/factor,h'/factor)
-        invalidate cid
+ --       invalidate cid  -}
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()

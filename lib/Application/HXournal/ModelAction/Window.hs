@@ -39,7 +39,7 @@ initCanvasInfo xstate cid = do
     vadj <- adjustmentNew 0 0 500 100 200 200 
     scrolledWindowSetHAdjustment scrwin hadj 
     scrolledWindowSetVAdjustment scrwin vadj 
-    scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
+    -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
     
     canvas `on` sizeRequest $ return (Requisition 480 400)    
     canvas `on` buttonPressEvent $ tryEvent $ do 

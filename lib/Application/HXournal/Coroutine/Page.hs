@@ -25,7 +25,6 @@ changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO ()
 changePage modifyfn = do 
     xstate <- getSt 
     let currCvsId = get currentCanvas xstate
-        -- cinfoMap = get canvasInfoMap xstate
         currCvsInfo = getCanvasInfo currCvsId xstate   
     let xojst = get xournalstate $ xstate 
     case xojst of 
@@ -39,11 +38,7 @@ changePage modifyfn = do
         (xstate',xoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = -- mkPageBBoxMapFromPageBBox 
-                        -- . mkPageBBoxFromPage
-                        -- . newPageFromOld 
-                        -- . pageFromPageBBoxMap $ lpage
-                        lpage { glayers = IM.insert 0 (GLayer []) IM.empty }                   
+            let npage = lpage { glayers = IM.insert 0 (GLayer []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newxoj = xoj { gpages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
@@ -75,12 +70,7 @@ changePage modifyfn = do
         (xstate',txoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = -- mkPageBBoxMapFromPageBBox 
-                        -- . mkPageBBoxFromPage
-                        -- . newPageFromOld 
-                        -- . pageFromPageBBoxMap $ lpage
-                        lpage { glayers = IM.insert 0 (GLayer []) IM.empty } 
-                  
+            let npage = lpage { glayers = IM.insert 0 (GLayer []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newtxoj = txoj { gselectAll = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate
@@ -103,6 +93,29 @@ changePage modifyfn = do
         lift . St.put $ xstate'' 
         invalidate currCvsId 
       
+canvasZoomUpdate :: Maybe ZoomMode -> CanvasId -> Iteratee MyEvent XournalStateIO ()
+canvasZoomUpdate mzmode cid = do 
+    xstate <- getSt 
+    let cinfoMap = get canvasInfoMap xstate
+    case IM.lookup cid cinfoMap of 
+      Nothing -> return () -- error " no such cvsinfo in canvasZoomUpdate"  
+      Just cvsInfo -> do 
+        let zmode = maybe (get (zoomMode.viewInfo) cvsInfo) id mzmode
+        let canvas = get drawArea cvsInfo
+        let page = getPage cvsInfo 
+        let Dim w h = gdimension page
+        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))        
+        let (w',h') = canvas_size cpg 
+        let (hadj,vadj) = get adjustments cvsInfo 
+            s = 1.0 / getRatioFromPageToCanvas cpg zmode
+        liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0) (w'*s,h'*s)
+        let cvsInfo' = set (zoomMode.viewInfo) zmode
+                       . set (viewPortOrigin.viewInfo) (0,0)
+                       $ cvsInfo 
+            xstate' = updateCanvasInfo cvsInfo' xstate
+        putSt xstate' 
+        invalidate cid       
+
 
 pageZoomChange :: ZoomMode -> Iteratee MyEvent XournalStateIO () 
 pageZoomChange zmode = do 

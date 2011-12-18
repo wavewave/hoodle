@@ -1,2 +1,4 @@
 0.2: 12 Dec 2011
    * First public release
+0.3: 18 Dec 2011
+   * Refactor out type definition to xournal-types package

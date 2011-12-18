@@ -1,17 +1,18 @@
 Name:		xournal-parser
-Version:	0.2.999
+Version:	0.3
 Synopsis:       Xournal file parser
-Description: 	Define Xournal type and parser for xournal xml file
+Description: 	Text parser for xournal xml file
 Homepage:       http://ianwookim.org/hxournal
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Text
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 Source-repository head
   type: git
-  location: https://www.github.com/wavewave/xournal-parser
+  location: http://www.github.com/wavewave/xournal-parser
 
 
 Library

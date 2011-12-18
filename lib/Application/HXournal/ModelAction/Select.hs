@@ -15,6 +15,10 @@ import Data.Strict.Tuple
 import qualified Data.IntMap as M
 import qualified Data.Map as Map 
 
+import Control.Category
+import Data.Label
+import Prelude hiding ((.),id)
+
 
 changeStrokeByOffset :: (Double,Double) -> StrokeBBox -> StrokeBBox 
 changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) = 
@@ -43,7 +47,11 @@ updateTempXournalSelect txoj tpage pagenum =
   let pgs = gselectAll txoj 
       pgs' = M.adjust (const (tpageBBoxMapPDFFromTTempPageSelectPDF tpage))
                         pagenum pgs
-  in GSelect { gselectAll = pgs', gselectSelected = Just (pagenum,tpage) } 
+  in set g_selectAll pgs' 
+     . set g_selectSelected (Just (pagenum,tpage))
+     $ txoj 
+     
+--      GSelect { gselectAll = pgs', gselectSelected = Just (pagenum,tpage) } 
     
     
 hitInSelection :: TTempPageSelectPDF -> (Double,Double) -> Bool 

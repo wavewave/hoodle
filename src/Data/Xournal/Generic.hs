@@ -120,6 +120,14 @@ g_layers = lens glayers (\a f -> f { glayers = a } )
 g_strokes :: GLayer s a :-> s a 
 g_strokes = lens gstrokes (\a f -> f { gstrokes = a } )
 
+g_selectTitle :: GSelect a b :-> ByteString
+g_selectTitle = lens gselectTitle (\a f -> f {gselectTitle = a})
+
+g_selectAll :: GSelect a b :-> a 
+g_selectAll = lens gselectAll (\a f -> f {gselectAll = a} )
+
+g_selectSelected :: GSelect a b :-> b
+g_selectSelected = lens gselectSelected (\a f -> f {gselectSelected = a})
 
 
 
@@ -151,28 +159,4 @@ pageFromTPageSimple = Page <$> gdimension <*> gbackground <*> map layerFromTLaye
 
 xournalFromTXournalSimple :: TXournalSimple -> Xournal 
 xournalFromTXournalSimple = Xournal <$> gtitle <*> map pageFromTPageSimple . gpages 
-
--- $(mkLabels [''GXournal, ''GPage, ''GLayer, ''GSelect])
-
-{-
-
-
--}
-
-{-
--}
-
-{-
--}
-
-
-{-
-  
-  
-  
-  
- -}               
-
-
-
 

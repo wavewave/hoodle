@@ -1,14 +1,18 @@
 Name:		xournal-builder
 Version:	0.1
-Synopsis:	
-Description: 	
+Synopsis:	text builder for xournal file format 
+Description: 	This library builds text xoj format file from xournal data structure
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Text
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
-data-files:     
+data-files:     CHANGES
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/xournal-builder
 
 Library
   hs-source-dirs: src

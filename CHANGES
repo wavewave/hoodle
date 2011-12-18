@@ -1,2 +1,11 @@
 0.5: 12 Dec 2011
    * First public release. basic pen operation, eraser operation, rectangular selection and file operations are implemented
+
+0.5.1: 16 Dec 2011 
+   * Use of configuration file '.hxournal'. Enable Use X Input menu. Dependency on xournal-parser and xournal-render is restricted to 0.2.0.* only
+   * checking gtk+-2.0 using pkg-config
+
+0.6: 18 Dec 2011 
+   * pdf background support. Annotate PDF menu is activated. preloading pdf background images
+
+ 

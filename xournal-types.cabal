@@ -20,7 +20,7 @@ Library
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base>4, 
+                   base == 4.*, 
                    bytestring == 0.9.*, 
                    strict == 0.3.*, 
                    containers == 0.4.*, 

@@ -51,7 +51,7 @@ updateTempXournalSelect txoj tpage pagenum =
      . set g_selectSelected (Just (pagenum,tpage))
      $ txoj 
      
---      GSelect { gselectAll = pgs', gselectSelected = Just (pagenum,tpage) } 
+
     
     
 hitInSelection :: TTempPageSelectPDF -> (Double,Double) -> Bool 

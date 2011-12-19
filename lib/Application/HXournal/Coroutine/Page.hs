@@ -100,7 +100,7 @@ canvasZoomUpdate mzmode cid = do
     case IM.lookup cid cinfoMap of 
       Nothing -> do
         liftIO $ putStrLn $ "canvasZoomUpdate : no cid = " ++ show cid 
-        return () -- error " no such cvsinfo in canvasZoomUpdate"  
+        return () 
       Just cvsInfo -> do 
         let zmode = maybe (get (zoomMode.viewInfo) cvsInfo) id mzmode
         let canvas = get drawArea cvsInfo
@@ -124,23 +124,3 @@ pageZoomChange zmode = do
     xstate <- getSt 
     let currCvsId = get currentCanvas xstate
     canvasZoomUpdate (Just zmode) currCvsId         
-{-    
-    cinfoMap = get canvasInfoMap xstate
-        currCvsInfo = case IM.lookup currCvsId cinfoMap of 
-                        Nothing -> error " no such cvsinfo in pageZoomChange"  
-                        Just cinfo -> cinfo 
-    let canvas = get drawArea currCvsInfo
-    let page = getPage currCvsInfo 
-    let Dim w h = gdimension page
-    cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))        
-    let (w',h') = canvas_size cpg 
-    let (hadj,vadj) = get adjustments currCvsInfo 
-        s = 1.0 / getRatioFromPageToCanvas cpg zmode
-    liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0) (w'*s,h'*s)
-    let currCvsInfo' = set (zoomMode.viewInfo) zmode
-                       . set (viewPortOrigin.viewInfo) (0,0)
-                       $ currCvsInfo 
-        xstate' = updateCanvasInfo currCvsInfo' xstate
-    putSt xstate' 
-    invalidate currCvsId       
--}

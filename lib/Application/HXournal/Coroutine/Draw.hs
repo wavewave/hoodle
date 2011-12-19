@@ -78,9 +78,6 @@ invalidateOther = do
       keys = M.keys cinfoMap 
   invalidateGen (filter (/=currCvsId) keys) Nothing drawPageInBBox
 
--- invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
--- invalidate cid = invalidateGenSingle cid Nothing drawPageInBBox 
-  
 invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 invalidate cid = invalidateSelSingle cid Nothing drawPageInBBox drawSelectionInBBox
 

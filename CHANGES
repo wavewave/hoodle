@@ -8,4 +8,7 @@
 0.6: 18 Dec 2011 
    * pdf background support. Annotate PDF menu is activated. preloading pdf background images
 
+0.6.0: 19 Dec 2011 
+   * some bug fixes (temporary yet) related to automatic scrollbar disappearing. Check when new, open, annotate pdf if xournal file is not saved yet. 
+ 
  

@@ -42,6 +42,7 @@ data HXournalState = HXournalState { _xournalstate :: XournalState
                                    , _penInfo :: PenInfo
                                    , _selectInfo :: SelectInfo 
                                    , _gtkUIManager :: UIManager 
+                                   , _isSaved :: Bool 
                                    } 
 
 
@@ -66,6 +67,7 @@ emptyHXournalState =
   , _penInfo = PenInfo PenWork predefined_medium ColorBlack
   , _selectInfo = SelectInfo SelectRectangleWork 
   , _gtkUIManager = error "emptyHXournalState.gtkUIManager"
+  , _isSaved = False 
   }
 
   

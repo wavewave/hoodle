@@ -20,6 +20,7 @@ import Application.HXournal.ModelAction.Window
 import Graphics.UI.Gtk hiding (get,set)
 
 import Control.Applicative 
+import Control.Monad.Trans 
 
 import Data.IORef
 
@@ -89,7 +90,10 @@ startGUI mfname = do
   boxPackStart vbox toolbar2 PackNatural 0 
   boxPackEnd vbox winCvsArea PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
-  onDestroy window mainQuit
+  window `on` deleteEvent $ do
+    liftIO $ bouncecallback tref sref (Menu MenuQuit)
+    return True
+    -- mainQuit
   widgetShowAll window
   
   -- initialized

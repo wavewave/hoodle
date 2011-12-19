@@ -10,6 +10,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
+import Application.HXournal.ModelAction.Common
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
 import Data.Xournal.Simple
@@ -71,9 +72,10 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
               newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
               newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
               newxojstate = ViewAppendState newxojbbox
-              xstate' = set xournalstate newxojstate 
+              xstate' = commitChange
+                        . set xournalstate newxojstate 
                         . updatePageAll newxojstate $ xstate 
-          lift $ St.put xstate' 
+          putSt xstate' 
           case maybebbox of 
             Just bbox -> invalidateDrawBBox cid bbox
             Nothing -> return ()

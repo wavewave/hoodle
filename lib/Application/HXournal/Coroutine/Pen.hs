@@ -10,6 +10,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Accessor
+import Application.HXournal.ModelAction.Common
 import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Draw
@@ -42,7 +43,8 @@ penStart cid pcoord = do
     pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
     let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
         bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
-        xstate' = set xournalstate (ViewAppendState newxoj) 
+        xstate' = commitChange
+                  . set xournalstate (ViewAppendState newxoj) 
                   . updatePageAll (ViewAppendState newxoj)
                   $ xstate
     putSt xstate'

@@ -4,6 +4,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
+import Application.HXournal.ModelAction.Common
 import Application.HXournal.ModelAction.File 
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.ModelAction.Window
@@ -21,15 +22,31 @@ import qualified Data.ByteString.Lazy as L
 import Data.Xournal.Simple
 import Data.Xournal.Map
 
+askIfSave :: Iteratee MyEvent XournalStateIO ()
+                    -> Iteratee MyEvent XournalStateIO ()
+askIfSave action = do 
+    xstate <- getSt 
+    if not (get isSaved xstate)
+      then do 
+        dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
+          MessageQuestion ButtonsOkCancel 
+          "Current canvas is not saved yet. Will you proceed without save?" 
+        res <- liftIO $ dialogRun dialog
+        case res of
+          ResponseOk -> do liftIO $ widgetDestroy dialog
+                           action
+          _ -> do liftIO $ widgetDestroy dialog
+        return () 
+      else action  
 
 fileNew :: Iteratee MyEvent XournalStateIO ()
-fileNew = do 
-    liftIO $ putStrLn "fileNew called"
-    xstate <- getSt 
+fileNew = do  
+    xstate <- getSt
     xstate' <- liftIO $ getFileContent Nothing xstate 
-    putSt xstate' 
+    putSt . commitChange $ xstate' 
     liftIO $ setTitleFromFileName xstate'
     invalidateAll 
+
 
 fileSave :: Iteratee MyEvent XournalStateIO () 
 fileSave = do 
@@ -42,6 +59,7 @@ fileSave = do
               ViewAppendState xojmap -> Xournal <$> get g_title <*> gToList . fmap (toPage gToBackground) . get g_pages $ xojmap 
               SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
         liftIO . L.writeFile filename . builder $ xoj
+        putSt . set isSaved True $ xstate 
 
 fileOpen :: Iteratee MyEvent XournalStateIO ()
 fileOpen = do 
@@ -61,7 +79,8 @@ fileOpen = do
             liftIO $ putStrLn $ show filename 
             xstate <- getSt 
             xstateNew <- liftIO $ getFileContent (Just filename) xstate
-            putSt xstateNew 
+            putSt . set isSaved True 
+                  $ xstateNew 
             liftIO $ setTitleFromFileName xstateNew             
             invalidateAll 
         liftIO $ widgetDestroy dialog
@@ -77,7 +96,6 @@ fileSaveAs = do
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
     res <- liftIO $ dialogRun dialog
-    -- liftIO $ putStrLn $ show response
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
       ResponseOk -> do
@@ -96,7 +114,7 @@ fileSaveAs = do
                                             $ xojmap 
                   SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
             liftIO . L.writeFile filename . builder $ xoj
-            putSt xstateNew                                     
+            putSt . set isSaved True $ xstateNew             
             liftIO $ setTitleFromFileName xstateNew 
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
@@ -126,7 +144,7 @@ fileAnnotatePDF = do
             flip (maybe (return ())) mxoj $ \xoj -> do 
               xstateNew <- return . set currFileName Nothing 
                            =<< (liftIO $ constructNewHXournalStateFromXournal xoj xstate)
-              putSt xstateNew 
+              putSt . commitChange $ xstateNew 
               liftIO $ setTitleFromFileName xstateNew             
               invalidateAll  
         liftIO $ widgetDestroy dialog

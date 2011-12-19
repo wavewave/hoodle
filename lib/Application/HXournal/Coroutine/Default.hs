@@ -162,10 +162,10 @@ defaultEventProcess (VScrollBarMoved cid v) = do
     lift . St.put $ xstate'
     invalidate cid
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
-defaultEventProcess (CanvasConfigure cid w' h') = do 
+defaultEventProcess (CanvasConfigure cid w' h') = canvasZoomUpdate Nothing cid 
 --    xstate <- getSt
 --    let cinfoMap = get canvasInfoMap xstate
-    canvasZoomUpdate Nothing cid 
+
 
 {-      
       
@@ -183,10 +183,27 @@ defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()
 
-
+askQuitProgram :: Iteratee MyEvent XournalStateIO () 
+askQuitProgram = do 
+  dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
+                       MessageQuestion ButtonsOkCancel 
+                       "Current canvas is not saved yet. Will you close hxournal?" 
+  res <- liftIO $ dialogRun dialog
+  case res of
+    ResponseOk -> do 
+      liftIO $ widgetDestroy dialog
+      liftIO $ mainQuit
+    _ -> do 
+      liftIO $ widgetDestroy dialog
+      return ()
 
 menuEventProcess :: MenuEvent -> Iteratee MyEvent XournalStateIO ()
-menuEventProcess MenuQuit = liftIO $ mainQuit
+menuEventProcess MenuQuit = do 
+  xstate <- getSt
+  liftIO $ putStrLn "MenuQuit called"
+  if get isSaved xstate 
+    then liftIO $ mainQuit
+    else askQuitProgram
 menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
@@ -196,9 +213,9 @@ menuEventProcess MenuLastPage = do
                           ViewAppendState xoj ->  M.size . get g_pages $ xoj
                           SelectState txoj    -> M.size . gselectAll $ txoj
   changePage (const (totalnumofpages-1))
-menuEventProcess MenuNew  = fileNew 
-menuEventProcess MenuAnnotatePDF = fileAnnotatePDF
-menuEventProcess MenuOpen = fileOpen
+menuEventProcess MenuNew  = askIfSave fileNew 
+menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
+menuEventProcess MenuOpen = askIfSave fileOpen
 menuEventProcess MenuSave = fileSave 
 menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuCut = cutSelection

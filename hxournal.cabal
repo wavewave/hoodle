@@ -78,6 +78,7 @@ Library
                    Application.HXournal.ModelAction.Select
                    Application.HXournal.ModelAction.File
                    Application.HXournal.ModelAction.Window
+                   Application.HXournal.ModelAction.Common
                    Application.HXournal.Coroutine.Callback
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu

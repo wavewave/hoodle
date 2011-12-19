@@ -13,6 +13,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Mode
+import Application.HXournal.ModelAction.Common
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 import Control.Monad.Trans
@@ -27,6 +28,8 @@ import Graphics.Xournal.Render.Type
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox
+
+
 
 import Data.Maybe
 
@@ -103,10 +106,8 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           cpn = get currentPageNum cinfo 
           
       let bbox = BBox orig (x,y)
-          -- prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox
-          
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate
           newlayer = GLayer (TEitherAlterHitted (Right selectstrs))
@@ -139,7 +140,6 @@ moveSelectRectangle :: CanvasInfo
                     -> Iteratee MyEvent XournalStateIO ()
 moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev = do
   xstate <- getSt
-  -- let cid = get canvasId cinfo 
   r <- await 
   case r of 
     PenMove _cid' pcoord -> do 
@@ -155,9 +155,10 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset tpage offset
               newtxoj = updateTempXournalSelect txoj newtpage pagenum 
-          putSt (set xournalstate (SelectState newtxoj)
+          putSt  . commitChange
+                 . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
-                 $ xstate )
+                 $ xstate 
         Left _ -> error "this is impossible, in moveSelectRectangle" 
       disconnect connidmove
       disconnect connidup 
@@ -168,8 +169,7 @@ deleteSelection :: Iteratee MyEvent XournalStateIO ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
   xstate <- getSt
-  let -- cinfo = getCurrentCanvasInfo xstate 
-      SelectState txoj = get xournalstate xstate 
+  let SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
   case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpage of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
@@ -178,10 +178,13 @@ deleteSelection = do
           oldlayers = glayers tpage
           newpage = tpage { glayers = oldlayers { gselectedlayer = GLayer (TEitherAlterHitted newlayer) } } 
           newtxoj = updateTempXournalSelect txoj newpage n          
-          newxstate = set xournalstate (SelectState newtxoj) xstate
-          newxstate' = updatePageAll (SelectState newtxoj) newxstate 
-      putSt newxstate' 
-      let ui = get gtkUIManager newxstate'
+          -- newxstate =  xstate
+          newxstate = commitChange
+                      . updatePageAll (SelectState newtxoj) 
+                      . set xournalstate (SelectState newtxoj)
+                      $ xstate 
+      putSt newxstate 
+      let ui = get gtkUIManager newxstate
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
@@ -238,7 +241,8 @@ pasteToSelection = do
                             :- Empty )
       tpage' = tpage { glayers = ls { gselectedlayer = newlayerselect } } 
       txoj' = updateTempXournalSelect txoj tpage' pagenum 
-      xstate' = updatePageAll (SelectState txoj') 
+      xstate' = commitChange
+                . updatePageAll (SelectState txoj') 
                 . set xournalstate (SelectState txoj') 
                 $ xstate 
   putSt xstate' 
@@ -261,9 +265,12 @@ selectPenColorChanged pcolor = do
           ls = glayers tpage 
           newpage = tpage { glayers = ls { gselectedlayer = GLayer (TEitherAlterHitted newlayer) }} 
           newtxoj = updateTempXournalSelect txoj newpage n
-          newxstate = set xournalstate (SelectState newtxoj) xstate
-          newxstate' = updatePageAll (SelectState newtxoj) newxstate 
-      putSt newxstate' 
+          -- newxstate = 
+          newxstate = commitChange
+                       . updatePageAll (SelectState newtxoj) 
+                       . set xournalstate (SelectState newtxoj) 
+                       $ xstate                       
+      putSt newxstate 
       invalidateAll 
           
 selectPenWidthChanged :: Double ->  Iteratee MyEvent XournalStateIO () 
@@ -281,8 +288,11 @@ selectPenWidthChanged pwidth = do
           ls = glayers tpage 
           newpage = tpage { glayers = ls { gselectedlayer = GLayer (TEitherAlterHitted newlayer) }} 
           newtxoj = updateTempXournalSelect txoj newpage n          
-          newxstate = set xournalstate (SelectState newtxoj) xstate
-          newxstate' = updatePageAll (SelectState newtxoj) newxstate 
-      putSt newxstate' 
+          -- newxstate =  xstate
+          newxstate = commitChange
+                       . updatePageAll (SelectState newtxoj) 
+                       . set xournalstate (SelectState newtxoj)
+                       $ xstate 
+      putSt newxstate 
       invalidateAll 
 

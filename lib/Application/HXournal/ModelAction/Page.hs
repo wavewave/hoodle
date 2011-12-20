@@ -16,15 +16,33 @@ import qualified Data.IntMap as M
 updatePageAll :: XournalState 
                  -> HXournalState 
                  -> HXournalState
-updatePageAll xst xstate = let cmap = get canvasInfoMap xstate
-                               cmap' = fmap (updatePage xst) cmap
-                           in  set canvasInfoMap cmap' xstate 
+updatePageAll xst xstate = 
+  let cmap = get canvasInfoMap xstate
+      cmap' = fmap (updatePage xst . adjustPage xst) cmap
+  in  set canvasInfoMap cmap' xstate 
+
+adjustPage :: XournalState -> CanvasInfo -> CanvasInfo
+adjustPage xojstate cinfo =
+    let cpn = get currentPageNum cinfo 
+        pagemap = case xojstate of 
+                    ViewAppendState xoj -> get g_pages xoj 
+                    SelectState txoj -> get g_selectAll txoj 
+    in  adjustwork cpn pagemap              
+  where adjustwork cpn pagemap = 
+         if M.notMember cpn pagemap  
+         then let (minp,_) = M.findMin pagemap 
+                  (maxp,_) = M.findMax pagemap 
+              in if cpn > maxp 
+                   then set currentPageNum maxp cinfo
+                   else set currentPageNum minp cinfo
+         else cinfo
+ 
 
 
 getPageFromXojBBoxMapPDF :: Int -> TXournalBBoxMapPDF -> TPageBBoxMapPDF
 getPageFromXojBBoxMapPDF pagenum xoj  = 
   case M.lookup pagenum (gpages xoj) of 
-    Nothing -> error "something wrong in updatePage"
+    Nothing -> error "something wrong in getPageFromXojBBoxMapPDF"
     Just p -> p
 
 updatePage :: XournalState -> CanvasInfo -> CanvasInfo 

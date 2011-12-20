@@ -7,6 +7,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Draw
 import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
+import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Adjustment
 import Graphics.Xournal.Render.Type 
 import Data.Xournal.Generic
@@ -42,7 +43,7 @@ changePage modifyfn = do
                 npages = IM.insert totalnumofpages npage pgs 
                 newxoj = xoj { gpages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
-            putSt xstate'
+            commit xstate'
             return (xstate',newxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
                  then return (xstate,xoj,pgs,totalnumofpages,0)
@@ -58,7 +59,7 @@ changePage modifyfn = do
             xstate'' = updatePageAll (ViewAppendState xoj')
                        . updateCanvasInfo currCvsInfo' 
                        $ xstate'
-        lift . St.put $ xstate'' 
+        putSt xstate'' 
         invalidate currCvsId 
       SelectState txoj -> do 
         let pgs = gselectAll txoj 
@@ -74,7 +75,7 @@ changePage modifyfn = do
                 npages = IM.insert totalnumofpages npage pgs 
                 newtxoj = txoj { gselectAll = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate
-            putSt xstate'
+            commit xstate'
             return (xstate',newtxoj,npages,totalnumofpages+1,totalnumofpages)
           else if modifyfn oldpage < 0 
                  then return (xstate,txoj,pgs,totalnumofpages,0)
@@ -90,7 +91,7 @@ changePage modifyfn = do
             xstate'' = updatePageAll (SelectState txoj')
                        . updateCanvasInfo currCvsInfo' 
                        $ xstate'
-        lift . St.put $ xstate'' 
+        putSt xstate'' 
         invalidate currCvsId 
       
 canvasZoomUpdate :: Maybe ZoomMode -> CanvasId -> Iteratee MyEvent XournalStateIO ()

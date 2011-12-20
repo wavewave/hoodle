@@ -4,14 +4,18 @@
 
 module Graphics.Xournal.Render.PDFBackground where
 
-import Control.Monad.State
+import Control.Monad.State hiding (mapM_)
+import Prelude hiding (mapM_)
 
+-- import qualified Data.IntMap as M
+import Data.Foldable 
 import Data.Monoid 
 import Data.ByteString hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C
 import Data.Xournal.Generic
 import Data.Xournal.Simple
 import Data.Xournal.BBox
+import Graphics.Xournal.Render.BBox 
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.Type
@@ -135,7 +139,30 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
           Just sfc -> do 
             setSourceSurface sfc 0 0 
             paint 
+  cairoRenderOption (DrawPDFInBBox mbbox) (b,dim) = do 
+    case b of 
+      BkgPDFSolid _ _ -> cairoDrawBackgroundBBox mbbox dim (bkgFromBkgPDF b)
+      BkgPDFPDF _ _ _ _ _ -> cairoRenderOption DrawBuffer (b,dim)
+
       
+
+newtype InBBox a = InBBox a
+
+data InBBoxOption = InBBoxOption (Maybe BBox) 
+
+instance RenderOptionable (InBBox TLayerBBox) where
+  type RenderOption (InBBox TLayerBBox) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) (InBBox layer) 
+    = cairoDrawLayerBBox mbbox layer 
+
+                             
+instance RenderOptionable (InBBox TPageBBoxMapPDF) where
+  type RenderOption (InBBox TPageBBoxMapPDF) = InBBoxOption 
+  cairoRenderOption opt@(InBBoxOption mbbox) (InBBox page) = do 
+    cairoRenderOption (DrawPDFInBBox mbbox) (gbackground page, gdimension page) 
+    mapM_ (cairoDrawLayerBBox mbbox) . glayers $ page 
+
+    
 
 cairoDrawPageBBoxPDF :: Maybe BBox -> TPageBBoxMapPDF -> Render ()
 cairoDrawPageBBoxPDF mbbox page = do 

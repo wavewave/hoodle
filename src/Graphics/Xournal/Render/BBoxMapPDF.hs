@@ -26,7 +26,10 @@ data BackgroundPDFDrawable =
               , bkgpdf_cairosurface :: Maybe Surface
               } 
 
-data BkgPDFOption = DrawBkgPDF | DrawWhite | DrawBuffer
+data BkgPDFOption = DrawBkgPDF 
+                  | DrawWhite 
+                  | DrawBuffer
+                  | DrawPDFInBBox (Maybe BBox)
 
 type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
 

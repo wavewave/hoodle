@@ -7,6 +7,7 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.ModelAction.Page
 import qualified Text.Xournal.Parse as P
 import qualified Data.IntMap as M
+
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
@@ -17,6 +18,8 @@ import Data.Xournal.Generic
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.PDFBackground
+
+import Graphics.UI.Gtk hiding (get,set)
 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
@@ -97,3 +100,11 @@ createPage dim fn n
                 in Page dim bkg [emptyLayer]
                    
                    
+toggleSave :: UIManager -> Bool -> IO ()
+toggleSave ui b = do 
+    agr <- uiManagerGetActionGroups ui >>= \x -> 
+      case x of
+        [] -> error "No action group?"
+        y:_ -> return y
+    Just savea <- actionGroupGetAction agr "SAVEA"
+    actionSetSensitive savea b

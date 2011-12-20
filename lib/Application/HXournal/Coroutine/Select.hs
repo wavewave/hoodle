@@ -13,7 +13,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Mode
-import Application.HXournal.ModelAction.Common
+import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 import Control.Monad.Trans
@@ -155,8 +155,7 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset tpage offset
               newtxoj = updateTempXournalSelect txoj newtpage pagenum 
-          putSt  . commitChange
-                 . set xournalstate (SelectState newtxoj)
+          commit . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
                  $ xstate 
         Left _ -> error "this is impossible, in moveSelectRectangle" 
@@ -178,12 +177,10 @@ deleteSelection = do
           oldlayers = glayers tpage
           newpage = tpage { glayers = oldlayers { gselectedlayer = GLayer (TEitherAlterHitted newlayer) } } 
           newtxoj = updateTempXournalSelect txoj newpage n          
-          -- newxstate =  xstate
-          newxstate = commitChange
-                      . updatePageAll (SelectState newtxoj) 
+          newxstate = updatePageAll (SelectState newtxoj) 
                       . set xournalstate (SelectState newtxoj)
                       $ xstate 
-      putSt newxstate 
+      commit newxstate 
       let ui = get gtkUIManager newxstate
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
@@ -241,11 +238,10 @@ pasteToSelection = do
                             :- Empty )
       tpage' = tpage { glayers = ls { gselectedlayer = newlayerselect } } 
       txoj' = updateTempXournalSelect txoj tpage' pagenum 
-      xstate' = commitChange
-                . updatePageAll (SelectState txoj') 
+      xstate' = updatePageAll (SelectState txoj') 
                 . set xournalstate (SelectState txoj') 
                 $ xstate 
-  putSt xstate' 
+  commit xstate' 
   let ui = get gtkUIManager xstate' 
   liftIO $ toggleCutCopyDelete ui True
   invalidateAll 
@@ -265,12 +261,9 @@ selectPenColorChanged pcolor = do
           ls = glayers tpage 
           newpage = tpage { glayers = ls { gselectedlayer = GLayer (TEitherAlterHitted newlayer) }} 
           newtxoj = updateTempXournalSelect txoj newpage n
-          -- newxstate = 
-          newxstate = commitChange
-                       . updatePageAll (SelectState newtxoj) 
-                       . set xournalstate (SelectState newtxoj) 
-                       $ xstate                       
-      putSt newxstate 
+      commit . updatePageAll (SelectState newtxoj) 
+             . set xournalstate (SelectState newtxoj) 
+             $ xstate                       
       invalidateAll 
           
 selectPenWidthChanged :: Double ->  Iteratee MyEvent XournalStateIO () 
@@ -288,11 +281,8 @@ selectPenWidthChanged pwidth = do
           ls = glayers tpage 
           newpage = tpage { glayers = ls { gselectedlayer = GLayer (TEitherAlterHitted newlayer) }} 
           newtxoj = updateTempXournalSelect txoj newpage n          
-          -- newxstate =  xstate
-          newxstate = commitChange
-                       . updatePageAll (SelectState newtxoj) 
-                       . set xournalstate (SelectState newtxoj)
-                       $ xstate 
-      putSt newxstate 
+      commit . updatePageAll (SelectState newtxoj) 
+             . set xournalstate (SelectState newtxoj)
+             $ xstate 
       invalidateAll 
 

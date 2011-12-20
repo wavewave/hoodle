@@ -4,10 +4,10 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
-import Application.HXournal.ModelAction.Common
-import Application.HXournal.ModelAction.File 
 import Application.HXournal.Coroutine.Draw
+import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Window
+import Application.HXournal.ModelAction.File
 import Text.Xournal.Builder 
 import Control.Monad.Trans
 import Control.Applicative
@@ -43,7 +43,7 @@ fileNew :: Iteratee MyEvent XournalStateIO ()
 fileNew = do  
     xstate <- getSt
     xstate' <- liftIO $ getFileContent Nothing xstate 
-    putSt . commitChange $ xstate' 
+    commit xstate' 
     liftIO $ setTitleFromFileName xstate'
     invalidateAll 
 
@@ -60,6 +60,8 @@ fileSave = do
               SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
         liftIO . L.writeFile filename . builder $ xoj
         putSt . set isSaved True $ xstate 
+        let ui = get gtkUIManager xstate
+        liftIO $ toggleSave ui False
 
 fileOpen :: Iteratee MyEvent XournalStateIO ()
 fileOpen = do 
@@ -114,7 +116,9 @@ fileSaveAs = do
                                             $ xojmap 
                   SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
             liftIO . L.writeFile filename . builder $ xoj
-            putSt . set isSaved True $ xstateNew             
+            putSt . set isSaved True $ xstateNew    
+            let ui = get gtkUIManager xstateNew
+            liftIO $ toggleSave ui False
             liftIO $ setTitleFromFileName xstateNew 
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
@@ -144,7 +148,7 @@ fileAnnotatePDF = do
             flip (maybe (return ())) mxoj $ \xoj -> do 
               xstateNew <- return . set currFileName Nothing 
                            =<< (liftIO $ constructNewHXournalStateFromXournal xoj xstate)
-              putSt . commitChange $ xstateNew 
+              commit xstateNew 
               liftIO $ setTitleFromFileName xstateNew             
               invalidateAll  
         liftIO $ widgetDestroy dialog

@@ -24,6 +24,9 @@ loadConfigFile = do
   config <- load [Required "$(HOME)/.hxournal"]
   return config
   
+getMaxUndo :: Config -> IO (Maybe Int)
+getMaxUndo c = C.lookup c "maxundo"
+
 getPenDevConfig :: Config -> IO (Maybe String, Maybe String,Maybe String) 
 getPenDevConfig c = do 
   mcore <- C.lookup c "core"

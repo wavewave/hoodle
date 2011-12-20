@@ -12,6 +12,7 @@ import Application.HXournal.Accessor
 
 import Application.HXournal.GUI.Menu
 import Application.HXournal.Coroutine.Callback
+import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Pen
 import Application.HXournal.Coroutine.Eraser
@@ -215,6 +216,8 @@ menuEventProcess MenuLastPage = do
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
+menuEventProcess MenuUndo = undo 
+menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen
 menuEventProcess MenuSave = fileSave 
 menuEventProcess MenuSaveAs = fileSaveAs

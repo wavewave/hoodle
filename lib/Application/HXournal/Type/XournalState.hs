@@ -8,7 +8,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
-
+import Application.HXournal.Type.Undo
 -- import Graphics.Xournal.Render.Select
 import Data.Xournal.Map
 
@@ -27,23 +27,25 @@ type XournalStateIO = StateT HXournalState IO
 data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDF }
                   | SelectState { tempSelect :: TTempXournalSelectPDF }
 
-data HXournalState = HXournalState { _xournalstate :: XournalState
-                                   , _currFileName :: Maybe FilePath
-                                   , _canvasInfoMap :: CanvasInfoMap 
-                                   , _currentCanvas :: Int
-                                   , _frameState :: WindowConfig 
-                                   , _rootWindow :: Widget
-                                   , _rootContainer :: Box
-                                   , _rootOfRootWindow :: Window
-                                   , _currentPenDraw :: PenDraw
-                                   , _clipboard :: Clipboard
-                                   , _callBack ::  MyEvent -> IO ()
-                                   , _deviceList :: DeviceList
-                                   , _penInfo :: PenInfo
-                                   , _selectInfo :: SelectInfo 
-                                   , _gtkUIManager :: UIManager 
-                                   , _isSaved :: Bool 
-                                   } 
+data HXournalState = 
+  HXournalState { _xournalstate :: XournalState
+                , _currFileName :: Maybe FilePath
+                , _canvasInfoMap :: CanvasInfoMap 
+                , _currentCanvas :: Int
+                , _frameState :: WindowConfig 
+                , _rootWindow :: Widget
+                , _rootContainer :: Box
+                , _rootOfRootWindow :: Window
+                , _currentPenDraw :: PenDraw
+                , _clipboard :: Clipboard
+                , _callBack ::  MyEvent -> IO ()
+                , _deviceList :: DeviceList
+                , _penInfo :: PenInfo
+                , _selectInfo :: SelectInfo 
+                , _gtkUIManager :: UIManager 
+                , _isSaved :: Bool 
+                , _undoTable :: UndoTable XournalState
+                } 
 
 
 $(mkLabels [''HXournalState]) 
@@ -68,6 +70,7 @@ emptyHXournalState =
   , _selectInfo = SelectInfo SelectRectangleWork 
   , _gtkUIManager = error "emptyHXournalState.gtkUIManager"
   , _isSaved = False 
+  , _undoTable = emptyUndo 1 
   }
 
   

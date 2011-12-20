@@ -5,7 +5,7 @@ module Application.HXournal.GUI where
 import Application.HXournal.Type.XournalState 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Canvas
-
+import Application.HXournal.Type.Undo 
 import qualified Data.IntMap as M
 
 import Application.HXournal.Coroutine.Callback
@@ -23,6 +23,7 @@ import Control.Applicative
 import Control.Monad.Trans 
 
 import Data.IORef
+import Data.Maybe
 
 import Control.Category
 import Data.Label
@@ -37,8 +38,11 @@ startGUI mfname = do
   cfg <- loadConfigFile   
   devlst <- initDevice cfg 
   (tref,sref) <- initCoroutine devlst window
-  st1 <- readIORef sref 
-
+  st0 <- readIORef sref 
+  maxundo <- getMaxUndo cfg >>= 
+               \mmax -> maybe (return 50) (return . id) mmax
+  let st1 = set undoTable (emptyUndo maxundo) st0 
+            
   -- let st1 = set gtkUIManager ui st0
   st2 <- getFileContent mfname st1
   let ui = get gtkUIManager st2 
@@ -49,6 +53,7 @@ startGUI mfname = do
   
   setTitleFromFileName st2
   vbox <- vBoxNew False 0 
+  
   
   let st3 = set frameState wconf 
             . set rootWindow winCvsArea 

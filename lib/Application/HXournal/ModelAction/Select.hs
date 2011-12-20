@@ -1,6 +1,8 @@
 module Application.HXournal.ModelAction.Select where
 
 import Application.HXournal.Type.Enum
+import Application.HXournal.Type.Canvas
+import Application.HXournal.Draw
 
 import Data.Xournal.Simple
 import Data.Xournal.Generic
@@ -19,6 +21,19 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
+                  
+isBBoxDeltaSmallerThan :: Double ->CanvasPageGeometry -> ZoomMode 
+                          -> BBox -> BBox -> Bool 
+isBBoxDeltaSmallerThan delta cpg zmode 
+                       (BBox (x11,y11) (x12,y12)) (BBox (x21,y21) (x22,y22)) = 
+  let (x11',y11') = pageToCanvasCoord cpg zmode (x11,y11)
+      (x12',y12') = pageToCanvasCoord cpg zmode (x12,y12)
+      (x21',y21') = pageToCanvasCoord cpg zmode (x21,y21)
+      (x22',y22') = pageToCanvasCoord cpg zmode (x22,y22)
+  in (x11'-x21' > (-delta) && x11'-x21' < delta) 
+     && (y11'-y21' > (-delta) && y11'-y21' < delta)  
+     && (x12'-x22' > (-delta) && x12'-x22' < delta)
+     && (y11'-y21' > (-delta) && y12'-y22' < delta)
 
 changeStrokeByOffset :: (Double,Double) -> StrokeBBox -> StrokeBBox 
 changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) = 

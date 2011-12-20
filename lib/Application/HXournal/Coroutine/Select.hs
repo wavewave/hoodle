@@ -95,10 +95,15 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
       -- for the time being (until double buffer)
-      -- invalidateInBBox cid (inflate (fromJust (Just bbox `merge` Just prevbbox)) 2)
-      invalidateBBoxOnly cid 
-      invalidateDrawBBox cid bbox
-      mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
+      
+      if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
+         then do invalidateInBBox cid 
+                   (inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0)
+                
+                 -- invalidateBBoxOnly cid 
+                 invalidateDrawBBox cid bbox
+                 mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
+         else return ()
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 

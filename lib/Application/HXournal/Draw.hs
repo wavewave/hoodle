@@ -96,6 +96,15 @@ device2pageCoord cpg zmode pcoord@(PointerCoord _ _ _)  =
       _    -> wacom2pageCoord cpg zmode (px,py)
 device2pageCoord _ _ NoPointerCoord = (-100,-100)
 
+pageToCanvasCoord :: CanvasPageGeometry -> ZoomMode -> (Double,Double) -> (Double,Double)
+pageToCanvasCoord cpg@(CanvasPageGeometry _ _ _ _ (xorig,yorig)) zmode (x,y) = 
+  let s = getRatioFromPageToCanvas cpg zmode
+      (xo,yo) = case zmode of 
+                  Original -> (xorig,yorig)
+                  FitWidth -> (0,yorig)
+                  FitHeight -> (xorig,0)
+                  _ -> error "not implemented yet in pageToScreenCoord"
+  in ((x-xo)*s,(y-yo)*s)
 
 transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
 transformForPageCoord cpg zmode = do 
@@ -142,7 +151,7 @@ drawPageInBBox canvas page vinfo mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPageBBox mbbox page
-    cairoRenderOption (DrawBuffer,DrawFull) page
+    cairoRenderOption (InBBoxOption mbbox) (InBBox page)
     return ()
   return ()
 
@@ -265,7 +274,8 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoDrawPageBBoxPDF mbbox page
+    -- cairoDrawPageBBoxPDF mbbox page
+    cairoRenderOption (InBBoxOption mbbox) (InBBox page)
     cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
 --     boxdrawaction 
       

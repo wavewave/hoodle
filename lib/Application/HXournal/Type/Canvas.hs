@@ -38,7 +38,7 @@ data CanvasInfo = CanvasInfo { _canvasId :: CanvasId
                              , _scrolledWindow :: ScrolledWindow
                              , _viewInfo :: ViewInfo 
                              , _currentPageNum :: Int
-                             , _currentPage :: Either TPageBBoxMapPDF TTempPageSelectPDF 
+                             , _currentPage :: Either TPageBBoxMapPDFBuf TTempPageSelectPDFBuf 
                              , _horizAdjustment :: Adjustment
                              , _vertAdjustment :: Adjustment 
                              }

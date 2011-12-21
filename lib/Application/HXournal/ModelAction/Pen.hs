@@ -23,14 +23,14 @@ import Graphics.Xournal.Render.Simple
 import Data.Xournal.Map
 
 
-addPDraw :: PenInfo -> TXournalBBoxMapPDF -> Int -> Seq (Double,Double) 
-            -> (TXournalBBoxMapPDF,BBox)
+addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
+            -> (TXournalBBoxMapPDFBuf,BBox)
 addPDraw pinfo xoj pgnum pdraw = 
   let pcolor = get penColor pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get penWidth pinfo
-      currpage = getPageFromXojBBoxMapPDF  pgnum xoj
-      currlayer = case IM.lookup 0 (glayers currpage) of
+      currpage = getPageFromGXournalMap pgnum xoj
+      currlayer = case IM.lookup 0 (get g_layers currpage) of
                     Nothing -> error "something wrong in addPDraw"
                     Just l -> l
       newstroke = Stroke { stroke_tool = "pen" 
@@ -39,7 +39,7 @@ addPDraw pinfo xoj pgnum pdraw =
                          , stroke_data = map (uncurry (:!:)) . toList $ pdraw
                          } 
       newstrokebbox = mkStrokeBBoxFromStroke newstroke
-      newlayerbbox =  set g_strokes (get g_strokes currlayer ++ [newstrokebbox]) currlayer
+      newlayerbbox =  set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) currlayer
       newpagebbox = set g_layers (IM.adjust (const newlayerbbox) 0 (get g_layers currpage)) currpage 
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
       

@@ -10,6 +10,7 @@ import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Adjustment
 import Graphics.Xournal.Render.Type 
+import Graphics.Xournal.Render.BBoxMapPDF
 import Data.Xournal.Generic
 import Data.Xournal.Map
 import Graphics.UI.Gtk hiding (get,set)
@@ -39,7 +40,7 @@ changePage modifyfn = do
         (xstate',xoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = lpage { glayers = IM.insert 0 (GLayer []) IM.empty } 
+            let npage = lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newxoj = xoj { gpages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
@@ -71,7 +72,7 @@ changePage modifyfn = do
         (xstate',txoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = lpage { glayers = IM.insert 0 (GLayer []) IM.empty } 
+            let npage = lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newtxoj = txoj { gselectAll = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate

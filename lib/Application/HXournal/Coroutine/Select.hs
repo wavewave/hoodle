@@ -30,7 +30,7 @@ import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox
 
 
-
+import qualified Data.IntMap as IM
 import Data.Maybe
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
@@ -115,15 +115,24 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           selectstrs = fmapAL unNotHitted id hittestbbox
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate
-          newlayer = GLayer (TEitherAlterHitted (Right selectstrs))
+          
           newpage = case epage of 
                       Left pagebbox -> 
-                        let tpg = ttempPageSelectPDFFromTPageBBoxMapPDF pagebbox
+                        let currlayer = case IM.lookup 0 (get g_layers pagebbox) of
+                              Nothing -> error "something wrong in newSelectRectangle"
+                              Just l -> l
+                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                         
+                        
+                            tpg = gcast pagebbox
                             ls = glayers tpg 
-                        in  tpg { glayers = ls { gselectedlayer = newlayer}  }
+                        in  tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
                       Right tpage -> 
                         let ls = glayers tpage 
-                        in  tpage { glayers = ls { gselectedlayer = newlayer } } 
+                            currlayer = gselectedlayerbuf ls
+                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+
+                        in  tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
       let ui = get gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
@@ -175,12 +184,13 @@ deleteSelection = do
   xstate <- getSt
   let SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
-  case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpage of 
+      slayer = gselectedlayerbuf . glayers $ tpage
+  case unTEitherAlterHitted . get g_bstrokes $ slayer of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
           oldlayers = glayers tpage
-          newpage = tpage { glayers = oldlayers { gselectedlayer = GLayer (TEitherAlterHitted newlayer) } } 
+          newpage = tpage { glayers = oldlayers { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) } } 
           newtxoj = updateTempXournalSelect txoj newpage n          
           newxstate = updatePageAll (SelectState newtxoj) 
                       . set xournalstate (SelectState newtxoj)
@@ -205,7 +215,8 @@ copySelection = do
   case etpage of
     Left _ -> return ()
     Right tpage -> do 
-      case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpage of 
+      let slayer =  gselectedlayerbuf . glayers $ tpage
+      case unTEitherAlterHitted . get g_bstrokes $ slayer of 
         Left _ -> return ()
         Right alist -> do 
           let strs = takeHittedStrokes alist 
@@ -230,18 +241,19 @@ pasteToSelection = do
       cinfo = getCurrentCanvasInfo xstate 
       pagenum = get currentPageNum cinfo 
       tpage = case get currentPage cinfo of 
-                Left pbbox -> ttempPageSelectPDFFromTPageBBoxMapPDF pbbox
+                Left pbbox -> (gcast pbbox :: TTempPageSelectPDFBuf)
                 Right tp -> tp 
-      layerselect = gselectedlayer . glayers $ tpage 
+      layerselect = gselectedlayerbuf . glayers $ tpage 
       ls  = glayers tpage
+      gbuf = get g_buffer layerselect
       newlayerselect = 
-        case unTEitherAlterHitted . gstrokes $ layerselect of 
-          Left strs -> (GLayer . TEitherAlterHitted . Right) (strs :- Hitted clipstrs :- Empty)
-          Right alist -> (GLayer . TEitherAlterHitted . Right) 
+        case unTEitherAlterHitted . get g_bstrokes $ layerselect of 
+          Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted clipstrs :- Empty)
+          Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
                            (concat (interleave id unHitted alist) 
                             :- Hitted clipstrs 
                             :- Empty )
-      tpage' = tpage { glayers = ls { gselectedlayer = newlayerselect } } 
+      tpage' = tpage { glayers = ls { gselectedlayerbuf = newlayerselect } } 
       txoj' = updateTempXournalSelect txoj tpage' pagenum 
       xstate' = updatePageAll (SelectState txoj') 
                 . set xournalstate (SelectState txoj') 
@@ -257,14 +269,15 @@ selectPenColorChanged pcolor = do
   xstate <- getSt
   let SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
-  case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpage of 
+      slayer = gselectedlayerbuf . glayers $ tpage
+  case unTEitherAlterHitted . get g_bstrokes $ slayer of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
           ls = glayers tpage 
-          newpage = tpage { glayers = ls { gselectedlayer = GLayer (TEitherAlterHitted newlayer) }} 
+          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
           newtxoj = updateTempXournalSelect txoj newpage n
       commit . updatePageAll (SelectState newtxoj) 
              . set xournalstate (SelectState newtxoj) 
@@ -277,17 +290,22 @@ selectPenWidthChanged pwidth = do
   xstate <- getSt
   let SelectState txoj = get xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
-  case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpage of 
+      slayer = gselectedlayerbuf . get g_layers $ tpage
+  case unTEitherAlterHitted . get g_bstrokes $ slayer  of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
-          ls = glayers tpage 
-          newpage = tpage { glayers = ls { gselectedlayer = GLayer (TEitherAlterHitted newlayer) }} 
+          ls = get g_layers tpage 
+          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
           newtxoj = updateTempXournalSelect txoj newpage n          
       commit . updatePageAll (SelectState newtxoj) 
              . set xournalstate (SelectState newtxoj)
              $ xstate 
       invalidateAll 
+
+
+
+
 

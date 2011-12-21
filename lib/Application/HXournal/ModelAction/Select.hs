@@ -43,25 +43,29 @@ changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) =
       newbbox = BBox (x1+offx,y1+offy) (x2+offx,y2+offy)
   in  StrokeBBox t c w newds newbbox
 
-changeSelectionByOffset :: TTempPageSelectPDF -> (Double,Double) -> TTempPageSelectPDF
+changeSelectionByOffset :: TTempPageSelectPDFBuf -> (Double,Double) 
+                           -> TTempPageSelectPDFBuf
 changeSelectionByOffset tpage off = 
   let ls = glayers tpage
-      activelayer = unTEitherAlterHitted . gstrokes . gselectedlayer $ ls
+      slayer = gselectedlayerbuf ls
+      buf = get g_buffer slayer 
+      activelayer = unTEitherAlterHitted . get g_bstrokes $ slayer 
   in case activelayer of 
        Left _ -> tpage 
        Right alist -> 
          let alist' =fmapAL id 
                             (Hitted . map (changeStrokeByOffset off) . unHitted) 
                             alist 
-             layer' = GLayer . TEitherAlterHitted . Right $ alist'
-         in tpage { glayers = ls { gselectedlayer = layer' }}
+             layer' = GLayerBuf buf . TEitherAlterHitted . Right $ alist'
+         in tpage { glayers = ls { gselectedlayerbuf = layer' }}
 
-updateTempXournalSelect :: TTempXournalSelectPDF -> TTempPageSelectPDF -> Int 
-                           -> TTempXournalSelectPDF
+updateTempXournalSelect :: TTempXournalSelectPDFBuf 
+                           -> TTempPageSelectPDFBuf
+                           -> Int 
+                           -> TTempXournalSelectPDFBuf
 updateTempXournalSelect txoj tpage pagenum =                
   let pgs = gselectAll txoj 
-      pgs' = M.adjust (const (tpageBBoxMapPDFFromTTempPageSelectPDF tpage))
-                        pagenum pgs
+      pgs' = M.adjust (const (gcast tpage)) pagenum pgs
   in set g_selectAll pgs' 
      . set g_selectSelected (Just (pagenum,tpage))
      $ txoj 
@@ -69,9 +73,9 @@ updateTempXournalSelect txoj tpage pagenum =
 
     
     
-hitInSelection :: TTempPageSelectPDF -> (Double,Double) -> Bool 
+hitInSelection :: TTempPageSelectPDFBuf -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
-  let activelayer = unTEitherAlterHitted . gstrokes .  gselectedlayer . glayers $ tpage
+  let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
   in case activelayer of 
        Left _ -> False   
        Right alist -> 

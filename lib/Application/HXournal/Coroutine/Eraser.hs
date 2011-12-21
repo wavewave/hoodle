@@ -68,7 +68,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                             Just l -> l
               
               (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
-              newlayerbbox = currlayer { gstrokes = newstrokes }    
+              newlayerbbox = set g_bstrokes newstrokes currlayer 
               newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
               newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
               newxojstate = ViewAppendState newxojbbox

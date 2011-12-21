@@ -39,16 +39,16 @@ adjustPage xojstate cinfo =
  
 
 
-getPageFromXojBBoxMapPDF :: Int -> TXournalBBoxMapPDF -> TPageBBoxMapPDF
-getPageFromXojBBoxMapPDF pagenum xoj  = 
-  case M.lookup pagenum (gpages xoj) of 
-    Nothing -> error "something wrong in getPageFromXojBBoxMapPDF"
+getPageFromGXournalMap :: Int -> GXournal M.IntMap a -> a
+getPageFromGXournalMap pagenum xoj  = 
+  case M.lookup pagenum (get g_pages xoj) of 
+    Nothing -> error "something wrong in getPageFromGXournalMap"
     Just p -> p
 
 updatePage :: XournalState -> CanvasInfo -> CanvasInfo 
 updatePage (ViewAppendState xojbbox) cinfo = 
   let pagenum = get currentPageNum cinfo 
-      pg = getPageFromXojBBoxMapPDF pagenum xojbbox 
+      pg = getPageFromGXournalMap pagenum xojbbox 
       Dim w h = gdimension pg
   in  set currentPageNum pagenum 
       . set (pageDimension.viewInfo) (w,h)       
@@ -74,7 +74,9 @@ updatePage (SelectState txoj) cinfo =
   
 setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
-  let pg = getPageFromXojBBoxMapPDF pagenum xojbbox 
+  let pg = getPageFromGXournalMap pagenum xojbbox
+        -- getPageFromXojBBoxMapPDF pagenum xojbbox 
+       
       Dim w h = gdimension pg
   in  set currentPageNum pagenum 
       . set (viewPortOrigin.viewInfo) (0,0) 
@@ -100,11 +102,10 @@ setPage (SelectState txoj) pagenum cinfo =
      . set currentPage newpage
      $ cinfo 
                             
-getPage :: CanvasInfo -> TPageBBoxMapPDF
-getPage cinfo = case get currentPage cinfo of 
-                  Right tpgs -> tpageBBoxMapPDFFromTTempPageSelectPDF tpgs
-                    
-                    -- pageBBoxMapFromTempPageSelect tpgs
-                  Left pg -> pg 
+getPage :: CanvasInfo -> TPageBBoxMapPDFBuf
+getPage cinfo = 
+  case get currentPage cinfo of 
+    Right tpgs -> tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf tpgs
+    Left pg -> pg 
                   
 

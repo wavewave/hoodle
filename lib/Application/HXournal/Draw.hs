@@ -33,10 +33,10 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
-type PageDrawF = DrawingArea -> TPageBBoxMapPDF -> ViewInfo -> Maybe BBox 
+type PageDrawF = DrawingArea -> TPageBBoxMapPDFBuf -> ViewInfo -> Maybe BBox 
                  -> IO ()
 
-type PageDrawFSel = DrawingArea -> TTempPageSelectPDF -> ViewInfo -> Maybe BBox 
+type PageDrawFSel = DrawingArea -> TTempPageSelectPDFBuf -> ViewInfo -> Maybe BBox 
                     -> IO ()
 
 
@@ -137,7 +137,7 @@ drawBBoxOnly canvas page vinfo _mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPageBBoxOnly page
-    cairoRenderOption (DrawBuffer,DrawBoxOnly) page 
+    cairoRenderOption (DrawBuffer,DrawBoxOnly) (tpageBBoxMapPDFFromTPageBBoxMapPDFBuf page )
   return ()
 
 
@@ -151,7 +151,7 @@ drawPageInBBox canvas page vinfo mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPageBBox mbbox page
-    cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+    cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
     return ()
   return ()
 
@@ -175,7 +175,7 @@ drawBBox canvas page vinfo (Just bbox) = do
 drawBBoxSel :: PageDrawFSel 
 drawBBoxSel _ _ _ Nothing = return ()
 drawBBoxSel canvas tpg vinfo (Just bbox) = do 
-  let page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
+  let page = (gcast tpg :: TPageBBoxMapPDFBuf)
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
@@ -221,32 +221,6 @@ drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do
     lineTo x y
     stroke
   
-{- 
-showTXournalBBoxMapPDF :: DrawingArea -> TXournalBBoxMapPDF -> Int -> ViewInfo -> IO ()
-showTXournalBBoxMapPDF canvas xoj pagenum vinfo = do 
-  let zmode  = get zoomMode vinfo
-      origin = get viewPortOrigin vinfo
-  let currpagebbox = case ( M.lookup pagenum . gpages) xoj of 
-                       Nothing -> error "no such page in showTXournalBBoxMapPDF"
-                       Just p -> p 
-      currpage = pageFromPageBBox currpagebbox
-      strs = do 
-        l <- pagebbox_layers currpagebbox 
-        s <- layerbbox_strokes l
-        return s 
-  geometry <- getCanvasPageGeometry canvas currpage origin
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    setSourceRGBA 1.0 0 0 1.0 
-    setLineWidth  0.5 
-    let f str = do 
-          let BBox (ulx,uly) (lrx,lry) = strokebbox_bbox str 
-          rectangle ulx uly (lrx-ulx) (lry-uly)
-          stroke 
-    mapM_ f strs 
-  return ()
--}
 
 showBBox :: DrawingArea -> CanvasPageGeometry -> ZoomMode -> BBox -> IO ()
 showBBox canvas cpg zmode (BBox (ulx,uly) (lrx,lry)) = do 
@@ -269,13 +243,13 @@ drawSelectionInBBox :: PageDrawFSel
 drawSelectionInBBox canvas tpg vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-      page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
+      page = (gcast tpg :: TPageBBoxMapPDFBuf)
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     -- cairoDrawPageBBoxPDF mbbox page
-    cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+    cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
     cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
 --     boxdrawaction 
       
@@ -283,20 +257,22 @@ drawSelectionInBBoxOnly :: PageDrawFSel
 drawSelectionInBBoxOnly canvas tpg vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
-      page = tpageBBoxMapPDFFromTTempPageSelectPDF tpg
+      page = (gcast tpg :: TPageBBoxMapPDFBuf)
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    cairoRenderOption (DrawBuffer,DrawBoxOnly) page
+    cairoRenderOption (DrawBuffer,DrawBoxOnly) (gcast page :: TPageBBoxMapPDF)
     -- cairoDrawPageBBoxPDF mbbox page
     cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
 
 
   
-cairoHittedBoxDraw :: TTempPageSelectPDF -> Maybe BBox -> Render () 
+cairoHittedBoxDraw :: TTempPageSelectPDFBuf -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
-  case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpg of
+  let layers = get g_layers tpg 
+      slayer = gselectedlayerbuf layers 
+  case unTEitherAlterHitted . get g_bstrokes $ slayer of
     Right alist -> do 
       setSourceRGBA 0.0 0.0 1.0 1.0
       let hitstrs = concatMap unHitted (getB alist)
@@ -313,21 +289,3 @@ cairoHittedBoxDraw tpg mbbox = do
 
 
 
-
-  {-
-  boxdrawaction <-  
-    case unTEitherAlterHitted . gstrokes . gselectedlayer . glayers $ tpg of
-      Right alist -> do 
-        return $ do 
-          setSourceRGBA 0.0 0.0 1.0 1.0
-          let hitstrs = concatMap unHitted (getB alist)
-              oneboxdraw str = do 
-                let bbox@(BBox (x1,y1) (x2,y2)) = strokebbox_bbox str
-                    drawbox = do { rectangle x1 y1 (x2-x1) (y2-y1); stroke }
-                case mbbox of 
-                  Just bboxarg -> if hitTestBBoxBBox bbox bboxarg 
-                                    then drawbox
-                                    else return () 
-                  Nothing -> drawbox 
-          mapM_ oneboxdraw hitstrs                       
-      Left _ -> return $ return ()  -}

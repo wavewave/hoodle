@@ -23,7 +23,6 @@ commit xstate = do
       xstate' = set isSaved False 
                 . set undoTable undotable'
                 $ xstate
-  liftIO $ putStrLn $ "num of undos = " ++ show (numOfUndo undotable')
   putSt xstate' 
 
 undo :: Iteratee MyEvent XournalStateIO ()

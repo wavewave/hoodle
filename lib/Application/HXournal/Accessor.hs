@@ -41,8 +41,8 @@ getAllStrokeBBoxInCurrentPage = do
   let currCvsInfo  = getCurrentCanvasInfo xstate 
   let pagebbox = getPage currCvsInfo
       strs = do 
-        l <- gToList (glayers pagebbox)
-        s <- gstrokes l
+        l <- gToList (get g_layers pagebbox)
+        s <- get g_bstrokes l
         return s 
   return strs 
       

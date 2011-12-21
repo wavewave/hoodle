@@ -44,7 +44,7 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types == 0.1.*,
+                     xournal-types >= 0.1.999 && < 0.3, 
                      xournal-parser == 0.3.*,
                      xournal-render >= 0.3.0.999 && < 0.4,
                      xournal-builder == 0.1.*,

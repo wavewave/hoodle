@@ -56,8 +56,8 @@ fileSave = do
       Just filename -> do     
         let xojstate = get xournalstate xstate
         let xoj = case xojstate of 
-              ViewAppendState xojmap -> Xournal <$> get g_title <*> gToList . fmap (toPage gToBackground) . get g_pages $ xojmap 
-              SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
+              ViewAppendState xojmap -> Xournal <$> get g_title <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages $ xojmap 
+              SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj 
         liftIO . L.writeFile filename . builder $ xoj
         putSt . set isSaved True $ xstate 
         let ui = get gtkUIManager xstate
@@ -112,9 +112,9 @@ fileSaveAs = do
             let xoj = case xojstate of 
                   ViewAppendState xojmap -> Xournal 
                                             <$> get g_title 
-                                            <*> gToList . fmap (toPage gToBackground) . get g_pages 
+                                            <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages 
                                             $ xojmap 
-                  SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPage gToBackground) . gselectAll $ txoj 
+                  SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj 
             liftIO . L.writeFile filename . builder $ xoj
             putSt . set isSaved True $ xstateNew    
             let ui = get gtkUIManager xstateNew

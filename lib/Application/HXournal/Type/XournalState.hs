@@ -24,8 +24,8 @@ import Prelude hiding ((.), id)
 
 type XournalStateIO = StateT HXournalState IO 
 
-data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDF }
-                  | SelectState { tempSelect :: TTempXournalSelectPDF }
+data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDFBuf }
+                  | SelectState { tempSelect :: TTempXournalSelectPDFBuf }
 
 data HXournalState = 
   HXournalState { _xournalstate :: XournalState
@@ -53,7 +53,8 @@ $(mkLabels [''HXournalState])
 emptyHXournalState :: HXournalState 
 emptyHXournalState = 
   HXournalState  
-  { _xournalstate = ViewAppendState emptyTXournalBBoxMapPDF
+  { _xournalstate = ViewAppendState emptyGXournalMap
+                    -- emptyTXournalBBoxMapPDF
                     -- (mkXournalBBoxMapFromXournal emptyXournal)
   , _currFileName = Nothing 
   , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"

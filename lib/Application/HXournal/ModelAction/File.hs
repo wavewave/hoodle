@@ -8,6 +8,7 @@ import Application.HXournal.ModelAction.Page
 import qualified Text.Xournal.Parse as P
 import qualified Data.IntMap as M
 
+import Control.Monad
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
@@ -37,7 +38,8 @@ getFileContent (Just fname) xstate = do
     nxstate <- constructNewHXournalStateFromXournal xojcontent xstate 
     return $ set currFileName (Just fname) nxstate 
 getFileContent Nothing xstate = do   
-    newxoj <- mkTXournalBBoxMapPDF defaultXournal 
+    newxoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF 
+              $ defaultXournal 
     let newxojstate = ViewAppendState newxoj 
         xstate' = set currFileName Nothing 
                   . set xournalstate newxojstate
@@ -54,7 +56,7 @@ constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalS
 constructNewHXournalStateFromXournal xoj xstate = do 
     let currcid = get currentCanvas xstate 
         cmap = get canvasInfoMap xstate 
-    xoj <- mkTXournalBBoxMapPDF xoj
+    xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj
     let Dim width height = case M.lookup 0 (gpages xoj) of    
                              Nothing -> error "no first page in getFileContent" 
                              Just p -> gdimension p 

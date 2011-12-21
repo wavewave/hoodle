@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, TypeOperators #-}
+{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
 
 module Data.Xournal.Generic where
 
@@ -21,10 +21,18 @@ data GPage b s a = GPage { gdimension :: Dimension
                          , gbackground :: b 
                          , glayers :: s a }  
 
-newtype GLayer s a = GLayer { gstrokes :: s a } 
+data GLayer s a = GLayer { gstrokes :: s a } 
+            
+data GLayerBuf b s a = GLayerBuf { gbuffer :: b 
+                                 , gbstrokes :: s a 
+                                 } 
+                       
 
 instance (Functor s) => Functor (GLayer s) where
   fmap f (GLayer strs) = GLayer (fmap f strs)
+  
+instance (Functor s) => Functor (GLayerBuf b s) where
+  fmap f (GLayerBuf b strs) = GLayerBuf b (fmap f strs) 
   
 instance (Functor s) => Functor (GPage b s) where
   fmap f (GPage d b ls) = GPage d b (fmap f ls)
@@ -32,6 +40,8 @@ instance (Functor s) => Functor (GPage b s) where
 instance (Functor s) => Functor (GXournal s) where
   fmap f (GXournal t ps) = GXournal t (fmap f ps)
 
+class GCast a b where 
+  gcast :: a -> b 
 
 
 -- data GBackground b = GBackground b
@@ -40,6 +50,7 @@ data GSelect a b = GSelect { gselectTitle :: ByteString
                            , gselectAll :: a 
                            , gselectSelected :: b
                            }
+
 
 
 type TLayerSimple = GLayer [] Stroke 
@@ -120,6 +131,12 @@ g_layers = lens glayers (\a f -> f { glayers = a } )
 g_strokes :: GLayer s a :-> s a 
 g_strokes = lens gstrokes (\a f -> f { gstrokes = a } )
 
+g_bstrokes :: GLayerBuf b s a :-> s a 
+g_bstrokes = lens gbstrokes (\a f -> f { gbstrokes = a } )
+
+g_buffer :: GLayerBuf b s a :-> b 
+g_buffer = lens gbuffer (\a f -> f { gbuffer = a } )
+
 g_selectTitle :: GSelect a b :-> ByteString
 g_selectTitle = lens gselectTitle (\a f -> f {gselectTitle = a})
 
@@ -131,12 +148,22 @@ g_selectSelected = lens gselectSelected (\a f -> f {gselectSelected = a})
 
 
 
+
+
 toLayer :: (GStrokeable a, GListable s) => GLayer s a -> Layer
 toLayer = layerFromTLayerSimple . fmap gToStroke . chgStreamToList 
+
+toNoBufferLayer :: GLayerBuf b s a -> GLayer s a 
+toNoBufferLayer (GLayerBuf b s) = GLayer s 
+
 
 toPage :: (GStrokeable a, GBackgroundable b, GListable s, GListable s', Functor s') => 
           (b->Background) -> GPage b s' (GLayer s a) -> Page
 toPage f = pageFromTPageSimple . bkgchange f . chgStreamToList . fmap (fmap gToStroke . chgStreamToList) 
+
+toPageFromBuf :: (GStrokeable a, GBackgroundable b, GListable s, GListable s', Functor s') => 
+              (b->Background) -> GPage b s' (GLayerBuf buf s a) -> Page
+toPageFromBuf f = pageFromTPageSimple . bkgchange f . chgStreamToList . fmap (fmap gToStroke . chgStreamToList . toNoBufferLayer) 
 
 
 bkgchange :: (b -> b') -> GPage b s a -> GPage b' s a 

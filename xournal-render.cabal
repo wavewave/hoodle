@@ -29,7 +29,7 @@ Library
                  bytestring == 0.9.*,
                  poppler == 0.12.*, 
                  fclabels == 1.0.*, 
-                 xournal-types == 0.1.* 
+                 xournal-types >= 0.1.999 && < 0.3 
                  -- xournal-parser >= 0.2.0.999 && < 0.3, 
   Exposed-Modules: 
                    Graphics.Xournal.Render.Simple

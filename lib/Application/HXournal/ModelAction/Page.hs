@@ -85,7 +85,6 @@ setPage (ViewAppendState xojbbox) pagenum cinfo =
       $ cinfo 
 setPage (SelectState txoj) pagenum cinfo = 
   let mspage = gselectSelected  txoj 
-               -- tx_selectpage 
       pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
                       Nothing -> error "no such page in setPage"
                       Just p -> p
@@ -105,7 +104,8 @@ setPage (SelectState txoj) pagenum cinfo =
 getPage :: CanvasInfo -> TPageBBoxMapPDFBuf
 getPage cinfo = 
   case get currentPage cinfo of 
-    Right tpgs -> tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf tpgs
+    Right tpgs -> gcast tpgs :: TPageBBoxMapPDFBuf 
+             -- tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf tpgs
     Left pg -> pg 
                   
 

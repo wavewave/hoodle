@@ -35,7 +35,8 @@ vscrollMove cid = do
                         . set currentCanvas cid
                         $ xstate
           lift . St.put $ xstate'
-          invalidateBBoxOnly cid
+          -- invalidateBBoxOnly cid
+          invalidateWithBuf cid 
           vscrollMove cid 
     VScrollBarEnd cid' _v -> do 
       invalidate cid' 

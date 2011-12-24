@@ -8,6 +8,7 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
+import Data.Monoid
 import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.Map
@@ -56,6 +57,12 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
                               (w,h) 
                               (fromIntegral x0,fromIntegral y0)
                               (xorig, yorig)
+
+visibleViewPort :: CanvasPageGeometry -> ZoomMode -> BBox  
+visibleViewPort cpg@(CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yorig)) zmode = 
+  let (xend,yend) = canvasToPageCoord cpg zmode (w',h')
+  in  BBox (xorig,yorig) (xend,yend)
+
 
 core2pageCoord :: CanvasPageGeometry -> ZoomMode 
                   -> (Double,Double) -> (Double,Double)
@@ -106,6 +113,9 @@ pageToCanvasCoord cpg@(CanvasPageGeometry _ _ _ _ (xorig,yorig)) zmode (x,y) =
                   _ -> error "not implemented yet in pageToScreenCoord"
   in ((x-xo)*s,(y-yo)*s)
 
+canvasToPageCoord :: CanvasPageGeometry -> ZoomMode -> (Double,Double) -> (Double,Double) 
+canvasToPageCoord = core2pageCoord
+
 transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
 transformForPageCoord cpg zmode = do 
   let (xo,yo) = page_origin cpg
@@ -124,7 +134,6 @@ updateCanvas canvas xoj pagenum vinfo = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    -- cairoDrawPage currpage
     cairoRenderOption (DrawBuffer,DrawFull) currpage
   return ()
 
@@ -136,8 +145,8 @@ drawBBoxOnly canvas page vinfo _mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    -- cairoDrawPageBBoxOnly page
-    cairoRenderOption (DrawBuffer,DrawBoxOnly) (tpageBBoxMapPDFFromTPageBBoxMapPDFBuf page )
+    cairoRenderOption (DrawBuffer,DrawBoxOnly) (gcast page :: TPageBBoxMapPDF)
+     --  tpageBBoxMapPDFFromTPageBBoxMapPDFBuf page )
   return ()
 
 
@@ -150,7 +159,6 @@ drawPageInBBox canvas page vinfo mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    -- cairoDrawPageBBox mbbox page
     cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
     return ()
   return ()
@@ -248,10 +256,8 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
-    -- cairoDrawPageBBoxPDF mbbox page
     cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
-    cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
---     boxdrawaction 
+    cairoHittedBoxDraw tpg mbbox  
       
 drawSelectionInBBoxOnly :: PageDrawFSel 
 drawSelectionInBBoxOnly canvas tpg vinfo mbbox = do 
@@ -263,9 +269,7 @@ drawSelectionInBBoxOnly canvas tpg vinfo mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     cairoRenderOption (DrawBuffer,DrawBoxOnly) (gcast page :: TPageBBoxMapPDF)
-    -- cairoDrawPageBBoxPDF mbbox page
-    cairoHittedBoxDraw tpg mbbox  -- boxdrawaction 
-
+    cairoHittedBoxDraw tpg mbbox 
 
   
 cairoHittedBoxDraw :: TTempPageSelectPDFBuf -> Maybe BBox -> Render () 
@@ -287,5 +291,31 @@ cairoHittedBoxDraw tpg mbbox = do
       mapM_ oneboxdraw hitstrs                       
     Left _ -> return ()  
 
+---- 
+    
+drawBuf :: PageDrawF 
+drawBuf canvas page vinfo mbbox = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+  geometry <- getCanvasPageGeometry canvas page origin
+  let viewbbox = visibleViewPort geometry zmode
+      newmbbox = toMaybe $ (fromMaybe mbbox :: IntersectBBox)  `mappend` (Intersect (Middle viewbbox))
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoRenderOption (InBBoxOption newmbbox) (InBBox page) -- (InBBox (gcast page :: TPageBBoxMapPDF))
+    return ()
+  return ()
 
 
+drawSelBuf :: PageDrawFSel 
+drawSelBuf canvas tpg vinfo mbbox = do 
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+      page = (gcast tpg :: TPageBBoxMapPDFBuf)
+  geometry <- getCanvasPageGeometry canvas page origin
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    transformForPageCoord geometry zmode
+    cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
+    cairoHittedBoxDraw tpg mbbox  

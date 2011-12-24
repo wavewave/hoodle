@@ -78,15 +78,34 @@ invalidateOther = do
       keys = M.keys cinfoMap 
   invalidateGen (filter (/=currCvsId) keys) Nothing drawPageInBBox
 
+-- | invalidate everything
+
 invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 invalidate cid = invalidateSelSingle cid Nothing drawPageInBBox drawSelectionInBBox
+
+-- | Drawing objects only in BBox
 
 invalidateInBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO ()
 invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox drawSelectionInBBox
 
+-- | Drawing BBox
+
 invalidateDrawBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO () 
 invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
+-- | Drawing pen strokes as bbox
+
 invalidateBBoxOnly :: CanvasId -> Iteratee MyEvent XournalStateIO () 
 invalidateBBoxOnly cid = invalidateSelSingle cid Nothing drawBBoxOnly drawSelectionInBBoxOnly
+
+-- | Drawing using layer buffer
+
+invalidateWithBuf :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+invalidateWithBuf cid = invalidateSelSingle cid Nothing drawBuf drawSelBuf
+
+
+-- | Drawing using layer buffer in BBox
+
+invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> Iteratee MyEvent XournalStateIO () 
+invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelBuf
 

@@ -33,7 +33,6 @@ penStart cid pcoord = do
     let currxoj = unView . get xournalstate $ xstate        
         -- page = getPage cvsInfo 
         pagenum = get currentPageNum cvsInfo
-        -- (x0,y0) = get (viewPortOrigin.viewInfo) cvsInfo
         pinfo = get penInfo xstate
         zmode = get (zoomMode.viewInfo) cvsInfo
     geometry <- getCanvasGeometry cvsInfo 
@@ -41,8 +40,8 @@ penStart cid pcoord = do
     connidup   <- connectPenUp   cvsInfo 
     connidmove <- connectPenMove cvsInfo 
     pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
-    let (newxoj,bbox) = addPDraw pinfo currxoj pagenum pdraw
-        bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
+    (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
+    let bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
         xstate' = set xournalstate (ViewAppendState newxoj) 
                   . updatePageAll (ViewAppendState newxoj)
                   $ xstate

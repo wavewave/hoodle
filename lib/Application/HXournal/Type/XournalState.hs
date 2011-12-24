@@ -9,7 +9,6 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Undo
--- import Graphics.Xournal.Render.Select
 import Data.Xournal.Map
 
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -54,8 +53,6 @@ emptyHXournalState :: HXournalState
 emptyHXournalState = 
   HXournalState  
   { _xournalstate = ViewAppendState emptyGXournalMap
-                    -- emptyTXournalBBoxMapPDF
-                    -- (mkXournalBBoxMapFromXournal emptyXournal)
   , _currFileName = Nothing 
   , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"
   , _currentCanvas = error "emtpyHxournalState.currentCanvas"

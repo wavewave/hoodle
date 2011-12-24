@@ -18,6 +18,7 @@ import Data.Xournal.Generic
 import Data.Xournal.Map
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
+import Graphics.Xournal.Render.BBoxMapPDF
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
@@ -68,21 +69,23 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                             Just l -> l
               
               (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
-              newlayerbbox = set g_bstrokes newstrokes currlayer 
-              newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
+          newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
+          let newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
               newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
               newxojstate = ViewAppendState newxojbbox
           commit . set xournalstate newxojstate 
                  . updatePageAll newxojstate $ xstate 
-          case maybebbox of 
-            Just bbox -> invalidateDrawBBox cid bbox
-            Nothing -> return ()
+          invalidateWithBufInBBox maybebbox cid 
+          {- case maybebbox of 
+            Just bbox -> -- invalidateWithBufInBBox m-- invalidateDrawBBox cid bbox
+            Nothing -> return () -}
           newstrs <- getAllStrokeBBoxInCurrentPage
           eraserProcess cid cpg connidup connidmove newstrs (x,y)
         else eraserProcess cid cpg connidmove connidup strs (x,y) 
     PenUp _cid' _pcoord -> do 
       disconnect connidmove 
       disconnect connidup 
+      
       invalidateAll
     _ -> return ()
     

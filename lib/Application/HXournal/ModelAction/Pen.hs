@@ -24,8 +24,8 @@ import Data.Xournal.Map
 
 
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
-            -> (TXournalBBoxMapPDFBuf,BBox)
-addPDraw pinfo xoj pgnum pdraw = 
+            -> IO (TXournalBBoxMapPDFBuf,BBox)
+addPDraw pinfo xoj pgnum pdraw = do 
   let pcolor = get penColor pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get penWidth pinfo
@@ -39,10 +39,14 @@ addPDraw pinfo xoj pgnum pdraw =
                          , stroke_data = map (uncurry (:!:)) . toList $ pdraw
                          } 
       newstrokebbox = mkStrokeBBoxFromStroke newstroke
-      newlayerbbox =  set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) currlayer
-      newpagebbox = set g_layers (IM.adjust (const newlayerbbox) 0 (get g_layers currpage)) currpage 
+      bbox = strokebbox_bbox newstrokebbox
+      
+  newlayerbbox <- updateLayerBuf (Just bbox)
+                   . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
+                   $ currlayer
+  let newpagebbox = set g_layers (IM.adjust (const newlayerbbox) 0 (get g_layers currpage)) currpage 
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
       
-  in  (newxojbbox,strokebbox_bbox newstrokebbox)
+  return (newxojbbox,strokebbox_bbox newstrokebbox)
 
 

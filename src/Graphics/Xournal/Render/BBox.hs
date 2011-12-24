@@ -26,6 +26,16 @@ clipBBox :: Maybe BBox -> Render ()
 clipBBox (Just (BBox (x1,y1) (x2,y2))) = do {resetClip; rectangle x1 y1 x2 y2; clip}
 clipBBox Nothing = resetClip 
 
+clearBBox :: Maybe BBox -> Render ()        
+clearBBox Nothing = return ()
+clearBBox (Just (BBox (x1,y1) (x2,y2))) = do 
+    save
+    setSourceRGBA 0 0 0 0
+    setOperator OperatorSource
+    rectangle x1 y1 x2 y2 
+    fill
+    restore
+
 
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
 cairoOneStrokeBBoxOnly sbbox = do  

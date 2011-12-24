@@ -18,6 +18,7 @@ import Data.Xournal.Generic
 import Data.Xournal.Map
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
+import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Trans
@@ -68,7 +69,8 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                             Nothing -> error "something wrong in eraserProcess"
                             Just l -> l
               
-              (newstrokes,maybebbox) = St.runState (eraseHitted hitteststroke) Nothing
+              (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
+              maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
           let newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
               newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }

@@ -13,6 +13,7 @@ import Data.Xournal.Map
 
 import Graphics.Xournal.Render.BBoxMapPDF
 
+import Control.Category
 import Control.Monad.State
 import Data.Xournal.Simple
 import Data.Xournal.Predefined 
@@ -71,4 +72,9 @@ emptyHXournalState =
   , _undoTable = emptyUndo 1 
   }
 
-  
+resetXournalStateBuffers :: XournalState -> IO XournalState 
+resetXournalStateBuffers xojstate1 = 
+  case xojstate1 of 
+    ViewAppendState xoj -> liftIO . liftM ViewAppendState . resetXournalBuffers $ xoj
+    _ -> return xojstate1
+

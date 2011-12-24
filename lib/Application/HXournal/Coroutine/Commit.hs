@@ -10,8 +10,11 @@ import Application.HXournal.ModelAction.File
 import Application.HXournal.ModelAction.Page
 
 import Data.Label
+-- import Control.Monad (liftM)
 import Control.Monad.Trans
 import Application.HXournal.Accessor
+
+import Graphics.Xournal.Render.BBoxMapPDF
 
 commit :: HXournalState -> Iteratee MyEvent XournalStateIO ()
 commit xstate = do 
@@ -32,7 +35,8 @@ undo = do
     let utable = get undoTable xstate
     case getPrevUndo utable of 
       Nothing -> liftIO $ putStrLn "no undo item yet"
-      Just (xojstate,newtable) -> do 
+      Just (xojstate1,newtable) -> do 
+        xojstate <- liftIO $ resetXournalStateBuffers xojstate1 
         let xstate' = set xournalstate xojstate
                       . set undoTable newtable 
                       . updatePageAll xojstate 
@@ -49,7 +53,8 @@ redo = do
     let utable = get undoTable xstate
     case getNextUndo utable of 
       Nothing -> liftIO $ putStrLn "no redo item"
-      Just (xojstate,newtable) -> do 
+      Just (xojstate1,newtable) -> do 
+        xojstate <- liftIO $ resetXournalStateBuffers xojstate1         
         let xstate' = set xournalstate xojstate
                       . set undoTable newtable 
                       . updatePageAll xojstate 

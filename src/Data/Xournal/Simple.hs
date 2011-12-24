@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings,  TypeOperators, 
              TypeFamilies, FlexibleContexts  #-}
-
+ 
 module Data.Xournal.Simple where
 
 import qualified Data.ByteString as S

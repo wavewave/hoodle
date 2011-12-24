@@ -14,13 +14,17 @@ import Data.Xournal.BBox
 import Data.Xournal.Predefined 
 
 import Data.Foldable
-
+import Data.Monoid 
 import qualified Data.Map as M
 
 import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter )
 
 import Debug.Trace
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
+
+clipBBox :: Maybe BBox -> Render ()
+clipBBox (Just (BBox (x1,y1) (x2,y2))) = do {resetClip; rectangle x1 y1 x2 y2; clip}
+clipBBox Nothing = resetClip 
 
 
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
@@ -67,8 +71,9 @@ cairoDrawLayerBBox mbbox layer = do
 
 
 cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()
-cairoDrawBackgroundBBox mbbox (Dim w h) (Background typ col sty) = 
-    case mbbox of 
+cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do 
+    let mbbox2 = toMaybe $ fromMaybe mbbox `mappend` (Intersect (Middle (dimToBBox dim)))
+    case mbbox2 of 
       Nothing -> cairoDrawBkg (Dim w h) (Background typ col sty)
       Just bbox@(BBox (x1,y1) (x2,y2)) -> do 
         let c = M.lookup col predefined_bkgcolor  

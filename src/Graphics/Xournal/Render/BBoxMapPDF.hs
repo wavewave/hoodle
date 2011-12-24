@@ -16,10 +16,9 @@ import Data.IntMap
 import Data.Traversable 
 
 import Control.Category
-import Control.Monad.State hiding (get, mapM_, mapM)
+import Control.Monad.State hiding (get, mapM_, mapM,sequence)
 import qualified Control.Monad.State as St (get)
 import Data.Label
-import Prelude hiding ((.),id,mapM, mapM_ )
 
 import Data.ByteString hiding (putStrLn, empty)
 import qualified Data.ByteString.Char8 as C hiding (empty)
@@ -27,6 +26,8 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 
 import Graphics.Xournal.Render.BBox
 import Graphics.Rendering.Cairo
+
+import Prelude hiding ((.),id,mapM, mapM_, sequence )
 
 
 type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
@@ -182,7 +183,7 @@ updateLayerBuf mbbox lyr = do
   -- putStrLn $ "updatelayerbuf called" ++ show mbbox
   case get g_buffer lyr of 
     LyBuf (Just sfc) -> do 
-      putStrLn "here"
+      --  putStrLn "here"
       renderWith sfc $ do 
         clearBBox mbbox        
         cairoDrawLayerBBox mbbox (gcast lyr :: TLayerBBox)
@@ -207,6 +208,21 @@ mkTXournalBBoxMapPDFBufFromNoBuf xoj = do
   pages' <- mapM mkTPageBBoxMapPDFBufFromNoBuf pages
  
   return $ GXournal title pages'
+
+resetPageBuffers :: TPageBBoxMapPDFBuf -> IO TPageBBoxMapPDFBuf 
+resetPageBuffers page = do 
+  let dim = get g_dimension page
+      mbbox = Just . dimToBBox $ dim 
+  newlayers <- sequence . fmap (updateLayerBuf mbbox) . get g_layers $ page 
+  return (set g_layers newlayers page)
+
+resetXournalBuffers :: TXournalBBoxMapPDFBuf -> IO TXournalBBoxMapPDFBuf 
+resetXournalBuffers xoj = do 
+  let pages = get g_pages xoj 
+  newpages <- mapM resetPageBuffers pages
+  return . set g_pages newpages $ xoj
+  
+  
 
 instance GCast (TLayerBBoxBuf a) TLayerBBox where
   gcast = tlayerBBoxFromTLayerBBoxBuf

@@ -32,7 +32,7 @@ clearBBox (Just (BBox (x1,y1) (x2,y2))) = do
     save
     setSourceRGBA 0 0 0 0
     setOperator OperatorSource
-    rectangle x1 y1 x2 y2 
+    rectangle x1 y1 (x2-x1) (y2-y1) 
     fill
     restore
 

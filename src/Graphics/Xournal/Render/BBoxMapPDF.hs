@@ -196,13 +196,16 @@ mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do
 
 updateLayerBuf :: Maybe BBox -> TLayerBBoxBuf LyBuf -> IO (TLayerBBoxBuf LyBuf)
 updateLayerBuf mbbox lyr = do 
-  -- putStrLn $ "updatelayerbuf called" ++ show mbbox
   case get g_buffer lyr of 
     LyBuf (Just sfc) -> do 
-      --  putStrLn "here"
       renderWith sfc $ do 
         clearBBox mbbox        
         cairoDrawLayerBBox mbbox (gcast lyr :: TLayerBBox)
+        {- case mbbox of
+          Just (BBox (x1,y1) (x2,y2)) -> do 
+            rectangle x1 y1 x2 y2 -- drawBBox bbox 
+            fill
+          _ -> return () -}
       return lyr
     _ -> return lyr
     

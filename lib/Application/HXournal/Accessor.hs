@@ -18,7 +18,7 @@ import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
 
 import Data.Xournal.BBox
-import Data.Xournal.Simple
+
 import Data.Xournal.Generic
 
 getSt :: Iteratee MyEvent XournalStateIO HXournalState

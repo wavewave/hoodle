@@ -13,9 +13,9 @@ import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
-import Data.Xournal.Simple
+
 import Data.Xournal.Generic
-import Data.Xournal.Map
+
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox

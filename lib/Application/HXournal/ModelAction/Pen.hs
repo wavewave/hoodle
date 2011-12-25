@@ -17,10 +17,10 @@ import Data.Strict.Tuple hiding (uncurry)
 import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.BBox
-import Graphics.Xournal.Render.Generic 
+
 import Graphics.Xournal.Render.BBoxMapPDF
-import Graphics.Xournal.Render.Simple
-import Data.Xournal.Map
+
+
 
 
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 

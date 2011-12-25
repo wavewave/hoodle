@@ -4,8 +4,8 @@ module Application.HXournal.Job where
 
 import Application.HXournal.GUI
 -- import Application.HXournal.Builder
-import qualified Data.ByteString.Lazy as L
-import Text.Xournal.Parse
+
+
 
 startJob :: Maybe FilePath -> IO () 
 startJob mfname = do 

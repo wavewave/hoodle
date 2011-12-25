@@ -98,7 +98,6 @@ startGUI mfname = do
   window `on` deleteEvent $ do
     liftIO $ bouncecallback tref sref (Menu MenuQuit)
     return True
-    -- mainQuit
   widgetShowAll window
   
   -- initialized

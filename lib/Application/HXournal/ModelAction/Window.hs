@@ -47,7 +47,7 @@ initCanvasInfo xstate cid = do
       liftIO (callback (PenDown cid p))
     canvas `on` configureEvent $ tryEvent $ do 
       (w,h) <- eventSize 
-      liftIO $ callback -- bouncecallback tref sref 
+      liftIO $ callback 
                  (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
     canvas `on` buttonReleaseEvent $ tryEvent $ do 
       p <- getPointer dev

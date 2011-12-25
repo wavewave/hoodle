@@ -11,10 +11,10 @@ import Prelude hiding ((.),id)
 import Data.Monoid
 import Data.Xournal.Simple
 import Data.Xournal.Generic
-import Data.Xournal.Map
+
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type
-import Graphics.Xournal.Render.Simple
+
 import Graphics.Xournal.Render.BBox 
 import Graphics.Xournal.Render.BBoxMapPDF 
 import Graphics.Xournal.Render.PDFBackground
@@ -23,7 +23,7 @@ import Graphics.Xournal.Render.HitTest
 import Application.HXournal.Type 
 import Application.HXournal.Device
 
-import qualified Data.IntMap as M
+
 
 data CanvasPageGeometry = 
   CanvasPageGeometry { screen_size :: (Double,Double) 
@@ -59,7 +59,7 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
                               (xorig, yorig)
 
 visibleViewPort :: CanvasPageGeometry -> ZoomMode -> BBox  
-visibleViewPort cpg@(CanvasPageGeometry (ws,hs) (w',h') (w,h) (x0,y0) (xorig,yorig)) zmode = 
+visibleViewPort cpg@(CanvasPageGeometry (_ws,_hs) (w',h') (_w,_h) (_x0,_y0) (xorig,yorig)) zmode = 
   let (xend,yend) = canvasToPageCoord cpg zmode (w',h')
   in  BBox (xorig,yorig) (xend,yend)
 
@@ -123,24 +123,6 @@ transformForPageCoord cpg zmode = do
   scale s s
   translate (-xo) (-yo)      
   
-{-
-updateCanvas :: DrawingArea -> TXournalBBoxMapPDF -> Int -> ViewInfo -> IO ()
-updateCanvas canvas xoj pagenum vinfo = do 
-  let zmode  = get zoomMode vinfo
-      origin = get viewPortOrigin vinfo
-  let currpage = case M.lookup pagenum (gpages xoj) of 
-                   Nothing -> error "updateCanvas"
-                   Just  p -> p 
-  geometry <- getCanvasPageGeometry canvas currpage origin
-  win <- widgetGetDrawWindow canvas
-  let viewbbox = visibleViewPort geometry zmode
-      newmbbox = Just viewbbox
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    -- cairoRenderOption (InBBoxOption newmbbox) (InBBox currpage)
-    cairoRenderOption (DrawBkgPDF,DrawFull)  currpage
-  return ()
--}
 
 drawFuncGen :: (TPageBBoxMapPDFBuf -> Maybe BBox -> Render ()) -> PageDrawF 
 drawFuncGen render canvas page vinfo mbbox = do 
@@ -178,7 +160,7 @@ drawPageClearly = drawFuncGen $ \page _mbbox ->
                      
 drawPageSelClearly :: PageDrawFSel                      
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
-  where rendercontent tpg mbbox = do
+  where rendercontent tpg _mbbox = do
           let pg = (gcast tpg :: TPageBBoxMapPDFBuf)
           cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg :: TPageBBoxMapPDF)
         renderselect tpg mbbox = 

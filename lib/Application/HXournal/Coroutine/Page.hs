@@ -9,13 +9,13 @@ import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Adjustment
-import Graphics.Xournal.Render.Type 
+
 import Graphics.Xournal.Render.BBoxMapPDF
 import Data.Xournal.Generic
-import Data.Xournal.Map
+
 import Graphics.UI.Gtk hiding (get,set)
 import Application.HXournal.ModelAction.Page
-import qualified Control.Monad.State as St 
+
 import Control.Monad.Trans
 import Control.Category
 import Data.Label

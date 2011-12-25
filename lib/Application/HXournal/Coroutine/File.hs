@@ -12,7 +12,7 @@ import Text.Xournal.Builder
 import Control.Monad.Trans
 import Control.Applicative
 import Data.Xournal.Generic
-import Graphics.Xournal.Render.BBoxMapPDF
+
 import Graphics.UI.Gtk hiding (get,set)
 import Control.Category
 import Data.Label
@@ -20,7 +20,7 @@ import Prelude hiding ((.),id)
 import qualified Data.ByteString.Lazy as L
 
 import Data.Xournal.Simple
-import Data.Xournal.Map
+
 
 import System.Directory
 

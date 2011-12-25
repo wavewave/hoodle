@@ -21,7 +21,7 @@ import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-import Data.Xournal.Simple
+
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type

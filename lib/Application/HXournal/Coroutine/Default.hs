@@ -7,7 +7,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Clipboard
-import Application.HXournal.Draw
+
 import Application.HXournal.Accessor
 
 import Application.HXournal.GUI.Menu
@@ -24,8 +24,8 @@ import Application.HXournal.Coroutine.File
 import Application.HXournal.Coroutine.Mode
 import Application.HXournal.Coroutine.Window
 
-import Application.HXournal.ModelAction.Adjustment
-import Application.HXournal.ModelAction.Page
+
+
 import Application.HXournal.ModelAction.Window 
 import Application.HXournal.Type.Window 
 import Application.HXournal.Device
@@ -39,7 +39,7 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 import Data.IORef
-import Data.Xournal.Map
+
 
 import Data.Xournal.Generic
 
@@ -163,7 +163,7 @@ defaultEventProcess (VScrollBarMoved cid v) = do
     lift . St.put $ xstate'
     invalidate cid
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
-defaultEventProcess (CanvasConfigure cid w' h') = canvasZoomUpdate Nothing cid 
+defaultEventProcess (CanvasConfigure cid _w' _h') = canvasZoomUpdate Nothing cid 
 --    xstate <- getSt
 --    let cinfoMap = get canvasInfoMap xstate
 

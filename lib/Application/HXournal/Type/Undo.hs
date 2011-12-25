@@ -1,7 +1,7 @@
 module Application.HXournal.Type.Undo where
 
 import Data.Sequence
-import Control.Monad
+
 
 type SeqZipper a = (a, (Seq a,Seq a))
 

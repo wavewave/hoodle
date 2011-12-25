@@ -7,11 +7,11 @@ import Application.HXournal.Accessor
 
 --import Data.Foldable
 import Data.Traversable
-import Data.Xournal.Map
+
 
 import Control.Monad.Trans
 
-import Control.Applicative
+
 import Control.Category
 import Data.Label
 

@@ -15,7 +15,7 @@ import Graphics.Xournal.Render.BBoxMapPDF
 
 import Control.Category
 import Control.Monad.State
-import Data.Xournal.Simple
+
 import Data.Xournal.Predefined 
 import Graphics.UI.Gtk hiding (Clipboard)
 import Data.Maybe

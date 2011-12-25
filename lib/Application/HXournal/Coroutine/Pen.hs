@@ -15,7 +15,7 @@ import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Draw
 import Control.Monad.Trans
-import qualified Control.Monad.State as St
+
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M

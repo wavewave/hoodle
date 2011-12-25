@@ -4,7 +4,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Draw
 
-import Data.Xournal.Simple
+
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type

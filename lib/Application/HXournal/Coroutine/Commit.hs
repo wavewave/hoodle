@@ -14,7 +14,7 @@ import Data.Label
 import Control.Monad.Trans
 import Application.HXournal.Accessor
 
-import Graphics.Xournal.Render.BBoxMapPDF
+
 
 commit :: HXournalState -> Iteratee MyEvent XournalStateIO ()
 commit xstate = do 

@@ -3,9 +3,9 @@ module Application.HXournal.ModelAction.Page where
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
 import Data.Xournal.Simple
-import Data.Xournal.Map
+
 import Data.Xournal.Generic
-import Graphics.Xournal.Render.Generic
+
 import Graphics.Xournal.Render.BBoxMapPDF
 
 import Control.Category

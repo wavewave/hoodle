@@ -55,10 +55,10 @@ getFileContent Nothing xstate = do
     return (set canvasInfoMap cmap' xstate')
 
 constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalState 
-constructNewHXournalStateFromXournal xoj xstate = do 
+constructNewHXournalStateFromXournal xoj' xstate = do 
     let currcid = get currentCanvas xstate 
         cmap = get canvasInfoMap xstate 
-    xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj
+    xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj'
     let Dim width height = case M.lookup 0 (gpages xoj) of    
                              Nothing -> error "no first page in getFileContent" 
                              Just p -> gdimension p 

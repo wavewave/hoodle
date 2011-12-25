@@ -8,7 +8,7 @@ import qualified Data.IntMap as M
 import Data.Label 
 import Prelude hiding ((.), id)
 import Graphics.Xournal.Render.BBoxMapPDF
-import Data.Xournal.Map
+
 import Graphics.UI.Gtk hiding (get,set)
 
 type CanvasId = Int 

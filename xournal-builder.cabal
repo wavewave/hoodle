@@ -1,5 +1,5 @@
 Name:		xournal-builder
-Version:	0.1
+Version:	0.1.0.0
 Synopsis:	text builder for xournal file format 
 Description: 	This library builds text xoj format file from xournal data structure
 License: 	BSD3
@@ -20,7 +20,7 @@ Library
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                    base == 4.*,
-                   xournal-types == 0.1.*, 
+                   xournal-types >= 0.1 && < 0.3, 
                    blaze-builder == 0.3.*, 
                    strict == 0.3.*, 
                    double-conversion == 0.2.*, 

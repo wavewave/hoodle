@@ -73,7 +73,7 @@ fileOpen = do
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
-    fileChooserSetCurrentFolder dialog cwd 
+    liftIO $ fileChooserSetCurrentFolder dialog cwd 
     res <- liftIO $ dialogRun dialog
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
@@ -102,7 +102,7 @@ fileSaveAs = do
                                             FileChooserActionSave 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
-    fileChooserSetCurrentFolder dialog cwd 
+    liftIO $ fileChooserSetCurrentFolder dialog cwd 
     res <- liftIO $ dialogRun dialog
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
@@ -142,7 +142,7 @@ fileAnnotatePDF = do
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
-    fileChooserSetCurrentFolder dialog cwd
+    liftIO $ fileChooserSetCurrentFolder dialog cwd
     res <- liftIO $ dialogRun dialog
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog

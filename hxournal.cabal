@@ -137,4 +137,4 @@ Library
                    csrc/template-hsc-gtk2hs.h
 
   if flag(poppler)
-    GHC-Options: -DPOPPLER
+    cpp-options: -DPOPPLER

@@ -81,7 +81,9 @@ invalidateOther = do
 -- | invalidate everything
 
 invalidate :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidate cid = invalidateSelSingle cid Nothing drawPageInBBox drawSelectionInBBox
+invalidate cid = invalidateSelSingle cid Nothing drawPageClearly drawPageSelClearly
+                 -- drawSelectionInBBox
+                 -- drawPageInBBox drawSelectionInBBox
 
 -- | Drawing objects only in BBox
 
@@ -93,19 +95,32 @@ invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox d
 invalidateDrawBBox :: CanvasId -> BBox -> Iteratee MyEvent XournalStateIO () 
 invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
+
+{-
 -- | Drawing pen strokes as bbox
 
 invalidateBBoxOnly :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidateBBoxOnly cid = invalidateSelSingle cid Nothing drawBBoxOnly drawSelectionInBBoxOnly
+invalidateBBoxOnly cid = invalidateBBoxOnlyInBBox cid Nothing
+  -- invalidateSelSingle cid Nothing drawBBoxOnly drawSelectionInBBoxOnly
+
+invalidateBBoxOnlyInBBox :: CanvasId -> Maybe BBox -> Iteratee MyEvent XournalStateIO () 
+invalidateBBoxOnlyInBBox cid mbbox  = invalidateSelSingle cid mbbox drawBBoxOnly drawSelectionInBBoxOnly
+-}
 
 -- | Drawing using layer buffer
 
 invalidateWithBuf :: CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidateWithBuf cid = invalidateSelSingle cid Nothing drawBuf drawSelBuf
+invalidateWithBuf = invalidateWithBufInBBox Nothing
+  
+  -- invalidateSelSingle cid Nothing drawBuf drawSelectionInBBox
+                        -- drawSelectionInBBoxOnly -- drawSelBuf -- temporarily
 
 
 -- | Drawing using layer buffer in BBox
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> Iteratee MyEvent XournalStateIO () 
-invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelBuf
+invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelectionInBBox
+                                    
+                                   -- drawSelectionInBBoxOnly -- drawSelBuf  --temporarily
+
 

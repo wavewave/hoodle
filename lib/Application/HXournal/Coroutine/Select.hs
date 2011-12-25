@@ -97,7 +97,7 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
       -- for the time being (until double buffer)
       
       if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
-         then do invalidateInBBox cid 
+         then do flip invalidateWithBufInBBox cid . Just $
                    (inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0)
                 
                  -- invalidateBBoxOnly cid 

@@ -47,6 +47,14 @@ addPDraw pinfo xoj pgnum pdraw = do
   let newpagebbox = set g_layers (IM.adjust (const newlayerbbox) 0 (get g_layers currpage)) currpage 
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
       
-  return (newxojbbox,strokebbox_bbox newstrokebbox)
+  return (newxojbbox,bbox) -- strokebbox_bbox newstrokebbox)
+
+
+
+
+
+
+
+
 
 

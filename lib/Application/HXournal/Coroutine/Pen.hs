@@ -31,7 +31,6 @@ penStart cid pcoord = do
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
     let currxoj = unView . get xournalstate $ xstate        
-        -- page = getPage cvsInfo 
         pagenum = get currentPageNum cvsInfo
         pinfo = get penInfo xstate
         zmode = get (zoomMode.viewInfo) cvsInfo
@@ -56,7 +55,7 @@ penProcess :: CanvasId
            -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
 penProcess cid cpg connidmove connidup pdraw (x0,y0) = do 
   r <- await 
-  xstate <- lift St.get
+  xstate <- getSt
   let cvsInfo = getCanvasInfo cid xstate
   case r of 
     PenMove _cid' pcoord -> do 

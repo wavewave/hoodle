@@ -1,5 +1,6 @@
-{-# LANGUAGE OverloadedStrings, TypeFamilies, TypeSynonymInstances, MultiParamTypeClasses,  
-             FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, TypeFamilies, TypeSynonymInstances, 
+             MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, 
+             CPP #-}
 
 module Graphics.Xournal.Render.BBoxMapPDF where
 
@@ -22,7 +23,10 @@ import Data.Label
 
 import Data.ByteString hiding (putStrLn, empty)
 import qualified Data.ByteString.Char8 as C hiding (empty)
+
+#ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+#endif 
 
 import Graphics.Xournal.Render.BBox
 import Graphics.Rendering.Cairo
@@ -130,6 +134,7 @@ mkBkgPDF :: Background
             -> StateT (Maybe Context) IO BackgroundPDFDrawable
 mkBkgPDF bkg = do  
   let bkgpdf = bkgPDFFromBkg bkg
+#ifdef POPPLER
   case bkgpdf of 
     BkgPDFSolid _ _ -> return bkgpdf 
     BkgPDFPDF md mf pn _ _ -> do 
@@ -151,6 +156,9 @@ mkBkgPDF bkg = do
               popplerGetPageFromDoc doc pn
             Nothing -> return (Nothing,Nothing) 
           return $ BkgPDFPDF md mf pn mpage msfc
+#else
+  return bkgpdf
+#endif  
 
 
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE ExistentialQuantification, OverloadedStrings, 
              FlexibleInstances, FlexibleContexts,  
-             TypeFamilies #-}
+             TypeFamilies, CPP #-}
 
 module Graphics.Xournal.Render.PDFBackground where
 
@@ -15,20 +15,24 @@ import Data.Xournal.Generic
 import Data.Xournal.Simple
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.BBox 
--- import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.Type
 
-
+#ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+#endif
 
 import Graphics.Rendering.Cairo
 
   
 data Context = Context { ctxt_domain :: ByteString
                        , ctxt_filename :: ByteString 
+#ifdef POPPLER
                        , ctxt_doc :: Maybe Poppler.Document
+#else
+                       , ctxt_doc :: Maybe ()
+#endif 
                        }
 
 data BackgroundPDFDrawable = 
@@ -38,7 +42,11 @@ data BackgroundPDFDrawable =
   | BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
               , bkgpdf_filename :: Maybe ByteString
               , bkgpdf_pageno :: Int 
+#ifdef POPPLER
               , bkgpdf_popplerpage :: Maybe Poppler.Page 
+#else    
+              , bkgpdf_popplerpage :: Maybe ()
+#endif
               , bkgpdf_cairosurface :: Maybe Surface
               } 
 
@@ -56,14 +64,15 @@ bkgPDFFromBkg (Background _t c s) = BkgPDFSolid c s
 bkgPDFFromBkg (BackgroundPdf _t md mf pn) = BkgPDFPDF md mf pn Nothing Nothing
 
             
-
+#ifdef POPPLER
 popplerGetDocFromFile :: (MonadIO m) => 
                          ByteString -> m (Maybe Poppler.Document)
 popplerGetDocFromFile fp = 
   liftIO $ Poppler.documentNewFromFile 
              (C.unpack ("file://localhost" `mappend` fp)) Nothing 
-             
-             
+#endif
+
+#ifdef POPPLER             
 popplerGetPageFromDoc :: (MonadIO m) => 
                          Poppler.Document -> Int -> m (Maybe Poppler.Page, Maybe Surface)
 popplerGetPageFromDoc doc pn = do   
@@ -79,7 +88,7 @@ popplerGetPageFromDoc doc pn = do
     fill
     PopplerPage.pageRender pg
   return (Just pg, Just sfc)
-
+#endif
 
 cairoRenderBackgroundPDFDrawable :: (BackgroundPDFDrawable,Dimension) 
                                     -> Render ()
@@ -93,8 +102,9 @@ cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p _,dim) = do
       setSourceRGBA 1 1 1 1
       rectangle 0 0 w h 
       fill
+#ifdef POPPLER
       PopplerPage.pageRender pg
-    
+#endif     
 
 instance Renderable (BackgroundPDFDrawable,Dimension) where
   cairoRender = cairoRenderBackgroundPDFDrawable

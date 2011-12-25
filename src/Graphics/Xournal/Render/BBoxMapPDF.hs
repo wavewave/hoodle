@@ -6,6 +6,7 @@ module Graphics.Xournal.Render.BBoxMapPDF where
 
 import Graphics.Xournal.Render.Type 
 import Graphics.Xournal.Render.Generic
+import Graphics.Xournal.Render.Simple
 import Graphics.Xournal.Render.PDFBackground
 import Data.Xournal.Simple
 import Data.Xournal.Generic
@@ -127,17 +128,24 @@ mkPagePDF pg = do
   let bkg = page_bkg pg
       dim = page_dim pg 
       ls = page_layers pg
-  newbkg <- mkBkgPDF bkg
+  newbkg <- mkBkgPDF dim bkg
   return $ GPage dim newbkg (gFromList . Prelude.map fromLayer $ ls)
   
-mkBkgPDF :: Background 
+mkBkgPDF :: Dimension -> Background 
             -> StateT (Maybe Context) IO BackgroundPDFDrawable
-mkBkgPDF bkg = do  
+mkBkgPDF dim@(Dim w h) bkg = do  
   let bkgpdf = bkgPDFFromBkg bkg
-#ifdef POPPLER
   case bkgpdf of 
-    BkgPDFSolid _ _ -> return bkgpdf 
+    BkgPDFSolid c s msfc -> do -- return bkgpdf 
+      case msfc of 
+        Just _ -> return bkgpdf
+        Nothing -> do 
+          sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
+          renderWith sfc $ do 
+            cairoDrawBkg dim (bkgFromBkgPDF bkgpdf) 
+          return bkgpdf { bkgpdf_cairosurface = Just sfc}
     BkgPDFPDF md mf pn _ _ -> do 
+#ifdef POPPLER
       mctxt <- St.get 
       case mctxt of
         Nothing -> do 
@@ -157,7 +165,7 @@ mkBkgPDF bkg = do
             Nothing -> return (Nothing,Nothing) 
           return $ BkgPDFPDF md mf pn mpage msfc
 #else
-  return bkgpdf
+          return bkgpdf
 #endif  
 
 

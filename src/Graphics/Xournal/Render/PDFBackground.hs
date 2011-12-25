@@ -4,6 +4,7 @@
 
 module Graphics.Xournal.Render.PDFBackground where
 
+import Debug.Trace
 import Control.Monad.State hiding (mapM_)
 import Prelude hiding (mapM_)
 
@@ -38,6 +39,7 @@ data Context = Context { ctxt_domain :: ByteString
 data BackgroundPDFDrawable = 
   BkgPDFSolid { bkgpdf_color :: ByteString
               , bkgpdf_style :: ByteString
+              , bkgpdf_cairosurface :: Maybe Surface
               }
   | BkgPDFPDF { bkgpdf_domain :: Maybe ByteString
               , bkgpdf_filename :: Maybe ByteString
@@ -56,11 +58,11 @@ data BkgPDFOption = DrawBkgPDF
                   | DrawPDFInBBox (Maybe BBox)
 
 bkgFromBkgPDF :: BackgroundPDFDrawable -> Background 
-bkgFromBkgPDF (BkgPDFSolid c s) = Background "solid" c s 
+bkgFromBkgPDF (BkgPDFSolid c s _) = Background "solid" c s 
 bkgFromBkgPDF (BkgPDFPDF d f n _ _ ) = BackgroundPdf "pdf" d f n 
 
 bkgPDFFromBkg :: Background -> BackgroundPDFDrawable
-bkgPDFFromBkg (Background _t c s) = BkgPDFSolid c s
+bkgPDFFromBkg (Background _t c s) = BkgPDFSolid c s Nothing
 bkgPDFFromBkg (BackgroundPdf _t md mf pn) = BkgPDFPDF md mf pn Nothing Nothing
 
             
@@ -92,7 +94,7 @@ popplerGetPageFromDoc doc pn = do
 
 cairoRenderBackgroundPDFDrawable :: (BackgroundPDFDrawable,Dimension) 
                                     -> Render ()
-cairoRenderBackgroundPDFDrawable (BkgPDFSolid c s,dim) = 
+cairoRenderBackgroundPDFDrawable (BkgPDFSolid c s _,dim) = 
   cairoRender (Background "solid" c s,dim)
 cairoRenderBackgroundPDFDrawable (BkgPDFPDF _ _ _ p _,dim) = do
   case p of 
@@ -119,7 +121,15 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
     fill 
   cairoRenderOption DrawBuffer (b,dim) = do 
     case b of 
-      BkgPDFSolid _ _ -> cairoRenderOption DrawBkgPDF (b,dim)
+      BkgPDFSolid _ _ msfc  -> do  
+        case msfc of 
+          Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
+          Just sfc -> do 
+            -- cairoRenderOption DrawBkgPDF (b,dim)
+            -- clipBBox . Just . dimToBBox $ dim
+            setSourceSurface sfc 0 0 
+            paint 
+            -- resetClip 
       BkgPDFPDF _ _ _ _ msfc -> do 
         case bkgpdf_cairosurface b of 
           Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
@@ -128,8 +138,15 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
             paint 
   cairoRenderOption (DrawPDFInBBox mbbox) (b,dim) = do 
     case b of 
-      BkgPDFSolid _ _ -> cairoDrawBackgroundBBox mbbox dim (bkgFromBkgPDF b)
-      BkgPDFPDF _ _ _ _ _ -> cairoRenderOption DrawBuffer (b,dim)
+      BkgPDFSolid _ _ _ -> do 
+        clipBBox mbbox
+        cairoRenderOption DrawBuffer (b,dim)
+        resetClip
+        --  cairoDrawBackgroundBBox mbbox dim (bkgFromBkgPDF b)
+      BkgPDFPDF _ _ _ _ _ -> do 
+        clipBBox mbbox
+        cairoRenderOption DrawBuffer (b,dim)
+        resetClip
 
       
 

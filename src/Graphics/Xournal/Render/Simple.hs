@@ -3,7 +3,6 @@
 module Graphics.Xournal.Render.Simple where 
 
 import Graphics.Rendering.Cairo
-
 import Data.Strict.Tuple
 
 import Data.Xournal.Simple

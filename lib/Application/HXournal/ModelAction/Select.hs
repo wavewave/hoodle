@@ -70,8 +70,18 @@ updateTempXournalSelect txoj tpage pagenum =
      . set g_selectSelected (Just (pagenum,tpage))
      $ txoj 
      
-
-    
+updateTempXournalSelectIO :: TTempXournalSelectPDFBuf
+                             -> TTempPageSelectPDFBuf
+                             -> Int
+                             -> IO TTempXournalSelectPDFBuf
+updateTempXournalSelectIO txoj tpage pagenum = do   
+  let pgs = gselectAll txoj 
+  newpage <- resetPageBuffers (gcast tpage)
+  let pgs' = M.adjust (const newpage) pagenum pgs
+  return $  set g_selectAll pgs' 
+            . set g_selectSelected (Just (pagenum,tpage))
+            $ txoj 
+  
     
 hitInSelection :: TTempPageSelectPDFBuf -> (Double,Double) -> Bool 
 hitInSelection tpage point = 

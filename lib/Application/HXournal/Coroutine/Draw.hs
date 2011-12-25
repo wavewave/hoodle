@@ -57,11 +57,12 @@ invalidateGenSingle cid mbbox drawf = do
                     <*> pure mbbox
                     $ cvsInfo )
 
-
+{-
 invalidateGen  :: [CanvasId] -> Maybe BBox -> PageDrawF
                -> Iteratee MyEvent XournalStateIO ()
 invalidateGen cids mbbox drawf = do                
   forM_ cids $ \x -> invalidateSelSingle x mbbox drawf drawSelectionInBBox
+
 
 invalidateAll :: Iteratee MyEvent XournalStateIO ()
 invalidateAll = do
@@ -77,6 +78,28 @@ invalidateOther = do
       cinfoMap  = get canvasInfoMap xstate
       keys = M.keys cinfoMap 
   invalidateGen (filter (/=currCvsId) keys) Nothing drawPageInBBox
+-}
+
+
+invalidateAll :: Iteratee MyEvent XournalStateIO ()
+invalidateAll = do
+  xstate <- getSt
+  let cinfoMap  = get canvasInfoMap xstate
+      keys = M.keys cinfoMap 
+  forM_ keys invalidate 
+    --  $ \x -> ---invalidateSel keys Nothing drawPageInBBox
+
+invalidateOther :: Iteratee MyEvent XournalStateIO ()
+invalidateOther = do 
+  xstate <- getSt
+  let currCvsId = get currentCanvas xstate
+      cinfoMap  = get canvasInfoMap xstate
+      keys = M.keys cinfoMap 
+  mapM_ invalidate (filter (/=currCvsId) keys)
+  
+   -- invalidateGen (filter (/=currCvsId) keys) Nothing drawPageInBBox
+
+
 
 -- | invalidate everything
 

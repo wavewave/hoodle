@@ -94,15 +94,12 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
-      -- for the time being (until double buffer)
-      
       if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
          then do flip invalidateWithBufInBBox cid . Just $
                    (inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0)
-                
-                 -- invalidateBBoxOnly cid 
                  invalidateDrawBBox cid bbox
-                 mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
+                 -- for the time being 
+                 -- mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
          else return ()
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
     PenUp _cid' pcoord -> do 
@@ -168,7 +165,7 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset tpage offset
-              newtxoj = updateTempXournalSelect txoj newtpage pagenum 
+          newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
           commit . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
                  $ xstate 
@@ -191,8 +188,8 @@ deleteSelection = do
       let newlayer = Left . concat . getA $ alist
           oldlayers = glayers tpage
           newpage = tpage { glayers = oldlayers { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) } } 
-          newtxoj = updateTempXournalSelect txoj newpage n          
-          newxstate = updatePageAll (SelectState newtxoj) 
+      newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n          
+      let newxstate = updatePageAll (SelectState newtxoj) 
                       . set xournalstate (SelectState newtxoj)
                       $ xstate 
       commit newxstate 
@@ -254,8 +251,8 @@ pasteToSelection = do
                             :- Hitted clipstrs 
                             :- Empty )
       tpage' = tpage { glayers = ls { gselectedlayerbuf = newlayerselect } } 
-      txoj' = updateTempXournalSelect txoj tpage' pagenum 
-      xstate' = updatePageAll (SelectState txoj') 
+  txoj' <- liftIO $ updateTempXournalSelectIO txoj tpage' pagenum 
+  let xstate' = updatePageAll (SelectState txoj') 
                 . set xournalstate (SelectState txoj') 
                 $ xstate 
   commit xstate' 
@@ -278,7 +275,7 @@ selectPenColorChanged pcolor = do
           newlayer = Right alist'
           ls = glayers tpage 
           newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
-          newtxoj = updateTempXournalSelect txoj newpage n
+      newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n
       commit . updatePageAll (SelectState newtxoj) 
              . set xournalstate (SelectState newtxoj) 
              $ xstate                       
@@ -299,7 +296,7 @@ selectPenWidthChanged pwidth = do
           newlayer = Right alist'
           ls = get g_layers tpage 
           newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
-          newtxoj = updateTempXournalSelect txoj newpage n          
+      newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n          
       commit . updatePageAll (SelectState newtxoj) 
              . set xournalstate (SelectState newtxoj)
              $ xstate 

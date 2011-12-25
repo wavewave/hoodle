@@ -22,6 +22,8 @@ import qualified Data.ByteString.Lazy as L
 import Data.Xournal.Simple
 import Data.Xournal.Map
 
+import System.Directory
+
 askIfSave :: Iteratee MyEvent XournalStateIO ()
                     -> Iteratee MyEvent XournalStateIO ()
 askIfSave action = do 
@@ -66,10 +68,12 @@ fileSave = do
 fileOpen :: Iteratee MyEvent XournalStateIO ()
 fileOpen = do 
     liftIO $ putStrLn "file open clicked"
+    cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
+    fileChooserSetCurrentFolder dialog cwd 
     res <- liftIO $ dialogRun dialog
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
@@ -93,10 +97,12 @@ fileOpen = do
 fileSaveAs :: Iteratee MyEvent XournalStateIO ()
 fileSaveAs = do 
     liftIO $ putStrLn "file save as clicked"
+    cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionSave 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
+    fileChooserSetCurrentFolder dialog cwd 
     res <- liftIO $ dialogRun dialog
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
@@ -131,10 +137,12 @@ fileAnnotatePDF :: Iteratee MyEvent XournalStateIO ()
 fileAnnotatePDF = do 
     xstate <- getSt
     liftIO $ putStrLn "file annotate PDf clicked"
+    cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
                                             , ("Cancel", ResponseCancel) ]
+    fileChooserSetCurrentFolder dialog cwd
     res <- liftIO $ dialogRun dialog
     case res of 
       ResponseDeleteEvent -> liftIO $ widgetDestroy dialog

@@ -19,6 +19,9 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/hxournal
 
+Flag Poppler
+  Description: Enable poppler support
+  Default:     True
 
 Executable hxournal
   Main-is: hxournal.hs
@@ -34,8 +37,9 @@ Library
   hs-source-dirs: lib
   ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
-  Build-Depends:   
-                     base == 4.*, 
+
+  if flag(poppler) 
+    Build-Depends:   base == 4.*, 
                      mtl == 2.*,
                      directory == 1.*,
                      filepath == 1.*, 
@@ -56,6 +60,27 @@ Library
                      cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.1.*, 
                      poppler == 0.12.*
+  else 
+    Build-Depends:   base == 4.*, 
+                     mtl == 2.*,
+                     directory == 1.*,
+                     filepath == 1.*, 
+                     strict == 0.3.*,
+                     gtk == 0.12.*, 
+                     cairo == 0.12.*,
+                     monad-coroutine == 0.7.*, 
+                     transformers == 0.2.*,
+                     xournal-types >= 0.1.999 && < 0.3, 
+                     xournal-parser == 0.3.*,
+                     xournal-render >= 0.3.999 && < 0.5,
+                     xournal-builder == 0.1.*,
+                     containers == 0.4.*,
+                     template-haskell == 2.*,
+                     bytestring == 0.9.*, 
+                     double-conversion == 0.2.*,
+                     fclabels == 1.0.*,
+                     cmdargs >= 0.7 && <= 0.10,
+                     configurator == 0.1.*
 
   Exposed-Modules: 
                    Application.HXournal.ProgType
@@ -77,7 +102,6 @@ Library
                    Application.HXournal.ModelAction.Select
                    Application.HXournal.ModelAction.File
                    Application.HXournal.ModelAction.Window
-                   -- Application.HXournal.ModelAction.Common
                    Application.HXournal.Coroutine.Callback
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu
@@ -111,4 +135,6 @@ Library
   install-includes: 
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
-		 
+
+  if flag(poppler)
+    GHC-Options: -DPOPPLER

@@ -11,4 +11,5 @@
 0.6.0: 19 Dec 2011 
    * some bug fixes (temporary yet) related to automatic scrollbar disappearing. Check when new, open, annotate pdf if xournal file is not saved yet. 
  
- 
+0.6.1: 25 Dec 2011
+   * undo/redo support, double buffer rendering while scrolling

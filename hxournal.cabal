@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.6.0.999
+Version:	0.6.1
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 Homepage:       http://ianwookim.org/hxournal
@@ -48,9 +48,9 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types >= 0.1.999 && < 0.3, 
+                     xournal-types == 0.2.*,
                      xournal-parser == 0.3.*,
-                     xournal-render >= 0.3.0.999 && < 0.4,
+                     xournal-render == 0.4.*,
                      xournal-builder == 0.1.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -70,9 +70,9 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types >= 0.1.999 && < 0.3, 
+                     xournal-types == 0.2.*,
                      xournal-parser == 0.3.*,
-                     xournal-render >= 0.3.999 && < 0.5,
+                     xournal-render == 0.4.*,
                      xournal-builder == 0.1.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -125,7 +125,6 @@ Library
                    Application.HXournal.Device
                    Application.HXournal.Accessor
                    Application.HXournal.Config
-
 
   Other-Modules: 
                    Paths_hxournal

@@ -22,12 +22,12 @@ import Control.Monad.State hiding (get, mapM_, mapM,sequence)
 import qualified Control.Monad.State as St (get)
 import Data.Label
 
-import Data.ByteString hiding (putStrLn, empty)
-import qualified Data.ByteString.Char8 as C hiding (empty)
+-- import Data.ByteString hiding (putStrLn, empty)
+-- import qualified Data.ByteString.Char8 as C hiding (empty)
 
-#ifdef POPPLER
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-#endif 
+-- #ifdef POPPLER
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+-- #endif 
 
 import Graphics.Xournal.Render.BBox
 import Graphics.Rendering.Cairo
@@ -136,7 +136,7 @@ mkBkgPDF :: Dimension -> Background
 mkBkgPDF dim@(Dim w h) bkg = do  
   let bkgpdf = bkgPDFFromBkg bkg
   case bkgpdf of 
-    BkgPDFSolid c s msfc -> do -- return bkgpdf 
+    BkgPDFSolid _c _s msfc -> do 
       case msfc of 
         Just _ -> return bkgpdf
         Nothing -> do 
@@ -157,8 +157,9 @@ mkBkgPDF dim@(Dim w h) bkg = do
                 Just doc -> do  
                   (mpg,msfc) <- popplerGetPageFromDoc doc pn 
                   return (bkgpdf {bkgpdf_popplerpage = mpg, bkgpdf_cairosurface = msfc}) 
+                Nothing -> error "no pdf doc? in mkBkgPDF"
             _ -> return bkgpdf 
-        Just (Context oldd oldf olddoc) -> do 
+        Just (Context _oldd _oldf olddoc) -> do 
           (mpage,msfc) <- case olddoc of 
             Just doc -> do 
               popplerGetPageFromDoc doc pn
@@ -201,11 +202,6 @@ updateLayerBuf mbbox lyr = do
       renderWith sfc $ do 
         clearBBox mbbox        
         cairoDrawLayerBBox mbbox (gcast lyr :: TLayerBBox)
-        {- case mbbox of
-          Just (BBox (x1,y1) (x2,y2)) -> do 
-            rectangle x1 y1 x2 y2 -- drawBBox bbox 
-            fill
-          _ -> return () -}
       return lyr
     _ -> return lyr
     
@@ -271,7 +267,7 @@ instance RenderOptionable (InBBox TLayerBBox) where
                              
 instance RenderOptionable (InBBox TPageBBoxMapPDF) where
   type RenderOption (InBBox TPageBBoxMapPDF) = InBBoxOption 
-  cairoRenderOption opt@(InBBoxOption mbbox) (InBBox page) = do 
+  cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
     cairoRenderOption (DrawPDFInBBox mbbox) (gbackground page, gdimension page) 
     mapM_ (cairoDrawLayerBBox mbbox) . glayers $ page 
 
@@ -279,7 +275,7 @@ instance RenderOptionable (InBBox TPageBBoxMapPDF) where
 -- | page within a bbox. not implemented bbox part.
 
 cairoDrawPageBBoxPDF :: Maybe BBox -> TPageBBoxMapPDF -> Render ()
-cairoDrawPageBBoxPDF mbbox page = cairoRender page  -- This is temporary
+cairoDrawPageBBoxPDF _mbbox page = cairoRender page  -- This is temporary
 
 
 

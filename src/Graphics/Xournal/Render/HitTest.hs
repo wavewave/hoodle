@@ -69,7 +69,7 @@ mkHitTestInsideBBox :: BBox -> [StrokeBBox] -> AlterList (NotHitted StrokeBBox) 
 mkHitTestInsideBBox b = mkHitTestAL (hitTestInsideBBox b . strokebbox_bbox)
 
 hitTestInsideBBox :: BBox -> BBox -> Bool 
-hitTestInsideBBox b1 b2@(BBox (ulx2,uly2) (lrx2,lry2)) 
+hitTestInsideBBox b1 (BBox (ulx2,uly2) (lrx2,lry2)) 
   = hitTestBBoxPoint b1 (ulx2,uly2)
     && hitTestBBoxPoint b1 (lrx2,lry2)
 

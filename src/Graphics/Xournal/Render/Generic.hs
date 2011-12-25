@@ -6,7 +6,7 @@ import Data.Foldable
 import Prelude hiding (mapM_)
 
 -- import Text.Xournal.Type
-import Graphics.Xournal.Render.Type 
+
 import Data.Xournal.Generic
 import Data.Xournal.Simple
 import Data.Xournal.BBox

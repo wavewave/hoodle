@@ -4,20 +4,19 @@
 
 module Graphics.Xournal.Render.PDFBackground where
 
-import Debug.Trace
+
 import Control.Monad.State hiding (mapM_)
 import Prelude hiding (mapM_)
 
-import Data.Foldable 
+
 import Data.Monoid 
 import Data.ByteString hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C
-import Data.Xournal.Generic
+
 import Data.Xournal.Simple
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.BBox 
 import Graphics.Xournal.Render.Generic
-import Graphics.Xournal.Render.Type
 
 #ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
@@ -125,13 +124,10 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
         case msfc of 
           Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
           Just sfc -> do 
-            -- cairoRenderOption DrawBkgPDF (b,dim)
-            -- clipBBox . Just . dimToBBox $ dim
             setSourceSurface sfc 0 0 
             paint 
-            -- resetClip 
       BkgPDFPDF _ _ _ _ msfc -> do 
-        case bkgpdf_cairosurface b of 
+        case msfc of 
           Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
           Just sfc -> do 
             setSourceSurface sfc 0 0 
@@ -142,7 +138,6 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
         clipBBox mbbox
         cairoRenderOption DrawBuffer (b,dim)
         resetClip
-        --  cairoDrawBackgroundBBox mbbox dim (bkgFromBkgPDF b)
       BkgPDFPDF _ _ _ _ _ -> do 
         clipBBox mbbox
         cairoRenderOption DrawBuffer (b,dim)

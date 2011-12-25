@@ -25,6 +25,7 @@ drawOneStrokeCurve ((x0 :!: y0) : xs) = do
   x0 `seq` y0 `seq` moveTo x0 y0
   mapM_ f xs 
     where f (x :!: y) = x `seq` y `seq` lineTo x y 
+drawOneStrokeCurve [] = return ()
 
 -- | general background drawing (including pdf file)
 
@@ -33,7 +34,7 @@ cairoDrawBackground page = do
   let Dim w h = page_dim page 
   case page_bkg page of 
     Background typ col sty -> cairoDrawBkg (Dim w h) (Background typ col sty)
-    bpdf@(BackgroundPdf _ mdomain mfilename pagenum) -> 
+    BackgroundPdf _ mdomain mfilename pagenum -> 
       cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
 
 
@@ -44,15 +45,15 @@ cairoDrawPdfBkg = do
   error "pdf bkg is not implemented"
 
 cairoDrawBkg :: Dimension -> Background -> Render () 
-cairoDrawBkg (Dim w h) (Background typ col sty) = do 
+cairoDrawBkg (Dim w h) (Background _typ col sty) = do 
   let c = M.lookup col predefined_bkgcolor  
   case c of 
-    Just (r,g,b,a) -> setSourceRGB r g b 
+    Just (r,g,b,_a) -> setSourceRGB r g b 
     Nothing        -> setSourceRGB 1 1 1 
   rectangle 0 0 w h 
   fill
   cairoDrawRuling w h sty
-cairoDrawBkg (Dim w h) (BackgroundPdf typ mdomain mfilename pagenum) = do 
+cairoDrawBkg (Dim w h) (BackgroundPdf _typ _mdomain _mfilename _pagenum) = do 
   setSourceRGBA 1 1 1 1
   rectangle 0 0 w h 
   fill
@@ -101,7 +102,7 @@ cairoDrawRuling w h style = do
 cairoDrawPage :: Page -> Render ()
 cairoDrawPage page = do 
   let strokes = (layer_strokes . (!!0) . page_layers) page 
-      (Dim w h) = page_dim page
+      -- (Dim w h) = page_dim page
   cairoDrawBackground page
   setLineCap LineCapRound
   setLineJoin LineJoinRound

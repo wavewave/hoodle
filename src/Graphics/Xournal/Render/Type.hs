@@ -3,8 +3,6 @@
 module Graphics.Xournal.Render.Type where
 
 import Prelude hiding (fst,snd)
-import Data.Strict.Tuple 
-import Data.ByteString hiding (map, minimum, maximum)
 
 import Data.Xournal.Simple 
 import Data.Xournal.Generic
@@ -38,10 +36,10 @@ getA (x :- xs)  = x : getB xs
 
 getB :: AlterList a b -> [b]
 getB Empty = [] 
-getB (x :- xs) = getA xs 
+getB (_x :- xs) = getA xs 
 
 interleave :: (a->c) -> (b->c) -> AlterList a b -> [c]
-interleave fa fb Empty = [] 
+interleave _fa _fb Empty = [] 
 interleave fa fb (x :- xs) = fa x : (interleave fb fa xs) 
 
 ----

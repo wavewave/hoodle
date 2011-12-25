@@ -19,7 +19,6 @@ import qualified Data.Map as M
 
 import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter )
 
-import Debug.Trace
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
 clipBBox :: Maybe BBox -> Render ()
@@ -88,14 +87,16 @@ cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do
       Just bbox@(BBox (x1,y1) (x2,y2)) -> do 
         let c = M.lookup col predefined_bkgcolor  
         case c of 
-          Just (r,g,b,a) -> setSourceRGB r g b 
+          Just (r,g,b,_a) -> setSourceRGB r g b 
           Nothing        -> setSourceRGB 1 1 1 
         rectangle x1 y1 (x2-x1) (y2-y1)
         fill
         cairoDrawRulingBBox bbox w h sty
+cairoDrawBackgroundBBox _ _  (BackgroundPdf _ _ _ _) = 
+    error "BackgroundPdf in cairoDrawBackgroundBBox"
 
 cairoDrawRulingBBox :: BBox -> Double -> Double -> ByteString -> Render () 
-cairoDrawRulingBBox bbox@(BBox (x1,y1) (x2,y2)) w h style = do
+cairoDrawRulingBBox (BBox (x1,y1) (x2,y2)) w h style = do
   let drawonerule y = do 
         moveTo x1 y 
         lineTo x2 y

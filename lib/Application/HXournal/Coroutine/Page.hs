@@ -126,3 +126,8 @@ pageZoomChange zmode = do
     xstate <- getSt 
     let currCvsId = get currentCanvas xstate
     canvasZoomUpdate (Just zmode) currCvsId         
+
+newPageBefore :: Iteratee MyEvent XournalStateIO () 
+newPageBefore = do 
+  liftIO $ putStrLn "newPageBefore called"
+

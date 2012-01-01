@@ -213,6 +213,7 @@ menuEventProcess MenuLastPage = do
                           ViewAppendState xoj ->  M.size . get g_pages $ xoj
                           SelectState txoj    -> M.size . gselectAll $ txoj
   changePage (const (totalnumofpages-1))
+menuEventProcess MenuNewPageBefore = newPageBefore 
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuUndo = undo 

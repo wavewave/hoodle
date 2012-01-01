@@ -489,10 +489,10 @@ getMenuUI tref sref = do
  
   let disabledActions = 
         [ recenta, printa, exporta
-        , {- undoa, redoa, -} cuta, copya, pastea, deletea
+        , cuta, copya, pastea, deletea
         , fscra,  zmina, zmouta, setzma
         , shwlayera, hidlayera
-        , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
+        , {- newpgba, -} newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta

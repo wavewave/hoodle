@@ -58,17 +58,23 @@ startCreate mc strs = do
         Success strokes -> do  
 -}
 
-startCurrent :: HXournalClipClientConfiguration -> IO () 
+startCurrent :: HXournalClipClientConfiguration -> IO (Maybe HXournalClipInfo) 
 startCurrent mc = do 
   putStrLn $"currentclip"
   let url = hxournalclipServerURL mc 
   r <- jsonFromServer url ("currentclip") methodGet
   putStrLn $ show r 
   case r of 
-    Right v -> case v of 
-      Success v' ->  putStrLn $ show (parse parseJSON v' :: Result HXournalClipInfo)
+    Right (Success v') -> 
+      case (parse parseJSON v' :: Result HXournalClipInfo) of 
+        Success hinfo -> return (Just hinfo)
+        _ -> return Nothing 
+    _ -> return Nothing 
+
+{-
+putStrLn $ show 
       _ -> return ()
-    Left _ -> return ()
+    Left _ -> return () -}
 
 startGet :: HXournalClipClientConfiguration -> String -> IO () 
 startGet mc idee = do 
@@ -173,7 +179,10 @@ copyContentsToNetworkClipboard clip = do
     else 
       putStrLn "no clipboard content"
 
-getContentsFromNetworkClipboard :: IO () 
+getContentsFromNetworkClipboard :: IO (Maybe Clipboard) 
 getContentsFromNetworkClipboard = do 
   putStrLn" get"
-  startGetList testHXournalClipClientConfiguration 
+  r <- startCurrent testHXournalClipClientConfiguration 
+  let mclip = fmap (Clipboard . fmap gFromStroke .  hxournalclip_strokes  )  r
+  return mclip
+  -- putStrLn $ show r

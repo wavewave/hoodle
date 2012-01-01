@@ -22,7 +22,8 @@ clipCopyToNetworkClipboard = do
 
 clipPasteFromNetworkClipboard :: Iteratee MyEvent XournalStateIO ()
 clipPasteFromNetworkClipboard = do 
+  xstate <- getSt 
   liftIO $ putStrLn "clipPasteFromNetworkClipboard called"
-  liftIO $ getContentsFromNetworkClipboard
-
+  mclip <- liftIO $ getContentsFromNetworkClipboard
+  maybe (return ()) (\clip -> putSt . set clipboard clip $ xstate) mclip 
 

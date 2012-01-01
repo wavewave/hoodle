@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.3.0.0
+Version:	0.3.0.999
 Synopsis:       Xournal file parser
 Description: 	Text parser for xournal xml file
 Homepage:       http://ianwookim.org/hxournal
@@ -22,12 +22,12 @@ Library
   Build-Depends: base == 4.*, 
                  mtl == 2.*, 
                  transformers == 0.2.*, 
-                 attoparsec == 0.9.*, 
-                 attoparsec-iteratee == 0.3.*, 
+                 attoparsec == 0.10.*, 
+                 attoparsec-iteratee == 0.4.*, 
                  iteratee >= 0.7 && < 0.9, 
                  bytestring == 0.9.*, 
                  containers == 0.4.*, 
-                 xml-enumerator < 0.4, 
+                 xml-enumerator == 0.4.*, 
                  enumerator >= 0.4.13 && < 0.5, 
                  strict == 0.3.*, 
                  iteratee-compress == 0.2.1.*, 

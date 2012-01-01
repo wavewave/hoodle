@@ -2,7 +2,7 @@
 
 module Text.Xournal.Parse where
 
-import Control.Applicative hiding (many)
+import Control.Applicative -- hiding (many)
 
 
 import Data.Attoparsec

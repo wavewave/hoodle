@@ -109,3 +109,18 @@ getPage cinfo =
     Left pg -> pg 
                   
 
+newSinglePageFromOld :: TPageBBoxMapPDFBuf -> TPageBBoxMapPDFBuf 
+newSinglePageFromOld lpage = 
+  lpage { glayers = M.insert 0 (GLayerBuf (LyBuf Nothing) []) M.empty } 
+
+newPageBeforeAction :: TXournalBBoxMapPDFBuf -> (CanvasId, CanvasInfo) -> IO TXournalBBoxMapPDFBuf
+newPageBeforeAction xoj (cid,cinfo) = do 
+  let cpn = get currentPageNum cinfo
+  let pagelst = M.elems . get g_pages $ xoj 
+      pagekeylst = M.keys . get g_pages $ xoj 
+      (pagesbefore,pagesafter) = splitAt cpn pagelst
+      npage = newSinglePageFromOld (head pagesafter)
+      npagelst = pagesbefore ++ (npage : pagesafter)
+      nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
+  putStrLn . show $ pagekeylst 
+  return nxoj

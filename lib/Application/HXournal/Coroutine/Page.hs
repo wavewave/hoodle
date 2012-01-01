@@ -1,5 +1,6 @@
 module Application.HXournal.Coroutine.Page where
 
+import Control.Applicative 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
@@ -40,7 +41,8 @@ changePage modifyfn = do
         (xstate',xoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
-            let npage = lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
+            let npage = newSinglePageFromOld lpage
+                -- npage = lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newxoj = xoj { gpages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
@@ -130,4 +132,20 @@ pageZoomChange zmode = do
 newPageBefore :: Iteratee MyEvent XournalStateIO () 
 newPageBefore = do 
   liftIO $ putStrLn "newPageBefore called"
+  xstate <- getSt
+  let xojstate = get xournalstate xstate
+  case xojstate of 
+    ViewAppendState xoj -> do 
+      liftIO $ putStrLn " In View " 
+      let currCvsId = get currentCanvas xstate 
+          mcurrCvsInfo = IM.lookup currCvsId (get canvasInfoMap xstate)
+      xoj' <- maybe (error $ "something wrong in newPageBefore")
+                    (liftIO . newPageBeforeAction xoj)
+                    $ (,) <$> pure currCvsId <*> mcurrCvsInfo  
+      let xstate' = updatePageAll (ViewAppendState xoj')
+                    . set xournalstate  (ViewAppendState xoj') 
+                    $ xstate 
+      commit xstate'
+      invalidate currCvsId 
+    SelectState txoj -> liftIO $ putStrLn " In Select State, this is not implemented yet."
 

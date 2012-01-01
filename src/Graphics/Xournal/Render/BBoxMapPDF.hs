@@ -43,6 +43,23 @@ type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TL
 
 type TTempXournalSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTempPageSelectPDF))
 
+newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
+
+type instance StrokeTypeFromLayer (TLayerBBoxBuf b) = StrokeBBox 
+
+type TPageBBoxMapPDFBuf = 
+  TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
+  
+type TXournalBBoxMapPDFBuf = 
+  TXournalBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
+  
+type TTempPageSelectPDFBuf = 
+  GPage BackgroundPDFDrawable (TLayerSelectInPageBuf []) (TLayerBBoxBuf LyBuf)
+
+type TTempXournalSelectPDFBuf = 
+  GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
+
+
 
 instance GBackgroundable BackgroundPDFDrawable where 
   gFromBackground = bkgPDFFromBkg 
@@ -171,21 +188,6 @@ mkBkgPDF dim@(Dim w h) bkg = do
 
 
 
-newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
-
-type instance StrokeTypeFromLayer (TLayerBBoxBuf b) = StrokeBBox 
-
-type TPageBBoxMapPDFBuf = 
-  TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
-  
-type TXournalBBoxMapPDFBuf = 
-  TXournalBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
-  
-type TTempPageSelectPDFBuf = 
-  GPage BackgroundPDFDrawable (TLayerSelectInPageBuf []) (TLayerBBoxBuf LyBuf)
-
-type TTempXournalSelectPDFBuf = 
-  GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
 
 mkTLayerBBoxBufFromNoBuf :: Dimension -> TLayerBBox -> IO (TLayerBBoxBuf LyBuf)
 mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do 

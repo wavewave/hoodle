@@ -23,8 +23,7 @@ import Application.HXournal.Coroutine.Select
 import Application.HXournal.Coroutine.File
 import Application.HXournal.Coroutine.Mode
 import Application.HXournal.Coroutine.Window
-
-
+import Application.HXournal.Coroutine.Network
 
 import Application.HXournal.ModelAction.Window 
 import Application.HXournal.Type.Window 
@@ -225,6 +224,8 @@ menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
 menuEventProcess MenuPaste = pasteToSelection
 menuEventProcess MenuDelete = deleteSelection
+menuEventProcess MenuNetCopy = clipCopyToNetworkClipboard
+menuEventProcess MenuNetPaste = clipPasteFromNetworkClipboard
 menuEventProcess MenuNormalSize = pageZoomChange Original  
 menuEventProcess MenuPageWidth = pageZoomChange FitWidth 
 menuEventProcess MenuPageHeight = pageZoomChange FitHeight

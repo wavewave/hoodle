@@ -36,6 +36,8 @@ data MenuEvent = MenuNew
                | MenuCopy 
                | MenuPaste 
                | MenuDelete
+               | MenuNetCopy
+               | MenuNetPaste
                | MenuFullScreen 
                | MenuZoom 
                | MenuZoomIn

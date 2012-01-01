@@ -4,6 +4,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Event
 import Application.HXournal.ModelAction.Network
+import Application.HXournal.ModelAction.Select
 import Application.HXournal.Accessor
 
 import Control.Monad.Trans
@@ -25,8 +26,11 @@ clipCopyToNetworkClipboard = do
 clipPasteFromNetworkClipboard :: Iteratee MyEvent XournalStateIO ()
 clipPasteFromNetworkClipboard = do 
   xstate <- getSt 
+  let ui = get gtkUIManager xstate 
   let mncconf = get networkClipboardInfo xstate
   flip (maybe (return ())) mncconf $ \ncconf -> do 
     mclip <- liftIO $ getContentsFromNetworkClipboard ncconf
-    maybe (return ()) (\clip -> putSt . set clipboard clip $ xstate) mclip 
-
+    flip (maybe (return ())) mclip $ \clip -> do 
+      putSt . set clipboard clip $ xstate
+      liftIO $ togglePaste ui True
+    

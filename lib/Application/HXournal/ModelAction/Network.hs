@@ -47,7 +47,8 @@ startCreate mc strs = do
   let info = HXournalClipInfo { hxournalclip_uuid = uuid 
                               , hxournalclip_strokes = strs } 
   response <- hxournalclipToServer url ("uploadhxournalclip") methodPost info
-  putStrLn $ show response 
+  -- putStrLn $ show response 
+  return () 
 
 {-
   case A.parseOnly json jsonstr of 
@@ -63,7 +64,7 @@ startCurrent mc = do
   putStrLn $"currentclip"
   let url = hxournalclipServerURL mc 
   r <- jsonFromServer url ("currentclip") methodGet
-  putStrLn $ show r 
+  -- putStrLn $ show r 
   case r of 
     Right (Success v') -> 
       case (parse parseJSON v' :: Result HXournalClipInfo) of 
@@ -71,10 +72,6 @@ startCurrent mc = do
         _ -> return Nothing 
     _ -> return Nothing 
 
-{-
-putStrLn $ show 
-      _ -> return ()
-    Left _ -> return () -}
 
 startGet :: HXournalClipClientConfiguration -> String -> IO () 
 startGet mc idee = do 

@@ -1,13 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module Application.HXournal.Type.Clipboard 
---       ( Clipboard
---       , emptyClipboard
---       , isEmpty
---       , getClipContents 
---       , replaceClipContents
---       ) 
-  where
+module Application.HXournal.Type.Clipboard where
 
 import Control.Category
 import Data.Label 

@@ -9,6 +9,8 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Undo
+
+import Application.HXournal.NetworkClipboard.Client.Config
 import Data.Xournal.Map
 
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -45,6 +47,7 @@ data HXournalState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable XournalState
+                , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
                 } 
 
 
@@ -70,6 +73,7 @@ emptyHXournalState =
   , _gtkUIManager = error "emptyHXournalState.gtkUIManager"
   , _isSaved = False 
   , _undoTable = emptyUndo 1 
+  , _networkClipboardInfo = Nothing 
   }
 
 resetXournalStateBuffers :: XournalState -> IO XournalState 

@@ -16,14 +16,17 @@ clipCopyToNetworkClipboard :: Iteratee MyEvent XournalStateIO ()
 clipCopyToNetworkClipboard = do 
   liftIO $ putStrLn "clipCopyToNetworkClipboard called"
   xstate <- getSt
-  let clip = get clipboard xstate 
-  liftIO $ copyContentsToNetworkClipboard clip 
+  let mncconf = get networkClipboardInfo xstate
+  flip (maybe (return ())) mncconf $ \ncconf -> do 
+    let clip = get clipboard xstate 
+    liftIO $ copyContentsToNetworkClipboard ncconf clip 
 
 
 clipPasteFromNetworkClipboard :: Iteratee MyEvent XournalStateIO ()
 clipPasteFromNetworkClipboard = do 
   xstate <- getSt 
-  liftIO $ putStrLn "clipPasteFromNetworkClipboard called"
-  mclip <- liftIO $ getContentsFromNetworkClipboard
-  maybe (return ()) (\clip -> putSt . set clipboard clip $ xstate) mclip 
+  let mncconf = get networkClipboardInfo xstate
+  flip (maybe (return ())) mncconf $ \ncconf -> do 
+    mclip <- liftIO $ getContentsFromNetworkClipboard ncconf
+    maybe (return ()) (\clip -> putSt . set clipboard clip $ xstate) mclip 
 

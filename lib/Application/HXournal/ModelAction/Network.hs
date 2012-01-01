@@ -169,20 +169,17 @@ testHXournalClipClientConfiguration =
   }
    
 
-copyContentsToNetworkClipboard :: Clipboard -> IO () 
-copyContentsToNetworkClipboard clip = do 
-  putStrLn " copy "
+copyContentsToNetworkClipboard :: HXournalClipClientConfiguration -> Clipboard -> IO () 
+copyContentsToNetworkClipboard ncconf clip = do 
   if not. isEmpty $ clip 
     then do 
       let strs = fmap gToStroke . getClipContents $ clip 
-      startCreate testHXournalClipClientConfiguration strs 
+      startCreate ncconf strs 
     else 
       putStrLn "no clipboard content"
 
-getContentsFromNetworkClipboard :: IO (Maybe Clipboard) 
-getContentsFromNetworkClipboard = do 
-  putStrLn" get"
-  r <- startCurrent testHXournalClipClientConfiguration 
+getContentsFromNetworkClipboard :: HXournalClipClientConfiguration -> IO (Maybe Clipboard) 
+getContentsFromNetworkClipboard ncconf = do 
+  r <- startCurrent ncconf
   let mclip = fmap (Clipboard . fmap gFromStroke .  hxournalclip_strokes  )  r
   return mclip
-  -- putStrLn $ show r

@@ -4,13 +4,20 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Event
 import Application.HXournal.ModelAction.Network
+import Application.HXournal.Accessor
 
 import Control.Monad.Trans
+
+import Control.Category 
+import Data.Label
+import Prelude hiding ((.),id)
 
 clipCopyToNetworkClipboard :: Iteratee MyEvent XournalStateIO ()
 clipCopyToNetworkClipboard = do 
   liftIO $ putStrLn "clipCopyToNetworkClipboard called"
-  liftIO $ copyContentsToNetworkClipboard 
+  xstate <- getSt
+  let clip = get clipboard xstate 
+  liftIO $ copyContentsToNetworkClipboard clip 
 
 
 clipPasteFromNetworkClipboard :: Iteratee MyEvent XournalStateIO ()

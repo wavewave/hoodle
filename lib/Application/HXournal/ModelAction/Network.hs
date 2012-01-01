@@ -17,6 +17,10 @@ import System.Directory
 import System.FilePath
 import Unsafe.Coerce
 
+import Data.Xournal.Generic
+import Data.Xournal.Simple
+import Data.Xournal.BBox
+import Application.HXournal.Type.Clipboard
 import Application.HXournal.NetworkClipboard.Client.Config
 import Application.HXournal.NetworkClipboard.Type
 import Data.UUID
@@ -34,22 +38,25 @@ nextUUID mc = do
   t <- getCurrentTime 
   return . generateNamed namespaceURL . B.unpack . SC.pack $ c ++ "/" ++ show t 
 
-startCreate :: HXournalClipClientConfiguration -> String -> IO () 
-startCreate mc jsonstr = do 
+startCreate :: HXournalClipClientConfiguration -> [Stroke] -> IO () 
+startCreate mc strs = do 
   putStrLn "job started"
   cwd <- getCurrentDirectory
   let url = hxournalclipServerURL mc 
   uuid <- nextUUID mc
-  case A.parseOnly json (SC.pack jsonstr) of 
+  let info = HXournalClipInfo { hxournalclip_uuid = uuid 
+                              , hxournalclip_strokes = strs } 
+  response <- hxournalclipToServer url ("uploadhxournalclip") methodPost info
+  putStrLn $ show response 
+
+{-
+  case A.parseOnly json jsonstr of 
     Left str -> error str
     Right jsonstrokes -> 
       case parse parseJSON jsonstrokes of 
         Error str2 -> error str2 
         Success strokes -> do  
-          let info = HXournalClipInfo { hxournalclip_uuid = uuid 
-                                      , hxournalclip_strokes = strokes } 
-          response <- hxournalclipToServer url ("uploadhxournalclip") methodPost info
-          putStrLn $ show response 
+-}
 
 startCurrent :: HXournalClipClientConfiguration -> IO () 
 startCurrent mc = do 
@@ -156,11 +163,17 @@ testHXournalClipClientConfiguration =
   }
    
 
-copyContentsToNetworkClipboard :: IO () 
-copyContentsToNetworkClipboard  = do 
+copyContentsToNetworkClipboard :: Clipboard -> IO () 
+copyContentsToNetworkClipboard clip = do 
   putStrLn " copy "
-  startGetList testHXournalClipClientConfiguration 
+  if not. isEmpty $ clip 
+    then do 
+      let strs = fmap gToStroke . getClipContents $ clip 
+      startCreate testHXournalClipClientConfiguration strs 
+    else 
+      putStrLn "no clipboard content"
 
 getContentsFromNetworkClipboard :: IO () 
 getContentsFromNetworkClipboard = do 
   putStrLn" get"
+  startGetList testHXournalClipClientConfiguration 

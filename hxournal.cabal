@@ -49,7 +49,7 @@ Library
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
                      xournal-types == 0.2.*,
-                     xournal-parser == 0.3.*,
+                     xournal-parser >= 0.3.0.999 && < 0.4,
                      xournal-render >= 0.4.0.0 && < 0.5,
                      xournal-builder == 0.1.*,
                      containers == 0.4.*,
@@ -58,8 +58,16 @@ Library
                      double-conversion == 0.2.*,
                      fclabels == 1.0.*,
                      cmdargs >= 0.7 && <= 0.10,
-                     configurator == 0.1.*,
-                     poppler == 0.12.*
+                     configurator == 0.2.*,
+                     poppler == 0.12.*, 
+                     attoparsec == 0.10.*,
+                     http-enumerator == 0.7.*, 
+                     http-types == 0.6.*, 
+                     aeson == 0.4.*, 
+                     time == 1.2.*, 
+                     uuid == 1.2.*, 
+                     hxournalclip-type == 0.0.*, 
+                     hxournalclip-client == 0.0.*
   else 
     Build-Depends:   base == 4.*, 
                      mtl == 2.*,
@@ -71,7 +79,7 @@ Library
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
                      xournal-types == 0.2.*,
-                     xournal-parser == 0.3.*,
+                     xournal-parser >= 0.3.0.999 && < 0.4,
                      xournal-render >= 0.4.0.0 && < 0.5,
                      xournal-builder == 0.1.*,
                      containers == 0.4.*,
@@ -80,8 +88,15 @@ Library
                      double-conversion == 0.2.*,
                      fclabels == 1.0.*,
                      cmdargs >= 0.7 && <= 0.10,
-                     configurator == 0.1.*
-
+                     configurator == 0.2.*, 
+                     attoparsec == 0.10.*,
+                     http-enumerator == 0.7.*, 
+                     http-types == 0.6.*, 
+                     aeson == 0.4.*, 
+                     time == 1.2.*, 
+                     uuid == 1.2.*, 
+                     hxournalclip-type == 0.0.*,
+                     hxournalclip-client == 0.0.*
 
   Exposed-Modules: 
                    Application.HXournal.ProgType

@@ -133,7 +133,9 @@ drawFuncGen render canvas page vinfo mbbox = do
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
+    clipBBox mbboxnew
     render page mbboxnew 
+    resetClip 
     return ()
   return ()
   
@@ -148,8 +150,10 @@ drawFuncSelGen rencont rensel canvas page vinfo mbbox = do
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
+    clipBBox mbboxnew
     rencont page mbboxnew 
     rensel page mbboxnew 
+    resetClip 
   return ()
   
 

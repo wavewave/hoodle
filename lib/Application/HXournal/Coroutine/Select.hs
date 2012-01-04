@@ -222,7 +222,7 @@ copySelection = do
             else do 
               let newclip = Clipboard strs
                   xstate' = set clipboard newclip xstate 
-              liftIO $ putStrLn $ "newclipboard with " ++ show strs 
+              -- liftIO $ putStrLn $ "newclipboard with " ++ show strs 
               let ui = get gtkUIManager xstate'
               liftIO $ togglePaste ui True 
               putSt xstate'

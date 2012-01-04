@@ -78,7 +78,7 @@ startGet mc idee = do
   putStrLn $"get " ++ idee
   let url = hxournalclipServerURL mc 
   r <- jsonFromServer url ("hxournalclip" </> idee) methodGet
-  putStrLn $ show r 
+  -- putStrLn $ show r 
   case r of 
     Right v -> case v of 
       Success v' ->  putStrLn $ show (parse parseJSON v' :: Result HXournalClipInfo)
@@ -139,6 +139,12 @@ jsonFromServer url api mthd = do
 
 hxournalclipToServer :: Url -> String -> Method -> HXournalClipInfo -> IO (Either String (Result Value))
 hxournalclipToServer url api mthd mi = do 
+{-  let mijson = E.encode (toJSON mi)  
+      strict_mijson = C.toChunks mijson
+  putStrLn $ show $ length strict_mijson
+  return $ Left "test" -}
+-- Temporarily      
+  
   request <- parseUrl (url </> api)
   withManager $ \manager -> do
     let mijson = E.encode (toJSON mi)
@@ -151,7 +157,9 @@ hxournalclipToServer url api mthd mi = do
     if statusCode r == 200 
       then return . parseJson . SC.concat . C.toChunks . responseBody $ r
       else return (Left $ "status code : " ++ show (statusCode r)) 
+   
 
+    
 parseJson :: (FromJSON a) => SC.ByteString -> Either String (Result a)
 parseJson bs =
   let resultjson = trace (SC.unpack bs) $ A.parse json bs 

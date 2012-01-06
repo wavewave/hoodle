@@ -71,13 +71,14 @@ cairoDrawPageBBox mbbox page = do
 
 cairoDrawLayerBBox :: Maybe BBox -> TLayerBBox -> Render () 
 cairoDrawLayerBBox mbbox layer = do  
+  clipBBox mbbox 
   let hittestbbox = case mbbox of 
                        Nothing -> NotHitted [] 
                                   :- Hitted (gstrokes layer) 
                                   :- Empty 
                        Just bbox -> mkHitTestBBoxBBox bbox (gstrokes layer)
   mapM_ drawOneStroke . map gToStroke . concatMap unHitted  . getB $ hittestbbox
-
+  resetClip
 
 cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()
 cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do 

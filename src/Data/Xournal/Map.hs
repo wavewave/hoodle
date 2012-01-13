@@ -22,3 +22,4 @@ type TXournalBBoxMapBkg b = GXournal IntMap (TPageBBoxMapBkg b)
 
 emptyGXournalMap :: GXournal IntMap a
 emptyGXournalMap = GXournal "" empty
+

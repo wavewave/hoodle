@@ -7,6 +7,7 @@ import Control.Applicative hiding (empty)
 import Control.Compose
 import Data.Foldable
 import Data.Traversable
+import Data.Monoid
 import Data.Sequence
 import Data.Xournal.Generic
 
@@ -50,6 +51,19 @@ moveRight (SZ (x,(x1s,x2s))) =
     z :< zs -> Just (SZ (z,(x1s|>x,zs)))
 
 
+goFirst :: SeqZipper a -> SeqZipper a 
+goFirst orig@(SZ (x,(x1s,x2s))) =
+  case viewl x1s of 
+    EmptyL -> orig
+    z :< zs -> SZ (z,(empty, zs `mappend` (x <| x2s)))  
+
+goLast :: SeqZipper a -> SeqZipper a 
+goLast orig@(SZ (x,(x1s,x2s))) = 
+  case viewr x2s of 
+    EmptyR -> orig
+    zs :> z -> SZ (z,((x1s |> x) `mappend` zs , empty))
+ 
+
 current :: SeqZipper a -> a 
 current (SZ (x,(_,_))) = x
 
@@ -59,28 +73,32 @@ prev = fmap current . moveLeft
 next :: SeqZipper a -> Maybe a 
 next = fmap current . moveRight
 
--- type MSeqZipper = Maybe :. SeqZipper
+replace :: a -> SeqZipper a -> SeqZipper a 
+replace y (SZ (x,zs)) = SZ (y,zs)
 
--- MSZ { unMSZ :: Maybe (SeqZipper a) }
 
 data ZipperSelect a = NoSelect { allelems :: [a] }  
                     | Select { zipper :: (Maybe :. SeqZipper) a }
 
--- instance Functor SeqZipper where
---  fmap f (SZ (a, (xs,ys))) = SZ (f a, (fmap f xs, fmap f ys))
+
+deriving instance Functor ZipperSelect 
+
+selectFirst :: ZipperSelect a -> ZipperSelect a 
+selectFirst (NoSelect []) = NoSelect []
+selectFirst (NoSelect lst@(x:xs))  = Select . gFromList $ lst
+selectFirst (Select (O Nothing)) = NoSelect []
+selectFirst (Select (O msz)) = Select . O $ return . goFirst =<<  msz
+
 
 {-
-instance Functor MSeqZipper where
-  fmap f (MSZ x) = MSZ (fmap (fmap f) x)
--}
-
 instance Functor ZipperSelect where 
   fmap f (NoSelect as) = NoSelect (fmap f as) 
   fmap f (Select as) = Select (fmap f as)
+-}
 
 instance GListable (Maybe :. SeqZipper) where
   gFromList [] = O Nothing 
-  gFromList (x:xs) = O (Just (SZ (x, (fromList xs,empty))))
+  gFromList (x:xs) = O (Just (SZ (x, (empty,fromList xs))))
   gToList (O Nothing) = [] 
   gToList (O (Just (SZ (x,(xs,ys))))) = toList xs ++ (x : toList ys)
 

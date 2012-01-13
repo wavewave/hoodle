@@ -1,14 +1,11 @@
 module Application.HXournal.Type.Undo where
 
 import Data.Sequence
+import Data.Xournal.Select
 
-
+{-
 type SeqZipper a = (a, (Seq a,Seq a))
 
-data UndoTable a = UndoTable { undo_allowednum :: Int
-                             , undo_totalnum :: Int 
-                             , undo_zipper :: Maybe (SeqZipper a)
-                             }
                  
 
 singletonSZ :: a -> SeqZipper a  
@@ -46,7 +43,12 @@ prev = fmap current . moveLeft
 
 next :: SeqZipper a -> Maybe a 
 next = fmap current . moveRight
+-}
 
+data UndoTable a = UndoTable { undo_allowednum :: Int
+                             , undo_totalnum :: Int 
+                             , undo_zipper :: Maybe (SeqZipper a)
+                             }
  
 emptyUndo :: Int -> UndoTable a
 emptyUndo n | n > 0 = UndoTable n 0 Nothing

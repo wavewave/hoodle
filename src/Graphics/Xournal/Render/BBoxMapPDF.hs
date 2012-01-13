@@ -22,12 +22,6 @@ import Control.Monad.State hiding (get, mapM_, mapM,sequence)
 import qualified Control.Monad.State as St (get)
 import Data.Label
 
--- import Data.ByteString hiding (putStrLn, empty)
--- import qualified Data.ByteString.Char8 as C hiding (empty)
-
--- #ifdef POPPLER
--- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
--- #endif 
 
 import Graphics.Xournal.Render.BBox
 import Graphics.Rendering.Cairo
@@ -60,6 +54,14 @@ type TTempXournalSelectPDFBuf =
   GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
 
 
+instance GCast (TLayerBBox)  (TLayerBBoxBuf LyBuf) where
+  gcast lyr = GLayerBuf (LyBuf Nothing) (get g_strokes lyr) 
+
+instance GCast Layer (TLayerBBoxBuf LyBuf) where
+  gcast lyr = gcast (fromLayer lyr :: TLayerBBox)
+
+emptyTLayerBBoxBufLyBuf :: IO (TLayerBBoxBuf LyBuf)
+emptyTLayerBBoxBufLyBuf = updateLayerBuf Nothing $ gcast emptyLayer 
 
 instance GBackgroundable BackgroundPDFDrawable where 
   gFromBackground = bkgPDFFromBkg 

@@ -1,13 +1,27 @@
-{-# LANGUAGE TypeSynonymInstances, TypeOperators, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, TypeOperators, FlexibleInstances, 
+             StandaloneDeriving, DeriveFunctor, DeriveFoldable, DeriveTraversable  #-}
 
 module Data.Xournal.Select where
 
+import Control.Applicative hiding (empty)
 import Control.Compose
 import Data.Foldable
+import Data.Traversable
 import Data.Sequence
 import Data.Xournal.Generic
 
+import Prelude hiding (zipWith)
+
 newtype SeqZipper a = SZ { unSZ :: (a, (Seq a,Seq a)) } 
+
+deriving instance Functor SeqZipper
+deriving instance Foldable SeqZipper 
+
+instance Applicative SeqZipper where
+  pure = singletonSZ 
+  SZ (f,(f1s,f2s)) <*> SZ (x,(y1s,y2s)) = SZ (f x, (zipWith id f1s y1s, zipWith id f2s y2s))
+
+deriving instance Traversable SeqZipper 
 
 singletonSZ :: a -> SeqZipper a  
 singletonSZ x = SZ (x, (empty,empty))
@@ -52,8 +66,8 @@ next = fmap current . moveRight
 data ZipperSelect a = NoSelect { allelems :: [a] }  
                     | Select { zipper :: (Maybe :. SeqZipper) a }
 
-instance Functor SeqZipper where
-  fmap f (SZ (a, (xs,ys))) = SZ (f a, (fmap f xs, fmap f ys))
+-- instance Functor SeqZipper where
+--  fmap f (SZ (a, (xs,ys))) = SZ (f a, (fmap f xs, fmap f ys))
 
 {-
 instance Functor MSeqZipper where
@@ -75,5 +89,14 @@ instance GListable ZipperSelect where
   gToList (NoSelect xs) = xs 
   gToList (Select xs) = gToList xs
 
+
+deriving instance Foldable ZipperSelect
+
+deriving instance Traversable ZipperSelect
+
+{-
+instance Foldable ZipperSelect where
+
   
- 
+instance Traversable ZipperSelect where
+-}

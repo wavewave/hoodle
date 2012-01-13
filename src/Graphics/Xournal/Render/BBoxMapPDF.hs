@@ -214,7 +214,7 @@ mkTPageBBoxMapPDFBufFromNoBuf page = do
       bkg = get g_background page
       ls =  get g_layers page
   ls' <- mapM (mkTLayerBBoxBufFromNoBuf dim) ls
-  return $ GPage dim bkg ls'
+  return . GPage dim bkg . gFromList . gToList $ ls'
       
 
 mkTXournalBBoxMapPDFBufFromNoBuf :: TXournalBBoxMapPDF 
@@ -230,7 +230,7 @@ resetPageBuffers :: TPageBBoxMapPDFBuf -> IO TPageBBoxMapPDFBuf
 resetPageBuffers page = do 
   let dim = get g_dimension page
       mbbox = Just . dimToBBox $ dim 
-  newlayers <- sequence . fmap (updateLayerBuf mbbox) . get g_layers $ page 
+  newlayers <- mapM (updateLayerBuf mbbox) . get g_layers $ page 
   return (set g_layers newlayers page)
 
 resetXournalBuffers :: TXournalBBoxMapPDFBuf -> IO TXournalBBoxMapPDFBuf 
@@ -252,7 +252,7 @@ tlayerBBoxFromTLayerBBoxBuf (GLayerBuf _ strs) = GLayer strs
 
 tpageBBoxMapPDFFromTPageBBoxMapPDFBuf :: TPageBBoxMapPDFBuf -> TPageBBoxMapPDF
 tpageBBoxMapPDFFromTPageBBoxMapPDFBuf (GPage dim bkg ls) = 
-  GPage dim bkg (fmap tlayerBBoxFromTLayerBBoxBuf ls)
+  GPage dim bkg . gFromList . gToList . fmap tlayerBBoxFromTLayerBBoxBuf $ ls
  
   
 ----- Rendering   

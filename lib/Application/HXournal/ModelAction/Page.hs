@@ -3,8 +3,8 @@ module Application.HXournal.ModelAction.Page where
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
 import Data.Xournal.Simple
-
 import Data.Xournal.Generic
+import Data.Xournal.Select
 
 import Graphics.Xournal.Render.BBoxMapPDF
 
@@ -75,8 +75,6 @@ updatePage (SelectState txoj) cinfo =
 setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
 setPage (ViewAppendState xojbbox) pagenum cinfo = 
   let pg = getPageFromGXournalMap pagenum xojbbox
-        -- getPageFromXojBBoxMapPDF pagenum xojbbox 
-       
       Dim w h = gdimension pg
   in  set currentPageNum pagenum 
       . set (viewPortOrigin.viewInfo) (0,0) 
@@ -105,13 +103,12 @@ getPage :: CanvasInfo -> TPageBBoxMapPDFBuf
 getPage cinfo = 
   case get currentPage cinfo of 
     Right tpgs -> gcast tpgs :: TPageBBoxMapPDFBuf 
-             -- tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf tpgs
     Left pg -> pg 
                   
 
 newSinglePageFromOld :: TPageBBoxMapPDFBuf -> TPageBBoxMapPDFBuf 
-newSinglePageFromOld lpage = 
-  lpage { glayers = M.insert 0 (GLayerBuf (LyBuf Nothing) []) M.empty } 
+newSinglePageFromOld = 
+  set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
 
 newPageBeforeAction :: TXournalBBoxMapPDFBuf -> (CanvasId, CanvasInfo) -> IO TXournalBBoxMapPDFBuf
 newPageBeforeAction xoj (cid,cinfo) = do 

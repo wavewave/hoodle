@@ -64,30 +64,28 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
         then do 
           let currxoj     = unView . get xournalstate $ xstate 
               pgnum       = get currentPageNum cvsInfo
-              currpage    = getPage cvsInfo
-              currlayer = case IM.lookup 0 (glayers currpage) of
-                            Nothing -> error "something wrong in eraserProcess"
-                            Just l -> l
-              
+              (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
+              currlayer = maybe (error "eraserProcess") id mcurrlayer
+
+              -- case IM.lookup 0 (glayers currpage) of
+              --              Nothing -> error "something wrong in eraserProcess"
+              --               Just l -> l
               (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
-          let newpagebbox = currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
+          let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+                -- currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
               newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
               newxojstate = ViewAppendState newxojbbox
           commit . set xournalstate newxojstate 
                  . updatePageAll newxojstate $ xstate 
           invalidateWithBufInBBox maybebbox cid 
-          {- case maybebbox of 
-            Just bbox -> -- invalidateWithBufInBBox m-- invalidateDrawBBox cid bbox
-            Nothing -> return () -}
           newstrs <- getAllStrokeBBoxInCurrentPage
           eraserProcess cid cpg connidup connidmove newstrs (x,y)
         else eraserProcess cid cpg connidmove connidup strs (x,y) 
     PenUp _cid' _pcoord -> do 
       disconnect connidmove 
       disconnect connidup 
-      
       invalidateAll
     _ -> return ()
     

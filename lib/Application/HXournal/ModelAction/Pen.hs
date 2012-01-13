@@ -2,6 +2,7 @@
 
 module Application.HXournal.ModelAction.Pen where
 
+import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Enum
@@ -17,11 +18,9 @@ import Data.Strict.Tuple hiding (uncurry)
 import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.BBox
+import Data.Xournal.Select 
 
 import Graphics.Xournal.Render.BBoxMapPDF
-
-
-
 
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
             -> IO (TXournalBBoxMapPDFBuf,BBox)
@@ -29,10 +28,12 @@ addPDraw pinfo xoj pgnum pdraw = do
   let pcolor = get penColor pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get penWidth pinfo
-      currpage = getPageFromGXournalMap pgnum xoj
-      currlayer = case IM.lookup 0 (get g_layers currpage) of
-                    Nothing -> error "something wrong in addPDraw"
-                    Just l -> l
+      (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
+      currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
+
+       -- currlayer = case IM.lookup 0 (get g_layers currpage) of
+       --               Nothing -> error "something wrong in addPDraw"
+       --               Just l -> l
       newstroke = Stroke { stroke_tool = "pen" 
                          , stroke_color = pcolname 
                          , stroke_width = pwidth
@@ -40,14 +41,13 @@ addPDraw pinfo xoj pgnum pdraw = do
                          } 
       newstrokebbox = mkStrokeBBoxFromStroke newstroke
       bbox = strokebbox_bbox newstrokebbox
-      
   newlayerbbox <- updateLayerBuf (Just bbox)
                    . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
                    $ currlayer
-  let newpagebbox = set g_layers (IM.adjust (const newlayerbbox) 0 (get g_layers currpage)) currpage 
+  let newpagebbox = adjustCurrentLayer newlayerbbox currpage
+                     -- set g_layers (IM.adjust (const newlayerbbox) 0 (get g_layers currpage)) currpage 
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
-      
-  return (newxojbbox,bbox) -- strokebbox_bbox newstrokebbox)
+  return (newxojbbox,bbox) 
 
 
 

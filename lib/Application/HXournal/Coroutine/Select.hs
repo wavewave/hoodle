@@ -18,12 +18,14 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Compose
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 
 import Data.Xournal.Generic
 import Data.Xournal.BBox
+import Data.Xournal.Select
 import Graphics.Xournal.Render.Type
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
@@ -115,13 +117,13 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           
           newpage = case epage of 
                       Left pagebbox -> 
-                        let currlayer = case IM.lookup 0 (get g_layers pagebbox) of
-                              Nothing -> error "something wrong in newSelectRectangle"
-                              Just l -> l
+                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
+                            -- currlayer = case IM.lookup 0 (get g_layers pagebbox) of
+                            --   Nothing -> error "something wrong in newSelectRectangle"
+                            --   Just l -> l
+                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
                             newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                         
-                        
-                            tpg = gcast pagebbox
+                            tpg = gcast npagebbox -- pagebbox
                             ls = glayers tpg 
                         in  tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
                       Right tpage -> 

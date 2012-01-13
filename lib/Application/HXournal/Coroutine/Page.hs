@@ -1,6 +1,7 @@
 module Application.HXournal.Coroutine.Page where
 
 import Control.Applicative 
+import Control.Compose
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
@@ -13,6 +14,7 @@ import Application.HXournal.ModelAction.Adjustment
 
 import Graphics.Xournal.Render.BBoxMapPDF
 import Data.Xournal.Generic
+import Data.Xournal.Select 
 
 import Graphics.UI.Gtk hiding (get,set)
 import Application.HXournal.ModelAction.Page
@@ -73,8 +75,11 @@ changePage modifyfn = do
                       Just p -> p            
         (xstate',txoj',_pages',_totalnumofpages',newpage) <-
           if (modifyfn oldpage >= totalnumofpages) 
-          then do 
-            let npage = lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
+          then do
+            nlyr <- liftIO emptyTLayerBBoxBufLyBuf  
+            let npage = set g_layers (Select . O . Just . singletonSZ $ nlyr) lpage 
+                         -- set g_layers (nlyr) lpage 
+                        -- lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newtxoj = txoj { gselectAll = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate

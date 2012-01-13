@@ -96,7 +96,8 @@ Library
                      time == 1.2.*, 
                      uuid == 1.2.*, 
                      hxournalclip-type == 0.0.*,
-                     hxournalclip-client == 0.0.*
+                     hxournalclip-client == 0.0.*, 
+                     TypeCompose == 0.9.*
 
   Exposed-Modules: 
                    Application.HXournal.ProgType

@@ -67,6 +67,7 @@ Library
                      time == 1.2.*, 
                      uuid == 1.2.*, 
                      hxournalclip-type == 0.0.*, 
+                     TypeCompose == 0.9.*,
                      hxournalclip-client == 0.0.*
   else 
     Build-Depends:   base == 4.*, 

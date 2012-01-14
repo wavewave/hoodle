@@ -97,6 +97,8 @@ uiDecl = [verbatim|<ui>
        <menuitem action="DELPGA" />       
        <separator />
        <menuitem action="NEWLYRA" />
+       <menuitem action="NEXTLAYERA" />
+       <menuitem action="PREVLAYERA" />
        <menuitem action="DELLYRA" />       
        <separator />
        <menuitem action="PPSIZEA" />
@@ -402,6 +404,8 @@ getMenuUI tref sref = do
   newpgea <- actionNewAndRegister "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing (justMenu MenuNewPageAtEnd)
   delpga  <- actionNewAndRegister "DELPGA"  "Delete Page"     (Just "Just a Stub") Nothing (justMenu MenuDeletePage)
   newlyra <- actionNewAndRegister "NEWLYRA" "New Layer"       (Just "Just a Stub") Nothing (justMenu MenuNewLayer)
+  nextlayera <- actionNewAndRegister "NEXTLAYERA" "Next Layer" (Just "Just a Stub") Nothing (justMenu MenuNextLayer)
+  prevlayera <- actionNewAndRegister "PREVLAYERA" "Prev Layer" (Just "Just a Stub") Nothing (justMenu MenuPrevLayer)
   dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (justMenu MenuDeleteLayer)
   ppsizea <- actionNewAndRegister "PPSIZEA" "Paper Size"      (Just "Just a Stub") Nothing (justMenu MenuPaperSize)
   ppclra  <- actionNewAndRegister "PPCLRA"  "Paper Color"     (Just "Just a Stub") Nothing (justMenu MenuPaperColor)
@@ -466,12 +470,11 @@ getMenuUI tref sref = do
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa
-        , newpgba, newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
+        , newpgba, newpgaa, newpgea, delpga, newlyra, nextlayera, prevlayera, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
-        , shpreca, rulera, clra, penopta  {- selregna, selrecta, vertspa, handa, -}
+        , shpreca, rulera, clra, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        {- , uxinputa, -} 
         , dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
@@ -484,15 +487,13 @@ getMenuUI tref sref = do
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode tref sref)
   actionGroupAddRadioActions agr colormods 0 (assignColor sref) 
-
-
  
   let disabledActions = 
         [ recenta, printa, exporta
         , cuta, copya, pastea, deletea
         , fscra,  zmina, zmouta, setzma
         , shwlayera, hidlayera
-        , {- newpgba, -} newpgaa, newpgea, delpga, newlyra, dellyra, ppsizea, ppclra
+        , newpgaa, newpgea, delpga, {- newlyra, dellyra, -} ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
@@ -505,8 +506,7 @@ getMenuUI tref sref = do
         ] 
       enabledActions = 
         [ opena, savea, saveasa, quita, fstpagea, prvpagea, nxtpagea, lstpagea
-        , clra, penopta, zooma, nrmsizea, pgwdtha  -- , selrecta
-        -- , uxinputa 
+        , clra, penopta, zooma, nrmsizea, pgwdtha 
         ]
   
   mapM_ (\x->actionSetSensitive x True) enabledActions  

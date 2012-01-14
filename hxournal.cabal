@@ -121,6 +121,7 @@ Library
                    Application.HXournal.ModelAction.File
                    Application.HXournal.ModelAction.Window
                    Application.HXournal.ModelAction.Network
+                   Application.HXournal.ModelAction.Layer
                    Application.HXournal.Coroutine.Callback
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu
@@ -139,6 +140,7 @@ Library
                    Application.HXournal.Coroutine.Window
                    Application.HXournal.Coroutine.Commit
                    Application.HXournal.Coroutine.Network
+                   Application.HXournal.Coroutine.Layer
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
                    Application.HXournal.Draw

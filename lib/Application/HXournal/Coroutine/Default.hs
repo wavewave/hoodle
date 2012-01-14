@@ -233,6 +233,11 @@ menuEventProcess MenuPageHeight = pageZoomChange FitHeight
 menuEventProcess MenuHSplit = eitherSplit SplitHorizontal
 menuEventProcess MenuVSplit = eitherSplit SplitVertical
 menuEventProcess MenuDelCanvas = deleteCanvas
+menuEventProcess MenuNewLayer = undefined 
+menuEventProcess MenuNextLayer = undefined 
+menuEventProcess MenuPrevLayer = undefined 
+menuEventProcess MenuDeleteLayer = undefined 
+
 menuEventProcess MenuUseXInput = do 
   -- putStrLn "Use X Input clicked" 
   xstate <- getSt 

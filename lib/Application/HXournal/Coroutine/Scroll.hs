@@ -13,10 +13,10 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 
-vscrollStart :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+vscrollStart :: CanvasId -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 vscrollStart cid = vscrollMove cid 
         
-vscrollMove :: CanvasId -> Iteratee MyEvent XournalStateIO () 
+vscrollMove :: CanvasId -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 vscrollMove cid = do    
   ev <- await 
   case ev of

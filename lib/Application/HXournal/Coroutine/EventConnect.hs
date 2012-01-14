@@ -16,16 +16,16 @@ import Data.Label
 import Prelude hiding ((.), id)
 
 disconnect :: (WidgetClass w) => ConnectId w 
-              -> Iteratee MyEvent XournalStateIO ()
+              -> MainCoroutine () --  Iteratee MyEvent XournalStateIO ()
 disconnect = liftIO . signalDisconnect
 
-connectPenUp :: CanvasInfo -> Iteratee MyEvent XournalStateIO (ConnectId DrawingArea)
+connectPenUp :: CanvasInfo -> MainCoroutine (ConnectId DrawingArea) -- Iteratee MyEvent XournalStateIO (ConnectId DrawingArea)
 connectPenUp cinfo = do 
   let cid = get canvasId cinfo
       canvas = get drawArea cinfo 
   connPenUp canvas cid 
 
-connectPenMove :: CanvasInfo -> Iteratee MyEvent XournalStateIO (ConnectId DrawingArea)
+connectPenMove :: CanvasInfo -> MainCoroutine (ConnectId DrawingArea) -- Iteratee MyEvent XournalStateIO (ConnectId DrawingArea)
 connectPenMove cinfo = do 
   let cid = get canvasId cinfo
       canvas = get drawArea cinfo 
@@ -34,7 +34,7 @@ connectPenMove cinfo = do
 connPenMove :: (WidgetClass w) => 
                w 
                -> CanvasId 
-               -> Iteratee MyEvent XournalStateIO (ConnectId w) 
+               -> MainCoroutine (ConnectId w) -- Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenMove c cid = do 
   callbk <- get callBack <$> lift St.get 
   dev <- get deviceList <$> lift St.get 
@@ -45,7 +45,7 @@ connPenMove c cid = do
 connPenUp :: (WidgetClass w) => 
              w 
              -> CanvasId
-             -> Iteratee MyEvent XournalStateIO (ConnectId w) 
+             -> MainCoroutine (ConnectId w) -- Iteratee MyEvent XournalStateIO (ConnectId w) 
 connPenUp c cid = do 
   callbk <- get callBack <$> lift St.get 
   dev <- get deviceList <$> lift St.get 

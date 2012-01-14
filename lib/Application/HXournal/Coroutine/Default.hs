@@ -24,6 +24,7 @@ import Application.HXournal.Coroutine.File
 import Application.HXournal.Coroutine.Mode
 import Application.HXournal.Coroutine.Window
 import Application.HXournal.Coroutine.Network
+import Application.HXournal.Coroutine.Layer 
 
 import Application.HXournal.ModelAction.Window 
 import Application.HXournal.Type.Window 
@@ -42,7 +43,7 @@ import Data.IORef
 
 import Data.Xournal.Generic
 
-guiProcess :: Iteratee MyEvent XournalStateIO () 
+guiProcess :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 guiProcess = do 
   initialize
   changePage (const 0)
@@ -87,7 +88,7 @@ initCoroutine devlst window = do
   writeIORef sref startingXstate   
   return (tref,sref)
 
-initialize :: Iteratee MyEvent XournalStateIO ()
+initialize :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 initialize = do ev <- await 
                 liftIO $ putStrLn $ show ev 
                 case ev of 
@@ -95,14 +96,14 @@ initialize = do ev <- await
                   _ -> initialize
 
 
-dispatchMode :: Iteratee MyEvent XournalStateIO ()
+dispatchMode :: MainCoroutine ()  -- Iteratee MyEvent XournalStateIO ()
 dispatchMode = do 
   xojstate <- return . get xournalstate =<< lift St.get
   case xojstate of 
     ViewAppendState _ -> viewAppendMode
     SelectState _ -> selectMode
 
-viewAppendMode :: Iteratee MyEvent XournalStateIO ()
+viewAppendMode :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 viewAppendMode = do 
   r1 <- await 
   case r1 of 
@@ -115,7 +116,7 @@ viewAppendMode = do
         _ -> return () 
     _ -> defaultEventProcess r1
 
-selectMode :: Iteratee MyEvent XournalStateIO ()
+selectMode :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 selectMode = do 
   r1 <- await 
   case r1 of 
@@ -130,7 +131,7 @@ selectMode = do
 
 
 
-defaultEventProcess :: MyEvent -> Iteratee MyEvent XournalStateIO () 
+defaultEventProcess :: MyEvent -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = do 
@@ -183,7 +184,7 @@ defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()
 
-askQuitProgram :: Iteratee MyEvent XournalStateIO () 
+askQuitProgram :: MainCoroutine () --Iteratee MyEvent XournalStateIO () 
 askQuitProgram = do 
   dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
                        MessageQuestion ButtonsOkCancel 
@@ -197,7 +198,7 @@ askQuitProgram = do
       liftIO $ widgetDestroy dialog
       return ()
 
-menuEventProcess :: MenuEvent -> Iteratee MyEvent XournalStateIO ()
+menuEventProcess :: MenuEvent -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 menuEventProcess MenuQuit = do 
   xstate <- getSt
   liftIO $ putStrLn "MenuQuit called"
@@ -233,13 +234,12 @@ menuEventProcess MenuPageHeight = pageZoomChange FitHeight
 menuEventProcess MenuHSplit = eitherSplit SplitHorizontal
 menuEventProcess MenuVSplit = eitherSplit SplitVertical
 menuEventProcess MenuDelCanvas = deleteCanvas
-menuEventProcess MenuNewLayer = undefined 
-menuEventProcess MenuNextLayer = undefined 
-menuEventProcess MenuPrevLayer = undefined 
-menuEventProcess MenuDeleteLayer = undefined 
+menuEventProcess MenuNewLayer = makeNewLayer 
+menuEventProcess MenuNextLayer = gotoNextLayer 
+menuEventProcess MenuPrevLayer = gotoPrevLayer
+menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 
 menuEventProcess MenuUseXInput = do 
-  -- putStrLn "Use X Input clicked" 
   xstate <- getSt 
   let ui = get gtkUIManager xstate 
   agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
@@ -249,7 +249,6 @@ menuEventProcess MenuUseXInput = do
   uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
                         return (castToToggleAction x) )
   b <- liftIO $ toggleActionGetActive uxinputa
-  -- liftIO $ putStrLn $ "bool = " ++ show b 
   let cmap = get canvasInfoMap xstate
       canvases = map (get drawArea) . M.elems $ cmap 
   

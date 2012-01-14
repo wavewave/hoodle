@@ -25,10 +25,10 @@ import Data.Xournal.Buffer
 import Data.Xournal.Select
 
 
-getSt :: Iteratee MyEvent XournalStateIO HXournalState
+getSt :: MainCoroutine HXournalState -- Iteratee MyEvent XournalStateIO HXournalState
 getSt = lift St.get
 
-putSt :: HXournalState -> Iteratee MyEvent XournalStateIO ()
+putSt :: HXournalState -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 putSt = lift . St.put
 
 
@@ -39,7 +39,7 @@ adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
 getPenType :: Iteratee MyEvent XournalStateIO PenType
 getPenType = get (penType.penInfo) <$> lift (St.get)
       
-getAllStrokeBBoxInCurrentPage :: Iteratee MyEvent XournalStateIO [StrokeBBox]
+getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] -- Iteratee MyEvent XournalStateIO [StrokeBBox]
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
   let currCvsInfo  = getCurrentCanvasInfo xstate 
@@ -62,7 +62,7 @@ updateCanvasInfo cinfo xstate =
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . get canvasInfoMap 
 
-changeCurrentCanvasId :: CanvasId -> Iteratee MyEvent XournalStateIO HXournalState
+changeCurrentCanvasId :: CanvasId -> MainCoroutine HXournalState -- Iteratee MyEvent XournalStateIO HXournalState
 changeCurrentCanvasId cid = do xstate1 <- getSt 
                                let xstate = set currentCanvas cid xstate1
                                putSt xstate
@@ -80,7 +80,7 @@ getCurrentCanvasInfo :: HXournalState -> CanvasInfo
 getCurrentCanvasInfo xstate = getCanvasInfo (get currentCanvas xstate) xstate
       
 
-getCanvasGeometry :: CanvasInfo -> Iteratee MyEvent XournalStateIO CanvasPageGeometry
+getCanvasGeometry :: CanvasInfo -> MainCoroutine CanvasPageGeometry -- Iteratee MyEvent XournalStateIO CanvasPageGeometry
 getCanvasGeometry cinfo = do 
     let canvas = get drawArea cinfo
         page = getPage cinfo

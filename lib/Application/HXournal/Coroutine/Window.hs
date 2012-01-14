@@ -14,7 +14,7 @@ import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Data.IntMap as M
 
-eitherSplit :: SplitType -> Iteratee MyEvent XournalStateIO ()
+eitherSplit :: SplitType -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 eitherSplit stype = do
     xstate <- getSt
     let cmap = get canvasInfoMap xstate
@@ -52,7 +52,7 @@ eitherSplit stype = do
         liftIO $ widgetShowAll rtcntr 
 
 
-deleteCanvas :: Iteratee MyEvent XournalStateIO ()
+deleteCanvas :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 deleteCanvas = do 
     liftIO $ putStrLn "deleteCanvas"  
     xstate <- getSt

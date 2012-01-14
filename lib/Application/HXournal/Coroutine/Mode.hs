@@ -21,7 +21,7 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Prelude hiding ((.),id, mapM_, mapM)
 
 
-modeChange :: MyEvent -> Iteratee MyEvent XournalStateIO ()
+modeChange :: MyEvent -> MainCoroutine () --  Iteratee MyEvent XournalStateIO ()
 modeChange ToViewAppendMode = do 
   xstate <- getSt
   let xojstate = get xournalstate xstate

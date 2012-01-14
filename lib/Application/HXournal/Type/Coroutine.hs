@@ -15,3 +15,4 @@ type SusAwait =  Await MyEvent (Iteratee MyEvent XournalStateIO ())
 type TRef = IORef SusAwait 
 type SRef = IORef HXournalState
 
+type MainCoroutine a = Iteratee MyEvent XournalStateIO a 

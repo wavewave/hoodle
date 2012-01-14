@@ -26,7 +26,7 @@ import Prelude hiding ((.), id)
 import Data.Xournal.Simple
 import qualified Data.IntMap as IM
 
-changePage :: (Int -> Int) -> Iteratee MyEvent XournalStateIO () 
+changePage :: (Int -> Int) -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 changePage modifyfn = do 
     xstate <- getSt 
     let currCvsId = get currentCanvas xstate
@@ -44,7 +44,6 @@ changePage modifyfn = do
           if (modifyfn oldpage >= totalnumofpages) 
           then do 
             let npage = newSinglePageFromOld lpage
-                -- npage = lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newxoj = xoj { gpages = npages } 
                 xstate' = set xournalstate (ViewAppendState newxoj) xstate
@@ -78,8 +77,6 @@ changePage modifyfn = do
           then do
             nlyr <- liftIO emptyTLayerBBoxBufLyBuf  
             let npage = set g_layers (Select . O . Just . singletonSZ $ nlyr) lpage 
-                         -- set g_layers (nlyr) lpage 
-                        -- lpage { glayers = IM.insert 0 (GLayerBuf (LyBuf Nothing) []) IM.empty } 
                 npages = IM.insert totalnumofpages npage pgs 
                 newtxoj = txoj { gselectAll = npages } 
                 xstate' = set xournalstate (SelectState newtxoj) xstate
@@ -102,7 +99,7 @@ changePage modifyfn = do
         putSt xstate'' 
         invalidate currCvsId 
       
-canvasZoomUpdate :: Maybe ZoomMode -> CanvasId -> Iteratee MyEvent XournalStateIO ()
+canvasZoomUpdate :: Maybe ZoomMode -> CanvasId -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 canvasZoomUpdate mzmode cid = do 
     xstate <- getSt 
     let cinfoMap = get canvasInfoMap xstate
@@ -128,13 +125,13 @@ canvasZoomUpdate mzmode cid = do
         invalidate cid       
 
 
-pageZoomChange :: ZoomMode -> Iteratee MyEvent XournalStateIO () 
+pageZoomChange :: ZoomMode -> MainCoroutine () --  Iteratee MyEvent XournalStateIO () 
 pageZoomChange zmode = do 
     xstate <- getSt 
     let currCvsId = get currentCanvas xstate
     canvasZoomUpdate (Just zmode) currCvsId         
 
-newPageBefore :: Iteratee MyEvent XournalStateIO () 
+newPageBefore :: MainCoroutine () --  Iteratee MyEvent XournalStateIO () 
 newPageBefore = do 
   liftIO $ putStrLn "newPageBefore called"
   xstate <- getSt

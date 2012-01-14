@@ -6,7 +6,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Control.Monad.Trans
 
-highlighterStart :: PointerCoord -> Iteratee MyEvent XournalStateIO ()
+highlighterStart :: PointerCoord -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 highlighterStart _pcoord = do 
   liftIO $ putStrLn "highlighter started"
 

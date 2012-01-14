@@ -39,7 +39,7 @@ import Data.Maybe
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
 
-selectRectStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO () 
+selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 selectRectStart cid pcoord = do    
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
@@ -85,7 +85,7 @@ newSelectRectangle :: CanvasInfo
                    -> [StrokeBBox] 
                    -> (Double,Double)
                    -> (Double,Double)
-                   -> Iteratee MyEvent XournalStateIO ()
+                   -> MainCoroutine () --  Iteratee MyEvent XournalStateIO ()
 newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do  
   let cid = get canvasId cinfo  
   r <- await 
@@ -100,8 +100,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
          then do flip invalidateWithBufInBBox cid . Just $
                    (inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0)
                  invalidateDrawBBox cid bbox
-                 -- for the time being 
-                 -- mapM_ (invalidateDrawBBox cid . strokebbox_bbox) hittedstrs
          else return ()
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
     PenUp _cid' pcoord -> do 
@@ -150,7 +148,7 @@ moveSelectRectangle :: CanvasInfo
                     -> ConnectId DrawingArea
                     -> (Double,Double)
                     -> (Double,Double)
-                    -> Iteratee MyEvent XournalStateIO ()
+                    -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev = do
   xstate <- getSt
   r <- await 
@@ -177,7 +175,7 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
       invalidateAll 
     _ -> return ()
  
-deleteSelection :: Iteratee MyEvent XournalStateIO () 
+deleteSelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
   xstate <- getSt
@@ -199,13 +197,13 @@ deleteSelection = do
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
-cutSelection :: Iteratee MyEvent XournalStateIO ()  
+cutSelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()  
 cutSelection = do
   liftIO $ putStrLn "cutSelection called"
   copySelection 
   deleteSelection
 
-copySelection :: Iteratee MyEvent XournalStateIO ()
+copySelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 copySelection = do 
   liftIO $ putStrLn "copySelection called"
   xstate <- getSt
@@ -230,7 +228,7 @@ copySelection = do
               putSt xstate'
               invalidateAll 
 
-pasteToSelection :: Iteratee MyEvent XournalStateIO () 
+pasteToSelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
 pasteToSelection = do 
   liftIO $ putStrLn "pasteToSelection called" 
   modeChange ToSelectMode    
@@ -262,7 +260,7 @@ pasteToSelection = do
   liftIO $ toggleCutCopyDelete ui True
   invalidateAll 
   
-selectPenColorChanged :: PenColor ->  Iteratee MyEvent XournalStateIO () 
+selectPenColorChanged :: PenColor -> MainCoroutine () --  Iteratee MyEvent XournalStateIO () 
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
   xstate <- getSt
@@ -283,7 +281,7 @@ selectPenColorChanged pcolor = do
              $ xstate                       
       invalidateAll 
           
-selectPenWidthChanged :: Double ->  Iteratee MyEvent XournalStateIO () 
+selectPenWidthChanged :: Double -> MainCoroutine () --  Iteratee MyEvent XournalStateIO () 
 selectPenWidthChanged pwidth = do 
   liftIO $ putStrLn "selectPenWidthChanged called"
   xstate <- getSt

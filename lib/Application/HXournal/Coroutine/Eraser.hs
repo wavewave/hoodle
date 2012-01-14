@@ -30,7 +30,7 @@ import Prelude hiding ((.), id)
 
 eraserStart :: CanvasId 
                -> PointerCoord 
-               -> Iteratee MyEvent XournalStateIO ()
+               -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 eraserStart cid pcoord = do 
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
@@ -47,7 +47,7 @@ eraserProcess :: CanvasId
               -> ConnectId DrawingArea -> ConnectId DrawingArea 
               -> [StrokeBBox] 
               -> (Double,Double)
-              -> Iteratee MyEvent XournalStateIO ()
+              -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
   r <- await 
   xstate <- getSt
@@ -66,15 +66,10 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
               pgnum       = get currentPageNum cvsInfo
               (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
               currlayer = maybe (error "eraserProcess") id mcurrlayer
-
-              -- case IM.lookup 0 (glayers currpage) of
-              --              Nothing -> error "something wrong in eraserProcess"
-              --               Just l -> l
               (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-                -- currpage { glayers = IM.adjust (const newlayerbbox) 0 (glayers currpage) } 
               newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
               newxojstate = ViewAppendState newxojbbox
           commit . set xournalstate newxojstate 

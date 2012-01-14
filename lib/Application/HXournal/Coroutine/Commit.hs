@@ -16,7 +16,7 @@ import Application.HXournal.Accessor
 
 
 
-commit :: HXournalState -> Iteratee MyEvent XournalStateIO ()
+commit :: HXournalState -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 commit xstate = do 
   let ui = get gtkUIManager xstate
   liftIO $ toggleSave ui True
@@ -28,7 +28,7 @@ commit xstate = do
                 $ xstate
   putSt xstate' 
 
-undo :: Iteratee MyEvent XournalStateIO ()
+undo :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 undo = do 
     liftIO $ putStrLn "undo is called"
     xstate <- getSt
@@ -46,7 +46,7 @@ undo = do
         invalidateAll 
       
   
-redo :: Iteratee MyEvent XournalStateIO ()
+redo :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
 redo = do 
     liftIO $ putStrLn "redo is called"
     xstate <- getSt

@@ -26,7 +26,7 @@ import Prelude hiding ((.), id)
 import Graphics.Xournal.Render.BBox
 
 
-penStart :: CanvasId -> PointerCoord -> Iteratee MyEvent XournalStateIO ()
+penStart :: CanvasId -> PointerCoord -> MainCoroutine () --  Iteratee MyEvent XournalStateIO ()
 penStart cid pcoord = do 
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
@@ -52,7 +52,8 @@ penProcess :: CanvasId
            -> CanvasPageGeometry
            -> ConnectId DrawingArea -> ConnectId DrawingArea 
            -> Seq (Double,Double) -> (Double,Double) 
-           -> Iteratee MyEvent XournalStateIO (Seq (Double,Double))
+           -> MainCoroutine (Seq (Double,Double))
+           -- Iteratee MyEvent XournalStateIO (Seq (Double,Double))
 penProcess cid cpg connidmove connidup pdraw (x0,y0) = do 
   r <- await 
   xstate <- getSt

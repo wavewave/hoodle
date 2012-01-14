@@ -16,6 +16,7 @@ import Application.HXournal.Coroutine.Mode
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
+import Application.HXournal.ModelAction.Layer 
 import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Compose
@@ -116,9 +117,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            -- currlayer = case IM.lookup 0 (get g_layers pagebbox) of
-                            --   Nothing -> error "something wrong in newSelectRectangle"
-                            --   Just l -> l
                             currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
                             newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             tpg = gcast npagebbox -- pagebbox

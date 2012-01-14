@@ -13,6 +13,7 @@ import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
+import Application.HXournal.ModelAction.Layer
 
 import Data.Xournal.Generic
 

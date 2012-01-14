@@ -88,22 +88,3 @@ getCanvasGeometry cinfo = do
     liftIO (getCanvasPageGeometry canvas page (x0,y0))
 
 
-getCurrentLayerOrSet :: TPageBBoxMapPDFBuf -> (Maybe (TLayerBBoxBuf LyBuf),TPageBBoxMapPDFBuf)
-getCurrentLayerOrSet pg = 
-  let olayers = get g_layers pg
-      nlayers = case olayers of 
-                  NoSelect _ -> selectFirst olayers
-                  Select _ -> olayers  
-  in case nlayers of
-      NoSelect _ -> (Nothing, set g_layers nlayers pg)
-      Select osz -> (return . current =<< unO osz, set g_layers nlayers pg)
-
-
-adjustCurrentLayer :: TLayerBBoxBuf LyBuf -> TPageBBoxMapPDFBuf -> TPageBBoxMapPDFBuf
-adjustCurrentLayer nlayer pg = 
-  let (molayer,pg') = getCurrentLayerOrSet pg
-      layerzipper = pg'
-  in maybe (set g_layers (Select .O . Just . singletonSZ $ nlayer) pg')
-           (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . get g_layers $  pg'
-                    in set g_layers (Select . O . Just . replace nlayer $ layerzipper) pg' )
-           molayer 

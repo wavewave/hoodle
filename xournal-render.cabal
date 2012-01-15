@@ -1,5 +1,5 @@
 Name:		xournal-render
-Version:	0.4.0.0.999
+Version:	0.4.999
 Synopsis:       Xournal file renderer
 Description: 	Rendering library using cairo for xournal file format
 License: 	BSD3
@@ -52,6 +52,8 @@ Library
                    Graphics.Xournal.Render.BBoxMapPDF
                    Graphics.Xournal.Render.HitTest
                    Graphics.Xournal.Render.Type
+                   Graphics.Xournal.Render.Type.Hitted
+                   Graphics.Xournal.Render.Type.Select
 
   if flag(poppler)
     cpp-options: -DPOPPLER

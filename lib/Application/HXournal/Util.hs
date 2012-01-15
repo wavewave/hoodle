@@ -2,6 +2,9 @@ module Application.HXournal.Util where
 
 import Data.Xournal.Simple
 
+maybeError :: String -> Maybe a -> a
+maybeError str = maybe (error str) id 
+
 getLargestWidth :: Xournal -> Double 
 getLargestWidth xoj = 
   let ws = map (dim_width . page_dim) (xoj_pages xoj)  

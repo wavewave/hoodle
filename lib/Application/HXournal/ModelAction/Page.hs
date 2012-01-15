@@ -13,6 +13,25 @@ import Data.Label
 import Prelude hiding ((.),id)
 import qualified Data.IntMap as M 
 
+getPageMap :: XournalState -> M.IntMap TPageBBoxMapPDFBuf
+getPageMap xojstate = case xojstate of 
+                        ViewAppendState xoj -> get g_pages xoj 
+                        SelectState txoj -> get g_selectAll txoj 
+
+setPageMap :: M.IntMap TPageBBoxMapPDFBuf -> XournalState -> XournalState
+setPageMap nmap xojstate = 
+  case xojstate of 
+    ViewAppendState xoj -> ViewAppendState (set g_pages nmap xoj)
+    SelectState txoj -> SelectState (set g_selectAll nmap txoj)
+        
+updatePageFromCanvasToXournal :: CanvasInfo -> XournalState -> XournalState 
+updatePageFromCanvasToXournal cinfo xojstate = 
+  let cpn = get currentPageNum cinfo 
+      epg = get currentPage cinfo
+      page = either id gcast epg
+  in  setPageMap (M.adjust (const page) cpn . getPageMap $ xojstate) xojstate 
+
+
 updatePageAll :: XournalState 
                  -> HXournalState 
                  -> HXournalState
@@ -24,9 +43,10 @@ updatePageAll xst xstate =
 adjustPage :: XournalState -> CanvasInfo -> CanvasInfo
 adjustPage xojstate cinfo =
     let cpn = get currentPageNum cinfo 
-        pagemap = case xojstate of 
+        pagemap = getPageMap xojstate
+        {- pagemap = case xojstate of 
                     ViewAppendState xoj -> get g_pages xoj 
-                    SelectState txoj -> get g_selectAll txoj 
+                    SelectState txoj -> get g_selectAll txoj -}
     in  adjustwork cpn pagemap              
   where adjustwork cpn pagemap = 
          if M.notMember cpn pagemap  
@@ -121,3 +141,4 @@ newPageBeforeAction xoj (cid,cinfo) = do
       nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
   putStrLn . show $ pagekeylst 
   return nxoj
+

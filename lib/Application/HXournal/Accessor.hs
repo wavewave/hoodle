@@ -24,6 +24,7 @@ import Data.Xournal.Generic
 import Data.Xournal.Buffer
 import Data.Xournal.Select
 
+import Application.HXournal.Util
 
 getSt :: MainCoroutine HXournalState -- Iteratee MyEvent XournalStateIO HXournalState
 getSt = lift St.get
@@ -72,9 +73,10 @@ getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfo
 getCanvasInfo cid xstate = 
   let cinfoMap = get canvasInfoMap xstate
       maybeCvs = M.lookup cid cinfoMap
-  in  case maybeCvs of 
+  in maybeError ("no canvas with id = " ++ show cid) maybeCvs
+{-  in  case maybeCvs of 
         Nothing -> error $ "no canvas with id = " ++ show cid 
-        Just cvsInfo -> cvsInfo
+        Just cvsInfo -> cvsInfo -}
 
 getCurrentCanvasInfo :: HXournalState -> CanvasInfo 
 getCurrentCanvasInfo xstate = getCanvasInfo (get currentCanvas xstate) xstate

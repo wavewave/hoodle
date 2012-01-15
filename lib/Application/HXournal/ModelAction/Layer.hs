@@ -1,5 +1,7 @@
 module Application.HXournal.ModelAction.Layer where
 
+import Application.HXournal.Util
+
 import Control.Compose
 import Control.Category
 import Data.Label
@@ -10,6 +12,11 @@ import Data.Xournal.Generic
 import Data.Xournal.Buffer
 import Data.Xournal.Select
 import Graphics.Xournal.Render.BBoxMapPDF
+
+import Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk (get,set)
+
+import Data.IORef
 
 getCurrentLayerOrSet :: TPageBBoxMapPDFBuf -> (Maybe (TLayerBBoxBuf LyBuf),TPageBBoxMapPDFBuf)
 getCurrentLayerOrSet pg = 
@@ -30,4 +37,28 @@ adjustCurrentLayer nlayer pg =
            (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . get g_layers $  pg'
                     in set g_layers (Select . O . Just . replace nlayer $ layerzipper) pg' )
            molayer 
+
+layerChooseDialog :: IORef Int -> Int -> Int -> IO Dialog
+layerChooseDialog layernumref cidx len = do 
+    dialog <- dialogNew 
+    layerentry <- entryNew
+    entrySetText layerentry (show (succ cidx))
+    label <- labelNew (Just (" / " ++ show len))
+    -- button <- buttonNewWithLabel "test"
+    hbox <- hBoxNew False 0 
+    upper <- dialogGetUpper dialog
+    boxPackStart upper hbox PackNatural 0 
+    boxPackStart hbox layerentry PackNatural 0 
+    boxPackStart hbox label PackGrow 0 
+    widgetShowAll upper
+    buttonOk <- dialogAddButton dialog stockOk ResponseOk
+    buttonCancel <- dialogAddButton dialog stockCancel ResponseCancel
+
+    buttonOk `on` buttonActivated $ do 
+      putStrLn "haha"
+      txt <- Gtk.get layerentry entryText
+      -- mnum <- maybeRead txt 
+      maybe (return ()) (modifyIORef layernumref . const . pred) . maybeRead $ txt
+    return dialog
+
 

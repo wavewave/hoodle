@@ -2,6 +2,8 @@ module Application.HXournal.Util where
 
 import Graphics.Xournal.Render.BBoxMapPDF
 
+import Data.Maybe
+
 import Data.Xournal.Generic
 
 import Data.Xournal.Simple
@@ -27,6 +29,8 @@ testXournal xojstate = do
   L.putStrLn (builder xojsimple)
 -}
 
+maybeRead :: Read a => String -> Maybe a 
+maybeRead = fmap fst . listToMaybe . reads 
 
 maybeError :: String -> Maybe a -> a
 maybeError str = maybe (error str) id 

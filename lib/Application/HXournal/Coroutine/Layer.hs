@@ -23,7 +23,10 @@ import Prelude hiding ((.),id)
 
 import Data.Xournal.Simple
 
+import Data.IORef
+
 import qualified Data.Sequence as Seq
+import Graphics.UI.Gtk hiding (get,set)
 
 layerAction :: (XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState) -> MainCoroutine HXournalState
 layerAction action = do 
@@ -90,5 +93,44 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = do 
-  liftIO $ putStrLn "startGotoLayerAt"
+    liftIO $ putStrLn "startGotoLayerAt"
+    xstate <- getSt 
+    let epage = get currentPage . getCurrentCanvasInfo $ xstate 
+        cpn = get currentPageNum . getCurrentCanvasInfo $ xstate
+        xojstate = get xournalstate xstate 
+        page = either id gcast epage 
+        (_,currpage) = getCurrentLayerOrSet page
+        Select (O (Just lyrzipper)) = get g_layers currpage
+        cidx = currIndex lyrzipper
+        len  = lengthSZ lyrzipper 
+   
+    lref <- liftIO $ newIORef cidx
+
+    dialog <- liftIO (layerChooseDialog lref cidx len)
+    {-    dialog <- liftIO $ dialogNew 
+    layerentry <- liftIO $ entryNew
+    -- label <- liftIO $ labelNew (Just "hello")
+    button <- liftIO $buttonNewWithLabel "test"
+    hbox <- liftIO $ hBoxNew 
+    upper <- liftIO $ dialogGetUpper dialog
+    liftIO $ boxPackStart upper hbox PackNatural 0 
+    liftIO $ boxPackStart hbox layerentry PackNatural 
+    liftIO $ boxPackStart hbox button PackGrow 0 
+
+
+    liftIO $ widgetShowAll upper
+    buttonOk <- liftIO $ dialogAddButton dialog stockOk ResponseOk
+    buttonCancel <- liftIO $ dialogAddButton dialog stockCancel ResponseCancel -}
+    res <- liftIO $ dialogRun dialog
+    case res of 
+        ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
+        ResponseOk ->  do
+          liftIO $ putStrLn "ok!"
+          liftIO $ widgetDestroy dialog
+          newnum <- liftIO (readIORef lref)
+
+          liftIO $ putStrLn (show (newnum))
+        ResponseCancel -> liftIO $ widgetDestroy dialog
+        _ -> error "??? in fileOpen " 
+    return ()
 

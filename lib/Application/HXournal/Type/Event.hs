@@ -62,6 +62,7 @@ data MenuEvent = MenuNew
                | MenuNewLayer
                | MenuNextLayer
                | MenuPrevLayer 
+               | MenuGotoLayer
                | MenuDeleteLayer
                | MenuPaperSize
                | MenuPaperColor

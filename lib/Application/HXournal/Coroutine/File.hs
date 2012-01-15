@@ -25,7 +25,6 @@ import Data.Xournal.Simple
 import System.Directory
 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
- -- Iteratee MyEvent XournalStateIO () -> Iteratee MyEvent XournalStateIO ()
 askIfSave action = do 
     xstate <- getSt 
     if not (get isSaved xstate)
@@ -41,7 +40,7 @@ askIfSave action = do
         return () 
       else action  
 
-fileNew :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+fileNew :: MainCoroutine () 
 fileNew = do  
     xstate <- getSt
     xstate' <- liftIO $ getFileContent Nothing xstate 
@@ -50,7 +49,7 @@ fileNew = do
     invalidateAll 
 
 
-fileSave :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+fileSave :: MainCoroutine ()
 fileSave = do 
     xstate <- getSt 
     case get currFileName xstate of
@@ -65,7 +64,7 @@ fileSave = do
         let ui = get gtkUIManager xstate
         liftIO $ toggleSave ui False
 
-fileOpen :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+fileOpen :: MainCoroutine ()
 fileOpen = do 
     liftIO $ putStrLn "file open clicked"
     cwd <- liftIO getCurrentDirectory
@@ -94,7 +93,7 @@ fileOpen = do
       _ -> error "??? in fileOpen " 
     return ()
 
-fileSaveAs :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
     liftIO $ putStrLn "file save as clicked"
     cwd <- liftIO getCurrentDirectory
@@ -133,7 +132,7 @@ fileSaveAs = do
 
 
 
-fileAnnotatePDF :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = do 
     xstate <- getSt
     liftIO $ putStrLn "file annotate PDf clicked"

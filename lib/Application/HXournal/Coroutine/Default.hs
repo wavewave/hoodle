@@ -237,6 +237,7 @@ menuEventProcess MenuDelCanvas = deleteCanvas
 menuEventProcess MenuNewLayer = makeNewLayer 
 menuEventProcess MenuNextLayer = gotoNextLayer 
 menuEventProcess MenuPrevLayer = gotoPrevLayer
+menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 
 menuEventProcess MenuUseXInput = do 

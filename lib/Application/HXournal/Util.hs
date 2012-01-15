@@ -7,16 +7,16 @@ import Data.Maybe
 import Data.Xournal.Generic
 
 import Data.Xournal.Simple
-import Blaze.ByteString.Builder
+--import Blaze.ByteString.Builder
 import Graphics.Xournal.Render.PDFBackground
 import qualified Data.ByteString.Lazy as L
-import Text.Xournal.Builder 
+-- import Text.Xournal.Builder 
 
-
+{-
 testPage :: TPageBBoxMapPDFBuf -> IO () 
 testPage page = do
     let pagesimple = toPage bkgFromBkgPDF . tpageBBoxMapPDFFromTPageBBoxMapPDFBuf $ page 
-    L.putStrLn . toLazyByteString . Text.Xournal.Builder.fromPage $ pagesimple  
+    L.putStrLn . toLazyByteString . Text.Xournal.Builder.fromPage $ pagesimple  -}
 
 
              

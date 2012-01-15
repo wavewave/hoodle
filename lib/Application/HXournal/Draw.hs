@@ -351,8 +351,6 @@ drawBuf canvas page vinfo mbbox = do
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-{-  let viewbbox = visibleViewPort geometry zmode
-      newmbbox = toMaybe $ (fromMaybe mbbox :: IntersectBBox)  `mappend` (Intersect (Middle viewbbox)) -}
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode

@@ -33,6 +33,11 @@ data TLayerSelectInPageBuf s a = TLayerSelectInPageBuf
                                }
 
 
+-- | deprecated 
+
 type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
                        
+
+-- | deprecated 
+
 type TTempXournalSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))

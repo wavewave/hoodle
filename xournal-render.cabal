@@ -32,7 +32,8 @@ Library
                    bytestring == 0.9.*,
                    poppler == 0.12.*, 
                    fclabels == 1.0.*, 
-                   xournal-types == 0.2.*
+                   xournal-types >= 0.2.999 && < 0.4, 
+                   TypeCompose == 0.9.*
   else
     Build-Depends: base == 4.*, 
                    mtl == 2.*, 
@@ -41,7 +42,8 @@ Library
                    strict == 0.3.*, 
                    bytestring == 0.9.*,
                    fclabels == 1.0.*, 
-                   xournal-types == 0.2.*
+                   xournal-types >= 0.2.999 && < 0.4, 
+                   TypeCompose == 0.9.*
 
 
   Exposed-Modules: 

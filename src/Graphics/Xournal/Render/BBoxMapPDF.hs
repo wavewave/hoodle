@@ -13,6 +13,7 @@ import Data.Xournal.Generic
 import Data.Xournal.Map
 import Data.Xournal.BBox
 import Data.Xournal.Buffer
+import Data.Xournal.Select
 import Data.Foldable 
 import Data.IntMap
 import Data.Traversable 
@@ -21,7 +22,7 @@ import Control.Category
 import Control.Monad.State hiding (get, mapM_, mapM,sequence)
 import qualified Control.Monad.State as St (get)
 import Data.Label
-
+import Control.Compose
 
 import Graphics.Xournal.Render.BBox
 import Graphics.Rendering.Cairo
@@ -32,6 +33,8 @@ import Prelude hiding ((.),id,mapM, mapM_, sequence )
 type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
 
 type TXournalBBoxMapPDF = TXournalBBoxMapBkg BackgroundPDFDrawable
+
+-- type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TLayerBBox
 
 type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TLayerBBox
 
@@ -48,7 +51,7 @@ type TXournalBBoxMapPDFBuf =
   TXournalBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
   
 type TTempPageSelectPDFBuf = 
-  GPage BackgroundPDFDrawable (TLayerSelectInPageBuf []) (TLayerBBoxBuf LyBuf)
+  GPage BackgroundPDFDrawable (TLayerSelectInPageBuf ZipperSelect) (TLayerBBoxBuf LyBuf)
 
 type TTempXournalSelectPDFBuf = 
   GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
@@ -87,12 +90,16 @@ instance GCast TTempPageSelectPDF TPageBBoxMapPDF where
   gcast = tpageBBoxMapPDFFromTTempPageSelectPDF
 
 
+-- | deprecated 
+
 tpageBBoxMapPDFFromTTempPageSelectPDF :: TTempPageSelectPDF -> TPageBBoxMapPDF
 tpageBBoxMapPDFFromTTempPageSelectPDF p = 
-  let TLayerSelectInPage s others = glayers p 
+  let TLayerSelectInPage s others = get g_layers p 
       s' = tlayerBBoxFromTLayerSelect s
-  in  GPage (gdimension p) (gbackground p) (gFromList (s':others))
+  in GPage (get g_dimension p) (get g_background p) (gFromList (s':others))
+   
      
+      
 instance GCast TTempPageSelectPDFBuf TPageBBoxMapPDFBuf where      
   gcast = tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf
       
@@ -101,18 +108,36 @@ tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf :: TTempPageSelectPDFBuf
 tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf p = 
   let TLayerSelectInPageBuf s others = get g_layers p 
       s' = tlayerbufFromTLayerSelectBuf s
-  in  GPage (gdimension p) (gbackground p) (gFromList (s':others))
+      normalizedothers = case others of   
+        NoSelect [] -> error "something wrong in tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf" 
+        NoSelect (x:xs) -> Select (gFromList (x:xs))
+        Select (O (Nothing)) -> error "something wrong in tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf"
+        Select (O (Just _)) -> others 
+      Select (O (Just sz)) = normalizedothers 
+  in GPage (get g_dimension p) (get g_background p) (Select . O . Just $ replace s' sz)
+       
+  --  GPage (gdimension p) (gbackground p) (gFromList (replace s' others)) 
+    --  (s':others))
 
       
+{-
 instance GCast TPageBBoxMapPDF TTempPageSelectPDF where
   gcast = ttempPageSelectPDFFromTPageBBoxMapPDF
 
 ttempPageSelectPDFFromTPageBBoxMapPDF :: TPageBBoxMapPDF -> TTempPageSelectPDF 
 ttempPageSelectPDFFromTPageBBoxMapPDF p = 
-  let (x:xs) = gToList (glayers p)
-      l = GLayer . TEitherAlterHitted . Left . gToList . gstrokes $ x
-  in  GPage (gdimension p) (gbackground p) (TLayerSelectInPage l xs)
-      
+  let -- (x:xs) = gToList (glayers p)
+      normalizedothers = case get g_layers p of 
+        NoSelect [] -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf" 
+        NoSelect (x:xs) -> Select (gFromList (x:xs))
+        Select (O (Nothing)) -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf"
+        others@(Select (O (Just _))) -> others 
+      Select (O (Just sz)) = normalizedothers 
+      curr  = current sz 
+      currtemp = GLayer . TEitherAlterHitted . Left . gToList . gstrokes $ curr
+  in  GPage (get g_dimension p) (get g_background p) 
+            (TLayerSelectInPage currtemp normalizedothers)
+-}      
 
 instance GCast TPageBBoxMapPDFBuf TTempPageSelectPDFBuf where
   gcast = ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf
@@ -120,12 +145,24 @@ instance GCast TPageBBoxMapPDFBuf TTempPageSelectPDFBuf where
 ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf :: TPageBBoxMapPDFBuf
                                                -> TTempPageSelectPDFBuf
 ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf p = 
-  let (x:xs) = gToList (get g_layers p)
+  let normalizedothers = case (get g_layers p) of 
+        NoSelect [] -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf" 
+        NoSelect (x:xs) -> Select (gFromList (x:xs))
+        Select (O (Nothing)) -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf"
+        others@(Select (O (Just _))) -> others 
+      Select (O (Just sz)) = normalizedothers 
+      curr  = current sz 
+      currtemp = GLayerBuf (get g_buffer curr) (TEitherAlterHitted . Left . gToList . get g_bstrokes $ curr)
+  in  GPage (get g_dimension p) (get g_background p) 
+            (TLayerSelectInPageBuf currtemp normalizedothers)
+        
+        
+{-  let (x:xs) = gToList (get g_layers p)
       l = GLayerBuf { 
           gbuffer = gbuffer x ,
           gbstrokes = TEitherAlterHitted . Left . gToList . gbstrokes $ x
           }
-  in  GPage (gdimension p) (gbackground p) (TLayerSelectInPageBuf l xs)
+  in  GPage (gdimension p) (gbackground p) (TLayerSelectInPageBuf l xs) -}
 
 ----------------------      
 

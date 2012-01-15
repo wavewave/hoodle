@@ -89,13 +89,6 @@ selectFirst (NoSelect lst@(x:xs))  = Select . gFromList $ lst
 selectFirst (Select (O Nothing)) = NoSelect []
 selectFirst (Select (O msz)) = Select . O $ return . goFirst =<<  msz
 
-
-{-
-instance Functor ZipperSelect where 
-  fmap f (NoSelect as) = NoSelect (fmap f as) 
-  fmap f (Select as) = Select (fmap f as)
--}
-
 instance GListable (Maybe :. SeqZipper) where
   gFromList [] = O Nothing 
   gFromList (x:xs) = O (Just (SZ (x, (empty,fromList xs))))
@@ -112,9 +105,3 @@ deriving instance Foldable ZipperSelect
 
 deriving instance Traversable ZipperSelect
 
-{-
-instance Foldable ZipperSelect where
-
-  
-instance Traversable ZipperSelect where
--}

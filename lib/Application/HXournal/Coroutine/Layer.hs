@@ -22,23 +22,67 @@ import Data.Label
 import Prelude hiding ((.),id)
 
 import Data.Xournal.Simple
--- (.:) = (.).(.)
-
--- infixr 8 .: 
 
 import qualified Data.Sequence as Seq
 
-
-makeNewLayer :: MainCoroutine () 
-makeNewLayer = do 
-    liftIO $ putStrLn "makeNewLayer called"
+layerAction :: (XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState) -> MainCoroutine HXournalState
+layerAction action = do 
     xstate <- getSt
     let epage = get currentPage . getCurrentCanvasInfo $ xstate
         cpn = get currentPageNum . getCurrentCanvasInfo $ xstate
         xojstate = get xournalstate xstate
-    newxojstate <- either (newlayeraction xojstate cpn) (newlayeraction xojstate cpn . gcast) epage 
-    commit . updatePageAll newxojstate . set xournalstate newxojstate $ xstate
-   
+    newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
+    return . updatePageAll newxojstate . set xournalstate newxojstate $ xstate
+
+makeNewLayer :: MainCoroutine () 
+makeNewLayer = layerAction newlayeraction >>= commit 
+  where newlayeraction :: XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState
+        newlayeraction xojstate cpn page = do 
+          let (_,currpage) = getCurrentLayerOrSet page
+              Select (O (Just lyrzipper)) = get g_layers currpage  
+          emptylyr <- liftIO emptyTLayerBBoxBufLyBuf 
+          let nlyrzipper = appendGoLast lyrzipper emptylyr 
+              npage = set g_layers (Select (O (Just nlyrzipper))) currpage
+          return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  --  $ xojstate) $ xojstate
+                
+
+gotoNextLayer :: MainCoroutine ()
+gotoNextLayer = layerAction nextlayeraction >> return ()
+  where nextlayeraction xojstate cpn page = do 
+          let (_,currpage) = getCurrentLayerOrSet page
+              Select (O (Just lyrzipper)) = get g_layers currpage  
+          let mlyrzipper = moveRight lyrzipper 
+              npage = maybe currpage (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) mlyrzipper
+          return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
+
+gotoPrevLayer :: MainCoroutine ()
+gotoPrevLayer = layerAction prevlayeraction >> return ()
+  where prevlayeraction xojstate cpn page = do 
+          let (_,currpage) = getCurrentLayerOrSet page
+              Select (O (Just lyrzipper)) = get g_layers currpage  
+          let mlyrzipper = moveLeft lyrzipper 
+              npage = maybe currpage (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) mlyrzipper
+          return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
+
+deleteCurrentLayer :: MainCoroutine ()
+deleteCurrentLayer = layerAction deletelayeraction >>= commit
+  where deletelayeraction :: XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState
+        deletelayeraction xojstate cpn page = do 
+          let (mcurrlayer,currpage) = getCurrentLayerOrSet page
+          case mcurrlayer of 
+            Nothing -> return xojstate 
+            Just currlayer -> do 
+              let Select (O (Just lyrzipper)) = get g_layers currpage  
+                  mlyrzipper = deleteCurrent lyrzipper 
+                  npage = maybe currpage 
+                                (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) 
+                                mlyrzipper
+              return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
+
+          --    (_,(l1,l2)) = unSZ nlyrzipper
+          -- liftIO $ putStrLn . show $ (Seq.length l1, Seq.length l2)
+          -- liftIO $ testPage npage
+
     {-
     -- just for test
     xstate2 <- getSt
@@ -49,20 +93,15 @@ makeNewLayer = do
         pagenum = get currentPageNum . getCurrentCanvasInfo $ xstate2 
     liftIO $ testPage (getPageFromGXournalMap pagenum currxoj)    -}
 
-  where newlayeraction :: XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState
-        newlayeraction xojstate cpn page = do 
-          let (_,currpage) = getCurrentLayerOrSet page
-              Select (O (Just lyrzipper)) = get g_layers currpage  
-          emptylyr <- liftIO emptyTLayerBBoxBufLyBuf 
-          let nlyrzipper = appendGoLast lyrzipper emptylyr 
-              npage = set g_layers (Select (O (Just nlyrzipper))) currpage
-          --    (_,(l1,l2)) = unSZ nlyrzipper
-          -- liftIO $ putStrLn . show $ (Seq.length l1, Seq.length l2)
-          -- liftIO $ testPage npage
-          return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  --  $ xojstate) $ xojstate
+{-    liftIO $ putStrLn "makeNewLayer called"
+    xstate <- getSt
+    let epage = get currentPage . getCurrentCanvasInfo $ xstate
+        cpn = get currentPageNum . getCurrentCanvasInfo $ xstate
+        xojstate = get xournalstate xstate
+    newxojstate <- either (newlayeraction xojstate cpn) (newlayeraction xojstate cpn . gcast) epage 
+    commit . updatePageAll newxojstate . set xournalstate newxojstate $ xstate -}
 
-               
-             
+
 {-
 testXournal :: XournalState -> IO () 
 testXournal xojstate = do
@@ -71,17 +110,3 @@ testXournal xojstate = do
                                SelectState txoj -> xournalFromTXournalSimple (gcast txoj :: TXournalSimple)
   L.putStrLn (builder xojsimple)
 -}
-
-
-gotoNextLayer :: MainCoroutine ()
-gotoNextLayer = do 
-  liftIO $ putStrLn "gotoNextLayer called"
-
-gotoPrevLayer :: MainCoroutine ()
-gotoPrevLayer = do 
-  liftIO $ putStrLn "gotoPrevLayer called"
-
-
-deleteCurrentLayer :: MainCoroutine ()
-deleteCurrentLayer = do 
-  liftIO $ putStrLn "deleteCurrentLayer called"

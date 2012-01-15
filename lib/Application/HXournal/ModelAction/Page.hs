@@ -22,7 +22,11 @@ setPageMap :: M.IntMap TPageBBoxMapPDFBuf -> XournalState -> XournalState
 setPageMap nmap xojstate = 
   case xojstate of 
     ViewAppendState xoj -> ViewAppendState (set g_pages nmap xoj)
-    SelectState txoj -> SelectState (set g_selectAll nmap txoj)
+    SelectState txoj -> let ntxoj = set g_selectSelected Nothing
+                                    . set g_selectAll nmap 
+                                    $ txoj 
+                        in SelectState ntxoj
+   -- SelectState (set g_selectAll nmap txoj)
         
 updatePageFromCanvasToXournal :: CanvasInfo -> XournalState -> XournalState 
 updatePageFromCanvasToXournal cinfo xojstate = 

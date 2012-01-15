@@ -48,9 +48,9 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types == 0.2.*,
+                     xournal-types >= 0.2.999 && < 0.4,
                      xournal-parser >= 0.3.0.999 && < 0.4,
-                     xournal-render >= 0.4.0.0 && < 0.5,
+                     xournal-render >= 0.4.999 && < 0.6,
                      xournal-builder == 0.1.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -69,6 +69,8 @@ Library
                      hxournalclip-type == 0.0.*, 
                      TypeCompose == 0.9.*,
                      hxournalclip-client == 0.0.*
+                     -- for test only
+                     , blaze-builder 
   else 
     Build-Depends:   base == 4.*, 
                      mtl == 2.*,
@@ -79,9 +81,9 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types == 0.2.*,
+                     xournal-types >= 0.2.999 && < 0.4,
                      xournal-parser >= 0.3.0.999 && < 0.4,
-                     xournal-render >= 0.4.0.0 && < 0.5,
+                     xournal-render >= 0.4.999 && < 0.6,
                      xournal-builder == 0.1.*,
                      containers == 0.4.*,
                      template-haskell == 2.*,

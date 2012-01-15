@@ -10,6 +10,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.Device
 import Application.HXournal.Draw
+import Application.HXournal.Util
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Mode
@@ -32,6 +33,7 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox
 
+import System.IO.Unsafe
 
 import qualified Data.IntMap as IM
 import Data.Maybe
@@ -119,14 +121,15 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
                             currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
                             newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             tpg = gcast npagebbox 
-                            ls = glayers tpg 
-                        in  tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+                            ls = get g_layers tpg 
+                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+                        in npg 
                       Right tpage -> 
                         let ls = glayers tpage 
                             currlayer = gselectedlayerbuf ls
                             newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-
-                        in  tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                            npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                        in npage
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
       let ui = get gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)

@@ -43,7 +43,7 @@ import Data.IORef
 
 import Data.Xournal.Generic
 
-guiProcess :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+guiProcess :: MainCoroutine ()
 guiProcess = do 
   initialize
   changePage (const 0)
@@ -88,7 +88,7 @@ initCoroutine devlst window = do
   writeIORef sref startingXstate   
   return (tref,sref)
 
-initialize :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+initialize :: MainCoroutine ()
 initialize = do ev <- await 
                 liftIO $ putStrLn $ show ev 
                 case ev of 
@@ -96,14 +96,14 @@ initialize = do ev <- await
                   _ -> initialize
 
 
-dispatchMode :: MainCoroutine ()  -- Iteratee MyEvent XournalStateIO ()
+dispatchMode :: MainCoroutine () 
 dispatchMode = do 
   xojstate <- return . get xournalstate =<< lift St.get
   case xojstate of 
     ViewAppendState _ -> viewAppendMode
     SelectState _ -> selectMode
 
-viewAppendMode :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 
   r1 <- await 
   case r1 of 
@@ -116,7 +116,7 @@ viewAppendMode = do
         _ -> return () 
     _ -> defaultEventProcess r1
 
-selectMode :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+selectMode :: MainCoroutine () 
 selectMode = do 
   r1 <- await 
   case r1 of 
@@ -131,7 +131,7 @@ selectMode = do
 
 
 
-defaultEventProcess :: MyEvent -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+defaultEventProcess :: MyEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = do 
@@ -164,27 +164,11 @@ defaultEventProcess (VScrollBarMoved cid v) = do
     invalidate cid
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure cid _w' _h') = canvasZoomUpdate Nothing cid 
---    xstate <- getSt
---    let cinfoMap = get canvasInfoMap xstate
-
-
-{-      
-      
-        let canvas = get drawArea cvsInfo
-        let page = getPage cvsInfo 
-            (w,h) = get (pageDimension.viewInfo) cvsInfo
-            zmode = get (zoomMode.viewInfo) cvsInfo
-        cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))
-        let factor = getRatioFromPageToCanvas cpg zmode
-            (hadj,vadj) = get adjustments cvsInfo
-        liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0)
-                                (w'/factor,h'/factor)
- --       invalidate cid  -}
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()
 
-askQuitProgram :: MainCoroutine () --Iteratee MyEvent XournalStateIO () 
+askQuitProgram :: MainCoroutine () 
 askQuitProgram = do 
   dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
                        MessageQuestion ButtonsOkCancel 
@@ -198,7 +182,7 @@ askQuitProgram = do
       liftIO $ widgetDestroy dialog
       return ()
 
-menuEventProcess :: MenuEvent -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+menuEventProcess :: MenuEvent -> MainCoroutine () 
 menuEventProcess MenuQuit = do 
   xstate <- getSt
   liftIO $ putStrLn "MenuQuit called"

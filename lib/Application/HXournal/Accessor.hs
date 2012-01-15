@@ -25,6 +25,8 @@ import Data.Xournal.Buffer
 import Data.Xournal.Select
 
 import Application.HXournal.Util
+import Application.HXournal.ModelAction.Layer 
+
 
 getSt :: MainCoroutine HXournalState -- Iteratee MyEvent XournalStateIO HXournalState
 getSt = lift St.get
@@ -40,7 +42,7 @@ adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
 getPenType :: Iteratee MyEvent XournalStateIO PenType
 getPenType = get (penType.penInfo) <$> lift (St.get)
       
-getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] -- Iteratee MyEvent XournalStateIO [StrokeBBox]
+getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
   let currCvsInfo  = getCurrentCanvasInfo xstate 
@@ -50,6 +52,15 @@ getAllStrokeBBoxInCurrentPage = do
         s <- get g_bstrokes l
         return s 
   return strs 
+
+getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
+getAllStrokeBBoxInCurrentLayer = do 
+  xstate <- getSt 
+  let currCvsInfo  = getCurrentCanvasInfo xstate 
+  let pagebbox = getPage currCvsInfo
+      (mcurrlayer, currpage) = getCurrentLayerOrSet pagebbox
+      currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
+  return (get g_bstrokes currlayer)
       
       
 updateCanvasInfo :: CanvasInfo -> HXournalState -> HXournalState

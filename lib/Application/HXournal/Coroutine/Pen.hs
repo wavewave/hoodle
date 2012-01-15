@@ -11,11 +11,13 @@ import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Accessor
+import Application.HXournal.Util
 import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Draw
 import Control.Monad.Trans
 
+import Data.Xournal.Generic
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
@@ -38,6 +40,17 @@ penStart cid pcoord = do
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup   <- connectPenUp   cvsInfo 
     connidmove <- connectPenMove cvsInfo 
+    
+    {-
+    -- just for test
+    xstate2 <- getSt
+    let epg2 = get currentPage . getCurrentCanvasInfo $ xstate2
+
+    liftIO $ putStrLn "before pen start"
+    liftIO $ either testPage (testPage . gcast) epg2 
+    liftIO $ putStrLn "from currxoj" 
+    liftIO $ testPage (getPageFromGXournalMap pagenum currxoj) -}
+
     pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
     (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
     let bbox' = inflate bbox (get (penWidth.penInfo) xstate) 

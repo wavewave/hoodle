@@ -21,6 +21,10 @@ import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Data.Xournal.Select 
 
+
+import Application.HXournal.Util
+import System.IO.Unsafe
+
 import Graphics.Xournal.Render.BBoxMapPDF
 
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
@@ -42,9 +46,14 @@ addPDraw pinfo xoj pgnum pdraw = do
   newlayerbbox <- updateLayerBuf (Just bbox)
                    . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
                    $ currlayer
-  let newpagebbox = adjustCurrentLayer newlayerbbox currpage
+  let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+
+    -- unsafePerformIO (do { putStrLn "currpage" ; testPage currpage ; return (adjustCurrentLayer newlayerbbox currpage)})
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
-  return (newxojbbox,bbox) 
+      
+  return (newxojbbox,bbox)
+
+  -- (unsafePerformIO (do { putStrLn "newpage" ; testPage newpagebbox ; return (newxojbbox,bbox)})) 
 
 
 

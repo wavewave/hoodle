@@ -44,9 +44,6 @@ adjustPage :: XournalState -> CanvasInfo -> CanvasInfo
 adjustPage xojstate cinfo =
     let cpn = get currentPageNum cinfo 
         pagemap = getPageMap xojstate
-        {- pagemap = case xojstate of 
-                    ViewAppendState xoj -> get g_pages xoj 
-                    SelectState txoj -> get g_selectAll txoj -}
     in  adjustwork cpn pagemap              
   where adjustwork cpn pagemap = 
          if M.notMember cpn pagemap  

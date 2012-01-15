@@ -1,6 +1,32 @@
 module Application.HXournal.Util where
 
+import Graphics.Xournal.Render.BBoxMapPDF
+
+import Data.Xournal.Generic
+
 import Data.Xournal.Simple
+import Blaze.ByteString.Builder
+import Graphics.Xournal.Render.PDFBackground
+import qualified Data.ByteString.Lazy as L
+import Text.Xournal.Builder 
+
+
+testPage :: TPageBBoxMapPDFBuf -> IO () 
+testPage page = do
+    let pagesimple = toPage bkgFromBkgPDF . tpageBBoxMapPDFFromTPageBBoxMapPDFBuf $ page 
+    L.putStrLn . toLazyByteString . Text.Xournal.Builder.fromPage $ pagesimple  
+
+
+             
+{-
+testXournal :: XournalState -> IO () 
+testXournal xojstate = do
+  let xojsimple :: Xournal = case xojstate of
+                               ViewAppendState xoj -> xournalFromTXournalSimple (gcast xoj :: TXournalSimple)
+                               SelectState txoj -> xournalFromTXournalSimple (gcast txoj :: TXournalSimple)
+  L.putStrLn (builder xojsimple)
+-}
+
 
 maybeError :: String -> Maybe a -> a
 maybeError str = maybe (error str) id 

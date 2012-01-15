@@ -49,7 +49,7 @@ selectRectStart cid pcoord = do
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup   <- connectPenUp cvsInfo 
     connidmove <- connectPenMove cvsInfo
-    strs <- getAllStrokeBBoxInCurrentPage
+    strs <- getAllStrokeBBoxInCurrentLayer
     case get currentPage cvsInfo of 
       Right tpage -> if hitInSelection tpage (x,y)
                        then do 
@@ -86,7 +86,7 @@ newSelectRectangle :: CanvasInfo
                    -> [StrokeBBox] 
                    -> (Double,Double)
                    -> (Double,Double)
-                   -> MainCoroutine () --  Iteratee MyEvent XournalStateIO ()
+                   -> MainCoroutine () 
 newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do  
   let cid = get canvasId cinfo  
   r <- await 
@@ -113,13 +113,12 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           selectstrs = fmapAL unNotHitted id hittestbbox
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate
-          
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
                             currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
                             newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            tpg = gcast npagebbox -- pagebbox
+                            tpg = gcast npagebbox 
                             ls = glayers tpg 
                         in  tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
                       Right tpage -> 
@@ -146,7 +145,7 @@ moveSelectRectangle :: CanvasInfo
                     -> ConnectId DrawingArea
                     -> (Double,Double)
                     -> (Double,Double)
-                    -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+                    -> MainCoroutine ()
 moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev = do
   xstate <- getSt
   r <- await 
@@ -173,7 +172,7 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
       invalidateAll 
     _ -> return ()
  
-deleteSelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
   xstate <- getSt
@@ -195,13 +194,13 @@ deleteSelection = do
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
-cutSelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()  
+cutSelection :: MainCoroutine () 
 cutSelection = do
   liftIO $ putStrLn "cutSelection called"
   copySelection 
   deleteSelection
 
-copySelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+copySelection :: MainCoroutine ()
 copySelection = do 
   liftIO $ putStrLn "copySelection called"
   xstate <- getSt
@@ -220,13 +219,12 @@ copySelection = do
             else do 
               let newclip = Clipboard strs
                   xstate' = set clipboard newclip xstate 
-              -- liftIO $ putStrLn $ "newclipboard with " ++ show strs 
               let ui = get gtkUIManager xstate'
               liftIO $ togglePaste ui True 
               putSt xstate'
               invalidateAll 
 
-pasteToSelection :: MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+pasteToSelection :: MainCoroutine () 
 pasteToSelection = do 
   liftIO $ putStrLn "pasteToSelection called" 
   modeChange ToSelectMode    
@@ -258,7 +256,7 @@ pasteToSelection = do
   liftIO $ toggleCutCopyDelete ui True
   invalidateAll 
   
-selectPenColorChanged :: PenColor -> MainCoroutine () --  Iteratee MyEvent XournalStateIO () 
+selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
   xstate <- getSt
@@ -279,7 +277,7 @@ selectPenColorChanged pcolor = do
              $ xstate                       
       invalidateAll 
           
-selectPenWidthChanged :: Double -> MainCoroutine () --  Iteratee MyEvent XournalStateIO () 
+selectPenWidthChanged :: Double -> MainCoroutine () 
 selectPenWidthChanged pwidth = do 
   liftIO $ putStrLn "selectPenWidthChanged called"
   xstate <- getSt

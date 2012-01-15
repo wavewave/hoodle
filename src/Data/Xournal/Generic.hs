@@ -187,3 +187,9 @@ pageFromTPageSimple = Page <$> gdimension <*> gbackground <*> map layerFromTLaye
 xournalFromTXournalSimple :: TXournalSimple -> Xournal 
 xournalFromTXournalSimple = Xournal <$> gtitle <*> map pageFromTPageSimple . gpages 
 
+
+---- 
+
+emptyPageFromOldPage :: (GListable s) => GPage b s a -> GPage b s a
+emptyPageFromOldPage p = GPage (get g_dimension p) (get g_background p) (gFromList [] )
+

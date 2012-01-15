@@ -135,3 +135,7 @@ deriving instance Foldable ZipperSelect
 
 deriving instance Traversable ZipperSelect
 
+--- 
+
+-- data HeteroSeqZipper a b = HSZ { unHSZ :: (b, (Seq a, Seq a)) } 
+

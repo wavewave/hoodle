@@ -66,7 +66,7 @@ moveTo n orig@(SZ (x,(x1s,x2s))) =
              | n < n_x1s = let (x1s1, x1s2) = splitAt n x1s 
                                el :< rm = viewl x1s2
                            in Just (SZ (el, (x1s1,(rm |> x) >< x2s)))
-             | n > n_x1s = let (x2s1,x2s2) = splitAt (n-1) x2s
+             | n > n_x1s = let (x2s1,x2s2) = splitAt (n-n_x1s-1) x2s
                                el :< rm = viewl x2s2
                            in Just (SZ (el, ((x1s |> x) >< x2s1, rm)))
   in result 

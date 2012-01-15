@@ -55,9 +55,7 @@ layerChooseDialog layernumref cidx len = do
     buttonCancel <- dialogAddButton dialog stockCancel ResponseCancel
 
     buttonOk `on` buttonActivated $ do 
-      putStrLn "haha"
       txt <- Gtk.get layerentry entryText
-      -- mnum <- maybeRead txt 
       maybe (return ()) (modifyIORef layernumref . const . pred) . maybeRead $ txt
     return dialog
 

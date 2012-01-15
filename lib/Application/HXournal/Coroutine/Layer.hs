@@ -35,7 +35,9 @@ layerAction action = do
         cpn = get currentPageNum . getCurrentCanvasInfo $ xstate
         xojstate = get xournalstate xstate
     newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
-    return . updatePageAll newxojstate . set xournalstate newxojstate $ xstate
+    return . updatePageAll newxojstate 
+           . set xournalstate newxojstate 
+           $ xstate
 
 makeNewLayer :: MainCoroutine () 
 makeNewLayer = layerAction newlayeraction >>= commit 
@@ -49,31 +51,49 @@ makeNewLayer = layerAction newlayeraction >>= commit
                 
 
 gotoNextLayer :: MainCoroutine ()
-gotoNextLayer = layerAction nextlayeraction >> return ()
+gotoNextLayer = layerAction nextlayeraction >>= putSt
   where nextlayeraction xojstate cpn page = do 
           let (_,currpage) = getCurrentLayerOrSet page
               Select (O (Just lyrzipper)) = get g_layers currpage  
           let mlyrzipper = moveRight lyrzipper 
-              npage = maybe currpage (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) mlyrzipper
+          
+              npage = maybe currpage (\x-> set g_layers (Select (O (Just x))) currpage) mlyrzipper
+          case mlyrzipper of 
+            Nothing -> liftIO $ putStrLn "Nothing"
+            Just _ -> liftIO $ putStrLn "Just"
+          let Select (O (Just ll)) = get g_layers npage
+              SZ (_,(x1,x2)) = ll 
+          liftIO$ print (Seq.length x1, Seq.length x2)
+
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 gotoPrevLayer :: MainCoroutine ()
-gotoPrevLayer = layerAction prevlayeraction >> return ()
+gotoPrevLayer = layerAction prevlayeraction >>= putSt
   where prevlayeraction xojstate cpn page = do 
           let (_,currpage) = getCurrentLayerOrSet page
               Select (O (Just lyrzipper)) = get g_layers currpage  
           let mlyrzipper = moveLeft lyrzipper 
-              npage = maybe currpage (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) mlyrzipper
+              npage = maybe currpage (\x -> set g_layers (Select (O (Just x))) currpage) mlyrzipper
+          let Select (O (Just ll)) = get g_layers npage
+              SZ (_,(x1,x2)) = ll 
+          case mlyrzipper of 
+            Nothing -> liftIO $ putStrLn "Nothing"
+            Just _ -> liftIO $ putStrLn "Just"
+          liftIO$ print (Seq.length x1, Seq.length x2)
+
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 
 gotoLayerAt :: Int -> MainCoroutine ()
-gotoLayerAt n = layerAction gotoaction >> return () 
+gotoLayerAt n = layerAction gotoaction >>= putSt
   where gotoaction xojstate cpn page = do 
           let (_,currpage) = getCurrentLayerOrSet page
               Select (O (Just lyrzipper)) = get g_layers currpage  
           let mlyrzipper = moveTo n lyrzipper 
-              npage = maybe currpage (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) mlyrzipper
+              npage = maybe currpage (\x -> set g_layers (Select (O (Just x))) currpage) mlyrzipper
+          let Select (O (Just ll)) = get g_layers npage
+              SZ (_,(x1,x2)) = ll 
+          liftIO $ print (Seq.length x1, Seq.length x2)
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 
@@ -87,7 +107,7 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
               let Select (O (Just lyrzipper)) = get g_layers currpage  
                   mlyrzipper = deleteCurrent lyrzipper 
                   npage = maybe currpage 
-                                (\lyrzipper-> set g_layers (Select (O (Just lyrzipper))) currpage) 
+                                (\x -> set g_layers (Select (O (Just x))) currpage) 
                                 mlyrzipper
               return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
@@ -107,29 +127,15 @@ startGotoLayerAt = do
     lref <- liftIO $ newIORef cidx
 
     dialog <- liftIO (layerChooseDialog lref cidx len)
-    {-    dialog <- liftIO $ dialogNew 
-    layerentry <- liftIO $ entryNew
-    -- label <- liftIO $ labelNew (Just "hello")
-    button <- liftIO $buttonNewWithLabel "test"
-    hbox <- liftIO $ hBoxNew 
-    upper <- liftIO $ dialogGetUpper dialog
-    liftIO $ boxPackStart upper hbox PackNatural 0 
-    liftIO $ boxPackStart hbox layerentry PackNatural 
-    liftIO $ boxPackStart hbox button PackGrow 0 
 
-
-    liftIO $ widgetShowAll upper
-    buttonOk <- liftIO $ dialogAddButton dialog stockOk ResponseOk
-    buttonCancel <- liftIO $ dialogAddButton dialog stockCancel ResponseCancel -}
     res <- liftIO $ dialogRun dialog
     case res of 
         ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
         ResponseOk ->  do
-          liftIO $ putStrLn "ok!"
           liftIO $ widgetDestroy dialog
           newnum <- liftIO (readIORef lref)
-
           liftIO $ putStrLn (show (newnum))
+          gotoLayerAt newnum
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileOpen " 
     return ()

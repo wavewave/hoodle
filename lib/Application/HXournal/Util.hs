@@ -12,15 +12,15 @@ import Graphics.Xournal.Render.PDFBackground
 import qualified Data.ByteString.Lazy as L
  
 -- for test
-import Blaze.ByteString.Builder
-import Text.Xournal.Builder 
+-- import Blaze.ByteString.Builder
+-- import Text.Xournal.Builder 
 
-
+{-
 testPage :: TPageBBoxMapPDFBuf -> IO () 
 testPage page = do
     let pagesimple = toPage bkgFromBkgPDF . tpageBBoxMapPDFFromTPageBBoxMapPDFBuf $ page 
     L.putStrLn . toLazyByteString . Text.Xournal.Builder.fromPage $ pagesimple 
-
+-}
 
              
 {-

@@ -10,7 +10,7 @@ import System.Directory
 import System.FilePath
 import Control.Concurrent 
 import Control.Applicative
-import Application.HXournal.NetworkClipboard.Client.Config
+-- import Application.HXournal.NetworkClipboard.Client.Config
 
 emptyConfigString :: String 
 emptyConfigString = "\n#config file for hxournal \n "  
@@ -46,9 +46,10 @@ getXInputConfig c = do
                   "false" -> return False 
                   _ -> error "cannot understand xinput in configfile"
 
-
+{-
 getNetworkInfo :: Config -> IO (Maybe HXournalClipClientConfiguration)
 getNetworkInfo c = do 
   (mserver :: Maybe String) <- C.lookup c "network.server"
   (mclient :: Maybe String) <- C.lookup c "network.client"
   return (HXournalClipClientConfiguration <$> mserver <*> mclient)
+-}

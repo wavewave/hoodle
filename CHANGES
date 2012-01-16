@@ -13,3 +13,6 @@
  
 0.6.1: 25 Dec 2011
    * undo/redo support, double buffer rendering while scrolling
+
+0.6.2: 15 Jan 2012
+   * layer support

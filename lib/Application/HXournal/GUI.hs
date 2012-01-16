@@ -41,10 +41,10 @@ startGUI mfname = do
   st0 <- readIORef sref 
   maxundo <- getMaxUndo cfg >>= 
                \mmax -> maybe (return 50) (return . id) mmax
-  ncconf <- getNetworkInfo  cfg
-
-  let st1 = set networkClipboardInfo ncconf
-            . set undoTable (emptyUndo maxundo) 
+  -- ncconf <- getNetworkInfo  cfg
+  
+  let st1 = -- set networkClipboardInfo ncconf
+            set undoTable (emptyUndo maxundo) 
             $ st0 
             
   -- let st1 = set gtkUIManager ui st0

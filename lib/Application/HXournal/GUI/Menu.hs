@@ -374,8 +374,8 @@ getMenuUI tref sref = do
   copya   <- actionNewAndRegister "COPYA"   "Copy" (Just "Just a Stub") (Just stockCopy) (justMenu MenuCopy)
   pastea  <- actionNewAndRegister "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste) (justMenu MenuPaste)
   deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete) (justMenu MenuDelete)
-  netcopya <- actionNewAndRegister "NETCOPYA" "Copy to NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetCopy)
-  netpastea <- actionNewAndRegister "NETPASTEA" "Paste from NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetPaste)
+  -- netcopya <- actionNewAndRegister "NETCOPYA" "Copy to NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetCopy)
+  -- netpastea <- actionNewAndRegister "NETPASTEA" "Paste from NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetPaste)
 
   
   -- view menu
@@ -468,7 +468,7 @@ getMenuUI tref sref = do
         [fma,ema,vma,jma,tma,oma,hma]
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
         [ newa, annpdfa, opena, savea, saveasa, recenta, printa, exporta, quita
-        , undoa, redoa, cuta, copya, pastea, deletea, netcopya, netpastea
+        , undoa, redoa, cuta, copya, pastea, deletea {- , netcopya, netpastea -}
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa

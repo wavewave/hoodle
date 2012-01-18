@@ -1,5 +1,5 @@
 Name:		xournal-builder
-Version:	0.1.0.1
+Version:	0.1.0.2
 Synopsis:	text builder for xournal file format 
 Description: 	This library builds text xoj format file from xournal data structure
 License: 	BSD3

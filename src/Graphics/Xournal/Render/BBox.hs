@@ -33,7 +33,7 @@ import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
 clipBBox :: Maybe BBox -> Render ()
-clipBBox (Just (BBox (x1,y1) (x2,y2))) = do {resetClip; rectangle x1 y1 x2 y2; clip}
+clipBBox (Just (BBox (x1,y1) (x2,y2))) = do {resetClip; rectangle x1 y1 (x2-x1) (y2-y1); clip}
 clipBBox Nothing = resetClip 
 
 clearBBox :: Maybe BBox -> Render ()        

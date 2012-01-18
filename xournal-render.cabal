@@ -1,5 +1,5 @@
 Name:		xournal-render
-Version:	0.5.0
+Version:	0.5.0.0
 Synopsis:       Xournal file renderer
 Description: 	Rendering library using cairo for xournal file format
 License: 	BSD3

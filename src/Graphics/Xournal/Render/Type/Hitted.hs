@@ -1,3 +1,14 @@
+
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Graphics.Xournal.Render.Type.Hitted 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
 module Graphics.Xournal.Render.Type.Hitted where
 
 import Data.Xournal.BBox

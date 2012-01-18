@@ -2,6 +2,17 @@
              MultiParamTypeClasses, FlexibleInstances, FlexibleContexts, 
              CPP #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Graphics.Xournal.Render.BBoxMapPDF 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Graphics.Xournal.Render.BBoxMapPDF where
 
 import Graphics.Xournal.Render.Type 

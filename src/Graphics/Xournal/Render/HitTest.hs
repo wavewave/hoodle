@@ -1,5 +1,16 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Graphics.Xournal.Render.HitTest 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Graphics.Xournal.Render.HitTest where
 
 import Data.Strict.Tuple

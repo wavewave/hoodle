@@ -1,5 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Text.Xournal.Parse 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Text.Xournal.Parse where
 
 import Control.Applicative -- hiding (many)
@@ -295,12 +306,5 @@ cat_xournalgz :: String -> IO ()
 cat_xournalgz str = Iter.fileDriver 
                       (Iter.joinIM (ungzipXoj printLinesUnterminated)) str 
 
-
--- printIter :: Iter.Iteratee B.ByteString IO () 
--- printIter = 
-
-
-
-   
 onlyresult (Done _ r) = r 
 

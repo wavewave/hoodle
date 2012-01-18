@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.6.2.0
+Version:	0.6.2.0.999
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 Homepage:       http://ianwookim.org/hxournal
@@ -8,7 +8,7 @@ License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 7.0.3
+Tested-with:    GHC == 7.0.3 && == 7.0.4
 Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
@@ -62,13 +62,6 @@ Library
                      poppler == 0.12.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*
-                     -- attoparsec == 0.10.*,
-                     -- uuid == 1.2.*, 
-                     -- hxournalclip-type == 0.0.*, 
-                     -- http-enumerator == 0.7.*, 
-                     -- http-types == 0.6.*, 
-                     -- aeson == 0.4.*, 
-                     -- hxournalclip-client == 0.0.*
 
   else 
     Build-Depends:   base == 4.*, 
@@ -93,13 +86,6 @@ Library
                      configurator == 0.2.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*
-                     -- attoparsec == 0.10.*,
-                     -- uuid == 1.2.*, 
-                     -- http-enumerator == 0.7.*, 
-                     -- http-types == 0.6.*, 
-                     -- aeson == 0.4.*, 
-                     -- hxournalclip-type == 0.0.*,
-                     -- hxournalclip-client == 0.0.*, 
 
 
   Exposed-Modules: 

@@ -1,5 +1,16 @@
 {-# LANGUAGE QuasiQuotes #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Application.HXournal.GUI.Menu 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Application.HXournal.GUI.Menu where
 
 import Application.HXournal.Util.Verbatim

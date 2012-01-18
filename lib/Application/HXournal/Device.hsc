@@ -1,5 +1,16 @@
 {-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Application.HXournal.Device 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 #include <gtk/gtk.h>
 #include "template-hsc-gtk2hs.h"
 

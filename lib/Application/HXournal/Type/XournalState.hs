@@ -1,5 +1,16 @@
 {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Application.HXournal.Type.XournalState 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Application.HXournal.Type.XournalState where
 
 import Application.HXournal.Device

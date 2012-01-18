@@ -1,5 +1,16 @@
 {-# LANGUAGE TypeFamilies, OverloadedStrings #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Data.Xournal.Map 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Data.Xournal.Map where
 
 import Data.IntMap 

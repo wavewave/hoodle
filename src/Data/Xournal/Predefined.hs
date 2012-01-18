@@ -1,5 +1,16 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Data.Xournal.Predefined 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Data.Xournal.Predefined where
 
 import qualified Data.Map as M

@@ -1,5 +1,5 @@
 Name:		xournal-types
-Version:	0.3
+Version:	0.3.0
 Synopsis:	Data types for programs for xournal file format
 Description: 	Xournal file format data type including generic interface
 License: 	BSD3

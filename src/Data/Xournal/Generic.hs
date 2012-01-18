@@ -1,5 +1,16 @@
 {-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Data.Xournal.Generic 
+-- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+
 module Data.Xournal.Generic where
 
 import Data.IntMap hiding (map)

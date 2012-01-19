@@ -77,6 +77,43 @@ predefined_thick = 2.26
 predefined_verythick :: Double 
 predefined_verythick = 5.67
 
+---- for Highlighter
+
+predefined_highlighter_veryfine :: Double
+predefined_highlighter_veryfine = 2.83
+
+predefined_highlighter_fine :: Double
+predefined_highlighter_fine = 2.83
+
+predefined_highlighter_medium :: Double
+predefined_highlighter_medium = 8.50
+
+predefined_highlighter_thick :: Double
+predefined_highlighter_thick = 19.84
+
+predefined_highlighter_verythick :: Double 
+predefined_highlighter_verythick = 19.84
+
+---- for Eraser
+
+predefined_eraser_veryfine :: Double
+predefined_eraser_veryfine = 2.83
+
+predefined_eraser_fine :: Double
+predefined_eraser_fine = 2.83
+
+predefined_eraser_medium :: Double
+predefined_eraser_medium = 8.50
+
+predefined_eraser_thick :: Double
+predefined_eraser_thick = 19.84
+
+predefined_eraser_verythick :: Double 
+predefined_eraser_verythick = 19.84
+
+
+
+
 predefined_RULING_MARGIN_COLOR :: (Double,Double,Double,Double)
 predefined_RULING_MARGIN_COLOR = hexToRGBA 0xff0080ff
 

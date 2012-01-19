@@ -578,16 +578,17 @@ assignColor sref a = do
     let c = int2Color v
     st <- readIORef sref 
     let callback = get callBack st
-    let stNew = set (penColor.penInfo) c st 
+    let stNew = set (penColor.currentTool.penInfo) c st 
     writeIORef sref stNew 
     callback (PenColorChanged c)
 
 assignPoint :: IORef HXournalState -> RadioAction -> IO () 
 assignPoint sref a = do 
     v <- radioActionGetCurrentValue a
-    let w = int2Point v
     st <- readIORef sref 
-    let stNew = set (penWidth.penInfo) w st 
+    let ptype = get (penType.penInfo) st
+    let w = int2Point ptype v
+    let stNew = set (penWidth.currentTool.penInfo) w st 
     let callback = get callBack st        
     writeIORef sref stNew 
     callback (PenWidthChanged w)
@@ -603,13 +604,28 @@ int2PenType 6 = Right SelectVerticalSpaceWork
 int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
 
-int2Point :: Int -> Double 
-int2Point 0 = predefined_veryfine 
-int2Point 1 = predefined_fine
-int2Point 2 = predefined_medium
-int2Point 3 = predefined_thick
-int2Point 4 = predefined_verythick
-int2Point _ = error "No such point"
+int2Point :: PenType -> Int -> Double 
+int2Point PenWork 0 = predefined_veryfine 
+int2Point PenWork 1 = predefined_fine
+int2Point PenWork 2 = predefined_medium
+int2Point PenWork 3 = predefined_thick
+int2Point PenWork 4 = predefined_verythick
+int2Point HighlighterWork 0 = predefined_highlighter_veryfine
+int2Point HighlighterWork 1 = predefined_highlighter_fine
+int2Point HighlighterWork 2 = predefined_highlighter_medium
+int2Point HighlighterWork 3 = predefined_highlighter_thick
+int2Point HighlighterWork 4 = predefined_highlighter_verythick
+int2Point EraserWork 0 = predefined_eraser_veryfine
+int2Point EraserWork 1 = predefined_eraser_fine
+int2Point EraserWork 2 = predefined_eraser_medium
+int2Point EraserWork 3 = predefined_eraser_thick
+int2Point EraserWork 4 = predefined_eraser_verythick
+int2Point TextWork 0 = predefined_veryfine
+int2Point TextWork 1 = predefined_fine
+int2Point TextWork 2 = predefined_medium
+int2Point TextWork 3 = predefined_thick
+int2Point TextWork 4 = predefined_verythick
+int2Point _ _ = error "No such point"
 
 int2Color :: Int -> PenColor
 int2Color 0  = ColorBlack 

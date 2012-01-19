@@ -9,15 +9,19 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+
 module Application.HXournal.Coroutine.Highlighter where
 
 import Application.HXournal.Device 
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
+import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Coroutine.Pen 
+
 import Control.Monad.Trans
 
-highlighterStart :: PointerCoord -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
-highlighterStart _pcoord = do 
+highlighterStart :: CanvasId -> PointerCoord -> MainCoroutine () 
+highlighterStart cid pcoord = do 
   liftIO $ putStrLn "highlighter started"
-
+  penStart cid pcoord

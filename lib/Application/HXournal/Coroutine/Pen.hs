@@ -38,8 +38,9 @@ import Data.Label
 import Prelude hiding ((.), id)
 import Graphics.Xournal.Render.BBox
 
+-- | enter pen drawing mode
 
-penStart :: CanvasId -> PointerCoord -> MainCoroutine () --  Iteratee MyEvent XournalStateIO ()
+penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid pcoord = do 
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
@@ -51,20 +52,10 @@ penStart cid pcoord = do
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup   <- connectPenUp   cvsInfo 
     connidmove <- connectPenMove cvsInfo 
-    
-    {-
-    -- just for test
-    xstate2 <- getSt
-    let epg2 = get currentPage . getCurrentCanvasInfo $ xstate2
-
-    liftIO $ putStrLn "before pen start"
-    liftIO $ either testPage (testPage . gcast) epg2 
-    liftIO $ putStrLn "from currxoj" 
-    liftIO $ testPage (getPageFromGXournalMap pagenum currxoj) -}
 
     pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
     (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
-    let bbox' = inflate bbox (get (penWidth.penInfo) xstate) 
+    let bbox' = inflate bbox (get (penWidth.currentTool.penInfo) xstate) 
         xstate' = set xournalstate (ViewAppendState newxoj) 
                   . updatePageAll (ViewAppendState newxoj)
                   $ xstate
@@ -72,12 +63,13 @@ penStart cid pcoord = do
     mapM_ (flip invalidateInBBox bbox') . filter (/=cid) $ otherCanvas xstate' 
 
 
+-- | main pen coordinate adding process
+
 penProcess :: CanvasId
            -> CanvasPageGeometry
            -> ConnectId DrawingArea -> ConnectId DrawingArea 
            -> Seq (Double,Double) -> (Double,Double) 
            -> MainCoroutine (Seq (Double,Double))
-           -- Iteratee MyEvent XournalStateIO (Seq (Double,Double))
 penProcess cid cpg connidmove connidup pdraw (x0,y0) = do 
   r <- await 
   xstate <- getSt
@@ -86,8 +78,8 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
     PenMove _cid' pcoord -> do 
       let canvas = get drawArea cvsInfo
           zmode  = get (zoomMode.viewInfo) cvsInfo
-          pcolor = get (penColor.penInfo) xstate 
-          pwidth = get (penWidth.penInfo) xstate 
+          pcolor = get (penColor.currentTool.penInfo) xstate 
+          pwidth = get (penWidth.currentTool.penInfo) xstate 
           (x,y) = device2pageCoord cpg zmode pcoord 
           pcolRGBA = fromJust (M.lookup pcolor penColorRGBAmap) 
       liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)

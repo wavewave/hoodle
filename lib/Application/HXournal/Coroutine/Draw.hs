@@ -32,7 +32,7 @@ import Prelude hiding ((.),id)
 invalidateSelSingle :: CanvasId -> Maybe BBox 
                        -> PageDrawF
                        -> PageDrawFSel 
-                       -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+                       -> MainCoroutine () 
 invalidateSelSingle cid mbbox drawf drawfsel = do
   xstate <- lift St.get  
   let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
@@ -52,7 +52,7 @@ invalidateSelSingle cid mbbox drawf drawfsel = do
                                         $ cvsInfo )
 
 invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
-                    -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+                    -> MainCoroutine () 
 invalidateGenSingle cid mbbox drawf = do
   xstate <- lift St.get  
   let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
@@ -69,14 +69,14 @@ invalidateGenSingle cid mbbox drawf = do
                     $ cvsInfo )
 
 
-invalidateAll :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+invalidateAll :: MainCoroutine () 
 invalidateAll = do
   xstate <- getSt
   let cinfoMap  = get canvasInfoMap xstate
       keys = M.keys cinfoMap 
   forM_ keys invalidate 
 
-invalidateOther :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+invalidateOther :: MainCoroutine () 
 invalidateOther = do 
   xstate <- getSt
   let currCvsId = get currentCanvas xstate
@@ -87,29 +87,29 @@ invalidateOther = do
 
 -- | invalidate clear 
 
-invalidate :: CanvasId -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+invalidate :: CanvasId -> MainCoroutine () 
 invalidate cid = invalidateSelSingle cid Nothing drawPageClearly drawPageSelClearly
 
 
 -- | Drawing objects only in BBox
 
-invalidateInBBox :: CanvasId -> BBox -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+invalidateInBBox :: CanvasId -> BBox -> MainCoroutine () 
 invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox drawSelectionInBBox
 
 -- | Drawing BBox
 
-invalidateDrawBBox :: CanvasId -> BBox -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+invalidateDrawBBox :: CanvasId -> BBox -> MainCoroutine () 
 invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
 -- | Drawing using layer buffer
 
-invalidateWithBuf :: CanvasId -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+invalidateWithBuf :: CanvasId -> MainCoroutine () 
 invalidateWithBuf = invalidateWithBufInBBox Nothing
   
 
 -- | Drawing using layer buffer in BBox
 
-invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelectionInBBox
                                     
 

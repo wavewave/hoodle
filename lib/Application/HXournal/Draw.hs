@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Draw 
@@ -9,6 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+
 module Application.HXournal.Draw where
 
 import Graphics.UI.Gtk hiding (get)

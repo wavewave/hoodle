@@ -123,7 +123,7 @@ viewAppendMode = do
       case ptype of 
         PenWork         -> penStart cid pcoord 
         EraserWork      -> eraserStart cid pcoord 
-        HighlighterWork -> highlighterStart pcoord
+        HighlighterWork -> highlighterStart cid pcoord
         _ -> return () 
     _ -> defaultEventProcess r1
 

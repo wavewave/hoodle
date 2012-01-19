@@ -41,9 +41,9 @@ import Graphics.Xournal.Render.BBoxMapPDF
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
             -> IO (TXournalBBoxMapPDFBuf,BBox)
 addPDraw pinfo xoj pgnum pdraw = do 
-  let pcolor = get penColor pinfo
+  let pcolor = get (penColor.currentTool) pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
-      pwidth = get penWidth pinfo
+      pwidth = get (penWidth.currentTool) pinfo
       (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
       currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
 

@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Eraser 
@@ -9,6 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+
 module Application.HXournal.Coroutine.Eraser where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
@@ -47,7 +47,7 @@ import qualified Data.Sequence as Seq
 
 eraserStart :: CanvasId 
                -> PointerCoord 
-               -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+               -> MainCoroutine () 
 eraserStart cid pcoord = do 
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
@@ -64,7 +64,7 @@ eraserProcess :: CanvasId
               -> ConnectId DrawingArea -> ConnectId DrawingArea 
               -> [StrokeBBox] 
               -> (Double,Double)
-              -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+              -> MainCoroutine () 
 eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
   r <- await 
   xstate <- getSt

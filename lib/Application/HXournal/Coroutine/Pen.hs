@@ -28,6 +28,7 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.Draw
 import Control.Monad.Trans
 
+import Data.Xournal.Predefined
 import Data.Xournal.Generic
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Sequence hiding (filter)
@@ -78,10 +79,15 @@ penProcess cid cpg connidmove connidup pdraw (x0,y0) = do
     PenMove _cid' pcoord -> do 
       let canvas = get drawArea cvsInfo
           zmode  = get (zoomMode.viewInfo) cvsInfo
+          ptype  = get (penType.penInfo) xstate
           pcolor = get (penColor.currentTool.penInfo) xstate 
           pwidth = get (penWidth.currentTool.penInfo) xstate 
           (x,y) = device2pageCoord cpg zmode pcoord 
-          pcolRGBA = fromJust (M.lookup pcolor penColorRGBAmap) 
+          (pcr,pcg,pcb,pca)= fromJust (M.lookup pcolor penColorRGBAmap) 
+          opacity = case ptype of 
+                      HighlighterWork -> predefined_highlighter_opacity 
+                      _ -> 1.0
+          pcolRGBA = (pcr,pcg,pcb,pca*opacity)
       liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)
       penProcess cid cpg connidmove connidup (pdraw |> (x,y)) (x,y) 
     PenUp _cid' pcoord -> do 

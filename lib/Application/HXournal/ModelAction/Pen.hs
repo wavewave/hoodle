@@ -41,13 +41,17 @@ import Graphics.Xournal.Render.BBoxMapPDF
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
             -> IO (TXournalBBoxMapPDFBuf,BBox)
 addPDraw pinfo xoj pgnum pdraw = do 
-  let pcolor = get (penColor.currentTool) pinfo
+  let ptype = get penType pinfo
+      pcolor = get (penColor.currentTool) pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get (penWidth.currentTool) pinfo
       (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
       currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
 
-      newstroke = Stroke { stroke_tool = "pen" 
+      newstroke = Stroke { stroke_tool = case ptype of 
+                                           PenWork -> "pen" 
+                                           HighlighterWork -> "highlighter"
+                                           _ -> error "error in addPDraw"
                          , stroke_color = pcolname 
                          , stroke_width = pwidth
                          , stroke_data = map (uncurry (:!:)) . toList $ pdraw

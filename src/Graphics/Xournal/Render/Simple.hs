@@ -24,8 +24,12 @@ import qualified Data.ByteString.Char8 as S
 
 drawOneStroke :: Stroke -> Render ()
 drawOneStroke s = do 
+  let opacity = if stroke_tool s == "highlighter" 
+                then predefined_highlighter_opacity
+                else 1.0
+  
   case M.lookup (stroke_color s) predefined_pencolor of
-    Just (r,g,b,a) -> setSourceRGBA r g b a 
+    Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
     Nothing -> setSourceRGBA 0 0 0 1
   setLineWidth . stroke_width $ s 
   drawOneStrokeCurve . stroke_data $ s

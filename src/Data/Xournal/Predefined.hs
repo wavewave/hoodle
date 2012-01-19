@@ -31,6 +31,9 @@ rgbaToHEX (r,g,b,a) =
   let i :: Integer = round (255*a) + round (256*255*b) + round (256*256*255*g) + round (256*256*256*255*r) 
   in printf "#%08x" i
 
+predefined_highlighter_opacity :: Double 
+predefined_highlighter_opacity = 0.5
+
 predefined_pencolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_pencolor = 
   M.fromList [ ("black"     , hexToRGBA 0x000000ff)

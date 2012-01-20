@@ -72,7 +72,12 @@ redo = do
         putSt xstate'
         invalidateAll 
 
-
+clearUndoHistory :: MainCoroutine () 
+clearUndoHistory = do 
+    liftIO $ putStrLn "clearUndoHistory is called"
+    xstate <- getSt
+    putSt . set undoTable (emptyUndo 1) $ xstate
+    
 
 
 

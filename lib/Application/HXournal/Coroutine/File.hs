@@ -75,6 +75,8 @@ fileSave = do
         let ui = get gtkUIManager xstate
         liftIO $ toggleSave ui False
 
+-- | main coroutine for open a file 
+
 fileOpen :: MainCoroutine ()
 fileOpen = do 
     liftIO $ putStrLn "file open clicked"
@@ -97,12 +99,15 @@ fileOpen = do
             xstateNew <- liftIO $ getFileContent (Just filename) xstate
             putSt . set isSaved True 
                   $ xstateNew 
-            liftIO $ setTitleFromFileName xstateNew             
+            liftIO $ setTitleFromFileName xstateNew  
+            clearUndoHistory 
             invalidateAll 
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileOpen " 
     return ()
+
+-- | main coroutine for save as 
 
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 

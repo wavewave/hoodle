@@ -337,43 +337,45 @@ cairoHittedBoxDraw tpg mbbox = do
       resetClip
     Left _ -> return ()  
 
+
 ---- 
     
+-- | common routine for double buffering 
+
+doubleBuffering :: DrawWindow -> CanvasPageGeometry 
+                   -> Render ()
+                   -> Render () 
+                   -> IO ()
+doubleBuffering win geometry xform rndr = do 
+  let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+                 $ canvas_size geometry 
+  withImageSurface FormatARGB32 cw ch $ \tempsurface -> do 
+    renderWith tempsurface $ do 
+      setSourceRGBA 0.5 0.5 0.5 1
+      rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
+      fill 
+      rndr 
+    renderWithDrawable win $ do 
+      setSourceSurface tempsurface 0 0   
+      setOperator OperatorSource 
+      xform
+      paint 
+  
 drawBuf :: PageDrawF 
 drawBuf canvas page vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-  putStrLn $ show mbboxnew 
+  -- putStrLn $ show mbboxnew 
   win <- widgetGetDrawWindow canvas
-  -- renderWithDrawable win $ do
-  -- new change
-  let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
-                   $ canvas_size geometry 
-    -- tempsurface <- createImageSurface FormatARGB32 cw ch 
-  withImageSurface FormatARGB32 cw ch $ \tempsurface -> do 
-    renderWith tempsurface $ do  
-      setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
-      fill 
-      transformForPageCoord geometry zmode
-      cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
-      return ()
-    renderWithDrawable win $ do 
-      setSourceSurface tempsurface 0 0   
-      setOperator OperatorSource 
-      transformForPageCoord geometry zmode
---       rectangle 100 100 100 100 
---      clip
---       rectangle 0 0 (fromIntegral cw) (fromIntegral ch)
---      clip 
-      -- clipBBox mbbox 
-
-      paint 
-      
-  return ()
-
+  let xformfunc = transformForPageCoord geometry zmode
+  let renderfunc = do   
+        -- transformForPageCoord geometry zmode
+        xformfunc 
+        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
+        return ()
+  doubleBuffering win geometry xformfunc renderfunc   
 
 drawSelBuf :: PageDrawFSel 
 drawSelBuf canvas tpg vinfo mbbox = do 

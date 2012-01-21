@@ -313,25 +313,8 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   renderWithDrawable win $ do
     transformForPageCoord geometry zmode
     cairoRenderOption (InBBoxOption mbboxnew) (InBBox page)
-       -- (InBBox (gcast page :: TPageBBoxMapPDF))
     cairoHittedBoxDraw tpg mbboxnew  
-      
-{-
-drawSelectionInBBoxOnly :: PageDrawFSel 
-drawSelectionInBBoxOnly canvas tpg vinfo mbbox = do 
-  let zmode  = get zoomMode vinfo
-      origin = get viewPortOrigin vinfo
-      page = (gcast tpg :: TPageBBoxMapPDFBuf)
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas  
-  let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    cairoRenderOption (InBBoxOption mbboxnew) (InBBox page)
-      -- (DrawWhite,DrawBoxOnly) (gcast page :: TPageBBoxMapPDF)
-      -- (DrawBuffer,DrawBoxOnly) (gcast page :: TPageBBoxMapPDF)
-    cairoHittedBoxDraw tpg mbbox 
--}
+    
   
 cairoHittedBoxDraw :: TTempPageSelectPDFBuf -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
@@ -362,11 +345,33 @@ drawBuf canvas page vinfo mbbox = do
       origin = get viewPortOrigin vinfo
   geometry <- getCanvasPageGeometry canvas page origin
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
+  putStrLn $ show mbboxnew 
   win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
-    return ()
+  -- renderWithDrawable win $ do
+  -- new change
+  let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+                   $ canvas_size geometry 
+    -- tempsurface <- createImageSurface FormatARGB32 cw ch 
+  withImageSurface FormatARGB32 cw ch $ \tempsurface -> do 
+    renderWith tempsurface $ do  
+      setSourceRGBA 0.5 0.5 0.5 1
+      rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
+      fill 
+      transformForPageCoord geometry zmode
+      cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
+      return ()
+    renderWithDrawable win $ do 
+      setSourceSurface tempsurface 0 0   
+      setOperator OperatorSource 
+      transformForPageCoord geometry zmode
+--       rectangle 100 100 100 100 
+--      clip
+--       rectangle 0 0 (fromIntegral cw) (fromIntegral ch)
+--      clip 
+      -- clipBBox mbbox 
+
+      paint 
+      
   return ()
 
 

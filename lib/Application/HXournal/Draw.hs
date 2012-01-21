@@ -310,10 +310,12 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    cairoRenderOption (InBBoxOption mbboxnew) (InBBox page)
-    cairoHittedBoxDraw tpg mbboxnew  
+  let xformfunc = transformForPageCoord geometry zmode
+      renderfunc = do
+        xformfunc 
+        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page)
+        cairoHittedBoxDraw tpg mbboxnew  
+  doubleBuffering win geometry xformfunc renderfunc   
     
   
 cairoHittedBoxDraw :: TTempPageSelectPDFBuf -> Maybe BBox -> Render () 
@@ -384,7 +386,10 @@ drawSelBuf canvas tpg vinfo mbbox = do
       page = (gcast tpg :: TPageBBoxMapPDFBuf)
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    transformForPageCoord geometry zmode
-    cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
-    cairoHittedBoxDraw tpg mbbox  
+  -- renderWithDrawable win $ 
+  let xformfunc = transformForPageCoord geometry zmode 
+  let renderfunc = do
+        transformForPageCoord geometry zmode
+        cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
+        cairoHittedBoxDraw tpg mbbox  
+  doubleBuffering win geometry xformfunc renderfunc   

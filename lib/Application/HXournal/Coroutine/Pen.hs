@@ -61,7 +61,8 @@ penStart cid pcoord = do
                   . updatePageAll (ViewAppendState newxoj)
                   $ xstate
     commit xstate'
-    mapM_ (flip invalidateInBBox bbox') . filter (/=cid) $ otherCanvas xstate' 
+    invalidateAll 
+    -- mapM_ (flip invalidateInBBox bbox') . filter (/=cid) $ otherCanvas xstate' 
 
 
 -- | main pen coordinate adding process

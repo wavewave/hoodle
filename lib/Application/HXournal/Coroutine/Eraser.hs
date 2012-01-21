@@ -83,12 +83,6 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
               pgnum       = get currentPageNum cvsInfo
               (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
               currlayer = maybe (error "eraserProcess") id mcurrlayer
-
-          -- for test
-          -- let Select (O (Just ll)) = get g_layers currpage
-          --     SZ (_,(x1,x2)) = ll 
-          -- liftIO$ print (Seq.length x1, Seq.length x2)
-
           let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
@@ -97,7 +91,8 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
               newxojstate = ViewAppendState newxojbbox
           commit . set xournalstate newxojstate 
                  . updatePageAll newxojstate $ xstate 
-          invalidateWithBufInBBox maybebbox cid 
+          -- invalidateWithBufInBBox maybebbox cid 
+          invalidateWithBuf cid 
           newstrs <- getAllStrokeBBoxInCurrentLayer
           eraserProcess cid cpg connidup connidmove newstrs (x,y)
         else eraserProcess cid cpg connidmove connidup strs (x,y) 
@@ -107,3 +102,4 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
       invalidateAll
     _ -> return ()
     
+

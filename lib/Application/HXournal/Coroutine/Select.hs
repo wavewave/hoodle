@@ -111,9 +111,11 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
       if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
-         then do flip invalidateWithBufInBBox cid . Just $
-                   (inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0)
-                 invalidateDrawBBox cid bbox
+         then do -- flip invalidateWithBufInBBox cid . Just $
+                 let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
+                 -- invalidateWithBuf cid 
+                 -- invalidateDrawBBox cid bbox
+                 invalidateDrawTempBBox cid bbox (Just newbbox)
          else return ()
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
     PenUp _cid' pcoord -> do 

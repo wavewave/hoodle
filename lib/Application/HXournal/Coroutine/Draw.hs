@@ -101,6 +101,13 @@ invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox d
 invalidateDrawBBox :: CanvasId -> BBox -> MainCoroutine () 
 invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
+-- | Drawing Temporary Selection BBox 
+
+invalidateDrawTempBBox :: CanvasId -> BBox -> Maybe BBox -> MainCoroutine ()
+invalidateDrawTempBBox cid bbox mbbox = 
+  invalidateSelSingle cid mbbox (drawTempBBox bbox) (drawSelTempBBox bbox)
+
+
 -- | Drawing using layer buffer
 
 invalidateWithBuf :: CanvasId -> MainCoroutine () 

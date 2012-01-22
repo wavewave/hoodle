@@ -77,6 +77,16 @@ renderBoxSelection bbox = do
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
 
+renderSelectedStroke :: StrokeBBox -> Render () 
+renderSelectedStroke str = do 
+  let bbox = strokebbox_bbox str 
+  setLineWidth 0.5
+  setSourceRGBA 0 0 1 1
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+   
 
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
@@ -137,14 +147,9 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev temps
       xstate <- getSt
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
-          {- render_selection_rect = do
-            setLineWidth 0.5 
-            setSourceRGBA 1.0 0.0 0.0 1.0
-            let (x1,y1) = bbox_upperleft bbox
-                (x2,y2) = bbox_lowerright bbox
-            rectangle x1 y1 (x2-x1) (y2-y1)
-            stroke -}
-      invalidateTemp cid tempsurface (renderBoxSelection bbox) -- (render_selection_rect)
+      invalidateTemp cid tempsurface (renderBoxSelection bbox >> mapM_ renderSelectedStroke  hittedstrs ) 
+        
+        -- (render_selection_rect)
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) tempsurface
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 

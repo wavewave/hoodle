@@ -23,7 +23,7 @@ import Prelude hiding (fst,snd)
 
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
-          deriving (Show)
+          deriving (Show,Eq)
 
 data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
                              , strokebbox_color :: ByteString 

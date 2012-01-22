@@ -79,7 +79,6 @@ selectRectStart cid pcoord = do
           moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) (x,y)
         action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
         action (Left page) = newSelectAction page
-        
         newSelectAction page = do   
           let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
                          $ canvas_size geometry 
@@ -87,7 +86,6 @@ selectRectStart cid pcoord = do
           let renderfunc = do   
                 xformfunc 
                 cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-                -- rndr
                 return ()
           tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
           liftIO $ renderWith tempsurface $ do 
@@ -95,39 +93,9 @@ selectRectStart cid pcoord = do
               rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
               fill 
               renderfunc 
-              -- rndr 
           newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs (x,y) (x,y) tempsurface
           surfaceFinish tempsurface 
     action (get currentPage cvsInfo)      
-{- 
-
-  case get currentPage cvsInfo of 
-      Right tpage -> if hitInSelection tpage (x,y)
-                       then do 
-                       else 
-    
-      case get currentPage cvsInfo of 
-        Right tpage -> if hitInSelection tpage (x,y)
-                          then do 
-                            moveSelectRectangle cvsInfo 
-                                               geometry 
-                                               zmode 
-                                               connidup 
-                                               connidmove 
-                                               (x,y) 
-                                               (x,y)
-                          else 
-        Left _ -> newSelectRectangle cvsInfo 
-                                     geometry 
-                                     zmode 
-                                     connidup 
-                                     connidmove 
-                                     strs 
-                                     (x,y) 
-                                     (x,y)
-                                     tempsurface 
-
--}      
 newSelectRectangle :: CanvasInfo
                    -> CanvasPageGeometry
                    -> ZoomMode
@@ -148,7 +116,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev temps
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
       let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
-      -- invalidateDrawTempBBox cid bbox (Just newbbox)
       xstate <- getSt
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
@@ -159,23 +126,12 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev temps
                 (x2,y2) = bbox_lowerright bbox
             rectangle x1 y1 (x2-x1) (y2-y1)
             stroke
-
-          
       invalidateTemp cid tempsurface (render_selection_rect)
- {-     -- if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
-         then do -- flip invalidateWithBufInBBox cid . Just $
-                 -- invalidateWithBuf cid 
-                 -- invalidateDrawBBox cid bbox
-                 liftIO $ putStrLn $ show bbox 
-         else do 
-           liftIO $ putStrLn $ "what?"
-           return () -}
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) tempsurface
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let epage = get currentPage cinfo 
           cpn = get currentPageNum cinfo 
-          
       let bbox = BBox orig (x,y)
           hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox

@@ -121,14 +121,7 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelectionInBBox
                                     
-
-{-
--- | Drawing Temporary Selection BBox 
-
-invalidateDrawTempBBox :: CanvasId -> BBox -> Maybe BBox -> MainCoroutine ()
-invalidateDrawTempBBox cid bbox mbbox = 
-  invalidateSelSingle cid mbbox (drawTempBBox bbox) (drawSelTempBBox bbox)
--}
+-- | Drawing temporary gadgets
 
 invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
@@ -145,57 +138,10 @@ invalidateTemp cid tempsurface rndr = do
   let mbboxnew = adjustBBoxWithView geometry zmode Nothing
   win <- liftIO $ widgetGetDrawWindow canvas
   let xformfunc = transformForPageCoord geometry zmode
-  {- let renderfuxnc = do   
-        xformfunc 
-        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
-        rndr
-        return () -}
   liftIO $ renderWithDrawable win $ do   
     setSourceSurface tempsurface 0 0 
     setOperator OperatorSource 
     paint 
     xformfunc 
     rndr 
-  -- liftIO $ doubleBuffering win geometry xformfunc renderfunc   
       
-
-{-    renderWithDrawable win $ do 
-      setSourceSurface tempsurface 0 0   
-      setOperator OperatorSource 
-      -- setAntialias AntialiasNone
-      xform
-      paint  -}
-          
-
---    Right tpage -> return ()  
-
-{-      
-      liftIO (drawf <$> get drawArea 
-                                    <*> pure page 
-                                    <*> get viewInfo 
-                                    <*> pure mbbox
-                                    $ cvsInfo )
-    Right tpage -> liftIO (drawfsel <$> get drawArea 
-                           <*> pure tpage
-  <*> get viewInfo
-                                        <*> pure mbbox
-                                        $ cvsInfo )
--}
-  {-
-  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do 
-      case get currentPage cvsInfo of 
-        Left page ->  liftIO (drawf <$> get drawArea 
-                                    <*> pure page 
-                                    <*> get viewInfo 
-                                    <*> pure mbbox
-                                    $ cvsInfo )
-        Right tpage -> liftIO (drawfsel <$> get drawArea 
-                                        <*> pure tpage
-                                        <*> get viewInfo
-                                        <*> pure mbbox
-                                        $ cvsInfo )
--}
-  

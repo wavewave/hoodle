@@ -34,10 +34,8 @@ import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Compose
 import Control.Category
 import Control.Applicative 
-
 import Data.Label
 import Prelude hiding ((.), id)
-
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Data.Xournal.Select
@@ -45,20 +43,40 @@ import Graphics.Xournal.Render.Type
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox
-
 import Graphics.Rendering.Cairo
-
 import System.IO.Unsafe
-
 import qualified Data.IntMap as IM
 import Data.Maybe
-
 import Data.Xournal.Generic
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set,disconnect)
+
+uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
+uncurry4 f (x,y,z,w) = f x y z w 
+
+
+predefinedLassoColor :: (Double,Double,Double,Double)
+predefinedLassoColor = (1.0,116.0/255.0,0,1)
+
+predefinedLassoWidth :: Double 
+predefinedLassoWidth = 4.0
+
+predefinedLassoDash :: ([Double],Double)
+predefinedLassoDash = ([10,5],10) 
+
+renderBoxSelection :: BBox -> Render () 
+renderBoxSelection bbox = do
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+
 
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
@@ -119,14 +137,14 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev temps
       xstate <- getSt
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
-          render_selection_rect = do
+          {- render_selection_rect = do
             setLineWidth 0.5 
             setSourceRGBA 1.0 0.0 0.0 1.0
             let (x1,y1) = bbox_upperleft bbox
                 (x2,y2) = bbox_lowerright bbox
             rectangle x1 y1 (x2-x1) (y2-y1)
-            stroke
-      invalidateTemp cid tempsurface (render_selection_rect)
+            stroke -}
+      invalidateTemp cid tempsurface (renderBoxSelection bbox) -- (render_selection_rect)
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) tempsurface
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 

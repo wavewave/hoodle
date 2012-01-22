@@ -61,7 +61,8 @@ Library
                      configurator == 0.2.*,
                      poppler == 0.12.*, 
                      time == 1.2.*, 
-                     TypeCompose == 0.9.*
+                     TypeCompose == 0.9.*, 
+                     Diff == 0.1.*
 
   else 
     Build-Depends:   base == 4.*, 
@@ -85,7 +86,8 @@ Library
                      cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.2.*, 
                      time == 1.2.*, 
-                     TypeCompose == 0.9.*
+                     TypeCompose == 0.9.*, 
+                     Diff == 0.1.*
 
 
   Exposed-Modules: 

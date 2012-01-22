@@ -48,16 +48,24 @@ import Graphics.Rendering.Cairo
 import System.IO.Unsafe
 import qualified Data.IntMap as IM
 import Data.Maybe
+import Data.Monoid 
 import Data.Xournal.Generic
+-- import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 
+import qualified Data.Function as F (on)
+import Data.Algorithm.Diff
+
+
 data TempSelection = TempSelection { tempSurface :: Surface  
                                    , widthHeight :: (Double,Double)
-                                   , numSelectedStrokes :: Int } 
+                                   -- , numSelectedStrokes :: Int 
+                                   , tempSelected :: [StrokeBBox]
+                                   } 
 
 
 uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
@@ -86,26 +94,24 @@ renderBoxSelection bbox = do
 renderSelectedStroke :: StrokeBBox -> Render () 
 renderSelectedStroke str = do 
   let bbox = strokebbox_bbox str 
-  setLineWidth 0.5
+  setLineWidth 1.5
   setSourceRGBA 0 0 1 1
   let (x1,y1) = bbox_upperleft bbox
       (x2,y2) = bbox_lowerright bbox
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
    
-  
-  -- TPageBBoxMapPDFBuf -> (Double,Double) 
-                  -- -> Render () -> Surface -> IO ()     
-    
-updateTempSelection :: TempSelection -> Render () -> IO ()
-updateTempSelection tempselection  renderfunc = 
+updateTempSelection :: TempSelection -> Render () -> Bool -> IO ()
+updateTempSelection tempselection  renderfunc isFullErase = 
   renderWith (tempSurface tempselection) $ do 
-    let (cw,ch) = widthHeight tempselection
-    setSourceRGBA 0.5 0.5 0.5 1
-    rectangle 0 0 cw ch 
-    fill 
+    when isFullErase $ do 
+      let (cw,ch) = widthHeight tempselection
+      setSourceRGBA 0.5 0.5 0.5 1
+      rectangle 0 0 cw ch 
+      fill 
     renderfunc    
     
+
 
                      
 
@@ -137,17 +143,10 @@ selectRectStart cid pcoord = do
                 return ()
           tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
           let cwch = (fromIntegral cw, fromIntegral ch)
-              tempselection = TempSelection tempsurface cwch 0 
-          liftIO $ updateTempSelection tempselection renderfunc 
-            -- renderTempPage page cwch renderfunc tempsurface 
-          {- liftIO $ renderWith tempsurface $ do 
-              setSourceRGBA 0.5 0.5 0.5 1
-              rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
-              fill 
-              renderfunc -}
+              tempselection = TempSelection tempsurface cwch []
+          liftIO $ updateTempSelection tempselection renderfunc True
           newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
                              (x,y) (x,y) tempselection
-                             -- (TempSelection tempsurface 0)
           surfaceFinish tempsurface 
     action (get currentPage cvsInfo)      
 newSelectRectangle :: CanvasInfo
@@ -157,7 +156,7 @@ newSelectRectangle :: CanvasInfo
                    -> [StrokeBBox] 
                    -> (Double,Double)
                    -> (Double,Double)
-                   -> TempSelection -- Surface
+                   -> TempSelection 
                    -> MainCoroutine () 
 newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev 
                    tempselection = do  
@@ -175,16 +174,32 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
           numselstrs = length hittedstrs 
-      when (numselstrs /= numSelectedStrokes tempselection) $ do 
-        -- let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
-        --                $ canvas_size geometry 
+          (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
+            -- filter (not . isSame . fst) $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
+          
+       
+      when ((not.null) fstrs || (not.null) sstrs) $ do 
         let xformfunc = transformForPageCoord geometry zmode
+            ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) $ fstrs
+            
         let renderfunc = do   
               xformfunc 
-              cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-              mapM_ renderSelectedStroke  hittedstrs
-        liftIO $ updateTempSelection tempselection renderfunc
-        liftIO $ putStrLn "selection changed!"
+              case ulbbox of 
+                Top -> do 
+                  cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
+                  mapM_ renderSelectedStroke hittedstrs
+                Middle bbox -> do 
+                  let redrawee = filter (\x -> hitTestBBoxBBox bbox (strokebbox_bbox x) ) hittedstrs  
+                  cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page)
+                  clipBBox (Just bbox)
+                  mapM_ renderSelectedStroke redrawee 
+                Bottom -> return ()
+                -- (InBBoxOption Nothing) (InBBox page) 
+              mapM_ renderSelectedStroke sstrs 
+              -- mapM_ renderSelectedStroke  hittedstrs
+        liftIO $ updateTempSelection tempselection renderfunc False
+        -- liftIO $ putStrLn "selection changed!"
+      
       invalidateTemp cid (tempSurface tempselection) 
                          (renderBoxSelection bbox) 
         
@@ -193,7 +208,7 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev
         -- (render_selection_rect)
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
                          (x,y) 
-                         tempselection { numSelectedStrokes = numselstrs }
+                         tempselection { tempSelected = hittedstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let epage = get currentPage cinfo 
@@ -388,6 +403,34 @@ selectPenWidthChanged pwidth = do
              . set xournalstate (SelectState newtxoj)
              $ xstate 
       invalidateAll 
+
+
+newtype CmpStrokeBBox = CmpStrokeBBox { unCmpStrokeBBox :: StrokeBBox }
+                      deriving Show
+instance Eq CmpStrokeBBox where
+  CmpStrokeBBox str1 == CmpStrokeBBox str2 = strokebbox_bbox str1 == strokebbox_bbox str2  
+  
+isSame :: DI -> Bool   
+isSame B = True 
+isSame _ = False 
+
+separateFS :: [(DI,a)] -> ([a],[a])
+separateFS = foldr f ([],[]) 
+  where f (F,x) (fs,ss) = (x:fs,ss)
+        f (S,x) (fs,ss) = (fs,x:ss)
+        f (B,x) (fs,ss) = (fs,ss)
+        
+getDiffStrokeBBox :: [StrokeBBox] -> [StrokeBBox] -> [(DI, StrokeBBox)]
+getDiffStrokeBBox lst1 lst2 = 
+  let nlst1 = fmap CmpStrokeBBox lst1 
+      nlst2 = fmap CmpStrokeBBox lst2 
+      diffresult = getDiff nlst1 nlst2 
+  in map (\(x,y)->(x,unCmpStrokeBBox y)) diffresult
+
+
+-- getDifferenceBy :: (a -> a -> Bool) -> [a] -> [a] -> [a]
+-- getDifferenceBy =
+
 
 
 

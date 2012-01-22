@@ -26,8 +26,15 @@ import Control.Monad
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
 import qualified Data.IntMap as M
+import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
+
+import Data.Xournal.Generic
+import Graphics.Xournal.Render.Generic
+import Graphics.Xournal.Render.BBoxMapPDF
+import Graphics.Rendering.Cairo
+import Graphics.UI.Gtk hiding (get,set)
 
 invalidateSelSingle :: CanvasId -> Maybe BBox 
                        -> PageDrawF
@@ -101,11 +108,6 @@ invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox d
 invalidateDrawBBox :: CanvasId -> BBox -> MainCoroutine () 
 invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
 
--- | Drawing Temporary Selection BBox 
-
-invalidateDrawTempBBox :: CanvasId -> BBox -> Maybe BBox -> MainCoroutine ()
-invalidateDrawTempBBox cid bbox mbbox = 
-  invalidateSelSingle cid mbbox (drawTempBBox bbox) (drawSelTempBBox bbox)
 
 
 -- | Drawing using layer buffer
@@ -120,4 +122,80 @@ invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine ()
 invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelectionInBBox
                                     
 
+{-
+-- | Drawing Temporary Selection BBox 
 
+invalidateDrawTempBBox :: CanvasId -> BBox -> Maybe BBox -> MainCoroutine ()
+invalidateDrawTempBBox cid bbox mbbox = 
+  invalidateSelSingle cid mbbox (drawTempBBox bbox) (drawSelTempBBox bbox)
+-}
+
+invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()
+invalidateTemp cid tempsurface rndr = do 
+  xstate <- lift St.get  
+  let cvsInfo = getCanvasInfo cid xstate 
+      page = either id gcast $ get currentPage cvsInfo 
+      canvas = get drawArea cvsInfo
+      vinfo = get viewInfo cvsInfo      
+  let zmode  = get zoomMode vinfo
+      origin = get viewPortOrigin vinfo
+  geometry <- liftIO $ getCanvasPageGeometry canvas page origin
+  let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+                 $ canvas_size geometry 
+  let mbboxnew = adjustBBoxWithView geometry zmode Nothing
+  win <- liftIO $ widgetGetDrawWindow canvas
+  let xformfunc = transformForPageCoord geometry zmode
+  {- let renderfuxnc = do   
+        xformfunc 
+        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
+        rndr
+        return () -}
+  liftIO $ renderWithDrawable win $ do   
+    setSourceSurface tempsurface 0 0 
+    setOperator OperatorSource 
+    paint 
+    xformfunc 
+    rndr 
+  -- liftIO $ doubleBuffering win geometry xformfunc renderfunc   
+      
+
+{-    renderWithDrawable win $ do 
+      setSourceSurface tempsurface 0 0   
+      setOperator OperatorSource 
+      -- setAntialias AntialiasNone
+      xform
+      paint  -}
+          
+
+--    Right tpage -> return ()  
+
+{-      
+      liftIO (drawf <$> get drawArea 
+                                    <*> pure page 
+                                    <*> get viewInfo 
+                                    <*> pure mbbox
+                                    $ cvsInfo )
+    Right tpage -> liftIO (drawfsel <$> get drawArea 
+                           <*> pure tpage
+  <*> get viewInfo
+                                        <*> pure mbbox
+                                        $ cvsInfo )
+-}
+  {-
+  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
+  case maybeCvs of 
+    Nothing -> return ()
+    Just cvsInfo -> do 
+      case get currentPage cvsInfo of 
+        Left page ->  liftIO (drawf <$> get drawArea 
+                                    <*> pure page 
+                                    <*> get viewInfo 
+                                    <*> pure mbbox
+                                    $ cvsInfo )
+        Right tpage -> liftIO (drawfsel <$> get drawArea 
+                                        <*> pure tpage
+                                        <*> get viewInfo
+                                        <*> pure mbbox
+                                        $ cvsInfo )
+-}
+  

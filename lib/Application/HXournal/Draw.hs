@@ -276,7 +276,8 @@ drawTempBBox bbox canvas page vinfo mbbox@(Just _) = do
   let xformfunc = transformForPageCoord geometry zmode
       renderbelow = do
         transformForPageCoord geometry zmode
-        cairoRenderOption {- (InBBoxOption mbbox) -} (InBBoxOption Nothing) (InBBox page)
+        cairoRenderOption  (InBBoxOption Nothing) (InBBox page)
+          {- (InBBoxOption mbbox) -}
       renderabove = do
         setLineWidth 0.5 
         setSourceRGBA 1.0 0.0 0.0 1.0
@@ -285,7 +286,9 @@ drawTempBBox bbox canvas page vinfo mbbox@(Just _) = do
         rectangle x1 y1 (x2-x1) (y2-y1)
         stroke
         return ()
-  doubleBuffering win geometry xformfunc (renderbelow >> renderabove)
+  doubleBuffering win geometry xformfunc (xformfunc >> renderbelow >> renderabove)
+    
+    -- (xformfunc >> renderabove) 
 
 
 
@@ -301,8 +304,8 @@ drawSelTempBBox bbox canvas tpg vinfo mbbox@(Just _) = do
   win <- widgetGetDrawWindow canvas
   let xformfunc = transformForPageCoord geometry zmode
       renderbelow = do
-        transformForPageCoord geometry zmode
-        cairoRenderOption (InBBoxOption Nothing) (InBBox (gcast page :: TPageBBoxMapPDF))
+        cairoRenderOption (InBBoxOption Nothing) (InBBox page)
+           -- (InBBox (gcast page :: TPageBBoxMapPDF))
         cairoHittedBoxDraw tpg mbbox  
       renderabove = do
         setLineWidth 0.5 
@@ -312,8 +315,8 @@ drawSelTempBBox bbox canvas tpg vinfo mbbox@(Just _) = do
         rectangle x1 y1 (x2-x1) (y2-y1)
         stroke
         return ()
-  doubleBuffering win geometry xformfunc (renderbelow >> renderabove)
-
+  doubleBuffering win geometry xformfunc (xformfunc >> renderbelow >> renderabove)
+    -- (xformfunc >> renderabove)
 
 getRatioFromPageToCanvas :: CanvasPageGeometry -> ZoomMode -> Double 
 getRatioFromPageToCanvas _cpg Original = 1.0 
@@ -421,8 +424,34 @@ doubleBuffering win geometry xform rndr = do
     renderWithDrawable win $ do 
       setSourceSurface tempsurface 0 0   
       setOperator OperatorSource 
+      -- setAntialias AntialiasNone
       xform
       paint 
+  
+  
+-- |   
+{-      
+doubleBufferingPersist :: DrawWindow 
+                       -> Surface
+                       -> Render () 
+                       -> IO ()
+doubleBufferingPersist win sfc xform rndr = do 
+  let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+                 $ canvas_size geometry 
+  renderWith tempsurface $ do 
+    setSourceRGBA 0.5 0.5 0.5 1
+    rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
+    fill 
+    rndr 
+  renderWithDrawable win $ do 
+    setSourceSurface sfc 0 0   
+    setOperator OperatorSource 
+    -- setAntialias AntialiasNone
+    -- xform
+    paint 
+-}
+
+
   
 drawBuf :: PageDrawF 
 drawBuf canvas page vinfo mbbox = do 

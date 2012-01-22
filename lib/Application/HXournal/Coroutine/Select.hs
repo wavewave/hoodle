@@ -33,6 +33,8 @@ import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Compose
 import Control.Category
+import Control.Applicative 
+
 import Data.Label
 import Prelude hiding ((.), id)
 
@@ -44,16 +46,26 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox
 
+import Graphics.Rendering.Cairo
+
 import System.IO.Unsafe
 
 import qualified Data.IntMap as IM
 import Data.Maybe
 
+import Data.Xournal.Generic
+import Graphics.Xournal.Render.Generic
+import Graphics.Xournal.Render.PDFBackground
+import Graphics.Xournal.Render.BBoxMapPDF
+import Graphics.Rendering.Cairo
+import Graphics.UI.Gtk hiding (get,set,disconnect)
+
+
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
 
-selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine () -- Iteratee MyEvent XournalStateIO () 
+selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 selectRectStart cid pcoord = do    
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
@@ -63,35 +75,59 @@ selectRectStart cid pcoord = do
     connidup   <- connectPenUp cvsInfo 
     connidmove <- connectPenMove cvsInfo
     strs <- getAllStrokeBBoxInCurrentLayer
-    case get currentPage cvsInfo of 
+    let action (Right tpage) | hitInSelection tpage (x,y) = 
+          moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) (x,y)
+        action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
+        action (Left page) = newSelectAction page
+        
+        newSelectAction page = do   
+          let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+                         $ canvas_size geometry 
+          let xformfunc = transformForPageCoord geometry zmode
+          let renderfunc = do   
+                xformfunc 
+                cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
+                -- rndr
+                return ()
+          tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
+          liftIO $ renderWith tempsurface $ do 
+              setSourceRGBA 0.5 0.5 0.5 1
+              rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
+              fill 
+              renderfunc 
+              -- rndr 
+          newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs (x,y) (x,y) tempsurface
+          surfaceFinish tempsurface 
+    action (get currentPage cvsInfo)      
+{- 
+
+  case get currentPage cvsInfo of 
       Right tpage -> if hitInSelection tpage (x,y)
                        then do 
-                         moveSelectRectangle cvsInfo 
-                                             geometry 
-                                             zmode 
-                                             connidup 
-                                             connidmove 
-                                             (x,y) 
-                                             (x,y)
                        else 
-                         newSelectRectangle cvsInfo 
-                                            geometry 
-                                            zmode 
-                                            connidup 
-                                            connidmove 
-                                            strs 
-                                            (x,y) 
-                                            (x,y)
-      Left _ -> newSelectRectangle cvsInfo 
-                                   geometry 
-                                   zmode 
-                                   connidup 
-                                   connidmove 
-                                   strs 
-                                   (x,y) 
-                                   (x,y)
+    
+      case get currentPage cvsInfo of 
+        Right tpage -> if hitInSelection tpage (x,y)
+                          then do 
+                            moveSelectRectangle cvsInfo 
+                                               geometry 
+                                               zmode 
+                                               connidup 
+                                               connidmove 
+                                               (x,y) 
+                                               (x,y)
+                          else 
+        Left _ -> newSelectRectangle cvsInfo 
+                                     geometry 
+                                     zmode 
+                                     connidup 
+                                     connidmove 
+                                     strs 
+                                     (x,y) 
+                                     (x,y)
+                                     tempsurface 
 
-      
+-}      
 newSelectRectangle :: CanvasInfo
                    -> CanvasPageGeometry
                    -> ZoomMode
@@ -99,8 +135,9 @@ newSelectRectangle :: CanvasInfo
                    -> [StrokeBBox] 
                    -> (Double,Double)
                    -> (Double,Double)
+                   -> Surface 
                    -> MainCoroutine () 
-newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do  
+newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev tempsurface = do  
   let cid = get canvasId cinfo  
   r <- await 
   case r of 
@@ -110,14 +147,30 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev = do
           prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
-      if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
+      let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
+      -- invalidateDrawTempBBox cid bbox (Just newbbox)
+      xstate <- getSt
+      let cvsInfo = getCanvasInfo cid xstate 
+          page = either id gcast $ get currentPage cvsInfo 
+          render_selection_rect = do
+            setLineWidth 0.5 
+            setSourceRGBA 1.0 0.0 0.0 1.0
+            let (x1,y1) = bbox_upperleft bbox
+                (x2,y2) = bbox_lowerright bbox
+            rectangle x1 y1 (x2-x1) (y2-y1)
+            stroke
+
+          
+      invalidateTemp cid tempsurface (render_selection_rect)
+ {-     -- if not (isBBoxDeltaSmallerThan 1.0 geometry zmode bbox prevbbox) 
          then do -- flip invalidateWithBufInBBox cid . Just $
-                 let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
                  -- invalidateWithBuf cid 
                  -- invalidateDrawBBox cid bbox
-                 invalidateDrawTempBBox cid bbox (Just newbbox)
-         else return ()
-      newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) 
+                 liftIO $ putStrLn $ show bbox 
+         else do 
+           liftIO $ putStrLn $ "what?"
+           return () -}
+      newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) tempsurface
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let epage = get currentPage cinfo 

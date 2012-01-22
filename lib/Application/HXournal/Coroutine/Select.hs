@@ -29,6 +29,7 @@ import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 import Application.HXournal.ModelAction.Layer 
+import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Compose
@@ -53,6 +54,11 @@ import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set,disconnect)
+
+data TempSelection = TempSelection { tempSurface :: Surface  
+                                   , widthHeight :: (Double,Double)
+                                   , numSelectedStrokes :: Int } 
+
 
 uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
 uncurry4 f (x,y,z,w) = f x y z w 
@@ -87,7 +93,21 @@ renderSelectedStroke str = do
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
    
+  
+  -- TPageBBoxMapPDFBuf -> (Double,Double) 
+                  -- -> Render () -> Surface -> IO ()     
+    
+updateTempSelection :: TempSelection -> Render () -> IO ()
+updateTempSelection tempselection  renderfunc = 
+  renderWith (tempSurface tempselection) $ do 
+    let (cw,ch) = widthHeight tempselection
+    setSourceRGBA 0.5 0.5 0.5 1
+    rectangle 0 0 cw ch 
+    fill 
+    renderfunc    
+    
 
+                     
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
@@ -116,12 +136,18 @@ selectRectStart cid pcoord = do
                 cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
                 return ()
           tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
-          liftIO $ renderWith tempsurface $ do 
+          let cwch = (fromIntegral cw, fromIntegral ch)
+              tempselection = TempSelection tempsurface cwch 0 
+          liftIO $ updateTempSelection tempselection renderfunc 
+            -- renderTempPage page cwch renderfunc tempsurface 
+          {- liftIO $ renderWith tempsurface $ do 
               setSourceRGBA 0.5 0.5 0.5 1
               rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
               fill 
-              renderfunc 
-          newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs (x,y) (x,y) tempsurface
+              renderfunc -}
+          newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
+                             (x,y) (x,y) tempselection
+                             -- (TempSelection tempsurface 0)
           surfaceFinish tempsurface 
     action (get currentPage cvsInfo)      
 newSelectRectangle :: CanvasInfo
@@ -131,9 +157,10 @@ newSelectRectangle :: CanvasInfo
                    -> [StrokeBBox] 
                    -> (Double,Double)
                    -> (Double,Double)
-                   -> Surface 
+                   -> TempSelection -- Surface
                    -> MainCoroutine () 
-newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev tempsurface = do  
+newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev 
+                   tempselection = do  
   let cid = get canvasId cinfo  
   r <- await 
   case r of 
@@ -147,10 +174,26 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev temps
       xstate <- getSt
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
-      invalidateTemp cid tempsurface (renderBoxSelection bbox >> mapM_ renderSelectedStroke  hittedstrs ) 
+          numselstrs = length hittedstrs 
+      when (numselstrs /= numSelectedStrokes tempselection) $ do 
+        -- let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+        --                $ canvas_size geometry 
+        let xformfunc = transformForPageCoord geometry zmode
+        let renderfunc = do   
+              xformfunc 
+              cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
+              mapM_ renderSelectedStroke  hittedstrs
+        liftIO $ updateTempSelection tempselection renderfunc
+        liftIO $ putStrLn "selection changed!"
+      invalidateTemp cid (tempSurface tempselection) 
+                         (renderBoxSelection bbox) 
+        
+        --  >> mapM_ renderSelectedStroke  hittedstrs ) 
         
         -- (render_selection_rect)
-      newSelectRectangle cinfo geometry zmode connidmove connidup strs orig (x,y) tempsurface
+      newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
+                         (x,y) 
+                         tempselection { numSelectedStrokes = numselstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let epage = get currentPage cinfo 

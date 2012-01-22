@@ -32,6 +32,8 @@ drawOneStroke s = do
     Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
     Nothing -> setSourceRGBA 0 0 0 1
   setLineWidth . stroke_width $ s 
+  setLineCap LineCapRound
+  setLineJoin LineJoinRound
   drawOneStrokeCurve . stroke_data $ s
   stroke
 

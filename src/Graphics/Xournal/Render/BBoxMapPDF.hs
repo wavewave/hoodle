@@ -127,28 +127,6 @@ tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf p =
       Select (O (Just sz)) = normalizedothers 
   in GPage (get g_dimension p) (get g_background p) (Select . O . Just $ replace s' sz)
        
-  --  GPage (gdimension p) (gbackground p) (gFromList (replace s' others)) 
-    --  (s':others))
-
-      
-{-
-instance GCast TPageBBoxMapPDF TTempPageSelectPDF where
-  gcast = ttempPageSelectPDFFromTPageBBoxMapPDF
-
-ttempPageSelectPDFFromTPageBBoxMapPDF :: TPageBBoxMapPDF -> TTempPageSelectPDF 
-ttempPageSelectPDFFromTPageBBoxMapPDF p = 
-  let -- (x:xs) = gToList (glayers p)
-      normalizedothers = case get g_layers p of 
-        NoSelect [] -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf" 
-        NoSelect (x:xs) -> Select (gFromList (x:xs))
-        Select (O (Nothing)) -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf"
-        others@(Select (O (Just _))) -> others 
-      Select (O (Just sz)) = normalizedothers 
-      curr  = current sz 
-      currtemp = GLayer . TEitherAlterHitted . Left . gToList . gstrokes $ curr
-  in  GPage (get g_dimension p) (get g_background p) 
-            (TLayerSelectInPage currtemp normalizedothers)
--}      
 
 instance GCast TPageBBoxMapPDFBuf TTempPageSelectPDFBuf where
   gcast = ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf
@@ -167,14 +145,7 @@ ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf p =
   in  GPage (get g_dimension p) (get g_background p) 
             (TLayerSelectInPageBuf currtemp normalizedothers)
         
-        
-{-  let (x:xs) = gToList (get g_layers p)
-      l = GLayerBuf { 
-          gbuffer = gbuffer x ,
-          gbstrokes = TEitherAlterHitted . Left . gToList . gbstrokes $ x
-          }
-  in  GPage (gdimension p) (gbackground p) (TLayerSelectInPageBuf l xs) -}
-
+      
 ----------------------      
 
 
@@ -337,6 +308,8 @@ cairoDrawLayerBBoxBuf mbbox layer = do
   case get g_buffer layer of 
     LyBuf (Just sfc) -> do clipBBox mbbox 
                            setSourceSurface sfc 0 0 
+                           -- setOperator OperatorSource
+                           -- setAntialias AntialiasNone
                            paint 
                            resetClip 
     _ -> cairoDrawLayerBBox mbbox (gcast layer :: TLayerBBox)

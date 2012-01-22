@@ -136,12 +136,16 @@ instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
           Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
           Just sfc -> do 
             setSourceSurface sfc 0 0 
+            -- setOperator OperatorSource
+            -- setAntialias AntialiasNone
             paint 
       BkgPDFPDF _ _ _ _ msfc -> do 
         case msfc of 
           Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
           Just sfc -> do 
             setSourceSurface sfc 0 0 
+            -- setOperator OperatorSource
+            -- setAntialias AntialiasNone
             paint 
   cairoRenderOption (DrawPDFInBBox mbbox) (b,dim) = do 
     case b of 

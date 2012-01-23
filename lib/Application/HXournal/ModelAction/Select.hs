@@ -32,6 +32,8 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
+import Data.Algorithm.Diff
+
                   
 isBBoxDeltaSmallerThan :: Double ->CanvasPageGeometry -> ZoomMode 
                           -> BBox -> BBox -> Bool 
@@ -140,3 +142,26 @@ changeStrokeColor pcolor str =
 changeStrokeWidth :: Double -> StrokeBBox -> StrokeBBox
 changeStrokeWidth pwidth str = str { strokebbox_width = pwidth } 
       
+newtype CmpStrokeBBox = CmpStrokeBBox { unCmpStrokeBBox :: StrokeBBox }
+                      deriving Show
+instance Eq CmpStrokeBBox where
+  CmpStrokeBBox str1 == CmpStrokeBBox str2 = strokebbox_bbox str1 == strokebbox_bbox str2  
+  
+isSame :: DI -> Bool   
+isSame B = True 
+isSame _ = False 
+
+separateFS :: [(DI,a)] -> ([a],[a])
+separateFS = foldr f ([],[]) 
+  where f (F,x) (fs,ss) = (x:fs,ss)
+        f (S,x) (fs,ss) = (fs,x:ss)
+        f (B,x) (fs,ss) = (fs,ss)
+        
+getDiffStrokeBBox :: [StrokeBBox] -> [StrokeBBox] -> [(DI, StrokeBBox)]
+getDiffStrokeBBox lst1 lst2 = 
+  let nlst1 = fmap CmpStrokeBBox lst1 
+      nlst2 = fmap CmpStrokeBBox lst2 
+      diffresult = getDiff nlst1 nlst2 
+  in map (\(x,y)->(x,unCmpStrokeBBox y)) diffresult
+
+

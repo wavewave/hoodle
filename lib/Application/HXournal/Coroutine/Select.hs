@@ -57,49 +57,14 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 
-import qualified Data.Function as F (on)
-import Data.Algorithm.Diff
-
-
 data TempSelection = TempSelection { tempSurface :: Surface  
                                    , widthHeight :: (Double,Double)
                                    , tempSelected :: [StrokeBBox]
                                    } 
 
 
-uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
-uncurry4 f (x,y,z,w) = f x y z w 
 
 
-predefinedLassoColor :: (Double,Double,Double,Double)
-predefinedLassoColor = (1.0,116.0/255.0,0,1)
-
-predefinedLassoWidth :: Double 
-predefinedLassoWidth = 4.0
-
-predefinedLassoDash :: ([Double],Double)
-predefinedLassoDash = ([10,5],10) 
-
-renderBoxSelection :: BBox -> Render () 
-renderBoxSelection bbox = do
-  setLineWidth predefinedLassoWidth
-  uncurry4 setSourceRGBA predefinedLassoColor
-  uncurry setDash predefinedLassoDash 
-  let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
-
-renderSelectedStroke :: StrokeBBox -> Render () 
-renderSelectedStroke str = do 
-  let bbox = strokebbox_bbox str 
-  setLineWidth 1.5
-  setSourceRGBA 0 0 1 1
-  cairoOneStrokeSelected str
-  {- let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke -}
    
 updateTempSelection :: TempSelection -> Render () -> Bool -> IO ()
 updateTempSelection tempselection  renderfunc isFullErase = 
@@ -111,9 +76,6 @@ updateTempSelection tempselection  renderfunc isFullErase =
       fill 
     renderfunc    
     
-
-
-                     
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
@@ -175,13 +137,9 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev
           page = either id gcast $ get currentPage cvsInfo 
           numselstrs = length hittedstrs 
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
-            -- filter (not . isSame . fst) $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
-          
-       
       when ((not.null) fstrs || (not.null) sstrs) $ do 
         let xformfunc = transformForPageCoord geometry zmode
-            ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) $ fstrs
-            
+            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
         let renderfunc = do   
               xformfunc 
               case ulbbox of 
@@ -194,18 +152,10 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev
                   clipBBox (Just bbox)
                   mapM_ renderSelectedStroke redrawee 
                 Bottom -> return ()
-                -- (InBBoxOption Nothing) (InBBox page) 
               mapM_ renderSelectedStroke sstrs 
-              -- mapM_ renderSelectedStroke  hittedstrs
         liftIO $ updateTempSelection tempselection renderfunc False
-        -- liftIO $ putStrLn "selection changed!"
-      
       invalidateTemp cid (tempSurface tempselection) 
                          (renderBoxSelection bbox) 
-        
-        --  >> mapM_ renderSelectedStroke  hittedstrs ) 
-        
-        -- (render_selection_rect)
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
                          (x,y) 
                          tempselection { tempSelected = hittedstrs }
@@ -405,31 +355,8 @@ selectPenWidthChanged pwidth = do
       invalidateAll 
 
 
-newtype CmpStrokeBBox = CmpStrokeBBox { unCmpStrokeBBox :: StrokeBBox }
-                      deriving Show
-instance Eq CmpStrokeBBox where
-  CmpStrokeBBox str1 == CmpStrokeBBox str2 = strokebbox_bbox str1 == strokebbox_bbox str2  
-  
-isSame :: DI -> Bool   
-isSame B = True 
-isSame _ = False 
-
-separateFS :: [(DI,a)] -> ([a],[a])
-separateFS = foldr f ([],[]) 
-  where f (F,x) (fs,ss) = (x:fs,ss)
-        f (S,x) (fs,ss) = (fs,x:ss)
-        f (B,x) (fs,ss) = (fs,ss)
-        
-getDiffStrokeBBox :: [StrokeBBox] -> [StrokeBBox] -> [(DI, StrokeBBox)]
-getDiffStrokeBBox lst1 lst2 = 
-  let nlst1 = fmap CmpStrokeBBox lst1 
-      nlst2 = fmap CmpStrokeBBox lst2 
-      diffresult = getDiff nlst1 nlst2 
-  in map (\(x,y)->(x,unCmpStrokeBBox y)) diffresult
 
 
--- getDifferenceBy :: (a -> a -> Bool) -> [a] -> [a] -> [a]
--- getDifferenceBy =
 
 
 

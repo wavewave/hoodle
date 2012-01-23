@@ -33,7 +33,7 @@ import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.HitTest
 import Application.HXournal.Type 
 import Application.HXournal.Device
-
+import Application.HXournal.Util
 
 
 data CanvasPageGeometry = 
@@ -51,6 +51,14 @@ type PageDrawF = DrawingArea -> TPageBBoxMapPDFBuf -> ViewInfo -> Maybe BBox
 type PageDrawFSel = DrawingArea -> TTempPageSelectPDFBuf -> ViewInfo -> Maybe BBox 
                     -> IO ()
 
+predefinedLassoColor :: (Double,Double,Double,Double)
+predefinedLassoColor = (1.0,116.0/255.0,0,0.8)
+
+predefinedLassoWidth :: Double 
+predefinedLassoWidth = 4.0
+
+predefinedLassoDash :: ([Double],Double)
+predefinedLassoDash = ([10,5],10) 
 
 getCanvasPageGeometry :: DrawingArea 
                          -> GPage b s a
@@ -178,7 +186,7 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
   where rendercontent tpg _mbbox = do
           let pg = (gcast tpg :: TPageBBoxMapPDFBuf)
           cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg :: TPageBBoxMapPDF)
-        renderselect tpg mbbox = 
+        renderselect tpg mbbox =  
           cairoHittedBoxDraw tpg mbbox
 
 
@@ -396,10 +404,18 @@ cairoHittedBoxDraw tpg mbbox = do
                 drawbox = do { rectangle x1 y1 (x2-x1) (y2-y1); stroke }
             case mbbox of 
               Just bboxarg -> if hitTestBBoxBBox bbox bboxarg 
-                              then drawbox
+                              then do -- drawbox
+                                drawbox 
                               else return () 
               Nothing -> drawbox 
-      mapM_ oneboxdraw hitstrs                       
+      mapM_ renderSelectedStroke hitstrs  
+      let ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) 
+                   $ hitstrs 
+                   
+      case ulbbox of 
+        Middle bbox -> renderSelectAnchor bbox 
+        _ -> return () 
+        -- (\x-> renderSelectedStroke x >> oneboxdraw x) hitstrs       
       resetClip
     Left _ -> return ()  
 
@@ -480,3 +496,60 @@ drawSelBuf canvas tpg vinfo mbbox = do
         cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
         cairoHittedBoxDraw tpg mbbox  
   doubleBuffering win geometry xformfunc renderfunc   
+
+
+renderBoxSelection :: BBox -> Render () 
+renderBoxSelection bbox = do
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+
+renderSelectedStroke :: StrokeBBox -> Render () 
+renderSelectedStroke str = do 
+  let bbox = strokebbox_bbox str 
+  setLineWidth 1.5
+  setSourceRGBA 0 0 1 1
+  cairoOneStrokeSelected str
+  {- let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke -}
+
+renderSelectAnchor :: BBox -> Render () 
+renderSelectAnchor bbox = do 
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x1-5) (y1-5) 10 10  
+  fill
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x1-5) (y2-5) 10 10  
+  fill
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x2-5) (y1-5) 10 10  
+  fill
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x2-5) (y2-5) 10 10  
+  fill
+  
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (x1-3) (0.5*(y1+y2)-3) 6 6  
+  fill
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (x2-3) (0.5*(y1+y2)-3) 6 6  
+  fill
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (0.5*(x1+x2)-3) (y1-3) 6 6  
+  fill
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
+  fill

@@ -43,6 +43,11 @@ testXournal xojstate = do
   L.putStrLn (builder xojsimple)
 -}
 
+
+uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
+uncurry4 f (x,y,z,w) = f x y z w 
+
+
 maybeRead :: Read a => String -> Maybe a 
 maybeRead = fmap fst . listToMaybe . reads 
 

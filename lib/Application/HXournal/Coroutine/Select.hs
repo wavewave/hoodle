@@ -63,7 +63,6 @@ import Data.Algorithm.Diff
 
 data TempSelection = TempSelection { tempSurface :: Surface  
                                    , widthHeight :: (Double,Double)
-                                   -- , numSelectedStrokes :: Int 
                                    , tempSelected :: [StrokeBBox]
                                    } 
 
@@ -96,10 +95,11 @@ renderSelectedStroke str = do
   let bbox = strokebbox_bbox str 
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1
-  let (x1,y1) = bbox_upperleft bbox
+  cairoOneStrokeSelected str
+  {- let (x1,y1) = bbox_upperleft bbox
       (x2,y2) = bbox_lowerright bbox
   rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
+  stroke -}
    
 updateTempSelection :: TempSelection -> Render () -> Bool -> IO ()
 updateTempSelection tempselection  renderfunc isFullErase = 

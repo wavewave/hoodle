@@ -47,6 +47,23 @@ clearBBox (Just (BBox (x1,y1) (x2,y2))) = do
     restore
 
 
+cairoOneStrokeSelected :: StrokeBBox -> Render ()
+cairoOneStrokeSelected sbbox = do 
+  let s = gToStroke sbbox 
+  case M.lookup (stroke_color s) predefined_pencolor of 
+    Just (r,g,b,a) -> setSourceRGBA r g b a
+    Nothing -> setSourceRGBA 0 0 0 1 
+  setLineWidth (stroke_width s * 4.0) 
+  setLineCap LineCapRound
+  setLineJoin LineJoinRound
+  drawOneStrokeCurve . stroke_data $ s 
+  stroke 
+  setSourceRGBA 1 1 1 1
+  setLineWidth (stroke_width s)
+  drawOneStrokeCurve . stroke_data $ s 
+  stroke
+
+  
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
 cairoOneStrokeBBoxOnly sbbox = do  
   let s = gToStroke sbbox

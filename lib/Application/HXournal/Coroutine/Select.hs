@@ -259,12 +259,13 @@ resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox _
             HandleTR -> BBox (ox1,y) (x,oy2)
             HandleBL -> BBox (x,oy1) (ox2,y)
             HandleBR -> BBox (ox1,oy1) (x,y)
-            _ -> error "not implemented"
+            HandleTM -> BBox (ox1,y) (ox2,oy2)
+            HandleBM -> BBox (ox1,oy1) (ox2,y)
+            HandleML -> BBox (x,oy1) (ox2,oy2)
+            HandleMR -> BBox (ox1,oy1) (x,oy2)
           SelectState txoj = get xournalstate xstate
           epage = get currentPage cinfo 
           pagenum = get currentPageNum cinfo
-      liftIO $ putStrLn ("orig = " ++ show origbbox) 
-      liftIO $ putStrLn ("new = " ++ show newbbox)
       case epage of 
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
@@ -273,44 +274,12 @@ resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox _
           commit . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
                  $ xstate 
-        Left _ -> error "this is impossible, in moveSelectRectangle" 
+        Left _ -> error "this is impossible, in resizeSelectRectangle" 
       disconnect connidmove
       disconnect connidup 
       invalidateAll
-         
       return ()    
-{-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      let offset = (x-x0,y-y0)
-          SelectState txoj = get xournalstate xstate
-          epage = get currentPage cinfo 
-          pagenum = get currentPageNum cinfo
-      case epage of 
-        Right tpage -> do 
-          let newtpage = changeSelectionByOffset tpage offset
-          newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
-          commit . set xournalstate (SelectState newtxoj)
-                 . updatePageAll (SelectState newtxoj) 
-                 $ xstate 
-        Left _ -> error "this is impossible, in moveSelectRectangle" 
-      disconnect connidmove
-      disconnect connidup 
-      invalidateAll -} 
     _ -> return () 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 deleteSelection :: MainCoroutine ()

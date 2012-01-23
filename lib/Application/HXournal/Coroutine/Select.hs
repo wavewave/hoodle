@@ -64,7 +64,7 @@ data TempSelection = TempSelection { tempSurface :: Surface
 
 
 
-
+-- | update the content of temp selection. should not be often updated
    
 updateTempSelection :: TempSelection -> Render () -> Bool -> IO ()
 updateTempSelection tempselection  renderfunc isFullErase = 
@@ -93,6 +93,13 @@ selectRectStart cid pcoord = do
     strs <- getAllStrokeBBoxInCurrentLayer
     let action (Right tpage) | hitInSelection tpage (x,y) = 
           moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) (x,y)
+        action (Right tpage) | hitInHandle tpage (x,y) = 
+          case getULBBoxFromSelected tpage of 
+            Middle bbox -> do 
+              maybe (return ()) 
+                    (\handle -> resizeSelectRectangle handle cvsInfo geometry zmode connidup connidmove bbox (x,y))
+                    $ checkIfHandleGrasped bbox (x,y)
+            _ -> return ()
         action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
         action (Left page) = newSelectAction page
         newSelectAction page = do   
@@ -217,7 +224,7 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
           pagenum = get currentPageNum cinfo
       case epage of 
         Right tpage -> do 
-          let newtpage = changeSelectionByOffset tpage offset
+          let newtpage = changeSelectionByOffset offset tpage 
           newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
           commit . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
@@ -228,6 +235,84 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev 
       invalidateAll 
     _ -> return ()
  
+resizeSelectRectangle :: Handle 
+                         -> CanvasInfo
+                         -> CanvasPageGeometry
+                         -> ZoomMode
+                         -> ConnectId DrawingArea 
+                         -> ConnectId DrawingArea
+                         -> BBox
+                         -> (Double,Double)
+                         -> MainCoroutine ()
+resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox _prev = do
+  xstate <- getSt
+  r <- await 
+  case r of 
+    PenMove _cid' pcoord -> do 
+      let (x,y) = device2pageCoord geometry zmode pcoord 
+      resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox (x,y) 
+    PenUp _cid' pcoord -> do 
+      let (x,y) = device2pageCoord geometry zmode pcoord 
+          BBox (ox1,oy1) (ox2,oy2) = origbbox
+          newbbox = case handle of
+            HandleTL -> BBox (x,y) (ox2,oy2)
+            HandleTR -> BBox (ox1,y) (x,oy2)
+            HandleBL -> BBox (x,oy1) (ox2,y)
+            HandleBR -> BBox (ox1,oy1) (x,y)
+            _ -> error "not implemented"
+          SelectState txoj = get xournalstate xstate
+          epage = get currentPage cinfo 
+          pagenum = get currentPageNum cinfo
+      liftIO $ putStrLn ("orig = " ++ show origbbox) 
+      liftIO $ putStrLn ("new = " ++ show newbbox)
+      case epage of 
+        Right tpage -> do 
+          let sfunc = scaleFromToBBox origbbox newbbox
+          let newtpage = changeSelectionBy sfunc tpage 
+          newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
+          commit . set xournalstate (SelectState newtxoj)
+                 . updatePageAll (SelectState newtxoj) 
+                 $ xstate 
+        Left _ -> error "this is impossible, in moveSelectRectangle" 
+      disconnect connidmove
+      disconnect connidup 
+      invalidateAll
+         
+      return ()    
+{-      let (x,y) = device2pageCoord geometry zmode pcoord 
+      let offset = (x-x0,y-y0)
+          SelectState txoj = get xournalstate xstate
+          epage = get currentPage cinfo 
+          pagenum = get currentPageNum cinfo
+      case epage of 
+        Right tpage -> do 
+          let newtpage = changeSelectionByOffset tpage offset
+          newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
+          commit . set xournalstate (SelectState newtxoj)
+                 . updatePageAll (SelectState newtxoj) 
+                 $ xstate 
+        Left _ -> error "this is impossible, in moveSelectRectangle" 
+      disconnect connidmove
+      disconnect connidup 
+      invalidateAll -} 
+    _ -> return () 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"

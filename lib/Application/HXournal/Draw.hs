@@ -413,7 +413,7 @@ cairoHittedBoxDraw tpg mbbox = do
                    $ hitstrs 
                    
       case ulbbox of 
-        Middle bbox -> renderSelectAnchor bbox 
+        Middle bbox -> renderSelectHandle bbox 
         _ -> return () 
         -- (\x-> renderSelectedStroke x >> oneboxdraw x) hitstrs       
       resetClip
@@ -519,8 +519,8 @@ renderSelectedStroke str = do
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke -}
 
-renderSelectAnchor :: BBox -> Render () 
-renderSelectAnchor bbox = do 
+renderSelectHandle :: BBox -> Render () 
+renderSelectHandle bbox = do 
   setLineWidth predefinedLassoWidth
   uncurry4 setSourceRGBA predefinedLassoColor
   uncurry setDash predefinedLassoDash 

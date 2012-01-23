@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.ModelAction.Select 
@@ -15,7 +14,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Draw
 
-
+import Data.Monoid
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type
@@ -34,7 +33,28 @@ import Prelude hiding ((.),id)
 
 import Data.Algorithm.Diff
 
-                  
+
+data Handle = HandleTL
+            | HandleTR     
+            | HandleBL
+            | HandleBR
+            | HandleTM
+            | HandleBM
+            | HandleML
+            | HandleMR
+            deriving (Show)
+                     
+
+scaleFromToBBox :: BBox -> BBox -> (Double,Double) -> (Double,Double)
+scaleFromToBBox (BBox (ox1,oy1) (ox2,oy2)) (BBox (nx1,ny1) (nx2,ny2)) (x,y) = 
+  let scalex = (nx2-nx1) / (ox2-ox1)
+      scaley = (ny2-ny1) / (oy2-oy1) 
+      -- offsetx = nx1 - ox1
+      -- offsety = ny1 - oy1
+      nx = (x-ox1)*scalex+nx1
+      ny = (y-oy1)*scaley+ny1
+  in (nx,ny)
+
 isBBoxDeltaSmallerThan :: Double ->CanvasPageGeometry -> ZoomMode 
                           -> BBox -> BBox -> Bool 
 isBBoxDeltaSmallerThan delta cpg zmode 
@@ -48,6 +68,15 @@ isBBoxDeltaSmallerThan delta cpg zmode
      && (x12'-x22' > (-delta) && x12'-x22' < delta)
      && (y11'-y21' > (-delta) && y12'-y22' < delta)
 
+changeStrokeBy :: ((Double,Double)->(Double,Double)) -> StrokeBBox -> StrokeBBox
+changeStrokeBy func (StrokeBBox t c w ds bbox) = 
+  let change ( x :!: y )  = let (nx,ny) = func (x,y) 
+                            in nx :!: ny
+      newds = map change ds 
+      newbbox = mkbbox newds 
+  in  StrokeBBox t c w newds newbbox
+
+{-
 changeStrokeByOffset :: (Double,Double) -> StrokeBBox -> StrokeBBox 
 changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) = 
   let offset ( x :!: y )  = (x+offx) :!: (y+offy)
@@ -55,9 +84,11 @@ changeStrokeByOffset (offx,offy) (StrokeBBox t c w ds bbox) =
       BBox (x1,y1) (x2,y2) = bbox 
       newbbox = BBox (x1+offx,y1+offy) (x2+offx,y2+offy)
   in  StrokeBBox t c w newds newbbox
+-}
 
-changeSelectionByOffset :: TTempPageSelectPDFBuf -> (Double,Double) 
-                           -> TTempPageSelectPDFBuf
+changeSelectionByOffset :: (Double,Double) -> TTempPageSelectPDFBuf -> TTempPageSelectPDFBuf
+changeSelectionByOffset (offx,offy) = changeSelectionBy (\(x,y)->(x+offx,y+offy))
+{- 
 changeSelectionByOffset tpage off = 
   let ls = glayers tpage
       slayer = gselectedlayerbuf ls
@@ -71,6 +102,25 @@ changeSelectionByOffset tpage off =
                             alist 
              layer' = GLayerBuf buf . TEitherAlterHitted . Right $ alist'
          in tpage { glayers = ls { gselectedlayerbuf = layer' }}
+-}
+
+
+changeSelectionBy :: ((Double,Double) -> (Double,Double))
+                     -> TTempPageSelectPDFBuf -> TTempPageSelectPDFBuf
+changeSelectionBy func tpage = 
+  let ls = glayers tpage
+      slayer = gselectedlayerbuf ls
+      buf = get g_buffer slayer 
+      activelayer = unTEitherAlterHitted . get g_bstrokes $ slayer 
+  in case activelayer of 
+       Left _ -> tpage 
+       Right alist -> 
+         let alist' =fmapAL id 
+                            (Hitted . map (changeStrokeBy func) . unHitted) 
+                            alist 
+             layer' = GLayerBuf buf . TEitherAlterHitted . Right $ alist'
+         in tpage { glayers = ls { gselectedlayerbuf = layer' }}
+
 
 updateTempXournalSelect :: TTempXournalSelectPDFBuf 
                            -> TTempPageSelectPDFBuf
@@ -105,6 +155,34 @@ hitInSelection tpage point =
          let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
          in  any (flip hitTestBBoxPoint point) bboxes 
     
+getULBBoxFromSelected :: TTempPageSelectPDFBuf -> ULMaybe BBox 
+getULBBoxFromSelected tpage = 
+  let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
+  in case activelayer of 
+       Left _ -> Bottom
+       Right alist -> 
+         unUnion . mconcat . fmap (Union . Middle . strokebbox_bbox) . takeHittedStrokes $ alist 
+     
+hitInHandle :: TTempPageSelectPDFBuf -> (Double,Double) -> Bool 
+hitInHandle tpage point = 
+  case getULBBoxFromSelected tpage of 
+    Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox point)
+    _ -> False
+    
+{-  let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
+  in case activelayer of 
+       Left _ -> False   
+       Right alist -> 
+         let ulbbox = unUnion . mconcat . fmap (Union . Middle . strokebbox_bbox) . takeHittledStroke $ alist 
+         in case ulbbox of 
+              Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox)
+              _ -> False
+         -- let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
+         -- in  any (flip hitTestBBoxPoint point) bboxes 
+-}
+
+
+
 takeHittedStrokes :: AlterList [StrokeBBox] (Hitted StrokeBBox) -> [StrokeBBox] 
 takeHittedStrokes = concatMap unHitted . getB 
 
@@ -164,4 +242,14 @@ getDiffStrokeBBox lst1 lst2 =
       diffresult = getDiff nlst1 nlst2 
   in map (\(x,y)->(x,unCmpStrokeBBox y)) diffresult
 
+            
+checkIfHandleGrasped :: BBox -> (Double,Double) -> Maybe Handle
+checkIfHandleGrasped bbox@(BBox (ulx,uly) (lrx,lry)) (x,y)  
+  | hitTestBBoxPoint (BBox (ulx-5,uly-5) (ulx+5,uly+5)) (x,y) = Just HandleTL
+  | hitTestBBoxPoint (BBox (lrx-5,uly-5) (lrx+5,uly+5)) (x,y) = Just HandleTR
+  | hitTestBBoxPoint (BBox (ulx-5,lry-5) (ulx+5,lry+5)) (x,y) = Just HandleBL
+  | hitTestBBoxPoint (BBox (lrx-5,lry-5) (lrx+5,lry+5)) (x,y) = Just HandleBR
+  | otherwise = Nothing  
+                
 
+                                                               

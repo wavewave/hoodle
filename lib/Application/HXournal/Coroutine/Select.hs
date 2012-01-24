@@ -83,6 +83,21 @@ updateTempSelection tempselection  renderfunc isFullErase =
       fill 
     renderfunc    
     
+dtime_bound :: NominalDiffTime 
+dtime_bound = realToFrac (picosecondsToDiffTime 100000000000)
+
+getNewCoordTime :: ((Double,Double),UTCTime) 
+                   -> (Double,Double)
+                   -> IO (Bool,((Double,Double),UTCTime))
+getNewCoordTime (prev,otime) (x,y) = do 
+    ntime <- getCurrentTime 
+    let dtime = diffUTCTime ntime otime 
+        willUpdate = dtime > dtime_bound
+        (nprev,nntime) = if dtime > dtime_bound 
+                         then ((x,y),ntime)
+                         else (prev,otime)
+    return (willUpdate,(nprev,nntime))
+
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
@@ -98,8 +113,9 @@ selectRectStart cid pcoord = do
     connidup   <- connectPenUp cvsInfo 
     connidmove <- connectPenMove cvsInfo
     strs <- getAllStrokeBBoxInCurrentLayer
+    ctime <- liftIO $ getCurrentTime
     let action (Right tpage) | hitInSelection tpage (x,y) = 
-          moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) (x,y)
+          moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) ((x,y),ctime)
         action (Right tpage) | hitInHandle tpage (x,y) = 
           case getULBBoxFromSelected tpage of 
             Middle bbox -> do 
@@ -121,7 +137,6 @@ selectRectStart cid pcoord = do
           let cwch = (fromIntegral cw, fromIntegral ch)
               tempselection = mkTempSelection tempsurface cwch []
           liftIO $ updateTempSelection tempselection renderfunc True
-          ctime <- liftIO $ getCurrentTime
           newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
                              (x,y) ((x,y),ctime) tempselection
           surfaceFinish tempsurface 
@@ -153,13 +168,14 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
           page = either id gcast $ get currentPage cvsInfo 
           numselstrs = length hittedstrs 
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
+      {-
       ntime <- liftIO $ getCurrentTime 
-      let dtime_bound = realToFrac (picosecondsToDiffTime 100000000000) :: NominalDiffTime 
-          dtime = diffUTCTime ntime otime 
+      let dtime = diffUTCTime ntime otime 
           willUpdate = dtime > dtime_bound -- || (not.null) fstrs || (not.null) sstrs
           (nprev,nntime) = if dtime > dtime_bound then ((x,y),ntime)
                                                   else (prev,otime)
-            
+      -}
+      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
         let xformfunc = transformForPageCoord geometry zmode
             ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
@@ -181,7 +197,7 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
         invalidateTemp cid (tempSurface tempselection) 
                            (renderBoxSelection bbox) 
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
-                         (nprev,nntime)
+                         (ncoord,ntime)
                          tempselection { tempSelectInfo = hittedstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
@@ -224,15 +240,17 @@ moveSelectRectangle :: CanvasInfo
                     -> ConnectId DrawingArea 
                     -> ConnectId DrawingArea
                     -> (Double,Double)
-                    -> (Double,Double)
+                    -> ((Double,Double),UTCTime)
                     -> MainCoroutine ()
-moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) _prev = do
+moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) 
+                    (prev,otime) = do
   xstate <- getSt
   r <- await 
   case r of 
     PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      moveSelectRectangle cinfo geometry zmode connidmove connidup orig (x,y) 
+      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
+      moveSelectRectangle cinfo geometry zmode connidmove connidup orig (ncoord,ntime) 
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let offset = (x-x0,y-y0)

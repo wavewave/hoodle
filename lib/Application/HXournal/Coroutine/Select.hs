@@ -49,6 +49,7 @@ import System.IO.Unsafe
 import qualified Data.IntMap as IM
 import Data.Maybe
 import Data.Monoid 
+import Data.Time.Clock
 import Data.Xournal.Generic
 -- import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.Generic
@@ -57,16 +58,22 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 
-data TempSelection = TempSelection { tempSurface :: Surface  
-                                   , widthHeight :: (Double,Double)
-                                   , tempSelected :: [StrokeBBox]
-                                   } 
+data TempSelectRender a = TempSelectRender { tempSurface :: Surface  
+                                           , widthHeight :: (Double,Double)
+                                           , tempSelectInfo :: a 
+                                           } 
 
+type TempSelection = TempSelectRender [StrokeBBox]
 
+tempSelected :: TempSelection -> [StrokeBBox]
+tempSelected = tempSelectInfo 
+
+mkTempSelection :: Surface -> (Double,Double) -> [StrokeBBox] -> TempSelection
+mkTempSelection sfc (w,h) strs = TempSelectRender sfc (w,h) strs 
 
 -- | update the content of temp selection. should not be often updated
    
-updateTempSelection :: TempSelection -> Render () -> Bool -> IO ()
+updateTempSelection :: TempSelectRender a -> Render () -> Bool -> IO ()
 updateTempSelection tempselection  renderfunc isFullErase = 
   renderWith (tempSurface tempselection) $ do 
     when isFullErase $ do 
@@ -112,10 +119,11 @@ selectRectStart cid pcoord = do
                 return ()
           tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
           let cwch = (fromIntegral cw, fromIntegral ch)
-              tempselection = TempSelection tempsurface cwch []
+              tempselection = mkTempSelection tempsurface cwch []
           liftIO $ updateTempSelection tempselection renderfunc True
+          ctime <- liftIO $ getCurrentTime
           newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
-                             (x,y) (x,y) tempselection
+                             (x,y) ((x,y),ctime) tempselection
           surfaceFinish tempsurface 
     action (get currentPage cvsInfo)      
 newSelectRectangle :: CanvasInfo
@@ -124,10 +132,11 @@ newSelectRectangle :: CanvasInfo
                    -> ConnectId DrawingArea -> ConnectId DrawingArea
                    -> [StrokeBBox] 
                    -> (Double,Double)
-                   -> (Double,Double)
+                   -> ((Double,Double),UTCTime)
                    -> TempSelection 
                    -> MainCoroutine () 
-newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev 
+newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
+                   (prev,otime) 
                    tempselection = do  
   let cid = get canvasId cinfo  
   r <- await 
@@ -144,10 +153,17 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev
           page = either id gcast $ get currentPage cvsInfo 
           numselstrs = length hittedstrs 
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
-      when ((not.null) fstrs || (not.null) sstrs) $ do 
+      ntime <- liftIO $ getCurrentTime 
+      let dtime_bound = realToFrac (picosecondsToDiffTime 100000000000) :: NominalDiffTime 
+          dtime = diffUTCTime ntime otime 
+          willUpdate = dtime > dtime_bound -- || (not.null) fstrs || (not.null) sstrs
+          (nprev,nntime) = if dtime > dtime_bound then ((x,y),ntime)
+                                                  else (prev,otime)
+            
+      when ((not.null) fstrs || (not.null) sstrs ) $ do 
         let xformfunc = transformForPageCoord geometry zmode
             ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
-        let renderfunc = do   
+            renderfunc = do   
               xformfunc 
               case ulbbox of 
                 Top -> do 
@@ -161,11 +177,12 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig prev
                 Bottom -> return ()
               mapM_ renderSelectedStroke sstrs 
         liftIO $ updateTempSelection tempselection renderfunc False
-      invalidateTemp cid (tempSurface tempselection) 
-                         (renderBoxSelection bbox) 
+      when willUpdate $  
+        invalidateTemp cid (tempSurface tempselection) 
+                           (renderBoxSelection bbox) 
       newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
-                         (x,y) 
-                         tempselection { tempSelected = hittedstrs }
+                         (nprev,nntime)
+                         tempselection { tempSelectInfo = hittedstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let epage = get currentPage cinfo 

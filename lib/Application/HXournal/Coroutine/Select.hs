@@ -99,6 +99,27 @@ getNewCoordTime (prev,otime) (x,y) = do
     return (willUpdate,(nprev,nntime))
 
 
+createTempSelectRender :: CanvasPageGeometry -> ZoomMode 
+                          -> TPageBBoxMapPDFBuf
+                          -> a 
+                          -> MainCoroutine (TempSelectRender a) 
+createTempSelectRender geometry zmode page x = do 
+    let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
+                   $ canvas_size geometry 
+        cwch = (fromIntegral cw, fromIntegral ch)
+                   
+        xformfunc = transformForPageCoord geometry zmode
+        renderfunc = do   
+          xformfunc 
+          cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
+          return ()
+    tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
+    let tempselection = TempSelectRender tempsurface cwch x
+    liftIO $ updateTempSelection tempselection renderfunc True
+    return tempselection 
+
+
+
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
@@ -126,6 +147,13 @@ selectRectStart cid pcoord = do
         action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
         action (Left page) = newSelectAction page
         newSelectAction page = do   
+          tempselection <- createTempSelectRender geometry zmode page [] 
+          newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
+                             (x,y) ((x,y),ctime) tempselection
+          surfaceFinish (tempSurface tempselection)
+    action (get currentPage cvsInfo)      
+
+  {-
           let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
                          $ canvas_size geometry 
           let xformfunc = transformForPageCoord geometry zmode
@@ -136,11 +164,10 @@ selectRectStart cid pcoord = do
           tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
           let cwch = (fromIntegral cw, fromIntegral ch)
               tempselection = mkTempSelection tempsurface cwch []
-          liftIO $ updateTempSelection tempselection renderfunc True
-          newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
-                             (x,y) ((x,y),ctime) tempselection
-          surfaceFinish tempsurface 
-    action (get currentPage cvsInfo)      
+          liftIO $ updateTempSelection tempselection renderfunc True -}
+  
+
+
 newSelectRectangle :: CanvasInfo
                    -> CanvasPageGeometry
                    -> ZoomMode
@@ -168,13 +195,6 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
           page = either id gcast $ get currentPage cvsInfo 
           numselstrs = length hittedstrs 
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
-      {-
-      ntime <- liftIO $ getCurrentTime 
-      let dtime = diffUTCTime ntime otime 
-          willUpdate = dtime > dtime_bound -- || (not.null) fstrs || (not.null) sstrs
-          (nprev,nntime) = if dtime > dtime_bound then ((x,y),ntime)
-                                                  else (prev,otime)
-      -}
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
         let xformfunc = transformForPageCoord geometry zmode

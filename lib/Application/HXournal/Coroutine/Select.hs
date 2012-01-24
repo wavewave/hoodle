@@ -52,6 +52,7 @@ import Data.Monoid
 import Data.Time.Clock
 import Data.Xournal.Generic
 -- import Graphics.Xournal.Render.BBox
+import Graphics.Xournal.Render.Simple
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -258,9 +259,16 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0)
   xstate <- getSt
   r <- await 
   case r of 
-    PenMove _cid' pcoord -> do 
+    PenMove cid pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
+      when willUpdate $ do 
+        let strs = tempSelectInfo tempselection
+            newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
+            drawselection = do 
+              mapM_ (drawOneStroke . gToStroke) newstrs  
+        invalidateTemp cid (tempSurface tempselection) drawselection
+      
       moveSelectRectangle cinfo geometry zmode connidmove connidup orig (ncoord,ntime) tempselection
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 

@@ -115,7 +115,10 @@ changeSelectionBy func tpage =
 -- | special case of offset modification
 
 changeSelectionByOffset :: (Double,Double) -> TTempPageSelectPDFBuf -> TTempPageSelectPDFBuf
-changeSelectionByOffset (offx,offy) = changeSelectionBy (\(x,y)->(x+offx,y+offy))
+changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
+
+offsetFunc :: (Double,Double) -> (Double,Double) -> (Double,Double) 
+offsetFunc (offx,offy) = \(x,y)->(x+offx,y+offy)
 
 
 

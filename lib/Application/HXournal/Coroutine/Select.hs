@@ -143,11 +143,9 @@ selectRectStart cid pcoord = do
           surfaceFinish (tempSurface tempselection)
         action (Right tpage) | hitInHandle tpage (x,y) = 
           case getULBBoxFromSelected tpage of 
-            Middle bbox -> do 
-              maybe (return ()) 
-                    (\handle -> resizeSelectRectangle handle cvsInfo geometry zmode connidup connidmove bbox (x,y))
-                    $ checkIfHandleGrasped bbox (x,y)
-            _ -> return ()
+            Middle bbox ->  
+              maybe (return ()) (\handle -> do { tempselection <- createTempSelectRender geometry zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelectRectangle handle cvsInfo geometry zmode connidup connidmove bbox ((x,y),ctime) tempselection ; surfaceFinish (tempSurface tempselection) }) (checkIfHandleGrasped bbox (x,y))
+            _ -> return () 
         action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
         action (Left page) = newSelectAction page
         newSelectAction page = do   
@@ -268,7 +266,6 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0)
             drawselection = do 
               mapM_ (drawOneStroke . gToStroke) newstrs  
         invalidateTemp cid (tempSurface tempselection) drawselection
-      
       moveSelectRectangle cinfo geometry zmode connidmove connidup orig (ncoord,ntime) tempselection
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
@@ -296,27 +293,30 @@ resizeSelectRectangle :: Handle
                          -> ConnectId DrawingArea 
                          -> ConnectId DrawingArea
                          -> BBox
-                         -> (Double,Double)
+                         -> ((Double,Double),UTCTime)
+                         -> TempSelection
                          -> MainCoroutine ()
-resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox _prev = do
+resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox 
+                      (prev,otime) tempselection = do
   xstate <- getSt
   r <- await 
   case r of 
-    PenMove _cid' pcoord -> do 
+    PenMove cid pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
-      resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox (x,y) 
-    PenUp _cid' pcoord -> do 
+      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
+      when willUpdate $ do 
+        let strs = tempSelectInfo tempselection
+            sfunc = scaleFromToBBox origbbox newbbox
+            newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)            
+            newstrs = map (changeStrokeBy sfunc) strs
+            drawselection = do 
+              mapM_ (drawOneStroke . gToStroke) newstrs  
+        invalidateTemp cid (tempSurface tempselection) drawselection
+      resizeSelectRectangle handle cinfo geometry zmode connidmove connidup 
+                            origbbox (ncoord,ntime) tempselection
+    PenUp _cid pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
-          BBox (ox1,oy1) (ox2,oy2) = origbbox
-          newbbox = case handle of
-            HandleTL -> BBox (x,y) (ox2,oy2)
-            HandleTR -> BBox (ox1,y) (x,oy2)
-            HandleBL -> BBox (x,oy1) (ox2,y)
-            HandleBR -> BBox (ox1,oy1) (x,y)
-            HandleTM -> BBox (ox1,y) (ox2,oy2)
-            HandleBM -> BBox (ox1,oy1) (ox2,y)
-            HandleML -> BBox (x,oy1) (ox2,oy2)
-            HandleMR -> BBox (ox1,oy1) (x,oy2)
+          newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
           SelectState txoj = get xournalstate xstate
           epage = get currentPage cinfo 
           pagenum = get currentPageNum cinfo
@@ -335,6 +335,18 @@ resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox _
       return ()    
     _ -> return () 
 
+{-
+          BBox (ox1,oy1) (ox2,oy2) = origbbox
+          newbbox = case handle of
+            HandleTL -> BBox (x,y) (ox2,oy2)
+            HandleTR -> BBox (ox1,y) (x,oy2)
+            HandleBL -> BBox (x,oy1) (ox2,y)
+            HandleBR -> BBox (ox1,oy1) (x,y)
+            HandleTM -> BBox (ox1,y) (ox2,oy2)
+            HandleBM -> BBox (ox1,oy1) (ox2,y)
+            HandleML -> BBox (x,oy1) (ox2,oy2)
+            HandleMR -> BBox (ox1,oy1) (x,oy2)
+-}
 
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 

@@ -255,5 +255,16 @@ checkIfHandleGrasped bbox@(BBox (ulx,uly) (lrx,lry)) (x,y)
   | hitTestBBoxPoint (BBox (lrx-5,0.5*(uly+lry)-5) (lrx+5,0.5*(uly+lry)+5)) (x,y) = Just HandleMR
   | otherwise = Nothing  
                 
+getNewBBoxFromHandlePos :: Handle -> BBox -> (Double,Double) -> BBox
+getNewBBoxFromHandlePos handle (BBox (ox1,oy1) (ox2,oy2)) (x,y) =           
+    case handle of
+      HandleTL -> BBox (x,y) (ox2,oy2)
+      HandleTR -> BBox (ox1,y) (x,oy2)
+      HandleBL -> BBox (x,oy1) (ox2,y)
+      HandleBR -> BBox (ox1,oy1) (x,y)
+      HandleTM -> BBox (ox1,y) (ox2,oy2)
+      HandleBM -> BBox (ox1,oy1) (ox2,y)
+      HandleML -> BBox (x,oy1) (ox2,oy2)
+      HandleMR -> BBox (ox1,oy1) (x,oy2)
 
                                                                

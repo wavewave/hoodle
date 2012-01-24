@@ -107,7 +107,6 @@ createTempSelectRender geometry zmode page x = do
     let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
                    $ canvas_size geometry 
         cwch = (fromIntegral cw, fromIntegral ch)
-                   
         xformfunc = transformForPageCoord geometry zmode
         renderfunc = do   
           xformfunc 
@@ -117,7 +116,6 @@ createTempSelectRender geometry zmode page x = do
     let tempselection = TempSelectRender tempsurface cwch x
     liftIO $ updateTempSelection tempselection renderfunc True
     return tempselection 
-
 
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
@@ -135,8 +133,13 @@ selectRectStart cid pcoord = do
     connidmove <- connectPenMove cvsInfo
     strs <- getAllStrokeBBoxInCurrentLayer
     ctime <- liftIO $ getCurrentTime
-    let action (Right tpage) | hitInSelection tpage (x,y) = 
-          moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) ((x,y),ctime)
+    let action (Right tpage) | hitInSelection tpage (x,y) = do
+          tempselection <- createTempSelectRender 
+                             geometry zmode 
+                             (gcast tpage :: TPageBBoxMapPDFBuf)
+                             (getSelectedStrokes tpage)
+          moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) ((x,y),ctime) tempselection 
+          surfaceFinish (tempSurface tempselection)
         action (Right tpage) | hitInHandle tpage (x,y) = 
           case getULBBoxFromSelected tpage of 
             Middle bbox -> do 
@@ -152,19 +155,6 @@ selectRectStart cid pcoord = do
                              (x,y) ((x,y),ctime) tempselection
           surfaceFinish (tempSurface tempselection)
     action (get currentPage cvsInfo)      
-
-  {-
-          let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
-                         $ canvas_size geometry 
-          let xformfunc = transformForPageCoord geometry zmode
-          let renderfunc = do   
-                xformfunc 
-                cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-                return ()
-          tempsurface <- liftIO $ createImageSurface FormatARGB32 cw ch  
-          let cwch = (fromIntegral cw, fromIntegral ch)
-              tempselection = mkTempSelection tempsurface cwch []
-          liftIO $ updateTempSelection tempselection renderfunc True -}
   
 
 
@@ -261,16 +251,17 @@ moveSelectRectangle :: CanvasInfo
                     -> ConnectId DrawingArea
                     -> (Double,Double)
                     -> ((Double,Double),UTCTime)
+                    -> TempSelection
                     -> MainCoroutine ()
 moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) 
-                    (prev,otime) = do
+                    (prev,otime) tempselection = do
   xstate <- getSt
   r <- await 
   case r of 
     PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
-      moveSelectRectangle cinfo geometry zmode connidmove connidup orig (ncoord,ntime) 
+      moveSelectRectangle cinfo geometry zmode connidmove connidup orig (ncoord,ntime) tempselection
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let offset = (x-x0,y-y0)

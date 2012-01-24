@@ -73,16 +73,30 @@ changeStrokeBy func (StrokeBBox t c w ds bbox) =
       newbbox = mkbbox newds 
   in  StrokeBBox t c w newds newbbox
 
+getActiveLayer :: TTempPageSelectPDFBuf -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
+getActiveLayer tpage = 
+  let ls = glayers tpage
+      slayer = gselectedlayerbuf ls
+      buf = get g_buffer slayer 
+  in unTEitherAlterHitted . get g_bstrokes $ slayer 
+
+
+getSelectedStrokes :: TTempPageSelectPDFBuf -> [StrokeBBox]
+getSelectedStrokes tpage =   
+  let activelayer = getActiveLayer tpage 
+  in case activelayer of 
+       Left _ -> [] 
+       Right alist -> concatMap unHitted . getB $ alist  
+
 
 -- | modify the whole selection using a function
 
 changeSelectionBy :: ((Double,Double) -> (Double,Double))
                      -> TTempPageSelectPDFBuf -> TTempPageSelectPDFBuf
 changeSelectionBy func tpage = 
-  let ls = glayers tpage
-      slayer = gselectedlayerbuf ls
-      buf = get g_buffer slayer 
-      activelayer = unTEitherAlterHitted . get g_bstrokes $ slayer 
+  let activelayer = getActiveLayer tpage
+      ls = glayers tpage
+      buf = get g_buffer . gselectedlayerbuf $ ls 
   in case activelayer of 
        Left _ -> tpage 
        Right alist -> 
@@ -91,7 +105,12 @@ changeSelectionBy func tpage =
                             alist 
              layer' = GLayerBuf buf . TEitherAlterHitted . Right $ alist'
          in tpage { glayers = ls { gselectedlayerbuf = layer' }}
-
+   
+{-  let ls = glayers tpage
+      slayer = gselectedlayerbuf ls
+      buf = get g_buffer slayer 
+      activelayer = unTEitherAlterHitted . get g_bstrokes $ slayer 
+-}
 
 -- | special case of offset modification
 

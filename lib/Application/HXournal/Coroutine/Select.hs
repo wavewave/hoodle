@@ -335,19 +335,6 @@ resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox
       return ()    
     _ -> return () 
 
-{-
-          BBox (ox1,oy1) (ox2,oy2) = origbbox
-          newbbox = case handle of
-            HandleTL -> BBox (x,y) (ox2,oy2)
-            HandleTR -> BBox (ox1,y) (x,oy2)
-            HandleBL -> BBox (x,oy1) (ox2,y)
-            HandleBR -> BBox (ox1,oy1) (x,y)
-            HandleTM -> BBox (ox1,y) (ox2,oy2)
-            HandleBM -> BBox (ox1,oy1) (ox2,y)
-            HandleML -> BBox (x,oy1) (ox2,oy2)
-            HandleMR -> BBox (ox1,oy1) (x,oy2)
--}
-
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
@@ -385,8 +372,7 @@ copySelection = do
   case etpage of
     Left _ -> return ()
     Right tpage -> do 
-      let slayer =  gselectedlayerbuf . glayers $ tpage
-      case unTEitherAlterHitted . get g_bstrokes $ slayer of 
+      case getActiveLayer tpage of 
         Left _ -> return ()
         Right alist -> do 
           let strs = takeHittedStrokes alist 
@@ -409,14 +395,15 @@ pasteToSelection = do
       clipstrs = getClipContents . get clipboard $ xstate
       cinfo = getCurrentCanvasInfo xstate 
       pagenum = get currentPageNum cinfo 
-      tpage = case get currentPage cinfo of 
-                Left pbbox -> (gcast pbbox :: TTempPageSelectPDFBuf)
-                Right tp -> tp 
+      tpage = either gcast id (get currentPage cinfo)
+              -- case get currentPage cinfo of 
+              --   Left pbbox -> (gcast pbbox :: TTempPageSelectPDFBuf)
+              --  Right tp -> tp 
       layerselect = gselectedlayerbuf . glayers $ tpage 
       ls  = glayers tpage
       gbuf = get g_buffer layerselect
-      newlayerselect = 
-        case unTEitherAlterHitted . get g_bstrokes $ layerselect of 
+      newlayerselect = case getActiveLayer tpage of 
+        -- case unTEitherAlterHitted . get g_bstrokes $ layerselect of 
           Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted clipstrs :- Empty)
           Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
                            (concat (interleave id unHitted alist) 

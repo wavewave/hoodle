@@ -13,7 +13,8 @@ module Application.HXournal.ModelAction.Select where
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Draw
-
+import Data.Sequence (ViewL(..),viewl,Seq(..))
+import Data.Foldable (foldl')
 import Data.Monoid
 import Data.Xournal.Generic
 import Data.Xournal.BBox
@@ -31,6 +32,8 @@ import Data.Label
 import Prelude hiding ((.),id)
 import Data.Algorithm.Diff
 
+import Debug.Trace 
+
 data Handle = HandleTL
             | HandleTR     
             | HandleBL
@@ -41,7 +44,6 @@ data Handle = HandleTL
             | HandleMR
             deriving (Show)
                      
-
 scaleFromToBBox :: BBox -> BBox -> (Double,Double) -> (Double,Double)
 scaleFromToBBox (BBox (ox1,oy1) (ox2,oy2)) (BBox (nx1,ny1) (nx2,ny2)) (x,y) = 
   let scalex = (nx2-nx1) / (ox2-ox1)
@@ -106,11 +108,6 @@ changeSelectionBy func tpage =
              layer' = GLayerBuf buf . TEitherAlterHitted . Right $ alist'
          in tpage { glayers = ls { gselectedlayerbuf = layer' }}
    
-{-  let ls = glayers tpage
-      slayer = gselectedlayerbuf ls
-      buf = get g_buffer slayer 
-      activelayer = unTEitherAlterHitted . get g_bstrokes $ slayer 
--}
 
 -- | special case of offset modification
 
@@ -169,20 +166,6 @@ hitInHandle tpage point =
     Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox point)
     _ -> False
     
-{-  let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
-  in case activelayer of 
-       Left _ -> False   
-       Right alist -> 
-         let ulbbox = unUnion . mconcat . fmap (Union . Middle . strokebbox_bbox) . takeHittledStroke $ alist 
-         in case ulbbox of 
-              Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox)
-              _ -> False
-         -- let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
-         -- in  any (flip hitTestBBoxPoint point) bboxes 
--}
-
-
-
 takeHittedStrokes :: AlterList [StrokeBBox] (Hitted StrokeBBox) -> [StrokeBBox] 
 takeHittedStrokes = concatMap unHitted . getB 
 
@@ -267,4 +250,40 @@ getNewBBoxFromHandlePos handle (BBox (ox1,oy1) (ox2,oy2)) (x,y) =
       HandleML -> BBox (x,oy1) (ox2,oy2)
       HandleMR -> BBox (ox1,oy1) (x,oy2)
 
-                                                               
+
+angleBAC :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Double 
+angleBAC b@(bx,by) a@(ax,ay) c@(cx,cy) = 
+    let theta1 | ax==bx && ay>by = pi/2.0 
+               | ax==bx && ay<=by = -pi/2.0 
+               | ax<bx && ay>by = atan ((ay-by)/(ax-bx)) + pi 
+               | ax<bx && ay<=by = atan ((ay-by)/(ax-bx)) - pi
+               | otherwise = atan ((ay-by)/(ax-bx)) 
+        theta2 | cx==bx && cy>by = pi/2.0 
+               | cx==bx && cy<=by = -pi/2.0                                         
+               | cx<bx && cy>by = atan ((cy-by)/(cx-bx)) +pi
+               | cx<bx && cy<=by = atan ((cy-by)/(cx-bx)) - pi
+               | otherwise = atan ((cy-by)/(cx-bx))
+        dtheta = theta2 - theta1 
+        result | dtheta > pi = dtheta - 2.0*pi
+               | dtheta < (-pi) = dtheta + 2.0*pi
+               | otherwise = dtheta
+    in result 
+
+
+wrappingAngle :: Seq (Double,Double) -> (Double,Double) -> Double
+wrappingAngle lst p = 
+    case viewl lst of 
+      EmptyL -> 0 
+      x :< xs -> Prelude.snd $ foldl' f (x,0) xs 
+  where f (q',theta) q = let theta' = angleBAC p q' q
+                         in theta' `seq` (q,theta'+theta)  
+                          
+mappingDegree :: Seq (Double,Double) -> (Double,Double) -> Int                        
+mappingDegree lst = round . (/(2.0*pi)) . wrappingAngle lst 
+
+
+hitLassoPoint :: Seq (Double,Double) -> (Double,Double) -> Bool 
+hitLassoPoint lst = odd . mappingDegree lst
+
+hitLassoStroke :: Seq (Double,Double) -> StrokeBBox -> Bool 
+hitLassoStroke lst strk = all (\(x :!: y)-> hitLassoPoint lst (x,y)) $ strokebbox_data strk

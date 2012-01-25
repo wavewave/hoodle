@@ -135,7 +135,7 @@ selectMode = do
       ptype <- return . get (selectType.selectInfo) =<< lift St.get 
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
-        _ -> return () 
+        SelectRegionWork -> selectLassoStart cid pcoord
     PenColorChanged c -> selectPenColorChanged c
     PenWidthChanged w -> selectPenWidthChanged w
     _ -> defaultEventProcess r1

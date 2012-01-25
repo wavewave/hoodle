@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Select 
@@ -24,6 +23,7 @@ import Application.HXournal.Draw
 import Application.HXournal.Util
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
+import Application.HXournal.Coroutine.Pen
 import Application.HXournal.Coroutine.Mode
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Page
@@ -124,36 +124,39 @@ createTempSelectRender geometry zmode page x = do
 --   selected selection. 
 
 selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
-selectRectStart cid pcoord = do    
+selectRectStart cid pcoord = commonPenStart cid pcoord rectaction 
+  where rectaction cinfo cpg zmode (cidup,cidmove) (x,y) = do
+          strs <- getAllStrokeBBoxInCurrentLayer
+          ctime <- liftIO $ getCurrentTime
+          let newSelectAction page = do   
+                tsel <- createTempSelectRender cpg zmode page [] 
+                newSelectRectangle cinfo cpg zmode cidup cidmove strs 
+                                   (x,y) ((x,y),ctime) tsel
+                surfaceFinish (tempSurface tsel)          
+          let action (Right tpage) | hitInSelection tpage (x,y) = do
+                tsel <- createTempSelectRender 
+                          cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf)
+                          (getSelectedStrokes tpage)
+                moveSelectRectangle cinfo cpg zmode cidup cidmove 
+                                    (x,y) ((x,y),ctime) tsel 
+                surfaceFinish (tempSurface tsel)
+              action (Right tpage) | hitInHandle tpage (x,y) = 
+                case getULBBoxFromSelected tpage of 
+                  Middle bbox ->  
+                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelectRectangle handle cinfo cpg zmode cidup cidmove bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                  _ -> return () 
+              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
+              action (Left page) = newSelectAction page
+          action (get currentPage cinfo)      
+
+{-
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
         zmode = get (zoomMode.viewInfo) cvsInfo     
     geometry <- getCanvasGeometry cvsInfo
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup   <- connectPenUp cvsInfo 
-    connidmove <- connectPenMove cvsInfo
-    strs <- getAllStrokeBBoxInCurrentLayer
-    ctime <- liftIO $ getCurrentTime
-    let action (Right tpage) | hitInSelection tpage (x,y) = do
-          tempselection <- createTempSelectRender 
-                             geometry zmode 
-                             (gcast tpage :: TPageBBoxMapPDFBuf)
-                             (getSelectedStrokes tpage)
-          moveSelectRectangle cvsInfo geometry zmode connidup connidmove (x,y) ((x,y),ctime) tempselection 
-          surfaceFinish (tempSurface tempselection)
-        action (Right tpage) | hitInHandle tpage (x,y) = 
-          case getULBBoxFromSelected tpage of 
-            Middle bbox ->  
-              maybe (return ()) (\handle -> do { tempselection <- createTempSelectRender geometry zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelectRectangle handle cvsInfo geometry zmode connidup connidmove bbox ((x,y),ctime) tempselection ; surfaceFinish (tempSurface tempselection) }) (checkIfHandleGrasped bbox (x,y))
-            _ -> return () 
-        action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
-        action (Left page) = newSelectAction page
-        newSelectAction page = do   
-          tempselection <- createTempSelectRender geometry zmode page [] 
-          newSelectRectangle cvsInfo  geometry zmode connidup connidmove strs 
-                             (x,y) ((x,y),ctime) tempselection
-          surfaceFinish (tempSurface tempselection)
-    action (get currentPage cvsInfo)      
+    connidmove <- connectPenMove cvsInfo -}
   
 
 
@@ -461,9 +464,17 @@ selectPenWidthChanged pwidth = do
              $ xstate 
       invalidateAll 
 
+-- | main mouse pointer click entrance in lasso selection mode. 
+--   choose either starting new rectangular selection or move previously 
+--   selected selection. 
+
+selectLassoStart :: CanvasId -> PointerCoord -> MainCoroutine ()
+selectLassoStart cid pcoord = do    
+  liftIO $ putStrLn "selectLassoStart called" 
 
 
 
+       
 
 
 

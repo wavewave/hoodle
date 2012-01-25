@@ -536,7 +536,7 @@ getMenuUI tref sref = do
   Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
 
   Just ra3 <- actionGroupGetAction agr "SELREGNA"
-  actionSetSensitive ra3 False
+  actionSetSensitive ra3 True 
 
   Just ra4 <- actionGroupGetAction agr "VERTSPA"
   actionSetSensitive ra4 False

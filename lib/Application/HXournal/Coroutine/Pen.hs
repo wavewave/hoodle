@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Pen 
@@ -38,6 +37,25 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 import Graphics.Xournal.Render.BBox
+
+-- | Common Pen Work starting point 
+
+commonPenStart :: CanvasId -> PointerCoord 
+               -> ( CanvasInfo -> CanvasPageGeometry -> ZoomMode 
+                    -> (ConnectId DrawingArea, ConnectId DrawingArea) 
+                    -> (Double,Double) -> MainCoroutine () )
+               -> MainCoroutine ()
+commonPenStart cid pcoord action = do    
+    xstate <- changeCurrentCanvasId cid 
+    let cvsInfo = getCanvasInfo cid xstate
+        zmode = get (zoomMode.viewInfo) cvsInfo     
+    geometry <- getCanvasGeometry cvsInfo
+    let (x,y) = device2pageCoord geometry zmode pcoord 
+    connidup   <- connectPenUp cvsInfo 
+    connidmove <- connectPenMove cvsInfo
+    action cvsInfo geometry zmode (connidup,connidmove) (x,y) 
+      
+
 
 -- | enter pen drawing mode
 

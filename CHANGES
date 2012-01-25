@@ -16,3 +16,6 @@
 
 0.6.2: 15 Jan 2012
    * layer support
+
+0.6.3: 24 Jan 2012 
+   * refine rendering while selection and scrolling. highlighter is implemented. Resizing selected strokes implemented

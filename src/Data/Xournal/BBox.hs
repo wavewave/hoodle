@@ -15,11 +15,14 @@ module Data.Xournal.BBox where
 
 import Control.Monad
 import Data.ByteString hiding (map,maximum,minimum)
+import qualified Data.Sequence as Seq
 import Data.Xournal.Generic
 import Data.Xournal.Simple
 import Data.Strict.Tuple 
+import qualified Data.Foldable as F
 import Data.Monoid
 import Prelude hiding (fst,snd)
+import qualified Prelude as Prelude (fst,snd)
 
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
@@ -47,6 +50,13 @@ mkbbox lst = let xs = map fst lst
                  ys = map snd lst
              in  BBox { bbox_upperleft = (minimum xs, minimum ys)
                       , bbox_lowerright = (maximum xs, maximum ys) } 
+
+mkbboxF :: (F.Foldable m, Functor m) => m (Double,Double) -> BBox 
+mkbboxF lst = 
+  let xs = fmap Prelude.fst lst  
+      ys = fmap Prelude.snd lst 
+  in BBox{bbox_upperleft=(F.minimum xs, F.minimum ys)
+         ,bbox_lowerright=(F.maximum xs, F.maximum ys)}
 
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)

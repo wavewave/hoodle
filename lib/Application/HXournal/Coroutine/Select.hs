@@ -500,16 +500,17 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
       let (x,y) = device2pageCoord cpg zmode pcoord 
           nlasso = lasso |> (x,y)
       let lassobbox = mkbboxF nlasso -- BBox orig (x,y)
-          -- prevbbox = BBox orig prev
-          hittestbbox = mkHitTestInsideBBox lassobbox strs
-          hittedstrs = concat . map unHitted . getB $ hittestbbox
+          -- hittestbbox = mkHitTestInsideBBox lassobbox strs
+          -- hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
+          -- hittedstrs = concat . map unHitted . getB $ hittestlasso
       let newbbox = inflate lassobbox 5.0
       xstate <- getSt
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
-          numselstrs = length hittedstrs 
-          (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tsel) hittedstrs 
+          -- numselstrs = length hittedstrs 
+          -- (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tsel) hittedstrs 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
+      {-
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
         let xformfunc = transformForPageCoord cpg zmode
             ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
@@ -526,27 +527,21 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
                   mapM_ renderSelectedStroke redrawee 
                 Bottom -> return ()
               mapM_ renderSelectedStroke sstrs 
-        liftIO $ updateTempSelection tsel renderfunc False
+        liftIO $ updateTempSelection tsel renderfunc False -}
       when willUpdate $ do 
-        -- let mytest = Sq.empty |> (sqrt 2/2,sqrt 2/2) |> (-sqrt 2/2,sqrt 2/2)
-        --                      |> (-sqrt 2/2,-sqrt 2/2) |> (sqrt 2/2,-sqrt 2/2)
-        --                      |> (sqrt 2/2,sqrt 2/2)
-        -- liftIO $ putStrLn $ "angle = " ++ show (wrappingAngle mytest (0,0))
-        liftIO $ putStrLn $ "angle = " ++ show (mappingDegree (nlasso |> orig ) (200,200))
-        let test = do { rectangle 195 195 10 10 ; fill } 
-        
-        invalidateTemp cid (tempSurface tsel) (renderLasso nlasso >> test ) 
+        invalidateTemp cid (tempSurface tsel) (renderLasso nlasso) 
       newSelectLasso cinfo cpg zmode cidmove cidup strs orig 
-                     (ncoord,ntime) nlasso 
-                     tsel { tempSelectInfo = hittedstrs }
+                     (ncoord,ntime) nlasso tsel
+                     -- tsel { tempSelectInfo = hittedstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord cpg zmode pcoord 
           nlasso = lasso |> (x,y)
       let epage = get currentPage cinfo 
           cpn = get currentPageNum cinfo 
-      let bbox = mkbboxF nlasso -- BBox orig (x,y)
-          hittestbbox = mkHitTestInsideBBox bbox strs
-          selectstrs = fmapAL unNotHitted id hittestbbox
+      let bbox = mkbboxF nlasso 
+          hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
+          --  hittestbbox = mkHitTestInsideBBox bbox strs
+          selectstrs = fmapAL unNotHitted id hittestlasso
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate
           newpage = case epage of 

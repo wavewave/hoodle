@@ -49,6 +49,8 @@ import System.IO.Unsafe
 import qualified Data.IntMap as IM
 import Data.Maybe
 import Data.Monoid 
+import Data.Sequence (Seq(..),(|>))
+import qualified Data.Sequence as Sq (empty)
 import Data.Time.Clock
 import Data.Xournal.Generic
 -- import Graphics.Xournal.Render.BBox
@@ -462,7 +464,7 @@ selectLassoStart = commonPenStart lassoAction
           let newSelectAction page = do   
                 tsel <- createTempSelectRender cpg zmode page [] 
                 newSelectLasso cinfo cpg zmode cidmove cidup strs 
-                               (x,y) ((x,y),ctime) tsel
+                               (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                 surfaceFinish (tempSurface tsel)          
           let action (Right tpage) | hitInSelection tpage (x,y) = do
                 tsel <- createTempSelectRender 
@@ -487,9 +489,10 @@ newSelectLasso :: CanvasInfo
                   -> [StrokeBBox] 
                   -> (Double,Double)
                   -> ((Double,Double),UTCTime)
+                  -> Seq (Double,Double)
                   -> TempSelection 
                   -> MainCoroutine ()
-newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) tsel = do
+newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel = do
   let cid = get canvasId cinfo  
   r <- await 
   case r of 
@@ -504,6 +507,7 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) tsel = do
       let cvsInfo = getCanvasInfo cid xstate 
           page = either id gcast $ get currentPage cvsInfo 
           numselstrs = length hittedstrs 
+          nlasso = lasso |> (x,y)
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tsel) hittedstrs 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
@@ -524,9 +528,9 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) tsel = do
               mapM_ renderSelectedStroke sstrs 
         liftIO $ updateTempSelection tsel renderfunc False
       when willUpdate $  
-        invalidateTemp cid (tempSurface tsel) (renderBoxSelection bbox) 
+        invalidateTemp cid (tempSurface tsel) (renderLasso nlasso) 
       newSelectLasso cinfo cpg zmode cidmove cidup strs orig 
-                     (ncoord,ntime)
+                     (ncoord,ntime) nlasso 
                      tsel { tempSelectInfo = hittedstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord cpg zmode pcoord 
@@ -540,7 +544,7 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) tsel = do
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
+                            currlayer = maybe (error "newSelectLasso") id mcurrlayer 
                             newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             tpg = gcast npagebbox 
                             ls = get g_layers tpg 

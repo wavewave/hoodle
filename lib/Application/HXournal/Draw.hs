@@ -17,9 +17,11 @@ import Graphics.Rendering.Cairo
 import Control.Applicative 
 import Control.Category
 import Data.Label
-import Prelude hiding ((.),id)
+import Prelude hiding ((.),id,mapM_,concatMap)
 
+import Data.Foldable
 import Data.Monoid
+import Data.Sequence
 import Data.Xournal.Simple
 import Data.Xournal.Generic
 
@@ -497,6 +499,18 @@ drawSelBuf canvas tpg vinfo mbbox = do
         cairoHittedBoxDraw tpg mbbox  
   doubleBuffering win geometry xformfunc renderfunc   
 
+renderLasso :: Seq (Double,Double) -> Render ()
+renderLasso lst = do 
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  case viewl lst of 
+    EmptyL -> return ()
+    x :< xs -> do uncurry moveTo x
+                  mapM_ (uncurry lineTo) xs 
+                  stroke 
+
+
 
 renderBoxSelection :: BBox -> Render () 
 renderBoxSelection bbox = do
@@ -514,10 +528,6 @@ renderSelectedStroke str = do
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1
   cairoOneStrokeSelected str
-  {- let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke -}
 
 renderSelectHandle :: BBox -> Render () 
 renderSelectHandle bbox = do 

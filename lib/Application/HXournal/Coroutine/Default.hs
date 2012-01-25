@@ -136,6 +136,7 @@ selectMode = do
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
+        _ -> return ()
     PenColorChanged c -> selectPenColorChanged c
     PenWidthChanged w -> selectPenWidthChanged w
     _ -> defaultEventProcess r1

@@ -137,27 +137,17 @@ selectRectStart = commonPenStart rectaction
                 tsel <- createTempSelectRender 
                           cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf)
                           (getSelectedStrokes tpage)
-                moveSelectRectangle cinfo cpg zmode cidmove cidup 
-                                    (x,y) ((x,y),ctime) tsel 
+                moveSelect cinfo cpg zmode cidmove cidup 
+                           (x,y) ((x,y),ctime) tsel 
                 surfaceFinish (tempSurface tsel)
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
-                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelectRectangle handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelect handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
               action (Left page) = newSelectAction page
           action (get currentPage cinfo)      
-
-{-
-    xstate <- changeCurrentCanvasId cid 
-    let cvsInfo = getCanvasInfo cid xstate
-        zmode = get (zoomMode.viewInfo) cvsInfo     
-    geometry <- getCanvasGeometry cvsInfo
-    let (x,y) = device2pageCoord geometry zmode pcoord 
-    connidup   <- connectPenUp cvsInfo 
-    connidmove <- connectPenMove cvsInfo -}
-  
 
 
 newSelectRectangle :: CanvasInfo
@@ -246,17 +236,17 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
       invalidateAll 
     _ -> return ()
          
-moveSelectRectangle :: CanvasInfo
-                    -> CanvasPageGeometry
-                    -> ZoomMode
-                    -> ConnectId DrawingArea 
-                    -> ConnectId DrawingArea
-                    -> (Double,Double)
-                    -> ((Double,Double),UTCTime)
-                    -> TempSelection
-                    -> MainCoroutine ()
-moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0) 
-                    (prev,otime) tempselection = do
+moveSelect :: CanvasInfo
+              -> CanvasPageGeometry
+              -> ZoomMode
+              -> ConnectId DrawingArea 
+              -> ConnectId DrawingArea
+              -> (Double,Double)
+              -> ((Double,Double),UTCTime)
+              -> TempSelection
+              -> MainCoroutine ()
+moveSelect cinfo geometry zmode connidmove connidup orig@(x0,y0) 
+           (prev,otime) tempselection = do
   xstate <- getSt
   r <- await 
   case r of 
@@ -269,7 +259,7 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0)
             drawselection = do 
               mapM_ (drawOneStroke . gToStroke) newstrs  
         invalidateTemp cid (tempSurface tempselection) drawselection
-      moveSelectRectangle cinfo geometry zmode connidmove connidup orig (ncoord,ntime) tempselection
+      moveSelect cinfo geometry zmode connidmove connidup orig (ncoord,ntime) tempselection
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let offset = (x-x0,y-y0)
@@ -283,24 +273,24 @@ moveSelectRectangle cinfo geometry zmode connidmove connidup orig@(x0,y0)
           commit . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
                  $ xstate 
-        Left _ -> error "this is impossible, in moveSelectRectangle" 
+        Left _ -> error "this is impossible, in moveSelect" 
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
     _ -> return ()
  
-resizeSelectRectangle :: Handle 
-                         -> CanvasInfo
-                         -> CanvasPageGeometry
-                         -> ZoomMode
-                         -> ConnectId DrawingArea 
-                         -> ConnectId DrawingArea
-                         -> BBox
-                         -> ((Double,Double),UTCTime)
-                         -> TempSelection
-                         -> MainCoroutine ()
-resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox 
-                      (prev,otime) tempselection = do
+resizeSelect :: Handle 
+                -> CanvasInfo
+                -> CanvasPageGeometry
+                -> ZoomMode
+                -> ConnectId DrawingArea 
+                -> ConnectId DrawingArea
+                -> BBox
+                -> ((Double,Double),UTCTime)
+                -> TempSelection
+                -> MainCoroutine ()
+resizeSelect handle cinfo geometry zmode connidmove connidup origbbox 
+             (prev,otime) tempselection = do
   xstate <- getSt
   r <- await 
   case r of 
@@ -315,8 +305,8 @@ resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox
             drawselection = do 
               mapM_ (drawOneStroke . gToStroke) newstrs  
         invalidateTemp cid (tempSurface tempselection) drawselection
-      resizeSelectRectangle handle cinfo geometry zmode connidmove connidup 
-                            origbbox (ncoord,ntime) tempselection
+      resizeSelect handle cinfo geometry zmode connidmove connidup 
+                   origbbox (ncoord,ntime) tempselection
     PenUp _cid pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
           newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
@@ -331,7 +321,7 @@ resizeSelectRectangle handle cinfo geometry zmode connidmove connidup origbbox
           commit . set xournalstate (SelectState newtxoj)
                  . updatePageAll (SelectState newtxoj) 
                  $ xstate 
-        Left _ -> error "this is impossible, in resizeSelectRectangle" 
+        Left _ -> error "this is impossible, in resizeSelect" 
       disconnect connidmove
       disconnect connidup 
       invalidateAll
@@ -399,14 +389,10 @@ pasteToSelection = do
       cinfo = getCurrentCanvasInfo xstate 
       pagenum = get currentPageNum cinfo 
       tpage = either gcast id (get currentPage cinfo)
-              -- case get currentPage cinfo of 
-              --   Left pbbox -> (gcast pbbox :: TTempPageSelectPDFBuf)
-              --  Right tp -> tp 
       layerselect = gselectedlayerbuf . glayers $ tpage 
       ls  = glayers tpage
       gbuf = get g_buffer layerselect
       newlayerselect = case getActiveLayer tpage of 
-        -- case unTEitherAlterHitted . get g_bstrokes $ layerselect of 
           Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted clipstrs :- Empty)
           Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
                            (concat (interleave id unHitted alist) 
@@ -469,12 +455,122 @@ selectPenWidthChanged pwidth = do
 --   selected selection. 
 
 selectLassoStart :: CanvasId -> PointerCoord -> MainCoroutine ()
-selectLassoStart cid pcoord = do    
-  liftIO $ putStrLn "selectLassoStart called" 
-
+selectLassoStart = commonPenStart lassoAction 
+  where lassoAction cinfo cpg zmode (cidup,cidmove) (x,y) = do 
+          strs <- getAllStrokeBBoxInCurrentLayer
+          ctime <- liftIO $ getCurrentTime
+          let newSelectAction page = do   
+                tsel <- createTempSelectRender cpg zmode page [] 
+                newSelectLasso cinfo cpg zmode cidmove cidup strs 
+                               (x,y) ((x,y),ctime) tsel
+                surfaceFinish (tempSurface tsel)          
+          let action (Right tpage) | hitInSelection tpage (x,y) = do
+                tsel <- createTempSelectRender 
+                          cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf)
+                          (getSelectedStrokes tpage)
+                moveSelect cinfo cpg zmode cidmove cidup 
+                           (x,y) ((x,y),ctime) tsel 
+                surfaceFinish (tempSurface tsel)
+              action (Right tpage) | hitInHandle tpage (x,y) = 
+                case getULBBoxFromSelected tpage of 
+                  Middle bbox ->  
+                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelect handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                  _ -> return () 
+              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
+              action (Left page) = newSelectAction page
+          action (get currentPage cinfo)      
+          
+newSelectLasso :: CanvasInfo
+                  -> CanvasPageGeometry
+                  -> ZoomMode
+                  -> ConnectId DrawingArea -> ConnectId DrawingArea
+                  -> [StrokeBBox] 
+                  -> (Double,Double)
+                  -> ((Double,Double),UTCTime)
+                  -> TempSelection 
+                  -> MainCoroutine ()
+newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) tsel = do
+  let cid = get canvasId cinfo  
+  r <- await 
+  case r of 
+    PenMove _cid' pcoord -> do 
+      let (x,y) = device2pageCoord cpg zmode pcoord 
+      let bbox = BBox orig (x,y)
+          prevbbox = BBox orig prev
+          hittestbbox = mkHitTestInsideBBox bbox strs
+          hittedstrs = concat . map unHitted . getB $ hittestbbox
+      let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
+      xstate <- getSt
+      let cvsInfo = getCanvasInfo cid xstate 
+          page = either id gcast $ get currentPage cvsInfo 
+          numselstrs = length hittedstrs 
+          (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tsel) hittedstrs 
+      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
+      when ((not.null) fstrs || (not.null) sstrs ) $ do 
+        let xformfunc = transformForPageCoord cpg zmode
+            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
+            renderfunc = do   
+              xformfunc 
+              case ulbbox of 
+                Top -> do 
+                  cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
+                  mapM_ renderSelectedStroke hittedstrs
+                Middle bbox -> do 
+                  let redrawee = filter (\x -> hitTestBBoxBBox bbox (strokebbox_bbox x) ) hittedstrs  
+                  cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page)
+                  clipBBox (Just bbox)
+                  mapM_ renderSelectedStroke redrawee 
+                Bottom -> return ()
+              mapM_ renderSelectedStroke sstrs 
+        liftIO $ updateTempSelection tsel renderfunc False
+      when willUpdate $  
+        invalidateTemp cid (tempSurface tsel) (renderBoxSelection bbox) 
+      newSelectLasso cinfo cpg zmode cidmove cidup strs orig 
+                     (ncoord,ntime)
+                     tsel { tempSelectInfo = hittedstrs }
+    PenUp _cid' pcoord -> do 
+      let (x,y) = device2pageCoord cpg zmode pcoord 
+      let epage = get currentPage cinfo 
+          cpn = get currentPageNum cinfo 
+      let bbox = BBox orig (x,y)
+          hittestbbox = mkHitTestInsideBBox bbox strs
+          selectstrs = fmapAL unNotHitted id hittestbbox
+      xstate <- getSt    
+      let SelectState txoj = get xournalstate xstate
+          newpage = case epage of 
+                      Left pagebbox -> 
+                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
+                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
+                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            tpg = gcast npagebbox 
+                            ls = get g_layers tpg 
+                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+                        in npg 
+                      Right tpage -> 
+                        let ls = glayers tpage 
+                            currlayer = gselectedlayerbuf ls
+                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                        in npage
+          newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
+      let ui = get gtkUIManager xstate
+      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
+      putSt (set xournalstate (SelectState newtxoj) 
+             . updatePageAll (SelectState newtxoj)
+             $ xstate) 
+      disconnect cidmove
+      disconnect cidup 
+      invalidateAll 
+    _ -> return ()
+  
+  
+  
+  -- liftIO $ putStrLn "newSelectLasso" 
+  
 
 
        
+
 
 
 

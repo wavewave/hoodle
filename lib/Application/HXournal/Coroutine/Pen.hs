@@ -75,20 +75,6 @@ penStart cid = commonPenStart penAction cid
           commit xstate'
           invalidateAll 
 
-
-{-    xstate <- changeCurrentCanvasId cid 
-    let cvsInfo = getCanvasInfo cid xstate 
-    let currxoj = unView . get xournalstate $ xstate        
-        pagenum = get currentPageNum cvsInfo
-        pinfo = get penInfo xstate
-        zmode = get (zoomMode.viewInfo) cvsInfo
-    geometry <- getCanvasGeometry cvsInfo 
-    let (x,y) = device2pageCoord geometry zmode pcoord 
-    connidup   <- connectPenUp   cvsInfo 
-    connidmove <- connectPenMove cvsInfo -}
-
-
-
 -- | main pen coordinate adding process
 
 penProcess :: CanvasId

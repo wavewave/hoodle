@@ -124,26 +124,26 @@ createTempSelectRender geometry zmode page x = do
 --   selected selection. 
 
 selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
-selectRectStart cid pcoord = commonPenStart cid pcoord rectaction 
+selectRectStart = commonPenStart rectaction 
   where rectaction cinfo cpg zmode (cidup,cidmove) (x,y) = do
           strs <- getAllStrokeBBoxInCurrentLayer
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page = do   
                 tsel <- createTempSelectRender cpg zmode page [] 
-                newSelectRectangle cinfo cpg zmode cidup cidmove strs 
+                newSelectRectangle cinfo cpg zmode cidmove cidup strs 
                                    (x,y) ((x,y),ctime) tsel
                 surfaceFinish (tempSurface tsel)          
           let action (Right tpage) | hitInSelection tpage (x,y) = do
                 tsel <- createTempSelectRender 
                           cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf)
                           (getSelectedStrokes tpage)
-                moveSelectRectangle cinfo cpg zmode cidup cidmove 
+                moveSelectRectangle cinfo cpg zmode cidmove cidup 
                                     (x,y) ((x,y),ctime) tsel 
                 surfaceFinish (tempSurface tsel)
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
-                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelectRectangle handle cinfo cpg zmode cidup cidmove bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelectRectangle handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
               action (Left page) = newSelectAction page

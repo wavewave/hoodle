@@ -40,12 +40,12 @@ import Graphics.Xournal.Render.BBox
 
 -- | Common Pen Work starting point 
 
-commonPenStart :: CanvasId -> PointerCoord 
-               -> ( CanvasInfo -> CanvasPageGeometry -> ZoomMode 
+commonPenStart :: ( CanvasInfo -> CanvasPageGeometry -> ZoomMode 
                     -> (ConnectId DrawingArea, ConnectId DrawingArea) 
                     -> (Double,Double) -> MainCoroutine () )
+               -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
-commonPenStart cid pcoord action = do    
+commonPenStart action cid pcoord = do    
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
         zmode = get (zoomMode.viewInfo) cvsInfo     
@@ -60,8 +60,23 @@ commonPenStart cid pcoord action = do
 -- | enter pen drawing mode
 
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
-penStart cid pcoord = do 
-    xstate <- changeCurrentCanvasId cid 
+penStart cid = commonPenStart penAction cid 
+  where penAction cinfo cpg zmode (cidmove,cidup) (x,y) = do 
+          xstate <- getSt
+          let currxoj = unView . get xournalstate $ xstate        
+              pagenum = get currentPageNum cinfo          
+              pinfo = get penInfo xstate
+          pdraw <-penProcess cid cpg cidmove cidup (empty |> (x,y)) (x,y) 
+          (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
+          let bbox' = inflate bbox (get (penWidth.currentTool.penInfo) xstate) 
+              xstate' = set xournalstate (ViewAppendState newxoj) 
+                        . updatePageAll (ViewAppendState newxoj)
+                        $ xstate
+          commit xstate'
+          invalidateAll 
+
+
+{-    xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate 
     let currxoj = unView . get xournalstate $ xstate        
         pagenum = get currentPageNum cvsInfo
@@ -70,17 +85,8 @@ penStart cid pcoord = do
     geometry <- getCanvasGeometry cvsInfo 
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup   <- connectPenUp   cvsInfo 
-    connidmove <- connectPenMove cvsInfo 
+    connidmove <- connectPenMove cvsInfo -}
 
-    pdraw <-penProcess cid geometry connidmove connidup (empty |> (x,y)) (x,y) 
-    (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
-    let bbox' = inflate bbox (get (penWidth.currentTool.penInfo) xstate) 
-        xstate' = set xournalstate (ViewAppendState newxoj) 
-                  . updatePageAll (ViewAppendState newxoj)
-                  $ xstate
-    commit xstate'
-    invalidateAll 
-    -- mapM_ (flip invalidateInBBox bbox') . filter (/=cid) $ otherCanvas xstate' 
 
 
 -- | main pen coordinate adding process

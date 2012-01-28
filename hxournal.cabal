@@ -100,6 +100,7 @@ Library
                    Application.HXournal.Type.Clipboard
                    Application.HXournal.Type.Canvas
                    Application.HXournal.Type.Coroutine
+                   Application.HXournal.Type.PageArrangement 
                    Application.HXournal.Type.XournalState
                    Application.HXournal.Type.Window
                    Application.HXournal.Type.Undo 

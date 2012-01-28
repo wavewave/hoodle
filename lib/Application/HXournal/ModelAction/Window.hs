@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -13,6 +14,7 @@ module Application.HXournal.ModelAction.Window where
 
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Event
+import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Device
@@ -39,7 +41,7 @@ newCanvasId cmap =
   in  (maximum cids) + 1  
 
 
-initCanvasInfo :: HXournalState -> CanvasId -> IO CanvasInfo 
+initCanvasInfo :: (ViewMode a) => HXournalState -> CanvasId -> IO (CanvasInfo a)
 initCanvasInfo xstate cid = do 
     let callback = get callBack xstate
         dev = get deviceList xstate 
@@ -102,13 +104,13 @@ initCanvasInfo xstate cid = do
       v <- liftIO $ adjustmentGetValue vadj 
       liftIO (callback (VScrollBarEnd cid v))
       return False
-    return $ CanvasInfo cid canvas scrwin (error "no viewInfo") 0 (error "No page")  hadj vadj 
+    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj 
   
 constructFrame :: WindowConfig -> CanvasInfoMap -> IO (Widget,WindowConfig)
 constructFrame (Node cid) cmap = do 
     case (M.lookup cid cmap) of
       Nothing -> error $ "no such cid = " ++ show cid ++ " in constructFrame"
-      Just cinfo -> return (castToWidget . get scrolledWindow $ cinfo, Node cid)
+      Just (CanvasInfoBox cinfo) -> return (castToWidget . get scrolledWindow $ cinfo, Node cid)
 constructFrame (HSplit hpane wconf1 wconf2) cmap = do  
     (win1,wconf1') <- constructFrame wconf1 cmap
     (win2,wconf2') <- constructFrame wconf2 cmap 

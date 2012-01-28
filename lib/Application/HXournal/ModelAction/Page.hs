@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -13,6 +14,8 @@ module Application.HXournal.ModelAction.Page where
 
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.PageArrangement
+import Data.Xournal.BBox (moveBBoxToOrigin)
 import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.Select
@@ -39,7 +42,7 @@ setPageMap nmap xojstate =
                         in SelectState ntxoj
    -- SelectState (set g_selectAll nmap txoj)
         
-updatePageFromCanvasToXournal :: CanvasInfo -> XournalState -> XournalState 
+updatePageFromCanvasToXournal :: (ViewMode a) => CanvasInfo a -> XournalState -> XournalState 
 updatePageFromCanvasToXournal cinfo xojstate = 
   let cpn = get currentPageNum cinfo 
       epg = get currentPage cinfo
@@ -52,10 +55,10 @@ updatePageAll :: XournalState
                  -> HXournalState
 updatePageAll xst xstate = 
   let cmap = get canvasInfoMap xstate
-      cmap' = fmap (updatePage xst . adjustPage xst) cmap
+      cmap' = fmap (fmapBox (updatePage xst . adjustPage xst)) cmap
   in  set canvasInfoMap cmap' xstate 
 
-adjustPage :: XournalState -> CanvasInfo -> CanvasInfo
+adjustPage :: (ViewMode a) => XournalState -> CanvasInfo a -> CanvasInfo a  
 adjustPage xojstate cinfo =
     let cpn = get currentPageNum cinfo 
         pagemap = getPageMap xojstate
@@ -77,16 +80,25 @@ getPageFromGXournalMap pagenum xoj  =
     Nothing -> error "something wrong in getPageFromGXournalMap"
     Just p -> p
 
-updatePage :: XournalState -> CanvasInfo -> CanvasInfo 
-updatePage (ViewAppendState xojbbox) cinfo = 
+updatePage :: XournalState -> CanvasInfo a -> CanvasInfo a 
+updatePage xst cinfo = 
+  case get (pageArrangement.viewInfo) cinfo of 
+    SingleArrangement _ _ _ -> updatePageSingle xst cinfo
+    _ -> error "not defined yet in updatePage"
+  
+
+-- | update page when single page view mode
+
+updatePageSingle :: XournalState -> CanvasInfo SinglePage -> CanvasInfo SinglePage
+updatePageSingle (ViewAppendState xojbbox) cinfo = 
   let pagenum = get currentPageNum cinfo 
       pg = getPageFromGXournalMap pagenum xojbbox 
       Dim w h = gdimension pg
   in  set currentPageNum pagenum 
-      . set (pageDimension.viewInfo) (w,h)       
+      . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
       . set currentPage (Left pg)
       $ cinfo 
-updatePage (SelectState txoj) cinfo = 
+updatePageSingle (SelectState txoj) cinfo = 
   let pagenum = get currentPageNum cinfo
       mspage = gselectSelected txoj 
       pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
@@ -100,17 +112,21 @@ updatePage (SelectState txoj) cinfo =
               then (Right page, gdimension page) 
               else (Left pageFromArg, gdimension pageFromArg)
   in set currentPageNum pagenum 
-     . set (pageDimension.viewInfo) (w,h)       
+     . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
      . set currentPage newpage
      $ cinfo 
-  
-setPage :: XournalState -> Int -> CanvasInfo -> CanvasInfo
-setPage (ViewAppendState xojbbox) pagenum cinfo = 
+
+-- | setPage in Single Page mode   
+
+setPageSingle :: XournalState -> Int 
+              -> CanvasInfo SinglePage 
+              -> CanvasInfo SinglePage
+setPageSingle (ViewAppendState xojbbox) pagenum cinfo = 
   let pg = getPageFromGXournalMap pagenum xojbbox
       Dim w h = gdimension pg
   in  set currentPageNum pagenum 
-      . set (viewPortOrigin.viewInfo) (0,0) 
-      . set (pageDimension.viewInfo) (w,h)       
+      . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
+      . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
       . set currentPage (Left pg)
       $ cinfo 
 setPage (SelectState txoj) pagenum cinfo = 
@@ -126,12 +142,14 @@ setPage (SelectState txoj) pagenum cinfo =
               then (Right page, gdimension page) 
               else (Left pageFromArg, gdimension pageFromArg)
   in set currentPageNum pagenum 
-     . set (viewPortOrigin.viewInfo) (0,0) 
-     . set (pageDimension.viewInfo) (w,h)       
+     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
+     . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
      . set currentPage newpage
      $ cinfo 
+
                             
-getPage :: CanvasInfo -> TPageBBoxMapPDFBuf
+
+getPage :: (ViewMode a) => CanvasInfo a -> TPageBBoxMapPDFBuf
 getPage cinfo = 
   case get currentPage cinfo of 
     Right tpgs -> gcast tpgs :: TPageBBoxMapPDFBuf 
@@ -142,7 +160,10 @@ newSinglePageFromOld :: TPageBBoxMapPDFBuf -> TPageBBoxMapPDFBuf
 newSinglePageFromOld = 
   set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
 
-newPageBeforeAction :: TXournalBBoxMapPDFBuf -> (CanvasId, CanvasInfo) -> IO TXournalBBoxMapPDFBuf
+newPageBeforeAction :: (ViewMode a) => 
+                       TXournalBBoxMapPDFBuf 
+                    -> (CanvasId, CanvasInfo a) 
+                    -> IO TXournalBBoxMapPDFBuf
 newPageBeforeAction xoj (cid,cinfo) = do 
   let cpn = get currentPageNum cinfo
   let pagelst = M.elems . get g_pages $ xoj 

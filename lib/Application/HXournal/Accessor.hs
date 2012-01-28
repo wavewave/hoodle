@@ -35,18 +35,20 @@ import Data.Xournal.Generic
 import Data.Xournal.Buffer
 import Data.Xournal.Select
 
+import qualified Data.IntMap as M
 import Application.HXournal.Util
 import Application.HXournal.ModelAction.Layer 
+import Application.HXournal.Type.PageArrangement
 
 
-getSt :: MainCoroutine HXournalState -- Iteratee MyEvent XournalStateIO HXournalState
+getSt :: MainCoroutine HXournalState 
 getSt = lift St.get
 
-putSt :: HXournalState -> MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+putSt :: HXournalState -> MainCoroutine () 
 putSt = lift . St.put
 
 
-adjustments :: CanvasInfo :-> (Adjustment,Adjustment) 
+adjustments :: CanvasInfo a :-> (Adjustment,Adjustment) 
 adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
                          <*> (snd `for` vertAdjustment)
 
@@ -56,24 +58,24 @@ getPenType = get (penType.penInfo) <$> lift (St.get)
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
-  let currCvsInfo  = getCurrentCanvasInfo xstate 
-  let pagebbox = getPage currCvsInfo
-      strs = do 
-        l <- gToList (get g_layers pagebbox)
-        s <- get g_bstrokes l
-        return s 
-  return strs 
+  case get currentCanvas xstate of
+    (_,CanvasInfoBox currCvsInfo) -> 
+      let pagebbox = getPage currCvsInfo
+      in  return [s| l <- gToList (get g_layers pagebbox), s <- get g_bstrokes l ]
+  
 
 getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentLayer = do 
   xstate <- getSt 
-  let currCvsInfo  = getCurrentCanvasInfo xstate 
-  let pagebbox = getPage currCvsInfo
-      (mcurrlayer, currpage) = getCurrentLayerOrSet pagebbox
-      currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-  return (get g_bstrokes currlayer)
+  case get currentCanvas xstate of 
+    (_,CanvasInfoBox currCvsInfo) -> do 
+      let pagebbox = getPage currCvsInfo
+          (mcurrlayer, currpage) = getCurrentLayerOrSet pagebbox
+          currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
+      return (get g_bstrokes currlayer)
       
-      
+
+{-
 updateCanvasInfo :: CanvasInfo -> HXournalState -> HXournalState
 updateCanvasInfo cinfo xstate = 
   let cid = get canvasId cinfo
@@ -81,34 +83,37 @@ updateCanvasInfo cinfo xstate =
       cmap' = M.adjust (const cinfo) cid cmap 
       xstate' = set canvasInfoMap cmap' xstate
   in xstate' 
- 
+-} 
+
+
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . get canvasInfoMap 
 
-changeCurrentCanvasId :: CanvasId -> MainCoroutine HXournalState -- Iteratee MyEvent XournalStateIO HXournalState
-changeCurrentCanvasId cid = do xstate1 <- getSt 
-                               let xstate = set currentCanvas cid xstate1
-                               putSt xstate
-                               return xstate
-                               
-getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfo 
+changeCurrentCanvasId :: CanvasId -> MainCoroutine HXournalState 
+changeCurrentCanvasId cid = do 
+    xstate1 <- getSt
+    (>>=) (return . M.lookup cid . get canvasInfoMap $ xstate1) $
+     maybe (return xstate1) 
+           (\cinfo -> let nst = set currentCanvas (cid,cinfo) xstate1 in (putSt nst >> return nst))
+
+
+getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfoBox 
 getCanvasInfo cid xstate = 
   let cinfoMap = get canvasInfoMap xstate
       maybeCvs = M.lookup cid cinfoMap
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
-{-  in  case maybeCvs of 
-        Nothing -> error $ "no canvas with id = " ++ show cid 
-        Just cvsInfo -> cvsInfo -}
 
+
+{-
 getCurrentCanvasInfo :: HXournalState -> CanvasInfo 
 getCurrentCanvasInfo xstate = getCanvasInfo (get currentCanvas xstate) xstate
-      
+-}      
 
-getCanvasGeometry :: CanvasInfo -> MainCoroutine CanvasPageGeometry -- Iteratee MyEvent XournalStateIO CanvasPageGeometry
+getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 
 getCanvasGeometry cinfo = do 
     let canvas = get drawArea cinfo
         page = getPage cinfo
-        (x0,y0) = get (viewPortOrigin.viewInfo) cinfo
+        (x0,y0) = bbox_upperleft . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo) $ cinfo
     liftIO (getCanvasPageGeometry canvas page (x0,y0))
 
 

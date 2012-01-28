@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, CPP #-}
+{-# LANGUAGE OverloadedStrings, CPP, GADTs #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -16,8 +16,12 @@ module Application.HXournal.ModelAction.File where
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
 import Application.HXournal.ModelAction.Page
+import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Util
+import Data.Xournal.BBox
 import qualified Text.Xournal.Parse as P
 import qualified Data.IntMap as M
+import Data.Maybe 
 
 import Control.Monad
 import Control.Category
@@ -54,36 +58,55 @@ getFileContent Nothing xstate = do
     newxoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF 
               $ defaultXournal 
     let newxojstate = ViewAppendState newxoj 
+        (_,ccinfo) = get currentCanvas xstate 
         xstate' = set currFileName Nothing 
                   . set xournalstate newxojstate
                   $ xstate 
-        cmap = get canvasInfoMap xstate'
-    let Dim w h = page_dim . (!! 0) .  xoj_pages $ defaultXournal
-        ciupdt = setPage newxojstate 0                       
-                 . set viewInfo (ViewInfo OnePage Original (0,0) (w,h))
+        -- cmap = get canvasInfoMap xstate'
+    let dim = get g_dimension . maybeError "getFileContent" . M.lookup 0 . get g_pages 
+            $ newxoj 
+
+        forSingle    = setPage newxojstate 0 
+                     . set (pageOrigin.pageArrangement.viewInfo) (PageOrigin (0,0))
+                     . set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
+                     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
+                     . set currentPageNum 0 
+    return (modifyCurrentCanvasInfo (selectBox forSingle (error "getFileContent")) xstate')
+
+        {- ciupdt = setPage newxojstate 0                       
+                 . modify viewInfo (gviewInfo ccinfo)
+                   -- (ViewInfo OnePage Original (0,0) (w,h))
                  . set currentPageNum 0 
-        cmap' = M.map ciupdt cmap
-    return (set canvasInfoMap cmap' xstate')
+                 $ ccinfo
+        cmap' = M.map ciupdt cmap 
+    return (set canvasInfoMap cmap' xstate') -}
 
 constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalState 
 constructNewHXournalStateFromXournal xoj' xstate = do 
     let currcid = get currentCanvas xstate 
         cmap = get canvasInfoMap xstate 
     xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj'
-    let Dim width height = case M.lookup 0 (gpages xoj) of    
-                             Nothing -> error "no first page in getFileContent" 
-                             Just p -> gdimension p 
+    let dim = get g_dimension . maybeError "constructNewHxournalStateFromXournal" . M.lookup 0 
+              . get g_pages $ xoj
         startingxojstate = ViewAppendState xoj
-    let changefunc c = 
+        forSingle = setPage startingxojstate 0 
+                    . set (pageOrigin.pageArrangement.viewInfo) (PageOrigin (0,0)) 
+                    . set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
+                    . set currentPageNum 0 
+    return $ set xournalstate startingxojstate
+             . modifyCurrentCanvasInfo (selectBox forSingle (error "construct..."))
+             $ xstate
+
+
+{-    let changefunc c = 
           setPage startingxojstate 0 
           . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
           . set currentPageNum 0 
-          $ c 
+          $ c  
         cmap' = fmap changefunc cmap
-    return $ set xournalstate startingxojstate
+
              . set canvasInfoMap cmap'
-             . set currentCanvas currcid 
-             $ xstate
+             . set currentCanvas currcid -} 
 
 
 makeNewXojWithPDF :: FilePath -> IO (Maybe Xournal)

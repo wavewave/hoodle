@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell, TypeOperators #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -15,7 +15,7 @@ module Application.HXournal.Type.XournalState where
 
 import Application.HXournal.Device
 import Application.HXournal.Type.Event 
-import Application.HXournal.Type.Enum
+
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
@@ -26,14 +26,18 @@ import Data.Xournal.Map
 
 import Graphics.Xournal.Render.BBoxMapPDF
 
+import Control.Applicative
 import Control.Category
-import Control.Monad.State
+import Control.Monad.State hiding (get,modify)
 
-import Data.Xournal.Predefined 
-import Graphics.UI.Gtk hiding (Clipboard)
+
+import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
 import Data.Label 
+import qualified Data.IntMap as M
+
 import Prelude hiding ((.), id)
+
 
 type XournalStateIO = StateT HXournalState IO 
 
@@ -44,7 +48,7 @@ data HXournalState =
   HXournalState { _xournalstate :: XournalState
                 , _currFileName :: Maybe FilePath
                 , _canvasInfoMap :: CanvasInfoMap 
-                , _currentCanvas :: Int
+                , _currentCanvas :: (CanvasId,CanvasInfoBox)
                 , _frameState :: WindowConfig 
                 , _rootWindow :: Widget
                 , _rootContainer :: Box
@@ -58,7 +62,7 @@ data HXournalState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable XournalState
---                , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
+                --  , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
                 } 
 
 
@@ -79,7 +83,7 @@ emptyHXournalState =
   , _clipboard = emptyClipboard
   , _callBack = error "emtpyHxournalState.callBack"
   , _deviceList = error "emtpyHxournalState.deviceList"
-  , _penInfo = defaultPenInfo -- PenInfo PenWork predefined_medium ColorBlack
+  , _penInfo = defaultPenInfo 
   , _selectInfo = SelectInfo SelectRectangleWork 
   , _gtkUIManager = error "emptyHXournalState.gtkUIManager"
   , _isSaved = False 
@@ -87,9 +91,35 @@ emptyHXournalState =
 --  , _networkClipboardInfo = Nothing 
   }
 
+currentCanvasId :: HXournalState :-> CanvasId
+currentCanvasId = lens getter setter 
+  where getter = fst . _currentCanvas 
+        setter a = modify currentCanvas (\(_,x)->(a,x))
+
+currentCanvasInfo :: HXournalState :-> CanvasInfoBox
+currentCanvasInfo = lens getter setter 
+  where getter = snd . _currentCanvas
+        setter a = modify currentCanvas (\(x,_)->(x,a)) 
+
+
 resetXournalStateBuffers :: XournalState -> IO XournalState 
 resetXournalStateBuffers xojstate1 = 
   case xojstate1 of 
     ViewAppendState xoj -> liftIO . liftM ViewAppendState . resetXournalBuffers $ xoj
     _ -> return xojstate1
+
+modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
+                        -> HXournalState
+                        -> HXournalState
+modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
+  where cid = fst . get currentCanvas $ st 
+
+
+
+
+
+
+
+
+
 

@@ -112,7 +112,7 @@ modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox)
                         -> HXournalState
                         -> HXournalState
 modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
-  where cid = fst . get currentCanvas $ st 
+  where cid = get currentCanvasId st 
 
 
 

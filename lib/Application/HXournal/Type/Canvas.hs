@@ -24,6 +24,8 @@ import Graphics.Xournal.Render.BBoxMapPDF
 
 import Graphics.UI.Gtk hiding (get,set)
 
+import Data.Xournal.Simple
+import Data.Xournal.BBox
 import Data.Xournal.Predefined 
 import Application.HXournal.Type.PageArrangement
 
@@ -46,6 +48,11 @@ data ZoomMode = Original | FitWidth | FitHeight | Zoom Double
 
 data ViewInfo a  = (ViewMode a) => ViewInfo { _zoomMode :: ZoomMode 
                                             , _pageArrangement :: PageArrangement a } 
+
+
+defaultViewInfoSinglePage :: ViewInfo SinglePage
+defaultViewInfoSinglePage = ViewInfo { _zoomMode = Original 
+                                     , _pageArrangement = SingleArrangement (PageOrigin (0,0)) (PageDimension (Dim 100 100)) (ViewPortBBox (BBox (0,0) (100,100))) } 
 
 
 zoomMode :: ViewInfo a :-> ZoomMode 
@@ -103,6 +110,12 @@ vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
 
 data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 
 
+{- unCanvasInfoBox :: (ViewMode a) => CanvasInfoBox -> CanvasInfo a 
+unCanvasInfoBox (CanvasInfoBox x) = x  -}
+
+getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
+getDrawAreaFromBox (CanvasInfoBox x) = get drawArea x 
+
 fmapBox :: (forall a. (ViewMode a) => CanvasInfo a -> CanvasInfo a)
         -> CanvasInfoBox -> CanvasInfoBox
 fmapBox f (CanvasInfoBox cinfo) = CanvasInfoBox (f cinfo)
@@ -125,9 +138,6 @@ selectBox fsingle fcont =
   let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
       idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
   in runIdentity . idaction   
-{-  case get (pageArrangement.viewInfo) cinfo of 
-    SingleArrangement _ _ _ -> CanvasInfoBox . fsingle $ cinfo 
-    ContinuousSingleArrangement _ _ -> CanvasInfoBox . fcont $ cinfo -}
 
 
 type CanvasInfoMap = M.IntMap CanvasInfoBox

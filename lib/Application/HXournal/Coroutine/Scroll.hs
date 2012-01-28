@@ -50,21 +50,3 @@ vscrollMove cid = do
                     (apply (moveBBoxULCornerTo (fst vm_orig,v))) cvsInfo 
 
 
-{-
-          let 
-          let cvsInfo' =
-
-
-              cinfoMap' = IM.adjust (const cvsInfo') cid cinfoMap  
-              xstate' = set canvasInfoMap cinfoMap' 
-                        . set currentCanvas cid
-                        $ xstate
-          lift . St.put $ xstate' -}
-    
-    
- {-       let cinfoMap = get canvasInfoMap xstate
-            maybeCvs = IM.lookup cid cinfoMap 
-      case maybeCvs of 
-        Nothing -> return ()
-        Just cvsInfo -> do -} 
-

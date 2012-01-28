@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -9,6 +10,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.Default where
 
 import Graphics.UI.Gtk hiding (get,set)
@@ -50,8 +53,8 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 import Data.IORef
-
-
+import Application.HXournal.Type.PageArrangement
+import Data.Xournal.BBox
 import Data.Xournal.Generic
 
 guiProcess :: MainCoroutine ()
@@ -61,9 +64,9 @@ guiProcess = do
   xstate <- getSt
   let cinfoMap  = get canvasInfoMap xstate
       assocs = M.toList cinfoMap 
-      f (cid,cinfo) = do let canvas = get drawArea cinfo
-                         (w',h') <- liftIO $ widgetGetSize canvas
-                         defaultEventProcess (CanvasConfigure cid
+      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
+                            (w',h') <- liftIO $ widgetGetSize canvas
+                            defaultEventProcess (CanvasConfigure cid
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
   mapM_ f assocs
@@ -90,9 +93,11 @@ initCoroutine devlst window = do
   putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
 
-  initcvs <- initCanvasInfo st1 1 
-  let initcmap = M.insert (get canvasId initcvs) initcvs M.empty
-  let startingXstate = set currentCanvas (get canvasId initcvs)
+  (initcvstemp :: CanvasInfo SinglePage) <- initCanvasInfo st1 1 
+  let initcvs = set viewInfo defaultViewInfoSinglePage initcvstemp
+  let initcvsbox = CanvasInfoBox initcvs
+      initcmap = M.insert (get canvasId initcvs) initcvsbox M.empty
+  let startingXstate = set currentCanvas (get canvasId initcvs, initcvsbox)
                        . set canvasInfoMap initcmap 
                        . set frameState (Node 1)
                        $ st1
@@ -146,8 +151,20 @@ selectMode = do
 defaultEventProcess :: MyEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
-defaultEventProcess (HScrollBarMoved cid v) = do 
-    xstate <- getSt 
+defaultEventProcess (HScrollBarMoved cid v) = updateXState (return . hscrollmoveAction) >> invalidate cid 
+  where hscrollmoveAction xst = 
+          modifyCurrentCanvasInfo (selectBox (fsimple xst) (error "defHscr")) xst 
+        fsimple xstate cinfo = 
+          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
+          in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
+defaultEventProcess (VScrollBarMoved cid v) = updateXState (return . vscrollmoveAction) >> invalidate cid
+  where vscrollmoveAction xst = 
+          modifyCurrentCanvasInfo (selectBox (fsimple xst) (error "defVscr")) xst
+        fsimple xstate cinfo =  
+          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
+          in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
+
+{-    xstate <- getSt 
     let cinfoMap = get canvasInfoMap xstate
         maybeCvs = M.lookup cid cinfoMap 
     case maybeCvs of 
@@ -160,8 +177,8 @@ defaultEventProcess (HScrollBarMoved cid v) = do
                     . updateCanvasInfo cvsInfo' 
                     $ xstate
         lift . St.put $ xstate'
-        invalidate cid
-defaultEventProcess (VScrollBarMoved cid v) = do 
+        invalidate cid -}
+{-
     xstate <- lift St.get 
     let cinfoMap = get canvasInfoMap xstate
         cvsInfo = case M.lookup cid cinfoMap of 
@@ -173,9 +190,9 @@ defaultEventProcess (VScrollBarMoved cid v) = do
         xstate' = set currentCanvas cid 
                   . updateCanvasInfo cvsInfo' $ xstate
     lift . St.put $ xstate'
-    invalidate cid
+    invalidate cid -}
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
-defaultEventProcess (CanvasConfigure cid _w' _h') = canvasZoomUpdate Nothing cid 
+defaultEventProcess (CanvasConfigure cid _w' _h') = canvasZoomUpdate Nothing 
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()
@@ -210,7 +227,7 @@ menuEventProcess MenuLastPage = do
                           ViewAppendState xoj ->  M.size . get g_pages $ xoj
                           SelectState txoj    -> M.size . gselectAll $ txoj
   changePage (const (totalnumofpages-1))
-menuEventProcess MenuNewPageBefore = newPageBefore 
+menuEventProcess MenuNewPageBefore = return () -- newPageBefore 
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuUndo = undo 
@@ -247,7 +264,7 @@ menuEventProcess MenuUseXInput = do
                         return (castToToggleAction x) )
   b <- liftIO $ toggleActionGetActive uxinputa
   let cmap = get canvasInfoMap xstate
-      canvases = map (get drawArea) . M.elems $ cmap 
+      canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
   
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases

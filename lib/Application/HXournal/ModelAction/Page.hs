@@ -116,20 +116,30 @@ updatePageSingle (SelectState txoj) cinfo =
      . set currentPage newpage
      $ cinfo 
 
--- | setPage in Single Page mode   
+
+-- | 
+
+setPage :: XournalState -> Int -> CanvasInfo a -> CanvasInfo a 
+setPage xstate pagenum cinfo = 
+  case get (pageArrangement.viewInfo) cinfo of 
+    SingleArrangement _ _ _ -> setPageSingle xstate pagenum cinfo 
+    _ -> error "not defined yet in setPage"
+
+
+-- | setPageSingle : in Single Page mode   
 
 setPageSingle :: XournalState -> Int 
               -> CanvasInfo SinglePage 
               -> CanvasInfo SinglePage
 setPageSingle (ViewAppendState xojbbox) pagenum cinfo = 
   let pg = getPageFromGXournalMap pagenum xojbbox
-      Dim w h = gdimension pg
+      Dim w h = get g_dimension pg
   in  set currentPageNum pagenum 
       . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
       . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
       . set currentPage (Left pg)
       $ cinfo 
-setPage (SelectState txoj) pagenum cinfo = 
+setPageSingle (SelectState txoj) pagenum cinfo = 
   let mspage = gselectSelected  txoj 
       pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
                       Nothing -> error "no such page in setPage"

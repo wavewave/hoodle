@@ -16,6 +16,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
+import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.Device
@@ -53,53 +54,12 @@ import Data.Sequence (Seq(..),(|>))
 import qualified Data.Sequence as Sq (empty)
 import Data.Time.Clock
 import Data.Xournal.Generic
--- import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.Simple
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.BBoxMapPDF
-import Graphics.Rendering.Cairo
+
 import Graphics.UI.Gtk hiding (get,set,disconnect)
-
-data TempSelectRender a = TempSelectRender { tempSurface :: Surface  
-                                           , widthHeight :: (Double,Double)
-                                           , tempSelectInfo :: a 
-                                           } 
-
-type TempSelection = TempSelectRender [StrokeBBox]
-
-tempSelected :: TempSelection -> [StrokeBBox]
-tempSelected = tempSelectInfo 
-
-mkTempSelection :: Surface -> (Double,Double) -> [StrokeBBox] -> TempSelection
-mkTempSelection sfc (w,h) strs = TempSelectRender sfc (w,h) strs 
-
--- | update the content of temp selection. should not be often updated
-   
-updateTempSelection :: TempSelectRender a -> Render () -> Bool -> IO ()
-updateTempSelection tempselection  renderfunc isFullErase = 
-  renderWith (tempSurface tempselection) $ do 
-    when isFullErase $ do 
-      let (cw,ch) = widthHeight tempselection
-      setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 cw ch 
-      fill 
-    renderfunc    
-    
-dtime_bound :: NominalDiffTime 
-dtime_bound = realToFrac (picosecondsToDiffTime 100000000000)
-
-getNewCoordTime :: ((Double,Double),UTCTime) 
-                   -> (Double,Double)
-                   -> IO (Bool,((Double,Double),UTCTime))
-getNewCoordTime (prev,otime) (x,y) = do 
-    ntime <- getCurrentTime 
-    let dtime = diffUTCTime ntime otime 
-        willUpdate = dtime > dtime_bound
-        (nprev,nntime) = if dtime > dtime_bound 
-                         then ((x,y),ntime)
-                         else (prev,otime)
-    return (willUpdate,(nprev,nntime))
 
 
 createTempSelectRender :: CanvasPageGeometry -> ZoomMode 
@@ -152,7 +112,7 @@ selectRectStart = commonPenStart rectaction
           action (get currentPage cinfo)      
 
 
-newSelectRectangle :: CanvasInfo
+newSelectRectangle :: CanvasInfo SinglePage
                    -> CanvasPageGeometry
                    -> ZoomMode
                    -> ConnectId DrawingArea -> ConnectId DrawingArea
@@ -175,8 +135,8 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
           hittedstrs = concat . map unHitted . getB $ hittestbbox
       let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
       xstate <- getSt
-      let cvsInfo = getCanvasInfo cid xstate 
-          page = either id gcast $ get currentPage cvsInfo 
+      let -- cvsInfo = getCanvasInfo cid xstate 
+          page = either id gcast $ get currentPage cinfo -- cvsInfo 
           numselstrs = length hittedstrs 
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
@@ -238,7 +198,7 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
       invalidateAll 
     _ -> return ()
          
-moveSelect :: CanvasInfo
+moveSelect :: CanvasInfo SinglePage
               -> CanvasPageGeometry
               -> ZoomMode
               -> ConnectId DrawingArea 
@@ -282,7 +242,7 @@ moveSelect cinfo geometry zmode connidmove connidup orig@(x0,y0)
     _ -> return ()
  
 resizeSelect :: Handle 
-                -> CanvasInfo
+                -> CanvasInfo SinglePage
                 -> CanvasPageGeometry
                 -> ZoomMode
                 -> ConnectId DrawingArea 
@@ -359,56 +319,56 @@ cutSelection = do
   deleteSelection
 
 copySelection :: MainCoroutine ()
-copySelection = do 
-  liftIO $ putStrLn "copySelection called"
-  xstate <- getSt
-  let cinfo = getCurrentCanvasInfo xstate 
-      etpage = get currentPage cinfo 
-  case etpage of
-    Left _ -> return ()
-    Right tpage -> do 
-      case getActiveLayer tpage of 
-        Left _ -> return ()
-        Right alist -> do 
-          let strs = takeHittedStrokes alist 
-          if null strs 
-            then return () 
-            else do 
-              let newclip = Clipboard strs
-                  xstate' = set clipboard newclip xstate 
-              let ui = get gtkUIManager xstate'
-              liftIO $ togglePaste ui True 
-              putSt xstate'
-              invalidateAll 
+copySelection = updateXState copySelectionAction >> invalidateAll 
+  where copySelectionAction xst = 
+          selectBoxAction (fsimple xst) (error "copySelection") . get currentCanvasInfo $ xst
+        fsimple xstate cinfo = maybe (return xstate) id $ 
+          eitherMaybe (get currentPage cinfo) `pipe` getActiveLayer 
+                                              `pipe` (Right . xstateadj . takeHittedStrokes)
+          where eitherMaybe (Left _) = Nothing
+                eitherMaybe (Right a) = Just a 
+                x `pipe` a = x >>= eitherMaybe . a 
+                infixl 6 `pipe`
+                xstateadj strs | null strs = return xstate
+                               | otherwise = do let newclip = Clipboard strs
+                                                    xstate' = set clipboard newclip xstate 
+                                                    ui = get gtkUIManager xstate'
+                                                liftIO $ togglePaste ui True 
+                                                return xstate' 
+
+--   >>=) (either (return xstate)) 
+-- getActiveLayer >=>)  $   
+--        either (return xstate) $ \alist -> do 
 
 pasteToSelection :: MainCoroutine () 
-pasteToSelection = do 
-  liftIO $ putStrLn "pasteToSelection called" 
-  modeChange ToSelectMode    
-  xstate <- getSt
-  let SelectState txoj = get xournalstate xstate
-      clipstrs = getClipContents . get clipboard $ xstate
-      cinfo = getCurrentCanvasInfo xstate 
-      pagenum = get currentPageNum cinfo 
-      tpage = either gcast id (get currentPage cinfo)
-      layerselect = gselectedlayerbuf . glayers $ tpage 
-      ls  = glayers tpage
-      gbuf = get g_buffer layerselect
-      newlayerselect = case getActiveLayer tpage of 
-          Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted clipstrs :- Empty)
-          Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
-                           (concat (interleave id unHitted alist) 
-                            :- Hitted clipstrs 
-                            :- Empty )
-      tpage' = tpage { glayers = ls { gselectedlayerbuf = newlayerselect } } 
-  txoj' <- liftIO $ updateTempXournalSelectIO txoj tpage' pagenum 
-  let xstate' = updatePageAll (SelectState txoj') 
-                . set xournalstate (SelectState txoj') 
-                $ xstate 
-  commit xstate' 
-  let ui = get gtkUIManager xstate' 
-  liftIO $ toggleCutCopyDelete ui True
-  invalidateAll 
+pasteToSelection = modeChange ToSelectMode >> updateXState pasteAction >> invalidateAll  
+  where pasteAction xst = 
+          selectBoxAction (fsimple xst) (error "pasteSelection") . get currentCanvasInfo $ xst
+        fsimple xstate cinfo = do 
+          let SelectState txoj = get xournalstate xstate
+              clipstrs = getClipContents . get clipboard $ xstate
+              pagenum = get currentPageNum cinfo 
+              tpage = either gcast id (get currentPage cinfo)
+              layerselect = gselectedlayerbuf . glayers $ tpage 
+              ls  = glayers tpage
+              gbuf = get g_buffer layerselect
+              newlayerselect = case getActiveLayer tpage of 
+                Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted clipstrs :- Empty)
+                Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
+                               (concat (interleave id unHitted alist) 
+                                 :- Hitted clipstrs 
+                                 :- Empty )
+              tpage' = tpage { glayers = ls { gselectedlayerbuf = newlayerselect } } 
+          txoj' <- liftIO $ updateTempXournalSelectIO txoj tpage' pagenum 
+          let xstate' = updatePageAll (SelectState txoj') 
+                        . set xournalstate (SelectState txoj') 
+                        $ xstate 
+          commit xstate' 
+          let ui = get gtkUIManager xstate' 
+          liftIO $ toggleCutCopyDelete ui True
+          return xstate' 
+        
+
   
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
@@ -482,7 +442,7 @@ selectLassoStart = commonPenStart lassoAction
               action (Left page) = newSelectAction page
           action (get currentPage cinfo)      
           
-newSelectLasso :: CanvasInfo
+newSelectLasso :: CanvasInfo SinglePage
                   -> CanvasPageGeometry
                   -> ZoomMode
                   -> ConnectId DrawingArea -> ConnectId DrawingArea
@@ -499,40 +459,16 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
     PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord cpg zmode pcoord 
           nlasso = lasso |> (x,y)
-      let lassobbox = mkbboxF nlasso -- BBox orig (x,y)
-          -- hittestbbox = mkHitTestInsideBBox lassobbox strs
-          -- hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
-          -- hittedstrs = concat . map unHitted . getB $ hittestlasso
+      let lassobbox = mkbboxF nlasso 
       let newbbox = inflate lassobbox 5.0
       xstate <- getSt
-      let cvsInfo = getCanvasInfo cid xstate 
-          page = either id gcast $ get currentPage cvsInfo 
-          -- numselstrs = length hittedstrs 
-          -- (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tsel) hittedstrs 
+      let -- cvsInfo = getCanvasInfo cid xstate 
+          page = either id gcast $ get currentPage cinfo -- cvsInfo 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
-      {-
-      when ((not.null) fstrs || (not.null) sstrs ) $ do 
-        let xformfunc = transformForPageCoord cpg zmode
-            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
-            renderfunc = do   
-              xformfunc 
-              case ulbbox of 
-                Top -> do 
-                  cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-                  mapM_ renderSelectedStroke hittedstrs
-                Middle bbox -> do 
-                  let redrawee = filter (\x -> hitTestBBoxBBox bbox (strokebbox_bbox x) ) hittedstrs  
-                  cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page)
-                  clipBBox (Just bbox)
-                  mapM_ renderSelectedStroke redrawee 
-                Bottom -> return ()
-              mapM_ renderSelectedStroke sstrs 
-        liftIO $ updateTempSelection tsel renderfunc False -}
       when willUpdate $ do 
         invalidateTemp cid (tempSurface tsel) (renderLasso nlasso) 
       newSelectLasso cinfo cpg zmode cidmove cidup strs orig 
                      (ncoord,ntime) nlasso tsel
-                     -- tsel { tempSelectInfo = hittedstrs }
     PenUp _cid' pcoord -> do 
       let (x,y) = device2pageCoord cpg zmode pcoord 
           nlasso = lasso |> (x,y)
@@ -540,7 +476,6 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
           cpn = get currentPageNum cinfo 
       let bbox = mkbboxF nlasso 
           hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
-          --  hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestlasso
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate
@@ -572,7 +507,6 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
   
   
   
-  -- liftIO $ putStrLn "newSelectLasso" 
   
 
 

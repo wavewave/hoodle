@@ -103,12 +103,6 @@ getCanvasInfo cid xstate =
       maybeCvs = M.lookup cid cinfoMap
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
-
-{-
-getCurrentCanvasInfo :: HXournalState -> CanvasInfo 
-getCurrentCanvasInfo xstate = getCanvasInfo (get currentCanvas xstate) xstate
--}      
-
 getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 
 getCanvasGeometry cinfo = do 
     let canvas = get drawArea cinfo

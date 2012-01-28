@@ -22,7 +22,10 @@ import Graphics.Xournal.Render.Type
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 
+import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set)
+import Data.Time.Clock
+import Control.Monad
 
 import Data.Strict.Tuple
 import qualified Data.IntMap as M
@@ -287,3 +290,45 @@ hitLassoPoint lst = odd . mappingDegree lst
 
 hitLassoStroke :: Seq (Double,Double) -> StrokeBBox -> Bool 
 hitLassoStroke lst strk = all (\(x :!: y)-> hitLassoPoint lst (x,y)) $ strokebbox_data strk
+
+
+data TempSelectRender a = TempSelectRender { tempSurface :: Surface  
+                                           , widthHeight :: (Double,Double)
+                                           , tempSelectInfo :: a 
+                                           } 
+
+type TempSelection = TempSelectRender [StrokeBBox]
+
+tempSelected :: TempSelection -> [StrokeBBox]
+tempSelected = tempSelectInfo 
+
+mkTempSelection :: Surface -> (Double,Double) -> [StrokeBBox] -> TempSelection
+mkTempSelection sfc (w,h) strs = TempSelectRender sfc (w,h) strs 
+
+-- | update the content of temp selection. should not be often updated
+   
+updateTempSelection :: TempSelectRender a -> Render () -> Bool -> IO ()
+updateTempSelection tempselection  renderfunc isFullErase = 
+  renderWith (tempSurface tempselection) $ do 
+    when isFullErase $ do 
+      let (cw,ch) = widthHeight tempselection
+      setSourceRGBA 0.5 0.5 0.5 1
+      rectangle 0 0 cw ch 
+      fill 
+    renderfunc    
+    
+dtime_bound :: NominalDiffTime 
+dtime_bound = realToFrac (picosecondsToDiffTime 100000000000)
+
+getNewCoordTime :: ((Double,Double),UTCTime) 
+                   -> (Double,Double)
+                   -> IO (Bool,((Double,Double),UTCTime))
+getNewCoordTime (prev,otime) (x,y) = do 
+    ntime <- getCurrentTime 
+    let dtime = diffUTCTime ntime otime 
+        willUpdate = dtime > dtime_bound
+        (nprev,nntime) = if dtime > dtime_bound 
+                         then ((x,y),ntime)
+                         else (prev,otime)
+    return (willUpdate,(nprev,nntime))
+

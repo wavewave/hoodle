@@ -61,6 +61,9 @@ mkbboxF lst =
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
 
+moveBBoxToOrigin :: BBox -> BBox 
+moveBBoxToOrigin (BBox (x0,y0) (x1,y1)) = BBox (0,0) (x1-x0,y1-y0)
+
 intersectBBox :: BBox -> BBox -> Maybe BBox
 intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do 
   guard $ (x1 <= x3 && x3 <= x2) || (x3 <= x1 && x1 <= x4 ) 

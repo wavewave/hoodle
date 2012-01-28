@@ -122,7 +122,13 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelectionInBBox
-                                    
+                             
+
+-- | Invalidate Current canvas
+
+invalidateCurrent :: MainCoroutine () 
+invalidateCurrent = invalidate . get currentCanvasId =<< getSt
+       
 -- | Drawing temporary gadgets
 
 invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()

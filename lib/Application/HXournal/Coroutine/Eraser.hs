@@ -43,12 +43,22 @@ import Prelude hiding ((.), id)
 -- for test
 import Control.Compose
 import Data.Xournal.Select
+
 import qualified Data.Sequence as Seq
+
+import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Coroutine.Pen 
 
 eraserStart :: CanvasId 
                -> PointerCoord 
                -> MainCoroutine () 
-eraserStart cid pcoord = do 
+eraserStart cid = commonPenStart eraserAction cid  
+  where eraserAction cinfo cpg zmode (cidup,cidmove) (x,y) = do 
+          strs <- getAllStrokeBBoxInCurrentLayer
+          eraserProcess cid cpg cidup cidmove strs (x,y)
+
+{-
+
     xstate <- changeCurrentCanvasId cid 
     let cvsInfo = getCanvasInfo cid xstate
         zmode = get (zoomMode.viewInfo) cvsInfo
@@ -56,9 +66,8 @@ eraserStart cid pcoord = do
     let (x,y) = device2pageCoord geometry zmode pcoord 
     connidup   <- connectPenUp cvsInfo     
     connidmove <- connectPenMove cvsInfo   
-    strs <- getAllStrokeBBoxInCurrentLayer
-    eraserProcess cid geometry connidup connidmove strs (x,y)
-  
+  -}
+
 eraserProcess :: CanvasId
               -> CanvasPageGeometry
               -> ConnectId DrawingArea -> ConnectId DrawingArea 
@@ -66,40 +75,41 @@ eraserProcess :: CanvasId
               -> (Double,Double)
               -> MainCoroutine () 
 eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
-  r <- await 
-  xstate <- getSt
-  let cvsInfo = getCanvasInfo cid xstate 
-  case r of 
-    PenMove _cid' pcoord -> do 
-      let zmode  = get (zoomMode.viewInfo) cvsInfo
-          (x,y) = device2pageCoord cpg zmode pcoord 
-          line = ((x0,y0),(x,y))
-          hittestbbox = mkHitTestBBox line strs   
-          (hitteststroke,hitState) = 
-            St.runState (hitTestStrokes line hittestbbox) False
-      if hitState 
-        then do 
-          let currxoj     = unView . get xournalstate $ xstate 
-              pgnum       = get currentPageNum cvsInfo
-              (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
-              currlayer = maybe (error "eraserProcess") id mcurrlayer
-          let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
-              maybebbox = fmap (flip inflate 2.0) maybebbox1
-          newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
-          let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-              newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
-              newxojstate = ViewAppendState newxojbbox
-          commit . set xournalstate newxojstate 
-                 . updatePageAll newxojstate $ xstate 
-          -- invalidateWithBufInBBox maybebbox cid 
-          invalidateWithBuf cid 
-          newstrs <- getAllStrokeBBoxInCurrentLayer
-          eraserProcess cid cpg connidup connidmove newstrs (x,y)
-        else eraserProcess cid cpg connidmove connidup strs (x,y) 
-    PenUp _cid' _pcoord -> do 
-      disconnect connidmove 
-      disconnect connidup 
-      invalidateAll
-    _ -> return ()
+    r <- await 
+    xst <- getSt
+    selectBoxAction (fsingle r xst) (error "eraserProcess") . getCanvasInfo cid $ xst 
+  where 
+    fsingle r xstate cvsInfo = do
+      case r of 
+        PenMove _cid' pcoord -> do 
+          let zmode  = get (zoomMode.viewInfo) cvsInfo
+              (x,y) = device2pageCoord cpg zmode pcoord 
+              line = ((x0,y0),(x,y))
+              hittestbbox = mkHitTestBBox line strs   
+              (hitteststroke,hitState) = 
+                St.runState (hitTestStrokes line hittestbbox) False
+          if hitState 
+            then do 
+              let currxoj     = unView . get xournalstate $ xstate 
+                  pgnum       = get currentPageNum cvsInfo
+                  (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
+                  currlayer = maybe (error "eraserProcess") id mcurrlayer
+              let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
+                  maybebbox = fmap (flip inflate 2.0) maybebbox1
+              newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
+              let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+                  newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
+                  newxojstate = ViewAppendState newxojbbox
+              commit . set xournalstate newxojstate 
+                     . updatePageAll newxojstate $ xstate 
+              invalidateWithBuf cid 
+              newstrs <- getAllStrokeBBoxInCurrentLayer
+              eraserProcess cid cpg connidup connidmove newstrs (x,y)
+            else eraserProcess cid cpg connidmove connidup strs (x,y) 
+        PenUp _cid' _pcoord -> do 
+          disconnect connidmove 
+          disconnect connidup 
+          invalidateAll
+        _ -> return ()
     
 

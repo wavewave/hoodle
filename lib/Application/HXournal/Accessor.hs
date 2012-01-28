@@ -116,4 +116,5 @@ getCanvasGeometry cinfo = do
         (x0,y0) = bbox_upperleft . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo) $ cinfo
     liftIO (getCanvasPageGeometry canvas page (x0,y0))
 
-
+updateXState :: (HXournalState -> MainCoroutine HXournalState) -> MainCoroutine ()
+updateXState action = putSt =<< action =<< getSt 

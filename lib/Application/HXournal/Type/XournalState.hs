@@ -123,3 +123,4 @@ modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMa
 
 
 
+

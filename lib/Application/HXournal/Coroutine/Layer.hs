@@ -39,16 +39,20 @@ import Data.IORef
 import qualified Data.Sequence as Seq
 import Graphics.UI.Gtk hiding (get,set)
 
-layerAction :: (XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState) -> MainCoroutine HXournalState
+layerAction :: (XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState) 
+            -> MainCoroutine HXournalState
 layerAction action = do 
-    xstate <- getSt
-    let epage = get currentPage . getCurrentCanvasInfo $ xstate
-        cpn = get currentPageNum . getCurrentCanvasInfo $ xstate
-        xojstate = get xournalstate xstate
-    newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
-    return . updatePageAll newxojstate 
-           . set xournalstate newxojstate 
-           $ xstate
+    xst <- getSt 
+    selectBoxAction (fsingle xst) (error "layerAction") . get currentCanvasInfo $ xst
+  where 
+    fsingle xstate cvsInfo = do
+      let epage = get currentPage cvsInfo
+          cpn = get currentPageNum cvsInfo
+          xojstate = get xournalstate xstate
+      newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
+      return . updatePageAll newxojstate 
+             . set xournalstate newxojstate 
+             $ xstate
 
 makeNewLayer :: MainCoroutine () 
 makeNewLayer = layerAction newlayeraction >>= commit 
@@ -124,23 +128,22 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = do 
-    liftIO $ putStrLn "startGotoLayerAt"
-    xstate <- getSt 
-    let epage = get currentPage . getCurrentCanvasInfo $ xstate 
-        cpn = get currentPageNum . getCurrentCanvasInfo $ xstate
-        xojstate = get xournalstate xstate 
-        page = either id gcast epage 
-        (_,currpage) = getCurrentLayerOrSet page
-        Select (O (Just lyrzipper)) = get g_layers currpage
-        cidx = currIndex lyrzipper
-        len  = lengthSZ lyrzipper 
-   
-    lref <- liftIO $ newIORef cidx
-
-    dialog <- liftIO (layerChooseDialog lref cidx len)
-
-    res <- liftIO $ dialogRun dialog
-    case res of 
+    xst <- getSt 
+    selectBoxAction (fsingle xst) (error "startGotoLayerAt") . get currentCanvasInfo $ xst 
+  where 
+    fsingle xstate cvsInfo = do 
+      let epage = get currentPage cvsInfo
+          cpn = get currentPageNum cvsInfo
+          xojstate = get xournalstate xstate 
+          page = either id gcast epage 
+          (_,currpage) = getCurrentLayerOrSet page
+          Select (O (Just lyrzipper)) = get g_layers currpage
+          cidx = currIndex lyrzipper
+          len  = lengthSZ lyrzipper 
+      lref <- liftIO $ newIORef cidx
+      dialog <- liftIO (layerChooseDialog lref cidx len)
+      res <- liftIO $ dialogRun dialog
+      case res of 
         ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
         ResponseOk ->  do
           liftIO $ widgetDestroy dialog
@@ -149,5 +152,5 @@ startGotoLayerAt = do
           gotoLayerAt newnum
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileOpen " 
-    return ()
+      return ()
 

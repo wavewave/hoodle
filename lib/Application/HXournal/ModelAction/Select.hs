@@ -12,7 +12,7 @@ module Application.HXournal.ModelAction.Select where
 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
-import Application.HXournal.Draw
+import Application.HXournal.View.Draw
 import Data.Sequence (ViewL(..),viewl,Seq(..))
 import Data.Foldable (foldl')
 import Data.Monoid

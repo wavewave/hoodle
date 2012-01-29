@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.6.3.999
+Version:	0.6.999
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 Homepage:       http://ianwookim.org/hxournal
@@ -95,6 +95,7 @@ Library
                    Application.HXournal.Job
                    Application.HXournal.Command 
                    Application.HXournal.Type
+                   Application.HXournal.Type.Alias 
                    Application.HXournal.Type.Event 
                    Application.HXournal.Type.Enum
                    Application.HXournal.Type.Clipboard
@@ -104,6 +105,9 @@ Library
                    Application.HXournal.Type.XournalState
                    Application.HXournal.Type.Window
                    Application.HXournal.Type.Undo 
+                   Application.HXournal.View.Draw
+                   Application.HXournal.GUI
+                   Application.HXournal.GUI.Menu
                    Application.HXournal.ModelAction.Adjustment
                    Application.HXournal.ModelAction.Pen 
                    Application.HXournal.ModelAction.Page
@@ -113,10 +117,8 @@ Library
                    Application.HXournal.ModelAction.Window
                    -- Application.HXournal.ModelAction.Network
                    Application.HXournal.ModelAction.Layer
-                   Application.HXournal.Coroutine.Callback
-                   Application.HXournal.GUI
-                   Application.HXournal.GUI.Menu
                    Application.HXournal.Coroutine
+                   Application.HXournal.Coroutine.Callback
                    Application.HXournal.Coroutine.Draw
                    Application.HXournal.Coroutine.EventConnect
                    Application.HXournal.Coroutine.Default
@@ -134,7 +136,6 @@ Library
                    Application.HXournal.Coroutine.Layer
                    Application.HXournal.Util
                    Application.HXournal.Util.Verbatim 
-                   Application.HXournal.Draw
                    Application.HXournal.Device
                    Application.HXournal.Accessor
                    Application.HXournal.Config

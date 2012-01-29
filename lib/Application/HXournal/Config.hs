@@ -20,8 +20,6 @@ import System.Environment
 import System.Directory
 import System.FilePath
 import Control.Concurrent 
-import Control.Applicative
--- import Application.HXournal.NetworkClipboard.Client.Config
 
 emptyConfigString :: String 
 emptyConfigString = "\n#config file for hxournal \n "  

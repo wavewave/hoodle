@@ -20,7 +20,7 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor
 import Application.HXournal.Device
-import Application.HXournal.Draw
+import Application.HXournal.View.Draw
 import Application.HXournal.Util
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw

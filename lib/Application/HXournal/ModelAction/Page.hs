@@ -83,6 +83,7 @@ getPageFromGXournalMap pagenum xoj  =
 
   
 
+
 -- | update page when single page view mode
 
 updatePageSingle :: XournalState -> CanvasInfo SinglePage -> CanvasInfo SinglePage

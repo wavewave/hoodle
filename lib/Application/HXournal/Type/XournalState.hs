@@ -115,7 +115,7 @@ modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMa
   where cid = get currentCanvasId st 
 
 
-
+-- modifyCurrentPageInXournalState :: Page ->  XournalState 
 
 
 

@@ -25,7 +25,7 @@ import Application.HXournal.Accessor
 import Application.HXournal.Util
 import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
-import Application.HXournal.Draw
+import Application.HXournal.View.Draw
 import Control.Monad.Trans
 
 import Data.Xournal.Predefined

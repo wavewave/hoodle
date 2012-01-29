@@ -8,6 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Type 
 ( module Application.HXournal.Type.Event

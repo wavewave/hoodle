@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Application.HXournal.Draw 
+-- Module      : Application.HXournal.View.Draw 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -9,7 +9,7 @@
 -- Portability : GHC
 --
 
-module Application.HXournal.Draw where
+module Application.HXournal.View.Draw where
 
 import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo

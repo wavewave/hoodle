@@ -14,7 +14,7 @@
 module Application.HXournal.Accessor where
 
 import Application.HXournal.Type
-import Application.HXournal.Draw 
+import Application.HXournal.View.Draw 
 import Application.HXournal.ModelAction.Page
 
 

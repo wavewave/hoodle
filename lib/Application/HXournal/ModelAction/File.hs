@@ -67,7 +67,6 @@ getFileContent Nothing xstate = do
             $ newxoj 
 
         forSingle    = setPage newxojstate 0 
-                     . set (pageOrigin.pageArrangement.viewInfo) (PageOrigin (0,0))
                      . set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
                      . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
                      . set currentPageNum 0 
@@ -90,7 +89,6 @@ constructNewHXournalStateFromXournal xoj' xstate = do
               . get g_pages $ xoj
         startingxojstate = ViewAppendState xoj
         forSingle = setPage startingxojstate 0 
-                    . set (pageOrigin.pageArrangement.viewInfo) (PageOrigin (0,0)) 
                     . set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
                     . set currentPageNum 0 
     return $ set xournalstate startingxojstate

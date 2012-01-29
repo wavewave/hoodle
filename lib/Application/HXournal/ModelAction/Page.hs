@@ -15,6 +15,7 @@ module Application.HXournal.ModelAction.Page where
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Util
 import Data.Xournal.BBox (moveBBoxToOrigin)
 import Data.Xournal.Simple
 import Data.Xournal.Generic
@@ -80,11 +81,6 @@ getPageFromGXournalMap pagenum xoj  =
     Nothing -> error "something wrong in getPageFromGXournalMap"
     Just p -> p
 
-updatePage :: XournalState -> CanvasInfo a -> CanvasInfo a 
-updatePage xst cinfo = 
-  case get (pageArrangement.viewInfo) cinfo of 
-    SingleArrangement _ _ _ -> updatePageSingle xst cinfo
-    _ -> error "not defined yet in updatePage"
   
 
 -- | update page when single page view mode
@@ -101,9 +97,7 @@ updatePageSingle (ViewAppendState xojbbox) cinfo =
 updatePageSingle (SelectState txoj) cinfo = 
   let pagenum = get currentPageNum cinfo
       mspage = gselectSelected txoj 
-      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
-                      Nothing -> error "no such page in updatePage"
-                      Just p -> p
+      pageFromArg = maybeError "undatePageSingle" $ M.lookup pagenum (get g_selectAll txoj) 
       (newpage,Dim w h) = 
         case mspage of 
           Nothing -> (Left pageFromArg, gdimension pageFromArg)
@@ -117,13 +111,17 @@ updatePageSingle (SelectState txoj) cinfo =
      $ cinfo 
 
 
+
+-- |
+updatePage :: XournalState -> CanvasInfo a -> CanvasInfo a 
+updatePage xst = viewModeBranch (updatePageSingle xst) (error "updatePage")    
+
 -- | 
 
 setPage :: XournalState -> Int -> CanvasInfo a -> CanvasInfo a 
-setPage xstate pagenum cinfo = 
-  case get (pageArrangement.viewInfo) cinfo of 
-    SingleArrangement _ _ _ -> setPageSingle xstate pagenum cinfo 
-    _ -> error "not defined yet in setPage"
+setPage xstate pagenum = 
+  viewModeBranch (setPageSingle xstate pagenum) (error "setPage")    
+
 
 
 -- | setPageSingle : in Single Page mode   

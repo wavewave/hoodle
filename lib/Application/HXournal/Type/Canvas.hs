@@ -52,7 +52,7 @@ data ViewInfo a  = (ViewMode a) => ViewInfo { _zoomMode :: ZoomMode
 
 defaultViewInfoSinglePage :: ViewInfo SinglePage
 defaultViewInfoSinglePage = ViewInfo { _zoomMode = Original 
-                                     , _pageArrangement = SingleArrangement (PageOrigin (0,0)) (PageDimension (Dim 100 100)) (ViewPortBBox (BBox (0,0) (100,100))) } 
+                                     , _pageArrangement = SingleArrangement (PageDimension (Dim 100 100)) (ViewPortBBox (BBox (0,0) (100,100))) } 
 
 
 zoomMode :: ViewInfo a :-> ZoomMode 
@@ -61,15 +61,6 @@ zoomMode = lens _zoomMode (\a f -> f { _zoomMode = a } )
 
 pageArrangement :: ViewInfo a :-> PageArrangement a  
 pageArrangement = lens _pageArrangement (\a f -> f { _pageArrangement = a })
-
-{- ViewInfo { _pageMode :: PageMode
-                         , _zoomMode :: ZoomMode
-                         , _viewPortOrigin :: (Double,Double)
-                         , _pageDimension :: (Double,Double) 
-                         } -}
-
--- createPageArrangement :: CanvasInfo a -> PageArrangement a 
--- createPageArrangement 
 
 data CanvasInfo a = 
     (ViewMode a) => CanvasInfo { _canvasId :: CanvasId
@@ -110,9 +101,6 @@ vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
 
 data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 
 
-{- unCanvasInfoBox :: (ViewMode a) => CanvasInfoBox -> CanvasInfo a 
-unCanvasInfoBox (CanvasInfoBox x) = x  -}
-
 getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
 getDrawAreaFromBox (CanvasInfoBox x) = get drawArea x 
 
@@ -126,10 +114,8 @@ selectBoxAction :: (Monad m) =>
                 -> (CanvasInfo ContinuousSinglePage -> m a) -> CanvasInfoBox -> m a 
 selectBoxAction fsingle fcont (CanvasInfoBox cinfo) = 
   case get (pageArrangement.viewInfo) cinfo of 
-    SingleArrangement _ _ _ ->  fsingle cinfo 
-    ContinuousSingleArrangement _ _ -> fcont cinfo 
-
-
+    SingleArrangement _ _ ->  fsingle cinfo 
+    ContinuousSingleArrangement _ _ _ -> fcont cinfo 
 
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
           -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage)
@@ -138,6 +124,18 @@ selectBox fsingle fcont =
   let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
       idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
   in runIdentity . idaction   
+
+
+viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
+               -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage) 
+               -> CanvasInfo v -> CanvasInfo v 
+viewModeBranch fsingle fcont cinfo = 
+  case get (pageArrangement.viewInfo) cinfo of 
+    SingleArrangement _ _ ->  fsingle cinfo 
+    ContinuousSingleArrangement _ _ _ -> fcont cinfo 
+
+
+
 
 
 type CanvasInfoMap = M.IntMap CanvasInfoBox

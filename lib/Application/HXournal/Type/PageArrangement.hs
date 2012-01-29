@@ -44,25 +44,27 @@ apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 
 
 data PageArrangement a where
-  SingleArrangement:: PageOrigin -> PageDimension -> ViewPortBBox -> PageArrangement SinglePage 
-  ContinuousSingleArrangement :: DesktopDimension -> ViewPortBBox -> PageArrangement ContinuousSinglePage
+  SingleArrangement:: {- PageOrigin -> -} PageDimension -> ViewPortBBox -> PageArrangement SinglePage 
+  ContinuousSingleArrangement :: DesktopDimension -> (Int -> PageOrigin) 
+                                 -> ViewPortBBox -> PageArrangement ContinuousSinglePage
 
 
-
+{-
 pageOrigin :: PageArrangement SinglePage :-> PageOrigin 
 pageOrigin = lens getter setter
   where getter (SingleArrangement porig _ _) = porig
         setter porig (SingleArrangement _ pdim vbbox) = SingleArrangement porig pdim vbbox
+-}
 
 pageDimension :: PageArrangement SinglePage :-> PageDimension
 pageDimension = lens getter setter 
-  where getter (SingleArrangement _ pdim _) = pdim
-        setter pdim (SingleArrangement porig _ vbbox) = SingleArrangement porig pdim vbbox
+  where getter (SingleArrangement pdim _) = pdim
+        setter pdim (SingleArrangement _ vbbox) = SingleArrangement pdim vbbox
 
 viewPortBBox :: PageArrangement SinglePage :-> ViewPortBBox 
 viewPortBBox = lens getter setter 
-  where getter (SingleArrangement _ _ vbbox) = vbbox 
-        setter vbbox (SingleArrangement porig pdim _) = SingleArrangement porig pdim vbbox 
+  where getter (SingleArrangement _ vbbox) = vbbox 
+        setter vbbox (SingleArrangement pdim _) = SingleArrangement pdim vbbox 
 
 
 

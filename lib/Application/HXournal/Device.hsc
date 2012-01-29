@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 #include <gtk/gtk.h>
 #include "template-hsc-gtk2hs.h"
@@ -19,14 +20,12 @@ module Application.HXournal.Device where
 import Application.HXournal.Config
 import Data.Configurator.Types
 
-
 import Control.Applicative 
 import Control.Monad.Reader
 
 import Foreign.Marshal.Utils
 import Foreign.Ptr
 import Foreign.C
-import Foreign.C.String 
 import Foreign.Storable
 
 import Graphics.UI.Gtk

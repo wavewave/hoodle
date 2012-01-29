@@ -10,14 +10,16 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Coroutine.Layer where
 
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
+import Application.HXournal.Type.Alias 
 import Application.HXournal.Accessor
-import Application.HXournal.Util
+
 import Application.HXournal.ModelAction.Layer
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Commit
@@ -32,14 +34,14 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-import Data.Xournal.Simple
+
 
 import Data.IORef
 
 import qualified Data.Sequence as Seq
 import Graphics.UI.Gtk hiding (get,set)
 
-layerAction :: (XournalState -> Int -> TPageBBoxMapPDFBuf -> MainCoroutine XournalState) 
+layerAction :: (XournalState -> Int -> Page EditMode -> MainCoroutine XournalState) 
             -> MainCoroutine HXournalState
 layerAction action = do 
     xst <- getSt 
@@ -116,9 +118,8 @@ deleteCurrentLayer :: MainCoroutine ()
 deleteCurrentLayer = layerAction deletelayeraction >>= commit
   where deletelayeraction xojstate cpn page = do 
           let (mcurrlayer,currpage) = getCurrentLayerOrSet page
-          case mcurrlayer of 
-            Nothing -> return xojstate 
-            Just currlayer -> do 
+          flip (maybe (return xojstate)) mcurrlayer $  
+            const $ do 
               let Select (O (Just lyrzipper)) = get g_layers currpage  
                   mlyrzipper = deleteCurrent lyrzipper 
                   npage = maybe currpage 
@@ -127,14 +128,11 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
               return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 startGotoLayerAt :: MainCoroutine ()
-startGotoLayerAt = do 
-    xst <- getSt 
-    selectBoxAction (fsingle xst) (error "startGotoLayerAt") . get currentCanvasInfo $ xst 
+startGotoLayerAt = 
+    selectBoxAction fsingle (error "startGotoLayerAt") . get currentCanvasInfo =<< getSt
   where 
-    fsingle xstate cvsInfo = do 
+    fsingle cvsInfo = do 
       let epage = get currentPage cvsInfo
-          cpn = get currentPageNum cvsInfo
-          xojstate = get xournalstate xstate 
           page = either id gcast epage 
           (_,currpage) = getCurrentLayerOrSet page
           Select (O (Just lyrzipper)) = get g_layers currpage

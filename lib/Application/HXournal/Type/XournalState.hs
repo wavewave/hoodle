@@ -10,27 +10,21 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Type.XournalState where
 
 import Application.HXournal.Device
 import Application.HXournal.Type.Event 
-
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Undo
-
 -- import Application.HXournal.NetworkClipboard.Client.Config
 import Data.Xournal.Map
-
 import Graphics.Xournal.Render.BBoxMapPDF
-
-import Control.Applicative
 import Control.Category
 import Control.Monad.State hiding (get,modify)
-
-
 import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
 import Data.Label 
@@ -115,7 +109,6 @@ modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMa
   where cid = get currentCanvasId st 
 
 
--- modifyCurrentPageInXournalState :: Page ->  XournalState 
 
 
 

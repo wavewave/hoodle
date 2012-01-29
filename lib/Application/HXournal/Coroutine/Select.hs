@@ -8,6 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.Select where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
@@ -18,10 +20,11 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Type.Alias
 import Application.HXournal.Accessor
 import Application.HXournal.Device
 import Application.HXournal.View.Draw
-import Application.HXournal.Util
+
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Pen
@@ -33,37 +36,36 @@ import Application.HXournal.ModelAction.Layer
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
-import Control.Compose
+
 import Control.Category
 import Control.Applicative 
 import Data.Label
 import Prelude hiding ((.), id)
 import Data.Xournal.Generic
 import Data.Xournal.BBox
-import Data.Xournal.Select
+
+import Graphics.Rendering.Cairo
+
+
+
+import Data.Monoid 
+import Data.Sequence (Seq,(|>))
+import qualified Data.Sequence as Sq (empty)
+import Data.Time.Clock
 import Graphics.Xournal.Render.Type
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBox
-import Graphics.Rendering.Cairo
-import System.IO.Unsafe
-import qualified Data.IntMap as IM
-import Data.Maybe
-import Data.Monoid 
-import Data.Sequence (Seq(..),(|>))
-import qualified Data.Sequence as Sq (empty)
-import Data.Time.Clock
-import Data.Xournal.Generic
 import Graphics.Xournal.Render.Simple
 import Graphics.Xournal.Render.Generic
-import Graphics.Xournal.Render.PDFBackground
-import Graphics.Xournal.Render.BBoxMapPDF
 
-import Graphics.UI.Gtk hiding (get,set,disconnect)
+
+
+
 
 
 createTempSelectRender :: CanvasPageGeometry -> ZoomMode 
-                          -> TPageBBoxMapPDFBuf
+                          -> Page EditMode
                           -> a 
                           -> MainCoroutine (TempSelectRender a) 
 createTempSelectRender geometry zmode page x = do 
@@ -97,7 +99,7 @@ selectRectStart = commonPenStart rectaction
                 surfaceFinish (tempSurface tsel)          
           let action (Right tpage) | hitInSelection tpage (x,y) = do
                 tsel <- createTempSelectRender 
-                          cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf)
+                          cpg zmode (gcast tpage :: Page EditMode)
                           (getSelectedStrokes tpage)
                 moveSelect cinfo cpg zmode cidmove cidup 
                            (x,y) ((x,y),ctime) tsel 
@@ -105,9 +107,9 @@ selectRectStart = commonPenStart rectaction
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
-                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelect handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
-              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
+              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
           action (get currentPage cinfo)      
 
@@ -130,14 +132,13 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
     PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord geometry zmode pcoord 
       let bbox = BBox orig (x,y)
-          prevbbox = BBox orig prev
+          -- prevbbox = BBox orig prev
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
-      let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
-      xstate <- getSt
-      let -- cvsInfo = getCanvasInfo cid xstate 
-          page = either id gcast $ get currentPage cinfo -- cvsInfo 
-          numselstrs = length hittedstrs 
+      -- let newbbox = inflate (fromJust (Just bbox `merge` Just prevbbox)) 5.0
+      -- xstate <- getSt
+      let page = either id gcast $ get currentPage cinfo 
+          -- numselstrs = length hittedstrs 
           (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
@@ -149,10 +150,10 @@ newSelectRectangle cinfo geometry zmode connidmove connidup strs orig
                 Top -> do 
                   cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
                   mapM_ renderSelectedStroke hittedstrs
-                Middle bbox -> do 
-                  let redrawee = filter (\x -> hitTestBBoxBBox bbox (strokebbox_bbox x) ) hittedstrs  
-                  cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page)
-                  clipBBox (Just bbox)
+                Middle sbbox -> do 
+                  let redrawee = filter (hitTestBBoxBBox sbbox.strokebbox_bbox) hittedstrs  
+                  cairoRenderOption (InBBoxOption (Just sbbox)) (InBBox page)
+                  clipBBox (Just sbbox)
                   mapM_ renderSelectedStroke redrawee 
                 Bottom -> return ()
               mapM_ renderSelectedStroke sstrs 
@@ -336,10 +337,6 @@ copySelection = updateXState copySelectionAction >> invalidateAll
                                                 liftIO $ togglePaste ui True 
                                                 return xstate' 
 
---   >>=) (either (return xstate)) 
--- getActiveLayer >=>)  $   
---        either (return xstate) $ \alist -> do 
-
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = modeChange ToSelectMode >> updateXState pasteAction >> invalidateAll  
   where pasteAction xst = 
@@ -428,7 +425,7 @@ selectLassoStart = commonPenStart lassoAction
                 surfaceFinish (tempSurface tsel)          
           let action (Right tpage) | hitInSelection tpage (x,y) = do
                 tsel <- createTempSelectRender 
-                          cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf)
+                          cpg zmode (gcast tpage :: Page EditMode)
                           (getSelectedStrokes tpage)
                 moveSelect cinfo cpg zmode cidmove cidup 
                            (x,y) ((x,y),ctime) tsel 
@@ -436,9 +433,9 @@ selectLassoStart = commonPenStart lassoAction
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
-                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: TPageBBoxMapPDFBuf) (getSelectedStrokes tpage); resizeSelect handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender cpg zmode (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cinfo cpg zmode cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
-              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: TPageBBoxMapPDFBuf )
+              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
           action (get currentPage cinfo)      
           
@@ -459,11 +456,7 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
     PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord cpg zmode pcoord 
           nlasso = lasso |> (x,y)
-      let lassobbox = mkbboxF nlasso 
-      let newbbox = inflate lassobbox 5.0
-      xstate <- getSt
-      let -- cvsInfo = getCanvasInfo cid xstate 
-          page = either id gcast $ get currentPage cinfo -- cvsInfo 
+      let -- lassobbox = mkbboxF nlasso 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
         invalidateTemp cid (tempSurface tsel) (renderLasso nlasso) 
@@ -474,7 +467,7 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
           nlasso = lasso |> (x,y)
       let epage = get currentPage cinfo 
           cpn = get currentPageNum cinfo 
-      let bbox = mkbboxF nlasso 
+      let -- bbox = mkbboxF nlasso 
           hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
           selectstrs = fmapAL unNotHitted id hittestlasso
       xstate <- getSt    

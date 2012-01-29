@@ -8,6 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.View.Draw where
 
@@ -22,7 +23,7 @@ import Prelude hiding ((.),id,mapM_,concatMap)
 import Data.Foldable
 import Data.Monoid
 import Data.Sequence
-import Data.Xournal.Simple
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 
 import Data.Xournal.BBox
@@ -32,8 +33,8 @@ import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.BBoxMapPDF 
 import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.Generic
-import Graphics.Xournal.Render.HitTest
-import Application.HXournal.Type 
+import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.Alias 
 import Application.HXournal.Device
 import Application.HXournal.Util
 import Application.HXournal.Type.PageArrangement
@@ -48,10 +49,10 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
-type PageDrawF = DrawingArea -> TPageBBoxMapPDFBuf -> ViewInfo SinglePage -> Maybe BBox 
+type PageDrawF = DrawingArea -> Page EditMode -> ViewInfo SinglePage -> Maybe BBox 
                  -> IO ()
 
-type PageDrawFSel = DrawingArea -> TTempPageSelectPDFBuf -> ViewInfo SinglePage -> Maybe BBox 
+type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox 
                     -> IO ()
 
 predefinedLassoColor :: (Double,Double,Double,Double)
@@ -146,7 +147,7 @@ transformForPageCoord cpg zmode = do
   translate (-xo) (-yo)      
   
 
-drawFuncGen :: (TPageBBoxMapPDFBuf -> Maybe BBox -> Render ()) -> PageDrawF 
+drawFuncGen :: (Page EditMode -> Maybe BBox -> Render ()) -> PageDrawF 
 drawFuncGen render canvas page vinfo mbbox = do 
     let zmode  = get zoomMode vinfo
         BBox origin _ = unViewPortBBox . get (viewPortBBox.pageArrangement) $ vinfo
@@ -162,8 +163,8 @@ drawFuncGen render canvas page vinfo mbbox = do
     doubleBuffering win geometry xformfunc renderfunc   
 
   
-drawFuncSelGen :: (TTempPageSelectPDFBuf -> Maybe BBox -> Render ()) 
-                  -> (TTempPageSelectPDFBuf -> Maybe BBox -> Render ())
+drawFuncSelGen :: (Page SelectMode -> Maybe BBox -> Render ()) 
+                  -> (Page SelectMode -> Maybe BBox -> Render ())
                   -> PageDrawFSel  
 drawFuncSelGen rencont rensel canvas page vinfo mbbox = do 
     let zmode  = get zoomMode vinfo
@@ -182,13 +183,13 @@ drawFuncSelGen rencont rensel canvas page vinfo mbbox = do
 
 drawPageClearly :: PageDrawF
 drawPageClearly = drawFuncGen $ \page _mbbox -> 
-                     cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF)
+                     cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
                      
 drawPageSelClearly :: PageDrawFSel                      
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
   where rendercontent tpg _mbbox = do
-          let pg = (gcast tpg :: TPageBBoxMapPDFBuf)
-          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg :: TPageBBoxMapPDF)
+          let pg' = gcast tpg :: Page EditMode
+          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg' :: TPageBBoxMapPDF)
         renderselect tpg mbbox =  
           cairoHittedBoxDraw tpg mbbox
 
@@ -256,7 +257,7 @@ drawBBox canvas page vinfo (Just bbox) = do
 drawBBoxSel :: PageDrawFSel 
 drawBBoxSel _ _ _ Nothing = return ()
 drawBBoxSel canvas tpg vinfo (Just bbox) = do 
-  let page = (gcast tpg :: TPageBBoxMapPDFBuf)
+  let page = (gcast tpg :: Page EditMode)
   let zmode  = get zoomMode vinfo
       BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
   geometry <- getCanvasPageGeometry canvas page origin
@@ -276,8 +277,8 @@ drawBBoxSel canvas tpg vinfo (Just bbox) = do
 -- | 
 
 drawTempBBox :: BBox -> PageDrawF 
-drawTempBBox bbox _ _ _ Nothing = return ()
-drawTempBBox bbox canvas page vinfo mbbox@(Just _) = do 
+drawTempBBox _bbox _ _ _ Nothing = return ()
+drawTempBBox bbox canvas page vinfo (Just _) = do 
   let zmode  = get zoomMode vinfo
       BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
   geometry <- getCanvasPageGeometry canvas page origin
@@ -302,9 +303,9 @@ drawTempBBox bbox canvas page vinfo mbbox@(Just _) = do
 -- |
 
 drawSelTempBBox :: BBox -> PageDrawFSel 
-drawSelTempBBox bbox _ _ _ Nothing = return ()
+drawSelTempBBox _bbox _ _ _ Nothing = return ()
 drawSelTempBBox bbox canvas tpg vinfo mbbox@(Just _) = do 
-  let page = (gcast tpg :: TPageBBoxMapPDFBuf)
+  let page = (gcast tpg :: Page EditMode)
   let zmode  = get zoomMode vinfo
       BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
   geometry <- getCanvasPageGeometry canvas page origin
@@ -377,7 +378,7 @@ drawSelectionInBBox :: PageDrawFSel
 drawSelectionInBBox canvas tpg vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-      page = (gcast tpg :: TPageBBoxMapPDFBuf)
+      page = (gcast tpg :: Page EditMode)
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   let mbboxnew = adjustBBoxWithView geometry zmode mbbox
@@ -389,7 +390,7 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   doubleBuffering win geometry xformfunc renderfunc   
     
   
-cairoHittedBoxDraw :: TTempPageSelectPDFBuf -> Maybe BBox -> Render () 
+cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
   let layers = get g_layers tpg 
       slayer = gselectedlayerbuf layers 
@@ -398,18 +399,9 @@ cairoHittedBoxDraw tpg mbbox = do
       clipBBox mbbox
       setSourceRGBA 0.0 0.0 1.0 1.0
       let hitstrs = concatMap unHitted (getB alist)
-          oneboxdraw str = do 
-            let bbox@(BBox (x1,y1) (x2,y2)) = strokebbox_bbox str
-                drawbox = do { rectangle x1 y1 (x2-x1) (y2-y1); stroke }
-            case mbbox of 
-              Just bboxarg -> if hitTestBBoxBBox bbox bboxarg 
-                              then drawbox 
-                              else return () 
-              Nothing -> drawbox 
       mapM_ renderSelectedStroke hitstrs  
       let ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) 
                    $ hitstrs 
-                   
       case ulbbox of 
         Middle bbox -> renderSelectHandle bbox 
         _ -> return () 
@@ -462,7 +454,7 @@ drawSelBuf :: PageDrawFSel
 drawSelBuf canvas tpg vinfo mbbox = do 
   let zmode  = get zoomMode vinfo
       BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-      page = (gcast tpg :: TPageBBoxMapPDFBuf)
+      page = (gcast tpg :: Page EditMode)
   geometry <- getCanvasPageGeometry canvas page origin
   win <- widgetGetDrawWindow canvas
   let xformfunc = transformForPageCoord geometry zmode 
@@ -497,7 +489,6 @@ renderBoxSelection bbox = do
 
 renderSelectedStroke :: StrokeBBox -> Render () 
 renderSelectedStroke str = do 
-  let bbox = strokebbox_bbox str 
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1
   cairoOneStrokeSelected str

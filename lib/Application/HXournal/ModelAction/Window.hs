@@ -10,6 +10,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.ModelAction.Window where
 
 import Application.HXournal.Type.Canvas

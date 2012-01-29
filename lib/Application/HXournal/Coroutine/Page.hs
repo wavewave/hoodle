@@ -11,10 +11,7 @@
 
 module Application.HXournal.Coroutine.Page where
 
-import Control.Applicative 
 import Control.Monad
-import Control.Compose
-import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
@@ -25,14 +22,10 @@ import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Adjustment
-
 import Graphics.Xournal.Render.BBoxMapPDF
 import Data.Xournal.Generic
-import Data.Xournal.Select 
-
 import Graphics.UI.Gtk hiding (get,set)
 import Application.HXournal.ModelAction.Page
-
 import Control.Monad.Trans
 import Control.Category
 import Data.Label
@@ -40,9 +33,6 @@ import Prelude hiding ((.), id)
 import Data.Xournal.Simple
 import Data.Xournal.BBox
 import qualified Data.IntMap as M
-
--- import Control.Arrow
--- import Control.Compose 
 
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction >> invalidateCurrent

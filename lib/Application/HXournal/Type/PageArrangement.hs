@@ -10,11 +10,10 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
-
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Type.PageArrangement where
 
-import Control.Category
 import Data.Xournal.Simple
 import Data.Xournal.BBox
 import Data.Label 

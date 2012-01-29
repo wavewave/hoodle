@@ -11,7 +11,6 @@
 --
 module Application.HXournal.Coroutine.Draw where
 
-import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
@@ -25,15 +24,15 @@ import Data.Xournal.BBox
 import Control.Applicative 
 import Control.Monad
 import Control.Monad.Trans
-import qualified Control.Monad.State as St
+
 import qualified Data.IntMap as M
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
 import Data.Xournal.Generic
-import Graphics.Xournal.Render.Generic
-import Graphics.Xournal.Render.BBoxMapPDF
+
+
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set)
 
@@ -50,9 +49,6 @@ invalidateSelSingle cid mbbox drawf drawfsel =
             Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure tpage <*> get viewInfo 
                                             <*> pure mbbox $ cvsInfo )
 
-{-  xstate <- getSt  
-  case getCanvasInfo cid xstate of 
-    CanvasInfoBox cvsInfo -> do -}
 
 
 
@@ -69,13 +65,6 @@ invalidateGenSingle cid mbbox drawf =
                         <*> get viewInfo 
                         <*> pure mbbox
                         $ cvsInfo )
-
-{-
-  xstate <- lift St.get  
-  let  maybeCvs = M.lookup cid (get canvasInfoMap xstate)
-  case maybeCvs of 
-    Nothing -> return ()
-    Just cvsInfo -> do  -}
 
 
 invalidateAll :: MainCoroutine () 
@@ -141,9 +130,6 @@ invalidateTemp cid tempsurface rndr = do
           let zmode  = get zoomMode vinfo
               BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
           geometry <- liftIO $ getCanvasPageGeometry canvas page origin
-          let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
-                         $ canvas_size geometry 
-          let mbboxnew = adjustBBoxWithView geometry zmode Nothing
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = transformForPageCoord geometry zmode
           liftIO $ renderWithDrawable win $ do   

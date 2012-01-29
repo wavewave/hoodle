@@ -21,9 +21,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Clipboard
-
 import Application.HXournal.Accessor
-
 import Application.HXournal.GUI.Menu
 import Application.HXournal.Coroutine.Callback
 import Application.HXournal.Coroutine.Commit
@@ -39,7 +37,6 @@ import Application.HXournal.Coroutine.Mode
 import Application.HXournal.Coroutine.Window
 -- import Application.HXournal.Coroutine.Network
 import Application.HXournal.Coroutine.Layer 
-
 import Application.HXournal.ModelAction.Window 
 import Application.HXournal.Type.Window 
 import Application.HXournal.Device
@@ -57,6 +54,8 @@ import Application.HXournal.Type.PageArrangement
 import Data.Xournal.BBox
 import Data.Xournal.Generic
 
+-- |
+
 guiProcess :: MainCoroutine ()
 guiProcess = do 
   initialize
@@ -72,6 +71,9 @@ guiProcess = do
   mapM_ f assocs
   sequence_ (repeat dispatchMode)
 
+
+-- |
+
 initCoroutine :: DeviceList -> Window -> IO (TRef,SRef)
 initCoroutine devlst window = do 
   let st0 = (emptyHXournalState :: HXournalState)
@@ -79,11 +81,7 @@ initCoroutine devlst window = do
   tref <- newIORef (undefined :: SusAwait)
   (r,st') <- St.runStateT (resume guiProcess) st0 
   writeIORef sref st' 
-  case r of 
-    Left aw -> do 
-      writeIORef tref aw 
-    Right _ -> error "what?"
-
+  either (writeIORef tref) (error "what?") r 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
             . set callBack (bouncecallback tref sref) 
@@ -152,15 +150,13 @@ defaultEventProcess :: MyEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = updateXState (return . hscrollmoveAction) >> invalidate cid 
-  where hscrollmoveAction xst = 
-          modifyCurrentCanvasInfo (selectBox (fsimple xst) (error "defHscr")) xst 
-        fsimple xstate cinfo = 
+  where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple (error "defHscr"))
+        fsimple cinfo = 
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
           in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
 defaultEventProcess (VScrollBarMoved cid v) = updateXState (return . vscrollmoveAction) >> invalidate cid
-  where vscrollmoveAction xst = 
-          modifyCurrentCanvasInfo (selectBox (fsimple xst) (error "defVscr")) xst
-        fsimple xstate cinfo =  
+  where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple (error "defVscr"))
+        fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
           in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
 
@@ -192,7 +188,7 @@ defaultEventProcess (VScrollBarMoved cid v) = updateXState (return . vscrollmove
     lift . St.put $ xstate'
     invalidate cid -}
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
-defaultEventProcess (CanvasConfigure cid _w' _h') = canvasZoomUpdate Nothing 
+defaultEventProcess (CanvasConfigure _cid _w' _h') = canvasZoomUpdate Nothing 
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess _ = return ()

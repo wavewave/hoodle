@@ -8,12 +8,15 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.ModelAction.Select where
 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.Alias
 import Application.HXournal.View.Draw
-import Data.Sequence (ViewL(..),viewl,Seq(..))
+import Data.Sequence (ViewL(..),viewl,Seq)
 import Data.Foldable (foldl')
 import Data.Monoid
 import Data.Xournal.Generic
@@ -35,7 +38,6 @@ import Data.Label
 import Prelude hiding ((.),id)
 import Data.Algorithm.Diff
 
-import Debug.Trace 
 
 data Handle = HandleTL
             | HandleTR     
@@ -71,33 +73,34 @@ isBBoxDeltaSmallerThan delta cpg zmode
 -- | modify stroke using a function
 
 changeStrokeBy :: ((Double,Double)->(Double,Double)) -> StrokeBBox -> StrokeBBox
-changeStrokeBy func (StrokeBBox t c w ds bbox) = 
+changeStrokeBy func (StrokeBBox t c w ds _bbox) = 
   let change ( x :!: y )  = let (nx,ny) = func (x,y) 
                             in nx :!: ny
       newds = map change ds 
       newbbox = mkbbox newds 
   in  StrokeBBox t c w newds newbbox
 
-getActiveLayer :: TTempPageSelectPDFBuf -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
-getActiveLayer tpage = 
-  let ls = glayers tpage
+getActiveLayer :: Page SelectMode -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
+getActiveLayer = unTEitherAlterHitted . get g_bstrokes . gselectedlayerbuf . get g_layers
+
+{-  let ls = glayers tpage
       slayer = gselectedlayerbuf ls
-      buf = get g_buffer slayer 
-  in unTEitherAlterHitted . get g_bstrokes $ slayer 
+  in  et  $ slayer -} 
 
 
-getSelectedStrokes :: TTempPageSelectPDFBuf -> [StrokeBBox]
-getSelectedStrokes tpage =   
-  let activelayer = getActiveLayer tpage 
+getSelectedStrokes :: Page SelectMode -> [StrokeBBox]
+getSelectedStrokes = either (const []) (concatMap unHitted . getB) . getActiveLayer   
+  
+ {- let activelayer = getActiveLayer tpage 
   in case activelayer of 
        Left _ -> [] 
-       Right alist -> concatMap unHitted . getB $ alist  
+       Right alist -> concatMap unHitted . getB $ alist  -}
 
 
 -- | modify the whole selection using a function
 
 changeSelectionBy :: ((Double,Double) -> (Double,Double))
-                     -> TTempPageSelectPDFBuf -> TTempPageSelectPDFBuf
+                     -> Page SelectMode -> Page SelectMode
 changeSelectionBy func tpage = 
   let activelayer = getActiveLayer tpage
       ls = glayers tpage
@@ -114,7 +117,7 @@ changeSelectionBy func tpage =
 
 -- | special case of offset modification
 
-changeSelectionByOffset :: (Double,Double) -> TTempPageSelectPDFBuf -> TTempPageSelectPDFBuf
+changeSelectionByOffset :: (Double,Double) -> Page SelectMode -> Page SelectMode
 changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
 
 offsetFunc :: (Double,Double) -> (Double,Double) -> (Double,Double) 
@@ -122,10 +125,8 @@ offsetFunc (offx,offy) = \(x,y)->(x+offx,y+offy)
 
 
 
-updateTempXournalSelect :: TTempXournalSelectPDFBuf 
-                           -> TTempPageSelectPDFBuf
-                           -> Int 
-                           -> TTempXournalSelectPDFBuf
+updateTempXournalSelect :: Xournal SelectMode -> Page SelectMode -> Int 
+                           -> Xournal SelectMode 
 updateTempXournalSelect txoj tpage pagenum =                
   let pgs = gselectAll txoj 
       pgs' = M.adjust (const (gcast tpage)) pagenum pgs
@@ -133,10 +134,8 @@ updateTempXournalSelect txoj tpage pagenum =
      . set g_selectSelected (Just (pagenum,tpage))
      $ txoj 
      
-updateTempXournalSelectIO :: TTempXournalSelectPDFBuf
-                             -> TTempPageSelectPDFBuf
-                             -> Int
-                             -> IO TTempXournalSelectPDFBuf
+updateTempXournalSelectIO :: Xournal SelectMode -> Page SelectMode -> Int
+                             -> IO (Xournal SelectMode)
 updateTempXournalSelectIO txoj tpage pagenum = do   
   let pgs = gselectAll txoj 
   newpage <- resetPageBuffers (gcast tpage)
@@ -146,7 +145,7 @@ updateTempXournalSelectIO txoj tpage pagenum = do
             $ txoj 
   
     
-hitInSelection :: TTempPageSelectPDFBuf -> (Double,Double) -> Bool 
+hitInSelection :: Page SelectMode -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
   let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
   in case activelayer of 
@@ -155,7 +154,7 @@ hitInSelection tpage point =
          let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
          in  any (flip hitTestBBoxPoint point) bboxes 
     
-getULBBoxFromSelected :: TTempPageSelectPDFBuf -> ULMaybe BBox 
+getULBBoxFromSelected :: Page SelectMode -> ULMaybe BBox 
 getULBBoxFromSelected tpage = 
   let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
   in case activelayer of 
@@ -163,7 +162,7 @@ getULBBoxFromSelected tpage =
        Right alist -> 
          unUnion . mconcat . fmap (Union . Middle . strokebbox_bbox) . takeHittedStrokes $ alist 
      
-hitInHandle :: TTempPageSelectPDFBuf -> (Double,Double) -> Bool 
+hitInHandle :: Page SelectMode -> (Double,Double) -> Bool 
 hitInHandle tpage point = 
   case getULBBoxFromSelected tpage of 
     Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox point)
@@ -219,7 +218,7 @@ separateFS :: [(DI,a)] -> ([a],[a])
 separateFS = foldr f ([],[]) 
   where f (F,x) (fs,ss) = (x:fs,ss)
         f (S,x) (fs,ss) = (fs,x:ss)
-        f (B,x) (fs,ss) = (fs,ss)
+        f (B,_x) (fs,ss) = (fs,ss)
         
 getDiffStrokeBBox :: [StrokeBBox] -> [StrokeBBox] -> [(DI, StrokeBBox)]
 getDiffStrokeBBox lst1 lst2 = 
@@ -230,7 +229,7 @@ getDiffStrokeBBox lst1 lst2 =
 
             
 checkIfHandleGrasped :: BBox -> (Double,Double) -> Maybe Handle
-checkIfHandleGrasped bbox@(BBox (ulx,uly) (lrx,lry)) (x,y)  
+checkIfHandleGrasped (BBox (ulx,uly) (lrx,lry)) (x,y)  
   | hitTestBBoxPoint (BBox (ulx-5,uly-5) (ulx+5,uly+5)) (x,y) = Just HandleTL
   | hitTestBBoxPoint (BBox (lrx-5,uly-5) (lrx+5,uly+5)) (x,y) = Just HandleTR
   | hitTestBBoxPoint (BBox (ulx-5,lry-5) (ulx+5,lry+5)) (x,y) = Just HandleBL
@@ -255,7 +254,7 @@ getNewBBoxFromHandlePos handle (BBox (ox1,oy1) (ox2,oy2)) (x,y) =
 
 
 angleBAC :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Double 
-angleBAC b@(bx,by) a@(ax,ay) c@(cx,cy) = 
+angleBAC (bx,by) (ax,ay) (cx,cy) = 
     let theta1 | ax==bx && ay>by = pi/2.0 
                | ax==bx && ay<=by = -pi/2.0 
                | ax<bx && ay>by = atan ((ay-by)/(ax-bx)) + pi 

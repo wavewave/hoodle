@@ -13,23 +13,18 @@
 module Application.HXournal.ModelAction.Layer where
 
 import Application.HXournal.Util
-
+import Application.HXournal.Type.Alias
 import Control.Compose
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import Data.Xournal.Generic
-import Data.Xournal.Buffer
 import Data.Xournal.Select
-import Graphics.Xournal.Render.BBoxMapPDF
-
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (get)
-
 import Data.IORef
 
-getCurrentLayerOrSet :: TPageBBoxMapPDFBuf -> (Maybe (TLayerBBoxBuf LyBuf),TPageBBoxMapPDFBuf)
+getCurrentLayerOrSet :: Page EditMode -> (Maybe (Layer EditMode), Page EditMode)
 getCurrentLayerOrSet pg = 
   let olayers = get g_layers pg
       nlayers = case olayers of 
@@ -40,7 +35,7 @@ getCurrentLayerOrSet pg =
       Select osz -> (return . current =<< unO osz, set g_layers nlayers pg)
 
 
-adjustCurrentLayer :: TLayerBBoxBuf LyBuf -> TPageBBoxMapPDFBuf -> TPageBBoxMapPDFBuf
+adjustCurrentLayer :: Layer EditMode -> Page EditMode -> Page EditMode
 adjustCurrentLayer nlayer pg = 
   let (molayer,pg') = getCurrentLayerOrSet pg
   in maybe (set g_layers (Select .O . Just . singletonSZ $ nlayer) pg')

@@ -15,9 +15,10 @@ module Application.HXournal.ModelAction.Page where
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Type.Alias
 import Application.HXournal.Util
 import Data.Xournal.BBox (moveBBoxToOrigin)
-import Data.Xournal.Simple
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.Select
 
@@ -28,12 +29,12 @@ import Data.Label
 import Prelude hiding ((.),id)
 import qualified Data.IntMap as M 
 
-getPageMap :: XournalState -> M.IntMap TPageBBoxMapPDFBuf
+getPageMap :: XournalState -> M.IntMap (Page EditMode)
 getPageMap xojstate = case xojstate of 
                         ViewAppendState xoj -> get g_pages xoj 
                         SelectState txoj -> get g_selectAll txoj 
 
-setPageMap :: M.IntMap TPageBBoxMapPDFBuf -> XournalState -> XournalState
+setPageMap :: M.IntMap (Page EditMode) -> XournalState -> XournalState
 setPageMap nmap xojstate = 
   case xojstate of 
     ViewAppendState xoj -> ViewAppendState (set g_pages nmap xoj)
@@ -158,22 +159,23 @@ setPageSingle (SelectState txoj) pagenum cinfo =
 
                             
 
-getPage :: (ViewMode a) => CanvasInfo a -> TPageBBoxMapPDFBuf
-getPage cinfo = 
-  case get currentPage cinfo of 
-    Right tpgs -> gcast tpgs :: TPageBBoxMapPDFBuf 
-    Left pg -> pg 
+getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
+getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
+  
+{-case get currentPage cinfo of 
+    Right tpg -> gcast tpgs :: (Page EditMode)
+    Left pg -> pg  -}
                   
 
-newSinglePageFromOld :: TPageBBoxMapPDFBuf -> TPageBBoxMapPDFBuf 
+newSinglePageFromOld :: Page EditMode -> Page EditMode 
 newSinglePageFromOld = 
   set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
 
 newPageBeforeAction :: (ViewMode a) => 
-                       TXournalBBoxMapPDFBuf 
+                       Xournal EditMode
                     -> (CanvasId, CanvasInfo a) 
-                    -> IO TXournalBBoxMapPDFBuf
-newPageBeforeAction xoj (cid,cinfo) = do 
+                    -> IO (Xournal EditMode)
+newPageBeforeAction xoj (_cid,cinfo) = do 
   let cpn = get currentPageNum cinfo
   let pagelst = M.elems . get g_pages $ xoj 
       pagekeylst = M.keys . get g_pages $ xoj 

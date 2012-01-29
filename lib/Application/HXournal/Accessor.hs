@@ -16,8 +16,6 @@ module Application.HXournal.Accessor where
 import Application.HXournal.Type
 import Application.HXournal.View.Draw 
 import Application.HXournal.ModelAction.Page
-
-
 import Control.Applicative
 import Control.Monad
 import qualified Control.Monad.State as St
@@ -27,15 +25,8 @@ import qualified Data.IntMap as M
 import Data.Label
 import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
-
-import Control.Compose
-import Graphics.Xournal.Render.BBoxMapPDF
 import Data.Xournal.BBox
 import Data.Xournal.Generic
-import Data.Xournal.Buffer
-import Data.Xournal.Select
-
-import qualified Data.IntMap as M
 import Application.HXournal.Util
 import Application.HXournal.ModelAction.Layer 
 import Application.HXournal.Type.PageArrangement
@@ -70,22 +61,10 @@ getAllStrokeBBoxInCurrentLayer = do
   case get currentCanvas xstate of 
     (_,CanvasInfoBox currCvsInfo) -> do 
       let pagebbox = getPage currCvsInfo
-          (mcurrlayer, currpage) = getCurrentLayerOrSet pagebbox
+          (mcurrlayer, _currpage) = getCurrentLayerOrSet pagebbox
           currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
       return (get g_bstrokes currlayer)
       
-
-{-
-updateCanvasInfo :: CanvasInfo -> HXournalState -> HXournalState
-updateCanvasInfo cinfo xstate = 
-  let cid = get canvasId cinfo
-      cmap = get canvasInfoMap xstate
-      cmap' = M.adjust (const cinfo) cid cmap 
-      xstate' = set canvasInfoMap cmap' xstate
-  in xstate' 
--} 
-
-
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . get canvasInfoMap 
 

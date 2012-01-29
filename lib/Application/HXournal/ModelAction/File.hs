@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.ModelAction.File where
 
@@ -28,10 +29,9 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-import Data.Xournal.Map
 import Data.Xournal.Simple
 import Data.Xournal.Generic
-import Graphics.Xournal.Render.Generic
+
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.PDFBackground
 
@@ -58,11 +58,10 @@ getFileContent Nothing xstate = do
     newxoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF 
               $ defaultXournal 
     let newxojstate = ViewAppendState newxoj 
-        (_,ccinfo) = get currentCanvas xstate 
+        -- (_,ccinfo) = get currentCanvas xstate 
         xstate' = set currFileName Nothing 
                   . set xournalstate newxojstate
                   $ xstate 
-        -- cmap = get canvasInfoMap xstate'
     let dim = get g_dimension . maybeError "getFileContent" . M.lookup 0 . get g_pages 
             $ newxoj 
 
@@ -72,18 +71,13 @@ getFileContent Nothing xstate = do
                      . set currentPageNum 0 
     return (modifyCurrentCanvasInfo (selectBox forSingle (error "getFileContent")) xstate')
 
-        {- ciupdt = setPage newxojstate 0                       
-                 . modify viewInfo (gviewInfo ccinfo)
-                   -- (ViewInfo OnePage Original (0,0) (w,h))
-                 . set currentPageNum 0 
-                 $ ccinfo
-        cmap' = M.map ciupdt cmap 
-    return (set canvasInfoMap cmap' xstate') -}
 
+-- |
+    
 constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalState 
 constructNewHXournalStateFromXournal xoj' xstate = do 
-    let currcid = get currentCanvas xstate 
-        cmap = get canvasInfoMap xstate 
+    -- let currcid = get currentCanvas xstate 
+    -- cmap = get canvasInfoMap xstate 
     xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj'
     let dim = get g_dimension . maybeError "constructNewHxournalStateFromXournal" . M.lookup 0 
               . get g_pages $ xoj

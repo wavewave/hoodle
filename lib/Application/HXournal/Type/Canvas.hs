@@ -15,16 +15,15 @@
 module Application.HXournal.Type.Canvas where
 
 import Application.HXournal.Type.Enum 
+import Application.HXournal.Type.Alias 
 import Data.Sequence
 import qualified Data.IntMap as M
 import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
-import Graphics.Xournal.Render.BBoxMapPDF
 
 import Graphics.UI.Gtk hiding (get,set)
-
-import Data.Xournal.Simple
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import Data.Xournal.Predefined 
 import Application.HXournal.Type.PageArrangement
@@ -68,7 +67,7 @@ data CanvasInfo a =
                                , _scrolledWindow :: ScrolledWindow
                                , _viewInfo :: ViewInfo a
                                , _currentPageNum :: Int
-                               , _currentPage :: Either TPageBBoxMapPDFBuf TTempPageSelectPDFBuf 
+                               , _currentPage :: Either (Page EditMode) (Page SelectMode)
                                , _horizAdjustment :: Adjustment
                                , _vertAdjustment :: Adjustment 
                                }
@@ -89,7 +88,7 @@ viewInfo = lens _viewInfo (\a f -> f { _viewInfo = a })
 currentPageNum :: CanvasInfo a :-> Int 
 currentPageNum = lens _currentPageNum (\a f -> f { _currentPageNum = a })
 
-currentPage :: CanvasInfo a :-> Either TPageBBoxMapPDFBuf TTempPageSelectPDFBuf
+currentPage :: CanvasInfo a :-> Either (Page EditMode) (Page SelectMode)
 currentPage = lens _currentPage (\a f -> f { _currentPage = a })
 
 horizAdjustment :: CanvasInfo a :-> Adjustment 
@@ -133,10 +132,6 @@ viewModeBranch fsingle fcont cinfo =
   case get (pageArrangement.viewInfo) cinfo of 
     SingleArrangement _ _ ->  fsingle cinfo 
     ContinuousSingleArrangement _ _ _ -> fcont cinfo 
-
-
-
-
 
 type CanvasInfoMap = M.IntMap CanvasInfoBox
 

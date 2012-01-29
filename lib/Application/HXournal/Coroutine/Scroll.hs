@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Scroll 
@@ -9,6 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.Scroll where
 
 import Application.HXournal.Type.Event 
@@ -18,15 +19,11 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
-import qualified Data.IntMap as IM
 import Control.Monad
-import Control.Monad.Trans
-import qualified Control.Monad.State as St
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
 import Data.Xournal.BBox
 import Data.Label
-import qualified Data.Label.PureM as Lb
 import Prelude hiding ((.), id)
 
 vscrollStart :: CanvasId -> MainCoroutine () 

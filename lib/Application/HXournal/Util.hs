@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Util 
@@ -9,25 +8,19 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Util where
 
-import Graphics.Xournal.Render.BBoxMapPDF
-
 import Data.Maybe
-
-import Data.Xournal.Generic
-
 import Data.Xournal.Simple
-
-import Graphics.Xournal.Render.PDFBackground
-import qualified Data.ByteString.Lazy as L
  
 -- for test
 -- import Blaze.ByteString.Builder
 -- import Text.Xournal.Builder 
 
 {-
-testPage :: TPageBBoxMapPDFBuf -> IO () 
+testPage :: Page Edit -> IO () 
 testPage page = do
     let pagesimple = toPage bkgFromBkgPDF . tpageBBoxMapPDFFromTPageBBoxMapPDFBuf $ page 
     L.putStrLn . toLazyByteString . Text.Xournal.Builder.fromPage $ pagesimple 
@@ -46,7 +39,6 @@ testXournal xojstate = do
 
 uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
 uncurry4 f (x,y,z,w) = f x y z w 
-
 
 maybeRead :: Read a => String -> Maybe a 
 maybeRead = fmap fst . listToMaybe . reads 

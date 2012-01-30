@@ -39,34 +39,15 @@ import Control.Category
 import Data.Label
 import qualified Data.IntMap as IM
 import Prelude hiding ((.), id)
-
--- for test
-import Control.Compose
-import Data.Xournal.Select
-
-import qualified Data.Sequence as Seq
-
-import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Coroutine.Pen 
 
 eraserStart :: CanvasId 
                -> PointerCoord 
                -> MainCoroutine () 
 eraserStart cid = commonPenStart eraserAction cid  
-  where eraserAction cinfo cpg zmode (cidup,cidmove) (x,y) = do 
+  where eraserAction _cinfo cpg _zmode (cidup,cidmove) (x,y) = do 
           strs <- getAllStrokeBBoxInCurrentLayer
           eraserProcess cid cpg cidup cidmove strs (x,y)
-
-{-
-
-    xstate <- changeCurrentCanvasId cid 
-    let cvsInfo = getCanvasInfo cid xstate
-        zmode = get (zoomMode.viewInfo) cvsInfo
-    geometry <- getCanvasGeometry cvsInfo 
-    let (x,y) = device2pageCoord geometry zmode pcoord 
-    connidup   <- connectPenUp cvsInfo     
-    connidmove <- connectPenMove cvsInfo   
-  -}
 
 eraserProcess :: CanvasId
               -> CanvasPageGeometry

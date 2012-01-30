@@ -27,12 +27,12 @@ data ContinuousSinglePage = ContinuousSinglePage
 instance ViewMode SinglePage 
 instance ViewMode ContinuousSinglePage
 
+
+newtype ScreenDimension = ScreenDimension { unScreenDimension :: Dimension } 
+newtype CanvasDimension = CanvasDimension { unCanvasDimension :: Dimension }
 newtype PageOrigin = PageOrigin { unPageOrigin :: (Double,Double) } 
-
 newtype PageDimension = PageDimension { unPageDimension :: Dimension } 
-
 newtype DesktopDimension = DesktopDimension { unDesktopDimension :: Dimension }
-
 newtype ViewPortBBox = ViewPortBBox { unViewPortBBox :: BBox } 
 
 
@@ -43,7 +43,7 @@ apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 
 
 data PageArrangement a where
-  SingleArrangement:: {- PageOrigin -> -} PageDimension -> ViewPortBBox -> PageArrangement SinglePage 
+  SingleArrangement:: PageDimension -> ViewPortBBox -> PageArrangement SinglePage 
   ContinuousSingleArrangement :: DesktopDimension -> (Int -> PageOrigin) 
                                  -> ViewPortBBox -> PageArrangement ContinuousSinglePage
 

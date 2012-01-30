@@ -105,6 +105,7 @@ Library
                    Application.HXournal.Type.XournalState
                    Application.HXournal.Type.Window
                    Application.HXournal.Type.Undo 
+                   Application.HXournal.Type.Predefined 
                    Application.HXournal.View.Draw
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu

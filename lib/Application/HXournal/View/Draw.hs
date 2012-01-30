@@ -38,7 +38,7 @@ import Application.HXournal.Type.Alias
 import Application.HXournal.Device
 import Application.HXournal.Util
 import Application.HXournal.Type.PageArrangement
-
+import Application.HXournal.Type.Predefined
 
 data CanvasPageGeometry = 
   CanvasPageGeometry { screen_size :: (Double,Double) 
@@ -49,20 +49,20 @@ data CanvasPageGeometry =
                      }
   deriving (Show)  
 
-type PageDrawF = DrawingArea -> Page EditMode -> ViewInfo SinglePage -> Maybe BBox 
-                 -> IO ()
 
-type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox 
-                    -> IO ()
+data CanvasGeometry = 
+  CanvasGeometry { screenDim :: ScreenDimension
+                 , canvasDim :: CanvasDimension
+                 , desktopDim :: DesktopDimension
+                 , canvasViewPort :: ViewPortBBox  
+                 , pageToDesktop :: (Int,(Double,Double)) -> (Double,Double)
+                 , desktopToPage :: (Double,Double) -> Maybe (Int,(Double,Double))
+  } 
 
-predefinedLassoColor :: (Double,Double,Double,Double)
-predefinedLassoColor = (1.0,116.0/255.0,0,0.8)
 
-predefinedLassoWidth :: Double 
-predefinedLassoWidth = 4.0
+type PageDrawF = DrawingArea -> Page EditMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
 
-predefinedLassoDash :: ([Double],Double)
-predefinedLassoDash = ([10,5],10) 
 
 getCanvasPageGeometry :: DrawingArea 
                          -> GPage b s a

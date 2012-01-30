@@ -30,19 +30,22 @@ import Prelude hiding ((.),id)
 import qualified Data.IntMap as M 
 
 getPageMap :: XournalState -> M.IntMap (Page EditMode)
-getPageMap xojstate = case xojstate of 
-                        ViewAppendState xoj -> get g_pages xoj 
-                        SelectState txoj -> get g_selectAll txoj 
-
+getPageMap = either (get g_pages) (get g_selectAll) . xojstateEither 
+  
 setPageMap :: M.IntMap (Page EditMode) -> XournalState -> XournalState
-setPageMap nmap xojstate = 
+setPageMap nmap = 
+  either (ViewAppendState . set g_pages nmap)
+         (SelectState . set g_selectSelected Nothing . set g_selectAll nmap )
+  . xojstateEither
+  
+{-
   case xojstate of 
     ViewAppendState xoj -> ViewAppendState (set g_pages nmap xoj)
     SelectState txoj -> let ntxoj = set g_selectSelected Nothing
                                     . set g_selectAll nmap 
                                     $ txoj 
                         in SelectState ntxoj
-   -- SelectState (set g_selectAll nmap txoj)
+   -- SelectState (set g_selectAll nmap txoj) -}
         
 updatePageFromCanvasToXournal :: (ViewMode a) => CanvasInfo a -> XournalState -> XournalState 
 updatePageFromCanvasToXournal cinfo xojstate = 
@@ -77,12 +80,9 @@ adjustPage xojstate cinfo =
 
 
 getPageFromGXournalMap :: Int -> GXournal M.IntMap a -> a
-getPageFromGXournalMap pagenum xoj  = 
-  case M.lookup pagenum (get g_pages xoj) of 
-    Nothing -> error "something wrong in getPageFromGXournalMap"
-    Just p -> p
+getPageFromGXournalMap pagenum = 
+  maybeError "getPageFromGXournalMap" . M.lookup pagenum . get g_pages
 
-  
 
 
 -- | update page when single page view mode
@@ -111,8 +111,6 @@ updatePageSingle (SelectState txoj) cinfo =
      . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
      . set currentPage newpage
      $ cinfo 
-
-
 
 -- |
 updatePage :: XournalState -> CanvasInfo a -> CanvasInfo a 
@@ -161,11 +159,7 @@ setPageSingle (SelectState txoj) pagenum cinfo =
 
 getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
 getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
-  
-{-case get currentPage cinfo of 
-    Right tpg -> gcast tpgs :: (Page EditMode)
-    Left pg -> pg  -}
-                  
+          
 
 newSinglePageFromOld :: Page EditMode -> Page EditMode 
 newSinglePageFromOld = 

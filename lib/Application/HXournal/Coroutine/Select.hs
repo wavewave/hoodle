@@ -456,7 +456,6 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
     PenMove _cid' pcoord -> do 
       let (x,y) = device2pageCoord cpg zmode pcoord 
           nlasso = lasso |> (x,y)
-      let -- lassobbox = mkbboxF nlasso 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
         invalidateTemp cid (tempSurface tsel) (renderLasso nlasso) 
@@ -467,8 +466,7 @@ newSelectLasso cinfo cpg zmode cidmove cidup strs orig (prev,otime) lasso tsel =
           nlasso = lasso |> (x,y)
       let epage = get currentPage cinfo 
           cpn = get currentPageNum cinfo 
-      let -- bbox = mkbboxF nlasso 
-          hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
+      let hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
           selectstrs = fmapAL unNotHitted id hittestlasso
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate

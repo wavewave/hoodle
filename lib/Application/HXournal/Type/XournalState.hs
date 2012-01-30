@@ -20,6 +20,7 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Undo
+import Application.HXournal.Type.Alias 
 -- import Application.HXournal.NetworkClipboard.Client.Config
 import Data.Xournal.Map
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -108,12 +109,10 @@ modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox)
 modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
   where cid = get currentCanvasId st 
 
-
-
-
-
-
-
-
+xojstateEither :: XournalState -> Either (Xournal EditMode) (Xournal SelectMode) 
+xojstateEither xojstate = case xojstate of 
+                            ViewAppendState xoj -> Left xoj 
+                            SelectState txoj -> Right txoj 
+                            
 
 

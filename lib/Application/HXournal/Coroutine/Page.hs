@@ -58,18 +58,22 @@ changePage modifyfn = updateXState changePageAction >> invalidateCurrent
 
         
 changePageInXournalState :: Int -> XournalState -> (Bool,Int,TPageBBoxMapPDFBuf,XournalState)
-changePageInXournalState npgnum (ViewAppendState xoj) = 
-    let pgs = get g_pages xoj 
-        totalnumofpages = M.size pgs
-        lpage = maybeError "changePage" (M.lookup (totalnumofpages-1) pgs)
-        (isChanged,npgnum',npage',xoj') 
-          | npgnum >= totalnumofpages = let npage = newSinglePageFromOld lpage
-                                            npages = M.insert totalnumofpages npage pgs 
-                                        in (True,totalnumofpages,npage,set g_pages npages xoj)
+changePageInXournalState npgnum xojstate = -- (ViewAppendState xoj) = 
+    let exoj = xojstateEither xojstate 
+        pgs = either (get g_pages) (get g_selectAll) exoj
+        totnumpages = M.size pgs
+        lpage = maybeError "changePage" (M.lookup (totnumpages-1) pgs)
+        (isChanged,npgnum',npage',exoj') 
+          | npgnum >= totnumpages = 
+            let npage = newSinglePageFromOld lpage
+                npages = M.insert totnumpages npage pgs 
+            in (True,totnumpages,npage,
+                either (Left . set g_pages npages) (Right. set g_selectAll npages) exoj )
           | otherwise = let npg = if npgnum < 0 then 0 else npgnum
                             pg = maybeError "changePage" (M.lookup npg pgs)
-                        in (False,npg,pg,xoj) 
-    in (isChanged,npgnum',npage',ViewAppendState xoj')
+                        in (False,npg,pg,exoj) 
+    in (isChanged,npgnum',npage',either ViewAppendState SelectState exoj')
+{-
 changePageInXournalState npgnum (SelectState txoj) = 
     let pgs = get g_selectAll txoj 
         totalnumofpages = M.size pgs
@@ -82,7 +86,7 @@ changePageInXournalState npgnum (SelectState txoj) =
           | otherwise = let npg = if npgnum < 0 then 0 else npgnum  
                             pg = maybeError "changePage" (M.lookup npg pgs)
                         in (False,npg,pg,txoj)
-    in (isChanged,npgnum',npage',SelectState txoj')
+    in (isChanged,npgnum',npage',SelectState txoj') -}
 
 
 -- | 
@@ -135,87 +139,4 @@ newPageBefore = do
 
 -}
 
-
-{- (f &&& id) >>> g  
-          where f = arr (selectBoxAction fsimple (error "canvasZoomUpdate") . get currentCanvasInfo )
-                g = arr (uncurry modifyCurrentCanvasInfo) -}
-
-
-{-         
-              xstate' = modifyCurrentCanvasInfo setnewview xstate
-          putSt xstate' 
-          invalidate cid       -}
-
-
-
-
-{-
-
-                  else if modifyfn oldpage < 0 
-                         then return (xstate,txoj,pgs,totalnumofpages,0)
-                         else return (xstate,txoj,pgs,totalnumofpages,modifyfn oldpage)
-
-
-
-              let xstate'' = updatePageAll (SelectState txoj')
-                             . modifyCurrentCanvasInfo (setPage (SelectState txoj') newpage) 
-                             $ xstate'
-              return xstate''
-
-
-
-    
-                  else if modifyfn oldpage < 0 
-                         then return (xstate,xoj,pgs,totalnumofpages,0)
-                         else return (xstate,xoj,pgs,totalnumofpages,modifyfn oldpage)
-              let Dim w h = get g_dimension lpage
-                 (hadj,vadj) = get adjustments currCvsInfo
-              liftIO $ do 
-                adjustmentSetUpper hadj w 
-                adjustmentSetUpper vadj h 
-                adjustmentSetValue hadj 0
-                adjustmentSetValue vadj 0
-              return . updatePageAll (ViewAppendState xoj')
-                     . modifyCurrentCanvasInfo (setPage (ViewAppendState xoj') newpage)  
-                     $ xstate'
-
-
-
-----
- 
-            ViewAppendState xoj -> do 
-
-              (xstate',xoj',_pages',_totalnumofpages',newpage) <-
-                        xstate' = set xournalstate (ViewAppendState newxoj) xstate
-                    commit xstate'
-                    return (xstate',newxoj,npages,totalnumofpages+1,totalnumofpages)
-
-
-
-
-            SelectState txoj -> do 
-
-              (xstate',txoj',_pages',_totalnumofpages',newpage) <-
-
-                  then do
-                    nlyr <- liftIO emptyTLayerBBoxBufLyBuf  
-                    let npage = set g_layers (Select . O . Just . singletonSZ $ nlyr) lpage 
-                        npages = IM.insert totalnumofpages npage pgs 
-                        newtxoj = txoj { gselectAll = npages } 
-                        xstate' = set xournalstate (SelectState newtxoj) xstate
-                    commit xstate'
-                    return (xstate',newtxoj,npages,totalnumofpages+1,totalnumofpages)
-
--}
---         putSt xstate'' 
---         invalidate currCvsId 
-
---         putSt xstate'' 
---         invalidate currCvsId 
-
-         -- currCvsInfo' = setPage (ViewAppendState xoj') newpage currCvsInfo
-        -- currCvsInfo' = setPage (SelectState txoj') newpage currCvsInfo 
-    {- xstate <- getSt 
-    let currCvsId = get currentCanvas xstate
-        currCvsInfo = getCanvasInfo currCvsId xstate  -}
 

@@ -22,14 +22,14 @@ import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Accessor
-import Application.HXournal.Util
+
 import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.View.Draw
 import Control.Monad.Trans
 
 import Data.Xournal.Predefined
-import Data.Xournal.Generic
+
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
@@ -37,7 +37,6 @@ import Data.Maybe
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-import Graphics.Xournal.Render.BBox
 
 -- | Common Pen Work starting point 
 
@@ -60,14 +59,14 @@ commonPenStart action cid pcoord =
 
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid = commonPenStart penAction cid 
-  where penAction cinfo cpg zmode (cidmove,cidup) (x,y) = do 
+  where penAction cinfo cpg _zmode (cidmove,cidup) (x,y) = do 
           xstate <- getSt
           let currxoj = unView . get xournalstate $ xstate        
               pagenum = get currentPageNum cinfo          
               pinfo = get penInfo xstate
           pdraw <-penProcess cid cpg cidmove cidup (empty |> (x,y)) (x,y) 
-          (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
-          let bbox' = inflate bbox (get (penWidth.currentTool.penInfo) xstate) 
+          (newxoj,_bbox) <- liftIO $ addPDraw pinfo currxoj pagenum pdraw
+          let -- bbox' = inflate bbox (get (penWidth.currentTool.penInfo) xstate) 
               xstate' = set xournalstate (ViewAppendState newxoj) 
                         . updatePageAll (ViewAppendState newxoj)
                         $ xstate

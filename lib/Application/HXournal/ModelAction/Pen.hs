@@ -13,7 +13,7 @@
 
 module Application.HXournal.ModelAction.Pen where
 
-import Application.HXournal.Accessor
+
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Layer
 import Application.HXournal.Type.Canvas
@@ -30,12 +30,6 @@ import Data.Strict.Tuple hiding (uncurry)
 import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.BBox
-import Data.Xournal.Select 
-
-
-import Application.HXournal.Util
-import System.IO.Unsafe
-
 import Graphics.Xournal.Render.BBoxMapPDF
 
 addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 

@@ -40,6 +40,7 @@ import Application.HXournal.Coroutine.Layer
 import Application.HXournal.ModelAction.Window 
 import Application.HXournal.Type.Window 
 import Application.HXournal.Device
+import Control.Applicative ((<$>))
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import qualified Control.Monad.State as St 
@@ -111,11 +112,13 @@ initialize = do ev <- await
 
 
 dispatchMode :: MainCoroutine () 
-dispatchMode = do 
-  xojstate <- return . get xournalstate =<< lift St.get
-  case xojstate of 
+dispatchMode = getSt >>= return . xojstateEither . get xournalstate
+                     >>= either (const viewAppendMode) (const selectMode)
+                     
+{-  xojstate <- return . get xournalstate =<< getSt 
+    case xojstate of 
     ViewAppendState _ -> viewAppendMode
-    SelectState _ -> selectMode
+    SelectState _ -> selectMode -}
 
 viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 
@@ -218,10 +221,8 @@ menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do 
-  xstate <- getSt
-  let totalnumofpages = case get xournalstate xstate of 
-                          ViewAppendState xoj ->  M.size . get g_pages $ xoj
-                          SelectState txoj    -> M.size . gselectAll $ txoj
+  totalnumofpages <- (either (M.size. get g_pages) (M.size . get g_selectAll) 
+                      . xojstateEither . get xournalstate) <$> getSt 
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNewPageBefore = return () -- newPageBefore 
 menuEventProcess MenuNew  = askIfSave fileNew 
@@ -256,8 +257,8 @@ menuEventProcess MenuUseXInput = do
                     case x of 
                       [] -> error "No action group? "
                       y:_ -> return y )
-  uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
-                        return (castToToggleAction x) )
+  uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA") 
+              >>= maybe (error "MenuUseXInput") (return . castToToggleAction)
   b <- liftIO $ toggleActionGetActive uxinputa
   let cmap = get canvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 

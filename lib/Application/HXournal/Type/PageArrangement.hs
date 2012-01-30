@@ -30,12 +30,13 @@ instance ViewMode ContinuousSinglePage
 
 newtype ScreenDimension = ScreenDimension { unScreenDimension :: Dimension } 
 newtype CanvasDimension = CanvasDimension { unCanvasDimension :: Dimension }
+newtype CanvasOrigin = CanvasOrigin { unCanvasOrigin :: (Double,Double) } 
 newtype PageOrigin = PageOrigin { unPageOrigin :: (Double,Double) } 
 newtype PageDimension = PageDimension { unPageDimension :: Dimension } 
 newtype DesktopDimension = DesktopDimension { unDesktopDimension :: Dimension }
 newtype ViewPortBBox = ViewPortBBox { unViewPortBBox :: BBox } 
 
-
+newtype PageNum = PageNum { unPageNum :: Int } 
                      
 apply :: (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox 
 apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)

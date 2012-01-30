@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.View.Draw 
@@ -16,7 +18,8 @@ import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
 
 import Control.Applicative 
-import Control.Category
+import Control.Category (id,(.))
+import Control.Monad (liftM,(<=<))
 import Data.Label
 import Prelude hiding ((.),id,mapM_,concatMap)
 
@@ -51,18 +54,51 @@ data CanvasPageGeometry =
 
 
 data CanvasGeometry = 
-  CanvasGeometry { screenDim :: ScreenDimension
-                 , canvasDim :: CanvasDimension
-                 , desktopDim :: DesktopDimension
-                 , canvasViewPort :: ViewPortBBox  
-                 , pageToDesktop :: (Int,(Double,Double)) -> (Double,Double)
-                 , desktopToPage :: (Double,Double) -> Maybe (Int,(Double,Double))
+  CanvasGeometry 
+  { screenDim :: ScreenDimension
+  , canvasDim :: CanvasDimension
+  , canvasOrigin :: CanvasOrigin 
+  , desktopDim :: DesktopDimension 
+  , canvasViewPort :: ViewPortBBox -- ^ in desktop coordinate 
+  , pageToDesktop :: (Int,(Double,Double)) -> (Double,Double) -- ^ in page/desktop coordinate
+  , desktopToPage :: (Double,Double) -> Maybe (Int,(Double,Double)) -- ^ in desktop/page coordinate
   } 
-
 
 type PageDrawF = DrawingArea -> Page EditMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
 type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
 
+makeCanvasGeometry :: (PageNum, GPage b s a) 
+                     -> PageArrangement vmode -> DrawingArea -> IO CanvasGeometry 
+makeCanvasGeometry (cpn,page) arr canvas = do 
+  win <- widgetGetDrawWindow canvas
+  (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
+  screen <- widgetGetScreen canvas
+  (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
+                 <*> (fromIntegral <$> screenGetHeight screen)
+  let (Dim w h) = get g_dimension page
+  (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< drawWindowGetOrigin win
+  let (deskdim, cvsvbbox, p2d, d2p) = 
+        case arr of  
+          SingleArrangement pdim vbbox -> ( DesktopDimension . unPageDimension $ pdim
+                                          , vbbox
+                                          , id.snd
+                                          , \coord->Just (unPageNum cpn,coord) )
+          _ -> error "not implemented yet for ContinuousArrangement in getCanvasGeometry"
+  return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
+                          (CanvasOrigin (x0,y0)) deskdim cvsvbbox p2d d2p
+                          
+    
+{-    
+    
+    (fromIntegral ws, fromIntegral hs) 
+                              (fromIntegral w', fromIntegral h') 
+                              (w,h) 
+                              (fromIntegral x0,fromIntegral y0)
+                              (xorig, yorig)
+-}  
+
+
+-- | obsolete 
 
 getCanvasPageGeometry :: DrawingArea 
                          -> GPage b s a

@@ -73,13 +73,11 @@ getViewableBBox geometry (pnum,mbbox) =
 
 doubleBufferDraw :: DrawWindow -> CanvasGeometry -> Render () -> Render () -> IO ()
 doubleBufferDraw win geometry xform rndr = do 
-  let Dim cw' ch' = unCanvasDimension . canvasDim $ geometry 
-      cw = floor cw' 
-      ch = floor ch'
-  withImageSurface FormatARGB32 cw ch $ \tempsurface -> do 
+  let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
+  withImageSurface FormatARGB32 (floor cw) (floor ch) $ \tempsurface -> do 
     renderWith tempsurface $ do 
       setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
+      rectangle 0 0 cw ch 
       fill 
       rndr 
     renderWithDrawable win $ do 
@@ -119,6 +117,17 @@ drawFuncGen render canvas (pnum,page) vinfo mbbox = do
 drawPageClearly :: PageDrawingFunction
 drawPageClearly = drawFuncGen $ \(_,page) _mbbox -> 
                      cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
+
+
+getRatioPageCanvas :: ZoomMode -> PageDimension -> CanvasDimension -> (Double,Double)
+getRatioPageCanvas zmode (PageDimension (Dim w h)) (CanvasDimension (Dim w' h')) = 
+  case zmode of 
+    Original -> (1.0,1.0)
+    FitWidth -> (w'/w,w'/w)
+    FitHeight -> (h'/h,h'/h)
+    Zoom s -> (s,s)
+
+
 
 
 -- | obsolete
@@ -408,7 +417,10 @@ drawSelTempBBox bbox canvas tpg vinfo mbbox@(Just _) = do
         return ()
   doubleBuffering win geometry xformfunc (xformfunc >> renderbelow >> renderabove)
 
--- | 
+
+
+
+-- | obsolete 
 
 getRatioFromPageToCanvas :: CanvasPageGeometry -> ZoomMode -> Double 
 getRatioFromPageToCanvas _cpg Original = 1.0 

@@ -18,6 +18,7 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Util
 import Application.HXournal.View.Draw
+import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
@@ -92,23 +93,39 @@ changePageInXournalState npgnum (SelectState txoj) =
 -- | 
     
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine () 
-canvasZoomUpdate mzmode = updateXState zoomUpdateAction 
+canvasZoomUpdate mzmode = updateXState zoomUpdateAction >> invalidateAll
   where zoomUpdateAction xst = 
           selectBoxAction (fsimple xst) (error "canvasZoomUpdate") . get currentCanvasInfo $ xst 
-        fsimple xstate cvsInfo = do   
-          let zmode = maybe (get (zoomMode.viewInfo) cvsInfo) id mzmode
-          let canvas = get drawArea cvsInfo
-          let page = getPage cvsInfo 
-          let Dim w h = gdimension page
-          cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))        
-          let (w',h') = canvas_size cpg 
+        fsimple xstate cinfo = do   
+          let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode
+          let canvas = get drawArea cinfo
+          let page = getPage cinfo
+              pn  = PageNum . get currentPageNum $ cinfo 
+          let pdim@(Dim w h) = get g_dimension page
+              arr = get (pageArrangement.viewInfo) cinfo 
+          geometry <- liftIO (makeCanvasGeometry (pn,page) arr canvas)
+          let cdim@(CanvasDimension (Dim w' h')) = canvasDim geometry 
+          let (sinvx,sinvy) = 
+                getRatioPageCanvas zmode (PageDimension pdim) cdim
+              (sx,sy) = (1.0/sinvx, 1.0/sinvy)
+              newvbbox = ViewPortBBox (BBox (0,0) (w'*sx,h'*sy)) 
+          let ncinfo = CanvasInfoBox . set (zoomMode.viewInfo) zmode
+                         . set (viewPortBBox.pageArrangement.viewInfo) newvbbox $ cinfo
+          let (hadj,vadj) = get adjustments cinfo 
+          liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0) (w'*sx,h'*sy)
+          return . modifyCurrentCanvasInfo (const ncinfo) $ xstate
+          
+
+{-          let (w',h') = canvas_size cpg 
           let (hadj,vadj) = get adjustments cvsInfo 
               s = 1.0 / getRatioFromPageToCanvas cpg zmode
           liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0) (w'*s,h'*s)
           let newvbbox = ViewPortBBox (BBox (0,0) (w'*s,h'*s))
           let ncvsInfo = CanvasInfoBox . set (zoomMode.viewInfo) zmode
-                         . set (viewPortBBox.pageArrangement.viewInfo) newvbbox $ cvsInfo 
-          return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate
+                         . set (viewPortBBox.pageArrangement.viewInfo) newvbbox $ cvsInfo  -}
+
+
+          -- cpg <- liftIO (getCanvasPageGeometry canvas page (0,0))        
 
 
 

@@ -162,34 +162,6 @@ defaultEventProcess (VScrollBarMoved cid v) = updateXState (return . vscrollmove
         fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
           in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
-
-{-    xstate <- getSt 
-    let cinfoMap = get canvasInfoMap xstate
-        maybeCvs = M.lookup cid cinfoMap 
-    case maybeCvs of 
-      Nothing -> return ()
-      Just cvsInfo -> do 
-        let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
-        let cvsInfo' = set (viewPortOrigin.viewInfo) (v,snd vm_orig) 
-                         $ cvsInfo
-            xstate' = set currentCanvas cid 
-                    . updateCanvasInfo cvsInfo' 
-                    $ xstate
-        lift . St.put $ xstate'
-        invalidate cid -}
-{-
-    xstate <- lift St.get 
-    let cinfoMap = get canvasInfoMap xstate
-        cvsInfo = case M.lookup cid cinfoMap of 
-                     Nothing -> error "No such canvas in defaultEventProcess" 
-                     Just cvs -> cvs
-    let vm_orig = get (viewPortOrigin.viewInfo) cvsInfo
-    let cvsInfo' = set (viewPortOrigin.viewInfo) (fst vm_orig,v)
-                   $ cvsInfo 
-        xstate' = set currentCanvas cid 
-                  . updateCanvasInfo cvsInfo' $ xstate
-    lift . St.put $ xstate'
-    invalidate cid -}
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
 defaultEventProcess (CanvasConfigure _cid _w' _h') = canvasZoomUpdate Nothing 
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode

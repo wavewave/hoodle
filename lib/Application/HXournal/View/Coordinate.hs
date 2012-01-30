@@ -96,7 +96,7 @@ xformCanvas2Screen (CanvasOrigin (x0,y0)) (CvsCoord (cx,cy)) = ScrCoord (cx+x0,c
 xformCanvas2Desk :: CanvasDimension -> ViewPortBBox -> CanvasCoordinate 
                     -> DesktopCoordinate 
 xformCanvas2Desk (CanvasDimension (Dim w h)) (ViewPortBBox (BBox (x1,y1) (x2,y2))) 
-                 (CvsCoord (cx,cy)) = DeskCoord (cx*(x2-x1)/w+x1,cy*(y2-y1)/h+x2) 
+                 (CvsCoord (cx,cy)) = DeskCoord (cx*(x2-x1)/w+x1,cy*(y2-y1)/h+y1) 
 
 -- |
 

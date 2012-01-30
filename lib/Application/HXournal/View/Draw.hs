@@ -98,7 +98,7 @@ cairoXform4PageCoordinate geometry pnum = do
       sx = x1-x0 
       sy = y1-y0
   scale sx sy
-  translate (-x0) (-y0)      
+  translate x0 y0      
   
 -- | 
 

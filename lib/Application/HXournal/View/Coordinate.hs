@@ -22,6 +22,7 @@ import Prelude hiding ((.),id)
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.BBox (BBox(..))
+import Application.HXournal.Device
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 
@@ -77,7 +78,7 @@ makeCanvasGeometry (cpn,page) zmode arr canvas = do
       c2d = xformCanvas2Desk cdim cvsvbbox 
       d2c = xformDesk2Canvas cdim cvsvbbox
   return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
-                          deskdim {- cvsvbbox -} s2c c2s c2d d2c d2p p2d
+                          deskdim s2c c2s c2d d2c d2p p2d
     
     
 xformScreen2Canvas :: CanvasOrigin -> ScreenCoordinate -> CanvasCoordinate
@@ -94,4 +95,27 @@ xformDesk2Canvas :: CanvasDimension -> ViewPortBBox -> DesktopCoordinate -> Canv
 xformDesk2Canvas (CanvasDimension (Dim w h)) (ViewPortBBox (BBox (x1,y1) (x2,y2)))
                  (DeskCoord (dx,dy)) = CvsCoord ((dx-x1)*w/(x2-x1),(dy-y1)*h/(y2-y1))
                                        
-    
+screen2Desktop :: CanvasGeometry -> ScreenCoordinate -> DesktopCoordinate
+screen2Desktop geometry = canvas2Desktop geometry . screen2Canvas geometry  
+
+desktop2Screen :: CanvasGeometry -> DesktopCoordinate -> ScreenCoordinate
+desktop2Screen geometry = canvas2Screen geometry . desktop2Canvas geometry
+
+-- device2pageCoord :: CanvasGeometry -> PointerCoord -> Page
+
+
+core2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate 
+core2Desktop geometry = screen2Desktop geometry . ScrCoord 
+
+wacom2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
+wacom2Desktop geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
+                               in screen2Desktop geometry . ScrCoord $ (w*x,h*y) 
+                                  
+device2Desktop :: CanvasGeometry -> PointerCoord -> DesktopCoordinate 
+device2Desktop geometry (PointerCoord typ x y) =  
+  case typ of 
+    Core -> core2Desktop geometry (x,y)
+    Stylus -> wacom2Desktop geometry (x,y)
+    Eraser -> wacom2Desktop geometry (x,y)
+device2Desktop geometry NoPointerCoord = error "NoPointerCoordinate device2Desktop"
+         

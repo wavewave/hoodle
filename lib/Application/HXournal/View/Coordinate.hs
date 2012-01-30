@@ -26,13 +26,14 @@ import Application.HXournal.Device
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 
--- | data structure for transformation among screen, canvas, desktop and page coordinates
 
 newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
 newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
 newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
 newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
 newtype PageNum = PageNum { unPageNum :: Int } 
+
+-- | data structure for transformation among screen, canvas, desktop and page coordinates
 
 data CanvasGeometry = 
   CanvasGeometry 
@@ -52,11 +53,10 @@ data CanvasGeometry =
 -- | make a canvas geometry data structure from current status 
 
 makeCanvasGeometry :: (PageNum, GPage b s a) 
-                      -> ZoomMode 
                       -> PageArrangement vmode 
                       -> DrawingArea 
                       -> IO CanvasGeometry 
-makeCanvasGeometry (cpn,page) zmode arr canvas = do 
+makeCanvasGeometry (cpn,page) arr canvas = do 
   win <- widgetGetDrawWindow canvas
   (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
   screen <- widgetGetScreen canvas
@@ -81,36 +81,53 @@ makeCanvasGeometry (cpn,page) zmode arr canvas = do
                           deskdim s2c c2s c2d d2c d2p p2d
     
     
+-- |   
+  
 xformScreen2Canvas :: CanvasOrigin -> ScreenCoordinate -> CanvasCoordinate
 xformScreen2Canvas (CanvasOrigin (x0,y0)) (ScrCoord (sx,sy)) = CvsCoord (sx-x0,sy-y0)
+
+-- |
 
 xformCanvas2Screen :: CanvasOrigin -> CanvasCoordinate -> ScreenCoordinate 
 xformCanvas2Screen (CanvasOrigin (x0,y0)) (CvsCoord (cx,cy)) = ScrCoord (cx+x0,cy+y0)
 
-xformCanvas2Desk :: CanvasDimension -> ViewPortBBox -> CanvasCoordinate -> DesktopCoordinate 
+-- |
+
+xformCanvas2Desk :: CanvasDimension -> ViewPortBBox -> CanvasCoordinate 
+                    -> DesktopCoordinate 
 xformCanvas2Desk (CanvasDimension (Dim w h)) (ViewPortBBox (BBox (x1,y1) (x2,y2))) 
                  (CvsCoord (cx,cy)) = DeskCoord (cx*(x2-x1)/w+x1,cy*(y2-y1)/h+x2) 
 
-xformDesk2Canvas :: CanvasDimension -> ViewPortBBox -> DesktopCoordinate -> CanvasCoordinate
+-- |
+
+xformDesk2Canvas :: CanvasDimension -> ViewPortBBox -> DesktopCoordinate 
+                    -> CanvasCoordinate
 xformDesk2Canvas (CanvasDimension (Dim w h)) (ViewPortBBox (BBox (x1,y1) (x2,y2)))
                  (DeskCoord (dx,dy)) = CvsCoord ((dx-x1)*w/(x2-x1),(dy-y1)*h/(y2-y1))
                                        
+-- | 
+
 screen2Desktop :: CanvasGeometry -> ScreenCoordinate -> DesktopCoordinate
 screen2Desktop geometry = canvas2Desktop geometry . screen2Canvas geometry  
+
+-- | 
 
 desktop2Screen :: CanvasGeometry -> DesktopCoordinate -> ScreenCoordinate
 desktop2Screen geometry = canvas2Screen geometry . desktop2Canvas geometry
 
--- device2pageCoord :: CanvasGeometry -> PointerCoord -> Page
-
+-- |
 
 core2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate 
 core2Desktop geometry = screen2Desktop geometry . ScrCoord 
+
+-- |
 
 wacom2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
 wacom2Desktop geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
                                in screen2Desktop geometry . ScrCoord $ (w*x,h*y) 
                                   
+-- | 
+
 device2Desktop :: CanvasGeometry -> PointerCoord -> DesktopCoordinate 
 device2Desktop geometry (PointerCoord typ x y) =  
   case typ of 

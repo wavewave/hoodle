@@ -22,16 +22,13 @@ import Control.Category (id,(.))
 import Control.Monad (liftM,(<=<))
 import Data.Label
 import Prelude hiding ((.),id,mapM_,concatMap)
-
 import Data.Foldable
 import Data.Monoid
 import Data.Sequence
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
-
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type
-
 import Graphics.Xournal.Render.BBox 
 import Graphics.Xournal.Render.BBoxMapPDF 
 import Graphics.Xournal.Render.PDFBackground
@@ -42,6 +39,89 @@ import Application.HXournal.Device
 import Application.HXournal.Util
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Predefined
+import Application.HXournal.View.Coordinate
+
+
+
+type PageDrawingFunction = DrawingArea -> (PageNum,Page EditMode) 
+                           -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+                           
+
+
+-- | 
+
+getCanvasViewPort :: CanvasGeometry -> ViewPortBBox 
+getCanvasViewPort geometry = 
+  let DeskCoord (x0,y0) = canvas2Desktop geometry (CvsCoord (0,0)) 
+      CanvasDimension (Dim w h) = canvasDim geometry  
+      DeskCoord (x1,y1) = canvas2Desktop geometry (CvsCoord (w,h))
+  in ViewPortBBox (BBox (x0,y0) (x1,y1))
+
+-- | 
+
+getViewableBBox :: CanvasGeometry 
+                   -> (PageNum, Maybe BBox) -- ^ in page coordinate
+                   -> Maybe BBox            -- ^ in desktop coordinate
+getViewableBBox geometry (pnum,mbbox) = 
+  let ViewPortBBox vportbbox = getCanvasViewPort geometry  
+  in toMaybe $ (fromMaybe mbbox :: IntersectBBox) 
+               `mappend` 
+               (Intersect (Middle vportbbox))
+
+
+-- | common routine for double buffering 
+
+doubleBufferDraw :: DrawWindow -> CanvasGeometry -> Render () -> Render () -> IO ()
+doubleBufferDraw win geometry xform rndr = do 
+  let Dim cw' ch' = unCanvasDimension . canvasDim $ geometry 
+      cw = floor cw' 
+      ch = floor ch'
+  withImageSurface FormatARGB32 cw ch $ \tempsurface -> do 
+    renderWith tempsurface $ do 
+      setSourceRGBA 0.5 0.5 0.5 1
+      rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
+      fill 
+      rndr 
+    renderWithDrawable win $ do 
+      setSourceSurface tempsurface 0 0   
+      setOperator OperatorSource 
+      xform
+      paint 
+
+
+-- | 
+
+cairoXform4PageCoordinate :: CanvasGeometry -> PageNum -> Render () 
+cairoXform4PageCoordinate geometry pnum = do 
+  let CvsCoord (x0,y0) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (0,0))
+      CvsCoord (x1,y1) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (1,1))
+      sx = x1-x0 
+      sy = y1-y0
+  scale sx sy
+  translate (-x0) (-y0)      
+  
+-- | 
+
+drawFuncGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) -> PageDrawingFunction 
+drawFuncGen render canvas (pnum,page) vinfo mbbox = do 
+    let arr = get pageArrangement vinfo
+    geometry <- makeCanvasGeometry (pnum,page) arr canvas
+    win <- widgetGetDrawWindow canvas
+    let mbboxnew = getViewableBBox geometry (pnum,mbbox)
+        xformfunc = cairoXform4PageCoordinate geometry pnum
+        renderfunc = do
+          xformfunc 
+          clipBBox mbboxnew
+          render (pnum,page) mbboxnew 
+          resetClip 
+    doubleBufferDraw win geometry xformfunc renderfunc   
+
+drawPageClearly :: PageDrawingFunction
+drawPageClearly = drawFuncGen $ \(_,page) _mbbox -> 
+                     cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
+
+
+-- | obsolete
 
 data CanvasPageGeometry = 
   CanvasPageGeometry { screen_size :: (Double,Double) 
@@ -54,7 +134,13 @@ data CanvasPageGeometry =
 
 
 
-type PageDrawF = DrawingArea -> Page EditMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+-- | obsolete                            
+
+type PageDrawF = DrawingArea -> Page EditMode 
+                 -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+
+-- | obsolete
+
 type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
 
 
@@ -157,21 +243,8 @@ transformForPageCoord cpg zmode = do
   translate (-xo) (-yo)      
   
 
-drawFuncGen :: (Page EditMode -> Maybe BBox -> Render ()) -> PageDrawF 
-drawFuncGen render canvas page vinfo mbbox = do 
-    let zmode  = get zoomMode vinfo
-        BBox origin _ = unViewPortBBox . get (viewPortBBox.pageArrangement) $ vinfo
-    geometry <- getCanvasPageGeometry canvas page origin
-    win <- widgetGetDrawWindow canvas
-    let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-        xformfunc = transformForPageCoord geometry zmode
-        renderfunc = do
-          xformfunc 
-          clipBBox mbboxnew
-          render page mbboxnew 
-          resetClip 
-    doubleBuffering win geometry xformfunc renderfunc   
 
+  
   
 drawFuncSelGen :: (Page SelectMode -> Maybe BBox -> Render ()) 
                   -> (Page SelectMode -> Maybe BBox -> Render ())
@@ -191,9 +264,6 @@ drawFuncSelGen rencont rensel canvas page vinfo mbbox = do
           resetClip 
     doubleBuffering win geometry xformfunc renderfunc   
 
-drawPageClearly :: PageDrawF
-drawPageClearly = drawFuncGen $ \page _mbbox -> 
-                     cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
                      
 drawPageSelClearly :: PageDrawFSel                      
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
@@ -216,6 +286,8 @@ drawBBoxOnly canvas page vinfo _mbbox = do
   doubleBuffering win geometry xformfunc renderfunc   
 
 
+-- | obsolete
+
 adjustBBoxWithView :: CanvasPageGeometry -> ZoomMode -> Maybe BBox 
                       -> Maybe BBox
 adjustBBoxWithView geometry zmode mbbox =   
@@ -223,6 +295,8 @@ adjustBBoxWithView geometry zmode mbbox =
   in  toMaybe $ (fromMaybe mbbox :: IntersectBBox)  
                 `mappend` 
                 (Intersect (Middle viewbbox))
+
+
 
 
 drawPageInBBox :: PageDrawF 
@@ -421,7 +495,8 @@ cairoHittedBoxDraw tpg mbbox = do
 
 ---- 
     
--- | common routine for double buffering 
+
+-- | obsolete 
 
 doubleBuffering :: DrawWindow -> CanvasPageGeometry 
                    -> Render ()

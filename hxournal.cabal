@@ -107,6 +107,7 @@ Library
                    Application.HXournal.Type.Undo 
                    Application.HXournal.Type.Predefined 
                    Application.HXournal.View.Draw
+                   Application.HXournal.View.Coordinate
                    Application.HXournal.GUI
                    Application.HXournal.GUI.Menu
                    Application.HXournal.ModelAction.Adjustment

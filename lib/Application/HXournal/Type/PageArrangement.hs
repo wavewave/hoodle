@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Type.PageArrangement
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2012 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -36,16 +36,19 @@ newtype PageDimension = PageDimension { unPageDimension :: Dimension }
 newtype DesktopDimension = DesktopDimension { unDesktopDimension :: Dimension }
 newtype ViewPortBBox = ViewPortBBox { unViewPortBBox :: BBox } 
 
-newtype PageNum = PageNum { unPageNum :: Int } 
                      
 apply :: (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox 
 apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 {-# INLINE apply #-}
 
+-- | data structure for coordinate arrangement of pages in desktop coordinate
 
 data PageArrangement a where
-  SingleArrangement:: PageDimension -> ViewPortBBox -> PageArrangement SinglePage 
-  ContinuousSingleArrangement :: DesktopDimension -> (Int -> PageOrigin) 
+  SingleArrangement:: PageDimension 
+                      ->  ViewPortBBox 
+                      -> PageArrangement SinglePage 
+  ContinuousSingleArrangement :: DesktopDimension 
+                                 -> (Int -> PageOrigin) 
                                  -> ViewPortBBox -> PageArrangement ContinuousSinglePage
 
 

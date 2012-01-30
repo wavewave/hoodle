@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Window 
@@ -9,14 +8,14 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.Window where
 
-import Application.HXournal.Type.Event
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
-import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Util
 import Control.Monad.Trans
 import Application.HXournal.ModelAction.Window

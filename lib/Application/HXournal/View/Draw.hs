@@ -53,49 +53,9 @@ data CanvasPageGeometry =
   deriving (Show)  
 
 
-data CanvasGeometry = 
-  CanvasGeometry 
-  { screenDim :: ScreenDimension
-  , canvasDim :: CanvasDimension
-  , canvasOrigin :: CanvasOrigin 
-  , desktopDim :: DesktopDimension 
-  , canvasViewPort :: ViewPortBBox -- ^ in desktop coordinate 
-  , pageToDesktop :: (Int,(Double,Double)) -> (Double,Double) -- ^ in page/desktop coordinate
-  , desktopToPage :: (Double,Double) -> Maybe (Int,(Double,Double)) -- ^ in desktop/page coordinate
-  } 
 
 type PageDrawF = DrawingArea -> Page EditMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
 type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
-
-makeCanvasGeometry :: (PageNum, GPage b s a) 
-                     -> PageArrangement vmode -> DrawingArea -> IO CanvasGeometry 
-makeCanvasGeometry (cpn,page) arr canvas = do 
-  win <- widgetGetDrawWindow canvas
-  (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
-  screen <- widgetGetScreen canvas
-  (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
-                 <*> (fromIntegral <$> screenGetHeight screen)
-  let (Dim w h) = get g_dimension page
-  (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< drawWindowGetOrigin win
-  let (deskdim, cvsvbbox, p2d, d2p) = 
-        case arr of  
-          SingleArrangement pdim vbbox -> ( DesktopDimension . unPageDimension $ pdim
-                                          , vbbox
-                                          , id.snd
-                                          , \coord->Just (unPageNum cpn,coord) )
-          _ -> error "not implemented yet for ContinuousArrangement in getCanvasGeometry"
-  return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
-                          (CanvasOrigin (x0,y0)) deskdim cvsvbbox p2d d2p
-                          
-    
-{-    
-    
-    (fromIntegral ws, fromIntegral hs) 
-                              (fromIntegral w', fromIntegral h') 
-                              (w,h) 
-                              (fromIntegral x0,fromIntegral y0)
-                              (xorig, yorig)
--}  
 
 
 -- | obsolete 
@@ -117,11 +77,15 @@ getCanvasPageGeometry canvas page (xorig,yorig) = do
                               (fromIntegral x0,fromIntegral y0)
                               (xorig, yorig)
 
+-- | obsolete
+
 visibleViewPort :: CanvasPageGeometry -> ZoomMode -> BBox  
 visibleViewPort cpg@(CanvasPageGeometry (_ws,_hs) (w',h') (_w,_h) (_x0,_y0) (xorig,yorig)) zmode = 
   let (xend,yend) = canvasToPageCoord cpg zmode (w',h')
   in  BBox (xorig,yorig) (xend,yend)
 
+
+-- | obsolete 
 
 core2pageCoord :: CanvasPageGeometry -> ZoomMode 
                   -> (Double,Double) -> (Double,Double)
@@ -135,6 +99,8 @@ core2pageCoord cpg@(CanvasPageGeometry (_ws,_hs) (_w',_h') (_w,_h) (_x0,_y0) (xo
                   _ -> error "not implemented yet in core2pageCoord"
   in (px*s+xo, py*s+yo)
   
+-- | obsolete      
+
 wacom2pageCoord :: CanvasPageGeometry 
                    -> ZoomMode 
                    -> (Double,Double) 
@@ -151,6 +117,8 @@ wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig
                     _ -> error "not implemented wacom2pageCoord"
     in  (x1*s+xo,y1*s+yo)
 
+-- | obsolete 
+
 device2pageCoord :: CanvasPageGeometry 
                  -> ZoomMode 
                  -> PointerCoord  
@@ -162,6 +130,8 @@ device2pageCoord cpg zmode pcoord@(PointerCoord _ _ _)  =
       _    -> wacom2pageCoord cpg zmode (px,py)
 device2pageCoord _ _ NoPointerCoord = (-100,-100)
 
+-- | obsolete 
+
 pageToCanvasCoord :: CanvasPageGeometry -> ZoomMode -> (Double,Double) -> (Double,Double)
 pageToCanvasCoord cpg@(CanvasPageGeometry _ _ _ _ (xorig,yorig)) zmode (x,y) = 
   let s = getRatioFromPageToCanvas cpg zmode
@@ -172,8 +142,12 @@ pageToCanvasCoord cpg@(CanvasPageGeometry _ _ _ _ (xorig,yorig)) zmode (x,y) =
                   _ -> error "not implemented yet in pageToScreenCoord"
   in ((x-xo)*s,(y-yo)*s)
 
+-- | obsolete 
+
 canvasToPageCoord :: CanvasPageGeometry -> ZoomMode -> (Double,Double) -> (Double,Double) 
 canvasToPageCoord = core2pageCoord
+
+-- | obsolete
 
 transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
 transformForPageCoord cpg zmode = do 

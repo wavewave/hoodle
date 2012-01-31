@@ -26,6 +26,8 @@ import Data.Xournal.BBox
 import Data.Label
 import Prelude hiding ((.), id)
 
+import Control.Monad.Trans
+
 vscrollStart :: CanvasId -> MainCoroutine () 
 vscrollStart cid = vscrollMove cid 
         
@@ -41,6 +43,10 @@ vscrollMove cid = do
       VScrollBarEnd cid' v -> do 
         updateXState $ return.modifyCurrentCanvasInfo 
                                 (selectBox (scrollmovecanvas v) (error "vscrollMove")) 
+                                
+        testcinfo <- return. get currentCanvasInfo =<< getSt 
+        selectBoxAction (liftIO .print . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo)) (const (return ())) testcinfo 
+        
         invalidate cid' 
         return ()
       _ -> return ()       

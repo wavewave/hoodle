@@ -68,7 +68,7 @@ commonPenStart action cid pcoord =
 
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid = commonPenStart penAction cid 
-  where penAction cinfo pnum@(PageNum cpn) geometry (cidmove,cidup) (x,y) = do 
+  where penAction cinfo pnum geometry (cidmove,cidup) (x,y) = do 
           xstate <- getSt
           let currxoj = unView . get xournalstate $ xstate        
               pinfo = get penInfo xstate

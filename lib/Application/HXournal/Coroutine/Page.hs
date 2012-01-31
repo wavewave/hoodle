@@ -112,6 +112,17 @@ canvasZoomUpdate mzmode = updateXState zoomUpdateAction >> invalidateAll
           let ncinfo = CanvasInfoBox . set (zoomMode.viewInfo) zmode
                          . set (viewPortBBox.pageArrangement.viewInfo) newvbbox $ cinfo
           let (hadj,vadj) = get adjustments cinfo 
+          
+          {-
+          -- for debug
+          let arrtest = get (pageArrangement.viewInfo) $
+                        set (zoomMode.viewInfo) zmode
+                         . set (viewPortBBox.pageArrangement.viewInfo) newvbbox $ cinfo
+                        
+          ngeom <- liftIO $ (makeCanvasGeometry (pn,page) arrtest canvas)
+          liftIO $ putStrLn $ "canvas (0,0) = " ++ show (canvas2Desktop ngeom (CvsCoord (0,0)))
+          -}
+              
           liftIO $ setAdjustments (hadj,vadj) (w,h) (0,0) (0,0) (w'*sx,h'*sy)
           return . modifyCurrentCanvasInfo (const ncinfo) $ xstate
           

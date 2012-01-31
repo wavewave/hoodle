@@ -29,7 +29,9 @@ import Application.HXournal.Type.PageArrangement
 
 newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
 newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
+                         deriving (Show)
 newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
+                          deriving (Show)
 newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
 newtype PageNum = PageNum { unPageNum :: Int } 
                 deriving (Eq)
@@ -119,7 +121,7 @@ desktop2Screen geometry = canvas2Screen geometry . desktop2Canvas geometry
 -- |
 
 core2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate 
-core2Desktop geometry = screen2Desktop geometry . ScrCoord 
+core2Desktop geometry = canvas2Desktop geometry . CvsCoord 
 
 -- |
 
@@ -127,6 +129,11 @@ wacom2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
 wacom2Desktop geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
                                in screen2Desktop geometry . ScrCoord $ (w*x,h*y) 
                                   
+wacom2Canvas :: CanvasGeometry -> (Double,Double) -> CanvasCoordinate                       
+wacom2Canvas geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
+                              in screen2Canvas geometry . ScrCoord $ (w*x,h*y) 
+         
+
 -- | 
 
 device2Desktop :: CanvasGeometry -> PointerCoord -> DesktopCoordinate 

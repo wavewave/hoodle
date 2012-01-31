@@ -95,8 +95,8 @@ cairoXform4PageCoordinate geometry pnum = do
       CvsCoord (x1,y1) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (1,1))
       sx = x1-x0 
       sy = y1-y0
-  scale sx sy
   translate x0 y0      
+  scale sx sy
   
 -- | 
 

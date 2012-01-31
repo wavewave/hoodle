@@ -155,15 +155,14 @@ setPageSingle (SelectState txoj) pagenum cinfo =
      . set currentPage newpage
      $ cinfo 
 
-                            
 
-getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
-getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
-          
+-- | 
 
 newSinglePageFromOld :: Page EditMode -> Page EditMode 
 newSinglePageFromOld = 
   set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
+
+-- | 
 
 newPageBeforeAction :: (ViewMode a) => 
                        Xournal EditMode

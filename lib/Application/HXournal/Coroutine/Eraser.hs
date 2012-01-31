@@ -8,6 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Coroutine.Eraser where
 
@@ -18,6 +19,7 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Device
 import Application.HXournal.View.Draw
+import Application.HXournal.View.Coordinate
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
@@ -45,17 +47,18 @@ eraserStart :: CanvasId
                -> PointerCoord 
                -> MainCoroutine () 
 eraserStart cid = commonPenStart eraserAction cid  
-  where eraserAction _cinfo cpg _zmode (cidup,cidmove) (x,y) = do 
+  where eraserAction _cinfo pnum geometry (cidup,cidmove) (x,y) = do 
           strs <- getAllStrokeBBoxInCurrentLayer
-          eraserProcess cid cpg cidup cidmove strs (x,y)
+          eraserProcess cid pnum geometry cidup cidmove strs (x,y)
 
 eraserProcess :: CanvasId
-              -> CanvasPageGeometry
+              -> PageNum 
+              -> CanvasGeometry
               -> ConnectId DrawingArea -> ConnectId DrawingArea 
               -> [StrokeBBox] 
               -> (Double,Double)
               -> MainCoroutine () 
-eraserProcess cid cpg connidmove connidup strs (x0,y0) = do 
+eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do 
     r <- await 
     xst <- getSt
     selectBoxAction (fsingle r xst) (error "eraserProcess") . getCanvasInfo cid $ xst 
@@ -64,7 +67,7 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
       case r of 
         PenMove _cid' pcoord -> do 
           let zmode  = get (zoomMode.viewInfo) cvsInfo
-              (x,y) = device2pageCoord cpg zmode pcoord 
+              (x,y) = device2pageCoord geometry pcoord 
               line = ((x0,y0),(x,y))
               hittestbbox = mkHitTestBBox line strs   
               (hitteststroke,hitState) = 
@@ -85,12 +88,15 @@ eraserProcess cid cpg connidmove connidup strs (x0,y0) = do
                      . updatePageAll newxojstate $ xstate 
               invalidateWithBuf cid 
               newstrs <- getAllStrokeBBoxInCurrentLayer
-              eraserProcess cid cpg connidup connidmove newstrs (x,y)
-            else eraserProcess cid cpg connidmove connidup strs (x,y) 
+              eraserProcess cid pnum geometry connidup connidmove newstrs (x,y)
+            else eraserProcess cid pnum geometry connidmove connidup strs (x,y) 
         PenUp _cid' _pcoord -> do 
           disconnect connidmove 
           disconnect connidup 
           invalidateAll
         _ -> return ()
     
+
+
+
 

@@ -434,6 +434,29 @@ getRatioFromPageToCanvas cpg FitHeight =
   in  h'/h
 getRatioFromPageToCanvas _cpg (Zoom s) = s 
 
+-- | 
+
+drawCurvebit :: DrawingArea 
+               -> CanvasGeometry 
+               -> Double 
+               -> (Double,Double,Double,Double) 
+               -> PageNum 
+               -> (Double,Double) 
+               -> (Double,Double) 
+               -> IO () 
+drawCurvebit canvas geometry wdth (r,g,b,a) pnum (x0,y0) (x,y) = do 
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    cairoXform4PageCoordinate geometry pnum 
+    setSourceRGBA r g b a
+    setLineWidth wdth
+    moveTo x0 y0
+    lineTo x y
+    stroke
+
+
+-- | obsolete 
+
 drawSegment :: DrawingArea
                -> CanvasPageGeometry 
                -> ZoomMode 

@@ -34,10 +34,13 @@ vscrollMove cid = do
     ev <- await 
     case ev of
       VScrollBarMoved _cid' v -> do 
-        putSt . modifyCurrentCanvasInfo (selectBox (scrollmovecanvas v) (error "vscrollMove")) =<< getSt 
+        updateXState $ return.modifyCurrentCanvasInfo 
+                                (selectBox (scrollmovecanvas v) (error "vscrollMove"))
         invalidateWithBuf cid 
         vscrollMove cid 
-      VScrollBarEnd cid' _v -> do 
+      VScrollBarEnd cid' v -> do 
+        updateXState $ return.modifyCurrentCanvasInfo 
+                                (selectBox (scrollmovecanvas v) (error "vscrollMove")) 
         invalidate cid' 
         return ()
       _ -> return ()       

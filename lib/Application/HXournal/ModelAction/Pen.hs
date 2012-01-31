@@ -31,17 +31,17 @@ import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
+import Application.HXournal.View.Coordinate
 
-addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> Int -> Seq (Double,Double) 
+addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> PageNum -> Seq (Double,Double) 
             -> IO (TXournalBBoxMapPDFBuf,BBox)
-addPDraw pinfo xoj pgnum pdraw = do 
+addPDraw pinfo xoj (PageNum pgnum) pdraw = do 
   let ptype = get penType pinfo
       pcolor = get (penColor.currentTool) pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get (penWidth.currentTool) pinfo
       (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
       currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
-
       newstroke = Stroke { stroke_tool = case ptype of 
                                            PenWork -> "pen" 
                                            HighlighterWork -> "highlighter"
@@ -56,13 +56,10 @@ addPDraw pinfo xoj pgnum pdraw = do
                    . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
                    $ currlayer
   let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-
-    -- unsafePerformIO (do { putStrLn "currpage" ; testPage currpage ; return (adjustCurrentLayer newlayerbbox currpage)})
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
-      
   return (newxojbbox,bbox)
 
-  -- (unsafePerformIO (do { putStrLn "newpage" ; testPage newpagebbox ; return (newxojbbox,bbox)})) 
+
 
 
 

@@ -101,7 +101,10 @@ vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
 data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 
 
 getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
-getDrawAreaFromBox (CanvasInfoBox x) = get drawArea x 
+getDrawAreaFromBox = unboxGet drawArea --  (CanvasInfoBox x) = get drawArea x 
+
+unboxGet :: (forall a. (ViewMode a) => CanvasInfo a :-> b) -> CanvasInfoBox -> b 
+unboxGet f (CanvasInfoBox x) = get f x
 
 fmapBox :: (forall a. (ViewMode a) => CanvasInfo a -> CanvasInfo a)
         -> CanvasInfoBox -> CanvasInfoBox

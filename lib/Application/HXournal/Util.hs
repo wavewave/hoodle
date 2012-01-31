@@ -36,6 +36,8 @@ testXournal xojstate = do
   L.putStrLn (builder xojsimple)
 -}
 
+maybeFlip :: Maybe a -> b -> (a->b) -> b  
+maybeFlip m n j = maybe n j m   
 
 uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
 uncurry4 f (x,y,z,w) = f x y z w 

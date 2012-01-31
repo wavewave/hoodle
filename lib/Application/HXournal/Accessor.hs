@@ -29,23 +29,39 @@ import Data.Xournal.BBox
 import Data.Xournal.Generic
 import Application.HXournal.Util
 import Application.HXournal.ModelAction.Layer 
+import Application.HXournal.Type.Alias
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.View.Coordinate
 
+
+-- | get HXournalState 
 
 getSt :: MainCoroutine HXournalState 
 getSt = lift St.get
 
+-- | put HXournalState
+
 putSt :: HXournalState -> MainCoroutine () 
 putSt = lift . St.put
 
+-- | update state
+
+updateXState :: (HXournalState -> MainCoroutine HXournalState) -> MainCoroutine ()
+updateXState action = putSt =<< action =<< getSt 
+
+-- | 
 
 adjustments :: CanvasInfo a :-> (Adjustment,Adjustment) 
 adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
                          <*> (snd `for` vertAdjustment)
 
+-- | 
+
 getPenType :: Iteratee MyEvent XournalStateIO PenType
 getPenType = get (penType.penInfo) <$> lift (St.get)
       
+-- | 
+
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
@@ -82,12 +98,42 @@ getCanvasInfo cid xstate =
       maybeCvs = M.lookup cid cinfoMap
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
+{-
 getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 
 getCanvasGeometry cinfo = do 
     let canvas = get drawArea cinfo
         page = getPage cinfo
         (x0,y0) = bbox_upperleft . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo) $ cinfo
     liftIO (getCanvasPageGeometry canvas page (x0,y0))
+-}
 
-updateXState :: (HXournalState -> MainCoroutine HXournalState) -> MainCoroutine ()
-updateXState action = putSt =<< action =<< getSt 
+-- | 
+
+getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
+getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
+
+-- | 
+
+unboxGetPage :: CanvasInfoBox -> (Page EditMode) 
+unboxGetPage = either id (gcast :: Page SelectMode -> Page EditMode) . unboxGet currentPage
+
+-- | 
+
+getCanvasGeometry :: HXournalState -> IO CanvasGeometry 
+getCanvasGeometry xstate = do 
+  let cinfobox = get currentCanvasInfo xstate
+      page = unboxGetPage cinfobox
+      cpn = PageNum . unboxGet currentPageNum $ cinfobox 
+      canvas = unboxGet drawArea cinfobox
+      fsingle = flip (makeCanvasGeometry (cpn,page)) canvas 
+                . get (pageArrangement.viewInfo) 
+  selectBoxAction fsingle (error "getCanvasGeometry") cinfobox
+  
+
+
+
+
+
+
+
+

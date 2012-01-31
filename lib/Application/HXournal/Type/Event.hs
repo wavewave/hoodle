@@ -28,6 +28,8 @@ data MyEvent = Initialized
              | VScrollBarEnd   Int Double
              | ToViewAppendMode
              | ToSelectMode
+             | ToSinglePage
+             | ToContSinglePage
              | Menu MenuEvent 
              deriving (Show,Eq,Ord)
 

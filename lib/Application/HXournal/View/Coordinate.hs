@@ -34,8 +34,6 @@ newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
 newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
                           deriving (Show)
 newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
-newtype PageNum = PageNum { unPageNum :: Int } 
-                deriving (Eq)
 
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 

@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.ModelAction.Pen where
 
@@ -18,6 +19,7 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Layer
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Enum
+import Application.HXournal.Type.PageArrangement
 import Data.Foldable
 import Data.Maybe
 import qualified Data.Map as M

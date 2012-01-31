@@ -193,15 +193,6 @@ cairoHittedBoxDraw tpg mbbox = do
       resetClip
     Left _ -> return ()  
 
--- |
-
-getRatioPageCanvas :: ZoomMode -> PageDimension -> CanvasDimension -> (Double,Double)
-getRatioPageCanvas zmode (PageDimension (Dim w h)) (CanvasDimension (Dim w' h')) = 
-  case zmode of 
-    Original -> (1.0,1.0)
-    FitWidth -> (w'/w,w'/w)
-    FitHeight -> (h'/h,h'/h)
-    Zoom s -> (s,s)
 
 -- | 
 

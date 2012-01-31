@@ -38,12 +38,6 @@ data PenDraw = PenDraw { _points :: Seq (Double,Double) }
 emptyPenDraw :: PenDraw
 emptyPenDraw = PenDraw empty
 
-data PageMode = Continous | OnePage
-              deriving (Show,Eq) 
-
-data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
-              deriving (Show,Eq)
-
 
 data ViewInfo a  = (ViewMode a) => ViewInfo { _zoomMode :: ZoomMode 
                                             , _pageArrangement :: PageArrangement a } 
@@ -126,6 +120,11 @@ selectBox fsingle fcont =
   let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
       idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
   in runIdentity . idaction   
+
+pageArrEitherFromCanvasInfoBox :: CanvasInfoBox 
+                 -> Either (PageArrangement SinglePage) (PageArrangement ContinuousSinglePage)
+pageArrEitherFromCanvasInfoBox (CanvasInfoBox cinfo) = 
+  pageArrEither . get (pageArrangement.viewInfo) $ cinfo 
 
 
 viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 

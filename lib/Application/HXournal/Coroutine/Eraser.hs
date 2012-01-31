@@ -17,6 +17,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Device
 import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate

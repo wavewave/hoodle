@@ -166,6 +166,8 @@ defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid
 defaultEventProcess (CanvasConfigure _cid _w' _h') = canvasZoomUpdate Nothing 
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
+defaultEventProcess ToSinglePage = viewModeChange ToSinglePage
+defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess _ = return ()
 
 askQuitProgram :: MainCoroutine () 

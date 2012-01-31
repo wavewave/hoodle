@@ -496,7 +496,7 @@ getMenuUI tref sref = do
         ] 
     
   actionGroupAddAction agr uxinputa 
-  actionGroupAddRadioActions agr viewmods 0 (\_ -> return ())
+  actionGroupAddRadioActions agr viewmods 0 (assignViewMode tref sref)
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode tref sref)
   actionGroupAddRadioActions agr colormods 0 (assignColor sref) 
@@ -545,7 +545,7 @@ getMenuUI tref sref = do
   actionSetSensitive ra5 False
 
   Just ra6 <- actionGroupGetAction agr "CONTA"
-  actionSetSensitive ra6 False 
+  actionSetSensitive ra6 True
 
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
@@ -554,6 +554,17 @@ getMenuUI tref sref = do
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
   
   return ui   
+
+assignViewMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
+                 -> IORef HXournalState -> RadioAction -> IO ()
+assignViewMode tref sref a = do 
+    v <- radioActionGetCurrentValue a
+    st <- readIORef sref 
+    case v of 
+      1 -> bouncecallback tref sref ToSinglePage
+      0 -> bouncecallback tref sref ToContSinglePage
+      _ -> return ()
+
 
 assignPenMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
                  -> IORef HXournalState -> RadioAction -> IO ()

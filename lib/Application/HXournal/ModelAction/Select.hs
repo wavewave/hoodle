@@ -15,6 +15,7 @@ module Application.HXournal.ModelAction.Select where
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Alias
+import Application.HXournal.Type.PageArrangement
 import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate
 import Data.Sequence (ViewL(..),viewl,Seq)

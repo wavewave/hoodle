@@ -44,8 +44,8 @@ vscrollMove cid = do
         updateXState $ return.modifyCurrentCanvasInfo 
                                 (selectBox (scrollmovecanvas v) (error "vscrollMove")) 
                                 
-        testcinfo <- return. get currentCanvasInfo =<< getSt 
-        selectBoxAction (liftIO .print . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo)) (const (return ())) testcinfo 
+        -- testcinfo <- return. get currentCanvasInfo =<< getSt 
+        -- selectBoxAction (liftIO .print . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo)) (const (return ())) testcinfo 
         
         invalidate cid' 
         return ()

@@ -114,7 +114,8 @@ instance Monoid (IntersectBBox) where
   _ `mappend` (Intersect Bottom) = Intersect Bottom 
   (Intersect Top) `mappend` x = x 
   x `mappend` (Intersect Top) = x 
-  (Intersect (Middle x)) `mappend` (Intersect (Middle y)) = fromMaybe (x `intersectBBox` y)
+  (Intersect (Middle x)) `mappend` (Intersect (Middle y)) = 
+    maybe (Intersect Bottom) (Intersect . Middle) (x `intersectBBox` y)
   mempty = Intersect Top 
   
 instance Monoid (UnionBBox) where

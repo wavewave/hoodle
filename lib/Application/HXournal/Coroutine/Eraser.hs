@@ -91,40 +91,6 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
           eraserProcess cid pnum geometry connidup connidmove newstrs (x,y)
         else eraserProcess cid pnum geometry connidmove connidup strs (x,y) 
             
-        
- {-       
-        PenMove _cid' pcoord -> do 
-          let zmode  = get (zoomMode.viewInfo) cvsInfo
-              (x,y) = device2pageCoord geometry pcoord 
-              line = ((x0,y0),(x,y))
-              hittestbbox = mkHitTestBBox line strs   
-              (hitteststroke,hitState) = 
-                St.runState (hitTestStrokes line hittestbbox) False
-          if hitState 
-            then do 
-              let currxoj     = unView . get xournalstate $ xstate 
-                  pgnum       = get currentPageNum cvsInfo
-                  (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
-                  currlayer = maybe (error "eraserProcess") id mcurrlayer
-              let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
-                  maybebbox = fmap (flip inflate 2.0) maybebbox1
-              newlayerbbox <- liftIO . updateLayerBuf maybebbox . set g_bstrokes newstrokes $ currlayer 
-              let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-                  newxojbbox = currxoj { gpages= IM.adjust (const newpagebbox) pgnum (gpages currxoj) }
-                  newxojstate = ViewAppendState newxojbbox
-              commit . set xournalstate newxojstate 
-                     . updatePageAll newxojstate $ xstate 
-              invalidateWithBuf cid 
-              newstrs <- getAllStrokeBBoxInCurrentLayer
-              eraserProcess cid pnum geometry connidup connidmove newstrs (x,y)
-            else eraserProcess cid pnum geometry connidmove connidup strs (x,y) 
-        PenUp _cid' _pcoord -> do 
-          disconnect connidmove 
-          disconnect connidup 
-          invalidateAll
-        _ -> return ()
-    
--}
 
 
 

@@ -114,6 +114,13 @@ getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPag
 
 -- | 
 
+getXournal :: HXournalState -> Xournal EditMode 
+getXournal = either id makexoj . xojstateEither . get xournalstate 
+  where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+
+
+-- | 
+
 unboxGetPage :: CanvasInfoBox -> (Page EditMode) 
 unboxGetPage = either id (gcast :: Page SelectMode -> Page EditMode) . unboxGet currentPage
 

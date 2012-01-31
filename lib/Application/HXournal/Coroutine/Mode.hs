@@ -17,6 +17,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Canvas
+import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
 --import Data.Foldable
 import Data.Traversable
@@ -52,27 +53,32 @@ viewModeChange command = case command of
                            ToContSinglePage -> updateXState single2cont 
                            _ -> return ()
   where cont2single xst =  
-          either (noaction xst) (whencont xst) 
-          . pageArrEitherFromCanvasInfoBox . get currentCanvasInfo $ xst
+          selectBoxAction (noaction xst) (whencont xst) . get currentCanvasInfo $ xst
         single2cont xst = 
-          either (whensing xst) (noaction xst) 
-          . pageArrEitherFromCanvasInfoBox . get currentCanvasInfo $ xst
+          selectBoxAction (whensing xst) (noaction xst) . get currentCanvasInfo $ xst
         noaction xstate = const (return xstate)
 
         whencont xstate _ = do 
           liftIO $ putStrLn "cont2single"
           return xstate
 
-        whensing xstate _ = do 
+        whensing xstate cinfo = do 
           liftIO $ putStrLn "single2cont"
-          
-          
-          return xstate 
+          cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
+          let zmode = get (zoomMode.viewInfo) cinfo
+              cpn = PageNum . get currentPageNum $ cinfo 
+              arr = makeContinousSingleArrangement zmode cdim (getXournal xstate) cpn
+              vinfo = get viewInfo cinfo 
+              nvinfo = ViewInfo (get zoomMode vinfo) arr 
+              ncinfo = CanvasInfo (get canvasId cinfo)
+                                  (get drawArea cinfo)
+                                  (get scrolledWindow cinfo)
+                                  nvinfo 
+                                  (get currentPageNum cinfo)
+                                  (get currentPage cinfo)
+                                  (get horizAdjustment cinfo)
+                                  (get vertAdjustment cinfo)
 
-{-        whenselect xstate txoj = return . flip (set xournalstate) xstate 
-                                 . ViewAppendState . GXournal (get g_selectTitle txoj)
-                                 =<< liftIO (mapM resetPageBuffers (get g_selectAll txoj))
-        whenedit xstate xoj = return . flip (set xournalstate) xstate 
-                              . SelectState  
-                              $ GSelect (get g_title xoj) (gpages xoj) Nothing -}
+          return . modifyCurrentCanvasInfo (const (CanvasInfoBox ncinfo)) $ xstate
+
 

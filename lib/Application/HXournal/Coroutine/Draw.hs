@@ -33,17 +33,35 @@ import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set)
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Type.Alias
+import Application.HXournal.ModelAction.Page
 
 -- |
 invalidateGeneral :: CanvasId -> Maybe BBox 
                   -> PageDrawingFunction EditMode
                   -> PageDrawingFunction SelectMode
                   -> MainCoroutine () 
-invalidateGeneral cid mbbox drawf drawfsel = 
-    selectBoxAction fsingle fsingle . getCanvasInfo cid =<< getSt 
-  where fsingle :: (ViewMode a) => CanvasInfo a -> MainCoroutine () 
+invalidateGeneral cid mbbox drawf drawfsel = do 
+    xst <- getSt 
+    selectBoxAction fsingle (fcont xst) . getCanvasInfo cid $ xst
+  where fsingle :: CanvasInfo SinglePage -> MainCoroutine () 
         fsingle cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
+          case get currentPage cvsInfo of 
+            Left page ->  liftIO (drawf <$> get drawArea <*> pure (cpn,page) <*> get viewInfo <*> pure mbbox 
+                                  $ cvsInfo )
+            Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure (cpn,tpage) <*> get viewInfo 
+                                            <*> pure mbbox $ cvsInfo )
+
+        fcont :: HXournalState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
+        fcont xstate cvsInfo = do 
+          let cpn = PageNum . get currentPageNum $ cvsInfo 
+              xoj = getXournal xstate
+              pg = getPage cvsInfo 
+              arr = get (pageArrangement.viewInfo) cvsInfo
+              canvas = get drawArea cvsInfo 
+          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn, pg) arr canvas  
+          liftIO $  print $ getPagesInViewPortRange geometry xoj 
+          
           case get currentPage cvsInfo of 
             Left page ->  liftIO (drawf <$> get drawArea <*> pure (cpn,page) <*> get viewInfo <*> pure mbbox 
                                   $ cvsInfo )

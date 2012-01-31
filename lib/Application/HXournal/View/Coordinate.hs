@@ -19,22 +19,28 @@ import Control.Applicative
 import Control.Category
 import Data.Label 
 import Prelude hiding ((.),id)
+import qualified Data.IntMap as M
 import Data.Maybe
+import Data.Monoid
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
-import Data.Xournal.BBox (BBox(..))
+import Data.Xournal.BBox 
+-- import Graphics.Xournal.Render.HitTest
 import Application.HXournal.Device
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Alias
 
+import Debug.Trace
 
 newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
+                         deriving (Show)
 newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
                          deriving (Show)
 newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
                           deriving (Show)
 newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
+                       deriving (Show)
 
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 
@@ -44,7 +50,7 @@ data CanvasGeometry =
   , canvasDim :: CanvasDimension
   -- , canvasOrigin :: CanvasOrigin 
   , desktopDim :: DesktopDimension 
-  -- , canvasViewPort :: ViewPortBBox -- ^ in desktop coordinate 
+  , canvasViewPort :: ViewPortBBox -- ^ in desktop coordinate 
   , screen2Canvas :: ScreenCoordinate -> CanvasCoordinate
   , canvas2Screen :: CanvasCoordinate -> ScreenCoordinate
   , canvas2Desktop :: CanvasCoordinate -> DesktopCoordinate
@@ -84,7 +90,7 @@ makeCanvasGeometry typ (cpn,page) arr canvas = do
       c2d = xformCanvas2Desk cdim cvsvbbox 
       d2c = xformDesk2Canvas cdim cvsvbbox
   return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
-                          deskdim s2c c2s c2d d2c d2p p2d
+                          deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
     
 
 -- |
@@ -101,7 +107,7 @@ makeDesktop2Page :: (PageNum -> Maybe PageOrigin) -> DesktopCoordinate
 makeDesktop2Page pfunc (DeskCoord (x,y)) =
   let (prev,next) = break (y<) . map (snd.unPageOrigin) . catMaybes
                     . takeWhile isJust . map (pfunc.PageNum) $ [0..] 
-  in if null next then Nothing else Just (PageNum (length prev-1),PageCoord (x,y- head next)) 
+  in Just (PageNum (length prev-1),PageCoord (x,y- last prev)) 
 
     
 -- |   
@@ -164,3 +170,31 @@ device2Desktop geometry (PointerCoord typ x y) =
     Eraser -> wacom2Desktop geometry (x,y)
 device2Desktop geometry NoPointerCoord = error "NoPointerCoordinate device2Desktop"
          
+-- | 
+
+getPagesInViewPortRange :: CanvasGeometry -> Xournal EditMode -> [PageNum]
+getPagesInViewPortRange geometry xoj = 
+  let ViewPortBBox bbox = canvasViewPort geometry
+      ivbbox = Intersect (Middle bbox)
+      pagemap = get g_pages xoj 
+      pnums = map PageNum [0..(length . gToList $ pagemap) -1 ]
+      -- contained (ViewPortBBox bbox) (DeskCoord (x,y)) = hitTestBBoxPoint bbox (x,y) 
+      pgcheck n pg = let Dim w h = get g_dimension pg  
+                         DeskCoord ul = page2Desktop geometry (PageNum n,PageCoord (0,0)) 
+                         -- ur = page2Desktop geometry (PageNum n,PageCoord (w,0))
+                         -- ll = page2Desktop geometry (PageNum n,PageCoord (0,h)) 
+                         DeskCoord lr = page2Desktop geometry (PageNum n,PageCoord (w,h))
+                         nbbox = BBox ul lr 
+                         inbbox = Intersect (Middle (BBox ul lr))
+                         result = ivbbox `mappend` inbbox 
+                     in trace (show n ++ ": " ++ show (intersectBBox bbox nbbox)
+                               ++ "\nivbbox = " ++ show ivbbox 
+                               ++ "\ninbbox = " ++ show inbbox 
+                               ++ "\nresult = " ++ show result) $ 
+                          case result of 
+                            Intersect Bottom -> False 
+                            _ -> True 
+                        {- contained vbbox ul || contained vbbox ur 
+                        || contained vbbox ll || contained vbbox lr -}
+      f (PageNum n) = maybe False (pgcheck n) . M.lookup n $ pagemap 
+  in filter f pnums

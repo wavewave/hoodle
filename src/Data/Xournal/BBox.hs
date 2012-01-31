@@ -74,7 +74,7 @@ moveBBoxULCornerTo (x,y) b@(BBox (x0,y0) _) = moveBBoxByOffset (x-x0,y-y0) b
 intersectBBox :: BBox -> BBox -> Maybe BBox
 intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do 
   guard $ (x1 <= x3 && x3 <= x2) || (x3 <= x1 && x1 <= x4 ) 
-  guard $ (y1 <= y3 && y3 <= y4) || (y3 <= y1 && y1 <= y4 )
+  guard $ (y1 <= y3 && y3 <= y2) || (y3 <= y1 && y1 <= y4 )
   let x5 = if x1 <= x3 then x3 else x1 
       y5 = if y1 <= y3 then y3 else y1 
       x6 = min x2 x4 

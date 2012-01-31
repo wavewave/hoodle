@@ -111,39 +111,6 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
            penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y)) (x,y) )
         (\_ -> disconnect connidmove >> disconnect connidup >> return pdraw )
 
-      {-
-      case r of 
-        PenMove _cid' pcoord -> do 
-          let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          
-          maybeFlip pagecoord 
-            (penProcess cid pnum geometry connidmove connidup pdraw (x0,y0)) 
-            $ \(pgn,PageCoord (x,y)) -> 
-                if (pnum /= pgn)  
-                then (penProcess cid pnum geometry connidmove connidup pdraw (x0,y0))
-                else do 
-                  let canvas = get drawArea cvsInfo
-                      ptype  = get (penType.penInfo) xstate
-                      pcolor = get (penColor.currentTool.penInfo) xstate 
-                      pwidth = get (penWidth.currentTool.penInfo) xstate 
-                      (pcr,pcg,pcb,pca)= fromJust (M.lookup pcolor penColorRGBAmap) 
-                      opacity = case ptype of 
-                                  HighlighterWork -> predefined_highlighter_opacity 
-                                  _ -> 1.0
-                      pcolRGBA = (pcr,pcg,pcb,pca*opacity)
-                  liftIO $ drawCurvebit canvas geometry pwidth pcolRGBA pnum (x0,y0) (x,y)
-
-                  penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y)) (x,y) 
-        PenUp _cid' pcoord -> do 
-          disconnect connidmove
-          disconnect connidup
-          return pdraw 
-        _ -> do
-          penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) 
-
-
-          -- liftIO $ drawSegment canvas cpg zmode pwidth pcolRGBA (x0,y0) (x,y)
--}
       
 skipIfNotInSamePage :: Monad m => 
                        PageNum -> CanvasGeometry -> PointerCoord 

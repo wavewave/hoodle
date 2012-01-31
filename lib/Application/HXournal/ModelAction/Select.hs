@@ -16,6 +16,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Alias
 import Application.HXournal.View.Draw
+import Application.HXournal.View.Coordinate
 import Data.Sequence (ViewL(..),viewl,Seq)
 import Data.Foldable (foldl')
 import Data.Monoid
@@ -57,18 +58,19 @@ scaleFromToBBox (BBox (ox1,oy1) (ox2,oy2)) (BBox (nx1,ny1) (nx2,ny2)) (x,y) =
       ny = (y-oy1)*scaley+ny1
   in (nx,ny)
 
-isBBoxDeltaSmallerThan :: Double ->CanvasPageGeometry -> ZoomMode 
-                          -> BBox -> BBox -> Bool 
-isBBoxDeltaSmallerThan delta cpg zmode 
-                       (BBox (x11,y11) (x12,y12)) (BBox (x21,y21) (x22,y22)) = 
-  let (x11',y11') = pageToCanvasCoord cpg zmode (x11,y11)
-      (x12',y12') = pageToCanvasCoord cpg zmode (x12,y12)
-      (x21',y21') = pageToCanvasCoord cpg zmode (x21,y21)
-      (x22',y22') = pageToCanvasCoord cpg zmode (x22,y22)
-  in (x11'-x21' > (-delta) && x11'-x21' < delta) 
-     && (y11'-y21' > (-delta) && y11'-y21' < delta)  
-     && (x12'-x22' > (-delta) && x12'-x22' < delta)
-     && (y11'-y21' > (-delta) && y12'-y22' < delta)
+isBBoxDeltaSmallerThan :: Double -> PageNum -> CanvasGeometry -> BBox -> BBox -> Bool 
+isBBoxDeltaSmallerThan delta pnum geometry 
+                       (BBox (x11,y11) (x12,y12)) (BBox (x21,y21) (x22,y22)) =   
+    let (x11',y11') = coordtrans (x11,y11)
+        (x12',y12') = coordtrans (x12,y12)
+        (x21',y21') = coordtrans (x21,y21)
+        (x22',y22') = coordtrans (x22,y22)
+    in (x11'-x21' > (-delta) && x11'-x21' < delta) 
+       && (y11'-y21' > (-delta) && y11'-y21' < delta)  
+       && (x12'-x22' > (-delta) && x12'-x22' < delta)
+       && (y11'-y21' > (-delta) && y12'-y22' < delta)
+  where coordtrans (x,y) = unCvsCoord . desktop2Canvas geometry . page2Desktop geometry 
+                           $ (pnum,PageCoord (x,y))
 
 -- | modify stroke using a function
 

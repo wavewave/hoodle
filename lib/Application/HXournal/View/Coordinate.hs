@@ -25,6 +25,7 @@ import Data.Xournal.BBox (BBox(..))
 import Application.HXournal.Device
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Type.Alias
 
 
 newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
@@ -55,11 +56,15 @@ data CanvasGeometry =
 
 -- | make a canvas geometry data structure from current status 
 
-makeCanvasGeometry :: (PageNum, GPage b s a) 
-                      -> PageArrangement vmode 
+makeCanvasGeometry :: (GPageable em) => 
+                      em 
+                      -> 
+                      -- (PageNum, GPage (AssocBkg vm) (AssocStream vm) (AssocLayer vm)) 
+                      (PageNum, Page em)
+                      -> PageArrangement vm 
                       -> DrawingArea 
                       -> IO CanvasGeometry 
-makeCanvasGeometry (cpn,page) arr canvas = do 
+makeCanvasGeometry typ (cpn,page) arr canvas = do 
   win <- widgetGetDrawWindow canvas
   (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
   screen <- widgetGetScreen canvas

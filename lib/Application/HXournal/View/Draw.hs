@@ -42,11 +42,15 @@ import Application.HXournal.Type.Predefined
 import Application.HXournal.View.Coordinate
 
 
+type DrawingFunction = ViewInfo SinglePage -> Maybe BBox -> IO ()
 
-type PageDrawingFunction = DrawingArea -> (PageNum,Page EditMode) 
-                           -> ViewInfo SinglePage -> Maybe BBox -> IO ()
-                           
+type PageDrawingFunction a = DrawingArea -> (PageNum,Page a) 
+                             -> ViewInfo SinglePage -> Maybe BBox -> IO ()
 
+{-                           
+type PageDrawingFunctionForSelection 
+      = DrawingArea -> (PageNum,Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+-}
 
 -- | 
 
@@ -100,10 +104,31 @@ cairoXform4PageCoordinate geometry pnum = do
   
 -- | 
 
-drawFuncGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) -> PageDrawingFunction 
-drawFuncGen render canvas (pnum,page) vinfo mbbox = do 
+drawCurvebit :: DrawingArea 
+               -> CanvasGeometry 
+               -> Double 
+               -> (Double,Double,Double,Double) 
+               -> PageNum 
+               -> (Double,Double) 
+               -> (Double,Double) 
+               -> IO () 
+drawCurvebit canvas geometry wdth (r,g,b,a) pnum (x0,y0) (x,y) = do 
+  win <- widgetGetDrawWindow canvas
+  renderWithDrawable win $ do
+    cairoXform4PageCoordinate geometry pnum 
+    setSourceRGBA r g b a
+    setLineWidth wdth
+    moveTo x0 y0
+    lineTo x y
+    stroke
+
+-- | 
+    
+drawFuncGen :: (GPageable em) => em -> 
+               ((PageNum,Page em) -> Maybe BBox -> Render ()) -> PageDrawingFunction em
+drawFuncGen typ render canvas (pnum,page) vinfo mbbox = do 
     let arr = get pageArrangement vinfo
-    geometry <- makeCanvasGeometry (pnum,page) arr canvas
+    geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
     win <- widgetGetDrawWindow canvas
     let mbboxnew = getViewableBBox geometry (pnum,mbbox)
         xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -114,9 +139,68 @@ drawFuncGen render canvas (pnum,page) vinfo mbbox = do
           resetClip 
     doubleBufferDraw win geometry xformfunc renderfunc   
 
-drawPageClearly :: PageDrawingFunction
-drawPageClearly = drawFuncGen $ \(_,page) _mbbox -> 
+drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox -> Render ()) 
+                  -> ((PageNum,Page SelectMode) -> Maybe BBox -> Render ())
+                  -> PageDrawingFunction SelectMode  
+drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> rensel x y) 
+
+
+drawPageClearly :: PageDrawingFunction EditMode
+drawPageClearly = drawFuncGen EditMode $ \(_,page) _mbbox -> 
                      cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
+
+
+drawPageSelClearly :: PageDrawingFunction SelectMode         
+drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
+  where rendercontent (_pnum,tpg)  _mbbox = do
+          let pg' = gcast tpg :: Page EditMode
+          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg' :: TPageBBoxMapPDF)
+        renderselect (_pnum,tpg) mbbox =  
+          cairoHittedBoxDraw tpg mbbox
+
+
+cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
+cairoHittedBoxDraw tpg mbbox = do   
+  let layers = get g_layers tpg 
+      slayer = gselectedlayerbuf layers 
+  case unTEitherAlterHitted . get g_bstrokes $ slayer of
+    Right alist -> do 
+      clipBBox mbbox
+      setSourceRGBA 0.0 0.0 1.0 1.0
+      let hitstrs = concatMap unHitted (getB alist)
+      mapM_ renderSelectedStroke hitstrs  
+      let ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) 
+                   $ hitstrs 
+      case ulbbox of 
+        Middle bbox -> renderSelectHandle bbox 
+        _ -> return () 
+      resetClip
+    Left _ -> return ()  
+
+
+{-  
+  canvas page vinfo mbbox = do 
+    let arr = get pageArrangement vinfo 
+    geometry <- getCanvasPageGeometry canvas page origin
+    win <- widgetGetDrawWindow canvas
+    let mbboxnew = adjustBBoxWithView geometry zmode mbbox
+        xformfunc = transformForPageCoord geometry zmode
+        renderfunc = do
+          xformfunc 
+          clipBBox mbboxnew
+          rencont page mbboxnew 
+          rensel page mbboxnew 
+          resetClip 
+    doubleBuffering win geometry xformfunc renderfunc   
+
+-}
+
+
+
+
+
+
+
 
 
 getRatioPageCanvas :: ZoomMode -> PageDimension -> CanvasDimension -> (Double,Double)
@@ -128,10 +212,73 @@ getRatioPageCanvas zmode (PageDimension (Dim w h)) (CanvasDimension (Dim w' h'))
     Zoom s -> (s,s)
 
 
+renderLasso :: Seq (Double,Double) -> Render ()
+renderLasso lst = do 
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  case viewl lst of 
+    EmptyL -> return ()
+    x :< xs -> do uncurry moveTo x
+                  mapM_ (uncurry lineTo) xs 
+                  stroke 
+
+
+
+renderBoxSelection :: BBox -> Render () 
+renderBoxSelection bbox = do
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+
+renderSelectedStroke :: StrokeBBox -> Render () 
+renderSelectedStroke str = do 
+  setLineWidth 1.5
+  setSourceRGBA 0 0 1 1
+  cairoOneStrokeSelected str
+
+renderSelectHandle :: BBox -> Render () 
+renderSelectHandle bbox = do 
+  setLineWidth predefinedLassoWidth
+  uncurry4 setSourceRGBA predefinedLassoColor
+  uncurry setDash predefinedLassoDash 
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x1-5) (y1-5) 10 10  
+  fill
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x1-5) (y2-5) 10 10  
+  fill
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x2-5) (y1-5) 10 10  
+  fill
+  setSourceRGBA 1 0 0 0.8
+  rectangle (x2-5) (y2-5) 10 10  
+  fill
+  
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (x1-3) (0.5*(y1+y2)-3) 6 6  
+  fill
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (x2-3) (0.5*(y1+y2)-3) 6 6  
+  fill
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (0.5*(x1+x2)-3) (y1-3) 6 6  
+  fill
+  setSourceRGBA 0.5 0 0.2 0.8
+  rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
+  fill
 
 
 -- | obsolete
-
+{-
 data CanvasPageGeometry = 
   CanvasPageGeometry { screen_size :: (Double,Double) 
                      , canvas_size :: (Double,Double)
@@ -140,7 +287,6 @@ data CanvasPageGeometry =
                      , page_origin :: (Double,Double)
                      }
   deriving (Show)  
-
 
 
 -- | obsolete                            
@@ -255,33 +401,7 @@ transformForPageCoord cpg zmode = do
 
   
   
-drawFuncSelGen :: (Page SelectMode -> Maybe BBox -> Render ()) 
-                  -> (Page SelectMode -> Maybe BBox -> Render ())
-                  -> PageDrawFSel  
-drawFuncSelGen rencont rensel canvas page vinfo mbbox = do 
-    let zmode  = get zoomMode vinfo
-        BBox origin _ = unViewPortBBox .get (viewPortBBox.pageArrangement) $ vinfo
-    geometry <- getCanvasPageGeometry canvas page origin
-    win <- widgetGetDrawWindow canvas
-    let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-        xformfunc = transformForPageCoord geometry zmode
-        renderfunc = do
-          xformfunc 
-          clipBBox mbboxnew
-          rencont page mbboxnew 
-          rensel page mbboxnew 
-          resetClip 
-    doubleBuffering win geometry xformfunc renderfunc   
-
                      
-drawPageSelClearly :: PageDrawFSel                      
-drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
-  where rendercontent tpg _mbbox = do
-          let pg' = gcast tpg :: Page EditMode
-          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg' :: TPageBBoxMapPDF)
-        renderselect tpg mbbox =  
-          cairoHittedBoxDraw tpg mbbox
-
 
 drawBBoxOnly :: PageDrawF
 drawBBoxOnly canvas page vinfo _mbbox = do 
@@ -436,24 +556,6 @@ getRatioFromPageToCanvas _cpg (Zoom s) = s
 
 -- | 
 
-drawCurvebit :: DrawingArea 
-               -> CanvasGeometry 
-               -> Double 
-               -> (Double,Double,Double,Double) 
-               -> PageNum 
-               -> (Double,Double) 
-               -> (Double,Double) 
-               -> IO () 
-drawCurvebit canvas geometry wdth (r,g,b,a) pnum (x0,y0) (x,y) = do 
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    cairoXform4PageCoordinate geometry pnum 
-    setSourceRGBA r g b a
-    setLineWidth wdth
-    moveTo x0 y0
-    lineTo x y
-    stroke
-
 
 -- | obsolete 
 
@@ -509,24 +611,6 @@ drawSelectionInBBox canvas tpg vinfo mbbox = do
   doubleBuffering win geometry xformfunc renderfunc   
     
   
-cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
-cairoHittedBoxDraw tpg mbbox = do   
-  let layers = get g_layers tpg 
-      slayer = gselectedlayerbuf layers 
-  case unTEitherAlterHitted . get g_bstrokes $ slayer of
-    Right alist -> do 
-      clipBBox mbbox
-      setSourceRGBA 0.0 0.0 1.0 1.0
-      let hitstrs = concatMap unHitted (getB alist)
-      mapM_ renderSelectedStroke hitstrs  
-      let ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) 
-                   $ hitstrs 
-      case ulbbox of 
-        Middle bbox -> renderSelectHandle bbox 
-        _ -> return () 
-      resetClip
-    Left _ -> return ()  
-
 
 ---- 
     
@@ -584,66 +668,4 @@ drawSelBuf canvas tpg vinfo mbbox = do
         cairoHittedBoxDraw tpg mbbox  
   doubleBuffering win geometry xformfunc renderfunc   
 
-renderLasso :: Seq (Double,Double) -> Render ()
-renderLasso lst = do 
-  setLineWidth predefinedLassoWidth
-  uncurry4 setSourceRGBA predefinedLassoColor
-  uncurry setDash predefinedLassoDash 
-  case viewl lst of 
-    EmptyL -> return ()
-    x :< xs -> do uncurry moveTo x
-                  mapM_ (uncurry lineTo) xs 
-                  stroke 
-
-
-
-renderBoxSelection :: BBox -> Render () 
-renderBoxSelection bbox = do
-  setLineWidth predefinedLassoWidth
-  uncurry4 setSourceRGBA predefinedLassoColor
-  uncurry setDash predefinedLassoDash 
-  let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
-
-renderSelectedStroke :: StrokeBBox -> Render () 
-renderSelectedStroke str = do 
-  setLineWidth 1.5
-  setSourceRGBA 0 0 1 1
-  cairoOneStrokeSelected str
-
-renderSelectHandle :: BBox -> Render () 
-renderSelectHandle bbox = do 
-  setLineWidth predefinedLassoWidth
-  uncurry4 setSourceRGBA predefinedLassoColor
-  uncurry setDash predefinedLassoDash 
-  let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
-  setSourceRGBA 1 0 0 0.8
-  rectangle (x1-5) (y1-5) 10 10  
-  fill
-  setSourceRGBA 1 0 0 0.8
-  rectangle (x1-5) (y2-5) 10 10  
-  fill
-  setSourceRGBA 1 0 0 0.8
-  rectangle (x2-5) (y1-5) 10 10  
-  fill
-  setSourceRGBA 1 0 0 0.8
-  rectangle (x2-5) (y2-5) 10 10  
-  fill
-  
-  setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (x1-3) (0.5*(y1+y2)-3) 6 6  
-  fill
-  setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (x2-3) (0.5*(y1+y2)-3) 6 6  
-  fill
-  setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (0.5*(x1+x2)-3) (y1-3) 6 6  
-  fill
-  setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
-  fill
+-}

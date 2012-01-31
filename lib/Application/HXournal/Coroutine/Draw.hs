@@ -34,7 +34,7 @@ import Application.HXournal.View.Coordinate
 -- |
 invalidateGeneral :: CanvasId -> Maybe BBox 
                   -> PageDrawingFunction
-                  -> PageDrawFSel 
+                  -> PageDrawingFunctionForSelection 
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox drawf drawfsel = 
     selectBoxAction fsingle (error "invalidateSelSingle") . getCanvasInfo cid =<< getSt 
@@ -46,8 +46,59 @@ invalidateGeneral cid mbbox drawf drawfsel =
             Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure tpage <*> get viewInfo 
                                             <*> pure mbbox $ cvsInfo )
 
+-- | 
+
+invalidateAll :: MainCoroutine () 
+invalidateAll = do
+  xstate <- getSt
+  let cinfoMap  = get canvasInfoMap xstate
+      keys = M.keys cinfoMap 
+  forM_ keys invalidate 
+
+invalidateOther :: MainCoroutine () 
+invalidateOther = do 
+  xstate <- getSt
+  let currCvsId = get currentCanvasId xstate
+      cinfoMap  = get canvasInfoMap xstate
+      keys = M.keys cinfoMap 
+  mapM_ invalidate (filter (/=currCvsId) keys)
+  
+
+-- | invalidate clear 
+
+invalidate :: CanvasId -> MainCoroutine () 
+invalidate cid = invalidateGeneral cid Nothing drawPageClearly drawPageSelClearly
 
 
+-- | Invalidate Current canvas
+
+invalidateCurrent :: MainCoroutine () 
+invalidateCurrent = invalidate . get currentCanvasId =<< getSt
+       
+-- | Drawing temporary gadgets
+
+invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()
+invalidateTemp cid tempsurface rndr = do 
+    selectBoxAction fsingle (error "invalidateTemp") . getCanvasInfo cid =<< getSt 
+  where fsingle cvsInfo = do 
+          let page = either id gcast $ get currentPage cvsInfo 
+              canvas = get drawArea cvsInfo
+              vinfo = get viewInfo cvsInfo      
+          let zmode  = get zoomMode vinfo
+              BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
+          geometry <- liftIO $ getCanvasPageGeometry canvas page origin
+          win <- liftIO $ widgetGetDrawWindow canvas
+          let xformfunc = transformForPageCoord geometry zmode
+          liftIO $ renderWithDrawable win $ do   
+                     setSourceSurface tempsurface 0 0 
+                     setOperator OperatorSource 
+                     paint 
+                     xformfunc 
+                     rndr 
+      
+
+
+{-
 -- | obsolete 
 
 invalidateSelSingle :: CanvasId -> Maybe BBox 
@@ -80,29 +131,9 @@ invalidateGenSingle cid mbbox drawf =
                         <*> pure mbbox
                         $ cvsInfo )
 
+-}
 
-invalidateAll :: MainCoroutine () 
-invalidateAll = do
-  xstate <- getSt
-  let cinfoMap  = get canvasInfoMap xstate
-      keys = M.keys cinfoMap 
-  forM_ keys invalidate 
-
-invalidateOther :: MainCoroutine () 
-invalidateOther = do 
-  xstate <- getSt
-  let currCvsId = get currentCanvasId xstate
-      cinfoMap  = get canvasInfoMap xstate
-      keys = M.keys cinfoMap 
-  mapM_ invalidate (filter (/=currCvsId) keys)
-  
-
--- | invalidate clear 
-
-invalidate :: CanvasId -> MainCoroutine () 
-invalidate cid = invalidateGeneral cid Nothing drawPageClearly drawPageSelClearly
-
-
+{-
 -- | Drawing objects only in BBox, obsolete 
 -- 
 -- invalidateInBBox :: CanvasId -> BBox -> MainCoroutine () 
@@ -125,31 +156,4 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid = invalidateSelSingle cid mbbox drawBuf drawSelectionInBBox
-                             
-
--- | Invalidate Current canvas
-
-invalidateCurrent :: MainCoroutine () 
-invalidateCurrent = invalidate . get currentCanvasId =<< getSt
-       
--- | Drawing temporary gadgets
-
-invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()
-invalidateTemp cid tempsurface rndr = do 
-    selectBoxAction fsingle (error "invalidateTemp") . getCanvasInfo cid =<< getSt 
-  where fsingle cvsInfo = do 
-          let page = either id gcast $ get currentPage cvsInfo 
-              canvas = get drawArea cvsInfo
-              vinfo = get viewInfo cvsInfo      
-          let zmode  = get zoomMode vinfo
-              BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-          geometry <- liftIO $ getCanvasPageGeometry canvas page origin
-          win <- liftIO $ widgetGetDrawWindow canvas
-          let xformfunc = transformForPageCoord geometry zmode
-          liftIO $ renderWithDrawable win $ do   
-                     setSourceSurface tempsurface 0 0 
-                     setOperator OperatorSource 
-                     paint 
-                     xformfunc 
-                     rndr 
-      
+-}                             

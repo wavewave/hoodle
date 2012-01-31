@@ -125,8 +125,10 @@ getCanvasGeometry xstate = do
       page = unboxGetPage cinfobox
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      fsingle = flip (makeCanvasGeometry (cpn,page)) canvas 
+      xojstate = get xournalstate xstate 
+      fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
                 . get (pageArrangement.viewInfo) 
+
   selectBoxAction fsingle (error "getCanvasGeometry") cinfobox
   
 

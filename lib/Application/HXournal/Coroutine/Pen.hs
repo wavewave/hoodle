@@ -104,10 +104,8 @@ penStart cid = commonPenStart penAction cid
               pinfo = get penInfo xstate
           pdraw <-penProcess cid pnum geometry cidmove cidup (empty |> (x,y)) (x,y) 
           (newxoj,_bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
-          let xstate' = set xournalstate (ViewAppendState newxoj) 
-                        . updatePageAll (ViewAppendState newxoj)
-                        $ xstate
-          commit xstate'
+          commit . set xournalstate (ViewAppendState newxoj) 
+                 =<< (liftIO (updatePageAll (ViewAppendState newxoj) xstate))
           invalidateAll 
 
 -- | main pen coordinate adding process

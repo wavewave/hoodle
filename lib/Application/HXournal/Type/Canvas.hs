@@ -11,6 +11,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Type.Canvas where
 
@@ -18,6 +19,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Alias 
 import Data.Sequence
 import qualified Data.IntMap as M
+import Control.Applicative ((<*>),(<$>))
 import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
@@ -90,6 +92,13 @@ horizAdjustment = lens _horizAdjustment (\a f -> f { _horizAdjustment = a })
 
 vertAdjustment :: CanvasInfo a :-> Adjustment 
 vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
+
+
+-- | 
+
+adjustments :: CanvasInfo a :-> (Adjustment,Adjustment) 
+adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
+                         <*> (snd `for` vertAdjustment)
 
 
 data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 

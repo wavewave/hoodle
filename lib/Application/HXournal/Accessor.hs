@@ -49,11 +49,6 @@ putSt = lift . St.put
 updateXState :: (HXournalState -> MainCoroutine HXournalState) -> MainCoroutine ()
 updateXState action = putSt =<< action =<< getSt 
 
--- | 
-
-adjustments :: CanvasInfo a :-> (Adjustment,Adjustment) 
-adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
-                         <*> (snd `for` vertAdjustment)
 
 -- | 
 
@@ -99,10 +94,6 @@ getCanvasInfo cid xstate =
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
 
--- | 
-
-getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
-getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
 
 -- | 
 

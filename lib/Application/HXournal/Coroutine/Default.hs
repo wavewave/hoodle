@@ -153,12 +153,12 @@ defaultEventProcess :: MyEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = updateXState (return . hscrollmoveAction) >> invalidate cid 
-  where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple (error "defHscr"))
+  where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo = 
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
           in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
 defaultEventProcess (VScrollBarMoved cid v) = updateXState (return . vscrollmoveAction) >> invalidate cid
-  where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple (error "defVscr"))
+  where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
           in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo

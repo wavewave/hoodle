@@ -52,9 +52,7 @@ layerAction action = do
           cpn = get currentPageNum cvsInfo
           xojstate = get xournalstate xstate
       newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
-      return . updatePageAll newxojstate 
-             . set xournalstate newxojstate 
-             $ xstate
+      return =<< (liftIO (updatePageAll newxojstate . set xournalstate newxojstate $ xstate))
 
 makeNewLayer :: MainCoroutine () 
 makeNewLayer = layerAction newlayeraction >>= commit 

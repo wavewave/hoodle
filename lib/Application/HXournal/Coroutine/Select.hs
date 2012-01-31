@@ -181,9 +181,8 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
       let ui = get gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      putSt (set xournalstate (SelectState newtxoj) 
-             . updatePageAll (SelectState newtxoj)
-             $ xstate) 
+      putSt . set xournalstate (SelectState newtxoj) 
+            =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
@@ -231,16 +230,14 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
           let newtpage = changeSelectionByOffset offset tpage 
           newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
           commit . set xournalstate (SelectState newtxoj)
-                 . updatePageAll (SelectState newtxoj) 
-                 $ xstate 
+                 =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
         Left _ -> error "this is impossible, in moveSelect" 
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
 
-                               
+-- |
       
-
 resizeSelect :: Handle 
                 -> CanvasId
                 -> PageNum 
@@ -285,16 +282,14 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
           let newtpage = changeSelectionBy sfunc tpage 
           newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
           commit . set xournalstate (SelectState newtxoj)
-                 . updatePageAll (SelectState newtxoj) 
-                 $ xstate 
+                 =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
         Left _ -> error "this is impossible, in resizeSelect" 
       disconnect connidmove
       disconnect connidup 
       invalidateAll
       return ()    
 
-
-
+-- |
 
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
@@ -310,9 +305,9 @@ deleteSelection = do
           oldlayers = glayers tpage
           newpage = tpage { glayers = oldlayers { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) } } 
       newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n          
-      let newxstate = updatePageAll (SelectState newtxoj) 
-                      . set xournalstate (SelectState newtxoj)
-                      $ xstate 
+      newxstate <- liftIO $ updatePageAll (SelectState newtxoj) 
+                            . set xournalstate (SelectState newtxoj)
+                            $ xstate 
       commit newxstate 
       let ui = get gtkUIManager newxstate
       liftIO $ toggleCutCopyDelete ui False 
@@ -362,15 +357,15 @@ pasteToSelection = modeChange ToSelectMode >> updateXState pasteAction >> invali
                                  :- Empty )
               tpage' = tpage { glayers = ls { gselectedlayerbuf = newlayerselect } } 
           txoj' <- liftIO $ updateTempXournalSelectIO txoj tpage' pagenum 
-          let xstate' = updatePageAll (SelectState txoj') 
-                        . set xournalstate (SelectState txoj') 
-                        $ xstate 
+          xstate' <- liftIO $ updatePageAll (SelectState txoj') 
+                              . set xournalstate (SelectState txoj') 
+                              $ xstate 
           commit xstate' 
           let ui = get gtkUIManager xstate' 
           liftIO $ toggleCutCopyDelete ui True
           return xstate' 
         
-
+-- | 
   
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
@@ -388,9 +383,8 @@ selectPenColorChanged pcolor = do
           ls = glayers tpage 
           newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
       newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n
-      commit . updatePageAll (SelectState newtxoj) 
-             . set xournalstate (SelectState newtxoj) 
-             $ xstate                       
+      commit =<< liftIO (updatePageAll (SelectState newtxoj)
+                        . set xournalstate (SelectState newtxoj) $ xstate )
       invalidateAll 
           
 selectPenWidthChanged :: Double -> MainCoroutine () 
@@ -409,9 +403,8 @@ selectPenWidthChanged pwidth = do
           ls = get g_layers tpage 
           newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
       newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n          
-      commit . updatePageAll (SelectState newtxoj) 
-             . set xournalstate (SelectState newtxoj)
-             $ xstate 
+      commit =<< liftIO (updatePageAll (SelectState newtxoj) 
+                         . set xournalstate (SelectState newtxoj) $ xstate )
       invalidateAll 
 
 -- | main mouse pointer click entrance in lasso selection mode. 
@@ -497,202 +490,11 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
       let ui = get gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      putSt (set xournalstate (SelectState newtxoj) 
-             . updatePageAll (SelectState newtxoj)
-             $ xstate) 
+      putSt . set xournalstate (SelectState newtxoj) 
+            =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
       disconnect cidmove
       disconnect cidup 
       invalidateAll 
-      
- {-     
-  case r of 
-    PenMove _cid' pcoord -> do 
-      let (x,y) = device2pageCoord cpg zmode pcoord 
-          nlasso = lasso |> (x,y)
-      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
-      when willUpdate $ do 
-        invalidateTemp cid (tempSurface tsel) (renderLasso nlasso) 
-      newSelectLasso cinfo cpg zmode cidmove cidup strs orig 
-                     (ncoord,ntime) nlasso tsel
-    PenUp _cid' pcoord -> do 
-      let (x,y) = device2pageCoord cpg zmode pcoord 
-          nlasso = lasso |> (x,y)
-      let epage = get currentPage cinfo 
-          cpn = get currentPageNum cinfo 
-      let hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
-          selectstrs = fmapAL unNotHitted id hittestlasso
-      xstate <- getSt    
-      let SelectState txoj = get xournalstate xstate
-          newpage = case epage of 
-                      Left pagebbox -> 
-                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            currlayer = maybe (error "newSelectLasso") id mcurrlayer 
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            tpg = gcast npagebbox 
-                            ls = get g_layers tpg 
-                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
-                        in npg 
-                      Right tpage -> 
-                        let ls = glayers tpage 
-                            currlayer = gselectedlayerbuf ls
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
-                        in npage
-          newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
-      let ui = get gtkUIManager xstate
-      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      putSt (set xournalstate (SelectState newtxoj) 
-             . updatePageAll (SelectState newtxoj)
-             $ xstate) 
-      disconnect cidmove
-      disconnect cidup 
-      invalidateAll 
-    _ -> return ()
-  
--}  
-  
-  
-{-
-
-  case r of 
-    PenMove _cid' pcoord -> do 
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      let bbox = BBox orig (x,y)
-          hittestbbox = mkHitTestInsideBBox bbox strs
-          hittedstrs = concat . map unHitted . getB $ hittestbbox
-      let page = either id gcast $ get currentPage cinfo 
-          (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
-      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
-      when ((not.null) fstrs || (not.null) sstrs ) $ do 
-        let xformfunc = transformForPageCoord geometry zmode
-            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
-            renderfunc = do   
-              xformfunc 
-              case ulbbox of 
-                Top -> do 
-                  cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-                  mapM_ renderSelectedStroke hittedstrs
-                Middle sbbox -> do 
-                  let redrawee = filter (hitTestBBoxBBox sbbox.strokebbox_bbox) hittedstrs  
-                  cairoRenderOption (InBBoxOption (Just sbbox)) (InBBox page)
-                  clipBBox (Just sbbox)
-                  mapM_ renderSelectedStroke redrawee 
-                Bottom -> return ()
-              mapM_ renderSelectedStroke sstrs 
-        liftIO $ updateTempSelection tempselection renderfunc False
-      when willUpdate $  
-        invalidateTemp cid (tempSurface tempselection) 
-                           (renderBoxSelection bbox) 
-      newSelectRectangle cinfo geometry zmode connidmove connidup strs orig 
-                         (ncoord,ntime)
-                         tempselection { tempSelectInfo = hittedstrs }
-    PenUp _cid' pcoord -> do 
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      let epage = get currentPage cinfo 
-          cpn = get currentPageNum cinfo 
-      let bbox = BBox orig (x,y)
-          hittestbbox = mkHitTestInsideBBox bbox strs
-          selectstrs = fmapAL unNotHitted id hittestbbox
-      xstate <- getSt    
-      let SelectState txoj = get xournalstate xstate
-          newpage = case epage of 
-                      Left pagebbox -> 
-                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            tpg = gcast npagebbox 
-                            ls = get g_layers tpg 
-                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
-                        in npg 
-                      Right tpage -> 
-                        let ls = glayers tpage 
-                            currlayer = gselectedlayerbuf ls
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
-                        in npage
-          newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
-      let ui = get gtkUIManager xstate
-      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      putSt (set xournalstate (SelectState newtxoj) 
-             . updatePageAll (SelectState newtxoj)
-             $ xstate) 
-      disconnect connidmove
-      disconnect connidup 
-      invalidateAll 
-    _ -> return ()
--}
-
-{-      
-  case r of 
-    PenMove cid pcoord -> do 
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
-      when willUpdate $ do 
-        let strs = tempSelectInfo tempselection
-            newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
-            drawselection = do 
-              mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTemp cid (tempSurface tempselection) drawselection
-      moveSelect cinfo geometry zmode connidmove connidup orig (ncoord,ntime) tempselection
-    PenUp _cid' pcoord -> do 
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      let offset = (x-x0,y-y0)
-          SelectState txoj = get xournalstate xstate
-          epage = get currentPage cinfo 
-          pagenum = get currentPageNum cinfo
-      case epage of 
-        Right tpage -> do 
-          let newtpage = changeSelectionByOffset offset tpage 
-          newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
-          commit . set xournalstate (SelectState newtxoj)
-                 . updatePageAll (SelectState newtxoj) 
-                 $ xstate 
-        Left _ -> error "this is impossible, in moveSelect" 
-      disconnect connidmove
-      disconnect connidup 
-      invalidateAll 
-    _ -> return ()
--} 
-
-       
-{-      
-  case r of 
-    PenMove cid pcoord -> do 
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-      (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
-      when willUpdate $ do 
-        let strs = tempSelectInfo tempselection
-            sfunc = scaleFromToBBox origbbox newbbox
-            newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)            
-            newstrs = map (changeStrokeBy sfunc) strs
-            drawselection = do 
-              mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTemp cid (tempSurface tempselection) drawselection
-      resizeSelect handle cinfo geometry zmode connidmove connidup 
-                   origbbox (ncoord,ntime) tempselection
-    PenUp _cid pcoord -> do 
-      let (x,y) = device2pageCoord geometry zmode pcoord 
-          newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
-          SelectState txoj = get xournalstate xstate
-          epage = get currentPage cinfo 
-          pagenum = get currentPageNum cinfo
-      case epage of 
-        Right tpage -> do 
-          let sfunc = scaleFromToBBox origbbox newbbox
-          let newtpage = changeSelectionBy sfunc tpage 
-          newtxoj <- liftIO $ updateTempXournalSelectIO txoj newtpage pagenum 
-          commit . set xournalstate (SelectState newtxoj)
-                 . updatePageAll (SelectState newtxoj) 
-                 $ xstate 
-        Left _ -> error "this is impossible, in resizeSelect" 
-      disconnect connidmove
-      disconnect connidup 
-      invalidateAll
-      return ()    
-    _ -> return () 
--}
-
-
 
 
 

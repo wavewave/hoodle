@@ -37,16 +37,12 @@ vscrollMove cid = do
     case ev of
       VScrollBarMoved _cid' v -> do 
         updateXState $ return.modifyCurrentCanvasInfo 
-                                (selectBox (scrollmovecanvas v) (error "vscrollMove"))
+                                (selectBox (scrollmovecanvas v) (scrollmovecanvas v))
         invalidateWithBuf cid 
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
         updateXState $ return.modifyCurrentCanvasInfo 
-                                (selectBox (scrollmovecanvas v) (error "vscrollMove")) 
-                                
-        -- testcinfo <- return. get currentCanvasInfo =<< getSt 
-        -- selectBoxAction (liftIO .print . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo)) (const (return ())) testcinfo 
-        
+                                (selectBox (scrollmovecanvas v) (scrollmovecanvas v)) 
         invalidate cid' 
         return ()
       _ -> return ()       

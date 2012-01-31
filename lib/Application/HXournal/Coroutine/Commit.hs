@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Commit 
@@ -9,6 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.Commit where
 
 import Application.HXournal.Type.XournalState 
@@ -21,7 +22,6 @@ import Application.HXournal.ModelAction.File
 import Application.HXournal.ModelAction.Page
 
 import Data.Label
--- import Control.Monad (liftM)
 import Control.Monad.Trans
 import Application.HXournal.Accessor
 
@@ -48,11 +48,9 @@ undo = do
       Nothing -> liftIO $ putStrLn "no undo item yet"
       Just (xojstate1,newtable) -> do 
         xojstate <- liftIO $ resetXournalStateBuffers xojstate1 
-        let xstate' = set xournalstate xojstate
-                      . set undoTable newtable 
-                      . updatePageAll xojstate 
-                      $ xstate 
-        putSt xstate'
+        putSt . set xournalstate xojstate
+              . set undoTable newtable 
+              =<< (liftIO (updatePageAll xojstate xstate))
         invalidateAll 
       
   
@@ -65,11 +63,9 @@ redo = do
       Nothing -> liftIO $ putStrLn "no redo item"
       Just (xojstate1,newtable) -> do 
         xojstate <- liftIO $ resetXournalStateBuffers xojstate1         
-        let xstate' = set xournalstate xojstate
-                      . set undoTable newtable 
-                      . updatePageAll xojstate 
-                      $ xstate 
-        putSt xstate'
+        putSt . set xournalstate xojstate
+              . set undoTable newtable 
+              =<< (liftIO (updatePageAll xojstate xstate))
         invalidateAll 
 
 clearUndoHistory :: MainCoroutine () 

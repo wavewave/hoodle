@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Mode 
@@ -15,6 +17,7 @@ module Application.HXournal.Coroutine.Mode where
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Type.Alias
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Canvas
 import Application.HXournal.View.Coordinate
@@ -24,8 +27,10 @@ import Data.Traversable
 import Control.Monad.Trans
 import Control.Category
 import Data.Label
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Graphics.Xournal.Render.BBoxMapPDF
+import Graphics.UI.Gtk (adjustmentSetUpper)
 import Prelude hiding ((.),id, mapM_, mapM)
 
 modeChange :: MyEvent -> MainCoroutine () 
@@ -37,10 +42,13 @@ modeChange command = case command of
           either (noaction xst) (whenselect xst) . xojstateEither . get xournalstate $ xst
         edit2select xst = 
           either (whenedit xst) (noaction xst) . xojstateEither . get xournalstate $ xst
+        noaction :: HXournalState -> a -> MainCoroutine HXournalState
         noaction xstate = const (return xstate)
+        whenselect :: HXournalState -> Xournal SelectMode -> MainCoroutine HXournalState
         whenselect xstate txoj = return . flip (set xournalstate) xstate 
                                  . ViewAppendState . GXournal (get g_selectTitle txoj)
-                                 =<< liftIO (mapM resetPageBuffers (get g_selectAll txoj))
+                                 =<< liftIO (mapM resetPageBuffers (get g_selectAll txoj)) 
+        whenedit :: HXournalState -> Xournal EditMode -> MainCoroutine HXournalState   
         whenedit xstate xoj = return . flip (set xournalstate) xstate 
                               . SelectState  
                               $ GSelect (get g_title xoj) (gpages xoj) Nothing
@@ -56,6 +64,7 @@ viewModeChange command = case command of
           selectBoxAction (noaction xst) (whencont xst) . get currentCanvasInfo $ xst
         single2cont xst = 
           selectBoxAction (whensing xst) (noaction xst) . get currentCanvasInfo $ xst
+        noaction :: HXournalState -> a -> MainCoroutine HXournalState  
         noaction xstate = const (return xstate)
 
         whencont xstate _ = do 
@@ -68,8 +77,12 @@ viewModeChange command = case command of
           let zmode = get (zoomMode.viewInfo) cinfo
               cpn = PageNum . get currentPageNum $ cinfo 
 
-              arr = makeContinousSingleArrangement zmode cdim (getXournal xstate) cpn
-              vinfo = get viewInfo cinfo 
+              arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) cpn
+              ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
+              (hadj,vadj) = get adjustments cinfo 
+          liftIO $ adjustmentSetUpper hadj w 
+          liftIO $ adjustmentSetUpper vadj h 
+          let vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
               ncinfo = CanvasInfo (get canvasId cinfo)
                                   (get drawArea cinfo)

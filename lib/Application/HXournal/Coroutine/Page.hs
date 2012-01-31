@@ -8,6 +8,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Coroutine.Page where
 
@@ -32,13 +33,14 @@ import Control.Monad.Trans
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-import Data.Xournal.Simple
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import qualified Data.IntMap as M
 
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction >> invalidateCurrent
-  where changePageAction xst = selectBoxAction (fsimple xst) (error "changePage") . get currentCanvasInfo $ xst
+  where changePageAction xst = selectBoxAction (fsimple xst) (fsimple xst) 
+                               . get currentCanvasInfo $ xst
         fsimple xstate cvsInfo = do 
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
@@ -52,15 +54,32 @@ changePage modifyfn = updateXState changePageAction >> invalidateCurrent
                       adjustmentSetValue hadj 0
                       adjustmentSetValue vadj 0
           let ncvsInfo = CanvasInfoBox . setPage xojst' npgnum' $ cvsInfo
-          return . updatePageAll xojst'
-                 . modifyCurrentCanvasInfo (const ncvsInfo)
-                 $ xstate'
+          return =<< (liftIO (updatePageAll xojst'
+                              . modifyCurrentCanvasInfo (const ncvsInfo)
+                              $ xstate'))
+{-        fcont xstate cvsInfo = do 
+          let xojst = get xournalstate $ xstate  
+              npgnum = modifyfn (get currentPageNum cvsInfo)
+              (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
+              xstate' = set xournalstate xojst' xstate
+              Dim w h = get g_dimension selectedpage
+              (hadj,vadj) = get adjustments cvsInfo
+          when b $ do {commit xstate' ;  }
+          liftIO $ do adjustmentSetUpper hadj w 
+                      adjustmentSetUpper vadj h 
+                      adjustmentSetValue hadj 0
+                      adjustmentSetValue vadj 0
+          let ncvsInfo = CanvasInfoBox . setPage xojst' npgnum' $ cvsInfo
+          return =<< (liftIO (updatePageAll xojst'
+                              . modifyCurrentCanvasInfo (const ncvsInfo)
+                              $ xstate'))
+-}
 
 
-
+-- | 
         
-changePageInXournalState :: Int -> XournalState -> (Bool,Int,TPageBBoxMapPDFBuf,XournalState)
-changePageInXournalState npgnum xojstate = -- (ViewAppendState xoj) = 
+changePageInXournalState :: Int -> XournalState -> (Bool,Int,Page EditMode,XournalState)
+changePageInXournalState npgnum xojstate =
     let exoj = xojstateEither xojstate 
         pgs = either (get g_pages) (get g_selectAll) exoj
         totnumpages = M.size pgs

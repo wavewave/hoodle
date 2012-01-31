@@ -86,12 +86,15 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
           let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
               newxojbbox = modify g_pages (IM.adjust (const newpagebbox) pgnum) currxoj
               newxojstate = ViewAppendState newxojbbox
-          commit . set xournalstate newxojstate . updatePageAll newxojstate $ xstate 
+          commit . set xournalstate newxojstate 
+            =<< (liftIO (updatePageAll newxojstate xstate))
           invalidateWithBuf cid 
           newstrs <- getAllStrokeBBoxInCurrentLayer
           eraserProcess cid pnum geometry connidup connidmove newstrs (x,y)
         else eraserProcess cid pnum geometry connidmove connidup strs (x,y) 
             
+
+
 
 
 

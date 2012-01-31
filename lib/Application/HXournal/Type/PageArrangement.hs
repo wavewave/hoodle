@@ -105,9 +105,9 @@ makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) =
 
 -- | 
 
-makeContinousSingleArrangement :: ZoomMode -> CanvasDimension -> Xournal EditMode -> PageNum 
+makeContinuousSingleArrangement :: ZoomMode -> CanvasDimension -> Xournal EditMode -> PageNum 
                                   -> PageArrangement ContinuousSinglePage
-makeContinousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) xoj pnum = 
+makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) xoj pnum = 
   let PageOrigin (_,y0) = maybeError "makeContSingleArr" $ pageArrFuncContSingle xoj pnum 
       dim@(Dim pw ph) = get g_dimension . head . gToList . get g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
@@ -129,10 +129,15 @@ pageArrFuncContSingle xoj pnum@(PageNum n)
 
 deskDimContSingle :: Xournal EditMode -> DesktopDimension 
 deskDimContSingle xoj = 
-  let PageOrigin (_,h) = maybeError "deskdimContSingle" 
+  let plst = gToList . get g_pages $ xoj
+      PageOrigin (_,h') = maybeError 
+                         ("deskdimContSingle" ++ 
+                          show (map (pageArrFuncContSingle xoj . PageNum) [0..5])) 
                          $ pageArrFuncContSingle xoj 
-                             (PageNum . length . gToList . get g_pages $ xoj)
-      w = maximum . map (dim_width.get g_dimension) . gToList . get g_pages $ xoj
+                             (PageNum . (\x->x-1) . length $ plst )
+      Dim _ h2 = get g_dimension (last plst)
+      h = h' + h2 
+      w = maximum . map (dim_width.get g_dimension) $ plst
   in DesktopDimension (Dim w h)
 
 -- lenses

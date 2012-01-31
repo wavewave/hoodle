@@ -28,6 +28,7 @@ import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.View.Coordinate
 import Application.HXournal.View.Draw
+import Application.HXournal.Type.Alias
 import Application.HXournal.Util
 import Control.Monad
 import Control.Monad.Trans
@@ -55,7 +56,7 @@ commonPenStart action cid pcoord =
               cpn = PageNum . get currentPageNum $ cvsInfo
               arr = get (pageArrangement.viewInfo) cvsInfo              
               canvas = get drawArea cvsInfo
-          geometry <- liftIO $ makeCanvasGeometry (cpn,page) arr canvas
+          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) ->  when (cpn == pgn) $ do 

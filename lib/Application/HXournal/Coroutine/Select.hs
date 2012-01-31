@@ -454,13 +454,13 @@ newSelectLasso :: CanvasInfo SinglePage
                   -> Seq (Double,Double)
                   -> TempSelection 
                   -> MainCoroutine ()
-newSelectLasso cinfo pnum geometry cidmove cidup strs orig (prev,otime) lasso tsel = do
+newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso tsel = do
     r <- await 
-    fsingle r cinfo 
+    fsingle r cvsInfo 
   where  
     fsingle r cinfo = penMoveAndUpOnly r pnum geometry defact
                         (moveact cinfo) (upact cinfo)
-    defact = newSelectLasso cinfo pnum geometry cidmove cidup strs orig 
+    defact = newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig 
                (prev,otime) lasso tsel
     moveact cinfo (x,y) = do 
       let nlasso = lasso |> (x,y)

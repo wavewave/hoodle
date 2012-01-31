@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, StandaloneDeriving #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -10,12 +10,13 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Data.Xournal.BBox where
 
 import Control.Monad
 import Data.ByteString hiding (map,maximum,minimum)
-import qualified Data.Sequence as Seq
+-- import qualified Data.Sequence as Seq
 import Data.Xournal.Generic
 import Data.Xournal.Simple
 import Data.Strict.Tuple 
@@ -98,9 +99,15 @@ unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) =
      
 data ULMaybe a = Bottom | Middle a | Top      
      
+deriving instance Show a => Show (ULMaybe a)
+
+deriving instance Eq a => Eq (ULMaybe a)
+                                     
 newtype IntersectBBox = Intersect { unIntersect :: ULMaybe BBox } 
+                        deriving (Show,Eq)
 
 newtype UnionBBox = Union { unUnion :: ULMaybe BBox }
+                    deriving (Show,Eq)
      
 instance Monoid (IntersectBBox) where 
   (Intersect Bottom) `mappend` _ = Intersect Bottom

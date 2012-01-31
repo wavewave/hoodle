@@ -67,6 +67,7 @@ viewModeChange command = case command of
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
           let zmode = get (zoomMode.viewInfo) cinfo
               cpn = PageNum . get currentPageNum $ cinfo 
+
               arr = makeContinousSingleArrangement zmode cdim (getXournal xstate) cpn
               vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
@@ -78,6 +79,7 @@ viewModeChange command = case command of
                                   (get currentPage cinfo)
                                   (get horizAdjustment cinfo)
                                   (get vertAdjustment cinfo)
+
 
           return . modifyCurrentCanvasInfo (const (CanvasInfoBox ncinfo)) $ xstate
 

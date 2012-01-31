@@ -43,12 +43,19 @@ newtype PageNum = PageNum { unPageNum :: Int }
                 deriving (Eq,Show,Ord,Num)
 
 newtype ScreenDimension = ScreenDimension { unScreenDimension :: Dimension } 
+                        deriving (Show)
 newtype CanvasDimension = CanvasDimension { unCanvasDimension :: Dimension }
+                        deriving (Show)
 newtype CanvasOrigin = CanvasOrigin { unCanvasOrigin :: (Double,Double) } 
+                       deriving (Show)
 newtype PageOrigin = PageOrigin { unPageOrigin :: (Double,Double) } 
+                   deriving (Show)
 newtype PageDimension = PageDimension { unPageDimension :: Dimension } 
+                      deriving (Show)
 newtype DesktopDimension = DesktopDimension { unDesktopDimension :: Dimension }
+                         deriving (Show)
 newtype ViewPortBBox = ViewPortBBox { unViewPortBBox :: BBox } 
+                     deriving (Show)
 
                      
 apply :: (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox 
@@ -64,6 +71,11 @@ data PageArrangement a where
   ContinuousSingleArrangement :: DesktopDimension 
                                  -> (PageNum -> Maybe PageOrigin) 
                                  -> ViewPortBBox -> PageArrangement ContinuousSinglePage
+
+-- | 
+
+pageFunction :: PageArrangement ContinuousSinglePage -> PageNum -> Maybe PageOrigin
+pageFunction (ContinuousSingleArrangement _ pfunc _ ) = pfunc 
 
 -- | 
 

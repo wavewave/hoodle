@@ -23,6 +23,7 @@ import Prelude hiding ((.),id)
 -- import qualified Data.IntMap as M
 
 import Application.HXournal.Type.Alias
+import Application.HXournal.Util
 
 data PageMode = Continous | OnePage
               deriving (Show,Eq) 
@@ -61,7 +62,7 @@ data PageArrangement a where
                       -> ViewPortBBox 
                       -> PageArrangement SinglePage 
   ContinuousSingleArrangement :: DesktopDimension 
-                                 -> (Xournal EditMode -> PageNum -> PageOrigin) 
+                                 -> (PageNum -> Maybe PageOrigin) 
                                  -> ViewPortBBox -> PageArrangement ContinuousSinglePage
 
 -- | 
@@ -95,24 +96,30 @@ makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) =
 makeContinousSingleArrangement :: ZoomMode -> CanvasDimension -> Xournal EditMode -> PageNum 
                                   -> PageArrangement ContinuousSinglePage
 makeContinousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) xoj pnum = 
-  let PageOrigin (_,y0) = pageArrFuncContSingle xoj pnum 
+  let PageOrigin (_,y0) = maybeError "makeContSingleArr" $ pageArrFuncContSingle xoj pnum 
       dim@(Dim pw ph) = get g_dimension . head . gToList . get g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       vport = ViewPortBBox (BBox (0,y0) (cw/sinvx,y0+ch/sinvy))
-  in ContinuousSingleArrangement (deskDimContSingle xoj) pageArrFuncContSingle vport 
+  in ContinuousSingleArrangement (deskDimContSingle xoj) (pageArrFuncContSingle xoj) vport 
 
 -- |
 
-pageArrFuncContSingle :: Xournal EditMode -> PageNum -> PageOrigin 
-pageArrFuncContSingle xoj pnum@(PageNum n) = PageOrigin (0,y)
+pageArrFuncContSingle :: Xournal EditMode -> PageNum -> Maybe PageOrigin 
+pageArrFuncContSingle xoj pnum@(PageNum n)
+  | n < 0 = Nothing 
+  | n >= len = Nothing 
+  | otherwise = Just (PageOrigin (0,ys !! n))
   where addf x y = x + y + 20 
-        y = foldr1 addf . take n . map (dim_height.get g_dimension) . gToList . get g_pages 
-            $ xoj 
+        pgs = gToList . get g_pages $ xoj 
+        len = length pgs 
+        ys = scanl addf 0 . map (dim_height.get g_dimension) $ pgs  
         
 
 deskDimContSingle :: Xournal EditMode -> DesktopDimension 
 deskDimContSingle xoj = 
-  let PageOrigin (_,h) = pageArrFuncContSingle xoj (PageNum . length . gToList . get g_pages $ xoj)
+  let PageOrigin (_,h) = maybeError "deskdimContSingle" 
+                         $ pageArrFuncContSingle xoj 
+                             (PageNum . length . gToList . get g_pages $ xoj)
       w = maximum . map (dim_width.get g_dimension) . gToList . get g_pages $ xoj
   in DesktopDimension (Dim w h)
 

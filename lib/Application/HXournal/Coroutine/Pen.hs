@@ -1,3 +1,5 @@
+{-# LANGUAGE Rank2Types #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Pen 
@@ -43,15 +45,14 @@ import Prelude hiding ((.), id)
 
 -- | Common Pen Work starting point 
 
-commonPenStart :: ( CanvasInfo SinglePage -> PageNum -> CanvasGeometry  
+commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeometry  
                     -> (ConnectId DrawingArea, ConnectId DrawingArea) 
                     -> (Double,Double) -> MainCoroutine () )
                -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
 commonPenStart action cid pcoord =
-    selectBoxAction fsingle (error "commonPenStart") . getCanvasInfo cid =<< changeCurrentCanvasId cid 
-  where fsingle :: CanvasInfo SinglePage -> MainCoroutine ()
-        fsingle cvsInfo = do 
+    selectBoxAction fsingle fsingle {- (error "commonPenStart") -} . getCanvasInfo cid =<< changeCurrentCanvasId cid 
+  where fsingle cvsInfo = do 
           let page = getPage cvsInfo
               cpn = PageNum . get currentPageNum $ cvsInfo
               arr = get (pageArrangement.viewInfo) cvsInfo              

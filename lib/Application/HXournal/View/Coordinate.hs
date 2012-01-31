@@ -19,6 +19,7 @@ import Control.Applicative
 import Control.Category
 import Data.Label 
 import Prelude hiding ((.),id)
+import Data.Maybe
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.BBox (BBox(..))
@@ -56,9 +57,7 @@ data CanvasGeometry =
 
 makeCanvasGeometry :: (GPageable em) => 
                       em 
-                      -> 
-                      -- (PageNum, GPage (AssocBkg vm) (AssocStream vm) (AssocLayer vm)) 
-                      (PageNum, Page em)
+                      -> (PageNum, Page em)
                       -> PageArrangement vm 
                       -> DrawingArea 
                       -> IO CanvasGeometry 
@@ -78,7 +77,8 @@ makeCanvasGeometry typ (cpn,page) arr canvas = do
                                           , vbbox
                                           , DeskCoord . unPageCoord . snd
                                           , \(DeskCoord coord) ->Just (cpn,(PageCoord coord)) )
-          _ -> error "not implemented yet for ContinuousArrangement in getCanvasGeometry"
+          ContinuousSingleArrangement ddim pfunc vbbox -> 
+            ( ddim, vbbox, makePage2Desktop pfunc, makeDesktop2Page pfunc ) 
   let s2c = xformScreen2Canvas corig
       c2s = xformCanvas2Screen corig
       c2d = xformCanvas2Desk cdim cvsvbbox 
@@ -86,6 +86,23 @@ makeCanvasGeometry typ (cpn,page) arr canvas = do
   return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
                           deskdim s2c c2s c2d d2c d2p p2d
     
+
+-- |
+ 
+makePage2Desktop :: (PageNum -> Maybe PageOrigin) 
+                    -> (PageNum,PageCoordinate) -> DesktopCoordinate
+makePage2Desktop pfunc (pnum,PageCoord (x,y)) = 
+  maybe (DeskCoord (-100,-100)) (\(PageOrigin (x0,y0)) -> DeskCoord (x0+x,y0+y)) (pfunc pnum) 
+     
+-- | 
+
+makeDesktop2Page :: (PageNum -> Maybe PageOrigin) -> DesktopCoordinate 
+                    -> Maybe (PageNum, PageCoordinate)
+makeDesktop2Page pfunc (DeskCoord (x,y)) =
+  let (prev,next) = break (y<) . map (snd.unPageOrigin) . catMaybes
+                    . takeWhile isJust . map (pfunc.PageNum) $ [0..] 
+  in if null next then Nothing else Just (PageNum (length prev-1),PageCoord (x,y- head next)) 
+
     
 -- |   
   

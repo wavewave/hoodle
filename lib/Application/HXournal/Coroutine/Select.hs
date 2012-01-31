@@ -444,7 +444,7 @@ selectLassoStart cid = commonPenStart lassoAction cid
               action (Left page) = newSelectAction page
           action (get currentPage cinfo)      
           
-newSelectLasso :: CanvasInfo SinglePage
+newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> PageNum 
                   -> CanvasGeometry
                   -> ConnectId DrawingArea -> ConnectId DrawingArea

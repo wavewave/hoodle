@@ -1,3 +1,5 @@
+{-# LANGUAGE Rank2Types #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Draw 
@@ -38,8 +40,9 @@ invalidateGeneral :: CanvasId -> Maybe BBox
                   -> PageDrawingFunction SelectMode
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox drawf drawfsel = 
-    selectBoxAction fsingle (error "invalidateSelSingle") . getCanvasInfo cid =<< getSt 
-  where fsingle cvsInfo = do 
+    selectBoxAction fsingle fsingle . getCanvasInfo cid =<< getSt 
+  where fsingle :: (ViewMode a) => CanvasInfo a -> MainCoroutine () 
+        fsingle cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
           case get currentPage cvsInfo of 
             Left page ->  liftIO (drawf <$> get drawArea <*> pure (cpn,page) <*> get viewInfo <*> pure mbbox 
@@ -47,6 +50,8 @@ invalidateGeneral cid mbbox drawf drawfsel =
             Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure (cpn,tpage) <*> get viewInfo 
                                             <*> pure mbbox $ cvsInfo )
 
+{- (error "invalidateGeneral") -}
+            
 -- | 
 
 invalidateAll :: MainCoroutine () 

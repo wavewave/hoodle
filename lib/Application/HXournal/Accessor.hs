@@ -98,14 +98,6 @@ getCanvasInfo cid xstate =
       maybeCvs = M.lookup cid cinfoMap
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
-{-
-getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 
-getCanvasGeometry cinfo = do 
-    let canvas = get drawArea cinfo
-        page = getPage cinfo
-        (x0,y0) = bbox_upperleft . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo) $ cinfo
-    liftIO (getCanvasPageGeometry canvas page (x0,y0))
--}
 
 -- | 
 
@@ -138,6 +130,16 @@ getCanvasGeometry xstate = do
 
   selectBoxAction fsingle (error "getCanvasGeometry") cinfobox
   
+
+
+{-
+getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 
+getCanvasGeometry cinfo = do 
+    let canvas = get drawArea cinfo
+        page = getPage cinfo
+        (x0,y0) = bbox_upperleft . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo) $ cinfo
+    liftIO (getCanvasPageGeometry canvas page (x0,y0))
+-}
 
 
 

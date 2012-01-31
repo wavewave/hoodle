@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, Rank2Types #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -42,10 +42,11 @@ import Application.HXournal.Type.Predefined
 import Application.HXournal.View.Coordinate
 
 
-type DrawingFunction = ViewInfo SinglePage -> Maybe BBox -> IO ()
+-- type DrawingFunction = forall a. (ViewMode a) => ViewInfo a -> Maybe BBox -> IO ()
 
-type PageDrawingFunction a = DrawingArea -> (PageNum,Page a) 
-                             -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+type PageDrawingFunction a = forall v. (ViewMode v) => 
+                             DrawingArea -> (PageNum,Page a) 
+                             -> ViewInfo v -> Maybe BBox -> IO ()
 
 {-                           
 type PageDrawingFunctionForSelection 

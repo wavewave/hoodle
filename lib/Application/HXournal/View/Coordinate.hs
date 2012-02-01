@@ -177,24 +177,25 @@ getPagesInViewPortRange geometry xoj =
   let ViewPortBBox bbox = canvasViewPort geometry
       ivbbox = Intersect (Middle bbox)
       pagemap = get g_pages xoj 
-      pnums = map PageNum [0..(length . gToList $ pagemap) -1 ]
-      -- contained (ViewPortBBox bbox) (DeskCoord (x,y)) = hitTestBBoxPoint bbox (x,y) 
+      pnums = map PageNum [ 0 .. (length . gToList $ pagemap)-1 ]
       pgcheck n pg = let Dim w h = get g_dimension pg  
                          DeskCoord ul = page2Desktop geometry (PageNum n,PageCoord (0,0)) 
-                         -- ur = page2Desktop geometry (PageNum n,PageCoord (w,0))
-                         -- ll = page2Desktop geometry (PageNum n,PageCoord (0,h)) 
                          DeskCoord lr = page2Desktop geometry (PageNum n,PageCoord (w,h))
                          nbbox = BBox ul lr 
                          inbbox = Intersect (Middle (BBox ul lr))
                          result = ivbbox `mappend` inbbox 
-                     in trace (show n ++ ": " ++ show (intersectBBox bbox nbbox)
-                               ++ "\nivbbox = " ++ show ivbbox 
-                               ++ "\ninbbox = " ++ show inbbox 
-                               ++ "\nresult = " ++ show result) $ 
-                          case result of 
-                            Intersect Bottom -> False 
-                            _ -> True 
-                        {- contained vbbox ul || contained vbbox ur 
-                        || contained vbbox ll || contained vbbox lr -}
+                     in case result of 
+                          Intersect Bottom -> False 
+                          _ -> True 
       f (PageNum n) = maybe False (pgcheck n) . M.lookup n $ pagemap 
   in filter f pnums
+
+      -- contained (ViewPortBBox bbox) (DeskCoord (x,y)) = hitTestBBoxPoint bbox (x,y) 
+                        {- contained vbbox ul || contained vbbox ur 
+                        || contained vbbox ll || contained vbbox lr -}
+                         -- ur = page2Desktop geometry (PageNum n,PageCoord (w,0))
+                         -- ll = page2Desktop geometry (PageNum n,PageCoord (0,h)) 
+{- trace (show n ++ ": " ++ show (intersectBBox bbox nbbox)
+                               ++ "\nivbbox = " ++ show ivbbox 
+                               ++ "\ninbbox = " ++ show inbbox 
+                               ++ "\nresult = " ++ show result) $ -}

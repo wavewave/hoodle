@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, Rank2Types #-}
+{-# LANGUAGE GADTs, Rank2Types, TypeFamilies #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -44,9 +44,33 @@ import Application.HXournal.View.Coordinate
 
 -- type DrawingFunction = forall a. (ViewMode a) => ViewInfo a -> Maybe BBox -> IO ()
 
-type PageDrawingFunction a = forall v. (ViewMode v) => 
-                             DrawingArea -> (PageNum,Page a) 
-                             -> ViewInfo v -> Maybe BBox -> IO ()
+type family DrawingFunction v :: * -> * 
+
+newtype SinglePageDraw a = 
+  SinglePageDraw { unSinglePageDraw :: DrawingArea -> (PageNum, Page a) -> ViewInfo SinglePage -> Maybe BBox -> IO () }
+
+
+newtype ContPageDraw a = 
+  ContPageDraw { unContPageDraw :: DrawingArea -> Xournal a -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO () }
+                    
+type instance DrawingFunction SinglePage = SinglePageDraw
+type instance DrawingFunction ContinuousSinglePage = ContPageDraw
+
+{-
+type instance PageDrawingFunction SinglePage SelectMode = 
+  DrawingArea -> (PageNum, Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+
+
+type instance PageDrawingFunction ContinuousSinglePage EditMode = 
+  DrawingArea -> Xournal EditMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
+  
+type instance PageDrawingFunction ContinuousSinglePage SelectMode = 
+  DrawingArea -> Xournal SelectMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
+
+-}
+
+{- type PageDrawingFunction v a = 
+       DrawingArea -> (PageNum,Page a) -> ViewInfo v -> Maybe BBox -> IO () -}
 
 {-                           
 type PageDrawingFunctionForSelection 
@@ -126,32 +150,33 @@ drawCurvebit canvas geometry wdth (r,g,b,a) pnum (x0,y0) (x,y) = do
 -- | 
     
 drawFuncGen :: (GPageable em) => em -> 
-               ((PageNum,Page em) -> Maybe BBox -> Render ()) -> PageDrawingFunction em
-drawFuncGen typ render canvas (pnum,page) vinfo mbbox = do 
-    let arr = get pageArrangement vinfo
-    geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
-    win <- widgetGetDrawWindow canvas
-    let mbboxnew = getViewableBBox geometry (pnum,mbbox)
-        xformfunc = cairoXform4PageCoordinate geometry pnum
-        renderfunc = do
-          xformfunc 
-          clipBBox mbboxnew
-          render (pnum,page) mbboxnew 
-          resetClip 
-    doubleBufferDraw win geometry xformfunc renderfunc   
+               ((PageNum,Page em) -> Maybe BBox -> Render ()) -> DrawingFunction SinglePage em
+drawFuncGen typ render = SinglePageDraw func 
+  where func canvas (pnum,page) vinfo mbbox = do 
+          let arr = get pageArrangement vinfo
+          geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
+          win <- widgetGetDrawWindow canvas
+          let mbboxnew = getViewableBBox geometry (pnum,mbbox)
+              xformfunc = cairoXform4PageCoordinate geometry pnum
+              renderfunc = do
+                xformfunc 
+                clipBBox mbboxnew
+                render (pnum,page) mbboxnew 
+                resetClip 
+          doubleBufferDraw win geometry xformfunc renderfunc   
 
 drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox -> Render ()) 
                   -> ((PageNum,Page SelectMode) -> Maybe BBox -> Render ())
-                  -> PageDrawingFunction SelectMode  
+                  -> DrawingFunction SinglePage SelectMode  
 drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> rensel x y) 
 
 
-drawPageClearly :: PageDrawingFunction EditMode
+drawPageClearly :: DrawingFunction SinglePage EditMode
 drawPageClearly = drawFuncGen EditMode $ \(_,page) _mbbox -> 
                      cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
 
 
-drawPageSelClearly :: PageDrawingFunction SelectMode         
+drawPageSelClearly :: DrawingFunction SinglePage SelectMode         
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
   where rendercontent (_pnum,tpg)  _mbbox = do
           let pg' = gcast tpg :: Page EditMode
@@ -161,12 +186,12 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
 
 -- |
 
-drawBuf :: PageDrawingFunction EditMode
+drawBuf :: DrawingFunction SinglePage EditMode
 drawBuf = drawFuncGen EditMode $ \(_,page) mbbox -> cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
   
 -- |
 
-drawSelBuf :: PageDrawingFunction SelectMode
+drawSelBuf :: DrawingFunction SinglePage SelectMode
 drawSelBuf = drawFuncSelGen rencont rensel  
   where rencont (_pnum,tpg) mbbox = do 
           let page = (gcast tpg :: Page EditMode)

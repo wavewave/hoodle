@@ -117,7 +117,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
                    (prev,otime) tempselection = do  
     r <- await 
     xst <- getSt 
-    selectBoxAction (fsingle r xst) (error "newSelRect") . getCanvasInfo cid $ xst
+    selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
                                (moveact xstate cinfo) (upact xstate cinfo)
@@ -322,7 +322,7 @@ cutSelection = do
 copySelection :: MainCoroutine ()
 copySelection = updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
-          selectBoxAction (fsingle xst) (error "copySelection") . get currentCanvasInfo $ xst
+          selectBoxAction (fsingle xst) (fsingle xst) . get currentCanvasInfo $ xst
         fsingle xstate cinfo = maybe (return xstate) id $ 
           eitherMaybe (get currentPage cinfo) `pipe` getActiveLayer 
                                               `pipe` (Right . xstateadj . takeHittedStrokes)

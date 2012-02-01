@@ -87,8 +87,9 @@ invalidateGeneral :: CanvasId -> Maybe BBox
                   -> DrawingFunction SinglePage EditMode
                   -> DrawingFunction SinglePage SelectMode
                   -> DrawingFunction ContinuousSinglePage EditMode
+                  -> DrawingFunction ContinuousSinglePage SelectMode
                   -> MainCoroutine () 
-invalidateGeneral cid mbbox drawf drawfsel drawcont = do 
+invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do 
     xst <- getSt 
     selectBoxAction fsingle fcont . getCanvasInfo cid $ xst
   where fsingle :: CanvasInfo SinglePage -> MainCoroutine () 
@@ -107,7 +108,8 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont = do
           case xojstate of 
             ViewAppendState xoj -> 
               liftIO (unContPageDraw drawcont cvsInfo Nothing xoj)
-            SelectState txoj -> error "invalidateGeneral not yet"
+            SelectState txoj -> 
+              liftIO (unContPageDraw drawcontsel cvsInfo Nothing txoj)
           
           
 {-          let cpn = PageNum . get currentPageNum $ cvsInfo 
@@ -156,7 +158,7 @@ invalidateOther = do
 
 invalidate :: CanvasId -> MainCoroutine () 
 invalidate cid = invalidateGeneral cid Nothing 
-                   drawPageClearly drawPageSelClearly drawContXojClearly
+                   drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly 
 
 
 -- | Invalidate Current canvas
@@ -169,7 +171,7 @@ invalidateCurrent = invalidate . get currentCanvasId =<< getSt
 invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
     xst <- getSt 
-    selectBoxAction (fsingle xst) (error "invalidateTemp") . getCanvasInfo cid $ xst 
+    selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
           let page = either id gcast $ get currentPage cvsInfo 
               canvas = get drawArea cvsInfo
@@ -196,7 +198,7 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid =  
-  invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojBuf
+  invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojBuf drawContXojSelClearly
 
 
 

@@ -223,9 +223,56 @@ drawContPageGen render = ContPageDraw func
                 mapM_ onepagerender drawpgs 
                 emphasispagerender (pnum,page)
                 resetClip 
-
           doubleBufferDraw win geometry xformfunc renderfunc   
 
+
+drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
+                      -> ((PageNum, Page SelectMode) -> Maybe BBox -> Render ())
+                      -> DrawingFunction ContinuousSinglePage SelectMode
+drawContPageSelGen rendergen rendersel = ContPageDraw func 
+  where func cinfo mpnumbbox txoj = do 
+          let arr = get (pageArrangement.viewInfo) cinfo
+              pnum = PageNum . get currentPageNum $ cinfo 
+              page = getPage cinfo 
+              tpage = get currentPage cinfo 
+              canvas = get drawArea cinfo 
+          geometry <- makeCanvasGeometry EditMode (pnum,page) arr canvas
+          let pgs = get g_selectAll txoj 
+              xoj = GXournal (get g_selectTitle txoj) pgs 
+          let drawpgs = catMaybes . map f 
+                        $ (getPagesInViewPortRange geometry xoj) 
+                where f k = maybe Nothing (\a->Just (k,a)) 
+                            . M.lookup (unPageNum k) $ pgs
+          print $ Prelude.length drawpgs
+          win <- widgetGetDrawWindow canvas
+          let mbboxnew = getViewableBBox geometry mpnumbbox
+              xformfunc = cairoXform4PageCoordinate geometry pnum
+              emphasispagerender (pn,pg) = do 
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                let Dim w h = get g_dimension pg 
+                setSourceRGBA 1.0 0 0 0.2
+                rectangle 0 0 w h 
+                fill 
+              onepagerender (pn,pg) = do  
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                rendergen (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew)
+              selpagerender (pn,pg) = do 
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                rendersel (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew)
+              renderfunc = do
+                xformfunc 
+                -- clipBBox mbboxnew
+                liftIO $ print mbboxnew 
+                mapM_ onepagerender drawpgs 
+                emphasispagerender (pnum,page)
+                case tpage of 
+                  Left page' -> return () 
+                  Right tpage' -> selpagerender (pnum,tpage')
+                resetClip 
+          doubleBufferDraw win geometry xformfunc renderfunc   
 
 
 drawPageClearly :: DrawingFunction SinglePage EditMode
@@ -248,6 +295,17 @@ drawContXojClearly =
   drawContPageGen $ \(_,page) _mbbox -> 
                        cairoRenderOption (DrawBkgPDF,DrawFull) 
                                          (gcast page :: TPageBBoxMapPDF )
+
+
+drawContXojSelClearly :: DrawingFunction ContinuousSinglePage SelectMode
+drawContXojSelClearly = drawContPageSelGen renderother {- rendercontent -} renderselect 
+  where 
+        renderother (_,page) _mbbox  = 
+          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )    
+        renderselect (_pnum,tpg) mbbox =  
+          cairoHittedBoxDraw tpg mbbox
+
+
 
 
 -- |

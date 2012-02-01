@@ -22,6 +22,7 @@ import Application.HXournal.View.Coordinate
 import Application.HXournal.Util
 
 import Control.Applicative
+import Control.Monad (liftM)
 import Data.Xournal.BBox (moveBBoxToOrigin)
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
@@ -37,10 +38,6 @@ import Prelude hiding ((.),id,mapM)
 import qualified Data.IntMap as M 
 
 import Graphics.UI.Gtk (adjustmentSetUpper,adjustmentGetValue)
--- | 
-
-getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
-getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
 
 -- |
 
@@ -148,6 +145,142 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
                  . set currentPage (Left pg) $ cinfo 
 
               
+
+-- |
+updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
+updatePage = updateCvsInfoFrmXoj . either id makexoj . xojstateEither  
+  where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+
+-- | 
+
+setPage :: HXournalState -> PageNum -> CanvasInfoBox -> IO CanvasInfoBox
+setPage xstate pnum = 
+  selectBoxAction (liftM CanvasInfoBox . setPageSingle xstate pnum) 
+                  (liftM CanvasInfoBox . setPageCont xstate pnum)
+
+
+-- | setPageSingle : in Single Page mode   
+
+setPageSingle :: HXournalState -> PageNum  
+              -> CanvasInfo SinglePage
+              -> IO (CanvasInfo SinglePage)
+setPageSingle xstate pnum cinfo = do 
+  let xoj = getXournal xstate
+  geometry <- getCvsGeomFrmCvsInfo cinfo
+  let cdim = canvasDim geometry 
+  let pg = getPageFromGXournalMap (unPageNum pnum) xoj
+      pdim = PageDimension (get g_dimension pg)
+      zmode = get (zoomMode.viewInfo) cinfo
+      arr = makeSingleArrangement zmode pdim cdim (0,0)  
+  return $ set currentPageNum (unPageNum pnum)
+           . set (pageArrangement.viewInfo) arr
+           . set currentPage (Left pg)
+           $ cinfo 
+
+
+-- | setPageCont : in ContinuousSingle Page mode   
+
+setPageCont :: HXournalState -> PageNum  
+            -> CanvasInfo ContinuousSinglePage
+            -> IO (CanvasInfo ContinuousSinglePage)
+setPageCont xstate pnum cinfo = do 
+  let xoj = getXournal xstate
+  geometry <- getCvsGeomFrmCvsInfo cinfo
+  let cdim = canvasDim geometry 
+  let pg = getPageFromGXournalMap (unPageNum pnum) xoj
+      zmode = get (zoomMode.viewInfo) cinfo
+      arr = makeContinuousSingleArrangement zmode cdim xoj (pnum,PageCoord (0,0))  
+  return $ set currentPageNum (unPageNum pnum)
+           . set (pageArrangement.viewInfo) arr
+           . set currentPage (Left pg)
+           $ cinfo 
+
+{-
+setPageCont (SelectState txoj) pagenum cinfo = 
+  let mspage = gselectSelected  txoj 
+      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
+                      Nothing -> error "no such page in setPage"
+                      Just p -> p
+      (newpage,Dim w h) = 
+        case mspage of 
+          Nothing -> (Left pageFromArg, gdimension pageFromArg)
+          Just (spagenum,page) -> 
+            if spagenum == pagenum 
+              then (Right page, gdimension page) 
+              else (Left pageFromArg, gdimension pageFromArg)
+  in set currentPageNum pagenum 
+     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
+     . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
+     . set currentPage newpage
+     $ cinfo 
+-}
+
+
+-- | 
+
+newSinglePageFromOld :: Page EditMode -> Page EditMode 
+newSinglePageFromOld = 
+  set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
+
+-- | 
+
+newPageBeforeAction :: (ViewMode a) => 
+                       Xournal EditMode
+                    -> (CanvasId, CanvasInfo a) 
+                    -> IO (Xournal EditMode)
+newPageBeforeAction xoj (_cid,cinfo) = do 
+  let cpn = get currentPageNum cinfo
+  let pagelst = M.elems . get g_pages $ xoj 
+      pagekeylst = M.keys . get g_pages $ xoj 
+      (pagesbefore,pagesafter) = splitAt cpn pagelst
+      npage = newSinglePageFromOld (head pagesafter)
+      npagelst = pagesbefore ++ (npage : pagesafter)
+      nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
+  putStrLn . show $ pagekeylst 
+  return nxoj
+
+
+
+{-
+  case xojstate of 
+    ViewAppendState xoj -> ViewAppendState (set g_pages nmap xoj)
+    SelectState txoj -> let ntxoj = set g_selectSelected Nothing
+                                    . set g_selectAll nmap 
+                                    $ txoj 
+                        in SelectState ntxoj
+   -- SelectState (set g_selectAll nmap txoj) -}
+
+
+{-
+setPageSingle :: XournalState -> Int 
+              -> CanvasInfo SinglePage 
+              -> CanvasInfo SinglePage
+setPageSingle (ViewAppendState xojbbox) pagenum cinfo = 
+  let pg = getPageFromGXournalMap pagenum xojbbox
+      Dim w h = get g_dimension pg
+  in  set currentPageNum pagenum 
+      . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
+      . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
+      . set currentPage (Left pg)
+      $ cinfo 
+setPageSingle (SelectState txoj) pagenum cinfo = 
+  let mspage = gselectSelected  txoj 
+      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
+                      Nothing -> error "no such page in setPage"
+                      Just p -> p
+      (newpage,Dim w h) = 
+        case mspage of 
+          Nothing -> (Left pageFromArg, gdimension pageFromArg)
+          Just (spagenum,page) -> 
+            if spagenum == pagenum 
+              then (Right page, gdimension page) 
+              else (Left pageFromArg, gdimension pageFromArg)
+  in set currentPageNum pagenum 
+     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
+     . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
+     . set currentPage newpage
+     $ cinfo 
+-}
           {-
           ngeom <- makeCanvasGeometry EditMode (PageNum pagenum,page) arr canvas
           let DesktopDimension (Dim w h) = desktopDim ngeom          
@@ -197,82 +330,3 @@ updatePageViewMode (SelectState txoj) cinfo =
      . set currentPage newpage
      $ cinfo 
 -}
-
--- |
-updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
-updatePage = updateCvsInfoFrmXoj . either id makexoj . xojstateEither  
-  where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
-
--- | 
-
-setPage :: XournalState -> Int -> CanvasInfo a -> CanvasInfo a 
-setPage xstate pagenum = 
-  viewModeBranch (setPageSingle xstate pagenum) (error "setPage")    
-
-
-
--- | setPageSingle : in Single Page mode   
-
-setPageSingle :: XournalState -> Int 
-              -> CanvasInfo SinglePage 
-              -> CanvasInfo SinglePage
-setPageSingle (ViewAppendState xojbbox) pagenum cinfo = 
-  let pg = getPageFromGXournalMap pagenum xojbbox
-      Dim w h = get g_dimension pg
-  in  set currentPageNum pagenum 
-      . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
-      . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
-      . set currentPage (Left pg)
-      $ cinfo 
-setPageSingle (SelectState txoj) pagenum cinfo = 
-  let mspage = gselectSelected  txoj 
-      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
-                      Nothing -> error "no such page in setPage"
-                      Just p -> p
-      (newpage,Dim w h) = 
-        case mspage of 
-          Nothing -> (Left pageFromArg, gdimension pageFromArg)
-          Just (spagenum,page) -> 
-            if spagenum == pagenum 
-              then (Right page, gdimension page) 
-              else (Left pageFromArg, gdimension pageFromArg)
-  in set currentPageNum pagenum 
-     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
-     . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
-     . set currentPage newpage
-     $ cinfo 
-
-
--- | 
-
-newSinglePageFromOld :: Page EditMode -> Page EditMode 
-newSinglePageFromOld = 
-  set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
-
--- | 
-
-newPageBeforeAction :: (ViewMode a) => 
-                       Xournal EditMode
-                    -> (CanvasId, CanvasInfo a) 
-                    -> IO (Xournal EditMode)
-newPageBeforeAction xoj (_cid,cinfo) = do 
-  let cpn = get currentPageNum cinfo
-  let pagelst = M.elems . get g_pages $ xoj 
-      pagekeylst = M.keys . get g_pages $ xoj 
-      (pagesbefore,pagesafter) = splitAt cpn pagelst
-      npage = newSinglePageFromOld (head pagesafter)
-      npagelst = pagesbefore ++ (npage : pagesafter)
-      nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
-  putStrLn . show $ pagekeylst 
-  return nxoj
-
-
-
-{-
-  case xojstate of 
-    ViewAppendState xoj -> ViewAppendState (set g_pages nmap xoj)
-    SelectState txoj -> let ntxoj = set g_selectSelected Nothing
-                                    . set g_selectAll nmap 
-                                    $ txoj 
-                        in SelectState ntxoj
-   -- SelectState (set g_selectAll nmap txoj) -}

@@ -29,6 +29,7 @@ import Control.Monad.State hiding (get,modify)
 import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
 import Data.Label 
+import Data.Xournal.Generic
 import qualified Data.IntMap as M
 
 import Prelude hiding ((.), id)
@@ -86,6 +87,15 @@ emptyHXournalState =
 --  , _networkClipboardInfo = Nothing 
   }
 
+-- | 
+
+getXournal :: HXournalState -> Xournal EditMode 
+getXournal = either id makexoj . xojstateEither . get xournalstate 
+  where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+
+
+-- | 
+        
 currentCanvasId :: HXournalState :-> CanvasId
 currentCanvasId = lens getter setter 
   where getter = fst . _currentCanvas 
@@ -108,6 +118,21 @@ modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox)
                         -> HXournalState
 modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
   where cid = get currentCanvasId st 
+
+
+modifyCurrCvsInfoM :: (Monad m) => (CanvasInfoBox -> m CanvasInfoBox) 
+                      -> HXournalState
+                      -> m HXournalState
+modifyCurrCvsInfoM f st = do 
+  let cinfobox = get currentCanvasInfo st 
+      cid = get currentCanvasId st 
+  ncinfobox <- f cinfobox
+  let cinfomap = get canvasInfoMap st
+      ncinfomap = M.adjust (const ncinfobox) cid cinfomap 
+      nst = set currentCanvasInfo ncinfobox 
+            . set canvasInfoMap ncinfomap 
+            $ st 
+  return nst
 
 xojstateEither :: XournalState -> Either (Xournal EditMode) (Xournal SelectMode) 
 xojstateEither xojstate = case xojstate of 

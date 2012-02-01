@@ -182,6 +182,23 @@ getPagesInViewPortRange geometry xoj =
       f (PageNum n) = maybe False (pgcheck n) . M.lookup n $ pagemap 
   in filter f pnums
 
+-- | 
+
+getCvsGeomFrmCvsInfo :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
+getCvsGeomFrmCvsInfo cinfo = do 
+  let page = getPage cinfo
+      cpn = PageNum . get currentPageNum $ cinfo 
+      canvas = get drawArea cinfo
+      arr = get (pageArrangement.viewInfo) cinfo 
+  makeCanvasGeometry EditMode (cpn,page) arr canvas 
+  
+
+
+
+
+
+
+
       -- contained (ViewPortBBox bbox) (DeskCoord (x,y)) = hitTestBBoxPoint bbox (x,y) 
                         {- contained vbbox ul || contained vbbox ur 
                         || contained vbbox ll || contained vbbox lr -}
@@ -191,3 +208,4 @@ getPagesInViewPortRange geometry xoj =
                                ++ "\nivbbox = " ++ show ivbbox 
                                ++ "\ninbbox = " ++ show inbbox 
                                ++ "\nresult = " ++ show result) $ -}
+

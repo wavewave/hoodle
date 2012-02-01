@@ -39,9 +39,9 @@ import qualified Data.IntMap as M
 
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction >> invalidateCurrent
-  where changePageAction xst = selectBoxAction (fsimple xst) (fsimple xst) 
+  where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
                                . get currentCanvasInfo $ xst
-        fsimple xstate cvsInfo = do 
+        fsingle xstate cvsInfo = do 
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
               (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
@@ -53,27 +53,23 @@ changePage modifyfn = updateXState changePageAction >> invalidateCurrent
                       adjustmentSetUpper vadj h 
                       adjustmentSetValue hadj 0
                       adjustmentSetValue vadj 0
-          let ncvsInfo = CanvasInfoBox . setPage xojst' npgnum' $ cvsInfo
+          ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') (CanvasInfoBox cvsInfo)
           return =<< (liftIO (updatePageAll xojst'
                               . modifyCurrentCanvasInfo (const ncvsInfo)
-                              $ xstate'))
-{-        fcont xstate cvsInfo = do 
+                              $ xstate')) 
+        fcont xstate cvsInfo = do 
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
               (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
               xstate' = set xournalstate xojst' xstate
               Dim w h = get g_dimension selectedpage
               (hadj,vadj) = get adjustments cvsInfo
-          when b $ do {commit xstate' ;  }
-          liftIO $ do adjustmentSetUpper hadj w 
-                      adjustmentSetUpper vadj h 
-                      adjustmentSetValue hadj 0
-                      adjustmentSetValue vadj 0
-          let ncvsInfo = CanvasInfoBox . setPage xojst' npgnum' $ cvsInfo
+          when b $ do {commit xstate' }
+          ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') (CanvasInfoBox cvsInfo)
           return =<< (liftIO (updatePageAll xojst'
                               . modifyCurrentCanvasInfo (const ncvsInfo)
                               $ xstate'))
--}
+
 
 
 -- | 

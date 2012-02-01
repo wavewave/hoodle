@@ -26,6 +26,7 @@ import Application.HXournal.Device
 import Application.HXournal.Coroutine
 -- import Application.HXournal.GUI.Menu
 import Application.HXournal.ModelAction.File 
+import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Window
 
 import Graphics.UI.Gtk hiding (get,set)
@@ -54,12 +55,12 @@ startGUI mfname = do
                \mmax -> maybe (return 50) (return . id) mmax
   -- ncconf <- getNetworkInfo  cfg
   
-  let st1 = -- set networkClipboardInfo ncconf
-            set undoTable (emptyUndo maxundo) 
-            $ st0 
+  let st1 = set undoTable (emptyUndo maxundo) st0 
             
   -- let st1 = set gtkUIManager ui st0
+  putStrLn "before st2"
   st2 <- getFileContent mfname st1
+  putStrLn "after st2"
   let ui = get gtkUIManager st2 
   writeIORef sref st2
   (winCvsArea, wconf) <- constructFrame 
@@ -74,7 +75,8 @@ startGUI mfname = do
             . set rootWindow winCvsArea 
             . set rootContainer (castToBox vbox) $ st2
   writeIORef sref st3
-  
+  -- st4 <- modifyCurrCvsInfoM (setPage st3 0) st3
+  -- writeIORef sref st4
   xinputbool <- getXInputConfig cfg 
   agr <- uiManagerGetActionGroups ui >>= \x ->
            case x of 

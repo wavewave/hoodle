@@ -27,6 +27,7 @@ import Prelude hiding ((.), id)
 import Graphics.UI.Gtk hiding (get,set)
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
+import Data.Xournal.Generic
 import Data.Xournal.Predefined 
 import Application.HXournal.Type.PageArrangement
 
@@ -208,3 +209,7 @@ defaultPenInfo =
                                            
 $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''WidthColorStyle ])
 
+-- | 
+
+getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
+getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage

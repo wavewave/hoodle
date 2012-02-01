@@ -57,49 +57,38 @@ getFileContent (Just fname) xstate = do
 getFileContent Nothing xstate = do   
     newxoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF 
               $ defaultXournal 
+    putStrLn "hello"
     let newxojstate = ViewAppendState newxoj 
-        -- (_,ccinfo) = get currentCanvas xstate 
         xstate' = set currFileName Nothing 
                   . set xournalstate newxojstate
                   $ xstate 
-    let dim = get g_dimension . maybeError "getFileContent" . M.lookup 0 . get g_pages 
-            $ newxoj 
+    -- let dim = get g_dimension . maybeError "getFileContent" . M.lookup 0 . get g_pages 
+    --         $ newxoj 
 
-        forSingle    = setPage newxojstate 0 
-                     . set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
-                     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
-                     . set currentPageNum 0 
-    return (modifyCurrentCanvasInfo (selectBox forSingle (error "getFileContent")) xstate')
-
+    -- let cvschange = setPage xstate' 0 
+    -- modifyCurrCvsInfoM cvschange xstate'
+    return xstate' 
 
 -- |
     
 constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalState 
 constructNewHXournalStateFromXournal xoj' xstate = do 
-    -- let currcid = get currentCanvas xstate 
-    -- cmap = get canvasInfoMap xstate 
     xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj'
     let dim = get g_dimension . maybeError "constructNewHxournalStateFromXournal" . M.lookup 0 
               . get g_pages $ xoj
         startingxojstate = ViewAppendState xoj
-        forSingle = setPage startingxojstate 0 
-                    . set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
-                    . set currentPageNum 0 
-    return $ set xournalstate startingxojstate
-             . modifyCurrentCanvasInfo (selectBox forSingle (error "construct..."))
-             $ xstate
+        -- forSingle = set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
+        --             . set currentPageNum 0 
+        
+    let xstate' = set xournalstate startingxojstate xstate
+        cvschange = setPage xstate' 0 
+    modifyCurrCvsInfoM  cvschange xstate' 
+      
+      -- rentCanvasInfo (selectBox forSingle (error "construct..."))
+ --    return $ setPage xstate' 0 xstate'
 
 
-{-    let changefunc c = 
-          setPage startingxojstate 0 
-          . set viewInfo (ViewInfo OnePage Original (0,0) (width,height))
-          . set currentPageNum 0 
-          $ c  
-        cmap' = fmap changefunc cmap
-
-             . set canvasInfoMap cmap'
-             . set currentCanvas currcid -} 
-
+-- | 
 
 makeNewXojWithPDF :: FilePath -> IO (Maybe Xournal)
 makeNewXojWithPDF fp = do 

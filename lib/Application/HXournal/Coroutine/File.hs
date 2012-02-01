@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.File 
@@ -9,6 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.File where
 
 import Application.HXournal.Type.Event
@@ -18,6 +19,7 @@ import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Window
+import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.File
 import Text.Xournal.Builder 
 import Control.Monad.Trans
@@ -55,8 +57,9 @@ fileNew :: MainCoroutine ()
 fileNew = do  
     xstate <- getSt
     xstate' <- liftIO $ getFileContent Nothing xstate 
-    commit xstate' 
-    liftIO $ setTitleFromFileName xstate'
+    xstate'' <- liftIO $ modifyCurrCvsInfoM (setPage xstate' 0) xstate'
+    commit xstate'' 
+    liftIO $ setTitleFromFileName xstate''
     invalidateAll 
 
 

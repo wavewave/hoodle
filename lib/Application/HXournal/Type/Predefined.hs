@@ -20,3 +20,6 @@ predefinedLassoWidth = 4.0
 
 predefinedLassoDash :: ([Double],Double)
 predefinedLassoDash = ([10,5],10) 
+
+predefinedPageSpacing :: Double
+predefinedPageSpacing = 10 

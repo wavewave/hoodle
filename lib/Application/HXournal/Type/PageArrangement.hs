@@ -22,6 +22,7 @@ import Data.Label
 import Prelude hiding ((.),id)
 -- import qualified Data.IntMap as M
 
+import Application.HXournal.Type.Predefined 
 import Application.HXournal.Type.Alias
 import Application.HXournal.Util
 
@@ -41,6 +42,15 @@ instance ViewMode ContinuousSinglePage
 
 newtype PageNum = PageNum { unPageNum :: Int } 
                 deriving (Eq,Show,Ord,Num)
+
+newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
+                         deriving (Show)
+newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
+                         deriving (Show)
+newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
+                          deriving (Show)
+newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
+                       deriving (Show)
 
 newtype ScreenDimension = ScreenDimension { unScreenDimension :: Dimension } 
                         deriving (Show)
@@ -96,22 +106,28 @@ getRatioPageCanvas zmode (PageDimension (Dim w h)) (CanvasDimension (Dim w' h'))
 
 -- |
 
-makeSingleArrangement :: ZoomMode -> PageDimension -> CanvasDimension 
+makeSingleArrangement :: ZoomMode 
+                         -> PageDimension 
+                         -> CanvasDimension 
+                         -> (Double,Double) 
                          -> PageArrangement SinglePage
-makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) = 
+makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) (x,y) = 
   let (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim
-      bbox = BBox (0,0) (w'/sinvx,h'/sinvy)
+      bbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
   in SingleArrangement pdim (ViewPortBBox bbox) 
 
 -- | 
 
-makeContinuousSingleArrangement :: ZoomMode -> CanvasDimension -> Xournal EditMode -> PageNum 
-                                  -> PageArrangement ContinuousSinglePage
-makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) xoj pnum = 
+makeContinuousSingleArrangement :: ZoomMode -> CanvasDimension 
+                                   -> Xournal EditMode 
+                                   -> (PageNum,PageCoordinate) 
+                                   -> PageArrangement ContinuousSinglePage
+makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) 
+                                xoj (pnum,PageCoord (xpos,ypos)) = 
   let PageOrigin (_,y0) = maybeError "makeContSingleArr" $ pageArrFuncContSingle xoj pnum 
       dim@(Dim pw ph) = get g_dimension . head . gToList . get g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
-      vport = ViewPortBBox (BBox (0,y0) (cw/sinvx,y0+ch/sinvy))
+      vport = ViewPortBBox (BBox (xpos,ypos+y0) (xpos+cw/sinvx,ypos+y0+ch/sinvy))
   in ContinuousSingleArrangement (deskDimContSingle xoj) (pageArrFuncContSingle xoj) vport 
 
 -- |
@@ -121,7 +137,7 @@ pageArrFuncContSingle xoj pnum@(PageNum n)
   | n < 0 = Nothing 
   | n >= len = Nothing 
   | otherwise = Just (PageOrigin (0,ys !! n))
-  where addf x y = x + y + 20 
+  where addf x y = x + y + predefinedPageSpacing
         pgs = gToList . get g_pages $ xoj 
         len = length pgs 
         ys = scanl addf 0 . map (dim_height.get g_dimension) $ pgs  

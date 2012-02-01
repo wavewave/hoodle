@@ -257,6 +257,14 @@ drawSelBuf = drawFuncSelGen rencont rensel
         rensel (_pnum,tpg) mbbox = do 
           cairoHittedBoxDraw tpg mbbox  
              
+-- | 
+
+drawContXojBuf :: DrawingFunction ContinuousSinglePage EditMode
+drawContXojBuf = 
+  drawContPageGen $ \(_,page) mbbox -> 
+                       cairoRenderOption (InBBoxOption mbbox) (InBBox page)   
+
+
 -- |
 
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 

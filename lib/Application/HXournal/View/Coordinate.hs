@@ -33,14 +33,6 @@ import Application.HXournal.Type.Alias
 
 import Debug.Trace
 
-newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
-                         deriving (Show)
-newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
-                         deriving (Show)
-newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
-                          deriving (Show)
-newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
-                       deriving (Show)
 
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 

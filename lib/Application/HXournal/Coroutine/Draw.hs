@@ -195,8 +195,8 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 -- | Drawing using layer buffer in BBox  
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
-invalidateWithBufInBBox mbbox cid =  -- temporary 
-  invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojClearly
+invalidateWithBufInBBox mbbox cid =  
+  invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojBuf
 
 
 

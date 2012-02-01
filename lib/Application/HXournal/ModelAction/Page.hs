@@ -20,6 +20,8 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Alias
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Util
+
+import Control.Applicative
 import Data.Xournal.BBox (moveBBoxToOrigin)
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
@@ -34,7 +36,7 @@ import Data.Label
 import Prelude hiding ((.),id,mapM)
 import qualified Data.IntMap as M 
 
-import Graphics.UI.Gtk (adjustmentSetUpper)
+import Graphics.UI.Gtk (adjustmentSetUpper,adjustmentGetValue)
 -- | 
 
 getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
@@ -67,9 +69,7 @@ updatePageAll :: XournalState
                  -> IO HXournalState
 updatePageAll xst xstate = do 
   let cmap = get canvasInfoMap xstate
-  putStrLn "updatePageAll" 
   cmap' <- mapM (updatePage xst . adjustPage xst) cmap
-  putStrLn "updatePageAll2"
   return (set canvasInfoMap cmap' xstate)
 
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
@@ -109,14 +109,11 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
           let cdim = canvasDim geometry 
               pg = getPageFromGXournalMap pagenum xoj 
               pdim@(PageDimension (Dim w h)) = PageDimension $ get g_dimension pg
-              arr = makeSingleArrangement zmode pdim cdim 
-              
               (hadj,vadj) = get adjustments cinfo
+          (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
+          let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
           adjustmentSetUpper hadj w 
           adjustmentSetUpper vadj h 
-          -- adjustmentSetValue hadj 0
-          -- adjustmentSetValue vadj 0
-          
           return . CanvasInfoBox 
                  . set currentPageNum pagenum  
                  . set (pageArrangement.viewInfo) arr
@@ -127,13 +124,20 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
           let oarr = get (pageArrangement.viewInfo) cinfo 
               canvas = get drawArea cinfo 
               zmode = get (zoomMode.viewInfo) cinfo
+              (hadj,vadj) = get adjustments cinfo
+          (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
+                               <*> adjustmentGetValue vadj 
           geometry <- makeCanvasGeometry EditMode (PageNum pagenum,page)
-                                         oarr canvas
+                                         oarr canvas 
+          let pcoordxy = 
+                maybe (PageCoord (0,0)) snd $ desktop2Page geometry (DeskCoord (xdesk,ydesk))
           let cdim = canvasDim geometry 
               pg = getPageFromGXournalMap pagenum xoj 
               pdim = PageDimension $ get g_dimension pg
-              arr = makeContinuousSingleArrangement zmode cdim xoj (PageNum pagenum) 
-              (hadj,vadj) = get adjustments cinfo
+          let arr = makeContinuousSingleArrangement zmode cdim xoj 
+                      (PageNum pagenum, pcoordxy)
+              
+--               (hadj,vadj) = get adjustments cinfo
               ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
           adjustmentSetUpper hadj w 
           adjustmentSetUpper vadj h 

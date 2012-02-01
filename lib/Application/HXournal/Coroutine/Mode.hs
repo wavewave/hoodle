@@ -22,15 +22,17 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Canvas
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
+import Application.HXournal.ModelAction.Page
 --import Data.Foldable
 import Data.Traversable
+import Control.Applicative
 import Control.Monad.Trans
 import Control.Category
 import Data.Label
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Graphics.Xournal.Render.BBoxMapPDF
-import Graphics.UI.Gtk (adjustmentSetUpper)
+import Graphics.UI.Gtk (adjustmentSetUpper,adjustmentGetValue,adjustmentSetValue)
 import Prelude hiding ((.),id, mapM_, mapM)
 
 modeChange :: MyEvent -> MainCoroutine () 
@@ -75,13 +77,21 @@ viewModeChange command = case command of
           liftIO $ putStrLn "single2cont"
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
           let zmode = get (zoomMode.viewInfo) cinfo
+              canvas = get drawArea cinfo 
               cpn = PageNum . get currentPageNum $ cinfo 
-
-              arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) cpn
-              ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
+              page = getPage cinfo
               (hadj,vadj) = get adjustments cinfo 
+          (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
+
+          let arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) 
+                                                    (cpn, PageCoord (xpos,ypos))
+              ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
+          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
+          let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
           liftIO $ adjustmentSetUpper hadj w 
           liftIO $ adjustmentSetUpper vadj h 
+          liftIO $ adjustmentSetValue hadj nxpos
+          liftIO $ adjustmentSetValue vadj nypos 
           let vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
               ncinfo = CanvasInfo (get canvasId cinfo)
@@ -90,8 +100,8 @@ viewModeChange command = case command of
                                   nvinfo 
                                   (get currentPageNum cinfo)
                                   (get currentPage cinfo)
-                                  (get horizAdjustment cinfo)
-                                  (get vertAdjustment cinfo)
+                                  hadj -- (get horizAdjustment cinfo)
+                                  vadj -- (get vertAdjustment cinfo)
 
 
           return . modifyCurrentCanvasInfo (const (CanvasInfoBox ncinfo)) $ xstate

@@ -96,10 +96,14 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
         fsingle cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
           case get currentPage cvsInfo of 
-            Left page ->  liftIO (unSinglePageDraw drawf <$> get drawArea 
+            Left page -> do  
+              liftIO $ putStrLn "left" 
+              liftIO (unSinglePageDraw drawf <$> get drawArea 
                                   <*> pure (cpn,page) <*> get viewInfo <*> pure mbbox 
                                   $ cvsInfo )
-            Right tpage -> liftIO (unSinglePageDraw drawfsel <$> get drawArea 
+            Right tpage -> do 
+              liftIO $ putStrLn "right"
+              liftIO (unSinglePageDraw drawfsel <$> get drawArea 
                                    <*> pure (cpn,tpage) <*> get viewInfo 
                                    <*> pure mbbox $ cvsInfo )
         fcont :: CanvasInfo ContinuousSinglePage -> MainCoroutine () 

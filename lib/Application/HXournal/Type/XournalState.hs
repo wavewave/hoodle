@@ -39,6 +39,7 @@ type XournalStateIO = StateT HXournalState IO
 
 data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDFBuf }
                   | SelectState { tempSelect :: TTempXournalSelectPDFBuf }
+                    
 
 data HXournalState = 
   HXournalState { _xournalstate :: XournalState

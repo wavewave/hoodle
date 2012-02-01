@@ -183,6 +183,13 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       putSt . set xournalstate (SelectState newtxoj) 
             =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
+        
+      -- x <- getSt  
+      -- let SelectState txojtest = get xournalstate x 
+      --     y = get g_selectSelected txojtest
+      -- liftIO $ print y 
+        
+      
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
@@ -203,7 +210,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
            (prev,otime) tempselection = do
     xst <- getSt
     r <- await 
-    selectBoxAction (fsingle r xst) (error "movSelect") . getCanvasInfo cid $ xst 
+    selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
     defact = moveSelect cid pnum geometry connidmove connidup orig (prev,otime) 
@@ -252,7 +259,7 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
              (prev,otime) tempselection = do
     xst <- getSt
     r <- await 
-    selectBoxAction (fsingle r xst) (error "reszSelect") . getCanvasInfo cid $ xst
+    selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst
   where
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
     defact = resizeSelect handle cid pnum geometry connidmove connidup 

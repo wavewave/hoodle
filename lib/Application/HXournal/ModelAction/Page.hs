@@ -132,9 +132,6 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               pg = getPageFromGXournalMap pagenum xoj 
               pdim = PageDimension $ get g_dimension pg
           let arr = makeContinuousSingleArrangement zmode cdim xoj ulcoord 
-                      --  (PageNum pagenum, pcoordxy)
-              
---               (hadj,vadj) = get adjustments cinfo
               ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
           adjustmentSetUpper hadj w 
           adjustmentSetUpper vadj h 
@@ -147,9 +144,57 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               
 
 -- |
+{-
 updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
-updatePage = updateCvsInfoFrmXoj . either id makexoj . xojstateEither  
+updatePage = either updateCvsInfoFrmXoj . either id makexoj . xojstateEither  
   where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+-}
+
+
+updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
+updatePage (ViewAppendState xojbbox) cinfobox = updateCvsInfoFrmXoj xojbbox cinfobox
+updatePage (SelectState txoj) cinfobox = selectBoxAction fsingle fcont cinfobox
+  where getselectedpage :: CanvasInfo a -> Either (Page EditMode) (Page SelectMode)
+        getselectedpage cinfo = 
+          let pagenum = get currentPageNum cinfo 
+              pgs = get g_selectAll txoj
+              pg = maybeError "??" (M.lookup pagenum pgs)
+              spg = case get g_selectSelected txoj of 
+                      Nothing -> Left pg 
+                      Just (spnum,tpg) -> if spnum == pagenum then Right tpg else Left pg
+          in spg
+        fsingle cinfo = do 
+          let xoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+          CanvasInfoBox cinfo' <- updateCvsInfoFrmXoj xoj cinfobox
+          return . CanvasInfoBox . set currentPage (getselectedpage cinfo)  $ cinfo' 
+          
+        fcont cinfo = do 
+          let xoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+          CanvasInfoBox cinfo' <- updateCvsInfoFrmXoj xoj cinfobox
+          return . CanvasInfoBox . set currentPage (getselectedpage cinfo)  $ cinfo' 
+  
+  
+ {- 
+  
+  
+  let pagenum = unboxGet currentPageNum cinfobox
+      mspage = get g_selectSelected txoj 
+      pageFromArg = case M.lookup pagenum (get g_selectAll txoj) of 
+                      Nothing -> error "no such page in updatePage"
+                      Just p -> p
+      (newpage,Dim w h) = 
+        case mspage of 
+          Nothing -> (Left pageFromArg, gdimension pageFromArg)
+          Just (spagenum,page) -> 
+            if spagenum == pagenum 
+              then (Right page, gdimension page) 
+              else (Left pageFromArg, gdimension pageFromArg)
+  in set currentPageNum pagenum 
+     . set (pageDimension.viewInfo) (w,h)       
+     . set currentPage newpage
+     $ cinfo 
+
+-}
 
 -- | 
 

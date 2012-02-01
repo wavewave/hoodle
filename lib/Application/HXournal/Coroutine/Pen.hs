@@ -58,7 +58,6 @@ penPageSwitch pgn = updateXState switchact
                  return $ CanvasInfoBox $ set currentPageNum (unPageNum pgn)
                                           . set currentPage (Left page) 
                                           $ cinfo 
-          -- case get currentCanvasInfo xst of            
           modifyCurrCvsInfoM mfunc xst
 
 
@@ -83,12 +82,7 @@ commonPenStart action cid pcoord =
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) -> do 
                  liftIO $ putStrLn $ show (pgn,(x,y))
-                 when (cpn /= pgn) $ do
-                   (penPageSwitch pgn)
-                   x <- return . unboxGet currentPageNum . get currentCanvasInfo =<< getSt
-                   liftIO $ putStrLn $ "x = " ++ show x 
-                   y <- return . unboxGet currentPageNum . getCanvasInfo cid =<< getSt
-                   liftIO $ putStrLn $ "y = " ++ show y 
+                 when (cpn /= pgn) (penPageSwitch pgn)
                  connidup   <- connectPenUp cvsInfo 
                  connidmove <- connectPenMove cvsInfo
                  action cvsInfo pgn geometry (connidup,connidmove) (x,y) 
@@ -106,17 +100,9 @@ penStart cid = commonPenStart penAction cid
           pdraw <-penProcess cid pnum geometry cidmove cidup (empty |> (x,y)) (x,y) 
           (newxoj,_bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
           
-          liftIO $ putStrLn $ "before commit = " 
-                               ++ show (get (viewPortBBox.pageArrangement.viewInfo) cinfo)  
           
           commit . set xournalstate (ViewAppendState newxoj) 
                  =<< (liftIO (updatePageAll (ViewAppendState newxoj) xstate))
-            
-          y <- return . unboxGet (viewPortBBox.pageArrangement.viewInfo) . getCanvasInfo cid =<< getSt            
-          
-          liftIO $ putStrLn $ "after commit = " ++ show y 
-
-            
             
           invalidateAll 
 
@@ -140,9 +126,6 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
       penMoveAndUpOnly r pnum geometry 
         (penProcess cid pnum geometry connidmove connidup pdraw (x0,y0))
         (\(x,y) -> do 
-           -- liftIO $ print (x,y)
-           -- liftIO $ print $ get currentPageNum cvsInfo 
-            
            let canvas = get drawArea cvsInfo
                ptype  = get (penType.penInfo) xstate
                pcolor = get (penColor.currentTool.penInfo) xstate 

@@ -285,7 +285,8 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
   where rendercontent (_pnum,tpg)  _mbbox = do
           let pg' = gcast tpg :: Page EditMode
           cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg' :: TPageBBoxMapPDF)
-        renderselect (_pnum,tpg) mbbox =  
+        renderselect (_pnum,tpg) mbbox = do 
+          liftIO $ putStrLn "I called"
           cairoHittedBoxDraw tpg mbbox
 
 -- | 

@@ -49,7 +49,7 @@ data DrawingFunctionSet =
 invalidateGen :: CanvasInfoBox -> Maybe BBox -> DrawingFunctionSet -> MainCoroutine () 
 invalidateGen cid mbbox fset = do 
     xst <- getSt 
-    selectBoxAction fsingle (error "invalidateGeneral") . getCanvasInfo cid $ xst
+    selectBoxAction fsingle fconterror "invalidateGen") . getCanvasInfo cid $ xst
     {-  (fcont xst) -}
   where fsingle :: CanvasInfo SinglePage -> MainCoroutine () 
         fsingle cvsInfo = do 
@@ -78,19 +78,19 @@ invalidateGen cid mbbox fset = do
               
           mapM_ (\(n,pg) -> liftIO (drawf canvas (PageNum n,pg) vinfo mbbox)) 
             . filter (\(n,pg) -> n `elem` redrawpages ) $ pgs    -}
-          
--}
+-}        
+
 
 -- | deprecated
 
 invalidateGeneral :: CanvasId -> Maybe BBox 
                   -> DrawingFunction SinglePage EditMode
                   -> DrawingFunction SinglePage SelectMode
+                  -> DrawingFunction ContinuousSinglePage EditMode
                   -> MainCoroutine () 
-invalidateGeneral cid mbbox drawf drawfsel = do 
+invalidateGeneral cid mbbox drawf drawfsel drawcont = do 
     xst <- getSt 
-    selectBoxAction fsingle (error "invalidateGeneral") . getCanvasInfo cid $ xst
-    {-  (fcont xst) -}
+    selectBoxAction fsingle fcont . getCanvasInfo cid $ xst
   where fsingle :: CanvasInfo SinglePage -> MainCoroutine () 
         fsingle cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
@@ -101,10 +101,16 @@ invalidateGeneral cid mbbox drawf drawfsel = do
             Right tpage -> liftIO (unSinglePageDraw drawfsel <$> get drawArea 
                                    <*> pure (cpn,tpage) <*> get viewInfo 
                                    <*> pure mbbox $ cvsInfo )
-{-
-        fcont :: HXournalState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
-        fcont xstate cvsInfo = do 
-          let cpn = PageNum . get currentPageNum $ cvsInfo 
+        fcont :: CanvasInfo ContinuousSinglePage -> MainCoroutine () 
+        fcont cvsInfo = do 
+          xojstate <- liftM (get xournalstate) getSt 
+          case xojstate of 
+            ViewAppendState xoj -> 
+              liftIO (unContPageDraw drawcont cvsInfo Nothing xoj)
+            SelectState txoj -> error "invalidateGeneral not yet"
+          
+          
+{-          let cpn = PageNum . get currentPageNum $ cvsInfo 
               pg = getPage cvsInfo
               xoj = getXournal xstate
               pgs = M.toList $ get g_pages xoj
@@ -149,7 +155,8 @@ invalidateOther = do
 -- | invalidate clear 
 
 invalidate :: CanvasId -> MainCoroutine () 
-invalidate cid = invalidateGeneral cid Nothing drawPageClearly drawPageSelClearly
+invalidate cid = invalidateGeneral cid Nothing 
+                   drawPageClearly drawPageSelClearly drawContXojClearly
 
 
 -- | Invalidate Current canvas
@@ -188,7 +195,8 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 -- | Drawing using layer buffer in BBox  
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
-invalidateWithBufInBBox mbbox cid = invalidateGeneral cid mbbox drawBuf drawSelBuf
+invalidateWithBufInBBox mbbox cid =  -- temporary 
+  invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojClearly
 
 
 

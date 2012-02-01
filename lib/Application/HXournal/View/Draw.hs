@@ -23,6 +23,8 @@ import Control.Monad (liftM,(<=<))
 import Data.Label
 import Prelude hiding ((.),id,mapM_,concatMap)
 import Data.Foldable
+import qualified Data.IntMap as M
+import Data.Maybe hiding (fromMaybe)
 import Data.Monoid
 import Data.Sequence
 import Data.Xournal.Simple (Dimension(..))
@@ -40,6 +42,7 @@ import Application.HXournal.Util
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Predefined
 import Application.HXournal.View.Coordinate
+import Application.HXournal.ModelAction.Page
 
 
 -- type DrawingFunction = forall a. (ViewMode a) => ViewInfo a -> Maybe BBox -> IO ()
@@ -51,7 +54,9 @@ newtype SinglePageDraw a =
 
 
 newtype ContPageDraw a = 
-  ContPageDraw { unContPageDraw :: DrawingArea -> Xournal a -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO () }
+  ContPageDraw 
+  { unContPageDraw :: CanvasInfo ContinuousSinglePage 
+                      -> Maybe (PageNum, Maybe BBox) -> Xournal a -> IO () }
                     
 type instance DrawingFunction SinglePage = SinglePageDraw
 type instance DrawingFunction ContinuousSinglePage = ContPageDraw
@@ -88,14 +93,24 @@ getCanvasViewPort geometry =
 
 -- | 
 
+getBBoxInPageCoord :: CanvasGeometry -> PageNum -> BBox -> BBox  
+getBBoxInPageCoord geometry pnum bbox@(BBox (x1,y1) (x2,y2)) = 
+  let DeskCoord (x0,y0) = page2Desktop geometry (pnum,PageCoord (0,0))  
+  in moveBBoxByOffset (-x0,-y0) bbox
+     
+-- | 
+
 getViewableBBox :: CanvasGeometry 
-                   -> (PageNum, Maybe BBox) -- ^ in page coordinate
+                   -> Maybe (PageNum, Maybe BBox) -- ^ in page coordinate
                    -> Maybe BBox            -- ^ in desktop coordinate
-getViewableBBox geometry (pnum,mbbox) = 
+getViewableBBox geometry (Just (pnum,mbbox)) = 
   let ViewPortBBox vportbbox = getCanvasViewPort geometry  
   in toMaybe $ (fromMaybe mbbox :: IntersectBBox) 
                `mappend` 
                (Intersect (Middle vportbbox))
+getViewableBBox geometry Nothing = 
+  let ViewPortBBox vportbbox = getCanvasViewPort geometry 
+  in (Just vportbbox)
 
 
 -- | common routine for double buffering 
@@ -156,7 +171,7 @@ drawFuncGen typ render = SinglePageDraw func
           let arr = get pageArrangement vinfo
           geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry (pnum,mbbox)
+          let mbboxnew = getViewableBBox geometry (Just (pnum,mbbox))
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
@@ -171,6 +186,40 @@ drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox -> Render ())
 drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> rensel x y) 
 
 
+
+drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
+                   -> DrawingFunction ContinuousSinglePage EditMode
+drawContPageGen render = ContPageDraw func 
+  where func cinfo mpnumbbox xoj = do 
+          let arr = get (pageArrangement.viewInfo) cinfo
+              pnum = PageNum . get currentPageNum $ cinfo 
+              page = getPage cinfo 
+              canvas = get drawArea cinfo 
+          geometry <- makeCanvasGeometry EditMode (pnum,page) arr canvas
+          let pgs = get g_pages xoj 
+          let drawpgs = catMaybes . map f 
+                        $ (getPagesInViewPortRange geometry xoj) 
+                where f k = maybe Nothing (\a->Just (k,a)) 
+                            . M.lookup (unPageNum k) $ pgs
+          print $ Prelude.length drawpgs
+          win <- widgetGetDrawWindow canvas
+          let mbboxnew = getViewableBBox geometry mpnumbbox
+              xformfunc = cairoXform4PageCoordinate geometry pnum
+              onepagerender (pn,pg) = do  
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                render (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew)
+              renderfunc = do
+                xformfunc 
+                clipBBox mbboxnew
+                liftIO $ print mbboxnew 
+                mapM_ onepagerender drawpgs 
+                resetClip 
+
+          doubleBufferDraw win geometry xformfunc renderfunc   
+
+
+
 drawPageClearly :: DrawingFunction SinglePage EditMode
 drawPageClearly = drawFuncGen EditMode $ \(_,page) _mbbox -> 
                      cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
@@ -183,6 +232,15 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
           cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg' :: TPageBBoxMapPDF)
         renderselect (_pnum,tpg) mbbox =  
           cairoHittedBoxDraw tpg mbbox
+
+-- | 
+        
+drawContXojClearly :: DrawingFunction ContinuousSinglePage EditMode
+drawContXojClearly = 
+  drawContPageGen $ \(_,page) _mbbox -> 
+                       cairoRenderOption (DrawBkgPDF,DrawFull) 
+                                         (gcast page :: TPageBBoxMapPDF )
+
 
 -- |
 

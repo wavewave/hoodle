@@ -41,8 +41,9 @@ emptyPenDraw :: PenDraw
 emptyPenDraw = PenDraw empty
 
 
-data ViewInfo a  = (ViewMode a) => ViewInfo { _zoomMode :: ZoomMode 
-                                            , _pageArrangement :: PageArrangement a } 
+data ViewInfo a  = (ViewMode a) => 
+                   ViewInfo { _zoomMode :: ZoomMode 
+                            , _pageArrangement :: PageArrangement a } 
 
 
 defaultViewInfoSinglePage :: ViewInfo SinglePage

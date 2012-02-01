@@ -94,15 +94,16 @@ viewModeChange command = case command of
           liftIO $ adjustmentSetValue vadj nypos 
           let vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
-              ncinfo = CanvasInfo (get canvasId cinfo)
-                                  (get drawArea cinfo)
-                                  (get scrolledWindow cinfo)
-                                  nvinfo 
-                                  (get currentPageNum cinfo)
-                                  (get currentPage cinfo)
-                                  hadj -- (get horizAdjustment cinfo)
-                                  vadj -- (get vertAdjustment cinfo)
-
+              ncinfotemp = CanvasInfo (get canvasId cinfo)
+                                      (get drawArea cinfo)
+                                      (get scrolledWindow cinfo)
+                                      nvinfo 
+                                      (get currentPageNum cinfo)
+                                      (get currentPage cinfo)
+                                      hadj 
+                                      vadj 
+              ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
+              ncinfo = modify currentPageNum (const (unPageNum ncpn)) ncinfotemp
 
           return . modifyCurrentCanvasInfo (const (CanvasInfoBox ncinfo)) $ xstate
 

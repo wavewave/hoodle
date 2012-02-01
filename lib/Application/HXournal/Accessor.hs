@@ -119,9 +119,8 @@ getCanvasGeometry xstate = do
       fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
                 . get (pageArrangement.viewInfo) 
 
-  selectBoxAction fsingle (error "getCanvasGeometry") cinfobox
+  selectBoxAction fsingle fsingle cinfobox
   
-
 
 {-
 getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 

@@ -19,6 +19,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
+import Application.HXournal.View.Coordinate
 import Control.Monad
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
@@ -34,15 +35,17 @@ vscrollStart cid = vscrollMove cid
 vscrollMove :: CanvasId -> MainCoroutine () 
 vscrollMove cid = do    
     ev <- await 
+    xst <- getSt 
+    geometry <- liftIO (getCanvasGeometry xst)
     case ev of
       VScrollBarMoved _cid' v -> do 
         updateXState $ return.modifyCurrentCanvasInfo 
-                                (selectBox (scrollmovecanvas v) (scrollmovecanvas v))
+                         (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
         invalidateWithBuf cid 
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
         updateXState $ return.modifyCurrentCanvasInfo 
-                                (selectBox (scrollmovecanvas v) (scrollmovecanvas v)) 
+                         (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 
         return ()
       _ -> return ()       
@@ -50,5 +53,21 @@ vscrollMove cid = do
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
           in modify (viewPortBBox.pageArrangement.viewInfo) 
                     (apply (moveBBoxULCornerTo (fst vm_orig,v))) cvsInfo 
+             
+        scrollmovecanvasCont geometry v cvsInfo = 
+          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
+              cpn = PageNum . get currentPageNum $ cvsInfo 
+              ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (0,v))
+                  
+              
+          in  modify currentPageNum (const (unPageNum ncpn)) 
+              . modify (viewPortBBox.pageArrangement.viewInfo) 
+                       (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cvsInfo 
+
+
+
+
+
+
 
 

@@ -205,15 +205,23 @@ drawContPageGen render = ContPageDraw func
           win <- widgetGetDrawWindow canvas
           let mbboxnew = getViewableBBox geometry mpnumbbox
               xformfunc = cairoXform4PageCoordinate geometry pnum
+              emphasispagerender (pn,pg) = do 
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                let Dim w h = get g_dimension pg 
+                setSourceRGBA 1.0 0 0 0.2
+                rectangle 0 0 w h 
+                fill 
               onepagerender (pn,pg) = do  
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 render (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew)
               renderfunc = do
                 xformfunc 
-                clipBBox mbboxnew
+                -- clipBBox mbboxnew
                 liftIO $ print mbboxnew 
                 mapM_ onepagerender drawpgs 
+                emphasispagerender (pnum,page)
                 resetClip 
 
           doubleBufferDraw win geometry xformfunc renderfunc   

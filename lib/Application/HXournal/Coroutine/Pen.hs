@@ -36,8 +36,10 @@ import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Xournal.Predefined
+import Data.Xournal.Generic
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
+import qualified Data.IntMap as IM
 import Data.Maybe 
 import Control.Category
 import Data.Label
@@ -51,7 +53,7 @@ commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeom
                -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
 commonPenStart action cid pcoord =
-    selectBoxAction fsingle fsingle' {- (error "commonPenStart") -} . getCanvasInfo cid =<< changeCurrentCanvasId cid 
+    selectBoxAction fsingle fcont . getCanvasInfo cid =<< changeCurrentCanvasId cid 
   where fsingle :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
         fsingle cvsInfo = do 
           let page = getPage cvsInfo
@@ -60,37 +62,36 @@ commonPenStart action cid pcoord =
               canvas = get drawArea cvsInfo
           geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          -- liftIO $ print pagecoord
-          -- liftIO $ print $ desktop2Page geometry (DeskCoord (100,100))
-              
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) ->  when (cpn == pgn) $ do 
                  connidup   <- connectPenUp cvsInfo 
                  connidmove <- connectPenMove cvsInfo
                  action cvsInfo pgn geometry (connidup,connidmove) (x,y) 
                  
-        fsingle' :: CanvasInfo ContinuousSinglePage -> MainCoroutine ()
-        fsingle' cvsInfo = do 
+        fcont :: CanvasInfo ContinuousSinglePage -> MainCoroutine ()
+        fcont cvsInfo = do 
           let page = getPage cvsInfo
               cpn = PageNum . get currentPageNum $ cvsInfo
               arr@(ContinuousSingleArrangement ddim pfunc vbbox) = get (pageArrangement.viewInfo) cvsInfo              
               canvas = get drawArea cvsInfo
           geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          liftIO $ print pagecoord
-          liftIO $ print $ desktop2Page geometry (DeskCoord (100,100))
-
-          liftIO $ print $ map (pageFunction arr . PageNum) $ [0,1,2,3,4]
+          
           liftIO $ putStrLn $ "desk coord = " ++ show (device2Desktop geometry pcoord)
-{-
-          liftIO $ print ddim 
-          liftIO $ print $  pfunc (PageNum 0)
-          liftIO $ print vbbox  --}
           maybeFlip pagecoord (return ()) 
-            $ \(pgn,PageCoord (x,y)) ->  when (cpn == pgn) $ do 
-                 connidup   <- connectPenUp cvsInfo 
-                 connidmove <- connectPenMove cvsInfo
-                 action cvsInfo pgn geometry (connidup,connidmove) (x,y)               
+            $ \(pgn,PageCoord (x,y)) -> do 
+                when (cpn /= pgn) $ do 
+                  xst <- getSt
+                  let xoj = getXournal xst
+                  let page = maybeError "no such page in commonPenStart" 
+                               $ IM.lookup (unPageNum pgn) (get g_pages xoj)
+                  let ncinfo = CanvasInfoBox $ set currentPageNum (unPageNum pgn)
+                                               . set currentPage (Left page) 
+                                               $ cvsInfo 
+                  putSt (set currentCanvasInfo ncinfo xst)
+                connidup   <- connectPenUp cvsInfo 
+                connidmove <- connectPenMove cvsInfo
+                action cvsInfo pgn geometry (connidup,connidmove) (x,y)               
 
       
 -- | enter pen drawing mode

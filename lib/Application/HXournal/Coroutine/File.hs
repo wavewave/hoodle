@@ -99,7 +99,8 @@ fileOpen = do
           Just filename -> do 
             liftIO $ putStrLn $ show filename 
             xstate <- getSt 
-            xstateNew <- liftIO $ getFileContent (Just filename) xstate
+            xstate' <- liftIO $ getFileContent (Just filename) xstate
+            xstateNew <- liftIO $ modifyCurrCvsInfoM (setPage xstate' 0) xstate'            
             putSt . set isSaved True 
                   $ xstateNew 
             liftIO $ setTitleFromFileName xstateNew  

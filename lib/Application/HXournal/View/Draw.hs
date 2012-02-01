@@ -221,7 +221,7 @@ drawContPageGen render = ContPageDraw func
                 -- clipBBox mbboxnew
                 liftIO $ print mbboxnew 
                 mapM_ onepagerender drawpgs 
-                emphasispagerender (pnum,page)
+                -- emphasispagerender (pnum,page)
                 resetClip 
 
           doubleBufferDraw win geometry xformfunc renderfunc   

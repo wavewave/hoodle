@@ -80,9 +80,9 @@ constructNewHXournalStateFromXournal xoj' xstate = do
         -- forSingle = set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
         --             . set currentPageNum 0 
         
-    let xstate' = set xournalstate startingxojstate xstate
-        cvschange = setPage xstate' 0 
-    modifyCurrCvsInfoM  cvschange xstate' 
+    return $ set xournalstate startingxojstate xstate
+--        cvschange = setPage xstate' 0 
+--    modifyCurrCvsInfoM  cvschange xstate' 
       
       -- rentCanvasInfo (selectBox forSingle (error "construct..."))
  --    return $ setPage xstate' 0 xstate'

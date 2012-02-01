@@ -116,6 +116,11 @@ fmapBox :: (forall a. (ViewMode a) => CanvasInfo a -> CanvasInfo a)
 fmapBox f (CanvasInfoBox cinfo) = CanvasInfoBox (f cinfo)
 
 
+boxAction :: Monad m => (forall a. ViewMode a => CanvasInfo a -> m b) 
+             -> CanvasInfoBox -> m b 
+boxAction f (CanvasInfoBox cinfo) = f cinfo 
+
+
 selectBoxAction :: (Monad m) => 
                    (CanvasInfo SinglePage -> m a) 
                 -> (CanvasInfo ContinuousSinglePage -> m a) -> CanvasInfoBox -> m a 

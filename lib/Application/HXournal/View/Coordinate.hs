@@ -81,8 +81,8 @@ makeCanvasGeometry typ (cpn,page) arr canvas = do
       c2s = xformCanvas2Screen corig
       c2d = xformCanvas2Desk cdim cvsvbbox 
       d2c = xformDesk2Canvas cdim cvsvbbox
-  return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
-                          deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
+  return $ trace (show cvsvbbox) $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
+                                    deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
     
 
 -- |
@@ -99,7 +99,7 @@ makeDesktop2Page :: (PageNum -> Maybe PageOrigin) -> DesktopCoordinate
 makeDesktop2Page pfunc (DeskCoord (x,y)) =
   let (prev,next) = break (y<) . map (snd.unPageOrigin) . catMaybes
                     . takeWhile isJust . map (pfunc.PageNum) $ [0..] 
-  in Just (PageNum (length prev-1),PageCoord (x,y- last prev)) 
+  in trace ( show y ++ ";" ++ show (map  pfunc [PageNum 0, PageNum 1,PageNum 2]) ++ show (length prev, length next)) $ Just (PageNum (length prev-1),PageCoord (x,y- last prev)) 
 
     
 -- |   

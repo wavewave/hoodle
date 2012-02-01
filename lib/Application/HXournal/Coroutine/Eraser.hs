@@ -19,7 +19,7 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Device
-import Application.HXournal.View.Draw
+-- import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Coroutine.EventConnect
 import Application.HXournal.Coroutine.Draw
@@ -62,13 +62,16 @@ eraserProcess :: CanvasId
 eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do 
     r <- await 
     xst <- getSt
-    selectBoxAction (fsingle r xst) (error "eraserProcess") . getCanvasInfo cid $ xst 
+    boxAction (f r xst) . getCanvasInfo cid $ xst 
   where 
-    fsingle r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
+    f :: (ViewMode a) => MyEvent -> HXournalState -> CanvasInfo a -> MainCoroutine ()
+    f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                                  (moveact xstate cvsInfo) upact
     defact = eraserProcess cid pnum geometry connidup connidmove strs (x0,y0)
     upact _ = disconnect connidmove >> disconnect connidup >> invalidateAll
     moveact xstate cvsInfo (x,y) = do 
+      liftIO $ print (x,y)
+      liftIO $ print $ get currentPageNum cvsInfo 
       let line = ((x0,y0),(x,y))
           hittestbbox = mkHitTestBBox line strs   
           (hitteststroke,hitState) = 

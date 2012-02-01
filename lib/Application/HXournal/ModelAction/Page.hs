@@ -126,13 +126,13 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
                                <*> adjustmentGetValue vadj 
           geometry <- makeCanvasGeometry EditMode (PageNum pagenum,page)
                                          oarr canvas 
-          let pcoordxy = 
-                maybe (PageCoord (0,0)) snd $ desktop2Page geometry (DeskCoord (xdesk,ydesk))
+          let ulcoord = maybeError "updateCvsFromXoj" $ 
+                          desktop2Page geometry (DeskCoord (xdesk,ydesk))
           let cdim = canvasDim geometry 
               pg = getPageFromGXournalMap pagenum xoj 
               pdim = PageDimension $ get g_dimension pg
-          let arr = makeContinuousSingleArrangement zmode cdim xoj 
-                      (PageNum pagenum, pcoordxy)
+          let arr = makeContinuousSingleArrangement zmode cdim xoj ulcoord 
+                      --  (PageNum pagenum, pcoordxy)
               
 --               (hadj,vadj) = get adjustments cinfo
               ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  

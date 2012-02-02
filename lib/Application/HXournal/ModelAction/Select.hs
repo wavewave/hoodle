@@ -154,8 +154,15 @@ hitInSelection tpage point =
   in case activelayer of 
        Left _ -> False   
        Right alist -> 
-         let bboxes = map strokebbox_bbox . takeHittedStrokes $ alist
-         in  any (flip hitTestBBoxPoint point) bboxes 
+         let Union bboxall = mconcat
+                             . map ( Union . Middle. strokebbox_bbox ) 
+                             . takeHittedStrokes $ alist
+         
+         in  case bboxall of 
+               Middle bbox -> hitTestBBoxPoint bbox point 
+               _ -> False 
+          
+             -- any (flip hitTestBBoxPoint point) bboxes 
     
 getULBBoxFromSelected :: Page SelectMode -> ULMaybe BBox 
 getULBBoxFromSelected tpage = 

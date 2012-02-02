@@ -38,6 +38,8 @@ import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import qualified Data.IntMap as M
 
+-- | change page of current canvas using a modify function
+
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
                       >> (liftIO $ putStrLn "here")
@@ -73,14 +75,6 @@ changePage modifyfn = updateXState changePageAction
           xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
           when b (commit xstatefinal)
           return xstatefinal 
-{-              
-          when b $ do {commit xstate' }
-          ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') (CanvasInfoBox cvsInfo)
-          
-          xstate'' <- liftIO (updatePageAll xojst' xstate')
-          xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate''
-          return xstatefinal 
--}
 
 
 -- | 
@@ -101,21 +95,6 @@ changePageInXournalState npgnum xojstate =
                             pg = maybeError "changePage" (M.lookup npg pgs)
                         in (False,npg,pg,exoj) 
     in (isChanged,npgnum',npage',either ViewAppendState SelectState exoj')
-{-
-changePageInXournalState npgnum (SelectState txoj) = 
-    let pgs = get g_selectAll txoj 
-        totalnumofpages = M.size pgs
-        lpage = maybeError "changePage" . M.lookup (totalnumofpages-1) $ pgs 
-        (isChanged,npgnum',npage',txoj') 
-          | npgnum  >= totalnumofpages = let npage = newSinglePageFromOld lpage
-                                             npages = M.insert totalnumofpages npage pgs
-                                             ntxoj = set g_selectAll npages txoj 
-                                         in (True,totalnumofpages,npage,ntxoj) 
-          | otherwise = let npg = if npgnum < 0 then 0 else npgnum  
-                            pg = maybeError "changePage" (M.lookup npg pgs)
-                        in (False,npg,pg,txoj)
-    in (isChanged,npgnum',npage',SelectState txoj') -}
-
 
 -- | 
     

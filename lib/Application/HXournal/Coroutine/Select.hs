@@ -88,17 +88,19 @@ selectRectStart cid = commonPenStart rectaction cid
                 newSelectRectangle cid pnum geometry cidmove cidup strs 
                                    (x,y) ((x,y),ctime) tsel
                 surfaceFinish (tempSurface tsel)          
-          let action (Right tpage) | hitInSelection tpage (x,y) = do
-                tsel <- createTempSelectRender pnum geometry
-                          (gcast tpage :: Page EditMode) (getSelectedStrokes tpage)
-                moveSelect cid pnum geometry cidmove cidup 
-                           (x,y) ((x,y),ctime) tsel 
-                surfaceFinish (tempSurface tsel)
+          let 
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
                     maybe (return ()) (\handle -> do { tsel <- createTempSelectRender pnum geometry (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
+              action (Right tpage) | hitInSelection tpage (x,y) = do
+                tsel <- createTempSelectRender pnum geometry
+                          (gcast tpage :: Page EditMode) (getSelectedStrokes tpage)
+                moveSelect cid pnum geometry cidmove cidup 
+                           (x,y) ((x,y),ctime) tsel 
+                surfaceFinish (tempSurface tsel)                  
+                  
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
           action (get currentPage cinfo)      

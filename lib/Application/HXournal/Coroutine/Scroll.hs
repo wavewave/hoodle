@@ -59,7 +59,10 @@ adjustScrollbarWithGeometryCurrent = do
 -- | 
    
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
-hscrollBarMoved cid v = updateXState (return . hscrollmoveAction) >> invalidate cid 
+hscrollBarMoved cid v = 
+    changeCurrentCanvasId cid 
+    >> updateXState (return . hscrollmoveAction) 
+    >> invalidate cid 
   where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo = 
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
@@ -69,7 +72,10 @@ hscrollBarMoved cid v = updateXState (return . hscrollmoveAction) >> invalidate 
 -- | 
         
 vscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
-vscrollBarMoved cid v = updateXState (return . vscrollmoveAction) >> liftIO (putStrLn "I got called") >> invalidate cid
+vscrollBarMoved cid v = 
+    changeCurrentCanvasId cid 
+    >> updateXState (return . vscrollmoveAction) 
+    >> invalidate cid
   where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
@@ -78,7 +84,9 @@ vscrollBarMoved cid v = updateXState (return . vscrollmoveAction) >> liftIO (put
 -- | 
 
 vscrollStart :: CanvasId -> MainCoroutine () 
-vscrollStart cid = vscrollMove cid 
+vscrollStart cid = do 
+  changeCurrentCanvasId cid 
+  vscrollMove cid 
         
 
 -- |                   

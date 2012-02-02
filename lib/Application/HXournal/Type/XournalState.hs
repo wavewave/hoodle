@@ -21,6 +21,7 @@ import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Undo
 import Application.HXournal.Type.Alias 
+import Application.HXournal.Util
 -- import Application.HXournal.NetworkClipboard.Client.Config
 import Data.Xournal.Map
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -113,6 +114,13 @@ resetXournalStateBuffers xojstate1 =
   case xojstate1 of 
     ViewAppendState xoj -> liftIO . liftM ViewAppendState . resetXournalBuffers $ xoj
     _ -> return xojstate1
+
+getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfoBox 
+getCanvasInfo cid xstate = 
+  let cinfoMap = get canvasInfoMap xstate
+      maybeCvs = M.lookup cid cinfoMap
+  in maybeError ("no canvas with id = " ++ show cid) maybeCvs
+
 
 modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
                         -> HXournalState

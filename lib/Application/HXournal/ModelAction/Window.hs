@@ -56,7 +56,7 @@ initCanvasInfo xstate cid = do
     scrolledWindowSetVAdjustment scrwin vadj 
     -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
     
-    canvas `on` sizeRequest $ return (Requisition 480 400)    
+    canvas `on` sizeRequest $ return (Requisition 800 400)    
     canvas `on` buttonPressEvent $ tryEvent $ do 
       p <- getPointer dev
       liftIO (callback (PenDown cid p))

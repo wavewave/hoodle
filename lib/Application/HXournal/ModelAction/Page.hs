@@ -60,14 +60,13 @@ updatePageFromCanvasToXournal cinfo xojstate =
       page = either id gcast epg
   in  setPageMap (M.adjust (const page) cpn . getPageMap $ xojstate) xojstate 
 
+-- |
 
-updatePageAll :: XournalState 
-                 -> HXournalState 
-                 -> IO HXournalState
-updatePageAll xst xstate = do 
+updatePageAll :: XournalState -> HXournalState -> IO HXournalState
+updatePageAll xojst xstate = do 
   let cmap = get canvasInfoMap xstate
-  cmap' <- mapM (updatePage xst . adjustPage xst) cmap
-  return (set canvasInfoMap cmap' xstate)
+  cmap' <- mapM (updatePage xojst . adjustPage xojst) cmap
+  return . set canvasInfoMap cmap' . set xournalstate xojst $ xstate
 
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
 adjustPage xojstate = selectBox fsingle fsingle  
@@ -88,7 +87,7 @@ adjustPage xojstate = selectBox fsingle fsingle
 
 getPageFromGXournalMap :: Int -> GXournal M.IntMap a -> a
 getPageFromGXournalMap pagenum = 
-  maybeError "getPageFromGXournalMap" . M.lookup pagenum . get g_pages
+  maybeError ("getPageFromGXournalMap " ++ show pagenum) . M.lookup pagenum . get g_pages
 
 
 -- | 
@@ -198,11 +197,12 @@ updatePage (SelectState txoj) cinfobox = selectBoxAction fsingle fcont cinfobox
 
 -- | 
 
-setPage :: HXournalState -> PageNum -> CanvasInfoBox -> IO CanvasInfoBox
-setPage xstate pnum = 
+setPage :: HXournalState -> PageNum -> CanvasId -> IO CanvasInfoBox
+setPage xstate pnum cid = do  
+  let cinfobox =  getCanvasInfo cid xstate
   selectBoxAction (liftM CanvasInfoBox . setPageSingle xstate pnum) 
                   (liftM CanvasInfoBox . setPageCont xstate pnum)
-
+                  cinfobox
 
 -- | setPageSingle : in Single Page mode   
 

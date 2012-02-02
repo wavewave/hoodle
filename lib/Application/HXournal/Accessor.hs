@@ -87,13 +87,20 @@ changeCurrentCanvasId cid = do
            (\cinfo -> let nst = set currentCanvas (cid,cinfo) xstate1 in (putSt nst >> return nst))
 
 
-getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfoBox 
-getCanvasInfo cid xstate = 
-  let cinfoMap = get canvasInfoMap xstate
-      maybeCvs = M.lookup cid cinfoMap
-  in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
+-- | 
 
+printViewPortBBox :: CanvasId -> MainCoroutine ()
+printViewPortBBox cid = do 
+  cvsInfo <- return . getCanvasInfo cid =<< getSt 
+  liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
+
+-- | 
+  
+printViewPortBBoxCurr :: MainCoroutine ()
+printViewPortBBoxCurr = do 
+  cvsInfo <- return . get currentCanvasInfo =<< getSt 
+  liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
 
 
 -- | 

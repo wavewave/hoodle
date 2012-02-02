@@ -41,38 +41,46 @@ import qualified Data.IntMap as M
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
                       >> (liftIO $ putStrLn "here")
+                      >> (getSt >>= printViewPortBBox . get currentCanvasId)
+                      >> (printViewPortBBoxCurr)
+                      >> (liftIO $ putStrLn "yeah")
                       >> adjustScrollbarWithGeometryCurrent
                       >> (liftIO $ putStrLn "here2")
                       >> invalidateCurrent
+                      >> (liftIO $ putStrLn "here3")
   where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
                                . get currentCanvasInfo $ xst
         fsingle xstate cvsInfo = do 
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
+              cid = get canvasId cvsInfo
               (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
-              xstate' = set xournalstate xojst' xstate
               Dim w h = get g_dimension selectedpage
-          when b (commit xstate')
-          ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') (CanvasInfoBox cvsInfo)
-          xstatefinal <- liftIO (updatePageAll xojst'
-                                 . modifyCurrentCanvasInfo (const ncvsInfo)
-                                 $ xstate')
+          xstate' <- liftIO $ updatePageAll xojst' xstate 
+          ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
+          xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
+          when b (commit xstatefinal)
           return xstatefinal 
-            
+        
         fcont xstate cvsInfo = do 
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
+              cid = get canvasId cvsInfo
               (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
-              xstate' = set xournalstate xojst' xstate
               Dim w h = get g_dimension selectedpage
+          xstate' <- liftIO $ updatePageAll xojst' xstate 
+          ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
+          xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
+          when b (commit xstatefinal)
+          return xstatefinal 
+{-              
           when b $ do {commit xstate' }
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') (CanvasInfoBox cvsInfo)
           
-          xstatefinal <- liftIO (updatePageAll xojst'
-                                 . modifyCurrentCanvasInfo (const ncvsInfo)
-                                 $ xstate')
+          xstate'' <- liftIO (updatePageAll xojst' xstate')
+          xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate''
           return xstatefinal 
-
+-}
 
 
 -- | 

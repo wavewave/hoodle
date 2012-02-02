@@ -57,9 +57,10 @@ fileNew :: MainCoroutine ()
 fileNew = do  
     xstate <- getSt
     xstate' <- liftIO $ getFileContent Nothing xstate 
-    xstate'' <- liftIO $ modifyCurrCvsInfoM (setPage xstate' 0) xstate'
-    commit xstate'' 
+    ncvsinfo <- liftIO $ setPage xstate' 0 (get currentCanvasId xstate')
+    xstate'' <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
     liftIO $ setTitleFromFileName xstate''
+    commit xstate'' 
     invalidateAll 
 
 
@@ -100,7 +101,8 @@ fileOpen = do
             liftIO $ putStrLn $ show filename 
             xstate <- getSt 
             xstate' <- liftIO $ getFileContent (Just filename) xstate
-            xstateNew <- liftIO $ modifyCurrCvsInfoM (setPage xstate' 0) xstate'            
+            ncvsinfo <- liftIO $ setPage xstate' 0 (get currentCanvasId xstate')
+            xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
             putSt . set isSaved True 
                   $ xstateNew 
             liftIO $ setTitleFromFileName xstateNew  

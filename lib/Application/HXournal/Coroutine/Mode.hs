@@ -23,6 +23,7 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
+import Application.HXournal.Coroutine.Scroll
 --import Data.Foldable
 import Data.Traversable
 import Control.Applicative
@@ -88,10 +89,12 @@ viewModeChange command = case command of
               ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
           geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
+          adjustScrollbarWithGeometryCurrent     
+          {- 
           liftIO $ adjustmentSetUpper hadj w 
           liftIO $ adjustmentSetUpper vadj h 
           liftIO $ adjustmentSetValue hadj nxpos
-          liftIO $ adjustmentSetValue vadj nypos 
+          liftIO $ adjustmentSetValue vadj nypos  -}
           let vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
               ncinfotemp = CanvasInfo (get canvasId cinfo)

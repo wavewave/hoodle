@@ -101,6 +101,19 @@ getCanvasInfo cid xstate =
 unboxGetPage :: CanvasInfoBox -> (Page EditMode) 
 unboxGetPage = either id (gcast :: Page SelectMode -> Page EditMode) . unboxGet currentPage
 
+-- | 
+
+getCanvasGeometryCvsId :: CanvasId -> HXournalState -> IO CanvasGeometry 
+getCanvasGeometryCvsId cid xstate = do 
+  let cinfobox = getCanvasInfo cid xstate
+      page = unboxGetPage cinfobox
+      cpn = PageNum . unboxGet currentPageNum $ cinfobox 
+      canvas = unboxGet drawArea cinfobox
+      xojstate = get xournalstate xstate 
+      fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
+                . get (pageArrangement.viewInfo) 
+  boxAction fsingle cinfobox
+
 -- |
 
 getCanvasGeometry :: HXournalState -> IO CanvasGeometry 

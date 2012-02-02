@@ -166,32 +166,4 @@ penMoveAndUpOnly r pgn geometry defact moveaction upaction =
   
 
 
-{-                 
-        fcont :: CanvasInfo ContinuousSinglePage -> MainCoroutine ()
-        fcont cvsInfo = do 
-          let page = getPage cvsInfo
-              cpn = PageNum . get currentPageNum $ cvsInfo
-              arr@(ContinuousSingleArrangement ddim pfunc vbbox) = get (pageArrangement.viewInfo) cvsInfo              
-              canvas = get drawArea cvsInfo
-          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
-          let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          
-          liftIO $ putStrLn $ "desk coord = " ++ show (device2Desktop geometry pcoord)
-          maybeFlip pagecoord (return ()) 
-            $ \(pgn,PageCoord (x,y)) -> do 
-                when (cpn /= pgn) $ do 
-                  xst <- getSt
-                  let xoj = getXournal xst
-                  let page = maybeError "no such page in commonPenStart" 
-                               $ IM.lookup (unPageNum pgn) (get g_pages xoj)
-                  let ncinfo = CanvasInfoBox $ set currentPageNum (unPageNum pgn)
-                                               . set currentPage (Left page) 
-                                               $ cvsInfo 
-                  putSt (set currentCanvasInfo ncinfo xst)
-                connidup   <- connectPenUp cvsInfo 
-                connidmove <- connectPenMove cvsInfo
-                action cvsInfo pgn geometry (connidup,connidmove) (x,y)  -}             
-
-
-
 

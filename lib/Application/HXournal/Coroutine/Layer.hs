@@ -78,8 +78,6 @@ gotoNextLayer = layerAction nextlayeraction >>= putSt
             Just _ -> liftIO $ putStrLn "Just"
           let Select (O (Just ll)) = get g_layers npage
               SZ (_,(x1,x2)) = ll 
-          liftIO$ print (Seq.length x1, Seq.length x2)
-
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 gotoPrevLayer :: MainCoroutine ()

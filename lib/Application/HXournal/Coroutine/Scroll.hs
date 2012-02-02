@@ -17,6 +17,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.PageArrangement
+import qualified Application.HXournal.ModelAction.Adjustment as A
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
 import Application.HXournal.View.Coordinate
@@ -25,13 +26,39 @@ import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
 import Data.Xournal.BBox
 import Data.Label
+import Control.Monad.Trans
+
 import Prelude hiding ((.), id)
 
-import Control.Monad.Trans
+-- | 
+
+adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
+adjustScrollbarWithGeometryCvsId cid = do
+  xstate <- getSt
+  let cinfobox = getCanvasInfo cid xstate
+      
+  geometry <- liftIO . getCanvasGeometry $ xstate
+  let (hadj,vadj) = unboxGet adjustments . get currentCanvasInfo $ xstate
+  liftIO $ A.adjustScrollbarWithGeometry geometry (hadj,vadj)  
+
+
+-- | 
+
+adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
+adjustScrollbarWithGeometryCurrent = do
+  xstate <- getSt
+  geometry <- liftIO . getCanvasGeometry $ xstate
+  let (hadj,vadj) = unboxGet adjustments . get currentCanvasInfo $ xstate
+  liftIO $ A.adjustScrollbarWithGeometry geometry (hadj,vadj)  
+
+-- | 
 
 vscrollStart :: CanvasId -> MainCoroutine () 
 vscrollStart cid = vscrollMove cid 
         
+
+-- |                   
+
 vscrollMove :: CanvasId -> MainCoroutine () 
 vscrollMove cid = do    
     ev <- await 
@@ -39,11 +66,13 @@ vscrollMove cid = do
     geometry <- liftIO (getCanvasGeometry xst)
     case ev of
       VScrollBarMoved _cid' v -> do 
+        liftIO $ print v
         updateXState $ return.modifyCurrentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
         invalidateWithBuf cid 
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
+        liftIO $ print v
         updateXState $ return.modifyCurrentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 
@@ -58,8 +87,6 @@ vscrollMove cid = do
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
               cpn = PageNum . get currentPageNum $ cvsInfo 
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (0,v))
-                  
-              
           in  modify currentPageNum (const (unPageNum ncpn)) 
               . modify (viewPortBBox.pageArrangement.viewInfo) 
                        (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cvsInfo 

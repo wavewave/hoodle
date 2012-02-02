@@ -70,8 +70,6 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
     defact = eraserProcess cid pnum geometry connidup connidmove strs (x0,y0)
     upact _ = disconnect connidmove >> disconnect connidup >> invalidateAll
     moveact xstate cvsInfo (x,y) = do 
-      liftIO $ print (x,y)
-      liftIO $ print $ get currentPageNum cvsInfo 
       let line = ((x0,y0),(x,y))
           hittestbbox = mkHitTestBBox line strs   
           (hitteststroke,hitState) = 

@@ -195,13 +195,14 @@ drawContPageGen render = ContPageDraw func
               pnum = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo 
               canvas = get drawArea cinfo 
+          print $ get viewPortBBox arr 
           geometry <- makeCanvasGeometry EditMode (pnum,page) arr canvas
           let pgs = get g_pages xoj 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry xoj) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-          print $ Prelude.length drawpgs
+          print (map fst drawpgs)
           win <- widgetGetDrawWindow canvas
           let mbboxnew = getViewableBBox geometry mpnumbbox
               xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -213,15 +214,15 @@ drawContPageGen render = ContPageDraw func
                 rectangle 0 0 w h 
                 fill 
               onepagerender (pn,pg) = do  
+                liftIO $ putStrLn $ " onepagerender page = " ++ show pn 
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 render (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew)
               renderfunc = do
                 xformfunc 
                 -- clipBBox mbboxnew
-                liftIO $ print mbboxnew 
                 mapM_ onepagerender drawpgs 
-                emphasispagerender (pnum,page)
+                -- emphasispagerender (pnum,page)
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc   
 

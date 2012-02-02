@@ -38,8 +38,10 @@ adjustScrollbarWithGeometryCvsId cid = do
   let cinfobox = getCanvasInfo cid xstate
       
   geometry <- liftIO . getCanvasGeometry $ xstate
-  let (hadj,vadj) = unboxGet adjustments . get currentCanvasInfo $ xstate
-  liftIO $ A.adjustScrollbarWithGeometry geometry (hadj,vadj)  
+  let (hadj,vadj) = unboxGet adjustments cinfobox 
+      connidh = unboxGet horizAdjConnId cinfobox 
+      connidv = unboxGet vertAdjConnId cinfobox
+  liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
 
 
 -- | 
@@ -48,8 +50,30 @@ adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = do
   xstate <- getSt
   geometry <- liftIO . getCanvasGeometry $ xstate
-  let (hadj,vadj) = unboxGet adjustments . get currentCanvasInfo $ xstate
-  liftIO $ A.adjustScrollbarWithGeometry geometry (hadj,vadj)  
+  let cinfobox = get currentCanvasInfo xstate
+  let (hadj,vadj) = unboxGet adjustments cinfobox 
+      connidh = unboxGet horizAdjConnId cinfobox 
+      connidv = unboxGet vertAdjConnId cinfobox
+  liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
+
+-- | 
+   
+hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
+hscrollBarMoved cid v = updateXState (return . hscrollmoveAction) >> invalidate cid 
+  where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
+        fsimple cinfo = 
+          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
+          in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
+
+
+-- | 
+        
+vscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
+vscrollBarMoved cid v = updateXState (return . vscrollmoveAction) >> liftIO (putStrLn "I got called") >> invalidate cid
+  where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
+        fsimple cinfo =  
+          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
+          in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
 
 -- | 
 

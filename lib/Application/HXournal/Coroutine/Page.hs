@@ -40,7 +40,9 @@ import qualified Data.IntMap as M
 
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
+                      >> (liftIO $ putStrLn "here")
                       >> adjustScrollbarWithGeometryCurrent
+                      >> (liftIO $ putStrLn "here2")
                       >> invalidateCurrent
   where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
                                . get currentCanvasInfo $ xst
@@ -71,12 +73,6 @@ changePage modifyfn = updateXState changePageAction
                                  $ xstate')
           return xstatefinal 
 
-              -- (hadj,vadj) = get adjustments cvsInfo
-              -- (hadj,vadj) = get adjustments cvsInfo
-          -- liftIO $ do adjustmentSetUpper hadj w 
-          --             adjustmentSetUpper vadj h 
-          --             adjustmentSetValue hadj 0
-          --             adjustmentSetValue vadj 0
 
 
 -- | 

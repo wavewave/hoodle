@@ -68,6 +68,8 @@ data CanvasInfo a =
                                , _currentPage :: Either (Page EditMode) (Page SelectMode)
                                , _horizAdjustment :: Adjustment
                                , _vertAdjustment :: Adjustment 
+                               , _horizAdjConnId :: ConnectId Adjustment
+                               , _vertAdjConnId :: ConnectId Adjustment
                                }
 
 
@@ -94,6 +96,14 @@ horizAdjustment = lens _horizAdjustment (\a f -> f { _horizAdjustment = a })
 
 vertAdjustment :: CanvasInfo a :-> Adjustment 
 vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
+
+horizAdjConnId :: CanvasInfo a :-> ConnectId Adjustment 
+horizAdjConnId = lens _horizAdjConnId (\a f -> f { _horizAdjConnId = a })
+
+vertAdjConnId :: CanvasInfo a :-> ConnectId Adjustment 
+vertAdjConnId = lens _vertAdjConnId (\a f -> f { _vertAdjConnId = a })
+
+
 
 
 -- | 

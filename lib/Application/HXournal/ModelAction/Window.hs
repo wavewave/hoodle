@@ -91,12 +91,12 @@ initCanvasInfo xstate cid = do
       then widgetSetExtensionEvents canvas [ExtensionEventsAll]
       else widgetSetExtensionEvents canvas [ExtensionEventsNone]
 
-    afterValueChanged hadj $ do 
-      v <- adjustmentGetValue hadj 
-      callback (HScrollBarMoved cid v)
-    afterValueChanged vadj $ do 
-      v <- adjustmentGetValue vadj     
-      callback (VScrollBarMoved cid v)
+    hadjconnid <- afterValueChanged hadj $ do 
+                    v <- adjustmentGetValue hadj 
+                    callback (HScrollBarMoved cid v)
+    vadjconnid <- afterValueChanged vadj $ do 
+                    v <- adjustmentGetValue vadj     
+                    callback (VScrollBarMoved cid v)
     Just vscrbar <- scrolledWindowGetVScrollbar scrwin
     vscrbar `on` buttonPressEvent $ do 
       v <- liftIO $ adjustmentGetValue vadj 
@@ -106,7 +106,7 @@ initCanvasInfo xstate cid = do
       v <- liftIO $ adjustmentGetValue vadj 
       liftIO (callback (VScrollBarEnd cid v))
       return False
-    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj 
+    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj hadjconnid vadjconnid  
   
 constructFrame :: WindowConfig -> CanvasInfoMap -> IO (Widget,WindowConfig)
 constructFrame (Node cid) cmap = do 

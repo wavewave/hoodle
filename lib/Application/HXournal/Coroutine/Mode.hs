@@ -59,10 +59,12 @@ modeChange command = case command of
 
 
 viewModeChange :: MyEvent -> MainCoroutine () 
-viewModeChange command = case command of 
-                           ToSinglePage -> updateXState cont2single
-                           ToContSinglePage -> updateXState single2cont 
-                           _ -> return ()
+viewModeChange command = do 
+    case command of 
+      ToSinglePage -> updateXState cont2single
+      ToContSinglePage -> updateXState single2cont 
+      _ -> return ()
+    adjustScrollbarWithGeometryCurrent     
   where cont2single xst =  
           selectBoxAction (noaction xst) (whencont xst) . get currentCanvasInfo $ xst
         single2cont xst = 
@@ -89,12 +91,6 @@ viewModeChange command = case command of
               ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
           geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
-          adjustScrollbarWithGeometryCurrent     
-          {- 
-          liftIO $ adjustmentSetUpper hadj w 
-          liftIO $ adjustmentSetUpper vadj h 
-          liftIO $ adjustmentSetValue hadj nxpos
-          liftIO $ adjustmentSetValue vadj nypos  -}
           let vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
               ncinfotemp = CanvasInfo (get canvasId cinfo)
@@ -105,6 +101,8 @@ viewModeChange command = case command of
                                       (get currentPage cinfo)
                                       hadj 
                                       vadj 
+                                      (get horizAdjConnId cinfo)
+                                      (get vertAdjConnId cinfo)
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
               ncinfo = modify currentPageNum (const (unPageNum ncpn)) ncinfotemp
 

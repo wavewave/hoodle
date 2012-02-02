@@ -108,7 +108,8 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
         fcont cvsInfo = do 
           xojstate <- liftM (get xournalstate) getSt 
           case xojstate of 
-            ViewAppendState xoj -> 
+            ViewAppendState xoj -> do  
+              liftIO $ putStrLn $ "IN INVALIDATEGENERAL " ++ show (get (viewPortBBox.pageArrangement.viewInfo) cvsInfo) 
               liftIO (unContPageDraw drawcont cvsInfo Nothing xoj)
             SelectState txoj -> 
               liftIO (unContPageDraw drawcontsel cvsInfo Nothing txoj)

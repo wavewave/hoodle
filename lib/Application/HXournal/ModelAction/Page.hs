@@ -217,6 +217,7 @@ setPageSingle xstate pnum cinfo = do
       pdim = PageDimension (get g_dimension pg)
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeSingleArrangement zmode pdim cdim (0,0)  
+  putStrLn " in setPageSingle"
   return $ set currentPageNum (unPageNum pnum)
            . set (pageArrangement.viewInfo) arr
            . set currentPage (Left pg)
@@ -235,6 +236,8 @@ setPageCont xstate pnum cinfo = do
   let pg = getPageFromGXournalMap (unPageNum pnum) xoj
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeContinuousSingleArrangement zmode cdim xoj (pnum,PageCoord (0,0))  
+      
+  putStrLn $  "in setPageCont : "  ++ show pnum ++ " : " ++ show (get viewPortBBox arr)    
   return $ set currentPageNum (unPageNum pnum)
            . set (pageArrangement.viewInfo) arr
            . set currentPage (Left pg)

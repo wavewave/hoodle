@@ -21,24 +21,24 @@ import Graphics.UI.Gtk
 -- | adjust values, upper limit and page size according to canvas geometry 
 
 adjustScrollbarWithGeometry :: CanvasGeometry 
-                               -> ((Adjustment,ConnectId Adjustment),(Adjustment,ConnectId Adjustment)) -> IO ()
-adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv)) = do 
+                               -> ((Adjustment,Maybe (ConnectId Adjustment))
+                                  ,(Adjustment,Maybe (ConnectId Adjustment))) 
+                               -> IO ()
+adjustScrollbarWithGeometry geometry ((hadj,mconnidh),(vadj,mconnidv)) = do 
   let DesktopDimension (Dim w h) = desktopDim geometry 
       ViewPortBBox (BBox (x0,y0) (x1,y1)) = canvasViewPort geometry 
       xsize = x1-x0
       ysize = y1-y0 
-  signalBlock connidh
-  signalBlock connidv
+  maybe (return ()) signalBlock mconnidh
+  maybe (return ()) signalBlock mconnidv
   adjustmentSetUpper hadj w 
   adjustmentSetUpper vadj h 
   adjustmentSetValue hadj x0 
   adjustmentSetValue vadj y0
   adjustmentSetPageSize hadj (min xsize w)
   adjustmentSetPageSize vadj (min ysize h)
-  putStrLn "----------------------------------------"
-  print (w,h,x0,y0,(min xsize w),(min ysize h))
-  signalUnblock connidh
-  signalUnblock connidv
+  maybe (return ()) signalUnblock mconnidh
+  maybe (return ()) signalUnblock mconnidv
 -- | 
 
 setAdjustments :: (Adjustment,Adjustment) 

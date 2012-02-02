@@ -63,20 +63,15 @@ startGUI mfname = do
   putStrLn "after st2"
   let ui = get gtkUIManager st2 
   writeIORef sref st2
-  (winCvsArea, wconf) <- constructFrame 
-                         <$> get frameState 
-                         <*> get canvasInfoMap $ st2
+  -- (st3, winCvsArea, wconf) <- constructFrame <*> get frameState $ st2
+  let st3 = st2                          
+  putStrLn "here?"
   
-  setTitleFromFileName st2
+  setTitleFromFileName st3
   vbox <- vBoxNew False 0 
   
-  
-  let st3 = set frameState wconf 
-            . set rootWindow winCvsArea 
-            . set rootContainer (castToBox vbox) $ st2
-  writeIORef sref st3
-  -- st4 <- modifyCurrCvsInfoM (setPage st3 0) st3
-  -- writeIORef sref st4
+  let st4 = set rootContainer (castToBox vbox) st3
+  writeIORef sref st4
   xinputbool <- getXInputConfig cfg 
   agr <- uiManagerGetActionGroups ui >>= \x ->
            case x of 
@@ -85,7 +80,7 @@ startGUI mfname = do
   uxinputa <- actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
                 return (castToToggleAction x) 
   toggleActionSetActive uxinputa xinputbool
-  let canvases = map (getDrawAreaFromBox) . M.elems . get canvasInfoMap $ st3
+  let canvases = map (getDrawAreaFromBox) . M.elems . get canvasInfoMap $ st4
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
@@ -110,12 +105,14 @@ startGUI mfname = do
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
-  boxPackEnd vbox winCvsArea PackGrow 0 
+  boxPackEnd vbox (get rootWindow st4) PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
   window `on` deleteEvent $ do
     liftIO $ bouncecallback tref sref (Menu MenuQuit)
     return True
+  putStrLn "before widget show all " 
   widgetShowAll window
+  putStrLn "after widget show all " 
   
   -- initialized
   bouncecallback tref sref Initialized     

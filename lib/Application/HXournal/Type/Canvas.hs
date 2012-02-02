@@ -68,10 +68,23 @@ data CanvasInfo a =
                                , _currentPage :: Either (Page EditMode) (Page SelectMode)
                                , _horizAdjustment :: Adjustment
                                , _vertAdjustment :: Adjustment 
-                               , _horizAdjConnId :: ConnectId Adjustment
-                               , _vertAdjConnId :: ConnectId Adjustment
+                               , _horizAdjConnId :: Maybe (ConnectId Adjustment)
+                               , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                                }
-
+    
+defaultCvsInfoSinglePage :: CanvasInfo SinglePage
+defaultCvsInfoSinglePage = 
+  CanvasInfo { _canvasId = error "cvsid"
+             , _drawArea = error "DrawingArea"
+             , _scrolledWindow = error "ScrolledWindow"
+             , _viewInfo = defaultViewInfoSinglePage
+             , _currentPageNum = 0 
+             , _currentPage = error "currentPage" 
+             , _horizAdjustment = error "adjustment"
+             , _vertAdjustment = error "vadjust"
+             , _horizAdjConnId = Nothing
+             , _vertAdjConnId =  Nothing
+             }
 
 canvasId :: CanvasInfo a :-> CanvasId 
 canvasId = lens _canvasId (\a f -> f { _canvasId = a })
@@ -97,10 +110,10 @@ horizAdjustment = lens _horizAdjustment (\a f -> f { _horizAdjustment = a })
 vertAdjustment :: CanvasInfo a :-> Adjustment 
 vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
 
-horizAdjConnId :: CanvasInfo a :-> ConnectId Adjustment 
+horizAdjConnId :: CanvasInfo a :-> Maybe (ConnectId Adjustment )
 horizAdjConnId = lens _horizAdjConnId (\a f -> f { _horizAdjConnId = a })
 
-vertAdjConnId :: CanvasInfo a :-> ConnectId Adjustment 
+vertAdjConnId :: CanvasInfo a :-> Maybe (ConnectId Adjustment)
 vertAdjConnId = lens _vertAdjConnId (\a f -> f { _vertAdjConnId = a })
 
 

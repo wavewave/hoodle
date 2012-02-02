@@ -62,7 +62,8 @@ Library
                      poppler == 0.12.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
-                     Diff == 0.1.*
+                     Diff == 0.1.*, 
+                     glib == 0.12.*
 
   else 
     Build-Depends:   base == 4.*, 
@@ -87,7 +88,8 @@ Library
                      configurator == 0.2.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
-                     Diff == 0.1.*
+                     Diff == 0.1.*, 
+                     glib == 0.12.*
 
 
   Exposed-Modules: 

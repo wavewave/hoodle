@@ -122,6 +122,21 @@ getCanvasInfo cid xstate =
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
 
+-- | change current canvas. this is the master function  
+
+updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> HXournalState -> HXournalState
+updateFromCanvasInfoAsCurrentCanvas cinfobox xstate = 
+  let cid = unboxGet canvasId cinfobox 
+      cmap = get canvasInfoMap xstate
+      cmap' = M.insert cid cinfobox cmap 
+      -- implement the following later
+      -- page = gcast (unboxGet currentPage cinfobox) :: Page EditMode 
+  in xstate { _currentCanvas = (cid,cinfobox)
+            , _canvasInfoMap = cmap' }
+
+
+-- | should be deprecated
+
 modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
                         -> HXournalState
                         -> HXournalState

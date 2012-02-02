@@ -20,6 +20,7 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Device
+import Application.HXournal.Util
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import Control.Monad.Trans 
@@ -29,6 +30,8 @@ import Prelude hiding ((.),id)
 import qualified Data.IntMap as M
 import System.FilePath
 
+-- | set frame title according to file name
+
 setTitleFromFileName :: HXournalState -> IO () 
 setTitleFromFileName xstate = do 
   case get currFileName xstate of
@@ -37,13 +40,15 @@ setTitleFromFileName xstate = do
     Just filename -> Gtk.set (get rootOfRootWindow xstate) 
                              [ windowTitle := takeFileName filename] 
 
+-- | 
+
 newCanvasId :: CanvasInfoMap -> CanvasId 
 newCanvasId cmap = 
   let cids = M.keys cmap 
   in  (maximum cids) + 1  
 
 
-initCanvasInfo :: (ViewMode a) => HXournalState -> CanvasId -> IO (CanvasInfo a)
+initCanvasInfo :: ViewMode a => HXournalState -> CanvasId -> IO (CanvasInfo a)
 initCanvasInfo xstate cid = do 
     let callback = get callBack xstate
         dev = get deviceList xstate 
@@ -106,38 +111,172 @@ initCanvasInfo xstate cid = do
       v <- liftIO $ adjustmentGetValue vadj 
       liftIO (callback (VScrollBarEnd cid v))
       return False
-    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj hadjconnid vadjconnid  
+    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj (Just hadjconnid) (Just vadjconnid)
   
-constructFrame :: WindowConfig -> CanvasInfoMap -> IO (Widget,WindowConfig)
-constructFrame (Node cid) cmap = do 
-    case (M.lookup cid cmap) of
-      Nothing -> error $ "no such cid = " ++ show cid ++ " in constructFrame"
-      Just (CanvasInfoBox cinfo) -> return (castToWidget . get scrolledWindow $ cinfo, Node cid)
-constructFrame (HSplit hpane wconf1 wconf2) cmap = do  
-    (win1,wconf1') <- constructFrame wconf1 cmap
-    (win2,wconf2') <- constructFrame wconf2 cmap 
-    hpane' <- case hpane of
-                Nothing -> hPanedNew 
-                Just h -> return h
+
+minimalCanvasInfo :: ViewMode a => HXournalState -> CanvasId -> IO (CanvasInfo a)
+minimalCanvasInfo xstate cid = do 
+    canvas <- drawingAreaNew
+    scrwin <- scrolledWindowNew Nothing Nothing 
+    containerAdd scrwin canvas
+    hadj <- adjustmentNew 0 0 500 100 200 200 
+    vadj <- adjustmentNew 0 0 500 100 200 200 
+    scrolledWindowSetHAdjustment scrwin hadj 
+    scrolledWindowSetVAdjustment scrwin vadj 
+    -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
+    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj Nothing Nothing
+
+
+connectDefaultEventCanvasInfo :: ViewMode a =>  
+                                 HXournalState -> CanvasInfo a -> IO (CanvasInfo a )
+connectDefaultEventCanvasInfo xstate cinfo = do 
+    let callback = get callBack xstate
+        dev = get deviceList xstate 
+        canvas = _drawArea cinfo 
+        cid = _canvasId cinfo 
+        scrwin = _scrolledWindow cinfo
+        hadj = _horizAdjustment cinfo 
+        vadj = _vertAdjustment cinfo 
+    sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
+    
+    bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
+                 p <- getPointer dev
+                 liftIO (callback (PenDown cid p))
+    confevent <- canvas `on` configureEvent $ tryEvent $ do 
+                   (w,h) <- eventSize 
+                   liftIO $ callback 
+                     (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
+    brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
+                 p <- getPointer dev
+                 liftIO (callback (PenUp cid p))
+    exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
+                  liftIO $ callback (UpdateCanvas cid) 
+
+    {-
+    canvas `on` enterNotifyEvent $ tryEvent $ do 
+      win <- liftIO $ widgetGetDrawWindow canvas
+      liftIO $ drawWindowSetCursor win (Just cursorDot)
+      return ()
+    -}  
+    widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
+    -- widgetSetExtensionEvents canvas [ExtensionEventsAll]
+    -- widgetSetExtensionEvents canvas 
+    let ui = get gtkUIManager xstate 
+    agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                      case x of 
+                        [] -> error "No action group? "
+                        y:_ -> return y )
+    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                          return (castToToggleAction x) )
+    b <- liftIO $ toggleActionGetActive uxinputa
+    if b
+      then widgetSetExtensionEvents canvas [ExtensionEventsAll]
+      else widgetSetExtensionEvents canvas [ExtensionEventsNone]
+
+    hadjconnid <- afterValueChanged hadj $ do 
+                    v <- adjustmentGetValue hadj 
+                    callback (HScrollBarMoved cid v)
+    vadjconnid <- afterValueChanged vadj $ do 
+                    v <- adjustmentGetValue vadj     
+                    callback (VScrollBarMoved cid v)
+    Just vscrbar <- scrolledWindowGetVScrollbar scrwin
+    bpevtvscrbar <- vscrbar `on` buttonPressEvent $ do 
+                      v <- liftIO $ adjustmentGetValue vadj 
+                      liftIO (callback (VScrollBarStart cid v))
+                      return False
+    brevtvscrbar <- vscrbar `on` buttonReleaseEvent $ do 
+                      v <- liftIO $ adjustmentGetValue vadj 
+                      liftIO (callback (VScrollBarEnd cid v))
+                      return False
+    return $ cinfo { _horizAdjConnId = Just hadjconnid
+                   , _vertAdjConnId = Just vadjconnid }
+
+
+
+-- | no event connect
+
+reinitCanvasInfoStage1 :: (ViewMode a) => 
+                           HXournalState 
+                           ->  CanvasInfo a -> IO (CanvasInfo a)
+reinitCanvasInfoStage1 xstate oldcinfo = do 
+  let cid = get canvasId oldcinfo 
+  newcinfo <- minimalCanvasInfo xstate cid      
+  return $ newcinfo { _viewInfo = _viewInfo oldcinfo 
+                    , _currentPageNum = _currentPageNum oldcinfo 
+                    , _currentPage = _currentPage oldcinfo } 
+
+    
+-- | no event connect
+
+reinitCanvasInfoStage2 :: (ViewMode a) => 
+                           HXournalState -> CanvasInfo a -> IO (CanvasInfo a)
+reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo
+    
+eventConnect :: HXournalState -> WindowConfig 
+                -> IO (HXournalState,WindowConfig)
+eventConnect xstate (Node cid) = do 
+    putStrLn $ show (Node cid)
+    let cmap = get canvasInfoMap xstate 
+        cinfobox = maybeError "eventConnect" $ M.lookup cid cmap
+    case cinfobox of       
+      CanvasInfoBox cinfo -> do 
+        ncinfo <- reinitCanvasInfoStage2 xstate cinfo 
+        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
+        return (xstate', Node cid)
+eventConnect xstate (HSplit wconf1 wconf2) = do  
+    (xstate',wconf1') <- eventConnect xstate wconf1 
+    (xstate'',wconf2') <- eventConnect xstate' wconf2 
+    return (xstate'',HSplit wconf1' wconf2')
+eventConnect xstate (VSplit wconf1 wconf2) = do  
+    (xstate',wconf1') <- eventConnect xstate wconf1 
+    (xstate'',wconf2') <- eventConnect xstate' wconf2 
+    return (xstate'',VSplit wconf1' wconf2')
+    
+  
+setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
+setCanvasId cid (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
+    
+constructFrame :: HXournalState -> WindowConfig 
+                  -> IO (HXournalState,Widget,WindowConfig)
+constructFrame = constructFrame' (CanvasInfoBox defaultCvsInfoSinglePage)
+
+
+constructFrame' :: CanvasInfoBox -> 
+                   HXournalState -> WindowConfig 
+                   -> IO (HXournalState,Widget,WindowConfig)
+constructFrame' template xstate (Node cid) = do 
+    putStrLn $ "called with " ++ show cid
+    let cmap = get canvasInfoMap xstate 
+        cinfobox = 
+          maybe (setCanvasId cid template) id $ M.lookup cid cmap
+    case cinfobox of       
+      CanvasInfoBox cinfo -> do 
+        ncinfo <- reinitCanvasInfoStage1 xstate cinfo 
+        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
+        print (get currentCanvasId xstate')
+        return (xstate', castToWidget . get scrolledWindow $ ncinfo, Node cid)
+constructFrame' template xstate (HSplit wconf1 wconf2) = do  
+    (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     
+    (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
+    hpane' <- hPanedNew
     panedPack1 hpane' win1 True False
     panedPack2 hpane' win2 True False
     widgetShowAll hpane' 
-    return (castToWidget hpane', HSplit (Just hpane') wconf1' wconf2')
-constructFrame (VSplit vpane wconf1 wconf2) cmap = do  
-    (win1,wconf1') <- constructFrame wconf1 cmap
-    (win2,wconf2') <- constructFrame wconf2 cmap 
-    vpane' <- case vpane of 
-                Nothing -> vPanedNew 
-                Just v -> return v
+    return (xstate'',castToWidget hpane', HSplit wconf1' wconf2')
+constructFrame' template xstate (VSplit wconf1 wconf2) = do  
+    (xstate',win1,wconf1') <- constructFrame' template xstate wconf1 
+    (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
+    vpane' <- vPanedNew 
     panedPack1 vpane' win1 True False
     panedPack2 vpane' win2 True False
     widgetShowAll vpane' 
-    return (castToWidget vpane', VSplit (Just vpane') wconf1' wconf2')
+    return (xstate'',castToWidget vpane', VSplit wconf1' wconf2')
   
-  
+{-  
 removePanes :: WindowConfig -> IO WindowConfig
 removePanes n@(Node _) = return n
-removePanes (HSplit hpane wconf1 wconf2) = do 
+removePanes (HSplit wconf1 wconf2) = do 
+    putStrLn "here@@@@"
     case hpane of 
       Just h -> do 
         panedGetChild1 h >>= \x -> case x of 
@@ -150,8 +289,9 @@ removePanes (HSplit hpane wconf1 wconf2) = do
       Nothing -> return ()
     wconf1' <- removePanes wconf1   
     wconf2' <- removePanes wconf2 
-    return (HSplit Nothing wconf1' wconf2')
-removePanes (VSplit vpane wconf1 wconf2) = do 
+    putStrLn "there@@@@"
+    return (HSplit wconf1' wconf2')
+removePanes (VSplit wconf1 wconf2) = do 
     case vpane of 
       Just v -> do 
         panedGetChild1 v >>= \x -> case x of 
@@ -164,5 +304,5 @@ removePanes (VSplit vpane wconf1 wconf2) = do
       Nothing -> return ()
     wconf1' <- removePanes wconf1 
     wconf2' <- removePanes wconf2 
-    return (VSplit Nothing wconf1' wconf2')  
-   
+    return (VSplit wconf1' wconf2')  
+ -}  

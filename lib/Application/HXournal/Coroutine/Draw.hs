@@ -109,35 +109,11 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
           xojstate <- liftM (get xournalstate) getSt 
           case xojstate of 
             ViewAppendState xoj -> do  
-              liftIO $ putStrLn $ "IN INVALIDATEGENERAL " ++ show (get (viewPortBBox.pageArrangement.viewInfo) cvsInfo) 
               liftIO (unContPageDraw drawcont cvsInfo Nothing xoj)
             SelectState txoj -> 
               liftIO (unContPageDraw drawcontsel cvsInfo Nothing txoj)
           
-          
-{-          let cpn = PageNum . get currentPageNum $ cvsInfo 
-              pg = getPage cvsInfo
-              xoj = getXournal xstate
-              pgs = M.toList $ get g_pages xoj
-              arr = get (pageArrangement.viewInfo) cvsInfo
-              canvas = get drawArea cvsInfo 
-              pagemap = get g_pages xoj
-          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn, pg) arr canvas  
-          let redrawpages = map unPageNum $ getPagesInViewPortRange geometry xoj 
-              canvas = get drawArea cvsInfo
-              vinfo = get viewInfo cvsInfo
-              
-              
-          mapM_ (\(n,pg) -> liftIO (drawf canvas (PageNum n,pg) vinfo mbbox)) 
-            . filter (\(n,pg) -> n `elem` redrawpages ) $ pgs    -}
-          
-{-          case get currentPage cvsInfo of 
-            Left page ->  liftIO (drawf <$> get drawArea <*> pure (cpn,page) <*> get viewInfo <*> pure mbbox 
-                                  $ cvsInfo )
-            Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure (cpn,tpage) <*> get viewInfo 
-                                            <*> pure mbbox $ cvsInfo ) -}
 
-{- (error "invalidateGeneral") -}
             
 -- | 
 
@@ -161,9 +137,8 @@ invalidateOther = do
 
 invalidate :: CanvasId -> MainCoroutine () 
 invalidate cid = do 
-  liftIO . putStrLn . ("Page = " ++) . show. unboxGet currentPageNum . get currentCanvasInfo =<< getSt
   invalidateGeneral cid Nothing 
-                   drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly 
+    drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly 
 
 
 -- | Invalidate Current canvas

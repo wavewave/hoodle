@@ -60,6 +60,9 @@ import Data.Xournal.Generic
 guiProcess :: MainCoroutine ()
 guiProcess = do 
   initialize
+  liftIO $ putStrLn "hi!"
+  
+  liftIO $ putStrLn "welcome to hxournal"
   changePage (const 0)
   xstate <- getSt
   let cinfoMap  = get canvasInfoMap xstate
@@ -92,16 +95,24 @@ initCoroutine devlst window = do
   putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
 
-  (initcvstemp :: CanvasInfo SinglePage) <- initCanvasInfo st1 1 
-  let initcvs = set viewInfo defaultViewInfoSinglePage initcvstemp
+  -- (initcvstemp :: CanvasInfo SinglePage) <- initCanvasInfo st1 1 
+  let initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
   let initcvsbox = CanvasInfoBox initcvs
-      initcmap = M.insert (get canvasId initcvs) initcvsbox M.empty
-  let startingXstate = set currentCanvas (get canvasId initcvs, initcvsbox)
-                       . set canvasInfoMap initcmap 
-                       . set frameState (Node 1)
-                       $ st1
+      --  initcmap = M.insert (get canvasId initcvs) initcvsbox M.empty
+  let -- startingXstate = set canvasInfoMap initcmap 
+      --                  . set frameState (Node 1)
+      --                 $ st1
+      st2 = set frameState (Node 1) 
+            . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
+            . set canvasInfoMap (M.empty)
+            $ st1 
+  (st3,cvs,wconf) <- constructFrame st2 (get frameState st2)
+  (st4,wconf') <- eventConnect st3 (get frameState st3)
+  let startingXstate = set frameState wconf' . set rootWindow cvs $ st4
+                       
   writeIORef sref startingXstate   
   return (tref,sref)
+
 
 initialize :: MainCoroutine ()
 initialize = do ev <- await 
@@ -110,6 +121,7 @@ initialize = do ev <- await
                   Initialized -> return () 
                   _ -> initialize
 
+-- | 
 
 dispatchMode :: MainCoroutine () 
 dispatchMode = getSt >>= return . xojstateEither . get xournalstate
@@ -119,6 +131,8 @@ dispatchMode = getSt >>= return . xojstateEither . get xournalstate
     case xojstate of 
     ViewAppendState _ -> viewAppendMode
     SelectState _ -> selectMode -}
+
+-- | 
 
 viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 

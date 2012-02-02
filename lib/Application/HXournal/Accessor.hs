@@ -79,6 +79,9 @@ getAllStrokeBBoxInCurrentLayer = do
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . get canvasInfoMap 
 
+
+-- | 
+
 changeCurrentCanvasId :: CanvasId -> MainCoroutine HXournalState 
 changeCurrentCanvasId cid = do 
     xstate1 <- getSt

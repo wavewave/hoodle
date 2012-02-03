@@ -134,6 +134,10 @@ updateFromCanvasInfoAsCurrentCanvas cinfobox xstate =
   in xstate { _currentCanvas = (cid,cinfobox)
             , _canvasInfoMap = cmap' }
 
+-- | 
+
+setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
+setCanvasId cid (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
 
 -- | should be deprecated
 
@@ -143,7 +147,8 @@ modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox)
 modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
   where cid = get currentCanvasId st 
 
-
+-- | should be deprecated 
+        
 modifyCurrCvsInfoM :: (Monad m) => (CanvasInfoBox -> m CanvasInfoBox) 
                       -> HXournalState
                       -> m HXournalState
@@ -157,6 +162,8 @@ modifyCurrCvsInfoM f st = do
             . set canvasInfoMap ncinfomap 
             $ st 
   return nst
+
+-- | 
 
 xojstateEither :: XournalState -> Either (Xournal EditMode) (Xournal SelectMode) 
 xojstateEither xojstate = case xojstate of 

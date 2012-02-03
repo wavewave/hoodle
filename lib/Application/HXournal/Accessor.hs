@@ -25,6 +25,7 @@ import qualified Data.IntMap as M
 import Data.Label
 import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk (get,set)
 import Data.Xournal.BBox
 import Data.Xournal.Generic
 import Application.HXournal.Util
@@ -87,10 +88,29 @@ changeCurrentCanvasId cid = do
     xstate1 <- getSt
     (>>=) (return . M.lookup cid . get canvasInfoMap $ xstate1) $
      maybe (return xstate1) 
-           (\cinfo -> let nst = set currentCanvas (cid,cinfo) xstate1 in (putSt nst >> return nst))
+           (\cinfo -> do 
+               let nst = set currentCanvas (cid,cinfo) xstate1 
+                   ui = get gtkUIManager nst 
+               liftIO $ reflectUI ui cinfo
+               putSt nst >> return nst
+           )
 
+-- | reflect UI for current canvas info 
 
-
+reflectUI :: UIManager -> CanvasInfoBox -> IO ()
+reflectUI ui cinfobox = do 
+    putStrLn $ "canvas id = " ++ show (unboxGet canvasId cinfobox)
+    agr <- uiManagerGetActionGroups ui
+    Just ra1 <- actionGroupGetAction (head agr) "ONEPAGEA"
+    selectBoxAction (fsingle ra1) (fcont ra1) cinfobox 
+  where fsingle ra1 cinfo = do 
+          putStrLn "fsingle"
+          Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1 ] 
+        fcont ra1 cinfo = do 
+          putStrLn "fcont"
+          Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
+          
+  
 -- | 
 
 printViewPortBBox :: CanvasId -> MainCoroutine ()

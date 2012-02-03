@@ -566,6 +566,7 @@ assignViewMode tref sref a = do
       _ -> return ()
 
 
+
 assignPenMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
                  -> IORef HXournalState -> RadioAction -> IO ()
 assignPenMode tref sref a = do 

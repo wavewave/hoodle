@@ -47,72 +47,14 @@ newCanvasId cmap =
   let cids = M.keys cmap 
   in  (maximum cids) + 1  
 
+-- | initialize CanvasInfo with creating windows and connect events
 
 initCanvasInfo :: ViewMode a => HXournalState -> CanvasId -> IO (CanvasInfo a)
-initCanvasInfo xstate cid = do 
-    let callback = get callBack xstate
-        dev = get deviceList xstate 
-    canvas <- drawingAreaNew
-    scrwin <- scrolledWindowNew Nothing Nothing 
-    containerAdd scrwin canvas
-    hadj <- adjustmentNew 0 0 500 100 200 200 
-    vadj <- adjustmentNew 0 0 500 100 200 200 
-    scrolledWindowSetHAdjustment scrwin hadj 
-    scrolledWindowSetVAdjustment scrwin vadj 
-    -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
-    
-    canvas `on` sizeRequest $ return (Requisition 800 400)    
-    canvas `on` buttonPressEvent $ tryEvent $ do 
-      p <- getPointer dev
-      liftIO (callback (PenDown cid p))
-    canvas `on` configureEvent $ tryEvent $ do 
-      (w,h) <- eventSize 
-      liftIO $ callback 
-                 (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
-    canvas `on` buttonReleaseEvent $ tryEvent $ do 
-      p <- getPointer dev
-      liftIO (callback (PenUp cid p))
-    canvas `on` exposeEvent $ tryEvent $ do 
-      liftIO $ callback (UpdateCanvas cid) 
-
-    {-
-    canvas `on` enterNotifyEvent $ tryEvent $ do 
-      win <- liftIO $ widgetGetDrawWindow canvas
-      liftIO $ drawWindowSetCursor win (Just cursorDot)
-      return ()
-    -}  
-    widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
-    -- widgetSetExtensionEvents canvas [ExtensionEventsAll]
-    -- widgetSetExtensionEvents canvas 
-    let ui = get gtkUIManager xstate 
-    agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
-                      case x of 
-                        [] -> error "No action group? "
-                        y:_ -> return y )
-    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
-                          return (castToToggleAction x) )
-    b <- liftIO $ toggleActionGetActive uxinputa
-    if b
-      then widgetSetExtensionEvents canvas [ExtensionEventsAll]
-      else widgetSetExtensionEvents canvas [ExtensionEventsNone]
-
-    hadjconnid <- afterValueChanged hadj $ do 
-                    v <- adjustmentGetValue hadj 
-                    callback (HScrollBarMoved cid v)
-    vadjconnid <- afterValueChanged vadj $ do 
-                    v <- adjustmentGetValue vadj     
-                    callback (VScrollBarMoved cid v)
-    Just vscrbar <- scrolledWindowGetVScrollbar scrwin
-    vscrbar `on` buttonPressEvent $ do 
-      v <- liftIO $ adjustmentGetValue vadj 
-      liftIO (callback (VScrollBarStart cid v))
-      return False
-    vscrbar `on` buttonReleaseEvent $ do 
-      v <- liftIO $ adjustmentGetValue vadj 
-      liftIO (callback (VScrollBarEnd cid v))
-      return False
-    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj (Just hadjconnid) (Just vadjconnid)
+initCanvasInfo xstate cid = 
+  minimalCanvasInfo xstate cid >>= connectDefaultEventCanvasInfo xstate
   
+
+-- | only creating windows 
 
 minimalCanvasInfo :: ViewMode a => HXournalState -> CanvasId -> IO (CanvasInfo a)
 minimalCanvasInfo xstate cid = do 
@@ -126,6 +68,8 @@ minimalCanvasInfo xstate cid = do
     -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
     return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj Nothing Nothing
 
+
+-- | only connect events 
 
 connectDefaultEventCanvasInfo :: ViewMode a =>  
                                  HXournalState -> CanvasInfo a -> IO (CanvasInfo a )
@@ -192,8 +136,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                    , _vertAdjConnId = Just vadjconnid }
 
 
-
--- | no event connect
+-- | recreate windows from old canvas info but no event connect
 
 reinitCanvasInfoStage1 :: (ViewMode a) => 
                            HXournalState 
@@ -206,16 +149,17 @@ reinitCanvasInfoStage1 xstate oldcinfo = do
                     , _currentPage = _currentPage oldcinfo } 
 
     
--- | no event connect
+-- | event connect
 
 reinitCanvasInfoStage2 :: (ViewMode a) => 
                            HXournalState -> CanvasInfo a -> IO (CanvasInfo a)
 reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo
     
+-- | event connecting for all windows                          
+                         
 eventConnect :: HXournalState -> WindowConfig 
                 -> IO (HXournalState,WindowConfig)
 eventConnect xstate (Node cid) = do 
-    putStrLn $ show (Node cid)
     let cmap = get canvasInfoMap xstate 
         cinfobox = maybeError "eventConnect" $ M.lookup cid cmap
     case cinfobox of       
@@ -233,19 +177,19 @@ eventConnect xstate (VSplit wconf1 wconf2) = do
     return (xstate'',VSplit wconf1' wconf2')
     
   
-setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
-setCanvasId cid (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
-    
+-- | default construct frame     
+
 constructFrame :: HXournalState -> WindowConfig 
                   -> IO (HXournalState,Widget,WindowConfig)
 constructFrame = constructFrame' (CanvasInfoBox defaultCvsInfoSinglePage)
 
 
+-- | construct frames with template
+
 constructFrame' :: CanvasInfoBox -> 
                    HXournalState -> WindowConfig 
                    -> IO (HXournalState,Widget,WindowConfig)
 constructFrame' template xstate (Node cid) = do 
-    putStrLn $ "called with " ++ show cid
     let cmap = get canvasInfoMap xstate 
         cinfobox = 
           maybe (setCanvasId cid template) id $ M.lookup cid cmap
@@ -253,7 +197,6 @@ constructFrame' template xstate (Node cid) = do
       CanvasInfoBox cinfo -> do 
         ncinfo <- reinitCanvasInfoStage1 xstate cinfo 
         let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
-        print (get currentCanvasId xstate')
         return (xstate', castToWidget . get scrolledWindow $ ncinfo, Node cid)
 constructFrame' template xstate (HSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     
@@ -306,3 +249,68 @@ removePanes (VSplit wconf1 wconf2) = do
     wconf2' <- removePanes wconf2 
     return (VSplit wconf1' wconf2')  
  -}  
+
+
+{-    let callback = get callBack xstate
+        dev = get deviceList xstate 
+    canvas <- drawingAreaNew
+    scrwin <- scrolledWindowNew Nothing Nothing 
+    containerAdd scrwin canvas
+    hadj <- adjustmentNew 0 0 500 100 200 200 
+    vadj <- adjustmentNew 0 0 500 100 200 200 
+    scrolledWindowSetHAdjustment scrwin hadj 
+    scrolledWindowSetVAdjustment scrwin vadj 
+    -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
+    
+    canvas `on` sizeRequest $ return (Requisition 800 400)    
+    canvas `on` buttonPressEvent $ tryEvent $ do 
+      p <- getPointer dev
+      liftIO (callback (PenDown cid p))
+    canvas `on` configureEvent $ tryEvent $ do 
+      (w,h) <- eventSize 
+      liftIO $ callback 
+                 (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
+    canvas `on` buttonReleaseEvent $ tryEvent $ do 
+      p <- getPointer dev
+      liftIO (callback (PenUp cid p))
+    canvas `on` exposeEvent $ tryEvent $ do 
+      liftIO $ callback (UpdateCanvas cid) 
+
+    {-
+    canvas `on` enterNotifyEvent $ tryEvent $ do 
+      win <- liftIO $ widgetGetDrawWindow canvas
+      liftIO $ drawWindowSetCursor win (Just cursorDot)
+      return ()
+    -}  
+    widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
+    -- widgetSetExtensionEvents canvas [ExtensionEventsAll]
+    -- widgetSetExtensionEvents canvas 
+    let ui = get gtkUIManager xstate 
+    agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                      case x of 
+                        [] -> error "No action group? "
+                        y:_ -> return y )
+    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                          return (castToToggleAction x) )
+    b <- liftIO $ toggleActionGetActive uxinputa
+    if b
+      then widgetSetExtensionEvents canvas [ExtensionEventsAll]
+      else widgetSetExtensionEvents canvas [ExtensionEventsNone]
+
+    hadjconnid <- afterValueChanged hadj $ do 
+                    v <- adjustmentGetValue hadj 
+                    callback (HScrollBarMoved cid v)
+    vadjconnid <- afterValueChanged vadj $ do 
+                    v <- adjustmentGetValue vadj     
+                    callback (VScrollBarMoved cid v)
+    Just vscrbar <- scrolledWindowGetVScrollbar scrwin
+    vscrbar `on` buttonPressEvent $ do 
+      v <- liftIO $ adjustmentGetValue vadj 
+      liftIO (callback (VScrollBarStart cid v))
+      return False
+    vscrbar `on` buttonReleaseEvent $ do 
+      v <- liftIO $ adjustmentGetValue vadj 
+      liftIO (callback (VScrollBarEnd cid v))
+      return False
+    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj (Just hadjconnid) (Just vadjconnid)
+-}  

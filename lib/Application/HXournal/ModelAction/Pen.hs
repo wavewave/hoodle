@@ -64,8 +64,6 @@ addPDraw pinfo xoj (PageNum pgnum) pdraw = do
 
   let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
-  
-  printLayerStructureInPage newpagebbox  
   return (newxojbbox,bbox)
 
 

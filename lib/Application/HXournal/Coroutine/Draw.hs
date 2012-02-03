@@ -71,9 +71,9 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
           xojstate <- liftM (get xournalstate) getSt 
           case xojstate of 
             ViewAppendState xoj -> do  
-              liftIO (unContPageDraw drawcont cvsInfo Nothing xoj)
+              liftIO (unContPageDraw drawcont cvsInfo mbbox xoj)
             SelectState txoj -> 
-              liftIO (unContPageDraw drawcontsel cvsInfo Nothing txoj)
+              liftIO (unContPageDraw drawcontsel cvsInfo mbbox txoj)
           
         
 

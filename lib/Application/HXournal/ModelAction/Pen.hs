@@ -35,8 +35,12 @@ import Data.Xournal.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
 import Application.HXournal.View.Coordinate
 
-addPDraw :: PenInfo -> TXournalBBoxMapPDFBuf -> PageNum -> Seq (Double,Double) 
-            -> IO (TXournalBBoxMapPDFBuf,BBox)
+addPDraw :: PenInfo 
+            -> TXournalBBoxMapPDFBuf 
+            -> PageNum 
+            -> Seq (Double,Double) 
+            -> IO (TXournalBBoxMapPDFBuf,BBox) 
+                       -- ^ new xournal and bbox in page coordinate
 addPDraw pinfo xoj (PageNum pgnum) pdraw = do 
   let ptype = get penType pinfo
       pcolor = get (penColor.currentTool) pinfo

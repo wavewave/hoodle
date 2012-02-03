@@ -55,32 +55,11 @@ newtype SinglePageDraw a =
 
 newtype ContPageDraw a = 
   ContPageDraw 
-  { unContPageDraw :: CanvasInfo ContinuousSinglePage 
-                      -> Maybe (PageNum, Maybe BBox) -> Xournal a -> IO () }
+  { unContPageDraw :: CanvasInfo ContinuousSinglePage -> Maybe BBox 
+                      -> Xournal a -> IO () }
                     
 type instance DrawingFunction SinglePage = SinglePageDraw
 type instance DrawingFunction ContinuousSinglePage = ContPageDraw
-
-{-
-type instance PageDrawingFunction SinglePage SelectMode = 
-  DrawingArea -> (PageNum, Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
-
-
-type instance PageDrawingFunction ContinuousSinglePage EditMode = 
-  DrawingArea -> Xournal EditMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
-  
-type instance PageDrawingFunction ContinuousSinglePage SelectMode = 
-  DrawingArea -> Xournal SelectMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
-
--}
-
-{- type PageDrawingFunction v a = 
-       DrawingArea -> (PageNum,Page a) -> ViewInfo v -> Maybe BBox -> IO () -}
-
-{-                           
-type PageDrawingFunctionForSelection 
-      = DrawingArea -> (PageNum,Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
--}
 
 -- | 
 
@@ -101,16 +80,18 @@ getBBoxInPageCoord geometry pnum bbox@(BBox (x1,y1) (x2,y2)) =
 -- | 
 
 getViewableBBox :: CanvasGeometry 
-                   -> Maybe (PageNum, Maybe BBox) -- ^ in page coordinate
-                   -> Maybe BBox            -- ^ in desktop coordinate
-getViewableBBox geometry (Just (pnum,mbbox)) = 
+                   -- -> Maybe (PageNum, Maybe BBox) -- ^ in page coordinate
+                   -> Maybe BBox   -- ^ in desktop coordinate 
+                   -> Maybe BBox   -- ^ in desktop coordinate
+getViewableBBox geometry mbbox = -- (Just (pnum,mbbox)) = 
   let ViewPortBBox vportbbox = getCanvasViewPort geometry  
   in toMaybe $ (fromMaybe mbbox :: IntersectBBox) 
                `mappend` 
                (Intersect (Middle vportbbox))
-getViewableBBox geometry Nothing = 
+               
+{- getViewableBBox geometry Nothing = 
   let ViewPortBBox vportbbox = getCanvasViewPort geometry 
-  in (Just vportbbox)
+  in (Just vportbbox) -}
 
 
 -- | common routine for double buffering 
@@ -171,7 +152,7 @@ drawFuncGen typ render = SinglePageDraw func
           let arr = get pageArrangement vinfo
           geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry (Just (pnum,mbbox))
+          let mbboxnew = getViewableBBox geometry mbbox -- (Just (pnum,mbbox))
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
@@ -190,7 +171,7 @@ drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> r
 drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                    -> DrawingFunction ContinuousSinglePage EditMode
 drawContPageGen render = ContPageDraw func 
-  where func cinfo mpnumbbox xoj = do 
+  where func cinfo mbbox {- mpnumbbox -} xoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo 
@@ -202,7 +183,7 @@ drawContPageGen render = ContPageDraw func
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry mpnumbbox
+          let mbboxnew = getViewableBBox geometry mbbox -- mpnumbbox
               xformfunc = cairoXform4PageCoordinate geometry pnum
               emphasispagerender (pn,pg) = do 
                 identityMatrix 
@@ -228,7 +209,7 @@ drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ())
                       -> ((PageNum, Page SelectMode) -> Maybe BBox -> Render ())
                       -> DrawingFunction ContinuousSinglePage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
-  where func cinfo mpnumbbox txoj = do 
+  where func cinfo mbbox txoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo 
@@ -242,7 +223,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry mpnumbbox
+          let mbboxnew = getViewableBBox geometry mbbox --  mpnumbbox
               xformfunc = cairoXform4PageCoordinate geometry pnum
               emphasispagerender (pn,pg) = do 
                 identityMatrix 
@@ -832,3 +813,24 @@ doubleBuffering win geometry xform rndr = do
  
 
 -}
+{-
+type instance PageDrawingFunction SinglePage SelectMode = 
+  DrawingArea -> (PageNum, Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+
+
+type instance PageDrawingFunction ContinuousSinglePage EditMode = 
+  DrawingArea -> Xournal EditMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
+  
+type instance PageDrawingFunction ContinuousSinglePage SelectMode = 
+  DrawingArea -> Xournal SelectMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
+
+-}
+
+{- type PageDrawingFunction v a = 
+       DrawingArea -> (PageNum,Page a) -> ViewInfo v -> Maybe BBox -> IO () -}
+
+{-                           
+type PageDrawingFunctionForSelection 
+      = DrawingArea -> (PageNum,Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
+-}
+

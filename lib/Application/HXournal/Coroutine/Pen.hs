@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, GADTs, ScopedTypeVariables #-}
+{-# LANGUAGE Rank2Types, GADTs, ScopedTypeVariables, TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -37,6 +37,8 @@ import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Xournal.Predefined
 import Data.Xournal.Generic
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.BBox
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
@@ -98,13 +100,16 @@ penStart cid = commonPenStart penAction cid
           let currxoj = unView . get xournalstate $ xstate        
               pinfo = get penInfo xstate
           pdraw <-penProcess cid pnum geometry cidmove cidup (empty |> (x,y)) (x,y) 
-          (newxoj,_bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
-          
-          
+          (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
           commit . set xournalstate (ViewAppendState newxoj) 
                  =<< (liftIO (updatePageAll (ViewAppendState newxoj) xstate))
             
-          invalidateAll 
+          let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
+              nbbox = xformBBox f bbox 
+          invalidateAll
+          -- invalidateAllInBBox (Just (inflate bbox 2.0))
+
+
 
 -- | main pen coordinate adding process
 

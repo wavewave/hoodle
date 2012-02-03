@@ -45,44 +45,6 @@ data DrawingFunctionSet =
 
 -- | 
 
-{-
-invalidateGen :: CanvasInfoBox -> Maybe BBox -> DrawingFunctionSet -> MainCoroutine () 
-invalidateGen cid mbbox fset = do 
-    xst <- getSt 
-    selectBoxAction fsingle fconterror "invalidateGen") . getCanvasInfo cid $ xst
-    {-  (fcont xst) -}
-  where fsingle :: CanvasInfo SinglePage -> MainCoroutine () 
-        fsingle cvsInfo = do 
-          let cpn = PageNum . get currentPageNum $ cvsInfo 
-          case get currentPage cvsInfo of 
-            Left page ->  liftIO (drawf <$> get drawArea <*> pure (cpn,page) 
-                                        <*> get viewInfo <*> pure mbbox 
-                                  $ cvsInfo )
-            Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure (cpn,tpage) <*> get viewInfo 
-                                            <*> pure mbbox $ cvsInfo )
-{-
-        fcont :: HXournalState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
-        fcont xstate cvsInfo = do 
-          let cpn = PageNum . get currentPageNum $ cvsInfo 
-              pg = getPage cvsInfo
-              xoj = getXournal xstate
-              pgs = M.toList $ get g_pages xoj
-              arr = get (pageArrangement.viewInfo) cvsInfo
-              canvas = get drawArea cvsInfo 
-              pagemap = get g_pages xoj
-          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn, pg) arr canvas  
-          let redrawpages = map unPageNum $ getPagesInViewPortRange geometry xoj 
-              canvas = get drawArea cvsInfo
-              vinfo = get viewInfo cvsInfo
-              
-              
-          mapM_ (\(n,pg) -> liftIO (drawf canvas (PageNum n,pg) vinfo mbbox)) 
-            . filter (\(n,pg) -> n `elem` redrawpages ) $ pgs    -}
--}        
-
-
--- | deprecated
-
 invalidateGeneral :: CanvasId -> Maybe BBox 
                   -> DrawingFunction SinglePage EditMode
                   -> DrawingFunction SinglePage SelectMode
@@ -97,13 +59,13 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
           let cpn = PageNum . get currentPageNum $ cvsInfo 
           case get currentPage cvsInfo of 
             Left page -> do  
-              liftIO (unSinglePageDraw drawf <$> get drawArea 
-                                  <*> pure (cpn,page) <*> get viewInfo <*> pure mbbox 
-                                  $ cvsInfo )
+              liftIO (unSinglePageDraw drawf 
+                        <$> get drawArea <*> pure (cpn,page) 
+                        <*> get viewInfo <*> pure mbbox $ cvsInfo )
             Right tpage -> do 
-              liftIO (unSinglePageDraw drawfsel <$> get drawArea 
-                                   <*> pure (cpn,tpage) <*> get viewInfo 
-                                   <*> pure mbbox $ cvsInfo )
+              liftIO (unSinglePageDraw drawfsel 
+                        <$> get drawArea <*> pure (cpn,tpage) 
+                        <*> get viewInfo <*> pure mbbox $ cvsInfo )
         fcont :: CanvasInfo ContinuousSinglePage -> MainCoroutine () 
         fcont cvsInfo = do 
           xojstate <- liftM (get xournalstate) getSt 
@@ -113,16 +75,7 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
             SelectState txoj -> 
               liftIO (unContPageDraw drawcontsel cvsInfo Nothing txoj)
           
-
-            
--- | 
-
-invalidateAll :: MainCoroutine () 
-invalidateAll = do
-  xstate <- getSt
-  let cinfoMap  = get canvasInfoMap xstate
-      keys = M.keys cinfoMap 
-  forM_ keys invalidate 
+        
 
 invalidateOther :: MainCoroutine () 
 invalidateOther = do 
@@ -136,9 +89,34 @@ invalidateOther = do
 -- | invalidate clear 
 
 invalidate :: CanvasId -> MainCoroutine () 
-invalidate cid = do 
-  invalidateGeneral cid Nothing 
-    drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly 
+invalidate = invalidateInBBox Nothing 
+
+{-  invalidateGeneral cid Nothing 
+    drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly-} 
+
+-- | 
+
+invalidateInBBox :: Maybe BBox -- ^ desktop coord
+                    -> CanvasId -> MainCoroutine ()
+invalidateInBBox mbbox cid = do 
+  invalidateGeneral cid mbbox
+    drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly
+
+-- | 
+
+invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
+                       -> MainCoroutine ()
+invalidateAllInBBox mbbox = do                        
+  xstate <- getSt
+  let cinfoMap  = get canvasInfoMap xstate
+      keys = M.keys cinfoMap 
+  forM_ keys (invalidateInBBox mbbox)
+
+-- | 
+
+invalidateAll :: MainCoroutine () 
+invalidateAll = invalidateAllInBBox Nothing
+
 
 
 -- | Invalidate Current canvas

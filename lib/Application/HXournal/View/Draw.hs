@@ -161,7 +161,7 @@ drawFuncGen typ render = SinglePageDraw func
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
-                clipBBox mbboxnew
+                clipBBox (fmap (flip inflate 1) mbboxnew) -- mbboxnew
                 render (pnum,page) mbboxnew 
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc mbboxnew   
@@ -171,7 +171,21 @@ drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox -> Render ())
                   -> DrawingFunction SinglePage SelectMode  
 drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> rensel x y) 
 
+-- |
 
+emphasisCanvasRender :: CanvasGeometry -> Render ()
+emphasisCanvasRender geometry = do 
+  identityMatrix
+  let CanvasDimension (Dim cw ch) = canvasDim geometry 
+  --       DeskCoord (dcx0,dcy0) = canvas2Desktop geometry . CvsCoord $ (0,0)
+  --     DeskCoord (dcx1,dcy1) = canvas2Desktop geometry . CvsCoord $ (cw,ch)
+  setSourceRGBA 1 0 0 1 
+  setLineWidth 10
+  rectangle 0 0 cw ch -- dcx0 dcy0 (dcx1-dcx0) (dcy1-dcy0)
+  stroke
+
+
+-- |
 
 drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                    -> DrawingFunction ContinuousSinglePage EditMode
@@ -190,7 +204,6 @@ drawContPageGen render = ContPageDraw func
           win <- widgetGetDrawWindow canvas
           putStrLn $ " in drawContFuncGen " ++ show mbbox
           let mbboxnew = getViewableBBox geometry mbbox -- mpnumbbox
-              
               xformfunc = cairoXform4PageCoordinate geometry pnum
               emphasispagerender (pn,pg) = do 
                 identityMatrix 
@@ -203,16 +216,14 @@ drawContPageGen render = ContPageDraw func
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 let pgmbbox = fmap (getBBoxInPageCoord geometry pn) mbboxnew
+                clipBBox (fmap (flip inflate 1) pgmbbox)     
                 render (pn,pg) pgmbbox
-                -- setSourceRGBA 1 0 0 1 
-                -- setLineWidth 20
-                -- liftIO $ putStrLn $ show mbbox 
-                -- maybe (return ()) cairoBBox pgmbbox 
               renderfunc = do
                 xformfunc 
                 -- clipBBox mbboxnew
                 mapM_ onepagerender drawpgs 
                 -- emphasispagerender (pnum,page)
+                emphasisCanvasRender geometry 
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc mbboxnew
 

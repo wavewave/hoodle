@@ -66,7 +66,11 @@ updatePageAll :: XournalState -> HXournalState -> IO HXournalState
 updatePageAll xojst xstate = do 
   let cmap = get canvasInfoMap xstate
   cmap' <- mapM (updatePage xojst . adjustPage xojst) cmap
-  return . set canvasInfoMap cmap' . set xournalstate xojst $ xstate
+  let cid = get currentCanvasId xstate 
+      cinfobox = maybeError "updatePageAll" (M.lookup cid cmap')
+  return . set currentCanvas (cid,cinfobox)
+         . set canvasInfoMap cmap' 
+         . set xournalstate xojst $ xstate
 
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
 adjustPage xojstate = selectBox fsingle fsingle  

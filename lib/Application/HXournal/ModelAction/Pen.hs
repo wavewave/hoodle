@@ -61,8 +61,11 @@ addPDraw pinfo xoj (PageNum pgnum) pdraw = do
   newlayerbbox <- updateLayerBuf (Just bbox)
                    . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
                    $ currlayer
+
   let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
       newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
+  
+  printLayerStructureInPage newpagebbox  
   return (newxojbbox,bbox)
 
 

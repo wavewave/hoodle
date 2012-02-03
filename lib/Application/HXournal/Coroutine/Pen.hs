@@ -103,7 +103,9 @@ penStart cid = commonPenStart penAction cid
           (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
           commit . set xournalstate (ViewAppendState newxoj) 
                  =<< (liftIO (updatePageAll (ViewAppendState newxoj) xstate))
-            
+          liftIO $ putStrLn "herre"
+          getSt >>= liftIO . boxAction (printLayerStructureInPage.getPage)
+                           . get currentCanvasInfo
           let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
               nbbox = xformBBox f bbox 
           invalidateAll

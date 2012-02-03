@@ -152,7 +152,7 @@ drawFuncGen typ render = SinglePageDraw func
           let arr = get pageArrangement vinfo
           geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry mbbox -- (Just (pnum,mbbox))
+          let mbboxnew = getViewableBBox geometry mbbox 
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
@@ -171,7 +171,7 @@ drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> r
 drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                    -> DrawingFunction ContinuousSinglePage EditMode
 drawContPageGen render = ContPageDraw func 
-  where func cinfo mbbox {- mpnumbbox -} xoj = do 
+  where func cinfo mbbox xoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo 

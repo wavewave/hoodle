@@ -45,7 +45,7 @@ layerAction :: (XournalState -> Int -> Page EditMode -> MainCoroutine XournalSta
             -> MainCoroutine HXournalState
 layerAction action = do 
     xst <- getSt 
-    selectBoxAction (fsingle xst) (error "layerAction") . get currentCanvasInfo $ xst
+    selectBoxAction (fsingle xst) (fsingle xst)  . get currentCanvasInfo $ xst
   where 
     fsingle xstate cvsInfo = do
       let epage = get currentPage cvsInfo
@@ -53,6 +53,8 @@ layerAction action = do
           xojstate = get xournalstate xstate
       newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
       return =<< (liftIO (updatePageAll newxojstate . set xournalstate newxojstate $ xstate))
+
+-- | 
 
 makeNewLayer :: MainCoroutine () 
 makeNewLayer = layerAction newlayeraction >>= commit 
@@ -125,7 +127,8 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
-    selectBoxAction fsingle (error "startGotoLayerAt") . get currentCanvasInfo =<< getSt
+    selectBoxAction fsingle fsingle . get currentCanvasInfo =<< getSt
+     {- (error "startGotoLayerAt") -}
   where 
     fsingle cvsInfo = do 
       let epage = get currentPage cvsInfo

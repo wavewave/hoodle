@@ -62,8 +62,17 @@ mkbboxF lst =
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
 
+-- | transform BBox
+         
+xformBBox :: ((Double,Double) -> (Double,Double)) -> BBox -> BBox 
+xformBBox f (BBox c1 c2) = BBox (f c1) (f c2)
+
+-- | 
+
 moveBBoxToOrigin :: BBox -> BBox 
 moveBBoxToOrigin (BBox (x0,y0) (x1,y1)) = BBox (0,0) (x1-x0,y1-y0)
+
+-- |
 
 moveBBoxByOffset :: (Double,Double) -> BBox -> BBox 
 moveBBoxByOffset (xoff,yoff) (BBox (x0,y0) (x1,y1)) = BBox (x0+xoff,y0+yoff) (x1+xoff,y1+yoff)

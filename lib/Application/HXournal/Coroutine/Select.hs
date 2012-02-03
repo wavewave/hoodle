@@ -349,7 +349,7 @@ copySelection = updateXState copySelectionAction >> invalidateAll
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = modeChange ToSelectMode >> updateXState pasteAction >> invalidateAll  
   where pasteAction xst = 
-          selectBoxAction (fsimple xst) (error "pasteSelection") . get currentCanvasInfo $ xst
+          boxAction (fsimple xst) . get currentCanvasInfo $ xst
         fsimple xstate cinfo = do 
           let SelectState txoj = get xournalstate xstate
               clipstrs = getClipContents . get clipboard $ xstate

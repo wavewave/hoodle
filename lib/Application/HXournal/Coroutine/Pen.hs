@@ -47,21 +47,24 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
 
+
 -- | page switch if pen click a page different than the current page
 
-penPageSwitch :: PageNum -> MainCoroutine ()
-penPageSwitch pgn = updateXState switchact
+penPageSwitch :: (ViewMode a) => 
+                 CanvasInfo a -> PageNum -> MainCoroutine (CanvasInfo a)
+penPageSwitch cinfo pgn = do (xst,cinfo') <- getSt >>= switchact 
+                             putSt xst     
+                             return cinfo'
   where switchact xst = do 
           liftIO $ putStrLn "penPageSwitch"
           let xoj = getXournal xst
           let page = maybeError "no such page in penPageSwitch" 
                       $ IM.lookup (unPageNum pgn) (get g_pages xoj)
-              mfunc (CanvasInfoBox cinfo) = do
-                 return $ CanvasInfoBox $ set currentPageNum (unPageNum pgn)
-                                          . set currentPage (Left page) 
-                                          $ cinfo 
-          modifyCurrCvsInfoM mfunc xst
-
+              ncinfo = set currentPageNum (unPageNum pgn)
+                       . set currentPage (Left page) 
+                       $ cinfo
+              mfunc = const (return . CanvasInfoBox $ ncinfo)  
+          return . (,ncinfo) =<< modifyCurrCvsInfoM mfunc xst
 
 
 -- | Common Pen Work starting point 
@@ -84,10 +87,12 @@ commonPenStart action cid pcoord =
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) -> do 
                  liftIO $ putStrLn $ show (pgn,(x,y))
-                 when (cpn /= pgn) (penPageSwitch pgn)
-                 connidup   <- connectPenUp cvsInfo 
-                 connidmove <- connectPenMove cvsInfo
-                 action cvsInfo pgn geometry (connidup,connidmove) (x,y) 
+                 nCvsInfo <- if (cpn /= pgn) 
+                               then penPageSwitch cvsInfo pgn
+                               else return cvsInfo                   
+                 connidup   <- connectPenUp nCvsInfo 
+                 connidmove <- connectPenMove nCvsInfo
+                 action nCvsInfo pgn geometry (connidup,connidmove) (x,y) 
 
       
 -- | enter pen drawing mode

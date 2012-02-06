@@ -99,15 +99,12 @@ changeCurrentCanvasId cid = do
 
 reflectUI :: UIManager -> CanvasInfoBox -> IO ()
 reflectUI ui cinfobox = do 
-    putStrLn $ "canvas id = " ++ show (unboxGet canvasId cinfobox)
     agr <- uiManagerGetActionGroups ui
     Just ra1 <- actionGroupGetAction (head agr) "ONEPAGEA"
     selectBoxAction (fsingle ra1) (fcont ra1) cinfobox 
-  where fsingle ra1 cinfo = do 
-          putStrLn "fsingle"
+  where fsingle ra1 cinfo =  
           Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1 ] 
-        fcont ra1 cinfo = do 
-          putStrLn "fcont"
+        fcont ra1 cinfo =  
           Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
           
   

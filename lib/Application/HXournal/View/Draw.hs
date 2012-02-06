@@ -216,7 +216,6 @@ drawContPageGen render = ContPageDraw func
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
           win <- widgetGetDrawWindow canvas
-          putStrLn $ " in drawContFuncGen " ++ show mbbox
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -289,7 +288,6 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               renderfunc = do
                 xformfunc 
                 -- clipBBox mbboxnew
-                liftIO $ print mbboxnew 
                 mapM_ onepagerender drawpgs 
                 -- emphasispagerender (pnum,page)
                 case tpage of 

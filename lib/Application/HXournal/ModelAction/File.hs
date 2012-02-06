@@ -57,7 +57,6 @@ getFileContent (Just fname) xstate = do
 getFileContent Nothing xstate = do   
     newxoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF 
               $ defaultXournal 
-    putStrLn "hello"
     let newxojstate = ViewAppendState newxoj 
         xstate' = set currFileName Nothing 
                   . set xournalstate newxojstate
@@ -107,8 +106,6 @@ makeNewXojWithPDF fp = do
           xoj = set s_title fname 
                 . set s_pages (map (createPage dim fname) [1..n]) 
                 $ emptyXournal
-      putStrLn $ "total num of pages " ++ show n 
-      putStrLn $ "size = " ++ show (w,h)
       return (Just xoj)
 #else
   error "makeNewXojWithPDF should not be used without poppler lib"

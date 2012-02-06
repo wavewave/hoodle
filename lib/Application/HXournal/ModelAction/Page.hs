@@ -71,9 +71,6 @@ updatePageAll xojst xstate = do
   let newxstate = set currentCanvas (cid,cinfobox)
                   . set canvasInfoMap cmap' 
                   . set xournalstate xojst $ xstate
-  putStrLn "in updatePageAll"
-  showCanvasInfoMapViewPortBBox xstate                       
-  showCanvasInfoMapViewPortBBox newxstate     
   return newxstate
 
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
@@ -142,8 +139,6 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
           adjustmentSetUpper hadj w 
           adjustmentSetUpper vadj h 
-          putStrLn $ " updateCvsFrmXoj : arr = " ++ show (get viewPortBBox arr )
-          
           return . CanvasInfoBox
                  . set currentPageNum pagenum  
                  . set (pageArrangement.viewInfo) arr
@@ -226,7 +221,6 @@ setPageSingle xstate pnum cinfo = do
       pdim = PageDimension (get g_dimension pg)
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeSingleArrangement zmode pdim cdim (0,0)  
-  putStrLn " in setPageSingle"
   return $ set currentPageNum (unPageNum pnum)
            . set (pageArrangement.viewInfo) arr
            . set currentPage (Left pg)
@@ -245,32 +239,10 @@ setPageCont xstate pnum cinfo = do
   let pg = getPageFromGXournalMap (unPageNum pnum) xoj
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeContinuousSingleArrangement zmode cdim xoj (pnum,PageCoord (0,0))  
-      
-  putStrLn $  "in setPageCont : "  ++ show pnum ++ " : " ++ show (get viewPortBBox arr)    
   return $ set currentPageNum (unPageNum pnum)
            . set (pageArrangement.viewInfo) arr
            . set currentPage (Left pg)
            $ cinfo 
-
-{-
-setPageCont (SelectState txoj) pagenum cinfo = 
-  let mspage = gselectSelected  txoj 
-      pageFromArg = case M.lookup pagenum (gselectAll txoj) of 
-                      Nothing -> error "no such page in setPage"
-                      Just p -> p
-      (newpage,Dim w h) = 
-        case mspage of 
-          Nothing -> (Left pageFromArg, gdimension pageFromArg)
-          Just (spagenum,page) -> 
-            if spagenum == pagenum 
-              then (Right page, gdimension page) 
-              else (Left pageFromArg, gdimension pageFromArg)
-  in set currentPageNum pagenum 
-     . modify (viewPortBBox.pageArrangement.viewInfo) (apply moveBBoxToOrigin)
-     . set (pageDimension.pageArrangement.viewInfo) (PageDimension (Dim w h))
-     . set currentPage newpage
-     $ cinfo 
--}
 
 
 -- | 

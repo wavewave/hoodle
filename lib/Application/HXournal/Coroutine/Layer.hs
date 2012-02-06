@@ -94,8 +94,6 @@ gotoPrevLayer = layerAction prevlayeraction >>= putSt
           case mlyrzipper of 
             Nothing -> liftIO $ putStrLn "Nothing"
             Just _ -> liftIO $ putStrLn "Just"
-          liftIO$ print (Seq.length x1, Seq.length x2)
-
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 
@@ -108,7 +106,6 @@ gotoLayerAt n = layerAction gotoaction >>= putSt
               npage = maybe currpage (\x -> set g_layers (Select (O (Just x))) currpage) mlyrzipper
           let Select (O (Just ll)) = get g_layers npage
               SZ (_,(x1,x2)) = ll 
-          liftIO $ print (Seq.length x1, Seq.length x2)
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 

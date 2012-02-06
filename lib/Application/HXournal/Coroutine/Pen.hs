@@ -56,7 +56,6 @@ penPageSwitch cinfo pgn = do (xst,cinfo') <- getSt >>= switchact
                              putSt xst     
                              return cinfo'
   where switchact xst = do 
-          liftIO $ putStrLn "penPageSwitch"
           let xoj = getXournal xst
           let page = maybeError "no such page in penPageSwitch" 
                       $ IM.lookup (unPageNum pgn) (get g_pages xoj)
@@ -90,7 +89,6 @@ commonPenStart action cid pcoord = do
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) -> do 
-                 liftIO $ putStrLn $ show (pgn,(x,y))
                  nCvsInfo <- if (cpn /= pgn) 
                                then penPageSwitch cvsInfo pgn
                                else return cvsInfo                   

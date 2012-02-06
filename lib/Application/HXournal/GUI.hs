@@ -65,8 +65,6 @@ startGUI mfname = do
   writeIORef sref st2
   -- (st3, winCvsArea, wconf) <- constructFrame <*> get frameState $ st2
   let st3 = st2                          
-  putStrLn "here?"
-  
   setTitleFromFileName st3
   vbox <- vBoxNew False 0 
   

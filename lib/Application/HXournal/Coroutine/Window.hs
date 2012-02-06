@@ -39,7 +39,6 @@ import Prelude hiding ((.),id)
 
 canvasConfigure :: CanvasId -> CanvasDimension -> MainCoroutine () 
 canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do 
-    liftIO $ putStrLn $ "canvas configure called " ++ show (cid, w',h')
     xstate <- getSt 
     let cinfobox = getCanvasInfo cid xstate
     xstate' <- selectBoxAction (fsingle xstate) (fcont xstate) cinfobox
@@ -94,7 +93,6 @@ eitherSplit stype = do
 
 deleteCanvas :: MainCoroutine () 
 deleteCanvas = do 
-    liftIO $ putStrLn "deleteCanvas"  
     xstate <- getSt
     let cmap = get canvasInfoMap xstate
         (currcid,_) = get currentCanvas xstate

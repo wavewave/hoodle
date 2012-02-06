@@ -140,79 +140,6 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     
 
 
-test :: ViewMode a =>  
-                                 HXournalState -> CanvasInfo a -> IO (CanvasInfo a )
-test xstate cinfo = do 
-    let callback = get callBack xstate
-        dev = get deviceList xstate 
-        canvas = _drawArea cinfo 
-        cid = _canvasId cinfo 
-        scrwin = _scrolledWindow cinfo
-        hadj = _horizAdjustment cinfo 
-        vadj = _vertAdjustment cinfo 
-    {-
-    sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
-    
-    bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
-                 p <- getPointer dev
-                 liftIO (callback (PenDown cid p)) -}
-    confevent <- canvas `on` configureEvent $ tryEvent $ do 
-                   (w,h) <- eventSize 
-                   liftIO $ callback 
-                     (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
-    {-                      
-    brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
-                 p <- getPointer dev
-                 liftIO (callback (PenUp cid p))
-    exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
-                  liftIO $ callback (UpdateCanvas cid) 
-
-    {-
-    canvas `on` enterNotifyEvent $ tryEvent $ do 
-      win <- liftIO $ widgetGetDrawWindow canvas
-      liftIO $ drawWindowSetCursor win (Just cursorDot)
-      return ()
-    -}  
-    widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
-    -- widgetSetExtensionEvents canvas [ExtensionEventsAll]
-    -- widgetSetExtensionEvents canvas 
-    let ui = get gtkUIManager xstate 
-    agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
-                      case x of 
-                        [] -> error "No action group? "
-                        y:_ -> return y )
-    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
-                          return (castToToggleAction x) )
-    b <- liftIO $ toggleActionGetActive uxinputa
-    if b
-      then widgetSetExtensionEvents canvas [ExtensionEventsAll]
-      else widgetSetExtensionEvents canvas [ExtensionEventsNone]
-
-    hadjconnid <- afterValueChanged hadj $ do 
-                    v <- adjustmentGetValue hadj 
-                    callback (HScrollBarMoved cid v)
-    vadjconnid <- afterValueChanged vadj $ do 
-                    v <- adjustmentGetValue vadj     
-                    callback (VScrollBarMoved cid v)
-    Just vscrbar <- scrolledWindowGetVScrollbar scrwin
-    bpevtvscrbar <- vscrbar `on` buttonPressEvent $ do 
-                      v <- liftIO $ adjustmentGetValue vadj 
-                      liftIO (callback (VScrollBarStart cid v))
-                      return False
-    brevtvscrbar <- vscrbar `on` buttonReleaseEvent $ do 
-                      v <- liftIO $ adjustmentGetValue vadj 
-                      liftIO (callback (VScrollBarEnd cid v))
-                      return False
-    
-    
-    return $ cinfo { _horizAdjConnId = Just hadjconnid
-                   , _vertAdjConnId = Just vadjconnid }
-    -}
-    return cinfo 
-
-
-
-
 -- | recreate windows from old canvas info but no event connect
 
 reinitCanvasInfoStage1 :: (ViewMode a) => 
@@ -253,27 +180,6 @@ eventConnect xstate (VSplit wconf1 wconf2) = do
     (xstate'',wconf2') <- eventConnect xstate' wconf2 
     return (xstate'',VSplit wconf1' wconf2')
     
-  
-eventConnecttest :: HXournalState -> WindowConfig 
-                -> IO (HXournalState,WindowConfig)
-eventConnecttest xstate (Node cid) = do 
-    let cmap = get canvasInfoMap xstate 
-        cinfobox = maybeError "eventConnect" $ M.lookup cid cmap
-    case cinfobox of       
-      CanvasInfoBox cinfo -> do 
-        ncinfo <- test xstate cinfo 
-        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
-        return (xstate', Node cid)
-eventConnecttest xstate (HSplit wconf1 wconf2) = do  
-    (xstate',wconf1') <- eventConnecttest xstate wconf1 
-    (xstate'',wconf2') <- eventConnecttest xstate' wconf2 
-    return (xstate'',HSplit wconf1' wconf2')
-eventConnecttest xstate (VSplit wconf1 wconf2) = do  
-    (xstate',wconf1') <- eventConnecttest xstate wconf1 
-    (xstate'',wconf2') <- eventConnecttest xstate' wconf2 
-    return (xstate'',VSplit wconf1' wconf2')
-    
-
 
 
 -- | default construct frame     
@@ -291,9 +197,6 @@ constructFrame' :: CanvasInfoBox ->
                    -> IO (HXournalState,Widget,WindowConfig)
 constructFrame' template oxstate (Node cid) = do 
     let ocmap = get canvasInfoMap oxstate 
-    
-    putStrLn $ "keys = " ++ show (M.keys ocmap)
-    showCanvasInfoMapViewPortBBox oxstate     
     (cinfobox,cmap,xstate) <- case M.lookup cid ocmap of 
       Just cinfobox' -> return (cinfobox',ocmap,oxstate)
       Nothing -> do 
@@ -301,8 +204,6 @@ constructFrame' template oxstate (Node cid) = do
             cmap' = M.insert cid cinfobox' ocmap
             xstate' = set canvasInfoMap cmap' oxstate
         return (cinfobox',cmap',xstate')
-    putStrLn $ "keys 2 = " ++ show (M.keys cmap )
-    showCanvasInfoMapViewPortBBox xstate
     case cinfobox of       
       CanvasInfoBox cinfo -> do 
         ncinfo <- reinitCanvasInfoStage1 xstate cinfo 

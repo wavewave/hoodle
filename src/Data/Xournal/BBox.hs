@@ -142,7 +142,7 @@ class Maybeable a where
   
 instance Maybeable IntersectBBox where
   type ElemType IntersectBBox = BBox
-  toMaybe (Intersect Bottom) = error "empty intersectbbox"
+  toMaybe (Intersect Bottom) = Nothing  -- error "empty intersectbbox"
   toMaybe (Intersect Top) = Nothing 
   toMaybe (Intersect (Middle x)) = Just x 
   fromMaybe Nothing = Intersect Top 
@@ -150,7 +150,7 @@ instance Maybeable IntersectBBox where
   
 instance Maybeable UnionBBox where
   type ElemType UnionBBox = BBox
-  toMaybe (Union Bottom) = error "empty unionbbox"
+  toMaybe (Union Bottom) = Nothing -- error "empty unionbbox"
   toMaybe (Union Top) = Nothing 
   toMaybe (Union (Middle x)) = Just x 
   fromMaybe Nothing = Union Top 

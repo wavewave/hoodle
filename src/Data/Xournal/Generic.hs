@@ -201,6 +201,19 @@ xournalFromTXournalSimple = Xournal <$> gtitle <*> map pageFromTPageSimple . gpa
 
 ---- 
 
+-- |
+
 emptyPageFromOldPage :: (GListable s) => GPage b s a -> GPage b s a
 emptyPageFromOldPage p = GPage (get g_dimension p) (get g_background p) (gFromList [] )
 
+----
+
+-- | 
+
+printLayerStructureInPage :: (GListable s) => 
+                              GPage b s (GLayerBuf buf [] a) -> IO () 
+printLayerStructureInPage page = do 
+  let lyrs = get g_layers page 
+      lst = fmap (Prelude.length . get g_bstrokes) (gToList lyrs)
+  (Prelude.putStrLn . ("num of layers = "++) . show . Prelude.length . gToList ) lyrs 
+  Prelude.putStrLn $ "layer strokes = " ++ show lst 

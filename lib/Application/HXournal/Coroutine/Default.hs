@@ -38,6 +38,7 @@ import Application.HXournal.Coroutine.Window
 -- import Application.HXournal.Coroutine.Network
 import Application.HXournal.Coroutine.Layer 
 import Application.HXournal.ModelAction.Window 
+import Application.HXournal.ModelAction.Page
 import Application.HXournal.Type.Window 
 import Application.HXournal.Device
 import Control.Applicative ((<$>))
@@ -52,6 +53,7 @@ import Data.Label
 import Prelude hiding ((.), id)
 import Data.IORef
 import Application.HXournal.Type.PageArrangement
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import Data.Xournal.Generic
 
@@ -169,7 +171,9 @@ defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
 defaultEventProcess (VScrollBarMoved cid v) = vscrollBarMoved cid v
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
-defaultEventProcess (CanvasConfigure _cid _w' _h') = canvasZoomUpdate Nothing 
+defaultEventProcess (CanvasConfigure cid w' h') = 
+  canvasConfigure cid (CanvasDimension (Dim w' h'))
+  
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess ToSinglePage = viewModeChange ToSinglePage

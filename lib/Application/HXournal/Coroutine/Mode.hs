@@ -88,7 +88,7 @@ viewModeChange command = do
 
           let arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) 
                                                     (cpn, PageCoord (xpos,ypos))
-              ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
+              ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
           geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
           let vinfo = get viewInfo cinfo 

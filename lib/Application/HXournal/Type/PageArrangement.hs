@@ -26,9 +26,6 @@ import Application.HXournal.Type.Predefined
 import Application.HXournal.Type.Alias
 import Application.HXournal.Util
 
-data PageMode = Continous | OnePage
-              deriving (Show,Eq) 
-
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
               deriving (Show,Eq)
 
@@ -75,24 +72,26 @@ apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 -- | data structure for coordinate arrangement of pages in desktop coordinate
 
 data PageArrangement a where
-  SingleArrangement:: PageDimension 
+  SingleArrangement:: CanvasDimension 
+                      -> PageDimension 
                       -> ViewPortBBox 
                       -> PageArrangement SinglePage 
-  ContinuousSingleArrangement :: DesktopDimension 
+  ContinuousSingleArrangement :: CanvasDimension  
+                                 -> DesktopDimension 
                                  -> (PageNum -> Maybe PageOrigin) 
                                  -> ViewPortBBox -> PageArrangement ContinuousSinglePage
 
 -- | 
 
 pageFunction :: PageArrangement ContinuousSinglePage -> PageNum -> Maybe PageOrigin
-pageFunction (ContinuousSingleArrangement _ pfunc _ ) = pfunc 
+pageFunction (ContinuousSingleArrangement _ _ pfunc _ ) = pfunc 
 
 -- | 
 
 pageArrEither :: PageArrangement a 
                  -> Either (PageArrangement SinglePage) (PageArrangement ContinuousSinglePage)
-pageArrEither arr@(SingleArrangement _ _) = Left arr 
-pageArrEither arr@(ContinuousSingleArrangement _ _ _) = Right arr 
+pageArrEither arr@(SingleArrangement _ _ _) = Left arr 
+pageArrEither arr@(ContinuousSingleArrangement _ _ _ _) = Right arr 
 
 -- |
 
@@ -114,7 +113,10 @@ makeSingleArrangement :: ZoomMode
 makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) (x,y) = 
   let (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim
       bbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
-  in SingleArrangement pdim (ViewPortBBox bbox) 
+  in SingleArrangement cdim pdim (ViewPortBBox bbox) 
+
+
+  
 
 -- | 
 
@@ -128,7 +130,7 @@ makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch))
       dim@(Dim pw ph) = get g_dimension . head . gToList . get g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       vport = ViewPortBBox (BBox (xpos,ypos+y0) (xpos+cw/sinvx,ypos+y0+ch/sinvy))
-  in ContinuousSingleArrangement (deskDimContSingle xoj) (pageArrFuncContSingle xoj) vport 
+  in ContinuousSingleArrangement cdim (deskDimContSingle xoj) (pageArrFuncContSingle xoj) vport 
 
 -- |
 
@@ -160,20 +162,32 @@ deskDimContSingle xoj =
 
 pageDimension :: PageArrangement SinglePage :-> PageDimension
 pageDimension = lens getter setter 
-  where getter (SingleArrangement pdim _) = pdim
-        setter pdim (SingleArrangement _ vbbox) = SingleArrangement pdim vbbox
+  where getter (SingleArrangement _ pdim _) = pdim
+        setter pdim (SingleArrangement cdim _ vbbox) = SingleArrangement cdim pdim vbbox
 
+canvasDimension :: PageArrangement a :-> CanvasDimension 
+canvasDimension = lens getter setter 
+  where 
+    getter (SingleArrangement cdim _ _) = cdim
+    getter (ContinuousSingleArrangement cdim _ _ _) = cdim
+    setter cdim (SingleArrangement _ pdim vbbox) = SingleArrangement cdim pdim vbbox
+    setter cdim (ContinuousSingleArrangement _ ddim pfunc vbbox) = 
+      ContinuousSingleArrangement cdim ddim pfunc vbbox
+
+    
 viewPortBBox :: PageArrangement a :-> ViewPortBBox 
 viewPortBBox = lens getter setter 
-  where getter (SingleArrangement _ vbbox) = vbbox 
-        getter (ContinuousSingleArrangement _ _ vbbox) = vbbox 
-        setter vbbox (SingleArrangement pdim _) = SingleArrangement pdim vbbox 
-        setter vbbox (ContinuousSingleArrangement ddim pfunc _) = ContinuousSingleArrangement ddim pfunc vbbox
+  where 
+    getter (SingleArrangement _ _ vbbox) = vbbox 
+    getter (ContinuousSingleArrangement _ _ _ vbbox) = vbbox 
+    setter vbbox (SingleArrangement cdim pdim _) = SingleArrangement cdim pdim vbbox 
+    setter vbbox (ContinuousSingleArrangement cdim ddim pfunc _) = 
+      ContinuousSingleArrangement cdim ddim pfunc vbbox
 
 desktopDimension :: PageArrangement a :-> DesktopDimension 
 desktopDimension = lens getter (error "setter for desktopDimension is not defined")
-  where getter (SingleArrangement (PageDimension dim) _) = DesktopDimension dim
-        getter (ContinuousSingleArrangement ddim _ _) = ddim 
+  where getter (SingleArrangement _ (PageDimension dim) _) = DesktopDimension dim
+        getter (ContinuousSingleArrangement _ ddim _ _) = ddim 
 
 
 

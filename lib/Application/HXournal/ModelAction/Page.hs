@@ -68,9 +68,13 @@ updatePageAll xojst xstate = do
   cmap' <- mapM (updatePage xojst . adjustPage xojst) cmap
   let cid = get currentCanvasId xstate 
       cinfobox = maybeError "updatePageAll" (M.lookup cid cmap')
-  return . set currentCanvas (cid,cinfobox)
-         . set canvasInfoMap cmap' 
-         . set xournalstate xojst $ xstate
+  let newxstate = set currentCanvas (cid,cinfobox)
+                  . set canvasInfoMap cmap' 
+                  . set xournalstate xojst $ xstate
+  putStrLn "in updatePageAll"
+  showCanvasInfoMapViewPortBBox xstate                       
+  showCanvasInfoMapViewPortBBox newxstate     
+  return newxstate
 
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
 adjustPage xojstate = selectBox fsingle fsingle  
@@ -135,9 +139,10 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               pg = getPageFromGXournalMap pagenum xoj 
               pdim = PageDimension $ get g_dimension pg
           let arr = makeContinuousSingleArrangement zmode cdim xoj ulcoord 
-              ContinuousSingleArrangement (DesktopDimension (Dim w h)) _ _ = arr  
+              ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
           adjustmentSetUpper hadj w 
           adjustmentSetUpper vadj h 
+          putStrLn $ " updateCvsFrmXoj : arr = " ++ show (get viewPortBBox arr )
           
           return . CanvasInfoBox
                  . set currentPageNum pagenum  

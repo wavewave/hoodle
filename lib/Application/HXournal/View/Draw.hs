@@ -82,12 +82,11 @@ getBBoxInPageCoord geometry pnum bbox@(BBox (x1,y1) (x2,y2)) =
 getViewableBBox :: CanvasGeometry 
                    -- -> Maybe (PageNum, Maybe BBox) -- ^ in page coordinate
                    -> Maybe BBox   -- ^ in desktop coordinate 
-                   -> Maybe BBox   -- ^ in desktop coordinate
+                   -> IntersectBBox
+                                            -- Maybe BBox   -- ^ in desktop coordinate
 getViewableBBox geometry mbbox = -- (Just (pnum,mbbox)) = 
   let ViewPortBBox vportbbox = getCanvasViewPort geometry  
-  in toMaybe $ (fromMaybe mbbox :: IntersectBBox) 
-               `mappend` 
-               (Intersect (Middle vportbbox))
+  in (fromMaybe mbbox :: IntersectBBox) `mappend` (Intersect (Middle vportbbox))
                
 {- getViewableBBox geometry Nothing = 
   let ViewPortBBox vportbbox = getCanvasViewPort geometry 
@@ -97,25 +96,30 @@ getViewableBBox geometry mbbox = -- (Just (pnum,mbbox)) =
 -- | common routine for double buffering 
 
 doubleBufferDraw :: DrawWindow -> CanvasGeometry -> Render () -> Render () 
-                    -> Maybe BBox
+                    -> IntersectBBox
                     -> IO ()
-doubleBufferDraw win geometry xform rndr mbbox = do 
-  putStrLn $ "in doubleBufferDraw " ++ show mbbox
+doubleBufferDraw win geometry xform rndr (Intersect ibbox) = do 
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
-      -- mbbox' = getViewableBBox geometry mbbox 
-      mbbox' = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord)) mbbox 
-  withImageSurface FormatARGB32 (floor cw) (floor ch) $ \tempsurface -> do 
-    renderWith tempsurface $ do 
-      setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 cw ch 
-      fill 
-      rndr 
-    renderWithDrawable win $ do 
-      clipBBox mbbox'
-      setSourceSurface tempsurface 0 0   
-      setOperator OperatorSource 
+      mbbox' = case ibbox of 
+        Top -> Just (BBox (0,0) (cw,ch))
+        Middle bbox -> Just (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord) bbox)
+        Bottom -> Nothing 
+  let action = withImageSurface FormatARGB32 (floor cw) (floor ch) $ \tempsurface -> do 
+        renderWith tempsurface $ do 
+          setSourceRGBA 0.5 0.5 0.5 1
+          rectangle 0 0 cw ch 
+          fill 
+          rndr 
+        renderWithDrawable win $ do 
+          clipBBox mbbox'
+          setSourceSurface tempsurface 0 0   
+          setOperator OperatorSource 
           -- xform
-      paint 
+          paint 
+  case ibbox of
+    Top -> action
+    Middle _ -> action 
+    Bottom -> return ()
 
 -- | 
 
@@ -157,14 +161,17 @@ drawFuncGen typ render = SinglePageDraw func
           let arr = get pageArrangement vinfo
           geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry mbbox 
+          putStrLn $ "in drawFuncGen : " ++ show mbbox
+          putStrLn $ "in drawFuncGen : " ++ show (canvasViewPort geometry)
+          let ibboxnew = getViewableBBox geometry mbbox 
+          let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
                 clipBBox (fmap (flip inflate 1) mbboxnew) -- mbboxnew
                 render (pnum,page) mbboxnew 
                 resetClip 
-          doubleBufferDraw win geometry xformfunc renderfunc mbboxnew   
+          doubleBufferDraw win geometry xformfunc renderfunc ibboxnew 
 
 drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox -> Render ()) 
                   -> ((PageNum,Page SelectMode) -> Maybe BBox -> Render ())
@@ -203,7 +210,8 @@ drawContPageGen render = ContPageDraw func
                             . M.lookup (unPageNum k) $ pgs
           win <- widgetGetDrawWindow canvas
           putStrLn $ " in drawContFuncGen " ++ show mbbox
-          let mbboxnew = getViewableBBox geometry mbbox -- mpnumbbox
+          let ibboxnew = getViewableBBox geometry mbbox 
+          let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
               emphasispagerender (pn,pg) = do 
                 identityMatrix 
@@ -225,7 +233,7 @@ drawContPageGen render = ContPageDraw func
                 -- emphasispagerender (pnum,page)
                 emphasisCanvasRender geometry 
                 resetClip 
-          doubleBufferDraw win geometry xformfunc renderfunc mbboxnew
+          doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
 cairoBBox :: BBox -> Render () 
 cairoBBox bbox = do 
@@ -253,7 +261,8 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
           win <- widgetGetDrawWindow canvas
-          let mbboxnew = getViewableBBox geometry mbbox --  mpnumbbox
+          let ibboxnew = getViewableBBox geometry mbbox --  mpnumbbox
+              mbboxnew = toMaybe ibboxnew
               xformfunc = cairoXform4PageCoordinate geometry pnum
               emphasispagerender (pn,pg) = do 
                 identityMatrix 
@@ -280,7 +289,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                   Left page' -> return () 
                   Right tpage' -> selpagerender (pnum,tpage')
                 resetClip 
-          doubleBufferDraw win geometry xformfunc renderfunc mbboxnew
+          doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
 
 drawPageClearly :: DrawingFunction SinglePage EditMode

@@ -97,8 +97,8 @@ vscrollMove cid = do
     xst <- getSt 
     geometry <- liftIO (getCanvasGeometry xst)
     case ev of
-      VScrollBarMoved _cid' v -> do 
-        liftIO $ print v
+      VScrollBarMoved cid' v -> do 
+        liftIO $ print $ (cid,cid',v)
         updateXState $ return.modifyCurrentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
         invalidateWithBuf cid 

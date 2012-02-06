@@ -48,8 +48,12 @@ data ViewInfo a  = (ViewMode a) =>
 
 
 defaultViewInfoSinglePage :: ViewInfo SinglePage
-defaultViewInfoSinglePage = ViewInfo { _zoomMode = Original 
-                                     , _pageArrangement = SingleArrangement (PageDimension (Dim 100 100)) (ViewPortBBox (BBox (0,0) (100,100))) } 
+defaultViewInfoSinglePage = 
+  ViewInfo { _zoomMode = Original 
+           , _pageArrangement = 
+             SingleArrangement (CanvasDimension (Dim 100 100))
+                               (PageDimension (Dim 100 100)) 
+                               (ViewPortBBox (BBox (0,0) (100,100))) } 
 
 
 zoomMode :: ViewInfo a :-> ZoomMode 
@@ -149,8 +153,8 @@ selectBoxAction :: (Monad m) =>
                 -> (CanvasInfo ContinuousSinglePage -> m a) -> CanvasInfoBox -> m a 
 selectBoxAction fsingle fcont (CanvasInfoBox cinfo) = 
   case get (pageArrangement.viewInfo) cinfo of 
-    SingleArrangement _ _ ->  fsingle cinfo 
-    ContinuousSingleArrangement _ _ _ -> fcont cinfo 
+    SingleArrangement _ _ _ ->  fsingle cinfo 
+    ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
 
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
           -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage)
@@ -171,8 +175,8 @@ viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
                -> CanvasInfo v -> CanvasInfo v 
 viewModeBranch fsingle fcont cinfo = 
   case get (pageArrangement.viewInfo) cinfo of 
-    SingleArrangement _ _ ->  fsingle cinfo 
-    ContinuousSingleArrangement _ _ _ -> fcont cinfo 
+    SingleArrangement _ _ _ ->  fsingle cinfo 
+    ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
 
 type CanvasInfoMap = M.IntMap CanvasInfoBox
 
@@ -241,3 +245,36 @@ $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''Width
 
 getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
 getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
+
+
+-- | 
+
+updateCanvasDimForSingle :: CanvasDimension 
+                            -> CanvasInfo SinglePage  
+                            -> CanvasInfo SinglePage 
+updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = 
+  let zmode = get (zoomMode.viewInfo) cinfo
+      arr@(SingleArrangement _ pdim vbbox@(ViewPortBBox bbox)) 
+        = get (pageArrangement.viewInfo) cinfo
+      (x,y) = bbox_upperleft bbox 
+      (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
+      nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
+      arr' = SingleArrangement cdim pdim (ViewPortBBox nbbox)
+  in set (pageArrangement.viewInfo) arr' cinfo
+     
+-- | 
+
+updateCanvasDimForContSingle :: CanvasDimension 
+                                -> CanvasInfo ContinuousSinglePage 
+                                -> CanvasInfo ContinuousSinglePage 
+updateCanvasDimForContSingle cdim@(CanvasDimension (Dim w' h')) cinfo = 
+  let zmode = get (zoomMode.viewInfo) cinfo
+      arr@(ContinuousSingleArrangement _ ddim  func vbbox@(ViewPortBBox bbox)) 
+        = get (pageArrangement.viewInfo) cinfo
+      (x,y) = bbox_upperleft bbox 
+      dim = get g_dimension . getPage $ cinfo 
+      (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
+      nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
+      arr' = ContinuousSingleArrangement cdim ddim func (ViewPortBBox nbbox)
+  in set (pageArrangement.viewInfo) arr' cinfo
+     

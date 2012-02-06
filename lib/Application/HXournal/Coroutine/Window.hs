@@ -22,6 +22,9 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Util
 import Control.Monad.Trans
 import Application.HXournal.ModelAction.Window
+import Application.HXournal.ModelAction.Page
+import Application.HXournal.Coroutine.Page
+import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
 import Control.Category
 import Data.Label
@@ -29,7 +32,28 @@ import Graphics.UI.Gtk hiding (get,set)
 import Graphics.Rendering.Cairo
 import qualified Data.IntMap as M
 import Data.Maybe
+import Data.Xournal.Simple (Dimension(..))
 import Prelude hiding ((.),id)
+
+-- | 
+
+canvasConfigure :: CanvasId -> CanvasDimension -> MainCoroutine () 
+canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do 
+    liftIO $ putStrLn $ "canvas configure called " ++ show (cid, w',h')
+    xstate <- getSt 
+    let cinfobox = getCanvasInfo cid xstate
+    xstate' <- selectBoxAction (fsingle xstate) (fcont xstate) cinfobox
+    putSt xstate'
+    canvasZoomUpdateAll 
+  where cdim = CanvasDimension (Dim w' h')
+        fsingle :: HXournalState -> CanvasInfo SinglePage -> MainCoroutine HXournalState
+        fsingle xstate cinfo = do 
+          let cinfo' = updateCanvasDimForSingle cdim cinfo 
+          return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
+        fcont xstate cinfo = do 
+          let cinfo' = updateCanvasDimForContSingle cdim cinfo 
+          return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
+
 
 -- | 
 
@@ -60,7 +84,10 @@ eitherSplit stype = do
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
             (xstate4,wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
-            liftIO $ putStrLn "haha"
+            canvasZoomUpdateAll
+            xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
+            putSt xstate5 
+            invalidateAll 
 
                 
 

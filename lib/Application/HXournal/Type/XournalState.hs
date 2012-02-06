@@ -21,6 +21,7 @@ import Application.HXournal.Type.Clipboard
 import Application.HXournal.Type.Window 
 import Application.HXournal.Type.Undo
 import Application.HXournal.Type.Alias 
+import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Util
 -- import Application.HXournal.NetworkClipboard.Client.Config
 import Data.Xournal.Map
@@ -115,11 +116,22 @@ resetXournalStateBuffers xojstate1 =
     ViewAppendState xoj -> liftIO . liftM ViewAppendState . resetXournalBuffers $ xoj
     _ -> return xojstate1
 
+-- |
+    
 getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfoBox 
 getCanvasInfo cid xstate = 
   let cinfoMap = get canvasInfoMap xstate
       maybeCvs = M.lookup cid cinfoMap
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
+
+-- | 
+
+setCanvasInfo :: (CanvasId,CanvasInfoBox) -> HXournalState -> HXournalState 
+setCanvasInfo (cid,cinfobox) xstate = 
+  let cmap = get canvasInfoMap xstate
+      cmap' = M.insert cid cinfobox cmap 
+      xstate' = set canvasInfoMap cmap' xstate
+  in xstate' 
 
 
 -- | change current canvas. this is the master function  
@@ -138,6 +150,16 @@ updateFromCanvasInfoAsCurrentCanvas cinfobox xstate =
 
 setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
 setCanvasId cid (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
+
+
+-- | 
+
+modifyCanvasInfo :: CanvasId -> (CanvasInfoBox -> CanvasInfoBox) -> HXournalState
+                    -> HXournalState
+modifyCanvasInfo cid f =  modify currentCanvasInfo f 
+                          . modify canvasInfoMap (M.adjust f cid) 
+
+                    
 
 -- | should be deprecated
 
@@ -171,4 +193,11 @@ xojstateEither xojstate = case xojstate of
                             SelectState txoj -> Right txoj 
                             
 
+
+-- | 
+
+showCanvasInfoMapViewPortBBox :: HXournalState -> IO ()
+showCanvasInfoMapViewPortBBox xstate = do 
+  let cmap = get canvasInfoMap xstate
+  putStrLn . show . map (unboxGet (viewPortBBox.pageArrangement.viewInfo)) . M.elems $ cmap 
 

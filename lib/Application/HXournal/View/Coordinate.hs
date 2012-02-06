@@ -59,23 +59,23 @@ makeCanvasGeometry :: (GPageable em) =>
                       -> PageArrangement vm 
                       -> DrawingArea 
                       -> IO CanvasGeometry 
-makeCanvasGeometry typ (cpn,page) arr canvas = do 
+makeCanvasGeometry typ (cpn,page) arr canvas = do  
   win <- widgetGetDrawWindow canvas
-  (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
+  -- (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
+  let cdim@(CanvasDimension (Dim w' h')) = get canvasDimension arr
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
                  <*> (fromIntegral <$> screenGetHeight screen)
   (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< drawWindowGetOrigin win
   let (Dim w h) = get g_dimension page
-      cdim = CanvasDimension (Dim w' h')
       corig = CanvasOrigin (x0,y0)
   let (deskdim, cvsvbbox, p2d, d2p) = 
         case arr of  
-          SingleArrangement pdim vbbox -> ( DesktopDimension . unPageDimension $ pdim
-                                          , vbbox
-                                          , DeskCoord . unPageCoord . snd
-                                          , \(DeskCoord coord) ->Just (cpn,(PageCoord coord)) )
-          ContinuousSingleArrangement ddim pfunc vbbox -> 
+          SingleArrangement _ pdim vbbox -> ( DesktopDimension . unPageDimension $ pdim
+                                               , vbbox
+                                               , DeskCoord . unPageCoord . snd
+                                               , \(DeskCoord coord) ->Just (cpn,(PageCoord coord)) )
+          ContinuousSingleArrangement _ ddim pfunc vbbox -> 
             ( ddim, vbbox, makePage2Desktop pfunc, makeDesktop2Page pfunc ) 
   let s2c = xformScreen2Canvas corig
       c2s = xformCanvas2Screen corig
@@ -84,6 +84,10 @@ makeCanvasGeometry typ (cpn,page) arr canvas = do
   return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
                           deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
     
+
+
+
+
 
 -- |
  

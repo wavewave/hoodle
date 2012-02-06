@@ -86,7 +86,7 @@ eitherSplit stype = do
             putSt xstate5 
             invalidateAll 
 
-                
+          
 
 
 -- | 
@@ -125,8 +125,3 @@ deleteCanvas = do
             putSt xstate5 
             invalidateAll 
             
-{-            liftIO $ boxPackEnd rtcntr win PackGrow 0 
-            liftIO $ widgetShowAll rtcntr   
-            liftIO $ widgetDestroy (get scrolledWindow oldcinfo)
-            liftIO $ widgetDestroy (get drawArea oldcinfo)
- -}       

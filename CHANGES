@@ -19,3 +19,6 @@
 
 0.6.3: 24 Jan 2012 
    * refine rendering while selection and scrolling. highlighter is implemented. Resizing selected strokes implemented
+
+0.6.4: 6 Feb 2012
+   * lasso selection, continuous page view. 

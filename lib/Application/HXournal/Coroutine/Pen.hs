@@ -74,8 +74,12 @@ commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeom
                     -> (Double,Double) -> MainCoroutine () )
                -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
-commonPenStart action cid pcoord =
-    boxAction f . getCanvasInfo cid =<< changeCurrentCanvasId cid 
+commonPenStart action cid pcoord = do
+    oxstate <- getSt 
+    let currcid = get currentCanvasId oxstate
+    when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
+    nxstate <- getSt
+    boxAction f . getCanvasInfo cid $ nxstate
   where f :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
           let page = getPage cvsInfo

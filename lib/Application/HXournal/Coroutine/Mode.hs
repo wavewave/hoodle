@@ -24,6 +24,7 @@ import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Scroll
+import Application.HXournal.Coroutine.Draw
 --import Data.Foldable
 import Data.Traversable
 import Control.Applicative
@@ -61,8 +62,8 @@ modeChange command = case command of
 viewModeChange :: MyEvent -> MainCoroutine () 
 viewModeChange command = do 
     case command of 
-      ToSinglePage -> updateXState cont2single
-      ToContSinglePage -> updateXState single2cont 
+      ToSinglePage -> updateXState cont2single >> invalidateAll 
+      ToContSinglePage -> updateXState single2cont >> invalidateAll 
       _ -> return ()
     adjustScrollbarWithGeometryCurrent     
   where cont2single xst =  

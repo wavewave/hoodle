@@ -19,7 +19,7 @@ import Graphics.Rendering.Cairo
 
 import Control.Applicative 
 import Control.Category (id,(.))
-import Control.Monad (liftM,(<=<))
+import Control.Monad (liftM,(<=<),when)
 import Data.Label
 import Prelude hiding ((.),id,mapM_,concatMap)
 import Data.Foldable
@@ -41,6 +41,7 @@ import Application.HXournal.Device
 import Application.HXournal.Util
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Predefined
+import Application.HXournal.Type.Enum
 import Application.HXournal.View.Coordinate
 import Application.HXournal.ModelAction.Page
 
@@ -50,13 +51,21 @@ import Application.HXournal.ModelAction.Page
 type family DrawingFunction v :: * -> * 
 
 newtype SinglePageDraw a = 
-  SinglePageDraw { unSinglePageDraw :: DrawingArea -> (PageNum, Page a) -> ViewInfo SinglePage -> Maybe BBox -> IO () }
+  SinglePageDraw { unSinglePageDraw :: Bool 
+                                       -> DrawingArea 
+                                       -> (PageNum, Page a) 
+                                       -> ViewInfo SinglePage 
+                                       -> Maybe BBox 
+                                       -> IO () }
 
 
 newtype ContPageDraw a = 
   ContPageDraw 
-  { unContPageDraw :: CanvasInfo ContinuousSinglePage -> Maybe BBox 
-                      -> Xournal a -> IO () }
+  { unContPageDraw :: Bool
+                      -> CanvasInfo ContinuousSinglePage 
+                      -> Maybe BBox 
+                      -> Xournal a 
+                      -> IO () }
                     
 type instance DrawingFunction SinglePage = SinglePageDraw
 type instance DrawingFunction ContinuousSinglePage = ContPageDraw
@@ -157,12 +166,10 @@ drawCurvebit canvas geometry wdth (r,g,b,a) pnum (x0,y0) (x,y) = do
 drawFuncGen :: (GPageable em) => em -> 
                ((PageNum,Page em) -> Maybe BBox -> Render ()) -> DrawingFunction SinglePage em
 drawFuncGen typ render = SinglePageDraw func 
-  where func canvas (pnum,page) vinfo mbbox = do 
+  where func isCurrentCvs canvas (pnum,page) vinfo mbbox = do 
           let arr = get pageArrangement vinfo
           geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
           win <- widgetGetDrawWindow canvas
-          putStrLn $ "in drawFuncGen : " ++ show mbbox
-          putStrLn $ "in drawFuncGen : " ++ show (canvasViewPort geometry)
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -170,6 +177,7 @@ drawFuncGen typ render = SinglePageDraw func
                 xformfunc 
                 clipBBox (fmap (flip inflate 1) mbboxnew) -- mbboxnew
                 render (pnum,page) mbboxnew 
+                when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew 
 
@@ -180,15 +188,14 @@ drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y -> rencont x y >> r
 
 -- |
 
-emphasisCanvasRender :: CanvasGeometry -> Render ()
-emphasisCanvasRender geometry = do 
+emphasisCanvasRender :: PenColor -> CanvasGeometry -> Render ()
+emphasisCanvasRender pcolor geometry = do 
   identityMatrix
   let CanvasDimension (Dim cw ch) = canvasDim geometry 
-  --       DeskCoord (dcx0,dcy0) = canvas2Desktop geometry . CvsCoord $ (0,0)
-  --     DeskCoord (dcx1,dcy1) = canvas2Desktop geometry . CvsCoord $ (cw,ch)
-  setSourceRGBA 1 0 0 1 
+  let (r,g,b,a) = convertPenColorToRGBA pcolor
+  setSourceRGBA r g b a 
   setLineWidth 10
-  rectangle 0 0 cw ch -- dcx0 dcy0 (dcx1-dcx0) (dcy1-dcy0)
+  rectangle 0 0 cw ch 
   stroke
 
 
@@ -197,7 +204,7 @@ emphasisCanvasRender geometry = do
 drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                    -> DrawingFunction ContinuousSinglePage EditMode
 drawContPageGen render = ContPageDraw func 
-  where func cinfo mbbox xoj = do 
+  where func isCurrentCvs cinfo mbbox xoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo 
@@ -231,7 +238,7 @@ drawContPageGen render = ContPageDraw func
                 -- clipBBox mbboxnew
                 mapM_ onepagerender drawpgs 
                 -- emphasispagerender (pnum,page)
-                emphasisCanvasRender geometry 
+                when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
@@ -247,7 +254,7 @@ drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ())
                       -> ((PageNum, Page SelectMode) -> Maybe BBox -> Render ())
                       -> DrawingFunction ContinuousSinglePage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
-  where func cinfo mbbox txoj = do 
+  where func isCurrentCvs cinfo mbbox txoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo 
@@ -284,10 +291,12 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 -- clipBBox mbboxnew
                 liftIO $ print mbboxnew 
                 mapM_ onepagerender drawpgs 
-                emphasispagerender (pnum,page)
+                -- emphasispagerender (pnum,page)
                 case tpage of 
                   Left page' -> return () 
                   Right tpage' -> selpagerender (pnum,tpage')
+                when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
+                  
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 

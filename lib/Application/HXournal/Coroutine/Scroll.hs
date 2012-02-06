@@ -73,7 +73,8 @@ hscrollBarMoved cid v =
         
 vscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
 vscrollBarMoved cid v = 
-    changeCurrentCanvasId cid 
+    -- changeCurrentCanvasId cid 
+    chkCvsIdNInvalidate cid 
     >> updateXState (return . vscrollmoveAction) 
     >> invalidate cid
   where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
@@ -85,7 +86,7 @@ vscrollBarMoved cid v =
 
 vscrollStart :: CanvasId -> MainCoroutine () 
 vscrollStart cid = do 
-  changeCurrentCanvasId cid 
+  chkCvsIdNInvalidate cid 
   vscrollMove cid 
         
 

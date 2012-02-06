@@ -53,27 +53,29 @@ invalidateGeneral :: CanvasId -> Maybe BBox
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do 
     xst <- getSt 
-    selectBoxAction fsingle fcont . getCanvasInfo cid $ xst
-  where fsingle :: CanvasInfo SinglePage -> MainCoroutine () 
-        fsingle cvsInfo = do 
+    selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
+  where fsingle :: HXournalState -> CanvasInfo SinglePage -> MainCoroutine () 
+        fsingle xstate cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
+              isCurrentCvs = cid == get currentCanvasId xstate
           case get currentPage cvsInfo of 
             Left page -> do  
-              liftIO (unSinglePageDraw drawf 
+              liftIO (unSinglePageDraw drawf isCurrentCvs 
                         <$> get drawArea <*> pure (cpn,page) 
                         <*> get viewInfo <*> pure mbbox $ cvsInfo )
             Right tpage -> do 
-              liftIO (unSinglePageDraw drawfsel 
+              liftIO (unSinglePageDraw drawfsel isCurrentCvs
                         <$> get drawArea <*> pure (cpn,tpage) 
                         <*> get viewInfo <*> pure mbbox $ cvsInfo )
-        fcont :: CanvasInfo ContinuousSinglePage -> MainCoroutine () 
-        fcont cvsInfo = do 
-          xojstate <- liftM (get xournalstate) getSt 
+        fcont :: HXournalState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
+        fcont xstate cvsInfo = do 
+          let xojstate = get xournalstate xstate 
+              isCurrentCvs = cid == get currentCanvasId xstate
           case xojstate of 
             ViewAppendState xoj -> do  
-              liftIO (unContPageDraw drawcont cvsInfo mbbox xoj)
+              liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox xoj)
             SelectState txoj -> 
-              liftIO (unContPageDraw drawcontsel cvsInfo mbbox txoj)
+              liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox txoj)
           
         
 
@@ -159,53 +161,12 @@ invalidateWithBufInBBox mbbox cid =
   invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojBuf drawContXojSelClearly
 
 
+-- | check current canvas id and new active canvas id and invalidate if it's changed. 
 
-{-
--- | obsolete 
-
-invalidateSelSingle :: CanvasId -> Maybe BBox 
-                       -> PageDrawF
-                       -> PageDrawFSel 
-                       -> MainCoroutine () 
-invalidateSelSingle cid mbbox drawf drawfsel = 
-    selectBoxAction fsingle (error "invalidateSelSingle") . getCanvasInfo cid =<< getSt 
-  where fsingle cvsInfo = do 
-          case get currentPage cvsInfo of 
-            Left page ->  liftIO (drawf <$> get drawArea <*> pure page <*> get viewInfo <*> pure mbbox 
-                                  $ cvsInfo )
-            Right tpage -> liftIO (drawfsel <$> get drawArea <*> pure tpage <*> get viewInfo 
-                                            <*> pure mbbox $ cvsInfo )
+chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
+chkCvsIdNInvalidate cid = do 
+  currcid <- liftM (get currentCanvasId) getSt 
+  when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
+  
 
 
-
-
-invalidateGenSingle :: CanvasId -> Maybe BBox -> PageDrawF
-                    -> MainCoroutine () 
-invalidateGenSingle cid mbbox drawf = 
-    selectBoxAction fsingle (error "invalidateGenSingle") . getCanvasInfo cid =<< getSt 
-  where fsingle cvsInfo = do 
-          let page = case get currentPage cvsInfo of
-                       Right _ -> error "no invalidateGenSingle implementation yet"
-                       Left pg -> pg
-          liftIO (drawf <$> get drawArea 
-                        <*> pure page 
-                        <*> get viewInfo 
-                        <*> pure mbbox
-                        $ cvsInfo )
-
--}
-
-{-
--- | Drawing objects only in BBox, obsolete 
--- 
--- invalidateInBBox :: CanvasId -> BBox -> MainCoroutine () 
--- invalidateInBBox cid bbox = invalidateSelSingle cid (Just bbox) drawPageInBBox drawSelectionInBBox
-
--- | Drawing BBox
---
-invalidateDrawBBox :: CanvasId -> BBox -> MainCoroutine () 
-invalidateDrawBBox cid bbox = invalidateSelSingle cid (Just bbox) drawBBox drawBBoxSel
-
-
-
--}                             

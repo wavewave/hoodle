@@ -68,8 +68,6 @@ eitherSplit stype = do
     case enewfstate of 
       Left _ -> return ()
       Right fstate' -> do 
-        liftIO $ putStrLn "hello"
-        liftIO $ putStrLn $ show fstate'
         case maybeError "eitherSplit" . M.lookup currcid $ cmap of 
           CanvasInfoBox oldcinfo -> do 
             let rtwin = get rootWindow xstate
@@ -106,25 +104,31 @@ deleteCanvas = do
       Left _ -> return ()
       Right Nothing -> return ()
       Right (Just fstate') -> do 
-      case maybeError "deleteCanvas" (M.lookup currcid cmap) of
-        CanvasInfoBox oldcinfo -> do 
-          let cmap' = M.delete currcid cmap
-              newcurrcid = maximum (M.keys cmap')
-          xstate' <- changeCurrentCanvasId newcurrcid 
-          let rtwin = get rootWindow xstate'
-              rtcntr = get rootContainer xstate' 
-              xstate'' = set canvasInfoMap cmap'
-                         . set frameState fstate'
-                         $ xstate'
-          putSt xstate''
-          liftIO $ containerRemove rtcntr rtwin
-          (xstate''',win,fstate'') <- liftIO $ constructFrame xstate'' fstate'
-          let xstate4 = set frameState fstate'' 
-                          . set rootWindow win 
-                          $ xstate'''
-          putSt xstate4
-          liftIO $ boxPackEnd rtcntr win PackGrow 0 
-          liftIO $ widgetShowAll rtcntr   
-          liftIO $ widgetDestroy (get scrolledWindow oldcinfo)
-          liftIO $ widgetDestroy (get drawArea oldcinfo)
-        
+        case maybeError "deleteCanvas" (M.lookup currcid cmap) of
+          CanvasInfoBox oldcinfo -> do 
+            let cmap' = M.delete currcid cmap
+                newcurrcid = maximum (M.keys cmap')
+            xstate0 <- changeCurrentCanvasId newcurrcid 
+            let xstate1 = set canvasInfoMap cmap' xstate0
+            putSt xstate1
+            let rtwin = get rootWindow xstate1
+                rtcntr = get rootContainer xstate1 
+            liftIO $ containerRemove rtcntr rtwin
+            (xstate'',win,fstate'') <- liftIO $ constructFrame xstate1 fstate'
+            let xstate3 = set frameState fstate'' 
+                            . set rootWindow win 
+                            $ xstate''
+            putSt xstate3
+            liftIO $ boxPackEnd rtcntr win PackGrow 0 
+            liftIO $ widgetShowAll rtcntr  
+            (xstate4,wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
+            canvasZoomUpdateAll
+            xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
+            putSt xstate5 
+            invalidateAll 
+            
+{-            liftIO $ boxPackEnd rtcntr win PackGrow 0 
+            liftIO $ widgetShowAll rtcntr   
+            liftIO $ widgetDestroy (get scrolledWindow oldcinfo)
+            liftIO $ widgetDestroy (get drawArea oldcinfo)
+ -}       

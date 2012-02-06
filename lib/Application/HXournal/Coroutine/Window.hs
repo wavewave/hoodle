@@ -51,6 +51,7 @@ canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
         fcont xstate cinfo = do 
           let cinfo' = updateCanvasDimForContSingle cdim cinfo 
+          liftIO $ print cdim 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
 
 
@@ -69,6 +70,7 @@ eitherSplit stype = do
       Right fstate' -> do 
         case maybeError "eitherSplit" . M.lookup currcid $ cmap of 
           CanvasInfoBox oldcinfo -> do 
+            liftIO $ putStrLn "called here"
             let rtwin = get rootWindow xstate
                 rtcntr = get rootContainer xstate 
             liftIO $ containerRemove rtcntr rtwin
@@ -81,7 +83,9 @@ eitherSplit stype = do
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
             (xstate4,wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
-            canvasZoomUpdateAll
+            -- liftIO $ putStrLn " called here 2 " 
+            -- canvasZoomUpdateAll
+            -- liftIO $ putStrLn " called here 3 "
             xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
             putSt xstate5 
             invalidateAll 

@@ -95,7 +95,7 @@ changePageInXournalState npgnum xojstate =
 
 canvasZoomUpdateCvsId :: CanvasId -> Maybe ZoomMode -> MainCoroutine ()
 canvasZoomUpdateCvsId cid mzmode = updateXState zoomUpdateAction 
-                                   >> adjustScrollbarWithGeometryCurrent
+                                   >> adjustScrollbarWithGeometryCvsId cid
                                    >> invalidateAll
   where zoomUpdateAction xst =  
           selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 

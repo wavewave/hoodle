@@ -61,7 +61,6 @@ makeCanvasGeometry :: (GPageable em) =>
                       -> IO CanvasGeometry 
 makeCanvasGeometry typ (cpn,page) arr canvas = do  
   win <- widgetGetDrawWindow canvas
-  -- (w',h') <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd) =<< widgetGetSize canvas
   let cdim@(CanvasDimension (Dim w' h')) = get canvasDimension arr
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)

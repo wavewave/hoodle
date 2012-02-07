@@ -178,7 +178,12 @@ updateTempXournalSelectIO txoj tpage pagenum = do
             . set g_selectSelected (Just (pagenum,tpage))
             $ txoj 
   
-    
+-- |   
+  
+calculateWholeBBox :: [StrokeBBox] -> Maybe BBox  
+calculateWholeBBox = toMaybe . mconcat . map ( Union . Middle. strokebbox_bbox ) 
+  
+-- |     
 hitInSelection :: Page SelectMode -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
   let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage

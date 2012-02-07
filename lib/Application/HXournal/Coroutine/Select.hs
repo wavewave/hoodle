@@ -236,27 +236,46 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
         invalidateTempBasePage cid (tempSurface tempselection) pnum drawselection
       moveSelect cid pnum geometry connidmove connidup orig (ncoord,ntime) 
         tempselection
-    upact :: HXournalState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
+    upact :: (ViewMode a) => HXournalState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
     upact xst cinfo pcoord = 
       switchActionEnteringDiffPage pnum geometry pcoord (return ()) 
         (chgaction xst cinfo) 
         (ordaction xst cinfo)
-            
+    chgaction :: (ViewMode a) => HXournalState -> CanvasInfo a -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
     chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
       let SelectState txoj = get xournalstate xstate
           epage = get currentPage cinfo 
-      (xstate1,ntxoj1) <- case epage of 
-        Right oldtpage -> do 
-          let oldtpage' = deleteSelected oldtpage
-          ntxoj <- liftIO $ updateTempXournalSelectIO txoj oldtpage' (unPageNum oldpgn)
-          xst <- return . set xournalstate (SelectState ntxoj)
-                   =<< (liftIO (updatePageAll (SelectState ntxoj) xstate)) 
-          return (xst,ntxoj)       
-        Left _ -> error "this is impossible, in moveSelect" 
-      let mpg = M.lookup (unPageNum newpgn) (get g_selectAll ntxoj1)
-      maybeFlip mpg (commit xstate1) $ \page -> do   
-        let xstate2 = xstate1 
-        commit xstate2
+      (xstate1,ntxoj1,selectedstrs) <- 
+        case epage of 
+          Right oldtpage -> do 
+            let strs = getSelectedStrokes oldtpage
+            let oldtpage' = deleteSelected oldtpage
+            ntxoj <- liftIO $ updateTempXournalSelectIO txoj oldtpage' (unPageNum oldpgn)
+            xst <- return . set xournalstate (SelectState ntxoj)
+                     =<< (liftIO (updatePageAll (SelectState ntxoj) xstate)) 
+            return (xst,ntxoj,strs)       
+          Left _ -> error "this is impossible, in moveSelect" 
+      let maction = do 
+            page <- M.lookup (unPageNum newpgn) (get g_selectAll ntxoj1)
+            let (mcurrlayer,npage) = getCurrentLayerOrSet page
+            currlayer <- mcurrlayer 
+            let oldstrs = get g_bstrokes currlayer
+            let newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) selectedstrs 
+                alist = oldstrs :- Hitted newstrs :- Empty 
+                ntpage = makePageSelectMode npage alist  
+                coroutineaction = do 
+                  ntxoj2 <- liftIO $ updateTempXournalSelectIO ntxoj1 ntpage (unPageNum newpgn)  
+                  let ncinfo = set currentPage (Right ntpage)
+                               . set currentPageNum (unPageNum newpgn) $ cinfo 
+                      cmap = get canvasInfoMap xstate1 
+                      cmap' = M.adjust (const (CanvasInfoBox ncinfo)) cid cmap
+                      xst = set canvasInfoMap cmap' xstate1
+                  
+                  return . set xournalstate (SelectState ntxoj2)
+                    =<< (liftIO (updatePageAll (SelectState ntxoj2) xst)) 
+            return coroutineaction
+      xstate2 <- maybe (return xstate1) id maction 
+      commit xstate2
       disconnect connidmove
       disconnect connidup 
       invalidateAll 

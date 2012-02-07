@@ -150,18 +150,35 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
            penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y)) (x,y) )
         (\_ -> disconnect connidmove >> disconnect connidup >> return pdraw )
 
-      
+-- | 
+    
 skipIfNotInSamePage :: Monad m => 
                        PageNum -> CanvasGeometry -> PointerCoord 
-                       -> m a -> ((Double,Double) -> m a) -> m a
-skipIfNotInSamePage pgn geometry pcoord skipaction realaction = do 
+                       -> m a 
+                       -> ((Double,Double) -> m a)
+                       -> m a
+skipIfNotInSamePage  pgn geometry pcoord skipaction ordaction =  
+  switchActionEnteringDiffPage pgn geometry pcoord 
+    skipaction (\_ _ -> skipaction ) (\_ (_,PageCoord xy)->ordaction xy) 
+  
+-- |       
+
+switchActionEnteringDiffPage :: Monad m => 
+                                PageNum -> CanvasGeometry -> PointerCoord 
+                                -> m a 
+                                -> (PageNum -> (PageNum,PageCoordinate) -> m a)
+                                -> (PageNum -> (PageNum,PageCoordinate) -> m a)
+                                -> m a
+switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction = do 
     let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-   
     maybeFlip pagecoord skipaction 
-      $ \(cpn, PageCoord (x,y)) -> if pgn == cpn then realaction (x,y) else skipaction
+      $ \(cpn, pxy) -> if pgn == cpn 
+                       then ordaction pgn (cpn,pxy) 
+                       else chgaction pgn (cpn,pxy)
                                                                  
         
-
+-- | in page action  
+    
 penMoveAndUpOnly :: Monad m => MyEvent 
                     -> PageNum 
                     -> CanvasGeometry 
@@ -172,6 +189,20 @@ penMoveAndUpOnly :: Monad m => MyEvent
 penMoveAndUpOnly r pgn geometry defact moveaction upaction = 
   case r of 
     PenMove _ pcoord -> skipIfNotInSamePage pgn geometry pcoord defact moveaction  
+    PenUp _ pcoord -> upaction pcoord  
+    _ -> defact 
+  
+penMoveAndUpInterPage :: Monad m => MyEvent 
+                      -> PageNum 
+                      -> CanvasGeometry 
+                      -> m a 
+                      -> (PageNum -> (PageNum,PageCoordinate) -> m a) 
+                      -> (PointerCoord -> m a) 
+                      -> m a
+penMoveAndUpInterPage r pgn geometry defact moveaction upaction = 
+  case r of 
+    PenMove _ pcoord -> 
+      switchActionEnteringDiffPage pgn geometry pcoord defact moveaction moveaction  
     PenUp _ pcoord -> upaction pcoord  
     _ -> defact 
   

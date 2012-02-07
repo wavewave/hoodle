@@ -18,6 +18,8 @@ import Application.HXournal.Type.Alias
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate
+import Application.HXournal.Util
+import Application.HXournal.ModelAction.Layer
 import Data.Sequence (ViewL(..),viewl,Seq)
 import Data.Foldable (foldl')
 import Data.Monoid
@@ -99,6 +101,35 @@ getSelectedStrokes = either (const []) (concatMap unHitted . getB) . getActiveLa
        Left _ -> [] 
        Right alist -> concatMap unHitted . getB $ alist  -}
 
+-- | start a select mode with alter list selection 
+
+makePageSelectMode :: Page EditMode  -- ^ base page 
+                      -> TAlterHitted StrokeBBox -- ^ current selection layer (active layer will be replaced)
+                      -> Page SelectMode -- ^ resultant select mode page
+makePageSelectMode page alist =  
+    let (mcurrlayer,npage) = getCurrentLayerOrSet page
+        currlayer = maybeError "makePageSelectMode" mcurrlayer 
+        newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right alist))
+        tpg = gcast npage 
+        ls = get g_layers tpg 
+        npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+    in npg 
+
+
+
+-- | get unselected part of page and make an ordinary page
+
+deleteSelected :: Page SelectMode -> Page SelectMode 
+deleteSelected tpage =
+    let activelayer = getActiveLayer tpage
+        ls = glayers tpage
+        buf = get g_buffer . gselectedlayerbuf $ ls 
+    in case activelayer of 
+         Left _ -> tpage 
+         Right alist -> 
+           let leftstrs = concat (getA alist)
+               layer' = GLayerBuf buf . TEitherAlterHitted . Left $ leftstrs 
+           in tpage { glayers = ls { gselectedlayerbuf = layer' }}   
 
 -- | modify the whole selection using a function
 

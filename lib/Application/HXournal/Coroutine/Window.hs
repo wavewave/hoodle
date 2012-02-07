@@ -51,7 +51,6 @@ canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
         fcont xstate cinfo = do 
           let cinfo' = updateCanvasDimForContSingle cdim cinfo 
-          liftIO $ print cdim 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
 
 

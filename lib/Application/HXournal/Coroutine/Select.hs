@@ -33,6 +33,7 @@ import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Select
 import Application.HXournal.ModelAction.Layer 
+import Application.HXournal.Util
 import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.Trans
@@ -46,6 +47,7 @@ import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Rendering.Cairo
 import Data.Monoid 
+import qualified Data.IntMap as M
 import Data.Sequence (Seq,(|>))
 import qualified Data.Sequence as Sq (empty)
 import Data.Time.Clock
@@ -166,14 +168,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       xstate <- getSt    
       let SelectState txoj = get xournalstate xstate
           newpage = case epage of 
-                      Left pagebbox -> 
-                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            tpg = gcast npagebbox 
-                            ls = get g_layers tpg 
-                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
-                        in npg 
+                      Left pagebbox -> makePageSelectMode pagebbox selectstrs 
                       Right tpage -> 
                         let ls = glayers tpage 
                             currlayer = gselectedlayerbuf ls
@@ -185,22 +180,28 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       putSt . set xournalstate (SelectState newtxoj) 
             =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
-        
-      -- x <- getSt  
-      -- let SelectState txojtest = get xournalstate x 
-      --     y = get g_selectSelected txojtest
-      -- liftIO $ print y 
-        
-      
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
+
+{-                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
+                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
+                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            tpg = gcast npagebbox 
+                            ls = get g_layers tpg 
+                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+                        in npg -}
+
+
+
+
+
 
 
 -- | 
          
 moveSelect :: CanvasId
-              -> PageNum
+              -> PageNum -- ^ starting pagenum 
               -> CanvasGeometry
               -> ConnectId DrawingArea 
               -> ConnectId DrawingArea
@@ -214,22 +215,55 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
     r <- await 
     selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
-    fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
+    fsingle r xstate cinfo = 
+      penMoveAndUpInterPage r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
     defact = moveSelect cid pnum geometry connidmove connidup orig (prev,otime) 
                tempselection
-    moveact xstate cinfo (x,y) = do 
+    moveact xstate cinfo oldpgn pcpair@(newpgn,pgxy@(PageCoord (px,py))) = do 
+      let (x,y) 
+            | oldpgn == newpgn = (px,py) 
+            | otherwise = 
+              let DeskCoord (xo,yo) = page2Desktop geometry (oldpgn,PageCoord (0,0))
+                  DeskCoord (xn,yn) = page2Desktop geometry pcpair 
+              in (xn-xo,yn-yo)
+      
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
         let strs = tempSelectInfo tempselection
             newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
             drawselection = do 
               mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTemp cid (tempSurface tempselection) drawselection
+        invalidateTempBasePage cid (tempSurface tempselection) pnum drawselection
       moveSelect cid pnum geometry connidmove connidup orig (ncoord,ntime) 
         tempselection
-    upact xstate cinfo pcoord = do 
-      let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
+    upact :: HXournalState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
+    upact xst cinfo pcoord = 
+      switchActionEnteringDiffPage pnum geometry pcoord (return ()) 
+        (chgaction xst cinfo) 
+        (ordaction xst cinfo)
+            
+    chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
+      let SelectState txoj = get xournalstate xstate
+          epage = get currentPage cinfo 
+      (xstate1,ntxoj1) <- case epage of 
+        Right oldtpage -> do 
+          let oldtpage' = deleteSelected oldtpage
+          ntxoj <- liftIO $ updateTempXournalSelectIO txoj oldtpage' (unPageNum oldpgn)
+          xst <- return . set xournalstate (SelectState ntxoj)
+                   =<< (liftIO (updatePageAll (SelectState ntxoj) xstate)) 
+          return (xst,ntxoj)       
+        Left _ -> error "this is impossible, in moveSelect" 
+      let mpg = M.lookup (unPageNum newpgn) (get g_selectAll ntxoj1)
+      maybeFlip mpg (commit xstate1) $ \page -> do   
+        let xstate2 = xstate1 
+        commit xstate2
+      disconnect connidmove
+      disconnect connidup 
+      invalidateAll 
+      
+      
+      
+    ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
           SelectState txoj = get xournalstate xstate
           epage = get currentPage cinfo 
@@ -244,6 +278,11 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
+      
+      
+      -- return ()                             
+       --  runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
+      -- penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
 
 -- |
       

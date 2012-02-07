@@ -128,7 +128,7 @@ invalidateCurrent = invalidate . get currentCanvasId =<< getSt
        
 -- | Drawing temporary gadgets
 
-invalidateTemp :: CanvasId -> Surface -> Render () -> MainCoroutine ()
+invalidateTemp :: CanvasId -> Surface ->  Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
@@ -148,6 +148,27 @@ invalidateTemp cid tempsurface rndr = do
                      rndr 
       
 
+-- | Drawing temporary gadgets with coordinate based on base page
+
+invalidateTempBasePage :: CanvasId -> Surface -> PageNum -> Render () 
+                          -> MainCoroutine ()
+invalidateTempBasePage cid tempsurface pnum rndr = do 
+    xst <- getSt 
+    selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
+  where fsingle xstate cvsInfo = do 
+          let page = either id gcast $ get currentPage cvsInfo 
+              canvas = get drawArea cvsInfo
+              vinfo = get viewInfo cvsInfo      
+          geometry <- liftIO $ getCanvasGeometry xstate
+          win <- liftIO $ widgetGetDrawWindow canvas
+          let xformfunc = cairoXform4PageCoordinate geometry pnum
+          liftIO $ renderWithDrawable win $ do   
+                     setSourceSurface tempsurface 0 0 
+                     setOperator OperatorSource 
+                     paint 
+                     xformfunc 
+                     rndr 
+      
 -- | Drawing using layer buffer
  
 invalidateWithBuf :: CanvasId -> MainCoroutine () 

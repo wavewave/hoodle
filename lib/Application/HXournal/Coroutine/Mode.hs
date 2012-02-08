@@ -62,13 +62,10 @@ modeChange command = case command of
 
 viewModeChange :: MyEvent -> MainCoroutine () 
 viewModeChange command = do 
-    xstate <- getSt 
-    liftIO $ printCanvasMode (getCurrentCanvasId xstate) (get currentCanvasInfo xstate) 
     case command of 
       ToSinglePage -> updateXState cont2single >> invalidateAll 
       ToContSinglePage -> updateXState single2cont >> invalidateAll 
       _ -> return ()
-    printModesAll  
     adjustScrollbarWithGeometryCurrent     
   where cont2single xst =  
           selectBoxAction (noaction xst) (whencont xst) . get currentCanvasInfo $ xst
@@ -78,7 +75,6 @@ viewModeChange command = do
         noaction xstate = const (return xstate)
 
         whencont xstate cinfo = do 
-          liftIO $ putStrLn "wehncont"
           geometry <- liftIO $ getCanvasGeometry xstate 
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
           let zmode = get (zoomMode.viewInfo) cinfo

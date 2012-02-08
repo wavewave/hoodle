@@ -54,6 +54,7 @@ module Application.HXournal.Type.XournalState
 , modifyCurrentCanvasInfo
 , modifyCurrCvsInfoM
 , xojstateEither
+, getCurrentPageFromXojState
 -- | for debug
 , showCanvasInfoMapViewPortBBox
 ) where
@@ -268,10 +269,26 @@ xojstateEither xojstate = case xojstate of
                             SelectState txoj -> Right txoj 
 
 -- | 
+ 
+getCurrentPageFromXojState :: (ViewMode a) => CanvasInfo a -> XournalState -> Page EditMode 
+getCurrentPageFromXojState cinfo xojstate = 
+  let cpn = get currentPageNum cinfo 
+      pagemap = getPageMapFromXojState xojstate   
+  in maybeError "updatePageFromCanvasToXournal" $ M.lookup cpn pagemap 
+
+-- | 
+
+getPageMapFromXojState :: XournalState -> M.IntMap (Page EditMode)
+getPageMapFromXojState = either (get g_pages) (get g_selectAll) . xojstateEither 
+  
+      
+-- | 
 
 showCanvasInfoMapViewPortBBox :: HXournalState -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
   let cmap = getCanvasInfoMap xstate
   putStrLn . show . map (unboxGet (viewPortBBox.pageArrangement.viewInfo)) . M.elems $ cmap 
+
+
 
 

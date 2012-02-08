@@ -76,9 +76,10 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
             St.runState (hitTestStrokes line hittestbbox) False
       if hitState 
         then do 
+          page <- getCurrentPageCvsId cid 
           let currxoj     = unView . get xournalstate $ xstate 
               pgnum       = get currentPageNum cvsInfo
-              (mcurrlayer, currpage) = getCurrentLayerOrSet . getPage $ cvsInfo
+              (mcurrlayer, currpage) = getCurrentLayerOrSet page
               currlayer = maybe (error "eraserProcess") id mcurrlayer
           let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1

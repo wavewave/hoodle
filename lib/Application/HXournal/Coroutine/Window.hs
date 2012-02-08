@@ -33,6 +33,7 @@ import Graphics.Rendering.Cairo
 import qualified Data.IntMap as M
 import Data.Maybe
 import Data.Xournal.Simple (Dimension(..))
+import Data.Xournal.Generic
 import Prelude hiding ((.),id)
 
 -- | 
@@ -50,7 +51,9 @@ canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
         fcont xstate cinfo = do 
-          let cinfo' = updateCanvasDimForContSingle cdim cinfo 
+          page <- getCurrentPageCvsId cid
+          let pdim = PageDimension (get g_dimension page)
+          let cinfo' = updateCanvasDimForContSingle pdim cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
 
 

@@ -66,7 +66,7 @@ minimalCanvasInfo xstate cid = do
     scrolledWindowSetHAdjustment scrwin hadj 
     scrolledWindowSetVAdjustment scrwin vadj 
     -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
-    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 (error "No page")  hadj vadj Nothing Nothing
+    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing
 
 
 -- | only connect events 
@@ -150,7 +150,7 @@ reinitCanvasInfoStage1 xstate oldcinfo = do
   newcinfo <- minimalCanvasInfo xstate cid      
   return $ newcinfo { _viewInfo = _viewInfo oldcinfo 
                     , _currentPageNum = _currentPageNum oldcinfo 
-                    , _currentPage = _currentPage oldcinfo } 
+                    } 
 
     
 -- | event connect

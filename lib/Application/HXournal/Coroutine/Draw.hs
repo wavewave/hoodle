@@ -58,7 +58,8 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
         fsingle xstate cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
               isCurrentCvs = cid == getCurrentCanvasId xstate
-          case get currentPage cvsInfo of 
+              epage = getCurrentPageEitherFromXojState cvsInfo (get xournalstate xstate)
+          case epage of 
             Left page -> do  
               liftIO (unSinglePageDraw drawf isCurrentCvs 
                         <$> get drawArea <*> pure (cpn,page) 
@@ -133,8 +134,8 @@ invalidateTemp cid tempsurface rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          let page = either id gcast $ get currentPage cvsInfo 
-              canvas = get drawArea cvsInfo
+          page <- getCurrentPageCvsId cid 
+          let canvas = get drawArea cvsInfo
               vinfo = get viewInfo cvsInfo      
               pnum = PageNum . get currentPageNum $ cvsInfo 
           geometry <- liftIO $ getCanvasGeometry xstate
@@ -156,8 +157,8 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          let page = either id gcast $ get currentPage cvsInfo 
-              canvas = get drawArea cvsInfo
+          page <- getCurrentPageCvsId cid  
+          let canvas = get drawArea cvsInfo
               vinfo = get viewInfo cvsInfo      
           geometry <- liftIO $ getCanvasGeometry xstate
           win <- liftIO $ widgetGetDrawWindow canvas

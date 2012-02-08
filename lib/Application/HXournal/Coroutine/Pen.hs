@@ -57,11 +57,7 @@ penPageSwitch cinfo pgn = do (xst,cinfo') <- getSt >>= switchact
                              return cinfo'
   where switchact xst = do 
           let xoj = getXournal xst
-          let page = maybeError "no such page in penPageSwitch" 
-                      $ IM.lookup (unPageNum pgn) (get g_pages xoj)
-              ncinfo = set currentPageNum (unPageNum pgn)
-                       . set currentPage (Left page) 
-                       $ cinfo
+              ncinfo = set currentPageNum (unPageNum pgn) cinfo 
               mfunc = const (return . CanvasInfoBox $ ncinfo)  
           return . (,ncinfo) =<< modifyCurrCvsInfoM mfunc xst
 
@@ -81,11 +77,10 @@ commonPenStart action cid pcoord = do
     boxAction f . getCanvasInfo cid $ nxstate
   where f :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
-          let page = getPage cvsInfo
-              cpn = PageNum . get currentPageNum $ cvsInfo
+          let cpn = PageNum . get currentPageNum $ cvsInfo
               arr = get (pageArrangement.viewInfo) cvsInfo              
               canvas = get drawArea cvsInfo
-          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
+          geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) -> do 

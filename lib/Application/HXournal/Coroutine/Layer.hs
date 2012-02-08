@@ -33,11 +33,7 @@ import Control.Compose
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
-
-
 import Data.IORef
-
 import qualified Data.Sequence as Seq
 import Graphics.UI.Gtk hiding (get,set)
 
@@ -48,7 +44,8 @@ layerAction action = do
     selectBoxAction (fsingle xst) (fsingle xst)  . get currentCanvasInfo $ xst
   where 
     fsingle xstate cvsInfo = do
-      let epage = get currentPage cvsInfo
+      let xojstate = get xournalstate xstate
+      let epage = getCurrentPageEitherFromXojState cvsInfo xojstate
           cpn = get currentPageNum cvsInfo
           xojstate = get xournalstate xstate
       newxojstate <- either (action xojstate cpn) (action xojstate cpn . gcast) epage 
@@ -125,10 +122,11 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
     selectBoxAction fsingle fsingle . get currentCanvasInfo =<< getSt
-     {- (error "startGotoLayerAt") -}
   where 
     fsingle cvsInfo = do 
-      let epage = get currentPage cvsInfo
+      xstate <- getSt 
+      let xojstate = get xournalstate xstate
+      let epage = getCurrentPageEitherFromXojState cvsInfo xojstate
           page = either id gcast epage 
           (_,currpage) = getCurrentLayerOrSet page
           Select (O (Just lyrzipper)) = get g_layers currpage

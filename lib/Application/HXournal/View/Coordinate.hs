@@ -53,20 +53,21 @@ data CanvasGeometry =
 
 -- | make a canvas geometry data structure from current status 
 
-makeCanvasGeometry :: (GPageable em) => 
-                      em 
-                      -> (PageNum, Page em)
+makeCanvasGeometry :: -- (GPageable em) => 
+                      -- em 
+                      PageNum -- , Page em) -> PageDimension 
                       -> PageArrangement vm 
                       -> DrawingArea 
                       -> IO CanvasGeometry 
-makeCanvasGeometry typ (cpn,page) arr canvas = do  
+-- makeCanvasGeometry typ (cpn,page) arr canvas = do  
+makeCanvasGeometry cpn arr canvas = do 
   win <- widgetGetDrawWindow canvas
   let cdim@(CanvasDimension (Dim w' h')) = get canvasDimension arr
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
                  <*> (fromIntegral <$> screenGetHeight screen)
   (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< drawWindowGetOrigin win
-  let (Dim w h) = get g_dimension page
+  let -- (Dim w h) = get g_dimension page
       corig = CanvasOrigin (x0,y0)
   let (deskdim, cvsvbbox, p2d, d2p) = 
         case arr of  
@@ -187,13 +188,15 @@ getPagesInViewPortRange geometry xoj =
 
 -- | 
 
-getCvsGeomFrmCvsInfo :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
+getCvsGeomFrmCvsInfo :: (ViewMode a) => 
+                        -- Page EditMode -> 
+                        CanvasInfo a -> IO CanvasGeometry 
 getCvsGeomFrmCvsInfo cinfo = do 
-  let page = getPage cinfo
+  let -- page = getPage cinfo
       cpn = PageNum . get currentPageNum $ cinfo 
       canvas = get drawArea cinfo
       arr = get (pageArrangement.viewInfo) cinfo 
-  makeCanvasGeometry EditMode (cpn,page) arr canvas 
+  makeCanvasGeometry cpn arr canvas -- EditMode (cpn,page) arr canvas 
   
 
 

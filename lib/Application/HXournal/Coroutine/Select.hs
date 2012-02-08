@@ -105,7 +105,10 @@ selectRectStart cid = commonPenStart rectaction cid
                   
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
-          action (get currentPage cinfo)      
+          xstate <- getSt 
+          let xojstate = get xournalstate xstate 
+          let epage = getCurrentPageEitherFromXojState cinfo xojstate 
+          action epage
 
 
 newSelectRectangle :: CanvasId
@@ -131,8 +134,8 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       let bbox = BBox orig (x,y)
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
-      let page = either id gcast $ get currentPage cinfo 
-          (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
+      page <- getCurrentPageCvsId cid
+      let (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
         let xformfunc = cairoXform4PageCoordinate geometry pnum 
@@ -160,7 +163,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
     upact xstate cinfo pcoord = do       
       let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
-      let epage = get currentPage cinfo 
+      let epage = getCurrentPageEitherFromXojState cinfo (get xournalstate xstate)
           cpn = get currentPageNum cinfo 
       let bbox = BBox orig (x,y)
           hittestbbox = mkHitTestInsideBBox bbox strs
@@ -183,19 +186,6 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
-
-{-                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            currlayer = maybe (error "newSelectRectangle") id mcurrlayer 
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            tpg = gcast npagebbox 
-                            ls = get g_layers tpg 
-                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
-                        in npg -}
-
-
-
-
-
 
 
 -- | 
@@ -243,8 +233,8 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
         (ordaction xst cinfo)
     chgaction :: (ViewMode a) => HXournalState -> CanvasInfo a -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
     chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
-      let SelectState txoj = get xournalstate xstate
-          epage = get currentPage cinfo 
+      let xojstate@(SelectState txoj) = get xournalstate xstate
+          epage = getCurrentPageEitherFromXojState cinfo xojstate
       (xstate1,ntxoj1,selectedstrs) <- 
         case epage of 
           Right oldtpage -> do 
@@ -265,8 +255,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
                 ntpage = makePageSelectMode npage alist  
                 coroutineaction = do 
                   ntxoj2 <- liftIO $ updateTempXournalSelectIO ntxoj1 ntpage (unPageNum newpgn)  
-                  let ncinfo = set currentPage (Right ntpage)
-                               . set currentPageNum (unPageNum newpgn) $ cinfo 
+                  let ncinfo = set currentPageNum (unPageNum newpgn) $ cinfo 
                       cmap = getCanvasInfoMap xstate1 
                       cmap' = M.adjust (const (CanvasInfoBox ncinfo)) cid cmap
                       xst = maybe xstate1 id $ setCanvasInfoMap cmap' xstate1
@@ -279,12 +268,10 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       disconnect connidup 
       invalidateAll 
       
-      
-      
     ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
-          SelectState txoj = get xournalstate xstate
-          epage = get currentPage cinfo 
+          xojstate@(SelectState txoj) = get xournalstate xstate
+          epage = getCurrentPageEitherFromXojState cinfo xojstate
           pagenum = get currentPageNum cinfo
       case epage of 
         Right tpage -> do 
@@ -298,10 +285,6 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       invalidateAll 
       
       
-      -- return ()                             
-       --  runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
-      -- penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
-
 -- |
       
 resizeSelect :: Handle 
@@ -339,8 +322,8 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
       let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
           newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
-          SelectState txoj = get xournalstate xstate
-          epage = get currentPage cinfo 
+          xojstate@(SelectState txoj) = get xournalstate xstate
+          epage = getCurrentPageEitherFromXojState cinfo xojstate
           pagenum = get currentPageNum cinfo
       case epage of 
         Right tpage -> do 
@@ -389,9 +372,11 @@ copySelection :: MainCoroutine ()
 copySelection = updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
           selectBoxAction (fsingle xst) (fsingle xst) . get currentCanvasInfo $ xst
-        fsingle xstate cinfo = maybe (return xstate) id $ 
-          eitherMaybe (get currentPage cinfo) `pipe` getActiveLayer 
-                                              `pipe` (Right . xstateadj . takeHittedStrokes)
+        fsingle xstate cinfo = maybe (return xstate) id $ do  
+          let xojstate = get xournalstate xstate
+          let epage = getCurrentPageEitherFromXojState cinfo xojstate
+          eitherMaybe epage `pipe` getActiveLayer 
+                            `pipe` (Right . xstateadj . takeHittedStrokes)
           where eitherMaybe (Left _) = Nothing
                 eitherMaybe (Right a) = Just a 
                 x `pipe` a = x >>= eitherMaybe . a 
@@ -408,10 +393,11 @@ pasteToSelection = modeChange ToSelectMode >> updateXState pasteAction >> invali
   where pasteAction xst = 
           boxAction (fsimple xst) . get currentCanvasInfo $ xst
         fsimple xstate cinfo = do 
-          let SelectState txoj = get xournalstate xstate
+          let xojstate@(SelectState txoj) = get xournalstate xstate
               clipstrs = getClipContents . get clipboard $ xstate
               pagenum = get currentPageNum cinfo 
-              tpage = either gcast id (get currentPage cinfo)
+              epage = getCurrentPageEitherFromXojState cinfo xojstate 
+              tpage = either gcast id epage
               layerselect = gselectedlayerbuf . glayers $ tpage 
               ls  = glayers tpage
               gbuf = get g_buffer layerselect
@@ -501,7 +487,10 @@ selectLassoStart cid = commonPenStart lassoAction cid
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
-          action (get currentPage cinfo)      
+          xstate <- getSt 
+          let xojstate = get xournalstate xstate 
+          let epage = getCurrentPageEitherFromXojState cinfo xojstate 
+          action epage
           
 newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> PageNum 
@@ -529,10 +518,12 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
       newSelectLasso cinfo pnum geometry cidmove cidup strs orig 
                      (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
+      xstate <- getSt 
       let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
           nlasso = lasso |> (x,y)
-      let epage = get currentPage cinfo 
+          xojstate = get xournalstate xstate 
+      let epage = getCurrentPageEitherFromXojState cinfo xojstate
           cpn = get currentPageNum cinfo 
       let hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
           selectstrs = fmapAL unNotHitted id hittestlasso

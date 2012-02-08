@@ -53,12 +53,16 @@ setPageMap nmap =
   . xojstateEither
   
         
+{-
 updatePageFromCanvasToXournal :: (ViewMode a) => CanvasInfo a -> XournalState -> XournalState 
 updatePageFromCanvasToXournal cinfo xojstate = 
-  let cpn = get currentPageNum cinfo 
-      epg = get currentPage cinfo
-      page = either id gcast epg
+  let cpn = get curentPageNum     
+      page = getCurrentPageFromXojState cinfo xojstate 
+ -- either id gcast epg
   in  setPageMap (M.adjust (const page) cpn . getPageMap $ xojstate) xojstate 
+
+      -- epg = get currentPage cinfo
+-}
 
 -- |
 
@@ -69,12 +73,8 @@ updatePageAll xojst xstate = do
   return $ maybe xstate id 
            . setCanvasInfoMap cmap' 
            . set xournalstate xojst $ xstate
-  
--- return newxstate
--- let cid = getCurrentCanvasId xstate 
---       cinfobox = maybeError "updatePageAll" (M.lookup cid cmap')
- -- set currentCanvasInfo cinfobox
-    -- set currentCanvas (cid,cinfobox)
+
+-- | 
 
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
 adjustPage xojstate = selectBox fsingle fsingle  
@@ -104,12 +104,10 @@ updateCvsInfoFrmXoj :: Xournal EditMode -> CanvasInfoBox -> IO CanvasInfoBox
 updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
   where fsingle cinfo = do 
           let pagenum = get currentPageNum cinfo 
-              page = getPage cinfo 
           let oarr = get (pageArrangement.viewInfo) cinfo 
               canvas = get drawArea cinfo 
               zmode = get (zoomMode.viewInfo) cinfo
-          geometry <- makeCanvasGeometry EditMode (PageNum pagenum,page) 
-                                         oarr canvas
+          geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas
           let cdim = canvasDim geometry 
               pg = getPageFromGXournalMap pagenum xoj 
               pdim@(PageDimension (Dim w h)) = PageDimension $ get g_dimension pg
@@ -120,19 +118,16 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
           adjustmentSetUpper vadj h 
           return . CanvasInfoBox 
                  . set currentPageNum pagenum  
-                 . set (pageArrangement.viewInfo) arr
-                 . set currentPage (Left pg) $ cinfo
+                 . set (pageArrangement.viewInfo) arr $ cinfo
         fcont cinfo = do 
           let pagenum = get currentPageNum cinfo 
-              page = getPage cinfo 
           let oarr = get (pageArrangement.viewInfo) cinfo 
               canvas = get drawArea cinfo 
               zmode = get (zoomMode.viewInfo) cinfo
               (hadj,vadj) = get adjustments cinfo
           (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
                                <*> adjustmentGetValue vadj 
-          geometry <- makeCanvasGeometry EditMode (PageNum pagenum,page)
-                                         oarr canvas 
+          geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas 
           let ulcoord = maybeError "updateCvsFromXoj" $ 
                           desktop2Page geometry (DeskCoord (xdesk,ydesk))
           let cdim = canvasDim geometry 
@@ -144,8 +139,7 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
           adjustmentSetUpper vadj h 
           return . CanvasInfoBox
                  . set currentPageNum pagenum  
-                 . set (pageArrangement.viewInfo) arr
-                 . set currentPage (Left pg) $ cinfo 
+                 . set (pageArrangement.viewInfo) arr $ cinfo 
 
               
 
@@ -171,13 +165,11 @@ updatePage (SelectState txoj) cinfobox = selectBoxAction fsingle fcont cinfobox
           in spg
         fsingle cinfo = do 
           let xoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
-          CanvasInfoBox cinfo' <- updateCvsInfoFrmXoj xoj cinfobox
-          return . CanvasInfoBox . set currentPage (getselectedpage cinfo)  $ cinfo' 
-          
+          updateCvsInfoFrmXoj xoj cinfobox
         fcont cinfo = do 
           let xoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
-          CanvasInfoBox cinfo' <- updateCvsInfoFrmXoj xoj cinfobox
-          return . CanvasInfoBox . set currentPage (getselectedpage cinfo)  $ cinfo' 
+          updateCvsInfoFrmXoj xoj cinfobox
+
   
   
  {- 
@@ -225,9 +217,7 @@ setPageSingle xstate pnum cinfo = do
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeSingleArrangement zmode pdim cdim (0,0)  
   return $ set currentPageNum (unPageNum pnum)
-           . set (pageArrangement.viewInfo) arr
-           . set currentPage (Left pg)
-           $ cinfo 
+           . set (pageArrangement.viewInfo) arr $ cinfo 
 
 
 -- | setPageCont : in ContinuousSingle Page mode   
@@ -243,9 +233,8 @@ setPageCont xstate pnum cinfo = do
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeContinuousSingleArrangement zmode cdim xoj (pnum,PageCoord (0,0))  
   return $ set currentPageNum (unPageNum pnum)
-           . set (pageArrangement.viewInfo) arr
-           . set currentPage (Left pg)
-           $ cinfo 
+           . set (pageArrangement.viewInfo) arr $ cinfo 
+
 
 
 -- | 

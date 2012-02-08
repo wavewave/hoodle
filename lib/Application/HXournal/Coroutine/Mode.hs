@@ -76,10 +76,11 @@ viewModeChange command = do
         whencont xstate cinfo = do 
           geometry <- liftIO $ getCanvasGeometry xstate 
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
+          page <- getCurrentPageCurr
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 
               cpn = PageNum . get currentPageNum $ cinfo 
-              page = getPage cinfo
+
               pdim = PageDimension (get g_dimension page )
               ViewPortBBox bbox = get (viewPortBBox.pageArrangement.viewInfo) cinfo       
               (x0,y0) = bbox_upperleft bbox 
@@ -91,7 +92,6 @@ viewModeChange command = do
                                   (get scrolledWindow cinfo)
                                   nvinfo 
                                   (unPageNum cpn)
-                                  (Left page)
                                   (get horizAdjustment cinfo)
                                   (get vertAdjustment cinfo)
                                   (get horizAdjConnId cinfo)
@@ -102,17 +102,17 @@ viewModeChange command = do
 
         whensing xstate cinfo = do 
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
+          page <- getCurrentPageCurr 
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 
               cpn = PageNum . get currentPageNum $ cinfo 
-              page = getPage cinfo
               (hadj,vadj) = get adjustments cinfo 
           (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
 
           let arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) 
                                                     (cpn, PageCoord (xpos,ypos))
               ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
-          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
+          geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
           let vinfo = get viewInfo cinfo 
               nvinfo = ViewInfo (get zoomMode vinfo) arr 
@@ -121,7 +121,6 @@ viewModeChange command = do
                                       (get scrolledWindow cinfo)
                                       nvinfo 
                                       (get currentPageNum cinfo)
-                                      (get currentPage cinfo)
                                       hadj 
                                       vadj 
                                       (get horizAdjConnId cinfo)

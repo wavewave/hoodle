@@ -168,7 +168,7 @@ drawFuncGen :: (GPageable em) => em ->
 drawFuncGen typ render = SinglePageDraw func 
   where func isCurrentCvs canvas (pnum,page) vinfo mbbox = do 
           let arr = get pageArrangement vinfo
-          geometry <- makeCanvasGeometry typ (pnum,page) arr canvas
+          geometry <- makeCanvasGeometry pnum arr canvas
           win <- widgetGetDrawWindow canvas
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
@@ -207,9 +207,8 @@ drawContPageGen render = ContPageDraw func
   where func isCurrentCvs cinfo mbbox xoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
-              page = getPage cinfo 
               canvas = get drawArea cinfo 
-          geometry <- makeCanvasGeometry EditMode (pnum,page) arr canvas
+          geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = get g_pages xoj 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry xoj) 
@@ -256,10 +255,9 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
   where func isCurrentCvs cinfo mbbox txoj = do 
           let arr = get (pageArrangement.viewInfo) cinfo
               pnum = PageNum . get currentPageNum $ cinfo 
-              page = getPage cinfo 
-              tpage = get currentPage cinfo 
+              mtpage = get g_selectSelected txoj 
               canvas = get drawArea cinfo 
-          geometry <- makeCanvasGeometry EditMode (pnum,page) arr canvas
+          geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = get g_selectAll txoj 
               xoj = GXournal (get g_selectTitle txoj) pgs 
           let drawpgs = catMaybes . map f 
@@ -290,9 +288,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 -- clipBBox mbboxnew
                 mapM_ onepagerender drawpgs 
                 -- emphasispagerender (pnum,page)
-                case tpage of 
-                  Left page' -> return () 
-                  Right tpage' -> selpagerender (pnum,tpage')
+                maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                   
                 resetClip 

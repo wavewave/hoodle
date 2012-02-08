@@ -43,7 +43,7 @@ module Application.HXournal.Type.Canvas
 , scrolledWindow
 , viewInfo
 , currentPageNum 
-, currentPage
+-- , currentPage
 , horizAdjustment
 , vertAdjustment
 , horizAdjConnId 
@@ -68,7 +68,7 @@ module Application.HXournal.Type.Canvas
 , pageArrEitherFromCanvasInfoBox
 , viewModeBranch
 -- * others
-, getPage
+-- , getPage
 , updateCanvasDimForSingle
 , updateCanvasDimForContSingle
 ) where
@@ -130,7 +130,7 @@ data CanvasInfo a =
                                , _scrolledWindow :: ScrolledWindow
                                , _viewInfo :: ViewInfo a
                                , _currentPageNum :: Int
-                               , _currentPage :: Either (Page EditMode) (Page SelectMode)
+                               -- , _currentPage :: Either (Page EditMode) (Page SelectMode)
                                , _horizAdjustment :: Adjustment
                                , _vertAdjustment :: Adjustment 
                                , _horizAdjConnId :: Maybe (ConnectId Adjustment)
@@ -144,7 +144,7 @@ defaultCvsInfoSinglePage =
              , _scrolledWindow = error "ScrolledWindow"
              , _viewInfo = defaultViewInfoSinglePage
              , _currentPageNum = 0 
-             , _currentPage = error "currentPage" 
+             -- , _currentPage = error "currentPage" 
              , _horizAdjustment = error "adjustment"
              , _vertAdjustment = error "vadjust"
              , _horizAdjConnId = Nothing
@@ -166,8 +166,10 @@ viewInfo = lens _viewInfo (\a f -> f { _viewInfo = a })
 currentPageNum :: CanvasInfo a :-> Int 
 currentPageNum = lens _currentPageNum (\a f -> f { _currentPageNum = a })
 
+{-
 currentPage :: CanvasInfo a :-> Either (Page EditMode) (Page SelectMode)
 currentPage = lens _currentPage (\a f -> f { _currentPage = a })
+-}
 
 -- | 
 
@@ -337,9 +339,10 @@ $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''Width
 
 -- | 
 
+{- 
 getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
 getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
-
+-}
 
 -- | 
 
@@ -358,16 +361,17 @@ updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo =
      
 -- | 
 
-updateCanvasDimForContSingle :: CanvasDimension 
+updateCanvasDimForContSingle :: PageDimension 
+                                -> CanvasDimension 
                                 -> CanvasInfo ContinuousSinglePage 
                                 -> CanvasInfo ContinuousSinglePage 
-updateCanvasDimForContSingle cdim@(CanvasDimension (Dim w' h')) cinfo = 
+updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = 
   let zmode = get (zoomMode.viewInfo) cinfo
       arr@(ContinuousSingleArrangement _ ddim  func vbbox@(ViewPortBBox bbox)) 
         = get (pageArrangement.viewInfo) cinfo
       (x,y) = bbox_upperleft bbox 
-      dim = get g_dimension . getPage $ cinfo 
-      (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
+      -- dim = get g_dimension . getPage $ cinfo 
+      (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousSingleArrangement cdim ddim func (ViewPortBBox nbbox)
   in set (pageArrangement.viewInfo) arr' cinfo

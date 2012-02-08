@@ -36,6 +36,7 @@ import Application.HXournal.Type.Event
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.View.Coordinate
+import Application.HXournal.Type.XournalState
 import Control.Monad.Coroutine 
 import Control.Monad.Coroutine.SuspensionFunctors
 
@@ -57,29 +58,65 @@ updateXState action = putSt =<< action =<< getSt
 
 -- | 
 
-getPenType :: Iteratee MyEvent XournalStateIO PenType
+getPenType :: MainCoroutine PenType --  Iteratee MyEvent XournalStateIO PenType
 getPenType = get (penType.penInfo) <$> lift (St.get)
       
 -- | 
 
+getCurrentPageCurr :: MainCoroutine (Page EditMode) 
+getCurrentPageCurr = do 
+  xstate <- getSt 
+  let xojstate = get xournalstate xstate
+      cinfobox = get currentCanvasInfo xstate 
+  case cinfobox of 
+    CanvasInfoBox cinfo -> return (getCurrentPageFromXojState cinfo xojstate)
+
+-- | 
+
+getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
+getCurrentPageCvsId cid = do 
+  xstate <- getSt 
+  let xojstate = get xournalstate xstate
+      cinfobox = getCanvasInfo cid xstate 
+  case cinfobox of 
+    CanvasInfoBox cinfo -> return (getCurrentPageFromXojState cinfo xojstate)
+
+
+
+-- | 
+    
+getCurrentPageEitherFromXojState :: (ViewMode a) => 
+                                    CanvasInfo a -> XournalState  
+                                    -> Either (Page EditMode) (Page SelectMode)
+getCurrentPageEitherFromXojState cinfo xojstate =  
+    let cpn = get currentPageNum cinfo 
+        page = getCurrentPageFromXojState cinfo xojstate
+    in case xojstate of 
+         ViewAppendState xoj -> Left page
+         SelectState txoj ->  
+           case get g_selectSelected txoj of 
+             Nothing -> Left page
+             Just (n,tpage) -> if cpn == n 
+                                 then Right tpage
+                                 else Left page
+                                      
+
+
+-- | 
+
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
-  xstate <- getSt 
-  case get currentCanvasInfo xstate of
-    CanvasInfoBox currCvsInfo -> 
-      let pagebbox = getPage currCvsInfo
-      in  return [s| l <- gToList (get g_layers pagebbox), s <- get g_bstrokes l ]
+  page <- getCurrentPageCurr
+  return [s| l <- gToList (get g_layers page), s <- get g_bstrokes l ]
   
+-- | 
 
 getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentLayer = do 
-  xstate <- getSt 
-  case get currentCanvasInfo xstate of 
-    CanvasInfoBox currCvsInfo -> do 
-      let pagebbox = getPage currCvsInfo
-          (mcurrlayer, _currpage) = getCurrentLayerOrSet pagebbox
-          currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-      return (get g_bstrokes currlayer)
+  page <- getCurrentPageCurr
+  let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
+      currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
+  return (get g_bstrokes currlayer)
       
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . getCanvasInfoMap 
@@ -190,21 +227,21 @@ printModesAll = do
 
 
 -- | 
-
+{-
 unboxGetPage :: CanvasInfoBox -> (Page EditMode) 
 unboxGetPage = either id (gcast :: Page SelectMode -> Page EditMode) . unboxGet currentPage
+-}
 
 -- | 
 
 getCanvasGeometryCvsId :: CanvasId -> HXournalState -> IO CanvasGeometry 
 getCanvasGeometryCvsId cid xstate = do 
   let cinfobox = getCanvasInfo cid xstate
-      page = unboxGetPage cinfobox
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
       xojstate = get xournalstate xstate 
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
-      fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
+      fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . get (pageArrangement.viewInfo) 
   boxAction fsingle cinfobox
 
@@ -213,12 +250,11 @@ getCanvasGeometryCvsId cid xstate = do
 getCanvasGeometry :: HXournalState -> IO CanvasGeometry 
 getCanvasGeometry xstate = do 
   let cinfobox = get currentCanvasInfo xstate
-      page = unboxGetPage cinfobox
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
       xojstate = get xournalstate xstate 
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
-      fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
+      fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . get (pageArrangement.viewInfo) 
 
   boxAction fsingle cinfobox

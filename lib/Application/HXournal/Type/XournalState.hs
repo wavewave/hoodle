@@ -157,7 +157,6 @@ setCurrentCanvasId :: CanvasId -> HXournalState -> Maybe HXournalState
 setCurrentCanvasId a f = do 
     cinfobox <- M.lookup a (_cvsInfoMap f)
     return (f { _currentCanvas = (a,cinfobox) })
-      --  modify currentCanvas (\(_,x)->(a,x))
      
 -- | 
     
@@ -187,8 +186,6 @@ currentCanvasInfo = lens getter setter
           cmap' = M.adjust (const a) cid (_cvsInfoMap f)
       in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
 
---         modify currentCanvas (\(x,_)->(x,a)) 
-                   
 resetXournalStateBuffers :: XournalState -> IO XournalState 
 resetXournalStateBuffers xojstate1 = 
   case xojstate1 of 
@@ -240,10 +237,6 @@ modifyCanvasInfo cid f xstate =
                     . M.adjust f cid . getCanvasInfoMap 
     $ xstate 
   
---   modify currentCanvasInfo f 
---                           . modify canvasInfoMap (M.adjust f cid) 
-
-                    
 
 -- | should be deprecated
 
@@ -252,8 +245,6 @@ modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox)
                         -> HXournalState
 modifyCurrentCanvasInfo f = modify currentCanvasInfo f  
   
-  --  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
-  -- where cid = getCurrentCanvasId st
 
 -- | should be deprecated 
         
@@ -268,8 +259,6 @@ modifyCurrCvsInfoM f st = do
       ncinfomap = M.adjust (const ncinfobox) cid cinfomap 
   maybe (return st) return (setCanvasInfoMap ncinfomap st) 
 
---  return nst
--- set currentCanvasInfo ncinfobox
 
 -- | 
 
@@ -284,12 +273,5 @@ showCanvasInfoMapViewPortBBox :: HXournalState -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
   let cmap = getCanvasInfoMap xstate
   putStrLn . show . map (unboxGet (viewPortBBox.pageArrangement.viewInfo)) . M.elems $ cmap 
-
-
-
-
-
-
-
 
 

@@ -13,7 +13,65 @@
 --
 -----------------------------------------------------------------------------
 
-module Application.HXournal.Type.Canvas where
+module Application.HXournal.Type.Canvas 
+( 
+-- * data types 
+  CanvasId
+, PenDraw (..)
+, emptyPenDraw
+, ViewInfo (..)
+, CanvasInfo (..) 
+, CanvasInfoBox (..)
+, CanvasInfoMap
+, PenType (..) 
+, WidthColorStyle
+, PenHighlighterEraserSet
+, PenInfo
+-- * default constructor 
+, defaultViewInfoSinglePage 
+, defaultCvsInfoSinglePage
+, defaultPenWCS
+, defaultEraserWCS
+, defaultTextWCS
+, defaultHighligherWCS
+, defaultPenInfo
+-- * lenses
+, zoomMode 
+, pageArrangement 
+, canvasId
+, drawArea 
+, scrolledWindow
+, viewInfo
+, currentPageNum 
+, currentPage
+, horizAdjustment
+, vertAdjustment
+, horizAdjConnId 
+, vertAdjConnId
+, adjustments 
+, currentTool 
+, penWidth
+, penColor
+, currPen
+, currHighlighter
+, currEraser
+, currText
+, penType
+, penSet
+-- * for box
+, getDrawAreaFromBox
+, unboxGet
+, fmapBox 
+, boxAction
+, selectBoxAction
+, selectBox
+, pageArrEitherFromCanvasInfoBox
+, viewModeBranch
+-- * others
+, getPage
+, updateCanvasDimForSingle
+, updateCanvasDimForContSingle
+) where
 
 import Application.HXournal.Type.Enum 
 import Application.HXournal.Type.Alias 
@@ -47,6 +105,8 @@ data ViewInfo a  = (ViewMode a) =>
                             , _pageArrangement :: PageArrangement a } 
 
 
+-- | default view info with single page mode
+
 defaultViewInfoSinglePage :: ViewInfo SinglePage
 defaultViewInfoSinglePage = 
   ViewInfo { _zoomMode = Original 
@@ -55,6 +115,7 @@ defaultViewInfoSinglePage =
                                (PageDimension (Dim 100 100)) 
                                (ViewPortBBox (BBox (0,0) (100,100))) } 
 
+-- | lens for zoomMode 
 
 zoomMode :: ViewInfo a :-> ZoomMode 
 zoomMode = lens _zoomMode (\a f -> f { _zoomMode = a } )
@@ -108,20 +169,25 @@ currentPageNum = lens _currentPageNum (\a f -> f { _currentPageNum = a })
 currentPage :: CanvasInfo a :-> Either (Page EditMode) (Page SelectMode)
 currentPage = lens _currentPage (\a f -> f { _currentPage = a })
 
+-- | 
+
 horizAdjustment :: CanvasInfo a :-> Adjustment 
 horizAdjustment = lens _horizAdjustment (\a f -> f { _horizAdjustment = a })
+
+-- | 
 
 vertAdjustment :: CanvasInfo a :-> Adjustment 
 vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
 
+-- | ConnectId for horizontal scrollbar value change event 
+
 horizAdjConnId :: CanvasInfo a :-> Maybe (ConnectId Adjustment )
 horizAdjConnId = lens _horizAdjConnId (\a f -> f { _horizAdjConnId = a })
 
+-- | ConnectId for vertical scrollbar value change event 
+
 vertAdjConnId :: CanvasInfo a :-> Maybe (ConnectId Adjustment)
 vertAdjConnId = lens _vertAdjConnId (\a f -> f { _vertAdjConnId = a })
-
-
-
 
 -- | 
 
@@ -133,20 +199,26 @@ adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
 data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 
 
 getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
-getDrawAreaFromBox = unboxGet drawArea --  (CanvasInfoBox x) = get drawArea x 
+getDrawAreaFromBox = unboxGet drawArea
+
+-- | 
 
 unboxGet :: (forall a. (ViewMode a) => CanvasInfo a :-> b) -> CanvasInfoBox -> b 
 unboxGet f (CanvasInfoBox x) = get f x
+
+-- | fmap-like operation for box
 
 fmapBox :: (forall a. (ViewMode a) => CanvasInfo a -> CanvasInfo a)
         -> CanvasInfoBox -> CanvasInfoBox
 fmapBox f (CanvasInfoBox cinfo) = CanvasInfoBox (f cinfo)
 
+-- | 
 
 boxAction :: Monad m => (forall a. ViewMode a => CanvasInfo a -> m b) 
              -> CanvasInfoBox -> m b 
 boxAction f (CanvasInfoBox cinfo) = f cinfo 
 
+-- | either-like operation
 
 selectBoxAction :: (Monad m) => 
                    (CanvasInfo SinglePage -> m a) 
@@ -156,6 +228,8 @@ selectBoxAction fsingle fcont (CanvasInfoBox cinfo) =
     SingleArrangement _ _ _ ->  fsingle cinfo 
     ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
 
+-- | 
+    
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
           -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage)
           -> CanvasInfoBox -> CanvasInfoBox 
@@ -164,11 +238,14 @@ selectBox fsingle fcont =
       idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
   in runIdentity . idaction   
 
+-- | 
+
 pageArrEitherFromCanvasInfoBox :: CanvasInfoBox 
                  -> Either (PageArrangement SinglePage) (PageArrangement ContinuousSinglePage)
 pageArrEitherFromCanvasInfoBox (CanvasInfoBox cinfo) = 
   pageArrEither . get (pageArrangement.viewInfo) $ cinfo 
 
+-- | 
 
 viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
                -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage) 
@@ -186,10 +263,15 @@ data PenType = PenWork
              | TextWork 
              deriving (Show,Eq)
 
+
+-- | 
+
 data WidthColorStyle = WidthColorStyle { _penWidth :: Double
                                        , _penColor :: PenColor } 
                      deriving (Show)
                        
+-- | 
+
 data PenHighlighterEraserSet = PenHighlighterEraserSet 
                                { _currPen :: WidthColorStyle 
                                , _currHighlighter :: WidthColorStyle 
@@ -197,10 +279,13 @@ data PenHighlighterEraserSet = PenHighlighterEraserSet
                                , _currText :: WidthColorStyle}
                              deriving (Show) 
                      
+-- | 
+
 data PenInfo = PenInfo { _penType :: PenType
                        , _penSet :: PenHighlighterEraserSet } 
              deriving (Show) 
 
+-- | 
 currentTool :: PenInfo :-> WidthColorStyle 
 currentTool = lens chooser setter
   where chooser pinfo = case _penType pinfo of
@@ -217,18 +302,27 @@ currentTool = lens chooser setter
                           TextWork -> pset { _currText = wcs }
           in  pinfo { _penSet = psetnew } 
 
+-- | 
+        
 defaultPenWCS :: WidthColorStyle                                           
 defaultPenWCS = WidthColorStyle predefined_medium ColorBlack               
+
+-- | 
 
 defaultEraserWCS :: WidthColorStyle
 defaultEraserWCS = WidthColorStyle predefined_eraser_medium ColorWhite
 
+-- | 
+
 defaultTextWCS :: WidthColorStyle
 defaultTextWCS = defaultPenWCS
+
+-- | 
 
 defaultHighligherWCS :: WidthColorStyle
 defaultHighligherWCS = WidthColorStyle predefined_highlighter_medium ColorYellow
 
+-- | 
 
 defaultPenInfo :: PenInfo 
 defaultPenInfo = 

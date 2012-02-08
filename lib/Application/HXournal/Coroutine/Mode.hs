@@ -25,7 +25,6 @@ import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Scroll
 import Application.HXournal.Coroutine.Draw
---import Data.Foldable
 import Data.Traversable
 import Control.Applicative
 import Control.Monad.Trans

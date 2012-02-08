@@ -12,7 +12,49 @@
 --
 -----------------------------------------------------------------------------
 
-module Application.HXournal.Type.XournalState where
+module Application.HXournal.Type.XournalState 
+( XournalStateIO 
+, XournalState(..)      
+, HXournalState(..)
+-- | labels
+, xournalstate
+, currFileName
+-- , canvasInfoMap 
+-- , currentCanvas
+, frameState
+, rootWindow
+, rootContainer
+, rootOfRootWindow
+, currentPenDraw
+, clipboard
+, callBack
+, deviceList
+, penInfo
+, selectInfo
+, gtkUIManager
+, isSaved
+, undoTable
+-- | others 
+, emptyHXournalState
+, getXournal
+-- | additional lenses 
+, getCanvasInfoMap 
+, setCanvasInfoMap 
+, getCurrentCanvasId
+, setCurrentCanvasId
+, currentCanvasInfo
+, resetXournalStateBuffers
+, getCanvasInfo
+, setCanvasInfo
+, updateFromCanvasInfoAsCurrentCanvas
+, setCanvasId
+, modifyCanvasInfo
+, modifyCurrentCanvasInfo
+, modifyCurrCvsInfoM
+, xojstateEither
+-- | for debug
+, showCanvasInfoMapViewPortBBox
+) where
 
 import Application.HXournal.Device
 import Application.HXournal.Type.Event 
@@ -31,6 +73,7 @@ import Control.Monad.State hiding (get,modify)
 import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
 import Data.Label 
+import qualified Data.Label.Maybe as ML
 import Data.Xournal.Generic
 import qualified Data.IntMap as M
 
@@ -46,7 +89,7 @@ data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDFBuf }
 data HXournalState = 
   HXournalState { _xournalstate :: XournalState
                 , _currFileName :: Maybe FilePath
-                , _canvasInfoMap :: CanvasInfoMap 
+                , _cvsInfoMap :: CanvasInfoMap 
                 , _currentCanvas :: (CanvasId,CanvasInfoBox)
                 , _frameState :: WindowConfig 
                 , _rootWindow :: Widget
@@ -72,7 +115,7 @@ emptyHXournalState =
   HXournalState  
   { _xournalstate = ViewAppendState emptyGXournalMap
   , _currFileName = Nothing 
-  , _canvasInfoMap = error "emptyHXournalState.canvasInfoMap"
+  , _cvsInfoMap = error "emptyHXournalState.cvsInfoMap"
   , _currentCanvas = error "emtpyHxournalState.currentCanvas"
   , _frameState = error "emptyHXournalState.frameState" 
   , _rootWindow = error "emtpyHXournalState.rootWindow"
@@ -99,17 +142,47 @@ getXournal = either id makexoj . xojstateEither . get xournalstate
 
 -- | 
         
-currentCanvasId :: HXournalState :-> CanvasId
-currentCanvasId = lens getter setter 
-  where getter = fst . _currentCanvas 
-        setter a = modify currentCanvas (\(_,x)->(a,x))
+getCurrentCanvasId :: HXournalState -> CanvasId
+getCurrentCanvasId = fst . _currentCanvas 
+  
+-- | 
+
+setCurrentCanvasId :: CanvasId -> HXournalState -> Maybe HXournalState
+setCurrentCanvasId a f = do 
+    cinfobox <- M.lookup a (_cvsInfoMap f)
+    return (f { _currentCanvas = (a,cinfobox) })
+      --  modify currentCanvas (\(_,x)->(a,x))
+     
+-- | 
+    
+getCanvasInfoMap :: HXournalState -> CanvasInfoMap 
+getCanvasInfoMap = _cvsInfoMap 
+
+-- | 
+
+setCanvasInfoMap :: CanvasInfoMap -> HXournalState -> Maybe HXournalState 
+setCanvasInfoMap cmap xstate 
+  | M.null cmap = Nothing
+  | otherwise = 
+      let (cid,_) = _currentCanvas xstate
+          (cidmax,cinfomax) = M.findMax cmap
+          mcinfobox = M.lookup cid cmap 
+      in Just . maybe (xstate {_currentCanvas=(cidmax,cinfomax), _cvsInfoMap = cmap}) 
+                       (\cinfobox -> xstate {_currentCanvas = (cid,cinfobox)
+                                            ,_cvsInfoMap = cmap }) 
+                $ mcinfobox
 
 currentCanvasInfo :: HXournalState :-> CanvasInfoBox
 currentCanvasInfo = lens getter setter 
-  where getter = snd . _currentCanvas
-        setter a = modify currentCanvas (\(x,_)->(x,a)) 
+  where 
+    getter = snd . _currentCanvas 
+    setter a f =  
+      let cid = fst . _currentCanvas $ f 
+          cmap' = M.adjust (const a) cid (_cvsInfoMap f)
+      in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
 
-
+--         modify currentCanvas (\(x,_)->(x,a)) 
+                   
 resetXournalStateBuffers :: XournalState -> IO XournalState 
 resetXournalStateBuffers xojstate1 = 
   case xojstate1 of 
@@ -120,7 +193,7 @@ resetXournalStateBuffers xojstate1 =
     
 getCanvasInfo :: CanvasId -> HXournalState -> CanvasInfoBox 
 getCanvasInfo cid xstate = 
-  let cinfoMap = get canvasInfoMap xstate
+  let cinfoMap = getCanvasInfoMap xstate
       maybeCvs = M.lookup cid cinfoMap
   in maybeError ("no canvas with id = " ++ show cid) maybeCvs
 
@@ -128,10 +201,10 @@ getCanvasInfo cid xstate =
 
 setCanvasInfo :: (CanvasId,CanvasInfoBox) -> HXournalState -> HXournalState 
 setCanvasInfo (cid,cinfobox) xstate = 
-  let cmap = get canvasInfoMap xstate
+  let cmap = getCanvasInfoMap xstate
       cmap' = M.insert cid cinfobox cmap 
-      xstate' = set canvasInfoMap cmap' xstate
-  in xstate' 
+  in maybe xstate id $ setCanvasInfoMap cmap' xstate
+
 
 
 -- | change current canvas. this is the master function  
@@ -139,12 +212,12 @@ setCanvasInfo (cid,cinfobox) xstate =
 updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> HXournalState -> HXournalState
 updateFromCanvasInfoAsCurrentCanvas cinfobox xstate = 
   let cid = unboxGet canvasId cinfobox 
-      cmap = get canvasInfoMap xstate
+      cmap = getCanvasInfoMap xstate
       cmap' = M.insert cid cinfobox cmap 
       -- implement the following later
       -- page = gcast (unboxGet currentPage cinfobox) :: Page EditMode 
   in xstate { _currentCanvas = (cid,cinfobox)
-            , _canvasInfoMap = cmap' }
+            , _cvsInfoMap = cmap' }
 
 -- | 
 
@@ -156,8 +229,13 @@ setCanvasId cid (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid }
 
 modifyCanvasInfo :: CanvasId -> (CanvasInfoBox -> CanvasInfoBox) -> HXournalState
                     -> HXournalState
-modifyCanvasInfo cid f =  modify currentCanvasInfo f 
-                          . modify canvasInfoMap (M.adjust f cid) 
+modifyCanvasInfo cid f xstate =  
+    maybe xstate id . flip setCanvasInfoMap xstate 
+                    . M.adjust f cid . getCanvasInfoMap 
+    $ xstate 
+  
+--   modify currentCanvasInfo f 
+--                           . modify canvasInfoMap (M.adjust f cid) 
 
                     
 
@@ -166,8 +244,10 @@ modifyCanvasInfo cid f =  modify currentCanvasInfo f
 modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
                         -> HXournalState
                         -> HXournalState
-modifyCurrentCanvasInfo f st =  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
-  where cid = get currentCanvasId st 
+modifyCurrentCanvasInfo f = modify currentCanvasInfo f  
+  
+  --  modify currentCanvasInfo f . modify canvasInfoMap (M.adjust f cid) $ st 
+  -- where cid = getCurrentCanvasId st
 
 -- | should be deprecated 
         
@@ -176,14 +256,14 @@ modifyCurrCvsInfoM :: (Monad m) => (CanvasInfoBox -> m CanvasInfoBox)
                       -> m HXournalState
 modifyCurrCvsInfoM f st = do 
   let cinfobox = get currentCanvasInfo st 
-      cid = get currentCanvasId st 
+      cid = getCurrentCanvasId st 
   ncinfobox <- f cinfobox
-  let cinfomap = get canvasInfoMap st
+  let cinfomap = getCanvasInfoMap st
       ncinfomap = M.adjust (const ncinfobox) cid cinfomap 
-      nst = set currentCanvasInfo ncinfobox 
-            . set canvasInfoMap ncinfomap 
-            $ st 
-  return nst
+  maybe (return st) return (setCanvasInfoMap ncinfomap st) 
+
+--  return nst
+-- set currentCanvasInfo ncinfobox
 
 -- | 
 
@@ -191,13 +271,19 @@ xojstateEither :: XournalState -> Either (Xournal EditMode) (Xournal SelectMode)
 xojstateEither xojstate = case xojstate of 
                             ViewAppendState xoj -> Left xoj 
                             SelectState txoj -> Right txoj 
-                            
-
 
 -- | 
 
 showCanvasInfoMapViewPortBBox :: HXournalState -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
-  let cmap = get canvasInfoMap xstate
+  let cmap = getCanvasInfoMap xstate
   putStrLn . show . map (unboxGet (viewPortBBox.pageArrangement.viewInfo)) . M.elems $ cmap 
+
+
+
+
+
+
+
+
 

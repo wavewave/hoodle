@@ -164,7 +164,7 @@ reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo
 eventConnect :: HXournalState -> WindowConfig 
                 -> IO (HXournalState,WindowConfig)
 eventConnect xstate (Node cid) = do 
-    let cmap = get canvasInfoMap xstate 
+    let cmap = getCanvasInfoMap xstate 
         cinfobox = maybeError "eventConnect" $ M.lookup cid cmap
     case cinfobox of       
       CanvasInfoBox cinfo -> do 
@@ -196,13 +196,13 @@ constructFrame' :: CanvasInfoBox ->
                    HXournalState -> WindowConfig 
                    -> IO (HXournalState,Widget,WindowConfig)
 constructFrame' template oxstate (Node cid) = do 
-    let ocmap = get canvasInfoMap oxstate 
+    let ocmap = getCanvasInfoMap oxstate 
     (cinfobox,cmap,xstate) <- case M.lookup cid ocmap of 
       Just cinfobox' -> return (cinfobox',ocmap,oxstate)
       Nothing -> do 
         let cinfobox' = setCanvasId cid template 
             cmap' = M.insert cid cinfobox' ocmap
-            xstate' = set canvasInfoMap cmap' oxstate
+            xstate' = maybe oxstate id (setCanvasInfoMap cmap' oxstate)
         return (cinfobox',cmap',xstate')
     case cinfobox of       
       CanvasInfoBox cinfo -> do 

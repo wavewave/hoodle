@@ -57,7 +57,7 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
   where fsingle :: HXournalState -> CanvasInfo SinglePage -> MainCoroutine () 
         fsingle xstate cvsInfo = do 
           let cpn = PageNum . get currentPageNum $ cvsInfo 
-              isCurrentCvs = cid == get currentCanvasId xstate
+              isCurrentCvs = cid == getCurrentCanvasId xstate
           case get currentPage cvsInfo of 
             Left page -> do  
               liftIO (unSinglePageDraw drawf isCurrentCvs 
@@ -70,7 +70,7 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
         fcont :: HXournalState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
         fcont xstate cvsInfo = do 
           let xojstate = get xournalstate xstate 
-              isCurrentCvs = cid == get currentCanvasId xstate
+              isCurrentCvs = cid == getCurrentCanvasId xstate
           case xojstate of 
             ViewAppendState xoj -> do  
               liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox xoj)
@@ -82,8 +82,8 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
 invalidateOther :: MainCoroutine () 
 invalidateOther = do 
   xstate <- getSt
-  let currCvsId = get currentCanvasId xstate
-      cinfoMap  = get canvasInfoMap xstate
+  let currCvsId = getCurrentCanvasId xstate
+      cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
   mapM_ invalidate (filter (/=currCvsId) keys)
   
@@ -110,7 +110,7 @@ invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate
                        -> MainCoroutine ()
 invalidateAllInBBox mbbox = do                        
   xstate <- getSt
-  let cinfoMap  = get canvasInfoMap xstate
+  let cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
   forM_ keys (invalidateInBBox mbbox)
 
@@ -124,7 +124,7 @@ invalidateAll = invalidateAllInBBox Nothing
 -- | Invalidate Current canvas
 
 invalidateCurrent :: MainCoroutine () 
-invalidateCurrent = invalidate . get currentCanvasId =<< getSt
+invalidateCurrent = invalidate . getCurrentCanvasId =<< getSt
        
 -- | Drawing temporary gadgets
 
@@ -186,7 +186,7 @@ invalidateWithBufInBBox mbbox cid =
 
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
 chkCvsIdNInvalidate cid = do 
-  currcid <- liftM (get currentCanvasId) getSt 
+  currcid <- liftM (getCurrentCanvasId) getSt 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
   
 

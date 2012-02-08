@@ -67,7 +67,7 @@ guiProcess = do
   liftIO $ putStrLn "welcome to hxournal"
   changePage (const 0)
   xstate <- getSt
-  let cinfoMap  = get canvasInfoMap xstate
+  let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
                             (w',h') <- liftIO $ widgetGetSize canvas
@@ -100,14 +100,9 @@ initCoroutine devlst window = do
   -- (initcvstemp :: CanvasInfo SinglePage) <- initCanvasInfo st1 1 
   let initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
   let initcvsbox = CanvasInfoBox initcvs
-      --  initcmap = M.insert (get canvasId initcvs) initcvsbox M.empty
-  let -- startingXstate = set canvasInfoMap initcmap 
-      --                  . set frameState (Node 1)
-      --                 $ st1
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
-            . set canvasInfoMap (M.empty)
-            $ st1 
+            $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,wconf) <- constructFrame st2 (get frameState st2)
   (st4,wconf') <- eventConnect st3 (get frameState st3)
   let startingXstate = set frameState wconf' . set rootWindow cvs $ st4
@@ -244,7 +239,7 @@ menuEventProcess MenuUseXInput = do
   uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA") 
               >>= maybe (error "MenuUseXInput") (return . castToToggleAction)
   b <- liftIO $ toggleActionGetActive uxinputa
-  let cmap = get canvasInfoMap xstate
+  let cmap = getCanvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
   
   if b

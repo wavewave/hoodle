@@ -267,10 +267,9 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
                   ntxoj2 <- liftIO $ updateTempXournalSelectIO ntxoj1 ntpage (unPageNum newpgn)  
                   let ncinfo = set currentPage (Right ntpage)
                                . set currentPageNum (unPageNum newpgn) $ cinfo 
-                      cmap = get canvasInfoMap xstate1 
+                      cmap = getCanvasInfoMap xstate1 
                       cmap' = M.adjust (const (CanvasInfoBox ncinfo)) cid cmap
-                      xst = set canvasInfoMap cmap' xstate1
-                  
+                      xst = maybe xstate1 id $ setCanvasInfoMap cmap' xstate1
                   return . set xournalstate (SelectState ntxoj2)
                     =<< (liftIO (updatePageAll (SelectState ntxoj2) xst)) 
             return coroutineaction

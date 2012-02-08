@@ -130,7 +130,7 @@ canvasZoomUpdateCvsId cid mzmode = updateXState zoomUpdateAction
           
 canvasZoomUpdateAll :: MainCoroutine () 
 canvasZoomUpdateAll = do 
-  klst <- liftM (M.keys . get canvasInfoMap) getSt
+  klst <- liftM (M.keys . getCanvasInfoMap) getSt
   mapM_ (flip canvasZoomUpdateCvsId Nothing) klst 
 
 
@@ -138,7 +138,7 @@ canvasZoomUpdateAll = do
     
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine () 
 canvasZoomUpdate mzmode = do  
-  cid <- (liftM (get currentCanvasId) getSt)
+  cid <- (liftM (getCurrentCanvasId) getSt)
   canvasZoomUpdateCvsId cid mzmode
   
 {-  

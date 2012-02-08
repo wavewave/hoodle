@@ -78,7 +78,7 @@ startGUI mfname = do
   uxinputa <- actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
                 return (castToToggleAction x) 
   toggleActionSetActive uxinputa xinputbool
-  let canvases = map (getDrawAreaFromBox) . M.elems . get canvasInfoMap $ st4
+  let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st4
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases

@@ -62,8 +62,8 @@ getPenType = get (penType.penInfo) <$> lift (St.get)
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   xstate <- getSt 
-  case get currentCanvas xstate of
-    (_,CanvasInfoBox currCvsInfo) -> 
+  case get currentCanvasInfo xstate of
+    CanvasInfoBox currCvsInfo -> 
       let pagebbox = getPage currCvsInfo
       in  return [s| l <- gToList (get g_layers pagebbox), s <- get g_bstrokes l ]
   
@@ -71,15 +71,15 @@ getAllStrokeBBoxInCurrentPage = do
 getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentLayer = do 
   xstate <- getSt 
-  case get currentCanvas xstate of 
-    (_,CanvasInfoBox currCvsInfo) -> do 
+  case get currentCanvasInfo xstate of 
+    CanvasInfoBox currCvsInfo -> do 
       let pagebbox = getPage currCvsInfo
           (mcurrlayer, _currpage) = getCurrentLayerOrSet pagebbox
           currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
       return (get g_bstrokes currlayer)
       
 otherCanvas :: HXournalState -> [Int] 
-otherCanvas = M.keys . get canvasInfoMap 
+otherCanvas = M.keys . getCanvasInfoMap 
 
 
 -- | 
@@ -87,14 +87,27 @@ otherCanvas = M.keys . get canvasInfoMap
 changeCurrentCanvasId :: CanvasId -> MainCoroutine HXournalState 
 changeCurrentCanvasId cid = do 
     xstate1 <- getSt
+    maybe (return xstate1) 
+          (\xst -> do let cinfo = get currentCanvasInfo xst               
+                          ui = get gtkUIManager xst      
+                      liftIO $ reflectUI ui cinfo
+                      putSt xst
+                      return xst)
+          (setCurrentCanvasId cid xstate1)
+
+{-
+    let maction = do  
     (>>=) (return . M.lookup cid . get canvasInfoMap $ xstate1) $
      maybe (return xstate1) 
            (\cinfo -> do 
-               let nst = set currentCanvas (cid,cinfo) xstate1 
+               let nst = set currentCanvasInfo cinfo 
+                         . set currentCanvasId cid $ xstate1 
                    ui = get gtkUIManager nst 
-               liftIO $ reflectUI ui cinfo
                putSt nst >> return nst
            )
+    -- set currentCanvas (cid,cinfo) $ xstate1 
+-}
+
 
 -- | reflect UI for current canvas info 
 

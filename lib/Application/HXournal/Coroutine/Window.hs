@@ -59,8 +59,8 @@ canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do
 eitherSplit :: SplitType -> MainCoroutine () 
 eitherSplit stype = do
     xstate <- getSt
-    let cmap = get canvasInfoMap xstate
-        (currcid,_) = get currentCanvas xstate
+    let cmap = getCanvasInfoMap xstate
+        currcid = getCurrentCanvasId xstate
         newcid = newCanvasId cmap 
         fstate = get frameState xstate
         enewfstate = splitWindow currcid (newcid,stype) fstate 
@@ -82,14 +82,10 @@ eitherSplit stype = do
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
             (xstate4,wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
-            -- liftIO $ putStrLn " called here 2 " 
-            -- canvasZoomUpdateAll
-            -- liftIO $ putStrLn " called here 3 "
             xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
             putSt xstate5 
+            canvasZoomUpdateAll
             invalidateAll 
-
-          
 
 
 -- | 
@@ -97,8 +93,8 @@ eitherSplit stype = do
 deleteCanvas :: MainCoroutine () 
 deleteCanvas = do 
     xstate <- getSt
-    let cmap = get canvasInfoMap xstate
-        (currcid,_) = get currentCanvas xstate
+    let cmap = getCanvasInfoMap xstate
+        currcid = getCurrentCanvasId xstate
         fstate = get frameState xstate
         enewfstate = removeWindow currcid fstate 
     case enewfstate of 
@@ -110,7 +106,7 @@ deleteCanvas = do
             let cmap' = M.delete currcid cmap
                 newcurrcid = maximum (M.keys cmap')
             xstate0 <- changeCurrentCanvasId newcurrcid 
-            let xstate1 = set canvasInfoMap cmap' xstate0
+            let xstate1 = maybe xstate0 id $ setCanvasInfoMap cmap' xstate0
             putSt xstate1
             let rtwin = get rootWindow xstate1
                 rtcntr = get rootContainer xstate1 

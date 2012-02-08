@@ -116,8 +116,6 @@ makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) (x,y) =
   in SingleArrangement cdim pdim (ViewPortBBox bbox) 
 
 
-  
-
 -- | 
 
 makeContinuousSingleArrangement :: ZoomMode -> CanvasDimension 

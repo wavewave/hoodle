@@ -92,30 +92,13 @@ changeCurrentCanvasId cid = do
     xstate1 <- getSt
     maybe (return xstate1) 
           (\xst -> do putSt xst 
-                      liftIO $ putStrLn "------------------------"
-                      printModesAll 
-                      liftIO $ putStrLn $ "current id " ++ show (getCurrentCanvasId xst) ++ " cid = " ++ ( show cid )
                       return xst)
           (setCurrentCanvasId cid xstate1)
     xst <- getSt
     let cinfo = get currentCanvasInfo xst               
         ui = get gtkUIManager xst                      
-    liftIO $ putStrLn $ " cinfo cid = " ++ show (unboxGet canvasId cinfo)
     reflectUI ui cinfo
     return xst
-    
-{-
-    let maction = do  
-    (>>=) (return . M.lookup cid . get canvasInfoMap $ xstate1) $
-     maybe (return xstate1) 
-           (\cinfo -> do 
-               let nst = set currentCanvasInfo cinfo 
-                         . set currentCanvasId cid $ xstate1 
-                   ui = get gtkUIManager nst 
-               putSt nst >> return nst
-           )
-    -- set currentCanvas (cid,cinfo) $ xstate1 
--}
 
 
 -- | reflect UI for current canvas info 

@@ -32,6 +32,7 @@ import Control.Monad.Trans
 import Control.Category
 import Data.Label
 import Data.Xournal.Simple (Dimension(..))
+import Data.Xournal.BBox
 import Data.Xournal.Generic
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.UI.Gtk (adjustmentSetUpper,adjustmentGetValue,adjustmentSetValue)
@@ -61,10 +62,13 @@ modeChange command = case command of
 
 viewModeChange :: MyEvent -> MainCoroutine () 
 viewModeChange command = do 
+    xstate <- getSt 
+    liftIO $ printCanvasMode (getCurrentCanvasId xstate) (get currentCanvasInfo xstate) 
     case command of 
       ToSinglePage -> updateXState cont2single >> invalidateAll 
       ToContSinglePage -> updateXState single2cont >> invalidateAll 
       _ -> return ()
+    printModesAll  
     adjustScrollbarWithGeometryCurrent     
   where cont2single xst =  
           selectBoxAction (noaction xst) (whencont xst) . get currentCanvasInfo $ xst
@@ -74,48 +78,34 @@ viewModeChange command = do
         noaction xstate = const (return xstate)
 
         whencont xstate cinfo = do 
-          liftIO $ putStrLn "cont2single--"
-          printModesAll 
-          liftIO $ putStrLn $ " dkdk currentid = " ++ show (getCurrentCanvasId xstate) 
-          return xstate
- {-
+          liftIO $ putStrLn "wehncont"
+          geometry <- liftIO $ getCanvasGeometry xstate 
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 
               cpn = PageNum . get currentPageNum $ cinfo 
               page = getPage cinfo
-              (hadj,vadj) = get adjustments cinfo 
-          (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
-
-          let arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) 
-                                                    (cpn, PageCoord (xpos,ypos))
-              ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
-          geometry <- liftIO $ makeCanvasGeometry EditMode (cpn,page) arr canvas
-          let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
-          let vinfo = get viewInfo cinfo 
-              nvinfo = ViewInfo (get zoomMode vinfo) arr 
-              ncinfotemp = CanvasInfo (get canvasId cinfo)
-                                      (get drawArea cinfo)
-                                      (get scrolledWindow cinfo)
-                                      nvinfo 
-                                      (get currentPageNum cinfo)
-                                      (get currentPage cinfo)
-                                      hadj 
-                                      vadj 
-                                      (get horizAdjConnId cinfo)
-                                      (get vertAdjConnId cinfo)
-              ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
-              ncinfo = modify currentPageNum (const (unPageNum ncpn)) ncinfotemp
-
-          return . modifyCurrentCanvasInfo (const (CanvasInfoBox ncinfo)) $ xstate
-
--}
-
+              pdim = PageDimension (get g_dimension page )
+              ViewPortBBox bbox = get (viewPortBBox.pageArrangement.viewInfo) cinfo       
+              (x0,y0) = bbox_upperleft bbox 
+              (xpos,ypos) = maybe (0,0) (unPageCoord.snd) $ desktop2Page geometry (DeskCoord (x0,y0))  
+          let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos) 
+          let nvinfo = ViewInfo (get zoomMode (get viewInfo cinfo)) arr 
+              ncinfo = CanvasInfo (get canvasId cinfo)
+                                  canvas
+                                  (get scrolledWindow cinfo)
+                                  nvinfo 
+                                  (unPageNum cpn)
+                                  (Left page)
+                                  (get horizAdjustment cinfo)
+                                  (get vertAdjustment cinfo)
+                                  (get horizAdjConnId cinfo)
+                                  (get vertAdjConnId cinfo)
+          liftIO $ putStrLn " after "                                   
+          liftIO $ printCanvasMode (getCurrentCanvasId xstate) (CanvasInfoBox ncinfo)
+          return $ set currentCanvasInfo (CanvasInfoBox ncinfo) xstate
 
         whensing xstate cinfo = do 
-          liftIO $ putStrLn "single2cont--"
-          liftIO $ putStrLn $ " dkdk currentid = " ++ show (getCurrentCanvasId xstate) 
-          
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 

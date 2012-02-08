@@ -40,9 +40,6 @@ import Prelude hiding ((.),id)
 canvasConfigure :: CanvasId -> CanvasDimension -> MainCoroutine () 
 canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do 
     xstate <- getSt 
-    -- for debug
-    printViewPortBBoxAll
-    
     let cinfobox = getCanvasInfo cid xstate
     xstate' <- selectBoxAction (fsingle xstate) (fcont xstate) cinfobox
     putSt xstate'

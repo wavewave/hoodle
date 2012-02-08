@@ -34,6 +34,8 @@ module Application.HXournal.Type.XournalState
 , gtkUIManager
 , isSaved
 , undoTable
+, isEventBlocked 
+, pageModeSignal
 -- | others 
 , emptyHXournalState
 , getXournal
@@ -104,6 +106,8 @@ data HXournalState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable XournalState
+                , _isEventBlocked :: Bool
+                , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 --  , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
                 } 
 
@@ -130,6 +134,8 @@ emptyHXournalState =
   , _gtkUIManager = error "emptyHXournalState.gtkUIManager"
   , _isSaved = False 
   , _undoTable = emptyUndo 1 
+  , _isEventBlocked = False 
+  , _pageModeSignal = Nothing
 --  , _networkClipboardInfo = Nothing 
   }
 

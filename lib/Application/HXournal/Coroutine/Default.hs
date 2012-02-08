@@ -57,6 +57,25 @@ import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import Data.Xournal.Generic
 
+-- | 
+
+initViewModeIOAction :: MainCoroutine HXournalState
+initViewModeIOAction = do 
+  oxstate <- getSt
+  let ui = get gtkUIManager oxstate
+  agr <- liftIO $ uiManagerGetActionGroups ui 
+  Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
+  let wra = castToRadioAction ra 
+  connid <- liftIO $ wra `on` radioActionChanged $ \x -> do 
+    y <- viewModeToMyEvent x 
+    get callBack oxstate y 
+    return () 
+  let xstate = set pageModeSignal (Just connid) oxstate
+  putSt xstate 
+  return xstate 
+
+
+
 -- |
 
 guiProcess :: MainCoroutine ()
@@ -66,7 +85,7 @@ guiProcess = do
   
   liftIO $ putStrLn "welcome to hxournal"
   changePage (const 0)
-  xstate <- getSt
+  xstate <- initViewModeIOAction 
   let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox

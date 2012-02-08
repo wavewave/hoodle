@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Type.Event 
@@ -9,10 +8,13 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Type.Event where
 
 import Application.HXournal.Type.Enum
 import Application.HXournal.Device 
+import Graphics.UI.Gtk
 
 data MyEvent = Initialized
              | CanvasConfigure Int Double Double 
@@ -120,3 +122,11 @@ data MenuEvent = MenuNew
                | MenuDefault
                deriving (Show, Ord, Eq)
   
+viewModeToMyEvent :: RadioAction -> IO MyEvent
+viewModeToMyEvent a = do 
+    v <- radioActionGetCurrentValue a
+    case v of 
+      1 -> return ToSinglePage
+      0 -> return ToContSinglePage
+      _ -> return ToSinglePage
+

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeOperators, GADTs, ScopedTypeVariables  #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -32,9 +32,12 @@ import Data.Xournal.Generic
 import Application.HXournal.Util
 import Application.HXournal.ModelAction.Layer 
 import Application.HXournal.Type.Alias
+import Application.HXournal.Type.Event
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Type.Coroutine
 import Application.HXournal.View.Coordinate
-
+import Control.Monad.Coroutine 
+import Control.Monad.Coroutine.SuspensionFunctors
 
 -- | get HXournalState 
 
@@ -88,13 +91,19 @@ changeCurrentCanvasId :: CanvasId -> MainCoroutine HXournalState
 changeCurrentCanvasId cid = do 
     xstate1 <- getSt
     maybe (return xstate1) 
-          (\xst -> do let cinfo = get currentCanvasInfo xst               
-                          ui = get gtkUIManager xst      
-                      liftIO $ reflectUI ui cinfo
-                      putSt xst
+          (\xst -> do putSt xst 
+                      liftIO $ putStrLn "------------------------"
+                      printModesAll 
+                      liftIO $ putStrLn $ "current id " ++ show (getCurrentCanvasId xst) ++ " cid = " ++ ( show cid )
                       return xst)
           (setCurrentCanvasId cid xstate1)
-
+    xst <- getSt
+    let cinfo = get currentCanvasInfo xst               
+        ui = get gtkUIManager xst                      
+    liftIO $ putStrLn $ " cinfo cid = " ++ show (unboxGet canvasId cinfo)
+    reflectUI ui cinfo
+    return xst
+    
 {-
     let maction = do  
     (>>=) (return . M.lookup cid . get canvasInfoMap $ xstate1) $
@@ -111,16 +120,24 @@ changeCurrentCanvasId cid = do
 
 -- | reflect UI for current canvas info 
 
-reflectUI :: UIManager -> CanvasInfoBox -> IO ()
+reflectUI :: UIManager -> CanvasInfoBox -> MainCoroutine ()
 reflectUI ui cinfobox = do 
-    agr <- uiManagerGetActionGroups ui
-    Just ra1 <- actionGroupGetAction (head agr) "ONEPAGEA"
+    xstate <- getSt
+    let mconnid = get pageModeSignal xstate
+    liftIO $ maybe (return ()) signalBlock mconnid 
+    agr <- liftIO $ uiManagerGetActionGroups ui
+    Just ra1 <- liftIO $ actionGroupGetAction (head agr) "ONEPAGEA"
+    let wra1 = castToRadioAction ra1 
     selectBoxAction (fsingle ra1) (fcont ra1) cinfobox 
-  where fsingle ra1 cinfo =  
-          Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1 ] 
-        fcont ra1 cinfo =  
-          Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
-          
+    liftIO $ maybe (return ()) signalUnblock mconnid 
+    return ()
+  where fsingle ra1 cinfo = do
+          let wra1 = castToRadioAction ra1           
+          liftIO $ Gtk.set wra1 [radioActionCurrentValue := 1 ] 
+        fcont ra1 cinfo = do
+          let wra1 = castToRadioAction ra1 
+          -- liftIO $ wra1 `on` radioActionChanged $ const (putStrLn "hellowworld2" >> return ())
+          liftIO $ Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
   
 -- | 
 
@@ -130,11 +147,63 @@ printViewPortBBox cid = do
   liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
 
 -- | 
+printViewPortBBoxAll :: MainCoroutine () 
+printViewPortBBoxAll = do 
+  xstate <- getSt 
+  let cmap = getCanvasInfoMap xstate
+      cids = M.keys cmap
+  mapM_ printViewPortBBox cids 
+
+-- | 
   
 printViewPortBBoxCurr :: MainCoroutine ()
 printViewPortBBoxCurr = do 
   cvsInfo <- return . get currentCanvasInfo =<< getSt 
   liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
+
+-- | 
+  
+printModes :: CanvasId -> MainCoroutine ()
+printModes cid = do 
+  cvsInfo <- return . getCanvasInfo cid =<< getSt 
+  liftIO $ printCanvasMode cid cvsInfo
+{-  let zmode = unboxGet (zoomMode.viewInfo) cvsInfo
+      f :: PageArrangement a -> String 
+      f (SingleArrangement _ _ _) = "SingleArrangement"
+      f (ContinuousSingleArrangement _ _ _ _) = "ContinuousSingleArrangement"
+
+      g :: CanvasInfo a -> String 
+      g cinfo = f . get (pageArrangement.viewInfo) $ cinfo
+      
+      arrmode :: String 
+      arrmode = boxAction g cvsInfo  
+      
+      incid = unboxGet canvasId cvsInfo 
+  liftIO $ putStrLn $ show (cid,incid,zmode,arrmode) -}
+
+printCanvasMode :: CanvasId -> CanvasInfoBox -> IO ()
+printCanvasMode cid cvsInfo = do 
+  let zmode = unboxGet (zoomMode.viewInfo) cvsInfo
+      f :: PageArrangement a -> String 
+      f (SingleArrangement _ _ _) = "SingleArrangement"
+      f (ContinuousSingleArrangement _ _ _ _) = "ContinuousSingleArrangement"
+
+      g :: CanvasInfo a -> String 
+      g cinfo = f . get (pageArrangement.viewInfo) $ cinfo
+      
+      arrmode :: String 
+      arrmode = boxAction g cvsInfo  
+      
+      incid = unboxGet canvasId cvsInfo 
+  putStrLn $ show (cid,incid,zmode,arrmode)
+
+
+printModesAll :: MainCoroutine () 
+printModesAll = do 
+  xstate <- getSt 
+  let cmap = getCanvasInfoMap xstate
+      cids = M.keys cmap
+  mapM_ printModes cids 
 
 
 -- | 
@@ -151,6 +220,7 @@ getCanvasGeometryCvsId cid xstate = do
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
       xojstate = get xournalstate xstate 
+      fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
                 . get (pageArrangement.viewInfo) 
   boxAction fsingle cinfobox
@@ -164,10 +234,11 @@ getCanvasGeometry xstate = do
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
       xojstate = get xournalstate xstate 
+      fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry EditMode (cpn,page)) canvas 
                 . get (pageArrangement.viewInfo) 
 
-  selectBoxAction fsingle fsingle cinfobox
+  boxAction fsingle cinfobox
   
 
 {-

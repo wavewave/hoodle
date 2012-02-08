@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Coroutine.Callback where
 
@@ -18,6 +19,7 @@ import Control.Monad.State
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
 import Application.HXournal.Type.Coroutine
+import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Event 
 
 dummycallback :: MyEvent -> IO ()
@@ -27,12 +29,13 @@ bouncecallback :: TRef -> SRef -> MyEvent -> IO ()
 bouncecallback tref sref input = do 
   Await cont <- readIORef tref 
   st <- readIORef sref
-  (nr,st') <- runStateT (resume (cont input)) st 
-  case nr of  
-    Left  naw -> do writeIORef tref naw 
-                    writeIORef sref st'
-    Right val -> do putStrLn $ show val 
-                    writeIORef tref (Await (\_ -> return ()))
-                    writeIORef sref st'
-  return ()  
+  when (not (_isEventBlocked st)) $ do 
+    (nr,st') <- runStateT (resume (cont input)) st 
+    case nr of  
+      Left  naw -> do writeIORef tref naw 
+                      writeIORef sref st'
+      Right val -> do putStrLn $ show val 
+                      writeIORef tref (Await (\_ -> return ()))
+                      writeIORef sref st'
+    return ()  
 

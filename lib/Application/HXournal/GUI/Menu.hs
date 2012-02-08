@@ -17,6 +17,7 @@ import Application.HXournal.Util.Verbatim
 import Application.HXournal.Coroutine.Callback
 import Application.HXournal.Type
 import Application.HXournal.Type.Clipboard
+import Application.HXournal.Accessor
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
 import Data.Maybe
@@ -496,7 +497,10 @@ getMenuUI tref sref = do
         ] 
     
   actionGroupAddAction agr uxinputa 
-  actionGroupAddRadioActions agr viewmods 0 (assignViewMode tref sref)
+  -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode tref sref)
+  actionGroupAddRadioActions agr viewmods 0 (const (return ()))
+  
+  
   actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode tref sref)
   actionGroupAddRadioActions agr colormods 0 (assignColor sref) 
@@ -529,8 +533,8 @@ getMenuUI tref sref = do
   uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
 
-  Just ra1 <- actionGroupGetAction agr "ONEPAGEA"
-  Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1]  
+  -- Just ra1 <- actionGroupGetAction agr "ONEPAGEA"
+  -- Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1]  
 
   Just ra2 <- actionGroupGetAction agr "PENFINEA"
   Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
@@ -555,15 +559,22 @@ getMenuUI tref sref = do
   
   return ui   
 
+
+
 assignViewMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
                  -> IORef HXournalState -> RadioAction -> IO ()
 assignViewMode tref sref a = do 
-    v <- radioActionGetCurrentValue a
+    -- v <- radioActionGetCurrentValue a
     st <- readIORef sref 
-    case v of 
+    putStrLn "in assignmViewMode"
+    printCanvasMode (getCurrentCanvasId st) (get currentCanvasInfo st)
+    putStrLn "still in assignViewMode"
+    viewModeToMyEvent a >>= bouncecallback tref sref
+    
+{-    case v of 
       1 -> bouncecallback tref sref ToSinglePage
       0 -> bouncecallback tref sref ToContSinglePage
-      _ -> return ()
+      _ -> return () -}
 
 
 

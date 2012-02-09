@@ -46,6 +46,7 @@ import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo.Matrix as Mat
 import Data.Monoid 
 import qualified Data.IntMap as M
 import Data.Sequence (Seq,(|>))
@@ -94,7 +95,11 @@ selectRectStart cid = commonPenStart rectaction cid
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
-                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender pnum geometry (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                    maybe (return ()) 
+                          (\handle -> startResizeSelect 
+                                        handle cid pnum geometry cidmove cidup 
+                                        bbox ((x,y),ctime) tpage)
+                          (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
               action (Right tpage) | hitInSelection tpage (x,y) = do
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
@@ -199,9 +204,9 @@ startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage = do
     tsel <- createTempSelectRender pnum geometry
               (gcast tpage :: Page EditMode) 
               strimage 
-              -- (getSelectedStrokes tpage)
     moveSelect cid pnum geometry cidmove cidup (x,y) ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)                  
+    surfaceFinish (imageSurface strimage)
 
 -- | 
          
@@ -233,14 +238,9 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
               in (xn-xo,yn-yo)
       
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
-      when willUpdate $ do 
-        -- let strs = tempSelectInfo tempselection
-        --     newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
-        --     drawselection = do 
-        --       mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTempBasePage cid (tempSurface tempselection) pnum 
-          (drawTempSelectImage tempselection (translate (x-x0) (y-y0)))
-        --   drawselection
+      when willUpdate $ invalidateTempBasePage cid (tempSurface tempselection) 
+                          pnum (drawTempSelectImage tempselection 
+                                                    (translate (x-x0) (y-y0)))
       moveSelect cid pnum geometry connidmove connidup orig (ncoord,ntime) 
         tempselection
     upact :: (ViewMode a) => HXournalState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
@@ -301,8 +301,31 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       disconnect connidup 
       invalidateAll 
       
+
+-- | prepare for resizing selection 
       
--- |
+startResizeSelect :: Handle 
+                     -> CanvasId 
+                     -> PageNum 
+                     -> CanvasGeometry 
+                     -> ConnectId DrawingArea
+                     -> ConnectId DrawingArea
+                     -> BBox
+                     -> ((Double,Double),UTCTime) 
+                     -> Page SelectMode
+                     -> MainCoroutine () 
+startResizeSelect handle cid pnum geometry cidmove cidup bbox 
+                  ((x,y),ctime) tpage = do  
+    strimage <- liftIO $ mkStrokesNImage geometry tpage  
+    tsel <- createTempSelectRender pnum geometry 
+              (gcast tpage :: Page EditMode) 
+              strimage 
+    resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel 
+    surfaceFinish (tempSurface tsel)  
+    surfaceFinish (imageSurface strimage)
+  
+
+-- | 
       
 resizeSelect :: Handle 
                 -> CanvasId
@@ -312,7 +335,7 @@ resizeSelect :: Handle
                 -> ConnectId DrawingArea
                 -> BBox
                 -> ((Double,Double),UTCTime)
-                -> TempSelection
+                -> TempSelectRender StrokesNImage
                 -> MainCoroutine ()
 resizeSelect handle cid pnum geometry connidmove connidup origbbox 
              (prev,otime) tempselection = do
@@ -326,13 +349,24 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
     moveact xstate cinfo (x,y) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
-        let strs = tempSelectInfo tempselection
+        let newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)      
+            sfunc = scaleFromToBBox origbbox newbbox
+            (c1,c2) = sfunc (0,0)
+            (a1',a2') = sfunc (1,0) 
+            (a1,a2) = (a1'-c1,a2'-c2)
+            (b1',b2') = sfunc (0,1) 
+            (b1,b2) = (b1'-c1,b2'-c2)
+            xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
+        invalidateTemp cid (tempSurface tempselection) 
+                           (drawTempSelectImage tempselection (setMatrix xformmat))
+        
+{-        let strs = tempSelectInfo tempselection
             sfunc = scaleFromToBBox origbbox newbbox
             newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)            
             newstrs = map (changeStrokeBy sfunc) strs
             drawselection = do 
               mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTemp cid (tempSurface tempselection) drawselection
+        invalidateTemp cid (tempSurface tempselection) drawselection -}
       resizeSelect handle cid pnum geometry connidmove connidup 
                    origbbox (ncoord,ntime) tempselection
     upact xstate cinfo pcoord = do 
@@ -495,7 +529,11 @@ selectLassoStart cid = commonPenStart lassoAction cid
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
-                    maybe (return ()) (\handle -> do { tsel <- createTempSelectRender pnum geometry (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+                    maybe (return ()) 
+                          (\handle -> startResizeSelect 
+                                        handle cid pnum geometry cidmove cidup 
+                                        bbox ((x,y),ctime) tpage)
+                          (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
@@ -585,6 +623,14 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
                            (x,y) ((x,y),ctime) tsel 
                 surfaceFinish (tempSurface tsel) -}
 
-
+        -- let strs = tempSelectInfo tempselection
+        --     newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
+        --     drawselection = do 
+        --       mapM_ (drawOneStroke . gToStroke) newstrs  
+        --   drawselection
+{-      
+                                        
+                                        do { tsel <- createTempSelectRender pnum geometry (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
+-}
 
 

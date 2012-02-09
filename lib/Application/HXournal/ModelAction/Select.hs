@@ -32,6 +32,7 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.Simple
 import Graphics.Rendering.Cairo
+import Graphics.Rendering.Cairo.Matrix (Matrix, invert, transformPoint )
 import Graphics.UI.Gtk hiding (get,set)
 import Data.Time.Clock
 import Control.Monad
@@ -372,11 +373,23 @@ mkStrokesNImage geometry tpage = do
 
 -- | 
           
-drawTempSelectImage :: TempSelectRender StrokesNImage -> Render () -> Render ()
-drawTempSelectImage tempselection xform = do 
+drawTempSelectImage :: CanvasGeometry 
+                       -> TempSelectRender StrokesNImage 
+                       -> Matrix -- Render ()  -- ^ transformation
+                       -> Render ()
+drawTempSelectImage geometry tempselection xformmat = do 
     let sfc = imageSurface (tempSelectInfo tempselection)
-    xform
-    clipBBox (strbbox (tempSelectInfo tempselection))
+        ViewPortBBox (BBox (x0,y0) (x1,y1)) = getCanvasViewPort geometry 
+        invxformmat = invert xformmat 
+        newvbbox = BBox (transformPoint invxformmat (x0,y0)) 
+                        (transformPoint invxformmat (x1,y1))
+        mbbox = strbbox (tempSelectInfo tempselection)
+        newmbbox = case unIntersect (Intersect (Middle newvbbox) `mappend` fromMaybe mbbox) of 
+                     Middle bbox -> Just bbox 
+                     _ -> Just newvbbox
+        --  newmbbox = case unIntersect (getViewableBBox geometry mbbox) of 
+    setMatrix xformmat
+    clipBBox newmbbox
     setSourceSurface sfc 0 0 
     setOperator OperatorOver
     paint 

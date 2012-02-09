@@ -91,18 +91,11 @@ changeStrokeBy func (StrokeBBox t c w ds _bbox) =
 getActiveLayer :: Page SelectMode -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
 getActiveLayer = unTEitherAlterHitted . get g_bstrokes . gselectedlayerbuf . get g_layers
 
-{-  let ls = glayers tpage
-      slayer = gselectedlayerbuf ls
-  in  et  $ slayer -} 
 
 
 getSelectedStrokes :: Page SelectMode -> [StrokeBBox]
 getSelectedStrokes = either (const []) (concatMap unHitted . getB) . getActiveLayer   
   
- {- let activelayer = getActiveLayer tpage 
-  in case activelayer of 
-       Left _ -> [] 
-       Right alist -> concatMap unHitted . getB $ alist  -}
 
 -- | start a select mode with alter list selection 
 
@@ -201,7 +194,6 @@ hitInSelection tpage point =
                Middle bbox -> hitTestBBoxPoint bbox point 
                _ -> False 
           
-             -- any (flip hitTestBBoxPoint point) bboxes 
     
 getULBBoxFromSelected :: Page SelectMode -> ULMaybe BBox 
 getULBBoxFromSelected tpage = 
@@ -358,7 +350,7 @@ mkStrokesNImage :: CanvasGeometry -> Page SelectMode -> IO StrokesNImage
 mkStrokesNImage geometry tpage = do 
   let strs = getSelectedStrokes tpage
       drawselection = mapM_ (drawOneStroke.gToStroke) strs 
-      Dim cw ch = unCanvasDimension . canvasDim $ geometry 
+      Dim cw ch = get g_dimension tpage -- unCanvasDimension . canvasDim $ geometry 
       mbbox = case getULBBoxFromSelected tpage of 
                 Middle bbox -> Just bbox 
                 _ -> Nothing 
@@ -375,19 +367,18 @@ mkStrokesNImage geometry tpage = do
           
 drawTempSelectImage :: CanvasGeometry 
                        -> TempSelectRender StrokesNImage 
-                       -> Matrix -- Render ()  -- ^ transformation
+                       -> Matrix -- ^ transformation matrix
                        -> Render ()
 drawTempSelectImage geometry tempselection xformmat = do 
     let sfc = imageSurface (tempSelectInfo tempselection)
-        ViewPortBBox (BBox (x0,y0) (x1,y1)) = getCanvasViewPort geometry 
+        CanvasDimension (Dim cw ch) = canvasDim geometry 
         invxformmat = invert xformmat 
-        newvbbox = BBox (transformPoint invxformmat (x0,y0)) 
-                        (transformPoint invxformmat (x1,y1))
+        newvbbox = BBox (transformPoint invxformmat (0,0)) 
+                        (transformPoint invxformmat (cw,ch))
         mbbox = strbbox (tempSelectInfo tempselection)
         newmbbox = case unIntersect (Intersect (Middle newvbbox) `mappend` fromMaybe mbbox) of 
                      Middle bbox -> Just bbox 
                      _ -> Just newvbbox
-        --  newmbbox = case unIntersect (getViewableBBox geometry mbbox) of 
     setMatrix xformmat
     clipBBox newmbbox
     setSourceSurface sfc 0 0 

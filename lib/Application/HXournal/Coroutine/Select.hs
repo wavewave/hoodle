@@ -239,10 +239,19 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
-        let (c1,c2) = (x-x0,y-y0)
+        let sfunc = offsetFunc (x-x0,y-y0)
+            xform = unCvsCoord . desktop2Canvas geometry
+                    . page2Desktop geometry . (,) pnum . PageCoord
+            (c1,c2) = xform (sfunc (0,0))
+            (a1',a2') = xform (sfunc (1,0))
+            (a1,a2) = (a1'-c1,a2'-c2)
+            (b1',b2') = xform (sfunc (0,1))
+            (b1,b2) = (b1'-c1,b2'-c2)
+            xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
+{-          (c1,c2) = (x-x0,y-y0)
             (a1,a2) = (1,0)
             (b1,b2) = (0,1)
-            xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2
+            xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 -}
         invalidateTempBasePage cid (tempSurface tempselection) pnum 
           (drawTempSelectImage geometry tempselection xformmat) 
                                                     -- (translate (x-x0) (y-y0)))
@@ -356,23 +365,17 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
       when willUpdate $ do 
         let newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)      
             sfunc = scaleFromToBBox origbbox newbbox
-            (c1,c2) = sfunc (0,0)
-            (a1',a2') = sfunc (1,0) 
+            xform = unCvsCoord . desktop2Canvas geometry
+                    . page2Desktop geometry . (,) pnum . PageCoord
+            (c1,c2) = xform (sfunc (0,0))
+            (a1',a2') = xform (sfunc (1,0))
             (a1,a2) = (a1'-c1,a2'-c2)
-            (b1',b2') = sfunc (0,1) 
+            (b1',b2') = xform (sfunc (0,1))
             (b1,b2) = (b1'-c1,b2'-c2)
             xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
         invalidateTemp cid (tempSurface tempselection) 
                            (drawTempSelectImage geometry tempselection 
                               xformmat)
-        
-{-        let strs = tempSelectInfo tempselection
-            sfunc = scaleFromToBBox origbbox newbbox
-            newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)            
-            newstrs = map (changeStrokeBy sfunc) strs
-            drawselection = do 
-              mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTemp cid (tempSurface tempselection) drawselection -}
       resizeSelect handle cid pnum geometry connidmove connidup 
                    origbbox (ncoord,ntime) tempselection
     upact xstate cinfo pcoord = do 
@@ -612,31 +615,5 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
       disconnect cidmove
       disconnect cidup 
       invalidateAll 
-
-
-{-      do          tsel <- createTempSelectRender 
-                          pnum geometry (gcast tpage :: Page EditMode)
-                          (getSelectedStrokes tpage)
-                moveSelect (get canvasId cinfo) pnum geometry cidmove cidup 
-                           (x,y) ((x,y),ctime) tsel 
-                surfaceFinish (tempSurface tsel) -}
-
-
-
-{-                 tsel <- createTempSelectRender pnum geometry
-                          (gcast tpage :: Page EditMode) (getSelectedStrokes tpage)
-                moveSelect cid pnum geometry cidmove cidup 
-                           (x,y) ((x,y),ctime) tsel 
-                surfaceFinish (tempSurface tsel) -}
-
-        -- let strs = tempSelectInfo tempselection
-        --     newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
-        --     drawselection = do 
-        --       mapM_ (drawOneStroke . gToStroke) newstrs  
-        --   drawselection
-{-      
-                                        
-                                        do { tsel <- createTempSelectRender pnum geometry (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
--}
 
 

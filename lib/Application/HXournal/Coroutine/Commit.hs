@@ -16,16 +16,14 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Event
 import Application.HXournal.Type.Undo 
-
 import Application.HXournal.Coroutine.Draw 
 import Application.HXournal.ModelAction.File
 import Application.HXournal.ModelAction.Page
-
 import Data.Label
 import Control.Monad.Trans
 import Application.HXournal.Accessor
 
-
+-- | save state and add the current status in undo history 
 
 commit :: HXournalState -> MainCoroutine () 
 commit xstate = do 
@@ -39,9 +37,10 @@ commit xstate = do
                 $ xstate
   putSt xstate' 
 
+-- | 
+
 undo :: MainCoroutine () 
 undo = do 
-    liftIO $ putStrLn "undo is called"
     xstate <- getSt
     let utable = get undoTable xstate
     case getPrevUndo utable of 
@@ -53,10 +52,10 @@ undo = do
               =<< (liftIO (updatePageAll xojstate xstate))
         invalidateAll 
       
+-- |       
   
 redo :: MainCoroutine () 
 redo = do 
-    liftIO $ putStrLn "redo is called"
     xstate <- getSt
     let utable = get undoTable xstate
     case getNextUndo utable of 
@@ -68,9 +67,10 @@ redo = do
               =<< (liftIO (updatePageAll xojstate xstate))
         invalidateAll 
 
+-- | 
+        
 clearUndoHistory :: MainCoroutine () 
 clearUndoHistory = do 
-    liftIO $ putStrLn "clearUndoHistory is called"
     xstate <- getSt
     putSt . set undoTable (emptyUndo 1) $ xstate
     

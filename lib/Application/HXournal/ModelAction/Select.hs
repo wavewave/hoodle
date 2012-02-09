@@ -25,10 +25,12 @@ import Data.Foldable (foldl')
 import Data.Monoid
 import Data.Xournal.Generic
 import Data.Xournal.BBox
+import Data.Xournal.Simple (Dimension(..))
 import Graphics.Xournal.Render.Type
+import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
-
+import Graphics.Xournal.Render.Simple
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set)
 import Data.Time.Clock
@@ -343,6 +345,45 @@ data TempSelectRender a = TempSelectRender { tempSurface :: Surface
                                            } 
 
 type TempSelection = TempSelectRender [StrokeBBox]
+
+data StrokesNImage = StrokesNImage { strokes :: [StrokeBBox]
+                                   , strbbox :: Maybe BBox 
+                                   , imageSurface :: Surface } 
+
+
+-- | 
+
+mkStrokesNImage :: CanvasGeometry -> Page SelectMode -> IO StrokesNImage 
+mkStrokesNImage geometry tpage = do 
+  let strs = getSelectedStrokes tpage
+      drawselection = mapM_ (drawOneStroke.gToStroke) strs 
+      Dim cw ch = unCanvasDimension . canvasDim $ geometry 
+      mbbox = case getULBBoxFromSelected tpage of 
+                Middle bbox -> Just bbox 
+                _ -> Nothing 
+  sfc <- createImageSurface FormatARGB32 (floor cw) (floor ch) 
+  renderWith sfc $ do 
+    setSourceRGBA 1 1 1 0    
+    rectangle 0 0 cw ch 
+    fill 
+    setSourceRGBA 0 0 0 1
+    drawselection
+  return $ StrokesNImage strs mbbox sfc
+
+-- | 
+          
+drawTempSelectImage :: TempSelectRender StrokesNImage -> Render () -> Render ()
+drawTempSelectImage tempselection xform = do 
+    let sfc = imageSurface (tempSelectInfo tempselection)
+    xform
+    clipBBox (strbbox (tempSelectInfo tempselection))
+    setSourceSurface sfc 0 0 
+    setOperator OperatorOver
+    paint 
+
+
+
+-- | 
 
 tempSelected :: TempSelection -> [StrokeBBox]
 tempSelected = tempSelectInfo 

@@ -97,12 +97,7 @@ selectRectStart cid = commonPenStart rectaction cid
                     maybe (return ()) (\handle -> do { tsel <- createTempSelectRender pnum geometry (gcast tpage :: Page EditMode) (getSelectedStrokes tpage); resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel ; surfaceFinish (tempSurface tsel) }) (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
               action (Right tpage) | hitInSelection tpage (x,y) = do
-                tsel <- createTempSelectRender pnum geometry
-                          (gcast tpage :: Page EditMode) (getSelectedStrokes tpage)
-                moveSelect cid pnum geometry cidmove cidup 
-                           (x,y) ((x,y),ctime) tsel 
-                surfaceFinish (tempSurface tsel)                  
-                  
+                startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
           xstate <- getSt 
@@ -110,6 +105,7 @@ selectRectStart cid = commonPenStart rectaction cid
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
 
+-- | 
 
 newSelectRectangle :: CanvasId
                    -> PageNum 
@@ -188,6 +184,25 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       invalidateAll 
 
 
+-- | prepare for moving selection 
+      
+startMoveSelect :: CanvasId 
+                   -> PageNum 
+                   -> CanvasGeometry 
+                   -> ConnectId DrawingArea
+                   -> ConnectId DrawingArea
+                   -> ((Double,Double),UTCTime) 
+                   -> Page SelectMode
+                   -> MainCoroutine () 
+startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage = do  
+    strimage <- liftIO $ mkStrokesNImage geometry tpage
+    tsel <- createTempSelectRender pnum geometry
+              (gcast tpage :: Page EditMode) 
+              strimage 
+              -- (getSelectedStrokes tpage)
+    moveSelect cid pnum geometry cidmove cidup (x,y) ((x,y),ctime) tsel 
+    surfaceFinish (tempSurface tsel)                  
+
 -- | 
          
 moveSelect :: CanvasId
@@ -197,7 +212,7 @@ moveSelect :: CanvasId
               -> ConnectId DrawingArea
               -> (Double,Double)
               -> ((Double,Double),UTCTime)
-              -> TempSelection
+              -> TempSelectRender StrokesNImage
               -> MainCoroutine ()
 moveSelect cid pnum geometry connidmove connidup orig@(x0,y0) 
            (prev,otime) tempselection = do
@@ -219,11 +234,13 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
-        let strs = tempSelectInfo tempselection
-            newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
-            drawselection = do 
-              mapM_ (drawOneStroke . gToStroke) newstrs  
-        invalidateTempBasePage cid (tempSurface tempselection) pnum drawselection
+        -- let strs = tempSelectInfo tempselection
+        --     newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) strs
+        --     drawselection = do 
+        --       mapM_ (drawOneStroke . gToStroke) newstrs  
+        invalidateTempBasePage cid (tempSurface tempselection) pnum 
+          (drawTempSelectImage tempselection (translate (x-x0) (y-y0)))
+        --   drawselection
       moveSelect cid pnum geometry connidmove connidup orig (ncoord,ntime) 
         tempselection
     upact :: (ViewMode a) => HXournalState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
@@ -473,13 +490,8 @@ selectLassoStart cid = commonPenStart lassoAction cid
                 newSelectLasso cinfo pnum geometry cidmove cidup strs 
                                (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                 surfaceFinish (tempSurface tsel)          
-          let action (Right tpage) | hitInSelection tpage (x,y) = do
-                tsel <- createTempSelectRender 
-                          pnum geometry (gcast tpage :: Page EditMode)
-                          (getSelectedStrokes tpage)
-                moveSelect (get canvasId cinfo) pnum geometry cidmove cidup 
-                           (x,y) ((x,y),ctime) tsel 
-                surfaceFinish (tempSurface tsel)
+          let action (Right tpage) | hitInSelection tpage (x,y) = 
+                startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
@@ -492,6 +504,10 @@ selectLassoStart cid = commonPenStart lassoAction cid
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
           
+                
+
+-- | 
+
 newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> PageNum 
                   -> CanvasGeometry
@@ -554,6 +570,20 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
       invalidateAll 
 
 
+{-      do          tsel <- createTempSelectRender 
+                          pnum geometry (gcast tpage :: Page EditMode)
+                          (getSelectedStrokes tpage)
+                moveSelect (get canvasId cinfo) pnum geometry cidmove cidup 
+                           (x,y) ((x,y),ctime) tsel 
+                surfaceFinish (tempSurface tsel) -}
+
+
+
+{-                 tsel <- createTempSelectRender pnum geometry
+                          (gcast tpage :: Page EditMode) (getSelectedStrokes tpage)
+                moveSelect cid pnum geometry cidmove cidup 
+                           (x,y) ((x,y),ctime) tsel 
+                surfaceFinish (tempSurface tsel) -}
 
 
 

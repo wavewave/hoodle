@@ -160,6 +160,7 @@ viewAppendMode = do
         (PenWork,PenButton1) -> penStart cid pcoord 
         (PenWork,PenButton2) -> eraserStart cid pcoord 
         (PenWork,PenButton3) -> do 
+          updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
           modeChange ToSelectMode
           selectLassoStart cid pcoord
         (EraserWork,_)      -> eraserStart cid pcoord 

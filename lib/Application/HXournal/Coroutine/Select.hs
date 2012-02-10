@@ -77,6 +77,22 @@ createTempSelectRender pnum geometry page x = do
     return tempselection 
 
 
+-- | For Selection mode from pen mode with 2nd pen button
+    
+dealWithOneTimeSelectMode :: MainCoroutine () -> MainCoroutine ()
+dealWithOneTimeSelectMode action = do 
+  xstate <- getSt 
+  liftIO $ putStrLn $ show (get isOneTimeSelectMode xstate)
+  case get isOneTimeSelectMode xstate of 
+    NoOneTimeSelectMode -> action 
+    YesBeforeSelect -> 
+      action >> updateXState (return . set isOneTimeSelectMode YesAfterSelect)
+    YesAfterSelect -> do 
+      updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 
+      modeChange ToViewAppendMode
+      invalidateAll
+  
+
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
@@ -86,11 +102,12 @@ selectRectStart cid = commonPenStart rectaction cid
   where rectaction cinfo pnum geometry (cidup,cidmove) (x,y) = do
           strs <- getAllStrokeBBoxInCurrentLayer
           ctime <- liftIO $ getCurrentTime
-          let newSelectAction page = do   
-                tsel <- createTempSelectRender pnum geometry page [] 
-                newSelectRectangle cid pnum geometry cidmove cidup strs 
-                                   (x,y) ((x,y),ctime) tsel
-                surfaceFinish (tempSurface tsel)          
+          let newSelectAction page = 
+                dealWithOneTimeSelectMode $ do 
+                  tsel <- createTempSelectRender pnum geometry page [] 
+                  newSelectRectangle cid pnum geometry cidmove cidup strs 
+                                     (x,y) ((x,y),ctime) tsel
+                  surfaceFinish (tempSurface tsel)          
           let 
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
@@ -528,11 +545,12 @@ selectLassoStart cid = commonPenStart lassoAction cid
   where lassoAction cinfo pnum geometry (cidup,cidmove) (x,y) = do 
           strs <- getAllStrokeBBoxInCurrentLayer
           ctime <- liftIO $ getCurrentTime
-          let newSelectAction page = do   
-                tsel <- createTempSelectRender pnum geometry page [] 
-                newSelectLasso cinfo pnum geometry cidmove cidup strs 
-                               (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
-                surfaceFinish (tempSurface tsel)          
+          let newSelectAction page =    
+                dealWithOneTimeSelectMode $ do 
+                  tsel <- createTempSelectRender pnum geometry page [] 
+                  newSelectLasso cinfo pnum geometry cidmove cidup strs 
+                                 (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
+                  surfaceFinish (tempSurface tsel)          
           let action (Right tpage) | hitInSelection tpage (x,y) = 
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
               action (Right tpage) | hitInHandle tpage (x,y) = 
@@ -551,6 +569,11 @@ selectLassoStart cid = commonPenStart lassoAction cid
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
           
+          -- for test
+          xstate' <- getSt 
+          let xojstate' = get xournalstate xstate' 
+          let epage' = getCurrentPageEitherFromXojState cinfo xojstate' 
+          liftIO $ either (\_->putStrLn "left") (\_->putStrLn "right") epage'
                 
 
 -- | 

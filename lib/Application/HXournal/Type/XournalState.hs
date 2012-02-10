@@ -16,6 +16,7 @@ module Application.HXournal.Type.XournalState
 ( XournalStateIO 
 , XournalState(..)      
 , HXournalState(..)
+, IsOneTimeSelectMode(..)
 -- | labels
 , xournalstate
 , currFileName
@@ -35,6 +36,7 @@ module Application.HXournal.Type.XournalState
 , isSaved
 , undoTable
 , isEventBlocked 
+, isOneTimeSelectMode
 , pageModeSignal
 -- | others 
 , emptyHXournalState
@@ -88,6 +90,10 @@ type XournalStateIO = StateT HXournalState IO
 data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDFBuf }
                   | SelectState { tempSelect :: TTempXournalSelectPDFBuf }
                     
+data IsOneTimeSelectMode = NoOneTimeSelectMode 
+                         | YesBeforeSelect 
+                         | YesAfterSelect
+                         deriving (Show,Eq,Ord)
 
 data HXournalState = 
   HXournalState { _xournalstate :: XournalState
@@ -108,6 +114,7 @@ data HXournalState =
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable XournalState
                 , _isEventBlocked :: Bool
+                , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 --  , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
                 } 
@@ -136,6 +143,7 @@ emptyHXournalState =
   , _isSaved = False 
   , _undoTable = emptyUndo 1 
   , _isEventBlocked = False 
+  , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
 --  , _networkClipboardInfo = Nothing 
   }

@@ -154,12 +154,16 @@ viewAppendMode :: MainCoroutine ()
 viewAppendMode = do 
   r1 <- await 
   case r1 of 
-    PenDown cid pcoord -> do 
+    PenDown cid pbtn pcoord -> do 
       ptype <- getPenType 
-      case ptype of 
-        PenWork         -> penStart cid pcoord 
-        EraserWork      -> eraserStart cid pcoord 
-        HighlighterWork -> highlighterStart cid pcoord
+      case (ptype,pbtn) of 
+        (PenWork,PenButton1) -> penStart cid pcoord 
+        (PenWork,PenButton2) -> eraserStart cid pcoord 
+        (PenWork,PenButton3) -> do 
+          modeChange ToSelectMode
+          selectLassoStart cid pcoord
+        (EraserWork,_)      -> eraserStart cid pcoord 
+        (HighlighterWork,_) -> highlighterStart cid pcoord
         _ -> return () 
     _ -> defaultEventProcess r1
 
@@ -167,7 +171,7 @@ selectMode :: MainCoroutine ()
 selectMode = do 
   r1 <- await 
   case r1 of 
-    PenDown cid pcoord -> do 
+    PenDown cid pbtn pcoord -> do 
       ptype <- return . get (selectType.selectInfo) =<< lift St.get 
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 

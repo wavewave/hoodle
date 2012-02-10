@@ -46,7 +46,7 @@ connPenMove c cid = do
   callbk <- get callBack <$> getSt
   dev <- get deviceList <$> getSt
   liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
-             p <- getPointer dev
+             (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))
 
 connPenUp :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w)
@@ -54,5 +54,5 @@ connPenUp c cid = do
   callbk <- get callBack <$> getSt
   dev <- get deviceList <$> getSt
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
-             p <- getPointer dev
+             (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))

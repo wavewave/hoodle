@@ -16,10 +16,11 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Device 
 import Graphics.UI.Gtk
 
+
 data MyEvent = Initialized
              | CanvasConfigure Int Double Double 
              | UpdateCanvas Int
-             | PenDown Int PointerCoord
+             | PenDown Int PenButton PointerCoord
              | PenMove Int PointerCoord
              | PenUp   Int PointerCoord 
              | PenColorChanged PenColor

@@ -85,14 +85,15 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
     
     bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
-                 p <- getPointer dev
-                 liftIO (callback (PenDown cid p))
+                 (mbtn,p) <- getPointer dev
+                 let pbtn = maybe PenButton1 id mbtn
+                 liftIO (callback (PenDown cid pbtn p))
     confevent <- canvas `on` configureEvent $ tryEvent $ do 
                    (w,h) <- eventSize 
                    liftIO $ callback 
                      (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
     brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
-                 p <- getPointer dev
+                 (_,p) <- getPointer dev
                  liftIO (callback (PenUp cid p))
     exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
                   liftIO $ callback (UpdateCanvas cid) 

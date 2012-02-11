@@ -82,7 +82,6 @@ createTempSelectRender pnum geometry page x = do
 dealWithOneTimeSelectMode :: MainCoroutine () -> MainCoroutine ()
 dealWithOneTimeSelectMode action = do 
   xstate <- getSt 
-  liftIO $ putStrLn $ show (get isOneTimeSelectMode xstate)
   case get isOneTimeSelectMode xstate of 
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
@@ -90,8 +89,6 @@ dealWithOneTimeSelectMode action = do
     YesAfterSelect -> do 
       updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 
       modeChange ToViewAppendMode
-      invalidateAll
-  
 
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
@@ -569,13 +566,6 @@ selectLassoStart cid = commonPenStart lassoAction cid
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
           
-          -- for test
-          xstate' <- getSt 
-          let xojstate' = get xournalstate xstate' 
-          let epage' = getCurrentPageEitherFromXojState cinfo xojstate' 
-          liftIO $ either (\_->putStrLn "left") (\_->putStrLn "right") epage'
-                
-
 -- | 
 
 newSelectLasso :: (ViewMode a) => CanvasInfo a
@@ -609,12 +599,11 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
           (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
           nlasso = lasso |> (x,y)
           xojstate = get xournalstate xstate 
-      let epage = getCurrentPageEitherFromXojState cinfo xojstate
+          epage = getCurrentPageEitherFromXojState cinfo xojstate
           cpn = get currentPageNum cinfo 
-      let hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
+          hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
           selectstrs = fmapAL unNotHitted id hittestlasso
-      xstate <- getSt    
-      let SelectState txoj = get xournalstate xstate
+          SelectState txoj = get xournalstate xstate
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox

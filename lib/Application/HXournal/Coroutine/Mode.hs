@@ -30,6 +30,7 @@ import Control.Applicative
 import Control.Monad.Trans
 import Control.Category
 import Data.Label
+import qualified Data.IntMap as M
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import Data.Xournal.Generic
@@ -39,8 +40,8 @@ import Prelude hiding ((.),id, mapM_, mapM)
 
 modeChange :: MyEvent -> MainCoroutine () 
 modeChange command = case command of 
-                       ToViewAppendMode -> updateXState select2edit
-                       ToSelectMode     -> updateXState edit2select 
+                       ToViewAppendMode -> updateXState select2edit >> invalidateAll 
+                       ToSelectMode     -> updateXState edit2select >> invalidateAll 
                        _ -> return ()
   where select2edit xst =  
           either (noaction xst) (whenselect xst) . xojstateEither . get xournalstate $ xst
@@ -49,15 +50,25 @@ modeChange command = case command of
         noaction :: HXournalState -> a -> MainCoroutine HXournalState
         noaction xstate = const (return xstate)
         whenselect :: HXournalState -> Xournal SelectMode -> MainCoroutine HXournalState
-        whenselect xstate txoj = return . flip (set xournalstate) xstate 
-                                 . ViewAppendState . GXournal (get g_selectTitle txoj)
-                                 =<< liftIO (mapM resetPageBuffers (get g_selectAll txoj)) 
+        whenselect xstate txoj = do 
+          let pages = get g_selectAll txoj
+              mselect = get g_selectSelected txoj
+          npages <- maybe (return pages) 
+                          (\(spgn,spage) -> do 
+                             npage <- liftIO $ resetPageBuffers (gcast spage)  
+                             return $ M.adjust (const npage) spgn pages )
+                          mselect
+          return . flip (set xournalstate) xstate 
+            . ViewAppendState . GXournal (get g_selectTitle txoj) $ npages 
         whenedit :: HXournalState -> Xournal EditMode -> MainCoroutine HXournalState   
         whenedit xstate xoj = return . flip (set xournalstate) xstate 
                               . SelectState  
                               $ GSelect (get g_title xoj) (gpages xoj) Nothing
 
+--   M.adjust (const ( 
+--   =<< liftIO (mapM resetPageBuffers (get g_selectAll txoj)) 
 
+-- | 
 
 viewModeChange :: MyEvent -> MainCoroutine () 
 viewModeChange command = do 

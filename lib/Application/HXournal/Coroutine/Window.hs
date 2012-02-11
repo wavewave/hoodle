@@ -173,9 +173,13 @@ paneMoveStart = do
     -- liftIO $ putStrLn "paneMoveStart" 
     ev <- await 
     case ev of 
+      UpdateCanvas cid -> do 
+        -- liftIO $ putStrLn "test" 
+        invalidateWithBuf cid
+        paneMoveStart
       PaneMoveEnd -> do 
         liftIO $ putStrLn "pane move end"
-        invalidateAll 
+        -- invalidateAll 
       CanvasConfigure cid w' h'-> do 
         canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h'))
         paneMoveStart

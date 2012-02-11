@@ -102,7 +102,6 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
     >> renderfunc
   where zoomUpdateAction xst =  
           selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
-          
         fsingle xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
           page <- getCurrentPageCvsId cid
@@ -114,7 +113,6 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
                           . set (pageArrangement.viewInfo) narr
                           . set (zoomMode.viewInfo) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
-          
         fcont xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
           page <- getCurrentPageCvsId cid          

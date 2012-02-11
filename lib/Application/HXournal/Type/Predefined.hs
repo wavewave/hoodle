@@ -12,6 +12,14 @@
 
 module Application.HXournal.Type.Predefined where
 
+import Data.Time.Clock 
+
+dtime_bound :: NominalDiffTime 
+dtime_bound = realToFrac (picosecondsToDiffTime 100000000000)
+
+predefinedWinReconfTimeBound :: NominalDiffTime
+predefinedWinReconfTimeBound = realToFrac (picosecondsToDiffTime 50000000000)
+
 predefinedLassoColor :: (Double,Double,Double,Double)
 predefinedLassoColor = (1.0,116.0/255.0,0,0.8)
 

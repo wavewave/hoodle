@@ -15,10 +15,12 @@
 module Application.HXournal.Coroutine.Window where
 
 import Application.HXournal.Type.Canvas
+import Application.HXournal.Type.Event
 import Application.HXournal.Type.Window
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Type.Predefined
 import Application.HXournal.Util
 import Control.Monad.Trans
 import Application.HXournal.ModelAction.Window
@@ -26,35 +28,72 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Page
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
 import Data.Label
 import Graphics.UI.Gtk hiding (get,set)
 import Graphics.Rendering.Cairo
 import qualified Data.IntMap as M
 import Data.Maybe
+import Data.Time.Clock 
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Prelude hiding ((.),id)
 
--- | 
+-- | canvas configure with general zoom update func
 
-canvasConfigure :: CanvasId -> CanvasDimension -> MainCoroutine () 
-canvasConfigure cid cdim@(CanvasDimension (Dim w' h')) = do 
-    xstate <- getSt 
-    let cinfobox = getCanvasInfo cid xstate
-    xstate' <- selectBoxAction (fsingle xstate) (fcont xstate) cinfobox
-    putSt xstate'
-    canvasZoomUpdateAll 
+canvasConfigureGenUpdate :: MainCoroutine () 
+                            -> CanvasId 
+                            -> CanvasDimension 
+                            -> MainCoroutine () 
+canvasConfigureGenUpdate updatefunc cid cdim@(CanvasDimension (Dim w' h')) 
+  = (updateXState $ selectBoxAction fsingle fcont . getCanvasInfo cid )
+    >> updatefunc 
+    -- canvasZoomUpdateAll 
   where cdim = CanvasDimension (Dim w' h')
-        fsingle :: HXournalState -> CanvasInfo SinglePage -> MainCoroutine HXournalState
-        fsingle xstate cinfo = do 
+        fsingle cinfo = do 
+          xstate <- getSt 
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
-        fcont xstate cinfo = do 
+        fcont cinfo = do 
+          xstate <- getSt
           page <- getCurrentPageCvsId cid
           let pdim = PageDimension (get g_dimension page)
           let cinfo' = updateCanvasDimForContSingle pdim cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
+  
+-- | 
+
+doCanvasConfigure :: CanvasId 
+                     -> CanvasDimension 
+                     -> MainCoroutine () 
+doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
+
+
+    -- fsingle :: CanvasInfo SinglePage -> MainCoroutine HXournalState
+    {- xstate <- getSt 
+    let cinfobox = getCanvasInfo cid xstate -}
+    {- xstate' <- -} 
+    -- putSt xstate' 
+  
+
+-- | 
+
+canvasConfigure' :: CanvasId -> CanvasDimension -> MainCoroutine () 
+canvasConfigure' cid cdim@(CanvasDimension (Dim w' h')) = do 
+    xstate <- getSt 
+    ctime <- liftIO getCurrentTime 
+    maybe defaction (chkaction ctime) (get lastTimeCanvasConfigure xstate) 
+  where defaction = do 
+          ntime <- liftIO getCurrentTime
+          doCanvasConfigure cid cdim          
+          updateXState (return . set lastTimeCanvasConfigure (Just ntime))    
+        chkaction ctime otime = do  
+          let dtime = diffUTCTime ctime otime 
+          if dtime > predefinedWinReconfTimeBound
+             then defaction 
+             else return ()
 
 
 -- | 
@@ -127,3 +166,29 @@ deleteCanvas = do
             putSt xstate5 
             invalidateAll 
             
+-- | 
+
+paneMoveStart :: MainCoroutine () 
+paneMoveStart = do 
+    -- liftIO $ putStrLn "paneMoveStart" 
+    ev <- await 
+    case ev of 
+      PaneMoveEnd -> do 
+        liftIO $ putStrLn "pane move end"
+        invalidateAll 
+      CanvasConfigure cid w' h'-> do 
+        canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h'))
+        paneMoveStart
+      _ -> do 
+        paneMoveStart
+       
+
+
+-- | 
+
+paneMoved :: MainCoroutine () 
+paneMoved = do 
+  liftIO $ putStrLn "pane moved called"
+  
+  
+

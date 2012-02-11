@@ -63,7 +63,6 @@ Library
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
                      Diff == 0.1.*
-
   else 
     Build-Depends:   base == 4.*, 
                      mtl == 2.*,

@@ -38,6 +38,7 @@ module Application.HXournal.Type.XournalState
 , isEventBlocked 
 , isOneTimeSelectMode
 , pageModeSignal
+, lastTimeCanvasConfigure
 -- | others 
 , emptyHXournalState
 , getXournal
@@ -77,6 +78,7 @@ import Control.Category
 import Control.Monad.State hiding (get,modify)
 import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
+import Data.Time.Clock
 import Data.Label 
 import qualified Data.Label.Maybe as ML
 import Data.Xournal.Generic
@@ -116,6 +118,7 @@ data HXournalState =
                 , _isEventBlocked :: Bool
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
+                , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 --  , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
                 } 
 
@@ -145,6 +148,7 @@ emptyHXournalState =
   , _isEventBlocked = False 
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
+  , _lastTimeCanvasConfigure = Nothing                      
 --  , _networkClipboardInfo = Nothing 
   }
 

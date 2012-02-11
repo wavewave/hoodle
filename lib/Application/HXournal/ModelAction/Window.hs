@@ -213,7 +213,14 @@ constructFrame' template oxstate (Node cid) = do
 constructFrame' template xstate (HSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     
     (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
+    let callback = get callBack xstate'' 
     hpane' <- hPanedNew
+    hpane' `on` buttonPressEvent $ do 
+      liftIO (callback PaneMoveStart)
+      return False 
+    hpane' `on` buttonReleaseEvent $ do 
+      liftIO (callback PaneMoveEnd)
+      return False       
     panedPack1 hpane' win1 True False
     panedPack2 hpane' win2 True False
     widgetShowAll hpane' 
@@ -221,7 +228,14 @@ constructFrame' template xstate (HSplit wconf1 wconf2) = do
 constructFrame' template xstate (VSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1 
     (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
+    let callback = get callBack xstate''     
     vpane' <- vPanedNew 
+    vpane' `on` buttonPressEvent $ do 
+      liftIO (callback PaneMoveStart)
+      return False 
+    vpane' `on` buttonReleaseEvent $ do 
+      liftIO (callback PaneMoveEnd)
+      return False 
     panedPack1 vpane' win1 True False
     panedPack2 vpane' win2 True False
     widgetShowAll vpane' 

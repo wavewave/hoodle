@@ -15,6 +15,7 @@ module Application.HXournal.ModelAction.Select where
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Alias
+import Application.HXournal.Type.Predefined 
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate
@@ -407,9 +408,8 @@ updateTempSelection tempselection  renderfunc isFullErase =
       fill 
     renderfunc    
     
-dtime_bound :: NominalDiffTime 
-dtime_bound = realToFrac (picosecondsToDiffTime 100000000000)
-
+-- | 
+    
 getNewCoordTime :: ((Double,Double),UTCTime) 
                    -> (Double,Double)
                    -> IO (Bool,((Double,Double),UTCTime))

@@ -29,6 +29,8 @@ data MyEvent = Initialized
              | VScrollBarMoved Int Double 
              | VScrollBarStart Int Double
              | VScrollBarEnd   Int Double
+             | PaneMoveStart 
+             | PaneMoveEnd 
              | ToViewAppendMode
              | ToSelectMode
              | ToSinglePage

@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances, TypeOperators, FlexibleInstances, 
-             StandaloneDeriving, DeriveFunctor, DeriveFoldable, DeriveTraversable  #-}
+             StandaloneDeriving, DeriveFunctor, DeriveFoldable, 
+             DeriveTraversable  #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -11,6 +12,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Data.Xournal.Select where
 
@@ -39,11 +41,11 @@ singletonSZ :: a -> SeqZipper a
 singletonSZ x = SZ (x, (empty,empty))
 
 lengthSZ :: SeqZipper a -> Int 
-lengthSZ (SZ (x, (x1s,x2s))) = length x1s + length x2s + 1 
+lengthSZ (SZ (_x, (x1s,x2s))) = length x1s + length x2s + 1 
 
 
 currIndex :: SeqZipper a -> Int
-currIndex (SZ (x, (x1s,x2s))) = length x1s 
+currIndex (SZ (_x, (x1s,_x2s))) = length x1s 
 
 appendGoLast :: SeqZipper a -> a -> SeqZipper a
 appendGoLast (SZ (y,(y1s,y2s))) x = SZ (x, ((y1s |> y) >< y2s, empty))
@@ -54,7 +56,7 @@ chopFirst (SZ (y,(y1s,y2s))) =
     EmptyL -> case viewl y2s of 
                 EmptyL -> Nothing 
                 z :< zs -> Just (SZ (z,(empty,zs)))
-    z :< zs -> Just (SZ (y,(zs,y2s)))
+    _z :< zs -> Just (SZ (y,(zs,y2s)))
     
 moveLeft :: SeqZipper a -> Maybe (SeqZipper a)
 moveLeft (SZ (x,(x1s,x2s))) = 
@@ -80,6 +82,7 @@ moveTo n orig@(SZ (x,(x1s,x2s))) =
              | n > n_x1s = let (x2s1,x2s2) = splitAt (n-n_x1s-1) x2s
                                el :< rm = viewl x2s2
                            in Just (SZ (el, ((x1s |> x) >< x2s1, rm)))
+             | otherwise = error "error in moveTo"
   in result 
 
 goFirst :: SeqZipper a -> SeqZipper a 
@@ -106,11 +109,11 @@ next :: SeqZipper a -> Maybe a
 next = fmap current . moveRight
 
 replace :: a -> SeqZipper a -> SeqZipper a 
-replace y (SZ (x,zs)) = SZ (y,zs)
+replace y (SZ (_x,zs)) = SZ (y,zs)
 
 
 deleteCurrent :: SeqZipper a -> Maybe (SeqZipper a)
-deleteCurrent orig@(SZ (_,(xs,ys))) = 
+deleteCurrent (SZ (_,(xs,ys))) = 
   case viewl ys of 
     EmptyL -> case viewr xs of 
                 EmptyR -> Nothing 
@@ -126,7 +129,7 @@ deriving instance Functor ZipperSelect
 
 selectFirst :: ZipperSelect a -> ZipperSelect a 
 selectFirst (NoSelect []) = NoSelect []
-selectFirst (NoSelect lst@(x:xs))  = Select . gFromList $ lst
+selectFirst (NoSelect lst@(_:_))  = Select . gFromList $ lst
 selectFirst (Select (O Nothing)) = NoSelect []
 selectFirst (Select (O msz)) = Select . O $ return . goFirst =<<  msz
 

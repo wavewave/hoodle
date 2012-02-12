@@ -79,13 +79,16 @@ predefined_fine :: Double
 predefined_fine = 0.85
 
 predefined_medium :: Double
-predefined_medium = 15.41 -- test original = 1.41
+predefined_medium = 1.41 
 
 predefined_thick :: Double
 predefined_thick = 2.26
 
 predefined_verythick :: Double 
 predefined_verythick = 5.67
+
+predefined_ultrathick :: Double 
+predefined_ultrathick = 15.41
 
 ---- for Highlighter
 
@@ -104,6 +107,10 @@ predefined_highlighter_thick = 19.84
 predefined_highlighter_verythick :: Double 
 predefined_highlighter_verythick = 19.84
 
+predefined_highlighter_ultrathick :: Double 
+predefined_highlighter_ultrathick = 30.84
+
+
 ---- for Eraser
 
 predefined_eraser_veryfine :: Double
@@ -121,6 +128,8 @@ predefined_eraser_thick = 19.84
 predefined_eraser_verythick :: Double 
 predefined_eraser_verythick = 19.84
 
+predefined_eraser_ultrathick :: Double 
+predefined_eraser_ultrathick = 30.84
 
 
 

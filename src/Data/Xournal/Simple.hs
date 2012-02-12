@@ -20,14 +20,8 @@ import qualified Data.ByteString as S
 import Data.ByteString.Char8 hiding (map)
 import Data.Strict.Tuple
 import Data.Xournal.Util
-
-import Control.Category
 import Data.Label
-import Prelude hiding ((.),id,putStrLn)
-
-
-
-import Prelude hiding (fst,snd,curry,uncurry)
+import Prelude hiding ((.),id,putStrLn,fst,snd,curry,uncurry)
 
 type Title = S.ByteString
 
@@ -42,14 +36,12 @@ data Stroke = Stroke { stroke_tool  :: !S.ByteString
                        }
             deriving Show
 
-getXYtuples :: Stroke -> [(Double,Double)]
-getXYtuples (Stroke t c w d) = map (\(x :!: y) -> (x,y)) d
-getXYtuples (VWStroke t c d) = map ((,)<$>fst3<*>snd3) d 
-
 
 
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }
                deriving Show
+
+-- | 
 
 data Background = Background { bkg_type :: !S.ByteString 
                              , bkg_color :: !S.ByteString 
@@ -62,19 +54,35 @@ data Background = Background { bkg_type :: !S.ByteString
                                 }
                 deriving Show 
 
+-- | 
+
 data Xournal = Xournal { xoj_title :: !Title, xoj_pages :: ![Page] }
              deriving Show 
+
+-- | 
 
 data Page = Page { page_dim :: !Dimension
                  , page_bkg :: !Background 
                  , page_layers :: ![Layer] }
           deriving Show 
 
+-- | 
+
 data Layer = Layer { layer_strokes :: ![Stroke] } 
            deriving Show 
 
+-- | 
+
+getXYtuples :: Stroke -> [(Double,Double)]
+getXYtuples (Stroke _t _c _w d) = map (\(x :!: y) -> (x,y)) d
+getXYtuples (VWStroke _t _c d) = map ((,)<$>fst3<*>snd3) d 
+
+-- | 
+
 s_tool :: Stroke :-> ByteString
 s_tool = lens stroke_tool (\a f -> f { stroke_tool = a })  
+
+-- | 
 
 s_color :: Stroke :-> ByteString 
 s_color = lens stroke_color (\a f -> f { stroke_color = a } )

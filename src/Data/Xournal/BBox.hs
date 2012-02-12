@@ -16,7 +16,6 @@ module Data.Xournal.BBox where
 
 import Control.Applicative 
 import Control.Monad
-import Data.ByteString hiding (map,maximum,minimum)
 -- import qualified Data.Sequence as Seq
 import Data.Xournal.Generic
 import Data.Xournal.Simple

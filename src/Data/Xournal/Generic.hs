@@ -70,6 +70,8 @@ type TPageSimple = GPage Background [] TLayerSimple
 
 type TXournalSimple = GXournal [] TPageSimple 
 
+-- |
+
 class GStrokeable a where
   gFromStroke :: Stroke -> a 
   gToStroke :: a -> Stroke 
@@ -78,6 +80,7 @@ instance GStrokeable Stroke where
   gFromStroke = id
   gToStroke = id 
 
+-- |
 
 class GListable s where  
   gFromList :: [a] -> s a 
@@ -91,6 +94,7 @@ instance GListable IntMap where
   gFromList = Data.IntMap.fromList . zip [0..] 
   gToList = Data.IntMap.elems 
 
+-- |
 
 class GBackgroundable b where
   gFromBackground :: Background -> b 
@@ -100,8 +104,12 @@ instance GBackgroundable Background where
   gFromBackground = id 
   gToBackground = id
 
+-- |
+  
 fromLayer :: (GStrokeable a, GListable s) => Layer -> GLayer s a 
 fromLayer = GLayer . gFromList . fmap gFromStroke . layer_strokes 
+
+-- |
 
 fromPage :: (GStrokeable a, GBackgroundable b, 
              GListable s, GListable s') => 
@@ -111,6 +119,7 @@ fromPage p = let bkg = gFromBackground $ page_bkg p
                  ls =  gFromList . fmap fromLayer . page_layers $ p 
              in  GPage dim bkg ls 
 
+-- |
 
 class SListable m where
   chgStreamToList :: (GListable s) => m s a -> m [] a 
@@ -124,48 +133,69 @@ instance SListable (GPage b) where
 instance SListable GXournal where
   chgStreamToList (GXournal t ps) = GXournal t (gToList ps)
   
+-- |
+
 g_title :: GXournal s a :-> ByteString 
 g_title = lens gtitle (\a f -> f { gtitle = a } )
 
+-- |
 g_pages :: GXournal s a :-> s a 
 g_pages = lens gpages (\a f -> f { gpages = a } )
+
+-- |
 
 g_dimension :: GPage b s a :-> Dimension 
 g_dimension = lens gdimension (\a f -> f { gdimension = a } )
 
+-- |
+
 g_background :: GPage b s a :-> b 
 g_background = lens gbackground (\a f -> f { gbackground = a } ) 
+
+-- |
 
 g_layers :: GPage b s a :-> s a 
 g_layers = lens glayers (\a f -> f { glayers = a } ) 
 
+-- |
+
 g_strokes :: GLayer s a :-> s a 
 g_strokes = lens gstrokes (\a f -> f { gstrokes = a } )
+
+-- |
 
 g_bstrokes :: GLayerBuf b s a :-> s a 
 g_bstrokes = lens gbstrokes (\a f -> f { gbstrokes = a } )
 
+-- |
+
 g_buffer :: GLayerBuf b s a :-> b 
 g_buffer = lens gbuffer (\a f -> f { gbuffer = a } )
+
+-- |
 
 g_selectTitle :: GSelect a b :-> ByteString
 g_selectTitle = lens gselectTitle (\a f -> f {gselectTitle = a})
 
+-- |
+
 g_selectAll :: GSelect a b :-> a 
 g_selectAll = lens gselectAll (\a f -> f {gselectAll = a} )
+
+-- |
 
 g_selectSelected :: GSelect a b :-> b
 g_selectSelected = lens gselectSelected (\a f -> f {gselectSelected = a})
 
-
-
-
+-- |
 
 toLayer :: (GStrokeable a, GListable s) => GLayer s a -> Layer
 toLayer = layerFromTLayerSimple . fmap gToStroke . chgStreamToList 
 
+-- |
+
 toNoBufferLayer :: GLayerBuf b s a -> GLayer s a 
-toNoBufferLayer (GLayerBuf b s) = GLayer s 
+toNoBufferLayer (GLayerBuf _b s) = GLayer s 
 
 
 toPage :: (GStrokeable a, GBackgroundable b, GListable s, GListable s', Functor s') => 

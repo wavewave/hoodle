@@ -15,11 +15,11 @@
 module Graphics.Xournal.Render.Simple where 
 
 import Graphics.Rendering.Cairo
+import Control.Applicative
+import Control.Monad
 import Data.Strict.Tuple hiding (fst,snd)
-
 import Data.Xournal.Simple
 import Data.Xournal.Predefined 
-
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 
@@ -42,7 +42,7 @@ drawOneStroke s = do
       drawOneStrokeCurve d
       stroke
     VWStroke _ _ d -> do  
-      setFillRule FillRuleEvenOdd -- Winding
+      setFillRule FillRuleWinding
       drawOneVWStrokeCurve d
     
 -- | 
@@ -60,17 +60,26 @@ drawOneVWStrokeCurve [] = return ()
 drawOneVWStrokeCurve (x:[]) = return ()
 drawOneVWStrokeCurve ((x0,y0,z0) : xs) = do 
     moveTo x0 y0
-    let (lxy:rxs) = reverse xs 
-    mapM_ forward xs 
-    mapM_ backward rxs 
+    let ((xlast,ylast,zlast):rxs) = reverse xs 
+    foldM_ forward (x0,y0) xs 
+    foldM_ backward (xlast,ylast) rxs 
     fill 
-  where forward (x,y,z)  = let wx = (fst predefinedPenShapeAspectXY)*z
-                               wy = (snd predefinedPenShapeAspectXY)*z
-                           in lineTo (x+wx) (y+wy)
-        backward (x,y,z) = let wx = (fst predefinedPenShapeAspectXY)*z
-                               wy = (snd predefinedPenShapeAspectXY)*z
-                           in lineTo (x-wx) (y-wy)
+  where (dx,dy) = (,) <$> fst <*> snd $ predefinedPenShapeAspectXY
+        dir (x,y) = x * dy - y * dx
+        forward (x0,y0) (x,y,z) = do if (dir (x-x0,y-y0) > 0) 
+                                       then lineTo (x+0.5*dx*z) (y+0.5*dy*z)
+                                       else lineTo (x-0.5*dx*z) (y-0.5*dy*z) 
+                                     return (x,y)       
+        backward (x0,y0) (x,y,z) = do if (dir (x-x0,y-y0) < 0) 
+                                        then lineTo (x-0.5*dx*z) (y-0.5*dy*z)
+                                        else lineTo (x+0.5*dx*z) (y+0.5*dy*z)
+                                      return (x,y)
 
+-- let wx = (fst predefinedPenShapeAspectXY)*z
+--    wy = (snd predefinedPenShapeAspectXY)*z
+
+-- let wx = (fst predefinedPenShapeAspectXY)*z
+--                wy = (snd predefinedPenShapeAspectXY)*z
 
 -- | general background drawing (including pdf file)
 

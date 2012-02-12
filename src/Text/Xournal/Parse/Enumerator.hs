@@ -25,7 +25,7 @@ import Control.Monad.Trans
 import Control.Monad
 import Data.Traversable
 import qualified Data.Text as T (dropWhile)
-import Data.Text hiding (foldl')
+import Data.Text hiding (foldl', zipWith)
 import Data.Text.Encoding
 import Data.Text.Read
 import Data.Strict.Tuple (  Pair(..) )
@@ -189,7 +189,8 @@ pLayer ev = do strokes <- getListUntilEnd ("stroke","layer") pStroke
                
 pStroke :: Monad m => Event -> Iteratee Event m (Either String Stroke) 
 pStroke ev = do 
-  let estr1 = getStroke ev 
+  let estr1wdth = getStroke ev 
+  trc "pStroke" estr1wdth unit
   EL.head >>= 
     maybe (return (Left "pStroke ecoord"))
           (\elm -> do 
@@ -197,8 +198,11 @@ pStroke ev = do
                   ctnt = getStrokeContent id =<< txt 
               EL.dropWhile (not.isEnd "stroke") 
               EL.drop 1 
-              return $ 
-                (\d' (Stroke t c s d)-> Stroke t c s d') <$> ctnt <*> estr1)
+              let f23 (x :!: y) z = (x,y,z)
+              let rfunc d' (Stroke t c w _, sw) = case sw of
+                      SingleWidth w' -> Stroke t c w d'  
+                      VarWidth ws -> VWStroke t c  (zipWith f23 d' ws)
+              return $ rfunc <$> ctnt <*> estr1wdth)
 
 -- * for each event 
 
@@ -217,23 +221,46 @@ getStrokeContent acc txt =
 
 -- | 
  
-getStroke :: Event -> Either String Stroke 
+getStroke :: Event -> Either String (Stroke,StrokeWidth) 
 getStroke (EventBeginElement name namecontent) = 
-    foldl' f (Right (Stroke "" "" 0 [])) namecontent 
+    foldl' f (Right (Stroke "" "" 0 [],SingleWidth 0)) namecontent 
   where  
     f acc@(Left _) _ = acc 
-    f acc@(Right str@(Stroke t c w d)) (name,contents) =            
+    f acc@(Right (str@(Stroke t c w d),wdth)) (name,contents) =            
       if nameLocalName name == "tool" 
       then let ContentText txt = Prelude.head contents 
-           in Right (str { stroke_tool = encodeUtf8 txt})
+           in Right (flip (set s_tool) str . encodeUtf8 $ txt, wdth)
       else if nameLocalName name == "color"           
       then let ContentText txt = Prelude.head contents 
-           in Right (str { stroke_color = encodeUtf8 txt})
+           in Right (flip (set s_color) str . encodeUtf8 $ txt, wdth)
       else if nameLocalName name == "width" 
       then let ContentText txt = Prelude.head contents 
-           in (\x -> Stroke t c x d) . fst <$> double txt 
+           in (,) str <$> getWidth id txt
       else acc 
 getStroke _ = Left "not a stroke"
+
+--    (str { stroke_tool = encodeUtf8 txt})
+
+-- | 
+
+data StrokeWidth = SingleWidth Double | VarWidth [Double]
+                 deriving Show
+  
+-- |
+
+getWidth :: ([Double] -> [Double])
+            -> Text 
+            -> Either String StrokeWidth
+getWidth acc txt = 
+  let eaction = do (w,rest1) <- double (skipspace txt)
+                   return (w,rest1) 
+  in case double (skipspace txt) of 
+       Left str -> case acc [] of 
+                     [] -> Left "no width in stroke"
+                     w:[] -> Right (SingleWidth w)
+                     ws -> Right (VarWidth ws)
+       Right (x,rest1) -> getWidth (acc.(x:)) rest1  
+
 
 -- | 
        

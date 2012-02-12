@@ -1,5 +1,5 @@
 Name:		xournal-render
-Version:	0.5.1.999
+Version:	0.6
 Synopsis:       Xournal file renderer
 Description: 	Rendering library using cairo for xournal file format
 License: 	BSD3
@@ -32,7 +32,7 @@ Library
                    bytestring == 0.9.*,
                    poppler == 0.12.*, 
                    fclabels == 1.0.*, 
-                   xournal-types >= 0.3.999 && < 0.5,
+                   xournal-types == 0.4.*,
                    TypeCompose == 0.9.*
   else
     Build-Depends: base == 4.*, 
@@ -42,7 +42,7 @@ Library
                    strict == 0.3.*, 
                    bytestring == 0.9.*,
                    fclabels == 1.0.*, 
-                   xournal-types >= 0.3.999 && < 0.5,
+                   xournal-types == 0.4.*,
                    TypeCompose == 0.9.*
 
 

@@ -58,11 +58,11 @@ drawOneStrokeCurve [] = return ()
 
 drawOneVWStrokeCurve :: [(Double,Double,Double)] -> Render ()
 drawOneVWStrokeCurve [] = return ()
-drawOneVWStrokeCurve (x:[]) = return ()
-drawOneVWStrokeCurve ((x0,y0,z0) : xs) = do 
-    moveTo x0 y0
-    let ((xlast,ylast,zlast):rxs) = reverse xs 
-    foldM_ forward (x0,y0) xs 
+drawOneVWStrokeCurve (_:[]) = return ()
+drawOneVWStrokeCurve ((xo,yo,_zo) : xs) = do 
+    moveTo xo yo
+    let ((xlast,ylast,_zlast):rxs) = reverse xs 
+    foldM_ forward (xo,yo) xs 
     foldM_ backward (xlast,ylast) rxs 
   where (dx,dy) = (,) <$> fst <*> snd $ predefinedPenShapeAspectXY
         dir (x,y) = x * dy - y * dx
@@ -75,11 +75,6 @@ drawOneVWStrokeCurve ((x0,y0,z0) : xs) = do
                                         else lineTo (x+0.5*dx*z) (y+0.5*dy*z)
                                       return (x,y)
 
--- let wx = (fst predefinedPenShapeAspectXY)*z
---    wy = (snd predefinedPenShapeAspectXY)*z
-
--- let wx = (fst predefinedPenShapeAspectXY)*z
---                wy = (snd predefinedPenShapeAspectXY)*z
 
 -- | general background drawing (including pdf file)
 
@@ -89,7 +84,7 @@ cairoDrawBackground page = do
   let Dim w h = page_dim page 
   case page_bkg page of 
     Background typ col sty -> cairoDrawBkg (Dim w h) (Background typ col sty)
-    BackgroundPdf _ mdomain mfilename pagenum -> 
+    BackgroundPdf _ _mdomain _mfilename _pagenum -> 
       error "in cairoDrawBackground, pdf drawing is not defined yet"
       -- cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
 

@@ -36,19 +36,18 @@ hitTestLineLine ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) =
         x43 = x4-x3 
         y21 = y2-y1 
         y43 = y4-y3
-        -- denom = y21*x43-y43*x21 
         xc = (x21*x43*(y3-y1)+y21*x43*x1-y43*x21*x3)/(y21*x43-y43*x21)
         
 hitTestLineStroke :: ((Double,Double),(Double,Double)) 
                      -> Stroke
                      -> Bool
-hitTestLineStroke line1 str@(Stroke t c w d) = test (stroke_data str) 
+hitTestLineStroke line1 str@(Stroke _t _c _w _d) = test (stroke_data str) 
   where test [] = False
         test ((_:!:_):[]) = False
         test ((x0:!:y0):(x:!:y):rest) 
           = hitTestLineLine line1 ((x0,y0),(x,y))
             || test ((x:!:y) : rest)
-hitTestLineStroke line1 str@(VWStroke t c d) = test d 
+hitTestLineStroke line1 (VWStroke _t _c d) = test d 
   where test [] = False
         test ((_,_,_):[]) = False
         test ((x0,y0,_):(x,y,z):rest) 

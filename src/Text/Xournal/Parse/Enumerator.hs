@@ -17,13 +17,11 @@ module Text.Xournal.Parse.Enumerator where
 
 import Debug.Trace
 import qualified Data.ByteString as S
-import Data.Enumerator (($$),joinI,run_,enumList)
 import Data.Enumerator as E hiding (foldl')
 import qualified Data.Enumerator.List as EL 
 import Control.Applicative 
 import Control.Monad.Trans
 import Control.Monad
-import Data.Traversable
 import qualified Data.Text as T (dropWhile)
 import Data.Text hiding (foldl', zipWith)
 import Data.Text.Encoding
@@ -129,14 +127,15 @@ many1eventWrkr (start,end) acc iter =
 drop2NextStartOrEnd :: (Monad m) => 
                        Iteratee Event m (Either (Text,Event) Text)
 drop2NextStartOrEnd = do 
-  str <- EL.takeWhile (not.isEventStartEnd)
+  EL.dropWhile (not.isEventStartEnd)
   melm <- lookAhead 
   case melm of  
     Just elm@(EventBeginElement name _) 
       -> return (Left (nameLocalName name,elm))
-    Just elm@(EventEndElement name) 
+    Just (EventEndElement name) 
       -> return (Right (nameLocalName name))
-    Nothing -> error ( show "no more item" )
+    Just _ -> error "this is impossible in drop2NextStartOrEnd"
+    Nothing -> error "no more item in drop2NextStartOrEnd" 
 
 
 -- * parsers 
@@ -148,10 +147,10 @@ pXournal = do
   EL.dropWhile (not.isStart "xournal")
   EL.head >>= maybe (
     return (Left "no xournal"))
-    (\x -> do 
-        title <- pTitle 
-        pages <- many1event ("page","xournal") pPage
-        (return $ Xournal <$> title <*> pages ))  
+    (const $ do 
+       title <- pTitle 
+       pages <- many1event ("page","xournal") pPage
+       (return $ Xournal <$> title <*> pages ))  
  
 -- | parse one page 
 
@@ -189,10 +188,10 @@ pBkg = do EL.dropWhile (not.isStart "background")
 -- | 
           
 pLayer :: Monad m => Event -> Iteratee Event m (Either String Layer) 
-pLayer ev = do strokes <- many0event ("stroke","layer") pStroke 
-               EL.dropWhile (not.isEnd "layer")
-               EL.drop 1 
-               return (Layer <$> strokes)
+pLayer _ev = do strokes <- many0event ("stroke","layer") pStroke 
+                EL.dropWhile (not.isEnd "layer")
+                EL.drop 1 
+                return (Layer <$> strokes)
 
 -- | 
                
@@ -207,9 +206,11 @@ pStroke ev = do
               EL.dropWhile (not.isEnd "stroke") 
               EL.drop 1 
               let f23 (x :!: y) z = (x,y,z)
-              let rfunc d' (Stroke t c w _, sw) = case sw of
-                      SingleWidth w' -> Stroke t c w d'  
+              let rfunc d' (Stroke t c _ _, sw) = case sw of
+                      SingleWidth w' -> Stroke t c w' d'  
                       VarWidth ws -> VWStroke t c  (zipWith f23 d' ws)
+                  rfunc _ (VWStroke _ _ _ ,_) = 
+                    error "this should not happen in pStroke"
               return $ rfunc <$> ctnt <*> estr1wdth)
 
 -- * for each event 
@@ -224,17 +225,17 @@ getStrokeContent acc txt =
                    (y,rest2) <- double (skipspace rest1)      
                    return (x :!: y, rest2)  
   in case eaction of 
-       Left str -> return (acc []) 
+       Left _str -> return (acc []) 
        Right (pxy,rest2) -> getStrokeContent (acc . (pxy:)) rest2
 
 -- | 
  
 getStroke :: Event -> Either String (Stroke,StrokeWidth) 
-getStroke (EventBeginElement name namecontent) = 
+getStroke (EventBeginElement _name namecontent) = 
     foldl' f (Right (Stroke "" "" 0 [],SingleWidth 0)) namecontent 
   where  
     f acc@(Left _) _ = acc 
-    f acc@(Right (str@(Stroke t c w d),wdth)) (name,contents) =            
+    f acc@(Right (str@(Stroke _t _c _w _d),wdth)) (name,contents) =            
       if nameLocalName name == "tool" 
       then let ContentText txt = Prelude.head contents 
            in Right (flip (set s_tool) str . encodeUtf8 $ txt, wdth)
@@ -245,6 +246,7 @@ getStroke (EventBeginElement name namecontent) =
       then let ContentText txt = Prelude.head contents 
            in (,) str <$> getWidth id txt
       else acc 
+    f (Right (VWStroke _ _ _,_)) (_,_) = error "this should not happen in getStroke"
 getStroke _ = Left "not a stroke"
 
 --    (str { stroke_tool = encodeUtf8 txt})
@@ -260,25 +262,23 @@ getWidth :: ([Double] -> [Double])
             -> Text 
             -> Either String StrokeWidth
 getWidth acc txt = 
-  let eaction = do (w,rest1) <- double (skipspace txt)
-                   return (w,rest1) 
-  in case double (skipspace txt) of 
-       Left str -> case acc [] of 
-                     [] -> Left "no width in stroke"
-                     w:[] -> Right (SingleWidth w)
-                     ws -> Right (VarWidth ws)
+    case double (skipspace txt) of 
+       Left _str -> case acc [] of 
+                      [] -> Left "no width in stroke"
+                      w:[] -> Right (SingleWidth w)
+                      ws -> Right (VarWidth ws)
        Right (x,rest1) -> getWidth (acc.(x:)) rest1  
 
 
 -- | 
        
 getBackground :: Event -> Either String Background
-getBackground (EventBeginElement name namecontent) = 
+getBackground (EventBeginElement _name namecontent) = 
     foldl' f (Right (Background "" "" "")) namecontent 
   where  
     toBkgPdf (Background _t _c _s) = BackgroundPdf "pdf" Nothing Nothing 0
-    toBkgPdf bkg@(BackgroundPdf t d f p) = bkg 
-    toBkgNoPdf t bkg@(Background _ _ _) = bkg
+    toBkgPdf bkg@(BackgroundPdf _t _d _f _p) = bkg 
+    toBkgNoPdf _t bkg@(Background _ _ _) = bkg
     toBkgNoPdf t (BackgroundPdf _t _d _f _p) = Background t "" "" 
     
     f acc@(Left _) _ = acc 
@@ -311,23 +311,20 @@ getBackground (EventBeginElement name namecontent) =
       then let ContentText txt = Prelude.head contents 
            in (\x -> BackgroundPdf t d f x) . fst <$> decimal txt 
       else acc 
-           
-           
-           
 getBackground _ = Left "not a background"
            
 -- | 
 
 getDimension :: Event -> Either String Dimension            
-getDimension (EventBeginElement name namecontent) = 
+getDimension (EventBeginElement _name namecontent) = 
     foldl' f (Right (Dim 0 0)) namecontent 
   where 
     f acc@(Left _) _ = acc 
-    f acc@(Right (Dim w h)) (name,contents) =            
-      if nameLocalName name == "width" 
+    f acc@(Right (Dim w h)) (nm,contents) =            
+      if nameLocalName nm == "width" 
       then let ContentText txt = Prelude.head contents 
            in (flip Dim h) . fst <$> double txt 
-      else if nameLocalName name == "height"           
+      else if nameLocalName nm == "height"           
       then let ContentText txt = Prelude.head contents 
            in (Dim w) . fst <$> double txt
       else acc 

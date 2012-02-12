@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.3.999
+Version:	0.4
 Synopsis:       Xournal file parser
 Description: 	Text parser for xournal xml file
 Homepage:       http://ianwookim.org/hxournal
@@ -14,17 +14,17 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/xournal-parser
 
-Executable xptest
-  Main-is: xptest.hs
-  hs-source-dirs: test
-  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
-  Build-Depends: 
-                 base>4, 
-                 xml-types,
-                 enumerator,
-                 mtl,
-                 xournal-parser
+-- Executable xptest
+--  Main-is: xptest.hs
+--  hs-source-dirs: test
+--  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+--  ghc-prof-options: -caf-all -auto-all
+--  Build-Depends: 
+--                 base>4, 
+--                 xml-types == 0.3.*,
+--                 enumerator == 0.4.*,
+--                 mtl,
+--                 xournal-parser
 
 
 
@@ -44,7 +44,7 @@ Library
                  enumerator >= 0.4.13 && < 0.5, 
                  strict == 0.3.*, 
                  iteratee-compress == 0.2.1.*, 
-                 xournal-types >= 0.3.999 && < 0.5, 
+                 xournal-types == 0.4.*, 
                  xml-types == 0.3.*, 
                  text == 0.11.*,
                  fclabels == 1.0.*

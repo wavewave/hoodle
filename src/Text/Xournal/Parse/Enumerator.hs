@@ -75,11 +75,20 @@ skipspace = T.dropWhile (\c->(c==' ') || (c=='\n') || (c=='\r'))
     
 -- | 
 
-getListUntilEnd :: Monad m => 
-                   (Text,Text) 
-                   -> (Event -> E.Iteratee Event m (Either String a))
-                   -> E.Iteratee Event m (Either String [a])
-getListUntilEnd (start,end) iter = do
+many0event :: Monad m => 
+              (Text,Text) 
+              -> (Event -> E.Iteratee Event m (Either String a))
+              -> E.Iteratee Event m (Either String [a])
+many0event (start,end) iter = many1eventWrkr (start,end) id iter 
+
+
+-- | 
+
+many1event :: Monad m => 
+              (Text,Text) 
+              -> (Event -> E.Iteratee Event m (Either String a))
+              -> E.Iteratee Event m (Either String [a])
+many1event (start,end) iter = do
   EL.dropWhile (not.isStart start)
   EL.head >>= 
     maybe (return (Left ("error in " ++ unpack start))) 
@@ -88,16 +97,16 @@ getListUntilEnd (start,end) iter = do
                        Left err -> return (Left err) 
                        Right x -> 
                          let acc = (x:)
-                         in getListUntilEndWorker (start,end) acc iter)
+                         in many1eventWrkr (start,end) acc iter)
   
 -- |    
   
-getListUntilEndWorker :: Monad m => 
-                         (Text,Text) 
-                         -> ( [a] -> [a]  ) 
-                         -> (Event -> E.Iteratee Event m (Either String a))
-                         -> E.Iteratee Event m (Either String [a])         
-getListUntilEndWorker (start,end) acc iter = 
+many1eventWrkr :: Monad m => 
+                  (Text,Text) 
+                  -> ( [a] -> [a]  ) 
+                  -> (Event -> E.Iteratee Event m (Either String a))
+                  -> E.Iteratee Event m (Either String [a])         
+many1eventWrkr (start,end) acc iter = 
     drop2NextStartOrEnd >>= \e -> do 
       case e of 
         Left (txt,ev) -> 
@@ -107,7 +116,7 @@ getListUntilEndWorker (start,end) acc iter =
                   case ex of 
                     Left err -> return (Left err)
                     Right x -> 
-                      getListUntilEndWorker (start,end) (acc.(x:)) iter  
+                      many1eventWrkr (start,end) (acc.(x:)) iter  
           else return (Left ("got " ++ unpack txt))
         Right txt -> 
           if txt == end 
@@ -141,7 +150,7 @@ pXournal = do
     return (Left "no xournal"))
     (\x -> do 
         title <- pTitle 
-        pages <- getListUntilEnd ("page","xournal") pPage
+        pages <- many1event ("page","xournal") pPage
         (return $ Xournal <$> title <*> pages ))  
  
 -- | parse one page 
@@ -149,7 +158,7 @@ pXournal = do
 pPage :: Monad m => Event -> Iteratee Event m (Either String Page)
 pPage ev = do let dim = getDimension ev 
               bkg <- pBkg
-              layers <- getListUntilEnd ("layer","page") pLayer 
+              layers <- many1event ("layer","page") pLayer 
               EL.dropWhile (not.isEnd "page")
               EL.drop 1 
               return (Page <$> dim <*> bkg <*> layers )  
@@ -180,7 +189,7 @@ pBkg = do EL.dropWhile (not.isStart "background")
 -- | 
           
 pLayer :: Monad m => Event -> Iteratee Event m (Either String Layer) 
-pLayer ev = do strokes <- getListUntilEnd ("stroke","layer") pStroke 
+pLayer ev = do strokes <- many0event ("stroke","layer") pStroke 
                EL.dropWhile (not.isEnd "layer")
                EL.drop 1 
                return (Layer <$> strokes)

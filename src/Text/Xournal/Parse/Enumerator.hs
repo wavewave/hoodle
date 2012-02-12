@@ -195,7 +195,6 @@ pStroke ev = do
           (\elm -> do 
               let txt = getContent elm :: Either String Text
                   ctnt = getStrokeContent id =<< txt 
-              trc "pStroke" ctnt unit 
               EL.dropWhile (not.isEnd "stroke") 
               EL.drop 1 
               return (set s_data <$>  ctnt <*> estr1))

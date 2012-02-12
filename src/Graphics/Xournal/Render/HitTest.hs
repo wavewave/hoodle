@@ -42,13 +42,22 @@ hitTestLineLine ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) =
 hitTestLineStroke :: ((Double,Double),(Double,Double)) 
                      -> Stroke
                      -> Bool
-hitTestLineStroke line1 str = test (stroke_data str) 
+hitTestLineStroke line1 str@(Stroke t c w d) = test (stroke_data str) 
   where test [] = False
         test ((_:!:_):[]) = False
         test ((x0:!:y0):(x:!:y):rest) 
           = hitTestLineLine line1 ((x0,y0),(x,y))
             || test ((x:!:y) : rest)
+hitTestLineStroke line1 str@(VWStroke t c d) = test d 
+  where test [] = False
+        test ((_,_,_):[]) = False
+        test ((x0,y0,_):(x,y,z):rest) 
+          = hitTestLineLine line1 ((x0,y0),(x,y))
+            || test ((x,y,z) : rest)
             
+
+
+
 mkHitTestAL :: (StrokeBBox -> Bool) 
             -> [StrokeBBox]
             -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
@@ -111,6 +120,9 @@ hitTestStrokes line (n:-h:-rest) = do
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
   
+
+-- | 
+
 elimHitted :: AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) -> State (Maybe BBox) [StrokeBBox]
 elimHitted Empty = error "something wrong in elimHitted"
 elimHitted (n:-Empty) = return (unNotHitted n)
@@ -120,6 +132,7 @@ elimHitted (n:-h:-rest) = do
   put (merge bbox bbox2) 
   return . (unNotHitted n ++) =<< elimHitted rest
 
+-- | 
                  
 merge :: Maybe BBox -> Maybe BBox -> Maybe BBox    
 merge Nothing Nothing = Nothing
@@ -128,12 +141,9 @@ merge (Just b) Nothing = Just b
 merge (Just (BBox (x1,y1) (x2,y2))) (Just (BBox (x3,y3) (x4,y4))) 
   = Just (BBox (min x1 x3, min y1 y3) (max x2 x4,max y2 y4))  
     
+-- | 
+
 getTotalBBox :: [StrokeBBox] -> Maybe BBox 
 getTotalBBox = foldl f Nothing 
   where f acc = merge acc . Just . strokebbox_bbox
-
-
-
-
-
 

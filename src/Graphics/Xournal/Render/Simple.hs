@@ -44,6 +44,7 @@ drawOneStroke s = do
     VWStroke _ _ d -> do  
       setFillRule FillRuleWinding
       drawOneVWStrokeCurve d
+      fill 
     
 -- | 
   
@@ -63,7 +64,6 @@ drawOneVWStrokeCurve ((x0,y0,z0) : xs) = do
     let ((xlast,ylast,zlast):rxs) = reverse xs 
     foldM_ forward (x0,y0) xs 
     foldM_ backward (xlast,ylast) rxs 
-    fill 
   where (dx,dy) = (,) <$> fst <*> snd $ predefinedPenShapeAspectXY
         dir (x,y) = x * dy - y * dx
         forward (x0,y0) (x,y,z) = do if (dir (x-x0,y-y0) > 0) 

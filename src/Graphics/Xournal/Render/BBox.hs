@@ -53,16 +53,24 @@ cairoOneStrokeSelected sbbox = do
   case M.lookup (stroke_color s) predefined_pencolor of 
     Just (r,g,b,a) -> setSourceRGBA r g b a
     Nothing -> setSourceRGBA 0 0 0 1 
-  setLineWidth (stroke_width s * 4.0) 
-  setLineCap LineCapRound
-  setLineJoin LineJoinRound
-  drawOneStrokeCurve . stroke_data $ s 
-  stroke 
-  setSourceRGBA 1 1 1 1
-  setLineWidth (stroke_width s)
-  drawOneStrokeCurve . stroke_data $ s 
-  stroke
-
+  case s of
+    Stroke _ _ w d -> do  
+      setLineWidth (w * 4.0) 
+      setLineCap LineCapRound
+      setLineJoin LineJoinRound
+      drawOneStrokeCurve d
+      stroke
+      setSourceRGBA 1 1 1 1
+      setLineWidth w
+      drawOneStrokeCurve . stroke_data $ s 
+      stroke
+    VWStroke _ _ d -> do  
+      setFillRule FillRuleWinding
+      drawOneVWStrokeCurve $ map (\(x,y,z)->(x,y,4*z)) d
+      fill  
+      setSourceRGBA 1 1 1 1
+      drawOneVWStrokeCurve d     
+      fill
   
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
 cairoOneStrokeBBoxOnly sbbox = do  

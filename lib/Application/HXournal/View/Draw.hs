@@ -141,25 +141,45 @@ cairoXform4PageCoordinate geometry pnum = do
   translate x0 y0      
   scale sx sy
   
+-- |   
+  
+data PressureMode = NoPressure | Pressure
+  
 -- | 
 
-drawCurvebit :: DrawingArea 
-               -> CanvasGeometry 
-               -> Double 
-               -> (Double,Double,Double,Double) 
-               -> PageNum 
-               -> ((Double,Double),Double) 
-               -> ((Double,Double),Double) 
-               -> IO () 
-drawCurvebit canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
+drawCurvebitGen  :: PressureMode 
+                    ->  DrawingArea 
+                    -> CanvasGeometry 
+                    -> Double 
+                    -> (Double,Double,Double,Double) 
+                    -> PageNum 
+                    -> ((Double,Double),Double) 
+                    -> ((Double,Double),Double) 
+                    -> IO () 
+drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     cairoXform4PageCoordinate geometry pnum 
     setSourceRGBA r g b a
-    setLineWidth (wdth*z)
-    moveTo x0 y0
-    lineTo x y
-    stroke
+    case pmode of 
+      NoPressure -> do 
+        setLineWidth wdth
+        moveTo x0 y0
+        lineTo x y
+        stroke
+      Pressure -> do 
+        -- setLineWidth wdth
+        let wx0 = (fst predefinedPenShapeAspectXY)*wdth*z0
+            wy0 = (snd predefinedPenShapeAspectXY)*wdth*z0
+            wx = (fst predefinedPenShapeAspectXY)*wdth*z
+            wy = (snd predefinedPenShapeAspectXY)*wdth*z
+        moveTo (x0-wx0) (y0-wy0)
+        lineTo (x0+wx0) (y0+wy0)
+        lineTo (x+wx) (y+wy)
+        lineTo (x-wx) (y-wy)
+        fill
+        -- stroke
+
 
 -- | 
     

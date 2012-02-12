@@ -144,7 +144,7 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
                   HighlighterWork -> predefined_highlighter_opacity 
                   _ -> 1.0
                pcolRGBA = (pcr,pcg,pcb,pca*opacity) 
-           liftIO $ drawCurvebit canvas geometry pwidth pcolRGBA pnum 
+           liftIO $ drawCurvebitGen Pressure canvas geometry pwidth pcolRGBA pnum 
                       ((x0,y0),z0) ((x,y),z)
            penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y)) ((x,y),z) )
         (\_ -> disconnect connidmove >> disconnect connidup >> return pdraw )

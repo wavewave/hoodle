@@ -26,7 +26,7 @@ import Data.Foldable (foldl')
 import Data.Monoid
 import Data.Xournal.Generic
 import Data.Xournal.BBox
-import Data.Xournal.Simple (Dimension(..))
+import Data.Xournal.Simple hiding (Page,Xournal)
 import Graphics.Xournal.Render.Type
 import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -82,12 +82,12 @@ isBBoxDeltaSmallerThan delta pnum geometry
 -- | modify stroke using a function
 
 changeStrokeBy :: ((Double,Double)->(Double,Double)) -> StrokeBBox -> StrokeBBox
-changeStrokeBy func (StrokeBBox t c w ds _bbox) = 
+changeStrokeBy func (StrokeBBox (Stroke t c w ds) _bbox) = 
   let change ( x :!: y )  = let (nx,ny) = func (x,y) 
                             in nx :!: ny
       newds = map change ds 
       newbbox = mkbbox newds 
-  in  StrokeBBox t c w newds newbbox
+  in  StrokeBBox (Stroke t c w newds) newbbox
 
 getActiveLayer :: Page SelectMode -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
 getActiveLayer = unTEitherAlterHitted . get g_bstrokes . gselectedlayerbuf . get g_layers
@@ -241,11 +241,17 @@ togglePaste ui b = do
 changeStrokeColor :: PenColor -> StrokeBBox -> StrokeBBox
 changeStrokeColor pcolor str =
   let Just cname = Map.lookup pcolor penColorNameMap 
-  in  str { strokebbox_color = cname } 
+      strsmpl = strokebbox_stroke str 
+  in str { strokebbox_stroke = set s_color cname strsmpl } 
       
 
 changeStrokeWidth :: Double -> StrokeBBox -> StrokeBBox
-changeStrokeWidth pwidth str = str { strokebbox_width = pwidth } 
+changeStrokeWidth pwidth str = 
+    let nstrsmpl = case strokebbox_stroke str of 
+          Stroke t c w d -> Stroke t c pwidth d
+          VWStroke t c d -> Stroke t c pwidth (map (\(x,y,z) -> (x:!:y)) d)
+    in str { strokebbox_stroke = nstrsmpl } 
+--  str { strokebbox_width = pwidth } 
       
 newtype CmpStrokeBBox = CmpStrokeBBox { unCmpStrokeBBox :: StrokeBBox }
                       deriving Show
@@ -330,7 +336,7 @@ hitLassoPoint :: Seq (Double,Double) -> (Double,Double) -> Bool
 hitLassoPoint lst = odd . mappingDegree lst
 
 hitLassoStroke :: Seq (Double,Double) -> StrokeBBox -> Bool 
-hitLassoStroke lst strk = all (\(x :!: y)-> hitLassoPoint lst (x,y)) $ strokebbox_data strk
+hitLassoStroke lst = all (hitLassoPoint lst) . getXYtuples . strokebbox_stroke
 
 
 data TempSelectRender a = TempSelectRender { tempSurface :: Surface  

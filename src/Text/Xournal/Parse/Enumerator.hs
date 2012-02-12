@@ -276,11 +276,18 @@ getBackground :: Event -> Either String Background
 getBackground (EventBeginElement name namecontent) = 
     foldl' f (Right (Background "" "" "")) namecontent 
   where  
+    toBkgPdf (Background _t _c _s) = BackgroundPdf "pdf" Nothing Nothing 0
+    toBkgPdf bkg@(BackgroundPdf t d f p) = bkg 
+    toBkgNoPdf t bkg@(Background _ _ _) = bkg
+    toBkgNoPdf t (BackgroundPdf _t _d _f _p) = Background t "" "" 
+    
     f acc@(Left _) _ = acc 
-    f acc@(Right (Background t c s)) (name,contents) =            
+    f acc@(Right bkg@(Background t c s)) (name,contents) =            
       if nameLocalName name == "type" 
       then let ContentText txt = Prelude.head contents 
-           in Right .  (\x -> Background x c s) . encodeUtf8 $ txt 
+           in if txt == "pdf" 
+              then Right (toBkgPdf bkg)
+              else Right (toBkgNoPdf (encodeUtf8 txt) bkg)
       else if nameLocalName name == "color"           
       then let ContentText txt = Prelude.head contents 
            in Right . (\x -> Background t x s) . encodeUtf8 $ txt 
@@ -288,6 +295,25 @@ getBackground (EventBeginElement name namecontent) =
       then let ContentText txt = Prelude.head contents 
            in Right . (\x -> Background t c x) . encodeUtf8 $ txt 
       else acc 
+    f acc@(Right bkg@(BackgroundPdf t d f p)) (name,contents) =            
+      if nameLocalName name == "type" 
+      then let ContentText txt = Prelude.head contents 
+           in if txt == "pdf" 
+              then Right (toBkgPdf bkg)
+              else Right (toBkgNoPdf (encodeUtf8 txt) bkg)
+      else if nameLocalName name == "domain"           
+      then let ContentText txt = Prelude.head contents 
+           in Right . (\x -> BackgroundPdf t x f p) . Just . encodeUtf8 $ txt 
+      else if nameLocalName name == "filename" 
+      then let ContentText txt = Prelude.head contents 
+           in Right . (\x -> BackgroundPdf t d x p) . Just . encodeUtf8 $ txt 
+      else if nameLocalName name == "pageno" 
+      then let ContentText txt = Prelude.head contents 
+           in (\x -> BackgroundPdf t d f x) . fst <$> decimal txt 
+      else acc 
+           
+           
+           
 getBackground _ = Left "not a background"
            
 -- | 

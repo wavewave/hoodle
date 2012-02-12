@@ -271,6 +271,18 @@ menuEventProcess MenuUseXInput = do
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
          
+menuEventProcess MenuPressureSensitivity = updateXState pressSensAction 
+  where pressSensAction xstate = do 
+          let ui = get gtkUIManager xstate 
+          agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                            case x of 
+                              [] -> error "No action group? "
+                              y:_ -> return y )
+          pressrsensa <- liftIO (actionGroupGetAction agr "PRESSRSENSA") 
+              >>= maybe (error "MenuPressureSensitivity") 
+                        (return . castToToggleAction)
+          b <- liftIO $ toggleActionGetActive pressrsensa
+          return (set (variableWidthPen.penInfo) b xstate) 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

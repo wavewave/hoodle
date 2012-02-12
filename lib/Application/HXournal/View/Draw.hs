@@ -28,6 +28,7 @@ import Data.Maybe hiding (fromMaybe)
 import Data.Monoid
 import Data.Sequence
 import Data.Xournal.Simple (Dimension(..))
+import Data.Xournal.Predefined
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type
@@ -46,9 +47,11 @@ import Application.HXournal.View.Coordinate
 import Application.HXournal.ModelAction.Page
 
 
--- type DrawingFunction = forall a. (ViewMode a) => ViewInfo a -> Maybe BBox -> IO ()
+-- | 
 
 type family DrawingFunction v :: * -> * 
+
+-- |
 
 newtype SinglePageDraw a = 
   SinglePageDraw { unSinglePageDraw :: Bool 
@@ -58,6 +61,7 @@ newtype SinglePageDraw a =
                                        -> Maybe BBox 
                                        -> IO () }
 
+-- | 
 
 newtype ContPageDraw a = 
   ContPageDraw 
@@ -67,7 +71,12 @@ newtype ContPageDraw a =
                       -> Xournal a 
                       -> IO () }
                     
+-- | 
+
 type instance DrawingFunction SinglePage = SinglePageDraw
+
+-- | 
+
 type instance DrawingFunction ContinuousSinglePage = ContPageDraw
 
 -- | 

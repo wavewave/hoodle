@@ -14,8 +14,6 @@ module Application.HXournal.Type.Predefined where
 
 import Data.Time.Clock 
 
-predefinedPenShapeAspectXY :: (Double,Double)
-predefinedPenShapeAspectXY = (cos (pi/6.0), sin (pi/6.0))
 
 
 dtime_bound :: NominalDiffTime 

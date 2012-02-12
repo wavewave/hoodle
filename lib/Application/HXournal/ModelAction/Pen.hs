@@ -38,7 +38,7 @@ import Application.HXournal.View.Coordinate
 addPDraw :: PenInfo 
             -> TXournalBBoxMapPDFBuf 
             -> PageNum 
-            -> Seq (Double,Double) 
+            -> Seq (Double,Double,Double) 
             -> IO (TXournalBBoxMapPDFBuf,BBox) 
                        -- ^ new xournal and bbox in page coordinate
 addPDraw pinfo xoj (PageNum pgnum) pdraw = do 
@@ -46,16 +46,25 @@ addPDraw pinfo xoj (PageNum pgnum) pdraw = do
       pcolor = get (penColor.currentTool) pinfo
       pcolname = fromJust (M.lookup pcolor penColorNameMap)
       pwidth = get (penWidth.currentTool) pinfo
+      pvwpen = get variableWidthPen pinfo
       (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
       currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
-      newstroke = Stroke { stroke_tool = case ptype of 
-                                           PenWork -> "pen" 
-                                           HighlighterWork -> "highlighter"
-                                           _ -> error "error in addPDraw"
-                         , stroke_color = pcolname 
-                         , stroke_width = pwidth
-                         , stroke_data = map (uncurry (:!:)) . toList $ pdraw
-                         } 
+      ptool = case ptype of 
+                PenWork -> "pen" 
+                HighlighterWork -> "highlighter"
+                _ -> error "error in addPDraw"
+      newstroke = 
+        case pvwpen of 
+          False -> Stroke { stroke_tool = ptool 
+                          , stroke_color = pcolname 
+                          , stroke_width = pwidth
+                          , stroke_data = map (\(x,y,_)->x:!:y) . toList $ pdraw
+                          } 
+          True -> VWStroke { stroke_tool = ptool
+                           , stroke_color = pcolname                 
+                           , stroke_vwdata = map (\(x,y,z)->(x,y,pwidth*z)) . toList $ pdraw
+                           }
+                                           
       newstrokebbox = mkStrokeBBoxFromStroke newstroke
       bbox = strokebbox_bbox newstrokebbox
   newlayerbbox <- updateLayerBuf (Just bbox)

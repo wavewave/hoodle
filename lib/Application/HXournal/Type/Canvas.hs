@@ -58,6 +58,7 @@ module Application.HXournal.Type.Canvas
 , currText
 , penType
 , penSet
+, variableWidthPen
 -- * for box
 , getDrawAreaFromBox
 , unboxGet
@@ -284,7 +285,9 @@ data PenHighlighterEraserSet = PenHighlighterEraserSet
 -- | 
 
 data PenInfo = PenInfo { _penType :: PenType
-                       , _penSet :: PenHighlighterEraserSet } 
+                       , _penSet :: PenHighlighterEraserSet 
+                       , _variableWidthPen :: Bool 
+                       } 
              deriving (Show) 
 
 -- | 
@@ -333,6 +336,7 @@ defaultPenInfo =
                                               , _currHighlighter = defaultHighligherWCS
                                               , _currEraser = defaultEraserWCS
                                               , _currText = defaultTextWCS }
+          , _variableWidthPen = True
           } 
                                            
 $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''WidthColorStyle ])

@@ -456,7 +456,14 @@ getMenuUI tref sref = do
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
-  pressrsensa <- actionNewAndRegister "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing (justMenu MenuPressureSensitivity)
+  pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
+  pressrsensa `on` actionToggled $ do 
+    bouncecallback tref sref (Menu MenuPressureSensitivity)
+--               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
+
+  
+  
+  
   pghilta <- actionNewAndRegister "PGHILTA" "Page Highlight" (Just "Just a Stub") Nothing (justMenu MenuPageHighlight)
   mltpgvwa <- actionNewAndRegister "MLTPGVWA" "Multiple Page View" (Just "Just a Stub") Nothing (justMenu MenuMultiplePageView) 
   mltpga <- actionNewAndRegister "MLTPGA" "Multiple Pages" (Just "Just a Stub") Nothing (justMenu MenuMultiplePages)
@@ -490,7 +497,7 @@ getMenuUI tref sref = do
         , shpreca, rulera, clra, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
+        , dcrdcorea, ersrtipa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
         , abouta 
@@ -498,6 +505,8 @@ getMenuUI tref sref = do
         ] 
     
   actionGroupAddAction agr uxinputa 
+  actionGroupAddAction agr pressrsensa
+  
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode tref sref)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
   
@@ -516,7 +525,7 @@ getMenuUI tref sref = do
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , dcrdcorea, ersrtipa, pressrsensa, pghilta, mltpgvwa
+        , dcrdcorea, ersrtipa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
         , abouta 

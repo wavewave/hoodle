@@ -95,13 +95,14 @@ commonPenStart action cid pcoord = do
 -- | enter pen drawing mode
 
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
-penStart cid = commonPenStart penAction cid 
+penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (ConnectId DrawingArea, ConnectId DrawingArea) -> (Double,Double) -> MainCoroutine ()
         penAction cinfo pnum geometry (cidmove,cidup) (x,y) = do 
           xstate <- getSt
+          let PointerCoord _ _ _ z = pcoord 
           let currxoj = unView . get xournalstate $ xstate        
               pinfo = get penInfo xstate
-          pdraw <-penProcess cid pnum geometry cidmove cidup (empty |> (x,y)) (x,y) 
+          pdraw <-penProcess cid pnum geometry cidmove cidup (empty |> (x,y)) ((x,y),z) 
           (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
           commit . set xournalstate (ViewAppendState newxoj) 
                  =<< (liftIO (updatePageAll (ViewAppendState newxoj) xstate))
@@ -119,9 +120,9 @@ penStart cid = commonPenStart penAction cid
 penProcess :: CanvasId -> PageNum 
            -> CanvasGeometry
            -> ConnectId DrawingArea -> ConnectId DrawingArea 
-           -> Seq (Double,Double) -> (Double,Double) 
+           -> Seq (Double,Double) -> ((Double,Double),Double) 
            -> MainCoroutine (Seq (Double,Double))
-penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do 
+penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do 
     r <- await 
     xst <- getSt 
     selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst
@@ -130,9 +131,10 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
                MyEvent -> HXournalState -> CanvasInfo b -> MainCoroutine (Seq (Double,Double))
     fsingle r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
-        (penProcess cid pnum geometry connidmove connidup pdraw (x0,y0))
+        (penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0))
         (\(pcoord,(x,y)) -> do 
-           liftIO $ putStrLn (show pcoord )
+           let PointerCoord _ _ _ z = pcoord 
+           -- liftIO $ putStrLn (show pcoord )
            let canvas = get drawArea cvsInfo
                ptype  = get (penType.penInfo) xstate
                pcolor = get (penColor.currentTool.penInfo) xstate 
@@ -142,8 +144,9 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
                   HighlighterWork -> predefined_highlighter_opacity 
                   _ -> 1.0
                pcolRGBA = (pcr,pcg,pcb,pca*opacity) 
-           liftIO $ drawCurvebit canvas geometry pwidth pcolRGBA pnum (x0,y0) (x,y)
-           penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y)) (x,y) )
+           liftIO $ drawCurvebit canvas geometry pwidth pcolRGBA pnum 
+                      ((x0,y0),z0) ((x,y),z)
+           penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y)) ((x,y),z) )
         (\_ -> disconnect connidmove >> disconnect connidup >> return pdraw )
 
 -- | 

@@ -148,15 +148,15 @@ drawCurvebit :: DrawingArea
                -> Double 
                -> (Double,Double,Double,Double) 
                -> PageNum 
-               -> (Double,Double) 
-               -> (Double,Double) 
+               -> ((Double,Double),Double) 
+               -> ((Double,Double),Double) 
                -> IO () 
-drawCurvebit canvas geometry wdth (r,g,b,a) pnum (x0,y0) (x,y) = do 
+drawCurvebit canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     cairoXform4PageCoordinate geometry pnum 
     setSourceRGBA r g b a
-    setLineWidth wdth
+    setLineWidth (wdth*z)
     moveTo x0 y0
     lineTo x y
     stroke

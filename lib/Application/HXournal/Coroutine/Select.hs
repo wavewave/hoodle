@@ -264,17 +264,14 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
             (b1',b2') = xform (sfunc (0,1))
             (b1,b2) = (b1'-c1,b2'-c2)
             xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
-{-          (c1,c2) = (x-x0,y-y0)
-            (a1,a2) = (1,0)
-            (b1,b2) = (0,1)
-            xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 -}
         invalidateTempBasePage cid (tempSurface tempselection) pnum 
           (drawTempSelectImage geometry tempselection xformmat) 
-                                                    -- (translate (x-x0) (y-y0)))
       moveSelect cid pnum geometry connidmove connidup orig (ncoord,ntime) 
         tempselection
     upact :: (ViewMode a) => HXournalState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
-    upact xst cinfo pcoord = 
+    upact xst cinfo pcoord = do 
+      liftIO $ putStrLn " I have been called "
+      
       switchActionEnteringDiffPage pnum geometry pcoord (return ()) 
         (chgaction xst cinfo) 
         (ordaction xst cinfo)

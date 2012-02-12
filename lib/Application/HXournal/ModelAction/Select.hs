@@ -86,8 +86,18 @@ changeStrokeBy func (StrokeBBox (Stroke t c w ds) _bbox) =
   let change ( x :!: y )  = let (nx,ny) = func (x,y) 
                             in nx :!: ny
       newds = map change ds 
-      newbbox = mkbbox newds 
-  in  StrokeBBox (Stroke t c w newds) newbbox
+      nstrk = Stroke t c w newds 
+      newbbox = bboxFromStroke nstrk 
+  in  StrokeBBox nstrk newbbox
+changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) = 
+  let change (x,y,z) = let (nx,ny) = func (x,y) 
+                       in (nx,ny,z)
+      newds = map change ds 
+      nstrk = VWStroke t c newds 
+      newbbox = bboxFromStroke nstrk 
+  in  StrokeBBox nstrk newbbox
+
+
 
 getActiveLayer :: Page SelectMode -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
 getActiveLayer = unTEitherAlterHitted . get g_bstrokes . gselectedlayerbuf . get g_layers

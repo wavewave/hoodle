@@ -10,28 +10,21 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Text.Xournal.Parse where
 
-import Control.Applicative -- hiding (many)
-
-
+import Control.Applicative 
 import Data.Attoparsec
 import Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
                              , isHorizontalSpace)
 import qualified Data.ByteString.Char8 as B hiding (map) 
-
-
 import qualified Data.Iteratee as Iter
 import Data.Iteratee.Char
-
 import qualified Data.Attoparsec.Iteratee as AI
 import Data.Char 
-
-
 import Data.Xournal.Simple
 import Text.Xournal.Parse.Zlib
-
 import Data.Strict.Tuple
 
 import Prelude hiding (takeWhile)
@@ -42,9 +35,6 @@ skipSpaces = satisfy isHorizontalSpace *> skipWhile isHorizontalSpace
 trim_starting_space :: Parser ()
 trim_starting_space = do try endOfInput
                          <|> takeWhile (inClass " \n") *> return ()
-
-
---                         <|> (many . satisfy . inClass ) " \n" *> return () 
                 
 langle :: Parser Char 
 langle = char '<'

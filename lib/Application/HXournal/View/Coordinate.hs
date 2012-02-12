@@ -159,7 +159,7 @@ wacom2Canvas geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometr
 -- | 
 
 device2Desktop :: CanvasGeometry -> PointerCoord -> DesktopCoordinate 
-device2Desktop geometry (PointerCoord typ x y) =  
+device2Desktop geometry (PointerCoord typ x y z) =  
   case typ of 
     Core -> core2Desktop geometry (x,y)
     Stylus -> wacom2Desktop geometry (x,y)
@@ -189,29 +189,14 @@ getPagesInViewPortRange geometry xoj =
 -- | 
 
 getCvsGeomFrmCvsInfo :: (ViewMode a) => 
-                        -- Page EditMode -> 
                         CanvasInfo a -> IO CanvasGeometry 
 getCvsGeomFrmCvsInfo cinfo = do 
-  let -- page = getPage cinfo
-      cpn = PageNum . get currentPageNum $ cinfo 
+  let cpn = PageNum . get currentPageNum $ cinfo 
       canvas = get drawArea cinfo
       arr = get (pageArrangement.viewInfo) cinfo 
-  makeCanvasGeometry cpn arr canvas -- EditMode (cpn,page) arr canvas 
+  makeCanvasGeometry cpn arr canvas 
   
 
 
 
-
-
-
-
-      -- contained (ViewPortBBox bbox) (DeskCoord (x,y)) = hitTestBBoxPoint bbox (x,y) 
-                        {- contained vbbox ul || contained vbbox ur 
-                        || contained vbbox ll || contained vbbox lr -}
-                         -- ur = page2Desktop geometry (PageNum n,PageCoord (w,0))
-                         -- ll = page2Desktop geometry (PageNum n,PageCoord (0,h)) 
-{- trace (show n ++ ": " ++ show (intersectBBox bbox nbbox)
-                               ++ "\nivbbox = " ++ show ivbbox 
-                               ++ "\ninbbox = " ++ show inbbox 
-                               ++ "\nresult = " ++ show result) $ -}
 

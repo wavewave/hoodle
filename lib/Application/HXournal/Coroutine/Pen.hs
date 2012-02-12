@@ -131,7 +131,8 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
     fsingle r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
         (penProcess cid pnum geometry connidmove connidup pdraw (x0,y0))
-        (\(x,y) -> do 
+        (\(pcoord,(x,y)) -> do 
+           liftIO $ putStrLn (show pcoord )
            let canvas = get drawArea cvsInfo
                ptype  = get (penType.penInfo) xstate
                pcolor = get (penColor.currentTool.penInfo) xstate 
@@ -150,11 +151,11 @@ penProcess cid pnum geometry connidmove connidup pdraw (x0,y0) = do
 skipIfNotInSamePage :: Monad m => 
                        PageNum -> CanvasGeometry -> PointerCoord 
                        -> m a 
-                       -> ((Double,Double) -> m a)
+                       -> ((PointerCoord,(Double,Double)) -> m a)
                        -> m a
 skipIfNotInSamePage  pgn geometry pcoord skipaction ordaction =  
   switchActionEnteringDiffPage pgn geometry pcoord 
-    skipaction (\_ _ -> skipaction ) (\_ (_,PageCoord xy)->ordaction xy) 
+    skipaction (\_ _ -> skipaction ) (\_ (_,PageCoord xy)->ordaction (pcoord,xy)) 
   
 -- |       
 
@@ -178,7 +179,7 @@ penMoveAndUpOnly :: Monad m => MyEvent
                     -> PageNum 
                     -> CanvasGeometry 
                     -> m a 
-                    -> ((Double,Double) -> m a) 
+                    -> ((PointerCoord,(Double,Double)) -> m a) 
                     -> (PointerCoord -> m a) 
                     -> m a
 penMoveAndUpOnly r pgn geometry defact moveaction upaction = 

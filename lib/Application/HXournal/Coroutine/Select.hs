@@ -145,7 +145,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
                                (moveact xstate cinfo) (upact xstate cinfo)
     defact = newSelectRectangle cid pnum geometry connidmove connidup strs orig 
                          (prev,otime) tempselection 
-    moveact xstate cinfo (x,y) = do 
+    moveact xstate cinfo (pcoord,(x,y)) = do 
       let bbox = BBox orig (x,y)
           hittestbbox = mkHitTestInsideBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
@@ -177,7 +177,9 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
                          tempselection { tempSelectInfo = hittedstrs }
     upact xstate cinfo pcoord = do       
       let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
+          (_,(x,y)) = runIdentity $ 
+            skipIfNotInSamePage pnum geometry pcoord 
+                                (return (pcoord,prev)) return
       let epage = getCurrentPageEitherFromXojState cinfo (get xournalstate xstate)
           cpn = get currentPageNum cinfo 
       let bbox = BBox orig (x,y)
@@ -374,7 +376,7 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
     defact = resizeSelect handle cid pnum geometry connidmove connidup 
                origbbox (prev,otime) tempselection
-    moveact xstate cinfo (x,y) = do 
+    moveact xstate cinfo (pcoord,(x,y)) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
         let newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)      
@@ -394,7 +396,9 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
                    origbbox (ncoord,ntime) tempselection
     upact xstate cinfo pcoord = do 
       let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
+          (_,(x,y)) = runIdentity $ 
+            skipIfNotInSamePage pnum geometry pcoord 
+                                (return (pcoord,prev)) return
           newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
           xojstate@(SelectState txoj) = get xournalstate xstate
           epage = getCurrentPageEitherFromXojState cinfo xojstate
@@ -586,7 +590,7 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
                         (moveact cinfo) (upact cinfo)
     defact = newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig 
                (prev,otime) lasso tsel
-    moveact cinfo (x,y) = do 
+    moveact cinfo (pcoord,(x,y)) = do 
       let nlasso = lasso |> (x,y)
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
@@ -596,7 +600,9 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
     upact cinfo pcoord = do 
       xstate <- getSt 
       let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          (x,y) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return prev) return
+          (_,(x,y)) = runIdentity $ 
+            skipIfNotInSamePage pnum geometry pcoord 
+                                (return (pcoord,prev)) return
           nlasso = lasso |> (x,y)
           xojstate = get xournalstate xstate 
           epage = getCurrentPageEitherFromXojState cinfo xojstate

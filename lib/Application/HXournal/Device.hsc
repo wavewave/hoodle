@@ -49,7 +49,9 @@ data DeviceList = DeviceList { dev_core :: CInt
 
 data PointerCoord = PointerCoord { pointerType :: PointerType 
                                  , pointerX :: Double 
-                                 , pointerY :: Double } 
+                                 , pointerY :: Double 
+                                 , pointerZ :: Double
+                                 } 
                   | NoPointerCoord
                   deriving (Show,Eq,Ord)
 
@@ -95,9 +97,9 @@ getPointer devlst = do
              | btn == 2 = Just PenButton2 
              | btn == 3 = Just PenButton3
     case mdev of 
-      Nothing -> return (rbtn,PointerCoord Core x y)
+      Nothing -> return (rbtn,PointerCoord Core x y 1.0)
       Just dev -> case maxf of 
-                    Nothing -> return (rbtn,PointerCoord Core x y)
+                    Nothing -> return (rbtn,PointerCoord Core x y 1.0)
                     Just axf -> (,) rbtn <$> (liftIO $ coord ptr x y dev axf)
   where 
     getInfo ptr = do 
@@ -135,18 +137,20 @@ getPointer devlst = do
         else error ("eventCoordinates: none for event type "++show ty)
 
     coord ptr x y device axf 
-          | device == dev_core devlst = return $ PointerCoord Core x y 
+          | device == dev_core devlst = return $ PointerCoord Core x y 1.0 
           | device == dev_stylus devlst = do 
             (ptrax :: Ptr CDouble ) <- axf ptr 
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
-            return $ PointerCoord Stylus wacomx wacomy 
+            (wacomz :: Double) <- peekByteOff ptrax 16
+            return $ PointerCoord Stylus wacomx wacomy wacomz
           | device == dev_eraser devlst = do 
             (ptrax :: Ptr CDouble ) <- axf ptr 
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
-            return $ PointerCoord Eraser wacomx wacomy 
-          | otherwise = return $ PointerCoord Core x y
+            (wacomz :: Double) <- peekByteOff ptrax 16 
+            return $ PointerCoord Eraser wacomx wacomy wacomz 
+          | otherwise = return $ PointerCoord Core x y 1.0
 
 -- | 
     

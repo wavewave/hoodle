@@ -10,11 +10,12 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Graphics.Xournal.Render.Simple where 
 
 import Graphics.Rendering.Cairo
-import Data.Strict.Tuple
+import Data.Strict.Tuple hiding (fst,snd)
 
 import Data.Xournal.Simple
 import Data.Xournal.Predefined 
@@ -22,21 +23,29 @@ import Data.Xournal.Predefined
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 
+
+-- | 
+
 drawOneStroke :: Stroke -> Render ()
 drawOneStroke s = do 
   let opacity = if stroke_tool s == "highlighter" 
                 then predefined_highlighter_opacity
                 else 1.0
-  
   case M.lookup (stroke_color s) predefined_pencolor of
     Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
     Nothing -> setSourceRGBA 0 0 0 1
-  setLineWidth . stroke_width $ s 
-  setLineCap LineCapRound
-  setLineJoin LineJoinRound
-  drawOneStrokeCurve . stroke_data $ s
-  stroke
-
+  case s of
+    Stroke _ _ w d -> do  
+      setLineWidth w
+      setLineCap LineCapRound
+      setLineJoin LineJoinRound
+      drawOneStrokeCurve d
+      stroke
+    VWStroke _ _ d -> do  
+      drawOneVWStrokeCurve d
+    
+-- | 
+  
 drawOneStrokeCurve :: [Pair Double Double] -> Render ()
 drawOneStrokeCurve ((x0 :!: y0) : xs) = do 
   x0 `seq` y0 `seq` moveTo x0 y0
@@ -44,7 +53,26 @@ drawOneStrokeCurve ((x0 :!: y0) : xs) = do
     where f (x :!: y) = x `seq` y `seq` lineTo x y 
 drawOneStrokeCurve [] = return ()
 
+
+drawOneVWStrokeCurve :: [(Double,Double,Double)] -> Render ()
+drawOneVWStrokeCurve [] = return ()
+drawOneVWStrokeCurve (x:[]) = return ()
+drawOneVWStrokeCurve ((x0,y0,z0) : xs) = do 
+    moveTo x0 y0
+    let (lxy:rxs) = reverse xs 
+    mapM_ forward xs 
+    mapM_ backward rxs 
+    fill 
+  where forward (x,y,z)  = let wx = (fst predefinedPenShapeAspectXY)*z
+                               wy = (snd predefinedPenShapeAspectXY)*z
+                           in lineTo (x+wx) (y+wy)
+        backward (x,y,z) = let wx = (fst predefinedPenShapeAspectXY)*z
+                               wy = (snd predefinedPenShapeAspectXY)*z
+                           in lineTo (x-wx) (y-wy)
+
+
 -- | general background drawing (including pdf file)
+
 
 cairoDrawBackground :: Page -> Render () 
 cairoDrawBackground page = do 
@@ -52,15 +80,13 @@ cairoDrawBackground page = do
   case page_bkg page of 
     Background typ col sty -> cairoDrawBkg (Dim w h) (Background typ col sty)
     BackgroundPdf _ mdomain mfilename pagenum -> 
-      cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
+      error "in cairoDrawBackground, pdf drawing is not defined yet"
+      -- cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
 
 
-cairoDrawPdfBkg :: Dimension -> Maybe S.ByteString 
-                   -> Maybe S.ByteString -> Int 
-                   -> Render () 
-cairoDrawPdfBkg = do 
-  error "pdf bkg is not implemented"
 
+-- | 
+    
 cairoDrawBkg :: Dimension -> Background -> Render () 
 cairoDrawBkg (Dim w h) (Background _typ col sty) = do 
   let c = M.lookup col predefined_bkgcolor  

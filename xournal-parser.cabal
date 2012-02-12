@@ -44,7 +44,7 @@ Library
                  enumerator >= 0.4.13 && < 0.5, 
                  strict == 0.3.*, 
                  iteratee-compress == 0.2.1.*, 
-                 xournal-types >= 0.1 && < 0.4, 
+                 xournal-types >= 0.3.999 && < 0.5, 
                  xml-types == 0.3.*, 
                  text == 0.11.*,
                  fclabels == 1.0.*

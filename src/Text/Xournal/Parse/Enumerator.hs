@@ -197,7 +197,8 @@ pStroke ev = do
                   ctnt = getStrokeContent id =<< txt 
               EL.dropWhile (not.isEnd "stroke") 
               EL.drop 1 
-              return (set s_data <$>  ctnt <*> estr1))
+              return $ 
+                (\d' (Stroke t c s d)-> Stroke t c s d') <$> ctnt <*> estr1)
 
 -- * for each event 
 

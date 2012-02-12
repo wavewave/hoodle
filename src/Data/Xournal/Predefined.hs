@@ -18,6 +18,13 @@ import qualified Data.ByteString.Char8 as B
 
 import Text.Printf 
 
+-- | 
+
+predefinedPenShapeAspectXY :: (Double,Double)
+predefinedPenShapeAspectXY = (cos (pi/6.0), sin (pi/6.0))
+
+-- | 
+
 hexToRGBA :: Integer -> (Double,Double,Double,Double) 
 hexToRGBA n = 
   let r = n `div` (256*256*256)

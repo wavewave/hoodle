@@ -46,6 +46,8 @@ getXYtuples :: Stroke -> [(Double,Double)]
 getXYtuples (Stroke t c w d) = map (\(x :!: y) -> (x,y)) d
 getXYtuples (VWStroke t c d) = map ((,)<$>fst3<*>snd3) d 
 
+
+
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }
                deriving Show
 

@@ -14,13 +14,12 @@
 -----------------------------------------------------------------------------
 
 module Text.Xournal.Parse.Enumerator where
-import Debug.Trace
 
+import Debug.Trace
 import qualified Data.ByteString as S
 import Data.Enumerator (($$),joinI,run_,enumList)
 import Data.Enumerator as E hiding (foldl')
 import qualified Data.Enumerator.List as EL 
-
 import Control.Applicative 
 import Control.Monad.Trans
 import Control.Monad
@@ -43,6 +42,9 @@ import Data.Xournal.Simple
 import Data.Enumerator.Binary (enumHandle)
 import Prelude hiding ((.),id)
 
+
+-- * utils 
+
 -- | 
 
 lookAhead :: Monad m => Iteratee a m (Maybe a)
@@ -51,101 +53,27 @@ lookAhead = continue loop where
   loop (Chunks (x:xs)) = yield (Just x) (Chunks (x:xs))
   loop EOF = yield Nothing EOF
 
--- |  
+-- |             
 
-parseXojFile :: FilePath -> IO ()
-parseXojFile fn = do 
-    x <- S.readFile fn
-    run_ $ enumList 1 [x] $$ joinI $ parseBytes def $$ iterPrint 
-
-
-iterPrint :: (Show s,MonadIO m) => E.Iteratee s m () 
-iterPrint = do
-  x <- EL.head
-  maybe (return ()) (liftIO . print >=> \_ -> iterPrint) x
-
-
-
--- Test functions
--- This is new xml event approach of xournal parsing
-
-
-parseXmlFile :: (MonadIO m) => Handle -> E.Iteratee Event m a -> m a
-parseXmlFile h iter = do 
-  run_ $ enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
-
--- | 
-{-  
-instance (Monad m) => Alternative (E.Iteratee Event m) where
-  empty = mzero 
-  a1 <|> a2 =  
--}
-
-{-
-instance (MonadPlus m) => MonadPlus (Iteratee s m) where
-  mzero = lift mzero 
-  a `mplus` b = E.Iteratee (E.runIteratee a `mplus` E.runIteratee b)
--}
-
--- | 
-{-   
-
-iterMany :: (MonadPlus m) => Iteratee s m a -> Iteratee s m [a] 
-iterMany = unwrapMonad . many . WrapMonad 
--}  
-
-onePrint :: (Monad m, Show s) => Iteratee s m () 
-onePrint = do 
-  EL.head >>=
-    maybe (return ()) 
-          (\x -> trace ("dropped item" ++ show x) (return ()))
--- | 
-  
-dropWhileNConsume :: (Monad m, Show s) => (s -> Bool) -> Iteratee s m () 
-dropWhileNConsume f = do
-    str <- EL.takeWhile f 
-    trace ("dropWhileNConsume" ++ show str) unit
-    onePrint -- EL.drop 1
-
--- | 
-
-upToEventStart :: (Monad m) => Text -> Iteratee Event m () 
-upToEventStart txt = dropWhileNConsume (not.isStart txt)
-
--- | 
-
-upToEventEnd :: (Monad m) => Text -> Iteratee Event m () 
-upToEventEnd txt = dropWhileNConsume (not.isEnd txt)
-                                     
--- | 
-
-withEvent :: Monad m => Text -> Iteratee Event m a -> Iteratee Event m a 
-withEvent txt iter = upToEventStart txt *> iter <* upToEventEnd txt 
-
--- data SuccessOrFail a b = Success a | Fail Event  
-{-
--- |
-
-withExactItem :: Monad m => Text -> (Content -> a) > Iteratee Event m a
-withExactItem txt f = 
-  let maction :: Either (Maybe Event) a)  
-      maction = do 
-        ev1 <- EL.head 
-        if isStart txt ev1 then Left 
-            
-        ev2 <- EL.head 
-          
--} 
-
--- | test function 
--- (Either String Xournal)
-            
 trc :: (Show a) => String -> a -> b -> b
 trc str a b = trace (str ++ ":" ++ show a) b 
                      
-    
-  
+-- |
+
+flipap :: a -> (a -> b) -> b
 flipap = flip ($)
+
+-- | 
+
+unit :: (Monad m) => m () 
+unit = return ()
+
+-- | 
+ 
+skipspace :: Text -> Text 
+skipspace = T.dropWhile (\c->(c==' ') || (c=='\n') || (c=='\r'))       
+    
+-- | 
 
 getListUntilEnd :: Monad m => 
                    (Text,Text) 
@@ -162,6 +90,7 @@ getListUntilEnd (start,end) iter = do
                          let acc = (x:)
                          in getListUntilEndWorker (start,end) acc iter)
   
+-- |    
   
 getListUntilEndWorker :: Monad m => 
                          (Text,Text) 
@@ -185,10 +114,24 @@ getListUntilEndWorker (start,end) acc iter =
           then do return (Right (acc [])) 
           else return (Left ("got " ++ unpack txt))
   
-
-
-unit = return ()
   
+-- | 
+
+drop2NextStartOrEnd :: (Monad m) => 
+                       Iteratee Event m (Either (Text,Event) Text)
+drop2NextStartOrEnd = do 
+  str <- EL.takeWhile (not.isEventStartEnd)
+  melm <- lookAhead 
+  case melm of  
+    Just elm@(EventBeginElement name _) 
+      -> return (Left (nameLocalName name,elm))
+    Just elm@(EventEndElement name) 
+      -> return (Right (nameLocalName name))
+    Nothing -> error ( show "no more item" )
+
+
+-- * parsers 
+
 -- | parse whole xournal file 
 
 pXournal :: Monad m => Iteratee Event m (Either String Xournal)
@@ -211,6 +154,8 @@ pPage ev = do let dim = getDimension ev
               EL.drop 1 
               return (Page <$> dim <*> bkg <*> layers )  
 
+-- | 
+              
 pTitle :: Monad m => Iteratee Event m (Either String S.ByteString) 
 pTitle = do EL.dropWhile (not.isStart "title")
             EL.drop 1
@@ -221,6 +166,7 @@ pTitle = do EL.dropWhile (not.isStart "title")
                                EL.drop 1 
                                return (encodeUtf8 <$> title) )
 
+-- | 
 
 pBkg :: Monad m => Iteratee Event m (Either String Background) 
 pBkg = do EL.dropWhile (not.isStart "background")
@@ -254,9 +200,10 @@ pStroke ev = do
               EL.drop 1 
               return (set s_data <$>  ctnt <*> estr1))
 
--- | 
-skipspace = T.dropWhile (\c->(c==' ') || (c=='\n') || (c=='\r'))       
-    
+-- * for each event 
+
+-- |             
+
 getStrokeContent :: ([Pair Double Double] -> [Pair Double Double])
                     -> Text
                     -> Either String [Pair Double Double]
@@ -331,19 +278,8 @@ getContent :: Event -> Either String Text
 getContent (EventContent (ContentText txt)) = Right txt 
 getContent _ = Left "no content"
   
--- | 
 
-drop2NextStartOrEnd :: (Monad m) => 
-                       Iteratee Event m (Either (Text,Event) Text)
-drop2NextStartOrEnd = do 
-  str <- EL.takeWhile (not.isEventStartEnd)
-  melm <- lookAhead 
-  case melm of  
-    Just elm@(EventBeginElement name _) 
-      -> return (Left (nameLocalName name,elm))
-    Just elm@(EventEndElement name) 
-      -> return (Right (nameLocalName name))
-    Nothing -> error ( show "no more item" )
+-- * predicates 
 
 -- | 
 
@@ -363,6 +299,43 @@ isStart _ _ = False
 isEnd :: Text -> Event -> Bool
 isEnd txt (EventEndElement name) = nameLocalName name == txt 
 isEnd _ _ = False 
+
+
+-- * driver routines 
+
+-- | generic xml file driver
+
+parseXmlFile :: (MonadIO m) => Handle -> E.Iteratee Event m a -> m a
+parseXmlFile h iter = do 
+  run_ $ enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
+
+
+-- | for xournal 
+
+parseXojFile :: FilePath -> IO (Either String Xournal)
+parseXojFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pXournal     
+
+-- | printing for debug
+
+iterPrint :: (Show s,MonadIO m) => E.Iteratee s m () 
+iterPrint = do
+  x <- EL.head
+  maybe (return ()) (liftIO . print >=> \_ -> iterPrint) x
+
+
+{-
+-- |  
+
+parseXmlFile :: (MonadIO m) => Handle -> E.Iteratee Event m a -> m a
+parseXmlFile h iter = do 
+  run_ $ enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
+-}
+
+
+-- Test functions
+-- This is new xml event approach of xournal parsing
+
+
 
 {-
 isPageStart :: Event -> Bool 
@@ -420,3 +393,57 @@ pTitle = withEvent "title" $ do
              Nothing -> return (Left "title" )
              Just elm -> return (getContent elm)
 -}         
+
+
+-- | 
+{-  
+instance (Monad m) => Alternative (E.Iteratee Event m) where
+  empty = mzero 
+  a1 <|> a2 =  
+-}
+
+{-
+instance (MonadPlus m) => MonadPlus (Iteratee s m) where
+  mzero = lift mzero 
+  a `mplus` b = E.Iteratee (E.runIteratee a `mplus` E.runIteratee b)
+-}
+
+-- | 
+{-   
+
+iterMany :: (MonadPlus m) => Iteratee s m a -> Iteratee s m [a] 
+iterMany = unwrapMonad . many . WrapMonad 
+-}  
+
+{-
+onePrint :: (Monad m, Show s) => Iteratee s m () 
+onePrint = do 
+  EL.head >>=
+    maybe (return ()) 
+          (\x -> trace ("dropped item" ++ show x) (return ()))
+-- | 
+  
+dropWhileNConsume :: (Monad m, Show s) => (s -> Bool) -> Iteratee s m () 
+dropWhileNConsume f = do
+    str <- EL.takeWhile f 
+    trace ("dropWhileNConsume" ++ show str) unit
+    onePrint -- EL.drop 1
+
+-- | 
+
+upToEventStart :: (Monad m) => Text -> Iteratee Event m () 
+upToEventStart txt = dropWhileNConsume (not.isStart txt)
+
+-- | 
+
+upToEventEnd :: (Monad m) => Text -> Iteratee Event m () 
+upToEventEnd txt = dropWhileNConsume (not.isEnd txt)
+                                     
+-- | 
+
+withEvent :: Monad m => Text -> Iteratee Event m a -> Iteratee Event m a 
+withEvent txt iter = upToEventStart txt *> iter <* upToEventEnd txt 
+
+-- data SuccessOrFail a b = Success a | Fail Event  
+-}
+

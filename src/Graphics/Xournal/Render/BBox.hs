@@ -86,11 +86,6 @@ cairoDrawLayerBBoxOnly  = mapM_ cairoOneStrokeBBoxOnly . gstrokes
 
 ----
 
-inflate :: BBox -> Double -> BBox 
-inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
-
-----
-
 cairoDrawPageBBox :: Maybe BBox -> TPageBBoxMap -> Render ()
 cairoDrawPageBBox mbbox page = do 
     cairoDrawBackgroundBBox mbbox (gdimension page) (gbackground page) 

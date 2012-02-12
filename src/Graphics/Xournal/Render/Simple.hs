@@ -42,6 +42,7 @@ drawOneStroke s = do
       drawOneStrokeCurve d
       stroke
     VWStroke _ _ d -> do  
+      setFillRule FillRuleEvenOdd -- Winding
       drawOneVWStrokeCurve d
     
 -- | 

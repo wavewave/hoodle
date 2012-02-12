@@ -80,7 +80,6 @@ import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
 import Data.Time.Clock
 import Data.Label 
-import qualified Data.Label.Maybe as ML
 import Data.Xournal.Generic
 import qualified Data.IntMap as M
 

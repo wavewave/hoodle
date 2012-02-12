@@ -18,7 +18,6 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Util
-import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
@@ -27,15 +26,11 @@ import Application.HXournal.Coroutine.Scroll
 -- import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Type.Alias
-import Graphics.Xournal.Render.BBoxMapPDF
 import Data.Xournal.Generic
-import Graphics.UI.Gtk hiding (get,set)
 import Control.Monad.Trans
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
-import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.BBox
 import qualified Data.IntMap as M
 
 -- | change page of current canvas using a modify function
@@ -50,8 +45,8 @@ changePage modifyfn = updateXState changePageAction
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
               cid = get canvasId cvsInfo
-              (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
-              Dim w h = get g_dimension selectedpage
+              (b,npgnum',_selectedpage,xojst') = changePageInXournalState npgnum xojst
+              -- Dim w h = get g_dimension selectedpage
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
@@ -62,8 +57,8 @@ changePage modifyfn = updateXState changePageAction
           let xojst = get xournalstate $ xstate  
               npgnum = modifyfn (get currentPageNum cvsInfo)
               cid = get canvasId cvsInfo
-              (b,npgnum',selectedpage,xojst') = changePageInXournalState npgnum xojst
-              Dim w h = get g_dimension selectedpage
+              (b,npgnum',_selectedpage,xojst') = changePageInXournalState npgnum xojst
+              -- Dim w h = get g_dimension selectedpage
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
@@ -115,10 +110,10 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
         fcont xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
-          page <- getCurrentPageCvsId cid          
+          -- page <- getCurrentPageCvsId cid          
           let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
               cpn = PageNum $ get currentPageNum cinfo 
-              pdim = PageDimension $ get g_dimension page
+              -- pdim = PageDimension $ get g_dimension page
               cdim = canvasDim geometry 
               xoj = getXournal xstate 
               narr = makeContinuousSingleArrangement zmode cdim xoj (cpn,PageCoord (0,0))

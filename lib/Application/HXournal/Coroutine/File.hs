@@ -12,7 +12,6 @@
 
 module Application.HXournal.Coroutine.File where
 
-import Application.HXournal.Type.Event
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.XournalState
 import Application.HXournal.Accessor

@@ -158,7 +158,8 @@ uiDecl = [verbatim|<ui>
          <menuitem action="PENFINEA" />                          
          <menuitem action="PENMEDIUMA" />                          
          <menuitem action="PENTHICKA" />                          
-         <menuitem action="PENVERYTHICKA" />                          
+         <menuitem action="PENVERYTHICKA" />                      
+         <menuitem action="PENULTRATHICKA" />     
        </menu>
        <menuitem action="ERASROPTA" />                        
        <menuitem action="HILTROPTA" />                        
@@ -293,7 +294,8 @@ pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothin
             , RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
             
             , RadioActionEntry "PENTHICKA" "Thick" (Just "mythick") Nothing Nothing 3 
-            , RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4                
+            , RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4 
+            , RadioActionEntry "PENULTRATHICKA" "Ultra Thick" Nothing Nothing Nothing 5   
             , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2              
             ]            
 
@@ -643,21 +645,25 @@ int2Point PenWork 1 = predefined_fine
 int2Point PenWork 2 = predefined_medium
 int2Point PenWork 3 = predefined_thick
 int2Point PenWork 4 = predefined_verythick
+int2Point PenWork 5 = predefined_ultrathick
 int2Point HighlighterWork 0 = predefined_highlighter_veryfine
 int2Point HighlighterWork 1 = predefined_highlighter_fine
 int2Point HighlighterWork 2 = predefined_highlighter_medium
 int2Point HighlighterWork 3 = predefined_highlighter_thick
 int2Point HighlighterWork 4 = predefined_highlighter_verythick
+int2Point HighlighterWork 5 = predefined_highlighter_ultrathick
 int2Point EraserWork 0 = predefined_eraser_veryfine
 int2Point EraserWork 1 = predefined_eraser_fine
 int2Point EraserWork 2 = predefined_eraser_medium
 int2Point EraserWork 3 = predefined_eraser_thick
 int2Point EraserWork 4 = predefined_eraser_verythick
+int2Point EraserWork 5 = predefined_eraser_ultrathick
 int2Point TextWork 0 = predefined_veryfine
 int2Point TextWork 1 = predefined_fine
 int2Point TextWork 2 = predefined_medium
 int2Point TextWork 3 = predefined_thick
 int2Point TextWork 4 = predefined_verythick
+int2Point TextWork 5 = predefined_ultrathick
 int2Point _ _ = error "No such point"
 
 int2Color :: Int -> PenColor

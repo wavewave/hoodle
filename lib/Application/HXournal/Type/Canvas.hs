@@ -75,35 +75,37 @@ module Application.HXournal.Type.Canvas
 ) where
 
 import Application.HXournal.Type.Enum 
-import Application.HXournal.Type.Alias 
 import Data.Sequence
 import qualified Data.IntMap as M
 import Control.Applicative ((<*>),(<$>))
 import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
-
 import Graphics.UI.Gtk hiding (get,set)
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
-import Data.Xournal.Generic
 import Data.Xournal.Predefined 
 import Application.HXournal.Type.PageArrangement
-
 import Control.Monad.Identity (Identity(..))
 
 type CanvasId = Int 
 
+-- |
+
 data PenDraw = PenDraw { _points :: Seq (Double,Double) } 
              deriving (Show)
                       
-emptyPenDraw :: PenDraw
-emptyPenDraw = PenDraw empty
-
+-- | 
 
 data ViewInfo a  = (ViewMode a) => 
                    ViewInfo { _zoomMode :: ZoomMode 
                             , _pageArrangement :: PageArrangement a } 
+
+
+-- | 
+
+emptyPenDraw :: PenDraw
+emptyPenDraw = PenDraw empty
 
 
 -- | default view info with single page mode
@@ -336,7 +338,7 @@ defaultPenInfo =
                                               , _currHighlighter = defaultHighligherWCS
                                               , _currEraser = defaultEraserWCS
                                               , _currText = defaultTextWCS }
-          , _variableWidthPen = True
+          , _variableWidthPen = False
           } 
                                            
 $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''WidthColorStyle ])
@@ -355,7 +357,7 @@ updateCanvasDimForSingle :: CanvasDimension
                             -> CanvasInfo SinglePage 
 updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = 
   let zmode = get (zoomMode.viewInfo) cinfo
-      arr@(SingleArrangement _ pdim vbbox@(ViewPortBBox bbox)) 
+      SingleArrangement _ pdim (ViewPortBBox bbox)
         = get (pageArrangement.viewInfo) cinfo
       (x,y) = bbox_upperleft bbox 
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
@@ -371,7 +373,7 @@ updateCanvasDimForContSingle :: PageDimension
                                 -> CanvasInfo ContinuousSinglePage 
 updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = 
   let zmode = get (zoomMode.viewInfo) cinfo
-      arr@(ContinuousSingleArrangement _ ddim  func vbbox@(ViewPortBBox bbox)) 
+      ContinuousSingleArrangement _ ddim  func (ViewPortBBox bbox) 
         = get (pageArrangement.viewInfo) cinfo
       (x,y) = bbox_upperleft bbox 
       -- dim = get g_dimension . getPage $ cinfo 

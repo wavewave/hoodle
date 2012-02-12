@@ -15,8 +15,6 @@
 module Application.HXournal.Accessor where
 
 import Application.HXournal.Type
-import Application.HXournal.View.Draw 
-import Application.HXournal.ModelAction.Page
 import Control.Applicative
 import Control.Monad
 import qualified Control.Monad.State as St
@@ -26,19 +24,14 @@ import qualified Data.IntMap as M
 import Data.Label
 import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (get,set)
+import qualified Graphics.UI.Gtk as Gtk (set)
 import Data.Xournal.BBox
 import Data.Xournal.Generic
-import Application.HXournal.Util
 import Application.HXournal.ModelAction.Layer 
 import Application.HXournal.Type.Alias
-import Application.HXournal.Type.Event
 import Application.HXournal.Type.PageArrangement
-import Application.HXournal.Type.Coroutine
 import Application.HXournal.View.Coordinate
-import Application.HXournal.Type.XournalState
-import Control.Monad.Coroutine 
-import Control.Monad.Coroutine.SuspensionFunctors
+
 
 -- | get HXournalState 
 
@@ -58,7 +51,7 @@ updateXState action = putSt =<< action =<< getSt
 
 -- | 
 
-getPenType :: MainCoroutine PenType --  Iteratee MyEvent XournalStateIO PenType
+getPenType :: MainCoroutine PenType 
 getPenType = get (penType.penInfo) <$> lift (St.get)
       
 -- | 
@@ -92,7 +85,7 @@ getCurrentPageEitherFromXojState cinfo xojstate =
     let cpn = get currentPageNum cinfo 
         page = getCurrentPageFromXojState cinfo xojstate
     in case xojstate of 
-         ViewAppendState xoj -> Left page
+         ViewAppendState _xoj -> Left page
          SelectState txoj ->  
            case get g_selectSelected txoj of 
              Nothing -> Left page
@@ -147,15 +140,15 @@ reflectUI ui cinfobox = do
     liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
     Just ra1 <- liftIO $ actionGroupGetAction (head agr) "ONEPAGEA"
-    let wra1 = castToRadioAction ra1 
+    -- let wra1 = castToRadioAction ra1 
     selectBoxAction (fsingle ra1) (fcont ra1) cinfobox 
     liftIO $ maybe (return ()) signalUnblock mconnid 
     return ()
-  where fsingle ra1 cinfo = do
+  where fsingle ra1 _cinfo = do
           let wra1 = castToRadioAction ra1           
           liftIO $ Gtk.set wra1 [radioActionCurrentValue := 1 ] 
-        fcont ra1 cinfo = do
-          let wra1 = castToRadioAction ra1 
+        fcont ra1 _cinfo = do
+          -- let wra1 = castToRadioAction ra1 
           -- liftIO $ wra1 `on` radioActionChanged $ const (putStrLn "hellowworld2" >> return ())
           liftIO $ Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
   
@@ -239,7 +232,7 @@ getCanvasGeometryCvsId cid xstate = do
   let cinfobox = getCanvasInfo cid xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      xojstate = get xournalstate xstate 
+      -- xojstate = get xournalstate xstate 
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . get (pageArrangement.viewInfo) 
@@ -252,7 +245,7 @@ getCanvasGeometry xstate = do
   let cinfobox = get currentCanvasInfo xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      xojstate = get xournalstate xstate 
+      -- xojstate = get xournalstate xstate 
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . get (pageArrangement.viewInfo) 

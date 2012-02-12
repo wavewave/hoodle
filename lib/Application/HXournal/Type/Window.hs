@@ -14,7 +14,7 @@ module Application.HXournal.Type.Window where
 
 import Application.HXournal.Type.Canvas
 
-import Graphics.UI.Gtk hiding (get,set)
+-- | 
 
 data WindowConfig = Node CanvasId 
                   | HSplit WindowConfig WindowConfig

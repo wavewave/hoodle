@@ -38,7 +38,6 @@ import Application.HXournal.Coroutine.Window
 -- import Application.HXournal.Coroutine.Network
 import Application.HXournal.Coroutine.Layer 
 import Application.HXournal.ModelAction.Window 
-import Application.HXournal.ModelAction.Page
 import Application.HXournal.Type.Window 
 import Application.HXournal.Device
 import Control.Applicative ((<$>))
@@ -54,7 +53,6 @@ import Prelude hiding ((.), id)
 import Data.IORef
 import Application.HXournal.Type.PageArrangement
 import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.BBox
 import Data.Xournal.Generic
 
 -- | 
@@ -122,7 +120,7 @@ initCoroutine devlst window = do
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
             $ st1 { _cvsInfoMap = M.empty } 
-  (st3,cvs,wconf) <- constructFrame st2 (get frameState st2)
+  (st3,cvs,_wconf) <- constructFrame st2 (get frameState st2)
   (st4,wconf') <- eventConnect st3 (get frameState st3)
   let startingXstate = set frameState wconf' . set rootWindow cvs $ st4
                        
@@ -172,7 +170,7 @@ selectMode :: MainCoroutine ()
 selectMode = do 
   r1 <- await 
   case r1 of 
-    PenDown cid pbtn pcoord -> do 
+    PenDown cid _pbtn pcoord -> do 
       ptype <- return . get (selectType.selectInfo) =<< lift St.get 
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 

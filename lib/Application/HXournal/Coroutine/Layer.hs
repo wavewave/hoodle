@@ -24,7 +24,6 @@ import Application.HXournal.ModelAction.Layer
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Commit
 import Control.Monad.Trans
-
 import qualified Data.IntMap as M
 import Data.Xournal.Generic
 import Data.Xournal.Select
@@ -34,7 +33,6 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 import Data.IORef
-import qualified Data.Sequence as Seq
 import Graphics.UI.Gtk hiding (get,set)
 
 layerAction :: (XournalState -> Int -> Page EditMode -> MainCoroutine XournalState) 
@@ -44,7 +42,6 @@ layerAction action = do
     selectBoxAction (fsingle xst) (fsingle xst)  . get currentCanvasInfo $ xst
   where 
     fsingle xstate cvsInfo = do
-      let xojstate = get xournalstate xstate
       let epage = getCurrentPageEitherFromXojState cvsInfo xojstate
           cpn = get currentPageNum cvsInfo
           xojstate = get xournalstate xstate
@@ -75,8 +72,8 @@ gotoNextLayer = layerAction nextlayeraction >>= putSt
           case mlyrzipper of 
             Nothing -> liftIO $ putStrLn "Nothing"
             Just _ -> liftIO $ putStrLn "Just"
-          let Select (O (Just ll)) = get g_layers npage
-              SZ (_,(x1,x2)) = ll 
+          -- let Select (O (Just ll)) = get g_layers npage
+          --     SZ (_,(x1,x2)) = ll 
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 gotoPrevLayer :: MainCoroutine ()
@@ -86,8 +83,8 @@ gotoPrevLayer = layerAction prevlayeraction >>= putSt
               Select (O (Just lyrzipper)) = get g_layers currpage  
           let mlyrzipper = moveLeft lyrzipper 
               npage = maybe currpage (\x -> set g_layers (Select (O (Just x))) currpage) mlyrzipper
-          let Select (O (Just ll)) = get g_layers npage
-              SZ (_,(x1,x2)) = ll 
+          -- let Select (O (Just ll)) = get g_layers npage
+          --     SZ (_,(x1,x2)) = ll 
           case mlyrzipper of 
             Nothing -> liftIO $ putStrLn "Nothing"
             Just _ -> liftIO $ putStrLn "Just"
@@ -101,8 +98,8 @@ gotoLayerAt n = layerAction gotoaction >>= putSt
               Select (O (Just lyrzipper)) = get g_layers currpage  
           let mlyrzipper = moveTo n lyrzipper 
               npage = maybe currpage (\x -> set g_layers (Select (O (Just x))) currpage) mlyrzipper
-          let Select (O (Just ll)) = get g_layers npage
-              SZ (_,(x1,x2)) = ll 
+          -- let Select (O (Just ll)) = get g_layers npage
+          --     SZ (_,(_x1,_x2)) = ll 
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 

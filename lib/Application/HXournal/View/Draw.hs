@@ -16,10 +16,8 @@ module Application.HXournal.View.Draw where
 
 import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
-
-import Control.Applicative 
-import Control.Category (id,(.))
-import Control.Monad (liftM,(<=<),when)
+import Control.Category ((.))
+import Control.Monad (when)
 import Data.Label
 import Prelude hiding ((.),id,mapM_,concatMap)
 import Data.Foldable
@@ -38,14 +36,11 @@ import Graphics.Xournal.Render.PDFBackground
 import Graphics.Xournal.Render.Generic
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Alias 
-import Application.HXournal.Device
 import Application.HXournal.Util
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Predefined
 import Application.HXournal.Type.Enum
 import Application.HXournal.View.Coordinate
-import Application.HXournal.ModelAction.Page
-
 
 -- | 
 
@@ -91,32 +86,25 @@ getCanvasViewPort geometry =
 -- | 
 
 getBBoxInPageCoord :: CanvasGeometry -> PageNum -> BBox -> BBox  
-getBBoxInPageCoord geometry pnum bbox@(BBox (x1,y1) (x2,y2)) = 
+getBBoxInPageCoord geometry pnum bbox = 
   let DeskCoord (x0,y0) = page2Desktop geometry (pnum,PageCoord (0,0))  
   in moveBBoxByOffset (-x0,-y0) bbox
      
 -- | 
 
 getViewableBBox :: CanvasGeometry 
-                   -- -> Maybe (PageNum, Maybe BBox) -- ^ in page coordinate
                    -> Maybe BBox   -- ^ in desktop coordinate 
                    -> IntersectBBox
-                                            -- Maybe BBox   -- ^ in desktop coordinate
-getViewableBBox geometry mbbox = -- (Just (pnum,mbbox)) = 
+getViewableBBox geometry mbbox = 
   let ViewPortBBox vportbbox = getCanvasViewPort geometry  
   in (fromMaybe mbbox :: IntersectBBox) `mappend` (Intersect (Middle vportbbox))
                
-{- getViewableBBox geometry Nothing = 
-  let ViewPortBBox vportbbox = getCanvasViewPort geometry 
-  in (Just vportbbox) -}
-
-
 -- | common routine for double buffering 
 
 doubleBufferDraw :: DrawWindow -> CanvasGeometry -> Render () -> Render () 
                     -> IntersectBBox
                     -> IO ()
-doubleBufferDraw win geometry xform rndr (Intersect ibbox) = do 
+doubleBufferDraw win geometry _xform rndr (Intersect ibbox) = do 
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
@@ -194,7 +182,7 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z)
     
 drawFuncGen :: (GPageable em) => em -> 
                ((PageNum,Page em) -> Maybe BBox -> Render ()) -> DrawingFunction SinglePage em
-drawFuncGen typ render = SinglePageDraw func 
+drawFuncGen _typ render = SinglePageDraw func 
   where func isCurrentCvs canvas (pnum,page) vinfo mbbox = do 
           let arr = get pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas

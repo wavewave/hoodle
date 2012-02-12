@@ -91,11 +91,12 @@ initDevice cfg = do
 getPointer :: DeviceList -> EventM t (Maybe PenButton,PointerCoord)
 getPointer devlst = do 
     ptr <- ask 
-    (ty,btn,x,y,mdev,maxf) <- liftIO (getInfo ptr)
+    (_ty,btn,x,y,mdev,maxf) <- liftIO (getInfo ptr)
     let rbtn | btn == 0 = Nothing 
              | btn == 1 = Just PenButton1
              | btn == 2 = Just PenButton2 
              | btn == 3 = Just PenButton3
+             | otherwise = Nothing 
     case mdev of 
       Nothing -> return (rbtn,PointerCoord Core x y 1.0)
       Just dev -> case maxf of 

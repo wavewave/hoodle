@@ -15,29 +15,16 @@
 module Application.HXournal.ModelAction.File where
 
 import Application.HXournal.Type.XournalState
-import Application.HXournal.Type.Canvas
-import Application.HXournal.ModelAction.Page
-import Application.HXournal.Type.PageArrangement
-import Application.HXournal.Util
-import Data.Xournal.BBox
-import qualified Text.Xournal.Parse as P
 import qualified Text.Xournal.Parse.Enumerator as PE
-import qualified Data.IntMap as M
 import Data.Maybe 
-
 import Control.Monad
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-
 import Data.Xournal.Simple
-import Data.Xournal.Generic
-
 import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.PDFBackground
-
 import Graphics.UI.Gtk hiding (get,set)
-
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 
@@ -67,30 +54,30 @@ getFileContent Nothing xstate = do
         xstate' = set currFileName Nothing 
                   . set xournalstate newxojstate
                   $ xstate 
+    return xstate' 
+                  
     -- let dim = get g_dimension . maybeError "getFileContent" . M.lookup 0 . get g_pages 
     --         $ newxoj 
 
     -- let cvschange = setPage xstate' 0 
     -- modifyCurrCvsInfoM cvschange xstate'
-    return xstate' 
 
 -- |
     
 constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalState 
 constructNewHXournalStateFromXournal xoj' xstate = do 
     xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj'
-    let dim = get g_dimension . maybeError "constructNewHxournalStateFromXournal" . M.lookup 0 
-              . get g_pages $ xoj
-        startingxojstate = ViewAppendState xoj
-        -- forSingle = set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
-        --             . set currentPageNum 0 
-        
+    let startingxojstate = ViewAppendState xoj
     return $ set xournalstate startingxojstate xstate
---        cvschange = setPage xstate' 0 
---    modifyCurrCvsInfoM  cvschange xstate' 
-      
-      -- rentCanvasInfo (selectBox forSingle (error "construct..."))
- --    return $ setPage xstate' 0 xstate'
+
+    -- dim = get g_dimension . maybeError "constructNewHxournalStateFromXournal" . M.lookup 0 
+    --       . get g_pages $ xoj
+    -- forSingle = set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
+    --             . set currentPageNum 0 
+    --        cvschange = setPage xstate' 0 
+    --    modifyCurrCvsInfoM  cvschange xstate' 
+    -- rentCanvasInfo (selectBox forSingle (error "construct..."))
+    --    return $ setPage xstate' 0 xstate'
 
 
 -- | 

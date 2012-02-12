@@ -13,11 +13,9 @@
 module Application.HXournal.ModelAction.Select where
 
 import Application.HXournal.Type.Enum
-import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.Alias
 import Application.HXournal.Type.Predefined 
 import Application.HXournal.Type.PageArrangement
-import Application.HXournal.View.Draw
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Util
 import Application.HXournal.ModelAction.Layer
@@ -33,7 +31,7 @@ import Graphics.Xournal.Render.BBoxMapPDF
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.Simple
 import Graphics.Rendering.Cairo
-import Graphics.Rendering.Cairo.Matrix (Matrix, invert, transformPoint )
+import Graphics.Rendering.Cairo.Matrix ( invert, transformPoint )
 import Graphics.UI.Gtk hiding (get,set)
 import Data.Time.Clock
 import Control.Monad
@@ -258,8 +256,8 @@ changeStrokeColor pcolor str =
 changeStrokeWidth :: Double -> StrokeBBox -> StrokeBBox
 changeStrokeWidth pwidth str = 
     let nstrsmpl = case strokebbox_stroke str of 
-          Stroke t c w d -> Stroke t c pwidth d
-          VWStroke t c d -> Stroke t c pwidth (map (\(x,y,z) -> (x:!:y)) d)
+          Stroke t c _w d -> Stroke t c pwidth d
+          VWStroke t c d -> Stroke t c pwidth (map (\(x,y,_z) -> (x:!:y)) d)
     in str { strokebbox_stroke = nstrsmpl } 
 --  str { strokebbox_width = pwidth } 
       
@@ -364,10 +362,10 @@ data StrokesNImage = StrokesNImage { strokes :: [StrokeBBox]
 -- | 
 
 mkStrokesNImage :: CanvasGeometry -> Page SelectMode -> IO StrokesNImage 
-mkStrokesNImage geometry tpage = do 
+mkStrokesNImage _geometry tpage = do 
   let strs = getSelectedStrokes tpage
       drawselection = mapM_ (drawOneStroke.gToStroke) strs 
-      Dim cw ch = get g_dimension tpage -- unCanvasDimension . canvasDim $ geometry 
+      Dim cw ch = get g_dimension tpage 
       mbbox = case getULBBoxFromSelected tpage of 
                 Middle bbox -> Just bbox 
                 _ -> Nothing 

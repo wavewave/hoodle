@@ -22,20 +22,17 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Canvas
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
-import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Scroll
 import Application.HXournal.Coroutine.Draw
-import Data.Traversable
 import Control.Applicative
 import Control.Monad.Trans
 import Control.Category
 import Data.Label
 import qualified Data.IntMap as M
-import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.BBox
 import Data.Xournal.Generic
 import Graphics.Xournal.Render.BBoxMapPDF
-import Graphics.UI.Gtk (adjustmentSetUpper,adjustmentGetValue,adjustmentSetValue)
+import Graphics.UI.Gtk (adjustmentGetValue)
 import Prelude hiding ((.),id, mapM_, mapM)
 
 modeChange :: MyEvent -> MainCoroutine () 
@@ -113,7 +110,7 @@ viewModeChange command = do
 
         whensing xstate cinfo = do 
           cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
-          page <- getCurrentPageCurr 
+          -- page <- getCurrentPageCurr 
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 
               cpn = PageNum . get currentPageNum $ cinfo 
@@ -122,7 +119,7 @@ viewModeChange command = do
 
           let arr = makeContinuousSingleArrangement zmode cdim (getXournal xstate) 
                                                     (cpn, PageCoord (xpos,ypos))
-              ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
+              -- ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
           let vinfo = get viewInfo cinfo 

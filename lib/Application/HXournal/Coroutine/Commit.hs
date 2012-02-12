@@ -14,7 +14,6 @@ module Application.HXournal.Coroutine.Commit where
 
 import Application.HXournal.Type.XournalState 
 import Application.HXournal.Type.Coroutine
-import Application.HXournal.Type.Event
 import Application.HXournal.Type.Undo 
 import Application.HXournal.Coroutine.Draw 
 import Application.HXournal.ModelAction.File

@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.ModelAction.Eraser 
@@ -9,10 +8,11 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.ModelAction.Eraser where
 
 import Control.Monad.State 
-
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.Type 
 import Graphics.Xournal.Render.HitTest

@@ -28,12 +28,10 @@ import Application.HXournal.ModelAction.Page
 import Application.HXournal.Coroutine.Page
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
-import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
 import Data.Label
 import Graphics.UI.Gtk hiding (get,set)
-import Graphics.Rendering.Cairo
 import qualified Data.IntMap as M
 import Data.Maybe
 import Data.Time.Clock 
@@ -47,11 +45,11 @@ canvasConfigureGenUpdate :: MainCoroutine ()
                             -> CanvasId 
                             -> CanvasDimension 
                             -> MainCoroutine () 
-canvasConfigureGenUpdate updatefunc cid cdim@(CanvasDimension (Dim w' h')) 
+canvasConfigureGenUpdate updatefunc cid cdim 
   = (updateXState $ selectBoxAction fsingle fcont . getCanvasInfo cid )
     >> updatefunc 
     -- canvasZoomUpdateAll 
-  where cdim = CanvasDimension (Dim w' h')
+  where -- cdim = CanvasDimension (Dim w' h')
         fsingle cinfo = do 
           xstate <- getSt 
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
@@ -81,7 +79,7 @@ doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
 -- | 
 
 canvasConfigure' :: CanvasId -> CanvasDimension -> MainCoroutine () 
-canvasConfigure' cid cdim@(CanvasDimension (Dim w' h')) = do 
+canvasConfigure' cid cdim = do -- @(CanvasDimension (Dim w' h')) = do 
     xstate <- getSt 
     ctime <- liftIO getCurrentTime 
     maybe defaction (chkaction ctime) (get lastTimeCanvasConfigure xstate) 
@@ -123,7 +121,7 @@ eitherSplit stype = do
             putSt xstate3 
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
-            (xstate4,wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
+            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
             xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
             putSt xstate5 
             canvasZoomUpdateAll
@@ -144,7 +142,7 @@ deleteCanvas = do
       Right Nothing -> return ()
       Right (Just fstate') -> do 
         case maybeError "deleteCanvas" (M.lookup currcid cmap) of
-          CanvasInfoBox oldcinfo -> do 
+          CanvasInfoBox _oldcinfo -> do 
             let cmap' = M.delete currcid cmap
                 newcurrcid = maximum (M.keys cmap')
             xstate0 <- changeCurrentCanvasId newcurrcid 
@@ -160,7 +158,7 @@ deleteCanvas = do
             putSt xstate3
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
-            (xstate4,wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
+            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
             canvasZoomUpdateAll
             xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
             putSt xstate5 

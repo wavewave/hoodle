@@ -31,9 +31,6 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Alias
 
-import Debug.Trace
-
-
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 
 data CanvasGeometry = 
@@ -101,7 +98,7 @@ makePage2Desktop pfunc (pnum,PageCoord (x,y)) =
 makeDesktop2Page :: (PageNum -> Maybe PageOrigin) -> DesktopCoordinate 
                     -> Maybe (PageNum, PageCoordinate)
 makeDesktop2Page pfunc (DeskCoord (x,y)) =
-  let (prev,next) = break (y<) . map (snd.unPageOrigin) . catMaybes
+  let (prev,_next) = break (y<) . map (snd.unPageOrigin) . catMaybes
                     . takeWhile isJust . map (pfunc.PageNum) $ [0..] 
   in Just (PageNum (length prev-1),PageCoord (x,y- last prev)) 
 
@@ -159,12 +156,12 @@ wacom2Canvas geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometr
 -- | 
 
 device2Desktop :: CanvasGeometry -> PointerCoord -> DesktopCoordinate 
-device2Desktop geometry (PointerCoord typ x y z) =  
+device2Desktop geometry (PointerCoord typ x y _z) =  
   case typ of 
     Core -> core2Desktop geometry (x,y)
     Stylus -> wacom2Desktop geometry (x,y)
     Eraser -> wacom2Desktop geometry (x,y)
-device2Desktop geometry NoPointerCoord = error "NoPointerCoordinate device2Desktop"
+device2Desktop _geometry NoPointerCoord = error "NoPointerCoordinate device2Desktop"
          
 -- | 
 
@@ -177,7 +174,7 @@ getPagesInViewPortRange geometry xoj =
       pgcheck n pg = let Dim w h = get g_dimension pg  
                          DeskCoord ul = page2Desktop geometry (PageNum n,PageCoord (0,0)) 
                          DeskCoord lr = page2Desktop geometry (PageNum n,PageCoord (w,h))
-                         nbbox = BBox ul lr 
+                         -- nbbox = BBox ul lr 
                          inbbox = Intersect (Middle (BBox ul lr))
                          result = ivbbox `mappend` inbbox 
                      in case result of 

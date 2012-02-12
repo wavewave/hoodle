@@ -125,7 +125,7 @@ makeContinuousSingleArrangement :: ZoomMode -> CanvasDimension
 makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) 
                                 xoj (pnum,PageCoord (xpos,ypos)) = 
   let PageOrigin (_,y0) = maybeError "makeContSingleArr" $ pageArrFuncContSingle xoj pnum 
-      dim@(Dim pw ph) = get g_dimension . head . gToList . get g_pages $ xoj
+      dim = get g_dimension . head . gToList . get g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       vport = ViewPortBBox (BBox (xpos,ypos+y0) (xpos+cw/sinvx,ypos+y0+ch/sinvy))
   in ContinuousSingleArrangement cdim (deskDimContSingle xoj) (pageArrFuncContSingle xoj) vport 
@@ -133,7 +133,7 @@ makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch))
 -- |
 
 pageArrFuncContSingle :: Xournal EditMode -> PageNum -> Maybe PageOrigin 
-pageArrFuncContSingle xoj pnum@(PageNum n)
+pageArrFuncContSingle xoj (PageNum n)
   | n < 0 = Nothing 
   | n >= len = Nothing 
   | otherwise = Just (PageOrigin (0,ys !! n))

@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.GUI where
 
@@ -26,21 +27,16 @@ import Application.HXournal.Device
 import Application.HXournal.Coroutine
 -- import Application.HXournal.GUI.Menu
 import Application.HXournal.ModelAction.File 
-import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Window
-
 import Graphics.UI.Gtk hiding (get,set)
-
-import Control.Applicative 
 import Control.Monad.Trans 
-
 import Data.IORef
 import Data.Maybe
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
+-- |
 
 startGUI :: Maybe FilePath -> IO () 
 startGUI mfname = do 

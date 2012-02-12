@@ -30,18 +30,14 @@ import Application.HXournal.ModelAction.Pen
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.View.Coordinate
 import Application.HXournal.View.Draw
-import Application.HXournal.Type.Alias
 import Application.HXournal.Util
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Xournal.Predefined
-import Data.Xournal.Generic
 import Data.Xournal.BBox
-import Graphics.Xournal.Render.BBox
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
-import qualified Data.IntMap as IM
 import Data.Maybe 
 import Control.Category
 import Data.Label
@@ -56,7 +52,7 @@ penPageSwitch cinfo pgn = do (xst,cinfo') <- getSt >>= switchact
                              putSt xst     
                              return cinfo'
   where switchact xst = do 
-          let xoj = getXournal xst
+          let -- xoj = getXournal xst
               ncinfo = set currentPageNum (unPageNum pgn) cinfo 
               mfunc = const (return . CanvasInfoBox $ ncinfo)  
           return . (,ncinfo) =<< modifyCurrCvsInfoM mfunc xst
@@ -97,7 +93,7 @@ commonPenStart action cid pcoord = do
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (ConnectId DrawingArea, ConnectId DrawingArea) -> (Double,Double) -> MainCoroutine ()
-        penAction cinfo pnum geometry (cidmove,cidup) (x,y) = do 
+        penAction _cinfo pnum geometry (cidmove,cidup) (x,y) = do 
           xstate <- getSt
           let PointerCoord _ _ _ z = pcoord 
           let currxoj = unView . get xournalstate $ xstate        

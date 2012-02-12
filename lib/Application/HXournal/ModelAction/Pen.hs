@@ -33,7 +33,8 @@ import Data.Xournal.Simple
 import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
-import Application.HXournal.View.Coordinate
+
+-- | 
 
 addPDraw :: PenInfo 
             -> TXournalBBoxMapPDFBuf 

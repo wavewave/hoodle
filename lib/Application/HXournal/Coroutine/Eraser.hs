@@ -33,7 +33,6 @@ import Data.Xournal.Generic
 
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
-import Graphics.Xournal.Render.BBox
 import Graphics.Xournal.Render.BBoxMapPDF
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.Trans
@@ -69,7 +68,7 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
                                  (moveact xstate cvsInfo) upact
     defact = eraserProcess cid pnum geometry connidup connidmove strs (x0,y0)
     upact _ = disconnect connidmove >> disconnect connidup >> invalidateAll
-    moveact xstate cvsInfo (pcoord,(x,y)) = do 
+    moveact xstate cvsInfo (_pcoord,(x,y)) = do 
       let line = ((x0,y0),(x,y))
           hittestbbox = mkHitTestBBox line strs   
           (hitteststroke,hitState) = 

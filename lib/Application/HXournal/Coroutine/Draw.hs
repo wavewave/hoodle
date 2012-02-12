@@ -28,12 +28,9 @@ import qualified Data.IntMap as M
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
-import Data.Xournal.Generic
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set)
-import Application.HXournal.View.Coordinate
 import Application.HXournal.Type.Alias
-import Application.HXournal.ModelAction.Page
 
 data DrawingFunctionSet = 
   DrawingFunctionSet { singleEditDraw :: DrawingFunction SinglePage EditMode
@@ -134,9 +131,9 @@ invalidateTemp cid tempsurface rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          page <- getCurrentPageCvsId cid 
+          -- page <- getCurrentPageCvsId cid 
           let canvas = get drawArea cvsInfo
-              vinfo = get viewInfo cvsInfo      
+              -- vinfo = get viewInfo cvsInfo      
               pnum = PageNum . get currentPageNum $ cvsInfo 
           geometry <- liftIO $ getCanvasGeometry xstate
           win <- liftIO $ widgetGetDrawWindow canvas
@@ -157,9 +154,9 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          page <- getCurrentPageCvsId cid  
+          -- page <- getCurrentPageCvsId cid  
           let canvas = get drawArea cvsInfo
-              vinfo = get viewInfo cvsInfo      
+              -- vinfo = get viewInfo cvsInfo      
           geometry <- liftIO $ getCanvasGeometry xstate
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum

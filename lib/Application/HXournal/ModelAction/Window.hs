@@ -57,7 +57,7 @@ initCanvasInfo xstate cid =
 -- | only creating windows 
 
 minimalCanvasInfo :: ViewMode a => HXournalState -> CanvasId -> IO (CanvasInfo a)
-minimalCanvasInfo xstate cid = do 
+minimalCanvasInfo _xstate cid = do 
     canvas <- drawingAreaNew
     scrwin <- scrolledWindowNew Nothing Nothing 
     containerAdd scrwin canvas
@@ -82,20 +82,20 @@ connectDefaultEventCanvasInfo xstate cinfo = do
         hadj = _horizAdjustment cinfo 
         vadj = _vertAdjustment cinfo 
 
-    sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
+    _sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
     
-    bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
+    _bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
                  (mbtn,p) <- getPointer dev
                  let pbtn = maybe PenButton1 id mbtn
                  liftIO (callback (PenDown cid pbtn p))
-    confevent <- canvas `on` configureEvent $ tryEvent $ do 
+    _confevent <- canvas `on` configureEvent $ tryEvent $ do 
                    (w,h) <- eventSize 
                    liftIO $ callback 
                      (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
-    brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
+    _brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
                  (_,p) <- getPointer dev
                  liftIO (callback (PenUp cid p))
-    exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
+    _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
                   liftIO $ callback (UpdateCanvas cid) 
 
     {-
@@ -126,11 +126,11 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                     v <- adjustmentGetValue vadj     
                     callback (VScrollBarMoved cid v)
     Just vscrbar <- scrolledWindowGetVScrollbar scrwin
-    bpevtvscrbar <- vscrbar `on` buttonPressEvent $ do 
+    _bpevtvscrbar <- vscrbar `on` buttonPressEvent $ do 
                       v <- liftIO $ adjustmentGetValue vadj 
                       liftIO (callback (VScrollBarStart cid v))
                       return False
-    brevtvscrbar <- vscrbar `on` buttonReleaseEvent $ do 
+    _brevtvscrbar <- vscrbar `on` buttonReleaseEvent $ do 
                       v <- liftIO $ adjustmentGetValue vadj 
                       liftIO (callback (VScrollBarEnd cid v))
                       return False
@@ -198,7 +198,7 @@ constructFrame' :: CanvasInfoBox ->
                    -> IO (HXournalState,Widget,WindowConfig)
 constructFrame' template oxstate (Node cid) = do 
     let ocmap = getCanvasInfoMap oxstate 
-    (cinfobox,cmap,xstate) <- case M.lookup cid ocmap of 
+    (cinfobox,_cmap,xstate) <- case M.lookup cid ocmap of 
       Just cinfobox' -> return (cinfobox',ocmap,oxstate)
       Nothing -> do 
         let cinfobox' = setCanvasId cid template 

@@ -12,6 +12,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Graphics.Xournal.Render.BBoxMapPDF where
 

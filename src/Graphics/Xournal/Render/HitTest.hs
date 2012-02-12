@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Graphics.Xournal.Render.HitTest where
 

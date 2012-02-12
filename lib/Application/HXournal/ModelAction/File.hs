@@ -21,6 +21,7 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Util
 import Data.Xournal.BBox
 import qualified Text.Xournal.Parse as P
+import qualified Text.Xournal.Parse.Enumerator as PE
 import qualified Data.IntMap as M
 import Data.Maybe 
 
@@ -51,9 +52,14 @@ getFileContent :: Maybe FilePath
                -> HXournalState 
                -> IO HXournalState 
 getFileContent (Just fname) xstate = do 
-    xojcontent <- P.read_xournal fname 
-    nxstate <- constructNewHXournalStateFromXournal xojcontent xstate 
-    return $ set currFileName (Just fname) nxstate 
+    -- xojcontent <- P.read_xournal fname 
+    PE.parseXojFile fname >>= \x -> case x of  
+      Left str -> do
+        putStrLn $ "file reading error : " ++ str 
+        return xstate 
+      Right xojcontent -> do 
+        nxstate <- constructNewHXournalStateFromXournal xojcontent xstate 
+        return $ set currFileName (Just fname) nxstate 
 getFileContent Nothing xstate = do   
     newxoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF 
               $ defaultXournal 

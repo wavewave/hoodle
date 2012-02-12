@@ -79,7 +79,7 @@ predefined_fine :: Double
 predefined_fine = 0.85
 
 predefined_medium :: Double
-predefined_medium = 1.41
+predefined_medium = 15.41 -- test original = 1.41
 
 predefined_thick :: Double
 predefined_thick = 2.26

@@ -71,10 +71,11 @@ mkbboxF lst =
          ,bbox_lowerright=(F.maximum xs, F.maximum ys)}
 
 bboxFromStroke :: Stroke -> BBox 
-bboxFromStroke (Stroke _ _ _ dat) = mkbbox dat 
+bboxFromStroke (Stroke _ _ w dat) = inflate (mkbbox dat) w
 bboxFromStroke (VWStroke _ _ dat) = 
   let dat' = map ((,) <$> fst3 <*> snd3) dat 
-  in mkbboxF dat'   
+      widthmax = F.maximum (map trd3 dat)
+  in inflate (mkbboxF dat') widthmax
    
 
 dimToBBox :: Dimension -> BBox 
@@ -84,6 +85,11 @@ dimToBBox (Dim w h) = BBox (0,0) (w,h)
          
 xformBBox :: ((Double,Double) -> (Double,Double)) -> BBox -> BBox 
 xformBBox f (BBox c1 c2) = BBox (f c1) (f c2)
+
+-- |
+
+inflate :: BBox -> Double -> BBox 
+inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
 
 -- | 
 

@@ -14,27 +14,38 @@
 
 module Data.Xournal.BBox where
 
+import Control.Applicative 
 import Control.Monad
 import Data.ByteString hiding (map,maximum,minimum)
 -- import qualified Data.Sequence as Seq
 import Data.Xournal.Generic
 import Data.Xournal.Simple
+import Data.Xournal.Util
 import Data.Strict.Tuple 
 import qualified Data.Foldable as F
 import Data.Monoid
 import Prelude hiding (fst,snd)
 import qualified Prelude as Prelude (fst,snd)
 
+
+-- | bounding box type 
+
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
           deriving (Show,Eq)
 
-data StrokeBBox = StrokeBBox { strokebbox_tool :: ByteString
+-- | 
+
+data StrokeBBox = StrokeBBox { strokebbox_stroke :: Stroke 
+                             , strokebbox_bbox :: BBox } 
+                deriving (Show)
+  
+{-  
+  StrokeBBox { strokebbox_tool :: ByteString
                              , strokebbox_color :: ByteString 
                              , strokebbox_width :: Double
                              , strokebbox_data :: [Pair Double Double] 
-                             , strokebbox_bbox :: BBox }
-                deriving (Show)
+                             , strokebbox_bbox :: BBox } -}
 
 type TLayerBBox = GLayer [] StrokeBBox 
 
@@ -58,6 +69,13 @@ mkbboxF lst =
       ys = fmap Prelude.snd lst 
   in BBox{bbox_upperleft=(F.minimum xs, F.minimum ys)
          ,bbox_lowerright=(F.maximum xs, F.maximum ys)}
+
+bboxFromStroke :: Stroke -> BBox 
+bboxFromStroke (Stroke _ _ _ dat) = mkbbox dat 
+bboxFromStroke (VWStroke _ _ dat) = 
+  let dat' = map ((,) <$> fst3 <*> snd3) dat 
+  in mkbboxF dat'   
+   
 
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
@@ -90,12 +108,6 @@ intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do
       y6 = min y2 y4
   return (BBox (x5,y5) (x6,y6))
   
-{- 
-  let x5 = if x1 <= x3 && x2 <= x3  && xthen x3 else x1
-      y5 = if y1 < y3 then y3 else y1
-      x6 = if x2 < x4 then x2 else x4
-      y6 = if y2 < y4 then y2 else y4
-  in BBox (x5,y5) (x6,y6) -}
      
 unionBBox :: BBox -> BBox -> BBox
 unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = 
@@ -142,7 +154,7 @@ class Maybeable a where
   
 instance Maybeable IntersectBBox where
   type ElemType IntersectBBox = BBox
-  toMaybe (Intersect Bottom) = Nothing  -- error "empty intersectbbox"
+  toMaybe (Intersect Bottom) = Nothing  
   toMaybe (Intersect Top) = Nothing 
   toMaybe (Intersect (Middle x)) = Just x 
   fromMaybe Nothing = Intersect Top 
@@ -150,7 +162,7 @@ instance Maybeable IntersectBBox where
   
 instance Maybeable UnionBBox where
   type ElemType UnionBBox = BBox
-  toMaybe (Union Bottom) = Nothing -- error "empty unionbbox"
+  toMaybe (Union Bottom) = Nothing 
   toMaybe (Union Top) = Nothing 
   toMaybe (Union (Middle x)) = Just x 
   fromMaybe Nothing = Union Top 
@@ -159,27 +171,11 @@ instance Maybeable UnionBBox where
 
 mkStrokeBBoxFromStroke :: Stroke -> StrokeBBox
 mkStrokeBBoxFromStroke str = 
-  StrokeBBox { strokebbox_tool = stroke_tool str 
-             , strokebbox_color = stroke_color str 
-             , strokebbox_width = stroke_width str 
-             , strokebbox_data = stroke_data str 
-             , strokebbox_bbox = mkbbox (stroke_data str) } 
+  StrokeBBox { strokebbox_stroke = str 
+             , strokebbox_bbox = bboxFromStroke str
+             } 
 
 strokeFromStrokeBBox :: StrokeBBox -> Stroke 
-strokeFromStrokeBBox strbbox = 
-  Stroke { stroke_tool = strokebbox_tool strbbox
-         , stroke_color = strokebbox_color strbbox
-         , stroke_width= strokebbox_width strbbox
-         , stroke_data = strokebbox_data strbbox } 
+strokeFromStrokeBBox = strokebbox_stroke 
 
-
-{-
-data XournalBBox = XournalBBox { xojbbox_pages :: [PageBBox] }
-
-data PageBBox = PageBBox { pagebbox_dim :: Dimension
-                         , pagebbox_bkg :: Background
-                         , pagebbox_layers :: [LayerBBox] } 
-
-data LayerBBox = LayerBBox { layerbbox_strokes :: [StrokeBBox] } 
--}
 

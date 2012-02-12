@@ -11,12 +11,15 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
- 
+----------------------------------------------------------------------------- 
+
 module Data.Xournal.Simple where
 
+import Control.Applicative 
 import qualified Data.ByteString as S
-import Data.ByteString.Char8
+import Data.ByteString.Char8 hiding (map)
 import Data.Strict.Tuple
+import Data.Xournal.Util
 
 import Control.Category
 import Data.Label
@@ -33,7 +36,15 @@ data Stroke = Stroke { stroke_tool  :: !S.ByteString
                      , stroke_width :: !Double
                      , stroke_data  :: ![Pair Double Double]
                      }
+            | VWStroke { stroke_tool :: S.ByteString 
+                       , stroke_color :: S.ByteString 
+                       , stroke_vwdata :: [(Double,Double,Double)] 
+                       }
             deriving Show
+
+getXYtuples :: Stroke -> [(Double,Double)]
+getXYtuples (Stroke t c w d) = map (\(x :!: y) -> (x,y)) d
+getXYtuples (VWStroke t c d) = map ((,)<$>fst3<*>snd3) d 
 
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }
                deriving Show
@@ -66,11 +77,11 @@ s_tool = lens stroke_tool (\a f -> f { stroke_tool = a })
 s_color :: Stroke :-> ByteString 
 s_color = lens stroke_color (\a f -> f { stroke_color = a } )
 
-s_width :: Stroke :-> Double 
-s_width = lens stroke_width (\a f -> f { stroke_width = a } )
+-- s_width :: Stroke :-> Double 
+-- s_width = lens stroke_width (\a f -> f { stroke_width = a } )
 
-s_data :: Stroke :-> [Pair Double Double] 
-s_data = lens stroke_data (\a f -> f { stroke_data = a } )
+-- s_data :: Stroke :-> [Pair Double Double] 
+-- s_data = lens stroke_data (\a f -> f { stroke_data = a } )
 
 s_title :: Xournal :-> Title
 s_title = lens xoj_title (\a f -> f { xoj_title = a } )

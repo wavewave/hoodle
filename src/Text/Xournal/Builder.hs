@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Text.Xournal.Builder where
 
@@ -86,18 +87,43 @@ fromLayer layer = fromByteString "<layer>\n"
                   <> fromByteString "</layer>\n"
 
 fromStroke :: Stroke -> Builder
-fromStroke stroke = fromByteString "<stroke tool=\""
-                    <> fromByteString (stroke_tool stroke)
-                    <> fromByteString "\" color=\""
-                    <> fromByteString (stroke_color stroke)
-                    <> fromByteString "\" width=\""
-                    <> fromByteString (toFixed 2 (stroke_width stroke))
-                    <> fromByteString "\">\n"
-                    <> mconcat (map fromCoord (stroke_data stroke))
-                    <> fromByteString "\n</stroke>\n"
+fromStroke stroke@(Stroke _ _ _ _) = 
+    fromByteString "<stroke tool=\""
+    <> fromByteString (stroke_tool stroke)
+    <> fromByteString "\" color=\""
+    <> fromByteString (stroke_color stroke)
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 (stroke_width stroke))
+    <> fromByteString "\">\n"
+    <> mconcat (map from2DCoord (stroke_data stroke))
+    <> fromByteString "\n</stroke>\n"
+fromStroke stroke@(VWStroke _ _ _) =
+    fromByteString "<stroke tool=\""
+    <> fromByteString (stroke_tool stroke)
+    <> fromByteString "\" color=\""
+    <> fromByteString (stroke_color stroke)
+    <> fromByteString "\" width=\""
+    <> mconcat (map zFrom3DCoord (stroke_vwdata stroke))
+    <> fromByteString "\">\n"
+    <> mconcat (map xyFrom3DCoord (stroke_vwdata stroke))
+    <> fromByteString "\n</stroke>\n"
+  
+-- | 
 
-fromCoord :: Pair Double Double -> Builder 
-fromCoord (x :!: y) = fromByteString (toFixed 2 x) 
+from2DCoord :: Pair Double Double -> Builder 
+from2DCoord (x :!: y) = fromByteString (toFixed 2 x) 
                       <> fromChar ' ' 
                       <> fromByteString (toFixed 2 y) 
                       <> fromChar ' ' 
+                      
+-- |                       
+
+xyFrom3DCoord :: (Double,Double,Double) -> Builder 
+xyFrom3DCoord (x,y,_) =  fromByteString (toFixed 2 x) 
+                         <> fromChar ' ' 
+                         <> fromByteString (toFixed 2 y)
+                         <> fromChar ' ' 
+                         
+zFrom3DCoord :: (Double,Double,Double) -> Builder 
+zFrom3DCoord (_,_,z) = fromByteString (toFixed 2 z) 
+                       <> fromChar ' '

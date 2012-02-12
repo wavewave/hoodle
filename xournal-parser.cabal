@@ -27,7 +27,6 @@ Source-repository head
 --                 xournal-parser
 
 
-
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind

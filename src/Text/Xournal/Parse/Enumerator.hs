@@ -198,6 +198,7 @@ pLayer _ev = do strokes <- many0event ("stroke","layer") pStroke
 pStroke :: Monad m => Event -> Iteratee Event m (Either String Stroke) 
 pStroke ev = do 
   let estr1wdth = getStroke ev 
+  -- trc "pStroke" estr1wdth unit 
   EL.head >>= 
     maybe (return (Left "pStroke ecoord"))
           (\elm -> do 

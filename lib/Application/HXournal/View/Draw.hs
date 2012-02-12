@@ -178,10 +178,10 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z)
         stroke
       Pressure -> do 
         -- setLineWidth wdth
-        let wx0 = (fst predefinedPenShapeAspectXY)*wdth*z0
-            wy0 = (snd predefinedPenShapeAspectXY)*wdth*z0
-            wx = (fst predefinedPenShapeAspectXY)*wdth*z
-            wy = (snd predefinedPenShapeAspectXY)*wdth*z
+        let wx0 = 0.5*(fst predefinedPenShapeAspectXY)*wdth*z0
+            wy0 = 0.5*(snd predefinedPenShapeAspectXY)*wdth*z0
+            wx = 0.5*(fst predefinedPenShapeAspectXY)*wdth*z
+            wy = 0.5*(snd predefinedPenShapeAspectXY)*wdth*z
         moveTo (x0-wx0) (y0-wy0)
         lineTo (x0+wx0) (y0+wy0)
         lineTo (x+wx) (y+wy)

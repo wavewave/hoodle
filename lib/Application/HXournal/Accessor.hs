@@ -16,22 +16,23 @@ module Application.HXournal.Accessor where
 
 import Application.HXournal.Type
 import Control.Applicative
-import Control.Monad
-import qualified Control.Monad.State as St
+import Control.Monad hiding (mapM_)
+import qualified Control.Monad.State as St hiding (mapM_)
 import Control.Monad.Trans
 import Control.Category
 import qualified Data.IntMap as M
 import Data.Label
-import Prelude hiding ((.),id)
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
+import Data.Foldable
+import Data.Monoid
 import Data.Xournal.BBox
 import Data.Xournal.Generic
 import Application.HXournal.ModelAction.Layer 
 import Application.HXournal.Type.Alias
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.View.Coordinate
-
+import Prelude hiding ((.),id,mapM_)
 
 -- | get HXournalState 
 
@@ -246,20 +247,9 @@ getGeometry4CurrCvs xstate = do
                 . get (pageArrangement.viewInfo) 
   boxAction fsingle cinfobox
   
+-- | 
 
-{-
-getCanvasGeometry :: CanvasInfo SinglePage -> MainCoroutine CanvasPageGeometry 
-getCanvasGeometry cinfo = do 
-    let canvas = get drawArea cinfo
-        page = getPage cinfo
-        (x0,y0) = bbox_upperleft . unViewPortBBox . get (viewPortBBox.pageArrangement.viewInfo) $ cinfo
-    liftIO (getCanvasPageGeometry canvas page (x0,y0))
--}
-
-
-
-
-
-
+bbox4AllStrokes :: (Foldable t, Functor t) => t StrokeBBox -> ULMaybe BBox 
+bbox4AllStrokes = unUnion . fold . fmap (Union . Middle . strokebbox_bbox)
 
 

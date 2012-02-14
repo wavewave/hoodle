@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Type.Clipboard where
 

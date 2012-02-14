@@ -12,6 +12,7 @@
 
 module Application.HXournal.ModelAction.Select where
 
+import Application.HXournal.Accessor (bbox4AllStrokes)
 import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Alias
 import Application.HXournal.Type.Predefined 
@@ -209,8 +210,8 @@ getULBBoxFromSelected tpage =
   let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
   in case activelayer of 
        Left _ -> Bottom
-       Right alist -> 
-         unUnion . mconcat . fmap (Union . Middle . strokebbox_bbox) . takeHittedStrokes $ alist 
+       Right alist -> bbox4AllStrokes . takeHittedStrokes $ alist  
+--  unUnion . mconcat . fmap (Union . Middle . strokebbox_bbox) . takeHittedStrokes $ alist 
      
 hitInHandle :: Page SelectMode -> (Double,Double) -> Bool 
 hitInHandle tpage point = 
@@ -435,4 +436,17 @@ getNewCoordTime (prev,otime) (x,y) = do
                          then ((x,y),ntime)
                          else (prev,otime)
     return (willUpdate,(nprev,nntime))
+
+-- | 
+
+adjustStrokePosition4Paste :: CanvasGeometry -> PageNum -> [StrokeBBox] -> [StrokeBBox]
+adjustStrokePosition4Paste geometry pgn strs = 
+    case bboxStrs of 
+      Middle (BBox (xs0,ys0) _) -> fmap (changeStrokeBy (offsetFunc (x0-xs0,y0-ys0))) strs  
+      _ -> strs 
+  where bboxStrs = bbox4AllStrokes strs
+        ViewPortBBox (BBox (xv0,yv0) _) = canvasViewPort geometry 
+        (x0,y0) = maybe (0,0) 
+                    (\(pgn',norigin) -> if pgn == pgn' then unPageCoord norigin else (0,0))
+                    $ desktop2Page geometry (DeskCoord (xv0,yv0))  
 

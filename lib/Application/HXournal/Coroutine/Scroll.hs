@@ -36,8 +36,7 @@ adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
 adjustScrollbarWithGeometryCvsId cid = do
   xstate <- getSt
   let cinfobox = getCanvasInfo cid xstate
-      
-  geometry <- liftIO . getCanvasGeometry $ xstate
+  geometry <- liftIO (getCanvasGeometryCvsId cid xstate)
   let (hadj,vadj) = unboxGet adjustments cinfobox 
       connidh = unboxGet horizAdjConnId cinfobox 
       connidv = unboxGet vertAdjConnId cinfobox
@@ -49,7 +48,7 @@ adjustScrollbarWithGeometryCvsId cid = do
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = do
   xstate <- getSt
-  geometry <- liftIO . getCanvasGeometry $ xstate
+  geometry <- liftIO . getGeometry4CurrCvs $ xstate
   let cinfobox = get currentCanvasInfo xstate
   let (hadj,vadj) = unboxGet adjustments cinfobox 
       connidh = unboxGet horizAdjConnId cinfobox 
@@ -96,7 +95,7 @@ vscrollMove :: CanvasId -> MainCoroutine ()
 vscrollMove cid = do    
     ev <- await 
     xst <- getSt 
-    geometry <- liftIO (getCanvasGeometry xst)
+    geometry <- liftIO (getCanvasGeometryCvsId cid xst)
     case ev of
       VScrollBarMoved _cid' v -> do 
         updateXState $ return.modifyCurrentCanvasInfo 

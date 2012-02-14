@@ -82,8 +82,9 @@ viewModeChange command = do
         noaction xstate = const (return xstate)
 
         whencont xstate cinfo = do 
-          geometry <- liftIO $ getCanvasGeometry xstate 
-          cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
+          geometry <- liftIO $ getGeometry4CurrCvs xstate 
+          cdim <- liftIO $  return . canvasDim $ geometry 
+                  --  =<< getCanvasGeometry xstate 
           page <- getCurrentPageCurr
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 
@@ -109,8 +110,7 @@ viewModeChange command = do
           return $ set currentCanvasInfo (CanvasInfoBox ncinfo) xstate
 
         whensing xstate cinfo = do 
-          cdim <- liftIO $  return . canvasDim =<< getCanvasGeometry xstate 
-          -- page <- getCurrentPageCurr 
+          cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs xstate 
           let zmode = get (zoomMode.viewInfo) cinfo
               canvas = get drawArea cinfo 
               cpn = PageNum . get currentPageNum $ cinfo 

@@ -140,7 +140,6 @@ reflectUI ui cinfobox = do
     liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
     Just ra1 <- liftIO $ actionGroupGetAction (head agr) "ONEPAGEA"
-    -- let wra1 = castToRadioAction ra1 
     selectBoxAction (fsingle ra1) (fcont ra1) cinfobox 
     liftIO $ maybe (return ()) signalUnblock mconnid 
     return ()
@@ -148,8 +147,6 @@ reflectUI ui cinfobox = do
           let wra1 = castToRadioAction ra1           
           liftIO $ Gtk.set wra1 [radioActionCurrentValue := 1 ] 
         fcont ra1 _cinfo = do
-          -- let wra1 = castToRadioAction ra1 
-          -- liftIO $ wra1 `on` radioActionChanged $ const (putStrLn "hellowworld2" >> return ())
           liftIO $ Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
   
 -- | 
@@ -232,7 +229,6 @@ getCanvasGeometryCvsId cid xstate = do
   let cinfobox = getCanvasInfo cid xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      -- xojstate = get xournalstate xstate 
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . get (pageArrangement.viewInfo) 
@@ -240,16 +236,14 @@ getCanvasGeometryCvsId cid xstate = do
 
 -- |
 
-getCanvasGeometry :: HXournalState -> IO CanvasGeometry 
-getCanvasGeometry xstate = do 
+getGeometry4CurrCvs :: HXournalState -> IO CanvasGeometry 
+getGeometry4CurrCvs xstate = do 
   let cinfobox = get currentCanvasInfo xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      -- xojstate = get xournalstate xstate 
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . get (pageArrangement.viewInfo) 
-
   boxAction fsingle cinfobox
   
 

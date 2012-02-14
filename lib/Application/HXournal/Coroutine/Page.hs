@@ -148,12 +148,13 @@ canvasZoomUpdateAll = do
 
 
 -- | 
-    
+
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine () 
 canvasZoomUpdate mzmode = do  
   cid <- (liftM (getCurrentCanvasId) getSt)
   canvasZoomUpdateCvsId cid mzmode
   
+
 
 -- |
 

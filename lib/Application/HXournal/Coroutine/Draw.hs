@@ -131,11 +131,9 @@ invalidateTemp cid tempsurface rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          -- page <- getCurrentPageCvsId cid 
           let canvas = get drawArea cvsInfo
-              -- vinfo = get viewInfo cvsInfo      
               pnum = PageNum . get currentPageNum $ cvsInfo 
-          geometry <- liftIO $ getCanvasGeometry xstate
+          geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum
           liftIO $ renderWithDrawable win $ do   
@@ -154,10 +152,8 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          -- page <- getCurrentPageCvsId cid  
           let canvas = get drawArea cvsInfo
-              -- vinfo = get viewInfo cvsInfo      
-          geometry <- liftIO $ getCanvasGeometry xstate
+          geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum
           liftIO $ renderWithDrawable win $ do   

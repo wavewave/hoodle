@@ -54,6 +54,7 @@ canvasConfigureGenUpdate updatefunc cid cdim
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
         fcont cinfo = do 
+          printViewPortBBoxAll
           xstate <- getSt
           page <- getCurrentPageCvsId cid
           let pdim = PageDimension (get g_dimension page)
@@ -159,6 +160,7 @@ deleteCanvas = do
 
 paneMoveStart :: MainCoroutine () 
 paneMoveStart = do 
+    printViewPortBBoxAll
     ev <- await 
     case ev of 
       UpdateCanvas cid -> invalidateWithBuf cid >> paneMoveStart 

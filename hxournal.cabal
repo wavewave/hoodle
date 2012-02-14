@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.6.5
+Version:	0.6.5.0
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 Homepage:       http://ianwookim.org/hxournal

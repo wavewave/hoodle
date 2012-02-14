@@ -345,13 +345,6 @@ $(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''Width
 
 -- | 
 
-{- 
-getPage :: (ViewMode a) => CanvasInfo a -> (Page EditMode)
-getPage = either id (gcast :: Page SelectMode -> Page EditMode) . get currentPage
--}
-
--- | 
-
 updateCanvasDimForSingle :: CanvasDimension 
                             -> CanvasInfo SinglePage  
                             -> CanvasInfo SinglePage 
@@ -376,7 +369,6 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo =
       ContinuousSingleArrangement _ ddim  func (ViewPortBBox bbox) 
         = get (pageArrangement.viewInfo) cinfo
       (x,y) = bbox_upperleft bbox 
-      -- dim = get g_dimension . getPage $ cinfo 
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousSingleArrangement cdim ddim func (ViewPortBBox nbbox)

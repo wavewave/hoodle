@@ -46,7 +46,6 @@ changePage modifyfn = updateXState changePageAction
               npgnum = modifyfn (get currentPageNum cvsInfo)
               cid = get canvasId cvsInfo
               (b,npgnum',_selectedpage,xojst') = changePageInXournalState npgnum xojst
-              -- Dim w h = get g_dimension selectedpage
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
@@ -58,7 +57,6 @@ changePage modifyfn = updateXState changePageAction
               npgnum = modifyfn (get currentPageNum cvsInfo)
               cid = get canvasId cvsInfo
               (b,npgnum',_selectedpage,xojst') = changePageInXournalState npgnum xojst
-              -- Dim w h = get g_dimension selectedpage
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
@@ -102,21 +100,23 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
           page <- getCurrentPageCvsId cid
           let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
               pdim = PageDimension $ get g_dimension page
+              xy = either (const (0,0)) (unPageCoord.snd) 
+                     (getCvsOriginInPage geometry)
               cdim = canvasDim geometry 
-              narr = makeSingleArrangement zmode pdim cdim (0,0)
+              narr = makeSingleArrangement zmode pdim cdim xy  
               ncinfobox = CanvasInfoBox
                           . set (pageArrangement.viewInfo) narr
                           . set (zoomMode.viewInfo) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
         fcont xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
-          -- page <- getCurrentPageCvsId cid          
           let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
               cpn = PageNum $ get currentPageNum cinfo 
-              -- pdim = PageDimension $ get g_dimension page
               cdim = canvasDim geometry 
               xoj = getXournal xstate 
-              narr = makeContinuousSingleArrangement zmode cdim xoj (cpn,PageCoord (0,0))
+              origcoord = either (const (cpn,PageCoord (0,0))) id 
+                            (getCvsOriginInPage geometry)
+              narr = makeContinuousSingleArrangement zmode cdim xoj origcoord
               ncinfobox = CanvasInfoBox
                           . set (pageArrangement.viewInfo) narr
                           . set (zoomMode.viewInfo) zmode $ cinfo
@@ -130,40 +130,6 @@ canvasZoomUpdateCvsId :: CanvasId
                          -> MainCoroutine ()
 canvasZoomUpdateCvsId = canvasZoomUpdateGenRenderCvsId invalidateAll
   
-{-  
-  cid mzmode = updateXState zoomUpdateAction 
-                                   >> adjustScrollbarWithGeometryCvsId cid
-                                   >> invalidateAll
-  where zoomUpdateAction xst =  
-          selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
-          
-        fsingle xstate cinfo = do   
-          geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
-          page <- getCurrentPageCvsId cid
-          let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
-              pdim = PageDimension $ get g_dimension page
-              cdim = canvasDim geometry 
-              narr = makeSingleArrangement zmode pdim cdim (0,0)
-              ncinfobox = CanvasInfoBox
-                          . set (pageArrangement.viewInfo) narr
-                          . set (zoomMode.viewInfo) zmode $ cinfo
-          return . modifyCanvasInfo cid (const ncinfobox) $ xstate
-          
-        fcont xstate cinfo = do   
-          geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
-          page <- getCurrentPageCvsId cid          
-          let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
-              cpn = PageNum $ get currentPageNum cinfo 
-              pdim = PageDimension $ get g_dimension page
-              cdim = canvasDim geometry 
-              xoj = getXournal xstate 
-              narr = makeContinuousSingleArrangement zmode cdim xoj (cpn,PageCoord (0,0))
-              ncinfobox = CanvasInfoBox
-                          . set (pageArrangement.viewInfo) narr
-                          . set (zoomMode.viewInfo) zmode $ cinfo
-          return . modifyCanvasInfo cid (const ncinfobox) $ xstate
--}
-
 -- | 
 
 canvasZoomUpdateBufAll :: MainCoroutine () 

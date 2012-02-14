@@ -22,3 +22,6 @@
 
 0.6.4: 6 Feb 2012
    * lasso selection, continuous page view. 
+
+0.6.5: 12 Feb 2012
+   * pen button support, pen pressure support, using faster xoj parser 

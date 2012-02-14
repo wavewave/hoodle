@@ -193,7 +193,16 @@ getCvsGeomFrmCvsInfo cinfo = do
       arr = get (pageArrangement.viewInfo) cinfo 
   makeCanvasGeometry cpn arr canvas 
   
-
-
+-- | Get Canvas Origin in Page Coordinate : Right is successful case, 
+--   Left is unsuccessful case, then return in DesktopCoordinate
+  
+getCvsOriginInPage :: CanvasGeometry 
+                      -> Either DesktopCoordinate (PageNum, PageCoordinate) 
+getCvsOriginInPage geometry = 
+  let ViewPortBBox (BBox (x0,y0) (_,_)) = canvasViewPort geometry 
+  in case desktop2Page geometry (DeskCoord (x0,y0)) of
+       Nothing -> Left (DeskCoord (x0,y0))
+       Just (pgn,pxy) -> Right (pgn,pxy)
+     
 
 

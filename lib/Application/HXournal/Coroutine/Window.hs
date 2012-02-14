@@ -49,8 +49,7 @@ canvasConfigureGenUpdate updatefunc cid cdim
   = (updateXState $ selectBoxAction fsingle fcont . getCanvasInfo cid )
     >> updatefunc 
     -- canvasZoomUpdateAll 
-  where -- cdim = CanvasDimension (Dim w' h')
-        fsingle cinfo = do 
+  where fsingle cinfo = do 
           xstate <- getSt 
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
@@ -68,18 +67,10 @@ doCanvasConfigure :: CanvasId
                      -> MainCoroutine () 
 doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
 
-
-    -- fsingle :: CanvasInfo SinglePage -> MainCoroutine HXournalState
-    {- xstate <- getSt 
-    let cinfobox = getCanvasInfo cid xstate -}
-    {- xstate' <- -} 
-    -- putSt xstate' 
-  
-
 -- | 
 
 canvasConfigure' :: CanvasId -> CanvasDimension -> MainCoroutine () 
-canvasConfigure' cid cdim = do -- @(CanvasDimension (Dim w' h')) = do 
+canvasConfigure' cid cdim = do
     xstate <- getSt 
     ctime <- liftIO getCurrentTime 
     maybe defaction (chkaction ctime) (get lastTimeCanvasConfigure xstate) 
@@ -171,8 +162,12 @@ paneMoveStart = do
     ev <- await 
     case ev of 
       UpdateCanvas cid -> invalidateWithBuf cid >> paneMoveStart 
-      PaneMoveEnd -> return () 
-      CanvasConfigure cid w' h'->  
+      PaneMoveEnd -> do 
+        liftIO $ putStrLn "PaneMoveEnd called"
+        canvasZoomUpdateAll 
+        return () 
+      CanvasConfigure cid w' h'-> do 
+        liftIO $ putStrLn ("CanvasConfigure called " ++ (show (cid,w',h')))
         canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h')) 
         >> paneMoveStart
       _ -> paneMoveStart

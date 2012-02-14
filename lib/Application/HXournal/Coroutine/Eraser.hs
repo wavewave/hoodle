@@ -28,9 +28,7 @@ import Application.HXournal.Accessor
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.Eraser
 import Application.HXournal.ModelAction.Layer
-
 import Data.Xournal.Generic
-
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBoxMapPDF
@@ -43,6 +41,8 @@ import qualified Data.IntMap as IM
 import Prelude hiding ((.), id)
 import Application.HXournal.Coroutine.Pen 
 
+-- |
+
 eraserStart :: CanvasId 
                -> PointerCoord 
                -> MainCoroutine () 
@@ -50,6 +50,8 @@ eraserStart cid = commonPenStart eraserAction cid
   where eraserAction _cinfo pnum geometry (cidup,cidmove) (x,y) = do 
           strs <- getAllStrokeBBoxInCurrentLayer
           eraserProcess cid pnum geometry cidup cidmove strs (x,y)
+
+-- |
 
 eraserProcess :: CanvasId
               -> PageNum 
@@ -94,8 +96,3 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
           eraserProcess cid pnum geometry connidup connidmove newstrs (x,y)
         else eraserProcess cid pnum geometry connidmove connidup strs (x,y) 
             
-
-
-
-
-

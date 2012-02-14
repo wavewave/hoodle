@@ -49,7 +49,6 @@ putSt = lift . St.put
 updateXState :: (HXournalState -> MainCoroutine HXournalState) -> MainCoroutine ()
 updateXState action = putSt =<< action =<< getSt 
 
-
 -- | 
 
 getPenType :: MainCoroutine PenType 
@@ -75,8 +74,6 @@ getCurrentPageCvsId cid = do
   case cinfobox of 
     CanvasInfoBox cinfo -> return (getCurrentPageFromXojState cinfo xojstate)
 
-
-
 -- | 
     
 getCurrentPageEitherFromXojState :: (ViewMode a) => 
@@ -93,8 +90,6 @@ getCurrentPageEitherFromXojState cinfo xojstate =
              Just (n,tpage) -> if cpn == n 
                                  then Right tpage
                                  else Left page
-                                      
-
 
 -- | 
 
@@ -112,9 +107,10 @@ getAllStrokeBBoxInCurrentLayer = do
       currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
   return (get g_bstrokes currlayer)
       
+-- |
+
 otherCanvas :: HXournalState -> [Int] 
 otherCanvas = M.keys . getCanvasInfoMap 
-
 
 -- | 
 
@@ -130,7 +126,6 @@ changeCurrentCanvasId cid = do
         ui = get gtkUIManager xst                      
     reflectUI ui cinfo
     return xst
-
 
 -- | reflect UI for current canvas info 
 
@@ -158,6 +153,7 @@ printViewPortBBox cid = do
   liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
 
 -- | 
+
 printViewPortBBoxAll :: MainCoroutine () 
 printViewPortBBoxAll = do 
   xstate <- getSt 
@@ -178,19 +174,8 @@ printModes :: CanvasId -> MainCoroutine ()
 printModes cid = do 
   cvsInfo <- return . getCanvasInfo cid =<< getSt 
   liftIO $ printCanvasMode cid cvsInfo
-{-  let zmode = unboxGet (zoomMode.viewInfo) cvsInfo
-      f :: PageArrangement a -> String 
-      f (SingleArrangement _ _ _) = "SingleArrangement"
-      f (ContinuousSingleArrangement _ _ _ _) = "ContinuousSingleArrangement"
 
-      g :: CanvasInfo a -> String 
-      g cinfo = f . get (pageArrangement.viewInfo) $ cinfo
-      
-      arrmode :: String 
-      arrmode = boxAction g cvsInfo  
-      
-      incid = unboxGet canvasId cvsInfo 
-  liftIO $ putStrLn $ show (cid,incid,zmode,arrmode) -}
+-- |
 
 printCanvasMode :: CanvasId -> CanvasInfoBox -> IO ()
 printCanvasMode cid cvsInfo = do 
@@ -198,30 +183,21 @@ printCanvasMode cid cvsInfo = do
       f :: PageArrangement a -> String 
       f (SingleArrangement _ _ _) = "SingleArrangement"
       f (ContinuousSingleArrangement _ _ _ _) = "ContinuousSingleArrangement"
-
       g :: CanvasInfo a -> String 
       g cinfo = f . get (pageArrangement.viewInfo) $ cinfo
-      
       arrmode :: String 
       arrmode = boxAction g cvsInfo  
-      
       incid = unboxGet canvasId cvsInfo 
   putStrLn $ show (cid,incid,zmode,arrmode)
 
-
+-- |
+  
 printModesAll :: MainCoroutine () 
 printModesAll = do 
   xstate <- getSt 
   let cmap = getCanvasInfoMap xstate
       cids = M.keys cmap
   mapM_ printModes cids 
-
-
--- | 
-{-
-unboxGetPage :: CanvasInfoBox -> (Page EditMode) 
-unboxGetPage = either id (gcast :: Page SelectMode -> Page EditMode) . unboxGet currentPage
--}
 
 -- | 
 

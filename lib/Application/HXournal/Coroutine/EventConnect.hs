@@ -8,6 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Application.HXournal.Coroutine.EventConnect where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
@@ -26,8 +28,12 @@ import Control.Category
 import Data.Label 
 import Prelude hiding ((.), id)
 
+-- |
+
 disconnect :: (WidgetClass w) => ConnectId w -> MainCoroutine () 
 disconnect = liftIO . signalDisconnect
+
+-- |
 
 connectPenUp :: CanvasInfo a -> MainCoroutine (ConnectId DrawingArea) 
 connectPenUp cinfo = do 
@@ -35,11 +41,15 @@ connectPenUp cinfo = do
       canvas = get drawArea cinfo 
   connPenUp canvas cid 
 
+-- |
+
 connectPenMove :: CanvasInfo a -> MainCoroutine (ConnectId DrawingArea) 
 connectPenMove cinfo = do 
   let cid = get canvasId cinfo
       canvas = get drawArea cinfo 
   connPenMove canvas cid 
+
+-- |
 
 connPenMove :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w) 
 connPenMove c cid = do 
@@ -49,6 +59,8 @@ connPenMove c cid = do
              (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))
 
+-- | 
+  
 connPenUp :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w)
 connPenUp c cid = do 
   callbk <- get callBack <$> getSt

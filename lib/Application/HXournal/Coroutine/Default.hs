@@ -80,7 +80,6 @@ guiProcess :: MainCoroutine ()
 guiProcess = do 
   initialize
   liftIO $ putStrLn "hi!"
-  
   liftIO $ putStrLn "welcome to hxournal"
   changePage (const 0)
   xstate <- initViewModeIOAction 
@@ -113,20 +112,18 @@ initCoroutine devlst window = do
   ui <- getMenuUI tref sref    
   putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
-
-  -- (initcvstemp :: CanvasInfo SinglePage) <- initCanvasInfo st1 1 
-  let initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
-  let initcvsbox = CanvasInfoBox initcvs
+      initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
+      initcvsbox = CanvasInfoBox initcvs
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (get frameState st2)
   (st4,wconf') <- eventConnect st3 (get frameState st3)
   let startingXstate = set frameState wconf' . set rootWindow cvs $ st4
-                       
   writeIORef sref startingXstate   
   return (tref,sref)
 
+-- |
 
 initialize :: MainCoroutine ()
 initialize = do ev <- await 
@@ -141,11 +138,6 @@ dispatchMode :: MainCoroutine ()
 dispatchMode = getSt >>= return . xojstateEither . get xournalstate
                      >>= either (const viewAppendMode) (const selectMode)
                      
-{-  xojstate <- return . get xournalstate =<< getSt 
-    case xojstate of 
-    ViewAppendState _ -> viewAppendMode
-    SelectState _ -> selectMode -}
-
 -- | 
 
 viewAppendMode :: MainCoroutine () 
@@ -166,6 +158,8 @@ viewAppendMode = do
         _ -> return () 
     _ -> defaultEventProcess r1
 
+-- |
+
 selectMode :: MainCoroutine () 
 selectMode = do 
   r1 <- await 
@@ -181,6 +175,7 @@ selectMode = do
     _ -> defaultEventProcess r1
 
 
+-- |
 
 defaultEventProcess :: MyEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
@@ -191,12 +186,13 @@ defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid
 defaultEventProcess PaneMoveStart = paneMoveStart 
 defaultEventProcess (CanvasConfigure cid w' h') = 
   doCanvasConfigure cid (CanvasDimension (Dim w' h'))
-  
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess ToSinglePage = viewModeChange ToSinglePage
 defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess _ = return ()
+
+-- |
 
 askQuitProgram :: MainCoroutine () 
 askQuitProgram = do 
@@ -211,6 +207,8 @@ askQuitProgram = do
     _ -> do 
       liftIO $ widgetDestroy dialog
       return ()
+
+-- |
 
 menuEventProcess :: MenuEvent -> MainCoroutine () 
 menuEventProcess MenuQuit = do 
@@ -251,7 +249,6 @@ menuEventProcess MenuNextLayer = gotoNextLayer
 menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
-
 menuEventProcess MenuUseXInput = do 
   xstate <- getSt 
   let ui = get gtkUIManager xstate 
@@ -268,7 +265,6 @@ menuEventProcess MenuUseXInput = do
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
-         
 menuEventProcess MenuPressureSensitivity = updateXState pressSensAction 
   where pressSensAction xstate = do 
           let ui = get gtkUIManager xstate 

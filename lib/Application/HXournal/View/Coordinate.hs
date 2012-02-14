@@ -76,7 +76,6 @@ makeCanvasGeometry cpn arr canvas = do
   return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
                           deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
     
-
 -- |
  
 makePage2Desktop :: (PageNum -> Maybe PageOrigin) 
@@ -139,11 +138,12 @@ wacom2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
 wacom2Desktop geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
                                in screen2Desktop geometry . ScrCoord $ (w*x,h*y) 
                                   
+-- |
+
 wacom2Canvas :: CanvasGeometry -> (Double,Double) -> CanvasCoordinate                       
 wacom2Canvas geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
                               in screen2Canvas geometry . ScrCoord $ (w*x,h*y) 
          
-
 -- | 
 
 device2Desktop :: CanvasGeometry -> PointerCoord -> DesktopCoordinate 
@@ -194,5 +194,3 @@ getCvsOriginInPage geometry =
        Nothing -> Left (DeskCoord (x0,y0))
        Just (pgn,pxy) -> Right (pgn,pxy)
      
-
-

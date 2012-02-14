@@ -32,13 +32,14 @@ import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk hiding (get,set)
 import Application.HXournal.Type.Alias
 
+-- |
+
 data DrawingFunctionSet = 
   DrawingFunctionSet { singleEditDraw :: DrawingFunction SinglePage EditMode
                      , singleSelectDraw :: DrawingFunction SinglePage SelectMode
                      , contEditDraw :: DrawingFunction ContinuousSinglePage EditMode
                      , contSelectDraw :: DrawingFunction ContinuousSinglePage SelectMode 
                      }
-
 
 -- | 
 
@@ -75,7 +76,7 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
             SelectState txoj -> 
               liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox txoj)
           
-        
+-- |         
 
 invalidateOther :: MainCoroutine () 
 invalidateOther = do 
@@ -85,14 +86,10 @@ invalidateOther = do
       keys = M.keys cinfoMap 
   mapM_ invalidate (filter (/=currCvsId) keys)
   
-
 -- | invalidate clear 
 
 invalidate :: CanvasId -> MainCoroutine () 
 invalidate = invalidateInBBox Nothing 
-
-{-  invalidateGeneral cid Nothing 
-    drawPageClearly drawPageSelClearly drawContXojClearly drawContXojSelClearly-} 
 
 -- | 
 
@@ -116,8 +113,6 @@ invalidateAllInBBox mbbox = do
 
 invalidateAll :: MainCoroutine () 
 invalidateAll = invalidateAllInBBox Nothing
-
-
 
 -- | Invalidate Current canvas
 
@@ -143,7 +138,6 @@ invalidateTemp cid tempsurface rndr = do
                      xformfunc 
                      rndr 
       
-
 -- | Drawing temporary gadgets with coordinate based on base page
 
 invalidateTempBasePage :: CanvasId -> Surface -> PageNum -> Render () 
@@ -168,13 +162,11 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
 invalidateWithBuf :: CanvasId -> MainCoroutine () 
 invalidateWithBuf = invalidateWithBufInBBox Nothing
   
-
 -- | Drawing using layer buffer in BBox  
 
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid =  
   invalidateGeneral cid mbbox drawBuf drawSelBuf drawContXojBuf drawContXojSelClearly
-
 
 -- | check current canvas id and new active canvas id and invalidate if it's changed. 
 
@@ -183,5 +175,3 @@ chkCvsIdNInvalidate cid = do
   currcid <- liftM (getCurrentCanvasId) getSt 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
   
-
-

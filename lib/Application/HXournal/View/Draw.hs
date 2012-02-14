@@ -120,7 +120,6 @@ doubleBufferDraw win geometry _xform rndr (Intersect ibbox) = do
           clipBBox mbbox'
           setSourceSurface tempsurface 0 0   
           setOperator OperatorSource 
-          -- xform
           paint 
   case ibbox of
     Top -> action
@@ -165,7 +164,6 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z)
         lineTo x y
         stroke
       Pressure -> do 
-        -- setLineWidth wdth
         let wx0 = 0.5*(fst predefinedPenShapeAspectXY)*wdth*z0
             wy0 = 0.5*(snd predefinedPenShapeAspectXY)*wdth*z0
             wx = 0.5*(fst predefinedPenShapeAspectXY)*wdth*z
@@ -175,8 +173,6 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z)
         lineTo (x+wx) (y+wy)
         lineTo (x-wx) (y-wy)
         fill
-        -- stroke
-
 
 -- | 
     
@@ -198,6 +194,8 @@ drawFuncGen _typ render = SinglePageDraw func
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew 
 
+-- | 
+
 drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox -> Render ()) 
                   -> ((PageNum,Page SelectMode) -> Maybe BBox -> Render ())
                   -> DrawingFunction SinglePage SelectMode  
@@ -214,7 +212,6 @@ emphasisCanvasRender pcolor geometry = do
   setLineWidth 10
   rectangle 0 0 cw ch 
   stroke
-
 
 -- |
 
@@ -257,6 +254,8 @@ drawContPageGen render = ContPageDraw func
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
+-- |
+
 cairoBBox :: BBox -> Render () 
 cairoBBox bbox = do 
   let (x1,y1) = bbox_upperleft bbox
@@ -264,6 +263,7 @@ cairoBBox bbox = do
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
 
+-- |
 
 drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                       -> ((PageNum, Page SelectMode) -> Maybe BBox -> Render ())
@@ -282,7 +282,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
           win <- widgetGetDrawWindow canvas
-          let ibboxnew = getViewableBBox geometry mbbox --  mpnumbbox
+          let ibboxnew = getViewableBBox geometry mbbox
               mbboxnew = toMaybe ibboxnew
               xformfunc = cairoXform4PageCoordinate geometry pnum
               emphasispagerender (pn,pg) = do 
@@ -307,15 +307,16 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 -- emphasispagerender (pnum,page)
                 maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
-                  
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
+-- |
 
 drawPageClearly :: DrawingFunction SinglePage EditMode
 drawPageClearly = drawFuncGen EditMode $ \(_,page) _mbbox -> 
                      cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
 
+-- |
 
 drawPageSelClearly :: DrawingFunction SinglePage SelectMode         
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
@@ -333,17 +334,14 @@ drawContXojClearly =
                        cairoRenderOption (DrawBkgPDF,DrawFull) 
                                          (gcast page :: TPageBBoxMapPDF )
 
+-- |
 
 drawContXojSelClearly :: DrawingFunction ContinuousSinglePage SelectMode
-drawContXojSelClearly = drawContPageSelGen renderother {- rendercontent -} renderselect 
-  where 
-        renderother (_,page) _mbbox  = 
+drawContXojSelClearly = drawContPageSelGen renderother renderselect 
+  where renderother (_,page) _mbbox  = 
           cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )    
         renderselect (_pnum,tpg) mbbox =  
           cairoHittedBoxDraw tpg mbbox
-
-
-
 
 -- |
 
@@ -367,7 +365,6 @@ drawContXojBuf =
   drawContPageGen $ \(_,page) mbbox -> 
                        cairoRenderOption (InBBoxOption mbbox) (InBBox page)   
 
-
 -- |
 
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
@@ -388,7 +385,6 @@ cairoHittedBoxDraw tpg mbbox = do
       resetClip
     Left _ -> return ()  
 
-
 -- | 
 
 renderLasso :: Seq (Double,Double) -> Render ()
@@ -402,7 +398,7 @@ renderLasso lst = do
                   mapM_ (uncurry lineTo) xs 
                   stroke 
 
-
+-- |
 
 renderBoxSelection :: BBox -> Render () 
 renderBoxSelection bbox = do
@@ -414,11 +410,15 @@ renderBoxSelection bbox = do
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
 
+-- |
+
 renderSelectedStroke :: StrokeBBox -> Render () 
 renderSelectedStroke str = do 
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1
   cairoOneStrokeSelected str
+
+-- |
 
 renderSelectHandle :: BBox -> Render () 
 renderSelectHandle bbox = do 
@@ -441,7 +441,6 @@ renderSelectHandle bbox = do
   setSourceRGBA 1 0 0 0.8
   rectangle (x2-5) (y2-5) 10 10  
   fill
-  
   setSourceRGBA 0.5 0 0.2 0.8
   rectangle (x1-3) (0.5*(y1+y2)-3) 6 6  
   fill
@@ -454,442 +453,4 @@ renderSelectHandle bbox = do
   setSourceRGBA 0.5 0 0.2 0.8
   rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
   fill
-
-
-
-
-{-  
-  canvas page vinfo mbbox = do 
-    let arr = get pageArrangement vinfo 
-    geometry <- getCanvasPageGeometry canvas page origin
-    win <- widgetGetDrawWindow canvas
-    let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-        xformfunc = transformForPageCoord geometry zmode
-        renderfunc = do
-          xformfunc 
-          clipBBox mbboxnew
-          rencont page mbboxnew 
-          rensel page mbboxnew 
-          resetClip 
-    doubleBuffering win geometry xformfunc renderfunc   
-
--}
-
-{-             
-             do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-      page = (gcast tpg :: Page EditMode)
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode 
-  let renderfunc = do
-        transformForPageCoord geometry zmode
-        cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
-        cairoHittedBoxDraw tpg mbbox  
-  doubleBuffering win geometry xformfunc renderfunc   
--}
-
-
-{-  
-canvas page vinfo mbbox = do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode
-  let renderfunc = do   
-        xformfunc 
-        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
-        return ()
-  doubleBuffering win geometry xformfunc renderfunc   -}
-
-
-
--- | obsolete
-{-
-data CanvasPageGeometry = 
-  CanvasPageGeometry { screen_size :: (Double,Double) 
-                     , canvas_size :: (Double,Double)
-                     , page_size :: (Double,Double)
-                     , canvas_origin :: (Double,Double) 
-                     , page_origin :: (Double,Double)
-                     }
-  deriving (Show)  
-
-
--- | obsolete                            
-
-type PageDrawF = DrawingArea -> Page EditMode 
-                 -> ViewInfo SinglePage -> Maybe BBox -> IO ()
-
--- | obsolete
-
-type PageDrawFSel = DrawingArea -> Page SelectMode -> ViewInfo SinglePage -> Maybe BBox -> IO ()
-
-
--- | obsolete 
-
-getCanvasPageGeometry :: DrawingArea 
-                         -> GPage b s a
-                         -> (Double,Double) 
-                         -> IO CanvasPageGeometry
-getCanvasPageGeometry canvas page (xorig,yorig) = do 
-  win <- widgetGetDrawWindow canvas
-  (w',h') <- widgetGetSize canvas
-  screen <- widgetGetScreen canvas
-  (ws,hs) <- (,) <$> screenGetWidth screen <*> screenGetHeight screen
-  let (Dim w h) = gdimension page
-  (x0,y0) <- drawWindowGetOrigin win
-  return $ CanvasPageGeometry (fromIntegral ws, fromIntegral hs) 
-                              (fromIntegral w', fromIntegral h') 
-                              (w,h) 
-                              (fromIntegral x0,fromIntegral y0)
-                              (xorig, yorig)
-
--- | obsolete
-
-visibleViewPort :: CanvasPageGeometry -> ZoomMode -> BBox  
-visibleViewPort cpg@(CanvasPageGeometry (_ws,_hs) (w',h') (_w,_h) (_x0,_y0) (xorig,yorig)) zmode = 
-  let (xend,yend) = canvasToPageCoord cpg zmode (w',h')
-  in  BBox (xorig,yorig) (xend,yend)
-
-
--- | obsolete 
-
-core2pageCoord :: CanvasPageGeometry -> ZoomMode 
-                  -> (Double,Double) -> (Double,Double)
-core2pageCoord cpg@(CanvasPageGeometry (_ws,_hs) (_w',_h') (_w,_h) (_x0,_y0) (xorig,yorig))
-               zmode (px,py) = 
-  let s =  1.0 / getRatioFromPageToCanvas cpg zmode 
-      (xo,yo) = case zmode of
-                  Original -> (xorig,yorig)
-                  FitWidth -> (0,yorig)
-                  FitHeight -> (xorig,0)
-                  _ -> error "not implemented yet in core2pageCoord"
-  in (px*s+xo, py*s+yo)
-  
--- | obsolete      
-
-wacom2pageCoord :: CanvasPageGeometry 
-                   -> ZoomMode 
-                   -> (Double,Double) 
-                   -> (Double,Double)
-wacom2pageCoord cpg@(CanvasPageGeometry (ws,hs) (_w',_h') (_w,_h) (x0,y0) (xorig,yorig)) 
-                zmode 
-                (px,py) 
-  = let (x1,y1) = (ws*px-x0,hs*py-y0)
-        s = 1.0 / getRatioFromPageToCanvas cpg zmode
-        (xo,yo) = case zmode of
-                    Original -> (xorig,yorig)
-                    FitWidth -> (0,yorig)
-                    FitHeight -> (xorig,0)
-                    _ -> error "not implemented wacom2pageCoord"
-    in  (x1*s+xo,y1*s+yo)
-
--- | obsolete 
-
-device2pageCoord :: CanvasPageGeometry 
-                 -> ZoomMode 
-                 -> PointerCoord  
-                 -> (Double,Double)
-device2pageCoord cpg zmode pcoord@(PointerCoord _ _ _)  = 
- let (px,py) = (,) <$> pointerX <*> pointerY $ pcoord  
- in case pointerType pcoord of 
-      Core -> core2pageCoord  cpg zmode (px,py)
-      _    -> wacom2pageCoord cpg zmode (px,py)
-device2pageCoord _ _ NoPointerCoord = (-100,-100)
-
--- | obsolete 
-
-pageToCanvasCoord :: CanvasPageGeometry -> ZoomMode -> (Double,Double) -> (Double,Double)
-pageToCanvasCoord cpg@(CanvasPageGeometry _ _ _ _ (xorig,yorig)) zmode (x,y) = 
-  let s = getRatioFromPageToCanvas cpg zmode
-      (xo,yo) = case zmode of 
-                  Original -> (xorig,yorig)
-                  FitWidth -> (0,yorig)
-                  FitHeight -> (xorig,0)
-                  _ -> error "not implemented yet in pageToScreenCoord"
-  in ((x-xo)*s,(y-yo)*s)
-
--- | obsolete 
-
-canvasToPageCoord :: CanvasPageGeometry -> ZoomMode -> (Double,Double) -> (Double,Double) 
-canvasToPageCoord = core2pageCoord
-
--- | obsolete
-
-transformForPageCoord :: CanvasPageGeometry -> ZoomMode -> Render ()
-transformForPageCoord cpg zmode = do 
-  let (xo,yo) = page_origin cpg
-  let s = getRatioFromPageToCanvas cpg zmode  
-  scale s s
-  translate (-xo) (-yo)      
-  
-
-
-  
-  
-                     
-
-drawBBoxOnly :: PageDrawF
-drawBBoxOnly canvas page vinfo _mbbox = do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) $ vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode
-      renderfunc = do 
-        cairoRenderOption (DrawWhite,DrawBoxOnly) (gcast page :: TPageBBoxMapPDF)
-  doubleBuffering win geometry xformfunc renderfunc   
-
-
--- | obsolete
-
-adjustBBoxWithView :: CanvasPageGeometry -> ZoomMode -> Maybe BBox 
-                      -> Maybe BBox
-adjustBBoxWithView geometry zmode mbbox =   
-  let viewbbox = visibleViewPort geometry zmode
-  in  toMaybe $ (fromMaybe mbbox :: IntersectBBox)  
-                `mappend` 
-                (Intersect (Middle viewbbox))
-
-
-
-
-drawPageInBBox :: PageDrawF 
-drawPageInBBox canvas page vinfo mbbox = do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox .get (viewPortBBox.pageArrangement) $ vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-      xformfunc = transformForPageCoord geometry zmode
-      renderfunc = do 
-        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page) 
-        return ()
-  doubleBuffering win geometry xformfunc renderfunc   
-
-
--- | deprecated
-
-drawBBox :: PageDrawF 
-drawBBox _ _ _ Nothing = return ()
-drawBBox canvas page vinfo (Just bbox) = do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode
-      renderfunc = do
-        setLineWidth 0.5 
-        setSourceRGBA 1.0 0.0 0.0 1.0
-        xformfunc 
-        let (x1,y1) = bbox_upperleft bbox
-            (x2,y2) = bbox_lowerright bbox
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        stroke
-        return ()
-  doubleBuffering win geometry xformfunc renderfunc   
-
-
-
--- | deprecated 
-
-drawBBoxSel :: PageDrawFSel 
-drawBBoxSel _ _ _ Nothing = return ()
-drawBBoxSel canvas tpg vinfo (Just bbox) = do 
-  let page = (gcast tpg :: Page EditMode)
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode
-      renderfunc = do
-        setLineWidth 0.5 
-        setSourceRGBA 1.0 0.0 0.0 1.0
-        let (x1,y1) = bbox_upperleft bbox
-            (x2,y2) = bbox_lowerright bbox
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        stroke
-        return ()
-  doubleBuffering win geometry xformfunc renderfunc   
-
-
--- | 
-
-drawTempBBox :: BBox -> PageDrawF 
-drawTempBBox _bbox _ _ _ Nothing = return ()
-drawTempBBox bbox canvas page vinfo (Just _) = do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode
-      renderbelow = do
-        transformForPageCoord geometry zmode
-        cairoRenderOption  (InBBoxOption Nothing) (InBBox page)
-      renderabove = do
-        setLineWidth 0.5 
-        setSourceRGBA 1.0 0.0 0.0 1.0
-        let (x1,y1) = bbox_upperleft bbox
-            (x2,y2) = bbox_lowerright bbox
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        stroke
-        return ()
-  doubleBuffering win geometry xformfunc (xformfunc >> renderbelow >> renderabove)
-    
-
-
-
--- |
-
-drawSelTempBBox :: BBox -> PageDrawFSel 
-drawSelTempBBox _bbox _ _ _ Nothing = return ()
-drawSelTempBBox bbox canvas tpg vinfo mbbox@(Just _) = do 
-  let page = (gcast tpg :: Page EditMode)
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let xformfunc = transformForPageCoord geometry zmode
-      renderbelow = do
-        cairoRenderOption (InBBoxOption Nothing) (InBBox page)
-        cairoHittedBoxDraw tpg mbbox  
-      renderabove = do
-        setLineWidth 0.5 
-        setSourceRGBA 1.0 0.0 0.0 1.0
-        let (x1,y1) = bbox_upperleft bbox
-            (x2,y2) = bbox_lowerright bbox
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        stroke
-        return ()
-  doubleBuffering win geometry xformfunc (xformfunc >> renderbelow >> renderabove)
-
-
-
-
--- | obsolete 
-
-getRatioFromPageToCanvas :: CanvasPageGeometry -> ZoomMode -> Double 
-getRatioFromPageToCanvas _cpg Original = 1.0 
-getRatioFromPageToCanvas cpg FitWidth = 
-  let (w,_)  = page_size cpg 
-      (w',_) = canvas_size cpg 
-  in  w'/w
-getRatioFromPageToCanvas cpg FitHeight = 
-  let (_,h)  = page_size cpg 
-      (_,h') = canvas_size cpg 
-  in  h'/h
-getRatioFromPageToCanvas _cpg (Zoom s) = s 
-
--- | 
-
-
--- | obsolete 
-
-drawSegment :: DrawingArea
-               -> CanvasPageGeometry 
-               -> ZoomMode 
-               -> Double 
-               -> (Double,Double,Double,Double) 
-               -> (Double,Double) 
-               -> (Double,Double) 
-               -> IO () 
-drawSegment canvas cpg zmode wdth (r,g,b,a) (x0,y0) (x,y) = do 
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    transformForPageCoord cpg zmode
-    setSourceRGBA r g b a
-    setLineWidth wdth
-    moveTo x0 y0
-    lineTo x y
-    stroke
-  
-
-showBBox :: DrawingArea -> CanvasPageGeometry -> ZoomMode -> BBox -> IO ()
-showBBox canvas cpg zmode (BBox (ulx,uly) (lrx,lry)) = do 
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
-    transformForPageCoord cpg zmode
-    setSourceRGBA 0.0 1.0 0.0 1.0 
-    setLineWidth  1.0 
-    rectangle ulx uly (lrx-ulx) (lry-uly)    
-    stroke
-  return ()
-
-dummyDraw :: PageDrawFSel 
-dummyDraw _canvas _pgslct _vinfo _mbbox = do 
-  putStrLn "dummy draw"
-  return ()
-  
-  
-drawSelectionInBBox :: PageDrawFSel 
-drawSelectionInBBox canvas tpg vinfo mbbox = do 
-  let zmode  = get zoomMode vinfo
-      BBox origin _ = unViewPortBBox $ get (viewPortBBox.pageArrangement) vinfo
-      page = (gcast tpg :: Page EditMode)
-  geometry <- getCanvasPageGeometry canvas page origin
-  win <- widgetGetDrawWindow canvas
-  let mbboxnew = adjustBBoxWithView geometry zmode mbbox
-  let xformfunc = transformForPageCoord geometry zmode
-      renderfunc = do
-        xformfunc 
-        cairoRenderOption (InBBoxOption mbboxnew) (InBBox page)
-        cairoHittedBoxDraw tpg mbboxnew  
-  doubleBuffering win geometry xformfunc renderfunc   
-    
-  
-
----- 
-    
-
--- | obsolete 
-
-doubleBuffering :: DrawWindow -> CanvasPageGeometry 
-                   -> Render ()
-                   -> Render () 
-                   -> IO ()
-doubleBuffering win geometry xform rndr = do 
-  let (cw, ch) = (,) <$> floor . fst <*> floor . snd 
-                 $ canvas_size geometry 
-  withImageSurface FormatARGB32 cw ch $ \tempsurface -> do 
-    renderWith tempsurface $ do 
-      setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 (fromIntegral cw) (fromIntegral ch) 
-      fill 
-      rndr 
-    renderWithDrawable win $ do 
-      setSourceSurface tempsurface 0 0   
-      setOperator OperatorSource 
-      xform
-      paint 
-  
-  
--- |   
-
- 
-
--}
-{-
-type instance PageDrawingFunction SinglePage SelectMode = 
-  DrawingArea -> (PageNum, Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
-
-
-type instance PageDrawingFunction ContinuousSinglePage EditMode = 
-  DrawingArea -> Xournal EditMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
-  
-type instance PageDrawingFunction ContinuousSinglePage SelectMode = 
-  DrawingArea -> Xournal SelectMode -> ViewInfo ContinuousSinglePage -> Maybe BBox -> IO ()
-
--}
-
-{- type PageDrawingFunction v a = 
-       DrawingArea -> (PageNum,Page a) -> ViewInfo v -> Maybe BBox -> IO () -}
-
-{-                           
-type PageDrawingFunctionForSelection 
-      = DrawingArea -> (PageNum,Page SelectMode) -> ViewInfo SinglePage -> Maybe BBox -> IO ()
--}
 

@@ -19,6 +19,8 @@ import Application.HXournal.Coroutine.Pen
 
 import Control.Monad.Trans
 
+-- | 
+
 highlighterStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 highlighterStart cid pcoord = do 
   liftIO $ putStrLn "highlighter started"

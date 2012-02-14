@@ -48,13 +48,11 @@ canvasConfigureGenUpdate :: MainCoroutine ()
 canvasConfigureGenUpdate updatefunc cid cdim 
   = (updateXState $ selectBoxAction fsingle fcont . getCanvasInfo cid )
     >> updatefunc 
-    -- canvasZoomUpdateAll 
   where fsingle cinfo = do 
           xstate <- getSt 
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
         fcont cinfo = do 
-          printViewPortBBoxAll
           xstate <- getSt
           page <- getCurrentPageCvsId cid
           let pdim = PageDimension (get g_dimension page)
@@ -160,16 +158,13 @@ deleteCanvas = do
 
 paneMoveStart :: MainCoroutine () 
 paneMoveStart = do 
-    printViewPortBBoxAll
     ev <- await 
     case ev of 
       UpdateCanvas cid -> invalidateWithBuf cid >> paneMoveStart 
       PaneMoveEnd -> do 
-        liftIO $ putStrLn "PaneMoveEnd called"
-        canvasZoomUpdateAll 
+        -- canvasZoomUpdateAll 
         return () 
       CanvasConfigure cid w' h'-> do 
-        liftIO $ putStrLn ("CanvasConfigure called " ++ (show (cid,w',h')))
         canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h')) 
         >> paneMoveStart
       _ -> paneMoveStart

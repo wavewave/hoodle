@@ -188,9 +188,7 @@ defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
 defaultEventProcess (VScrollBarMoved cid v) = vscrollBarMoved cid v
 defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
-defaultEventProcess PaneMoveStart = do  
-  liftIO $ putStrLn "------------------------"
-  paneMoveStart 
+defaultEventProcess PaneMoveStart = paneMoveStart 
 defaultEventProcess (CanvasConfigure cid w' h') = 
   doCanvasConfigure cid (CanvasDimension (Dim w' h'))
   

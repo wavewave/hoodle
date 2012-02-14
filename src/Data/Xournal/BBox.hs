@@ -56,11 +56,15 @@ instance GStrokeable StrokeBBox where
   gFromStroke = mkStrokeBBoxFromStroke 
   gToStroke = strokeFromStrokeBBox
 
+-- |
+  
 mkbbox :: [Pair Double Double] -> BBox 
 mkbbox lst = let xs = map fst lst 
                  ys = map snd lst
              in  BBox { bbox_upperleft = (minimum xs, minimum ys)
                       , bbox_lowerright = (maximum xs, maximum ys) } 
+                 
+-- |                 
 
 mkbboxF :: (F.Foldable m, Functor m) => m (Double,Double) -> BBox 
 mkbboxF lst = 
@@ -69,6 +73,8 @@ mkbboxF lst =
   in BBox{bbox_upperleft=(F.minimum xs, F.minimum ys)
          ,bbox_lowerright=(F.maximum xs, F.maximum ys)}
 
+-- |
+
 bboxFromStroke :: Stroke -> BBox 
 bboxFromStroke (Stroke _ _ w dat) = inflate (mkbbox dat) w
 bboxFromStroke (VWStroke _ _ dat) = 
@@ -76,6 +82,7 @@ bboxFromStroke (VWStroke _ _ dat) =
       widthmax = F.maximum (map trd3 dat)
   in inflate (mkbboxF dat') widthmax
    
+-- |
 
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
@@ -100,8 +107,12 @@ moveBBoxToOrigin (BBox (x0,y0) (x1,y1)) = BBox (0,0) (x1-x0,y1-y0)
 moveBBoxByOffset :: (Double,Double) -> BBox -> BBox 
 moveBBoxByOffset (xoff,yoff) (BBox (x0,y0) (x1,y1)) = BBox (x0+xoff,y0+yoff) (x1+xoff,y1+yoff)
 
+-- |
+
 moveBBoxULCornerTo :: (Double,Double) -> BBox -> BBox 
 moveBBoxULCornerTo (x,y) b@(BBox (x0,y0) _) = moveBBoxByOffset (x-x0,y-y0) b 
+
+-- |
 
 intersectBBox :: BBox -> BBox -> Maybe BBox
 intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do 
@@ -113,6 +124,7 @@ intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do
       y6 = min y2 y4
   return (BBox (x5,y5) (x6,y6))
   
+-- |  
      
 unionBBox :: BBox -> BBox -> BBox
 unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = 
@@ -122,15 +134,20 @@ unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) =
       y6 = if y2 < y4 then y4 else y2
   in BBox (x5,y5) (x6,y6)
   
+-- |
      
 data ULMaybe a = Bottom | Middle a | Top      
-     
+
 deriving instance Show a => Show (ULMaybe a)
 
 deriving instance Eq a => Eq (ULMaybe a)
                                      
+-- |
+
 newtype IntersectBBox = Intersect { unIntersect :: ULMaybe BBox } 
                         deriving (Show,Eq)
+
+-- |
 
 newtype UnionBBox = Union { unUnion :: ULMaybe BBox }
                     deriving (Show,Eq)
@@ -152,6 +169,8 @@ instance Monoid (UnionBBox) where
   (Union (Middle x)) `mappend` (Union (Middle y)) = Union (Middle (x `unionBBox` y))
   mempty = Union Bottom
   
+-- |
+
 class Maybeable a where
   type ElemType a :: *
   toMaybe :: a -> Maybe (ElemType a) 
@@ -173,6 +192,7 @@ instance Maybeable UnionBBox where
   fromMaybe Nothing = Union Top 
   fromMaybe (Just x) = Union (Middle x)
 
+-- |
 
 mkStrokeBBoxFromStroke :: Stroke -> StrokeBBox
 mkStrokeBBoxFromStroke str = 
@@ -180,7 +200,7 @@ mkStrokeBBoxFromStroke str =
              , strokebbox_bbox = bboxFromStroke str
              } 
 
+-- |
+
 strokeFromStrokeBBox :: StrokeBBox -> Stroke 
 strokeFromStrokeBBox = strokebbox_stroke 
-
-

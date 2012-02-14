@@ -127,8 +127,13 @@ makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch))
   let PageOrigin (_,y0) = maybeError "makeContSingleArr" $ pageArrFuncContSingle xoj pnum 
       dim = get g_dimension . head . gToList . get g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
-      vport = ViewPortBBox (BBox (xpos,ypos+y0) (xpos+cw/sinvx,ypos+y0+ch/sinvy))
-  in ContinuousSingleArrangement cdim (deskDimContSingle xoj) (pageArrFuncContSingle xoj) vport 
+      (x1,y1) = (xpos,ypos+y0)
+      (x2,y2) = (xpos+cw/sinvx,ypos+y0+ch/sinvy)
+      ddim@(DesktopDimension (Dim w h)) = deskDimContSingle xoj 
+      (x1',x2') = if x2 > w && w-(x2-x1) > 0 then (w-(x2-x1),w) else (x1,x2)
+      (y1',y2') = if y2 > h && h-(y2-y1) > 0 then (h-(y2-y1),h) else (y1,y2)
+      vport = ViewPortBBox (BBox (x1',y1') (x2',y2') )
+  in ContinuousSingleArrangement cdim ddim (pageArrFuncContSingle xoj) vport 
 
 -- |
 

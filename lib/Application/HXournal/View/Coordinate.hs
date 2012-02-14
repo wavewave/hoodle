@@ -37,7 +37,6 @@ data CanvasGeometry =
   CanvasGeometry 
   { screenDim :: ScreenDimension
   , canvasDim :: CanvasDimension
-  -- , canvasOrigin :: CanvasOrigin 
   , desktopDim :: DesktopDimension 
   , canvasViewPort :: ViewPortBBox -- ^ in desktop coordinate 
   , screen2Canvas :: ScreenCoordinate -> CanvasCoordinate
@@ -50,13 +49,10 @@ data CanvasGeometry =
 
 -- | make a canvas geometry data structure from current status 
 
-makeCanvasGeometry :: -- (GPageable em) => 
-                      -- em 
-                      PageNum -- , Page em) -> PageDimension 
+makeCanvasGeometry :: PageNum 
                       -> PageArrangement vm 
                       -> DrawingArea 
                       -> IO CanvasGeometry 
--- makeCanvasGeometry typ (cpn,page) arr canvas = do  
 makeCanvasGeometry cpn arr canvas = do 
   win <- widgetGetDrawWindow canvas
   let cdim@(CanvasDimension (Dim w' h')) = get canvasDimension arr
@@ -64,9 +60,8 @@ makeCanvasGeometry cpn arr canvas = do
   (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
                  <*> (fromIntegral <$> screenGetHeight screen)
   (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< drawWindowGetOrigin win
-  let -- (Dim w h) = get g_dimension page
-      corig = CanvasOrigin (x0,y0)
-  let (deskdim, cvsvbbox, p2d, d2p) = 
+  let corig = CanvasOrigin (x0,y0)
+      (deskdim, cvsvbbox, p2d, d2p) = 
         case arr of  
           SingleArrangement _ pdim vbbox -> ( DesktopDimension . unPageDimension $ pdim
                                                , vbbox
@@ -81,10 +76,6 @@ makeCanvasGeometry cpn arr canvas = do
   return $ CanvasGeometry (ScreenDimension (Dim ws hs)) (CanvasDimension (Dim w' h')) 
                           deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
     
-
-
-
-
 
 -- |
  
@@ -174,7 +165,6 @@ getPagesInViewPortRange geometry xoj =
       pgcheck n pg = let Dim w h = get g_dimension pg  
                          DeskCoord ul = page2Desktop geometry (PageNum n,PageCoord (0,0)) 
                          DeskCoord lr = page2Desktop geometry (PageNum n,PageCoord (w,h))
-                         -- nbbox = BBox ul lr 
                          inbbox = Intersect (Middle (BBox ul lr))
                          result = ivbbox `mappend` inbbox 
                      in case result of 

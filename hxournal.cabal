@@ -1,5 +1,5 @@
 Name:		hxournal
-Version:	0.6.5.0
+Version:	0.6.5.999
 Synopsis:	A pen notetaking program written in haskell 
 Description: 	notetaking program written in haskell and gtk2hs
 Homepage:       http://ianwookim.org/hxournal
@@ -62,7 +62,8 @@ Library
                      poppler == 0.12.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
-                     Diff == 0.1.*
+                     Diff == 0.1.*, 
+                     dyre == 0.8.*
   else 
     Build-Depends:   base == 4.*, 
                      mtl == 2.*,
@@ -86,10 +87,12 @@ Library
                      configurator == 0.2.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
-                     Diff == 0.1.*
-
-
+                     Diff == 0.1.*, 
+                     dyre == 0.8.*
   Exposed-Modules: 
+                   Application.HXournal.StartUp
+                   Application.HXournal.Script
+                   Application.HXournal.Script.MainEntry
                    Application.HXournal.ProgType
                    Application.HXournal.Job
                    Application.HXournal.Command 
@@ -140,7 +143,7 @@ Library
                    Application.HXournal.Device
                    Application.HXournal.Accessor
                    Application.HXournal.Config
-
+--                    Paths_hxournal
   Other-Modules: 
                    Paths_hxournal
   c-sources: 

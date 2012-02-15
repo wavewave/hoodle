@@ -23,6 +23,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Clipboard
 import Application.HXournal.Accessor
 import Application.HXournal.GUI.Menu
+import Application.HXournal.Script
 import Application.HXournal.Coroutine.Callback
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Coroutine.Draw
@@ -277,6 +278,7 @@ menuEventProcess MenuPressureSensitivity = updateXState pressSensAction
                         (return . castToToggleAction)
           b <- liftIO $ toggleActionGetActive pressrsensa
           return (set (variableWidthPen.penInfo) b xstate) 
+menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

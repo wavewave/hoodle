@@ -31,8 +31,12 @@ import System.FilePath
 import Data.Xournal.Predefined 
 import Paths_hxournal
 
+-- | 
+
 justMenu :: MenuEvent -> Maybe MyEvent
 justMenu = Just . Menu 
+
+-- |
 
 uiDeclTest :: String 
 uiDeclTest = [verbatim|<ui> 
@@ -46,6 +50,8 @@ uiDeclTest = [verbatim|<ui>
     </menu>
   </menubar>
 </ui>|]
+
+-- | 
 
 uiDecl :: String 
 uiDecl = [verbatim|<ui> 
@@ -190,6 +196,7 @@ uiDecl = [verbatim|<ui>
        <separator />
        <menuitem action="AUTOSAVEPREFA" />                        
        <menuitem action="SAVEPREFA" />
+       <menuitem action="RELAUNCHA" />
     </menu>
     <menu action="HMA">
        <menuitem action="ABOUTA" />
@@ -324,6 +331,8 @@ colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       
             , RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0              
             ]
 
+-- |
+
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
                    -> IO ()
 iconResourceAdd iconfac resdir (fp,stid) = do 
@@ -338,11 +347,12 @@ iconResourceAdd iconfac resdir (fp,stid) = do
   iconSetAddSource myIconSet myIconSourceSmall
   iconFactoryAdd iconfac stid myIconSet
 
+-- | 
+
 getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
              -> IORef HXournalState 
              -> IO UIManager
 getMenuUI tref sref = do 
-
   let actionNewAndRegister :: String -> String 
                            -> Maybe String -> Maybe StockId
                            -> Maybe MyEvent 
@@ -355,14 +365,11 @@ getMenuUI tref sref = do
             a `on` actionActivated $ do 
               bouncecallback tref sref ev
             return a
-  
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
-  
   resDir <- getDataDir >>= return . (</> "resource") 
   mapM_ (iconResourceAdd myiconfac resDir) iconList 
-  
   fma     <- actionNewAndRegister "FMA"   "File" Nothing Nothing Nothing
   ema     <- actionNewAndRegister "EMA"   "Edit" Nothing Nothing Nothing
   vma     <- actionNewAndRegister "VMA"   "View" Nothing Nothing Nothing
@@ -392,10 +399,7 @@ getMenuUI tref sref = do
   -- netcopya <- actionNewAndRegister "NETCOPYA" "Copy to NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetCopy)
   -- netpastea <- actionNewAndRegister "NETPASTEA" "Paste from NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetPaste)
 
-  
   -- view menu
-
-
   fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (justMenu MenuFullScreen)
   zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing (justMenu MenuZoom)
   zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (justMenu MenuZoomIn)
@@ -450,7 +454,8 @@ getMenuUI tref sref = do
   defhiltra <- actionNewAndRegister "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing (justMenu MenuDefaultHighlighter)
   deftxta   <- actionNewAndRegister "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing (justMenu MenuDefaultText)
   setdefopta <- actionNewAndRegister "SETDEFOPTA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultOption)
-  
+  relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
+    
   -- options menu 
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
@@ -498,7 +503,7 @@ getMenuUI tref sref = do
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera, clra, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
-        , setdefopta
+        , setdefopta, relauncha
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 

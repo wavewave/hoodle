@@ -16,6 +16,7 @@ import Application.HXournal.Type.Enum
 import Application.HXournal.Device 
 import Graphics.UI.Gtk
 
+-- | 
 
 data MyEvent = Initialized
              | CanvasConfigure Int Double Double 
@@ -38,6 +39,7 @@ data MyEvent = Initialized
              | Menu MenuEvent 
              deriving (Show,Eq,Ord)
 
+-- | 
 
 data MenuEvent = MenuNew 
                | MenuAnnotatePDF
@@ -105,6 +107,7 @@ data MenuEvent = MenuNew
                | MenuDefaultHighlighter
                | MenuDefaultText 
                | MenuSetAsDefaultOption
+               | MenuRelaunch
                | MenuUseXInput
                | MenuDiscardCoreEvents 
                | MenuEraserTip 

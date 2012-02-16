@@ -13,15 +13,17 @@
 
 module Application.HXournal.Job where
 
+import Application.HXournal.Script.Hook
+
 import Application.HXournal.GUI
 -- import Application.HXournal.Builder
 
 
 
-startJob :: Maybe FilePath -> IO () 
-startJob mfname = do 
+startJob :: Maybe FilePath -> Maybe Hook -> IO () 
+startJob mfname mhook = do 
   putStrLn "job started"
-  startGUI mfname
+  startGUI mfname mhook 
 
 {-
 startTestBuilder :: FilePath -> IO () 

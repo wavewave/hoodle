@@ -28,6 +28,7 @@ import Application.HXournal.Coroutine
 -- import Application.HXournal.GUI.Menu
 import Application.HXournal.ModelAction.File 
 import Application.HXournal.ModelAction.Window
+import Application.HXournal.Script.Hook
 import Graphics.UI.Gtk hiding (get,set)
 import Control.Monad.Trans 
 import Data.IORef
@@ -38,8 +39,8 @@ import Prelude hiding ((.),id)
 
 -- |
 
-startGUI :: Maybe FilePath -> IO () 
-startGUI mfname = do 
+startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
+startGUI mfname mhook = do 
   initGUI
   window <- windowNew   
 
@@ -51,7 +52,9 @@ startGUI mfname = do
                \mmax -> maybe (return 50) (return . id) mmax
   -- ncconf <- getNetworkInfo  cfg
   
-  let st1 = set undoTable (emptyUndo maxundo) st0 
+  let st1 = set hookSet mhook 
+          . set undoTable (emptyUndo maxundo) 
+          $ st0 
             
   -- let st1 = set gtkUIManager ui st0
   putStrLn "before st2"

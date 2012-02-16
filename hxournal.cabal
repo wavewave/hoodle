@@ -76,7 +76,7 @@ Library
                      transformers == 0.2.*,
                      xournal-types == 0.4.*,
                      xournal-parser == 0.4.*,
-                     xournal-render == 0.6.*,
+                     xournal-render >= 0.6.0 && < 0.7,
                      xournal-builder >= 0.1.1 && < 0.2,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -92,7 +92,7 @@ Library
   Exposed-Modules: 
                    Application.HXournal.StartUp
                    Application.HXournal.Script
-                   Application.HXournal.Script.MainEntry
+                   Application.HXournal.Script.Hook
                    Application.HXournal.ProgType
                    Application.HXournal.Job
                    Application.HXournal.Command 

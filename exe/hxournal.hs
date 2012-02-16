@@ -17,6 +17,7 @@ module Main where
 -- import Application.HXournal.ProgType
 -- import Application.HXournal.Command
 
+import Application.HXournal.Script 
 import Application.HXournal.StartUp
 
 main :: IO () 

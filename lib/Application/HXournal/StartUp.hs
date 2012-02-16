@@ -27,19 +27,7 @@ import Config.Dyre.Relaunch
 import System.FilePath
 import System.Environment
 
--- | 
-
-data ScriptConfig = ScriptConfig { message :: String, errorMsg :: Maybe String }  
-
--- | 
-
-defaultScriptConfig :: ScriptConfig 
-defaultScriptConfig = ScriptConfig "Hxournal testing" Nothing
-
--- | 
-
-showError :: ScriptConfig -> String -> ScriptConfig
-showError cfg msg = cfg { errorMsg = Just msg } 
+import Application.HXournal.Script
 
 -- | 
 
@@ -47,14 +35,9 @@ hxournalMain ScriptConfig {..} = do
     case errorMsg of 
       Nothing -> return () 
       Just em -> putStrLn $ "Error: " ++ em 
-    putStrLn message
-    
-    -- forever $ do  
-    --   threadDelay 1000000
-    --   putStrLn "im idling"
   
     param <- cmdArgs mode
-    commandLineProcess param 
+    commandLineProcess param hook
 
 -- | 
     

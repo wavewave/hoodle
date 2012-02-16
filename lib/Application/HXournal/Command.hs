@@ -8,15 +8,16 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Application.HXournal.Command where
 
 
 import Application.HXournal.ProgType
 import Application.HXournal.Job
+import Application.HXournal.Script.Hook
 
-commandLineProcess :: Hxournal -> IO ()
-commandLineProcess (Test mfname) = do 
-  putStrLn "test called"
-  startJob mfname
+commandLineProcess :: Hxournal -> Maybe Hook -> IO ()
+commandLineProcess (Test mfname) mhook = do 
+  startJob mfname mhook
   

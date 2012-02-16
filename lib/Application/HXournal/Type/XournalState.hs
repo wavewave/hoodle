@@ -39,6 +39,7 @@ module Application.HXournal.Type.XournalState
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure
+, hookSet 
 -- | others 
 , emptyHXournalState
 , getXournal
@@ -70,6 +71,7 @@ import Application.HXournal.Type.Window
 import Application.HXournal.Type.Undo
 import Application.HXournal.Type.Alias 
 import Application.HXournal.Type.PageArrangement
+import Application.HXournal.Script.Hook
 import Application.HXournal.Util
 -- import Application.HXournal.NetworkClipboard.Client.Config
 import Data.Xournal.Map
@@ -88,9 +90,13 @@ import Prelude hiding ((.), id)
 
 type XournalStateIO = StateT HXournalState IO 
 
+-- | 
+
 data XournalState = ViewAppendState { unView :: TXournalBBoxMapPDFBuf }
                   | SelectState { tempSelect :: TTempXournalSelectPDFBuf }
                     
+-- | 
+
 data IsOneTimeSelectMode = NoOneTimeSelectMode 
                          | YesBeforeSelect 
                          | YesAfterSelect
@@ -118,6 +124,7 @@ data HXournalState =
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
+                , _hookSet :: Maybe Hook
                 --  , _networkClipboardInfo :: Maybe HXournalClipClientConfiguration
                 } 
 
@@ -148,6 +155,7 @@ emptyHXournalState =
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      
+  , _hookSet = Nothing
 --  , _networkClipboardInfo = Nothing 
   }
 

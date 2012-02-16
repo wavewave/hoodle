@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Application.HXournal.Script.MainEntry
+-- Module      : Application.HXournal.Script.Hook
 -- Copyright   : (c) 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,4 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-module Application.HXournal.Script.MainEntry where 
+module Application.HXournal.Script.Hook where 
+
+
+import Data.Xournal.Simple 
+
+
+data Hook = Hook { 
+              saveAsHook :: Xournal -> IO ()
+            } 

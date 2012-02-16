@@ -20,6 +20,7 @@ import Application.HXournal.Coroutine.Commit
 import Application.HXournal.ModelAction.Window
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.File
+import Application.HXournal.Script.Hook
 import Text.Xournal.Builder 
 import Control.Monad.Trans
 import Control.Applicative
@@ -117,41 +118,44 @@ fileOpen = do
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
     liftIO $ putStrLn "file save as clicked"
-    cwd <- liftIO getCurrentDirectory
-    dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
-                                            FileChooserActionSave 
-                                            [ ("OK", ResponseOk) 
-                                            , ("Cancel", ResponseCancel) ]
-    liftIO $ fileChooserSetCurrentFolder dialog cwd 
-    res <- liftIO $ dialogRun dialog
-    case res of 
-      ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
-      ResponseOk -> do
-        mfilename <- liftIO $ fileChooserGetFilename dialog 
-        case mfilename of 
-          Nothing -> return () 
-          Just filename -> do 
-            liftIO $ putStrLn $ show filename 
-            xstate <- getSt 
-            let xstateNew = set currFileName (Just filename) xstate 
-            let xojstate = get xournalstate xstateNew
-            let xoj = case xojstate of 
-                  ViewAppendState xojmap -> Xournal 
-                                            <$> get g_title 
-                                            <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages 
-                                            $ xojmap 
-                  SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj 
-            liftIO . L.writeFile filename . builder $ xoj
-            putSt . set isSaved True $ xstateNew    
-            let ui = get gtkUIManager xstateNew
-            liftIO $ toggleSave ui False
-            liftIO $ setTitleFromFileName xstateNew 
-        liftIO $ widgetDestroy dialog
-      ResponseCancel -> liftIO $ widgetDestroy dialog
-      _ -> error "??? in fileSaveAs"
-    return ()
+    xstate <- getSt 
+    let xojstate = get xournalstate xstate
+    let xoj = case xojstate of 
+          ViewAppendState xojmap -> gcast xojmap
+          SelectState txoj -> gcast txoj
+    maybe (defSaveAsAction xstate xoj) 
+          (\f -> liftIO (f xoj))
+          (hookSaveAsAction xstate) 
+  where 
+    hookSaveAsAction xstate = saveAsHook <$> get hookSet xstate 
+    defSaveAsAction xstate xoj = do 
+      cwd <- liftIO getCurrentDirectory
+      dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
+                                              FileChooserActionSave 
+                                              [ ("OK", ResponseOk) 
+                                              , ("Cancel", ResponseCancel) ]
+      liftIO $ fileChooserSetCurrentFolder dialog cwd 
+      res <- liftIO $ dialogRun dialog
+      case res of 
+        ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
+        ResponseOk -> do
+          mfilename <- liftIO $ fileChooserGetFilename dialog 
+          case mfilename of 
+            Nothing -> return () 
+            Just filename -> do 
+              liftIO $ putStrLn $ show filename 
+              let xstateNew = set currFileName (Just filename) xstate 
+              liftIO . L.writeFile filename . builder $ xoj
+              putSt . set isSaved True $ xstateNew    
+              let ui = get gtkUIManager xstateNew
+              liftIO $ toggleSave ui False
+              liftIO $ setTitleFromFileName xstateNew 
+          liftIO $ widgetDestroy dialog
+        ResponseCancel -> liftIO $ widgetDestroy dialog
+        _ -> error "??? in fileSaveAs"
+      return ()
 
-
+-- | 
 
 fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = do 
@@ -183,3 +187,13 @@ fileAnnotatePDF = do
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileOpen " 
     return ()
+
+
+
+
+ {- Xournal 
+                                            <$> get g_title 
+                                            <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages 
+                                            $ xojmap -} 
+      
+       {- Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj -}

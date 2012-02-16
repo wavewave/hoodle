@@ -56,12 +56,6 @@ getFileContent Nothing xstate = do
                   $ xstate 
     return xstate' 
                   
-    -- let dim = get g_dimension . maybeError "getFileContent" . M.lookup 0 . get g_pages 
-    --         $ newxoj 
-
-    -- let cvschange = setPage xstate' 0 
-    -- modifyCurrCvsInfoM cvschange xstate'
-
 -- |
     
 constructNewHXournalStateFromXournal :: Xournal -> HXournalState -> IO HXournalState 
@@ -69,16 +63,6 @@ constructNewHXournalStateFromXournal xoj' xstate = do
     xoj <- mkTXournalBBoxMapPDFBufFromNoBuf <=< mkTXournalBBoxMapPDF $ xoj'
     let startingxojstate = ViewAppendState xoj
     return $ set xournalstate startingxojstate xstate
-
-    -- dim = get g_dimension . maybeError "constructNewHxournalStateFromXournal" . M.lookup 0 
-    --       . get g_pages $ xoj
-    -- forSingle = set (pageDimension.pageArrangement.viewInfo) (PageDimension dim)
-    --             . set currentPageNum 0 
-    --        cvschange = setPage xstate' 0 
-    --    modifyCurrCvsInfoM  cvschange xstate' 
-    -- rentCanvasInfo (selectBox forSingle (error "construct..."))
-    --    return $ setPage xstate' 0 xstate'
-
 
 -- | 
 
@@ -104,6 +88,7 @@ makeNewXojWithPDF fp = do
   error "makeNewXojWithPDF should not be used without poppler lib"
 #endif
       
+-- | 
       
 createPage :: Dimension -> B.ByteString -> Int -> Page
 createPage dim fn n 
@@ -112,7 +97,8 @@ createPage dim fn n
   | otherwise = let bkg = BackgroundPdf "pdf" Nothing Nothing n 
                 in Page dim bkg [emptyLayer]
                    
-                   
+-- |                    
+
 toggleSave :: UIManager -> Bool -> IO ()
 toggleSave ui b = do 
     agr <- uiManagerGetActionGroups ui >>= \x -> 

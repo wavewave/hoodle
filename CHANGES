@@ -4,3 +4,5 @@
    * Refactor out type definition to xournal-types package
 0.4: 12 Feb 2012
    * faster parser using xml-enumerator. Parsing variable width strokes is possible 
+0.4.1: 17 Feb 2012 
+   * support for gunzip in enumerator parser

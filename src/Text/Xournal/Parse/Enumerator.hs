@@ -18,7 +18,8 @@ module Text.Xournal.Parse.Enumerator where
 import Debug.Trace
 import qualified Data.ByteString as S
 import Data.Enumerator as E hiding (foldl')
-import qualified Data.Enumerator.List as EL 
+import qualified Data.Enumerator.List as EL
+import qualified Codec.Zlib.Enum as EZ
 import Control.Applicative 
 import Control.Monad.Trans
 import Control.Monad
@@ -34,10 +35,11 @@ import Data.Label
 import Data.XML.Types
 import Text.XML.Stream.Render 
 import Text.XML.Stream.Parse hiding (many)
+import Text.Xournal.Parse.Zlib
 import System.IO 
 
 import Data.Xournal.Simple 
-import Data.Enumerator.Binary (enumHandle)
+import Data.Enumerator.Binary (enumHandle, enumFile)
 import Prelude hiding ((.),id)
 
 
@@ -373,6 +375,20 @@ parseXmlFile h iter = do
 
 parseXojFile :: FilePath -> IO (Either String Xournal)
 parseXojFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pXournal     
+
+-- | 
+
+parseXojGzFile :: FilePath -> IO (Either String Xournal) 
+parseXojGzFile fp =
+ run_ $ enumFile fp $$ EZ.ungzip =$ parseBytes def =$ pXournal 
+
+-- | 
+
+parseXournal :: FilePath -> IO (Either String Xournal)
+parseXournal fname = 
+    checkIfBinary fname >>= \b -> 
+      if b then parseXojGzFile fname else parseXojFile fname
+  
 
 -- | printing for debug
 

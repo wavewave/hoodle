@@ -97,12 +97,14 @@ vscrollMove cid = do
     xst <- getSt 
     geometry <- liftIO (getCanvasGeometryCvsId cid xst)
     case ev of
-      VScrollBarMoved _cid' v -> do 
+      VScrollBarMoved cid' v -> do 
+        when (cid /= cid') $ error "something wrong in vscrollMove"
         updateXState $ return.modifyCurrentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
         invalidateWithBuf cid 
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
+        when (cid /= cid') $ error "something wrong in vscrollMove"        
         updateXState $ return.modifyCurrentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 

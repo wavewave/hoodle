@@ -39,15 +39,21 @@ adjustScrollbarWithGeometry geometry ((hadj,mconnidh),(vadj,mconnidv)) = do
   adjustmentSetPageSize vadj (min ysize h)
   maybe (return ()) signalUnblock mconnidh
   maybe (return ()) signalUnblock mconnidv
+
 -- | 
 
-setAdjustments :: (Adjustment,Adjustment) 
+setAdjustments :: ((Adjustment,Maybe (ConnectId Adjustment))
+                  ,(Adjustment,Maybe (ConnectId Adjustment))) 
                   -> (Double,Double) 
                   -> (Double,Double)
                   -> (Double,Double) 
                   -> (Double,Double)
                   -> IO ()
-setAdjustments (hadj,vadj) (upperx,uppery) (lowerx,lowery) (valuex,valuey) (pagex,pagey) = do 
+setAdjustments ((hadj,mconnidh),(vadj,mconnidv)) 
+               (upperx,uppery) (lowerx,lowery) 
+               (valuex,valuey) (pagex,pagey) = do 
+    maybe (return ()) signalBlock mconnidh
+    maybe (return ()) signalBlock mconnidv
     adjustmentSetUpper hadj upperx 
     adjustmentSetUpper vadj uppery 
     adjustmentSetLower hadj lowerx
@@ -56,6 +62,8 @@ setAdjustments (hadj,vadj) (upperx,uppery) (lowerx,lowery) (valuex,valuey) (page
     adjustmentSetValue vadj valuey 
     adjustmentSetPageSize hadj pagex
     adjustmentSetPageSize vadj pagey
+    maybe (return ()) signalUnblock mconnidh
+    maybe (return ()) signalUnblock mconnidv
     
 
      

@@ -35,7 +35,9 @@ hxournalMain ScriptConfig {..} = do
     case errorMsg of 
       Nothing -> return () 
       Just em -> putStrLn $ "Error: " ++ em 
-  
+    -- 
+    maybe (return ()) putStrLn message   
+    -- 
     param <- cmdArgs mode
     commandLineProcess param hook
 

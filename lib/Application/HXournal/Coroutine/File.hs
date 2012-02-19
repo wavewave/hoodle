@@ -21,6 +21,7 @@ import Application.HXournal.ModelAction.Window
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.ModelAction.File
 import Application.HXournal.Script.Hook
+import qualified Application.HXournal.Script.Coroutine as S
 import Text.Xournal.Builder 
 import Control.Monad.Trans
 import Control.Applicative
@@ -33,9 +34,9 @@ import Prelude hiding ((.),id)
 import qualified Data.ByteString.Lazy as L
 
 import Data.Xournal.Simple
-
-
 import System.Directory
+
+-- | 
 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
@@ -52,6 +53,8 @@ askIfSave action = do
           _ -> do liftIO $ widgetDestroy dialog
         return () 
       else action  
+
+-- | 
 
 fileNew :: MainCoroutine () 
 fileNew = do  
@@ -78,6 +81,7 @@ fileSave = do
         putSt . set isSaved True $ xstate 
         let ui = get gtkUIManager xstate
         liftIO $ toggleSave ui False
+        S.afterSaveHook xoj
 
 -- | main coroutine for open a file 
 
@@ -117,17 +121,17 @@ fileOpen = do
 
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
-    liftIO $ putStrLn "file save as clicked"
     xstate <- getSt 
     let xojstate = get xournalstate xstate
     let xoj = case xojstate of 
           ViewAppendState xojmap -> gcast xojmap
           SelectState txoj -> gcast txoj
-    maybe (defSaveAsAction xstate xoj) 
-          (\f -> liftIO (f xoj))
+    maybe (defSaveAsAction xstate xoj) (\f -> liftIO (f xoj))
           (hookSaveAsAction xstate) 
   where 
-    hookSaveAsAction xstate = saveAsHook <$> get hookSet xstate 
+    hookSaveAsAction xstate = do 
+      hset <- get hookSet xstate
+      saveAsHook hset
     defSaveAsAction xstate xoj = do 
       cwd <- liftIO getCurrentDirectory
       dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
@@ -150,6 +154,7 @@ fileSaveAs = do
               let ui = get gtkUIManager xstateNew
               liftIO $ toggleSave ui False
               liftIO $ setTitleFromFileName xstateNew 
+              S.afterSaveHook xoj
           liftIO $ widgetDestroy dialog
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileSaveAs"

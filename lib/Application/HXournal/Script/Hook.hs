@@ -12,10 +12,12 @@
 
 module Application.HXournal.Script.Hook where 
 
-
 import Data.Xournal.Simple 
 
+-- | 
 
-data Hook = Hook { 
-              saveAsHook :: Xournal -> IO ()
-            } 
+data Hook = Hook { saveAsHook :: Maybe (Xournal -> IO ())
+                 , afterSaveHook :: Maybe (Xournal -> IO ())
+                 } 
+
+

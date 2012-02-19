@@ -93,6 +93,7 @@ Library
                    Application.HXournal.StartUp
                    Application.HXournal.Script
                    Application.HXournal.Script.Hook
+                   Application.HXournal.Script.Coroutine
                    Application.HXournal.ProgType
                    Application.HXournal.Job
                    Application.HXournal.Command 

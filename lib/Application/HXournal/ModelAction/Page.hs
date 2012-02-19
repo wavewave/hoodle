@@ -114,8 +114,8 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               (hadj,vadj) = get adjustments cinfo
           (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
           let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
+          -- adjustmentSetUpper hadj w 
+          -- adjustmentSetUpper vadj h 
           return . CanvasInfoBox 
                  . set currentPageNum pagenum  
                  . set (pageArrangement.viewInfo) arr $ cinfo
@@ -135,8 +135,8 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               -- pdim = PageDimension $ get g_dimension pg
           let arr = makeContinuousSingleArrangement zmode cdim xoj ulcoord 
               ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
-          adjustmentSetUpper hadj w 
-          adjustmentSetUpper vadj h 
+          -- adjustmentSetUpper hadj w 
+          -- adjustmentSetUpper vadj h 
           return . CanvasInfoBox
                  . set currentPageNum pagenum  
                  . set (pageArrangement.viewInfo) arr $ cinfo 

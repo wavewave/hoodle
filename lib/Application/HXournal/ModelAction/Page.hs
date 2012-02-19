@@ -20,24 +20,17 @@ import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Alias
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Util
-
 import Control.Applicative
 import Control.Monad (liftM)
--- import Data.Xournal.BBox (moveBBoxToOrigin)
-import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.Select
-
 import Data.Traversable (mapM)
-
 import Graphics.Xournal.Render.BBoxMapPDF
-
 import Control.Category
 import Data.Label
 import Prelude hiding ((.),id,mapM)
 import qualified Data.IntMap as M 
-
-import Graphics.UI.Gtk (adjustmentSetUpper,adjustmentGetValue)
+import Graphics.UI.Gtk (adjustmentGetValue)
 
 -- |
 
@@ -110,12 +103,10 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
           geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas
           let cdim = canvasDim geometry 
               pg = getPageFromGXournalMap pagenum xoj 
-              pdim@(PageDimension (Dim w h)) = PageDimension $ get g_dimension pg
+              pdim = PageDimension $ get g_dimension pg
               (hadj,vadj) = get adjustments cinfo
           (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
           let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
-          -- adjustmentSetUpper hadj w 
-          -- adjustmentSetUpper vadj h 
           return . CanvasInfoBox 
                  . set currentPageNum pagenum  
                  . set (pageArrangement.viewInfo) arr $ cinfo
@@ -131,12 +122,7 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
           let ulcoord = maybeError "updateCvsFromXoj" $ 
                           desktop2Page geometry (DeskCoord (xdesk,ydesk))
           let cdim = canvasDim geometry 
-              -- pg = getPageFromGXournalMap pagenum xoj 
-              -- pdim = PageDimension $ get g_dimension pg
           let arr = makeContinuousSingleArrangement zmode cdim xoj ulcoord 
-              ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
-          -- adjustmentSetUpper hadj w 
-          -- adjustmentSetUpper vadj h 
           return . CanvasInfoBox
                  . set currentPageNum pagenum  
                  . set (pageArrangement.viewInfo) arr $ cinfo 
@@ -144,12 +130,6 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               
 
 -- |
-{-
-updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
-updatePage = either updateCvsInfoFrmXoj . either id makexoj . xojstateEither  
-  where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
--}
-
 
 updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
 updatePage (ViewAppendState xojbbox) cinfobox = updateCvsInfoFrmXoj xojbbox cinfobox
@@ -160,41 +140,6 @@ updatePage (SelectState txoj) cinfobox = selectBoxAction fsingle fcont cinfobox
         fcont _cinfo = do 
           let xoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
           updateCvsInfoFrmXoj xoj cinfobox
-
-  
-  
- {- 
-  
--- getselectedpage :: CanvasInfo a -> Either (Page EditMode) (Page SelectMode)
-        -- getselectedpage cinfo = 
-        --   let pagenum = get currentPageNum cinfo 
-        --       pgs = get g_selectAll txoj
-        --     pg = maybeError "??" (M.lookup pagenum pgs)
-        --       spg = case get g_selectSelected txoj of 
-        --              Nothing -> Left pg 
-        --              Just (spnum,tpg) -> if spnum == pagenum then Right tpg else Left pg
-        --   in spg
-
-
-  
-  let pagenum = unboxGet currentPageNum cinfobox
-      mspage = get g_selectSelected txoj 
-      pageFromArg = case M.lookup pagenum (get g_selectAll txoj) of 
-                      Nothing -> error "no such page in updatePage"
-                      Just p -> p
-      (newpage,Dim w h) = 
-        case mspage of 
-          Nothing -> (Left pageFromArg, gdimension pageFromArg)
-          Just (spagenum,page) -> 
-            if spagenum == pagenum 
-              then (Right page, gdimension page) 
-              else (Left pageFromArg, gdimension pageFromArg)
-  in set currentPageNum pagenum 
-     . set (pageDimension.viewInfo) (w,h)       
-     . set currentPage newpage
-     $ cinfo 
-
--}
 
 -- | 
 
@@ -221,7 +166,6 @@ setPageSingle xstate pnum cinfo = do
   return $ set currentPageNum (unPageNum pnum)
            . set (pageArrangement.viewInfo) arr $ cinfo 
 
-
 -- | setPageCont : in ContinuousSingle Page mode   
 
 setPageCont :: HXournalState -> PageNum  
@@ -231,13 +175,10 @@ setPageCont xstate pnum cinfo = do
   let xoj = getXournal xstate
   geometry <- getCvsGeomFrmCvsInfo cinfo
   let cdim = canvasDim geometry 
-  let -- pg = getPageFromGXournalMap (unPageNum pnum) xoj
       zmode = get (zoomMode.viewInfo) cinfo
       arr = makeContinuousSingleArrangement zmode cdim xoj (pnum,PageCoord (0,0))  
   return $ set currentPageNum (unPageNum pnum)
            . set (pageArrangement.viewInfo) arr $ cinfo 
-
-
 
 -- | 
 
@@ -254,7 +195,6 @@ newPageBeforeAction :: (ViewMode a) =>
 newPageBeforeAction xoj (_cid,cinfo) = do 
   let cpn = get currentPageNum cinfo
   let pagelst = M.elems . get g_pages $ xoj 
-      -- pagekeylst = M.keys . get g_pages $ xoj 
       (pagesbefore,pagesafter) = splitAt cpn pagelst
       npage = newSinglePageFromOld (head pagesafter)
       npagelst = pagesbefore ++ (npage : pagesafter)

@@ -20,6 +20,12 @@ import Data.Maybe
 
 import Data.Xournal.Predefined
 
+-- | page add direction
+
+data AddDirection = PageBefore | PageAfter
+
+-- | 
+
 data PenColor = ColorBlack
               | ColorBlue 
               | ColorRed

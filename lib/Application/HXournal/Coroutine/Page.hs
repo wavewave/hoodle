@@ -17,6 +17,7 @@ import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.XournalState
+import Application.HXournal.Type.Enum
 import Application.HXournal.Util
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Accessor
@@ -161,25 +162,23 @@ pageZoomChange = canvasZoomUpdate . Just
 
 -- |
 
-newPageBefore :: MainCoroutine () 
-newPageBefore = updateXState npgBfrAct >> commit_ >> invalidateAll
+newPage :: AddDirection -> MainCoroutine () 
+newPage dir = updateXState npgBfrAct >> commit_ >> invalidateAll
   where 
     npgBfrAct xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
     fsimple xstate cinfo = do 
       case get xournalstate xstate of 
         ViewAppendState xoj -> do 
-          -- let cpn = get currentPageNum cinfo
-          xoj' <- liftIO $ addNewPageBeforeInXoj xoj (get currentPageNum cinfo)
-          liftIO $ putStrLn "test"
-          xstate' <- liftIO . updatePageAll (ViewAppendState xoj')
-                            . set xournalstate  (ViewAppendState xoj') 
-                            $ xstate 
-          return xstate'
+          xoj' <- liftIO $ addNewPageInXoj dir xoj (get currentPageNum cinfo)
+          return =<< liftIO . updatePageAll (ViewAppendState xoj')
+                     . set xournalstate  (ViewAppendState xoj') $ xstate 
         SelectState _ -> do 
           liftIO $ putStrLn " not implemented yet"
           return xstate
       
   
+
+
 {-  
   do 
   liftIO $ putStrLn "newPageBefore called"

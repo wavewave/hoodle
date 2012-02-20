@@ -527,7 +527,7 @@ getMenuUI tref sref = do
         , cuta, copya, pastea, deletea
         , fscra,  zmina, zmouta, setzma
         , shwlayera, hidlayera
-        , newpgaa, newpgea, delpga, {- newlyra, dellyra, -} ppsizea, ppclra
+        , newpgea, delpga, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta

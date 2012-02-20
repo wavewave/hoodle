@@ -17,6 +17,7 @@ module Application.HXournal.Coroutine.Default where
 import Graphics.UI.Gtk hiding (get,set)
 
 import Application.HXournal.Type.Event
+import Application.HXournal.Type.Enum
 import Application.HXournal.Type.Coroutine
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.XournalState
@@ -225,7 +226,8 @@ menuEventProcess MenuLastPage = do
   totalnumofpages <- (either (M.size. get g_pages) (M.size . get g_selectAll) 
                       . xojstateEither . get xournalstate) <$> getSt 
   changePage (const (totalnumofpages-1))
-menuEventProcess MenuNewPageBefore = newPageBefore 
+menuEventProcess MenuNewPageBefore = newPage PageBefore 
+menuEventProcess MenuNewPageAfter = newPage PageAfter
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuUndo = undo 

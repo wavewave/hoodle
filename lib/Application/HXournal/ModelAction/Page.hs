@@ -18,6 +18,7 @@ import Application.HXournal.Type.XournalState
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Alias
+import Application.HXournal.Type.Enum
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Util
 import Control.Applicative
@@ -186,16 +187,20 @@ newSinglePageFromOld :: Page EditMode -> Page EditMode
 newSinglePageFromOld = 
   set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
 
+
 -- | 
 
-addNewPageBeforeInXoj :: Xournal EditMode
-                         -> Int -- CanvasInfo a 
-                         -> IO (Xournal EditMode)
-addNewPageBeforeInXoj xoj cpn {- cinfo -}  = do 
+addNewPageInXoj :: AddDirection  
+                   -> Xournal EditMode
+                   -> Int 
+                   -> IO (Xournal EditMode)
+addNewPageInXoj dir xoj cpn = do 
   let pagelst = M.elems . get g_pages $ xoj 
-      (pagesbefore,pagesafter) = splitAt cpn pagelst
-      npage = newSinglePageFromOld (head pagesafter)
-      npagelst = pagesbefore ++ (npage : pagesafter)
+      (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
+      npage = newSinglePageFromOld cpage
+      npagelst = case dir of 
+                   PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
+                   PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
       nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
   return nxoj
 

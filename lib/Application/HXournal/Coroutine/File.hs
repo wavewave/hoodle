@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.File 
@@ -26,7 +28,7 @@ import Text.Xournal.Builder
 import Control.Monad.Trans
 import Control.Applicative
 import Data.Xournal.Generic
-
+import Data.ByteString.Char8 as B (pack)
 import Graphics.UI.Gtk hiding (get,set)
 import Control.Category
 import Data.Label
@@ -35,6 +37,8 @@ import qualified Data.ByteString.Lazy as L
 
 import Data.Xournal.Simple
 import System.Directory
+import System.FilePath
+import Debug.Trace 
 
 -- | 
 
@@ -66,6 +70,7 @@ fileNew = do
     commit xstate'' 
     invalidateAll 
 
+-- | 
 
 fileSave :: MainCoroutine ()
 fileSave = do 
@@ -148,13 +153,30 @@ fileSaveAs = do
             Nothing -> return () 
             Just filename -> do 
               liftIO $ putStrLn $ show filename 
-              let xstateNew = set currFileName (Just filename) xstate 
-              liftIO . L.writeFile filename . builder $ xoj
+              let ntitle = B.pack . snd . splitFileName $ filename 
+              let (xojstate',xoj') = case get xournalstate xstate of
+                    ViewAppendState xojmap -> 
+                      if get g_title xojmap == "untitled"
+                      then ( ViewAppendState . set g_title ntitle
+                             $ xojmap
+                           , (set s_title ntitle xoj))
+                      else (ViewAppendState xojmap,xoj)
+                    SelectState txoj -> 
+                      if gselectTitle txoj == "untitled"
+                      then ( SelectState $ 
+                               txoj { gselectTitle = ntitle }
+                           , set s_title ntitle xoj)  
+                      else (SelectState txoj,xoj)
+              let xstateNew = set currFileName (Just filename) 
+                              . set xournalstate xojstate' $ xstate 
+              liftIO $ putStrLn $ "xoj' = " ++ show (get s_title xoj')
+                              
+              liftIO . L.writeFile filename . builder $ xoj'
               putSt . set isSaved True $ xstateNew    
               let ui = get gtkUIManager xstateNew
               liftIO $ toggleSave ui False
               liftIO $ setTitleFromFileName xstateNew 
-              S.afterSaveHook xoj
+              S.afterSaveHook xoj'
           liftIO $ widgetDestroy dialog
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileSaveAs"

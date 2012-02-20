@@ -92,7 +92,6 @@ fileSave = do
 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
-    liftIO $ putStrLn "file open clicked"
     cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
@@ -107,7 +106,6 @@ fileOpen = do
         case mfilename of 
           Nothing -> return () 
           Just filename -> do 
-            liftIO $ putStrLn $ show filename 
             xstate <- getSt 
             xstate' <- liftIO $ getFileContent (Just filename) xstate
             ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
@@ -152,7 +150,6 @@ fileSaveAs = do
           case mfilename of 
             Nothing -> return () 
             Just filename -> do 
-              liftIO $ putStrLn $ show filename 
               let ntitle = B.pack . snd . splitFileName $ filename 
               let (xojstate',xoj') = case get xournalstate xstate of
                     ViewAppendState xojmap -> 
@@ -169,8 +166,6 @@ fileSaveAs = do
                       else (SelectState txoj,xoj)
               let xstateNew = set currFileName (Just filename) 
                               . set xournalstate xojstate' $ xstate 
-              liftIO $ putStrLn $ "xoj' = " ++ show (get s_title xoj')
-                              
               liftIO . L.writeFile filename . builder $ xoj'
               putSt . set isSaved True $ xstateNew    
               let ui = get gtkUIManager xstateNew
@@ -187,7 +182,6 @@ fileSaveAs = do
 fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = do 
     xstate <- getSt
-    liftIO $ putStrLn "file annotate PDf clicked"
     cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
@@ -202,7 +196,6 @@ fileAnnotatePDF = do
         case mfilename of 
           Nothing -> return () 
           Just filename -> do 
-            liftIO $ putStrLn $ show filename 
             mxoj <- liftIO $ makeNewXojWithPDF filename 
             flip (maybe (return ())) mxoj $ \xoj -> do 
               xstateNew <- return . set currFileName Nothing 

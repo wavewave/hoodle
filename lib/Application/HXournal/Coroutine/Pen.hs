@@ -52,8 +52,7 @@ penPageSwitch cinfo pgn = do (xst,cinfo') <- getSt >>= switchact
                              putSt xst     
                              return cinfo'
   where switchact xst = do 
-          let -- xoj = getXournal xst
-              ncinfo = set currentPageNum (unPageNum pgn) cinfo 
+          let ncinfo = set currentPageNum (unPageNum pgn) cinfo 
               mfunc = const (return . CanvasInfoBox $ ncinfo)  
           return . (,ncinfo) =<< modifyCurrCvsInfoM mfunc xst
 
@@ -104,13 +103,9 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                  =<< (liftIO (updatePageAll (ViewAppendState newxoj) xstate))
           let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
               nbbox = xformBBox f bbox 
-          -- invalidateAll
           invalidateAllInBBox (Just (inflate nbbox 2.0))
 
-
-
 -- | main pen coordinate adding process
-
 -- | now being changed
 
 penProcess :: CanvasId -> PageNum 

@@ -153,26 +153,40 @@ canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine ()
 canvasZoomUpdate mzmode = do  
   cid <- (liftM (getCurrentCanvasId) getSt)
   canvasZoomUpdateCvsId cid mzmode
-  
-
 
 -- |
 
 pageZoomChange :: ZoomMode -> MainCoroutine () 
 pageZoomChange = canvasZoomUpdate . Just 
 
-{-
-
 -- |
 
 newPageBefore :: MainCoroutine () 
-newPageBefore = do 
+newPageBefore = updateXState npgBfrAct >> commit_ >> invalidateAll
+  where 
+    npgBfrAct xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
+    fsimple xstate cinfo = do 
+      case get xournalstate xstate of 
+        ViewAppendState xoj -> do 
+          -- let cpn = get currentPageNum cinfo
+          xoj' <- liftIO $ addNewPageBeforeInXoj xoj (get currentPageNum cinfo)
+          liftIO $ putStrLn "test"
+          xstate' <- liftIO . updatePageAll (ViewAppendState xoj')
+                            . set xournalstate  (ViewAppendState xoj') 
+                            $ xstate 
+          return xstate'
+        SelectState _ -> do 
+          liftIO $ putStrLn " not implemented yet"
+          return xstate
+      
+  
+{-  
+  do 
   liftIO $ putStrLn "newPageBefore called"
   xstate <- getSt
   let xojstate = get xournalstate xstate
   case xojstate of 
     ViewAppendState xoj -> do 
-      liftIO $ putStrLn " In View " 
       let currCvsId = get currentCanvas xstate 
           mcurrCvsInfo = M.lookup currCvsId (get canvasInfoMap xstate)
       xoj' <- maybe (error $ "something wrong in newPageBefore")

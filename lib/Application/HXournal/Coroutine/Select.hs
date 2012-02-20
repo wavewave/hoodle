@@ -136,7 +136,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
                    (prev,otime) tempselection = do  
     r <- await 
     xst <- getSt 
-    selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst
+    boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
                                (moveact xstate cinfo) (upact xstate cinfo)
@@ -234,7 +234,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
            (prev,otime) tempselection = do
     xst <- getSt
     r <- await 
-    selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst 
+    boxAction (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
     fsingle r xstate cinfo = 
       penMoveAndUpInterPage r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
@@ -361,7 +361,7 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
              (prev,otime) tempselection = do
     xst <- getSt
     r <- await 
-    selectBoxAction (fsingle r xst) (fsingle r xst) . getCanvasInfo cid $ xst
+    boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
     defact = resizeSelect handle cid pnum geometry connidmove connidup 
@@ -442,7 +442,7 @@ cutSelection = do
 copySelection :: MainCoroutine ()
 copySelection = updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
-          selectBoxAction (fsingle xst) (fsingle xst) . get currentCanvasInfo $ xst
+          boxAction (fsingle xst) . get currentCanvasInfo $ xst
         fsingle xstate cinfo = maybe (return xstate) id $ do  
           let xojstate = get xournalstate xstate
           let epage = getCurrentPageEitherFromXojState cinfo xojstate
@@ -463,8 +463,7 @@ copySelection = updateXState copySelectionAction >> invalidateAll
 
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = modeChange ToSelectMode >> updateXState pasteAction >> invalidateAll  
-  where pasteAction xst = 
-          boxAction (fsimple xst) . get currentCanvasInfo $ xst
+  where pasteAction xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
         fsimple xstate cinfo = do 
           geometry <- liftIO (getGeometry4CurrCvs xstate)
           let pagenum = get currentPageNum cinfo 

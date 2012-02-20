@@ -37,6 +37,11 @@ commit xstate = do
   putSt xstate' 
 
 -- | 
+  
+commit_ :: MainCoroutine ()
+commit_ = getSt >>= commit 
+
+-- | 
 
 undo :: MainCoroutine () 
 undo = do 

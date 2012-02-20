@@ -225,7 +225,7 @@ menuEventProcess MenuLastPage = do
   totalnumofpages <- (either (M.size. get g_pages) (M.size . get g_selectAll) 
                       . xojstateEither . get xournalstate) <$> getSt 
   changePage (const (totalnumofpages-1))
-menuEventProcess MenuNewPageBefore = return () -- newPageBefore 
+menuEventProcess MenuNewPageBefore = newPageBefore 
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuUndo = undo 

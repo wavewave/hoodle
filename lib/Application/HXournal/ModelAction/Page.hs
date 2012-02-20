@@ -188,12 +188,10 @@ newSinglePageFromOld =
 
 -- | 
 
-newPageBeforeAction :: (ViewMode a) => 
-                       Xournal EditMode
-                    -> (CanvasId, CanvasInfo a) 
-                    -> IO (Xournal EditMode)
-newPageBeforeAction xoj (_cid,cinfo) = do 
-  let cpn = get currentPageNum cinfo
+addNewPageBeforeInXoj :: Xournal EditMode
+                         -> Int -- CanvasInfo a 
+                         -> IO (Xournal EditMode)
+addNewPageBeforeInXoj xoj cpn {- cinfo -}  = do 
   let pagelst = M.elems . get g_pages $ xoj 
       (pagesbefore,pagesafter) = splitAt cpn pagelst
       npage = newSinglePageFromOld (head pagesafter)

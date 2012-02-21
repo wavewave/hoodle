@@ -180,7 +180,10 @@ pageZoomChangeRel rzmode = do
 -- |
 
 newPage :: AddDirection -> MainCoroutine () 
-newPage dir = updateXState npgBfrAct >> commit_ >> invalidateAll
+newPage dir = updateXState npgBfrAct 
+              >> commit_ 
+              >> canvasZoomUpdateAll 
+              >> invalidateAll
   where 
     npgBfrAct xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
     fsimple :: (ViewMode a) => HXournalState -> CanvasInfo a 

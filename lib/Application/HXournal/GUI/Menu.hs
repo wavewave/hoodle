@@ -401,7 +401,7 @@ getMenuUI tref sref = do
 
   -- view menu
   fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (justMenu MenuFullScreen)
-  zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing (justMenu MenuZoom)
+  zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing Nothing -- (justMenu MenuZoom)
   zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (justMenu MenuZoomIn)
   zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (justMenu MenuZoomOut)
   nrmsizea  <- actionNewAndRegister "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100) (justMenu MenuNormalSize)
@@ -525,7 +525,7 @@ getMenuUI tref sref = do
   let disabledActions = 
         [ recenta, printa, exporta
         , cuta, copya, pastea, deletea
-        , fscra,  zmina, zmouta, setzma
+        , fscra,  {- zmina, zmouta, -} setzma
         , shwlayera, hidlayera
         , newpgea, delpga, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa

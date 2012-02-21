@@ -23,7 +23,12 @@ import Data.Xournal.Predefined
 -- | page add direction
 
 data AddDirection = PageBefore | PageAfter
+                  deriving (Show,Eq,Ord,Enum)
 
+-- | relative zoom mode 
+
+data ZoomModeRel = ZoomIn | ZoomOut
+                 deriving (Show,Eq,Ord,Enum)
 -- | 
 
 data PenColor = ColorBlack

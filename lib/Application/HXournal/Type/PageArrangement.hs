@@ -20,51 +20,93 @@ import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Data.Label 
 import Prelude hiding ((.),id)
--- import qualified Data.IntMap as M
-
 import Application.HXournal.Type.Predefined 
 import Application.HXournal.Type.Alias
 import Application.HXournal.Util
 
+-- | 
+
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
               deriving (Show,Eq)
 
+-- | 
+
 class ViewMode a 
 
+-- |
+
 data SinglePage = SinglePage
+
+-- | 
+
 data ContinuousSinglePage = ContinuousSinglePage
 
+-- | 
 instance ViewMode SinglePage 
 instance ViewMode ContinuousSinglePage
+
+-- | 
 
 newtype PageNum = PageNum { unPageNum :: Int } 
                 deriving (Eq,Show,Ord,Num)
 
+-- |
+
 newtype ScreenCoordinate = ScrCoord { unScrCoord :: (Double,Double) } 
                          deriving (Show)
+                                  
+-- |                                   
+
 newtype CanvasCoordinate = CvsCoord { unCvsCoord :: (Double,Double) }
                          deriving (Show)
+                                  
+-- |                                   
+
 newtype DesktopCoordinate = DeskCoord { unDeskCoord :: (Double,Double) } 
                           deriving (Show)
+                                   
+-- | 
+
 newtype PageCoordinate = PageCoord { unPageCoord :: (Double,Double) } 
                        deriving (Show)
 
+-- | 
+
 newtype ScreenDimension = ScreenDimension { unScreenDimension :: Dimension } 
                         deriving (Show)
+                                 
+-- |                                  
+                                 
 newtype CanvasDimension = CanvasDimension { unCanvasDimension :: Dimension }
                         deriving (Show)
+                                 
+-- |                                  
+
 newtype CanvasOrigin = CanvasOrigin { unCanvasOrigin :: (Double,Double) } 
                        deriving (Show)
+                                
+-- |                                 
+
 newtype PageOrigin = PageOrigin { unPageOrigin :: (Double,Double) } 
                    deriving (Show)
+                            
+-- |                             
+
 newtype PageDimension = PageDimension { unPageDimension :: Dimension } 
                       deriving (Show)
+                               
+-- |                               
+
 newtype DesktopDimension = DesktopDimension { unDesktopDimension :: Dimension }
                          deriving (Show)
+                                  
+-- |                                   
+
 newtype ViewPortBBox = ViewPortBBox { unViewPortBBox :: BBox } 
                      deriving (Show)
 
-                     
+-- |                      
+
 apply :: (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox 
 apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 {-# INLINE apply #-}

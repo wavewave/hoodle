@@ -25,7 +25,6 @@ import Data.Monoid
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.BBox 
--- import Graphics.Xournal.Render.HitTest
 import Application.HXournal.Device
 import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement

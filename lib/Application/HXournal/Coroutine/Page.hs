@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Application.HXournal.Coroutine.Page 
@@ -160,12 +162,43 @@ canvasZoomUpdate mzmode = do
 pageZoomChange :: ZoomMode -> MainCoroutine () 
 pageZoomChange = canvasZoomUpdate . Just 
 
+-- | 
+
+pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
+pageZoomChangeRel rzmode = do 
+    boxAction fsingle . get currentCanvasInfo =<< getSt 
+  where 
+    fsingle :: (ViewMode a) => CanvasInfo a -> MainCoroutine ()
+    fsingle cinfo = do 
+      let czmode = get (zoomMode.viewInfo) cinfo 
+          cpn = PageNum (get currentPageNum cinfo)
+          arr = get (pageArrangement.viewInfo) cinfo 
+          canvas = get drawArea cinfo 
+      geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
+      liftIO $ putStrLn $ show czmode ++ show rzmode
+      liftIO $ putStrLn $ show (relZoomRatio geometry rzmode)
+{-    fcont cinfo = do
+      xstate <- getSt
+      let xojstate = get xournalstate xstate
+      let czmode = get (zoomMode.viewInfo) cinfo 
+          cpn = PageNum (get currentPageNum cinfo)
+          pdim = getCurrentPageDimFromXojState cinfo xojstate 
+          arr@(ContinuousSingleArrangement cdim ddim _func vbbox)
+            = get (pageArrangement.viewInfo) cinfo 
+          canvas = get drawArea cinfo 
+      geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
+      liftIO $ putStrLn $ show czmode ++ show rzmode
+      liftIO $ putStrLn $ show (relZoomRatio geometry (cpn,pdim) czmode rzmode)
+-}
+
 -- |
 
 newPage :: AddDirection -> MainCoroutine () 
 newPage dir = updateXState npgBfrAct >> commit_ >> invalidateAll
   where 
     npgBfrAct xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
+    fsimple :: (ViewMode a) => HXournalState -> CanvasInfo a 
+               -> MainCoroutine HXournalState
     fsimple xstate cinfo = do 
       case get xournalstate xstate of 
         ViewAppendState xoj -> do 
@@ -178,26 +211,5 @@ newPage dir = updateXState npgBfrAct >> commit_ >> invalidateAll
       
   
 
-
-{-  
-  do 
-  liftIO $ putStrLn "newPageBefore called"
-  xstate <- getSt
-  let xojstate = get xournalstate xstate
-  case xojstate of 
-    ViewAppendState xoj -> do 
-      let currCvsId = get currentCanvas xstate 
-          mcurrCvsInfo = M.lookup currCvsId (get canvasInfoMap xstate)
-      xoj' <- maybe (error $ "something wrong in newPageBefore")
-                    (liftIO . newPageBeforeAction xoj)
-                    $ (,) <$> pure currCvsId <*> mcurrCvsInfo  
-      let xstate' = updatePageAll (ViewAppendState xoj')
-                    . set xournalstate  (ViewAppendState xoj') 
-                    $ xstate 
-      commit xstate'
-      invalidate currCvsId 
-    SelectState txoj -> liftIO $ putStrLn " In Select State, this is not implemented yet."
-
--}
 
 

@@ -59,6 +59,7 @@ module Application.HXournal.Type.XournalState
 , modifyCurrCvsInfoM
 , xojstateEither
 , getCurrentPageFromXojState
+, getCurrentPageDimFromXojState
 -- | for debug
 , showCanvasInfoMapViewPortBBox
 ) where
@@ -289,11 +290,20 @@ xojstateEither xojstate = case xojstate of
 
 -- | 
  
-getCurrentPageFromXojState :: (ViewMode a) => CanvasInfo a -> XournalState -> Page EditMode 
+getCurrentPageFromXojState :: (ViewMode a) => CanvasInfo a 
+                              -> XournalState -> Page EditMode 
 getCurrentPageFromXojState cinfo xojstate = 
   let cpn = get currentPageNum cinfo 
       pagemap = getPageMapFromXojState xojstate   
   in maybeError "updatePageFromCanvasToXournal" $ M.lookup cpn pagemap 
+
+-- | 
+
+getCurrentPageDimFromXojState :: (ViewMode a) => CanvasInfo a 
+                              -> XournalState -> PageDimension
+getCurrentPageDimFromXojState cinfo =                               
+  PageDimension . get g_dimension . getCurrentPageFromXojState cinfo
+
 
 -- | 
 

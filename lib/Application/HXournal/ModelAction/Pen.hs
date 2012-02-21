@@ -43,47 +43,36 @@ addPDraw :: PenInfo
             -> IO (TXournalBBoxMapPDFBuf,BBox) 
                        -- ^ new xournal and bbox in page coordinate
 addPDraw pinfo xoj (PageNum pgnum) pdraw = do 
-  let ptype = get penType pinfo
-      pcolor = get (penColor.currentTool) pinfo
-      pcolname = fromJust (M.lookup pcolor penColorNameMap)
-      pwidth = get (penWidth.currentTool) pinfo
-      pvwpen = get variableWidthPen pinfo
-      (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
-      currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
-      ptool = case ptype of 
-                PenWork -> "pen" 
-                HighlighterWork -> "highlighter"
-                _ -> error "error in addPDraw"
-      newstroke = 
-        case pvwpen of 
-          False -> Stroke { stroke_tool = ptool 
-                          , stroke_color = pcolname 
-                          , stroke_width = pwidth
-                          , stroke_data = map (\(x,y,_)->x:!:y) . toList $ pdraw
+    let ptype = get penType pinfo
+        pcolor = get (penColor.currentTool) pinfo
+        pcolname = fromJust (M.lookup pcolor penColorNameMap)
+        pwidth = get (penWidth.currentTool) pinfo
+        pvwpen = get variableWidthPen pinfo
+        (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
+        currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
+        ptool = case ptype of 
+                  PenWork -> "pen" 
+                  HighlighterWork -> "highlighter"
+                  _ -> error "error in addPDraw"
+        newstroke = 
+          case pvwpen of 
+            False -> Stroke { stroke_tool = ptool 
+                            , stroke_color = pcolname 
+                            , stroke_width = pwidth
+                            , stroke_data = map (\(x,y,_)->x:!:y) . toList $ pdraw
                           } 
-          True -> VWStroke { stroke_tool = ptool
-                           , stroke_color = pcolname                 
-                           , stroke_vwdata = map (\(x,y,z)->(x,y,pwidth*z)) . toList $ pdraw
-                           }
+            True -> VWStroke { stroke_tool = ptool
+                             , stroke_color = pcolname                 
+                             , stroke_vwdata = map (\(x,y,z)->(x,y,pwidth*z)) . toList $ pdraw
+                             }
                                            
-      newstrokebbox = mkStrokeBBoxFromStroke newstroke
-      bbox = strokebbox_bbox newstrokebbox
-  newlayerbbox <- updateLayerBuf (Just bbox)
-                   . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
-                   $ currlayer
+        newstrokebbox = mkStrokeBBoxFromStroke newstroke
+        bbox = strokebbox_bbox newstrokebbox
+    newlayerbbox <- updateLayerBuf (Just bbox)
+                    . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
+                    $ currlayer
 
-  let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-      newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
-  return (newxojbbox,bbox)
-
-
-
-
-
-
-
-
-
-
-
+    let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+        newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
+    return (newxojbbox,bbox)
 

@@ -19,10 +19,12 @@ import Application.HXournal.Type.Canvas
 import Application.HXournal.Type.PageArrangement
 import Application.HXournal.Type.Alias
 import Application.HXournal.Type.Enum
+import Application.HXournal.Type.Predefined
 import Application.HXournal.View.Coordinate
 import Application.HXournal.Util
 import Control.Applicative
 import Control.Monad (liftM)
+import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.Select
 import Data.Traversable (mapM)
@@ -46,18 +48,6 @@ setPageMap nmap =
          (SelectState . set g_selectSelected Nothing . set g_selectAll nmap )
   . xojstateEither
   
-        
-{-
-updatePageFromCanvasToXournal :: (ViewMode a) => CanvasInfo a -> XournalState -> XournalState 
-updatePageFromCanvasToXournal cinfo xojstate = 
-  let cpn = get curentPageNum     
-      page = getCurrentPageFromXojState cinfo xojstate 
- -- either id gcast epg
-  in  setPageMap (M.adjust (const page) cpn . getPageMap $ xojstate) xojstate 
-
-      -- epg = get currentPage cinfo
--}
-
 -- |
 
 updatePageAll :: XournalState -> HXournalState -> IO HXournalState
@@ -85,7 +75,7 @@ adjustPage xojstate = selectBox fsingle fsingle
                           else set currentPageNum minp cinfo
                   else cinfo
  
-
+-- | 
 
 getPageFromGXournalMap :: Int -> GXournal M.IntMap a -> a
 getPageFromGXournalMap pagenum = 
@@ -204,3 +194,27 @@ addNewPageInXoj dir xoj cpn = do
       nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
   return nxoj
 
+-- | 
+
+relZoomRatio :: CanvasGeometry  
+                -> ZoomModeRel 
+                -> Double
+relZoomRatio geometry rzmode =   
+    let CvsCoord (cx0,cy0) = desktop2Canvas geometry (DeskCoord (0,0))
+        CvsCoord (cx1,cy1) = desktop2Canvas geometry (DeskCoord (1,1))
+        scalefactor = case rzmode of
+          ZoomIn -> predefinedZoomStepFactor
+          ZoomOut -> 1.0/predefinedZoomStepFactor
+    in (cx1-cx0) * scalefactor
+     
+-- -> (PageNum,PageDimension) -> ZoomMode     
+     -- (pgn,pdim@(PageDimension (Dim pw ph)))
+                                -- czmode rzmode =
+-- DeskCoord (dx0,dy0) = page2Desktop geometry (pgn,PageCoord (0,0))
+        -- DeskCoord (dx1,dy1) = page2Desktop geometry (pgn,PageCoord (pw,ph))
+     {-     
+     case czmode of 
+         Original -> scalefactor
+         FitWidth -> (dx1-dx0)/pw * scalefactor 
+         FitHeight -> (dy1-dy0)/ph * scalefactor 
+         Zoom s -> s * scalefactor -} 

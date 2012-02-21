@@ -26,7 +26,6 @@ import Application.HXournal.Accessor
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Coroutine.Commit
 import Application.HXournal.Coroutine.Scroll
--- import Application.HXournal.ModelAction.Adjustment
 import Application.HXournal.ModelAction.Page
 import Application.HXournal.Type.Alias
 import Data.Xournal.Generic
@@ -176,8 +175,6 @@ pageZoomChangeRel rzmode = do
           canvas = get drawArea cinfo 
       geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
       let  nratio = relZoomRatio geometry rzmode
-      liftIO $ putStrLn $ show czmode ++ show rzmode
-      liftIO $ putStrLn $ show (relZoomRatio geometry rzmode)
       pageZoomChange (Zoom nratio)
 
 -- |

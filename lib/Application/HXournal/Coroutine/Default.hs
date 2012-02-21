@@ -228,6 +228,7 @@ menuEventProcess MenuLastPage = do
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNewPageBefore = newPage PageBefore 
 menuEventProcess MenuNewPageAfter = newPage PageAfter
+menuEventProcess MenuDeletePage = deleteCurrentPage
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuUndo = undo 

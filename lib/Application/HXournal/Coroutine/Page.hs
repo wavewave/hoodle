@@ -198,7 +198,38 @@ newPage dir = updateXState npgBfrAct
           liftIO $ putStrLn " not implemented yet"
           return xstate
       
-  
+-- | delete current page of current canvas
+          
+deleteCurrentPage :: MainCoroutine ()           
+deleteCurrentPage = do 
+    updateXState delpgact >> commit_ >> canvasZoomUpdateAll >> invalidateAll
+  where 
+    delpgact xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
+    fsimple :: (ViewMode a) => HXournalState -> CanvasInfo a
+               -> MainCoroutine HXournalState
+    fsimple xstate cinfo = do 
+      let cpn = PageNum (get currentPageNum cinfo)      
+      case get xournalstate xstate of 
+        ViewAppendState xoj -> do 
+          xoj' <- liftIO $ deletePageInXoj xoj 
+                             (PageNum (get currentPageNum cinfo))
+          return =<< liftIO . updatePageAll (ViewAppendState xoj')
+                     . set xournalstate  (ViewAppendState xoj') $ xstate 
+        SelectState _ -> do 
+          liftIO $ putStrLn " not implemented yet"
+          return xstate
+      
+-- | delete designated page
+          
+deletePageInXoj :: Xournal EditMode -> PageNum -> IO (Xournal EditMode)
+deletePageInXoj xoj (PageNum pgn) = do 
+  putStrLn "deletePageInxoj is called"
+  let pagelst = M.elems . get g_pages $ xoj 
+      (pagesbefore,cpage:pagesafter) = splitAt pgn pagelst
+      npage = newSinglePageFromOld cpage
+      npagelst = pagesbefore ++ pagesafter
+      nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
+  return nxoj
 
 
 

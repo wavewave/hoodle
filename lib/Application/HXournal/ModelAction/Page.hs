@@ -196,25 +196,12 @@ addNewPageInXoj dir xoj cpn = do
 
 -- | 
 
-relZoomRatio :: CanvasGeometry  
-                -> ZoomModeRel 
-                -> Double
+relZoomRatio :: CanvasGeometry -> ZoomModeRel -> Double
 relZoomRatio geometry rzmode =   
-    let CvsCoord (cx0,cy0) = desktop2Canvas geometry (DeskCoord (0,0))
-        CvsCoord (cx1,cy1) = desktop2Canvas geometry (DeskCoord (1,1))
+    let CvsCoord (cx0,_cy0) = desktop2Canvas geometry (DeskCoord (0,0))
+        CvsCoord (cx1,_cy1) = desktop2Canvas geometry (DeskCoord (1,1))
         scalefactor = case rzmode of
           ZoomIn -> predefinedZoomStepFactor
           ZoomOut -> 1.0/predefinedZoomStepFactor
     in (cx1-cx0) * scalefactor
      
--- -> (PageNum,PageDimension) -> ZoomMode     
-     -- (pgn,pdim@(PageDimension (Dim pw ph)))
-                                -- czmode rzmode =
--- DeskCoord (dx0,dy0) = page2Desktop geometry (pgn,PageCoord (0,0))
-        -- DeskCoord (dx1,dy1) = page2Desktop geometry (pgn,PageCoord (pw,ph))
-     {-     
-     case czmode of 
-         Original -> scalefactor
-         FitWidth -> (dx1-dx0)/pw * scalefactor 
-         FitHeight -> (dy1-dy0)/ph * scalefactor 
-         Zoom s -> s * scalefactor -} 

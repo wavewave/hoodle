@@ -175,21 +175,10 @@ pageZoomChangeRel rzmode = do
           arr = get (pageArrangement.viewInfo) cinfo 
           canvas = get drawArea cinfo 
       geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
+      let  nratio = relZoomRatio geometry rzmode
       liftIO $ putStrLn $ show czmode ++ show rzmode
       liftIO $ putStrLn $ show (relZoomRatio geometry rzmode)
-{-    fcont cinfo = do
-      xstate <- getSt
-      let xojstate = get xournalstate xstate
-      let czmode = get (zoomMode.viewInfo) cinfo 
-          cpn = PageNum (get currentPageNum cinfo)
-          pdim = getCurrentPageDimFromXojState cinfo xojstate 
-          arr@(ContinuousSingleArrangement cdim ddim _func vbbox)
-            = get (pageArrangement.viewInfo) cinfo 
-          canvas = get drawArea cinfo 
-      geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
-      liftIO $ putStrLn $ show czmode ++ show rzmode
-      liftIO $ putStrLn $ show (relZoomRatio geometry (cpn,pdim) czmode rzmode)
--}
+      pageZoomChange (Zoom nratio)
 
 -- |
 

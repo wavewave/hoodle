@@ -21,13 +21,13 @@ import qualified Application.HXournal.ModelAction.Adjustment as A
 import Application.HXournal.Coroutine.Draw
 import Application.HXournal.Accessor
 import Application.HXournal.View.Coordinate
+import Application.HXournal.Util
 import Control.Monad
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Category
 import Data.Xournal.BBox
 import Data.Label
 import Control.Monad.Trans
-
 import Prelude hiding ((.), id)
 
 -- | 
@@ -93,15 +93,21 @@ vscrollStart cid = do
 
 vscrollMove :: CanvasId -> MainCoroutine () 
 vscrollMove cid = do    
+    liftIO $ timeShow "vscrollMove"
     ev <- await 
     xst <- getSt 
+    liftIO $ timeShow ("beforegeometry" ++ show cid ++ " : " )
     geometry <- liftIO (getCanvasGeometryCvsId cid xst)
+    liftIO $ timeShow ("aftergeometry" ++ show cid ++ " : " )
     case ev of
       VScrollBarMoved cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"
+        liftIO $ timeShow "before_update"
         updateXState $ return.modifyCurrentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
+        liftIO $ timeShow "before_invali"
         invalidateWithBuf cid 
+        liftIO $ timeShow "after_invali"
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"        
@@ -109,7 +115,10 @@ vscrollMove cid = do
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 
         return ()
-      _ -> return ()       
+      VScrollBarStart cid v -> vscrollStart cid 
+      other -> do 
+        liftIO $ putStrLn ("what?" ++ show other)
+        return ()       
   where scrollmovecanvas v cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
           in modify (viewPortBBox.pageArrangement.viewInfo) 

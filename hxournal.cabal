@@ -63,7 +63,8 @@ Library
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
                      Diff == 0.1.*, 
-                     dyre == 0.8.*
+                     dyre == 0.8.*, 
+                     old-locale == 1.0.*
   else 
     Build-Depends:   base == 4.*, 
                      mtl == 2.*,
@@ -88,7 +89,8 @@ Library
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
                      Diff == 0.1.*, 
-                     dyre == 0.8.*
+                     dyre == 0.8.*, 
+                     old-locale == 1.0.*
   Exposed-Modules: 
                    Application.HXournal.StartUp
                    Application.HXournal.Script

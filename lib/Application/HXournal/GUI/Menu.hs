@@ -291,11 +291,15 @@ iconList = [ ("fullscreen.png" , "myfullscreen")
            , ("white.png"      , "mywhite")
            ]
 
+-- | 
+
 viewmods :: [RadioActionEntry] 
 viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
            , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
            ]
            
+-- | 
+
 pointmods :: [RadioActionEntry] 
 pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothing 0
             , RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
@@ -305,6 +309,8 @@ pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothin
             , RadioActionEntry "PENULTRATHICKA" "Ultra Thick" Nothing Nothing Nothing 5   
             , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2              
             ]            
+
+-- | 
 
 penmods :: [RadioActionEntry] 
 penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0 
@@ -316,6 +322,8 @@ penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Noth
           , RadioActionEntry "VERTSPA" "Vertical Space"    (Just "mystretch")        Nothing Nothing 6
           , RadioActionEntry "HANDA"   "Hand Tool"         (Just "myhand")        Nothing Nothing 7
           ]            
+
+-- | 
 
 colormods :: [RadioActionEntry]
 colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
@@ -349,22 +357,28 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 
 -- | 
 
+actionNewAndRegisterRef :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
+                           -> IORef HXournalState
+                           -> String -> String 
+                           -> Maybe String -> Maybe StockId
+                           -> Maybe MyEvent 
+                           -> IO Action
+actionNewAndRegisterRef tref sref name label tooltip stockId myevent = do 
+    a <- actionNew name label tooltip stockId 
+    case myevent of 
+      Nothing -> return a 
+      Just ev -> do 
+        a `on` actionActivated $ do 
+          bouncecallback tref sref ev
+        return a
+
+-- | 
+
 getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
              -> IORef HXournalState 
              -> IO UIManager
 getMenuUI tref sref = do 
-  let actionNewAndRegister :: String -> String 
-                           -> Maybe String -> Maybe StockId
-                           -> Maybe MyEvent 
-                           -> IO Action
-      actionNewAndRegister name label tooltip stockId myevent = do 
-        a <- actionNew name label tooltip stockId 
-        case myevent of 
-          Nothing -> return a 
-          Just ev -> do 
-            a `on` actionActivated $ do 
-              bouncecallback tref sref ev
-            return a
+  let actionNewAndRegister = actionNewAndRegisterRef tref sref 
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
@@ -493,9 +507,12 @@ getMenuUI tref sref = do
   agr <- actionGroupNew "AGR"
   mapM_ (actionGroupAddAction agr) 
         [fma,ema,vma,jma,tma,oma,hma]
+  mapM_ (actionGroupAddAction agr)   
+        [ undoa, redoa, cuta, copya, pastea, deletea ] 
+  -- actionGroupAddActionWithAccel agr undoa (Just "<control>z")   
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
         [ newa, annpdfa, opena, savea, saveasa, recenta, printa, exporta, quita
-        , undoa, redoa, cuta, copya, pastea, deletea {- , netcopya, netpastea -}
+        {- , netcopya, netpastea -}
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa
@@ -542,58 +559,49 @@ getMenuUI tref sref = do
         [ opena, savea, saveasa, quita, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha 
         ]
-  
+  --
   mapM_ (\x->actionSetSensitive x True) enabledActions  
   mapM_ (\x->actionSetSensitive x False) disabledActions
+  --
+
   
+  
+  -- 
+  -- radio actions
+  --
   ui <- uiManagerNew 
   uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
-
   -- Just ra1 <- actionGroupGetAction agr "ONEPAGEA"
   -- Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1]  
-
   Just ra2 <- actionGroupGetAction agr "PENFINEA"
   Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
-
   Just ra3 <- actionGroupGetAction agr "SELREGNA"
   actionSetSensitive ra3 True 
-
   Just ra4 <- actionGroupGetAction agr "VERTSPA"
   actionSetSensitive ra4 False
-
   Just ra5 <- actionGroupGetAction agr "HANDA"
   actionSetSensitive ra5 False
-
   Just ra6 <- actionGroupGetAction agr "CONTA"
   actionSetSensitive ra6 True
-
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
-
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
-  
   return ui   
 
-
+-- | 
 
 assignViewMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
                  -> IORef HXournalState -> RadioAction -> IO ()
 assignViewMode tref sref a = do 
-    -- v <- radioActionGetCurrentValue a
     st <- readIORef sref 
     putStrLn "in assignmViewMode"
     printCanvasMode (getCurrentCanvasId st) (get currentCanvasInfo st)
     putStrLn "still in assignViewMode"
     viewModeToMyEvent a >>= bouncecallback tref sref
     
-{-    case v of 
-      1 -> bouncecallback tref sref ToSinglePage
-      0 -> bouncecallback tref sref ToContSinglePage
-      _ -> return () -}
-
-
+-- | 
 
 assignPenMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
                  -> IORef HXournalState -> RadioAction -> IO ()
@@ -611,6 +619,7 @@ assignPenMode tref sref a = do
         writeIORef sref stNew 
         bouncecallback tref sref ToSelectMode
         
+-- | 
 
 assignColor :: IORef HXournalState -> RadioAction -> IO () 
 assignColor sref a = do 
@@ -621,6 +630,8 @@ assignColor sref a = do
     let stNew = set (penColor.currentTool.penInfo) c st 
     writeIORef sref stNew 
     callback (PenColorChanged c)
+
+-- | 
 
 assignPoint :: IORef HXournalState -> RadioAction -> IO () 
 assignPoint sref a = do 
@@ -633,6 +644,8 @@ assignPoint sref a = do
     writeIORef sref stNew 
     callback (PenWidthChanged w)
 
+-- | 
+
 int2PenType :: Int -> Either PenType SelectType 
 int2PenType 0 = Left PenWork
 int2PenType 1 = Left EraserWork
@@ -643,6 +656,8 @@ int2PenType 5 = Right SelectRectangleWork
 int2PenType 6 = Right SelectVerticalSpaceWork
 int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
+
+-- | 
 
 int2Point :: PenType -> Int -> Double 
 int2Point PenWork 0 = predefined_veryfine 
@@ -670,6 +685,8 @@ int2Point TextWork 3 = predefined_thick
 int2Point TextWork 4 = predefined_verythick
 int2Point TextWork 5 = predefined_ultrathick
 int2Point _ _ = error "No such point"
+
+-- | 
 
 int2Color :: Int -> PenColor
 int2Color 0  = ColorBlack 

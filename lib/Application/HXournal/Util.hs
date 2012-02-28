@@ -14,9 +14,10 @@ module Application.HXournal.Util where
 
 import Data.Maybe
 import Data.Xournal.Simple
-import Data.Time.Clock 
-import Data.Time.Format
-import System.Locale
+
+-- import Data.Time.Clock 
+-- import Data.Time.Format
+-- import System.Locale
 
 -- for test
 -- import Blaze.ByteString.Builder
@@ -69,8 +70,9 @@ waitUntil p act = do
     else waitUntil p act  
 
 -- | for debugging
-
+{-
 timeShow :: String -> IO () 
 timeShow msg = 
   putStrLn . (msg ++) . (formatTime defaultTimeLocale "%Q") 
     =<< getCurrentTime 
+-}

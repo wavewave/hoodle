@@ -16,6 +16,7 @@
 
 module Graphics.Xournal.Render.BBoxMapPDF where
 
+import Control.Applicative
 import Graphics.Xournal.Render.Type 
 import Graphics.Xournal.Render.Generic
 import Graphics.Xournal.Render.Simple
@@ -41,54 +42,82 @@ import Graphics.Rendering.Cairo
 
 import Prelude hiding ((.),id,mapM, mapM_, sequence )
 
+-- | 
 
 type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
+
+-- | 
 
 type TXournalBBoxMapPDF = TXournalBBoxMapBkg BackgroundPDFDrawable
 
 -- type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TLayerBBox
 
+-- | 
+
 type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TLayerBBox
+
+-- | 
 
 type TTempXournalSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTempPageSelectPDF))
 
+-- | 
+
 newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
 
+-- | 
+
 type instance StrokeTypeFromLayer (TLayerBBoxBuf b) = StrokeBBox 
+
+-- | 
 
 type TPageBBoxMapPDFBuf = 
   TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
   
+-- |   
+
 type TXournalBBoxMapPDFBuf = 
   TXournalBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
   
+-- |
+
 type TTempPageSelectPDFBuf = 
   GPage BackgroundPDFDrawable (TLayerSelectInPageBuf ZipperSelect) (TLayerBBoxBuf LyBuf)
+
+-- | 
 
 type TTempXournalSelectPDFBuf = 
   GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
 
+-- | 
 
 instance GCast (TLayerBBox)  (TLayerBBoxBuf LyBuf) where
   gcast lyr = GLayerBuf (LyBuf Nothing) (get g_strokes lyr) 
 
+-- | 
+  
 instance GCast Layer (TLayerBBoxBuf LyBuf) where
   gcast lyr = gcast (fromLayer lyr :: TLayerBBox)
 
+-- | 
+  
 emptyTLayerBBoxBufLyBuf :: IO (TLayerBBoxBuf LyBuf)
 emptyTLayerBBoxBufLyBuf = updateLayerBuf Nothing $ gcast emptyLayer 
+
+-- | 
 
 instance GBackgroundable BackgroundPDFDrawable where 
   gFromBackground = bkgPDFFromBkg 
   gToBackground = bkgFromBkgPDF
 
-
+-- | 
 
 tlayerBBoxFromTLayerSelect :: TLayerSelect TLayerBBox -> TLayerBBox 
 tlayerBBoxFromTLayerSelect l = 
   case unTEitherAlterHitted (gstrokes l) of
     Left strs -> GLayer strs 
     Right alist -> GLayer . Prelude.concat $ interleave id unHitted alist
+
+-- | 
 
 tlayerbufFromTLayerSelectBuf :: TLayerSelectBuf (TLayerBBoxBuf b) 
                                 -> (TLayerBBoxBuf b) 
@@ -98,23 +127,18 @@ tlayerbufFromTLayerSelectBuf l =
     Right alist -> GLayerBuf (get g_buffer l) . Prelude.concat 
                    $ interleave id unHitted alist
   
+-- | 
+    
 instance GCast TTempPageSelectPDF TPageBBoxMapPDF where      
   gcast = tpageBBoxMapPDFFromTTempPageSelectPDF
 
-
--- | deprecated 
-
-tpageBBoxMapPDFFromTTempPageSelectPDF :: TTempPageSelectPDF -> TPageBBoxMapPDF
-tpageBBoxMapPDFFromTTempPageSelectPDF p = 
-  let TLayerSelectInPage s others = get g_layers p 
-      s' = tlayerBBoxFromTLayerSelect s
-  in GPage (get g_dimension p) (get g_background p) (gFromList (s':others))
-   
-     
-      
+-- |   
+  
 instance GCast TTempPageSelectPDFBuf TPageBBoxMapPDFBuf where      
   gcast = tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf
       
+-- | 
+
 tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf :: TTempPageSelectPDFBuf 
                                                -> TPageBBoxMapPDFBuf
 tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf p = 
@@ -128,9 +152,12 @@ tpageBBoxMapPDFBufFromTTempPageSelectPDFBuf p =
       Select (O (Just sz)) = normalizedothers 
   in GPage (get g_dimension p) (get g_background p) (Select . O . Just $ replace s' sz)
        
+-- | 
 
 instance GCast TPageBBoxMapPDFBuf TTempPageSelectPDFBuf where
   gcast = ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf
+
+-- | 
 
 ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf :: TPageBBoxMapPDFBuf
                                                -> TTempPageSelectPDFBuf
@@ -145,12 +172,48 @@ ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf p =
       currtemp = GLayerBuf (get g_buffer curr) (TEitherAlterHitted . Left . gToList . get g_bstrokes $ curr)
   in  GPage (get g_dimension p) (get g_background p) 
             (TLayerSelectInPageBuf currtemp normalizedothers)
-        
-      
+
+-- | 
+
+instance GCast TXournalBBoxMapPDFBuf Xournal where
+  gcast = Xournal <$> get g_title 
+                  <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages 
+
+
+-- | 
+
+instance GCast TTempXournalSelectPDFBuf Xournal where 
+  gcast = Xournal <$> gselectTitle 
+                  <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll  
+
 ----------------------      
+----- Rendering   
+
+-- | 
+
+newtype InBBox a = InBBox a
+
+-- | 
+
+data InBBoxOption = InBBoxOption (Maybe BBox) 
+
+-- | 
+
+instance RenderOptionable (InBBox TLayerBBox) where
+  type RenderOption (InBBox TLayerBBox) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) (InBBox layer) 
+    = cairoDrawLayerBBox mbbox layer 
+
+-- | 
+                             
+instance RenderOptionable (InBBox TPageBBoxMapPDF) where
+  type RenderOption (InBBox TPageBBoxMapPDF) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
+    cairoRenderOption (DrawPDFInBBox mbbox) (gbackground page, gdimension page) 
+    mapM_ (cairoDrawLayerBBox mbbox) . glayers $ page 
 
 
-
+-- |
 
 mkTXournalBBoxMapPDF :: Xournal -> IO TXournalBBoxMapPDF
 mkTXournalBBoxMapPDF xoj = do 
@@ -208,8 +271,7 @@ mkBkgPDF dim@(Dim w h) bkg = do
           return bkgpdf
 #endif  
 
-
-
+-- | 
 
 mkTLayerBBoxBufFromNoBuf :: Dimension -> TLayerBBox -> IO (TLayerBBoxBuf LyBuf)
 mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do 
@@ -218,6 +280,8 @@ mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do
   renderWith sfc (cairoDrawLayerBBox (Just (BBox (0,0) (w,h))) lyr)
   return $ GLayerBuf { gbuffer = LyBuf (Just sfc), 
                        gbstrokes = strs }  -- temporary
+
+-- | 
 
 updateLayerBuf :: Maybe BBox -> TLayerBBoxBuf LyBuf -> IO (TLayerBBoxBuf LyBuf)
 updateLayerBuf mbbox lyr = do 
@@ -229,6 +293,7 @@ updateLayerBuf mbbox lyr = do
       return lyr
     _ -> return lyr
     
+-- | 
 
 mkTPageBBoxMapPDFBufFromNoBuf :: TPageBBoxMapPDF -> IO TPageBBoxMapPDFBuf
 mkTPageBBoxMapPDFBufFromNoBuf page = do 
@@ -238,6 +303,7 @@ mkTPageBBoxMapPDFBufFromNoBuf page = do
   ls' <- mapM (mkTLayerBBoxBufFromNoBuf dim) ls
   return . GPage dim bkg . gFromList . gToList $ ls'
       
+-- | 
 
 mkTXournalBBoxMapPDFBufFromNoBuf :: TXournalBBoxMapPDF 
                                     -> IO TXournalBBoxMapPDFBuf
@@ -277,23 +343,6 @@ tpageBBoxMapPDFFromTPageBBoxMapPDFBuf (GPage dim bkg ls) =
   GPage dim bkg . gFromList . gToList . fmap tlayerBBoxFromTLayerBBoxBuf $ ls
  
   
------ Rendering   
-
-newtype InBBox a = InBBox a
-
-data InBBoxOption = InBBoxOption (Maybe BBox) 
-
-instance RenderOptionable (InBBox TLayerBBox) where
-  type RenderOption (InBBox TLayerBBox) = InBBoxOption 
-  cairoRenderOption (InBBoxOption mbbox) (InBBox layer) 
-    = cairoDrawLayerBBox mbbox layer 
-
-                             
-instance RenderOptionable (InBBox TPageBBoxMapPDF) where
-  type RenderOption (InBBox TPageBBoxMapPDF) = InBBoxOption 
-  cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
-    cairoRenderOption (DrawPDFInBBox mbbox) (gbackground page, gdimension page) 
-    mapM_ (cairoDrawLayerBBox mbbox) . glayers $ page 
 
     
 -- | page within a bbox. not implemented bbox part.
@@ -301,8 +350,7 @@ instance RenderOptionable (InBBox TPageBBoxMapPDF) where
 cairoDrawPageBBoxPDF :: Maybe BBox -> TPageBBoxMapPDF -> Render ()
 cairoDrawPageBBoxPDF _mbbox page = cairoRender page  -- This is temporary
 
-
-
+-- | 
 
 cairoDrawLayerBBoxBuf :: Maybe BBox -> TLayerBBoxBuf LyBuf -> Render ()
 cairoDrawLayerBBoxBuf mbbox layer = do
@@ -327,3 +375,13 @@ instance RenderOptionable (InBBox TPageBBoxMapPDFBuf) where
   cairoRenderOption opt@(InBBoxOption mbbox) (InBBox page) = do 
     cairoRenderOption (DrawPDFInBBox mbbox) (get g_background page, get g_dimension page)
     mapM_ (cairoRenderOption opt . InBBox) .  get g_layers $ page
+
+
+
+-- | deprecated 
+
+tpageBBoxMapPDFFromTTempPageSelectPDF :: TTempPageSelectPDF -> TPageBBoxMapPDF
+tpageBBoxMapPDFFromTTempPageSelectPDF p = 
+  let TLayerSelectInPage s others = get g_layers p 
+      s' = tlayerBBoxFromTLayerSelect s
+  in GPage (get g_dimension p) (get g_background p) (gFromList (s':others))

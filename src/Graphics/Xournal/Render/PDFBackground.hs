@@ -12,31 +12,29 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Graphics.Xournal.Render.PDFBackground where
 
-
 import Control.Monad.State hiding (mapM_)
-import Prelude hiding (mapM_)
-
-
 import Data.Monoid 
 import Data.ByteString hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C
-
 import Data.Xournal.Simple
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.BBox 
 import Graphics.Xournal.Render.Generic
-
+--
 #ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif
-
+--
 import Graphics.Rendering.Cairo
-
+import Prelude hiding (mapM_)
   
+-- | 
+
 data Context = Context { ctxt_domain :: ByteString
                        , ctxt_filename :: ByteString 
 #ifdef POPPLER
@@ -45,6 +43,8 @@ data Context = Context { ctxt_domain :: ByteString
                        , ctxt_doc :: Maybe ()
 #endif 
                        }
+
+-- |
 
 data BackgroundPDFDrawable = 
   BkgPDFSolid { bkgpdf_color :: ByteString

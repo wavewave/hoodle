@@ -6,3 +6,5 @@
    * Double buffer support
 0.5: 15 Jan 2012
    * ZipperSelect support
+0.6: 12 Feb 2012
+   * Variable width support

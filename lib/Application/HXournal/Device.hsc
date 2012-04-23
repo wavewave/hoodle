@@ -66,6 +66,7 @@ initDevice :: Config -> IO DeviceList
 initDevice cfg = do 
   (mcore,mstylus,meraser) <- getPenDevConfig cfg 
   putStrLn $ show mstylus 
+  putStrLn $ show meraser
   with 0 $ \pcore -> 
     with 0 $ \pstylus -> 
       with 0 $ \peraser -> do 
@@ -101,7 +102,10 @@ getPointer devlst = do
       Nothing -> return (rbtn,PointerCoord Core x y 1.0)
       Just dev -> case maxf of 
                     Nothing -> return (rbtn,PointerCoord Core x y 1.0)
-                    Just axf -> (,) rbtn <$> (liftIO $ coord ptr x y dev axf)
+                    Just axf -> do 
+                      tst <- (,) rbtn <$> (liftIO $ coord ptr x y dev axf)
+                      liftIO $ print tst 
+                      return tst 
   where 
     getInfo ptr = do 
       (ty :: #{gtk2hs_type GdkEventType}) <- peek (castPtr ptr)

@@ -1,0 +1,158 @@
+Name:		hoodle
+Version:	0.6.999
+Synopsis:	A pen notetaking program written in haskell 
+Description: 	notetaking program written in haskell and gtk2hs
+Homepage:       http://ianwookim.org/hoodle
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 7.0
+Build-Type: 	Custom
+Cabal-Version:  >= 1.8
+data-files:     template/*.html.st
+                resource/*.png
+                CHANGES
+                Config.hs
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle
+
+Flag Poppler
+  Description: Enable poppler support
+  Default:     True
+
+Executable hoodle
+  Main-is: hoodle.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: 
+                 base>4, 
+                 cmdargs >= 0.7 && <= 0.10, 
+                 hoodle 
+
+Library
+  hs-source-dirs: lib
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+
+  if flag(poppler) 
+    Build-Depends:   base == 4.*, 
+                     mtl == 2.*,
+                     directory == 1.*,
+                     filepath == 1.*, 
+                     strict == 0.3.*,
+                     gtk == 0.12.*, 
+                     cairo == 0.12.*,
+                     monad-coroutine == 0.7.*, 
+                     transformers == 0.2.*,
+                     xournal-types == 0.4.*,
+                     xournal-parser == 0.4.*,
+                     xournal-render == 0.6.*,
+                     xournal-builder >= 0.1.1 && < 0.2,
+                     containers == 0.4.*,
+                     template-haskell == 2.*,
+                     bytestring == 0.9.*, 
+                     double-conversion == 0.2.*,
+                     fclabels == 1.0.*,
+                     cmdargs >= 0.7 && <= 0.10,
+                     configurator == 0.2.*,
+                     poppler == 0.12.*, 
+                     time == 1.2.*, 
+                     TypeCompose == 0.9.*, 
+                     Diff == 0.1.*, 
+                     dyre == 0.8.*
+  else 
+    Build-Depends:   base == 4.*, 
+                     mtl == 2.*,
+                     directory == 1.*,
+                     filepath == 1.*, 
+                     strict == 0.3.*,
+                     gtk == 0.12.*, 
+                     cairo == 0.12.*,
+                     monad-coroutine == 0.7.*, 
+                     transformers == 0.2.*,
+                     xournal-types == 0.4.*,
+                     xournal-parser == 0.4.*,
+                     xournal-render >= 0.6.0 && < 0.7,
+                     xournal-builder >= 0.1.1 && < 0.2,
+                     containers == 0.4.*,
+                     template-haskell == 2.*,
+                     bytestring == 0.9.*, 
+                     double-conversion == 0.2.*,
+                     fclabels == 1.0.*,
+                     cmdargs >= 0.7 && <= 0.10,
+                     configurator == 0.2.*, 
+                     time == 1.2.*, 
+                     TypeCompose == 0.9.*, 
+                     Diff == 0.1.*, 
+                     dyre == 0.8.*
+  Exposed-Modules: 
+                   Application.Hoodle.StartUp
+                   Application.Hoodle.Script
+                   Application.Hoodle.Script.Hook
+                   Application.Hoodle.Script.Coroutine
+                   Application.Hoodle.ProgType
+                   Application.Hoodle.Job
+                   Application.Hoodle.Command 
+                   Application.Hoodle.Type
+                   Application.Hoodle.Type.Alias 
+                   Application.Hoodle.Type.Event 
+                   Application.Hoodle.Type.Enum
+                   Application.Hoodle.Type.Clipboard
+                   Application.Hoodle.Type.Canvas
+                   Application.Hoodle.Type.Coroutine
+                   Application.Hoodle.Type.PageArrangement 
+                   Application.Hoodle.Type.XournalState
+                   Application.Hoodle.Type.Window
+                   Application.Hoodle.Type.Undo 
+                   Application.Hoodle.Type.Predefined 
+                   Application.Hoodle.View.Draw
+                   Application.Hoodle.View.Coordinate
+                   Application.Hoodle.GUI
+                   Application.Hoodle.GUI.Menu
+                   Application.Hoodle.ModelAction.Adjustment
+                   Application.Hoodle.ModelAction.Pen 
+                   Application.Hoodle.ModelAction.Page
+                   Application.Hoodle.ModelAction.Eraser
+                   Application.Hoodle.ModelAction.Select
+                   Application.Hoodle.ModelAction.File
+                   Application.Hoodle.ModelAction.Window
+                   -- Application.Hoodle.ModelAction.Network
+                   Application.Hoodle.ModelAction.Layer
+                   Application.Hoodle.Coroutine
+                   Application.Hoodle.Coroutine.Callback
+                   Application.Hoodle.Coroutine.Draw
+                   Application.Hoodle.Coroutine.EventConnect
+                   Application.Hoodle.Coroutine.Default
+                   Application.Hoodle.Coroutine.Pen
+                   Application.Hoodle.Coroutine.Eraser
+                   Application.Hoodle.Coroutine.Highlighter
+                   Application.Hoodle.Coroutine.Scroll
+                   Application.Hoodle.Coroutine.Page
+                   Application.Hoodle.Coroutine.Select
+                   Application.Hoodle.Coroutine.File
+                   Application.Hoodle.Coroutine.Mode
+                   Application.Hoodle.Coroutine.Window
+                   Application.Hoodle.Coroutine.Commit
+                   -- Application.Hoodle.Coroutine.Network
+                   Application.Hoodle.Coroutine.Layer
+                   Application.Hoodle.Util
+                   Application.Hoodle.Util.Verbatim 
+                   Application.Hoodle.Device
+                   Application.Hoodle.Accessor
+                   Application.Hoodle.Config
+--                    Paths_hoodle
+  Other-Modules: 
+                   Paths_hoodle
+  c-sources: 
+                   csrc/c_initdevice.c
+  include-dirs:    csrc
+  install-includes: 
+                   csrc/c_initdevice.h
+                   csrc/template-hsc-gtk2hs.h
+
+  if flag(poppler)
+    cpp-options: -DPOPPLER

@@ -1,0 +1,47 @@
+Name:		hoodle
+Version:	0.6.999
+Synopsis:	Executable for hoodle
+Description: 	Hoodle is a pen notetaking program written in haskell. 
+Homepage:       http://ianwookim.org/hoodle
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 7.0
+Build-Type: 	Custom
+Cabal-Version:  >= 1.8
+data-files:     CHANGES
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle
+
+Executable hoodle
+  Main-is: hoodle.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: 
+                 base>4, 
+                 cmdargs >= 0.7 && <= 0.10, 
+                 hoodle-core >= 0.6.999, 
+                 hoodle 
+
+Library
+  hs-source-dirs: lib
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends:   base == 4.*, 
+                   mtl == 2.*,
+                   directory == 1.*,
+                   filepath == 1.*, 
+                   containers == 0.4.*,
+                   cmdargs >= 0.7 && <= 0.10,
+                   configurator == 0.2.*,
+                   dyre == 0.8.*, 
+                   hoodle-core >= 0.6.999
+  Exposed-Modules: 
+                   Application.Hoodle.ProgType
+                   Application.Hoodle.Job
+                   Application.Hoodle.Command 
+                   Application.Hoodle.StartUp

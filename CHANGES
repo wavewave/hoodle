@@ -1,0 +1,30 @@
+0.5: 12 Dec 2011
+   * First public release. basic pen operation, eraser operation, rectangular selection and file operations are implemented
+
+0.5.1: 16 Dec 2011 
+   * Use of configuration file '.hxournal'. Enable Use X Input menu. Dependency on xournal-parser and xournal-render is restricted to 0.2.0.* only
+   * checking gtk+-2.0 using pkg-config
+
+0.6: 18 Dec 2011 
+   * pdf background support. Annotate PDF menu is activated. preloading pdf background images
+
+0.6.0: 19 Dec 2011 
+   * some bug fixes (temporary yet) related to automatic scrollbar disappearing. Check when new, open, annotate pdf if xournal file is not saved yet. 
+ 
+0.6.1: 25 Dec 2011
+   * undo/redo support, double buffer rendering while scrolling
+
+0.6.2: 15 Jan 2012
+   * layer support
+
+0.6.3: 24 Jan 2012 
+   * refine rendering while selection and scrolling. highlighter is implemented. Resizing selected strokes implemented
+
+0.6.4: 6 Feb 2012
+   * lasso selection, continuous page view. 
+
+0.6.5: 12 Feb 2012
+   * pen button support, pen pressure support, using faster xoj parser 
+
+0.6.6: 28 Feb 2012 
+   * scripting support, zoom in/out implemented. page functions are implemented

@@ -35,7 +35,7 @@ data PointerType = Core | Stylus | Eraser
 
 -- |
 
-data PenButton = PenButton1 | PenButton2 | PenButton3 
+data PenButton = PenButton1 | PenButton2 | PenButton3 | EraserButton
                deriving (Show,Eq,Ord)
 
 -- | 
@@ -103,8 +103,14 @@ getPointer devlst = do
       Just dev -> case maxf of 
                     Nothing -> return (rbtn,PointerCoord Core x y 1.0)
                     Just axf -> do 
-                      tst <- (,) rbtn <$> (liftIO $ coord ptr x y dev axf)
-                      liftIO $ print tst 
+                      pcoord <- liftIO $ coord ptr x y dev axf 
+                      let rbtnfinal = case pointerType pcoord of 
+                                        Eraser -> Just EraserButton
+                                        _ -> rbtn 
+                      
+                      let tst = (rbtnfinal,pcoord)
+                        -- (,) rbtn <$> (liftIO $ coord ptr x y dev axf)
+                      -- liftIO $ print tst 
                       return tst 
   where 
     getInfo ptr = do 

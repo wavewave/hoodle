@@ -155,6 +155,7 @@ viewAppendMode = do
           updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
           modeChange ToSelectMode
           selectLassoStart cid pcoord
+        (PenWork,EraserButton) -> eraserStart cid pcoord
         (EraserWork,_)      -> eraserStart cid pcoord 
         (HighlighterWork,_) -> highlighterStart cid pcoord
         _ -> return () 

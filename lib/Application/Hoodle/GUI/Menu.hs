@@ -29,7 +29,7 @@ import Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import System.FilePath
 import Data.Xournal.Predefined 
-import Paths_hoodle
+import Paths_hoodle_core
 
 -- | 
 

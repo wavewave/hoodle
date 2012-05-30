@@ -1,7 +1,9 @@
-Name:		hoodle
+Name:		hoodle-core
 Version:	0.6.999
-Synopsis:	A pen notetaking program written in haskell 
-Description: 	notetaking program written in haskell and gtk2hs
+Synopsis:	Core library for hoodle
+Description: 	Hoodle is a pen notetaking program written in haskell. 
+                hoodle-core is the core library written in haskell and 
+                using gtk2hs
 Homepage:       http://ianwookim.org/hoodle
 License: 	BSD3
 License-file:	LICENSE
@@ -17,21 +19,21 @@ data-files:     template/*.html.st
                 Config.hs
 Source-repository head
   type: git
-  location: http://www.github.com/wavewave/hoodle
+  location: http://www.github.com/wavewave/hoodle-core
 
 Flag Poppler
   Description: Enable poppler support
   Default:     True
 
-Executable hoodle
-  Main-is: hoodle.hs
-  hs-source-dirs: exe
-  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
-  Build-Depends: 
-                 base>4, 
-                 cmdargs >= 0.7 && <= 0.10, 
-                 hoodle 
+-- Executable hoodle
+--   Main-is: hoodle.hs
+--   hs-source-dirs: exe
+--   ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+--   ghc-prof-options: -caf-all -auto-all
+--  Build-Depends: 
+--                 base>4, 
+--                 cmdargs >= 0.7 && <= 0.10, 
+--                 hoodle 
 
 Library
   hs-source-dirs: lib
@@ -90,13 +92,13 @@ Library
                      Diff == 0.1.*, 
                      dyre == 0.8.*
   Exposed-Modules: 
-                   Application.Hoodle.StartUp
+--                   Application.Hoodle.StartUp
                    Application.Hoodle.Script
                    Application.Hoodle.Script.Hook
                    Application.Hoodle.Script.Coroutine
-                   Application.Hoodle.ProgType
-                   Application.Hoodle.Job
-                   Application.Hoodle.Command 
+--                   Application.Hoodle.ProgType
+--                   Application.Hoodle.Job
+--                   Application.Hoodle.Command 
                    Application.Hoodle.Type
                    Application.Hoodle.Type.Alias 
                    Application.Hoodle.Type.Event 
@@ -146,7 +148,7 @@ Library
                    Application.Hoodle.Config
 --                    Paths_hoodle
   Other-Modules: 
-                   Paths_hoodle
+                   Paths_hoodle_core
   c-sources: 
                    csrc/c_initdevice.c
   include-dirs:    csrc

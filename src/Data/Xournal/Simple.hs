@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, OverloadedStrings,  TypeOperators, 
-             TypeFamilies, FlexibleContexts  #-}
+             TypeFamilies, FlexibleContexts, RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -22,8 +22,13 @@ import Data.Strict.Tuple
 import Data.Xournal.Util
 import Data.Label
 import Prelude hiding ((.),id,putStrLn,fst,snd,curry,uncurry)
+import qualified Data.Serialize as SE
+
+-- | 
 
 type Title = S.ByteString
+
+-- | 
 
 data Stroke = Stroke { stroke_tool  :: !S.ByteString
                      , stroke_color :: !S.ByteString
@@ -36,7 +41,32 @@ data Stroke = Stroke { stroke_tool  :: !S.ByteString
                        }
             deriving Show
 
+-- | 
 
+instance SE.Serialize Stroke where
+    put Stroke{..} = SE.putWord8 0 
+                     >> SE.put stroke_tool 
+                     >> SE.put stroke_color
+                     >> SE.put stroke_width
+                     >> SE.put stroke_data
+    put VWStroke{..} = SE.putWord8 1 
+                       >> SE.put stroke_tool 
+                       >> SE.put stroke_color
+                       >> SE.put stroke_vwdata
+    get = do tag <- SE.getWord8  
+             case tag of 
+               0 -> Stroke <$> SE.get <*> SE.get <*> SE.get <*> SE.get
+               1 -> VWStroke <$> SE.get <*> SE.get <*> SE.get
+  
+-- |    
+               
+instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
+    put (x :!: y) = SE.put x
+                    >> SE.put y
+    get = (:!:) <$> SE.get <*> SE.get
+
+    
+-- | 
 
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }
                deriving Show

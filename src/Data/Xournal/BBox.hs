@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies, StandaloneDeriving, RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -25,7 +25,7 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Prelude hiding (fst,snd)
 import qualified Prelude as Prelude (fst,snd)
-
+import Data.Serialize
 
 -- | bounding box type 
 
@@ -35,16 +35,25 @@ data BBox = BBox { bbox_upperleft :: (Double,Double)
 
 -- | 
 
+instance Serialize BBox where
+    put BBox{..} = put bbox_upperleft >> put bbox_lowerright  
+    get = liftM2 BBox get get 
+
+
+-- | 
+
 data StrokeBBox = StrokeBBox { strokebbox_stroke :: Stroke 
                              , strokebbox_bbox :: BBox } 
                 deriving (Show)
   
-{-  
-  StrokeBBox { strokebbox_tool :: ByteString
-                             , strokebbox_color :: ByteString 
-                             , strokebbox_width :: Double
-                             , strokebbox_data :: [Pair Double Double] 
-                             , strokebbox_bbox :: BBox } -}
+-- |
+
+instance Serialize StrokeBBox where
+  put StrokeBBox{..} = put strokebbox_stroke >> put strokebbox_bbox
+  get = liftM2 StrokeBBox get get
+  
+
+
 
 type TLayerBBox = GLayer [] StrokeBBox 
 

@@ -62,6 +62,8 @@ import Graphics.Xournal.Render.Generic
 import Graphics.UI.Gtk.General.Clipboard as Clip
 import qualified Data.Serialize as Se 
 
+import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString.Char8 as C8
 
 -- |
 
@@ -450,27 +452,17 @@ updateClipboard :: HoodleState -> [StrokeBBox] -> IO HoodleState
 updateClipboard xstate strs 
   | null strs = return xstate
   | otherwise = do 
-    let -- newclip = Clipboard strs
-        -- xstate' = set clipboard newclip xstate 
-        ui = get gtkUIManager xstate
+    let ui = get gtkUIManager xstate
     hdltag <- atomNew "hoodle"
     tgttag <- atomNew "Stroke"
+    seltag <- atomNew "Stroke"
     clip <- clipboardGet hdltag
-    let bstr = Se.encode strs 
-    clipboardSetText clip (show bstr)
-    -- clipboardSetWithData clip [(tgttag,234)] gfunc cfunc
+    let bstr = C8.unpack . B64.encode . Se.encode $ strs 
+    clipboardSetText clip bstr
     togglePaste ui True 
     return xstate
 
 
-{- -- |
-    
-gfunc :: InfoId -> SelectionDataM () 
-gfunc = 
-  
--}
-  
-  
   
 -- | 
 
@@ -490,59 +482,25 @@ copySelection = do
                 infixl 6 `pipe`
 
 
-{-
-    
-connClipPaste :: MainCoroutine Clip.Clipboard
-connClipPaste = do 
-    hdltag <- liftIO $ atomNew "hoodle"
-    clip <- liftIO $ clipboardGet hdltag
-    callbk <- get callBack <$> getSt 
-    liftIO $ clipboardRequestText clip (callback4Clipboard callbk)
-    return clip 
-
--- |
-
-getClipPaste :: MainCoroutine ()
-getClipPaste = do 
-    r <- await 
-    case r of 
-      GotClipboardContent -> liftIO $ putStrLn "got clipboard content"
-      x -> do 
-        liftIO $ print x 
-        getClipPaste 
-
-
--- | 
-
-callback4Clipboard :: (MyEvent -> IO ()) -> Maybe String -> IO ()
-callback4Clipboard callbk Nothing = putStrLn "nothing" >> callbk (GotClipboardContent Nothing)
-callback4Clipboard callbk (Just str) = do
-    either putStrLn (putStrLn . show) (Se.decode (read str) :: Either String [StrokeBBox]) 
-    callbk GotClipboardContent
-    -- putStrLn $ " str = " ++ str
-
--- |
--}
 
 -- |
 
 
 callback4Clip :: (MyEvent -> IO ()) -> IORef (Maybe [StrokeBBox]) -> Maybe String -> IO ()
 callback4Clip callbk ref Nothing = do 
-    putStrLn "nothing"
     writeIORef ref Nothing
     callbk (GotClipboardContent Nothing)
 callback4Clip callbk ref (Just str) = do
-    case Se.decode (read str) of 
+    let r = do let bstr = C8.pack str 
+               bstr' <- B64.decode bstr
+               Se.decode bstr' 
+    case r of 
       Left err -> do 
-        putStrLn "i am here"
         putStrLn err >> writeIORef ref Nothing
         callbk (GotClipboardContent Nothing)
       Right cnt -> do  
-        putStrLn " i am right"
         cnt `seq` writeIORef ref (Just cnt)
         callbk (GotClipboardContent (Just cnt))
-    -- putStrLn $ " str = " ++ str
 
 -- |
 
@@ -553,9 +511,7 @@ getClipFromGtk = do
     ref <- liftIO $ newIORef Nothing 
     callbk <- get callBack <$> getSt     
     liftIO $ clipboardRequestText clip (callback4Clip callbk ref)
-    -- liftIO $ threadDelay 1000000
     cnt <- liftIO $ readIORef ref
-    liftIO $  print cnt 
     case cnt of 
       Nothing -> do 
         r <- await 
@@ -579,7 +535,6 @@ pasteToSelection = do
           geometry <- liftIO (getGeometry4CurrCvs xstate)
           let pagenum = get currentPageNum cinfo 
               xojstate@(SelectState txoj) = get xournalstate xstate
-              -- clipstrs' = getClipContents . get clipboard $ xstate
               nclipstrs = adjustStrokePosition4Paste geometry (PageNum pagenum) stks
               epage = getCurrentPageEitherFromXojState cinfo xojstate 
               tpage = either gcast id epage

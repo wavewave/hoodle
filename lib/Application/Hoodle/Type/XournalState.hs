@@ -27,7 +27,7 @@ module Application.Hoodle.Type.XournalState
 , rootContainer
 , rootOfRootWindow
 , currentPenDraw
-, clipboard
+-- , clipboard
 , callBack
 , deviceList
 , penInfo
@@ -113,7 +113,7 @@ data HoodleState =
                 , _rootContainer :: Box
                 , _rootOfRootWindow :: Window
                 , _currentPenDraw :: PenDraw
-                , _clipboard :: Clipboard
+    --            , _clipboard :: Clipboard
                 , _callBack ::  MyEvent -> IO ()
                 , _deviceList :: DeviceList
                 , _penInfo :: PenInfo
@@ -144,7 +144,7 @@ emptyHoodleState =
   , _rootContainer = error "emptyHoodleState.rootContainer"
   , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
   , _currentPenDraw = emptyPenDraw 
-  , _clipboard = emptyClipboard
+  -- , _clipboard = emptyClipboard
   , _callBack = error "emtpyHxournalState.callBack"
   , _deviceList = error "emtpyHxournalState.deviceList"
   , _penInfo = defaultPenInfo 

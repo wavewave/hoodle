@@ -50,7 +50,7 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types == 0.4.*,
+                     xournal-types >= 0.4.0.999 && < 0.5,
                      xournal-parser == 0.4.*,
                      xournal-render == 0.6.*,
                      xournal-builder >= 0.1.1 && < 0.2,
@@ -65,7 +65,8 @@ Library
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
                      Diff == 0.1.*, 
-                     dyre == 0.8.*
+                     dyre == 0.8.*, 
+                     cereal == 0.3.5.*
   else 
     Build-Depends:   base == 4.*, 
                      mtl == 2.*,
@@ -76,7 +77,7 @@ Library
                      cairo == 0.12.*,
                      monad-coroutine == 0.7.*, 
                      transformers == 0.2.*,
-                     xournal-types == 0.4.*,
+                     xournal-types >= 0.4.0.999 && < 0.5 ,
                      xournal-parser == 0.4.*,
                      xournal-render >= 0.6.0 && < 0.7,
                      xournal-builder >= 0.1.1 && < 0.2,
@@ -90,7 +91,8 @@ Library
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
                      Diff == 0.1.*, 
-                     dyre == 0.8.*
+                     dyre == 0.8.*, 
+                     cereal == 0.3.5.*
   Exposed-Modules: 
 --                   Application.Hoodle.StartUp
                    Application.Hoodle.Script

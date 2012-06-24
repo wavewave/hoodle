@@ -15,6 +15,7 @@ module Application.Hoodle.Type.Event where
 import Application.Hoodle.Type.Enum
 import Application.Hoodle.Device 
 import Graphics.UI.Gtk
+import Data.Xournal.BBox
 
 -- | 
 
@@ -37,6 +38,7 @@ data MyEvent = Initialized
              | ToSinglePage
              | ToContSinglePage
              | Menu MenuEvent 
+             | GotClipboardContent (Maybe [StrokeBBox])
              deriving (Show,Eq,Ord)
 
 -- | 

@@ -39,7 +39,7 @@ data Stroke = Stroke { stroke_tool  :: !S.ByteString
                        , stroke_color :: S.ByteString 
                        , stroke_vwdata :: [(Double,Double,Double)] 
                        }
-            deriving Show
+            deriving (Show,Eq,Ord)
 
 -- | 
 

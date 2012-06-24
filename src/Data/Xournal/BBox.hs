@@ -31,7 +31,7 @@ import Data.Serialize
 
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
-          deriving (Show,Eq)
+          deriving (Show,Eq,Ord)
 
 -- | 
 
@@ -44,7 +44,7 @@ instance Serialize BBox where
 
 data StrokeBBox = StrokeBBox { strokebbox_stroke :: Stroke 
                              , strokebbox_bbox :: BBox } 
-                deriving (Show)
+                deriving (Show,Eq,Ord)
   
 -- |
 

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Application.Hoodle.Command 
+-- Module      : Hoodle.Command 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,12 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-module Application.Hoodle.Command where
+module Hoodle.Command where
 
 
-import Application.Hoodle.ProgType
-import Application.Hoodle.Job
-import Application.Hoodle.Script.Hook
+import Hoodle.ProgType
+import Hoodle.Job
+import Hoodle.Script.Hook
 
 commandLineProcess :: Hoodle -> Maybe Hook -> IO ()
 commandLineProcess (Test mfname) mhook = do 

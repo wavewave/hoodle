@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Application.Hoodle.Job 
+-- Module      : Hoodle.Job 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,12 +11,12 @@
 -- Portability : GHC
 --
 
-module Application.Hoodle.Job where
+module Hoodle.Job where
 
-import Application.Hoodle.Script.Hook
+import Hoodle.Script.Hook
 
-import Application.Hoodle.GUI
--- import Application.Hoodle.Builder
+import Hoodle.GUI
+-- import Hoodle.Builder
 
 
 

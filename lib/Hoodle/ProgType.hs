@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Application.Hoodle.ProgType 
+-- Module      : Hoodle.ProgType 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,7 +11,7 @@
 -- Portability : GHC
 --
 
-module Application.Hoodle.ProgType where 
+module Hoodle.ProgType where 
 
 import System.Console.CmdArgs
 

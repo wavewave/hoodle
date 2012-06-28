@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Application.Hoodle.StartUp
+-- Module      : Hoodle.StartUp
 -- Copyright   : (c) 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,11 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-module Application.Hoodle.StartUp where 
+module Hoodle.StartUp where 
 
 import System.Console.CmdArgs
-import Application.Hoodle.ProgType
-import Application.Hoodle.Command
+import Hoodle.ProgType
+import Hoodle.Command
 
 import Control.Monad
 import Control.Concurrent
@@ -27,7 +27,7 @@ import Config.Dyre.Relaunch
 import System.FilePath
 import System.Environment
 
-import Application.Hoodle.Script
+import Hoodle.Script
 
 -- | 
 

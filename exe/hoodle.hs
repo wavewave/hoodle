@@ -14,11 +14,11 @@ module Main where
 
 -- import System.Console.CmdArgs
 
--- import Application.Hoodle.ProgType
--- import Application.Hoodle.Command
+-- import Hoodle.ProgType
+-- import Hoodle.Command
 
-import Application.Hoodle.Script 
-import Application.Hoodle.StartUp
+import Hoodle.Script 
+import Hoodle.StartUp
 
 main :: IO () 
 main = hoodleStartMain defaultScriptConfig 

@@ -41,7 +41,7 @@ Library
                    dyre == 0.8.*, 
                    hoodle-core >= 0.6.999
   Exposed-Modules: 
-                   Application.Hoodle.ProgType
-                   Application.Hoodle.Job
-                   Application.Hoodle.Command 
-                   Application.Hoodle.StartUp
+                   Hoodle.ProgType
+                   Hoodle.Job
+                   Hoodle.Command 
+                   Hoodle.StartUp

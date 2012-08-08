@@ -23,11 +23,12 @@ import Data.Double.Conversion.ByteString
 import Data.Monoid
 import Data.Strict.Tuple
 
+{-
 infixl 4 <>
 
 (<>) :: Monoid a => a -> a -> a 
 (<>) = mappend 
-
+-}
 
 builder :: Xournal -> L.ByteString
 builder = toLazyByteString . fromXournal

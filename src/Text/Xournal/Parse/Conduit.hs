@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Xournal.Parse.Enumerator 
+-- Module      : Text.Xournal.Parse.Conduit
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,51 +13,69 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Xournal.Parse.Enumerator where
+module Text.Xournal.Parse.Conduit where
 
-import Debug.Trace
+-- from other packages
+import           Control.Applicative 
+import           Control.Category
+import           Control.Monad.Trans
+import           Control.Monad
 import qualified Data.ByteString as S
-import Data.Enumerator as E hiding (foldl')
-import qualified Data.Enumerator.List as EL
-import qualified Codec.Zlib.Enum as EZ
-import Control.Applicative 
-import Control.Monad.Trans
-import Control.Monad
-import qualified Data.Text as T (dropWhile)
-import Data.Text hiding (foldl', zipWith)
-import Data.Text.Encoding
-import Data.Text.Read
-import Data.Strict.Tuple (  Pair(..) )
-import Data.List (foldl') 
-import Control.Category
-import Data.Label
+import           Data.Conduit 
+import           Data.Conduit.Binary hiding (dropWhile) 
+import           Data.Conduit.List as CL
+import           Data.Conduit.Zlib
+import           Data.Label
+import           Data.List (foldl') 
+import           Data.Strict.Tuple (  Pair(..) )
+import qualified Data.Text as T -- hiding (foldl', zipWith)
+import           Data.Text.Encoding
+import           Data.Text.Read
+import           Data.XML.Types
+import           Text.XML.Stream.Render 
+import           Text.XML.Stream.Parse hiding (many)
+import           System.IO 
+-- from other hoodle related packages
+import           Data.Xournal.Simple 
+-- from this package
+import           Text.Xournal.Parse.Zlib
+-- 
+import           Debug.Trace
+import           Prelude hiding ((.),id,dropWhile)
+ 
 
-import Data.XML.Types
-import Text.XML.Stream.Render 
-import Text.XML.Stream.Parse hiding (many)
-import Text.Xournal.Parse.Zlib
-import System.IO 
-
-import Data.Xournal.Simple 
-import Data.Enumerator.Binary (enumHandle, enumFile)
-import Prelude hiding ((.),id)
-
+-- import Data.Enumerator as E hiding (foldl')
+-- import qualified Data.Enumerator.List as EL
+-- import Data.Enumerator.Binary (enumHandle, enumFile)
+-- import qualified Codec.Zlib.Enum as EZ
 
 -- * utils 
 
--- | 
+-- |
 
-lookAhead :: Monad m => Iteratee a m (Maybe a)
+dropWhile :: (Show a, Monad m) => (a -> Bool) -> Sink a m () 
+dropWhile p = do 
+  x <- peek 
+  case x of 
+    Nothing -> return ()
+    Just e -> if p e 
+              then CL.drop 1 >> dropWhile p 
+              else return ()
+
+-- | 
+{-
+lookAhead :: Monad m => Sink a m (Maybe a)
 lookAhead = continue loop where
   loop (Chunks []) = lookAhead
   loop (Chunks (x:xs)) = yield (Just x) (Chunks (x:xs))
   loop EOF = yield Nothing EOF
+-}
 
 -- |             
-
+{-
 trc :: (Show a) => String -> a -> b -> b
 trc str a b = trace (str ++ ":" ++ show a) b 
-                     
+-}                     
 -- |
 
 flipap :: a -> (a -> b) -> b
@@ -70,28 +88,28 @@ unit = return ()
 
 -- | 
  
-skipspace :: Text -> Text 
+skipspace :: T.Text -> T.Text 
 skipspace = T.dropWhile (\c->(c==' ') || (c=='\n') || (c=='\r'))       
     
 -- | 
 
 many0event :: Monad m => 
-              (Text,Text) 
-              -> (Event -> E.Iteratee Event m (Either String a))
-              -> E.Iteratee Event m (Either String [a])
+              (T.Text,T.Text) 
+              -> (Event -> Sink Event m (Either String a))
+              -> Sink Event m (Either String [a])
 many0event (start,end) iter = many1eventWrkr (start,end) id iter 
 
 
 -- | 
 
 many1event :: Monad m => 
-              (Text,Text) 
-              -> (Event -> E.Iteratee Event m (Either String a))
-              -> E.Iteratee Event m (Either String [a])
+              (T.Text,T.Text) 
+              -> (Event -> Sink Event m (Either String a))
+              -> Sink Event m (Either String [a])
 many1event (start,end) iter = do
-  EL.dropWhile (not.isStart start)
-  EL.head >>= 
-    maybe (return (Left ("error in " ++ unpack start))) 
+  dropWhile (not.isStart start)
+  CL.head >>= 
+    maybe (return (Left ("error in " ++ T.unpack start))) 
           (\ev -> do ex <- iter ev
                      case ex of       
                        Left err -> return (Left err) 
@@ -102,35 +120,35 @@ many1event (start,end) iter = do
 -- |    
   
 many1eventWrkr :: Monad m => 
-                  (Text,Text) 
+                  (T.Text,T.Text) 
                   -> ( [a] -> [a]  ) 
-                  -> (Event -> E.Iteratee Event m (Either String a))
-                  -> E.Iteratee Event m (Either String [a])         
+                  -> (Event -> Sink Event m (Either String a))
+                  -> Sink Event m (Either String [a])         
 many1eventWrkr (start,end) acc iter = 
     drop2NextStartOrEnd >>= \e -> do 
       case e of 
         Left (txt,ev) -> 
           if txt == start 
-          then do EL.drop 1 
+          then do CL.drop 1 
                   ex <- iter ev
                   case ex of 
                     Left err -> return (Left err)
                     Right x -> 
                       many1eventWrkr (start,end) (acc.(x:)) iter  
-          else return (Left ("got " ++ unpack txt))
+          else return (Left ("got " ++ T.unpack txt))
         Right txt -> 
           if txt == end 
           then do return (Right (acc [])) 
-          else return (Left ("got " ++ unpack txt))
+          else return (Left ("got " ++ T.unpack txt))
   
   
 -- | 
 
 drop2NextStartOrEnd :: (Monad m) => 
-                       Iteratee Event m (Either (Text,Event) Text)
+                       Sink Event m (Either (T.Text,Event) T.Text)
 drop2NextStartOrEnd = do 
-  EL.dropWhile (not.isEventStartEnd)
-  melm <- lookAhead 
+  dropWhile (not.isEventStartEnd)
+  melm <- peek 
   case melm of  
     Just elm@(EventBeginElement name _) 
       -> return (Left (nameLocalName name,elm))
@@ -144,10 +162,10 @@ drop2NextStartOrEnd = do
 
 -- | parse whole xournal file 
 
-pXournal :: Monad m => Iteratee Event m (Either String Xournal)
+pXournal :: Monad m => Sink Event m (Either String Xournal)
 pXournal = do  
-  EL.dropWhile (not.isStart "xournal")
-  EL.head >>= maybe (
+  dropWhile (not.isStart "xournal")
+  CL.head >>= maybe (
     return (Left "no xournal"))
     (const $ do 
        title <- pTitle 
@@ -156,58 +174,59 @@ pXournal = do
  
 -- | parse one page 
 
-pPage :: Monad m => Event -> Iteratee Event m (Either String Page)
+pPage :: Monad m => Event -> Sink Event m (Either String Page)
 pPage ev = do let dim = getDimension ev 
               bkg <- pBkg
               layers <- many1event ("layer","page") pLayer 
-              EL.dropWhile (not.isEnd "page")
-              EL.drop 1 
+              dropWhile (not.isEnd "page")
+              CL.drop 1 
               return (Page <$> dim <*> bkg <*> layers )  
 
 -- | 
               
-pTitle :: Monad m => Iteratee Event m (Either String S.ByteString) 
-pTitle = do EL.dropWhile (not.isStart "title")
-            EL.drop 1
-            EL.head >>= 
+pTitle :: Monad m => Sink Event m (Either String S.ByteString) 
+pTitle = do dropWhile (not.isStart "title")
+            CL.drop 1 
+            CL.head >>= 
               maybe (return (Left "not title"))
                     (\ev -> do let title = getContent ev 
-                               EL.dropWhile (not.isEnd "title")
-                               EL.drop 1 
+                               dropWhile (not.isEnd "title")
+                               CL.drop 1 
                                return (encodeUtf8 <$> title) )
 
 -- | 
 
-pBkg :: Monad m => Iteratee Event m (Either String Background) 
-pBkg = do EL.dropWhile (not.isStart "background")
-          EL.head >>= 
+pBkg :: Monad m => Sink Event m (Either String Background) 
+pBkg = do dropWhile (not.isStart "background")
+          -- CL.drop 1 
+          CL.head >>= 
             maybe (return (Left "not background"))
                   (\ev -> do let bkg = getBackground ev 
-                             EL.dropWhile (not.isEnd "background")
-                             EL.drop 1 
+                             dropWhile (not.isEnd "background")
+                             CL.drop 1 
                              return bkg) 
 
 -- | 
           
-pLayer :: Monad m => Event -> Iteratee Event m (Either String Layer) 
-pLayer _ev = do strokes <- many0event ("stroke","layer") pStroke 
-                EL.dropWhile (not.isEnd "layer")
-                EL.drop 1 
-                return (Layer <$> strokes)
+pLayer :: Monad m => Event -> Sink Event m (Either String Layer) 
+pLayer ev = do strokes <- many0event ("stroke","layer") pStroke 
+               dropWhile (not.isEnd "layer")
+               CL.drop 1 
+               return (Layer <$> strokes)
 
 -- | 
                
-pStroke :: Monad m => Event -> Iteratee Event m (Either String Stroke) 
+pStroke :: Monad m => Event -> Sink Event m (Either String Stroke) 
 pStroke ev = do 
   let estr1wdth = getStroke ev 
   -- trc "pStroke" estr1wdth unit 
-  EL.head >>= 
+  CL.head >>= 
     maybe (return (Left "pStroke ecoord"))
           (\elm -> do 
-              let txt = getContent elm :: Either String Text
+              let txt = getContent elm :: Either String T.Text
                   ctnt = getStrokeContent id =<< txt 
-              EL.dropWhile (not.isEnd "stroke") 
-              EL.drop 1 
+              dropWhile (not.isEnd "stroke") 
+              CL.drop 1 
               let f23 (x :!: y) z = (x,y,z)
               let rfunc d' (Stroke t c _ _, sw) = case sw of
                       SingleWidth w' -> Stroke t c w' d'  
@@ -221,7 +240,7 @@ pStroke ev = do
 -- |             
 
 getStrokeContent :: ([Pair Double Double] -> [Pair Double Double])
-                    -> Text
+                    -> T.Text
                     -> Either String [Pair Double Double]
 getStrokeContent acc txt = 
   let eaction = do (x,rest1) <- double (skipspace txt)
@@ -262,7 +281,7 @@ data StrokeWidth = SingleWidth Double | VarWidth [Double]
 -- |
 
 getWidth :: ([Double] -> [Double])
-            -> Text 
+            -> T.Text 
             -> Either String StrokeWidth
 getWidth acc txt = 
     case double (skipspace txt) of 
@@ -331,13 +350,13 @@ getDimension (EventBeginElement _name namecontent) =
       then let ContentText txt = Prelude.head contents 
            in (Dim w) . fst <$> double txt
       else acc 
-getDimension _ = Left "not a dimension"
+getDimension r = Left ("not a dimension : " ++ show r)
 
 -- | get Content   
 
-getContent :: Event -> Either String Text
+getContent :: Event -> Either String T.Text
 getContent (EventContent (ContentText txt)) = Right txt 
-getContent _ = Left "no content"
+getContent r = Left ("no content" ++ show r)
   
 
 -- * predicates 
@@ -351,13 +370,13 @@ isEventStartEnd _ = False
 
 -- | check start of element with name txt  
   
-isStart :: Text -> Event -> Bool 
+isStart :: T.Text -> Event -> Bool 
 isStart txt (EventBeginElement name _) = nameLocalName name == txt
 isStart _ _ = False 
 
 -- | check end of element with name txt 
 
-isEnd :: Text -> Event -> Bool
+isEnd :: T.Text -> Event -> Bool
 isEnd txt (EventEndElement name) = nameLocalName name == txt 
 isEnd _ _ = False 
 
@@ -366,9 +385,9 @@ isEnd _ _ = False
 
 -- | generic xml file driver
 
-parseXmlFile :: (MonadIO m) => Handle -> E.Iteratee Event m a -> m a
-parseXmlFile h iter = do 
-  run_ $ enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
+parseXmlFile :: (MonadThrow m, MonadIO m) => Handle -> Sink Event m a -> m a
+parseXmlFile h iter = sourceHandle h =$= parseBytes def $$ iter 
+  -- enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
 
 
 -- | for xournal 
@@ -379,8 +398,9 @@ parseXojFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pXournal
 -- | 
 
 parseXojGzFile :: FilePath -> IO (Either String Xournal) 
-parseXojGzFile fp =
- run_ $ enumFile fp $$ EZ.ungzip =$ parseBytes def =$ pXournal 
+parseXojGzFile fp = withFile fp ReadMode $ \h -> 
+                      sourceHandle h =$= ungzip =$= parseBytes def $$ pXournal 
+ --  run_ $ enumFile fp $$ EZ.ungzip =$ parseBytes def =$ pXournal 
 
 -- | 
 
@@ -392,133 +412,10 @@ parseXournal fname =
 
 -- | printing for debug
 
-iterPrint :: (Show s,MonadIO m) => E.Iteratee s m () 
+iterPrint :: (Show s,MonadIO m) => Sink s m () 
 iterPrint = do
-  x <- EL.head
+  x <- CL.head
   maybe (return ()) (liftIO . print >=> \_ -> iterPrint) x
 
 
-{-
--- |  
-
-parseXmlFile :: (MonadIO m) => Handle -> E.Iteratee Event m a -> m a
-parseXmlFile h iter = do 
-  run_ $ enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
--}
-
-
--- Test functions
--- This is new xml event approach of xournal parsing
-
-
-
-{-
-isPageStart :: Event -> Bool 
-isPageStart (EventBeginElement name _) = nameLocalName name == "page"
-isPageStart _ = False 
-
-isPageEnd :: Event -> Bool 
-isPageEnd (EventEndElement name ) = nameLocalName name == "page"
-isPageEnd _ = False 
--}
-
-{-    dropWhileNConsume (not.isStart "xournal") 
-    *> pTitle 
-    <* dropWhileNConsume (not.isEnd "xournal") -}
-{-    Nothing -> return ()
-    Just y -> liftIO (print y) >> iterPrint -}
-{-         
-parseUpToFirstPage :: (Monad m) => E.Iteratee Event m [Event] 
-parseUpToFirstPage = do 
-  evs <- EL.takeWhile (not.isPageStart)
-  return evs 
--}  
-{-  
-  dropWhileNConsume (not.isStart "title")
-         *> (fmap getContent . maybe (Left "no title") Right <$> EL.head)
-         <* dropWhileNConsume (not.isEnd "title") -}
-
-{-               
-parsePages :: (Monad m) => E.Iteratee Event m Page
-parsePages = E.sequence $ do 
-                 EL.dropWhile (not.isPageStart)
-                 EL.drop 1
-                 bkg <- parseBackground
-                 ls <- parseLayers  
-                 EL.takeWhile (not.isPageStart)
-                 EL.drop 1 
-                 return (Page ev 
-            
-myTakeWhile :: (s -> Bool) -> Step s m a -> Step s m a 
-myTakeWhile chk iter = 
-  mel <- EL.head 
-  case mel of 
-    Nothing -> return 
-    Just el -> 
--}               
-
--- consumeStrokes x = chunkAsStrokes =$ x
--- | title 
-
-{-
-pTitle :: Monad m => Iteratee Event m (Either String Text)
-pTitle = withEvent "title" $ do
-           melm <- EL.head 
-           case melm of 
-             Nothing -> return (Left "title" )
-             Just elm -> return (getContent elm)
--}         
-
-
--- | 
-{-  
-instance (Monad m) => Alternative (E.Iteratee Event m) where
-  empty = mzero 
-  a1 <|> a2 =  
--}
-
-{-
-instance (MonadPlus m) => MonadPlus (Iteratee s m) where
-  mzero = lift mzero 
-  a `mplus` b = E.Iteratee (E.runIteratee a `mplus` E.runIteratee b)
--}
-
--- | 
-{-   
-
-iterMany :: (MonadPlus m) => Iteratee s m a -> Iteratee s m [a] 
-iterMany = unwrapMonad . many . WrapMonad 
--}  
-
-{-
-onePrint :: (Monad m, Show s) => Iteratee s m () 
-onePrint = do 
-  EL.head >>=
-    maybe (return ()) 
-          (\x -> trace ("dropped item" ++ show x) (return ()))
--- | 
-  
-dropWhileNConsume :: (Monad m, Show s) => (s -> Bool) -> Iteratee s m () 
-dropWhileNConsume f = do
-    str <- EL.takeWhile f 
-    trace ("dropWhileNConsume" ++ show str) unit
-    onePrint -- EL.drop 1
-
--- | 
-
-upToEventStart :: (Monad m) => Text -> Iteratee Event m () 
-upToEventStart txt = dropWhileNConsume (not.isStart txt)
-
--- | 
-
-upToEventEnd :: (Monad m) => Text -> Iteratee Event m () 
-upToEventEnd txt = dropWhileNConsume (not.isEnd txt)
-                                     
--- | 
-
-withEvent :: Monad m => Text -> Iteratee Event m a -> Iteratee Event m a 
-withEvent txt iter = upToEventStart txt *> iter <* upToEventEnd txt 
-
--- data SuccessOrFail a b = Success a | Fail Event  
--}
 

@@ -12,23 +12,35 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Xournal.Parse where
+module Text.Xournal.Parse 
+( module Text.Xournal.Parse.Conduit ) where
 
-import Control.Applicative 
-import Data.Attoparsec
-import Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
-                             , isHorizontalSpace)
+import Text.Xournal.Parse.Conduit
+
+{-
+-- from other packages by others
+import           Control.Applicative 
+import           Data.Attoparsec
+import           Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
+                                       , isHorizontalSpace)
 import qualified Data.ByteString.Char8 as B hiding (map) 
-import qualified Data.Iteratee as Iter
-import Data.Iteratee.Char
-import qualified Data.Attoparsec.Iteratee as AI
-import Data.Char 
-import Data.Xournal.Simple
-import Text.Xournal.Parse.Zlib
-import Data.Strict.Tuple
-
+import           Data.Char 
+import qualified Data.Conduit as C
+import           Data.Conduit.Attoparsec
+import           Data.Strict.Tuple
+-- from other hoodle packages
+import           Data.Xournal.Simple
+-- from this package
+import           Text.Xournal.Parse.Zlib
+--
 import Prelude hiding (takeWhile)
 
+-- import qualified Data.Iteratee as Iter
+-- import Data.Iteratee.Char
+-- import qualified Data.Attoparsec.Iteratee as AI
+-}
+
+{-
 --  |
 
 skipSpaces :: Parser () 
@@ -352,7 +364,7 @@ backgroundclose = string "/>"
 
 -- | 
 
-iter_xournal :: Iter.Iteratee B.ByteString IO Xournal
+iter_xournal :: Sink B.ByteString IO Xournal
 iter_xournal = AI.parserToIteratee parser_xournal 
 
 -- | 
@@ -374,4 +386,4 @@ cat_xournalgz str = Iter.fileDriver
 -- | 
 
 onlyresult (Done _ r) = r 
-
+-}

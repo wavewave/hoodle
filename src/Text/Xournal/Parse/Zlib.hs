@@ -12,20 +12,25 @@
 
 module Text.Xournal.Parse.Zlib where
 
-import Control.Monad.IO.Class
-import Data.Iteratee.ZLib as IZ
-import Data.Iteratee as I
+-- from other packages
+import           Control.Monad.IO.Class
+import           Data.ByteString 
+import qualified Data.ByteString.Lazy as LB
+import           Data.Conduit
+import qualified Data.Conduit.List as CL
+import           Data.Conduit.Zlib
+import           System.IO
+
+-- import Data.Iteratee.ZLib as IZ
+-- import Data.Iteratee as I
 -- import Codec.Zlib.Enum as EZ
 -- import Data.Enumerator as E
-import Data.ByteString 
-import qualified Data.ByteString.Lazy as LB
 
-import System.IO
 
 -- |
 
-ungzipXoj :: MonadIO m => I.Enumerator ByteString m a
-ungzipXoj = IZ.enumInflate IZ.GZip IZ.defaultDecompressParams
+-- ungzipXoj :: MonadIO m => I.Enumerator ByteString m a
+-- ungzipXoj = IZ.enumInflate IZ.GZip IZ.defaultDecompressParams
 
 -- | 
 

@@ -15,7 +15,7 @@
 module Hoodle.ModelAction.File where
 
 import Hoodle.Type.XournalState
-import qualified Text.Xournal.Parse.Enumerator as PE
+import qualified Text.Xournal.Parse.Conduit as PC
 import Data.Maybe 
 import Control.Monad
 import Control.Category
@@ -40,7 +40,7 @@ getFileContent :: Maybe FilePath
                -> IO HoodleState 
 getFileContent (Just fname) xstate = do 
     -- xojcontent <- P.read_xournal fname 
-    PE.parseXojFile fname >>= \x -> case x of  
+    PC.parseXojFile fname >>= \x -> case x of  
       Left str -> do
         putStrLn $ "file reading error : " ++ str 
         return xstate 

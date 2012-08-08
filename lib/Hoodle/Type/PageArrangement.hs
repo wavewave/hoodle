@@ -1,4 +1,4 @@
-{-# LANGUAGE EmptyDataDecls, GADTs, TypeOperators, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE EmptyDataDecls, GADTs, TypeOperators, GeneralizedNewtypeDeriving, NoMonoPatBinds #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -213,8 +213,10 @@ pageDimension = lens getter setter
 canvasDimension :: PageArrangement a :-> CanvasDimension 
 canvasDimension = lens getter setter 
   where 
+    getter :: PageArrangement a -> CanvasDimension
     getter (SingleArrangement cdim _ _) = cdim
     getter (ContinuousSingleArrangement cdim _ _ _) = cdim
+    setter :: CanvasDimension -> PageArrangement a -> PageArrangement a
     setter cdim (SingleArrangement _ pdim vbbox) = SingleArrangement cdim pdim vbbox
     setter cdim (ContinuousSingleArrangement _ ddim pfunc vbbox) = 
       ContinuousSingleArrangement cdim ddim pfunc vbbox
@@ -223,15 +225,18 @@ canvasDimension = lens getter setter
 viewPortBBox :: PageArrangement a :-> ViewPortBBox 
 viewPortBBox = lens getter setter 
   where 
+    getter :: PageArrangement a -> ViewPortBBox   
     getter (SingleArrangement _ _ vbbox) = vbbox 
     getter (ContinuousSingleArrangement _ _ _ vbbox) = vbbox 
+    setter :: ViewPortBBox -> PageArrangement a -> PageArrangement a
     setter vbbox (SingleArrangement cdim pdim _) = SingleArrangement cdim pdim vbbox 
     setter vbbox (ContinuousSingleArrangement cdim ddim pfunc _) = 
       ContinuousSingleArrangement cdim ddim pfunc vbbox
 
 desktopDimension :: PageArrangement a :-> DesktopDimension 
 desktopDimension = lens getter (error "setter for desktopDimension is not defined")
-  where getter (SingleArrangement _ (PageDimension dim) _) = DesktopDimension dim
+  where getter :: PageArrangement a -> DesktopDimension
+        getter (SingleArrangement _ (PageDimension dim) _) = DesktopDimension dim
         getter (ContinuousSingleArrangement _ ddim _ _) = ddim 
 
 

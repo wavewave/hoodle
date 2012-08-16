@@ -9,6 +9,7 @@ import Control.Monad.Trans.Error
 import System.INotify 
 -- from this package 
 import Driver 
+import Event 
 import EventHandler 
 import Object 
 -- import FileObserver 

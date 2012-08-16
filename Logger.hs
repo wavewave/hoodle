@@ -1,5 +1,9 @@
 {-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 
+---------------------------
+-- | describe logger
+---------------------------
+
 module Logger where
 
 import Control.Monad.Trans 

@@ -10,21 +10,21 @@ module Driver where
 import Control.Monad.Trans
 -- 
 import Coroutine 
+import Event 
 import Logger 
-import Object 
-
--- | event 
-data Event = Message String 
+import Object
+import World  
 
 -- | signature of IO event driver
 data DrvOp i o where 
   Dispatch :: DrvOp Event () 
+  GetEvent :: DrvOp () Event 
 
 -- | event driver input 
 type DrvInput = MethodInput DrvOp
 
 -- | driver server monad 
-type DriverM = ServerM DrvOp 
+type DriverT = ServerT DrvOp 
 
 -- | driver 
 type Driver m = ServerObj DrvOp m  
@@ -38,16 +38,24 @@ dispatch ev = do request (Input Dispatch ev)
                  return ()
 
 -- | basic driver 
-driver :: (Monad m, MonadLog m) => Driver m () 
-driver = Server (driverW logger)
+driver :: (Monad m, MonadLog m, MonadIO m) => Driver m () 
+driver = Server (driverW logger world) 
 
 -- | for testing internal state 
-driverW :: (Monad m, MonadLog m) => LogServer (DriverM m) () -> DrvInput -> DriverM m () 
-driverW logobj (Input Dispatch ev) = do 
-    Just (logobj',_) <- case ev of
-                          Message str -> (logobj `connect` (writeLog str)) 
+driverW :: (Monad m, MonadLog m, MonadIO m) => 
+           LogServer (DriverT m) () 
+        -> World (DriverT m) () 
+        -> DrvInput -> DriverT m () 
+driverW logobj worldobj (Input Dispatch ev) = do 
+    (logobj',worldobj') <- case ev of
+      Message str -> do 
+        Just (logobj',_) <- logobj `connect` (writeLog str)
+        Just (worldobj',_) <- worldobj `connect` (giveEvent ev)
+        Just (worldobj'',_) <- worldobj' `connect` render 
+        return (logobj',worldobj')
+ 
     req <- request (Output Dispatch ()) 
-    driverW logobj' req 
+    driverW logobj' worldobj' req 
     -- driverW logobj req 
 
 -- | convenience routine for driver 

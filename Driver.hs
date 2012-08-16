@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
+{-# LANGUAGE GADTs, FlexibleInstances #-}
 
 ----------------------------
 -- | IO event driver
@@ -7,11 +7,10 @@
 
 module Driver where 
 
-import Control.Monad.Error
-import Control.Monad.State 
-import Control.Monad.Trans 
+import Control.Monad.Trans
 -- 
 import Coroutine 
+import Logger 
 import Object 
 
 -- | event 
@@ -24,8 +23,11 @@ data DrvOp i o where
 -- | event driver input 
 type DrvInput = MethodInput DrvOp
 
+-- | driver server monad 
+type DriverM = ServerM DrvOp 
+
 -- | driver 
-type Driver m r = ServerObj DrvOp m r 
+type Driver m = ServerObj DrvOp m  
 
 -- | driver client 
 type DrvClient m r = ClientObj DrvOp m r 
@@ -35,34 +37,20 @@ dispatch :: (Monad m) => Event -> DrvClient m ()
 dispatch ev = do request (Input Dispatch ev) 
                  return ()
 
--------------------------
--- Logging monad 
--------------------------
-
-class (Monad m) => MonadLog m where 
-    scribe :: String -> m () 
-  
-instance MonadLog IO where
-    scribe = putStrLn 
-
-instance (MonadIO m) => MonadLog m where
-    scribe = liftIO . putStrLn 
-
-
 -- | basic driver 
 driver :: (Monad m, MonadLog m) => Driver m () 
-driver = driverW 0 
+driver = Server (driverW logger)
 
 -- | for testing internal state 
-driverW :: (Monad m, MonadLog m) => Int -> Driver m () 
-driverW i (Input Dispatch ev) = do 
-    case ev of
-      Message str -> lift (scribe $ show i ++ "th event : " ++ str)
+driverW :: (Monad m, MonadLog m) => LogServer (DriverM m) () -> DrvInput -> DriverM m () 
+driverW logobj (Input Dispatch ev) = do 
+    Just (logobj',_) <- case ev of
+                          Message str -> (logobj `connect` (writeLog str)) 
     req <- request (Output Dispatch ()) 
-    driverW (i+1) req 
-
+    driverW logobj' req 
+    -- driverW logobj req 
 
 -- | convenience routine for driver 
-fire :: (Monad m, MonadLog m) => Event 
-        -> ErrorT String (StateT (Driver m ()) m) ()
+fire :: (Monad m, MonadLog m) => Event -> EStT (Driver m ()) m () --  -> ErrorT String (StateT (Driver m ()) m) ()
 fire = query . dispatch  
+

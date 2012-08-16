@@ -49,8 +49,9 @@ type Coroutine req ans = FreeT (Request req ans)
 request :: Monad m => req -> Coroutine req ans m ans
 request r = wrap (Request r return)
 
+
 -- | type alias for Server 
-type Server req ans m r = req -> Coroutine ans req m r 
+newtype Server req ans m r = Server { server :: req -> Coroutine ans req m r} 
  
 -- | type alias for Client 
 type Client req ans m r = Coroutine req ans m r 
@@ -60,30 +61,30 @@ connect :: (Monad m) =>
            Server req ans m ()    -- ^ server coroutine
         -> Coroutine req ans m r  -- ^ client coroutine
         -> m (Maybe (Server req ans m (), r))
-connect sf c = do 
+connect (Server sf) c = do 
     y <- runFreeT c           
     case y of
-      Pure r -> return (Just (sf,r))
+      Pure r -> return (Just ((Server sf),r))
       Free (Request rq af) -> do 
         x <- runFreeT (sf rq)
         case x of 
           Pure _ -> return Nothing
-          Free (Request ans rf) -> connect rf (af ans)
+          Free (Request ans rf) -> connect (Server rf) (af ans)
 
 -- | connecting server and client in error monad
 connectE :: Monad m => 
             Server req ans m ()    -- ^ server coroutine
          -> Coroutine req ans m r  -- ^ client coroutine
          -> ErrorT String m (Server req ans m (), r)
-connectE sf c = do 
+connectE (Server sf) c = do 
     y <- lift (runFreeT c)
     case y of
-      Pure r -> return (sf,r)
+      Pure r -> return ((Server sf),r)
       Free (Request rq af) -> do 
         x <- lift (runFreeT (sf rq))
         case x of 
           Pure _ -> throwError "server finished"
-          Free (Request ans rf) -> connectE rf (af ans)
+          Free (Request ans rf) -> connectE (Server rf) (af ans)
 
 
 {-

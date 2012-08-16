@@ -28,3 +28,4 @@ watchFile inotify fp handler = do
       action (Unknown _) = handler (D.Message "Unknown")
   addWatch inotify [AllEvents] fp action
   
+

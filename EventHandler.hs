@@ -1,12 +1,11 @@
 module EventHandler where 
 
 import Control.Concurrent.MVar 
-import Control.Monad 
 import Control.Monad.State 
 import Control.Monad.Error
 -- 
 import Driver 
-
+import Logger 
 
 eventHandler :: MVar (Driver IO ()) -> Event -> IO ()
 eventHandler dref ev = do 

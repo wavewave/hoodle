@@ -11,8 +11,7 @@ module QServer (
   query 
 ) where 
 
--- import Control.Monad.State
--- import Control.Monad.Trans.Error
+
 -- 
 import Coroutine
 import Object 
@@ -67,13 +66,3 @@ qserver = go (Queue [] [])
                                 go q' req'
 
 
-{-
--- | 
-query :: (Monad m) => QClient a m r 
-      -> ErrorT String (StateT (QServer a m ()) m) r 
-query cli = do 
-  qserv <- lift get 
-  (qserv',r) <- mapErrorT lift (qserv `connectE` cli )
-  lift (put qserv')
-  return r
--}

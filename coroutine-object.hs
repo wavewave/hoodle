@@ -10,10 +10,13 @@ import System.INotify
 -- from this package 
 import Driver 
 import EventHandler 
-import HINotify 
+import Object 
+-- import FileObserver 
+-- import HINotify 
 import Lsof 
-import QServer
+-- import QServer
 
+{-
 -- | test qclient 
 test_qclient :: IO () 
 test_qclient = eaction >>= either putStrLn (const (putStrLn "good end")) 
@@ -29,6 +32,8 @@ test_qclient = eaction >>= either putStrLn (const (putStrLn "good end"))
           r3  <- query $ do z <- retrieveQ 
                             return z 
           liftIO $ print r3  
+-}
+
 
 -- | test driver 
 test_driver :: IO () 
@@ -51,7 +56,7 @@ test_eventhandler = do
     putStrLn "----"
   
 -- | test hinotify 
-test_hinotify :: IO () 
+{- test_hinotify :: IO () 
 test_hinotify = do 
     dref <- newMVar driver 
     let handler = eventHandler dref 
@@ -60,6 +65,7 @@ test_hinotify = do
     watchFile inotify "test.txt" handler 
     threadDelay 10000000000
     killINotify inotify  
+-}
 
 -- | test lsof
 test_lsof :: IO () 
@@ -68,6 +74,19 @@ test_lsof = do
     t <- checkLsof "test" 
     print t
 
+-- | 
+test_fileobserver :: IO () 
+test_fileobserver = do 
+    putStrLn "testing file observer"
+    dref <- newMVar driver 
+    eventHandler dref (Message "hi")
+    putStrLn "----"
+    eventHandler dref (Message "hello")
+    putStrLn "----"
+    eventHandler dref (Message "dlsl") 
+    putStrLn "----"
+   
+
 
 ------------------------------- 
 -- test 
@@ -75,9 +94,9 @@ test_lsof = do
 
 main :: IO ()
 main = do 
-    test_qclient
-    test_driver 
-    test_eventhandler
+    -- test_qclient
+    -- test_driver 
+    -- test_eventhandler
     -- test_hinotify 
-    test_lsof 
-    threadDelay 300000000
+    -- test_lsof 
+    test_fileobserver

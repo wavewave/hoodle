@@ -2,12 +2,15 @@
 
 module Main where
 
+import Control.Concurrent 
 import Control.Concurrent.MVar 
 import Control.Monad.State
 import Control.Monad.Trans.Error
+import System.INotify 
 -- from this package 
 import Driver 
 import EventHandler 
+import HINotify 
 import QServer
 
 -- | test qclient 
@@ -46,7 +49,16 @@ test_eventhandler = do
   eventHandler dref (Message "dlsl") 
   putStrLn "----"
   
-
+-- | test hinotify 
+test_hinotify :: IO () 
+test_hinotify = do 
+  dref <- newMVar driver 
+  let handler = eventHandler dref 
+  handler (Message "hi")
+  inotify <- initINotify 
+  watchFile inotify "test.txt" handler 
+  threadDelay 10000000000
+  killINotify inotify  
 
 
 
@@ -60,3 +72,4 @@ main = do
     test_qclient
     test_driver 
     test_eventhandler
+    test_hinotify 

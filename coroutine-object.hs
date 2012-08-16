@@ -2,12 +2,15 @@
 
 module Main where
 
+import Control.Concurrent.MVar 
 import Control.Monad.State
 import Control.Monad.Trans.Error
--- 
-import QServer 
+-- from this package 
+import Driver 
+import EventHandler 
+import QServer
 
--- | test initializer 
+-- | test qclient 
 test_qclient :: IO () 
 test_qclient = eaction >>= either putStrLn (const (putStrLn "good end")) 
   where eaction :: IO (Either String ())
@@ -23,6 +26,26 @@ test_qclient = eaction >>= either putStrLn (const (putStrLn "good end"))
                             return z 
           liftIO $ print r3  
 
+-- | test driver 
+test_driver :: IO () 
+test_driver = eaction >>= either putStrLn (const (putStrLn "good end"))
+  where eaction :: IO (Either String ())
+        eaction = flip evalStateT driver $ runErrorT $ do 
+          query $ dispatch (Message "hello")
+          query $ dispatch (Message "how are you?")
+          return () 
+          
+-- | test event handling 
+test_eventhandler :: IO () 
+test_eventhandler = do 
+  dref <- newMVar driver 
+  eventHandler dref (Message "hi")
+  putStrLn "----"
+  eventHandler dref (Message "hello")
+  putStrLn "----"
+  eventHandler dref (Message "dlsl") 
+  putStrLn "----"
+  
 
 
 
@@ -35,3 +58,5 @@ test_qclient = eaction >>= either putStrLn (const (putStrLn "good end"))
 main :: IO ()
 main = do 
     test_qclient
+    test_driver 
+    test_eventhandler

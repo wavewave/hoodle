@@ -11,6 +11,7 @@ import System.INotify
 import Driver 
 import EventHandler 
 import HINotify 
+import Lsof 
 import QServer
 
 -- | test qclient 
@@ -41,26 +42,31 @@ test_driver = eaction >>= either putStrLn (const (putStrLn "good end"))
 -- | test event handling 
 test_eventhandler :: IO () 
 test_eventhandler = do 
-  dref <- newMVar driver 
-  eventHandler dref (Message "hi")
-  putStrLn "----"
-  eventHandler dref (Message "hello")
-  putStrLn "----"
-  eventHandler dref (Message "dlsl") 
-  putStrLn "----"
+    dref <- newMVar driver 
+    eventHandler dref (Message "hi")
+    putStrLn "----"
+    eventHandler dref (Message "hello")
+    putStrLn "----"
+    eventHandler dref (Message "dlsl") 
+    putStrLn "----"
   
 -- | test hinotify 
 test_hinotify :: IO () 
 test_hinotify = do 
-  dref <- newMVar driver 
-  let handler = eventHandler dref 
-  handler (Message "hi")
-  inotify <- initINotify 
-  watchFile inotify "test.txt" handler 
-  threadDelay 10000000000
-  killINotify inotify  
+    dref <- newMVar driver 
+    let handler = eventHandler dref 
+    handler (Message "hi")
+    inotify <- initINotify 
+    watchFile inotify "test.txt" handler 
+    threadDelay 10000000000
+    killINotify inotify  
 
-
+-- | test lsof
+test_lsof :: IO () 
+test_lsof = do 
+    putStrLn "testing lsof"
+    t <- checkLsof "test" 
+    print t
 
 
 ------------------------------- 
@@ -72,4 +78,6 @@ main = do
     test_qclient
     test_driver 
     test_eventhandler
-    test_hinotify 
+    -- test_hinotify 
+    test_lsof 
+    threadDelay 300000000

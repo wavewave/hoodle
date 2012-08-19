@@ -23,7 +23,7 @@ type ClientObj s = Client (MethodInput s) (MethodOutput s)
 
 
 -- | convenient error state monad for object  
-type EStT s m = ErrorT String (StateT s m)  
+type EStT s m = ErrorT (CoroutineError ()) (StateT s m)  
 
 -- |  
 query :: (Monad m) => ClientObj s m r -> EStT (ServerObj s m ()) m r   -- -> ErrorT String (StateT (ServerObj s m ()) m) r 

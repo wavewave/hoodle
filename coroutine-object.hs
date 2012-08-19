@@ -8,6 +8,7 @@ import Control.Monad.State
 import Control.Monad.Trans.Error
 import System.INotify 
 -- from this package 
+import Coroutine
 import Driver 
 import Event 
 import EventHandler 
@@ -38,8 +39,8 @@ test_qclient = eaction >>= either putStrLn (const (putStrLn "good end"))
 
 -- | test driver 
 test_driver :: IO () 
-test_driver = eaction >>= either putStrLn (const (putStrLn "good end"))
-  where eaction :: IO (Either String ())
+test_driver = eaction >>= either (putStrLn.show) (const (putStrLn "good end"))
+  where eaction :: IO (Either (CoroutineError ()) ())
         eaction = flip evalStateT driver $ runErrorT $ do 
           query $ dispatch (Message "hello")
           query $ dispatch (Message "how are you?")

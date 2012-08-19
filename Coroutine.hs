@@ -1,3 +1,5 @@
+{-# LANGUAGE StandaloneDeriving #-}
+
 module Coroutine where 
 
 import Control.Monad.Error
@@ -79,11 +81,19 @@ connect s c = do
           Free (Request ans rf) -> connect (ReaderT rf) (af ans)
 -}
 
+data CoroutineError r = NoError | ServerFinished r | Other String 
+
+deriving instance (Show r) => Show (CoroutineError r) 
+
+instance Error (CoroutineError r) where 
+  noMsg = NoError 
+  strMsg str = Other str 
+
 -- | connecting server and client in error monad
 connectE :: Monad m => 
-            Server req ans m ()    -- ^ server coroutine
+            Server req ans m r'    -- ^ server coroutine
          -> Coroutine req ans m r  -- ^ client coroutine
-         -> ErrorT String m (Server req ans m (), r)
+         -> ErrorT (CoroutineError r') m (Server req ans m r', r)
 connectE s c = do 
     y <- lift (runFreeT c)
     case y of
@@ -91,7 +101,7 @@ connectE s c = do
       Free (Request rq af) -> do 
         x <- lift (runFreeT (runReaderT s rq))
         case x of 
-          Pure _ -> throwError "server finished"
+          Pure r' -> throwError (ServerFinished r')
           Free (Request ans rf) -> connectE (ReaderT rf) (af ans)
 
 

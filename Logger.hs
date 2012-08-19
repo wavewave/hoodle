@@ -6,6 +6,7 @@
 
 module Logger where
 
+import Control.Monad.Reader
 import Control.Monad.Trans 
 --
 import Coroutine 
@@ -50,7 +51,7 @@ logger = loggerW 0
  
 -- |
 loggerW :: (MonadLog m) => Int -> LogServer m () 
-loggerW n = Server (f n)
+loggerW n = ReaderT (f n)
   where f n req = case req of 
                     Input WriteLog msg -> do lift (scribe (show n ++ " : " ++ msg))
                                              req <- request (Output WriteLog ())

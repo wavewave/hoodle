@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, RankNTypes, ImpredicativeTypes #-}
+{-# LANGUAGE GADTs, RankNTypes #-}
 
 module Object where 
 
@@ -16,10 +16,10 @@ data MethodOutput s = forall i o.  Output (s i o) o
 type ServerT s = Coroutine (MethodOutput s) (MethodInput s)  
 
 -- | Server object
-type ServerObj s m = Server (MethodInput s) (MethodOutput s) m 
+type ServerObj s m = Server (MethodInput s) (MethodOutput s) m  
  
 -- | Client object
-type ClientObj s m r = Client (MethodInput s) (MethodOutput s) m r 
+type ClientObj s = Client (MethodInput s) (MethodOutput s)  
 
 
 -- | convenient error state monad for object  

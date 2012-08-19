@@ -6,6 +6,7 @@
 
 module World where 
 
+import Control.Monad.Reader
 import Control.Monad.Trans 
 -- 
 import Coroutine
@@ -30,17 +31,17 @@ render :: (Monad m) => ClientObj WorldOp m ()
 render = request (Input Render ()) >> return ()
 
 -- | 
-world = Server (worldW "") 
-
--- | 
-worldW str (Input Render ()) = do 
-    liftIO $ putStrLn str 
-    req <- request (Output Render ())
-    worldW str req 
-worldW str (Input GiveEvent ev) = do 
-    let str' = case ev of 
-                 Message msg -> str ++ "\n" ++ msg
-    req <- request (Output GiveEvent ())
-    worldW str' req 
+world :: (MonadIO m) => ServerObj WorldOp m () 
+world = ReaderT (worldW "") 
+  where 
+    worldW str (Input Render ()) = do 
+      liftIO $ putStrLn str 
+      req <- request (Output Render ())
+      worldW str req 
+    worldW str (Input GiveEvent ev) = do 
+      let str' = case ev of 
+                   Message msg -> str ++ "\n" ++ msg
+      req <- request (Output GiveEvent ())
+      worldW str' req 
 
 

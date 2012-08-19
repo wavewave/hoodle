@@ -1,5 +1,5 @@
 module EventHandler where 
-
+  
 import Control.Concurrent.MVar 
 import Control.Monad.State 
 import Control.Monad.Error

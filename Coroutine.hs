@@ -1,7 +1,8 @@
 module Coroutine where 
 
+import Control.Monad.Error
+import Control.Monad.Reader 
 import Control.Monad.Trans
-import Control.Monad.Trans.Error
 import Control.Monad.Trans.Free
 
 
@@ -50,41 +51,48 @@ request :: Monad m => req -> Coroutine req ans m ans
 request r = wrap (Request r return)
 
 
--- | type alias for Server 
-newtype Server req ans m r = Server { server :: req -> Coroutine ans req m r} 
+-- -- | type alias for Server 
+-- newtype Server req ans m r = Server { server :: req -> Coroutine ans req m r} 
+
+type Server req ans m = ReaderT req (Coroutine ans req m) 
+
+-- instance (Monad m) => Monad (Server req ans m) where 
+--   return 
  
 -- | type alias for Client 
-type Client req ans m r = Coroutine req ans m r 
+type Client req ans = Coroutine req ans  
 
+{-
 -- | connect two coroutine loop. First coroutine is a server and second coroutine is a client.--   Connection initiated by starting client first. 
 connect :: (Monad m) => 
            Server req ans m ()    -- ^ server coroutine
         -> Coroutine req ans m r  -- ^ client coroutine
         -> m (Maybe (Server req ans m (), r))
-connect (Server sf) c = do 
+connect s c = do 
     y <- runFreeT c           
     case y of
-      Pure r -> return (Just ((Server sf),r))
+      Pure r -> return (Just (s,r))
       Free (Request rq af) -> do 
-        x <- runFreeT (sf rq)
+        x <- runFreeT (runReaderT s rq)
         case x of 
           Pure _ -> return Nothing
-          Free (Request ans rf) -> connect (Server rf) (af ans)
+          Free (Request ans rf) -> connect (ReaderT rf) (af ans)
+-}
 
 -- | connecting server and client in error monad
 connectE :: Monad m => 
             Server req ans m ()    -- ^ server coroutine
          -> Coroutine req ans m r  -- ^ client coroutine
          -> ErrorT String m (Server req ans m (), r)
-connectE (Server sf) c = do 
+connectE s c = do 
     y <- lift (runFreeT c)
     case y of
-      Pure r -> return ((Server sf),r)
+      Pure r -> return (s,r)
       Free (Request rq af) -> do 
-        x <- lift (runFreeT (sf rq))
+        x <- lift (runFreeT (runReaderT s rq))
         case x of 
           Pure _ -> throwError "server finished"
-          Free (Request ans rf) -> connectE (Server rf) (af ans)
+          Free (Request ans rf) -> connectE (ReaderT rf) (af ans)
 
 
 {-

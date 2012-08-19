@@ -105,6 +105,12 @@ connectE s c = do
           Free (Request ans rf) -> connectE (ReaderT rf) (af ans)
 
 
+-- | synonym of connectE
+(<==>) :: Monad m => Server req ans m r' -> Coroutine req ans m r
+          -> ErrorT (CoroutineError r') m (Server req ans m r', r)
+(<==>) = connectE
+           
+
 {-
 -- | infinite request/response action for server, note that request and answer are reverted in server 
 --   compared with client.  

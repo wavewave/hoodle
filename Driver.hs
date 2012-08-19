@@ -43,21 +43,17 @@ dispatch ev = do request (Input Dispatch ev)
 driver :: (Monad m, MonadLog m, MonadIO m) => Driver m () 
 driver = ReaderT (driverW logger world) 
   where 
-{-   driverW :: (Monad m, MonadLog m, MonadIO m) => 
-           LogServer (DriverT m) () 
-        -> World (DriverT m) () 
-        -> DrvInput -> DriverT m ()  -}
     driverW logobj worldobj (Input Dispatch ev) = do 
-      Right (logobj',worldobj') <- case ev of
-        Message str -> runErrorT $ do 
-          (logobj',_) <- logobj `connectE` (writeLog str)
-          (worldobj',_) <- worldobj `connectE` (giveEvent ev)
-          (worldobj'',_) <- worldobj' `connectE` render 
-          return (logobj',worldobj')
+      Right (logobj',worldobj') <- 
+        runErrorT $ do (logobj',_)    <- logobj    <==> writeLog (show ev)
+                       (worldobj',_)  <- worldobj  <==> giveEvent ev
+                       (worldobj'',_) <- worldobj' <==> render 
+                       return (logobj',worldobj')
       req <- request (Output Dispatch ()) 
       driverW logobj' worldobj' req 
 
 -- | convenience routine for driver 
-fire :: (Monad m, MonadLog m) => Event -> EStT (Driver m ()) m () --  -> ErrorT String (StateT (Driver m ()) m) ()
+fire :: (Monad m, MonadLog m) => Event -> EStT (Driver m ()) m () 
 fire = query . dispatch  
+
 

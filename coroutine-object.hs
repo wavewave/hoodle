@@ -6,7 +6,7 @@ import Control.Concurrent
 import Control.Concurrent.MVar 
 import Control.Monad.State
 import Control.Monad.Trans.Error
-import System.INotify 
+-- import System.INotify 
 -- from this package 
 import Coroutine
 import Driver 
@@ -87,8 +87,34 @@ test_fileobserver = do
     putStrLn "----"
     eventHandler dref (Message "dlsl") 
     putStrLn "----"
-   
 
+
+-- |
+
+test_tickingevent :: IO () 
+test_tickingevent = do 
+    dref <- newMVar driver 
+    putStrLn "starting ticking" 
+    ticking dref 0    
+
+
+second :: Int 
+second = 1000000
+
+-- | 
+
+ticking :: MVar (Driver IO ()) -> Int -> IO () 
+ticking mvar n = do 
+    putStrLn "--------------------------"
+    putStrLn ("ticking : " ++ show n)
+    if n `mod` 10 == 0 
+    then eventHandler mvar Open 
+    else if n `mod` 10 == 5                 
+    then eventHandler mvar Close 
+    else eventHandler mvar (Message ("test : " ++ show n))
+    putStrLn "_-_-_-_-_-_-_-_-_-_-_-_-_-"
+    threadDelay (1*second)
+    ticking mvar (n+1)
 
 ------------------------------- 
 -- test 
@@ -101,4 +127,5 @@ main = do
     -- test_eventhandler
     -- test_hinotify 
     -- test_lsof 
-    test_fileobserver
+    -- test_fileobserver
+    test_tickingevent 

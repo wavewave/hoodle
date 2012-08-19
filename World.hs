@@ -6,15 +6,17 @@
 
 module World where 
 
+import Control.Applicative
 import Control.Monad.Reader
+import Control.Monad.State
 import Control.Monad.Trans 
--- import Data.Lens.Common 
+import Data.Lens.Common 
 -- 
 import Coroutine
 import Event 
 import Object
 
-{-
+
 -- | full state of world 
 data WorldState = WorldState { _isDoorOpen :: Bool 
                              , _messageBoard :: String }
@@ -26,7 +28,10 @@ isDoorOpen = lens _isDoorOpen (\d s -> s { _isDoorOpen = d })
 -- | messageBoard lens
 messageBoard :: Lens WorldState String 
 messageBoard = lens _messageBoard (\str st -> st { _messageBoard = str })
--}
+
+-- | 
+emptyWorldState = WorldState False "" 
+
 
 -- | 
 data WorldOp i o where 
@@ -48,20 +53,26 @@ render = request (Input Render ()) >> return ()
 
 -- | 
 world :: (MonadIO m) => ServerObj WorldOp m () 
-world = ReaderT (worldW (False,"")) -- (const (return ()) . flip runStateT (False,"") . worldW)
+world = ReaderT staction 
   where 
-    worldW (b,str) (Input Render ()) = do 
+    staction req = runStateT (worldW req) emptyWorldState >> return ()
+    worldW (Input Render ()) = do 
+      b <- (getL isDoorOpen) <$> get 
+      str <- getL messageBoard <$> get 
       liftIO $ putStrLn str 
       liftIO $ putStrLn ("door open? " ++ show b)
-      req <- request (Output Render ())
-      worldW (b,str) req 
-    worldW (b,str) (Input GiveEvent ev) = do 
+      req <- lift (request (Output Render ()))
+      worldW req 
+    worldW (Input GiveEvent ev) = do 
+      b <- getL isDoorOpen <$> get 
+      str <- getL messageBoard <$> get 
       let (b',str') = case ev of 
                         Message msg -> (b,msg)
                         Open        -> (True,str)
                         Close       -> (False,str) 
-      req <- request (Output GiveEvent ())
-      worldW (b',str') req 
+      put . (setL messageBoard str') . (setL isDoorOpen b') =<< get 
+      req <- lift (request (Output GiveEvent ()))
+      worldW req 
 
 
 {-  -- | 

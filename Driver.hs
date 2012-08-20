@@ -14,6 +14,7 @@ import Data.Foldable
 -- 
 import Coroutine 
 import Event 
+import IOActor 
 import Logger 
 import Object
 import World  
@@ -45,11 +46,12 @@ driver :: (Monad m, MonadLog m, MonadIO m) => Driver m ()
 driver = ReaderT (driverW logger world) 
   where 
     driverW logobj worldobj (Input Dispatch ev) = do 
+      (logobj',worldobj') <- multiDispatchTillEnd (logobj,worldobj) [ev]
       -- for the time being, only one step feedback is allowed.
-      (logobj',worldobj',evs') <- multiDispatch  (logobj,worldobj,[]) [ev]
-      (logobj'',worldobj'',evs'') <- multiDispatch (logobj',worldobj',[]) evs'
+      -- (logobj',worldobj',evs') <- multiDispatch  (logobj,worldobj,[]) [ev]
+      -- (logobj'',worldobj'',evs'') <- multiDispatch (logobj',worldobj',[]) evs'
       req <- request (Output Dispatch ()) 
-      driverW logobj'' worldobj'' req 
+      driverW logobj' worldobj' req 
 
 -- | 
 singleDispatch ev (logobj,worldobj,evacc) = do
@@ -66,16 +68,16 @@ singleDispatch ev (logobj,worldobj,evacc) = do
 multiDispatch (logobj,worldobj,evacc) events = do 
   foldrM singleDispatch (logobj,worldobj,[]) events   
 
+multiDispatchTillEnd (logobj,worldobj) events = go (logobj,worldobj,events)
+  where go (l,w,evs) = do  
+          (l',w',evs') <- multiDispatch (l,w,[]) evs 
+          if (not.null) evs' 
+          then go (l',w',evs')
+          else return (l',w')
+          
+
 -- | convenience routine for driver 
 fire :: (Monad m, MonadLog m) => Event -> EStT (Driver m ()) m () 
 fire = query . dispatch  
 
 
-{-      Right (logobj',worldobj',events) <- 
-        runErrorT $ do (logobj1,_)    <- logobj    <==> writeLog ("[Driver] " ++ show ev)
-                       (worldobj1,_)  <- worldobj  <==> giveEvent ev
-                       (worldobj2,logobj2) <- worldobj1 <==> flushLog logobj1
-                       (worldobj3,events) <- worldobj2 <==> flushQueue 
-                       return (logobj2,worldobj3,events)
-      liftIO $ putStrLn (show events ) -}
-      -- (logobj',worldobj',events) <- singleDispatch ev (logobj,worldobj,[])  

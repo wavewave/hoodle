@@ -28,7 +28,6 @@ data WorldOp m i o where
   GiveEvent :: WorldOp m Event ()
   FlushLog :: WorldOp m (LogServer m ()) (LogServer m ())
   FlushQueue :: WorldOp m () [Event]
-  -- Render :: WorldOp m () () 
 
 -- | 
 type World m r = ServerObj (WorldOp m) m r  

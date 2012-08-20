@@ -27,7 +27,7 @@ type ClientObj s = Client (MethodInput s) (MethodOutput s)
 type EStT s m = ErrorT (CoroutineError ()) (StateT s m)  
 
 -- |  
-query :: (Monad m) => ClientObj s m r -> EStT (ServerObj s m ()) m r   -- -> ErrorT String (StateT (ServerObj s m ()) m) r 
+query :: (Monad m) => ClientObj s m r -> EStT (ServerObj s m ()) m r  
 query cli = do 
   qserv <- lift get 
   (qserv',r) <- mapErrorT lift (qserv `connectE` cli )

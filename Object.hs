@@ -12,6 +12,7 @@ data MethodInput s = forall i o. Input (s i o) i
 
 -- | output of methdo of an object with signature s 
 data MethodOutput s = forall i o.  Output (s i o) o 
+                    | Ignore
 
 type ServerT s = Coroutine (MethodOutput s) (MethodInput s)  
 

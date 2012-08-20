@@ -45,10 +45,11 @@ driver = ReaderT (driverW logger world)
   where 
     driverW logobj worldobj (Input Dispatch ev) = do 
       Right (logobj',worldobj') <- 
-        runErrorT $ do (logobj',_)    <- logobj    <==> writeLog (show ev)
-                       (worldobj',_)  <- worldobj  <==> giveEvent ev
-                       (worldobj'',_) <- worldobj' <==> render 
-                       return (logobj',worldobj')
+        runErrorT $ do (logobj1,_)    <- logobj    <==> writeLog ("[Driver] " ++ show ev)
+                       (worldobj1,_)  <- worldobj  <==> giveEvent ev
+                       -- (worldobj'',_) <- worldobj' <==> render 
+                       (worldobj2,logobj2) <- worldobj1 <==> flushLog logobj1
+                       return (logobj2,worldobj2)
       req <- request (Output Dispatch ()) 
       driverW logobj' worldobj' req 
 

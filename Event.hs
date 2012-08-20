@@ -4,6 +4,7 @@ module Event where
 data Event = Message String 
            | Open 
            | Close 
+           | Render 
              deriving (Show,Eq)
 
 

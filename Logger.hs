@@ -53,7 +53,7 @@ logger = loggerW 0
 loggerW :: (MonadLog m) => Int -> LogServer m () 
 loggerW n = ReaderT (f n)
   where f n req = case req of 
-                    Input WriteLog msg -> do lift (scribe (show n ++ " : " ++ msg))
+                    Input WriteLog msg -> do lift (scribe ("log number " ++ show n ++ " : " ++ msg))
                                              req <- request (Output WriteLog ())
                                              f (n+1) req 
 

@@ -75,6 +75,5 @@ world = ReaderT staction
         go req  
       else do 
         req <- lift (request Ignore) 
-               -- lift (request (Output FlushLog logobj))
         go req 
 

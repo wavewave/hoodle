@@ -102,28 +102,26 @@ modState l m = lift ( put . modL (l.worldState) m =<< get )
 door :: (Monad m) => ServerObj SubOp (StateT (WorldAttrib m) m) () 
 door = ReaderT doorW 
   where doorW (Input GiveEventSub ev) = do 
-          case ev of 
-            Open -> do b <- getState isDoorOpen 
-                       when (not b) $ do 
-                         putState isDoorOpen True 
-                         modState tempLog (. (++ "door opened\n")) 
-                       req <- request (Output GiveEventSub ())
-                       doorW req
-            Close -> do b <- getState isDoorOpen
-                        when b $ do 
-                          putState isDoorOpen False
-                          modState tempLog (. (++ "door closed\n"))
-                        req <- request (Output GiveEventSub ()) 
-                        doorW req 
-            Render -> do b <- getState isDoorOpen
-                         modState tempLog 
-                           (. (++ "current door state : " ++ show b ++ "\n"))
-                         req <- request (Output GiveEventSub ()) 
-                         doorW req 
-            _ -> do req <- request Ignore 
-                    doorW req 
-
-
+          r <- case ev of 
+                Open   -> do b <- getState isDoorOpen 
+                             when (not b) $ do 
+                               putState isDoorOpen True 
+                               modState tempLog (. (++ "door opened\n")) 
+                             return True 
+                Close  -> do b <- getState isDoorOpen
+                             when b $ do 
+                               putState isDoorOpen False
+                               modState tempLog (. (++ "door closed\n"))
+                             return True
+                Render -> do b <- getState isDoorOpen
+                             modState tempLog 
+                               (. (++ "current door state : " ++ show b ++ "\n"))
+                             return True
+                _ -> return False
+          req <- if r then request (Output GiveEventSub ())
+                      else request Ignore
+          doorW req 
+  
 -- | 
 messageBoard :: Monad m => ServerObj SubOp (StateT (WorldAttrib m) m) ()
 messageBoard = ReaderT msgbdW

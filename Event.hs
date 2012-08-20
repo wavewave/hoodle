@@ -9,4 +9,5 @@ data Event = Message String
              deriving (Show,Eq)
 
 
+data ActionOrder = ActionOrder (IO ())
 

@@ -1,7 +1,7 @@
-{-# LANGUAGE GADTs, FlexibleInstances #-}
+{-# LANGUAGE GADTs, FlexibleInstances, ScopedTypeVariables #-}
 
 ----------------------------
--- | IO event driver
+-- | IO event driverzo
 --
 ----------------------------
 
@@ -42,38 +42,43 @@ dispatch ev = do request (Input Dispatch ev)
                  return ()
 
 -- | basic driver 
-driver :: (Monad m, MonadLog m, MonadIO m) => Driver m () 
-driver = ReaderT (driverW logger world) 
+driver :: forall m. (Monad m, MonadLog m, MonadIO m) => Driver m () 
+driver = ReaderT (driverW logger world ioactor) 
   where 
-    driverW logobj worldobj (Input Dispatch ev) = do 
-      (logobj',worldobj') <- multiDispatchTillEnd (logobj,worldobj) [ev]
-      -- for the time being, only one step feedback is allowed.
-      -- (logobj',worldobj',evs') <- multiDispatch  (logobj,worldobj,[]) [ev]
-      -- (logobj'',worldobj'',evs'') <- multiDispatch (logobj',worldobj',[]) evs'
+    driverW :: LogServer (ServerT DrvOp m) () -> ServerObj (WorldOp (ServerT DrvOp m)) (ServerT DrvOp m) () -> ServerObj IOOp (ServerT DrvOp m) () -> MethodInput DrvOp -> ServerT DrvOp m () 
+    driverW logobj worldobj ioactorobj (Input Dispatch ev) = do 
+      (logobj',worldobj',ioactorobj') <- multiDispatchTillEnd (logobj,worldobj,ioactorobj) [Right ev]
       req <- request (Output Dispatch ()) 
-      driverW logobj' worldobj' req 
+      driverW logobj' worldobj' ioactorobj' req 
 
--- | 
-singleDispatch ev (logobj,worldobj,evacc) = do
+-- | single event dispatch 
+singleDispatch (Right ev) (logobj,worldobj,ioactorobj,evacc) = do
     Right (logobj',worldobj',events) <- 
       runErrorT $ do (logobj1,_)    <- logobj    <==> writeLog ("[Driver] " ++ show ev)
                      (worldobj1,_)  <- worldobj  <==> giveEvent ev
                      (worldobj2,logobj2) <- worldobj1 <==> flushLog logobj1
                      (worldobj3,events) <- worldobj2 <==> flushQueue 
                      return (logobj2,worldobj3,events)
-    liftIO $ putStrLn (show events)
-    return (logobj',worldobj',evacc++events) 
+    return (logobj',worldobj',ioactorobj,evacc++events) 
+singleDispatch (Left (ActionOrder act)) (logobj,worldobj,ioactorobj,evacc) = do 
+     Right ioactorobj' <- 
+       runErrorT $ do (ioactorobj',_) <- ioactorobj <==> doIOAction act
+                      return ioactorobj'
+        -- let ioactorobj' = ioactorobj 
+     return (logobj,worldobj,ioactorobj',evacc) 
 
--- |
-multiDispatch (logobj,worldobj,evacc) events = do 
-  foldrM singleDispatch (logobj,worldobj,[]) events   
+-- | a single feedback step of multiple event dispatch
+multiDispatch (logobj,worldobj,ioactorobj,evacc) events = do 
+  foldrM singleDispatch (logobj,worldobj,ioactorobj,[]) events   
 
-multiDispatchTillEnd (logobj,worldobj) events = go (logobj,worldobj,events)
-  where go (l,w,evs) = do  
-          (l',w',evs') <- multiDispatch (l,w,[]) evs 
+-- | full multiple event dispatch with feedback
+multiDispatchTillEnd (logobj,worldobj,ioactorobj) events = 
+    go (logobj,worldobj,ioactorobj,events)
+  where go (l,w,io,evs) = do  
+          (l',w',io',evs') <- multiDispatch (l,w,io,[]) evs 
           if (not.null) evs' 
-          then go (l',w',evs')
-          else return (l',w')
+          then go (l',w',io',evs')
+          else return (l',w',io')
           
 
 -- | convenience routine for driver 

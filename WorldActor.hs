@@ -24,7 +24,7 @@ import Prelude hiding ((.),id)
 data WorldState = WorldState { _isDoorOpen :: Bool 
                              , _message :: String 
                              , _tempLog :: String -> String 
-                             , _tempQueue :: Queue Event 
+                             , _tempQueue :: Queue (Either ActionOrder Event)
                              }
 
 -- | isDoorOpen lens
@@ -40,7 +40,7 @@ tempLog :: Lens WorldState (String -> String)
 tempLog = lens _tempLog (\b a -> a { _tempLog = b } )
 
 -- | 
-tempQueue :: Lens WorldState (Queue Event) 
+tempQueue :: Lens WorldState (Queue (Either ActionOrder Event))
 tempQueue = lens _tempQueue (\b a -> a { _tempQueue = b} )
 
 -- | 
@@ -119,6 +119,7 @@ air = ReaderT airW
           r <- case ev of 
                  Sound snd -> do 
                    modState tempLog (. (++ "sound " ++ snd ++"\n"))
+                   modState tempQueue (enqueue (Left (ActionOrder (putStrLn "BAAAAAAMM"))))
                    return True
                  _ -> return False 
           req <- if r then request (Output GiveEventSub ())
@@ -131,21 +132,24 @@ door :: (Monad m) => ServerObj SubOp (StateT (WorldAttrib m) m) ()
 door = ReaderT doorW 
   where doorW (Input GiveEventSub ev) = do 
           r <- case ev of 
-                Open   -> do b <- getState isDoorOpen 
-                             when (not b) $ do 
-                               putState isDoorOpen True 
-                               modState tempLog (. (++ "door opened\n")) 
-                             return True 
-                Close  -> do b <- getState isDoorOpen
-                             when b $ do 
-                               putState isDoorOpen False
-                               modState tempLog (. (++ "door closed\n"))
-                               modState tempQueue (enqueue (Sound "bam!")) 
-                             return True
-                Render -> do b <- getState isDoorOpen
-                             modState tempLog 
-                               (. (++ "current door state : " ++ show b ++ "\n"))
-                             return True
+                Open   -> do 
+                  b <- getState isDoorOpen 
+                  when (not b) $ do 
+                    putState isDoorOpen True 
+                    modState tempLog (. (++ "door opened\n")) 
+                  return True 
+                Close  -> do
+                  b <- getState isDoorOpen
+                  when b $ do 
+                    putState isDoorOpen False
+                    modState tempLog (. (++ "door closed\n"))
+                    modState tempQueue (enqueue (Right (Sound "bam!")))
+                  return True
+                Render -> do 
+                  b <- getState isDoorOpen
+                  modState tempLog 
+                           (. (++ "current door state : " ++ show b ++ "\n"))
+                  return True
                 _ -> return False
           req <- if r then request (Output GiveEventSub ())
                       else request Ignore

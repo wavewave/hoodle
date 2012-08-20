@@ -27,7 +27,7 @@ import Prelude hiding ((.),id)
 data WorldOp m i o where 
   GiveEvent :: WorldOp m Event ()
   FlushLog :: WorldOp m (LogServer m ()) (LogServer m ())
-  FlushQueue :: WorldOp m () [Event]
+  FlushQueue :: WorldOp m () [Either ActionOrder Event]
 
 -- | 
 type World m r = ServerObj (WorldOp m) m r  
@@ -47,7 +47,7 @@ flushLog logger = do req <- request (Input FlushLog logger)
                        _ -> error "error in flushLog"  -- allow partiality
 
 -- | 
-flushQueue :: (Monad m) => ClientObj (WorldOp m) m [Event]
+flushQueue :: (Monad m) => ClientObj (WorldOp m) m [Either ActionOrder Event]
 flushQueue = do req <- request (Input FlushQueue ())
                 case req of 
                   Output FlushQueue lst -> return lst 

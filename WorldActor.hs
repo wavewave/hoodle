@@ -22,7 +22,7 @@ import Prelude hiding ((.),id)
 -- | full state of world 
 data WorldState = WorldState { _isDoorOpen :: Bool 
                              , _message :: String 
-                              , _tempLog :: String -> String 
+                             , _tempLog :: String -> String 
                              }
 
 -- | isDoorOpen lens
@@ -103,23 +103,21 @@ door :: (Monad m) => ServerObj SubOp (StateT (WorldAttrib m) m) ()
 door = ReaderT doorW 
   where doorW (Input GiveEventSub ev) = do 
           case ev of 
-            Open -> do b <- getState isDoorOpen -- lift( liftM (getL (isDoorOpen.worldState)) get )
+            Open -> do b <- getState isDoorOpen 
                        when (not b) $ do 
                          putState isDoorOpen True 
                          modState tempLog (. (++ "door opened\n")) 
-                      {-   lift (put . setL (isDoorOpen.worldState) True 
-                                   . modL (tempLog.worldState) (. (++"door opened\n"))
-                                   =<< get) -}
                        req <- request (Output GiveEventSub ())
                        doorW req
-            Close -> do -- lift (put . setL (isDoorOpen.worldState) False =<< get)
-                        b <- getState isDoorOpen
+            Close -> do b <- getState isDoorOpen
                         when b $ do 
                           putState isDoorOpen False
                           modState tempLog (. (++ "door closed\n"))
                         req <- request (Output GiveEventSub ()) 
                         doorW req 
-            Render -> do 
+            Render -> do b <- getState isDoorOpen
+                         modState tempLog 
+                           (. (++ "current door state : " ++ show b ++ "\n"))
                          req <- request (Output GiveEventSub ()) 
                          doorW req 
             _ -> do req <- request Ignore 
@@ -130,10 +128,15 @@ door = ReaderT doorW
 messageBoard :: Monad m => ServerObj SubOp (StateT (WorldAttrib m) m) ()
 messageBoard = ReaderT msgbdW
   where msgbdW (Input GiveEventSub ev) = do 
-          case ev of 
-            Message msg -> do lift (put . setL (message.worldState) msg =<< get) 
-                              req <- request (Output GiveEventSub ())
-                              msgbdW req
-            _ -> do req <- request Ignore 
-                    msgbdW req 
+          r <- case ev of 
+                 Message msg -> do putState message msg 
+                                   return True 
+                 Render      -> do msg <- getState message 
+                                   modState tempLog 
+                                     (.(++ "current msg : " ++ msg ++ "\n"))
+                                   return True 
+                 _           -> return False 
+          req <- if r then request (Output GiveEventSub ())
+                      else request Ignore 
+          msgbdW req
 

@@ -42,14 +42,8 @@ flushLog :: (Monad m) => LogServer m () -> ClientObj (WorldOp m) m (LogServer m 
 flushLog logger = do req <- request (Input FlushLog logger) 
                      case req of 
                        Output FlushLog logger' -> return logger' 
+                       Ignore -> return logger 
                        _ -> error "error in flushLog"  -- allow partiality
-
-
-{- -- | 
-render :: (Monad m) => ClientObj (WorldOp m) m () 
-render = request (Input Render ()) >> return ()
--}
-
 
 
 -- | 
@@ -71,22 +65,16 @@ world = ReaderT staction
       go req   
     go (Input FlushLog (logobj :: LogServer m ())) = do
       logf <- getL (tempLog.worldState) <$> get 
-      let l1 = runErrorT (logobj <==> writeLog ("[World] " ++ (logf ""))) 
+      let msg = logf "" 
+      if ((not . null) msg) 
+      then do 
+        let l1 = runErrorT (logobj <==> writeLog ("[World] " ++ (logf ""))) 
+        Right (logobj',_) <- lift . lift $ l1
+        put . setL (tempLog.worldState) id =<< get
+        req <- lift (request (Output FlushLog logobj'))
+        go req  
+      else do 
+        req <- lift (request Ignore) 
+               -- lift (request (Output FlushLog logobj))
+        go req 
 
-      Right (logobj',_) <- lift . lift $ l1 
-      req <- lift (request (Output FlushLog logobj'))
-      go req  
- 
-
--- :: m (Either (CoroutineError ()) (LogServer m (),()))
-      -- liftIO $ putStrLn "flushlog called"
---      Right (logobj',_) <- runErrorT (logobj <==> writeLog ("[World] " ++ (logf "") ) ) :: Double 
-
-
---    go (Input Render ()) = do 
---      b <- getL (isDoorOpen.worldState) <$> get 
---      str <- getL (message.worldState) <$> get 
---      liftIO $ putStrLn str 
- --     liftIO $ putStrLn ("door open? " ++ show b)
---      req <- lift (request (Output Render ()))
---      go req 

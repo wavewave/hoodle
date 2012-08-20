@@ -47,7 +47,6 @@ driver = ReaderT (driverW logger world)
       Right (logobj',worldobj') <- 
         runErrorT $ do (logobj1,_)    <- logobj    <==> writeLog ("[Driver] " ++ show ev)
                        (worldobj1,_)  <- worldobj  <==> giveEvent ev
-                       -- (worldobj'',_) <- worldobj' <==> render 
                        (worldobj2,logobj2) <- worldobj1 <==> flushLog logobj1
                        return (logobj2,worldobj2)
       req <- request (Output Dispatch ()) 

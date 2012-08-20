@@ -5,6 +5,7 @@ data Event = Message String
            | Open 
            | Close 
            | Render 
+           | Sound String 
              deriving (Show,Eq)
 
 

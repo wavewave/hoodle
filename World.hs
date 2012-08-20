@@ -15,8 +15,9 @@ import Data.Lens.Common
 -- 
 import Coroutine
 import Event 
-import Object
 import Logger 
+import Object
+import Queue
 import WorldActor
 -- 
 import Prelude hiding ((.),id)
@@ -26,6 +27,7 @@ import Prelude hiding ((.),id)
 data WorldOp m i o where 
   GiveEvent :: WorldOp m Event ()
   FlushLog :: WorldOp m (LogServer m ()) (LogServer m ())
+  FlushQueue :: WorldOp m () [Event]
   -- Render :: WorldOp m () () 
 
 -- | 
@@ -45,6 +47,14 @@ flushLog logger = do req <- request (Input FlushLog logger)
                        Ignore -> return logger 
                        _ -> error "error in flushLog"  -- allow partiality
 
+-- | 
+flushQueue :: (Monad m) => ClientObj (WorldOp m) m [Event]
+flushQueue = do req <- request (Input FlushQueue ())
+                case req of 
+                  Output FlushQueue lst -> return lst 
+                  Ignore -> return [] 
+                  _ -> error "error in flushQueue" -- allow partiality
+
 
 -- | 
 world :: forall m. (MonadIO m) => ServerObj (WorldOp m) m () 
@@ -56,11 +66,14 @@ world = ReaderT staction
     go (Input GiveEvent ev) = do
       dobj <- getL (objDoor.worldActor) <$> get  
       mobj <- getL (objMessageBoard.worldActor) <$> get 
-      Right (dobj',mobj') <- 
-        runErrorT $ (,) <$> liftM fst (dobj <==> giveEventSub ev) 
-                        <*> liftM fst (mobj <==> giveEventSub ev) 
+      aobj <- getL (objAir.worldActor) <$> get 
+      Right (dobj',mobj',aobj') <- 
+        runErrorT $ (,,) <$> liftM fst (dobj <==> giveEventSub ev) 
+                         <*> liftM fst (mobj <==> giveEventSub ev) 
+                         <*> liftM fst (aobj <==> giveEventSub ev)
       put . setL (objDoor.worldActor) dobj' 
-          . setL (objMessageBoard.worldActor) mobj' =<< get  
+          . setL (objMessageBoard.worldActor) mobj' 
+          . setL (objAir.worldActor) aobj' =<< get  
       req <- lift (request (Output GiveEvent ()))
       go req   
     go (Input FlushLog (logobj :: LogServer m ())) = do
@@ -76,4 +89,9 @@ world = ReaderT staction
       else do 
         req <- lift (request Ignore) 
         go req 
-
+    go (Input FlushQueue ()) = do
+      q <- getL (tempQueue.worldState) <$> get 
+      let lst = fqueue q ++ reverse (bqueue q)
+      put . setL (tempQueue.worldState) emptyQueue =<< get 
+      req <- lift (request (Output FlushQueue lst))
+      go req 

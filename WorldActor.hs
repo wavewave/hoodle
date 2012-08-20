@@ -15,6 +15,7 @@ import Data.Lens.Common
 import Coroutine
 import Event 
 import Object
+import Queue 
 -- 
 import Prelude hiding ((.),id)
 
@@ -23,6 +24,7 @@ import Prelude hiding ((.),id)
 data WorldState = WorldState { _isDoorOpen :: Bool 
                              , _message :: String 
                              , _tempLog :: String -> String 
+                             , _tempQueue :: Queue Event 
                              }
 
 -- | isDoorOpen lens
@@ -38,8 +40,12 @@ tempLog :: Lens WorldState (String -> String)
 tempLog = lens _tempLog (\b a -> a { _tempLog = b } )
 
 -- | 
+tempQueue :: Lens WorldState (Queue Event) 
+tempQueue = lens _tempQueue (\b a -> a { _tempQueue = b} )
+
+-- | 
 emptyWorldState :: WorldState 
-emptyWorldState = WorldState False "" id
+emptyWorldState = WorldState False "" id emptyQueue 
 
 
 type WorldObject m r = ServerObj SubOp (StateT (WorldAttrib m) m) r 
@@ -49,6 +55,7 @@ type WorldObject m r = ServerObj SubOp (StateT (WorldAttrib m) m) r
 data WorldActor m 
     = WorldActor { _objDoor :: WorldObject m () 
                  , _objMessageBoard :: WorldObject m () 
+                 , _objAir :: WorldObject m () 
                  } 
 
 -- | isDoorOpen lens
@@ -60,9 +67,16 @@ objDoor = lens _objDoor (\b a -> a { _objDoor = b })
 objMessageBoard :: Lens (WorldActor m) (ServerObj SubOp (StateT (WorldAttrib m) m) ()) 
 objMessageBoard = lens _objMessageBoard (\b a-> a { _objMessageBoard = b })
 
+-- | air lens 
+objAir :: Lens (WorldActor m) (ServerObj SubOp (StateT (WorldAttrib m) m) ())
+objAir = lens _objAir (\b a -> a { _objAir = b } )
+
 -- | 
 initWorldActor :: (Monad m) => WorldActor m 
-initWorldActor = WorldActor { _objDoor = door, _objMessageBoard = messageBoard }
+initWorldActor = WorldActor { _objDoor = door
+                            , _objMessageBoard = messageBoard 
+                            , _objAir = air 
+                            }
 
 -- | 
 data WorldAttrib m =
@@ -98,6 +112,20 @@ putState l x = lift ( put . ( setL (l.worldState) x ) =<<  get  )
 modState l m = lift ( put . modL (l.worldState) m =<< get ) 
 
 
+-- | air object 
+air :: (Monad m) => ServerObj SubOp (StateT (WorldAttrib m) m) () 
+air = ReaderT airW 
+  where airW (Input GiveEventSub ev) = do 
+          r <- case ev of 
+                 Sound snd -> do 
+                   modState tempLog (. (++ "sound " ++ snd ++"\n"))
+                   return True
+                 _ -> return False 
+          req <- if r then request (Output GiveEventSub ())
+                      else request Ignore 
+          airW req 
+
+
 -- | door object 
 door :: (Monad m) => ServerObj SubOp (StateT (WorldAttrib m) m) () 
 door = ReaderT doorW 
@@ -112,6 +140,7 @@ door = ReaderT doorW
                              when b $ do 
                                putState isDoorOpen False
                                modState tempLog (. (++ "door closed\n"))
+                               modState tempQueue (enqueue (Sound "bam!")) 
                              return True
                 Render -> do b <- getState isDoorOpen
                              modState tempLog 

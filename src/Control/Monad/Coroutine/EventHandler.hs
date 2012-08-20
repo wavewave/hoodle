@@ -1,13 +1,13 @@
-module EventHandler where 
+module Control.Monad.Coroutine.EventHandler where 
   
 import Control.Concurrent.MVar 
 import Control.Monad.State 
 import Control.Monad.Error
 -- 
-import Coroutine
-import Event 
-import Driver 
-import Logger 
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.Event 
+import Control.Monad.Coroutine.Driver 
+import Control.Monad.Coroutine.Logger 
 
 eventHandler :: MVar (Driver IO ()) -> Event -> IO ()
 eventHandler dref ev = do 

@@ -3,11 +3,11 @@
 -- | handling file system event
 ------------------------------
 
-module HINotify where 
+module Control.Monad.Coroutine.HINotify where 
 
 import           System.INotify 
 -- 
-import qualified Driver as D
+import qualified Control.Monad.Coroutine.Driver as D
 
 watchFile :: INotify -> FilePath -> (D.Event -> IO ()) -> IO WatchDescriptor 
 watchFile inotify fp handler = do 

@@ -1,6 +1,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Queue where 
+module Control.Monad.Coroutine.Queue where 
 
 ---------------------------
 -- queue

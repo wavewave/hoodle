@@ -1,11 +1,11 @@
 {-# LANGUAGE GADTs, RankNTypes #-}
 
-module Object where 
+module Control.Monad.Coroutine.Object where 
 
 import Control.Monad.State 
 import Control.Monad.Error 
 --
-import Coroutine 
+import Control.Monad.Coroutine 
 
 -- | input of method of an object with signature s 
 data MethodInput s = forall i o. Input (s i o) i 

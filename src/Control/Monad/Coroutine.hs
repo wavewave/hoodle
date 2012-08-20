@@ -1,6 +1,6 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Coroutine where 
+module Control.Monad.Coroutine where 
 
 import Control.Monad.Error
 import Control.Monad.Reader 

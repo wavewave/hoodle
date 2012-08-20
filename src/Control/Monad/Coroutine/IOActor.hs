@@ -4,15 +4,15 @@
 -- | special actor for IO action 
 ------------------------------
 
-module IOActor where
+module Control.Monad.Coroutine.IOActor where
 
 import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.Trans 
 -- 
-import Coroutine
-import Event 
-import Object 
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.Event 
+import Control.Monad.Coroutine.Object 
 
 
 -- | 

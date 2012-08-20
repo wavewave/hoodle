@@ -4,13 +4,13 @@
 -- | describe logger
 ---------------------------
 
-module Logger where
+module Control.Monad.Coroutine.Logger where
 
 import Control.Monad.Reader
 import Control.Monad.Trans 
 --
-import Coroutine 
-import Object
+import Control.Monad.Coroutine 
+import Control.Monad.Coroutine.Object
 
 -------------------------
 -- Logging monad 

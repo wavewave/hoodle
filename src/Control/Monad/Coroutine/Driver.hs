@@ -5,19 +5,19 @@
 --
 ----------------------------
 
-module Driver where 
+module Control.Monad.Coroutine.Driver where 
 
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.Trans
 import Data.Foldable
 -- 
-import Coroutine 
-import Event 
-import IOActor 
-import Logger 
-import Object
-import World  
+import Control.Monad.Coroutine 
+import Control.Monad.Coroutine.Event 
+import Control.Monad.Coroutine.IOActor 
+import Control.Monad.Coroutine.Logger 
+import Control.Monad.Coroutine.Object
+import Control.Monad.Coroutine.World  
 
 -- | signature of IO event driver
 data DrvOp i o where 
@@ -77,8 +77,8 @@ multiDispatchTillEnd (logobj,worldobj,ioactorobj) events =
   where go (l,w,io,evs) = do  
           (l',w',io',evs') <- multiDispatch (l,w,io,[]) evs 
           if (not.null) evs' 
-          then go (l',w',io',evs')
-          else return (l',w',io')
+            then go (l',w',io',evs')
+            else return (l',w',io')
           
 
 -- | convenience routine for driver 

@@ -1,11 +1,11 @@
 {-# LANGUAGE GADTs #-}
 
-module FileObserver where
+module Control.Monad.Coroutine.FileObserver where
 
 import System.FilePath 
 --
-import Coroutine 
-import Object 
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.Object 
 
 data FileEvent = FileOpen | FileClose
                  deriving (Show,Eq)

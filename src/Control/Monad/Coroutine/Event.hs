@@ -1,4 +1,4 @@
-module Event where 
+module Control.Monad.Coroutine.Event where 
 
 -- | event 
 data Event = Message String 

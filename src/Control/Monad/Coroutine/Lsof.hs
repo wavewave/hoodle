@@ -1,4 +1,4 @@
-module Lsof where
+module Control.Monad.Coroutine.Lsof where
 
 import System.Directory 
 import System.Exit 

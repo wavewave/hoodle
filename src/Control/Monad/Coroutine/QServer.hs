@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables, StandaloneDeriving, GADTs, Rank2Types #-}
 
-module QServer ( 
+module Control.Monad.Coroutine.QServer ( 
   QInput, 
   QOutput, 
   QServer, 
@@ -13,9 +13,9 @@ module QServer (
 
 
 -- 
-import Coroutine
-import Object 
-import Queue 
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.Object 
+import Control.Monad.Coroutine.Queue 
 
 -- | signature of queue operation 
 data QOp a i o where 

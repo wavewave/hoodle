@@ -8,14 +8,14 @@ import Control.Monad.State
 import Control.Monad.Trans.Error
 -- import System.INotify 
 -- from this package 
-import Coroutine
-import Driver 
-import Event 
-import EventHandler 
-import Object 
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.Driver 
+import Control.Monad.Coroutine.Event 
+import Control.Monad.Coroutine.EventHandler 
+import Control.Monad.Coroutine.Object 
 -- import FileObserver 
 -- import HINotify 
-import Lsof 
+-- import Lsof 
 -- import QServer
 
 {-
@@ -70,11 +70,14 @@ test_hinotify = do
 -}
 
 -- | test lsof
+{-
 test_lsof :: IO () 
 test_lsof = do 
     putStrLn "testing lsof"
     t <- checkLsof "test" 
     print t
+-}
+
 
 -- | 
 test_fileobserver :: IO () 
@@ -108,12 +111,12 @@ ticking mvar n = do
     putStrLn "--------------------------"
     putStrLn ("ticking : " ++ show n)
     if n `mod` 10 == 0 
-    then eventHandler mvar Open 
-    else if n `mod` 10 == 5                 
-    then eventHandler mvar Close 
-    else if n `mod` 10 == 3
-    then eventHandler mvar Render
-    else eventHandler mvar (Message ("test : " ++ show n))
+      then eventHandler mvar Open 
+      else if n `mod` 10 == 5                 
+        then eventHandler mvar Close 
+        else if n `mod` 10 == 3
+          then eventHandler mvar Render
+          else eventHandler mvar (Message ("test : " ++ show n))
     putStrLn "_-_-_-_-_-_-_-_-_-_-_-_-_-"
     threadDelay (1*second)
     ticking mvar (n+1)

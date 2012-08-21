@@ -1,12 +1,13 @@
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE StandaloneDeriving, TypeSynonymInstances, FlexibleInstances, 
+             MultiParamTypeClasses #-}
 
 module Control.Monad.Coroutine where 
 
 import Control.Monad.Error
 import Control.Monad.Reader 
+import Control.Monad.State 
 import Control.Monad.Trans
 import Control.Monad.Trans.Free
-
 
 ---------------------------
 -- general generator 
@@ -47,6 +48,11 @@ instance Functor (Request req ans) where
   fmap f (Request req g) = Request req (f.g)
 
 type Coroutine req ans = FreeT (Request req ans)
+
+instance (Monad m, Functor f) => MonadState st (FreeT f (StateT st m)) where 
+  get = lift get
+  put = lift . put
+
 
 -- | general request 
 request :: Monad m => req -> Coroutine req ans m ans

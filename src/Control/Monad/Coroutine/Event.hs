@@ -6,6 +6,8 @@ data Event = Message String
            | Close 
            | Render 
            | Sound String 
+           | Start
+           | Finished 
              deriving (Show,Eq)
 
 -- | action order 

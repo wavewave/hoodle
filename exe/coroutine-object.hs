@@ -12,7 +12,7 @@ import Control.Concurrent
 import Control.Monad.Coroutine.Driver 
 import Control.Monad.Coroutine.Event 
 import Control.Monad.Coroutine.EventHandler 
-import Control.Monad.Coroutine.World.Sample
+import Control.Monad.Coroutine.World.Sample2
 -- import Control.Monad.Coroutine.Object 
 -- import FileObserver 
 -- import HINotify 
@@ -40,13 +40,19 @@ ticking :: MVar (Driver IO ()) -> Int -> IO ()
 ticking mvar n = do 
     putStrLn "--------------------------"
     putStrLn ("ticking : " ++ show n)
-    if n `mod` 10 == 0 
+    {- if n `mod` 10 == 0 
       then eventHandler mvar Open  
       else if n `mod` 10 == 5                 
         then eventHandler mvar Close 
         else if n `mod` 10 == 3
           then eventHandler mvar Render
-          else eventHandler mvar (Message ("test : " ++ show n))
+          else eventHandler mvar (Message ("test : " ++ show n)) -}
+    if n == 5 
+      then eventHandler mvar Start 
+      else if n `mod` 3 == 0 
+           then eventHandler mvar Render
+           else eventHandler mvar (Message ("test : " ++ show n))
+
     putStrLn "_-_-_-_-_-_-_-_-_-_-_-_-_-"
     threadDelay (1*second)
     ticking mvar (n+1)

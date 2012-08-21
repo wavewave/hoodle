@@ -31,6 +31,8 @@ Library
                    Control.Monad.Coroutine.World
                    Control.Monad.Coroutine.World.Sample 
                    Control.Monad.Coroutine.World.SampleActor
+                   Control.Monad.Coroutine.World.Sample2
+                   Control.Monad.Coroutine.World.SampleActor2
  
 Executable coroutine-object
   Main-is: coroutine-object.hs

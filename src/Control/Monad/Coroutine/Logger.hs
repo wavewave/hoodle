@@ -40,17 +40,6 @@ writeLog :: (Monad m) => String -> LogClient m ()
 writeLog msg = do request (Input WriteLog msg) 
                   return () 
 
--- | 
-logger :: (MonadLog m) => LogServer m () 
-logger = loggerW 0
- 
--- |
-loggerW :: (MonadLog m) => Int -> LogServer m () 
-loggerW num = ReaderT (f num)
-  where f n req = case req of 
-                    Input WriteLog msg -> do lift (scribe ("log number " ++ show n ++ " : " ++ msg))
-                                             req' <- request (Output WriteLog ())
-                                             f (n+1) req' 
 
 
 

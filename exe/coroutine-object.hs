@@ -8,6 +8,7 @@ import Control.Concurrent
 import Control.Monad.Coroutine.Driver 
 import Control.Monad.Coroutine.Event 
 import Control.Monad.Coroutine.EventHandler 
+import Control.Monad.Coroutine.Logger.Simple 
 import Control.Monad.Coroutine.World.CmdExec
 
 
@@ -15,9 +16,8 @@ import Control.Monad.Coroutine.World.CmdExec
 
 test_tickingevent :: IO () 
 test_tickingevent = do 
-    dref <- newEmptyMVar :: IO (MVar (Driver IO ())) -- newMVar (undefined :: Driver IO ()) 
-    -- _ <- takeMVar dref  
-    putMVar dref (driver world (eventHandler dref))
+    dref <- newEmptyMVar :: IO (MVar (Driver IO ()))
+    putMVar dref (driver logger world (eventHandler dref))
     putStrLn "starting ticking" 
     ticking dref 0    
 

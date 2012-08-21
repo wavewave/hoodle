@@ -28,7 +28,8 @@ Library
                    -- Control.Monad.Coroutine.FileObserver 
                    -- Control.Monad.Coroutine.HINotify
                    Control.Monad.Coroutine.IOActor 
-                   Control.Monad.Coroutine.Logger 
+                   Control.Monad.Coroutine.Logger
+                   Control.Monad.Coroutine.Logger.Simple  
                    -- Control.Monad.Coroutine.Lsof 
                    Control.Monad.Coroutine.Object 
                    -- Control.Monad.Coroutine.QServer 

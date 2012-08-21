@@ -8,7 +8,8 @@ import Control.Concurrent
 import Control.Monad.Coroutine.Driver 
 import Control.Monad.Coroutine.Event 
 import Control.Monad.Coroutine.EventHandler 
-import Control.Monad.Coroutine.Logger.Simple 
+-- import Control.Monad.Coroutine.Logger.Simple 
+import Control.Monad.Coroutine.Logger.WebLog
 import Control.Monad.Coroutine.World.CmdExec
 
 
@@ -17,6 +18,7 @@ import Control.Monad.Coroutine.World.CmdExec
 test_tickingevent :: IO () 
 test_tickingevent = do 
     dref <- newEmptyMVar :: IO (MVar (Driver IO ()))
+    let logger = weblogger "http://127.0.0.1:7800"
     putMVar dref (driver logger world (eventHandler dref))
     putStrLn "starting ticking" 
     ticking dref 0    

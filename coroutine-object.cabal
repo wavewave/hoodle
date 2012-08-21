@@ -28,8 +28,9 @@ Library
                    Control.Monad.Coroutine.Object 
                    -- Control.Monad.Coroutine.QServer 
                    Control.Monad.Coroutine.Queue 
-                   Control.Monad.Coroutine.WorldActor
-                   Control.Monad.Coroutine.World 
+                   Control.Monad.Coroutine.World
+                   Control.Monad.Coroutine.World.Sample 
+                   Control.Monad.Coroutine.World.SampleActor
  
 Executable coroutine-object
   Main-is: coroutine-object.hs

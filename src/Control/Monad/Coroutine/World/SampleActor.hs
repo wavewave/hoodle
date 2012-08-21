@@ -4,7 +4,7 @@
 -- | describe world object
 ----------------------------
 
-module Control.Monad.Coroutine.WorldActor where 
+module Control.Monad.Coroutine.World.SampleActor where 
 
 import Control.Category
 import Control.Concurrent 
@@ -126,8 +126,6 @@ air = ReaderT airW
                                     putStrLn "BAAAAAMM"
                                     evhandler (Message "HAHAHAH")
                         return ()
-
--- const (putStrLn "BAAAAAMM")
                    return True
                  _ -> return False 
           req <- if r then request (Output GiveEventSub ())

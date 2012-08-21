@@ -6,7 +6,6 @@ module Control.Monad.Coroutine where
 import Control.Monad.Error
 import Control.Monad.Reader 
 import Control.Monad.State 
-import Control.Monad.Trans
 import Control.Monad.Trans.Free
 
 ---------------------------

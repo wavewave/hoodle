@@ -9,7 +9,6 @@ module Control.Monad.Coroutine.Driver where
 
 import Control.Monad.Error
 import Control.Monad.Reader
-import Control.Monad.Trans
 import Data.Foldable
 -- 
 import Control.Monad.Coroutine 
@@ -22,7 +21,7 @@ import Control.Monad.Coroutine.World
 -- | signature of IO event driver
 data DrvOp i o where 
   Dispatch :: DrvOp Event () 
-  GetEvent :: DrvOp () Event 
+
 
 -- | event driver input 
 type DrvInput = MethodInput DrvOp
@@ -52,8 +51,11 @@ driver world evhandler = ReaderT (driverW logger world (ioactorgen evhandler))
       req <- request (Output Dispatch ()) 
       driverW logobj' worldobj' ioactorobj' req 
 
-
 -- | single event dispatch 
+singleDispatch :: Monad m => 
+                  Either ActionOrder Event 
+               -> (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
+               -> m (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
 singleDispatch (Right ev) (logobj,worldobj,ioactorobj,evacc) = do
     Right (logobj',worldobj',events) <- 
       runErrorT $ do (logobj1,_)    <- logobj    <==> writeLog ("[Driver] " ++ show ev)
@@ -70,14 +72,22 @@ singleDispatch (Left (ActionOrder act)) (logobj,worldobj,ioactorobj,evacc) = do
 
 
 -- | a single feedback step of multiple event dispatch
-multiDispatch (logobj,worldobj,ioactorobj,evacc) events = do 
+multiDispatch :: Monad m => 
+                 (LogServer m (), World m (), IOActor m ())
+              -> [Either ActionOrder Event]
+              -> m (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
+multiDispatch (logobj,worldobj,ioactorobj) events = do 
   foldrM singleDispatch (logobj,worldobj,ioactorobj,[]) events   
 
 -- | full multiple event dispatch with feedback
+multiDispatchTillEnd :: Monad m => 
+                        (LogServer m (), World m (), IOActor m ()) 
+                     -> [Either ActionOrder Event] 
+                     -> m (LogServer m (), World m (), IOActor m ())
 multiDispatchTillEnd (logobj,worldobj,ioactorobj) events = 
     go (logobj,worldobj,ioactorobj,events)
   where go (l,w,io,evs) = do  
-          (l',w',io',evs') <- multiDispatch (l,w,io,[]) evs 
+          (l',w',io',evs') <- multiDispatch (l,w,io) evs 
           if (not.null) evs' 
             then go (l',w',io',evs')
             else return (l',w',io')

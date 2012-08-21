@@ -11,11 +11,10 @@ Cabal-Version:  >= 1.8
 data-files:      
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends:   base>4, 
                    mtl>2, 
-                   data-lens == 2.10.* , 
                    lens == 2.4.*,
                    containers == 0.4.*,
                    transformers == 0.3.*, 
@@ -35,6 +34,7 @@ Library
                    -- Control.Monad.Coroutine.QServer 
                    Control.Monad.Coroutine.Queue 
                    Control.Monad.Coroutine.World
+                   Control.Monad.Coroutine.World.CmdExec
                    Control.Monad.Coroutine.World.Sample 
                    Control.Monad.Coroutine.World.SampleActor
                    Control.Monad.Coroutine.World.Sample2
@@ -43,7 +43,7 @@ Library
 Executable coroutine-object
   Main-is: coroutine-object.hs
   hs-source-dirs: exe
-  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options: 	-Wall -O2 -threaded -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: base>4, 
                  transformers == 0.3.*, 

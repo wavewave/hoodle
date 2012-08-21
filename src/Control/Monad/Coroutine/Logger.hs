@@ -7,7 +7,6 @@
 module Control.Monad.Coroutine.Logger where
 
 import Control.Monad.Reader
-import Control.Monad.Trans 
 --
 import Control.Monad.Coroutine 
 import Control.Monad.Coroutine.Object
@@ -25,10 +24,6 @@ instance (MonadTrans t, MonadLog m, Monad (t m)) => MonadLog (t m) where
 instance MonadLog IO where
     scribe = putStrLn 
 
-{-
-instance (MonadIO m) => MonadLog m where
-    scribe = liftIO . putStrLn 
--}
 
 data LogOp i o where 
   WriteLog :: LogOp String () 
@@ -51,11 +46,11 @@ logger = loggerW 0
  
 -- |
 loggerW :: (MonadLog m) => Int -> LogServer m () 
-loggerW n = ReaderT (f n)
+loggerW num = ReaderT (f num)
   where f n req = case req of 
                     Input WriteLog msg -> do lift (scribe ("log number " ++ show n ++ " : " ++ msg))
-                                             req <- request (Output WriteLog ())
-                                             f (n+1) req 
+                                             req' <- request (Output WriteLog ())
+                                             f (n+1) req' 
 
 
 

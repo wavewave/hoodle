@@ -15,7 +15,6 @@ import Control.Monad.State
 import Control.Lens
 -- 
 import Control.Monad.Coroutine
-import Control.Monad.Coroutine.Event 
 import Control.Monad.Coroutine.Logger 
 import Control.Monad.Coroutine.Object
 import Control.Monad.Coroutine.Queue

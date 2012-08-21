@@ -6,9 +6,7 @@
 
 module Control.Monad.Coroutine.IOActor where
 
-import Control.Monad
 import Control.Monad.Reader
-import Control.Monad.Trans 
 -- 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Event 
@@ -18,6 +16,8 @@ import Control.Monad.Coroutine.Object
 -- | first is 
 data IOOp i o where
   DoIOAction :: IOOp ((Event -> IO ()) -> IO ()) (Either String ())
+
+type IOActor m r = ServerObj IOOp m r
 
 -- | 
 doIOAction :: (Monad m) => ((Event -> IO ()) -> IO ()) 

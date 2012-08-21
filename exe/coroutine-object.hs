@@ -3,21 +3,12 @@
 module Main where
 
 import Control.Concurrent 
--- import Control.Concurrent.MVar 
--- import Control.Monad.State
--- import Control.Monad.Trans.Error
--- import System.INotify 
 -- from this package 
 -- import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Driver 
 import Control.Monad.Coroutine.Event 
 import Control.Monad.Coroutine.EventHandler 
-import Control.Monad.Coroutine.World.Sample2
--- import Control.Monad.Coroutine.Object 
--- import FileObserver 
--- import HINotify 
--- import Lsof 
--- import QServer
+import Control.Monad.Coroutine.World.CmdExec
 
 
 -- |

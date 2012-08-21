@@ -16,6 +16,10 @@ import Control.Monad.State
 import Data.Map hiding (null)
 import Data.Map.Lens 
 import Data.Monoid
+import Data.SafeCopy
+import Data.Serialize.Get 
+import Data.Serialize.Put
+import Data.UUID hiding (null)
 -- from this package 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Event 
@@ -28,11 +32,52 @@ import Prelude hiding ((.),id)
 
 -- | 
 data SubOp i o where 
-  GiveEventSub :: SubOp Event ()
+  GiveEventSub :: SubOp CmdExecEvent ()
 
+-- | 
+data CmdExecEvent = Start 
+                  | Init Int 
+                  | Finish Int
+                  | Render 
+                    deriving (Show,Eq)
+
+
+-- | 
+instance SafeCopy CmdExecEvent where
+  putCopy Start = contain (safePut (1 :: Int))
+  putCopy (Init n) = contain $ safePut (2 :: Int) >> safePut n 
+  putCopy (Finish n) = contain $ safePut (3 :: Int) >> safePut n 
+  putCopy Render = contain $ safePut (4 :: Int)
+  getCopy = contain $ do (x :: Int) <- safeGet 
+                         case x of 
+                           1 -> return Start 
+                           2 -> Init <$> safeGet
+                           3 -> Finish <$> safeGet
+                           4 -> pure Render 
+                           _ -> error "failed in getCopy of CmdExecEvent"
+
+
+evuuid :: UUID
+evuuid = case (fromString "858066b5-e6e7-431d-9ff3-facc5eb0befc") of 
+           Nothing -> error "evuuid in CmdExec.hs" 
+           Just i -> i 
+
+evwrap :: CmdExecEvent -> Event 
+evwrap ev = Event (evuuid,runPut (safePut ev))
+
+
+-- | 
+instance Eventable CmdExecEvent where
+  eventClassID _ = evuuid 
+  eventWrap = evwrap 
+
+getCmdExecEvent :: Event -> Maybe CmdExecEvent 
+getCmdExecEvent (Event (i,bstr))  
+    | i == evuuid = either (const Nothing) Just (runGet safeGet bstr)
+    | otherwise = Nothing 
 
 -- |
-giveEventSub :: (Monad m) => Event -> ClientObj SubOp m () 
+giveEventSub :: (Monad m) => CmdExecEvent -> ClientObj SubOp m () 
 giveEventSub ev = request (Input GiveEventSub ev) >> return ()
 
 
@@ -122,37 +167,39 @@ cmdexec :: forall m. (Monad m) =>
            Int        -- ^ id 
         -> ServerObj SubOp (StateT (WorldAttrib m) m) ()
 cmdexec idnum = ReaderT (workerW idnum None)  
-  where workerW :: Int 
-                -> JobStatus 
-                -> MethodInput SubOp 
-                -> ServerT SubOp (StateT (WorldAttrib m) m) ()
-        workerW i jst (Input GiveEventSub ev) = do 
-          (r,jst') <- case ev of 
-                 Init i' -> do 
-                   if i == i' 
-                     then do 
-                       let action = Left . ActionOrder $ 
-                             \evhandler -> do 
-                               forkIO $ do threadDelay 10000000
-                                           putStrLn "BAAAAAMM"
-                                           evhandler (Finish i)
-                               return ()
-                       modify (worldState.bufQueue %~ enqueue action)
-                       return (True,Started)
-                     else return (False,jst)
-                 Finish i' -> do
-                   if i == i' then return (True,Ended) 
-                              else return (False,jst)
-                 Render -> do 
-                   modify 
-                     (worldState.bufLog %~ 
+  where 
+    workerW :: Int 
+            -> JobStatus 
+            -> MethodInput SubOp 
+            -> ServerT SubOp (StateT (WorldAttrib m) m) ()
+    workerW i jst (Input GiveEventSub ev) = do 
+      (r,jst') <- case ev of 
+          Init i' -> do 
+            if i == i' 
+              then do 
+                let action = Left . ActionOrder $ 
+                      \evhandler -> do 
+                        forkIO $ do threadDelay 10000000
+                                    putStrLn "BAAAAAMM"
+                                    evhandler (eventWrap (Finish i))
+--  $ Event (evuuid,runPut (safePut (Finish i)))
+                        return ()
+                modify (worldState.bufQueue %~ enqueue action)
+                return (True,Started)
+              else return (False,jst)
+          Finish i' -> do
+            if i == i' then return (True,Ended) 
+                       else return (False,jst)
+          Render -> do 
+            modify (worldState.bufLog %~ 
                        (. (<> show i <> "th job status = " <> show jst <> "\n")))
-                   return (True,jst)
-                 _ -> return (False,jst) 
-          modify (worldState.jobMap.at i .~ Just jst')
-          req <- if r then request (Output GiveEventSub ())
-                      else request Ignore 
-          workerW i jst' req 
+            return (True,jst)
+          _ -> return (False,jst)
+
+      modify (worldState.jobMap.at i .~ Just jst')
+      req <- if r then request (Output GiveEventSub ())
+                  else request Ignore 
+      workerW i jst' req 
 
           
 -- | 
@@ -163,18 +210,19 @@ world = ReaderT staction
                       return ()
     go :: (MonadIO m) => MethodInput (WorldOp m) -> StateT (WorldAttrib (ServerT (WorldOp m) m)) (ServerT (WorldOp m) m) () 
     go (Input GiveEvent ev) = do
-      wlst <- (^. worldActor.workers ) <$> get 
-      if ev == Start 
-        then do 
-          i <- (^. worldState.nextID) <$> get 
-          let wlst' = cmdexec i : wlst 
-          modify (worldActor.workers .~ wlst')
-          modify (worldState.nextID %~ (+1) )
-        else do 
-          Right wlst' <- 
-            runErrorT $ mapM (\x -> liftM fst (x <==> giveEventSub ev)) wlst
-            --  runErrorT $ liftM fst (wobj <==> giveEventSub ev) 
-          modify (worldActor.workers .~ wlst')
+      case getCmdExecEvent ev of  
+        Nothing -> return () 
+        Just e -> do wlst <- (^. worldActor.workers ) <$> get 
+                     case e of 
+                       Start -> do 
+                         i <- (^. worldState.nextID) <$> get 
+                         let wlst' = cmdexec i : wlst 
+                         modify (worldActor.workers .~ wlst')
+                         modify (worldState.nextID %~ (+1) )
+                       _ -> do  
+                         Right wlst' <- 
+                           runErrorT $ mapM (\x -> liftM fst (x <==> giveEventSub e)) wlst
+                         modify (worldActor.workers .~ wlst')
       req <- lift (request (Output GiveEvent ()))
       go req 
 

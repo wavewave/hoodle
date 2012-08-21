@@ -45,9 +45,9 @@ ticking mvar n = do
       else if n `mod` 3 == 0 
            then eventHandler mvar Render
            else eventHandler mvar (Message ("test : " ++ show n)) -}
-    let action | n `mod` 10 == 5 = eventHandler mvar Start  
-               | n `mod` 10 == 9 = eventHandler mvar (Init (n `div` 10))
-               | otherwise = eventHandler mvar Render 
+    let action | n `mod` 10 == 5 = eventHandler mvar (eventWrap Start)
+               | n `mod` 10 == 9 = eventHandler mvar (eventWrap (Init (n `div` 10)))
+               | otherwise = eventHandler mvar (eventWrap Render)
     action 
 
    

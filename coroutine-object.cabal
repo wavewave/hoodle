@@ -25,6 +25,9 @@ Library
                    http-types == 0.7.*,
                    http-conduit == 1.6.*, 
                    aeson == 0.6.*, 
+                   safecopy == 0.6.*,
+                   uuid == 1.2.*,
+                   cereal == 0.3.*,
                    weblogger-type == 0.0.*
   Other-Modules:   
   exposed-modules:
@@ -32,22 +35,25 @@ Library
                    Control.Monad.Coroutine.Driver
                    Control.Monad.Coroutine.EventHandler 
                    Control.Monad.Coroutine.Event 
-                   -- Control.Monad.Coroutine.FileObserver 
-                   -- Control.Monad.Coroutine.HINotify
                    Control.Monad.Coroutine.IOActor 
                    Control.Monad.Coroutine.Logger
                    Control.Monad.Coroutine.Logger.Simple  
                    Control.Monad.Coroutine.Logger.WebLog
-                   -- Control.Monad.Coroutine.Lsof 
                    Control.Monad.Coroutine.Object 
-                   -- Control.Monad.Coroutine.QServer 
                    Control.Monad.Coroutine.Queue 
                    Control.Monad.Coroutine.World
                    Control.Monad.Coroutine.World.CmdExec
-                   Control.Monad.Coroutine.World.Sample 
-                   Control.Monad.Coroutine.World.SampleActor
-                   Control.Monad.Coroutine.World.Sample2
-                   Control.Monad.Coroutine.World.SampleActor2
+                   -- Control.Monad.Coroutine.World.Sample 
+                   -- Control.Monad.Coroutine.World.SampleActor
+                   -- Control.Monad.Coroutine.World.Sample2
+                   -- Control.Monad.Coroutine.World.SampleActor2
+
+                   -- Control.Monad.Coroutine.FileObserver 
+                   -- Control.Monad.Coroutine.HINotify
+                   -- Control.Monad.Coroutine.Lsof 
+                   -- Control.Monad.Coroutine.QServer 
+
+
  
 Executable coroutine-object
   Main-is: coroutine-object.hs

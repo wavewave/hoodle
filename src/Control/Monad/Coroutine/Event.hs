@@ -8,6 +8,7 @@ data Event = Message String
            | Sound String 
              deriving (Show,Eq)
 
+-- | action order 
+data ActionOrder = ActionOrder ((Event -> IO ()) -> IO ())
 
-data ActionOrder = ActionOrder (IO ())
 

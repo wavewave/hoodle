@@ -15,22 +15,23 @@ import Control.Monad.Coroutine.Event
 import Control.Monad.Coroutine.Object 
 
 
--- | 
+-- | first is 
 data IOOp i o where
-  DoIOAction :: IOOp (IO ()) (Either String ())
+  DoIOAction :: IOOp ((Event -> IO ()) -> IO ()) (Either String ())
 
 -- | 
-doIOAction :: (Monad m) => IO () -> ClientObj IOOp m (Either String ())
+doIOAction :: (Monad m) => ((Event -> IO ()) -> IO ()) 
+           -> ClientObj IOOp m (Either String ())
 doIOAction act = do ans <- request (Input DoIOAction act) 
                     case ans of 
                       Output DoIOAction r -> return r
                       Ignore -> return (Left "error in doing doIOAction")
 
 -- | 
-ioactor :: (MonadIO m) => ServerObj IOOp m ()
-ioactor = ReaderT ioactorW 
+ioactorgen :: (MonadIO m) => (Event -> IO ()) -> ServerObj IOOp m ()
+ioactorgen evhandler = ReaderT ioactorW 
   where ioactorW (Input DoIOAction act) = do 
-          liftIO act 
+          liftIO (act evhandler) 
           req <- request (Output DoIOAction (Right ()))
           ioactorW req 
 

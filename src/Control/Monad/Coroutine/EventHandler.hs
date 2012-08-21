@@ -9,6 +9,7 @@ import Control.Monad.Coroutine.Event
 import Control.Monad.Coroutine.Driver 
 import Control.Monad.Coroutine.Logger 
 
+-- | 
 eventHandler :: MVar (Driver IO ()) -> Event -> IO ()
 eventHandler dref ev = do 
     drv <- takeMVar dref 

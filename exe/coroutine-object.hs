@@ -3,16 +3,16 @@
 module Main where
 
 import Control.Concurrent 
-import Control.Concurrent.MVar 
-import Control.Monad.State
-import Control.Monad.Trans.Error
+-- import Control.Concurrent.MVar 
+-- import Control.Monad.State
+-- import Control.Monad.Trans.Error
 -- import System.INotify 
 -- from this package 
-import Control.Monad.Coroutine
+-- import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Driver 
 import Control.Monad.Coroutine.Event 
 import Control.Monad.Coroutine.EventHandler 
-import Control.Monad.Coroutine.Object 
+-- import Control.Monad.Coroutine.Object 
 -- import FileObserver 
 -- import HINotify 
 -- import Lsof 
@@ -36,7 +36,7 @@ test_qclient = eaction >>= either putStrLn (const (putStrLn "good end"))
           liftIO $ print r3  
 -}
 
-
+{-
 -- | test driver 
 test_driver :: IO () 
 test_driver = eaction >>= either (putStrLn.show) (const (putStrLn "good end"))
@@ -45,7 +45,9 @@ test_driver = eaction >>= either (putStrLn.show) (const (putStrLn "good end"))
           query $ dispatch (Message "hello")
           query $ dispatch (Message "how are you?")
           return () 
-          
+-}
+
+{-        
 -- | test event handling 
 test_eventhandler :: IO () 
 test_eventhandler = do 
@@ -56,7 +58,8 @@ test_eventhandler = do
     putStrLn "----"
     eventHandler dref (Message "dlsl") 
     putStrLn "----"
-  
+-}  
+
 -- | test hinotify 
 {- test_hinotify :: IO () 
 test_hinotify = do 
@@ -78,7 +81,7 @@ test_lsof = do
     print t
 -}
 
-
+{-
 -- | 
 test_fileobserver :: IO () 
 test_fileobserver = do 
@@ -90,13 +93,15 @@ test_fileobserver = do
     putStrLn "----"
     eventHandler dref (Message "dlsl") 
     putStrLn "----"
-
+-}
 
 -- |
 
 test_tickingevent :: IO () 
 test_tickingevent = do 
-    dref <- newMVar driver 
+    dref <- newMVar (undefined :: Driver IO ()) 
+    _ <- takeMVar dref  
+    putMVar dref (driver (eventHandler dref))
     putStrLn "starting ticking" 
     ticking dref 0    
 

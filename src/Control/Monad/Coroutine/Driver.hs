@@ -42,14 +42,16 @@ dispatch ev = do request (Input Dispatch ev)
                  return ()
 
 -- | basic driver 
-driver :: forall m. (Monad m, MonadLog m, MonadIO m) => Driver m () 
-driver = ReaderT (driverW logger world ioactor) 
+driver :: forall m. (Monad m, MonadLog m, MonadIO m) => 
+          (Event -> IO ()) -> Driver m () 
+driver evhandler = ReaderT (driverW logger world (ioactorgen evhandler)) 
   where 
     driverW :: LogServer (ServerT DrvOp m) () -> ServerObj (WorldOp (ServerT DrvOp m)) (ServerT DrvOp m) () -> ServerObj IOOp (ServerT DrvOp m) () -> MethodInput DrvOp -> ServerT DrvOp m () 
     driverW logobj worldobj ioactorobj (Input Dispatch ev) = do 
       (logobj',worldobj',ioactorobj') <- multiDispatchTillEnd (logobj,worldobj,ioactorobj) [Right ev]
       req <- request (Output Dispatch ()) 
       driverW logobj' worldobj' ioactorobj' req 
+
 
 -- | single event dispatch 
 singleDispatch (Right ev) (logobj,worldobj,ioactorobj,evacc) = do
@@ -66,6 +68,7 @@ singleDispatch (Left (ActionOrder act)) (logobj,worldobj,ioactorobj,evacc) = do
                       return ioactorobj'
         -- let ioactorobj' = ioactorobj 
      return (logobj,worldobj,ioactorobj',evacc) 
+
 
 -- | a single feedback step of multiple event dispatch
 multiDispatch (logobj,worldobj,ioactorobj,evacc) events = do 

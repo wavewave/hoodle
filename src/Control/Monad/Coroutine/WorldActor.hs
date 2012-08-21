@@ -7,6 +7,7 @@
 module Control.Monad.Coroutine.WorldActor where 
 
 import Control.Category
+import Control.Concurrent 
 import Control.Monad.Error 
 import Control.Monad.Reader
 import Control.Monad.State
@@ -119,7 +120,14 @@ air = ReaderT airW
           r <- case ev of 
                  Sound snd -> do 
                    modState tempLog (. (++ "sound " ++ snd ++"\n"))
-                   modState tempQueue (enqueue (Left (ActionOrder (putStrLn "BAAAAAAMM"))))
+                   modState tempQueue . enqueue . Left . ActionOrder $ 
+                     \evhandler -> do 
+                        forkIO $ do threadDelay 10000000
+                                    putStrLn "BAAAAAMM"
+                                    evhandler (Message "HAHAHAH")
+                        return ()
+
+-- const (putStrLn "BAAAAAMM")
                    return True
                  _ -> return False 
           req <- if r then request (Output GiveEventSub ())

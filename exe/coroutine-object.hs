@@ -38,11 +38,17 @@ ticking mvar n = do
         else if n `mod` 10 == 3
           then eventHandler mvar Render
           else eventHandler mvar (Message ("test : " ++ show n)) -}
-    if n == 5 
+    {- if n == 5 
       then eventHandler mvar Start 
       else if n `mod` 3 == 0 
            then eventHandler mvar Render
-           else eventHandler mvar (Message ("test : " ++ show n))
+           else eventHandler mvar (Message ("test : " ++ show n)) -}
+    let action | n `mod` 10 == 5 = eventHandler mvar Start  
+               | n `mod` 10 == 9 = eventHandler mvar (Init (n `div` 10))
+               | otherwise = eventHandler mvar Render 
+    action 
+
+   
 
     putStrLn "_-_-_-_-_-_-_-_-_-_-_-_-_-"
     threadDelay (1*second)

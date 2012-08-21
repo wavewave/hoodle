@@ -37,7 +37,6 @@ world = ReaderT staction
       Right wobj' <- 
         runErrorT $ liftM fst (wobj <==> giveEventSub ev) 
       modify (worldActor.objWorker .~ wobj')
-      -- put . (worldActor.objWorker .~ wobj')  =<< get       
       req <- lift (request (Output GiveEvent ()))
       go req   
     go (Input FlushLog (logobj :: LogServer m ())) = do
@@ -48,7 +47,6 @@ world = ReaderT staction
           let l1 = runErrorT (logobj <==> writeLog ("[World] " ++ (logf ""))) 
           Right (logobj',_) <- lift . lift $ l1
           modify (worldState.tempLog .~ id)
-          -- put . (worldState.tempLog .~ id) =<< get
           req <- lift (request (Output FlushLog logobj'))
           go req  
         else do 
@@ -58,6 +56,6 @@ world = ReaderT staction
       q <- ( ^. worldState.tempQueue ) <$> get
       let lst = fqueue q ++ reverse (bqueue q)
       modify ( worldState.tempQueue .~ emptyQueue )
-      -- put =<< ( worldState.tempQueue .~ emptyQueue ) <$> get 
       req <- lift (request (Output FlushQueue lst))
       go req 
+

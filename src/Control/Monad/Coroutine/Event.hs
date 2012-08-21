@@ -8,6 +8,8 @@ data Event = Message String
            | Sound String 
            | Start
            | Finished 
+           | Init Int 
+           | Finish Int 
              deriving (Show,Eq)
 
 -- | action order 

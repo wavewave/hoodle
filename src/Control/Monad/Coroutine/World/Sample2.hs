@@ -11,7 +11,8 @@ import Control.Category
 import Control.Monad.Error 
 import Control.Monad.Reader
 import Control.Monad.State
-import Data.Lens.Common 
+-- import Data.Lens.Common 
+import Control.Lens
 -- 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Event 
@@ -33,28 +34,34 @@ world = ReaderT staction
                       return ()
     go :: (MonadIO m) => MethodInput (WorldOp m) -> StateT (WorldAttrib (ServerT (WorldOp m) m)) (ServerT (WorldOp m) m) () 
     go (Input GiveEvent ev) = do
-      wobj <- getL (objWorker.worldActor) <$> get  
+      wobj <- get >>= return . (^. worldActor.objWorker )  
+      -- getL (objWorker.worldActor) <$> get  
       Right wobj' <- 
         runErrorT $ liftM fst (wobj <==> giveEventSub ev) 
-      put . setL (objWorker.worldActor) wobj' =<< get  
+      put . (worldActor.objWorker .~ wobj')  =<< get       
+      -- put . setL (objWorker.worldActor) wobj' =<< get  
       req <- lift (request (Output GiveEvent ()))
       go req   
     go (Input FlushLog (logobj :: LogServer m ())) = do
-      logf <- getL (tempLog.worldState) <$> get 
+      logf <- get >>= return . (^. worldState.tempLog )
+      -- getL (tempLog.worldState) <$> get 
       let msg = logf "" 
       if ((not . null) msg) 
         then do 
           let l1 = runErrorT (logobj <==> writeLog ("[World] " ++ (logf ""))) 
           Right (logobj',_) <- lift . lift $ l1
-          put . setL (tempLog.worldState) id =<< get
+          put . (worldState.tempLog .~ id) =<< get
+          -- put . setL (tempLog.worldState) id =<< get
           req <- lift (request (Output FlushLog logobj'))
           go req  
         else do 
           req <- lift (request Ignore) 
           go req 
     go (Input FlushQueue ()) = do
-      q <- getL (tempQueue.worldState) <$> get 
+      q <- ( ^. worldState.tempQueue ) <$> get
+      -- getL (tempQueue.worldState) <$> get 
       let lst = fqueue q ++ reverse (bqueue q)
-      put . setL (tempQueue.worldState) emptyQueue =<< get 
+      put =<< ( worldState.tempQueue .~ emptyQueue ) <$> get 
+      -- put . setL (tempQueue.worldState) emptyQueue =<< get 
       req <- lift (request (Output FlushQueue lst))
       go req 

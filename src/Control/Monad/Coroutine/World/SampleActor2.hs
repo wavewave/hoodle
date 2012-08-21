@@ -11,7 +11,10 @@ import Control.Concurrent
 import Control.Monad.Error 
 import Control.Monad.Reader
 import Control.Monad.State
-import Data.Lens.Common 
+-- import Data.Lens.Common 
+import Control.Lens 
+import Data.Map.Lens
+import qualified Data.Map as Map 
 -- 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Event 
@@ -23,6 +26,10 @@ import Prelude hiding ((.),id)
 data JobStatus = None | Started | Ended 
                deriving (Show,Eq)
 
+-- | 
+data SubOp i o where 
+  GiveEventSub :: SubOp Event ()
+
 
 -- | full state of world 
 data WorldState = WorldState { _jobStatus :: JobStatus
@@ -30,17 +37,19 @@ data WorldState = WorldState { _jobStatus :: JobStatus
                              , _tempQueue :: Queue (Either ActionOrder Event)
                              }
 
+
 -- | isDoorOpen lens
-jobStatus :: Lens WorldState JobStatus
-jobStatus = lens _jobStatus (\d s -> s { _jobStatus = d })
+jobStatus :: Simple Lens WorldState JobStatus
+jobStatus = lens _jobStatus (\a b -> a { _jobStatus = b })
 
 -- | 
-tempLog :: Lens WorldState (String -> String) 
-tempLog = lens _tempLog (\b a -> a { _tempLog = b } )
+tempLog :: Simple Lens WorldState (String -> String) 
+tempLog = lens _tempLog (\a b -> a { _tempLog = b } )
 
 -- | 
-tempQueue :: Lens WorldState (Queue (Either ActionOrder Event))
-tempQueue = lens _tempQueue (\b a -> a { _tempQueue = b} )
+tempQueue :: Simple Lens WorldState (Queue (Either ActionOrder Event))
+tempQueue = lens _tempQueue (\a b -> a { _tempQueue = b} )
+
 
 -- | 
 emptyWorldState :: WorldState 
@@ -49,15 +58,18 @@ emptyWorldState = WorldState None id emptyQueue
 
 type WorldObject m r = ServerObj SubOp (StateT (WorldAttrib m) m) r 
 
-
 -- | full collection of actors in world 
 data WorldActor m 
     = WorldActor { _objWorker :: WorldObject m () 
                  } 
 
--- | isDoorOpen lens
-objWorker :: Lens (WorldActor m) (ServerObj SubOp (StateT (WorldAttrib m) m) ())
-objWorker = lens _objWorker (\b a -> a { _objWorker = b })
+
+-- | objWorker lens
+objWorker :: Simple Lens (WorldActor m) (ServerObj SubOp (StateT (WorldAttrib m) m) ())
+objWorker = lens _objWorker (\a b -> a { _objWorker = b })
+
+
+-- makeLenses [''WorldActor]
 
 -- | 
 initWorldActor :: (Monad m) => WorldActor m 
@@ -69,33 +81,36 @@ data WorldAttrib m =
        WorldAttrib { _worldState :: WorldState
                    , _worldActor :: WorldActor m } 
 
+-- makeLenses [''WorldAttrib]
+
 
 -- | lens
-worldState :: Lens (WorldAttrib m) WorldState
-worldState = lens _worldState (\b a -> a {_worldState = b})
+worldState :: Simple Lens (WorldAttrib m) WorldState
+worldState = lens _worldState (\a b -> a {_worldState = b})
 
 -- | lens 
-worldActor :: Lens (WorldAttrib m) (WorldActor m)
-worldActor = lens _worldActor (\b a -> a {_worldActor = b})
+worldActor :: Simple Lens (WorldAttrib m) (WorldActor m)
+worldActor = lens _worldActor (\a b -> a {_worldActor = b})
+
+
 
 -- | initialization   
 initWorld :: (Monad m) => WorldAttrib m 
 initWorld = WorldAttrib emptyWorldState initWorldActor
 
 
--- | 
-data SubOp i o where 
-  GiveEventSub :: SubOp Event ()
+
+
 
 -- |
 giveEventSub :: (Monad m) => Event -> ClientObj SubOp m () 
 giveEventSub ev = request (Input GiveEventSub ev) >> return ()
 
-getState l = lift ( liftM ( getL (l.worldState) ) get )
+getState l = lift ( liftM ( ^. worldState.l ) get )
 
-putState l x = lift ( put . ( setL (l.worldState) x ) =<<  get  )
+putState l x = lift ( put . ( worldState.l .~ x ) =<<  get  )
 
-modState l m = lift ( put . modL (l.worldState) m =<< get ) 
+modState l m = lift ( put . ( worldState.l %~ m ) =<< get ) 
 
 
 worker :: (Monad m) => ServerObj SubOp (StateT (WorldAttrib m) m) ()
@@ -103,12 +118,14 @@ worker = ReaderT workerW
   where workerW (Input GiveEventSub ev) = do 
           r <- case ev of 
                  Start -> do 
-                   modState tempQueue . enqueue . Left . ActionOrder $ 
-                     \evhandler -> do 
-                        forkIO $ do threadDelay 10000000
-                                    putStrLn "BAAAAAMM"
-                                    evhandler Finished
-                        return ()
+
+                   let act = Left . ActionOrder $ 
+                               \evhandler -> do 
+                                 forkIO $ do threadDelay 10000000
+                                             putStrLn "BAAAAAMM"
+                                             evhandler Finished
+                                 return ()
+                   lift (put . ((worldState.tempQueue) %~ (enqueue act)) =<< get)
                    putState jobStatus Started
                    return True
                  Finished -> do 

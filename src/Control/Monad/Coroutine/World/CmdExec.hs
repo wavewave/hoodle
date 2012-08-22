@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs, NoMonomorphismRestriction, ScopedTypeVariables, KindSignatures #-}
+{-# LANGUAGE GADTs, NoMonomorphismRestriction, ScopedTypeVariables, 
+             KindSignatures, RecordWildCards #-}
 
 ----------------------------
 -- | describe world object
@@ -20,6 +21,8 @@ import Data.SafeCopy
 import Data.Serialize.Get 
 import Data.Serialize.Put
 import Data.UUID hiding (null)
+import System.Directory 
+import System.Process 
 -- from this package 
 import Control.Monad.Coroutine
 import Control.Monad.Coroutine.Event 
@@ -34,23 +37,33 @@ import Prelude hiding ((.),id)
 data SubOp i o where 
   GiveEventSub :: SubOp CmdExecEvent ()
 
+-- | info about command 
+data CmdSet = CmdSet { program :: String 
+                     , workdir :: FilePath } 
+            deriving (Show,Eq)
+
 -- | 
-data CmdExecEvent = Start 
+data CmdExecEvent = Start CmdSet
                   | Init Int 
                   | Finish Int
                   | Render 
                     deriving (Show,Eq)
 
+-- | 
+instance SafeCopy CmdSet where
+  putCopy CmdSet {..} = contain $ safePut program >> safePut workdir 
+  getCopy = contain $ CmdSet <$> safeGet <*> safeGet                        
+
 
 -- | 
 instance SafeCopy CmdExecEvent where
-  putCopy Start = contain (safePut (1 :: Int))
+  putCopy (Start exec) = contain $ safePut (1 :: Int) >> safePut exec
   putCopy (Init n) = contain $ safePut (2 :: Int) >> safePut n 
   putCopy (Finish n) = contain $ safePut (3 :: Int) >> safePut n 
   putCopy Render = contain $ safePut (4 :: Int)
   getCopy = contain $ do (x :: Int) <- safeGet 
                          case x of 
-                           1 -> return Start 
+                           1 -> Start <$> safeGet  
                            2 -> Init <$> safeGet
                            3 -> Finish <$> safeGet
                            4 -> pure Render 
@@ -162,28 +175,33 @@ initWorld :: (Monad m) => WorldAttrib m
 initWorld = WorldAttrib emptyWorldState initWorldActor
 
 
+-- | 
+doCmdAction :: Int -> CmdSet -> (Event -> IO ()) -> IO ()
+doCmdAction i cmdset handler = do 
+    forkIO $ do setCurrentDirectory (workdir cmdset)
+                system (program cmdset)
+                handler (eventWrap (Finish i))
+    return ()
+
+
 -- | command executor actor
 cmdexec :: forall m. (Monad m) => 
-           Int        -- ^ id 
+           CmdSet     -- ^ command set 
+        -> Int        -- ^ id 
         -> ServerObj SubOp (StateT (WorldAttrib m) m) ()
-cmdexec idnum = ReaderT (workerW idnum None)  
+cmdexec cmdset idnum = ReaderT (workerW cmdset idnum None)  
   where 
-    workerW :: Int 
+    workerW :: CmdSet 
+            -> Int 
             -> JobStatus 
             -> MethodInput SubOp 
             -> ServerT SubOp (StateT (WorldAttrib m) m) ()
-    workerW i jst (Input GiveEventSub ev) = do 
+    workerW cmdset i jst (Input GiveEventSub ev) = do 
       (r,jst') <- case ev of 
           Init i' -> do 
             if i == i' 
               then do 
-                let action = Left . ActionOrder $ 
-                      \evhandler -> do 
-                        forkIO $ do threadDelay 10000000
-                                    putStrLn "BAAAAAMM"
-                                    evhandler (eventWrap (Finish i))
---  $ Event (evuuid,runPut (safePut (Finish i)))
-                        return ()
+                let action = Left . ActionOrder $ doCmdAction i cmdset
                 modify (worldState.bufQueue %~ enqueue action)
                 return (True,Started)
               else return (False,jst)
@@ -199,7 +217,7 @@ cmdexec idnum = ReaderT (workerW idnum None)
       modify (worldState.jobMap.at i .~ Just jst')
       req <- if r then request (Output GiveEventSub ())
                   else request Ignore 
-      workerW i jst' req 
+      workerW cmdset i jst' req 
 
           
 -- | 
@@ -214,9 +232,9 @@ world = ReaderT staction
         Nothing -> return () 
         Just e -> do wlst <- (^. worldActor.workers ) <$> get 
                      case e of 
-                       Start -> do 
+                       Start cmdset -> do 
                          i <- (^. worldState.nextID) <$> get 
-                         let wlst' = cmdexec i : wlst 
+                         let wlst' = cmdexec cmdset i : wlst 
                          modify (worldActor.workers .~ wlst')
                          modify (worldState.nextID %~ (+1) )
                        _ -> do  

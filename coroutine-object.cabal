@@ -28,6 +28,8 @@ Library
                    safecopy == 0.6.*,
                    uuid == 1.2.*,
                    cereal == 0.3.*,
+                   process == 1.1.*,
+                   directory == 1.1.*, 
                    weblogger-type == 0.0.*
   Other-Modules:   
   exposed-modules:

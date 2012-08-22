@@ -28,6 +28,10 @@ second :: Int
 second = 1000000
 
 -- | 
+mycmd = CmdSet "/home/wavewave/repo/workspace/haskellstudy/slow/slow 20"
+               "/home/wavewave/repo/workspace/haskellstudy/slow"
+
+-- | 
 
 ticking :: MVar (Driver IO ()) -> Int -> IO () 
 ticking mvar n = do 
@@ -45,7 +49,7 @@ ticking mvar n = do
       else if n `mod` 3 == 0 
            then eventHandler mvar Render
            else eventHandler mvar (Message ("test : " ++ show n)) -}
-    let action | n `mod` 10 == 5 = eventHandler mvar (eventWrap Start)
+    let action | n `mod` 10 == 5 = eventHandler mvar (eventWrap (Start mycmd))
                | n `mod` 10 == 9 = eventHandler mvar (eventWrap (Init (n `div` 10)))
                | otherwise = eventHandler mvar (eventWrap Render)
     action 

@@ -58,7 +58,7 @@ singleDispatch :: Monad m =>
                   Either ActionOrder Event 
                -> (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
                -> m (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
-singleDispatch (Right ev@(Event (i,bstr))) (logobj,worldobj,ioactorobj,evacc) = do
+singleDispatch (Right ev) (logobj,worldobj,ioactorobj,evacc) = do
     Right (logobj',worldobj',events) <- 
       runErrorT $ do -- (logobj1,_)    <- logobj    <==> writeLog ("[Driver] " ++ show i)
                      (worldobj1,_)  <- worldobj  <==> giveEvent ev

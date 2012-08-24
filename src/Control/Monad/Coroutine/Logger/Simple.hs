@@ -10,8 +10,8 @@ import Control.Monad.Coroutine.Object
 
 
 -- | 
-logger :: (MonadLog m) => LogServer m () 
-logger = loggerW 0
+simplelogger :: (MonadLog m) => LogServer m () 
+simplelogger = loggerW 0
  
 -- |
 loggerW :: (MonadLog m) => Int -> LogServer m () 

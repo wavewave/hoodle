@@ -1,5 +1,5 @@
 {-# LANGUAGE StandaloneDeriving, TypeSynonymInstances, FlexibleInstances, 
-             MultiParamTypeClasses #-}
+             MultiParamTypeClasses, UndecidableInstances #-}
 
 module Control.Monad.Coroutine where 
 
@@ -48,7 +48,7 @@ instance Functor (Request req ans) where
 
 type Coroutine req ans = FreeT (Request req ans)
 
-instance (Monad m, Functor f) => MonadState st (FreeT f (StateT st m)) where 
+instance (Monad m, MonadState st m, Functor f) => MonadState st (FreeT f m) where 
   get = lift get
   put = lift . put
 

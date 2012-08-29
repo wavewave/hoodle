@@ -48,7 +48,7 @@ hoodleStartMain = Dyre.wrapMain $ Dyre.defaultParams
   , Dyre.configDir = Just dirHoodled
   , Dyre.realMain = hoodleMain 
   , Dyre.showError = showError 
-  , Dyre.hidePackages = ["meta-hoodle"] 
+  -- , Dyre.hidePackages = ["meta-hoodle"] 
   } 
 
 -- | 
@@ -59,13 +59,3 @@ dirHoodled = do
   return (homedir </> ".hoodle.d")
 
 
-{-
--- | main starting point of the whole program
-
-startUp :: IO () 
-startUp = do 
-    -- putStrLn "welcome to hoodle"
-    -- param <- cmdArgs mode
-    -- commandLineProcess param 
-    hoodleStartMain defaultScriptConfig  
--}

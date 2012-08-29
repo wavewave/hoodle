@@ -12,19 +12,9 @@
 
 module Main where
 
--- import System.Console.CmdArgs
-
--- import Hoodle.ProgType
--- import Hoodle.Command
-
 import Hoodle.Script 
 import Hoodle.StartUp
 
 main :: IO () 
 main = hoodleStartMain defaultScriptConfig 
 
--- startUp
--- do 
---  putStrLn "hoodle"
---   param <- cmdArgs mode
---   commandLineProcess param

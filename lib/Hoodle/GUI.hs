@@ -14,6 +14,7 @@
 
 module Hoodle.GUI where
 
+import Hoodle.Type.Coroutine
 import Hoodle.Type.XournalState 
 import Hoodle.Type.Event
 import Hoodle.Type.Canvas
@@ -46,25 +47,11 @@ startGUI mfname mhook = do
 
   cfg <- loadConfigFile   
   devlst <- initDevice cfg 
-  (tref,sref) <- initCoroutine devlst window
-  st0 <- readIORef sref 
   maxundo <- getMaxUndo cfg >>= 
                \mmax -> maybe (return 50) (return . id) mmax
-  let st1 = set hookSet mhook 
-          . set undoTable (emptyUndo maxundo) 
-          $ st0 
-  putStrLn "before st2"
-  st2 <- getFileContent mfname st1
-  putStrLn "after st2"
-  let ui = get gtkUIManager st2 
-  writeIORef sref st2
-  -- (st3, winCvsArea, wconf) <- constructFrame <*> get frameState $ st2
-  let st3 = st2                          
-  setTitleFromFileName st3
-  vbox <- vBoxNew False 0 
-  
-  let st4 = set rootContainer (castToBox vbox) st3
-  writeIORef sref st4
+  (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  
+  setTitleFromFileName st0
+  -- writeIORef sref st4
   xinputbool <- getXInputConfig cfg 
   agr <- uiManagerGetActionGroups ui >>= \x ->
            case x of 
@@ -73,7 +60,7 @@ startGUI mfname mhook = do
   uxinputa <- actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
                 return (castToToggleAction x) 
   toggleActionSetActive uxinputa xinputbool
-  let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st4
+  let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
@@ -98,17 +85,17 @@ startGUI mfname mhook = do
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
-  boxPackEnd vbox (get rootWindow st4) PackGrow 0 
+  boxPackEnd vbox (get rootWindow st0) PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
   window `on` deleteEvent $ do
-    liftIO $ bouncecallback tref sref (Menu MenuQuit)
+    liftIO $ bouncecallback tref (Menu MenuQuit)
     return True
   putStrLn "before widget show all " 
   widgetShowAll window
   putStrLn "after widget show all " 
   
   -- initialized
-  bouncecallback tref sref Initialized     
+  bouncecallback tref Initialized     
   mainGUI 
   return ()
   

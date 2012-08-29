@@ -23,7 +23,7 @@ module Hoodle.Type.Canvas
 , CanvasInfo (..) 
 , CanvasInfoBox (..)
 , CanvasInfoMap
-, PenType (..) 
+-- , PenType (..) 
 , WidthColorStyle
 , PenHighlighterEraserSet
 , PenInfo
@@ -262,11 +262,6 @@ viewModeBranch fsingle fcont cinfo =
 
 type CanvasInfoMap = M.IntMap CanvasInfoBox
 
-data PenType = PenWork 
-             | HighlighterWork 
-             | EraserWork 
-             | TextWork 
-             deriving (Show,Eq)
 
 
 -- | 

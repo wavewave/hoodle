@@ -12,21 +12,40 @@
 
 module Hoodle.Type.Coroutine where
 
+import Control.Monad.State
+import Control.Monad.Trans.Free
 import Data.IORef 
+-- from this package
+import Control.Monad.Coroutine 
 import Hoodle.Type.Event
 import Hoodle.Type.XournalState 
-import Control.Monad.Coroutine 
--- import Control.Monad.Coroutine.SuspensionFunctors
-import Data.Functor.Identity (Identity(..))
 
--- type Trampoline m x = Coroutine Identity m x 
--- type Generator a m x = Coroutine (Yield a) m x
--- type Iteratee a m x = Coroutine (Await a) m x
-
--- type SusAwait =  Await MyEvent (Iteratee MyEvent XournalStateIO ())
-
-
+-- | 
 type MainCoroutine a = Consumer MyEvent XournalStateIO a 
 
-type TRef = IORef (MyEvent -> MainCoroutine ()) -- SusAwait
-type SRef = IORef HoodleState
+-- |
+type Driver a = Consumer MyEvent IO a 
+
+-- | 
+mapDown :: HoodleState -> MainCoroutine a -> Driver a 
+mapDown st m = 
+    FreeT $ do x <- flip runStateT st $ runFreeT m 
+               case x of 
+                 (Pure r,_) -> return (Pure r) 
+                 (Free (Await next),st') -> 
+                   return . Free . Await $ \ev -> mapDown st' (next ev)
+                      
+{-                      
+                      do 
+                    x <- runFreeT m 
+                    case x of               
+                      Pure r -> undefined -- return (Left r) 
+                      Free (Await next) -> return next 
+    in FreeT (Await (\ev -> mapDown st' (next ev)))
+                                
+  evalStateT m st -}
+
+type TRef = IORef (Maybe (MyEvent -> Driver ()))
+            -- (MyEvent -> MainCoroutine ()) 
+-- type SRef = IORef HoodleState
+

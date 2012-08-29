@@ -30,21 +30,20 @@ dummycallback = const (return ())
 
 -- |
 
-bouncecallback :: TRef -> SRef -> MyEvent -> IO () 
-bouncecallback tref sref input = do 
-  -- Await cont 
-  putStrLn "bounceCallback1"
-  putStrLn (show input) 
-  next <- readIORef tref 
-  st <- readIORef sref
-  (next',st') <- flip runStateT st $ do 
-    x <- runFreeT (next input)
-    case x of 
-      Pure () -> error "end? in boundcallback" -- partial
-      Free (Await next') -> return next' 
-  writeIORef tref next'   
-  writeIORef sref st' 
-  putStrLn "bounceCallBack2"
+bouncecallback :: TRef -> MyEvent -> IO () 
+bouncecallback tref ev = do 
+    mnext <- readIORef tref 
+    case mnext of 
+      Nothing -> do putStrLn "Nothing" 
+                    print ev 
+      Just next -> do                
+        next' <- do 
+          x <- runFreeT (next ev)
+          case x of 
+            Pure () -> error "end? in boundcallback" -- partial
+            Free (Await next') -> return next' 
+        writeIORef tref (Just next')
+
   
    
   

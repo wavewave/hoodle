@@ -14,17 +14,23 @@
 
 module Hoodle.Coroutine.Default where
 
+import Control.Applicative ((<$>))
+import Control.Monad.Coroutine
+-- import Control.Monad.Coroutine.SuspensionFunctors
+import qualified Control.Monad.State as St 
+import Control.Monad.Trans
+import qualified Data.IntMap as M
+import Data.Maybe
+import Control.Category
+import Data.Label
+import Prelude hiding ((.), id)
+import Data.IORef
 import Graphics.UI.Gtk hiding (get,set)
-
-import Hoodle.Type.Event
-import Hoodle.Type.Enum
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Canvas
-import Hoodle.Type.XournalState
-import Hoodle.Type.Clipboard
+-- from hoodle-platform
+import Data.Xournal.Simple (Dimension(..))
+import Data.Xournal.Generic
+-- from this package
 import Hoodle.Accessor
-import Hoodle.GUI.Menu
-import Hoodle.Script
 import Hoodle.Coroutine.Callback
 import Hoodle.Coroutine.Commit
 import Hoodle.Coroutine.Draw
@@ -39,41 +45,36 @@ import Hoodle.Coroutine.Mode
 import Hoodle.Coroutine.Window
 -- import Hoodle.Coroutine.Network
 import Hoodle.Coroutine.Layer 
-import Hoodle.ModelAction.Window 
-import Hoodle.Type.Window 
 import Hoodle.Device
-import Control.Applicative ((<$>))
-import Control.Monad.Coroutine
--- import Control.Monad.Coroutine.SuspensionFunctors
-import qualified Control.Monad.State as St 
-import Control.Monad.Trans
-import qualified Data.IntMap as M
-import Data.Maybe
-import Control.Category
-import Data.Label
-import Prelude hiding ((.), id)
-import Data.IORef
+import Hoodle.GUI.Menu
+import Hoodle.ModelAction.File
+import Hoodle.ModelAction.Window 
+import Hoodle.Script
+import Hoodle.Script.Hook
+import Hoodle.Type.Canvas
+import Hoodle.Type.Clipboard
+import Hoodle.Type.Coroutine
+import Hoodle.Type.Enum
+import Hoodle.Type.Event
+import Hoodle.Type.Undo
+import Hoodle.Type.Window 
+import Hoodle.Type.XournalState
 import Hoodle.Type.PageArrangement
-import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.Generic
 
 
 
 -- |
-initCoroutine :: DeviceList -> Window -> IO (TRef,SRef)
-initCoroutine devlst window = do 
-  let st0 = emptyHoodleState 
-  sref <- newIORef st0
-  tref <- newIORef guiProcess -- undefined -- (undefined :: SusAwait)
-  -- (r,st') <- St.runStateT (resume guiProcess) st0 
-  -- writeIORef sref st' 
-  -- either (writeIORef tref) (error "what?") r 
+initCoroutine :: DeviceList -> Window -> Maybe FilePath -> Maybe Hook 
+                 -> Int -- ^ maxundo 
+                 -> IO (TRef,HoodleState,UIManager,VBox)
+initCoroutine devlst window mfname mhook maxundo  = do 
+  
+  tref <- newIORef Nothing -- undefined -- guiProcess 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
-            . set callBack (bouncecallback tref sref) 
-            $ st0
-  writeIORef sref st0new            
-  ui <- getMenuUI tref sref    
+            . set callBack (bouncecallback tref) 
+            $ emptyHoodleState 
+  ui <- getMenuUI tref     
   putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
@@ -83,9 +84,18 @@ initCoroutine devlst window = do
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (get frameState st2)
   (st4,wconf') <- eventConnect st3 (get frameState st3)
-  let startingXstate = set frameState wconf' . set rootWindow cvs $ st4
-  writeIORef sref startingXstate   
-  return (tref,sref)
+  let st5 = set hookSet mhook 
+          . set undoTable (emptyUndo maxundo)  
+          . set frameState wconf' 
+          . set rootWindow cvs $ st4
+  st6 <- getFileContent mfname st5
+  let ui = get gtkUIManager st6
+  vbox <- vBoxNew False 0 
+
+  let startingXstate = set rootContainer (castToBox vbox) st6
+  writeIORef tref (Just (\ev -> mapDown startingXstate (guiProcess ev)))
+
+  return (tref,startingXstate,ui,vbox)
 
 
 -- | 
@@ -175,7 +185,13 @@ selectMode = do
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
     PenColorChanged c -> selectPenColorChanged c
-    PenWidthChanged w -> selectPenWidthChanged w
+    PenWidthChanged v -> do 
+      st <- getSt 
+      let ptype = get (penType.penInfo) st
+      let w = int2Point ptype v
+      let stNew = set (penWidth.currentTool.penInfo) w st 
+      putSt stNew 
+      selectPenWidthChanged w
     _ -> defaultEventProcess r1
 
 

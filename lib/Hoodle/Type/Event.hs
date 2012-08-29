@@ -26,7 +26,8 @@ data MyEvent = Initialized
              | PenMove Int PointerCoord
              | PenUp   Int PointerCoord 
              | PenColorChanged PenColor
-             | PenWidthChanged Double 
+             | PenWidthChanged Int -- (PenType -> Double)
+             | AssignPenMode Int 
              | HScrollBarMoved Int Double
              | VScrollBarMoved Int Double 
              | VScrollBarStart Int Double

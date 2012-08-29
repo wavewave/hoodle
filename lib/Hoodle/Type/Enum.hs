@@ -29,8 +29,15 @@ data AddDirection = PageBefore | PageAfter
 
 data ZoomModeRel = ZoomIn | ZoomOut
                  deriving (Show,Eq,Ord,Enum)
--- | 
 
+-- | 
+data PenType = PenWork 
+             | HighlighterWork 
+             | EraserWork 
+             | TextWork 
+             deriving (Show,Eq)
+
+-- | 
 data PenColor = ColorBlack
               | ColorBlue 
               | ColorRed

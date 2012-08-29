@@ -357,27 +357,26 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 
 -- | 
 
-actionNewAndRegisterRef :: TRef -> SRef 
+actionNewAndRegisterRef :: TRef -- -> SRef 
                            -> String -> String 
                            -> Maybe String -> Maybe StockId
                            -> Maybe MyEvent 
                            -> IO Action
-actionNewAndRegisterRef tref sref name label tooltip stockId myevent = do 
+actionNewAndRegisterRef tref name label tooltip stockId myevent = do 
     a <- actionNew name label tooltip stockId 
     case myevent of 
       Nothing -> return a 
       Just ev -> do 
         a `on` actionActivated $ do 
-          bouncecallback tref sref ev
+          bouncecallback tref ev
         return a
 
 -- | 
 
-getMenuUI :: TRef 
-             -> SRef
+getMenuUI :: TRef -- -> SRef
              -> IO UIManager
-getMenuUI tref sref = do 
-  let actionNewAndRegister = actionNewAndRegisterRef tref sref 
+getMenuUI tref = do 
+  let actionNewAndRegister = actionNewAndRegisterRef tref  
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
@@ -472,13 +471,13 @@ getMenuUI tref sref = do
   -- options menu 
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
-    bouncecallback tref sref (Menu MenuUseXInput)
+    bouncecallback tref (Menu MenuUseXInput)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
-    bouncecallback tref sref (Menu MenuPressureSensitivity)
+    bouncecallback tref (Menu MenuPressureSensitivity)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
 
   
@@ -534,9 +533,9 @@ getMenuUI tref sref = do
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
   
   
-  actionGroupAddRadioActions agr pointmods 0 (assignPoint sref)
-  actionGroupAddRadioActions agr penmods   0 (assignPenMode tref sref)
-  actionGroupAddRadioActions agr colormods 0 (assignColor sref) 
+  actionGroupAddRadioActions agr pointmods 0 (assignPoint tref)
+  actionGroupAddRadioActions agr penmods   0 (assignPenMode tref)
+  actionGroupAddRadioActions agr colormods 0 (assignColor tref) 
  
   let disabledActions = 
         [ recenta, printa, exporta
@@ -591,55 +590,58 @@ getMenuUI tref sref = do
 
 -- | 
 
-assignViewMode :: TRef -> SRef -> RadioAction -> IO ()
-assignViewMode tref sref a = do 
-    st <- readIORef sref 
+assignViewMode :: TRef -> RadioAction -> IO ()
+assignViewMode tref a = viewModeToMyEvent a >>= bouncecallback tref   
+
+{-    st <- readIORef sref 
     putStrLn "in assignmViewMode"
     printCanvasMode (getCurrentCanvasId st) (get currentCanvasInfo st)
-    putStrLn "still in assignViewMode"
-    viewModeToMyEvent a >>= bouncecallback tref sref
+    putStrLn "still in assignViewMode" -}
+
     
 -- | 
 
-assignPenMode :: TRef -> SRef -> RadioAction -> IO ()
-assignPenMode tref sref a = do 
+assignPenMode :: TRef -> RadioAction -> IO ()
+assignPenMode tref a = do 
     v <- radioActionGetCurrentValue a
+    bouncecallback tref (AssignPenMode v)
+    
+{-    
     let t = int2PenType v
     st <- readIORef sref 
     case t of 
       Left pm -> do 
         let stNew = set (penType.penInfo) pm st 
         writeIORef sref stNew 
-        bouncecallback tref sref ToViewAppendMode
+        bouncecallback tref ToViewAppendMode
       Right sm -> do 
         let stNew = set (selectType.selectInfo) sm st 
         writeIORef sref stNew 
-        bouncecallback tref sref ToSelectMode
+        bouncecallback tref ToSelectMode -}
         
 -- | 
 
-assignColor :: IORef HoodleState -> RadioAction -> IO () 
-assignColor sref a = do 
+assignColor :: TRef -> RadioAction -> IO () 
+assignColor tref a = do 
     v <- radioActionGetCurrentValue a
     let c = int2Color v
-    st <- readIORef sref 
+    {- st <- readIORef sref 
     let callback = get callBack st
     let stNew = set (penColor.currentTool.penInfo) c st 
-    writeIORef sref stNew 
-    callback (PenColorChanged c)
+    writeIORef sref stNew  -}
+    bouncecallback tref (PenColorChanged c)
 
 -- | 
-
-assignPoint :: IORef HoodleState -> RadioAction -> IO () 
-assignPoint sref a = do 
+assignPoint :: TRef -> RadioAction -> IO ()  -- SRef
+assignPoint tref a = do 
     v <- radioActionGetCurrentValue a
-    st <- readIORef sref 
+    {- st <- readIORef sref 
     let ptype = get (penType.penInfo) st
     let w = int2Point ptype v
     let stNew = set (penWidth.currentTool.penInfo) w st 
     let callback = get callBack st        
-    writeIORef sref stNew 
-    callback (PenWidthChanged w)
+    writeIORef sref stNew -}
+    bouncecallback  tref (PenWidthChanged v)
 
 -- | 
 

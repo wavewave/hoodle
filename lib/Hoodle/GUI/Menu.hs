@@ -604,7 +604,7 @@ assignViewMode tref a = viewModeToMyEvent a >>= bouncecallback tref
 assignPenMode :: TRef -> RadioAction -> IO ()
 assignPenMode tref a = do 
     v <- radioActionGetCurrentValue a
-    bouncecallback tref (AssignPenMode v)
+    bouncecallback tref (AssignPenMode (int2PenType v))
     
 {-    
     let t = int2PenType v

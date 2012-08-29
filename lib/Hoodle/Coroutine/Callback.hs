@@ -23,13 +23,7 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.XournalState
 import Hoodle.Type.Event 
 
--- |
-
-dummycallback :: MyEvent -> IO ()
-dummycallback = const (return ())
-
--- |
-
+-- | common event handler
 bouncecallback :: TRef -> MyEvent -> IO () 
 bouncecallback tref ev = do 
     mnext <- readIORef tref 
@@ -44,20 +38,3 @@ bouncecallback tref ev = do
             Free (Await next') -> return next' 
         writeIORef tref (Just next')
 
-  
-   
-  
-{-
-  cont 
-  
-
-  when (not (_isEventBlocked st)) $ do 
-    (nr,st') <- runStateT (resume (cont input)) st 
-    case nr of  
-      Left  naw -> do writeIORef tref naw 
-                      writeIORef sref st'
-      Right val -> do putStrLn $ show val 
-                      writeIORef tref (Await (\_ -> return ()))
-                      writeIORef sref st'
-    return ()  
--}

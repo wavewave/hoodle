@@ -35,7 +35,7 @@ data PenType = PenWork
              | HighlighterWork 
              | EraserWork 
              | TextWork 
-             deriving (Show,Eq)
+             deriving (Show,Eq,Ord)
 
 -- | 
 data PenColor = ColorBlack

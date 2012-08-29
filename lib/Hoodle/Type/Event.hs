@@ -12,6 +12,7 @@
 
 module Hoodle.Type.Event where
 
+import Hoodle.Type.Clipboard
 import Hoodle.Type.Enum
 import Hoodle.Device 
 import Graphics.UI.Gtk
@@ -27,7 +28,7 @@ data MyEvent = Initialized
              | PenUp   Int PointerCoord 
              | PenColorChanged PenColor
              | PenWidthChanged Int -- (PenType -> Double)
-             | AssignPenMode Int 
+             | AssignPenMode (Either PenType SelectType) 
              | HScrollBarMoved Int Double
              | VScrollBarMoved Int Double 
              | VScrollBarStart Int Double

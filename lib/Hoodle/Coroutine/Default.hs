@@ -68,8 +68,7 @@ initCoroutine :: DeviceList -> Window -> Maybe FilePath -> Maybe Hook
                  -> Int -- ^ maxundo 
                  -> IO (TRef,HoodleState,UIManager,VBox)
 initCoroutine devlst window mfname mhook maxundo  = do 
-  
-  tref <- newIORef Nothing -- undefined -- guiProcess 
+  tref <- newIORef Nothing 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
             . set callBack (bouncecallback tref) 
@@ -91,10 +90,8 @@ initCoroutine devlst window mfname mhook maxundo  = do
   st6 <- getFileContent mfname st5
   let ui = get gtkUIManager st6
   vbox <- vBoxNew False 0 
-
   let startingXstate = set rootContainer (castToBox vbox) st6
   writeIORef tref (Just (\ev -> mapDown startingXstate (guiProcess ev)))
-
   return (tref,startingXstate,ui,vbox)
 
 
@@ -184,14 +181,16 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
-    PenColorChanged c -> selectPenColorChanged c
+    PenColorChanged c -> do  
+      putSt . set (penColor.currentTool.penInfo) c =<< getSt 
+      selectPenColorChanged c
     PenWidthChanged v -> do 
       st <- getSt 
       let ptype = get (penType.penInfo) st
       let w = int2Point ptype v
-      let stNew = set (penWidth.currentTool.penInfo) w st 
-      putSt stNew 
       selectPenWidthChanged w
+      let stNew = set (penWidth.currentTool.penInfo) w st 
+      putSt stNew  
     _ -> defaultEventProcess r1
 
 
@@ -210,7 +209,27 @@ defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess ToSinglePage = viewModeChange ToSinglePage
 defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
-defaultEventProcess _ = return ()
+defaultEventProcess (AssignPenMode t) =  
+    case t of 
+      Left pm -> do 
+        putSt . set (penType.penInfo) pm =<< getSt 
+        modeChange ToViewAppendMode
+      Right sm -> do 
+        putSt . set (selectType.selectInfo) sm =<< getSt 
+        modeChange ToSelectMode 
+defaultEventProcess (PenColorChanged c) = 
+    putSt . set (penColor.currentTool.penInfo) c =<< getSt 
+defaultEventProcess (PenWidthChanged v) = do 
+      st <- getSt 
+      let ptype = get (penType.penInfo) st
+      let w = int2Point ptype v
+      let stNew = set (penWidth.currentTool.penInfo) w st 
+      putSt stNew 
+
+defaultEventProcess ev = do liftIO $ putStrLn "--- no default ---"
+                            liftIO $ print ev 
+                            liftIO $ putStrLn "------------------"
+                            return ()
 
 -- |
 

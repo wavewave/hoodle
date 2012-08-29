@@ -49,7 +49,7 @@ data SelectType = SelectRegionWork
                 | SelectRectangleWork 
                 | SelectVerticalSpaceWork
                 | SelectHandToolWork 
-                deriving (Show,Eq) 
+                deriving (Show,Eq,Ord) 
 
 -- |
 

@@ -19,7 +19,7 @@ import Hoodle.Coroutine.Callback
 import Hoodle.Type
 import Hoodle.Type.Clipboard
 import Hoodle.Accessor
-import Control.Monad.Coroutine -- .SuspensionFunctors
+import Control.Monad.Coroutine 
 import Data.IORef
 import Data.Maybe
 import Control.Category
@@ -357,7 +357,7 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 
 -- | 
 
-actionNewAndRegisterRef :: TRef -- -> SRef 
+actionNewAndRegisterRef :: TRef                            
                            -> String -> String 
                            -> Maybe String -> Maybe StockId
                            -> Maybe MyEvent 
@@ -373,8 +373,7 @@ actionNewAndRegisterRef tref name label tooltip stockId myevent = do
 
 -- | 
 
-getMenuUI :: TRef -- -> SRef
-             -> IO UIManager
+getMenuUI :: TRef -> IO UIManager
 getMenuUI tref = do 
   let actionNewAndRegister = actionNewAndRegisterRef tref  
   -- icons   
@@ -528,7 +527,6 @@ getMenuUI tref = do
     
   actionGroupAddAction agr uxinputa 
   actionGroupAddAction agr pressrsensa
-  
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode tref sref)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
   
@@ -561,9 +559,6 @@ getMenuUI tref = do
   mapM_ (\x->actionSetSensitive x True) enabledActions  
   mapM_ (\x->actionSetSensitive x False) disabledActions
   --
-
-  
-  
   -- 
   -- radio actions
   --
@@ -589,62 +584,30 @@ getMenuUI tref = do
   return ui   
 
 -- | 
-
 assignViewMode :: TRef -> RadioAction -> IO ()
 assignViewMode tref a = viewModeToMyEvent a >>= bouncecallback tref   
-
-{-    st <- readIORef sref 
-    putStrLn "in assignmViewMode"
-    printCanvasMode (getCurrentCanvasId st) (get currentCanvasInfo st)
-    putStrLn "still in assignViewMode" -}
-
     
 -- | 
-
 assignPenMode :: TRef -> RadioAction -> IO ()
 assignPenMode tref a = do 
     v <- radioActionGetCurrentValue a
     bouncecallback tref (AssignPenMode (int2PenType v))
-    
-{-    
-    let t = int2PenType v
-    st <- readIORef sref 
-    case t of 
-      Left pm -> do 
-        let stNew = set (penType.penInfo) pm st 
-        writeIORef sref stNew 
-        bouncecallback tref ToViewAppendMode
-      Right sm -> do 
-        let stNew = set (selectType.selectInfo) sm st 
-        writeIORef sref stNew 
-        bouncecallback tref ToSelectMode -}
-        
--- | 
 
+      
+-- | 
 assignColor :: TRef -> RadioAction -> IO () 
 assignColor tref a = do 
     v <- radioActionGetCurrentValue a
     let c = int2Color v
-    {- st <- readIORef sref 
-    let callback = get callBack st
-    let stNew = set (penColor.currentTool.penInfo) c st 
-    writeIORef sref stNew  -}
     bouncecallback tref (PenColorChanged c)
 
 -- | 
-assignPoint :: TRef -> RadioAction -> IO ()  -- SRef
+assignPoint :: TRef -> RadioAction -> IO ()  
 assignPoint tref a = do 
     v <- radioActionGetCurrentValue a
-    {- st <- readIORef sref 
-    let ptype = get (penType.penInfo) st
-    let w = int2Point ptype v
-    let stNew = set (penWidth.currentTool.penInfo) w st 
-    let callback = get callBack st        
-    writeIORef sref stNew -}
     bouncecallback  tref (PenWidthChanged v)
 
 -- | 
-
 int2PenType :: Int -> Either PenType SelectType 
 int2PenType 0 = Left PenWork
 int2PenType 1 = Left EraserWork
@@ -657,7 +620,6 @@ int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
 
 -- | 
-
 int2Point :: PenType -> Int -> Double 
 int2Point PenWork 0 = predefined_veryfine 
 int2Point PenWork 1 = predefined_fine
@@ -686,7 +648,6 @@ int2Point TextWork 5 = predefined_ultrathick
 int2Point _ _ = error "No such point"
 
 -- | 
-
 int2Color :: Int -> PenColor
 int2Color 0  = ColorBlack 
 int2Color 1  = ColorBlue

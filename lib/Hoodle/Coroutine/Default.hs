@@ -16,7 +16,6 @@ module Hoodle.Coroutine.Default where
 
 import Control.Applicative ((<$>))
 import Control.Monad.Coroutine
--- import Control.Monad.Coroutine.SuspensionFunctors
 import qualified Control.Monad.State as St 
 import Control.Monad.Trans
 import qualified Data.IntMap as M
@@ -43,7 +42,6 @@ import Hoodle.Coroutine.Select
 import Hoodle.Coroutine.File
 import Hoodle.Coroutine.Mode
 import Hoodle.Coroutine.Window
--- import Hoodle.Coroutine.Network
 import Hoodle.Coroutine.Layer 
 import Hoodle.Device
 import Hoodle.GUI.Menu
@@ -60,7 +58,6 @@ import Hoodle.Type.Undo
 import Hoodle.Type.Window 
 import Hoodle.Type.XournalState
 import Hoodle.Type.PageArrangement
-
 
 
 -- |
@@ -143,13 +140,11 @@ guiProcess ev = do
 
 
 -- | 
-
 dispatchMode :: MainCoroutine () 
 dispatchMode = getSt >>= return . xojstateEither . get xournalstate
                      >>= either (const viewAppendMode) (const selectMode)
                      
 -- | 
-
 viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 
   r1 <- await 
@@ -170,7 +165,6 @@ viewAppendMode = do
     _ -> defaultEventProcess r1
 
 -- |
-
 selectMode :: MainCoroutine () 
 selectMode = do 
   r1 <- await 
@@ -195,7 +189,6 @@ selectMode = do
 
 
 -- |
-
 defaultEventProcess :: MyEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
@@ -225,14 +218,12 @@ defaultEventProcess (PenWidthChanged v) = do
       let w = int2Point ptype v
       let stNew = set (penWidth.currentTool.penInfo) w st 
       putSt stNew 
-
 defaultEventProcess ev = do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
                             liftIO $ putStrLn "------------------"
                             return ()
 
 -- |
-
 askQuitProgram :: MainCoroutine () 
 askQuitProgram = do 
   dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
@@ -248,7 +239,6 @@ askQuitProgram = do
       return ()
 
 -- |
-
 menuEventProcess :: MenuEvent -> MainCoroutine () 
 menuEventProcess MenuQuit = do 
   xstate <- getSt
@@ -277,8 +267,6 @@ menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
 menuEventProcess MenuPaste = pasteToSelection
 menuEventProcess MenuDelete = deleteSelection
--- menuEventProcess MenuNetCopy = clipCopyToNetworkClipboard
--- menuEventProcess MenuNetPaste = clipPasteFromNetworkClipboard
 menuEventProcess MenuZoomIn = pageZoomChangeRel ZoomIn 
 menuEventProcess MenuZoomOut = pageZoomChangeRel ZoomOut
 menuEventProcess MenuNormalSize = pageZoomChange Original  

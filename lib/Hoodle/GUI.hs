@@ -39,19 +39,16 @@ import Data.Label
 import Prelude hiding ((.),id)
 
 -- |
-
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
 startGUI mfname mhook = do 
   initGUI
   window <- windowNew   
-
   cfg <- loadConfigFile   
   devlst <- initDevice cfg 
   maxundo <- getMaxUndo cfg >>= 
                \mmax -> maybe (return 50) (return . id) mmax
   (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  
   setTitleFromFileName st0
-  -- writeIORef sref st4
   xinputbool <- getXInputConfig cfg 
   agr <- uiManagerGetActionGroups ui >>= \x ->
            case x of 
@@ -64,8 +61,6 @@ startGUI mfname mhook = do
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
-  
-
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
                   Just x  -> x 
@@ -79,9 +74,7 @@ startGUI mfname mhook = do
   let toolbar2 = case maybeToolbar2 of 
                    Just x  -> x     
                    Nothing -> error "cannot get toolbar from string" 
-  
   containerAdd window vbox
-  
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
@@ -93,7 +86,6 @@ startGUI mfname mhook = do
   putStrLn "before widget show all " 
   widgetShowAll window
   putStrLn "after widget show all " 
-  
   -- initialized
   bouncecallback tref Initialized     
   mainGUI 

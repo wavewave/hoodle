@@ -25,15 +25,6 @@ Flag Poppler
   Description: Enable poppler support
   Default:     True
 
--- Executable hoodle
---   Main-is: hoodle.hs
---   hs-source-dirs: exe
---   ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
---   ghc-prof-options: -caf-all -auto-all
---  Build-Depends: 
---                 base>4, 
---                 cmdargs >= 0.7 && <= 0.10, 
---                 hoodle 
 
 Library
   hs-source-dirs: lib
@@ -48,8 +39,9 @@ Library
                      strict == 0.3.*,
                      gtk == 0.12.*, 
                      cairo == 0.12.*,
-                     monad-coroutine == 0.7.*, 
+                     -- monad-coroutine == 0.7.*, 
                      transformers == 0.3.*,
+                     transformers-free == 1.0.*,
                      xournal-types >= 0.4.0.999 && < 0.5,
                      xournal-parser == 0.4.*,
                      xournal-render == 0.6.*,
@@ -76,8 +68,9 @@ Library
                      strict == 0.3.*,
                      gtk == 0.12.*, 
                      cairo == 0.12.*,
-                     monad-coroutine == 0.7.*, 
-                     transformers == 0.2.*,
+                     -- monad-coroutine == 0.7.*, 
+                     transformers == 0.3.*,
+                     transformers-free == 1.0.*,
                      xournal-types >= 0.4.0.999 && < 0.5 ,
                      xournal-parser == 0.4.*,
                      xournal-render >= 0.6.0 && < 0.7,
@@ -96,6 +89,7 @@ Library
                      cereal == 0.3.5.*, 
                      base64-bytestring == 0.1.*
   Exposed-Modules: 
+                   Control.Monad.Coroutine
 --                   Hoodle.StartUp
                    Hoodle.Script
                    Hoodle.Script.Hook

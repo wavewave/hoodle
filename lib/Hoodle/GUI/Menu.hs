@@ -19,7 +19,7 @@ import Hoodle.Coroutine.Callback
 import Hoodle.Type
 import Hoodle.Type.Clipboard
 import Hoodle.Accessor
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Coroutine -- .SuspensionFunctors
 import Data.IORef
 import Data.Maybe
 import Control.Category
@@ -357,8 +357,7 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 
 -- | 
 
-actionNewAndRegisterRef :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
-                           -> IORef HoodleState
+actionNewAndRegisterRef :: TRef -> SRef 
                            -> String -> String 
                            -> Maybe String -> Maybe StockId
                            -> Maybe MyEvent 
@@ -374,8 +373,8 @@ actionNewAndRegisterRef tref sref name label tooltip stockId myevent = do
 
 -- | 
 
-getMenuUI :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
-             -> IORef HoodleState 
+getMenuUI :: TRef 
+             -> SRef
              -> IO UIManager
 getMenuUI tref sref = do 
   let actionNewAndRegister = actionNewAndRegisterRef tref sref 
@@ -592,8 +591,7 @@ getMenuUI tref sref = do
 
 -- | 
 
-assignViewMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
-                 -> IORef HoodleState -> RadioAction -> IO ()
+assignViewMode :: TRef -> SRef -> RadioAction -> IO ()
 assignViewMode tref sref a = do 
     st <- readIORef sref 
     putStrLn "in assignmViewMode"
@@ -603,8 +601,7 @@ assignViewMode tref sref a = do
     
 -- | 
 
-assignPenMode :: IORef (Await MyEvent (Iteratee MyEvent XournalStateIO ()))
-                 -> IORef HoodleState -> RadioAction -> IO ()
+assignPenMode :: TRef -> SRef -> RadioAction -> IO ()
 assignPenMode tref sref a = do 
     v <- radioActionGetCurrentValue a
     let t = int2PenType v

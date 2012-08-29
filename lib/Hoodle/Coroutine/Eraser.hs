@@ -32,7 +32,7 @@ import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBoxMapPDF
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Coroutine -- .SuspensionFunctors
 import Control.Monad.Trans
 import qualified Control.Monad.State as St
 import Control.Category

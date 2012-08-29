@@ -28,7 +28,7 @@ import Hoodle.ModelAction.Page
 import Hoodle.Coroutine.Page
 import Hoodle.Coroutine.Draw
 import Hoodle.Accessor
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Coroutine -- .SuspensionFunctors
 import Control.Category
 import Data.Label
 import Graphics.UI.Gtk hiding (get,set)

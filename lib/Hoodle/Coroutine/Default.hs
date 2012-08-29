@@ -44,7 +44,7 @@ import Hoodle.Type.Window
 import Hoodle.Device
 import Control.Applicative ((<$>))
 import Control.Monad.Coroutine
-import Control.Monad.Coroutine.SuspensionFunctors
+-- import Control.Monad.Coroutine.SuspensionFunctors
 import qualified Control.Monad.State as St 
 import Control.Monad.Trans
 import qualified Data.IntMap as M
@@ -57,59 +57,21 @@ import Hoodle.Type.PageArrangement
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 
--- | 
-
-initViewModeIOAction :: MainCoroutine HoodleState
-initViewModeIOAction = do 
-  oxstate <- getSt
-  let ui = get gtkUIManager oxstate
-  agr <- liftIO $ uiManagerGetActionGroups ui 
-  Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
-  let wra = castToRadioAction ra 
-  connid <- liftIO $ wra `on` radioActionChanged $ \x -> do 
-    y <- viewModeToMyEvent x 
-    get callBack oxstate y 
-    return () 
-  let xstate = set pageModeSignal (Just connid) oxstate
-  putSt xstate 
-  return xstate 
-
 
 
 -- |
-
-guiProcess :: MainCoroutine ()
-guiProcess = do 
-  initialize
-  liftIO $ putStrLn "hi!"
-  liftIO $ putStrLn "welcome to hoodle"
-  changePage (const 0)
-  xstate <- initViewModeIOAction 
-  let cinfoMap  = getCanvasInfoMap xstate
-      assocs = M.toList cinfoMap 
-      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
-                            (w',h') <- liftIO $ widgetGetSize canvas
-                            defaultEventProcess (CanvasConfigure cid
-                                                (fromIntegral w') 
-                                                (fromIntegral h')) 
-  mapM_ f assocs
-  sequence_ (repeat dispatchMode)
-
-
--- |
-
 initCoroutine :: DeviceList -> Window -> IO (TRef,SRef)
 initCoroutine devlst window = do 
-  let st0 = (emptyHoodleState :: HoodleState)
+  let st0 = emptyHoodleState 
   sref <- newIORef st0
-  tref <- newIORef (undefined :: SusAwait)
-  (r,st') <- St.runStateT (resume guiProcess) st0 
-  writeIORef sref st' 
-  either (writeIORef tref) (error "what?") r 
+  tref <- newIORef guiProcess -- undefined -- (undefined :: SusAwait)
+  -- (r,st') <- St.runStateT (resume guiProcess) st0 
+  -- writeIORef sref st' 
+  -- either (writeIORef tref) (error "what?") r 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
             . set callBack (bouncecallback tref sref) 
-            $ st' 
+            $ st0
   writeIORef sref st0new            
   ui <- getMenuUI tref sref    
   putStrLn "hi"  
@@ -125,14 +87,53 @@ initCoroutine devlst window = do
   writeIORef sref startingXstate   
   return (tref,sref)
 
--- |
 
-initialize :: MainCoroutine ()
-initialize = do ev <- await 
-                liftIO $ putStrLn $ show ev 
-                case ev of 
-                  Initialized -> return () 
-                  _ -> initialize
+-- | 
+initViewModeIOAction :: MainCoroutine HoodleState
+initViewModeIOAction = do 
+  oxstate <- getSt
+  let ui = get gtkUIManager oxstate
+  agr <- liftIO $ uiManagerGetActionGroups ui 
+  Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
+  let wra = castToRadioAction ra 
+  connid <- liftIO $ wra `on` radioActionChanged $ \x -> do 
+    y <- viewModeToMyEvent x 
+    get callBack oxstate y 
+    return () 
+  let xstate = set pageModeSignal (Just connid) oxstate
+  putSt xstate 
+  return xstate 
+
+-- |
+initialize :: MyEvent -> MainCoroutine ()
+initialize ev = do  
+    liftIO $ putStrLn $ show ev 
+    case ev of 
+      Initialized -> return () 
+      _ -> do ev <- await
+              initialize ev 
+
+
+-- |
+guiProcess :: MyEvent -> MainCoroutine ()
+guiProcess ev = do 
+  initialize ev
+  liftIO $ putStrLn "hi!"
+  liftIO $ putStrLn "welcome to hoodle"
+  changePage (const 0)
+  xstate <- initViewModeIOAction 
+  let cinfoMap  = getCanvasInfoMap xstate
+      assocs = M.toList cinfoMap 
+      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
+                            (w',h') <- liftIO $ widgetGetSize canvas
+                            defaultEventProcess (CanvasConfigure cid
+                                                (fromIntegral w') 
+                                                (fromIntegral h')) 
+  mapM_ f assocs
+  sequence_ (repeat dispatchMode)
+
+
+
 
 -- | 
 

@@ -23,7 +23,7 @@ import Hoodle.Accessor
 import Hoodle.View.Coordinate
 import Hoodle.Util
 import Control.Monad
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Coroutine -- .SuspensionFunctors
 import Control.Category
 import Data.Xournal.BBox
 import Data.Label

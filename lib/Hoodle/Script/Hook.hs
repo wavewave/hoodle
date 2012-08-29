@@ -13,11 +13,14 @@
 module Hoodle.Script.Hook where 
 
 import Data.Xournal.Simple 
+import Data.Xournal.BBox
+
 
 -- | 
 
 data Hook = Hook { saveAsHook :: Maybe (Xournal -> IO ())
                  , afterSaveHook :: Maybe (Xournal -> IO ())
+                 , afterUpdateClipboardHook :: Maybe ([StrokeBBox] -> IO ())
                  } 
 
 

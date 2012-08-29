@@ -13,32 +13,12 @@
 module Hoodle.Coroutine.Select where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
-import Hoodle.Type.Event 
-import Hoodle.Type.Enum
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Canvas
-import Hoodle.Type.Clipboard
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.XournalState
-import Hoodle.Type.Alias
-import Hoodle.Accessor
-import Hoodle.Device
-import Hoodle.View.Draw
-import Hoodle.View.Coordinate
-import Hoodle.Coroutine.EventConnect
-import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Pen
-import Hoodle.Coroutine.Mode
-import Hoodle.Coroutine.Commit
-import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.Select
-import Hoodle.ModelAction.Layer 
 import Control.Applicative 
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.Trans
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Coroutine -- .SuspensionFunctors
 import Control.Category
 import Data.Label
 import Prelude hiding ((.), id)
@@ -64,6 +44,29 @@ import qualified Data.Serialize as Se
 
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
+
+
+import Hoodle.Type.Event 
+import Hoodle.Type.Enum
+import Hoodle.Type.Coroutine
+import Hoodle.Type.Canvas
+import Hoodle.Type.Clipboard
+import Hoodle.Type.PageArrangement
+import Hoodle.Type.XournalState
+import Hoodle.Type.Alias
+import Hoodle.Accessor
+import Hoodle.Device
+import Hoodle.View.Draw
+import Hoodle.View.Coordinate
+import Hoodle.Coroutine.EventConnect
+import Hoodle.Coroutine.Draw
+import Hoodle.Coroutine.Pen
+import Hoodle.Coroutine.Mode
+import Hoodle.Coroutine.Commit
+import Hoodle.ModelAction.Page
+import Hoodle.ModelAction.Select
+import Hoodle.ModelAction.Layer 
+import Hoodle.Script.Hook 
 
 -- |
 
@@ -460,6 +463,12 @@ updateClipboard xstate strs
     let bstr = C8.unpack . B64.encode . Se.encode $ strs 
     clipboardSetText clip bstr
     togglePaste ui True 
+    case (get hookSet xstate) of 
+      Nothing -> return () 
+      Just hset -> case afterUpdateClipboardHook hset of 
+                     Nothing -> return () 
+                     Just uchook -> liftIO $ uchook strs 
+
     return xstate
 
 

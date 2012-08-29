@@ -33,7 +33,7 @@ import Hoodle.View.Draw
 import Hoodle.Util
 import Control.Monad
 import Control.Monad.Trans
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Coroutine -- .SuspensionFunctors
 import Data.Xournal.Predefined
 import Data.Xournal.BBox
 import Data.Sequence hiding (filter)

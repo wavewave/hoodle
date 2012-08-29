@@ -16,7 +16,8 @@ module Hoodle.Coroutine.Callback where
 
 import Control.Monad.Coroutine 
 import Control.Monad.State
-import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.Trans.Free
+-- import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
 import Hoodle.Type.Coroutine
 import Hoodle.Type.XournalState
@@ -31,8 +32,26 @@ dummycallback = const (return ())
 
 bouncecallback :: TRef -> SRef -> MyEvent -> IO () 
 bouncecallback tref sref input = do 
-  Await cont <- readIORef tref 
+  -- Await cont 
+  putStrLn "bounceCallback1"
+  putStrLn (show input) 
+  next <- readIORef tref 
   st <- readIORef sref
+  (next',st') <- flip runStateT st $ do 
+    x <- runFreeT (next input)
+    case x of 
+      Pure () -> error "end? in boundcallback" -- partial
+      Free (Await next') -> return next' 
+  writeIORef tref next'   
+  writeIORef sref st' 
+  putStrLn "bounceCallBack2"
+  
+   
+  
+{-
+  cont 
+  
+
   when (not (_isEventBlocked st)) $ do 
     (nr,st') <- runStateT (resume (cont input)) st 
     case nr of  
@@ -42,4 +61,4 @@ bouncecallback tref sref input = do
                       writeIORef tref (Await (\_ -> return ()))
                       writeIORef sref st'
     return ()  
-
+-}

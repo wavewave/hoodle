@@ -50,13 +50,9 @@ startGUI mfname mhook = do
   st0 <- readIORef sref 
   maxundo <- getMaxUndo cfg >>= 
                \mmax -> maybe (return 50) (return . id) mmax
-  -- ncconf <- getNetworkInfo  cfg
-  
   let st1 = set hookSet mhook 
           . set undoTable (emptyUndo maxundo) 
           $ st0 
-            
-  -- let st1 = set gtkUIManager ui st0
   putStrLn "before st2"
   st2 <- getFileContent mfname st1
   putStrLn "after st2"

@@ -35,7 +35,7 @@ module Hoodle.Type.XournalState
 , gtkUIManager
 , isSaved
 , undoTable
-, isEventBlocked 
+-- , isEventBlocked 
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure
@@ -121,7 +121,7 @@ data HoodleState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable XournalState
-                , _isEventBlocked :: Bool
+                -- , _isEventBlocked :: Bool
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
@@ -152,7 +152,7 @@ emptyHoodleState =
   , _gtkUIManager = error "emptyHoodleState.gtkUIManager"
   , _isSaved = False 
   , _undoTable = emptyUndo 1 
-  , _isEventBlocked = False 
+  -- , _isEventBlocked = False 
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      

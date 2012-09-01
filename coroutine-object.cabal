@@ -19,18 +19,10 @@ Library
                    containers == 0.4.*,
                    transformers == 0.3.*, 
                    transformers-free == 1.0.*, 
-                   -- filepath == 1.3.*,
                    bytestring == 0.9.*,
-                   -- attoparsec == 0.10.*,
-                   -- http-types == 0.7.*,
-                   -- http-conduit == 1.6.*, 
-                   -- aeson == 0.6.*, 
                    safecopy == 0.6.*,
                    uuid == 1.2.*,
                    cereal == 0.3.*
-                   -- process == 1.1.*,
-                   -- directory == 1.1.*, 
-                   -- weblogger-type == 0.0.*
   Other-Modules:   
   exposed-modules:
                    Control.Monad.Coroutine
@@ -40,15 +32,10 @@ Library
                    Control.Monad.Coroutine.IOActor 
                    Control.Monad.Coroutine.Logger
                    Control.Monad.Coroutine.Logger.Simple  
-                   -- Control.Monad.Coroutine.Logger.WebLog
                    Control.Monad.Coroutine.Object 
                    Control.Monad.Coroutine.Queue 
                    Control.Monad.Coroutine.World
-                   -- Control.Monad.Coroutine.World.CmdExec
-                   -- Control.Monad.Coroutine.World.Sample 
-                   -- Control.Monad.Coroutine.World.SampleActor
-                   -- Control.Monad.Coroutine.World.Sample2
-                   -- Control.Monad.Coroutine.World.SampleActor2
+
 
 
 

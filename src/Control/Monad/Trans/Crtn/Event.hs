@@ -1,4 +1,18 @@
-module Control.Monad.Coroutine.Event where 
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Control.Monad.Trans.Crtn.Event
+-- Copyright   : (c) 2012 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+-- coroutine that can be interpreted as an object
+-- 
+-----------------------------------------------------------------------------
+
+module Control.Monad.Trans.Crtn.Event where 
 
 import Data.ByteString 
 import Data.UUID

@@ -25,16 +25,16 @@ Library
                    cereal == 0.3.*
   Other-Modules:   
   exposed-modules:
-                   Control.Monad.Coroutine
-                   Control.Monad.Coroutine.Driver
-                   Control.Monad.Coroutine.EventHandler 
-                   Control.Monad.Coroutine.Event 
-                   Control.Monad.Coroutine.IOActor 
-                   Control.Monad.Coroutine.Logger
-                   Control.Monad.Coroutine.Logger.Simple  
-                   Control.Monad.Coroutine.Object 
-                   Control.Monad.Coroutine.Queue 
-                   Control.Monad.Coroutine.World
+                   Control.Monad.Trans.Crtn
+                   Control.Monad.Trans.Crtn.Driver
+                   Control.Monad.Trans.Crtn.EventHandler 
+                   Control.Monad.Trans.Crtn.Event 
+                   Control.Monad.Trans.Crtn.IOActor 
+                   Control.Monad.Trans.Crtn.Logger
+                   Control.Monad.Trans.Crtn.Logger.Simple  
+                   Control.Monad.Trans.Crtn.Object 
+                   Control.Monad.Trans.Crtn.Queue 
+                   Control.Monad.Trans.Crtn.World
 
 
 

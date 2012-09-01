@@ -148,6 +148,6 @@ Library
   install-includes: 
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
-
+  cc-options:      -Wno-pointer-to-int-cast
   if flag(poppler)
     cpp-options: -DPOPPLER

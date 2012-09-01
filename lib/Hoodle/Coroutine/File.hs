@@ -14,34 +14,34 @@
 
 module Hoodle.Coroutine.File where
 
-import Hoodle.Type.Coroutine
-import Hoodle.Type.XournalState
-import Hoodle.Accessor
-import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Commit
-import Hoodle.ModelAction.Window
-import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.File
-import Hoodle.Script.Hook
-import qualified Hoodle.Script.Coroutine as S
-import Text.Xournal.Builder 
-import Control.Monad.Trans
-import Control.Applicative
-import Data.Xournal.Generic
-import Data.ByteString.Char8 as B (pack)
-import Graphics.UI.Gtk hiding (get,set)
-import Control.Category
-import Data.Label
-import Prelude hiding ((.),id)
+import           Control.Applicative
+import           Control.Category
+import           Control.Monad.Trans
+import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
-
-import Data.Xournal.Simple
-import System.Directory
-import System.FilePath
-import Debug.Trace 
+import           Data.Label
+import           Graphics.UI.Gtk hiding (get,set)
+import           System.Directory
+import           System.FilePath
+import           Text.Xournal.Builder 
+-- from hoodle-platform
+import           Data.Xournal.Generic
+import           Data.Xournal.Simple
+-- from this package 
+import           Hoodle.Accessor
+import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Commit
+import           Hoodle.ModelAction.File
+import           Hoodle.ModelAction.Page
+import           Hoodle.ModelAction.Window
+import qualified Hoodle.Script.Coroutine as S
+import           Hoodle.Script.Hook
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.XournalState
+--
+import Prelude hiding ((.),id)
 
 -- | 
-
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
     xstate <- getSt 
@@ -59,7 +59,6 @@ askIfSave action = do
       else action  
 
 -- | 
-
 fileNew :: MainCoroutine () 
 fileNew = do  
     xstate <- getSt
@@ -71,7 +70,6 @@ fileNew = do
     invalidateAll 
 
 -- | 
-
 fileSave :: MainCoroutine ()
 fileSave = do 
     xstate <- getSt 
@@ -89,7 +87,6 @@ fileSave = do
         S.afterSaveHook xoj
 
 -- | main coroutine for open a file 
-
 fileOpen :: MainCoroutine ()
 fileOpen = do 
     cwd <- liftIO getCurrentDirectory
@@ -121,7 +118,6 @@ fileOpen = do
     return ()
 
 -- | main coroutine for save as 
-
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
     xstate <- getSt 
@@ -178,7 +174,6 @@ fileSaveAs = do
       return ()
 
 -- | 
-
 fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = do 
     xstate <- getSt
@@ -211,9 +206,3 @@ fileAnnotatePDF = do
 
 
 
- {- Xournal 
-                                            <$> get g_title 
-                                            <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages 
-                                            $ xojmap -} 
-      
-       {- Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj -}

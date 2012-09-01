@@ -14,29 +14,24 @@
 
 module Hoodle.GUI where
 
-import Hoodle.Type.Coroutine
-import Hoodle.Type.XournalState 
-import Hoodle.Type.Event
-import Hoodle.Type.Canvas
-import Hoodle.Type.Undo 
+import           Control.Category
+import           Control.Monad.Trans 
+import           Data.Label
 import qualified Data.IntMap as M
-
-import Hoodle.Coroutine.Callback
-
-import Hoodle.Config 
-import Hoodle.Device
-import Hoodle.Coroutine
--- import Hoodle.GUI.Menu
-import Hoodle.ModelAction.File 
-import Hoodle.ModelAction.Window
-import Hoodle.Script.Hook
-import Graphics.UI.Gtk hiding (get,set)
-import Control.Monad.Trans 
-import Data.IORef
-import Data.Maybe
-import Control.Category
-import Data.Label
-import Prelude hiding ((.),id)
+import           Data.Maybe
+import           Graphics.UI.Gtk hiding (get,set)
+-- from this package
+import           Hoodle.Config 
+import           Hoodle.Coroutine
+import           Hoodle.Coroutine.Callback
+import           Hoodle.Device
+import           Hoodle.ModelAction.Window
+import           Hoodle.Script.Hook
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Event
+import           Hoodle.Type.XournalState 
+--
+import           Prelude hiding ((.),id)
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
@@ -83,10 +78,7 @@ startGUI mfname mhook = do
   window `on` deleteEvent $ do
     liftIO $ bouncecallback tref (Menu MenuQuit)
     return True
-  putStrLn "before widget show all " 
   widgetShowAll window
-  putStrLn "after widget show all " 
-  -- initialized
   bouncecallback tref Initialized     
   mainGUI 
   return ()

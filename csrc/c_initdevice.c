@@ -11,9 +11,9 @@ void initdevice( int* core, int* stylus, int* eraser,
   dev_list = gdk_devices_list();
   (*stylus) = 0;
   while (dev_list != NULL) {
-    printf ("one device\n"); 
+    // printf ("one device\n"); 
     device = (GdkDevice *)dev_list->data;
-    printf(" %d : %s \n", device, device->name );
+    // printf(" %d : %s \n", device, device->name );
     if (device != gdk_device_get_core_pointer()) {
       // #ifdef ENABLE_XINPUT_BUGFIX
       gdk_device_set_axis_use(device, 0, GDK_AXIS_IGNORE);
@@ -21,19 +21,19 @@ void initdevice( int* core, int* stylus, int* eraser,
       // #endif
       gdk_device_set_mode(device, GDK_MODE_SCREEN);
 
-      printf("This is xinput device %s \n", device -> name);
+      // printf("This is xinput device %s \n", device -> name);
       if( !strcmp (device->name, stylusname) ) {
-        printf("got stylus\n");   
+        // printf("got stylus\n");   
         (*stylus) = (int) device; 
       } 
       if( !strcmp (device->name, erasername) ) { 
-        printf("got eraser\n");
+        // printf("got eraser\n");
         (*eraser) = (int) device;
       } 
     } 
     else { 
       if( !strcmp (device->name, corepointername) ) { 
-        printf("got Core Pointer\n"); 
+        // printf("got Core Pointer\n"); 
         (*core) = (int) device; 
       } 
     } 

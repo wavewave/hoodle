@@ -85,7 +85,7 @@ initCoroutine devlst window mfname mhook maxundo  = do
           . set frameState wconf' 
           . set rootWindow cvs $ st4
   st6 <- getFileContent mfname st5
-  let ui = get gtkUIManager st6
+  -- let ui = get gtkUIManager st6
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
   writeIORef tref (Just (\ev -> mapDown startingXstate (guiProcess ev)))
@@ -114,8 +114,8 @@ initialize ev = do
     liftIO $ putStrLn $ show ev 
     case ev of 
       Initialized -> return () 
-      _ -> do ev <- await
-              initialize ev 
+      _ -> do ev' <- await
+              initialize ev'
 
 
 -- |

@@ -36,38 +36,36 @@ import           Graphics.UI.Gtk hiding (get,set,disconnect)
 import           Data.Xournal.Simple (Dimension(..))
 import           Data.Xournal.Generic
 import           Data.Xournal.BBox
-import           Graphics.Xournal.Render.Type
-import           Graphics.Xournal.Render.BBoxMapPDF
-import           Graphics.Xournal.Render.HitTest
 import           Graphics.Xournal.Render.BBox
+import           Graphics.Xournal.Render.BBoxMapPDF
 import           Graphics.Xournal.Render.Generic
+import           Graphics.Xournal.Render.HitTest
+import           Graphics.Xournal.Render.Type
 -- from this package
-import           Hoodle.Type.Event 
-import           Hoodle.Type.Enum
-import           Hoodle.Type.Coroutine
-import           Hoodle.Type.Canvas
-import           Hoodle.Type.Clipboard
-import           Hoodle.Type.PageArrangement
-import           Hoodle.Type.XournalState
-import           Hoodle.Type.Alias
 import           Hoodle.Accessor
 import           Hoodle.Device
-import           Hoodle.View.Draw
-import           Hoodle.View.Coordinate
-import           Hoodle.Coroutine.EventConnect
-import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.Pen
-import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.EventConnect
+import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Pen
+import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
-import           Hoodle.ModelAction.Layer 
 import           Hoodle.Script.Hook 
+import           Hoodle.Type.Alias
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
+import           Hoodle.Type.Event 
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.XournalState
+import           Hoodle.View.Coordinate
+import           Hoodle.View.Draw
 -- 
 import           Prelude hiding ((.), id)
 
 -- |
-
 createTempSelectRender :: PageNum -> CanvasGeometry -> Page EditMode
                           -> a 
                           -> MainCoroutine (TempSelectRender a) 
@@ -85,7 +83,6 @@ createTempSelectRender pnum geometry page x = do
 
 
 -- | For Selection mode from pen mode with 2nd pen button
-    
 dealWithOneTimeSelectMode :: MainCoroutine () -> MainCoroutine ()
 dealWithOneTimeSelectMode action = do 
   xstate <- getSt 
@@ -100,7 +97,6 @@ dealWithOneTimeSelectMode action = do
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
-
 selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 selectRectStart cid = commonPenStart rectaction cid
   where rectaction cinfo pnum geometry (cidup,cidmove) (x,y) = do
@@ -132,7 +128,6 @@ selectRectStart cid = commonPenStart rectaction cid
           action epage
 
 -- | 
-
 newSelectRectangle :: CanvasId
                    -> PageNum 
                    -> CanvasGeometry
@@ -211,7 +206,6 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
 
 
 -- | prepare for moving selection 
-      
 startMoveSelect :: CanvasId 
                    -> PageNum 
                    -> CanvasGeometry 
@@ -230,7 +224,6 @@ startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage = do
     surfaceFinish (imageSurface strimage)
 
 -- | 
-         
 moveSelect :: CanvasId
               -> PageNum -- ^ starting pagenum 
               -> CanvasGeometry
@@ -333,7 +326,6 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       
 
 -- | prepare for resizing selection 
-      
 startResizeSelect :: Handle 
                      -> CanvasId 
                      -> PageNum 
@@ -356,7 +348,6 @@ startResizeSelect handle cid pnum geometry cidmove cidup bbox
   
 
 -- | 
-      
 resizeSelect :: Handle 
                 -> CanvasId
                 -> PageNum 
@@ -416,7 +407,6 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
       return ()    
 
 -- |
-
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
@@ -440,7 +430,6 @@ deleteSelection = do
       invalidateAll 
           
 -- | 
-
 cutSelection :: MainCoroutine () 
 cutSelection = do
   liftIO $ putStrLn "cutSelection called"
@@ -448,31 +437,26 @@ cutSelection = do
   deleteSelection
 
 -- | 
-  
 updateClipboard :: HoodleState -> [StrokeBBox] -> IO HoodleState 
 updateClipboard xstate strs 
   | null strs = return xstate
   | otherwise = do 
     let ui = get gtkUIManager xstate
     hdltag <- atomNew "hoodle"
-    tgttag <- atomNew "Stroke"
-    seltag <- atomNew "Stroke"
-    clip <- clipboardGet hdltag
+    -- tgttag <- atomNew "Stroke"
+    -- seltag <- atomNew "Stroke"
+    clipbd <- clipboardGet hdltag
     let bstr = C8.unpack . B64.encode . Se.encode $ strs 
-    clipboardSetText clip bstr
+    clipboardSetText clipbd bstr
     togglePaste ui True 
     case (get hookSet xstate) of 
       Nothing -> return () 
       Just hset -> case afterUpdateClipboardHook hset of 
                      Nothing -> return () 
                      Just uchook -> liftIO $ uchook strs 
-
     return xstate
-
-
   
 -- | 
-
 copySelection :: MainCoroutine ()
 copySelection = do 
     updateXState copySelectionAction >> invalidateAll 
@@ -491,8 +475,6 @@ copySelection = do
 
 
 -- |
-
-
 callback4Clip :: (MyEvent -> IO ()) -> IORef (Maybe [StrokeBBox]) -> Maybe String -> IO ()
 callback4Clip callbk ref Nothing = do 
     writeIORef ref Nothing
@@ -510,14 +492,13 @@ callback4Clip callbk ref (Just str) = do
         callbk (GotClipboardContent (Just cnt))
 
 -- |
-
 getClipFromGtk :: MainCoroutine (Maybe [StrokeBBox])
 getClipFromGtk = do 
     hdltag <- liftIO $ atomNew "hoodle"
-    clip <- liftIO $ clipboardGet hdltag
+    clipbd <- liftIO $ clipboardGet hdltag
     ref <- liftIO $ newIORef Nothing 
     callbk <- get callBack <$> getSt     
-    liftIO $ clipboardRequestText clip (callback4Clip callbk ref)
+    liftIO $ clipboardRequestText clipbd (callback4Clip callbk ref)
     cnt <- liftIO $ readIORef ref
     case cnt of 
       Nothing -> do 
@@ -528,7 +509,6 @@ getClipFromGtk = do
       Just _ -> return cnt
 
 -- | 
-
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = do 
     mstrks <- getClipFromGtk 
@@ -565,7 +545,6 @@ pasteToSelection = do
           return xstate' 
         
 -- | 
-  
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
@@ -587,7 +566,6 @@ selectPenColorChanged pcolor = do
       invalidateAll 
           
 -- | 
-
 selectPenWidthChanged :: Double -> MainCoroutine () 
 selectPenWidthChanged pwidth = do 
   liftIO $ putStrLn "selectPenWidthChanged called"
@@ -611,7 +589,6 @@ selectPenWidthChanged pwidth = do
 -- | main mouse pointer click entrance in lasso selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
-
 selectLassoStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 selectLassoStart cid = commonPenStart lassoAction cid 
   where lassoAction cinfo pnum geometry (cidup,cidmove) (x,y) = do 
@@ -642,7 +619,6 @@ selectLassoStart cid = commonPenStart lassoAction cid
           action epage
           
 -- | 
-
 newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> PageNum 
                   -> CanvasGeometry

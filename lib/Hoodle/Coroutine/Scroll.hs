@@ -33,7 +33,6 @@ import           Hoodle.View.Coordinate
 import           Prelude hiding ((.), id)
 
 -- | 
-
 adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
 adjustScrollbarWithGeometryCvsId cid = do
   xstate <- getSt
@@ -46,7 +45,6 @@ adjustScrollbarWithGeometryCvsId cid = do
 
 
 -- | 
-
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = do
   xstate <- getSt
@@ -58,7 +56,6 @@ adjustScrollbarWithGeometryCurrent = do
   liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
 
 -- | 
-   
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
 hscrollBarMoved cid v = 
     changeCurrentCanvasId cid 
@@ -71,10 +68,8 @@ hscrollBarMoved cid v =
 
 
 -- | 
-        
 vscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
 vscrollBarMoved cid v = 
-    -- changeCurrentCanvasId cid 
     chkCvsIdNInvalidate cid 
     >> updateXState (return . vscrollmoveAction) 
     >> invalidate cid
@@ -84,7 +79,6 @@ vscrollBarMoved cid v =
           in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
 
 -- | 
-
 vscrollStart :: CanvasId -> MainCoroutine () 
 vscrollStart cid = do 
   chkCvsIdNInvalidate cid 
@@ -92,7 +86,6 @@ vscrollStart cid = do
         
 
 -- |                   
-
 vscrollMove :: CanvasId -> MainCoroutine () 
 vscrollMove cid = do    
     ev <- await 
@@ -111,8 +104,8 @@ vscrollMove cid = do
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 
         return ()
-      VScrollBarStart cid v -> vscrollStart cid 
-      other -> return ()       
+      VScrollBarStart cid' _v -> vscrollStart cid' 
+      _ -> return ()       
   where scrollmovecanvas v cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
           in modify (viewPortBBox.pageArrangement.viewInfo) 

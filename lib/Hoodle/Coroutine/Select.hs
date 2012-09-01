@@ -18,7 +18,6 @@ import           Control.Category
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.Trans
-import           Control.Monad.Coroutine 
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import           Data.IORef
@@ -33,6 +32,7 @@ import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.Matrix as Mat
 import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn 
 import           Data.Xournal.Simple (Dimension(..))
 import           Data.Xournal.Generic
 import           Data.Xournal.BBox

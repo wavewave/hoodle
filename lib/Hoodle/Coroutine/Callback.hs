@@ -18,7 +18,7 @@ module Hoodle.Coroutine.Callback where
 import Control.Monad.Trans.Free
 import Data.IORef
 -- from hoodle-platform
-import Control.Monad.Coroutine 
+import Control.Monad.Trans.Crtn 
 -- from this package 
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Event 
@@ -35,6 +35,6 @@ bouncecallback tref ev = do
           x <- runFreeT (next ev)
           case x of 
             Pure () -> error "end? in boundcallback" -- partial
-            Free (Await next') -> return next' 
+            Free (Awt next') -> return next' 
         writeIORef tref (Just next')
 

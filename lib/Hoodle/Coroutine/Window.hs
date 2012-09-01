@@ -14,6 +14,18 @@
 
 module Hoodle.Coroutine.Window where
 
+import Control.Category
+import Control.Monad.Trans
+import Data.Label
+import Graphics.UI.Gtk hiding (get,set)
+import qualified Data.IntMap as M
+import Data.Maybe
+import Data.Time.Clock 
+--
+import Control.Monad.Trans.Crtn
+import Data.Xournal.Simple (Dimension(..))
+import Data.Xournal.Generic
+--
 import Hoodle.Type.Canvas
 import Hoodle.Type.Event
 import Hoodle.Type.Window
@@ -22,21 +34,12 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.PageArrangement
 import Hoodle.Type.Predefined
 import Hoodle.Util
-import Control.Monad.Trans
 import Hoodle.ModelAction.Window
 import Hoodle.ModelAction.Page
 import Hoodle.Coroutine.Page
 import Hoodle.Coroutine.Draw
 import Hoodle.Accessor
-import Control.Monad.Coroutine -- .SuspensionFunctors
-import Control.Category
-import Data.Label
-import Graphics.UI.Gtk hiding (get,set)
-import qualified Data.IntMap as M
-import Data.Maybe
-import Data.Time.Clock 
-import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.Generic
+--
 import Prelude hiding ((.),id)
 
 -- | canvas configure with general zoom update func

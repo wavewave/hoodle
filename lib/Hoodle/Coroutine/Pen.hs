@@ -14,7 +14,20 @@
 
 module Hoodle.Coroutine.Pen where
 
+-- from other packages
 import Graphics.UI.Gtk hiding (get,set,disconnect)
+import Control.Monad
+import Control.Monad.Trans
+import Data.Sequence hiding (filter)
+import qualified Data.Map as M
+import Data.Maybe 
+import Control.Category
+import Data.Label
+-- from hoodle-platform
+import Control.Monad.Trans.Crtn
+import Data.Xournal.Predefined
+import Data.Xournal.BBox
+-- from this package
 import Hoodle.Device 
 import Hoodle.Type.Event
 import Hoodle.Type.Enum
@@ -31,16 +44,7 @@ import Hoodle.ModelAction.Page
 import Hoodle.View.Coordinate
 import Hoodle.View.Draw
 import Hoodle.Util
-import Control.Monad
-import Control.Monad.Trans
-import Control.Monad.Coroutine -- .SuspensionFunctors
-import Data.Xournal.Predefined
-import Data.Xournal.BBox
-import Data.Sequence hiding (filter)
-import qualified Data.Map as M
-import Data.Maybe 
-import Control.Category
-import Data.Label
+--
 import Prelude hiding ((.), id)
 
 

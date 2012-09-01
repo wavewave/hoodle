@@ -16,15 +16,15 @@ import Control.Monad.State
 import Control.Monad.Trans.Free
 import Data.IORef 
 -- from this package
-import Control.Monad.Coroutine 
+import Control.Monad.Trans.Crtn 
 import Hoodle.Type.Event
 import Hoodle.Type.XournalState 
 
 -- | 
-type MainCoroutine a = Consumer MyEvent XournalStateIO a 
+type MainCoroutine a = CnsmT MyEvent XournalStateIO a 
 
 -- |
-type Driver a = Consumer MyEvent IO a 
+type Driver a = CnsmT MyEvent IO a 
 
 -- | 
 mapDown :: HoodleState -> MainCoroutine a -> Driver a 
@@ -32,20 +32,9 @@ mapDown st m =
     FreeT $ do x <- flip runStateT st $ runFreeT m 
                case x of 
                  (Pure r,_) -> return (Pure r) 
-                 (Free (Await next),st') -> 
-                   return . Free . Await $ \ev -> mapDown st' (next ev)
+                 (Free (Awt next),st') -> 
+                   return . Free . Awt $ \ev -> mapDown st' (next ev)
                       
-{-                      
-                      do 
-                    x <- runFreeT m 
-                    case x of               
-                      Pure r -> undefined -- return (Left r) 
-                      Free (Await next) -> return next 
-    in FreeT (Await (\ev -> mapDown st' (next ev)))
-                                
-  evalStateT m st -}
 
 type TRef = IORef (Maybe (MyEvent -> Driver ()))
-            -- (MyEvent -> MainCoroutine ()) 
--- type SRef = IORef HoodleState
 

@@ -14,51 +14,51 @@
 
 module Hoodle.Coroutine.Default where
 
-import Control.Applicative ((<$>))
-import Control.Monad.Coroutine
+import           Control.Applicative ((<$>))
+import           Control.Category
 import qualified Control.Monad.State as St 
-import Control.Monad.Trans
+import           Control.Monad.Trans
 import qualified Data.IntMap as M
-import Data.Maybe
-import Control.Category
-import Data.Label
-import Prelude hiding ((.), id)
-import Data.IORef
-import Graphics.UI.Gtk hiding (get,set)
+import           Data.IORef
+import           Data.Maybe
+import           Data.Label
+import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
-import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.Generic
+import           Control.Monad.Trans.Crtn
+import           Data.Xournal.Simple (Dimension(..))
+import           Data.Xournal.Generic
 -- from this package
-import Hoodle.Accessor
-import Hoodle.Coroutine.Callback
-import Hoodle.Coroutine.Commit
-import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Pen
-import Hoodle.Coroutine.Eraser
-import Hoodle.Coroutine.Highlighter
-import Hoodle.Coroutine.Scroll
-import Hoodle.Coroutine.Page
-import Hoodle.Coroutine.Select
-import Hoodle.Coroutine.File
-import Hoodle.Coroutine.Mode
-import Hoodle.Coroutine.Window
-import Hoodle.Coroutine.Layer 
-import Hoodle.Device
-import Hoodle.GUI.Menu
-import Hoodle.ModelAction.File
-import Hoodle.ModelAction.Window 
-import Hoodle.Script
-import Hoodle.Script.Hook
-import Hoodle.Type.Canvas
-import Hoodle.Type.Clipboard
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
-import Hoodle.Type.Event
-import Hoodle.Type.Undo
-import Hoodle.Type.Window 
-import Hoodle.Type.XournalState
-import Hoodle.Type.PageArrangement
-
+import           Hoodle.Accessor
+import           Hoodle.Coroutine.Callback
+import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Eraser
+import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.Highlighter
+import           Hoodle.Coroutine.Layer 
+import           Hoodle.Coroutine.Page
+import           Hoodle.Coroutine.Pen
+import           Hoodle.Coroutine.Scroll
+import           Hoodle.Coroutine.Select
+import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Window
+import           Hoodle.Device
+import           Hoodle.GUI.Menu
+import           Hoodle.ModelAction.File
+import           Hoodle.ModelAction.Window 
+import           Hoodle.Script
+import           Hoodle.Script.Hook
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Clipboard
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
+import           Hoodle.Type.Event
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Undo
+import           Hoodle.Type.Window 
+import           Hoodle.Type.XournalState
+--
+import Prelude hiding ((.), id)
 
 -- |
 initCoroutine :: DeviceList -> Window -> Maybe FilePath -> Maybe Hook 

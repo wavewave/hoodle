@@ -32,14 +32,15 @@ import Data.Xournal.Generic
 import Data.Xournal.BBox
 import Graphics.Xournal.Render.HitTest
 import Graphics.Xournal.Render.BBoxMapPDF
-import Control.Monad.Coroutine -- .SuspensionFunctors
 import Control.Monad.Trans
+import Control.Monad.Trans.Crtn
 import qualified Control.Monad.State as St
 import Control.Category
 import Data.Label
 import qualified Data.IntMap as IM
-import Prelude hiding ((.), id)
 import Hoodle.Coroutine.Pen 
+--
+import Prelude hiding ((.), id)
 
 -- |
 

@@ -18,7 +18,7 @@ import           Control.Monad.Trans
 import           Data.Label
 import           Data.Xournal.BBox
 -- from hoodle-platform
-import           Control.Monad.Coroutine 
+import           Control.Monad.Trans.Crtn 
 -- from this package
 import           Hoodle.Type.Event 
 import           Hoodle.Type.Coroutine

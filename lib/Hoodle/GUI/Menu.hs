@@ -10,25 +10,27 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-- Construct hoodle menus 
+--
 -----------------------------------------------------------------------------
 
 module Hoodle.GUI.Menu where
 
-import Hoodle.Util.Verbatim
-import Hoodle.Coroutine.Callback
-import Hoodle.Type
-import Hoodle.Type.Clipboard
-import Hoodle.Accessor
-import Control.Monad.Coroutine 
-import Data.IORef
-import Data.Maybe
-import Control.Category
-import Data.Label
-import Prelude hiding ((.),id)
-import Graphics.UI.Gtk hiding (set,get)
+-- from other packages
+import           Control.Category
+import           Data.Maybe
+import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
-import System.FilePath
-import Data.Xournal.Predefined 
+import           System.FilePath
+-- from hoodle-platform 
+import           Data.Xournal.Predefined 
+-- from this package
+import           Hoodle.Coroutine.Callback
+import           Hoodle.Type
+import           Hoodle.Type.Clipboard
+import           Hoodle.Util.Verbatim
+--
+import Prelude hiding ((.),id)
 import Paths_hoodle_core
 
 -- | 

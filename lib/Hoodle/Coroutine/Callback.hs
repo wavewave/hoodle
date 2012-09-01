@@ -14,13 +14,13 @@
 
 module Hoodle.Coroutine.Callback where
 
-import Control.Monad.Coroutine 
-import Control.Monad.State
+-- from other packages
 import Control.Monad.Trans.Free
--- import Control.Monad.Coroutine.SuspensionFunctors
 import Data.IORef
+-- from hoodle-platform
+import Control.Monad.Coroutine 
+-- from this package 
 import Hoodle.Type.Coroutine
-import Hoodle.Type.XournalState
 import Hoodle.Type.Event 
 
 -- | common event handler

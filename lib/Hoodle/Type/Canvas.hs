@@ -36,6 +36,7 @@ module Hoodle.Type.Canvas
 , defaultHighligherWCS
 , defaultPenInfo
 -- * lenses
+, points 
 , zoomMode 
 , pageArrangement 
 , canvasId

@@ -12,61 +12,59 @@
 
 module Hoodle.Coroutine.Select where
 
-import Graphics.UI.Gtk hiding (get,set,disconnect)
-import Control.Applicative 
-import Control.Concurrent
-import Control.Monad
-import Control.Monad.Identity
-import Control.Monad.Trans
-import Control.Monad.Coroutine -- .SuspensionFunctors
-import Control.Category
-import Data.Label
-import Prelude hiding ((.), id)
-import Data.IORef
-import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.Generic
-import Data.Xournal.BBox
-import Graphics.Rendering.Cairo
-import qualified Graphics.Rendering.Cairo.Matrix as Mat
-import Data.Monoid 
-import qualified Data.IntMap as M
-import Data.Sequence (Seq,(|>))
-import qualified Data.Sequence as Sq (empty)
-import Data.Time.Clock
-import Graphics.Xournal.Render.Type
-import Graphics.Xournal.Render.BBoxMapPDF
-import Graphics.Xournal.Render.HitTest
-import Graphics.Xournal.Render.BBox
-import Graphics.Xournal.Render.Generic
-
-import Graphics.UI.Gtk.General.Clipboard as Clip
-import qualified Data.Serialize as Se 
-
+-- from other package 
+import           Control.Applicative 
+import           Control.Category
+import           Control.Monad
+import           Control.Monad.Identity
+import           Control.Monad.Trans
+import           Control.Monad.Coroutine 
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
-
-
-import Hoodle.Type.Event 
-import Hoodle.Type.Enum
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Canvas
-import Hoodle.Type.Clipboard
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.XournalState
-import Hoodle.Type.Alias
-import Hoodle.Accessor
-import Hoodle.Device
-import Hoodle.View.Draw
-import Hoodle.View.Coordinate
-import Hoodle.Coroutine.EventConnect
-import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Pen
-import Hoodle.Coroutine.Mode
-import Hoodle.Coroutine.Commit
-import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.Select
-import Hoodle.ModelAction.Layer 
-import Hoodle.Script.Hook 
+import           Data.IORef
+import           Data.Label
+import           Data.Monoid 
+import qualified Data.IntMap as M
+import           Data.Sequence (Seq,(|>))
+import qualified Data.Sequence as Sq (empty)
+import           Data.Time.Clock
+import qualified Data.Serialize as Se 
+import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo.Matrix as Mat
+import           Graphics.UI.Gtk hiding (get,set,disconnect)
+-- from hoodle-platform
+import           Data.Xournal.Simple (Dimension(..))
+import           Data.Xournal.Generic
+import           Data.Xournal.BBox
+import           Graphics.Xournal.Render.Type
+import           Graphics.Xournal.Render.BBoxMapPDF
+import           Graphics.Xournal.Render.HitTest
+import           Graphics.Xournal.Render.BBox
+import           Graphics.Xournal.Render.Generic
+-- from this package
+import           Hoodle.Type.Event 
+import           Hoodle.Type.Enum
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Clipboard
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.XournalState
+import           Hoodle.Type.Alias
+import           Hoodle.Accessor
+import           Hoodle.Device
+import           Hoodle.View.Draw
+import           Hoodle.View.Coordinate
+import           Hoodle.Coroutine.EventConnect
+import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Pen
+import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Commit
+import           Hoodle.ModelAction.Page
+import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Layer 
+import           Hoodle.Script.Hook 
+-- 
+import           Prelude hiding ((.), id)
 
 -- |
 

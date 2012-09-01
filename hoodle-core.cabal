@@ -39,12 +39,13 @@ Library
                      strict == 0.3.*,
                      gtk == 0.12.*, 
                      cairo == 0.12.*,
+                     coroutine-object >= 0.0.999 && < 0.2, 
                      -- monad-coroutine == 0.7.*, 
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
                      xournal-types >= 0.4.0.999 && < 0.5,
                      xournal-parser == 0.4.*,
-                     xournal-render == 0.6.*,
+                     xournal-render >= 0.6.999 && < 0.8,
                      xournal-builder >= 0.1.1 && < 0.2,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -54,7 +55,7 @@ Library
                      cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.2.*,
                      poppler == 0.12.*, 
-                     time == 1.2.*, 
+                     time >= 1.2 && < 1.5, 
                      TypeCompose == 0.9.*, 
                      Diff == 0.1.*, 
                      dyre == 0.8.*, 
@@ -68,12 +69,13 @@ Library
                      strict == 0.3.*,
                      gtk == 0.12.*, 
                      cairo == 0.12.*,
+                     coroutine-object >= 0.0.999 && < 0.2,
                      -- monad-coroutine == 0.7.*, 
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
                      xournal-types >= 0.4.0.999 && < 0.5 ,
                      xournal-parser == 0.4.*,
-                     xournal-render >= 0.6.0 && < 0.7,
+                     xournal-render >= 0.6.999 && < 0.8,
                      xournal-builder >= 0.1.1 && < 0.2,
                      containers == 0.4.*,
                      template-haskell == 2.*,
@@ -89,14 +91,10 @@ Library
                      cereal == 0.3.5.*, 
                      base64-bytestring == 0.1.*
   Exposed-Modules: 
-                   Control.Monad.Coroutine
---                   Hoodle.StartUp
+                   -- Control.Monad.Coroutine
                    Hoodle.Script
                    Hoodle.Script.Hook
                    Hoodle.Script.Coroutine
---                   Hoodle.ProgType
---                   Hoodle.Job
---                   Hoodle.Command 
                    Hoodle.Type
                    Hoodle.Type.Alias 
                    Hoodle.Type.Event 
@@ -120,7 +118,6 @@ Library
                    Hoodle.ModelAction.Select
                    Hoodle.ModelAction.File
                    Hoodle.ModelAction.Window
-                   -- Hoodle.ModelAction.Network
                    Hoodle.ModelAction.Layer
                    Hoodle.Coroutine
                    Hoodle.Coroutine.Callback
@@ -137,14 +134,12 @@ Library
                    Hoodle.Coroutine.Mode
                    Hoodle.Coroutine.Window
                    Hoodle.Coroutine.Commit
-                   -- Hoodle.Coroutine.Network
                    Hoodle.Coroutine.Layer
                    Hoodle.Util
                    Hoodle.Util.Verbatim 
                    Hoodle.Device
                    Hoodle.Accessor
                    Hoodle.Config
---                    Paths_hoodle
   Other-Modules: 
                    Paths_hoodle_core
   c-sources: 

@@ -188,7 +188,7 @@ drawFuncGen _typ render = SinglePageDraw func
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
-                clipBBox (fmap (flip inflate 1) mbboxnew) -- mbboxnew
+                clipBBox (fmap (flip inflate 1) mbboxnew) 
                 render (pnum,page) mbboxnew 
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
                 resetClip 
@@ -232,13 +232,6 @@ drawContPageGen render = ContPageDraw func
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
-              emphasispagerender (pn,pg) = do 
-                identityMatrix 
-                cairoXform4PageCoordinate geometry pn
-                let Dim w h = get g_dimension pg 
-                setSourceRGBA 1.0 0 0 0.2
-                rectangle 0 0 w h 
-                fill 
               onepagerender (pn,pg) = do  
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
@@ -247,12 +240,20 @@ drawContPageGen render = ContPageDraw func
                 render (pn,pg) pgmbbox
               renderfunc = do
                 xformfunc 
-                -- clipBBox mbboxnew
                 mapM_ onepagerender drawpgs 
-                -- emphasispagerender (pnum,page)
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
+
+
+              {- emphasispagerender (pn,pg) = do 
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                let Dim w h = get g_dimension pg 
+                setSourceRGBA 1.0 0 0 0.2
+                rectangle 0 0 w h 
+                fill  -}
+
 
 -- |
 
@@ -285,13 +286,6 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
           let ibboxnew = getViewableBBox geometry mbbox
               mbboxnew = toMaybe ibboxnew
               xformfunc = cairoXform4PageCoordinate geometry pnum
-              emphasispagerender (pn,pg) = do 
-                identityMatrix 
-                cairoXform4PageCoordinate geometry pn
-                let Dim w h = get g_dimension pg 
-                setSourceRGBA 1.0 0 0 0.2
-                rectangle 0 0 w h 
-                fill 
               onepagerender (pn,pg) = do  
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
@@ -302,13 +296,20 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 rendersel (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew)
               renderfunc = do
                 xformfunc 
-                -- clipBBox mbboxnew
                 mapM_ onepagerender drawpgs 
-                -- emphasispagerender (pnum,page)
                 maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
+
+              {- emphasispagerender (pn,pg) = do 
+                identityMatrix 
+                cairoXform4PageCoordinate geometry pn
+                let Dim w h = get g_dimension pg 
+                setSourceRGBA 1.0 0 0 0.2
+                rectangle 0 0 w h 
+                fill  -}
+
 
 -- |
 

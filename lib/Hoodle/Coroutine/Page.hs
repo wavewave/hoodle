@@ -169,8 +169,7 @@ pageZoomChangeRel rzmode = do
   where 
     fsingle :: (ViewMode a) => CanvasInfo a -> MainCoroutine ()
     fsingle cinfo = do 
-      let czmode = get (zoomMode.viewInfo) cinfo 
-          cpn = PageNum (get currentPageNum cinfo)
+      let cpn = PageNum (get currentPageNum cinfo)
           arr = get (pageArrangement.viewInfo) cinfo 
           canvas = get drawArea cinfo 
       geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
@@ -208,7 +207,6 @@ deleteCurrentPage = do
     fsimple :: (ViewMode a) => HoodleState -> CanvasInfo a
                -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
-      let cpn = PageNum (get currentPageNum cinfo)      
       case get xournalstate xstate of 
         ViewAppendState xoj -> do 
           xoj' <- liftIO $ deletePageInXoj xoj 
@@ -225,8 +223,7 @@ deletePageInXoj :: Xournal EditMode -> PageNum -> IO (Xournal EditMode)
 deletePageInXoj xoj (PageNum pgn) = do 
   putStrLn "deletePageInxoj is called"
   let pagelst = M.elems . get g_pages $ xoj 
-      (pagesbefore,cpage:pagesafter) = splitAt pgn pagelst
-      npage = newSinglePageFromOld cpage
+      (pagesbefore,_cpage:pagesafter) = splitAt pgn pagelst
       npagelst = pagesbefore ++ pagesafter
       nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 
   return nxoj

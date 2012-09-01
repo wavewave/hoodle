@@ -20,14 +20,13 @@ module Hoodle.Type.XournalState
 -- | labels
 , xournalstate
 , currFileName
--- , canvasInfoMap 
--- , currentCanvas
+, cvsInfoMap
+, currentCanvas
 , frameState
 , rootWindow
 , rootContainer
 , rootOfRootWindow
 , currentPenDraw
--- , clipboard
 , callBack
 , deviceList
 , penInfo
@@ -35,7 +34,6 @@ module Hoodle.Type.XournalState
 , gtkUIManager
 , isSaved
 , undoTable
--- , isEventBlocked 
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure

@@ -14,34 +14,35 @@
 
 module Hoodle.ModelAction.Page where
 
-import Hoodle.Type.XournalState
-import Hoodle.Type.Canvas
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.Alias
-import Hoodle.Type.Enum
-import Hoodle.Type.Predefined
-import Hoodle.View.Coordinate
-import Hoodle.Util
-import Control.Applicative
-import Control.Monad (liftM)
-import Data.Xournal.Simple (Dimension(..))
-import Data.Xournal.Generic
-import Data.Xournal.Select
-import Data.Traversable (mapM)
-import Graphics.Xournal.Render.BBoxMapPDF
-import Control.Category
-import Data.Label
-import Prelude hiding ((.),id,mapM)
-import qualified Data.IntMap as M 
-import Graphics.UI.Gtk (adjustmentGetValue)
+import           Control.Applicative
+import           Control.Category
+import           Control.Monad (liftM)
+import qualified Data.IntMap as M
+import           Data.Label
+import           Data.Traversable (mapM)
+import           Graphics.UI.Gtk (adjustmentGetValue)
+-- from hoodle-platform
+import           Data.Xournal.Generic
+import           Data.Xournal.Select
+import           Graphics.Xournal.Render.BBoxMapPDF
+-- from this package
+import           Hoodle.Type.XournalState
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Alias
+import           Hoodle.Type.Enum
+import           Hoodle.Type.Predefined
+import           Hoodle.View.Coordinate
+import           Hoodle.Util
+-- 
+import           Prelude hiding ((.),id,mapM)
+
 
 -- |
-
 getPageMap :: XournalState -> M.IntMap (Page EditMode)
 getPageMap = either (get g_pages) (get g_selectAll) . xojstateEither 
   
 -- |             
-             
 setPageMap :: M.IntMap (Page EditMode) -> XournalState -> XournalState
 setPageMap nmap = 
   either (ViewAppendState . set g_pages nmap)
@@ -49,7 +50,6 @@ setPageMap nmap =
   . xojstateEither
   
 -- |
-
 updatePageAll :: XournalState -> HoodleState -> IO HoodleState
 updatePageAll xojst xstate = do 
   let cmap = getCanvasInfoMap xstate
@@ -59,7 +59,6 @@ updatePageAll xojst xstate = do
            . set xournalstate xojst $ xstate
 
 -- | 
-
 adjustPage :: XournalState -> CanvasInfoBox -> CanvasInfoBox  
 adjustPage xojstate = selectBox fsingle fsingle  
   where fsingle :: CanvasInfo a -> CanvasInfo a 
@@ -76,14 +75,12 @@ adjustPage xojstate = selectBox fsingle fsingle
                   else cinfo
  
 -- | 
-
 getPageFromGXournalMap :: Int -> GXournal M.IntMap a -> a
 getPageFromGXournalMap pagenum = 
   maybeError ("getPageFromGXournalMap " ++ show pagenum) . M.lookup pagenum . get g_pages
 
 
 -- | 
-
 updateCvsInfoFrmXoj :: Xournal EditMode -> CanvasInfoBox -> IO CanvasInfoBox
 updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
   where fsingle cinfo = do 
@@ -121,7 +118,6 @@ updateCvsInfoFrmXoj xoj cinfobox = selectBoxAction fsingle fcont cinfobox
               
 
 -- |
-
 updatePage :: XournalState -> CanvasInfoBox -> IO CanvasInfoBox 
 updatePage (ViewAppendState xojbbox) cinfobox = updateCvsInfoFrmXoj xojbbox cinfobox
 updatePage (SelectState txoj) cinfobox = selectBoxAction fsingle fcont cinfobox
@@ -133,7 +129,6 @@ updatePage (SelectState txoj) cinfobox = selectBoxAction fsingle fcont cinfobox
           updateCvsInfoFrmXoj xoj cinfobox
 
 -- | 
-
 setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox
 setPage xstate pnum cid = do  
   let cinfobox =  getCanvasInfo cid xstate
@@ -142,7 +137,6 @@ setPage xstate pnum cid = do
                   cinfobox
 
 -- | setPageSingle : in Single Page mode   
-
 setPageSingle :: HoodleState -> PageNum  
               -> CanvasInfo SinglePage
               -> IO (CanvasInfo SinglePage)
@@ -158,7 +152,6 @@ setPageSingle xstate pnum cinfo = do
            . set (pageArrangement.viewInfo) arr $ cinfo 
 
 -- | setPageCont : in ContinuousSingle Page mode   
-
 setPageCont :: HoodleState -> PageNum  
             -> CanvasInfo ContinuousSinglePage
             -> IO (CanvasInfo ContinuousSinglePage)
@@ -172,14 +165,12 @@ setPageCont xstate pnum cinfo = do
            . set (pageArrangement.viewInfo) arr $ cinfo 
 
 -- | 
-
 newSinglePageFromOld :: Page EditMode -> Page EditMode 
 newSinglePageFromOld = 
   set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
 
 
 -- | 
-
 addNewPageInXoj :: AddDirection  
                    -> Xournal EditMode
                    -> Int 
@@ -195,7 +186,6 @@ addNewPageInXoj dir xoj cpn = do
   return nxoj
 
 -- | 
-
 relZoomRatio :: CanvasGeometry -> ZoomModeRel -> Double
 relZoomRatio geometry rzmode =   
     let CvsCoord (cx0,_cy0) = desktop2Canvas geometry (DeskCoord (0,0))

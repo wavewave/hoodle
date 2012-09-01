@@ -208,7 +208,10 @@ deskDimContSingle xoj =
 pageDimension :: PageArrangement SinglePage :-> PageDimension
 pageDimension = lens getter setter 
   where getter (SingleArrangement _ pdim _) = pdim
+        getter (ContinuousSingleArrangement _ _ _ _) = error $ "in pageDimension " -- partial 
         setter pdim (SingleArrangement cdim _ vbbox) = SingleArrangement cdim pdim vbbox
+        setter _pdim (ContinuousSingleArrangement _ _ _ _) = error $ "in pageDimension "  -- partial 
+        
 
 canvasDimension :: PageArrangement a :-> CanvasDimension 
 canvasDimension = lens getter setter 

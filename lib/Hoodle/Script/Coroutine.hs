@@ -12,16 +12,16 @@
 
 module Hoodle.Script.Coroutine where
 
-import Hoodle.Type.XournalState
+import           Control.Monad.Trans
+import           Data.Label
+-- from hoodle-platform
+import           Data.Xournal.Simple
+-- from this package
+import           Hoodle.Accessor
 import qualified Hoodle.Script.Hook as H
-import Hoodle.Type.Coroutine
-import Hoodle.Accessor
-
-import Control.Category 
-import Control.Monad.Trans
-import Data.Label
-import Data.Xournal.Simple
-
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.XournalState
+-- 
 import Prelude hiding ((.),id)
 
 -- |

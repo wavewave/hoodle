@@ -12,23 +12,25 @@
 
 module Hoodle.Coroutine.Scroll where
 
-import Hoodle.Type.Event 
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Canvas
-import Hoodle.Type.XournalState
-import Hoodle.Type.PageArrangement
+import           Control.Category
+import           Control.Monad
+import           Control.Monad.Trans
+import           Data.Label
+import           Data.Xournal.BBox
+-- from hoodle-platform
+import           Control.Monad.Coroutine 
+-- from this package
+import           Hoodle.Type.Event 
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.XournalState
+import           Hoodle.Type.PageArrangement
 import qualified Hoodle.ModelAction.Adjustment as A
-import Hoodle.Coroutine.Draw
-import Hoodle.Accessor
-import Hoodle.View.Coordinate
-import Hoodle.Util
-import Control.Monad
-import Control.Monad.Coroutine -- .SuspensionFunctors
-import Control.Category
-import Data.Xournal.BBox
-import Data.Label
-import Control.Monad.Trans
-import Prelude hiding ((.), id)
+import           Hoodle.Coroutine.Draw
+import           Hoodle.Accessor
+import           Hoodle.View.Coordinate
+--
+import           Prelude hiding ((.), id)
 
 -- | 
 

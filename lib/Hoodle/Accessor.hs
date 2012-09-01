@@ -14,25 +14,27 @@
 
 module Hoodle.Accessor where
 
-import Hoodle.Type
-import Control.Applicative
-import Control.Monad hiding (mapM_)
+import           Control.Applicative
+import           Control.Category
+import           Control.Monad hiding (mapM_)
 import qualified Control.Monad.State as St hiding (mapM_)
-import Control.Monad.Trans
-import Control.Category
+import           Control.Monad.Trans
+import           Data.Foldable
 import qualified Data.IntMap as M
-import Data.Label
-import Graphics.UI.Gtk hiding (get,set)
+import           Data.Label
+import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
-import Data.Foldable
-import Data.Monoid
-import Data.Xournal.BBox
-import Data.Xournal.Generic
-import Hoodle.ModelAction.Layer 
-import Hoodle.Type.Alias
-import Hoodle.Type.PageArrangement
-import Hoodle.View.Coordinate
-import Prelude hiding ((.),id,mapM_)
+-- from hoodle-platform 
+import           Data.Xournal.BBox
+import           Data.Xournal.Generic
+-- from this package
+import           Hoodle.ModelAction.Layer 
+import           Hoodle.Type
+import           Hoodle.Type.Alias
+import           Hoodle.View.Coordinate
+import           Hoodle.Type.PageArrangement
+--
+import           Prelude hiding ((.),id,mapM_)
 
 -- | get HoodleState 
 

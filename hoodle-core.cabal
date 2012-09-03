@@ -40,7 +40,6 @@ Library
                      gtk == 0.12.*, 
                      cairo == 0.12.*,
                      coroutine-object >= 0.0.999 && < 0.2, 
-                     -- monad-coroutine == 0.7.*, 
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
                      xournal-types >= 0.4.999 && < 0.6,
@@ -50,10 +49,7 @@ Library
                      containers == 0.4.*,
                      template-haskell == 2.*,
                      bytestring == 0.9.*, 
-                     -- double-conversion == 0.2.*,
-                     -- fclabels == 1.1.*,
                      lens >= 2.4 && < 2.6,
-                     -- cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.2.*,
                      poppler == 0.12.*, 
                      time >= 1.2 && < 1.5, 
@@ -71,7 +67,6 @@ Library
                      gtk == 0.12.*, 
                      cairo == 0.12.*,
                      coroutine-object >= 0.0.999 && < 0.2,
-                     -- monad-coroutine == 0.7.*, 
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
                      xournal-types >= 0.4.0.999 && < 0.5 ,
@@ -81,10 +76,7 @@ Library
                      containers == 0.4.*,
                      template-haskell == 2.*,
                      bytestring == 0.9.*, 
-                     -- double-conversion == 0.2.*,
-                     -- fclabels == 1.1.*,
                      lens >= 2.4 && < 2.6,
-                     -- cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.2.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
@@ -93,7 +85,6 @@ Library
                      cereal == 0.3.5.*, 
                      base64-bytestring == 0.1.*
   Exposed-Modules: 
-                   -- Control.Monad.Coroutine
                    Hoodle.Accessor
                    Hoodle.Config
                    Hoodle.Coroutine

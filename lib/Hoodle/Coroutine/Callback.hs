@@ -15,8 +15,9 @@
 module Hoodle.Coroutine.Callback where
 
 -- from other packages
+import Control.Concurrent 
 import Control.Monad.Trans.Free
-import Data.IORef
+-- import Data.IORef
 -- from hoodle-platform
 import Control.Monad.Trans.Crtn 
 -- from this package 
@@ -24,9 +25,9 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.Event 
 
 -- | common event handler
-bouncecallback :: TRef -> MyEvent -> IO () 
-bouncecallback tref ev = do 
-    mnext <- readIORef tref 
+bouncecallback :: EventVar -> MyEvent -> IO () 
+bouncecallback evar ev = do 
+    mnext <- takeMVar evar
     case mnext of 
       Nothing -> do putStrLn "Nothing" 
                     print ev 
@@ -36,5 +37,5 @@ bouncecallback tref ev = do
           case x of 
             Pure () -> error "end? in boundcallback" -- partial
             Free (Awt next') -> return next' 
-        writeIORef tref (Just next')
+        putMVar evar (Just next')
 

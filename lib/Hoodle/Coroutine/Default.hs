@@ -16,10 +16,11 @@ module Hoodle.Coroutine.Default where
 
 import           Control.Applicative ((<$>))
 import           Control.Category
+import           Control.Concurrent 
 import           Control.Lens
 import           Control.Monad.State 
 import qualified Data.IntMap as M
-import           Data.IORef
+-- import           Data.IORef
 import           Data.Maybe
 -- import           Data.Label
 import           Graphics.UI.Gtk hiding (get,set)
@@ -63,14 +64,16 @@ import Prelude hiding ((.), id)
 -- |
 initCoroutine :: DeviceList -> Window -> Maybe FilePath -> Maybe Hook 
                  -> Int -- ^ maxundo 
-                 -> IO (TRef,HoodleState,UIManager,VBox)
+                 -> IO (EventVar,HoodleState,UIManager,VBox)
 initCoroutine devlst window mfname mhook maxundo  = do 
-  tref <- newIORef Nothing 
+  evar <- newEmptyMVar  
+  -- takeMVar evar 
+  putMVar evar Nothing 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
-            . set callBack (bouncecallback tref) 
+            . set callBack (bouncecallback evar) 
             $ emptyHoodleState 
-  ui <- getMenuUI tref     
+  ui <- getMenuUI evar    
   putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
@@ -88,8 +91,12 @@ initCoroutine devlst window mfname mhook maxundo  = do
   -- let ui = view gtkUIManager st6
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
-  writeIORef tref (Just (\ev -> mapDown startingXstate (guiProcess ev)))
-  return (tref,startingXstate,ui,vbox)
+  putStrLn "testing two"
+  -- takeMVar evar 
+  -- takeMVar evar 
+  putMVar evar (Just (\ev -> mapDown startingXstate (guiProcess ev)))
+  putStrLn "testing three"
+  return (evar,startingXstate,ui,vbox)
 
 
 -- | 
@@ -230,6 +237,7 @@ askQuitProgram = do
                        MessageQuestion ButtonsOkCancel 
                        "Current canvas is not saved yet. Will you close hoodle?" 
   res <- liftIO $ dialogRun dialog
+  liftIO $ putStrLn "okay" 
   case res of
     ResponseOk -> do 
       liftIO $ widgetDestroy dialog

@@ -359,25 +359,25 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 
 -- | 
 
-actionNewAndRegisterRef :: TRef                            
+actionNewAndRegisterRef :: EventVar                            
                            -> String -> String 
                            -> Maybe String -> Maybe StockId
                            -> Maybe MyEvent 
                            -> IO Action
-actionNewAndRegisterRef tref name label tooltip stockId myevent = do 
+actionNewAndRegisterRef evar name label tooltip stockId myevent = do 
     a <- actionNew name label tooltip stockId 
     case myevent of 
       Nothing -> return a 
       Just ev -> do 
         a `on` actionActivated $ do 
-          bouncecallback tref ev
+          bouncecallback evar ev
         return a
 
 -- | 
 
-getMenuUI :: TRef -> IO UIManager
-getMenuUI tref = do 
-  let actionNewAndRegister = actionNewAndRegisterRef tref  
+getMenuUI :: EventVar -> IO UIManager
+getMenuUI evar = do 
+  let actionNewAndRegister = actionNewAndRegisterRef evar  
   -- icons   
   myiconfac <- iconFactoryNew 
   iconFactoryAddDefault myiconfac 
@@ -472,13 +472,13 @@ getMenuUI tref = do
   -- options menu 
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
-    bouncecallback tref (Menu MenuUseXInput)
+    bouncecallback evar (Menu MenuUseXInput)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
-    bouncecallback tref (Menu MenuPressureSensitivity)
+    bouncecallback evar (Menu MenuPressureSensitivity)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
 
   
@@ -529,13 +529,13 @@ getMenuUI tref = do
     
   actionGroupAddAction agr uxinputa 
   actionGroupAddAction agr pressrsensa
-  -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode tref sref)
+  -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
   
   
-  actionGroupAddRadioActions agr pointmods 0 (assignPoint tref)
-  actionGroupAddRadioActions agr penmods   0 (assignPenMode tref)
-  actionGroupAddRadioActions agr colormods 0 (assignColor tref) 
+  actionGroupAddRadioActions agr pointmods 0 (assignPoint evar)
+  actionGroupAddRadioActions agr penmods   0 (assignPenMode evar)
+  actionGroupAddRadioActions agr colormods 0 (assignColor evar) 
  
   let disabledActions = 
         [ recenta, printa, exporta
@@ -586,28 +586,28 @@ getMenuUI tref = do
   return ui   
 
 -- | 
-assignViewMode :: TRef -> RadioAction -> IO ()
-assignViewMode tref a = viewModeToMyEvent a >>= bouncecallback tref   
+assignViewMode :: EventVar -> RadioAction -> IO ()
+assignViewMode evar a = viewModeToMyEvent a >>= bouncecallback evar
     
 -- | 
-assignPenMode :: TRef -> RadioAction -> IO ()
-assignPenMode tref a = do 
+assignPenMode :: EventVar -> RadioAction -> IO ()
+assignPenMode evar a = do 
     v <- radioActionGetCurrentValue a
-    bouncecallback tref (AssignPenMode (int2PenType v))
+    bouncecallback evar (AssignPenMode (int2PenType v))
 
       
 -- | 
-assignColor :: TRef -> RadioAction -> IO () 
-assignColor tref a = do 
+assignColor :: EventVar -> RadioAction -> IO () 
+assignColor evar a = do 
     v <- radioActionGetCurrentValue a
     let c = int2Color v
-    bouncecallback tref (PenColorChanged c)
+    bouncecallback evar (PenColorChanged c)
 
 -- | 
-assignPoint :: TRef -> RadioAction -> IO ()  
-assignPoint tref a = do 
+assignPoint :: EventVar -> RadioAction -> IO ()  
+assignPoint evar a = do 
     v <- radioActionGetCurrentValue a
-    bouncecallback  tref (PenWidthChanged v)
+    bouncecallback evar (PenWidthChanged v)
 
 -- | 
 int2PenType :: Int -> Either PenType SelectType 

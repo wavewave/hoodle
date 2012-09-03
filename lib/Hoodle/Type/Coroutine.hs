@@ -12,13 +12,17 @@
 
 module Hoodle.Type.Coroutine where
 
+-- from other packages 
+import Control.Concurrent 
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Data.IORef 
--- from this package
+-- from hoodle-platform
 import Control.Monad.Trans.Crtn 
+-- from this package
 import Hoodle.Type.Event
 import Hoodle.Type.XournalState 
+-- 
 
 -- | 
 type MainCoroutine a = CnsmT MyEvent XournalStateIO a 
@@ -37,4 +41,6 @@ mapDown st m =
                       
 
 type TRef = IORef (Maybe (MyEvent -> Driver ()))
+
+type EventVar = MVar (Maybe (MyEvent -> Driver ()))
 

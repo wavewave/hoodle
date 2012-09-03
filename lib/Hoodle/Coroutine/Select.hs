@@ -140,7 +140,7 @@ newSelectRectangle :: CanvasId
                    -> MainCoroutine () 
 newSelectRectangle cid pnum geometry connidmove connidup strs orig 
                    (prev,otime) tempselection = do  
-    r <- await 
+    r <- nextevent
     xst <- get 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
@@ -237,7 +237,7 @@ moveSelect :: CanvasId
 moveSelect cid pnum geometry connidmove connidup orig@(x0,y0) 
            (prev,otime) tempselection = do
     xst <- get
-    r <- await 
+    r <- nextevent 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
     fsingle r xstate cinfo = 
@@ -362,7 +362,7 @@ resizeSelect :: Handle
 resizeSelect handle cid pnum geometry connidmove connidup origbbox 
              (prev,otime) tempselection = do
     xst <- get
-    r <- await 
+    r <- nextevent 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
@@ -493,7 +493,7 @@ newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> TempSelection 
                   -> MainCoroutine ()
 newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso tsel = do
-    r <- await 
+    r <- nextevent 
     fsingle r cvsInfo 
   where  
     fsingle r cinfo = penMoveAndUpOnly r pnum geometry defact

@@ -117,7 +117,6 @@ callback4Clip callbk ref (Just str) = do
     let r = do let bstr = C8.pack str 
                bstr' <- B64.decode bstr
                Se.decode bstr' 
-    -- threadDelay 1000000
     case r of 
       Left err -> do 
         putStrLn err >> writeIORef ref Nothing
@@ -132,14 +131,12 @@ getClipFromGtk = do
     hdltag <- liftIO $ atomNew "hoodle"
     clipbd <- liftIO $ clipboardGet hdltag
     ref <- liftIO $ newIORef Nothing 
-    liftIO $ print "getClipFrmoGtk1"
     callbk <- view callBack <$> get     
     liftIO $ clipboardRequestText clipbd (callback4Clip callbk ref)
     cnt <- liftIO $ readIORef ref
-    liftIO $ print "getClipFromGtk2"
     case cnt of 
       Nothing -> do 
-        r <- await 
+        r <- nextevent 
         case r of 
           GotClipboardContent cnt' -> return cnt' 
           _ -> return Nothing 

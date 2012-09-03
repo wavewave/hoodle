@@ -88,7 +88,7 @@ vscrollStart cid = do
 -- |                   
 vscrollMove :: CanvasId -> MainCoroutine () 
 vscrollMove cid = do    
-    ev <- await 
+    ev <- nextevent 
     xst <- get 
     geometry <- liftIO (getCanvasGeometryCvsId cid xst)
     case ev of

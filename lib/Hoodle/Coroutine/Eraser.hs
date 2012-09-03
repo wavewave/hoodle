@@ -65,7 +65,7 @@ eraserProcess :: CanvasId
               -> (Double,Double)
               -> MainCoroutine () 
 eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do 
-    r <- await 
+    r <- nextevent 
     xst <- get
     boxAction (f r xst) . getCanvasInfo cid $ xst 
   where 

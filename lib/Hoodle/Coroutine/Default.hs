@@ -18,6 +18,7 @@ import           Control.Applicative ((<$>))
 import           Control.Category
 import           Control.Concurrent 
 import           Control.Lens
+import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Data.Maybe
@@ -87,14 +88,9 @@ initCoroutine devlst window mfname mhook maxundo  = do
           . set frameState wconf' 
           . set rootWindow cvs $ st4
   st6 <- getFileContent mfname st5
-  -- let ui = view gtkUIManager st6
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
-  putStrLn "testing two"
-  -- takeMVar evar 
-  -- takeMVar evar 
-  putMVar evar (Just (\ev -> mapStateDown startingXstate (guiProcess ev)))
-  putStrLn "testing three"
+  putMVar evar . Just . ReaderT $ (\ev -> mapStateDown startingXstate (guiProcess ev))
   return (evar,startingXstate,ui,vbox)
 
 
@@ -120,7 +116,7 @@ initialize ev = do
     liftIO $ putStrLn $ show ev 
     case ev of 
       Initialized -> return () 
-      _ -> do ev' <- await
+      _ -> do ev' <- nextevent
               initialize ev'
 
 
@@ -153,7 +149,7 @@ dispatchMode = get >>= return . xojstateEither . view xournalstate
 -- | 
 viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 
-  r1 <- await 
+  r1 <- nextevent 
   case r1 of 
     PenDown cid pbtn pcoord -> do 
       ptype <- getPenType 
@@ -173,7 +169,7 @@ viewAppendMode = do
 -- |
 selectMode :: MainCoroutine () 
 selectMode = do 
-  r1 <- await 
+  r1 <- nextevent 
   case r1 of 
     PenDown cid _pbtn pcoord -> do 
       ptype <- liftM (view (selectInfo.selectType)) get

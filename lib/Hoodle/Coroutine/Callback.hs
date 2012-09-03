@@ -29,13 +29,15 @@ bouncecallback :: EventVar -> MyEvent -> IO ()
 bouncecallback evar ev = do 
     mnext <- takeMVar evar
     case mnext of 
-      Nothing -> do putStrLn "Nothing" 
-                    print ev 
+      Nothing -> return () 
       Just next -> do                
-        next' <- do 
+        enext' <- dispatch ev next
+        either (error "end? in bouncecallback") (putMVar evar.Just) enext' 
+        
+{-        next' <- do 
           x <- runFreeT (next ev)
           case x of 
             Pure () -> error "end? in boundcallback" -- partial
             Free (Awt next') -> return next' 
         putMVar evar (Just next')
-
+-}

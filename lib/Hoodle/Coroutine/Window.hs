@@ -162,7 +162,7 @@ deleteCanvas = do
 
 paneMoveStart :: MainCoroutine () 
 paneMoveStart = do 
-    ev <- await 
+    ev <- nextevent 
     case ev of 
       UpdateCanvas cid -> invalidateWithBuf cid >> paneMoveStart 
       PaneMoveEnd -> do 

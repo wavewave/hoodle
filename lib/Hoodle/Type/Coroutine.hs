@@ -14,6 +14,7 @@ module Hoodle.Type.Coroutine where
 
 -- from other packages 
 import Control.Concurrent 
+import Control.Monad.Reader 
 import Control.Monad.State
 import Control.Monad.Trans.Free
 import Data.IORef 
@@ -25,34 +26,27 @@ import Hoodle.Type.XournalState
 -- 
 
 -- | 
-type MainCoroutine a = CnsmT MyEvent XournalStateIO a 
--- type MainCoroutine a = SrvT MyEvent () XournalStateIO a 
+-- type MainCoroutine a = CnsmT MyEvent XournalStateIO a 
+type MainCoroutine a = CrtnT () MyEvent XournalStateIO a 
 
 -- |
-type Driver a = CnsmT MyEvent IO a 
--- type Driver a = SrvT MyEvent () a 
+-- type Driver a = CnsmT MyEvent IO a 
+type Driver a = SrvT MyEvent () IO a 
 
-{- 
+
+-- type TRef = IORef (Maybe (Driver ()))
+
+type EventVar = MVar (Maybe (Driver ()))
+
 -- | 
-mapDown1 :: HoodleState -> MainCoroutine a -> Driver a 
-mapDown1 st m = 
-    FreeT $ do x <- flip runStateT st $ runFreeT m 
-               case x of 
-                 (Pure r,_) -> return (Pure r) 
-                 (Free (Awt next),st') -> 
-                   return . Free . Awt $ \ev -> mapDown st' (next ev)
--}                      
+dispatch :: MyEvent -> Driver a -> IO (Either a (Driver a))
+dispatch ev drv = do 
+  x <- runFreeT (runReaderT drv ev) 
+  case x of 
+    Pure a -> return (Left a)  
+    Free (Rqst () next') -> return (Right (ReaderT next'))
 
-{-                   
-                   
-                   Awt $ \ev -> mapStateDown st' (fmap ev 
-                                                                  
-                                                                  
-                                                                  f x next ev)
--}
-  
-  
-type TRef = IORef (Maybe (MyEvent -> Driver ()))
 
-type EventVar = MVar (Maybe (MyEvent -> Driver ()))
-
+-- | 
+nextevent :: MainCoroutine MyEvent 
+nextevent = request ()  

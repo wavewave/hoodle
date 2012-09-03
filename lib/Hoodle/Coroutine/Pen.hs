@@ -119,7 +119,7 @@ penProcess :: CanvasId -> PageNum
            -> Seq (Double,Double,Double) -> ((Double,Double),Double) 
            -> MainCoroutine (Seq (Double,Double,Double))
 penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do 
-    r <- await 
+    r <- nextevent
     xst <- get 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 

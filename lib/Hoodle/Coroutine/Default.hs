@@ -177,13 +177,13 @@ selectMode = do
   r1 <- await 
   case r1 of 
     PenDown cid _pbtn pcoord -> do 
-      ptype <- return . view (selectInfo.selectType) =<< get
+      ptype <- liftM (view (selectInfo.selectType)) get
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
     PenColorChanged c -> do  
-      put . set (penInfo.currentTool.penColor) c =<< get 
+      modify (penInfo.currentTool.penColor .~ c)
       selectPenColorChanged c
     PenWidthChanged v -> do 
       st <- get 
@@ -212,13 +212,14 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        put . set (penInfo.penType) pm =<< get 
+        -- put . set (penInfo.penType) pm =<< get 
+        modify (penInfo.penType .~ pm)
         modeChange ToViewAppendMode
       Right sm -> do 
-        put . set (selectInfo.selectType) sm =<< get 
+        modify (selectInfo.selectType .~ sm)
         modeChange ToSelectMode 
 defaultEventProcess (PenColorChanged c) = 
-    put . set (penInfo.currentTool.penColor) c =<< get 
+    modify (penInfo.currentTool.penColor .~ c)
 defaultEventProcess (PenWidthChanged v) = do 
       st <- get 
       let ptype = view (penInfo.penType) st

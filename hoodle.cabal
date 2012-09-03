@@ -23,8 +23,8 @@ Executable hoodle
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                  base>4, 
-                 cmdargs >= 0.7 && <= 0.10, 
-                 hoodle-core >= 0.6.999, 
+                 cmdargs >= 0.7 && < 0.10, 
+                 hoodle-core >= 0.6.999 && < 0.8, 
                  hoodle 
 
 Library
@@ -36,10 +36,10 @@ Library
                    directory == 1.*,
                    filepath == 1.*, 
                    containers == 0.4.*,
-                   cmdargs >= 0.7 && <= 0.10,
+                   cmdargs >= 0.7 && < 0.11,
                    configurator == 0.2.*,
                    dyre == 0.8.*, 
-                   hoodle-core >= 0.6.999
+                   hoodle-core >= 0.6.999 && < 0.8
   Exposed-Modules: 
                    Hoodle.ProgType
                    Hoodle.Job

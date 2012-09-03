@@ -25,7 +25,8 @@ import Control.Applicative
 import Control.Monad.Trans
 
 import Control.Category
-import Data.Label 
+import Control.Lens
+-- import Data.Label 
 import Prelude hiding ((.), id)
 
 -- |
@@ -37,24 +38,24 @@ disconnect = liftIO . signalDisconnect
 
 connectPenUp :: CanvasInfo a -> MainCoroutine (ConnectId DrawingArea) 
 connectPenUp cinfo = do 
-  let cid = get canvasId cinfo
-      canvas = get drawArea cinfo 
+  let cid = view canvasId cinfo
+      canvas = view drawArea cinfo 
   connPenUp canvas cid 
 
 -- |
 
 connectPenMove :: CanvasInfo a -> MainCoroutine (ConnectId DrawingArea) 
 connectPenMove cinfo = do 
-  let cid = get canvasId cinfo
-      canvas = get drawArea cinfo 
+  let cid = view canvasId cinfo
+      canvas = view drawArea cinfo 
   connPenMove canvas cid 
 
 -- |
 
 connPenMove :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w) 
 connPenMove c cid = do 
-  callbk <- get callBack <$> getSt
-  dev <- get deviceList <$> getSt
+  callbk <- view callBack <$> getSt
+  dev <- view deviceList <$> getSt
   liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
              (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))
@@ -63,8 +64,8 @@ connPenMove c cid = do
   
 connPenUp :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w)
 connPenUp c cid = do 
-  callbk <- get callBack <$> getSt
-  dev <- get deviceList <$> getSt
+  callbk <- view callBack <$> getSt
+  dev <- view deviceList <$> getSt
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
              (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))

@@ -12,24 +12,26 @@
 
 module Hoodle.Coroutine.Commit where
 
-import Hoodle.Type.XournalState 
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Undo 
+-- import Data.Label
+import Control.Lens
+import Control.Monad.Trans
+-- from this package
+import Hoodle.Accessor
 import Hoodle.Coroutine.Draw 
 import Hoodle.ModelAction.File
 import Hoodle.ModelAction.Page
-import Data.Label
-import Control.Monad.Trans
-import Hoodle.Accessor
+import Hoodle.Type.Coroutine
+import Hoodle.Type.XournalState 
+import Hoodle.Type.Undo 
 
 -- | save state and add the current status in undo history 
 
 commit :: HoodleState -> MainCoroutine () 
 commit xstate = do 
-  let ui = get gtkUIManager xstate
+  let ui = view gtkUIManager xstate
   liftIO $ toggleSave ui True
-  let xojstate = get xournalstate xstate
-      undotable = get undoTable xstate 
+  let xojstate = view xournalstate xstate
+      undotable = view undoTable xstate 
       undotable' = addToUndo undotable xojstate
       xstate' = set isSaved False 
                 . set undoTable undotable'
@@ -46,7 +48,7 @@ commit_ = getSt >>= commit
 undo :: MainCoroutine () 
 undo = do 
     xstate <- getSt
-    let utable = get undoTable xstate
+    let utable = view undoTable xstate
     case getPrevUndo utable of 
       Nothing -> liftIO $ putStrLn "no undo item yet"
       Just (xojstate1,newtable) -> do 
@@ -61,7 +63,7 @@ undo = do
 redo :: MainCoroutine () 
 redo = do 
     xstate <- getSt
-    let utable = get undoTable xstate
+    let utable = view undoTable xstate
     case getNextUndo utable of 
       Nothing -> liftIO $ putStrLn "no redo item"
       Just (xojstate1,newtable) -> do 

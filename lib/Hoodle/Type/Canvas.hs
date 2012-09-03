@@ -80,7 +80,8 @@ import Data.Sequence
 import qualified Data.IntMap as M
 import Control.Applicative ((<*>),(<$>))
 import Control.Category
-import Data.Label 
+import           Control.Lens
+-- import Data.Label 
 import Prelude hiding ((.), id)
 import Graphics.UI.Gtk hiding (get,set)
 import Data.Xournal.Simple (Dimension(..))
@@ -121,12 +122,12 @@ defaultViewInfoSinglePage =
 
 -- | lens for zoomMode 
 
-zoomMode :: ViewInfo a :-> ZoomMode 
-zoomMode = lens _zoomMode (\a f -> f { _zoomMode = a } )
+zoomMode :: Simple Lens (ViewInfo a) ZoomMode 
+zoomMode = lens _zoomMode (\f a -> f { _zoomMode = a } )
 
 
-pageArrangement :: ViewInfo a :-> PageArrangement a  
-pageArrangement = lens _pageArrangement (\a f -> f { _pageArrangement = a })
+pageArrangement :: Simple Lens (ViewInfo a) (PageArrangement a)
+pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 
 data CanvasInfo a = 
     (ViewMode a) => CanvasInfo { _canvasId :: CanvasId
@@ -155,20 +156,25 @@ defaultCvsInfoSinglePage =
              , _vertAdjConnId =  Nothing
              }
 
-canvasId :: CanvasInfo a :-> CanvasId 
-canvasId = lens _canvasId (\a f -> f { _canvasId = a })
+-- | 
+canvasId :: Simple Lens (CanvasInfo a) CanvasId 
+canvasId = lens _canvasId (\f a -> f { _canvasId = a })
 
-drawArea :: CanvasInfo a :-> DrawingArea
-drawArea = lens _drawArea (\a f -> f { _drawArea = a })
+-- | 
+drawArea :: Simple Lens (CanvasInfo a) DrawingArea
+drawArea = lens _drawArea (\f a -> f { _drawArea = a })
 
-scrolledWindow :: CanvasInfo a :-> ScrolledWindow
-scrolledWindow = lens _scrolledWindow (\a f -> f { _scrolledWindow = a })
+-- | 
+scrolledWindow :: Simple Lens (CanvasInfo a) ScrolledWindow
+scrolledWindow = lens _scrolledWindow (\f a -> f { _scrolledWindow = a })
 
-viewInfo :: CanvasInfo a :-> ViewInfo a 
-viewInfo = lens _viewInfo (\a f -> f { _viewInfo = a }) 
+-- |
+viewInfo :: Simple Lens (CanvasInfo a) (ViewInfo a)
+viewInfo = lens _viewInfo (\f a -> f { _viewInfo = a }) 
 
-currentPageNum :: CanvasInfo a :-> Int 
-currentPageNum = lens _currentPageNum (\a f -> f { _currentPageNum = a })
+-- | 
+currentPageNum :: Simple Lens (CanvasInfo a) Int 
+currentPageNum = lens _currentPageNum (\f a -> f { _currentPageNum = a })
 
 {-
 currentPage :: CanvasInfo a :-> Either (Page EditMode) (Page SelectMode)
@@ -177,29 +183,32 @@ currentPage = lens _currentPage (\a f -> f { _currentPage = a })
 
 -- | 
 
-horizAdjustment :: CanvasInfo a :-> Adjustment 
-horizAdjustment = lens _horizAdjustment (\a f -> f { _horizAdjustment = a })
+horizAdjustment :: Simple Lens (CanvasInfo a) Adjustment 
+horizAdjustment = lens _horizAdjustment (\f a -> f { _horizAdjustment = a })
 
 -- | 
 
-vertAdjustment :: CanvasInfo a :-> Adjustment 
-vertAdjustment = lens _vertAdjustment (\a f -> f { _vertAdjustment = a })
+vertAdjustment :: Simple Lens (CanvasInfo a) Adjustment 
+vertAdjustment = lens _vertAdjustment (\f a -> f { _vertAdjustment = a })
 
 -- | ConnectId for horizontal scrollbar value change event 
 
-horizAdjConnId :: CanvasInfo a :-> Maybe (ConnectId Adjustment )
-horizAdjConnId = lens _horizAdjConnId (\a f -> f { _horizAdjConnId = a })
+horizAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (ConnectId Adjustment))
+horizAdjConnId = lens _horizAdjConnId (\f a -> f { _horizAdjConnId = a })
 
 -- | ConnectId for vertical scrollbar value change event 
 
-vertAdjConnId :: CanvasInfo a :-> Maybe (ConnectId Adjustment)
-vertAdjConnId = lens _vertAdjConnId (\a f -> f { _vertAdjConnId = a })
+vertAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (ConnectId Adjustment))
+vertAdjConnId = lens _vertAdjConnId (\f a -> f { _vertAdjConnId = a })
 
--- | 
-
-adjustments :: CanvasInfo a :-> (Adjustment,Adjustment) 
-adjustments = Lens $ (,) <$> (fst `for` horizAdjustment)
-                         <*> (snd `for` vertAdjustment)
+-- | composition lens
+adjustments :: Simple Lens (CanvasInfo a) (Adjustment,Adjustment) 
+adjustments = lens getter setter  
+  where getter = (,) <$> view horizAdjustment <*> view vertAdjustment 
+        setter f (h,v) = set horizAdjustment h . set vertAdjustment v $ f
+  
+  {- Lens $ (,) <$> (fst `for` horizAdjustment)
+                         <*> (snd `for` vertAdjustment) -}
 
 
 data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 
@@ -209,8 +218,8 @@ getDrawAreaFromBox = unboxGet drawArea
 
 -- | 
 
-unboxGet :: (forall a. (ViewMode a) => CanvasInfo a :-> b) -> CanvasInfoBox -> b 
-unboxGet f (CanvasInfoBox x) = get f x
+unboxGet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
+unboxGet f (CanvasInfoBox x) = view f x
 
 -- | fmap-like operation for box
 
@@ -230,7 +239,7 @@ selectBoxAction :: (Monad m) =>
                    (CanvasInfo SinglePage -> m a) 
                 -> (CanvasInfo ContinuousSinglePage -> m a) -> CanvasInfoBox -> m a 
 selectBoxAction fsingle fcont (CanvasInfoBox cinfo) = 
-  case get (pageArrangement.viewInfo) cinfo of 
+  case view (viewInfo.pageArrangement) cinfo of 
     SingleArrangement _ _ _ ->  fsingle cinfo 
     ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
 
@@ -249,7 +258,7 @@ selectBox fsingle fcont =
 pageArrEitherFromCanvasInfoBox :: CanvasInfoBox 
                  -> Either (PageArrangement SinglePage) (PageArrangement ContinuousSinglePage)
 pageArrEitherFromCanvasInfoBox (CanvasInfoBox cinfo) = 
-  pageArrEither . get (pageArrangement.viewInfo) $ cinfo 
+  pageArrEither . view (viewInfo.pageArrangement) $ cinfo 
 
 -- | 
 
@@ -257,7 +266,7 @@ viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
                -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage) 
                -> CanvasInfo v -> CanvasInfo v 
 viewModeBranch fsingle fcont cinfo = 
-  case get (pageArrangement.viewInfo) cinfo of 
+  case view (viewInfo.pageArrangement) cinfo of 
     SingleArrangement _ _ _ ->  fsingle cinfo 
     ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
 
@@ -266,13 +275,11 @@ type CanvasInfoMap = M.IntMap CanvasInfoBox
 
 
 -- | 
-
 data WidthColorStyle = WidthColorStyle { _penWidth :: Double
                                        , _penColor :: PenColor } 
                      deriving (Show)
                        
 -- | 
-
 data PenHighlighterEraserSet = PenHighlighterEraserSet 
                                { _currPen :: WidthColorStyle 
                                , _currHighlighter :: WidthColorStyle 
@@ -289,14 +296,14 @@ data PenInfo = PenInfo { _penType :: PenType
              deriving (Show) 
 
 -- | 
-currentTool :: PenInfo :-> WidthColorStyle 
+currentTool :: Simple Lens PenInfo WidthColorStyle 
 currentTool = lens chooser setter
   where chooser pinfo = case _penType pinfo of
                           PenWork -> _currPen . _penSet $ pinfo
                           HighlighterWork -> _currHighlighter . _penSet $ pinfo
                           EraserWork -> _currEraser . _penSet $ pinfo
                           TextWork -> _currText . _penSet $ pinfo 
-        setter wcs pinfo = 
+        setter pinfo wcs = 
           let pset = _penSet pinfo
               psetnew = case _penType pinfo of 
                           PenWork -> pset { _currPen = wcs }
@@ -337,7 +344,11 @@ defaultPenInfo =
           , _variableWidthPen = False
           } 
                                            
-$(mkLabels [''PenDraw, ''ViewInfo, ''PenInfo, ''PenHighlighterEraserSet, ''WidthColorStyle ])
+makeLenses ''PenDraw
+makeLenses ''ViewInfo
+makeLenses ''PenInfo
+makeLenses ''PenHighlighterEraserSet
+makeLenses ''WidthColorStyle 
 
 -- | 
 
@@ -345,14 +356,14 @@ updateCanvasDimForSingle :: CanvasDimension
                             -> CanvasInfo SinglePage  
                             -> CanvasInfo SinglePage 
 updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = 
-  let zmode = get (zoomMode.viewInfo) cinfo
+  let zmode = view (viewInfo.zoomMode) cinfo
       SingleArrangement _ pdim (ViewPortBBox bbox)
-        = get (pageArrangement.viewInfo) cinfo
+        = view (viewInfo.pageArrangement) cinfo
       (x,y) = bbox_upperleft bbox 
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = SingleArrangement cdim pdim (ViewPortBBox nbbox)
-  in set (pageArrangement.viewInfo) arr' cinfo
+  in set (viewInfo.pageArrangement) arr' cinfo
      
 -- | 
 
@@ -361,12 +372,12 @@ updateCanvasDimForContSingle :: PageDimension
                                 -> CanvasInfo ContinuousSinglePage 
                                 -> CanvasInfo ContinuousSinglePage 
 updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = 
-  let zmode = get (zoomMode.viewInfo) cinfo
+  let zmode = view (viewInfo.zoomMode) cinfo
       ContinuousSingleArrangement _ ddim  func (ViewPortBBox bbox) 
-        = get (pageArrangement.viewInfo) cinfo
+        = view (viewInfo.pageArrangement) cinfo
       (x,y) = bbox_upperleft bbox 
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousSingleArrangement cdim ddim func (ViewPortBBox nbbox)
-  in set (pageArrangement.viewInfo) arr' cinfo
+  in set (viewInfo.pageArrangement) arr' cinfo
      

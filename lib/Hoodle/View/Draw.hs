@@ -17,8 +17,10 @@ module Hoodle.View.Draw where
 import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
 import Control.Category ((.))
+import           Control.Lens
 import Control.Monad (when)
-import Data.Label
+
+-- import Data.Label
 import Prelude hiding ((.),id,mapM_,concatMap)
 import Data.Foldable
 import qualified Data.IntMap as M
@@ -180,7 +182,7 @@ drawFuncGen :: (GPageable em) => em ->
                ((PageNum,Page em) -> Maybe BBox -> Render ()) -> DrawingFunction SinglePage em
 drawFuncGen _typ render = SinglePageDraw func 
   where func isCurrentCvs canvas (pnum,page) vinfo mbbox = do 
-          let arr = get pageArrangement vinfo
+          let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
           win <- widgetGetDrawWindow canvas
           let ibboxnew = getViewableBBox geometry mbbox 
@@ -219,11 +221,11 @@ drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ())
                    -> DrawingFunction ContinuousSinglePage EditMode
 drawContPageGen render = ContPageDraw func 
   where func isCurrentCvs cinfo mbbox xoj = do 
-          let arr = get (pageArrangement.viewInfo) cinfo
-              pnum = PageNum . get currentPageNum $ cinfo 
-              canvas = get drawArea cinfo 
+          let arr = view (viewInfo.pageArrangement) cinfo
+              pnum = PageNum . view currentPageNum $ cinfo 
+              canvas = view drawArea cinfo 
           geometry <- makeCanvasGeometry pnum arr canvas
-          let pgs = get g_pages xoj 
+          let pgs = view g_pages xoj 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry xoj) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
@@ -249,7 +251,7 @@ drawContPageGen render = ContPageDraw func
               {- emphasispagerender (pn,pg) = do 
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
-                let Dim w h = get g_dimension pg 
+                let Dim w h = view g_dimension pg 
                 setSourceRGBA 1.0 0 0 0.2
                 rectangle 0 0 w h 
                 fill  -}
@@ -271,13 +273,13 @@ drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ())
                       -> DrawingFunction ContinuousSinglePage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
   where func isCurrentCvs cinfo mbbox txoj = do 
-          let arr = get (pageArrangement.viewInfo) cinfo
-              pnum = PageNum . get currentPageNum $ cinfo 
-              mtpage = get g_selectSelected txoj 
-              canvas = get drawArea cinfo 
+          let arr = view (viewInfo.pageArrangement) cinfo
+              pnum = PageNum . view currentPageNum $ cinfo 
+              mtpage = view g_selectSelected txoj 
+              canvas = view drawArea cinfo 
           geometry <- makeCanvasGeometry pnum arr canvas
-          let pgs = get g_selectAll txoj 
-              xoj = GXournal (get g_selectTitle txoj) pgs 
+          let pgs = view g_selectAll txoj 
+              xoj = GXournal (view g_selectTitle txoj) pgs 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry xoj) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
@@ -305,7 +307,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               {- emphasispagerender (pn,pg) = do 
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
-                let Dim w h = get g_dimension pg 
+                let Dim w h = view g_dimension pg 
                 setSourceRGBA 1.0 0 0 0.2
                 rectangle 0 0 w h 
                 fill  -}
@@ -370,9 +372,9 @@ drawContXojBuf =
 
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
-  let layers = get g_layers tpg 
+  let layers = view g_layers tpg 
       slayer = gselectedlayerbuf layers 
-  case unTEitherAlterHitted . get g_bstrokes $ slayer of
+  case unTEitherAlterHitted . view g_bstrokes $ slayer of
     Right alist -> do 
       clipBBox mbbox
       setSourceRGBA 0.0 0.0 1.0 1.0

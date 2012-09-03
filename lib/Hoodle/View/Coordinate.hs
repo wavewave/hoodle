@@ -17,7 +17,9 @@ module Hoodle.View.Coordinate where
 import Graphics.UI.Gtk hiding (get,set)
 import Control.Applicative
 import Control.Category
-import Data.Label 
+import           Control.Lens
+
+-- import Data.Label 
 import Prelude hiding ((.),id)
 import qualified Data.IntMap as M
 import Data.Maybe
@@ -54,7 +56,7 @@ makeCanvasGeometry :: PageNum
                       -> IO CanvasGeometry 
 makeCanvasGeometry cpn arr canvas = do 
   win <- widgetGetDrawWindow canvas
-  let cdim@(CanvasDimension (Dim w' h')) = get canvasDimension arr
+  let cdim@(CanvasDimension (Dim w' h')) = view canvasDimension arr
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
                  <*> (fromIntegral <$> screenGetHeight screen)
@@ -159,9 +161,9 @@ getPagesInViewPortRange :: CanvasGeometry -> Xournal EditMode -> [PageNum]
 getPagesInViewPortRange geometry xoj = 
   let ViewPortBBox bbox = canvasViewPort geometry
       ivbbox = Intersect (Middle bbox)
-      pagemap = get g_pages xoj 
+      pagemap = view g_pages xoj 
       pnums = map PageNum [ 0 .. (length . gToList $ pagemap)-1 ]
-      pgcheck n pg = let Dim w h = get g_dimension pg  
+      pgcheck n pg = let Dim w h = view g_dimension pg  
                          DeskCoord ul = page2Desktop geometry (PageNum n,PageCoord (0,0)) 
                          DeskCoord lr = page2Desktop geometry (PageNum n,PageCoord (w,h))
                          inbbox = Intersect (Middle (BBox ul lr))
@@ -177,9 +179,9 @@ getPagesInViewPortRange geometry xoj =
 getCvsGeomFrmCvsInfo :: (ViewMode a) => 
                         CanvasInfo a -> IO CanvasGeometry 
 getCvsGeomFrmCvsInfo cinfo = do 
-  let cpn = PageNum . get currentPageNum $ cinfo 
-      canvas = get drawArea cinfo
-      arr = get (pageArrangement.viewInfo) cinfo 
+  let cpn = PageNum . view currentPageNum $ cinfo 
+      canvas = view drawArea cinfo
+      arr = view (viewInfo.pageArrangement) cinfo 
   makeCanvasGeometry cpn arr canvas 
   
 -- | Get Canvas Origin in Page Coordinate : Right is successful case, 

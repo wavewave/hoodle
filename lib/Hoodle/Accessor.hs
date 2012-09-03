@@ -16,12 +16,13 @@ module Hoodle.Accessor where
 
 import           Control.Applicative
 import           Control.Category
+import           Control.Lens
 import           Control.Monad hiding (mapM_)
 import qualified Control.Monad.State as St hiding (mapM_)
 import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
-import           Data.Label
+-- import           Data.Label
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 -- from hoodle-platform 
@@ -54,15 +55,15 @@ updateXState action = putSt =<< action =<< getSt
 -- | 
 
 getPenType :: MainCoroutine PenType 
-getPenType = get (penType.penInfo) <$> lift (St.get)
+getPenType = view (penInfo.penType) <$> lift (St.get)
       
 -- | 
 
 getCurrentPageCurr :: MainCoroutine (Page EditMode) 
 getCurrentPageCurr = do 
   xstate <- getSt 
-  let xojstate = get xournalstate xstate
-      cinfobox = get currentCanvasInfo xstate 
+  let xojstate = view xournalstate xstate
+      cinfobox = view currentCanvasInfo xstate 
   case cinfobox of 
     CanvasInfoBox cinfo -> return (getCurrentPageFromXojState cinfo xojstate)
 
@@ -71,7 +72,7 @@ getCurrentPageCurr = do
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
 getCurrentPageCvsId cid = do 
   xstate <- getSt 
-  let xojstate = get xournalstate xstate
+  let xojstate = view xournalstate xstate
       cinfobox = getCanvasInfo cid xstate 
   case cinfobox of 
     CanvasInfoBox cinfo -> return (getCurrentPageFromXojState cinfo xojstate)
@@ -82,12 +83,12 @@ getCurrentPageEitherFromXojState :: (ViewMode a) =>
                                     CanvasInfo a -> XournalState  
                                     -> Either (Page EditMode) (Page SelectMode)
 getCurrentPageEitherFromXojState cinfo xojstate =  
-    let cpn = get currentPageNum cinfo 
+    let cpn = view currentPageNum cinfo 
         page = getCurrentPageFromXojState cinfo xojstate
     in case xojstate of 
          ViewAppendState _xoj -> Left page
          SelectState txoj ->  
-           case get g_selectSelected txoj of 
+           case view g_selectSelected txoj of 
              Nothing -> Left page
              Just (n,tpage) -> if cpn == n 
                                  then Right tpage
@@ -98,7 +99,7 @@ getCurrentPageEitherFromXojState cinfo xojstate =
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   page <- getCurrentPageCurr
-  return [s| l <- gToList (get g_layers page), s <- get g_bstrokes l ]
+  return [s| l <- gToList (view g_layers page), s <- view g_bstrokes l ]
   
 -- | 
 
@@ -107,7 +108,7 @@ getAllStrokeBBoxInCurrentLayer = do
   page <- getCurrentPageCurr
   let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
       currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-  return (get g_bstrokes currlayer)
+  return (view g_bstrokes currlayer)
       
 -- |
 
@@ -124,8 +125,8 @@ changeCurrentCanvasId cid = do
                       return xst)
           (setCurrentCanvasId cid xstate1)
     xst <- getSt
-    let cinfo = get currentCanvasInfo xst               
-        ui = get gtkUIManager xst                      
+    let cinfo = view currentCanvasInfo xst               
+        ui = view gtkUIManager xst                      
     reflectUI ui cinfo
     return xst
 
@@ -134,7 +135,7 @@ changeCurrentCanvasId cid = do
 reflectUI :: UIManager -> CanvasInfoBox -> MainCoroutine ()
 reflectUI ui cinfobox = do 
     xstate <- getSt
-    let mconnid = get pageModeSignal xstate
+    let mconnid = view pageModeSignal xstate
     liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
     Just ra1 <- liftIO $ actionGroupGetAction (head agr) "ONEPAGEA"
@@ -152,7 +153,7 @@ reflectUI ui cinfobox = do
 printViewPortBBox :: CanvasId -> MainCoroutine ()
 printViewPortBBox cid = do 
   cvsInfo <- return . getCanvasInfo cid =<< getSt 
-  liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
+  liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
 
 -- | 
 
@@ -167,8 +168,8 @@ printViewPortBBoxAll = do
   
 printViewPortBBoxCurr :: MainCoroutine ()
 printViewPortBBoxCurr = do 
-  cvsInfo <- return . get currentCanvasInfo =<< getSt 
-  liftIO $ putStrLn $ show (unboxGet (viewPortBBox.pageArrangement.viewInfo) cvsInfo)
+  cvsInfo <- return . view currentCanvasInfo =<< getSt 
+  liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
 
 -- | 
   
@@ -181,12 +182,12 @@ printModes cid = do
 
 printCanvasMode :: CanvasId -> CanvasInfoBox -> IO ()
 printCanvasMode cid cvsInfo = do 
-  let zmode = unboxGet (zoomMode.viewInfo) cvsInfo
+  let zmode = unboxGet (viewInfo.zoomMode) cvsInfo
       f :: PageArrangement a -> String 
       f (SingleArrangement _ _ _) = "SingleArrangement"
       f (ContinuousSingleArrangement _ _ _ _) = "ContinuousSingleArrangement"
       g :: CanvasInfo a -> String 
-      g cinfo = f . get (pageArrangement.viewInfo) $ cinfo
+      g cinfo = f . view (viewInfo.pageArrangement) $ cinfo
       arrmode :: String 
       arrmode = boxAction g cvsInfo  
       incid = unboxGet canvasId cvsInfo 
@@ -210,19 +211,19 @@ getCanvasGeometryCvsId cid xstate = do
       canvas = unboxGet drawArea cinfobox
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
-                . get (pageArrangement.viewInfo) 
+                . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox
 
 -- |
 
 getGeometry4CurrCvs :: HoodleState -> IO CanvasGeometry 
 getGeometry4CurrCvs xstate = do 
-  let cinfobox = get currentCanvasInfo xstate
+  let cinfobox = view currentCanvasInfo xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
       fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
-                . get (pageArrangement.viewInfo) 
+                . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox
   
 -- | 

@@ -31,7 +31,8 @@ import Hoodle.Type.Alias
 import Data.Xournal.Generic
 import Control.Monad.Trans
 import Control.Category
-import Data.Label
+-- import Data.Label
+import Control.Lens
 import Prelude hiding ((.), id)
 import qualified Data.IntMap as M
 
@@ -42,11 +43,11 @@ changePage modifyfn = updateXState changePageAction
                       >> adjustScrollbarWithGeometryCurrent
                       >> invalidateCurrent
   where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
-                               . get currentCanvasInfo $ xst
+                               . view currentCanvasInfo $ xst
         fsingle xstate cvsInfo = do 
-          let xojst = get xournalstate $ xstate  
-              npgnum = modifyfn (get currentPageNum cvsInfo)
-              cid = get canvasId cvsInfo
+          let xojst = view xournalstate $ xstate  
+              npgnum = modifyfn (view currentPageNum cvsInfo)
+              cid = view canvasId cvsInfo
               (b,npgnum',_selectedpage,xojst') = changePageInXournalState npgnum xojst
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
@@ -55,9 +56,9 @@ changePage modifyfn = updateXState changePageAction
           return xstatefinal 
         
         fcont xstate cvsInfo = do 
-          let xojst = get xournalstate $ xstate  
-              npgnum = modifyfn (get currentPageNum cvsInfo)
-              cid = get canvasId cvsInfo
+          let xojst = view xournalstate $ xstate  
+              npgnum = modifyfn (view currentPageNum cvsInfo)
+              cid = view canvasId cvsInfo
               (b,npgnum',_selectedpage,xojst') = changePageInXournalState npgnum xojst
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
@@ -71,7 +72,7 @@ changePage modifyfn = updateXState changePageAction
 changePageInXournalState :: Int -> XournalState -> (Bool,Int,Page EditMode,XournalState)
 changePageInXournalState npgnum xojstate =
     let exoj = xojstateEither xojstate 
-        pgs = either (get g_pages) (get g_selectAll) exoj
+        pgs = either (view g_pages) (view g_selectAll) exoj
         totnumpages = M.size pgs
         lpage = maybeError "changePage" (M.lookup (totnumpages-1) pgs)
         (isChanged,npgnum',npage',exoj') 
@@ -100,28 +101,28 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
         fsingle xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
           page <- getCurrentPageCvsId cid
-          let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
-              pdim = PageDimension $ get g_dimension page
+          let zmode = maybe (view (viewInfo.zoomMode) cinfo) id mzmode  
+              pdim = PageDimension $ view g_dimension page
               xy = either (const (0,0)) (unPageCoord.snd) 
                      (getCvsOriginInPage geometry)
               cdim = canvasDim geometry 
               narr = makeSingleArrangement zmode pdim cdim xy  
               ncinfobox = CanvasInfoBox
-                          . set (pageArrangement.viewInfo) narr
-                          . set (zoomMode.viewInfo) zmode $ cinfo
+                          . set (viewInfo.pageArrangement) narr
+                          . set (viewInfo.zoomMode) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
         fcont xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
-          let zmode = maybe (get (zoomMode.viewInfo) cinfo) id mzmode          
-              cpn = PageNum $ get currentPageNum cinfo 
+          let zmode = maybe (view (viewInfo.zoomMode) cinfo) id mzmode 
+              cpn = PageNum $ view currentPageNum cinfo 
               cdim = canvasDim geometry 
               xoj = getXournal xstate 
               origcoord = either (const (cpn,PageCoord (0,0))) id 
                             (getCvsOriginInPage geometry)
               narr = makeContinuousSingleArrangement zmode cdim xoj origcoord
               ncinfobox = CanvasInfoBox
-                          . set (pageArrangement.viewInfo) narr
-                          . set (zoomMode.viewInfo) zmode $ cinfo
+                          . set (viewInfo.pageArrangement) narr
+                          . set (viewInfo.zoomMode) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
 
 
@@ -165,13 +166,13 @@ pageZoomChange = canvasZoomUpdate . Just
 
 pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
 pageZoomChangeRel rzmode = do 
-    boxAction fsingle . get currentCanvasInfo =<< getSt 
+    boxAction fsingle . view currentCanvasInfo =<< getSt 
   where 
     fsingle :: (ViewMode a) => CanvasInfo a -> MainCoroutine ()
     fsingle cinfo = do 
-      let cpn = PageNum (get currentPageNum cinfo)
-          arr = get (pageArrangement.viewInfo) cinfo 
-          canvas = get drawArea cinfo 
+      let cpn = PageNum (view currentPageNum cinfo)
+          arr = view (viewInfo.pageArrangement) cinfo 
+          canvas = view drawArea cinfo 
       geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
       let  nratio = relZoomRatio geometry rzmode
       pageZoomChange (Zoom nratio)
@@ -184,13 +185,13 @@ newPage dir = updateXState npgBfrAct
               >> canvasZoomUpdateAll 
               >> invalidateAll
   where 
-    npgBfrAct xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
+    npgBfrAct xst = boxAction (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: (ViewMode a) => HoodleState -> CanvasInfo a 
                -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
-      case get xournalstate xstate of 
+      case view xournalstate xstate of 
         ViewAppendState xoj -> do 
-          xoj' <- liftIO $ addNewPageInXoj dir xoj (get currentPageNum cinfo)
+          xoj' <- liftIO $ addNewPageInXoj dir xoj (view currentPageNum cinfo)
           return =<< liftIO . updatePageAll (ViewAppendState xoj')
                      . set xournalstate  (ViewAppendState xoj') $ xstate 
         SelectState _ -> do 
@@ -203,14 +204,14 @@ deleteCurrentPage :: MainCoroutine ()
 deleteCurrentPage = do 
     updateXState delpgact >> commit_ >> canvasZoomUpdateAll >> invalidateAll
   where 
-    delpgact xst = boxAction (fsimple xst) . get currentCanvasInfo $ xst
+    delpgact xst = boxAction (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: (ViewMode a) => HoodleState -> CanvasInfo a
                -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
-      case get xournalstate xstate of 
+      case view xournalstate xstate of 
         ViewAppendState xoj -> do 
           xoj' <- liftIO $ deletePageInXoj xoj 
-                             (PageNum (get currentPageNum cinfo))
+                             (PageNum (view currentPageNum cinfo))
           return =<< liftIO . updatePageAll (ViewAppendState xoj')
                      . set xournalstate  (ViewAppendState xoj') $ xstate 
         SelectState _ -> do 
@@ -222,7 +223,7 @@ deleteCurrentPage = do
 deletePageInXoj :: Xournal EditMode -> PageNum -> IO (Xournal EditMode)
 deletePageInXoj xoj (PageNum pgn) = do 
   putStrLn "deletePageInxoj is called"
-  let pagelst = M.elems . get g_pages $ xoj 
+  let pagelst = M.elems . view g_pages $ xoj 
       (pagesbefore,_cpage:pagesafter) = splitAt pgn pagelst
       npagelst = pagesbefore ++ pagesafter
       nxoj = set g_pages (M.fromList . zip [0..] $ npagelst) xoj 

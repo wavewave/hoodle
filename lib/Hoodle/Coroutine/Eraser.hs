@@ -12,7 +12,20 @@
 
 module Hoodle.Coroutine.Eraser where
 
+import Control.Category
+-- import Data.Label
+import qualified Data.IntMap as IM
+import Control.Lens
+import Control.Monad.Trans
+import Control.Monad.Trans.Crtn
+import qualified Control.Monad.State as St
 import Graphics.UI.Gtk hiding (get,set,disconnect)
+-- 
+import Data.Xournal.Generic
+import Data.Xournal.BBox
+import Graphics.Xournal.Render.HitTest
+import Graphics.Xournal.Render.BBoxMapPDF
+-- 
 import Hoodle.Type.Event
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Canvas
@@ -28,16 +41,6 @@ import Hoodle.Accessor
 import Hoodle.ModelAction.Page
 import Hoodle.ModelAction.Eraser
 import Hoodle.ModelAction.Layer
-import Data.Xournal.Generic
-import Data.Xournal.BBox
-import Graphics.Xournal.Render.HitTest
-import Graphics.Xournal.Render.BBoxMapPDF
-import Control.Monad.Trans
-import Control.Monad.Trans.Crtn
-import qualified Control.Monad.State as St
-import Control.Category
-import Data.Label
-import qualified Data.IntMap as IM
 import Hoodle.Coroutine.Pen 
 --
 import Prelude hiding ((.), id)
@@ -79,8 +82,8 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
       if hitState 
         then do 
           page <- getCurrentPageCvsId cid 
-          let currxoj     = unView . get xournalstate $ xstate 
-              pgnum       = get currentPageNum cvsInfo
+          let currxoj     = unView . view xournalstate $ xstate 
+              pgnum       = view currentPageNum cvsInfo
               (mcurrlayer, currpage) = getCurrentLayerOrSet page
               currlayer = maybe (error "eraserProcess") id mcurrlayer
           let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
@@ -88,7 +91,7 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
           newlayerbbox <- liftIO . updateLayerBuf maybebbox 
                           . set g_bstrokes newstrokes $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-              newxojbbox = modify g_pages (IM.adjust (const newpagebbox) pgnum) currxoj
+              newxojbbox = over g_pages (IM.adjust (const newpagebbox) pgnum) currxoj
               newxojstate = ViewAppendState newxojbbox
           commit . set xournalstate newxojstate 
             =<< (liftIO (updatePageAll newxojstate xstate))

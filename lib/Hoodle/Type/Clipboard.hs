@@ -15,7 +15,9 @@
 module Hoodle.Type.Clipboard where
 
 import Control.Category
-import Data.Label 
+import           Control.Lens
+import           Control.Lens.TH
+-- import Data.Label 
 import Prelude hiding ((.), id)
 import Data.Xournal.BBox
 
@@ -57,5 +59,4 @@ data SelectInfo = SelectInfo { _selectType :: SelectType
                              }
              deriving (Show) 
 
-$(mkLabels [''SelectInfo])
-
+makeLenses ''SelectInfo

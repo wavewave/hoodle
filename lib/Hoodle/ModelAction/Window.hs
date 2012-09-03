@@ -25,7 +25,8 @@ import Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import Control.Monad.Trans 
 import Control.Category
-import Data.Label
+import           Control.Lens
+-- import Data.Label
 import Prelude hiding ((.),id)
 import qualified Data.IntMap as M
 import System.FilePath
@@ -34,10 +35,10 @@ import System.FilePath
 
 setTitleFromFileName :: HoodleState -> IO () 
 setTitleFromFileName xstate = do 
-  case get currFileName xstate of
-    Nothing -> Gtk.set (get rootOfRootWindow xstate) 
+  case view currFileName xstate of
+    Nothing -> Gtk.set (view rootOfRootWindow xstate) 
                        [ windowTitle := "untitled" ]
-    Just filename -> Gtk.set (get rootOfRootWindow xstate) 
+    Just filename -> Gtk.set (view rootOfRootWindow xstate) 
                              [ windowTitle := takeFileName filename] 
 
 -- | 
@@ -74,8 +75,8 @@ minimalCanvasInfo _xstate cid = do
 connectDefaultEventCanvasInfo :: ViewMode a =>  
                                  HoodleState -> CanvasInfo a -> IO (CanvasInfo a )
 connectDefaultEventCanvasInfo xstate cinfo = do 
-    let callback = get callBack xstate
-        dev = get deviceList xstate 
+    let callback = view callBack xstate
+        dev = view deviceList xstate 
         canvas = _drawArea cinfo 
         cid = _canvasId cinfo 
         scrwin = _scrolledWindow cinfo
@@ -105,7 +106,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       return ()
     -}  
     widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
-    let ui = get gtkUIManager xstate 
+    let ui = view gtkUIManager xstate 
     agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                       case x of 
                         [] -> error "No action group? "
@@ -139,7 +140,7 @@ reinitCanvasInfoStage1 :: (ViewMode a) =>
                            HoodleState 
                            ->  CanvasInfo a -> IO (CanvasInfo a)
 reinitCanvasInfoStage1 xstate oldcinfo = do 
-  let cid = get canvasId oldcinfo 
+  let cid = view canvasId oldcinfo 
   newcinfo <- minimalCanvasInfo xstate cid      
   return $ newcinfo { _viewInfo = _viewInfo oldcinfo 
                     , _currentPageNum = _currentPageNum oldcinfo 
@@ -201,11 +202,11 @@ constructFrame' template oxstate (Node cid) = do
       CanvasInfoBox cinfo -> do 
         ncinfo <- reinitCanvasInfoStage1 xstate cinfo 
         let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
-        return (xstate', castToWidget . get scrolledWindow $ ncinfo, Node cid)
+        return (xstate', castToWidget . view scrolledWindow $ ncinfo, Node cid)
 constructFrame' template xstate (HSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     
     (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
-    let callback = get callBack xstate'' 
+    let callback = view callBack xstate'' 
     hpane' <- hPanedNew
     hpane' `on` buttonPressEvent $ do 
       liftIO (callback PaneMoveStart)
@@ -220,7 +221,7 @@ constructFrame' template xstate (HSplit wconf1 wconf2) = do
 constructFrame' template xstate (VSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1 
     (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
-    let callback = get callBack xstate''     
+    let callback = view callBack xstate''     
     vpane' <- vPanedNew 
     vpane' `on` buttonPressEvent $ do 
       liftIO (callback PaneMoveStart)

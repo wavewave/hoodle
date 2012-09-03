@@ -15,13 +15,14 @@ module Hoodle.Coroutine.Select where
 -- from other package 
 import           Control.Applicative 
 import           Control.Category
+import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.Trans
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import           Data.IORef
-import           Data.Label
+-- import           Data.Label
 import           Data.Monoid 
 import qualified Data.IntMap as M
 import           Data.Sequence (Seq,(|>))
@@ -86,7 +87,7 @@ createTempSelectRender pnum geometry page x = do
 dealWithOneTimeSelectMode :: MainCoroutine () -> MainCoroutine ()
 dealWithOneTimeSelectMode action = do 
   xstate <- getSt 
-  case get isOneTimeSelectMode xstate of 
+  case view isOneTimeSelectMode xstate of 
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
       action >> updateXState (return . set isOneTimeSelectMode YesAfterSelect)
@@ -123,7 +124,7 @@ selectRectStart cid = commonPenStart rectaction cid
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
           xstate <- getSt 
-          let xojstate = get xournalstate xstate 
+          let xojstate = view xournalstate xstate 
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
 
@@ -181,22 +182,22 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
-          epage = getCurrentPageEitherFromXojState cinfo (get xournalstate xstate)
-          cpn = get currentPageNum cinfo 
+          epage = getCurrentPageEitherFromXojState cinfo (view xournalstate xstate)
+          cpn = view currentPageNum cinfo 
           bbox = BBox orig (x,y)
           hittestbbox = mkHitTestInsideBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox
-          SelectState txoj = get xournalstate xstate
+          SelectState txoj = view xournalstate xstate
           newpage = case epage of 
                       Left pagebbox -> makePageSelectMode pagebbox selectstrs 
                       Right tpage -> 
                         let ls = glayers tpage 
                             currlayer = gselectedlayerbuf ls
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
                         in npage
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
-          ui = get gtkUIManager xstate
+          ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       putSt . set xournalstate (SelectState newtxoj) 
             =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
@@ -273,7 +274,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
         (ordaction xst cinfo)
     chgaction :: (ViewMode a) => HoodleState -> CanvasInfo a -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
     chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
-      let xojstate@(SelectState txoj) = get xournalstate xstate
+      let xojstate@(SelectState txoj) = view xournalstate xstate
           epage = getCurrentPageEitherFromXojState cinfo xojstate
       (xstate1,ntxoj1,selectedstrs) <- 
         case epage of 
@@ -286,10 +287,10 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
             return (xst,ntxoj,strs)       
           Left _ -> error "this is impossible, in moveSelect" 
       let maction = do 
-            page <- M.lookup (unPageNum newpgn) (get g_selectAll ntxoj1)
+            page <- M.lookup (unPageNum newpgn) (view g_selectAll ntxoj1)
             let (mcurrlayer,npage) = getCurrentLayerOrSet page
             currlayer <- mcurrlayer 
-            let oldstrs = get g_bstrokes currlayer
+            let oldstrs = view g_bstrokes currlayer
             let newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) selectedstrs 
                 alist = oldstrs :- Hitted newstrs :- Empty 
                 ntpage = makePageSelectMode npage alist  
@@ -310,9 +311,9 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       
     ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
-          xojstate@(SelectState txoj) = get xournalstate xstate
+          xojstate@(SelectState txoj) = view xournalstate xstate
           epage = getCurrentPageEitherFromXojState cinfo xojstate
-          pagenum = get currentPageNum cinfo
+          pagenum = view currentPageNum cinfo
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset offset tpage 
@@ -390,9 +391,9 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
           newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
-          xojstate@(SelectState txoj) = get xournalstate xstate
+          xojstate@(SelectState txoj) = view xournalstate xstate
           epage = getCurrentPageEitherFromXojState cinfo xojstate
-          pagenum = get currentPageNum cinfo
+          pagenum = view currentPageNum cinfo
       case epage of 
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
@@ -411,21 +412,21 @@ deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
   xstate <- getSt
-  let SelectState txoj = get xournalstate xstate 
+  let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . glayers $ tpage
-  case unTEitherAlterHitted . get g_bstrokes $ slayer of 
+  case unTEitherAlterHitted . view g_bstrokes $ slayer of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
           oldlayers = glayers tpage
-          newpage = tpage { glayers = oldlayers { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) } } 
+          newpage = tpage { glayers = oldlayers { gselectedlayerbuf = GLayerBuf (view g_buffer slayer) (TEitherAlterHitted newlayer) } } 
       newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n          
       newxstate <- liftIO $ updatePageAll (SelectState newtxoj) 
                             . set xournalstate (SelectState newtxoj)
                             $ xstate 
       commit newxstate 
-      let ui = get gtkUIManager newxstate
+      let ui = view gtkUIManager newxstate
       liftIO $ toggleCutCopyDelete ui False 
       invalidateAll 
           
@@ -441,7 +442,7 @@ updateClipboard :: HoodleState -> [StrokeBBox] -> IO HoodleState
 updateClipboard xstate strs 
   | null strs = return xstate
   | otherwise = do 
-    let ui = get gtkUIManager xstate
+    let ui = view gtkUIManager xstate
     hdltag <- atomNew "hoodle"
     -- tgttag <- atomNew "Stroke"
     -- seltag <- atomNew "Stroke"
@@ -449,7 +450,7 @@ updateClipboard xstate strs
     let bstr = C8.unpack . B64.encode . Se.encode $ strs 
     clipboardSetText clipbd bstr
     togglePaste ui True 
-    case (get hookSet xstate) of 
+    case (view hookSet xstate) of 
       Nothing -> return () 
       Just hset -> case afterUpdateClipboardHook hset of 
                      Nothing -> return () 
@@ -461,9 +462,9 @@ copySelection :: MainCoroutine ()
 copySelection = do 
     updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
-          boxAction (fsingle xst) . get currentCanvasInfo $ xst
+          boxAction (fsingle xst) . view currentCanvasInfo $ xst
         fsingle xstate cinfo = maybe (return xstate) id $ do  
-          let xojstate = get xournalstate xstate
+          let xojstate = view xournalstate xstate
           let epage = getCurrentPageEitherFromXojState cinfo xojstate
           eitherMaybe epage `pipe` getActiveLayer 
                             `pipe` (Right . liftIO . updateClipboard xstate . takeHittedStrokes)
@@ -497,7 +498,7 @@ getClipFromGtk = do
     hdltag <- liftIO $ atomNew "hoodle"
     clipbd <- liftIO $ clipboardGet hdltag
     ref <- liftIO $ newIORef Nothing 
-    callbk <- get callBack <$> getSt     
+    callbk <- view callBack <$> getSt     
     liftIO $ clipboardRequestText clipbd (callback4Clip callbk ref)
     cnt <- liftIO $ readIORef ref
     case cnt of 
@@ -516,18 +517,18 @@ pasteToSelection = do
       Nothing -> return () 
       Just strks -> do 
         modeChange ToSelectMode >>updateXState (pasteAction strks) >> invalidateAll  
-  where pasteAction stks xst = boxAction (fsimple stks xst) . get currentCanvasInfo 
+  where pasteAction stks xst = boxAction (fsimple stks xst) . view currentCanvasInfo 
                                $ xst
         fsimple stks xstate cinfo = do 
           geometry <- liftIO (getGeometry4CurrCvs xstate)
-          let pagenum = get currentPageNum cinfo 
-              xojstate@(SelectState txoj) = get xournalstate xstate
+          let pagenum = view currentPageNum cinfo 
+              xojstate@(SelectState txoj) = view xournalstate xstate
               nclipstrs = adjustStrokePosition4Paste geometry (PageNum pagenum) stks
               epage = getCurrentPageEitherFromXojState cinfo xojstate 
               tpage = either gcast id epage
               layerselect = gselectedlayerbuf . glayers $ tpage 
               ls  = glayers tpage
-              gbuf = get g_buffer layerselect
+              gbuf = view g_buffer layerselect
               newlayerselect = case getActiveLayer tpage of 
                 Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted nclipstrs :- Empty)
                 Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
@@ -540,7 +541,7 @@ pasteToSelection = do
                               . set xournalstate (SelectState txoj') 
                               $ xstate 
           commit xstate' 
-          let ui = get gtkUIManager xstate' 
+          let ui = view gtkUIManager xstate' 
           liftIO $ toggleCutCopyDelete ui True
           return xstate' 
         
@@ -549,17 +550,17 @@ selectPenColorChanged :: PenColor -> MainCoroutine ()
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
   xstate <- getSt
-  let SelectState txoj = get xournalstate xstate 
+  let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . glayers $ tpage
-  case unTEitherAlterHitted . get g_bstrokes $ slayer of 
+  case unTEitherAlterHitted . view g_bstrokes $ slayer of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
           ls = glayers tpage 
-          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
+          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (view g_buffer slayer) (TEitherAlterHitted newlayer) }} 
       newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n
       commit =<< liftIO (updatePageAll (SelectState newtxoj)
                         . set xournalstate (SelectState newtxoj) $ xstate )
@@ -570,17 +571,17 @@ selectPenWidthChanged :: Double -> MainCoroutine ()
 selectPenWidthChanged pwidth = do 
   liftIO $ putStrLn "selectPenWidthChanged called"
   xstate <- getSt
-  let SelectState txoj = get xournalstate xstate 
+  let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
-      slayer = gselectedlayerbuf . get g_layers $ tpage
-  case unTEitherAlterHitted . get g_bstrokes $ slayer  of 
+      slayer = gselectedlayerbuf . view g_layers $ tpage
+  case unTEitherAlterHitted . view g_bstrokes $ slayer  of 
     Left _ -> liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
-          ls = get g_layers tpage 
-          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (get g_buffer slayer) (TEitherAlterHitted newlayer) }} 
+          ls = view g_layers tpage 
+          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (view g_buffer slayer) (TEitherAlterHitted newlayer) }} 
       newtxoj <- liftIO $ updateTempXournalSelectIO txoj newpage n          
       commit =<< liftIO (updatePageAll (SelectState newtxoj) 
                          . set xournalstate (SelectState newtxoj) $ xstate )
@@ -614,7 +615,7 @@ selectLassoStart cid = commonPenStart lassoAction cid
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
           xstate <- getSt 
-          let xojstate = get xournalstate xstate 
+          let xojstate = view xournalstate xstate 
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
           
@@ -641,7 +642,7 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
       let nlasso = lasso |> (x,y)
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
-        invalidateTemp (get canvasId cinfo) (tempSurface tsel) (renderLasso nlasso) 
+        invalidateTemp (view canvasId cinfo) (tempSurface tsel) (renderLasso nlasso) 
       newSelectLasso cinfo pnum geometry cidmove cidup strs orig 
                      (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
@@ -650,29 +651,29 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
           nlasso = lasso |> (x,y)
-          xojstate = get xournalstate xstate 
+          xojstate = view xournalstate xstate 
           epage = getCurrentPageEitherFromXojState cinfo xojstate
-          cpn = get currentPageNum cinfo 
+          cpn = view currentPageNum cinfo 
           hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
           selectstrs = fmapAL unNotHitted id hittestlasso
-          SelectState txoj = get xournalstate xstate
+          SelectState txoj = view xournalstate xstate
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
                             currlayer = maybe (error "newSelectLasso") id mcurrlayer 
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             tpg = gcast npagebbox 
-                            ls = get g_layers tpg 
+                            ls = view g_layers tpg 
                             npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
                         in npg 
                       Right tpage -> 
                         let ls = glayers tpage 
                             currlayer = gselectedlayerbuf ls
-                            newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
                         in npage
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
-      let ui = get gtkUIManager xstate
+      let ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       putSt . set xournalstate (SelectState newtxoj) 
             =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))

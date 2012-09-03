@@ -19,7 +19,8 @@ import           Control.Category
 import           Control.Monad.Trans
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
-import           Data.Label
+-- import           Data.Label
+import           Control.Lens
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.FilePath
@@ -45,7 +46,7 @@ import Prelude hiding ((.),id)
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
     xstate <- getSt 
-    if not (get isSaved xstate)
+    if not (view isSaved xstate)
       then do 
         dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
           MessageQuestion ButtonsOkCancel 
@@ -73,16 +74,16 @@ fileNew = do
 fileSave :: MainCoroutine ()
 fileSave = do 
     xstate <- getSt 
-    case get currFileName xstate of
+    case view currFileName xstate of
       Nothing -> fileSaveAs 
       Just filename -> do     
-        let xojstate = get xournalstate xstate
+        let xojstate = view xournalstate xstate
         let xoj = case xojstate of 
-              ViewAppendState xojmap -> Xournal <$> get g_title <*> gToList . fmap (toPageFromBuf gToBackground) . get g_pages $ xojmap 
+              ViewAppendState xojmap -> Xournal <$> view g_title <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages $ xojmap 
               SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj 
         liftIO . L.writeFile filename . builder $ xoj
         putSt . set isSaved True $ xstate 
-        let ui = get gtkUIManager xstate
+        let ui = view gtkUIManager xstate
         liftIO $ toggleSave ui False
         S.afterSaveHook xoj
 
@@ -121,7 +122,7 @@ fileOpen = do
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
     xstate <- getSt 
-    let xojstate = get xournalstate xstate
+    let xojstate = view xournalstate xstate
     let xoj = case xojstate of 
           ViewAppendState xojmap -> gcast xojmap
           SelectState txoj -> gcast txoj
@@ -129,7 +130,7 @@ fileSaveAs = do
           (hookSaveAsAction xstate) 
   where 
     hookSaveAsAction xstate = do 
-      hset <- get hookSet xstate
+      hset <- view hookSet xstate
       saveAsHook hset
     defSaveAsAction xstate xoj = do 
       cwd <- liftIO getCurrentDirectory
@@ -147,9 +148,9 @@ fileSaveAs = do
             Nothing -> return () 
             Just filename -> do 
               let ntitle = B.pack . snd . splitFileName $ filename 
-              let (xojstate',xoj') = case get xournalstate xstate of
+              let (xojstate',xoj') = case view xournalstate xstate of
                     ViewAppendState xojmap -> 
-                      if get g_title xojmap == "untitled"
+                      if view g_title xojmap == "untitled"
                       then ( ViewAppendState . set g_title ntitle
                              $ xojmap
                            , (set s_title ntitle xoj))
@@ -164,7 +165,7 @@ fileSaveAs = do
                               . set xournalstate xojstate' $ xstate 
               liftIO . L.writeFile filename . builder $ xoj'
               putSt . set isSaved True $ xstateNew    
-              let ui = get gtkUIManager xstateNew
+              let ui = view gtkUIManager xstateNew
               liftIO $ toggleSave ui False
               liftIO $ setTitleFromFileName xstateNew 
               S.afterSaveHook xoj'

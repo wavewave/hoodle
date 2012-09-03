@@ -14,26 +14,30 @@
 
 module Hoodle.Coroutine.Draw where
 
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Canvas
-import Hoodle.Type.XournalState
-import Hoodle.Type.PageArrangement
-import Hoodle.View.Draw
-import Hoodle.Accessor
-import Data.Xournal.BBox
-import Control.Applicative 
-import Control.Monad
-import Control.Monad.Trans
+-- from other packages
+import           Control.Applicative 
+import           Control.Category
 import qualified Data.IntMap as M
-import Control.Category
-import Data.Label
+import           Control.Lens
+import           Control.Monad
+import           Control.Monad.Trans
+-- import Data.Label
+import           Graphics.Rendering.Cairo
+import           Graphics.UI.Gtk hiding (get,set)
+-- from hoodle-platform
+import           Data.Xournal.BBox
+-- from this package
+import           Hoodle.Accessor
+import           Hoodle.Type.Alias
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.XournalState
+import           Hoodle.View.Draw
+-- 
 import Prelude hiding ((.),id)
-import Graphics.Rendering.Cairo
-import Graphics.UI.Gtk hiding (get,set)
-import Hoodle.Type.Alias
 
 -- |
-
 data DrawingFunctionSet = 
   DrawingFunctionSet { singleEditDraw :: DrawingFunction SinglePage EditMode
                      , singleSelectDraw :: DrawingFunction SinglePage SelectMode
@@ -42,7 +46,6 @@ data DrawingFunctionSet =
                      }
 
 -- | 
-
 invalidateGeneral :: CanvasId -> Maybe BBox 
                   -> DrawingFunction SinglePage EditMode
                   -> DrawingFunction SinglePage SelectMode
@@ -54,21 +57,21 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
     selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
   where fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
         fsingle xstate cvsInfo = do 
-          let cpn = PageNum . get currentPageNum $ cvsInfo 
+          let cpn = PageNum . view currentPageNum $ cvsInfo 
               isCurrentCvs = cid == getCurrentCanvasId xstate
-              epage = getCurrentPageEitherFromXojState cvsInfo (get xournalstate xstate)
+              epage = getCurrentPageEitherFromXojState cvsInfo (view xournalstate xstate)
           case epage of 
             Left page -> do  
               liftIO (unSinglePageDraw drawf isCurrentCvs 
-                        <$> get drawArea <*> pure (cpn,page) 
-                        <*> get viewInfo <*> pure mbbox $ cvsInfo )
+                        <$> view drawArea <*> pure (cpn,page) 
+                        <*> view viewInfo <*> pure mbbox $ cvsInfo )
             Right tpage -> do 
               liftIO (unSinglePageDraw drawfsel isCurrentCvs
-                        <$> get drawArea <*> pure (cpn,tpage) 
-                        <*> get viewInfo <*> pure mbbox $ cvsInfo )
+                        <$> view drawArea <*> pure (cpn,tpage) 
+                        <*> view viewInfo <*> pure mbbox $ cvsInfo )
         fcont :: HoodleState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
         fcont xstate cvsInfo = do 
-          let xojstate = get xournalstate xstate 
+          let xojstate = view xournalstate xstate 
               isCurrentCvs = cid == getCurrentCanvasId xstate
           case xojstate of 
             ViewAppendState xoj -> do  
@@ -126,8 +129,8 @@ invalidateTemp cid tempsurface rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          let canvas = get drawArea cvsInfo
-              pnum = PageNum . get currentPageNum $ cvsInfo 
+          let canvas = view drawArea cvsInfo
+              pnum = PageNum . view currentPageNum $ cvsInfo 
           geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -146,7 +149,7 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
     xst <- getSt 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
-          let canvas = get drawArea cvsInfo
+          let canvas = view drawArea cvsInfo
           geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum

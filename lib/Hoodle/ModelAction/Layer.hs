@@ -12,21 +12,25 @@
 
 module Hoodle.ModelAction.Layer where
 
-import Hoodle.Util
-import Hoodle.Type.Alias
 import Control.Compose
 import Control.Category
-import Data.Label
-import Prelude hiding ((.),id)
-import Data.Xournal.Generic
-import Data.Xournal.Select
+-- import Data.Label
+import           Control.Lens
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (get)
 import Data.IORef
+-- 
+import Data.Xournal.Generic
+import Data.Xournal.Select
+-- 
+import Hoodle.Util
+import Hoodle.Type.Alias
+-- 
+import Prelude hiding ((.),id)
 
 getCurrentLayerOrSet :: Page EditMode -> (Maybe (Layer EditMode), Page EditMode)
 getCurrentLayerOrSet pg = 
-  let olayers = get g_layers pg
+  let olayers = view g_layers pg
       nlayers = case olayers of 
                   NoSelect _ -> selectFirst olayers
                   Select _ -> olayers  
@@ -39,7 +43,7 @@ adjustCurrentLayer :: Layer EditMode -> Page EditMode -> Page EditMode
 adjustCurrentLayer nlayer pg = 
   let (molayer,pg') = getCurrentLayerOrSet pg
   in maybe (set g_layers (Select .O . Just . singletonSZ $ nlayer) pg')
-           (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . get g_layers $  pg'
+           (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . view g_layers $  pg'
                     in set g_layers (Select . O . Just . replace nlayer $ layerzipper) pg' )
            molayer 
 

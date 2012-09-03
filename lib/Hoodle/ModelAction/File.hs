@@ -19,7 +19,8 @@ import qualified Text.Xournal.Parse.Conduit as PC
 import Data.Maybe 
 import Control.Monad
 import Control.Category
-import Data.Label
+import           Control.Lens
+-- import Data.Label
 import Prelude hiding ((.),id)
 import Data.Xournal.Simple
 import Graphics.Xournal.Render.BBoxMapPDF

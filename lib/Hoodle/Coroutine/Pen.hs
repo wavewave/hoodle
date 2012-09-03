@@ -22,7 +22,8 @@ import Data.Sequence hiding (filter)
 import qualified Data.Map as M
 import Data.Maybe 
 import Control.Category
-import Data.Label
+-- import Data.Label
+import Control.Lens
 -- from hoodle-platform
 import Control.Monad.Trans.Crtn
 import Data.Xournal.Predefined
@@ -76,9 +77,9 @@ commonPenStart action cid pcoord = do
     boxAction f . getCanvasInfo cid $ nxstate
   where f :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
-          let cpn = PageNum . get currentPageNum $ cvsInfo
-              arr = get (pageArrangement.viewInfo) cvsInfo              
-              canvas = get drawArea cvsInfo
+          let cpn = PageNum . view currentPageNum $ cvsInfo
+              arr = view (viewInfo.pageArrangement) cvsInfo              
+              canvas = view drawArea cvsInfo
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
           maybeFlip pagecoord (return ()) 
@@ -99,8 +100,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
         penAction _cinfo pnum geometry (cidmove,cidup) (x,y) = do 
           xstate <- getSt
           let PointerCoord _ _ _ z = pcoord 
-          let currxoj = unView . get xournalstate $ xstate        
-              pinfo = get penInfo xstate
+          let currxoj = unView . view xournalstate $ xstate        
+              pinfo = view penInfo xstate
           pdraw <-penProcess cid pnum geometry cidmove cidup (empty |> (x,y,z)) ((x,y),z) 
           (newxoj,bbox) <- liftIO $ addPDraw pinfo currxoj pnum pdraw
           commit . set xournalstate (ViewAppendState newxoj) 
@@ -130,16 +131,16 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
         (penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0))
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
-           let canvas = get drawArea cvsInfo
-               ptype  = get (penType.penInfo) xstate
-               pcolor = get (penColor.currentTool.penInfo) xstate 
-               pwidth = get (penWidth.currentTool.penInfo) xstate 
+           let canvas = view drawArea cvsInfo
+               ptype  = view (penInfo.penType) xstate
+               pcolor = view (penInfo.currentTool.penColor) xstate 
+               pwidth = view (penInfo.currentTool.penWidth) xstate 
                (pcr,pcg,pcb,pca)= fromJust (M.lookup pcolor penColorRGBAmap) 
                opacity = case ptype of 
                   HighlighterWork -> predefined_highlighter_opacity 
                   _ -> 1.0
                pcolRGBA = (pcr,pcg,pcb,pca*opacity) 
-           let pressureType = case get (variableWidthPen.penInfo) xstate of 
+           let pressureType = case view (penInfo.variableWidthPen) xstate of 
                                 True -> Pressure
                                 False -> NoPressure
            liftIO $ drawCurvebitGen pressureType canvas geometry 

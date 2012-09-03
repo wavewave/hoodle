@@ -15,8 +15,9 @@
 module Hoodle.GUI where
 
 import           Control.Category
+import           Control.Lens
 import           Control.Monad.Trans 
-import           Data.Label
+-- import           Data.Label
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
@@ -73,7 +74,7 @@ startGUI mfname mhook = do
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox toolbar1 PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0 
-  boxPackEnd vbox (get rootWindow st0) PackGrow 0 
+  boxPackEnd vbox (view rootWindow st0) PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
   window `on` deleteEvent $ do
     liftIO $ bouncecallback tref (Menu MenuQuit)

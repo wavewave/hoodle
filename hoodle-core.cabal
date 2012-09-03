@@ -43,15 +43,16 @@ Library
                      -- monad-coroutine == 0.7.*, 
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
-                     xournal-types >= 0.4.0.999 && < 0.5,
-                     xournal-parser == 0.4.*,
+                     xournal-types >= 0.4.999 && < 0.6,
+                     xournal-parser >= 0.4.999 && < 0.6,
                      xournal-render >= 0.6.999 && < 0.8,
-                     xournal-builder >= 0.1.1 && < 0.2,
+                     xournal-builder >= 0.1.999 && < 0.3,
                      containers == 0.4.*,
                      template-haskell == 2.*,
                      bytestring == 0.9.*, 
                      double-conversion == 0.2.*,
-                     fclabels == 1.1.*,
+                     -- fclabels == 1.1.*,
+                     lens >= 2.4 && < 2.6,
                      cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.2.*,
                      poppler == 0.12.*, 
@@ -81,7 +82,8 @@ Library
                      template-haskell == 2.*,
                      bytestring == 0.9.*, 
                      double-conversion == 0.2.*,
-                     fclabels == 1.1.*,
+                     -- fclabels == 1.1.*,
+                     lens >= 2.4 && < 2.6,
                      cmdargs >= 0.7 && <= 0.10,
                      configurator == 0.2.*, 
                      time == 1.2.*, 
@@ -92,54 +94,54 @@ Library
                      base64-bytestring == 0.1.*
   Exposed-Modules: 
                    -- Control.Monad.Coroutine
-                   Hoodle.Script
-                   Hoodle.Script.Hook
-                   Hoodle.Script.Coroutine
-                   Hoodle.Type
-                   Hoodle.Type.Alias 
-                   Hoodle.Type.Event 
-                   Hoodle.Type.Enum
-                   Hoodle.Type.Clipboard
-                   Hoodle.Type.Canvas
-                   Hoodle.Type.Coroutine
-                   Hoodle.Type.PageArrangement 
-                   Hoodle.Type.XournalState
-                   Hoodle.Type.Window
-                   Hoodle.Type.Undo 
-                   Hoodle.Type.Predefined 
-                   Hoodle.View.Draw
-                   Hoodle.View.Coordinate
+                   Hoodle.Accessor
+                   Hoodle.Config
+                   Hoodle.Coroutine
+                   Hoodle.Coroutine.Callback
+                   Hoodle.Coroutine.Commit
+                   Hoodle.Coroutine.Default
+                   Hoodle.Coroutine.Draw
+                   Hoodle.Coroutine.Eraser
+                   Hoodle.Coroutine.EventConnect
+                   Hoodle.Coroutine.File
+                   Hoodle.Coroutine.Highlighter
+                   Hoodle.Coroutine.Layer
+                   Hoodle.Coroutine.Mode
+                   Hoodle.Coroutine.Page
+                   Hoodle.Coroutine.Pen
+                   Hoodle.Coroutine.Scroll
+                   Hoodle.Coroutine.Select
+                   Hoodle.Coroutine.Window
+                   Hoodle.Device
                    Hoodle.GUI
                    Hoodle.GUI.Menu
                    Hoodle.ModelAction.Adjustment
-                   Hoodle.ModelAction.Pen 
-                   Hoodle.ModelAction.Page
                    Hoodle.ModelAction.Eraser
-                   Hoodle.ModelAction.Select
                    Hoodle.ModelAction.File
-                   Hoodle.ModelAction.Window
                    Hoodle.ModelAction.Layer
-                   Hoodle.Coroutine
-                   Hoodle.Coroutine.Callback
-                   Hoodle.Coroutine.Draw
-                   Hoodle.Coroutine.EventConnect
-                   Hoodle.Coroutine.Default
-                   Hoodle.Coroutine.Pen
-                   Hoodle.Coroutine.Eraser
-                   Hoodle.Coroutine.Highlighter
-                   Hoodle.Coroutine.Scroll
-                   Hoodle.Coroutine.Page
-                   Hoodle.Coroutine.Select
-                   Hoodle.Coroutine.File
-                   Hoodle.Coroutine.Mode
-                   Hoodle.Coroutine.Window
-                   Hoodle.Coroutine.Commit
-                   Hoodle.Coroutine.Layer
+                   Hoodle.ModelAction.Page
+                   Hoodle.ModelAction.Pen 
+                   Hoodle.ModelAction.Select
+                   Hoodle.ModelAction.Window
+                   Hoodle.Script
+                   Hoodle.Script.Coroutine
+                   Hoodle.Script.Hook
+                   Hoodle.Type
+                   Hoodle.Type.Alias 
+                   Hoodle.Type.Canvas
+                   Hoodle.Type.Clipboard
+                   Hoodle.Type.Coroutine
+                   Hoodle.Type.Enum
+                   Hoodle.Type.Event 
+                   Hoodle.Type.PageArrangement 
+                   Hoodle.Type.Predefined
+                   Hoodle.Type.Undo 
+                   Hoodle.Type.Window
+                   Hoodle.Type.XournalState
                    Hoodle.Util
                    Hoodle.Util.Verbatim 
-                   Hoodle.Device
-                   Hoodle.Accessor
-                   Hoodle.Config
+                   Hoodle.View.Coordinate
+                   Hoodle.View.Draw
   Other-Modules: 
                    Paths_hoodle_core
   c-sources: 

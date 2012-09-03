@@ -16,12 +16,13 @@ module Hoodle.Coroutine.Default where
 
 import           Control.Applicative ((<$>))
 import           Control.Category
+import           Control.Lens
 import qualified Control.Monad.State as St 
 import           Control.Monad.Trans
 import qualified Data.IntMap as M
 import           Data.IORef
 import           Data.Maybe
-import           Data.Label
+-- import           Data.Label
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
@@ -78,14 +79,14 @@ initCoroutine devlst window mfname mhook maxundo  = do
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
             $ st1 { _cvsInfoMap = M.empty } 
-  (st3,cvs,_wconf) <- constructFrame st2 (get frameState st2)
-  (st4,wconf') <- eventConnect st3 (get frameState st3)
+  (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
+  (st4,wconf') <- eventConnect st3 (view frameState st3)
   let st5 = set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs $ st4
   st6 <- getFileContent mfname st5
-  -- let ui = get gtkUIManager st6
+  -- let ui = view gtkUIManager st6
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
   writeIORef tref (Just (\ev -> mapDown startingXstate (guiProcess ev)))
@@ -96,13 +97,13 @@ initCoroutine devlst window mfname mhook maxundo  = do
 initViewModeIOAction :: MainCoroutine HoodleState
 initViewModeIOAction = do 
   oxstate <- getSt
-  let ui = get gtkUIManager oxstate
+  let ui = view gtkUIManager oxstate
   agr <- liftIO $ uiManagerGetActionGroups ui 
   Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
   let wra = castToRadioAction ra 
   connid <- liftIO $ wra `on` radioActionChanged $ \x -> do 
     y <- viewModeToMyEvent x 
-    get callBack oxstate y 
+    view callBack oxstate y 
     return () 
   let xstate = set pageModeSignal (Just connid) oxstate
   putSt xstate 
@@ -141,7 +142,7 @@ guiProcess ev = do
 
 -- | 
 dispatchMode :: MainCoroutine () 
-dispatchMode = getSt >>= return . xojstateEither . get xournalstate
+dispatchMode = getSt >>= return . xojstateEither . view xournalstate
                      >>= either (const viewAppendMode) (const selectMode)
                      
 -- | 
@@ -170,20 +171,20 @@ selectMode = do
   r1 <- await 
   case r1 of 
     PenDown cid _pbtn pcoord -> do 
-      ptype <- return . get (selectType.selectInfo) =<< lift St.get 
+      ptype <- return . view (selectInfo.selectType) =<< lift St.get 
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
     PenColorChanged c -> do  
-      putSt . set (penColor.currentTool.penInfo) c =<< getSt 
+      putSt . set (penInfo.currentTool.penColor) c =<< getSt 
       selectPenColorChanged c
     PenWidthChanged v -> do 
       st <- getSt 
-      let ptype = get (penType.penInfo) st
+      let ptype = view (penInfo.penType) st
       let w = int2Point ptype v
       selectPenWidthChanged w
-      let stNew = set (penWidth.currentTool.penInfo) w st 
+      let stNew = set (penInfo.currentTool.penWidth) w st 
       putSt stNew  
     _ -> defaultEventProcess r1
 
@@ -205,18 +206,18 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        putSt . set (penType.penInfo) pm =<< getSt 
+        putSt . set (penInfo.penType) pm =<< getSt 
         modeChange ToViewAppendMode
       Right sm -> do 
-        putSt . set (selectType.selectInfo) sm =<< getSt 
+        putSt . set (selectInfo.selectType) sm =<< getSt 
         modeChange ToSelectMode 
 defaultEventProcess (PenColorChanged c) = 
-    putSt . set (penColor.currentTool.penInfo) c =<< getSt 
+    putSt . set (penInfo.currentTool.penColor) c =<< getSt 
 defaultEventProcess (PenWidthChanged v) = do 
       st <- getSt 
-      let ptype = get (penType.penInfo) st
+      let ptype = view (penInfo.penType) st
       let w = int2Point ptype v
-      let stNew = set (penWidth.currentTool.penInfo) w st 
+      let stNew = set (penInfo.currentTool.penWidth) w st 
       putSt stNew 
 defaultEventProcess ev = do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
@@ -243,15 +244,15 @@ menuEventProcess :: MenuEvent -> MainCoroutine ()
 menuEventProcess MenuQuit = do 
   xstate <- getSt
   liftIO $ putStrLn "MenuQuit called"
-  if get isSaved xstate 
+  if view isSaved xstate 
     then liftIO $ mainQuit
     else askQuitProgram
 menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do 
-  totalnumofpages <- (either (M.size. get g_pages) (M.size . get g_selectAll) 
-                      . xojstateEither . get xournalstate) <$> getSt 
+  totalnumofpages <- (either (M.size. view g_pages) (M.size . view g_selectAll) 
+                      . xojstateEither . view xournalstate) <$> getSt 
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNewPageBefore = newPage PageBefore 
 menuEventProcess MenuNewPageAfter = newPage PageAfter
@@ -282,7 +283,7 @@ menuEventProcess MenuGotoLayer = startGotoLayerAt
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
   xstate <- getSt 
-  let ui = get gtkUIManager xstate 
+  let ui = view gtkUIManager xstate 
   agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                     case x of 
                       [] -> error "No action group? "
@@ -298,7 +299,7 @@ menuEventProcess MenuUseXInput = do
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
 menuEventProcess MenuPressureSensitivity = updateXState pressSensAction 
   where pressSensAction xstate = do 
-          let ui = get gtkUIManager xstate 
+          let ui = view gtkUIManager xstate 
           agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                             case x of 
                               [] -> error "No action group? "
@@ -307,7 +308,7 @@ menuEventProcess MenuPressureSensitivity = updateXState pressSensAction
               >>= maybe (error "MenuPressureSensitivity") 
                         (return . castToToggleAction)
           b <- liftIO $ toggleActionGetActive pressrsensa
-          return (set (variableWidthPen.penInfo) b xstate) 
+          return (set (penInfo.variableWidthPen) b xstate) 
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 

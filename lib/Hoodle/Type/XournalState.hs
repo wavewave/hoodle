@@ -76,11 +76,12 @@ import Hoodle.Util
 import Data.Xournal.Map
 import Graphics.Xournal.Render.BBoxMapPDF
 import Control.Category
+import           Control.Lens
 import Control.Monad.State hiding (get,modify)
 import Graphics.UI.Gtk hiding (Clipboard, get,set)
 import Data.Maybe
 import Data.Time.Clock
-import Data.Label 
+-- import Data.Label 
 import Data.Xournal.Generic
 import qualified Data.IntMap as M
 
@@ -128,7 +129,7 @@ data HoodleState =
                 } 
 
 
-$(mkLabels [''HoodleState]) 
+makeLenses ''HoodleState 
 
 emptyHoodleState :: HoodleState 
 emptyHoodleState = 
@@ -161,8 +162,8 @@ emptyHoodleState =
 -- | 
 
 getXournal :: HoodleState -> Xournal EditMode 
-getXournal = either id makexoj . xojstateEither . get xournalstate 
-  where makexoj txoj = GXournal (get g_selectTitle txoj) (get g_selectAll txoj)
+getXournal = either id makexoj . xojstateEither . view xournalstate 
+  where makexoj txoj = GXournal (view g_selectTitle txoj) (view g_selectAll txoj)
 
 
 -- | 
@@ -196,11 +197,11 @@ setCanvasInfoMap cmap xstate
                                             ,_cvsInfoMap = cmap }) 
                 $ mcinfobox
 
-currentCanvasInfo :: HoodleState :-> CanvasInfoBox
+currentCanvasInfo :: Simple Lens HoodleState CanvasInfoBox
 currentCanvasInfo = lens getter setter 
   where 
     getter = snd . _currentCanvas 
-    setter a f =  
+    setter f a =  
       let cid = fst . _currentCanvas $ f 
           cmap' = M.adjust (const a) cid (_cvsInfoMap f)
       in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
@@ -262,7 +263,7 @@ modifyCanvasInfo cid f xstate =
 modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
                         -> HoodleState
                         -> HoodleState
-modifyCurrentCanvasInfo f = modify currentCanvasInfo f  
+modifyCurrentCanvasInfo f = over currentCanvasInfo f  
   
 
 -- | should be deprecated 
@@ -271,7 +272,7 @@ modifyCurrCvsInfoM :: (Monad m) => (CanvasInfoBox -> m CanvasInfoBox)
                       -> HoodleState
                       -> m HoodleState
 modifyCurrCvsInfoM f st = do 
-  let cinfobox = get currentCanvasInfo st 
+  let cinfobox = view currentCanvasInfo st 
       cid = getCurrentCanvasId st 
   ncinfobox <- f cinfobox
   let cinfomap = getCanvasInfoMap st
@@ -291,7 +292,7 @@ xojstateEither xojstate = case xojstate of
 getCurrentPageFromXojState :: (ViewMode a) => CanvasInfo a 
                               -> XournalState -> Page EditMode 
 getCurrentPageFromXojState cinfo xojstate = 
-  let cpn = get currentPageNum cinfo 
+  let cpn = view currentPageNum cinfo 
       pagemap = getPageMapFromXojState xojstate   
   in maybeError "updatePageFromCanvasToXournal" $ M.lookup cpn pagemap 
 
@@ -300,13 +301,13 @@ getCurrentPageFromXojState cinfo xojstate =
 getCurrentPageDimFromXojState :: (ViewMode a) => CanvasInfo a 
                               -> XournalState -> PageDimension
 getCurrentPageDimFromXojState cinfo =                               
-  PageDimension . get g_dimension . getCurrentPageFromXojState cinfo
+  PageDimension . view g_dimension . getCurrentPageFromXojState cinfo
 
 
 -- | 
 
 getPageMapFromXojState :: XournalState -> M.IntMap (Page EditMode)
-getPageMapFromXojState = either (get g_pages) (get g_selectAll) . xojstateEither 
+getPageMapFromXojState = either (view g_pages) (view g_selectAll) . xojstateEither 
   
       
 -- | 
@@ -314,7 +315,7 @@ getPageMapFromXojState = either (get g_pages) (get g_selectAll) . xojstateEither
 showCanvasInfoMapViewPortBBox :: HoodleState -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
   let cmap = getCanvasInfoMap xstate
-  putStrLn . show . map (unboxGet (viewPortBBox.pageArrangement.viewInfo)) . M.elems $ cmap 
+  print . map (unboxGet (viewInfo.pageArrangement.viewPortBBox)) . M.elems $ cmap 
 
 
 

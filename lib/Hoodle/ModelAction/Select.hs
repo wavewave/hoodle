@@ -41,7 +41,8 @@ import Data.Strict.Tuple
 import qualified Data.IntMap as M
 import qualified Data.Map as Map 
 import Control.Category
-import Data.Label
+import           Control.Lens
+-- import Data.Label
 import Prelude hiding ((.),id)
 import Data.Algorithm.Diff
 
@@ -104,7 +105,7 @@ changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) =
 -- |
 
 getActiveLayer :: Page SelectMode -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
-getActiveLayer = unTEitherAlterHitted . get g_bstrokes . gselectedlayerbuf . get g_layers
+getActiveLayer = unTEitherAlterHitted . view g_bstrokes . gselectedlayerbuf . view g_layers
 
 -- |
 
@@ -119,9 +120,9 @@ makePageSelectMode :: Page EditMode  -- ^ base page
 makePageSelectMode page alist =  
     let (mcurrlayer,npage) = getCurrentLayerOrSet page
         currlayer = maybeError "makePageSelectMode" mcurrlayer 
-        newlayer = GLayerBuf (get g_buffer currlayer) (TEitherAlterHitted (Right alist))
+        newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right alist))
         tpg = gcast npage 
-        ls = get g_layers tpg 
+        ls = view g_layers tpg 
         npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
     in npg 
 
@@ -131,7 +132,7 @@ deleteSelected :: Page SelectMode -> Page SelectMode
 deleteSelected tpage =
     let activelayer = getActiveLayer tpage
         ls = glayers tpage
-        buf = get g_buffer . gselectedlayerbuf $ ls 
+        buf = view g_buffer . gselectedlayerbuf $ ls 
     in case activelayer of 
          Left _ -> tpage 
          Right alist -> 
@@ -146,7 +147,7 @@ changeSelectionBy :: ((Double,Double) -> (Double,Double))
 changeSelectionBy func tpage = 
   let activelayer = getActiveLayer tpage
       ls = glayers tpage
-      buf = get g_buffer . gselectedlayerbuf $ ls 
+      buf = view g_buffer . gselectedlayerbuf $ ls 
   in case activelayer of 
        Left _ -> tpage 
        Right alist -> 
@@ -198,7 +199,7 @@ calculateWholeBBox = toMaybe . mconcat . map ( Union . Middle. strokebbox_bbox )
 
 hitInSelection :: Page SelectMode -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
-  let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
+  let activelayer = unTEitherAlterHitted . view g_bstrokes .  gselectedlayerbuf . glayers $ tpage
   in case activelayer of 
        Left _ -> False   
        Right alist -> 
@@ -214,7 +215,7 @@ hitInSelection tpage point =
 
 getULBBoxFromSelected :: Page SelectMode -> ULMaybe BBox 
 getULBBoxFromSelected tpage = 
-  let activelayer = unTEitherAlterHitted . get g_bstrokes .  gselectedlayerbuf . glayers $ tpage
+  let activelayer = unTEitherAlterHitted . view g_bstrokes .  gselectedlayerbuf . glayers $ tpage
   in case activelayer of 
        Left _ -> Bottom
        Right alist -> bbox4AllStrokes . takeHittedStrokes $ alist  
@@ -392,7 +393,7 @@ mkStrokesNImage :: CanvasGeometry -> Page SelectMode -> IO StrokesNImage
 mkStrokesNImage _geometry tpage = do 
   let strs = getSelectedStrokes tpage
       drawselection = mapM_ (drawOneStroke.gToStroke) strs 
-      Dim cw ch = get g_dimension tpage 
+      Dim cw ch = view g_dimension tpage 
       mbbox = case getULBBoxFromSelected tpage of 
                 Middle bbox -> Just bbox 
                 _ -> Nothing 

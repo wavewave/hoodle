@@ -15,8 +15,9 @@
 module Hoodle.Coroutine.Window where
 
 import Control.Category
+import           Control.Lens
 import Control.Monad.Trans
-import Data.Label
+-- import Data.Label
 import Graphics.UI.Gtk hiding (get,set)
 import qualified Data.IntMap as M
 import Data.Maybe
@@ -58,7 +59,7 @@ canvasConfigureGenUpdate updatefunc cid cdim
         fcont cinfo = do 
           xstate <- getSt
           page <- getCurrentPageCvsId cid
-          let pdim = PageDimension (get g_dimension page)
+          let pdim = PageDimension (view g_dimension page)
           let cinfo' = updateCanvasDimForContSingle pdim cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
   
@@ -75,7 +76,7 @@ canvasConfigure' :: CanvasId -> CanvasDimension -> MainCoroutine ()
 canvasConfigure' cid cdim = do
     xstate <- getSt 
     ctime <- liftIO getCurrentTime 
-    maybe defaction (chkaction ctime) (get lastTimeCanvasConfigure xstate) 
+    maybe defaction (chkaction ctime) (view lastTimeCanvasConfigure xstate) 
   where defaction = do 
           ntime <- liftIO getCurrentTime
           doCanvasConfigure cid cdim          
@@ -95,7 +96,7 @@ eitherSplit stype = do
     let cmap = getCanvasInfoMap xstate
         currcid = getCurrentCanvasId xstate
         newcid = newCanvasId cmap 
-        fstate = get frameState xstate
+        fstate = view frameState xstate
         enewfstate = splitWindow currcid (newcid,stype) fstate 
     case enewfstate of 
       Left _ -> return ()
@@ -103,8 +104,8 @@ eitherSplit stype = do
         case maybeError "eitherSplit" . M.lookup currcid $ cmap of 
           CanvasInfoBox oldcinfo -> do 
             liftIO $ putStrLn "called here"
-            let rtwin = get rootWindow xstate
-                rtcntr = get rootContainer xstate 
+            let rtwin = view rootWindow xstate
+                rtcntr = view rootContainer xstate 
             liftIO $ containerRemove rtcntr rtwin
             (xstate'',win,fstate'') <- 
               liftIO $ constructFrame' (CanvasInfoBox oldcinfo) xstate fstate'
@@ -114,8 +115,8 @@ eitherSplit stype = do
             putSt xstate3 
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
-            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
-            xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
+            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
+            xstate5 <- liftIO $ updatePageAll (view xournalstate xstate4) xstate4
             putSt xstate5 
             canvasZoomUpdateAll
             invalidateAll 
@@ -128,7 +129,7 @@ deleteCanvas = do
     xstate <- getSt
     let cmap = getCanvasInfoMap xstate
         currcid = getCurrentCanvasId xstate
-        fstate = get frameState xstate
+        fstate = view frameState xstate
         enewfstate = removeWindow currcid fstate 
     case enewfstate of 
       Left _ -> return ()
@@ -141,8 +142,8 @@ deleteCanvas = do
             xstate0 <- changeCurrentCanvasId newcurrcid 
             let xstate1 = maybe xstate0 id $ setCanvasInfoMap cmap' xstate0
             putSt xstate1
-            let rtwin = get rootWindow xstate1
-                rtcntr = get rootContainer xstate1 
+            let rtwin = view rootWindow xstate1
+                rtcntr = view rootContainer xstate1 
             liftIO $ containerRemove rtcntr rtwin
             (xstate'',win,fstate'') <- liftIO $ constructFrame xstate1 fstate'
             let xstate3 = set frameState fstate'' 
@@ -151,9 +152,9 @@ deleteCanvas = do
             putSt xstate3
             liftIO $ boxPackEnd rtcntr win PackGrow 0 
             liftIO $ widgetShowAll rtcntr  
-            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (get frameState xstate3)
+            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
             canvasZoomUpdateAll
-            xstate5 <- liftIO $ updatePageAll (get xournalstate xstate4) xstate4
+            xstate5 <- liftIO $ updatePageAll (view xournalstate xstate4) xstate4
             putSt xstate5 
             invalidateAll 
             

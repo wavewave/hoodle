@@ -25,8 +25,9 @@ import Data.Maybe
 import qualified Data.Map as M
 import qualified Data.IntMap as IM
 import Control.Category
+import           Control.Lens
 import Data.Sequence hiding (take, drop)
-import Data.Label
+-- import Data.Label
 import Prelude hiding ((.), id)
 import Data.Strict.Tuple hiding (uncurry)
 import Data.Xournal.Simple
@@ -43,11 +44,11 @@ addPDraw :: PenInfo
             -> IO (TXournalBBoxMapPDFBuf,BBox) 
                        -- ^ new xournal and bbox in page coordinate
 addPDraw pinfo xoj (PageNum pgnum) pdraw = do 
-    let ptype = get penType pinfo
-        pcolor = get (penColor.currentTool) pinfo
+    let ptype = view penType pinfo
+        pcolor = view (currentTool.penColor) pinfo
         pcolname = fromJust (M.lookup pcolor penColorNameMap)
-        pwidth = get (penWidth.currentTool) pinfo
-        pvwpen = get variableWidthPen pinfo
+        pwidth = view (currentTool.penWidth) pinfo
+        pvwpen = view variableWidthPen pinfo
         (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGXournalMap pgnum xoj)
         currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
         ptool = case ptype of 
@@ -69,10 +70,10 @@ addPDraw pinfo xoj (PageNum pgnum) pdraw = do
         newstrokebbox = mkStrokeBBoxFromStroke newstroke
         bbox = strokebbox_bbox newstrokebbox
     newlayerbbox <- updateLayerBuf (Just bbox)
-                    . set g_bstrokes (get g_bstrokes currlayer ++ [newstrokebbox]) 
+                    . set g_bstrokes (view g_bstrokes currlayer ++ [newstrokebbox]) 
                     $ currlayer
 
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-        newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (get g_pages xoj) ) xoj 
+        newxojbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (view g_pages xoj) ) xoj 
     return (newxojbbox,bbox)
 

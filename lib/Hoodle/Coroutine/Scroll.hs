@@ -13,9 +13,10 @@
 module Hoodle.Coroutine.Scroll where
 
 import           Control.Category
+import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Trans
-import           Data.Label
+-- import           Data.Label
 import           Data.Xournal.BBox
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn 
@@ -49,7 +50,7 @@ adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = do
   xstate <- getSt
   geometry <- liftIO . getGeometry4CurrCvs $ xstate
-  let cinfobox = get currentCanvasInfo xstate
+  let cinfobox = view currentCanvasInfo xstate
   let (hadj,vadj) = unboxGet adjustments cinfobox 
       connidh = unboxGet horizAdjConnId cinfobox 
       connidv = unboxGet vertAdjConnId cinfobox
@@ -63,8 +64,8 @@ hscrollBarMoved cid v =
     >> invalidate cid 
   where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo = 
-          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
-          in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
+          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
+          in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
 
 
 -- | 
@@ -75,8 +76,8 @@ vscrollBarMoved cid v =
     >> invalidate cid
   where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo =  
-          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cinfo
-          in modify (viewPortBBox.pageArrangement.viewInfo) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
+          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
+          in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
 
 -- | 
 vscrollStart :: CanvasId -> MainCoroutine () 
@@ -107,16 +108,16 @@ vscrollMove cid = do
       VScrollBarStart cid' _v -> vscrollStart cid' 
       _ -> return ()       
   where scrollmovecanvas v cvsInfo = 
-          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
-          in modify (viewPortBBox.pageArrangement.viewInfo) 
-                    (apply (moveBBoxULCornerTo (fst vm_orig,v))) cvsInfo 
+          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
+          in over (viewInfo.pageArrangement.viewPortBBox) 
+                  (apply (moveBBoxULCornerTo (fst vm_orig,v))) cvsInfo 
              
         scrollmovecanvasCont geometry v cvsInfo = 
-          let BBox vm_orig _ = unViewPortBBox $ get (viewPortBBox.pageArrangement.viewInfo) cvsInfo
-              cpn = PageNum . get currentPageNum $ cvsInfo 
+          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
+              cpn = PageNum . view currentPageNum $ cvsInfo 
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (0,v))
-          in  modify currentPageNum (const (unPageNum ncpn)) 
-              . modify (viewPortBBox.pageArrangement.viewInfo) 
+          in  over currentPageNum (const (unPageNum ncpn)) 
+              . over (viewInfo.pageArrangement.viewPortBBox) 
                        (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cvsInfo 
 
 

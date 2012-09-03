@@ -15,10 +15,11 @@
 module Hoodle.Type.PageArrangement where
 
 import Control.Category ((.))
+import           Control.Lens
 import Data.Xournal.Simple (Dimension(..))
 import Data.Xournal.Generic
 import Data.Xournal.BBox
-import Data.Label 
+-- import Data.Label 
 import Prelude hiding ((.),id)
 import Hoodle.Type.Predefined 
 import Hoodle.Type.Alias
@@ -167,7 +168,7 @@ makeContinuousSingleArrangement :: ZoomMode -> CanvasDimension
 makeContinuousSingleArrangement zmode cdim@(CanvasDimension (Dim cw ch)) 
                                 xoj (pnum,PageCoord (xpos,ypos)) = 
   let PageOrigin (_,y0) = maybeError "makeContSingleArr" $ pageArrFuncContSingle xoj pnum 
-      dim = get g_dimension . head . gToList . get g_pages $ xoj
+      dim = view g_dimension . head . gToList . view g_pages $ xoj
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       (x1,y1) = (xpos,ypos+y0)
       (x2,y2) = (xpos+cw/sinvx,ypos+y0+ch/sinvy)
@@ -185,58 +186,58 @@ pageArrFuncContSingle xoj (PageNum n)
   | n >= len = Nothing 
   | otherwise = Just (PageOrigin (0,ys !! n))
   where addf x y = x + y + predefinedPageSpacing
-        pgs = gToList . get g_pages $ xoj 
+        pgs = gToList . view g_pages $ xoj 
         len = length pgs 
-        ys = scanl addf 0 . map (dim_height.get g_dimension) $ pgs  
+        ys = scanl addf 0 . map (dim_height.view g_dimension) $ pgs  
         
 
 deskDimContSingle :: Xournal EditMode -> DesktopDimension 
 deskDimContSingle xoj = 
-  let plst = gToList . get g_pages $ xoj
+  let plst = gToList . view g_pages $ xoj
       PageOrigin (_,h') = maybeError 
                          ("deskdimContSingle" ++ 
                           show (map (pageArrFuncContSingle xoj . PageNum) [0..5])) 
                          $ pageArrFuncContSingle xoj 
                              (PageNum . (\x->x-1) . length $ plst )
-      Dim _ h2 = get g_dimension (last plst)
+      Dim _ h2 = view g_dimension (last plst)
       h = h' + h2 
-      w = maximum . map (dim_width.get g_dimension) $ plst
+      w = maximum . map (dim_width.view g_dimension) $ plst
   in DesktopDimension (Dim w h)
 
 -- lenses
 
-pageDimension :: PageArrangement SinglePage :-> PageDimension
+pageDimension :: Simple Lens (PageArrangement SinglePage) PageDimension
 pageDimension = lens getter setter 
   where getter (SingleArrangement _ pdim _) = pdim
         getter (ContinuousSingleArrangement _ _ _ _) = error $ "in pageDimension " -- partial 
-        setter pdim (SingleArrangement cdim _ vbbox) = SingleArrangement cdim pdim vbbox
-        setter _pdim (ContinuousSingleArrangement _ _ _ _) = error $ "in pageDimension "  -- partial 
+        setter (SingleArrangement cdim _ vbbox) pdim = SingleArrangement cdim pdim vbbox
+        setter (ContinuousSingleArrangement _ _ _ _) _pdim = error $ "in pageDimension "  -- partial 
         
 
-canvasDimension :: PageArrangement a :-> CanvasDimension 
+canvasDimension :: Simple Lens (PageArrangement a) CanvasDimension 
 canvasDimension = lens getter setter 
   where 
     getter :: PageArrangement a -> CanvasDimension
     getter (SingleArrangement cdim _ _) = cdim
     getter (ContinuousSingleArrangement cdim _ _ _) = cdim
-    setter :: CanvasDimension -> PageArrangement a -> PageArrangement a
-    setter cdim (SingleArrangement _ pdim vbbox) = SingleArrangement cdim pdim vbbox
-    setter cdim (ContinuousSingleArrangement _ ddim pfunc vbbox) = 
+    setter :: PageArrangement a -> CanvasDimension -> PageArrangement a
+    setter (SingleArrangement _ pdim vbbox) cdim = SingleArrangement cdim pdim vbbox
+    setter (ContinuousSingleArrangement _ ddim pfunc vbbox) cdim = 
       ContinuousSingleArrangement cdim ddim pfunc vbbox
 
     
-viewPortBBox :: PageArrangement a :-> ViewPortBBox 
+viewPortBBox :: Simple Lens (PageArrangement a) ViewPortBBox 
 viewPortBBox = lens getter setter 
   where 
     getter :: PageArrangement a -> ViewPortBBox   
     getter (SingleArrangement _ _ vbbox) = vbbox 
     getter (ContinuousSingleArrangement _ _ _ vbbox) = vbbox 
-    setter :: ViewPortBBox -> PageArrangement a -> PageArrangement a
-    setter vbbox (SingleArrangement cdim pdim _) = SingleArrangement cdim pdim vbbox 
-    setter vbbox (ContinuousSingleArrangement cdim ddim pfunc _) = 
+    setter :: PageArrangement a -> ViewPortBBox -> PageArrangement a
+    setter (SingleArrangement cdim pdim _) vbbox = SingleArrangement cdim pdim vbbox 
+    setter (ContinuousSingleArrangement cdim ddim pfunc _) vbbox = 
       ContinuousSingleArrangement cdim ddim pfunc vbbox
 
-desktopDimension :: PageArrangement a :-> DesktopDimension 
+desktopDimension :: Simple Lens (PageArrangement a) DesktopDimension 
 desktopDimension = lens getter (error "setter for desktopDimension is not defined")
   where getter :: PageArrangement a -> DesktopDimension
         getter (SingleArrangement _ (PageDimension dim) _) = DesktopDimension dim

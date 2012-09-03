@@ -12,8 +12,9 @@
 
 module Hoodle.Script.Coroutine where
 
+import           Control.Lens
 import           Control.Monad.Trans
-import           Data.Label
+-- import           Data.Label
 -- from hoodle-platform
 import           Data.Xournal.Simple
 -- from this package
@@ -30,7 +31,7 @@ afterSaveHook :: Xournal -> MainCoroutine ()
 afterSaveHook xoj = do 
   xstate <- getSt 
   let aftersavehk = do         
-        hset <- get hookSet xstate 
+        hset <- view hookSet xstate 
         H.afterSaveHook hset
   maybe (return ()) (\f -> liftIO (f xoj)) aftersavehk      
 
@@ -40,7 +41,7 @@ saveAsHook :: Xournal -> MainCoroutine ()
 saveAsHook xoj = do 
   xstate <- getSt 
   let saveashk = do         
-        hset <- get hookSet xstate 
+        hset <- view hookSet xstate 
         H.saveAsHook hset
   maybe (return ()) (\f -> liftIO (f xoj)) saveashk      
 

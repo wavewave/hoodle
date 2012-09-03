@@ -17,16 +17,17 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                    base == 4.*, 
                    bytestring == 0.9.*, 
                    strict == 0.3.*, 
                    containers == 0.4.*, 
-                   fclabels == 1.1.*, 
+                   -- fclabels == 1.1.*, 
+                   lens >= 2.4 && < 2.6,
                    TypeCompose == 0.9.*, 
-                   cereal == 0.3.5.*
+                   cereal == 0.3.*
   Exposed-Modules: 
                    Data.Xournal.Generic
                    Data.Xournal.Simple

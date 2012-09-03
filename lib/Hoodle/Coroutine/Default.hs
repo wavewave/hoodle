@@ -20,9 +20,7 @@ import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad.State 
 import qualified Data.IntMap as M
--- import           Data.IORef
 import           Data.Maybe
--- import           Data.Label
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
@@ -41,6 +39,7 @@ import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
+import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
@@ -94,7 +93,7 @@ initCoroutine devlst window mfname mhook maxundo  = do
   putStrLn "testing two"
   -- takeMVar evar 
   -- takeMVar evar 
-  putMVar evar (Just (\ev -> mapDown startingXstate (guiProcess ev)))
+  putMVar evar (Just (\ev -> mapStateDown startingXstate (guiProcess ev)))
   putStrLn "testing three"
   return (evar,startingXstate,ui,vbox)
 
@@ -239,7 +238,6 @@ askQuitProgram = do
                        MessageQuestion ButtonsOkCancel 
                        "Current canvas is not saved yet. Will you close hoodle?" 
   res <- liftIO $ dialogRun dialog
-  liftIO $ putStrLn "okay" 
   case res of
     ResponseOk -> do 
       liftIO $ widgetDestroy dialog

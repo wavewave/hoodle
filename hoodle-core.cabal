@@ -102,6 +102,7 @@ Library
                    Hoodle.Coroutine.Pen
                    Hoodle.Coroutine.Scroll
                    Hoodle.Coroutine.Select
+                   Hoodle.Coroutine.Select.Clipboard
                    Hoodle.Coroutine.Window
                    Hoodle.Device
                    Hoodle.GUI

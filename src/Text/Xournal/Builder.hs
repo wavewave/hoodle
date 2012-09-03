@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP, OverloadedStrings #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -14,36 +14,44 @@
 
 module Text.Xournal.Builder where
 
-import Data.Xournal.Simple
+-- from other packages 
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import Data.Double.Conversion.ByteString 
-import Data.Monoid
+#if MIN_VERSION_base(4,5,0) 
+import Data.Monoid hiding ((<>)) 
+#else
+import Data.Monoid 
+#endif 
 import Data.Strict.Tuple
+-- from this package 
+import Data.Xournal.Simple
 
-{-
 infixl 4 <>
 
+-- | 
 (<>) :: Monoid a => a -> a -> a 
 (<>) = mappend 
--}
 
+-- | 
 builder :: Xournal -> L.ByteString
 builder = toLazyByteString . fromXournal
 
+-- |
 fromXournal :: Xournal -> Builder 
 fromXournal xoj = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal version=\"0.4.2.1\">\n"
                   <> fromTitle (xoj_title xoj) <> mconcat (map fromPage (xoj_pages xoj))
                   <> fromByteString "</xournal>\n"
   
+-- |                  
 fromTitle :: S.ByteString -> Builder
 fromTitle title = fromByteString "<title>"
                   <> fromByteString title
                   <> fromByteString "</title>\n"
 
-  
+-- | 
 fromPage :: Page -> Builder 
 fromPage page = fromByteString "<page width=\""
                 <> fromByteString (toFixed 2 w)
@@ -55,6 +63,7 @@ fromPage page = fromByteString "<page width=\""
                 <> fromByteString "</page>\n"
   where Dim w h = page_dim page
   
+-- | 
 fromBackground :: Background -> Builder 
 fromBackground bkg = 
   case bkg of  
@@ -81,12 +90,13 @@ fromBackground bkg =
       <> fromString (show pageno)
       <> fromByteString "\"/>\n"
       
-
+-- | 
 fromLayer :: Layer -> Builder
 fromLayer layer = fromByteString "<layer>\n"
                   <> mconcat (map fromStroke (layer_strokes layer))
                   <> fromByteString "</layer>\n"
 
+-- | 
 fromStroke :: Stroke -> Builder
 fromStroke stroke@(Stroke _ _ _ _) = 
     fromByteString "<stroke tool=\""
@@ -110,7 +120,6 @@ fromStroke stroke@(VWStroke _ _ _) =
     <> fromByteString "\n</stroke>\n"
   
 -- | 
-
 from2DCoord :: Pair Double Double -> Builder 
 from2DCoord (x :!: y) = fromByteString (toFixed 2 x) 
                       <> fromChar ' ' 
@@ -118,13 +127,13 @@ from2DCoord (x :!: y) = fromByteString (toFixed 2 x)
                       <> fromChar ' ' 
                       
 -- |                       
-
 xyFrom3DCoord :: (Double,Double,Double) -> Builder 
 xyFrom3DCoord (x,y,_) =  fromByteString (toFixed 2 x) 
                          <> fromChar ' ' 
                          <> fromByteString (toFixed 2 y)
                          <> fromChar ' ' 
                          
+-- |
 zFrom3DCoord :: (Double,Double,Double) -> Builder 
 zFrom3DCoord (_,_,z) = fromByteString (toFixed 2 z) 
                        <> fromChar ' '

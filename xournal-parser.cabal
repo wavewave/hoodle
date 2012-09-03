@@ -29,10 +29,11 @@ Library
                  conduit == 0.5.*,
                  strict == 0.3.*, 
                  attoparsec-conduit == 0.5.*,
-                 xournal-types == 0.4.*, 
+                 xournal-types >= 0.4.999 && < 0.6, 
                  xml-types == 0.3.*, 
                  text == 0.11.*,
-                 fclabels == 1.1.*, 
+                 -- fclabels == 1.1.*, 
+                 lens >= 2.4 && < 2.6, 
                  zlib-conduit == 0.5.*
 
                  -- iteratee >= 0.7 && < 0.9, 

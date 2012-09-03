@@ -18,6 +18,7 @@ module Text.Xournal.Parse.Conduit where
 -- from other packages
 import           Control.Applicative 
 import           Control.Category
+import           Control.Lens
 import           Control.Monad.Trans
 import           Control.Monad
 import qualified Data.ByteString as S
@@ -25,7 +26,7 @@ import           Data.Conduit
 import           Data.Conduit.Binary hiding (dropWhile) 
 import           Data.Conduit.List as CL
 import           Data.Conduit.Zlib
-import           Data.Label
+-- import           Data.Label
 import           Data.List (foldl') 
 import           Data.Strict.Tuple (  Pair(..) )
 import qualified Data.Text as T -- hiding (foldl', zipWith)

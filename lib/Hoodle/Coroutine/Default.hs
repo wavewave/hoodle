@@ -225,10 +225,11 @@ defaultEventProcess (PenWidthChanged v) = do
       let w = int2Point ptype v
       let stNew = set (penInfo.currentTool.penWidth) w st 
       put stNew 
-defaultEventProcess ev = do liftIO $ putStrLn "--- no default ---"
-                            liftIO $ print ev 
-                            liftIO $ putStrLn "------------------"
-                            return ()
+defaultEventProcess ev = -- for debugging
+                            do liftIO $ putStrLn "--- no default ---"
+                               liftIO $ print ev 
+                               liftIO $ putStrLn "------------------"
+                               return () 
 
 -- |
 askQuitProgram :: MainCoroutine () 

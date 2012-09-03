@@ -84,14 +84,17 @@ createTempSelectRender pnum geometry page x = do
 
 
 -- | For Selection mode from pen mode with 2nd pen button
-dealWithOneTimeSelectMode :: MainCoroutine () -> MainCoroutine ()
-dealWithOneTimeSelectMode action = do 
+dealWithOneTimeSelectMode :: MainCoroutine ()     -- ^ main action 
+                             -> MainCoroutine ()  -- ^ terminating action
+                             -> MainCoroutine ()
+dealWithOneTimeSelectMode action terminator = do 
   xstate <- get 
   case view isOneTimeSelectMode xstate of 
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
       action >> updateXState (return . set isOneTimeSelectMode YesAfterSelect)
     YesAfterSelect -> do 
+      terminator 
       updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 
       modeChange ToViewAppendMode
 
@@ -104,11 +107,12 @@ selectRectStart cid = commonPenStart rectaction cid
           strs <- getAllStrokeBBoxInCurrentLayer
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page = 
-                dealWithOneTimeSelectMode $ do 
-                  tsel <- createTempSelectRender pnum geometry page [] 
-                  newSelectRectangle cid pnum geometry cidmove cidup strs 
-                                     (x,y) ((x,y),ctime) tsel
-                  surfaceFinish (tempSurface tsel)          
+                dealWithOneTimeSelectMode 
+                  (do tsel <- createTempSelectRender pnum geometry page [] 
+                      newSelectRectangle cid pnum geometry cidmove cidup strs 
+                                         (x,y) ((x,y),ctime) tsel
+                      surfaceFinish (tempSurface tsel)) 
+                  (disconnect cidmove >> disconnect cidup) 
           let 
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
@@ -410,13 +414,12 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
 -- |
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
-  liftIO $ putStrLn "delete selection is called"
   xstate <- get
   let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . glayers $ tpage
   case unTEitherAlterHitted . view g_bstrokes $ slayer of 
-    Left _ -> liftIO $ putStrLn "no stroke selection 2 "
+    Left _ -> return () -- liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
           oldlayers = glayers tpage
@@ -433,7 +436,7 @@ deleteSelection = do
 -- | 
 cutSelection :: MainCoroutine () 
 cutSelection = do
-  liftIO $ putStrLn "cutSelection called"
+  -- liftIO $ putStrLn "cutSelection called"
   copySelection 
   deleteSelection
 
@@ -548,13 +551,12 @@ pasteToSelection = do
 -- | 
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
-  liftIO $ putStrLn "selectPenColorChanged called"
   xstate <- get
   let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . glayers $ tpage
   case unTEitherAlterHitted . view g_bstrokes $ slayer of 
-    Left _ -> liftIO $ putStrLn "no stroke selection 2 "
+    Left _ -> return () -- liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
@@ -569,13 +571,12 @@ selectPenColorChanged pcolor = do
 -- | 
 selectPenWidthChanged :: Double -> MainCoroutine () 
 selectPenWidthChanged pwidth = do 
-  liftIO $ putStrLn "selectPenWidthChanged called"
   xstate <- get
   let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . view g_layers $ tpage
   case unTEitherAlterHitted . view g_bstrokes $ slayer  of 
-    Left _ -> liftIO $ putStrLn "no stroke selection 2 "
+    Left _ -> return () -- liftIO $ putStrLn "no stroke selection 2 "
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
@@ -596,11 +597,12 @@ selectLassoStart cid = commonPenStart lassoAction cid
           strs <- getAllStrokeBBoxInCurrentLayer
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page =    
-                dealWithOneTimeSelectMode $ do 
-                  tsel <- createTempSelectRender pnum geometry page [] 
-                  newSelectLasso cinfo pnum geometry cidmove cidup strs 
-                                 (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
-                  surfaceFinish (tempSurface tsel)          
+                dealWithOneTimeSelectMode 
+                  (do tsel <- createTempSelectRender pnum geometry page [] 
+                      newSelectLasso cinfo pnum geometry cidmove cidup strs 
+                                     (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
+                      surfaceFinish (tempSurface tsel))
+                  (disconnect cidmove >> disconnect cidup )
           let action (Right tpage) | hitInSelection tpage (x,y) = 
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
               action (Right tpage) | hitInHandle tpage (x,y) = 

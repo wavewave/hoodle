@@ -134,3 +134,20 @@ s <==| c = do
           -> ErrorT (CrtnErr r') m (SrvT req ans m r', r)
 (<==>) = connectE
  -}         
+
+
+----------------------
+-- some utility 
+------------------------
+
+-- | combine state and free monad with base state monad transformer 
+--   with a base monad m to free monad with the base monad m
+--   Think this as fusing down the state monad  
+mapStateDown :: (Monad m, Functor f) => 
+                s -> FreeT f (StateT s m) a -> FreeT f m a 
+mapStateDown st m =
+    FreeT $ do x <- flip runStateT st $ runFreeT m 
+               case x of 
+                 (Pure r,_) -> return (Pure r) 
+                 (Free f,st') -> 
+                   return . Free . fmap (mapStateDown st') $ f

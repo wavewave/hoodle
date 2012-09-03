@@ -16,7 +16,7 @@ import Control.Category
 -- import Data.Label
 import qualified Data.IntMap as IM
 import Control.Lens
-import Control.Monad.Trans
+import Control.Monad.State 
 import Control.Monad.Trans.Crtn
 import qualified Control.Monad.State as St
 import Graphics.UI.Gtk hiding (get,set,disconnect)
@@ -66,7 +66,7 @@ eraserProcess :: CanvasId
               -> MainCoroutine () 
 eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do 
     r <- await 
-    xst <- getSt
+    xst <- get
     boxAction (f r xst) . getCanvasInfo cid $ xst 
   where 
     f :: (ViewMode a) => MyEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()

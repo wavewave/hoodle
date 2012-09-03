@@ -21,6 +21,7 @@ import qualified Data.IntMap as M
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Trans
+import           Control.Monad.State
 -- import Data.Label
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -53,7 +54,7 @@ invalidateGeneral :: CanvasId -> Maybe BBox
                   -> DrawingFunction ContinuousSinglePage SelectMode
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do 
-    xst <- getSt 
+    xst <- get 
     selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
   where fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
         fsingle xstate cvsInfo = do 
@@ -83,7 +84,7 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
 
 invalidateOther :: MainCoroutine () 
 invalidateOther = do 
-  xstate <- getSt
+  xstate <- get
   let currCvsId = getCurrentCanvasId xstate
       cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
@@ -107,7 +108,7 @@ invalidateInBBox mbbox cid = do
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
                        -> MainCoroutine ()
 invalidateAllInBBox mbbox = do                        
-  xstate <- getSt
+  xstate <- get
   let cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
   forM_ keys (invalidateInBBox mbbox)
@@ -120,13 +121,13 @@ invalidateAll = invalidateAllInBBox Nothing
 -- | Invalidate Current canvas
 
 invalidateCurrent :: MainCoroutine () 
-invalidateCurrent = invalidate . getCurrentCanvasId =<< getSt
+invalidateCurrent = invalidate . getCurrentCanvasId =<< get
        
 -- | Drawing temporary gadgets
 
 invalidateTemp :: CanvasId -> Surface ->  Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
-    xst <- getSt 
+    xst <- get 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
           let canvas = view drawArea cvsInfo
@@ -146,7 +147,7 @@ invalidateTemp cid tempsurface rndr = do
 invalidateTempBasePage :: CanvasId -> Surface -> PageNum -> Render () 
                           -> MainCoroutine ()
 invalidateTempBasePage cid tempsurface pnum rndr = do 
-    xst <- getSt 
+    xst <- get 
     selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
           let canvas = view drawArea cvsInfo
@@ -175,6 +176,6 @@ invalidateWithBufInBBox mbbox cid =
 
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
 chkCvsIdNInvalidate cid = do 
-  currcid <- liftM (getCurrentCanvasId) getSt 
+  currcid <- liftM (getCurrentCanvasId) get 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
   

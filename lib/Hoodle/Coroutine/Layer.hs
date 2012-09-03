@@ -14,32 +14,35 @@
 
 module Hoodle.Coroutine.Layer where
 
+import Control.Monad.State
+import qualified Data.IntMap as M
+import Control.Compose
+import Control.Category
+-- import Data.Label
+import Control.Lens 
+import Data.IORef
+import Graphics.UI.Gtk hiding (get,set)
+--
+import Data.Xournal.Generic
+import Data.Xournal.Select
+import Graphics.Xournal.Render.BBoxMapPDF
+-- 
 import Hoodle.Type.Canvas
 import Hoodle.Type.XournalState
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Alias 
 import Hoodle.Accessor
-
 import Hoodle.ModelAction.Layer
 import Hoodle.ModelAction.Page
 import Hoodle.Coroutine.Commit
-import Control.Monad.Trans
-import qualified Data.IntMap as M
-import Data.Xournal.Generic
-import Data.Xournal.Select
-import Graphics.Xournal.Render.BBoxMapPDF
-import Control.Compose
-import Control.Category
--- import Data.Label
-import Control.Lens 
+-- 
 import Prelude hiding ((.),id)
-import Data.IORef
-import Graphics.UI.Gtk hiding (get,set)
+
 
 layerAction :: (XournalState -> Int -> Page EditMode -> MainCoroutine XournalState) 
             -> MainCoroutine HoodleState
 layerAction action = do 
-    xst <- getSt 
+    xst <- get 
     selectBoxAction (fsingle xst) (fsingle xst)  . view currentCanvasInfo $ xst
   where 
     fsingle xstate cvsInfo = do
@@ -63,7 +66,7 @@ makeNewLayer = layerAction newlayeraction >>= commit
                 
 
 gotoNextLayer :: MainCoroutine ()
-gotoNextLayer = layerAction nextlayeraction >>= putSt
+gotoNextLayer = layerAction nextlayeraction >>= put
   where nextlayeraction xojstate cpn page = do 
           let (_,currpage) = getCurrentLayerOrSet page
               Select (O (Just lyrzipper)) = view g_layers currpage  
@@ -78,7 +81,7 @@ gotoNextLayer = layerAction nextlayeraction >>= putSt
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ xojstate) $ xojstate  
 
 gotoPrevLayer :: MainCoroutine ()
-gotoPrevLayer = layerAction prevlayeraction >>= putSt
+gotoPrevLayer = layerAction prevlayeraction >>= put
   where prevlayeraction xojstate cpn page = do 
           let (_,currpage) = getCurrentLayerOrSet page
               Select (O (Just lyrzipper)) = view g_layers currpage  
@@ -93,7 +96,7 @@ gotoPrevLayer = layerAction prevlayeraction >>= putSt
 
 
 gotoLayerAt :: Int -> MainCoroutine ()
-gotoLayerAt n = layerAction gotoaction >>= putSt
+gotoLayerAt n = layerAction gotoaction >>= put
   where gotoaction xojstate cpn page = do 
           let (_,currpage) = getCurrentLayerOrSet page
               Select (O (Just lyrzipper)) = view g_layers currpage  
@@ -119,10 +122,10 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
-    selectBoxAction fsingle fsingle . view currentCanvasInfo =<< getSt
+    selectBoxAction fsingle fsingle . view currentCanvasInfo =<< get
   where 
     fsingle cvsInfo = do 
-      xstate <- getSt 
+      xstate <- get 
       let xojstate = view xournalstate xstate
       let epage = getCurrentPageEitherFromXojState cvsInfo xojstate
           page = either id gcast epage 

@@ -17,8 +17,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative ((<$>))
 import           Control.Category
 import           Control.Lens
-import qualified Control.Monad.State as St 
-import           Control.Monad.Trans
+import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Data.IORef
 import           Data.Maybe
@@ -96,7 +95,7 @@ initCoroutine devlst window mfname mhook maxundo  = do
 -- | 
 initViewModeIOAction :: MainCoroutine HoodleState
 initViewModeIOAction = do 
-  oxstate <- getSt
+  oxstate <- get
   let ui = view gtkUIManager oxstate
   agr <- liftIO $ uiManagerGetActionGroups ui 
   Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
@@ -106,7 +105,7 @@ initViewModeIOAction = do
     view callBack oxstate y 
     return () 
   let xstate = set pageModeSignal (Just connid) oxstate
-  putSt xstate 
+  put xstate 
   return xstate 
 
 -- |
@@ -142,8 +141,8 @@ guiProcess ev = do
 
 -- | 
 dispatchMode :: MainCoroutine () 
-dispatchMode = getSt >>= return . xojstateEither . view xournalstate
-                     >>= either (const viewAppendMode) (const selectMode)
+dispatchMode = get >>= return . xojstateEither . view xournalstate
+                   >>= either (const viewAppendMode) (const selectMode)
                      
 -- | 
 viewAppendMode :: MainCoroutine () 
@@ -171,21 +170,21 @@ selectMode = do
   r1 <- await 
   case r1 of 
     PenDown cid _pbtn pcoord -> do 
-      ptype <- return . view (selectInfo.selectType) =<< lift St.get 
+      ptype <- return . view (selectInfo.selectType) =<< get
       case ptype of 
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
     PenColorChanged c -> do  
-      putSt . set (penInfo.currentTool.penColor) c =<< getSt 
+      put . set (penInfo.currentTool.penColor) c =<< get 
       selectPenColorChanged c
     PenWidthChanged v -> do 
-      st <- getSt 
+      st <- get 
       let ptype = view (penInfo.penType) st
       let w = int2Point ptype v
       selectPenWidthChanged w
       let stNew = set (penInfo.currentTool.penWidth) w st 
-      putSt stNew  
+      put stNew  
     _ -> defaultEventProcess r1
 
 
@@ -206,19 +205,19 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        putSt . set (penInfo.penType) pm =<< getSt 
+        put . set (penInfo.penType) pm =<< get 
         modeChange ToViewAppendMode
       Right sm -> do 
-        putSt . set (selectInfo.selectType) sm =<< getSt 
+        put . set (selectInfo.selectType) sm =<< get 
         modeChange ToSelectMode 
 defaultEventProcess (PenColorChanged c) = 
-    putSt . set (penInfo.currentTool.penColor) c =<< getSt 
+    put . set (penInfo.currentTool.penColor) c =<< get 
 defaultEventProcess (PenWidthChanged v) = do 
-      st <- getSt 
+      st <- get 
       let ptype = view (penInfo.penType) st
       let w = int2Point ptype v
       let stNew = set (penInfo.currentTool.penWidth) w st 
-      putSt stNew 
+      put stNew 
 defaultEventProcess ev = do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
                             liftIO $ putStrLn "------------------"
@@ -242,7 +241,7 @@ askQuitProgram = do
 -- |
 menuEventProcess :: MenuEvent -> MainCoroutine () 
 menuEventProcess MenuQuit = do 
-  xstate <- getSt
+  xstate <- get
   liftIO $ putStrLn "MenuQuit called"
   if view isSaved xstate 
     then liftIO $ mainQuit
@@ -252,7 +251,7 @@ menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do 
   totalnumofpages <- (either (M.size. view g_pages) (M.size . view g_selectAll) 
-                      . xojstateEither . view xournalstate) <$> getSt 
+                      . xojstateEither . view xournalstate) <$> get 
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNewPageBefore = newPage PageBefore 
 menuEventProcess MenuNewPageAfter = newPage PageAfter
@@ -282,7 +281,7 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
-  xstate <- getSt 
+  xstate <- get 
   let ui = view gtkUIManager xstate 
   agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                     case x of 

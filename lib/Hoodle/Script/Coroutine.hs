@@ -13,12 +13,10 @@
 module Hoodle.Script.Coroutine where
 
 import           Control.Lens
-import           Control.Monad.Trans
--- import           Data.Label
+import           Control.Monad.State 
 -- from hoodle-platform
 import           Data.Xournal.Simple
 -- from this package
-import           Hoodle.Accessor
 import qualified Hoodle.Script.Hook as H
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.XournalState
@@ -29,7 +27,7 @@ import Prelude hiding ((.),id)
 
 afterSaveHook :: Xournal -> MainCoroutine ()
 afterSaveHook xoj = do 
-  xstate <- getSt 
+  xstate <- get 
   let aftersavehk = do         
         hset <- view hookSet xstate 
         H.afterSaveHook hset
@@ -39,7 +37,7 @@ afterSaveHook xoj = do
   
 saveAsHook :: Xournal -> MainCoroutine ()
 saveAsHook xoj = do 
-  xstate <- getSt 
+  xstate <- get 
   let saveashk = do         
         hset <- view hookSet xstate 
         H.saveAsHook hset

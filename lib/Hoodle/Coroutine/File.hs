@@ -16,7 +16,7 @@ module Hoodle.Coroutine.File where
 
 import           Control.Applicative
 import           Control.Category
-import           Control.Monad.Trans
+import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
 -- import           Data.Label
@@ -29,7 +29,6 @@ import           Text.Xournal.Builder
 import           Data.Xournal.Generic
 import           Data.Xournal.Simple
 -- from this package 
-import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.ModelAction.File
@@ -45,7 +44,7 @@ import Prelude hiding ((.),id)
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
-    xstate <- getSt 
+    xstate <- get 
     if not (view isSaved xstate)
       then do 
         dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
@@ -62,7 +61,7 @@ askIfSave action = do
 -- | 
 fileNew :: MainCoroutine () 
 fileNew = do  
-    xstate <- getSt
+    xstate <- get
     xstate' <- liftIO $ getFileContent Nothing xstate 
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
     xstate'' <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
@@ -73,7 +72,7 @@ fileNew = do
 -- | 
 fileSave :: MainCoroutine ()
 fileSave = do 
-    xstate <- getSt 
+    xstate <- get 
     case view currFileName xstate of
       Nothing -> fileSaveAs 
       Just filename -> do     
@@ -82,7 +81,7 @@ fileSave = do
               ViewAppendState xojmap -> Xournal <$> view g_title <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages $ xojmap 
               SelectState txoj -> Xournal <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ txoj 
         liftIO . L.writeFile filename . builder $ xoj
-        putSt . set isSaved True $ xstate 
+        put . set isSaved True $ xstate 
         let ui = view gtkUIManager xstate
         liftIO $ toggleSave ui False
         S.afterSaveHook xoj
@@ -104,11 +103,11 @@ fileOpen = do
         case mfilename of 
           Nothing -> return () 
           Just filename -> do 
-            xstate <- getSt 
+            xstate <- get 
             xstate' <- liftIO $ getFileContent (Just filename) xstate
             ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
             xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
-            putSt . set isSaved True 
+            put . set isSaved True 
                   $ xstateNew 
             liftIO $ setTitleFromFileName xstateNew  
             clearUndoHistory 
@@ -121,7 +120,7 @@ fileOpen = do
 -- | main coroutine for save as 
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
-    xstate <- getSt 
+    xstate <- get 
     let xojstate = view xournalstate xstate
     let xoj = case xojstate of 
           ViewAppendState xojmap -> gcast xojmap
@@ -164,7 +163,7 @@ fileSaveAs = do
               let xstateNew = set currFileName (Just filename) 
                               . set xournalstate xojstate' $ xstate 
               liftIO . L.writeFile filename . builder $ xoj'
-              putSt . set isSaved True $ xstateNew    
+              put . set isSaved True $ xstateNew    
               let ui = view gtkUIManager xstateNew
               liftIO $ toggleSave ui False
               liftIO $ setTitleFromFileName xstateNew 
@@ -177,7 +176,7 @@ fileSaveAs = do
 -- | 
 fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = do 
-    xstate <- getSt
+    xstate <- get
     cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 

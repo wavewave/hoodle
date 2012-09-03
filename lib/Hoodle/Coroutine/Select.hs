@@ -18,7 +18,7 @@ import           Control.Category
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Identity
-import           Control.Monad.Trans
+import           Control.Monad.State
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
 import           Data.IORef
@@ -86,7 +86,7 @@ createTempSelectRender pnum geometry page x = do
 -- | For Selection mode from pen mode with 2nd pen button
 dealWithOneTimeSelectMode :: MainCoroutine () -> MainCoroutine ()
 dealWithOneTimeSelectMode action = do 
-  xstate <- getSt 
+  xstate <- get 
   case view isOneTimeSelectMode xstate of 
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
@@ -123,7 +123,7 @@ selectRectStart cid = commonPenStart rectaction cid
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
-          xstate <- getSt 
+          xstate <- get 
           let xojstate = view xournalstate xstate 
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
@@ -141,7 +141,7 @@ newSelectRectangle :: CanvasId
 newSelectRectangle cid pnum geometry connidmove connidup strs orig 
                    (prev,otime) tempselection = do  
     r <- await 
-    xst <- getSt 
+    xst <- get 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
@@ -199,7 +199,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
           ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      putSt . set xournalstate (SelectState newtxoj) 
+      put . set xournalstate (SelectState newtxoj) 
             =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
       disconnect connidmove
       disconnect connidup 
@@ -236,7 +236,7 @@ moveSelect :: CanvasId
               -> MainCoroutine ()
 moveSelect cid pnum geometry connidmove connidup orig@(x0,y0) 
            (prev,otime) tempselection = do
-    xst <- getSt
+    xst <- get
     r <- await 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
@@ -361,7 +361,7 @@ resizeSelect :: Handle
                 -> MainCoroutine ()
 resizeSelect handle cid pnum geometry connidmove connidup origbbox 
              (prev,otime) tempselection = do
-    xst <- getSt
+    xst <- get
     r <- await 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where
@@ -411,7 +411,7 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   liftIO $ putStrLn "delete selection is called"
-  xstate <- getSt
+  xstate <- get
   let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . glayers $ tpage
@@ -498,7 +498,7 @@ getClipFromGtk = do
     hdltag <- liftIO $ atomNew "hoodle"
     clipbd <- liftIO $ clipboardGet hdltag
     ref <- liftIO $ newIORef Nothing 
-    callbk <- view callBack <$> getSt     
+    callbk <- view callBack <$> get     
     liftIO $ clipboardRequestText clipbd (callback4Clip callbk ref)
     cnt <- liftIO $ readIORef ref
     case cnt of 
@@ -549,7 +549,7 @@ pasteToSelection = do
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
   liftIO $ putStrLn "selectPenColorChanged called"
-  xstate <- getSt
+  xstate <- get
   let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . glayers $ tpage
@@ -570,7 +570,7 @@ selectPenColorChanged pcolor = do
 selectPenWidthChanged :: Double -> MainCoroutine () 
 selectPenWidthChanged pwidth = do 
   liftIO $ putStrLn "selectPenWidthChanged called"
-  xstate <- getSt
+  xstate <- get
   let SelectState txoj = view xournalstate xstate 
       Just (n,tpage) = gselectSelected txoj
       slayer = gselectedlayerbuf . view g_layers $ tpage
@@ -614,7 +614,7 @@ selectLassoStart cid = commonPenStart lassoAction cid
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
               action (Left page) = newSelectAction page
-          xstate <- getSt 
+          xstate <- get 
           let xojstate = view xournalstate xstate 
           let epage = getCurrentPageEitherFromXojState cinfo xojstate 
           action epage
@@ -646,7 +646,7 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
       newSelectLasso cinfo pnum geometry cidmove cidup strs orig 
                      (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
-      xstate <- getSt 
+      xstate <- get 
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
@@ -675,7 +675,7 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
           newtxoj = txoj { gselectSelected = Just (cpn,newpage) } 
       let ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
-      putSt . set xournalstate (SelectState newtxoj) 
+      put . set xournalstate (SelectState newtxoj) 
             =<< (liftIO (updatePageAll (SelectState newtxoj) xstate))
       disconnect cidmove
       disconnect cidup 

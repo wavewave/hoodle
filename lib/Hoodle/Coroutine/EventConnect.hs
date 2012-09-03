@@ -13,20 +13,19 @@
 module Hoodle.Coroutine.EventConnect where
 
 import Graphics.UI.Gtk hiding (get,set,disconnect)
+-- import qualified Control.Monad.State as St
+import Control.Applicative
+import Control.Monad.Trans
+import Control.Category
+import Control.Lens
+import Control.Monad.State 
+-- 
 import Hoodle.Type.Event
 import Hoodle.Type.Canvas
 import Hoodle.Type.XournalState
 import Hoodle.Device
 import Hoodle.Type.Coroutine
-import Hoodle.Accessor
-
--- import qualified Control.Monad.State as St
-import Control.Applicative
-import Control.Monad.Trans
-
-import Control.Category
-import Control.Lens
--- import Data.Label 
+-- 
 import Prelude hiding ((.), id)
 
 -- |
@@ -54,8 +53,8 @@ connectPenMove cinfo = do
 
 connPenMove :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w) 
 connPenMove c cid = do 
-  callbk <- view callBack <$> getSt
-  dev <- view deviceList <$> getSt
+  callbk <- view callBack <$> get
+  dev <- view deviceList <$> get
   liftIO (c `on` motionNotifyEvent $ tryEvent $ do 
              (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))
@@ -64,8 +63,8 @@ connPenMove c cid = do
   
 connPenUp :: (WidgetClass w) => w -> CanvasId -> MainCoroutine (ConnectId w)
 connPenUp c cid = do 
-  callbk <- view callBack <$> getSt
-  dev <- view deviceList <$> getSt
+  callbk <- view callBack <$> get
+  dev <- view deviceList <$> get
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
              (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))

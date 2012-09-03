@@ -14,7 +14,14 @@
 
 module Hoodle.Coroutine.Page where
 
+import Control.Lens
 import Control.Monad
+import Control.Monad.State
+import Control.Category
+import qualified Data.IntMap as M
+--
+import Data.Xournal.Generic
+-- 
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Canvas
 import Hoodle.Type.PageArrangement
@@ -28,13 +35,8 @@ import Hoodle.Coroutine.Commit
 import Hoodle.Coroutine.Scroll
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Alias
-import Data.Xournal.Generic
-import Control.Monad.Trans
-import Control.Category
--- import Data.Label
-import Control.Lens
+-- 
 import Prelude hiding ((.), id)
-import qualified Data.IntMap as M
 
 -- | change page of current canvas using a modify function
 
@@ -137,7 +139,7 @@ canvasZoomUpdateCvsId = canvasZoomUpdateGenRenderCvsId invalidateAll
 
 canvasZoomUpdateBufAll :: MainCoroutine () 
 canvasZoomUpdateBufAll = do 
-    klst <- liftM (M.keys . getCanvasInfoMap) getSt
+    klst <- liftM (M.keys . getCanvasInfoMap) get
     mapM_ updatefunc klst 
   where 
     updatefunc cid 
@@ -146,7 +148,7 @@ canvasZoomUpdateBufAll = do
           
 canvasZoomUpdateAll :: MainCoroutine () 
 canvasZoomUpdateAll = do 
-  klst <- liftM (M.keys . getCanvasInfoMap) getSt
+  klst <- liftM (M.keys . getCanvasInfoMap) get
   mapM_ (flip canvasZoomUpdateCvsId Nothing) klst 
 
 
@@ -154,7 +156,7 @@ canvasZoomUpdateAll = do
 
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine () 
 canvasZoomUpdate mzmode = do  
-  cid <- (liftM (getCurrentCanvasId) getSt)
+  cid <- (liftM (getCurrentCanvasId) get)
   canvasZoomUpdateCvsId cid mzmode
 
 -- |
@@ -166,7 +168,7 @@ pageZoomChange = canvasZoomUpdate . Just
 
 pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
 pageZoomChangeRel rzmode = do 
-    boxAction fsingle . view currentCanvasInfo =<< getSt 
+    boxAction fsingle . view currentCanvasInfo =<< get 
   where 
     fsingle :: (ViewMode a) => CanvasInfo a -> MainCoroutine ()
     fsingle cinfo = do 

@@ -15,36 +15,36 @@
 module Hoodle.Coroutine.Pen where
 
 -- from other packages
-import Graphics.UI.Gtk hiding (get,set,disconnect)
+import Control.Category
+import Control.Lens
 import Control.Monad
-import Control.Monad.Trans
+import Control.Monad.State
+-- import Control.Monad.Trans
 import Data.Sequence hiding (filter)
 import qualified Data.Map as M
 import Data.Maybe 
-import Control.Category
--- import Data.Label
-import Control.Lens
+import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
 import Control.Monad.Trans.Crtn
 import Data.Xournal.Predefined
 import Data.Xournal.BBox
 -- from this package
+import Hoodle.Accessor
 import Hoodle.Device 
-import Hoodle.Type.Event
-import Hoodle.Type.Enum
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Canvas
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.XournalState
+import Hoodle.Coroutine.Commit
 import Hoodle.Coroutine.Draw
 import Hoodle.Coroutine.EventConnect
-import Hoodle.Coroutine.Commit
-import Hoodle.Accessor
-import Hoodle.ModelAction.Pen
 import Hoodle.ModelAction.Page
+import Hoodle.ModelAction.Pen
+import Hoodle.Type.Canvas
+import Hoodle.Type.Coroutine
+import Hoodle.Type.Enum
+import Hoodle.Type.Event
+import Hoodle.Type.PageArrangement
+import Hoodle.Type.XournalState
+import Hoodle.Util
 import Hoodle.View.Coordinate
 import Hoodle.View.Draw
-import Hoodle.Util
 --
 import Prelude hiding ((.), id)
 
@@ -53,8 +53,8 @@ import Prelude hiding ((.), id)
 
 penPageSwitch :: (ViewMode a) => 
                  CanvasInfo a -> PageNum -> MainCoroutine (CanvasInfo a)
-penPageSwitch cinfo pgn = do (xst,cinfo') <- getSt >>= switchact 
-                             putSt xst     
+penPageSwitch cinfo pgn = do (xst,cinfo') <- get >>= switchact 
+                             put xst     
                              return cinfo'
   where switchact xst = do 
           let ncinfo = set currentPageNum (unPageNum pgn) cinfo 
@@ -70,10 +70,10 @@ commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeom
                -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
 commonPenStart action cid pcoord = do
-    oxstate <- getSt 
+    oxstate <- get 
     let currcid = getCurrentCanvasId oxstate
     when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
-    nxstate <- getSt
+    nxstate <- get
     boxAction f . getCanvasInfo cid $ nxstate
   where f :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
@@ -98,7 +98,7 @@ penStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (ConnectId DrawingArea, ConnectId DrawingArea) -> (Double,Double) -> MainCoroutine ()
         penAction _cinfo pnum geometry (cidmove,cidup) (x,y) = do 
-          xstate <- getSt
+          xstate <- get
           let PointerCoord _ _ _ z = pcoord 
           let currxoj = unView . view xournalstate $ xstate        
               pinfo = view penInfo xstate
@@ -120,7 +120,7 @@ penProcess :: CanvasId -> PageNum
            -> MainCoroutine (Seq (Double,Double,Double))
 penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do 
     r <- await 
-    xst <- getSt 
+    xst <- get 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle :: forall b. (ViewMode b) => 

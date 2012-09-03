@@ -37,6 +37,7 @@ import           Hoodle.Type.PageArrangement
 --
 import           Prelude hiding ((.),id,mapM_)
 
+{-
 -- | get HoodleState 
 
 getSt :: MainCoroutine HoodleState 
@@ -47,21 +48,23 @@ getSt = lift St.get
 putSt :: HoodleState -> MainCoroutine () 
 putSt = lift . St.put
 
+-}
+
 -- | update state
 
 updateXState :: (HoodleState -> MainCoroutine HoodleState) -> MainCoroutine ()
-updateXState action = putSt =<< action =<< getSt 
+updateXState action = St.put =<< action =<< St.get 
 
 -- | 
 
 getPenType :: MainCoroutine PenType 
-getPenType = view (penInfo.penType) <$> lift (St.get)
+getPenType = view (penInfo.penType) <$> St.get
       
 -- | 
 
 getCurrentPageCurr :: MainCoroutine (Page EditMode) 
 getCurrentPageCurr = do 
-  xstate <- getSt 
+  xstate <- St.get 
   let xojstate = view xournalstate xstate
       cinfobox = view currentCanvasInfo xstate 
   case cinfobox of 
@@ -71,7 +74,7 @@ getCurrentPageCurr = do
 
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
 getCurrentPageCvsId cid = do 
-  xstate <- getSt 
+  xstate <- St.get 
   let xojstate = view xournalstate xstate
       cinfobox = getCanvasInfo cid xstate 
   case cinfobox of 
@@ -119,12 +122,12 @@ otherCanvas = M.keys . getCanvasInfoMap
 
 changeCurrentCanvasId :: CanvasId -> MainCoroutine HoodleState 
 changeCurrentCanvasId cid = do 
-    xstate1 <- getSt
+    xstate1 <- St.get
     maybe (return xstate1) 
-          (\xst -> do putSt xst 
+          (\xst -> do St.put xst 
                       return xst)
           (setCurrentCanvasId cid xstate1)
-    xst <- getSt
+    xst <- St.get
     let cinfo = view currentCanvasInfo xst               
         ui = view gtkUIManager xst                      
     reflectUI ui cinfo
@@ -134,7 +137,7 @@ changeCurrentCanvasId cid = do
 
 reflectUI :: UIManager -> CanvasInfoBox -> MainCoroutine ()
 reflectUI ui cinfobox = do 
-    xstate <- getSt
+    xstate <- St.get
     let mconnid = view pageModeSignal xstate
     liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
@@ -152,14 +155,14 @@ reflectUI ui cinfobox = do
 
 printViewPortBBox :: CanvasId -> MainCoroutine ()
 printViewPortBBox cid = do 
-  cvsInfo <- return . getCanvasInfo cid =<< getSt 
+  cvsInfo <- return . getCanvasInfo cid =<< St.get 
   liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
 
 -- | 
 
 printViewPortBBoxAll :: MainCoroutine () 
 printViewPortBBoxAll = do 
-  xstate <- getSt 
+  xstate <- St.get 
   let cmap = getCanvasInfoMap xstate
       cids = M.keys cmap
   mapM_ printViewPortBBox cids 
@@ -168,14 +171,14 @@ printViewPortBBoxAll = do
   
 printViewPortBBoxCurr :: MainCoroutine ()
 printViewPortBBoxCurr = do 
-  cvsInfo <- return . view currentCanvasInfo =<< getSt 
+  cvsInfo <- return . view currentCanvasInfo =<< St.get 
   liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
 
 -- | 
   
 printModes :: CanvasId -> MainCoroutine ()
 printModes cid = do 
-  cvsInfo <- return . getCanvasInfo cid =<< getSt 
+  cvsInfo <- return . getCanvasInfo cid =<< St.get 
   liftIO $ printCanvasMode cid cvsInfo
 
 -- |
@@ -197,7 +200,7 @@ printCanvasMode cid cvsInfo = do
   
 printModesAll :: MainCoroutine () 
 printModesAll = do 
-  xstate <- getSt 
+  xstate <- St.get 
   let cmap = getCanvasInfoMap xstate
       cids = M.keys cmap
   mapM_ printModes cids 

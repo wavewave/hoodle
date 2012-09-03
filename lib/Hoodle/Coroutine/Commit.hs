@@ -15,8 +15,8 @@ module Hoodle.Coroutine.Commit where
 -- import Data.Label
 import Control.Lens
 import Control.Monad.Trans
+import Control.Monad.State
 -- from this package
-import Hoodle.Accessor
 import Hoodle.Coroutine.Draw 
 import Hoodle.ModelAction.File
 import Hoodle.ModelAction.Page
@@ -36,49 +36,49 @@ commit xstate = do
       xstate' = set isSaved False 
                 . set undoTable undotable'
                 $ xstate
-  putSt xstate' 
+  put xstate' 
 
 -- | 
   
 commit_ :: MainCoroutine ()
-commit_ = getSt >>= commit 
+commit_ = get >>= commit 
 
 -- | 
 
 undo :: MainCoroutine () 
 undo = do 
-    xstate <- getSt
+    xstate <- get
     let utable = view undoTable xstate
     case getPrevUndo utable of 
       Nothing -> liftIO $ putStrLn "no undo item yet"
       Just (xojstate1,newtable) -> do 
         xojstate <- liftIO $ resetXournalStateBuffers xojstate1 
-        putSt . set xournalstate xojstate
-              . set undoTable newtable 
-              =<< (liftIO (updatePageAll xojstate xstate))
+        put . set xournalstate xojstate
+            . set undoTable newtable 
+            =<< (liftIO (updatePageAll xojstate xstate))
         invalidateAll 
       
 -- |       
   
 redo :: MainCoroutine () 
 redo = do 
-    xstate <- getSt
+    xstate <- get
     let utable = view undoTable xstate
     case getNextUndo utable of 
       Nothing -> liftIO $ putStrLn "no redo item"
       Just (xojstate1,newtable) -> do 
         xojstate <- liftIO $ resetXournalStateBuffers xojstate1         
-        putSt . set xournalstate xojstate
-              . set undoTable newtable 
-              =<< (liftIO (updatePageAll xojstate xstate))
+        put . set xournalstate xojstate
+            . set undoTable newtable 
+            =<< (liftIO (updatePageAll xojstate xstate))
         invalidateAll 
 
 -- | 
         
 clearUndoHistory :: MainCoroutine () 
 clearUndoHistory = do 
-    xstate <- getSt
-    putSt . set undoTable (emptyUndo 1) $ xstate
+    xstate <- get
+    put . set undoTable (emptyUndo 1) $ xstate
     
 
 

@@ -15,11 +15,10 @@ module Hoodle.Coroutine.Scroll where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad
-import           Control.Monad.Trans
--- import           Data.Label
-import           Data.Xournal.BBox
+import           Control.Monad.State 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn 
+import           Data.Xournal.BBox
 -- from this package
 import           Hoodle.Type.Event 
 import           Hoodle.Type.Coroutine
@@ -36,7 +35,7 @@ import           Prelude hiding ((.), id)
 -- | 
 adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
 adjustScrollbarWithGeometryCvsId cid = do
-  xstate <- getSt
+  xstate <- get
   let cinfobox = getCanvasInfo cid xstate
   geometry <- liftIO (getCanvasGeometryCvsId cid xstate)
   let (hadj,vadj) = unboxGet adjustments cinfobox 
@@ -48,7 +47,7 @@ adjustScrollbarWithGeometryCvsId cid = do
 -- | 
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = do
-  xstate <- getSt
+  xstate <- get
   geometry <- liftIO . getGeometry4CurrCvs $ xstate
   let cinfobox = view currentCanvasInfo xstate
   let (hadj,vadj) = unboxGet adjustments cinfobox 
@@ -90,7 +89,7 @@ vscrollStart cid = do
 vscrollMove :: CanvasId -> MainCoroutine () 
 vscrollMove cid = do    
     ev <- await 
-    xst <- getSt 
+    xst <- get 
     geometry <- liftIO (getCanvasGeometryCvsId cid xst)
     case ev of
       VScrollBarMoved cid' v -> do 

@@ -19,51 +19,55 @@ import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.World  
 
 -- | signature of IO event driver
-data DrvOp i o where 
-  Dispatch :: DrvOp Event () 
+data DrvOp e i o where 
+  Dispatch :: DrvOp e e () 
 
 
--- | event driver input 
-type DrvInput = Arg DrvOp
+-- -- | event driver input 
+-- type DrvInput e = Arg (DrvOp e)
 
 -- -- | driver server monad 
 -- type DriverT = ServerT DrvOp 
 
 -- | driver 
-type Driver m = SObjT DrvOp m  
+type Driver e m = SObjT (DrvOp e) m  
 
 -- | driver client 
-type DrvClient m r = CObjT DrvOp m r 
+type DrvClient e m r = CObjT (DrvOp e) m r 
 
 -- | 
-dispatch :: (Monad m) => Event -> DrvClient m () 
+dispatch :: (Monad m) => e -> DrvClient e m () 
 dispatch ev = do request (Arg Dispatch ev) 
                  return ()
 
 -- | basic driver 
-driver :: forall m. (Monad m, MonadLog m, MonadIO m) => 
-           LogServer (SObjBT DrvOp m) ()
-        -> SObjT (WorldOp (SObjBT DrvOp m)) (SObjBT DrvOp m) () -> (Event -> IO ()) -> Driver m () 
+                 
+driver :: forall m e. (Monad m, MonadLog m, MonadIO m) => 
+           LogServer (SObjBT (DrvOp e) m) ()
+           -> SObjT (WorldOp e (SObjBT (DrvOp e) m)) (SObjBT (DrvOp e) m) () 
+           -> (e -> IO ()) 
+           -> Driver e m ()  
 driver logger world evhandler = 
     ReaderT (driverW logger world (ioactorgen evhandler)) 
   where 
+    driverW :: LogServer (SObjBT (DrvOp e) m) () 
+            -> SObjT (WorldOp e (SObjBT (DrvOp e) m)) (SObjBT (DrvOp e) m) () 
+            -> SObjT (IOOp e) (SObjBT (DrvOp e) m) () 
+            -> Arg (DrvOp e)
+            -> SObjBT (DrvOp e) m () 
+    
     driverW logobj worldobj ioactorobj (Arg Dispatch ev) = do 
       (logobj',worldobj',ioactorobj') <- multiDispatchTillEnd (logobj,worldobj,ioactorobj) [Right ev]
       req <- request (Res Dispatch ()) 
       driverW logobj' worldobj' ioactorobj' req 
 
-    -- driverW :: LogServer (SObjBT DrvOp m) () 
-    --            -> SObjT (WorldOp (SObjBT DrvOp m)) (SObjBT DrvOp m) () 
-    --           -> SObjT IOOp (SObjBT DrvOp m) () 
-    --            -> Arg DrvOp 
-    --           -> SObjBT DrvOp m () 
 
 
 -- | single event dispatch 
 singleDispatch :: Monad m => 
-                  Either ActionOrder Event 
-               -> (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
-               -> m (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
+                  Either (ActionOrder e) e
+               -> (LogServer m (), World e m (), IOActor e m (), [Either (ActionOrder e) e])
+               -> m (LogServer m (), World e m (), IOActor e m (), [Either (ActionOrder e) e])
 singleDispatch (Right ev) (logobj,worldobj,ioactorobj,evacc) = do
     Right (logobj',worldobj',events) <- 
       runErrorT $ do (worldobj1,_)  <- worldobj  <==| giveEvent ev
@@ -80,17 +84,17 @@ singleDispatch (Left (ActionOrder act)) (logobj,worldobj,ioactorobj,evacc) = do
 
 -- | a single feedback step of multiple event dispatch
 multiDispatch :: Monad m => 
-                 (LogServer m (), World m (), IOActor m ())
-              -> [Either ActionOrder Event]
-              -> m (LogServer m (), World m (), IOActor m (), [Either ActionOrder Event])
+                 (LogServer m (), World e m (), IOActor e m ())
+              -> [Either (ActionOrder e) e]
+              -> m (LogServer m (), World e m (), IOActor e m (), [Either (ActionOrder e) e])
 multiDispatch (logobj,worldobj,ioactorobj) events = do 
   foldrM singleDispatch (logobj,worldobj,ioactorobj,[]) events   
 
 -- | full multiple event dispatch with feedback
 multiDispatchTillEnd :: Monad m => 
-                        (LogServer m (), World m (), IOActor m ()) 
-                     -> [Either ActionOrder Event] 
-                     -> m (LogServer m (), World m (), IOActor m ())
+                        (LogServer m (), World e m (), IOActor e m ()) 
+                     -> [Either (ActionOrder e) e] 
+                     -> m (LogServer m (), World e m (), IOActor e m ())
 multiDispatchTillEnd (logobj,worldobj,ioactorobj) events = 
     go (logobj,worldobj,ioactorobj,events)
   where go (l,w,io,evs) = do  
@@ -101,7 +105,7 @@ multiDispatchTillEnd (logobj,worldobj,ioactorobj) events =
           
 
 -- | convenience routine for driver 
-fire :: (Monad m, MonadLog m) => Event -> EStT (Driver m ()) m () 
+fire :: (Monad m, MonadLog m) => e -> EStT (Driver e m ()) m () 
 fire = query . dispatch  
 
 

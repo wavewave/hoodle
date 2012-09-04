@@ -14,6 +14,7 @@
 
 module Control.Monad.Trans.Crtn.Event where 
 
+{-
 import Data.ByteString 
 import Data.UUID
 import Data.SafeCopy
@@ -38,8 +39,10 @@ data Event = Message String
            | Init Int 
            | Finish Int 
              deriving (Show,Eq) -}
+-}
 
 -- | action order 
-data ActionOrder = ActionOrder ((Event -> IO ()) -> IO ())
+data ActionOrder e = ActionOrder ((e -> IO ()) -> IO ())
+
 
 

@@ -9,26 +9,26 @@ module Control.Monad.Trans.Crtn.IOActor where
 import Control.Monad.Reader
 -- 
 import Control.Monad.Trans.Crtn
-import Control.Monad.Trans.Crtn.Event 
+-- import Control.Monad.Trans.Crtn.Event 
 import Control.Monad.Trans.Crtn.Object 
 
 
 -- | first is 
-data IOOp i o where
-  DoIOAction :: IOOp ((Event -> IO ()) -> IO ()) (Either String ())
+data IOOp e i o where
+  DoIOAction :: IOOp e ((e -> IO ()) -> IO ()) (Either String ())
 
-type IOActor m r = SObjT IOOp m r
+type IOActor e m r = SObjT (IOOp e) m r
 
 -- | 
-doIOAction :: (Monad m) => ((Event -> IO ()) -> IO ()) 
-           -> CObjT IOOp m (Either String ())
+doIOAction :: (Monad m) => ((e -> IO ()) -> IO ()) 
+           -> CObjT (IOOp e) m (Either String ())
 doIOAction act = do ans <- request (Arg DoIOAction act) 
                     case ans of 
                       Res DoIOAction r -> return r
                       Ign -> return (Left "error in doing doIOAction")
 
 -- | 
-ioactorgen :: (MonadIO m) => (Event -> IO ()) -> SObjT IOOp m ()
+ioactorgen :: (MonadIO m) => (e -> IO ()) -> SObjT (IOOp e) m ()
 ioactorgen evhandler = ReaderT ioactorW 
   where ioactorW (Arg DoIOAction act) = do 
           liftIO (act evhandler) 

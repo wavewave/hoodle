@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Control.Monad.Trans.Crtn.Logger 
+-- Module      : Control.Monad.Trans.Crtn.World
 -- Copyright   : (c) 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -27,22 +27,22 @@ import Prelude hiding ((.),id)
 
 
 -- | 
-data WorldOp m i o where 
-  GiveEvent :: WorldOp m Event ()
-  FlushLog :: WorldOp m (LogServer m ()) (LogServer m ())
-  FlushQueue :: WorldOp m () [Either ActionOrder Event]
+data WorldOp e m i o where 
+  GiveEvent :: WorldOp e m e ()
+  FlushLog :: WorldOp e m (LogServer m ()) (LogServer m ())
+  FlushQueue :: WorldOp e m () [Either (ActionOrder e) e]
 
 -- | 
-type World m r = SObjT (WorldOp m) m r  
+type World e m r = SObjT (WorldOp e m) m r  
 
 
 -- | 
-giveEvent :: (Monad m) => Event -> CObjT (WorldOp m) m () 
+giveEvent :: (Monad m) => e -> CObjT (WorldOp e m) m () 
 giveEvent ev = request (Arg GiveEvent ev) >> return () 
 
 
 -- | 
-flushLog :: (Monad m) => LogServer m () -> CObjT (WorldOp m) m (LogServer m ()) 
+flushLog :: (Monad m) => LogServer m () -> CObjT (WorldOp e m) m (LogServer m ()) 
 flushLog logobj = do req <- request (Arg FlushLog logobj) 
                      case req of 
                        Res FlushLog logobj' -> return logobj' 
@@ -50,7 +50,7 @@ flushLog logobj = do req <- request (Arg FlushLog logobj)
                        _ -> error "error in flushLog"  -- allow partiality
 
 -- | 
-flushQueue :: (Monad m) => CObjT (WorldOp m) m [Either ActionOrder Event]
+flushQueue :: (Monad m) => CObjT (WorldOp e m) m [Either (ActionOrder e) e]
 flushQueue = do req <- request (Arg FlushQueue ())
                 case req of 
                   Res FlushQueue lst -> return lst 

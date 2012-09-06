@@ -38,6 +38,8 @@ XournalState(..)
 , pageModeSignal
 , lastTimeCanvasConfigure
 , hookSet 
+, tempLog 
+, tempQueue 
 -- | others 
 , emptyHoodleState
 , getXournal
@@ -62,29 +64,31 @@ XournalState(..)
 , showCanvasInfoMapViewPortBBox
 ) where
 
-import Hoodle.Device
-import Hoodle.Type.Event 
-import Hoodle.Type.Canvas
-import Hoodle.Type.Clipboard
-import Hoodle.Type.Window 
-import Hoodle.Type.Undo
-import Hoodle.Type.Alias 
-import Hoodle.Type.PageArrangement
-import Hoodle.Script.Hook
-import Hoodle.Util
--- import Hoodle.NetworkClipboard.Client.Config
-import Data.Xournal.Map
-import Graphics.Xournal.Render.BBoxMapPDF
-import Control.Category
+import           Control.Category
 import           Control.Lens
-import Control.Monad.State hiding (get,modify)
-import Graphics.UI.Gtk hiding (Clipboard, get,set)
-import Data.Maybe
-import Data.Time.Clock
--- import Data.Label 
-import Data.Xournal.Generic
+import           Control.Monad.State hiding (get,modify)
 import qualified Data.IntMap as M
-
+import           Data.Maybe
+import           Data.Time.Clock
+import           Graphics.UI.Gtk hiding (Clipboard, get,set)
+-- from hoodle-platform
+import           Control.Monad.Trans.Crtn.Event 
+import           Control.Monad.Trans.Crtn.Queue 
+import           Data.Xournal.Generic
+import           Data.Xournal.Map
+import           Graphics.Xournal.Render.BBoxMapPDF
+-- from this package 
+import           Hoodle.Device
+import           Hoodle.Script.Hook
+import           Hoodle.Type.Event 
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Clipboard
+import           Hoodle.Type.Window 
+import           Hoodle.Type.Undo
+import           Hoodle.Type.Alias 
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Util
+-- 
 import Prelude hiding ((.), id)
 
 
@@ -120,12 +124,12 @@ data HoodleState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable XournalState
-                -- , _isEventBlocked :: Bool
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 , _hookSet :: Maybe Hook
-                --  , _networkClipboardInfo :: Maybe HoodleClipClientConfiguration
+                , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
+                , _tempLog :: String -> String 
                 } 
 
 
@@ -156,7 +160,8 @@ emptyHoodleState =
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      
   , _hookSet = Nothing
---  , _networkClipboardInfo = Nothing 
+  , _tempQueue = emptyQueue
+  , _tempLog = id 
   }
 
 -- | 

@@ -24,7 +24,7 @@ import qualified Data.IntMap as M
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn
+-- import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.EventHandler
 import           Control.Monad.Trans.Crtn.Object
@@ -71,7 +71,6 @@ initCoroutine :: DeviceList -> Window -> Maybe FilePath -> Maybe Hook
                  -> IO (EventVar,HoodleState,UIManager,VBox)
 initCoroutine devlst window mfname mhook maxundo  = do 
   evar <- newEmptyMVar  
-  -- takeMVar evar 
   putMVar evar Nothing 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
@@ -94,11 +93,10 @@ initCoroutine devlst window mfname mhook maxundo  = do
   st6 <- getFileContent mfname st5
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
-  -- putMVar evar . Just . ReaderT $ (\(Arg Dispatch ev) -> mapStateDown startingXstate (guiProcess ev))
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
       
-  putMVar evar . Just $ (driver simplelogger startworld undefined)      
+  putMVar evar . Just $ (driver simplelogger startworld (eventHandler evar))
       
       
   return (evar,startingXstate,ui,vbox)

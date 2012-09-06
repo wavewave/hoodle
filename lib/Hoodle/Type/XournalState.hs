@@ -13,8 +13,8 @@
 -----------------------------------------------------------------------------
 
 module Hoodle.Type.XournalState 
-( XournalStateIO 
-, XournalState(..)      
+( -- XournalStateIO 
+XournalState(..)      
 , HoodleState(..)
 , IsOneTimeSelectMode(..)
 -- | labels
@@ -88,7 +88,7 @@ import qualified Data.IntMap as M
 import Prelude hiding ((.), id)
 
 
-type XournalStateIO = StateT HoodleState IO 
+-- type XournalStateIO = StateT HoodleState IO 
 
 -- | 
 

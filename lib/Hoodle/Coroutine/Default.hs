@@ -25,7 +25,10 @@ import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
+import           Control.Monad.Trans.Crtn.Driver
+import           Control.Monad.Trans.Crtn.EventHandler
 import           Control.Monad.Trans.Crtn.Object
+import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Data.Xournal.Simple (Dimension(..))
 import           Data.Xournal.Generic
 -- from this package
@@ -91,7 +94,13 @@ initCoroutine devlst window mfname mhook maxundo  = do
   st6 <- getFileContent mfname st5
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
-  putMVar evar . Just . ReaderT $ (\(Arg Dispatch ev) -> mapStateDown startingXstate (guiProcess ev))
+  -- putMVar evar . Just . ReaderT $ (\(Arg Dispatch ev) -> mapStateDown startingXstate (guiProcess ev))
+  let startworld = world startingXstate . ReaderT $ 
+                     (\(Arg DoEvent ev) -> guiProcess ev)  
+      
+  putMVar evar . Just $ (driver simplelogger startworld undefined)      
+      
+      
   return (evar,startingXstate,ui,vbox)
 
 

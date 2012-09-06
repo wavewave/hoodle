@@ -18,11 +18,14 @@ module Hoodle.Coroutine.Callback where
 import Control.Applicative
 import Control.Concurrent 
 import Control.Monad.Error
+import Control.Monad.State
 import Control.Monad.Trans.Free
 -- import Data.IORef
 -- from hoodle-platform
 import Control.Monad.Trans.Crtn 
+import Control.Monad.Trans.Crtn.Driver
 import Control.Monad.Trans.Crtn.Object
+import Control.Monad.Trans.Crtn.Logger
 -- from this package 
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Event 
@@ -33,9 +36,15 @@ bouncecallback evar ev = do
     mnext <- takeMVar evar
     case mnext of 
       Nothing -> return () 
-      Just next -> do                
-        enext' <- runErrorT (fst <$> (next <==| dispatch ev)) -- next
+      Just drv -> do                
+        eaction drv >>= either (\err -> scribe (show err) >> return drv) return >>= putMVar evar . Just  
+          where eaction = evalStateT $ runErrorT $ fire ev >> lift get >>= return
+        
+        
+        {-        enext' <- runErrorT (fst <$> (next <==| dispatch ev)) -- next
         either (error "end? in bouncecallback") (putMVar evar.Just) enext' 
+-}        
+        
         
 {-        next' <- do 
           x <- runFreeT (next ev)

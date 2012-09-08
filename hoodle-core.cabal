@@ -108,6 +108,7 @@ Library
                    Hoodle.GUI
                    Hoodle.GUI.Menu
                    Hoodle.ModelAction.Adjustment
+                   Hoodle.ModelAction.Clipboard
                    Hoodle.ModelAction.Eraser
                    Hoodle.ModelAction.File
                    Hoodle.ModelAction.Layer

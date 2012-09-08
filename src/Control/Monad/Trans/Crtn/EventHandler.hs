@@ -31,7 +31,9 @@ eventHandler evar ev = do
       Nothing -> return () 
       Just drv -> do                
         eaction drv >>= either (\err -> scribe (show err) >> return drv) return >>= putMVar evar . Just  
-          where eaction = evalStateT $ runErrorT $ fire ev >> lift get >>= return
+          where eaction drv = do  
+                  evalStateT (runErrorT $ fire ev >> lift get >>= return) drv 
+                  
   
 {-  
     drv <- takeMVar dref 

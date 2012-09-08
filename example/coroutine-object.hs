@@ -22,25 +22,12 @@ test_tickingevent :: IO ()
 test_tickingevent = do 
     dref <- newEmptyMVar :: IO (MVar (Maybe (Driver Event IO ())))
     let logger = simplelogger --  weblogger "http://127.0.0.1:7800"
-    putMVar dref . Just $ (driver logger world (eventHandler dref))
+    putMVar dref . Just $ (driver logger world)
     putStrLn "starting ticking" 
     ticking dref 0    
 
-
 second :: Int 
 second = 1000000
-
-
-{-
--- | 
-test_tickingevent :: IO ()
-test_tickingevent = do 
-    dref <- newEmptyMVar :: IO (MVar (Driver Event IO ()))
-    putMVar dref (driver world (eventHandler dref)) 
-    putStrLn "starting ticking" 
-    ticking dref 0 
--}
-
 
 -- | 
 ticking :: MVar (Maybe (Driver Event IO ())) -> Int -> IO () 

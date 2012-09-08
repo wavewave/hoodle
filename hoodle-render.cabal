@@ -1,7 +1,7 @@
-Name:		xournal-render
+Name:		hoodle-render
 Version:	0.6.999 
-Synopsis:       Xournal file renderer
-Description: 	Rendering library using cairo for xournal file format
+Synopsis:       Hoodle file renderer
+Description: 	Rendering library using cairo for hoodle file format
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -12,7 +12,7 @@ Cabal-Version:  >= 1.8
 data-files:     CHANGES
 Source-repository head
   type: git
-  location: http://www.github.com/wavewave/xournal-render
+  location: http://www.github.com/wavewave/hoodle-render
 
 Flag Poppler
   Description: Enable poppler support
@@ -31,8 +31,8 @@ Library
                    strict == 0.3.*, 
                    bytestring == 0.9.*,
                    poppler == 0.12.*, 
-                   lens >= 2.4 && < 2.6, 
-                   xournal-types >= 0.4.999 && < 0.6,
+                   lens >= 2.4 && < 2.7, 
+                   hoodle-types >= 0.0.999 && < 0.2,
                    TypeCompose == 0.9.*
   else
     Build-Depends: base == 4.*, 
@@ -42,20 +42,20 @@ Library
                    strict == 0.3.*, 
                    bytestring == 0.9.*,
                    lens >= 2.4 && < 2.6, 
-                   xournal-types >= 0.4.999 && < 0.6,
+                   hoodle-types >= 0.0.999 && < 0.2,
                    TypeCompose == 0.9.*
 
 
   Exposed-Modules: 
-                   Graphics.Xournal.Render.Simple
-                   Graphics.Xournal.Render.BBox
-                   Graphics.Xournal.Render.Generic
-                   Graphics.Xournal.Render.PDFBackground
-                   Graphics.Xournal.Render.BBoxMapPDF
-                   Graphics.Xournal.Render.HitTest
-                   Graphics.Xournal.Render.Type
-                   Graphics.Xournal.Render.Type.Hitted
-                   Graphics.Xournal.Render.Type.Select
+                   Graphics.Hoodle.Render.Simple
+                   Graphics.Hoodle.Render.BBox
+                   Graphics.Hoodle.Render.Generic
+                   Graphics.Hoodle.Render.PDFBackground
+                   Graphics.Hoodle.Render.BBoxMapPDF
+                   Graphics.Hoodle.Render.HitTest
+                   Graphics.Hoodle.Render.Type
+                   Graphics.Hoodle.Render.Type.Hitted
+                   Graphics.Hoodle.Render.Type.Select
 
   if flag(poppler)
     cpp-options: -DPOPPLER

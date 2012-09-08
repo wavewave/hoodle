@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.Generic 
+-- Module      : Graphics.Hoodle.Render.Generic 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,19 +11,19 @@
 -- Portability : GHC
 --
 
-module Graphics.Xournal.Render.Generic where
+module Graphics.Hoodle.Render.Generic where
 
 import Data.Foldable
 import Prelude hiding (mapM_)
 
--- import Text.Xournal.Type
+-- import Text.Hoodle.Type
 
-import Data.Xournal.Generic
-import Data.Xournal.Simple
-import Data.Xournal.BBox
+import Data.Hoodle.Generic
+import Data.Hoodle.Simple
+import Data.Hoodle.BBox
 import Graphics.Rendering.Cairo
-import Graphics.Xournal.Render.Simple
-import Graphics.Xournal.Render.BBox
+import Graphics.Hoodle.Render.Simple
+import Graphics.Hoodle.Render.BBox
 
 class Renderable a where 
   cairoRender :: a -> Render ()

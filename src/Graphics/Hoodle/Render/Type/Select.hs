@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.Type.Select 
+-- Module      : Graphics.Hoodle.Render.Type.Select 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,15 +12,15 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Xournal.Render.Type.Select where
+module Graphics.Hoodle.Render.Type.Select where
 
-import Data.Xournal.Simple 
-import Data.Xournal.Generic
-import Data.Xournal.BBox
-import Data.Xournal.Map
+import Data.Hoodle.Simple 
+import Data.Hoodle.Generic
+import Data.Hoodle.BBox
+import Data.Hoodle.Map
 import Data.IntMap hiding (map)
 
-import Graphics.Xournal.Render.Type.Hitted 
+import Graphics.Hoodle.Render.Type.Hitted 
 
 type TLayerSelect a = GLayer TEitherAlterHitted (StrokeTypeFromLayer a) 
 
@@ -44,7 +44,7 @@ data TLayerSelectInPageBuf s a = TLayerSelectInPageBuf
                                , gotherlayersbuf :: s a
                                }
 
-
+{-
 -- | deprecated 
 
 type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
@@ -52,4 +52,6 @@ type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
 
 -- | deprecated 
 
-type TTempXournalSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))
+type TTempHoodleSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))
+
+-}

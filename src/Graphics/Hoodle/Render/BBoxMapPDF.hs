@@ -4,7 +4,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.BBoxMapPDF 
+-- Module      : Graphics.Hoodle.Render.BBoxMapPDF 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Xournal.Render.BBoxMapPDF where
+module Graphics.Hoodle.Render.BBoxMapPDF where
 
 import Control.Applicative
 import Data.Foldable 
@@ -28,18 +28,18 @@ import           Control.Monad.State hiding (get, mapM_, mapM,sequence)
 import qualified Control.Monad.State as St (get)
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
-import           Data.Xournal.BBox
-import           Data.Xournal.Buffer
-import           Data.Xournal.Generic
-import           Data.Xournal.Map
-import           Data.Xournal.Select
-import           Data.Xournal.Simple
+import           Data.Hoodle.BBox
+import           Data.Hoodle.Buffer
+import           Data.Hoodle.Generic
+import           Data.Hoodle.Map
+import           Data.Hoodle.Select
+import           Data.Hoodle.Simple
 -- from this package 
-import           Graphics.Xournal.Render.BBox
-import           Graphics.Xournal.Render.Generic
-import           Graphics.Xournal.Render.PDFBackground
-import           Graphics.Xournal.Render.Simple
-import           Graphics.Xournal.Render.Type 
+import           Graphics.Hoodle.Render.BBox
+import           Graphics.Hoodle.Render.Generic
+import           Graphics.Hoodle.Render.PDFBackground
+import           Graphics.Hoodle.Render.Simple
+import           Graphics.Hoodle.Render.Type 
 -- 
 import Prelude hiding ((.),id,mapM, mapM_, sequence )
 
@@ -47,13 +47,13 @@ import Prelude hiding ((.),id,mapM, mapM_, sequence )
 type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
 
 -- | 
-type TXournalBBoxMapPDF = TXournalBBoxMapBkg BackgroundPDFDrawable
+type THoodleBBoxMapPDF = THoodleBBoxMapBkg BackgroundPDFDrawable
 
 -- | 
 type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TLayerBBox
 
 -- | 
-type TTempXournalSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTempPageSelectPDF))
+type TTempHoodleSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTempPageSelectPDF))
 
 -- | 
 newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
@@ -66,15 +66,15 @@ type TPageBBoxMapPDFBuf =
   TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
   
 -- |   
-type TXournalBBoxMapPDFBuf = 
-  TXournalBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
+type THoodleBBoxMapPDFBuf = 
+  THoodleBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
   
 -- |
 type TTempPageSelectPDFBuf = 
   GPage BackgroundPDFDrawable (TLayerSelectInPageBuf ZipperSelect) (TLayerBBoxBuf LyBuf)
 
 -- | 
-type TTempXournalSelectPDFBuf = 
+type TTempHoodleSelectPDFBuf = 
   GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
 
 -- | 
@@ -152,14 +152,14 @@ ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf p =
             (TLayerSelectInPageBuf currtemp normalizedothers)
 
 -- | 
-instance GCast TXournalBBoxMapPDFBuf Xournal where
-  gcast = Xournal <$> view g_title 
+instance GCast THoodleBBoxMapPDFBuf Hoodle where
+  gcast = Hoodle <$> view g_title 
                   <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages 
 
 
 -- | 
-instance GCast TTempXournalSelectPDFBuf Xournal where 
-  gcast = Xournal <$> gselectTitle 
+instance GCast TTempHoodleSelectPDFBuf Hoodle where 
+  gcast = Hoodle <$> gselectTitle 
                   <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll  
 
 ----------------------      
@@ -185,11 +185,11 @@ instance RenderOptionable (InBBox TPageBBoxMapPDF) where
     mapM_ (cairoDrawLayerBBox mbbox) . glayers $ page 
 
 -- |
-mkTXournalBBoxMapPDF :: Xournal -> IO TXournalBBoxMapPDF
-mkTXournalBBoxMapPDF xoj = do 
+mkTHoodleBBoxMapPDF :: Hoodle -> IO THoodleBBoxMapPDF
+mkTHoodleBBoxMapPDF xoj = do 
   let pgs = xoj_pages xoj 
   npgs <- mkAllTPageBBoxMapPDF pgs 
-  return $ GXournal (xoj_title xoj) (gFromList npgs)
+  return $ GHoodle (xoj_title xoj) (gFromList npgs)
   
 -- |
 mkAllTPageBBoxMapPDF :: [Page] -> IO [TPageBBoxMapPDF]
@@ -273,14 +273,14 @@ mkTPageBBoxMapPDFBufFromNoBuf page = do
   return . GPage dim bkg . gFromList . gToList $ ls'
       
 -- | 
-mkTXournalBBoxMapPDFBufFromNoBuf :: TXournalBBoxMapPDF 
-                                    -> IO TXournalBBoxMapPDFBuf
-mkTXournalBBoxMapPDFBufFromNoBuf xoj = do 
+mkTHoodleBBoxMapPDFBufFromNoBuf :: THoodleBBoxMapPDF 
+                                    -> IO THoodleBBoxMapPDFBuf
+mkTHoodleBBoxMapPDFBufFromNoBuf xoj = do 
   let title = view g_title xoj
       pages = view g_pages xoj 
   pages' <- mapM mkTPageBBoxMapPDFBufFromNoBuf pages
  
-  return $ GXournal title pages'
+  return $ GHoodle title pages'
 
 -- | 
 resetPageBuffers :: TPageBBoxMapPDFBuf -> IO TPageBBoxMapPDFBuf 
@@ -291,8 +291,8 @@ resetPageBuffers page = do
   return (set g_layers newlayers page)
 
 -- | 
-resetXournalBuffers :: TXournalBBoxMapPDFBuf -> IO TXournalBBoxMapPDFBuf 
-resetXournalBuffers xoj = do 
+resetHoodleBuffers :: THoodleBBoxMapPDFBuf -> IO THoodleBBoxMapPDFBuf 
+resetHoodleBuffers xoj = do 
   let pages = view g_pages xoj 
   newpages <- mapM resetPageBuffers pages
   return . set g_pages newpages $ xoj

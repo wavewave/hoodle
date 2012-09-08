@@ -4,7 +4,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.PDFBackground 
+-- Module      : Graphics.Hoodle.Render.PDFBackground 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,16 +14,16 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Xournal.Render.PDFBackground where
+module Graphics.Hoodle.Render.PDFBackground where
 
 import Control.Monad.State hiding (mapM_)
 import Data.Monoid 
 import Data.ByteString hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C
-import Data.Xournal.Simple
-import Data.Xournal.BBox
-import Graphics.Xournal.Render.BBox 
-import Graphics.Xournal.Render.Generic
+import Data.Hoodle.Simple
+import Data.Hoodle.BBox
+import Graphics.Hoodle.Render.BBox 
+import Graphics.Hoodle.Render.Generic
 --
 #ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler

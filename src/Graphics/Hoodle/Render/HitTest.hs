@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.HitTest 
+-- Module      : Graphics.Hoodle.Render.HitTest 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,14 +12,14 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Xournal.Render.HitTest where
+module Graphics.Hoodle.Render.HitTest where
 
 import Data.Strict.Tuple
-import Data.Xournal.Simple 
-import Data.Xournal.BBox 
-import Data.Xournal.Generic
+import Data.Hoodle.Simple 
+import Data.Hoodle.BBox 
+import Data.Hoodle.Generic
 
-import Graphics.Xournal.Render.Type
+import Graphics.Hoodle.Render.Type
 
 import Control.Applicative
 import Control.Monad.State

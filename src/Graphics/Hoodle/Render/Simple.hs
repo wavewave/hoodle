@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.Simple 
+-- Module      : Graphics.Hoodle.Render.Simple 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,14 +12,14 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Xournal.Render.Simple where 
+module Graphics.Hoodle.Render.Simple where 
 
 import Graphics.Rendering.Cairo
 import Control.Applicative
 import Control.Monad
 import Data.Strict.Tuple hiding (fst,snd)
-import Data.Xournal.Simple
-import Data.Xournal.Predefined 
+import Data.Hoodle.Simple
+import Data.Hoodle.Predefined 
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as S
 

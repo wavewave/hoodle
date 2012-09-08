@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Xournal.Render.BBox 
+-- Module      : Graphics.Hoodle.Render.BBox 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,18 +11,18 @@
 -- Portability : GHC
 --
 
-module Graphics.Xournal.Render.BBox where
+module Graphics.Hoodle.Render.BBox where
 
 import Graphics.Rendering.Cairo
-import Graphics.Xournal.Render.Simple
-import Graphics.Xournal.Render.HitTest
-import Graphics.Xournal.Render.Type 
+import Graphics.Hoodle.Render.Simple
+import Graphics.Hoodle.Render.HitTest
+import Graphics.Hoodle.Render.Type 
 
-import Data.Xournal.Generic
-import Data.Xournal.Map
-import Data.Xournal.Simple
-import Data.Xournal.BBox
-import Data.Xournal.Predefined 
+import Data.Hoodle.Generic
+import Data.Hoodle.Map
+import Data.Hoodle.Simple
+import Data.Hoodle.BBox
+import Data.Hoodle.Predefined 
 
 import Data.Foldable
 import Data.Monoid 

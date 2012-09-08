@@ -83,7 +83,8 @@ data Background = Background { bkg_type :: !S.ByteString
                 deriving Show 
 
 -- | 
-data Hoodle = Hoodle { xoj_title :: !Title, xoj_pages :: ![Page] }
+data Hoodle = Hoodle { hoodle_title :: !Title
+                     , hoodle_pages :: ![Page] }
              deriving Show 
 
 -- | 
@@ -115,11 +116,11 @@ s_color = lens stroke_color (\f a -> f { stroke_color = a } )
 
 -- | 
 s_title :: Simple Lens Hoodle Title
-s_title = lens xoj_title (\f a -> f { xoj_title = a } )
+s_title = lens hoodle_title (\f a -> f { hoodle_title = a } )
 
 -- | 
 s_pages :: Simple Lens Hoodle [Page]
-s_pages = lens xoj_pages (\f a -> f { xoj_pages = a } )
+s_pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
 
 -- | 
 s_dim :: Simple Lens Page Dimension 

@@ -219,7 +219,9 @@ mkTPageSimpleFromPage = GPage <$> page_dim <*> page_bkg <*> map mkTLayerSimpleFr
 
 -- | 
 mkTHoodleSimpleFromHoodle :: Hoodle -> THoodleSimple 
-mkTHoodleSimpleFromHoodle = GHoodle <$> xoj_title <*> map mkTPageSimpleFromPage . xoj_pages
+mkTHoodleSimpleFromHoodle = 
+  GHoodle <$> hoodle_title 
+          <*> map mkTPageSimpleFromPage . hoodle_pages
 
 -- | 
 layerFromTLayerSimple :: TLayerSimple -> Layer

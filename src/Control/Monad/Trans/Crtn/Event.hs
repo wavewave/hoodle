@@ -42,7 +42,7 @@ data Event = Message String
 -}
 
 -- | action order 
-data ActionOrder e = ActionOrder ((e -> IO ()) -> IO ())
+data ActionOrder e = ActionOrder ((e -> IO ()) -> IO e)
 
 
 

@@ -130,7 +130,8 @@ air = ReaderT airW
                                     forkIO $ do threadDelay 10000000
                                                 putStrLn "BAAAAAMM"
                                                 evhandler (Message "HAHAHAH")
-                                    return ()
+                                    putStrLn "hey"
+                                    return (Message "Gombalbadak")
                    modify ( worldState.tempQueue %~ enqueue action ) 
                    return True
                  _ -> return False 

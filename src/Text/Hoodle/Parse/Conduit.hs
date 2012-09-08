@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Xournal.Parse.Conduit
+-- Module      : Text.Hoodle.Parse.Conduit
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Xournal.Parse.Conduit where
+module Text.Hoodle.Parse.Conduit where
 
 -- from other packages
 import           Control.Applicative 
@@ -37,9 +37,9 @@ import           Text.XML.Stream.Render
 import           Text.XML.Stream.Parse hiding (many)
 import           System.IO 
 -- from other hoodle related packages
-import           Data.Xournal.Simple 
+import           Data.Hoodle.Simple 
 -- from this package
-import           Text.Xournal.Parse.Zlib
+import           Text.Hoodle.Parse.Zlib
 -- 
 import           Debug.Trace
 import           Prelude hiding ((.),id,dropWhile)
@@ -161,17 +161,17 @@ drop2NextStartOrEnd = do
 
 -- * parsers 
 
--- | parse whole xournal file 
+-- | parse whole hoodle file 
 
-pXournal :: Monad m => Sink Event m (Either String Xournal)
-pXournal = do  
-  dropWhile (not.isStart "xournal")
+pHoodle :: Monad m => Sink Event m (Either String Hoodle)
+pHoodle = do  
+  dropWhile (not.isStart "hoodle")
   CL.head >>= maybe (
-    return (Left "no xournal"))
+    return (Left "no hoodle"))
     (const $ do 
        title <- pTitle 
-       pages <- many1event ("page","xournal") pPage
-       (return $ Xournal <$> title <*> pages ))  
+       pages <- many1event ("page","hoodle") pPage
+       (return $ Hoodle <$> title <*> pages ))  
  
 -- | parse one page 
 
@@ -272,7 +272,6 @@ getStroke (EventBeginElement _name namecontent) =
     f (Right (VWStroke _ _ _,_)) (_,_) = error "this should not happen in getStroke"
 getStroke _ = Left "not a stroke"
 
---    (str { stroke_tool = encodeUtf8 txt})
 
 -- | 
 
@@ -391,28 +390,24 @@ parseXmlFile h iter = sourceHandle h =$= parseBytes def $$ iter
   -- enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
 
 
--- | for xournal 
+-- | for hoodle 
 
-parseXojFile :: FilePath -> IO (Either String Xournal)
-parseXojFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pXournal     
-
--- | 
-
-parseXojGzFile :: FilePath -> IO (Either String Xournal) 
-parseXojGzFile fp = withFile fp ReadMode $ \h -> 
-                      sourceHandle h =$= ungzip =$= parseBytes def $$ pXournal 
- --  run_ $ enumFile fp $$ EZ.ungzip =$ parseBytes def =$ pXournal 
+parseHoodleFile :: FilePath -> IO (Either String Hoodle)
+parseHoodleFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pHoodle 
 
 -- | 
+parseHoodleGzFile :: FilePath -> IO (Either String Hoodle) 
+parseHoodleGzFile fp = withFile fp ReadMode $ \h -> 
+                      sourceHandle h =$= ungzip =$= parseBytes def $$ pHoodle 
 
-parseXournal :: FilePath -> IO (Either String Xournal)
-parseXournal fname = 
+-- | 
+parseHoodle :: FilePath -> IO (Either String Hoodle)
+parseHoodle fname = 
     checkIfBinary fname >>= \b -> 
-      if b then parseXojGzFile fname else parseXojFile fname
+      if b then parseHoodleGzFile fname else parseHoodleFile fname
   
 
 -- | printing for debug
-
 iterPrint :: (Show s,MonadIO m) => Sink s m () 
 iterPrint = do
   x <- CL.head

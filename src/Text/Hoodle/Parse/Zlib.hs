@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Xournal.Parse.Zlib 
+-- Module      : Text.Hoodle.Parse.Zlib 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Xournal.Parse.Zlib where
+module Text.Hoodle.Parse.Zlib where
 
 -- from other packages
 import           Control.Monad.IO.Class
@@ -20,24 +20,6 @@ import           Data.Conduit
 import qualified Data.Conduit.List as CL
 import           Data.Conduit.Zlib
 import           System.IO
-
--- import Data.Iteratee.ZLib as IZ
--- import Data.Iteratee as I
--- import Codec.Zlib.Enum as EZ
--- import Data.Enumerator as E
-
-
--- |
-
--- ungzipXoj :: MonadIO m => I.Enumerator ByteString m a
--- ungzipXoj = IZ.enumInflate IZ.GZip IZ.defaultDecompressParams
-
--- | 
-
--- gunzipXojEnum :: MonadIO m => E.Enumeratee ByteString ByteString m a
--- gunzipXojEnum = EZ.decompress EZ.defaultWindowBits  
-
-
 
 -- | check if gzip or not
 

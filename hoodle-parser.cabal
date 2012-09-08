@@ -30,6 +30,7 @@ Library
                  strict == 0.3.*, 
                  attoparsec-conduit == 0.5.*,
                  hoodle-types >= 0.0.999 && < 0.2, 
+                 xournal-types >= 0.4.999 && < 0.6,
                  xml-types == 0.3.*, 
                  text == 0.11.*,
                  lens >= 2.4 && < 2.7, 
@@ -38,6 +39,7 @@ Library
                    Text.Hoodle.Parse
                    Text.Hoodle.Parse.Conduit
                    Text.Hoodle.Parse.Zlib
+                   Text.Hoodle.Translate.FromXournal
 
 
 

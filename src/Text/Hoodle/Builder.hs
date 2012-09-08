@@ -41,8 +41,9 @@ builder = toLazyByteString . fromHoodle
 
 -- |
 fromHoodle :: Hoodle -> Builder 
-fromHoodle xoj = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal version=\"0.4.2.1\">\n"
-                 <> fromTitle (xoj_title xoj) <> mconcat (map fromPage (xoj_pages xoj))
+fromHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal version=\"0.4.2.1\">\n"
+                 <> fromTitle (hoodle_title hdl) 
+                 <> mconcat (map fromPage (hoodle_pages hdl))
                  <> fromByteString "</xournal>\n"
   
 -- |                  

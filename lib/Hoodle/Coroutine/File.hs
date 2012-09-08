@@ -72,6 +72,13 @@ fileNew = do
 -- | 
 fileSave :: MainCoroutine ()
 fileSave = do 
+    {- let action = Left . ActionOrder $ 
+                   \evhandler -> do 
+                      forkIO $ do threadDelay 10000000
+                                  putStrLn "BAAAAAM"
+                                  evhandler (Menu MenuQuit)
+                      return () 
+    modify (tempQueue %~ enqueue action) -}
     xstate <- get 
     case view currFileName xstate of
       Nothing -> fileSaveAs 

@@ -96,7 +96,7 @@ initCoroutine devlst window mfname mhook maxundo  = do
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
       
-  putMVar evar . Just $ (driver simplelogger startworld (eventHandler evar))
+  putMVar evar . Just $ (driver simplelogger startworld)
       
       
   return (evar,startingXstate,ui,vbox)

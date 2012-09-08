@@ -98,9 +98,7 @@ penStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (ConnectId DrawingArea, ConnectId DrawingArea) -> (Double,Double) -> MainCoroutine ()
         penAction _cinfo pnum geometry (cidmove,cidup) (x,y) = do 
-          modify (tempLog %~ ( . ( ++ "pen ") ))
           xstate <- get
-          modify (tempLog %~ ( . ( ++ "start\n") )) 
           let PointerCoord _ _ _ z = pcoord 
           let currxoj = unView . view xournalstate $ xstate        
               pinfo = view penInfo xstate

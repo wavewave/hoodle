@@ -16,7 +16,7 @@ module Hoodle.Coroutine.Select.Clipboard where
 
 -- from other packages
 import           Control.Applicative 
--- import           Control.Concurrent
+import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad.State 
 import qualified Data.ByteString.Base64 as B64 
@@ -26,6 +26,8 @@ import qualified Data.Serialize as Se
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
 import           Control.Monad.Trans.Crtn
+import           Control.Monad.Trans.Crtn.Event
+import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Xournal.BBox
 import           Data.Xournal.Generic 
 import           Graphics.Xournal.Render.Type 
@@ -109,25 +111,36 @@ updateClipboard xstate strs
 
 
 -- |
-callback4Clip :: (MyEvent -> IO ()) -> IORef (Maybe [StrokeBBox]) -> Maybe String -> IO ()
-callback4Clip callbk ref Nothing = do 
-    writeIORef ref Nothing
-    callbk (GotClipboardContent Nothing)
-callback4Clip callbk ref (Just str) = do
+callback4Clip :: (MyEvent -> IO ()) -> Maybe String -> IO ()
+callback4Clip callbk Nothing = callbk (GotClipboardContent Nothing)
+callback4Clip callbk (Just str) = do
     let r = do let bstr = C8.pack str 
                bstr' <- B64.decode bstr
                Se.decode bstr' 
     case r of 
-      Left err -> do 
-        putStrLn err >> writeIORef ref Nothing
-        callbk (GotClipboardContent Nothing)
-      Right cnt -> do  
-        cnt `seq` writeIORef ref (Just cnt)
-        callbk (GotClipboardContent (Just cnt))
+      Left err -> callbk (GotClipboardContent Nothing)
+      Right cnt -> callbk (GotClipboardContent (Just cnt))
 
 -- |
 getClipFromGtk :: MainCoroutine (Maybe [StrokeBBox])
 getClipFromGtk = do 
+    let action = Left . ActionOrder $ 
+                   \evhandler -> do 
+                       hdltag <- liftIO $ atomNew "hoodle"
+                       clipbd <- liftIO $ clipboardGet hdltag
+                       liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
+                       return ActionOrdered 
+    modify (tempQueue %~ enqueue action) 
+--     return Nothing 
+    go 
+  where go = do r <- nextevent 
+                case r of 
+                  GotClipboardContent cnt' -> return cnt' 
+                  _ -> go 
+
+    
+{-  
+  
     hdltag <- liftIO $ atomNew "hoodle"
     clipbd <- liftIO $ clipboardGet hdltag
     ref <- liftIO $ newIORef Nothing 
@@ -140,7 +153,7 @@ getClipFromGtk = do
         case r of 
           GotClipboardContent cnt' -> return cnt' 
           _ -> return Nothing 
-      Just _ -> return cnt
+      Just _ -> return cnt -}
 
 -- | 
 pasteToSelection :: MainCoroutine () 

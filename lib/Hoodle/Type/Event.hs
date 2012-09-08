@@ -41,6 +41,7 @@ data MyEvent = Initialized
              | ToContSinglePage
              | Menu MenuEvent 
              | GotClipboardContent (Maybe [StrokeBBox])
+             | ActionOrdered
              deriving (Show,Eq,Ord)
 
 -- | 

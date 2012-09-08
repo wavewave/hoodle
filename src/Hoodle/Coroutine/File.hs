@@ -14,12 +14,12 @@
 
 module Hoodle.Coroutine.File where
 
+-- from other packages
 import           Control.Applicative
 import           Control.Category
 import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
--- import           Data.Label
 import           Control.Lens
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
@@ -72,26 +72,23 @@ fileNew = do
 -- | 
 fileSave :: MainCoroutine ()
 fileSave = do 
-    {- let action = Left . ActionOrder $ 
-                   \evhandler -> do 
-                      forkIO $ do threadDelay 10000000
-                                  putStrLn "BAAAAAM"
-                                  evhandler (Menu MenuQuit)
-                      return () 
-    modify (tempQueue %~ enqueue action) -}
     xstate <- get 
     case view currFileName xstate of
       Nothing -> fileSaveAs 
       Just filename -> do     
-        let hdlmodst = view hoodleModeState xstate
-        let hdl = case hdlmodst of 
-              ViewAppendState hdlmap -> Hoodle <$> view g_title <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages $ hdlmap 
-              SelectState thdl -> Hoodle <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ thdl 
-        liftIO . L.writeFile filename . builder $ hdl
-        put . set isSaved True $ xstate 
-        let ui = view gtkUIManager xstate
-        liftIO $ toggleSave ui False
-        S.afterSaveHook hdl
+        -- this is rather temporary not to make mistake 
+        if takeExtension filename == ".hdl" 
+          then do 
+             let hdlmodst = view hoodleModeState xstate
+             let hdl = case hdlmodst of 
+                   ViewAppendState hdlmap -> Hoodle <$> view g_title <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages $ hdlmap 
+                   SelectState thdl -> Hoodle <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ thdl 
+             liftIO . L.writeFile filename . builder $ hdl
+             put . set isSaved True $ xstate 
+             let ui = view gtkUIManager xstate
+             liftIO $ toggleSave ui False
+             S.afterSaveHook hdl
+           else fileExtensionInvalid >> fileSaveAs 
 
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
@@ -153,32 +150,46 @@ fileSaveAs = do
           case mfilename of 
             Nothing -> return () 
             Just filename -> do 
-              let ntitle = B.pack . snd . splitFileName $ filename 
-              let (hdlmodst',hdl') = case view hoodleModeState xstate of
-                    ViewAppendState hdlmap -> 
-                      if view g_title hdlmap == "untitled"
-                      then ( ViewAppendState . set g_title ntitle
-                             $ hdlmap
-                           , (set s_title ntitle hdl))
-                      else (ViewAppendState hdlmap,hdl)
-                    SelectState thdl -> 
-                      if gselectTitle thdl == "untitled"
-                      then ( SelectState $ 
-                               thdl { gselectTitle = ntitle }
-                           , set s_title ntitle hdl)  
-                      else (SelectState thdl,hdl)
-              let xstateNew = set currFileName (Just filename) 
-                              . set hoodleModeState hdlmodst' $ xstate 
-              liftIO . L.writeFile filename . builder $ hdl'
-              put . set isSaved True $ xstateNew    
-              let ui = view gtkUIManager xstateNew
-              liftIO $ toggleSave ui False
-              liftIO $ setTitleFromFileName xstateNew 
-              S.afterSaveHook hdl'
+              if takeExtension filename == ".hdl" 
+                then do 
+                  let ntitle = B.pack . snd . splitFileName $ filename 
+                  let (hdlmodst',hdl') = case view hoodleModeState xstate of
+                        ViewAppendState hdlmap -> 
+                          if view g_title hdlmap == "untitled"
+                            then ( ViewAppendState . set g_title ntitle
+                                   $ hdlmap
+                                 , (set s_title ntitle hdl))
+                            else (ViewAppendState hdlmap,hdl)
+                        SelectState thdl -> 
+                          if gselectTitle thdl == "untitled"
+                            then ( SelectState $ 
+                                     thdl { gselectTitle = ntitle }
+                                 , set s_title ntitle hdl)  
+                            else (SelectState thdl,hdl)
+                  let xstateNew = set currFileName (Just filename) 
+                                . set hoodleModeState hdlmodst' $ xstate 
+                  liftIO . L.writeFile filename . builder $ hdl'
+                  put . set isSaved True $ xstateNew    
+                  let ui = view gtkUIManager xstateNew
+                  liftIO $ toggleSave ui False
+                  liftIO $ setTitleFromFileName xstateNew 
+                  S.afterSaveHook hdl'
+                else fileExtensionInvalid
           liftIO $ widgetDestroy dialog
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileSaveAs"
       return ()
+
+-- | 
+fileExtensionInvalid :: MainCoroutine ()
+fileExtensionInvalid = do 
+    dialog <- liftIO $ messageDialogNew Nothing [DialogModal]
+                         MessageQuestion ButtonsOk
+                         "only .hdl extension is supported for save"
+    _res <- liftIO $ dialogRun dialog
+    liftIO $ widgetDestroy dialog
+
+
 
 -- | 
 fileAnnotatePDF :: MainCoroutine ()

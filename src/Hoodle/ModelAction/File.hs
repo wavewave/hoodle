@@ -28,11 +28,15 @@ import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif
+import           System.FilePath (takeExtension)
 -- from hoodle-platform 
 import           Data.Hoodle.Simple
+import qualified Data.Xournal.Simple as X
 import           Graphics.Hoodle.Render.BBoxMapPDF
 import           Graphics.Hoodle.Render.PDFBackground
 import qualified Text.Hoodle.Parse.Conduit as PC
+import qualified Text.Xournal.Parse.Conduit as XP
+import           Text.Hoodle.Translate.FromXournal
 -- from this package
 import           Hoodle.Type.HoodleState
 -- 
@@ -44,13 +48,27 @@ getFileContent :: Maybe FilePath
                -> HoodleState 
                -> IO HoodleState 
 getFileContent (Just fname) xstate = do 
-    PC.parseHoodleFile fname >>= \x -> case x of  
-      Left str -> do
-        putStrLn $ "file reading error : " ++ str 
-        return xstate 
-      Right hdlcontent -> do 
-        nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
-        return $ set currFileName (Just fname) nxstate 
+    let ext = takeExtension fname
+    if ext == ".hdl" 
+      then do  
+        PC.parseHoodleFile fname >>= \x -> case x of  
+          Left str -> do
+            putStrLn $ "file reading error : " ++ str 
+            return xstate 
+          Right hdlcontent -> do 
+            nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
+            return $ set currFileName (Just fname) nxstate 
+      else if ext == ".xoj" 
+        then do 
+          XP.parseXojFile fname >>= \x -> case x of  
+            Left str -> do
+              putStrLn $ "file reading error : " ++ str 
+              return xstate 
+            Right xojcontent -> do 
+              let hdlcontent = mkHoodleFromXournal xojcontent 
+              nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
+              return $ set currFileName (Just fname) nxstate               
+        else getFileContent Nothing xstate      
 getFileContent Nothing xstate = do   
     newhdl <- mkTHoodleBBoxMapPDFBufFromNoBuf <=< mkTHoodleBBoxMapPDF 
               $ defaultHoodle 

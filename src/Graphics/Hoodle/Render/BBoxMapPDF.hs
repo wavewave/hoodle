@@ -186,10 +186,10 @@ instance RenderOptionable (InBBox TPageBBoxMapPDF) where
 
 -- |
 mkTHoodleBBoxMapPDF :: Hoodle -> IO THoodleBBoxMapPDF
-mkTHoodleBBoxMapPDF xoj = do 
-  let pgs = xoj_pages xoj 
+mkTHoodleBBoxMapPDF hdl = do 
+  let pgs = hoodle_pages hdl
   npgs <- mkAllTPageBBoxMapPDF pgs 
-  return $ GHoodle (xoj_title xoj) (gFromList npgs)
+  return $ GHoodle (hoodle_title hdl) (gFromList npgs)
   
 -- |
 mkAllTPageBBoxMapPDF :: [Page] -> IO [TPageBBoxMapPDF]
@@ -275,9 +275,9 @@ mkTPageBBoxMapPDFBufFromNoBuf page = do
 -- | 
 mkTHoodleBBoxMapPDFBufFromNoBuf :: THoodleBBoxMapPDF 
                                     -> IO THoodleBBoxMapPDFBuf
-mkTHoodleBBoxMapPDFBufFromNoBuf xoj = do 
-  let title = view g_title xoj
-      pages = view g_pages xoj 
+mkTHoodleBBoxMapPDFBufFromNoBuf hdl = do 
+  let title = view g_title hdl
+      pages = view g_pages hdl 
   pages' <- mapM mkTPageBBoxMapPDFBufFromNoBuf pages
  
   return $ GHoodle title pages'
@@ -292,10 +292,10 @@ resetPageBuffers page = do
 
 -- | 
 resetHoodleBuffers :: THoodleBBoxMapPDFBuf -> IO THoodleBBoxMapPDFBuf 
-resetHoodleBuffers xoj = do 
-  let pages = view g_pages xoj 
+resetHoodleBuffers hdl = do 
+  let pages = view g_pages hdl 
   newpages <- mapM resetPageBuffers pages
-  return . set g_pages newpages $ xoj
+  return . set g_pages newpages $ hdl
   
 -- |
 instance GCast (TLayerBBoxBuf a) TLayerBBox where

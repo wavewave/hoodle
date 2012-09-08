@@ -27,7 +27,7 @@ Flag Poppler
 
 
 Library
-  hs-source-dirs: lib
+  hs-source-dirs: src
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
 
@@ -42,14 +42,14 @@ Library
                      coroutine-object >= 0.0.999 && < 0.2, 
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
-                     xournal-types >= 0.4.999 && < 0.6,
-                     xournal-parser >= 0.4.999 && < 0.6,
-                     xournal-render >= 0.6.999 && < 0.8,
-                     xournal-builder >= 0.1.999 && < 0.3,
+                     hoodle-types >= 0.0.999 && < 0.2,
+                     hoodle-parser >= 0.0.999 && < 0.2,
+                     hoodle-render >= 0.0.999 && < 0.2,
+                     hoodle-builder >= 0.0.999 && < 0.2,
                      containers == 0.4.*,
                      template-haskell == 2.*,
                      bytestring == 0.9.*, 
-                     lens >= 2.4 && < 2.6,
+                     lens >= 2.4 && < 2.7,
                      configurator == 0.2.*,
                      poppler == 0.12.*, 
                      time >= 1.2 && < 1.5, 
@@ -69,14 +69,14 @@ Library
                      coroutine-object >= 0.0.999 && < 0.2,
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
-                     xournal-types >= 0.4.0.999 && < 0.5 ,
-                     xournal-parser == 0.4.*,
-                     xournal-render >= 0.6.999 && < 0.8,
-                     xournal-builder >= 0.1.1 && < 0.2,
+                     hoodle-types >= 0.0.999 && < 0.2 ,
+                     hoodle-parser == 0.0.999 && < 0.2,
+                     hoodle-render >= 0.0.999 && < 0.2,
+                     hoodle-builder >= 0.0.999 && < 0.2,
                      containers == 0.4.*,
                      template-haskell == 2.*,
                      bytestring == 0.9.*, 
-                     lens >= 2.4 && < 2.6,
+                     lens >= 2.4 && < 2.7,
                      configurator == 0.2.*, 
                      time == 1.2.*, 
                      TypeCompose == 0.9.*, 
@@ -130,7 +130,7 @@ Library
                    Hoodle.Type.Predefined
                    Hoodle.Type.Undo 
                    Hoodle.Type.Window
-                   Hoodle.Type.XournalState
+                   Hoodle.Type.HoodleState
                    Hoodle.Util
                    Hoodle.Util.Verbatim 
                    Hoodle.View.Coordinate

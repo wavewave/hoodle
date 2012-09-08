@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Xournal.Builder 
+-- Module      : Text.Hoodle.Builder 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Xournal.Builder where
+module Text.Hoodle.Builder where
 
 -- from other packages 
 import qualified Data.ByteString as S
@@ -27,7 +27,7 @@ import Data.Monoid
 #endif 
 import Data.Strict.Tuple
 -- from this package 
-import Data.Xournal.Simple
+import Data.Hoodle.Simple
 
 infixl 4 <>
 
@@ -36,14 +36,14 @@ infixl 4 <>
 (<>) = mappend 
 
 -- | 
-builder :: Xournal -> L.ByteString
-builder = toLazyByteString . fromXournal
+builder :: Hoodle -> L.ByteString
+builder = toLazyByteString . fromHoodle
 
 -- |
-fromXournal :: Xournal -> Builder 
-fromXournal xoj = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal version=\"0.4.2.1\">\n"
-                  <> fromTitle (xoj_title xoj) <> mconcat (map fromPage (xoj_pages xoj))
-                  <> fromByteString "</xournal>\n"
+fromHoodle :: Hoodle -> Builder 
+fromHoodle xoj = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<xournal version=\"0.4.2.1\">\n"
+                 <> fromTitle (xoj_title xoj) <> mconcat (map fromPage (xoj_pages xoj))
+                 <> fromByteString "</xournal>\n"
   
 -- |                  
 fromTitle :: S.ByteString -> Builder

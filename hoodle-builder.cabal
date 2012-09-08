@@ -1,7 +1,7 @@
-Name:		xournal-builder
-Version:	0.1.999
-Synopsis:	text builder for xournal file format 
-Description: 	This library builds text xoj format file from xournal data structure
+Name:		hoodle-builder
+Version:	0.0.999
+Synopsis:	text builder for hoodle file format 
+Description: 	This library builds text xoj format file from hoodle data structure
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -12,7 +12,7 @@ Cabal-Version:  >= 1.8
 data-files:     CHANGES
 Source-repository head
   type: git
-  location: http://www.github.com/wavewave/xournal-builder
+  location: http://www.github.com/wavewave/hoodle-builder
 
 Library
   hs-source-dirs: src
@@ -20,14 +20,14 @@ Library
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                    base == 4.*,
-                   xournal-types >= 0.4.999 && < 0.6,
+                   hoodle-types >= 0.0.999 && < 0.2,
                    blaze-builder == 0.3.*, 
                    strict == 0.3.*, 
                    double-conversion == 0.2.*, 
                    bytestring == 0.9.*
                  
   Exposed-Modules: 
-                   Text.Xournal.Builder
+                   Text.Hoodle.Builder
   Other-Modules: 
 
  

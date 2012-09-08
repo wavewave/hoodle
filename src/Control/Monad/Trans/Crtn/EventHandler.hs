@@ -24,9 +24,8 @@ import Control.Monad.Trans.Crtn.Driver
 import Control.Monad.Trans.Crtn.Logger 
 
 -- | 
-eventHandler :: (Show e) => MVar (Maybe (Driver e IO ())) -> e -> IO ()
+eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()
 eventHandler evar ev = do 
-    putStrLn " In eventhandler : " ++ show ev
     mnext <- takeMVar evar
     case mnext of 
       Nothing -> return () 
@@ -34,28 +33,9 @@ eventHandler evar ev = do
         (r,drv') <- eaction drv 
         putMVar evar (Just drv')
         case r of    
-          Left err -> scribe (show err) -- >>= putMVar evar (Just drv') 
-          Right Nothing -> return () -- putMVar evar (Just drv')  
-          Right (Just (ActionOrder act)) -> do e <- act (eventHandler evar)
-                                               eventHandler evar e 
+          Left err -> scribe (show err) 
+          Right Nothing -> return () 
+          Right (Just (ActionOrder act)) -> 
+            act (eventHandler evar) >>= eventHandler evar 
   where eaction = runStateT (runErrorT $ fire ev) 
                   
-                  
-                  
-                  --  >> lift get >>= return)  
-          
-{-          
-          >>= either (\err -> scribe (show err) >> return drv) 
-                               (\drv'
-          
-          
-          
-          return >>= putMVar evar . Just  
--}                
-  
-{-  
-    drv <- takeMVar dref 
-    eaction drv >>= either (\err -> scribe (show err) >> return drv) return >>= putMVar dref 
-  where -- eaction :: Driver e IO () -> IO (Either (CrtnErr ()) (Driver e IO ()))
-        eaction = evalStateT $ runErrorT $ fire ev >> lift get >>= return -}
-

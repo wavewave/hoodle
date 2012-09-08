@@ -38,7 +38,7 @@ ticking mvar n = do
       then eventHandler mvar Open  
       else if n `mod` 10 == 5                 
              then eventHandler mvar Close 
-             else if n `mod` 10 == 3
+             else if n `mod` 10 == 3 || n `mod` 10 == 6 
                     then eventHandler mvar Render
                     else eventHandler mvar (Message ("test : " ++ show n))
     putStrLn "_-_-_-_-_-_-_-_-_-_-_-_-_-"

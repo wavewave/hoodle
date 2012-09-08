@@ -17,17 +17,12 @@ import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Logger 
 import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.World  
+-- 
+import Debug.Trace
 
 -- | signature of IO event driver
 data DrvOp e i o where 
-  Dispatch :: DrvOp e e (Maybe (ActionOrder e)) -- () 
-
-
--- -- | event driver input 
--- type DrvInput e = Arg (DrvOp e)
-
--- -- | driver server monad 
--- type DriverT = ServerT DrvOp 
+  Dispatch :: DrvOp e e (Maybe (ActionOrder e)) 
 
 -- | driver 
 type Driver e m = SObjT (DrvOp e) m  
@@ -36,12 +31,11 @@ type Driver e m = SObjT (DrvOp e) m
 type DrvClient e m r = CObjT (DrvOp e) m r 
 
 -- | 
-dispatch :: (Monad m) => e -> DrvClient e m (Maybe (ActionOrder e)) --  () 
+dispatch :: (Monad m) => e -> DrvClient e m (Maybe (ActionOrder e)) 
 dispatch ev = do Res Dispatch r <- request (Arg Dispatch ev) 
                  return r
               
 -- | basic driver 
-                 
 driver :: forall m e. (Monad m, MonadLog m, MonadIO m) => 
            LogServer (SObjBT (DrvOp e) m) ()
            -> SObjT (WorldOp e (SObjBT (DrvOp e) m)) (SObjBT (DrvOp e) m) () 
@@ -81,12 +75,10 @@ singleDispatch (Left act) (logobj,worldobj,evacc) = do
     Arg Dispatch ev <- request (Res Dispatch (Just act))
     return (logobj,worldobj,evacc++[Right ev]) 
 
- -- (ioactorobj',_) <- ioactorobj <==| doIOAction act
-                      -- return ioactorobj'
 
 
 -- | a single feedback step of multiple event dispatch
-multiDispatch :: Monad m => 
+multiDispatch :: (Monad m) => 
                  ( LogServer (SObjBT (DrvOp e) m) ()
                  , World e (SObjBT (DrvOp e) m) ())
               -> [EvOrAct e]
@@ -98,7 +90,7 @@ multiDispatch (logobj,worldobj) events = do
   foldrM singleDispatch (logobj,worldobj,[]) events   
 
 -- | full multiple event dispatch with feedback
-multiDispatchTillEnd :: Monad m => 
+multiDispatchTillEnd :: (Monad m) => 
                         ( LogServer (SObjBT (DrvOp e) m) ()
                         , World e (SObjBT (DrvOp e) m) ()) 
                      -> [EvOrAct e] 

@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Generic 
+-- Module      : Data.Hoodle.Generic 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Xournal.Generic where
+module Data.Hoodle.Generic where
 
 -- from other packages
 import Control.Applicative
@@ -22,12 +22,12 @@ import Data.ByteString hiding (map,zip)
 import Data.Functor
 import Data.IntMap hiding (map)
 -- from this package
-import Data.Xournal.Simple
+import Data.Hoodle.Simple
 -- 
 import Prelude hiding ((.),id)
 
 -- | 
-data GXournal s a = GXournal { gtitle :: ByteString 
+data GHoodle s a = GHoodle { gtitle :: ByteString 
                              , gpages :: s a }  
 
 -- | 
@@ -56,8 +56,8 @@ instance (Functor s) => Functor (GPage b s) where
   fmap f (GPage d b ls) = GPage d b (fmap f ls)
   
 -- | 
-instance (Functor s) => Functor (GXournal s) where
-  fmap f (GXournal t ps) = GXournal t (fmap f ps)
+instance (Functor s) => Functor (GHoodle s) where
+  fmap f (GHoodle t ps) = GHoodle t (fmap f ps)
 
 -- | 
 class GCast a b where 
@@ -77,7 +77,7 @@ type TLayerSimple = GLayer [] Stroke
 type TPageSimple = GPage Background [] TLayerSimple 
 
 -- |
-type TXournalSimple = GXournal [] TPageSimple 
+type THoodleSimple = GHoodle [] TPageSimple 
 
 -- |
 class GStrokeable a where
@@ -140,15 +140,15 @@ instance SListable (GPage b) where
   chgStreamToList (GPage d b ls) = GPage d b (gToList ls)
   
 -- |
-instance SListable GXournal where
-  chgStreamToList (GXournal t ps) = GXournal t (gToList ps)
+instance SListable GHoodle where
+  chgStreamToList (GHoodle t ps) = GHoodle t (gToList ps)
   
 -- |
-g_title :: Simple Lens (GXournal s a) ByteString
+g_title :: Simple Lens (GHoodle s a) ByteString
 g_title = lens gtitle (\f a -> f { gtitle = a } )
 
 -- |
-g_pages :: Simple Lens (GXournal s a) (s a)
+g_pages :: Simple Lens (GHoodle s a) (s a)
 g_pages = lens gpages (\f a -> f { gpages = a } )
 
 -- |
@@ -218,8 +218,8 @@ mkTPageSimpleFromPage :: Page -> TPageSimple
 mkTPageSimpleFromPage = GPage <$> page_dim <*> page_bkg <*> map mkTLayerSimpleFromLayer . page_layers 
 
 -- | 
-mkTXournalSimpleFromXournal :: Xournal -> TXournalSimple 
-mkTXournalSimpleFromXournal = GXournal <$> xoj_title <*> map mkTPageSimpleFromPage . xoj_pages
+mkTHoodleSimpleFromHoodle :: Hoodle -> THoodleSimple 
+mkTHoodleSimpleFromHoodle = GHoodle <$> xoj_title <*> map mkTPageSimpleFromPage . xoj_pages
 
 -- | 
 layerFromTLayerSimple :: TLayerSimple -> Layer
@@ -230,8 +230,8 @@ pageFromTPageSimple :: TPageSimple -> Page
 pageFromTPageSimple = Page <$> gdimension <*> gbackground <*> map layerFromTLayerSimple . glayers
 
 -- | 
-xournalFromTXournalSimple :: TXournalSimple -> Xournal 
-xournalFromTXournalSimple = Xournal <$> gtitle <*> map pageFromTPageSimple . gpages 
+hoodleFromTHoodleSimple :: THoodleSimple -> Hoodle 
+hoodleFromTHoodleSimple = Hoodle <$> gtitle <*> map pageFromTPageSimple . gpages 
 
 
 ---- 

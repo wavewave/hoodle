@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Util
+-- Module      : Data.Hoodle.Util
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Xournal.Util where
+module Data.Hoodle.Util where
 
 -- |
 

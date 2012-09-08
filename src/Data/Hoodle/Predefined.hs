@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Predefined 
+-- Module      : Data.Hoodle.Predefined 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,7 +11,7 @@
 -- Portability : GHC
 --
 
-module Data.Xournal.Predefined where
+module Data.Hoodle.Predefined where
 
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B

@@ -1,7 +1,7 @@
-Name:		xournal-types
-Version:	0.4.999
-Synopsis:	Data types for programs for xournal file format
-Description: 	Xournal file format data type including generic interface
+Name:		hoodle-types
+Version:	0.0.999
+Synopsis:	Data types for programs for hoodle file format
+Description: 	Hoodle file format data type including generic interface
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -12,7 +12,7 @@ Cabal-Version:  >= 1.8
 data-files:     CHANGES
 Source-repository head
   type: git
-  location: https://www.github.com/wavewave/hxournal
+  location: https://www.github.com/wavewave/hhoodle
 
 
 Library
@@ -24,19 +24,18 @@ Library
                    bytestring == 0.9.*, 
                    strict == 0.3.*, 
                    containers == 0.4.*, 
-                   -- fclabels == 1.1.*, 
-                   lens >= 2.4 && < 2.6,
+                   lens >= 2.4 && < 2.7,
                    TypeCompose == 0.9.*, 
                    cereal == 0.3.*
   Exposed-Modules: 
-                   Data.Xournal.Generic
-                   Data.Xournal.Simple
-                   Data.Xournal.BBox
-                   Data.Xournal.Map
-                   Data.Xournal.Buffer
-                   Data.Xournal.Predefined 
-                   Data.Xournal.Select
-                   Data.Xournal.Util
+                   Data.Hoodle.Generic
+                   Data.Hoodle.Simple
+                   Data.Hoodle.BBox
+                   Data.Hoodle.Map
+                   Data.Hoodle.Buffer
+                   Data.Hoodle.Predefined 
+                   Data.Hoodle.Select
+                   Data.Hoodle.Util
   Other-Modules: 
 
  

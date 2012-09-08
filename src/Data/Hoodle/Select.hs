@@ -4,7 +4,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Select 
+-- Module      : Data.Hoodle.Select 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,11 +12,11 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- representing selection of xournal type 
+-- representing selection of hoodle type 
 -- 
 -----------------------------------------------------------------------------
 
-module Data.Xournal.Select where
+module Data.Hoodle.Select where
 
 import Control.Applicative hiding (empty)
 import Control.Compose
@@ -25,7 +25,7 @@ import Data.Monoid
 import Data.Sequence
 import Data.Traversable
 -- from this package
-import Data.Xournal.Generic
+import Data.Hoodle.Generic
 -- 
 import Prelude hiding (zipWith, length, splitAt)
 

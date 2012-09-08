@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Buffer 
+-- Module      : Data.Hoodle.Buffer 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,19 +11,20 @@
 -- Portability : GHC
 --
 
-module Data.Xournal.Buffer where
+module Data.Hoodle.Buffer where
 
 import Data.IntMap 
-import Data.Xournal.Select
--- import Data.Xournal.Simple
-import Data.Xournal.Generic
-import Data.Xournal.BBox
--- import Data.Xournal.Map
+import Data.Hoodle.Select
+-- import Data.Hoodle.Simple
+import Data.Hoodle.Generic
+import Data.Hoodle.BBox
+-- import Data.Hoodle.Map
 
 type TLayerBBoxBuf buf = GLayerBuf buf [] StrokeBBox
 
 type TPageBBoxMapBkgBuf bkg buf = GPage bkg ZipperSelect (TLayerBBoxBuf buf)
 
-type TXournalBBoxMapBkgBuf bkg buf = 
-  GXournal IntMap (TPageBBoxMapBkgBuf bkg buf)
+type THoodleBBoxMapBkgBuf bkg buf = 
+  GHoodle IntMap (TPageBBoxMapBkgBuf bkg buf)
   
+

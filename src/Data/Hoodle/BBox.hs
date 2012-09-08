@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.BBox 
+-- Module      : Data.Hoodle.BBox 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,14 +12,14 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Xournal.BBox where
+module Data.Hoodle.BBox where
 
 import Control.Applicative 
 import Control.Monad
 -- import qualified Data.Sequence as Seq
-import Data.Xournal.Generic
-import Data.Xournal.Simple
-import Data.Xournal.Util
+import Data.Hoodle.Generic
+import Data.Hoodle.Simple
+import Data.Hoodle.Util
 import Data.Strict.Tuple 
 import qualified Data.Foldable as F
 import Data.Monoid
@@ -59,7 +59,7 @@ type TLayerBBox = GLayer [] StrokeBBox
 
 type TPageBBox = GPage Background [] TLayerBBox 
 
-type TXournalBBox = GXournal [] TPageBBox
+type THoodleBBox = GHoodle [] TPageBBox
 
 instance GStrokeable StrokeBBox where  
   gFromStroke = mkStrokeBBoxFromStroke 

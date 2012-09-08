@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Simple 
+-- Module      : Data.Hoodle.Simple 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,7 +13,7 @@
 --
 ----------------------------------------------------------------------------- 
 
-module Data.Xournal.Simple where
+module Data.Hoodle.Simple where
 
 -- from other packages
 import           Control.Applicative 
@@ -24,7 +24,7 @@ import           Data.ByteString.Char8 hiding (map)
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
 -- from this package
-import           Data.Xournal.Util
+import           Data.Hoodle.Util
 -- 
 import Prelude hiding ((.),id,putStrLn,fst,snd,curry,uncurry)
 
@@ -83,7 +83,7 @@ data Background = Background { bkg_type :: !S.ByteString
                 deriving Show 
 
 -- | 
-data Xournal = Xournal { xoj_title :: !Title, xoj_pages :: ![Page] }
+data Hoodle = Hoodle { xoj_title :: !Title, xoj_pages :: ![Page] }
              deriving Show 
 
 -- | 
@@ -114,11 +114,11 @@ s_color :: Simple Lens Stroke ByteString
 s_color = lens stroke_color (\f a -> f { stroke_color = a } )
 
 -- | 
-s_title :: Simple Lens Xournal Title
+s_title :: Simple Lens Hoodle Title
 s_title = lens xoj_title (\f a -> f { xoj_title = a } )
 
 -- | 
-s_pages :: Simple Lens Xournal [Page]
+s_pages :: Simple Lens Hoodle [Page]
 s_pages = lens xoj_pages (\f a -> f { xoj_pages = a } )
 
 -- | 
@@ -142,8 +142,8 @@ s_strokes = lens layer_strokes (\f a -> f { layer_strokes = a } )
 --------------------------
 
 -- | 
-emptyXournal :: Xournal
-emptyXournal = Xournal "" [] 
+emptyHoodle :: Hoodle
+emptyHoodle = Hoodle "" [] 
 
 -- | 
 emptyLayer :: Layer 
@@ -172,8 +172,8 @@ defaultPage = Page { page_dim = Dim  612.0 792.0
                    } 
 
 -- | 
-defaultXournal :: Xournal 
-defaultXournal = Xournal "untitled" [ defaultPage  ] 
+defaultHoodle :: Hoodle 
+defaultHoodle = Hoodle "untitled" [ defaultPage  ] 
 
 -- | 
 newPageFromOld :: Page -> Page

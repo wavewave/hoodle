@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Xournal.Map 
+-- Module      : Data.Hoodle.Map 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,26 +11,26 @@
 -- Portability : GHC
 --
 
-module Data.Xournal.Map where
+module Data.Hoodle.Map where
 
 import Data.IntMap 
-import Data.Xournal.Simple
-import Data.Xournal.Generic
-import Data.Xournal.BBox
+import Data.Hoodle.Simple
+import Data.Hoodle.Generic
+import Data.Hoodle.BBox
 
 type TPageMap = GPage Background IntMap TLayerSimple 
 
-type TXournalMap = GXournal [] TPageMap 
+type THoodleMap = GHoodle [] TPageMap 
 
 type TPageBBoxMap = GPage Background IntMap TLayerBBox
 
-type TXournalBBoxMap = GXournal IntMap TPageBBoxMap
+type THoodleBBoxMap = GHoodle IntMap TPageBBoxMap
 
 type TPageBBoxMapBkg b = GPage b IntMap TLayerBBox
 
-type TXournalBBoxMapBkg b = GXournal IntMap (TPageBBoxMapBkg b)
+type THoodleBBoxMapBkg b = GHoodle IntMap (TPageBBoxMapBkg b)
 
 
-emptyGXournalMap :: GXournal IntMap a
-emptyGXournalMap = GXournal "" empty
+emptyGHoodleMap :: GHoodle IntMap a
+emptyGHoodleMap = GHoodle "" empty
 

@@ -32,10 +32,12 @@ import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter 
 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
+-- | 
 clipBBox :: Maybe BBox -> Render ()
 clipBBox (Just (BBox (x1,y1) (x2,y2))) = do {resetClip; rectangle x1 y1 (x2-x1) (y2-y1); clip}
 clipBBox Nothing = resetClip 
 
+-- | 
 clearBBox :: Maybe BBox -> Render ()        
 clearBBox Nothing = return ()
 clearBBox (Just (BBox (x1,y1) (x2,y2))) = do 
@@ -71,7 +73,11 @@ cairoOneStrokeSelected sbbox = do
       setSourceRGBA 1 1 1 1
       drawOneVWStrokeCurve d     
       fill
-  
+    Img _ _ _ -> cairoOneStrokeBBoxOnly sbbox 
+      
+    
+    
+    
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
 cairoOneStrokeBBoxOnly sbbox = do  
   let s = gToStroke sbbox
@@ -150,14 +156,11 @@ cairoDrawRulingBBox (BBox (x1,y1) (x2,y2)) w h style = do
       fullGraphYs = [0,predefined_RULING_GRAPHSPACING..h-1]
       graphXs = filter (\x->(x<=x2)&&(x>=x1)) fullGraphXs
       graphYs = filter (\y->(y<=y2)&&(y>=y1)) fullGraphYs 
-  
   let drawHorizRules = do 
       let (r,g,b,a) = predefined_RULING_COLOR         
       setSourceRGBA r g b a 
       setLineWidth predefined_RULING_THICKNESS
       mapM_ drawonerule ruleYs
-  
-  
   case style of 
     "plain" -> return () 
     "lined" -> do 

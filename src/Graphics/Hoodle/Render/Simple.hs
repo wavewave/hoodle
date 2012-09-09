@@ -25,7 +25,6 @@ import qualified Data.ByteString.Char8 as S
 
 
 -- | 
-
 drawOneStroke :: Stroke -> Render ()
 drawOneStroke s = do 
   let opacity = if stroke_tool s == "highlighter" 
@@ -45,9 +44,9 @@ drawOneStroke s = do
       setFillRule FillRuleWinding
       drawOneVWStrokeCurve d
       fill 
-    
+    Img _ _ _ -> return () 
+   
 -- | 
-  
 drawOneStrokeCurve :: [Pair Double Double] -> Render ()
 drawOneStrokeCurve ((x0 :!: y0) : xs) = do 
   x0 `seq` y0 `seq` moveTo x0 y0
@@ -55,7 +54,7 @@ drawOneStrokeCurve ((x0 :!: y0) : xs) = do
     where f (x :!: y) = x `seq` y `seq` lineTo x y 
 drawOneStrokeCurve [] = return ()
 
-
+-- | 
 drawOneVWStrokeCurve :: [(Double,Double,Double)] -> Render ()
 drawOneVWStrokeCurve [] = return ()
 drawOneVWStrokeCurve (_:[]) = return ()
@@ -77,8 +76,6 @@ drawOneVWStrokeCurve ((xo,yo,_zo) : xs) = do
 
 
 -- | general background drawing (including pdf file)
-
-
 cairoDrawBackground :: Page -> Render () 
 cairoDrawBackground page = do 
   let Dim w h = page_dim page 
@@ -88,10 +85,7 @@ cairoDrawBackground page = do
       error "in cairoDrawBackground, pdf drawing is not defined yet"
       -- cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
 
-
-
 -- | 
-    
 cairoDrawBkg :: Dimension -> Background -> Render () 
 cairoDrawBkg (Dim w h) (Background _typ col sty) = do 
   let c = M.lookup col predefined_bkgcolor  
@@ -106,6 +100,7 @@ cairoDrawBkg (Dim w h) (BackgroundPdf _typ _mdomain _mfilename _pagenum) = do
   rectangle 0 0 w h 
   fill
 
+-- | 
 cairoDrawRuling :: Double -> Double -> S.ByteString -> Render () 
 cairoDrawRuling w h style = do
   let drawHorizRules = do 
@@ -147,14 +142,13 @@ cairoDrawRuling w h style = do
       mapM_ drawonegraphhoriz [0,predefined_RULING_GRAPHSPACING..h-1]
     _ -> return ()     
 
+-- |
 cairoDrawPage :: Page -> Render ()
 cairoDrawPage page = do 
   let strokes = (layer_strokes . (!!0) . page_layers) page 
-      -- (Dim w h) = page_dim page
   cairoDrawBackground page
   setLineCap LineCapRound
   setLineJoin LineJoinRound
-
   mapM_ drawOneStroke strokes
   stroke
 

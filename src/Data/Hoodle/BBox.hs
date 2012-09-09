@@ -83,41 +83,36 @@ mkbboxF lst =
          ,bbox_lowerright=(F.maximum xs, F.maximum ys)}
 
 -- |
-
 bboxFromStroke :: Stroke -> BBox 
 bboxFromStroke (Stroke _ _ w dat) = inflate (mkbbox dat) w
 bboxFromStroke (VWStroke _ _ dat) = 
   let dat' = map ((,) <$> fst3 <*> snd3) dat 
       widthmax = F.maximum (map trd3 dat)
   in inflate (mkbboxF dat') widthmax
-   
--- |
+bboxFromStroke (Img _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
 
+
+-- |
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
 
--- | transform BBox
-         
+-- | general transform BBox         
 xformBBox :: ((Double,Double) -> (Double,Double)) -> BBox -> BBox 
 xformBBox f (BBox c1 c2) = BBox (f c1) (f c2)
 
--- |
-
+-- | inflate bbox by amount r 
 inflate :: BBox -> Double -> BBox 
 inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
 
 -- | 
-
 moveBBoxToOrigin :: BBox -> BBox 
 moveBBoxToOrigin (BBox (x0,y0) (x1,y1)) = BBox (0,0) (x1-x0,y1-y0)
 
 -- |
-
 moveBBoxByOffset :: (Double,Double) -> BBox -> BBox 
 moveBBoxByOffset (xoff,yoff) (BBox (x0,y0) (x1,y1)) = BBox (x0+xoff,y0+yoff) (x1+xoff,y1+yoff)
 
 -- |
-
 moveBBoxULCornerTo :: (Double,Double) -> BBox -> BBox 
 moveBBoxULCornerTo (x,y) b@(BBox (x0,y0) _) = moveBBoxByOffset (x-x0,y-y0) b 
 

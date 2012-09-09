@@ -41,6 +41,10 @@ data Stroke = Stroke { stroke_tool  :: !S.ByteString
                        , stroke_color :: S.ByteString 
                        , stroke_vwdata :: [(Double,Double,Double)] 
                        }
+            | Img { stroke_imgsrc :: S.ByteString
+                  , stroke_imgpos :: (Double,Double)
+                  , stroke_imgdim :: !Dimension
+                  } 
             deriving (Show,Eq,Ord)
 
 -- | 
@@ -54,10 +58,15 @@ instance SE.Serialize Stroke where
                        >> SE.put stroke_tool 
                        >> SE.put stroke_color
                        >> SE.put stroke_vwdata
+    put Img {..} = SE.putWord8 2                   
+                   >> SE.put stroke_imgsrc
+                   >> SE.put stroke_imgpos
+                   >> SE.put stroke_imgdim
     get = do tag <- SE.getWord8  
              case tag of 
                0 -> Stroke <$> SE.get <*> SE.get <*> SE.get <*> SE.get
                1 -> VWStroke <$> SE.get <*> SE.get <*> SE.get
+               2 -> Img <$> SE.get <*> SE.get <*> SE.get
                _ -> fail "err in Stroke parsing"
 -- |    
 instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
@@ -68,7 +77,12 @@ instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
     
 -- | 
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }
-               deriving Show
+               deriving (Show,Eq,Ord)
+
+-- | 
+instance SE.Serialize Dimension where 
+  put (Dim w h) = SE.put w >> SE.put h 
+  get = Dim <$> SE.get <*> SE.get
 
 -- | 
 data Background = Background { bkg_type :: !S.ByteString 
@@ -101,6 +115,7 @@ data Layer = Layer { layer_strokes :: ![Stroke] }
 getXYtuples :: Stroke -> [(Double,Double)]
 getXYtuples (Stroke _t _c _w d) = map (\(x :!: y) -> (x,y)) d
 getXYtuples (VWStroke _t _c d) = map ((,)<$>fst3<*>snd3) d 
+getXYtuples (Img _ _ _) = [] 
 
 ----------------------------
 -- Lenses

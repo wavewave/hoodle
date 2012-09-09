@@ -119,7 +119,21 @@ fromStroke stroke@(VWStroke _ _ _) =
     <> fromByteString "\">\n"
     <> mconcat (map xyFrom3DCoord (stroke_vwdata stroke))
     <> fromByteString "\n</stroke>\n"
+fromStroke (Img bstr (x,y) (Dim w h)) =
+    fromByteString "<img src=\""
+    <> fromByteString bstr
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 w)
+    <> fromByteString "\" height=\""
+    <> fromByteString (toFixed 2 h)
+    <> fromByteString "\" posx=\"" 
+    <> fromByteString (toFixed 2 x)
+    <> fromByteString "\" posy=\""
+    <> fromByteString (toFixed 2 y)
+    <> fromByteString "\" />\n"
   
+
+
 -- | 
 from2DCoord :: Pair Double Double -> Builder 
 from2DCoord (x :!: y) = fromByteString (toFixed 2 x) 

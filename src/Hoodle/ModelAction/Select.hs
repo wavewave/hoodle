@@ -95,16 +95,22 @@ changeStrokeBy func (StrokeBBox (Stroke t c w ds) _bbox) =
                             in nx :!: ny
       newds = map change ds 
       nstrk = Stroke t c w newds 
-      newbbox = bboxFromStroke nstrk 
-  in  StrokeBBox nstrk newbbox
+      nbbox = bboxFromStroke nstrk 
+  in  StrokeBBox nstrk nbbox
 changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) = 
   let change (x,y,z) = let (nx,ny) = func (x,y) 
                        in (nx,ny,z)
       newds = map change ds 
       nstrk = VWStroke t c newds 
-      newbbox = bboxFromStroke nstrk 
-  in  StrokeBBox nstrk newbbox
-changeStrokeBy func (StrokeBBox (Img bstr w h) bbox) = error "changeStrokeBy"
+      nbbox = bboxFromStroke nstrk 
+  in  StrokeBBox nstrk nbbox
+changeStrokeBy func (StrokeBBox (Img bstr (x,y) (Dim w h)) _bbox) = 
+  let (x1,y1) = func (x,y) 
+      (x2,y2) = func (x+w,y+w)
+      nimg = Img bstr (x1,y1) (Dim (x2-x1) (y2-y1))
+      nbbox = bboxFromStroke nimg
+  in StrokeBBox nimg nbbox
+  
 
 -- |
 

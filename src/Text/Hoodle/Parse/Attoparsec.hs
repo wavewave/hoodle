@@ -105,6 +105,36 @@ onestroke =  do trim
                 return $ strokeinit { stroke_data = coordlist } 
 
 -- | 
+img :: Parser Stroke 
+img = do trim 
+         string "<img"
+         trim 
+         string "src=\""
+         fsrc <- parseFileName 
+         char '"'
+         trim 
+         string "x=\""
+         posx <- double 
+         char '"'
+         trim
+         string "y=\""
+         posy <- double
+         char '"'
+         trim 
+         string "width=\""
+         width <- double
+         char '"'
+         trim 
+         string "height=\""
+         height <- double
+         char '"'
+         trim 
+         string "/>"
+         return (Img fsrc (posx,posy) (Dim width height))
+         
+         
+
+-- | 
 trim :: Parser ()
 trim = trim_starting_space
 
@@ -144,7 +174,10 @@ layer :: Parser Layer
 layer = do trim
            layerheader
            trim
-           strokes <- many onestroke
+           -- s1 <- onestroke 
+           -- s2 <- img
+           -- let strokes = [s1,s2]
+           strokes <- many (try onestroke <|> img)
            trim
            layerclose 
            return $ Layer strokes

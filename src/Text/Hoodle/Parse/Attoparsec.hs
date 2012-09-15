@@ -109,15 +109,14 @@ trim :: Parser ()
 trim = trim_starting_space
 
 -- | 
-parser_hoodle :: Parser Hoodle
-parser_hoodle = do trim
-                   xmlheader <?> "xmlheader"
-                   trim
-                   hoodle <?> "hoodle"
+-- parser_hoodle :: Parser Hoodle
+-- parser_hoodle = do 
                   
 
 hoodle :: Parser Hoodle 
-hoodle  = do trim 
+hoodle  = do trim
+             xmlheader <?> "xmlheader"
+             trim
              hoodleheader <?> "hoodleheader"
              trim
              t <- title <?> "title"

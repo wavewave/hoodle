@@ -20,6 +20,7 @@ module Hoodle.ModelAction.File where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad
+import           Data.Attoparsec 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import           Data.Maybe 
@@ -34,7 +35,8 @@ import           Data.Hoodle.Simple
 import qualified Data.Xournal.Simple as X
 import           Graphics.Hoodle.Render.BBoxMapPDF
 import           Graphics.Hoodle.Render.PDFBackground
-import qualified Text.Hoodle.Parse.Conduit as PC
+-- import qualified Text.Hoodle.Parse.Conduit as PC
+import           Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Xournal.Parse.Conduit as XP
 import           Text.Hoodle.Translate.FromXournal
 -- from this package
@@ -51,13 +53,20 @@ getFileContent (Just fname) xstate = do
     let ext = takeExtension fname
     if ext == ".hdl" 
       then do  
-        PC.parseHoodleFile fname >>= \x -> case x of  
+        bstr <- B.readFile fname
+        let r = parse PA.hoodle bstr
+        case r of 
+          Done _ h -> constructNewHoodleStateFromHoodle h xstate 
+                      >>= return . set currFileName (Just fname)
+          _ -> print r >> return xstate 
+               
+{-        PC.parseHoodleFile fname >>= \x -> case x of  
           Left str -> do
             putStrLn $ "file reading error : " ++ str 
             return xstate 
           Right hdlcontent -> do 
             nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
-            return $ set currFileName (Just fname) nxstate 
+            return $ set currFileName (Just fname) nxstate -}
       else if ext == ".xoj" 
         then do 
           XP.parseXojFile fname >>= \x -> case x of  

@@ -104,6 +104,7 @@ changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) =
       nstrk = VWStroke t c newds 
       newbbox = bboxFromStroke nstrk 
   in  StrokeBBox nstrk newbbox
+changeStrokeBy func (StrokeBBox (Img bstr w h) bbox) = error "changeStrokeBy"
 
 -- |
 
@@ -281,6 +282,7 @@ changeStrokeWidth pwidth str =
     let nstrsmpl = case strokebbox_stroke str of 
           Stroke t c _w d -> Stroke t c pwidth d
           VWStroke t c d -> Stroke t c pwidth (map (\(x,y,_z) -> (x:!:y)) d)
+          Img b w h -> Img b w h
     in str { strokebbox_stroke = nstrsmpl } 
 
 -- |

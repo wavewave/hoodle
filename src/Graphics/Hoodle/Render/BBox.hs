@@ -52,39 +52,43 @@ clearBBox (Just (BBox (x1,y1) (x2,y2))) = do
 cairoOneStrokeSelected :: StrokeBBox -> Render ()
 cairoOneStrokeSelected sbbox = do 
   let s = gToStroke sbbox 
-  case M.lookup (stroke_color s) predefined_pencolor of 
-    Just (r,g,b,a) -> setSourceRGBA r g b a
-    Nothing -> setSourceRGBA 0 0 0 1 
-  case s of
-    Stroke _ _ w d -> do  
-      setLineWidth (w * 4.0) 
-      setLineCap LineCapRound
-      setLineJoin LineJoinRound
-      drawOneStrokeCurve d
-      stroke
-      setSourceRGBA 1 1 1 1
-      setLineWidth w
-      drawOneStrokeCurve . stroke_data $ s 
-      stroke
-    VWStroke _ _ d -> do  
-      setFillRule FillRuleWinding
-      drawOneVWStrokeCurve $ map (\(x,y,z)->(x,y,4*z)) d
-      fill  
-      setSourceRGBA 1 1 1 1
-      drawOneVWStrokeCurve d     
-      fill
+  case s of     
     Img _ _ _ -> cairoOneStrokeBBoxOnly sbbox 
-      
+    _ -> do     
+      case M.lookup (stroke_color s) predefined_pencolor of 
+        Just (r,g,b,a) -> setSourceRGBA r g b a
+        Nothing -> setSourceRGBA 0 0 0 1 
+      case s of
+        Stroke _ _ w d -> do  
+          setLineWidth (w * 4.0) 
+          setLineCap LineCapRound
+          setLineJoin LineJoinRound
+          drawOneStrokeCurve d
+          stroke
+          setSourceRGBA 1 1 1 1
+          setLineWidth w
+          drawOneStrokeCurve . stroke_data $ s 
+          stroke
+        VWStroke _ _ d -> do  
+          setFillRule FillRuleWinding
+          drawOneVWStrokeCurve $ map (\(x,y,z)->(x,y,4*z)) d
+          fill  
+          setSourceRGBA 1 1 1 1
+          drawOneVWStrokeCurve d     
+          fill
+        _ -> error "in cairoOneStrokeSelected"
     
     
     
 cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
 cairoOneStrokeBBoxOnly sbbox = do  
   let s = gToStroke sbbox
-  case M.lookup (stroke_color s) predefined_pencolor of 
-    Just (r,g,b,a) -> setSourceRGBA r g b a
-    Nothing -> setSourceRGBA 0 0 0 1 
-  setLineWidth (stroke_width s) 
+  -- case M.lookup (stroke_color s) predefined_pencolor of 
+  --   Just (r,g,b,a) -> setSourceRGBA r g b a
+  --   Nothing -> setSourceRGBA 0 0 0 1 
+  setSourceRGBA 0 0 0 1
+  -- setLineWidth (stroke_width s) 
+  setLineWidth 10
   let BBox (x1,y1) (x2,y2) = strokebbox_bbox sbbox
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke

@@ -154,13 +154,13 @@ ttempPageSelectPDFBufFromTPageBBoxMapPDFBuf p =
 -- | 
 instance GCast THoodleBBoxMapPDFBuf Hoodle where
   gcast = Hoodle <$> view g_title 
-                  <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages 
+                 <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages
 
 
 -- | 
 instance GCast TTempHoodleSelectPDFBuf Hoodle where 
   gcast = Hoodle <$> gselectTitle 
-                  <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll  
+                 <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll 
 
 ----------------------      
 ----- Rendering   

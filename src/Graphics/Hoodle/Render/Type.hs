@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Graphics.Hoodle.Render.Type ( 
   module Graphics.Hoodle.Render.Type.Hitted,

@@ -27,24 +27,37 @@ import qualified Data.ByteString.Char8 as S
 -- | 
 drawOneStroke :: Stroke -> Render ()
 drawOneStroke s = do 
-  let opacity = if stroke_tool s == "highlighter" 
-                then predefined_highlighter_opacity
-                else 1.0
-  case M.lookup (stroke_color s) predefined_pencolor of
-    Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-    Nothing -> setSourceRGBA 0 0 0 1
   case s of
     Stroke _ _ w d -> do  
+      let opacity = if stroke_tool s == "highlighter" 
+                    then predefined_highlighter_opacity
+                    else 1.0
+      case M.lookup (stroke_color s) predefined_pencolor of
+        Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
+        Nothing -> setSourceRGBA 0 0 0 1
+      
       setLineWidth w
       setLineCap LineCapRound
       setLineJoin LineJoinRound
       drawOneStrokeCurve d
       stroke
     VWStroke _ _ d -> do  
+      let opacity = if stroke_tool s == "highlighter" 
+                    then predefined_highlighter_opacity
+                    else 1.0
+      case M.lookup (stroke_color s) predefined_pencolor of
+        Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
+        Nothing -> setSourceRGBA 0 0 0 1
+      
       setFillRule FillRuleWinding
       drawOneVWStrokeCurve d
       fill 
-    Img _ _ _ -> return () 
+    Img _ (x,y) (Dim w h) -> do  
+      setSourceRGBA 0 0 0 1
+      setLineWidth 10
+      rectangle x y w h
+      stroke
+
    
 -- | 
 drawOneStrokeCurve :: [Pair Double Double] -> Render ()

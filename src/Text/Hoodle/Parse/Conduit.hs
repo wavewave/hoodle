@@ -45,15 +45,10 @@ import           Debug.Trace
 import           Prelude hiding ((.),id,dropWhile)
  
 
--- import Data.Enumerator as E hiding (foldl')
--- import qualified Data.Enumerator.List as EL
--- import Data.Enumerator.Binary (enumHandle, enumFile)
--- import qualified Codec.Zlib.Enum as EZ
 
 -- * utils 
 
 -- |
-
 dropWhile :: (Show a, Monad m) => (a -> Bool) -> Sink a m () 
 dropWhile p = do 
   x <- peek 
@@ -63,46 +58,26 @@ dropWhile p = do
               then CL.drop 1 >> dropWhile p 
               else return ()
 
--- | 
-{-
-lookAhead :: Monad m => Sink a m (Maybe a)
-lookAhead = continue loop where
-  loop (Chunks []) = lookAhead
-  loop (Chunks (x:xs)) = yield (Just x) (Chunks (x:xs))
-  loop EOF = yield Nothing EOF
--}
-
--- |             
-{-
-trc :: (Show a) => String -> a -> b -> b
-trc str a b = trace (str ++ ":" ++ show a) b 
--}                     
 -- |
-
 flipap :: a -> (a -> b) -> b
 flipap = flip ($)
 
 -- | 
-
 unit :: (Monad m) => m () 
 unit = return ()
 
 -- | 
- 
 skipspace :: T.Text -> T.Text 
 skipspace = T.dropWhile (\c->(c==' ') || (c=='\n') || (c=='\r'))       
     
 -- | 
-
 many0event :: Monad m => 
               (T.Text,T.Text) 
               -> (Event -> Sink Event m (Either String a))
               -> Sink Event m (Either String [a])
 many0event (start,end) iter = many1eventWrkr (start,end) id iter 
 
-
 -- | 
-
 many1event :: Monad m => 
               (T.Text,T.Text) 
               -> (Event -> Sink Event m (Either String a))
@@ -119,7 +94,6 @@ many1event (start,end) iter = do
                          in many1eventWrkr (start,end) acc iter)
   
 -- |    
-  
 many1eventWrkr :: Monad m => 
                   (T.Text,T.Text) 
                   -> ( [a] -> [a]  ) 
@@ -144,7 +118,6 @@ many1eventWrkr (start,end) acc iter =
   
   
 -- | 
-
 drop2NextStartOrEnd :: (Monad m) => 
                        Sink Event m (Either (T.Text,Event) T.Text)
 drop2NextStartOrEnd = do 
@@ -162,7 +135,6 @@ drop2NextStartOrEnd = do
 -- * parsers 
 
 -- | parse whole hoodle file 
-
 pHoodle :: Monad m => Sink Event m (Either String Hoodle)
 pHoodle = do  
   dropWhile (not.isStart "hoodle")
@@ -174,7 +146,6 @@ pHoodle = do
        (return $ Hoodle <$> title <*> pages ))  
  
 -- | parse one page 
-
 pPage :: Monad m => Event -> Sink Event m (Either String Page)
 pPage ev = do let dim = getDimension ev 
               bkg <- pBkg
@@ -183,8 +154,7 @@ pPage ev = do let dim = getDimension ev
               CL.drop 1 
               return (Page <$> dim <*> bkg <*> layers )  
 
--- | 
-              
+-- |               
 pTitle :: Monad m => Sink Event m (Either String S.ByteString) 
 pTitle = do dropWhile (not.isStart "title")
             CL.drop 1 
@@ -196,10 +166,8 @@ pTitle = do dropWhile (not.isStart "title")
                                return (encodeUtf8 <$> title) )
 
 -- | 
-
 pBkg :: Monad m => Sink Event m (Either String Background) 
 pBkg = do dropWhile (not.isStart "background")
-          -- CL.drop 1 
           CL.head >>= 
             maybe (return (Left "not background"))
                   (\ev -> do let bkg = getBackground ev 
@@ -207,20 +175,17 @@ pBkg = do dropWhile (not.isStart "background")
                              CL.drop 1 
                              return bkg) 
 
--- | 
-          
+-- |           
 pLayer :: Monad m => Event -> Sink Event m (Either String Layer) 
 pLayer ev = do strokes <- many0event ("stroke","layer") pStroke 
                dropWhile (not.isEnd "layer")
                CL.drop 1 
                return (Layer <$> strokes)
 
--- | 
-               
+-- |                
 pStroke :: Monad m => Event -> Sink Event m (Either String Stroke) 
 pStroke ev = do 
   let estr1wdth = getStroke ev 
-  -- trc "pStroke" estr1wdth unit 
   CL.head >>= 
     maybe (return (Left "pStroke ecoord"))
           (\elm -> do 
@@ -237,9 +202,7 @@ pStroke ev = do
               return $ rfunc <$> ctnt <*> estr1wdth)
 
 -- * for each event 
-
 -- |             
-
 getStrokeContent :: ([Pair Double Double] -> [Pair Double Double])
                     -> T.Text
                     -> Either String [Pair Double Double]
@@ -252,7 +215,6 @@ getStrokeContent acc txt =
        Right (pxy,rest2) -> getStrokeContent (acc . (pxy:)) rest2
 
 -- | 
- 
 getStroke :: Event -> Either String (Stroke,StrokeWidth) 
 getStroke (EventBeginElement _name namecontent) = 
     foldl' f (Right (Stroke "" "" 0 [],SingleWidth 0)) namecontent 
@@ -274,12 +236,10 @@ getStroke _ = Left "not a stroke"
 
 
 -- | 
-
 data StrokeWidth = SingleWidth Double | VarWidth [Double]
                  deriving Show
   
 -- |
-
 getWidth :: ([Double] -> [Double])
             -> T.Text 
             -> Either String StrokeWidth
@@ -293,7 +253,6 @@ getWidth acc txt =
 
 
 -- | 
-       
 getBackground :: Event -> Either String Background
 getBackground (EventBeginElement _name namecontent) = 
     foldl' f (Right (Background "" "" "")) namecontent 
@@ -336,7 +295,6 @@ getBackground (EventBeginElement _name namecontent) =
 getBackground _ = Left "not a background"
            
 -- | 
-
 getDimension :: Event -> Either String Dimension            
 getDimension (EventBeginElement _name namecontent) = 
     foldl' f (Right (Dim 0 0)) namecontent 
@@ -353,7 +311,6 @@ getDimension (EventBeginElement _name namecontent) =
 getDimension r = Left ("not a dimension : " ++ show r)
 
 -- | get Content   
-
 getContent :: Event -> Either String T.Text
 getContent (EventContent (ContentText txt)) = Right txt 
 getContent r = Left ("no content" ++ show r)
@@ -362,20 +319,17 @@ getContent r = Left ("no content" ++ show r)
 -- * predicates 
 
 -- | 
-
 isEventStartEnd :: Event -> Bool 
 isEventStartEnd (EventBeginElement _ _) = True
 isEventStartEnd (EventEndElement _ ) = True
 isEventStartEnd _ = False 
 
 -- | check start of element with name txt  
-  
 isStart :: T.Text -> Event -> Bool 
 isStart txt (EventBeginElement name _) = nameLocalName name == txt
 isStart _ _ = False 
 
 -- | check end of element with name txt 
-
 isEnd :: T.Text -> Event -> Bool
 isEnd txt (EventEndElement name) = nameLocalName name == txt 
 isEnd _ _ = False 
@@ -384,14 +338,10 @@ isEnd _ _ = False
 -- * driver routines 
 
 -- | generic xml file driver
-
 parseXmlFile :: (MonadThrow m, MonadIO m) => Handle -> Sink Event m a -> m a
 parseXmlFile h iter = sourceHandle h =$= parseBytes def $$ iter 
-  -- enumHandle 4096 h $$ joinI $ parseBytes def $$ iter 
-
 
 -- | for hoodle 
-
 parseHoodleFile :: FilePath -> IO (Either String Hoodle)
 parseHoodleFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pHoodle 
 
@@ -412,6 +362,4 @@ iterPrint :: (Show s,MonadIO m) => Sink s m ()
 iterPrint = do
   x <- CL.head
   maybe (return ()) (liftIO . print >=> \_ -> iterPrint) x
-
-
 

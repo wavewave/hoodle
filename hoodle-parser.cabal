@@ -37,6 +37,7 @@ Library
                  zlib-conduit == 0.5.*
   Exposed-Modules: 
                    Text.Hoodle.Parse
+                   Text.Hoodle.Parse.Attoparsec
                    Text.Hoodle.Parse.Conduit
                    Text.Hoodle.Parse.Zlib
                    Text.Hoodle.Translate.FromXournal

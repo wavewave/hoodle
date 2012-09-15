@@ -122,14 +122,14 @@ fromStroke stroke@(VWStroke _ _ _) =
 fromStroke (Img bstr (x,y) (Dim w h)) =
     fromByteString "<img src=\""
     <> fromByteString bstr
+    <> fromByteString "\" x=\"" 
+    <> fromByteString (toFixed 2 x)
+    <> fromByteString "\" y=\""
+    <> fromByteString (toFixed 2 y)
     <> fromByteString "\" width=\""
     <> fromByteString (toFixed 2 w)
     <> fromByteString "\" height=\""
     <> fromByteString (toFixed 2 h)
-    <> fromByteString "\" posx=\"" 
-    <> fromByteString (toFixed 2 x)
-    <> fromByteString "\" posy=\""
-    <> fromByteString (toFixed 2 y)
     <> fromByteString "\" />\n"
   
 

@@ -47,6 +47,7 @@ Library
 
 
   Exposed-Modules: 
+                   Graphics.Hoodle.Render.SimpleNew 
                    Graphics.Hoodle.Render.Simple
                    Graphics.Hoodle.Render.BBox
                    Graphics.Hoodle.Render.Generic
@@ -55,6 +56,7 @@ Library
                    Graphics.Hoodle.Render.HitTest
                    Graphics.Hoodle.Render.Type
                    Graphics.Hoodle.Render.Type.Hitted
+                   Graphics.Hoodle.Render.Type.HoodleRender 
                    Graphics.Hoodle.Render.Type.Select
 
   if flag(poppler)

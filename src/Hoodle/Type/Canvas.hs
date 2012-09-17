@@ -67,7 +67,7 @@ module Hoodle.Type.Canvas
 , boxAction
 , selectBoxAction
 , selectBox
-, pageArrEitherFromCanvasInfoBox
+-- , pageArrEitherFromCanvasInfoBox
 , viewModeBranch
 -- * others
 -- , getPage
@@ -223,35 +223,30 @@ boxAction f (CanvasInfoBox cinfo) = f cinfo
 -- | either-like operation
 selectBoxAction :: (Monad m) => 
                    (CanvasInfo SinglePage -> m a) 
-                -> (CanvasInfo ContinuousSinglePage -> m a) -> CanvasInfoBox -> m a 
+                -> (CanvasInfo ContinuousPage -> m a) -> CanvasInfoBox -> m a 
 selectBoxAction fsingle fcont (CanvasInfoBox cinfo) = 
   case view (viewInfo.pageArrangement) cinfo of 
     SingleArrangement _ _ _ ->  fsingle cinfo 
-    ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
+    ContinuousArrangement _ _ _ _ -> fcont cinfo 
 
 -- |     
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
-          -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage)
+          -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
           -> CanvasInfoBox -> CanvasInfoBox 
 selectBox fsingle fcont = 
   let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
       idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
   in runIdentity . idaction   
 
--- | 
-pageArrEitherFromCanvasInfoBox :: CanvasInfoBox 
-                 -> Either (PageArrangement SinglePage) (PageArrangement ContinuousSinglePage)
-pageArrEitherFromCanvasInfoBox (CanvasInfoBox cinfo) = 
-  pageArrEither . view (viewInfo.pageArrangement) $ cinfo 
 
 -- | 
 viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
-               -> (CanvasInfo ContinuousSinglePage -> CanvasInfo ContinuousSinglePage) 
+               -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage) 
                -> CanvasInfo v -> CanvasInfo v 
 viewModeBranch fsingle fcont cinfo = 
   case view (viewInfo.pageArrangement) cinfo of 
     SingleArrangement _ _ _ ->  fsingle cinfo 
-    ContinuousSingleArrangement _ _ _ _ -> fcont cinfo 
+    ContinuousArrangement _ _ _ _ -> fcont cinfo 
 
 -- |
 type CanvasInfoMap = M.IntMap CanvasInfoBox
@@ -344,15 +339,22 @@ updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo =
 
 updateCanvasDimForContSingle :: PageDimension 
                                 -> CanvasDimension 
-                                -> CanvasInfo ContinuousSinglePage 
-                                -> CanvasInfo ContinuousSinglePage 
+                                -> CanvasInfo ContinuousPage 
+                                -> CanvasInfo ContinuousPage 
 updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = 
   let zmode = view (viewInfo.zoomMode) cinfo
-      ContinuousSingleArrangement _ ddim  func (ViewPortBBox bbox) 
+      ContinuousArrangement _ ddim  func (ViewPortBBox bbox) 
         = view (viewInfo.pageArrangement) cinfo
       (x,y) = bbox_upperleft bbox 
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
-      arr' = ContinuousSingleArrangement cdim ddim func (ViewPortBBox nbbox)
+      arr' = ContinuousArrangement cdim ddim func (ViewPortBBox nbbox)
   in set (viewInfo.pageArrangement) arr' cinfo
      
+{- 
+-- | 
+pageArrEitherFromCanvasInfoBox :: CanvasInfoBox 
+                 -> Either (PageArrangement SinglePage) (PageArrangement ContinuousPage)
+pageArrEitherFromCanvasInfoBox (CanvasInfoBox cinfo) = 
+  pageArrEither . view (viewInfo.pageArrangement) $ cinfo 
+-}

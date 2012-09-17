@@ -111,7 +111,7 @@ updateCvsInfoFrmHoodle hdl cinfobox = selectBoxAction fsingle fcont cinfobox
           let ulcoord = maybeError "updateCvsFromHoodle" $ 
                           desktop2Page geometry (DeskCoord (xdesk,ydesk))
           let cdim = canvasDim geometry 
-          let arr = makeContinuousSingleArrangement zmode cdim hdl ulcoord 
+          let arr = makeContinuousArrangement zmode cdim hdl ulcoord 
           return . CanvasInfoBox
                  . set currentPageNum pagenum  
                  . set (viewInfo.pageArrangement) arr $ cinfo 
@@ -152,16 +152,16 @@ setPageSingle xstate pnum cinfo = do
   return $ set currentPageNum (unPageNum pnum)
            . set (viewInfo.pageArrangement) arr $ cinfo 
 
--- | setPageCont : in ContinuousSingle Page mode   
+-- | setPageCont : in Continuous Page mode   
 setPageCont :: HoodleState -> PageNum  
-            -> CanvasInfo ContinuousSinglePage
-            -> IO (CanvasInfo ContinuousSinglePage)
+            -> CanvasInfo ContinuousPage
+            -> IO (CanvasInfo ContinuousPage)
 setPageCont xstate pnum cinfo = do 
   let hdl = getHoodle xstate
   geometry <- getCvsGeomFrmCvsInfo cinfo
   let cdim = canvasDim geometry 
       zmode = view (viewInfo.zoomMode) cinfo
-      arr = makeContinuousSingleArrangement zmode cdim hdl (pnum,PageCoord (0,0))  
+      arr = makeContinuousArrangement zmode cdim hdl (pnum,PageCoord (0,0))  
   return $ set currentPageNum (unPageNum pnum)
            . set (viewInfo.pageArrangement) arr $ cinfo 
 

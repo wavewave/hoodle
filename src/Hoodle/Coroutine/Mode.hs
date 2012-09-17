@@ -118,9 +118,8 @@ viewModeChange command = do
               (hadj,vadj) = view adjustments cinfo 
           (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
 
-          let arr = makeContinuousSingleArrangement zmode cdim (getHoodle xstate) 
+          let arr = makeContinuousArrangement zmode cdim (getHoodle xstate) 
                                                     (cpn, PageCoord (xpos,ypos))
-              -- ContinuousSingleArrangement _ (DesktopDimension (Dim w h)) _ _ = arr  
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
           let vinfo = view viewInfo cinfo 

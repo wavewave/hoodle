@@ -42,16 +42,16 @@ import Prelude hiding ((.),id)
 data DrawingFunctionSet = 
   DrawingFunctionSet { singleEditDraw :: DrawingFunction SinglePage EditMode
                      , singleSelectDraw :: DrawingFunction SinglePage SelectMode
-                     , contEditDraw :: DrawingFunction ContinuousSinglePage EditMode
-                     , contSelectDraw :: DrawingFunction ContinuousSinglePage SelectMode 
+                     , contEditDraw :: DrawingFunction ContinuousPage EditMode
+                     , contSelectDraw :: DrawingFunction ContinuousPage SelectMode 
                      }
 
 -- | 
 invalidateGeneral :: CanvasId -> Maybe BBox 
                   -> DrawingFunction SinglePage EditMode
                   -> DrawingFunction SinglePage SelectMode
-                  -> DrawingFunction ContinuousSinglePage EditMode
-                  -> DrawingFunction ContinuousSinglePage SelectMode
+                  -> DrawingFunction ContinuousPage EditMode
+                  -> DrawingFunction ContinuousPage SelectMode
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do 
     xst <- get 
@@ -70,7 +70,7 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
               liftIO (unSinglePageDraw drawfsel isCurrentCvs
                         <$> view drawArea <*> pure (cpn,tpage) 
                         <*> view viewInfo <*> pure mbbox $ cvsInfo )
-        fcont :: HoodleState -> CanvasInfo ContinuousSinglePage -> MainCoroutine () 
+        fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
         fcont xstate cvsInfo = do 
           let hdlmodst = view hoodleModeState xstate 
               isCurrentCvs = cid == getCurrentCanvasId xstate

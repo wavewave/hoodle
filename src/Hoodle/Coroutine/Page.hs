@@ -120,7 +120,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
               hdl = getHoodle xstate 
               origcoord = either (const (cpn,PageCoord (0,0))) id 
                             (getCvsOriginInPage geometry)
-              narr = makeContinuousSingleArrangement zmode cdim hdl origcoord
+              narr = makeContinuousArrangement zmode cdim hdl origcoord
               ncinfobox = CanvasInfoBox
                           . set (viewInfo.pageArrangement) narr
                           . set (viewInfo.zoomMode) zmode $ cinfo

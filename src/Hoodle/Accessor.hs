@@ -170,7 +170,7 @@ printCanvasMode cid cvsInfo = do
   let zmode = unboxGet (viewInfo.zoomMode) cvsInfo
       f :: PageArrangement a -> String 
       f (SingleArrangement _ _ _) = "SingleArrangement"
-      f (ContinuousSingleArrangement _ _ _ _) = "ContinuousSingleArrangement"
+      f (ContinuousArrangement _ _ _ _) = "ContinuousArrangement"
       g :: CanvasInfo a -> String 
       g cinfo = f . view (viewInfo.pageArrangement) $ cinfo
       arrmode :: String 

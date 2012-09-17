@@ -70,7 +70,7 @@ makeCanvasGeometry cpn arr canvas = do
                                                , vbbox
                                                , DeskCoord . unPageCoord . snd
                                                , \(DeskCoord coord) ->Just (cpn,(PageCoord coord)) )
-          ContinuousSingleArrangement _ ddim pfunc vbbox -> 
+          ContinuousArrangement _ ddim pfunc vbbox -> 
             ( ddim, vbbox, makePage2Desktop pfunc, makeDesktop2Page pfunc ) 
   let s2c = xformScreen2Canvas corig
       c2s = xformCanvas2Screen corig

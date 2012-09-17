@@ -67,7 +67,7 @@ newtype SinglePageDraw a =
 newtype ContPageDraw a = 
   ContPageDraw 
   { unContPageDraw :: Bool
-                      -> CanvasInfo ContinuousSinglePage 
+                      -> CanvasInfo ContinuousPage 
                       -> Maybe BBox 
                       -> Hoodle a 
                       -> IO () }
@@ -78,7 +78,7 @@ type instance DrawingFunction SinglePage = SinglePageDraw
 
 -- | 
 
-type instance DrawingFunction ContinuousSinglePage = ContPageDraw
+type instance DrawingFunction ContinuousPage = ContPageDraw
 
 -- | 
 
@@ -222,7 +222,7 @@ emphasisCanvasRender pcolor geometry = do
 -- |
 
 drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
-                   -> DrawingFunction ContinuousSinglePage EditMode
+                   -> DrawingFunction ContinuousPage EditMode
 drawContPageGen render = ContPageDraw func 
   where func isCurrentCvs cinfo mbbox hdl = do 
           let arr = view (viewInfo.pageArrangement) cinfo
@@ -274,7 +274,7 @@ cairoBBox bbox = do
 
 drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                       -> ((PageNum, Page SelectMode) -> Maybe BBox -> Render ())
-                      -> DrawingFunction ContinuousSinglePage SelectMode
+                      -> DrawingFunction ContinuousPage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
   where func isCurrentCvs cinfo mbbox thdl = do 
           let arr = view (viewInfo.pageArrangement) cinfo
@@ -335,7 +335,7 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
 
 -- | 
         
-drawContHoodleClearly :: DrawingFunction ContinuousSinglePage EditMode
+drawContHoodleClearly :: DrawingFunction ContinuousPage EditMode
 drawContHoodleClearly = 
   drawContPageGen $ \(_,page) _mbbox -> 
                        cairoRenderOption (DrawBkgPDF,DrawFull) 
@@ -343,7 +343,7 @@ drawContHoodleClearly =
 
 -- |
 
-drawContHoodleSelClearly :: DrawingFunction ContinuousSinglePage SelectMode
+drawContHoodleSelClearly :: DrawingFunction ContinuousPage SelectMode
 drawContHoodleSelClearly = drawContPageSelGen renderother renderselect 
   where renderother (_,page) _mbbox  = 
           cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )    
@@ -366,7 +366,7 @@ drawSelBuf = drawFuncSelGen rencont rensel
           cairoHittedBoxDraw tpg mbbox  
              
 -- | 
-drawContHoodleBuf :: DrawingFunction ContinuousSinglePage EditMode
+drawContHoodleBuf :: DrawingFunction ContinuousPage EditMode
 drawContHoodleBuf = 
   drawContPageGen $ \(_,page) mbbox -> 
                        cairoRenderOption (InBBoxOption mbbox) (InBBox page)   

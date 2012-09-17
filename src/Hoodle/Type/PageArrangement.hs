@@ -154,16 +154,25 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       cnstrnt = DesktopWidthConstrained (cw/sinvx)     
       (PageOrigin (x0,y0),_) = maybeError "makeContArr" $ pageArrFuncCont cnstrnt hdl pnum 
-      (x1,y1) = (0,0) -- for the time being (xpos+x0,ypos+y0)
-      (x2,y2) = (cw/sinvx,ch/sinvy) -- for the time being (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy)
+      (x1,y1) = (xpos+x0,ypos+y0) 
+      (x2,y2) = (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy) 
       ddim@(DesktopDimension (Dim w h)) = deskDimCont cnstrnt hdl 
-      (x1',x2') = if x2 > w && w-(x2-x1) > 0 then (w-(x2-x1),w) else (x1,x2)
-      (y1',y2') = if y2 > h && h-(y2-y1) > 0 then (h-(y2-y1),h) else (y1,y2)
+      (x1',x2') 
+        | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
+        | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
+        | otherwise            = (x1,x2)
+      (y1',y2') 
+        | y2>h && h-(y2-y1)>0  = (h-(y2-y1),h)
+        | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
+        | otherwise            = (y1,y2)
       vport = ViewPortBBox (BBox (x1',y1') (x2',y2') )
   in trace ("ddim = " ++ show ddim ++ 
             "\n(x0,y0) = " ++ show (x0,y0) ++
             "\n(xpos,ypos) = " ++ show (xpos,ypos) ++ 
-            "\nvport = " ++ show vport ) 
+            "\nvport = " ++ show vport ++
+            "\n(x1,y1) = " ++ show (x1,y1) ++ 
+            "\n(x2,y2) = " ++ show (x2,y2)
+             ) 
      
      
      $  ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport 

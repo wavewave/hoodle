@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GADTs, TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -18,6 +18,7 @@ module Hoodle.View.Coordinate where
 import           Control.Applicative
 import           Control.Category
 import           Control.Lens
+import           Control.Monad 
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Monoid
@@ -80,24 +81,37 @@ makeCanvasGeometry cpn arr canvas = do
                           deskdim cvsvbbox s2c c2s c2d d2c d2p p2d
     
 -- |
- 
-makePage2Desktop :: (PageNum -> Maybe PageOrigin) 
-                    -> (PageNum,PageCoordinate) -> DesktopCoordinate
+makePage2Desktop :: (PageNum -> Maybe (PageOrigin,PageDimension)) 
+                 -> (PageNum,PageCoordinate) 
+                 -> DesktopCoordinate
 makePage2Desktop pfunc (pnum,PageCoord (x,y)) = 
-  maybe (DeskCoord (-100,-100)) (\(PageOrigin (x0,y0)) -> DeskCoord (x0+x,y0+y)) (pfunc pnum) 
+  maybe (DeskCoord (-100,-100)) -- temporary 
+        (\(PageOrigin (x0,y0),_) -> DeskCoord (x0+x,y0+y)) 
+        (pfunc pnum) 
      
 -- | 
-
-makeDesktop2Page :: (PageNum -> Maybe PageOrigin) -> DesktopCoordinate 
-                    -> Maybe (PageNum, PageCoordinate)
+makeDesktop2Page :: (PageNum -> Maybe (PageOrigin,PageDimension)) 
+                 -> DesktopCoordinate 
+                 -> Maybe (PageNum, PageCoordinate)
 makeDesktop2Page pfunc (DeskCoord (x,y)) =
-  let (prev,_next) = break (y<) . map (snd.unPageOrigin) . catMaybes
-                    . takeWhile isJust . map (pfunc.PageNum) $ [0..] 
-  in Just (PageNum (length prev-1),PageCoord (x,y- last prev)) 
-
+    if null matched 
+      then Nothing 
+      else let (pagenum,(PageOrigin (x0,y0),_)) = head matched  
+           in Just (pagenum, PageCoord (x-x0,y-y0))
+  where condition (_,(PageOrigin (x0,y0),PageDimension (Dim w h))) = 
+          x >= x0 && x < x0+w && y >= y0 && y < y0+h 
+        matched = filter condition -- break undefined --  (\(x',y')->(y<y') ) 
+                  . catMaybes
+                  . takeWhile isJust 
+                  . map ((\x-> liftM (x,) (pfunc x)) . PageNum)
+                  $ [0..] 
     
+
+{-  let 
+    in undefined -- Just (PageNum (length prev-1),PageCoord (x,y- last prev)) -}
+
+
 -- |   
-  
 xformScreen2Canvas :: CanvasOrigin -> ScreenCoordinate -> CanvasCoordinate
 xformScreen2Canvas (CanvasOrigin (x0,y0)) (ScrCoord (sx,sy)) = CvsCoord (sx-x0,sy-y0)
 

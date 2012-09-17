@@ -29,6 +29,7 @@ import Hoodle.Type.Alias
 import Hoodle.Util
 -- 
 import Prelude hiding ((.),id)
+import Debug.Trace
 
 -- | 
 
@@ -112,7 +113,7 @@ data PageArrangement a where
                     -> PageArrangement SinglePage 
   ContinuousArrangement :: CanvasDimension  
                         -> DesktopDimension 
-                        -> (PageNum -> Maybe PageOrigin) 
+                        -> (PageNum -> Maybe (PageOrigin,PageDimension)) 
                         -> ViewPortBBox 
                         -> PageArrangement ContinuousPage
 
@@ -152,30 +153,37 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
   let dim = view g_dimension . head . gToList . view g_pages $ hdl
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       cnstrnt = DesktopWidthConstrained (cw/sinvx)     
-      PageOrigin (x0,y0) = maybeError "makeContArr" $ pageArrFuncCont cnstrnt hdl pnum 
-      (x1,y1) = (xpos+x0,ypos+y0)
-      (x2,y2) = (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy)
+      (PageOrigin (x0,y0),_) = maybeError "makeContArr" $ pageArrFuncCont cnstrnt hdl pnum 
+      (x1,y1) = (0,0) -- for the time being (xpos+x0,ypos+y0)
+      (x2,y2) = (cw/sinvx,ch/sinvy) -- for the time being (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy)
       ddim@(DesktopDimension (Dim w h)) = deskDimCont cnstrnt hdl 
       (x1',x2') = if x2 > w && w-(x2-x1) > 0 then (w-(x2-x1),w) else (x1,x2)
       (y1',y2') = if y2 > h && h-(y2-y1) > 0 then (h-(y2-y1),h) else (y1,y2)
       vport = ViewPortBBox (BBox (x1',y1') (x2',y2') )
-  in ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport 
+  in trace ("ddim = " ++ show ddim ++ 
+            "\n(x0,y0) = " ++ show (x0,y0) ++
+            "\n(xpos,ypos) = " ++ show (xpos,ypos) ++ 
+            "\nvport = " ++ show vport ) 
+     
+     
+     $  ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport 
 
 
 -- |
 pageArrFuncCont :: DesktopConstraint
                 -> Hoodle EditMode 
                 -> PageNum 
-                -> Maybe PageOrigin 
+                -> Maybe (PageOrigin,PageDimension) 
 pageArrFuncCont (DesktopWidthConstrained w') hdl (PageNum n)
   | n < 0 = Nothing 
   | n >= len = Nothing 
-  | otherwise = Just (PageOrigin (xys !! n))
+  | otherwise = Just (PageOrigin (xys !! n), PageDimension (pdims !! n))
   where addf (x,y) (w,h) = if x+2*w+predefinedPageSpacing < w'   
                              then (x+w+predefinedPageSpacing,y)
                              else (0,y+h+predefinedPageSpacing)
         pgs = gToList . view g_pages $ hdl 
         len = length pgs 
+        pdims = map (view g_dimension) pgs 
         wh2xyFrmPg = ((,) <$> dim_width <*> dim_height) . view g_dimension
         xys = scanl addf (0,0) . map wh2xyFrmPg $ pgs  
 
@@ -185,53 +193,13 @@ deskDimCont cnstrnt hdl =
     let pgs = gToList . view g_pages $ hdl
         len = length pgs 
         olst = map (fromJust . pageArrFuncCont cnstrnt hdl . PageNum) [0..len-1] 
-        dlst = map (view g_dimension) pgs
-        odlst = zip olst dlst
-        f (PageOrigin (x,y),Dim w h) (Dim w' h') = 
+        -- dlst = map (view g_dimension) pgs
+        -- odlst = zip olst dlst
+        f (PageOrigin (x,y),PageDimension (Dim w h)) (Dim w' h') = 
           let w'' = if w' < x+w then x+w else w' 
               h'' = if h' < y+h then y+h else h' 
           in Dim w'' h''
-    in DesktopDimension $ foldr f (Dim 0 0) odlst
-      
-{-      PageOrigin (w',h') = maybeError 
-                         ("deskdimCont" ++ 
-                          show (map (pageArrFuncCont cdim hdl . PageNum) [0..5])) 
-                         $ pageArrFuncCont cdim hdl 
-                             (PageNum . (\x->x-1) . length $ plst ) 
-      Dim _ h2 = view g_dimension (last plst)
-      h = h' + h2 
-      w = maximum . map (dim_width.view g_dimension) $ plst
-  in DesktopDimension (Dim w h) -}
-
-
-{- --- previous version 
--- |
-pageArrFuncCont :: Hoodle EditMode -> PageNum -> Maybe PageOrigin 
-pageArrFuncCont hdl (PageNum n)
-  | n < 0 = Nothing 
-  | n >= len = Nothing 
-  | otherwise = Just (PageOrigin (0,ys !! n))
-  where addf x y = x + y + predefinedPageSpacing
-        pgs = gToList . view g_pages $ hdl 
-        len = length pgs 
-        ys = scanl addf 0 . map (dim_height.view g_dimension) $ pgs  
--}
-        
-{- --- previous version 
--- |
-deskDimCont :: Hoodle EditMode -> DesktopDimension 
-deskDimCont hdl = 
-  let plst = gToList . view g_pages $ hdl
-      PageOrigin (_,h') = maybeError 
-                         ("deskdimCont" ++ 
-                          show (map (pageArrFuncCont hdl . PageNum) [0..5])) 
-                         $ pageArrFuncCont hdl 
-                             (PageNum . (\x->x-1) . length $ plst )
-      Dim _ h2 = view g_dimension (last plst)
-      h = h' + h2 
-      w = maximum . map (dim_width.view g_dimension) $ plst
-  in DesktopDimension (Dim w h)
--}
+    in DesktopDimension $ foldr f (Dim 0 0) olst
 
 ------------
 -- lenses
@@ -289,6 +257,47 @@ pageArrEither :: PageArrangement a
 pageArrEither arr@(SingleArrangement _ _ _) = Left arr 
 pageArrEither arr@(ContinuousSingleArrangement _ _ _ _) = Right arr 
 
+-}
+
+      
+{-      PageOrigin (w',h') = maybeError 
+                         ("deskdimCont" ++ 
+                          show (map (pageArrFuncCont cdim hdl . PageNum) [0..5])) 
+                         $ pageArrFuncCont cdim hdl 
+                             (PageNum . (\x->x-1) . length $ plst ) 
+      Dim _ h2 = view g_dimension (last plst)
+      h = h' + h2 
+      w = maximum . map (dim_width.view g_dimension) $ plst
+  in DesktopDimension (Dim w h) -}
+
+
+{- --- previous version 
+-- |
+pageArrFuncCont :: Hoodle EditMode -> PageNum -> Maybe PageOrigin 
+pageArrFuncCont hdl (PageNum n)
+  | n < 0 = Nothing 
+  | n >= len = Nothing 
+  | otherwise = Just (PageOrigin (0,ys !! n))
+  where addf x y = x + y + predefinedPageSpacing
+        pgs = gToList . view g_pages $ hdl 
+        len = length pgs 
+        ys = scanl addf 0 . map (dim_height.view g_dimension) $ pgs  
+-}
+        
+{- --- previous version 
+-- |
+deskDimCont :: Hoodle EditMode -> DesktopDimension 
+deskDimCont hdl = 
+  let plst = gToList . view g_pages $ hdl
+      PageOrigin (_,h') = maybeError 
+                         ("deskdimCont" ++ 
+                          show (map (pageArrFuncCont hdl . PageNum) [0..5])) 
+                         $ pageArrFuncCont hdl 
+                             (PageNum . (\x->x-1) . length $ plst )
+      Dim _ h2 = view g_dimension (last plst)
+      h = h' + h2 
+      w = maximum . map (dim_width.view g_dimension) $ plst
+  in DesktopDimension (Dim w h)
 -}
 
 

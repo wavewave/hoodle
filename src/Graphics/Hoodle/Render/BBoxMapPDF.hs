@@ -16,16 +16,16 @@
 
 module Graphics.Hoodle.Render.BBoxMapPDF where
 
-import Control.Applicative
-import Data.Foldable 
-import Data.IntMap
-import Data.Traversable 
-
+-- from others
+import           Control.Applicative
 import           Control.Category
 import           Control.Compose
 import           Control.Lens
 import           Control.Monad.State hiding (get, mapM_, mapM,sequence)
 import qualified Control.Monad.State as St (get)
+import           Data.Foldable 
+import           Data.IntMap
+import           Data.Traversable 
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
@@ -110,9 +110,11 @@ tlayerbufFromTLayerSelectBuf l =
     Right alist -> GLayerBuf (view g_buffer l) . Prelude.concat 
                    $ interleave id unHitted alist
   
+{-
 -- | 
 instance GCast TTempPageSelectPDF TPageBBoxMapPDF where      
   gcast = tpageBBoxMapPDFFromTTempPageSelectPDF
+-}
 
 -- |   
 instance GCast TTempPageSelectPDFBuf TPageBBoxMapPDFBuf where      
@@ -156,7 +158,6 @@ instance GCast THoodleBBoxMapPDFBuf Hoodle where
   gcast = Hoodle <$> view g_title 
                  <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages
 
-
 -- | 
 instance GCast TTempHoodleSelectPDFBuf Hoodle where 
   gcast = Hoodle <$> gselectTitle 
@@ -164,6 +165,7 @@ instance GCast TTempHoodleSelectPDFBuf Hoodle where
 
 ----------------------      
 ----- Rendering   
+----------------------
 
 -- | 
 newtype InBBox a = InBBox a
@@ -344,10 +346,11 @@ instance RenderOptionable (InBBox TPageBBoxMapPDFBuf) where
     cairoRenderOption (DrawPDFInBBox mbbox) (view g_background page, view g_dimension page)
     mapM_ (cairoRenderOption opt . InBBox) .  view g_layers $ page
 
-
+{-
 -- | deprecated 
 tpageBBoxMapPDFFromTTempPageSelectPDF :: TTempPageSelectPDF -> TPageBBoxMapPDF
 tpageBBoxMapPDFFromTTempPageSelectPDF p = 
   let TLayerSelectInPage s others = view g_layers p 
       s' = tlayerBBoxFromTLayerSelect s
   in GPage (view g_dimension p) (view g_background p) (gFromList (s':others))
+-}

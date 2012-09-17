@@ -1,4 +1,5 @@
 import Control.Monad
+import Control.Monad.State 
 import Data.Attoparsec
 import qualified Data.ByteString as B
 import Graphics.Rendering.Cairo
@@ -7,7 +8,7 @@ import System.Environment
 import Data.Hoodle.Simple 
 import Text.Hoodle.Parse.Attoparsec 
 -- from this package
-import Graphics.Hoodle.Render.Simple 
+import Graphics.Hoodle.Render.SimpleNew 
 
 
 -- | 
@@ -21,14 +22,13 @@ main = do
   mh <- attoparsec (args !! 1)
   case mh of 
     Nothing -> print "not parsed"
-    Just h -> do 
-      let fstpage = head (hoodle_pages h) 
-          Dim width height = page_dim fstpage 
+    Just hoo -> do 
+      let fstpage = head (hoodle_pages hoo) 
+          Dim w h = page_dim fstpage 
+          cairowork s = renderWith s (evalStateT (cairoDrawPage fstpage) ())
       let action 
-            | mod == "svg" = withSVGSurface outfile width height 
-                               (\s -> renderWith s (cairoDrawPage fstpage))
-            | mod == "pdf" = withPDFSurface outfile width height
-                               (\s -> renderWith s (cairoDrawPage fstpage))  
+            | mod == "svg" = withSVGSurface outfile w h cairowork 
+            | mod == "pdf" = withPDFSurface outfile w h cairowork
             | otherwise = return () 
       action 
                             

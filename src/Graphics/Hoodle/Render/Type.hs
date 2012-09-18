@@ -16,19 +16,28 @@
 
 module Graphics.Hoodle.Render.Type where
 
--- from this package
+import Data.IntMap 
+import Graphics.Rendering.Cairo 
+-- from hoodle-platform 
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple
+-- import Data.Hoodle.Simple
+-- from this package
+import Graphics.Hoodle.Render.Type.Background 
+import Graphics.Hoodle.Render.Type.Item
+
 
 -- | 
-type RNLayer = GLayer () [] Stroke 
+type RLayer = GLayer Surface [] RItem 
 
 -- | 
-type RNPage = GPage Background [] SLayer 
+type RPage = GPage RBackground IntMap RLayer 
 
 -- |
-type RNHoodle = GHoodle [] SPage 
+type RHoodle = GHoodle IntMap RPage 
 
 
+cnstrctRHoodle :: Hoodle -> IO RHoodle
+cnstrctRHoodle = undefined 
 
 

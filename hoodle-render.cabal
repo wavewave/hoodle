@@ -59,10 +59,12 @@ Library
                    -- Graphics.Hoodle.Render.Type.BBoxMapPDFImg
                    -- Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Background
+                   Graphics.Hoodle.Render.BBoxOnly
                    Graphics.Hoodle.Render.Item
                    Graphics.Hoodle.Render.Simple
                    Graphics.Hoodle.Render.Type.Item
                    Graphics.Hoodle.Render.Type.Background
+                   Graphics.Hoodle.Render.Util
 
   if flag(poppler)
     cpp-options: -DPOPPLER

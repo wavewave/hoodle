@@ -26,7 +26,7 @@ import           Data.Strict.Tuple hiding (uncurry)
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 -- from this package 
 import           Hoodle.ModelAction.Layer
 import           Hoodle.ModelAction.Page

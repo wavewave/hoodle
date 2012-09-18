@@ -24,7 +24,7 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 --
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Scroll

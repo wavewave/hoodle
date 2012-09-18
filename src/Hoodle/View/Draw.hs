@@ -34,7 +34,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.BBox
 import Graphics.Hoodle.Render.Type
 import Graphics.Hoodle.Render.BBox 
-import Graphics.Hoodle.Render.BBoxMapPDF 
+import Graphics.Hoodle.Render.BBoxMapPDFImg
 import Graphics.Hoodle.Render.PDFBackground
 import Graphics.Hoodle.Render.Generic
 -- from this package

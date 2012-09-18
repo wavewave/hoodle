@@ -35,7 +35,7 @@ import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
 import           Graphics.Hoodle.Render.BBox
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.HitTest
 import           Graphics.Hoodle.Render.Type

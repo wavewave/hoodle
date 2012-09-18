@@ -18,7 +18,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Buffer
 import Data.Hoodle.Select
 import Graphics.Hoodle.Render.Type.Select
-import Graphics.Hoodle.Render.BBoxMapPDF
+import Graphics.Hoodle.Render.BBoxMapPDFImg
 import Graphics.Hoodle.Render.PDFBackground
 
 data EditMode = EditMode 

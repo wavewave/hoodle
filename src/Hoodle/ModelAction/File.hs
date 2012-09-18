@@ -33,7 +33,7 @@ import           System.FilePath (takeExtension)
 -- from hoodle-platform 
 import           Data.Hoodle.Simple
 import qualified Data.Xournal.Simple as X
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 import           Graphics.Hoodle.Render.PDFBackground
 -- import qualified Text.Hoodle.Parse.Conduit as PC
 import           Text.Hoodle.Parse.Attoparsec as PA

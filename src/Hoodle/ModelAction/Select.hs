@@ -33,7 +33,7 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple hiding (Page,Hoodle)
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.BBox
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 import           Graphics.Hoodle.Render.HitTest
 import           Graphics.Hoodle.Render.Simple
 -- from this package

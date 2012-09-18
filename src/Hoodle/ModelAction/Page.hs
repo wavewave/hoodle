@@ -25,7 +25,7 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 -- from this package
 import           Hoodle.Util
 import           Hoodle.Type.Alias

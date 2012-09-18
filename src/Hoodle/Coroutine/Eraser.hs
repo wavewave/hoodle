@@ -24,7 +24,7 @@ import Graphics.UI.Gtk hiding (get,set,disconnect)
 import Data.Hoodle.Generic
 import Data.Hoodle.BBox
 import Graphics.Hoodle.Render.HitTest
-import Graphics.Hoodle.Render.BBoxMapPDF
+import Graphics.Hoodle.Render.BBoxMapPDFImg
 -- 
 import Hoodle.Type.Event
 import Hoodle.Type.Coroutine

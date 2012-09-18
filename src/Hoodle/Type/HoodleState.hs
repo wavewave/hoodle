@@ -75,7 +75,7 @@ import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Map
-import           Graphics.Hoodle.Render.BBoxMapPDF
+import           Graphics.Hoodle.Render.BBoxMapPDFImg
 -- from this package 
 import           Hoodle.Device
 import           Hoodle.Script.Hook

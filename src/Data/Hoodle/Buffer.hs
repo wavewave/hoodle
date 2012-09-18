@@ -10,21 +10,35 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Data.Hoodle.Buffer where
 
 import Data.IntMap 
-import Data.Hoodle.Select
--- import Data.Hoodle.Simple
-import Data.Hoodle.Generic
+-- from this package
 import Data.Hoodle.BBox
--- import Data.Hoodle.Map
+import Data.Hoodle.BBoxImg
+import Data.Hoodle.Generic
+import Data.Hoodle.Select
 
+-- |
 type TLayerBBoxBuf buf = GLayerBuf buf [] StrokeBBox
 
+-- |
 type TPageBBoxMapBkgBuf bkg buf = GPage bkg ZipperSelect (TLayerBBoxBuf buf)
 
+-- |
 type THoodleBBoxMapBkgBuf bkg buf = 
   GHoodle IntMap (TPageBBoxMapBkgBuf bkg buf)
+  
+-- |
+type TLayerBBoxBufImg buf = GLayerBuf buf [] StrokeBBoxImg
+
+-- | 
+type TPageBBoxMapBkgBufImg bkg buf = GPage bkg ZipperSelect (TLayerBBoxBufImg buf)
+
+-- | 
+type THoodleBBoxMapBkgBufImg bkg buf = 
+  GHoodle IntMap (TPageBBoxMapBkgBufImg bkg buf)
   
 

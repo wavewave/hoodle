@@ -14,9 +14,12 @@
 module Data.Hoodle.Map where
 
 import Data.IntMap 
-import Data.Hoodle.Simple
-import Data.Hoodle.Generic
+-- from this package
 import Data.Hoodle.BBox
+import Data.Hoodle.BBoxImg
+import Data.Hoodle.Generic
+import Data.Hoodle.Simple
+
 
 type TPageMap = GPage Background IntMap TLayerSimple 
 
@@ -29,6 +32,12 @@ type THoodleBBoxMap = GHoodle IntMap TPageBBoxMap
 type TPageBBoxMapBkg b = GPage b IntMap TLayerBBox
 
 type THoodleBBoxMapBkg b = GHoodle IntMap (TPageBBoxMapBkg b)
+
+-- | 
+type TPageBBoxMapBkgImg b = GPage b IntMap TLayerBBoxImg
+
+-- | 
+type THoodleBBoxMapBkgImg b = GHoodle IntMap (TPageBBoxMapBkgImg b)
 
 
 emptyGHoodleMap :: GHoodle IntMap a

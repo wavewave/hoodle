@@ -31,7 +31,13 @@ import Prelude hiding ((.),id,putStrLn,fst,snd,curry,uncurry)
 -- | 
 type Title = S.ByteString
 
--- | 
+
+-- | wrapper of object embeddable in Layer
+data Item = ItemStroke Stroke
+          | ItemImage Image
+          deriving (Show,Eq,Ord)
+
+-- | Pen stroke item 
 data Stroke = Stroke { stroke_tool  :: !S.ByteString
                      , stroke_color :: !S.ByteString
                      , stroke_width :: !Double
@@ -41,11 +47,16 @@ data Stroke = Stroke { stroke_tool  :: !S.ByteString
                        , stroke_color :: S.ByteString 
                        , stroke_vwdata :: [(Double,Double,Double)] 
                        }
-            | Img { stroke_imgsrc :: S.ByteString
-                  , stroke_imgpos :: (Double,Double)
-                  , stroke_imgdim :: !Dimension
-                  } 
             deriving (Show,Eq,Ord)
+
+-- | Image item 
+data Image = Image { img_src :: S.ByteString
+                   , img_pos :: (Double,Double)
+                   , img_dim :: !Dimension
+                   } 
+             deriving (Show,Eq,Ord)
+
+
 
 -- | 
 instance SE.Serialize Stroke where
@@ -58,16 +69,33 @@ instance SE.Serialize Stroke where
                        >> SE.put stroke_tool 
                        >> SE.put stroke_color
                        >> SE.put stroke_vwdata
-    put Img {..} = SE.putWord8 2                   
-                   >> SE.put stroke_imgsrc
-                   >> SE.put stroke_imgpos
-                   >> SE.put stroke_imgdim
     get = do tag <- SE.getWord8  
              case tag of 
                0 -> Stroke <$> SE.get <*> SE.get <*> SE.get <*> SE.get
                1 -> VWStroke <$> SE.get <*> SE.get <*> SE.get
-               2 -> Img <$> SE.get <*> SE.get <*> SE.get
                _ -> fail "err in Stroke parsing"
+
+
+-- | 
+instance SE.Serialize Image where
+    put Image {..} = SE.put img_src
+                     >> SE.put img_pos
+                     >> SE.put img_dim
+    get = Image <$> SE.get <*> SE.get <*> SE.get
+
+
+-- | 
+instance SE.Serialize Item where
+    put (ItemStroke str) = SE.putWord8 0 
+                           >> SE.put str 
+    put (ItemImage img) = SE.putWord8 1 
+                          >> SE.put img
+    get = do tag <- SE.getWord8 
+             case tag of 
+               0 -> ItemStroke <$> SE.get
+               1 -> ItemImage <$> SE.get
+               _ -> fail "err in Item parsing"
+
 -- |    
 instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
     put (x :!: y) = SE.put x
@@ -108,50 +136,50 @@ data Page = Page { page_dim :: !Dimension
           deriving Show 
 
 -- | 
-data Layer = Layer { layer_strokes :: ![Stroke] } 
+data Layer = Layer { layer_items :: ![Item] } 
            deriving Show 
 
 -- | 
 getXYtuples :: Stroke -> [(Double,Double)]
 getXYtuples (Stroke _t _c _w d) = map (\(x :!: y) -> (x,y)) d
 getXYtuples (VWStroke _t _c d) = map ((,)<$>fst3<*>snd3) d 
-getXYtuples (Img _ _ _) = [] 
+
 
 ----------------------------
 -- Lenses
 ----------------------------
 
 -- | 
-s_tool :: Simple Lens Stroke ByteString
-s_tool = lens stroke_tool (\f a -> f { stroke_tool = a })  
+tool :: Simple Lens Stroke ByteString
+tool = lens stroke_tool (\f a -> f { stroke_tool = a })  
 
 -- | 
-s_color :: Simple Lens Stroke ByteString 
-s_color = lens stroke_color (\f a -> f { stroke_color = a } )
+color :: Simple Lens Stroke ByteString 
+color = lens stroke_color (\f a -> f { stroke_color = a } )
 
 -- | 
-s_title :: Simple Lens Hoodle Title
-s_title = lens hoodle_title (\f a -> f { hoodle_title = a } )
+title :: Simple Lens Hoodle Title
+title = lens hoodle_title (\f a -> f { hoodle_title = a } )
 
 -- | 
-s_pages :: Simple Lens Hoodle [Page]
-s_pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
+pages :: Simple Lens Hoodle [Page]
+pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
 
 -- | 
-s_dim :: Simple Lens Page Dimension 
-s_dim = lens page_dim (\f a -> f { page_dim = a } )
+dimension :: Simple Lens Page Dimension 
+dimension = lens page_dim (\f a -> f { page_dim = a } )
 
 -- | 
-s_bkg :: Simple Lens Page Background 
-s_bkg = lens page_bkg (\f a -> f { page_bkg = a } )
+background :: Simple Lens Page Background 
+background = lens page_bkg (\f a -> f { page_bkg = a } )
 
 -- | 
-s_layers :: Simple Lens Page [Layer] 
-s_layers = lens page_layers (\f a -> f { page_layers = a } )
+layers :: Simple Lens Page [Layer] 
+layers = lens page_layers (\f a -> f { page_layers = a } )
 
 -- | 
-s_strokes :: Simple Lens Layer [Stroke]
-s_strokes = lens layer_strokes (\f a -> f { layer_strokes = a } )
+items :: Simple Lens Layer [Item]
+items = lens layer_items (\f a -> f { layer_items = a } )
 
 --------------------------
 -- empty objects
@@ -163,7 +191,7 @@ emptyHoodle = Hoodle "" []
 
 -- | 
 emptyLayer :: Layer 
-emptyLayer = Layer { layer_strokes = [] }
+emptyLayer = Layer { layer_items = [] }
 
 -- | 
 emptyStroke :: Stroke 
@@ -175,16 +203,18 @@ defaultBackground = Background { bkg_type = "solid"
                                , bkg_color = "white"
                                , bkg_style = "lined" 
                                }
-
+{- 
 -- | 
 defaultLayer :: Layer
 defaultLayer = Layer { layer_strokes  = [] } 
+-}
+
 
 -- | 
 defaultPage :: Page
 defaultPage = Page { page_dim = Dim  612.0 792.0 
                    , page_bkg = defaultBackground
-                   , page_layers = [ defaultLayer ] 
+                   , page_layers = [ emptyLayer ] 
                    } 
 
 -- | 

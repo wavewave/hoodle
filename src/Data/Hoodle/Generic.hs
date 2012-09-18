@@ -26,44 +26,105 @@ import Data.Hoodle.Simple
 -- 
 import Prelude hiding ((.),id)
 
--- | 
-data GHoodle s a = GHoodle { gtitle :: ByteString 
-                           , gpages :: s a }  
+-- | Generic Hoodle data having generic pages
+data GHoodle cntnr pg = GHoodle 
+                        { ghoodle_ttl :: ByteString 
+                        , ghoodle_pgs :: cntnr pg }  
 
--- | 
-data GPage b s a = GPage { gdimension :: Dimension 
-                         , gbackground :: b 
-                         , glayers :: s a }  
+-- | Generic page data having dimension, generic background
+--   and generic layers
+data GPage bkg cntnr lyr = GPage 
+                           { gpage_dim :: Dimension 
+                           , gpage_bkg :: bkg 
+                           , gpage_lyrs :: cntnr lyr }  
 
--- | 
-data GLayer s a = GLayer { gstrokes :: s a } 
+-- -- | Generic layer data having generic items 
+-- data GLayer cntnr itm = GLayer { glayer_itms :: cntnr itm } 
             
--- | 
-data GLayerBuf b s a = GLayerBuf { gbuffer :: b 
-                                 , gbstrokes :: s a 
-                                 } 
+-- | Generic buffered layer having generic items
+data GLayer buf cntnr itm = GLayer 
+                          { glayer_buf :: buf 
+                          , glayer_itms :: cntnr itm 
+                          } 
                        
+{-                          
 -- |
 instance (Functor s) => Functor (GLayer s) where
-  fmap f (GLayer strs) = GLayer (fmap f strs)
-  
--- | 
-instance (Functor s) => Functor (GLayerBuf b s) where
-  fmap f (GLayerBuf b strs) = GLayerBuf b (fmap f strs) 
-  
--- | 
-instance (Functor s) => Functor (GPage b s) where
-  fmap f (GPage d b ls) = GPage d b (fmap f ls)
-  
--- | 
-instance (Functor s) => Functor (GHoodle s) where
-  fmap f (GHoodle t ps) = GHoodle t (fmap f ps)
+  fmap f (GLayer bstrs) = GLayer (fmap f strs)
+-}
 
+-- | 
+instance (Functor cntnr) => Functor (GLayer buf cntnr) where
+  fmap f (GLayer buf itms) = GLayer buf (fmap f itms) 
+  
+-- | 
+instance (Functor cntnr) => Functor (GPage bkg cntnr) where
+  fmap f (GPage dim bkg lyrs) = GPage dim bkg (fmap f lyrs)
+  
+-- | 
+instance (Functor cntnr) => Functor (GHoodle cntnr) where
+  fmap f (GHoodle ttl pgs) = GHoodle ttl (fmap f pgs)
+
+------------------------------
+-- lenses for Generic types --
+------------------------------
+
+
+-- |
+gtitle :: Simple Lens (GHoodle cntnr pg) ByteString
+gtitle = lens ghoodle_ttl (\f a -> f { ghoodle_ttl = a } )
+
+-- |
+gpages :: Simple Lens (GHoodle cntnr pg) (cntnr pg)
+gpages = lens ghoodle_pgs (\f a -> f { ghoodle_pgs = a } )
+
+-- |
+gdimension :: Simple Lens (GPage bkg cntnr pg) Dimension 
+gdimension = lens gpage_dim (\f a -> f { gpage_dim = a } )
+
+-- |
+gbackground :: Simple Lens (GPage bkg cntnr lyr) bkg 
+gbackground = lens gpage_bkg (\f a -> f { gpage_bkg = a } ) 
+
+-- |
+glayers :: Simple Lens (GPage bkg cntnr lyr) (cntnr lyr)
+glayers = lens gpage_lyrs (\f a -> f { gpage_lyrs = a } ) 
+
+-- |
+gitems :: Simple Lens (GLayer buf cntnr itm) (cntnr itm)
+gitems = lens glayer_itms (\f a -> f { glayer_itms = a } )
+
+{- -- |
+g_bstrokes :: Simple Lens (GLayerBuf b s a) (s a)
+g_bstrokes = lens gbstrokes (\f a -> f { gbstrokes = a } )
+-}
+
+
+-- |
+gbuffer :: Simple Lens (GLayer buf cntnr itm) buf 
+gbuffer = lens glayer_buf (\f a -> f { glayer_buf = a } )
+
+{-
+-- |
+g_selectTitle :: Simple Lens (GSelect a b) ByteString
+g_selectTitle = lens gselectTitle (\f a -> f {gselectTitle = a})
+
+-- |
+g_selectAll :: Simple Lens (GSelect a b) a 
+g_selectAll = lens gselectAll (\f a -> f {gselectAll = a} )
+
+-- |
+g_selectSelected :: Simple Lens (GSelect a b) b
+g_selectSelected = lens gselectSelected (\f a -> f {gselectSelected = a})
+-}
+
+{-
 -- | 
 class GCast a b where 
   gcast :: a -> b 
+-}
 
-
+{-
 -- | 
 data GSelect a b = GSelect { gselectTitle :: ByteString 
                            , gselectAll :: a 
@@ -88,22 +149,25 @@ class GStrokeable a where
 instance GStrokeable Stroke where
   gFromStroke = id
   gToStroke = id 
+-}
+
 
 -- |
-class GListable s where  
-  gFromList :: [a] -> s a 
-  gToList :: s a -> [a]
+class Listable s where  
+  fromList :: [a] -> s a 
+  toList :: s a -> [a]
   
 -- |
-instance GListable [] where
-  gFromList = id 
-  gToList = id 
+instance Listable [] where
+  fromList = id 
+  toList = id 
   
 -- | 
-instance GListable IntMap where 
-  gFromList = Data.IntMap.fromList . zip [0..] 
-  gToList = Data.IntMap.elems 
+instance Listable IntMap where 
+  fromList = Data.IntMap.fromList . zip [0..] 
+  toList = Data.IntMap.elems 
 
+{-
 -- |
 class GBackgroundable b where
   gFromBackground :: Background -> b 
@@ -143,49 +207,6 @@ instance SListable (GPage b) where
 instance SListable GHoodle where
   chgStreamToList (GHoodle t ps) = GHoodle t (gToList ps)
   
--- |
-g_title :: Simple Lens (GHoodle s a) ByteString
-g_title = lens gtitle (\f a -> f { gtitle = a } )
-
--- |
-g_pages :: Simple Lens (GHoodle s a) (s a)
-g_pages = lens gpages (\f a -> f { gpages = a } )
-
--- |
-g_dimension :: Simple Lens (GPage b s a) Dimension 
-g_dimension = lens gdimension (\f a -> f { gdimension = a } )
-
--- |
-g_background :: Simple Lens (GPage b s a) b 
-g_background = lens gbackground (\f a -> f { gbackground = a } ) 
-
--- |
-g_layers :: Simple Lens (GPage b s a) (s a)
-g_layers = lens glayers (\f a -> f { glayers = a } ) 
-
--- |
-g_strokes :: Simple Lens (GLayer s a) (s a)
-g_strokes = lens gstrokes (\f a -> f { gstrokes = a } )
-
--- |
-g_bstrokes :: Simple Lens (GLayerBuf b s a) (s a)
-g_bstrokes = lens gbstrokes (\f a -> f { gbstrokes = a } )
-
--- |
-g_buffer :: Simple Lens (GLayerBuf b s a) b 
-g_buffer = lens gbuffer (\f a -> f { gbuffer = a } )
-
--- |
-g_selectTitle :: Simple Lens (GSelect a b) ByteString
-g_selectTitle = lens gselectTitle (\f a -> f {gselectTitle = a})
-
--- |
-g_selectAll :: Simple Lens (GSelect a b) a 
-g_selectAll = lens gselectAll (\f a -> f {gselectAll = a} )
-
--- |
-g_selectSelected :: Simple Lens (GSelect a b) b
-g_selectSelected = lens gselectSelected (\f a -> f {gselectSelected = a})
 
 -- |
 toLayer :: (GStrokeable a, GListable s) => GLayer s a -> Layer
@@ -256,3 +277,4 @@ printLayerStructureInPage page = do
       lst = fmap (Prelude.length . (^.g_bstrokes)) (gToList lyrs)
   (Prelude.putStrLn . ("num of layers = "++) . show . Prelude.length . gToList ) lyrs 
   Prelude.putStrLn $ "layer strokes = " ++ show lst 
+-}

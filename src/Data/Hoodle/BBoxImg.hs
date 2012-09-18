@@ -44,6 +44,7 @@ type TPageBBoxImg = GPage Background [] TLayerBBoxImg
 
 type THoodleBBoxImg = GHoodle [] TPageBBoxImg
 
+
 instance GStrokeable StrokeBBoxImg where  
   gFromStroke = gcast . mkStrokeBBoxFromStroke
   gToStroke = strokeFromStrokeBBox . gcast 

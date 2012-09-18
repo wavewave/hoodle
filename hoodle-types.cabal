@@ -31,12 +31,12 @@ Library
   Exposed-Modules: 
                    Data.Hoodle.Generic
                    Data.Hoodle.Simple
-                   Data.Hoodle.BBox
-                   Data.Hoodle.BBoxImg 
-                   Data.Hoodle.Map
-                   Data.Hoodle.Buffer
-                   Data.Hoodle.Predefined 
-                   Data.Hoodle.Select
+--                   Data.Hoodle.BBox
+--                   Data.Hoodle.BBoxImg 
+--                   Data.Hoodle.Map
+--                   Data.Hoodle.Buffer
+--                   Data.Hoodle.Predefined 
+--                   Data.Hoodle.Select
                    Data.Hoodle.Util
   Other-Modules: 
 

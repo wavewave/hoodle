@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.Type.Item 
+-- Module      : Graphics.Hoodle.Render.Class
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,16 +10,19 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- Renderable Item Type  
+-- Renderable Hoodle Type  
 -- 
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.Type.Item where
+module Graphics.Hoodle.Render.Class where
 
 import Graphics.Rendering.Cairo
--- from hoodle-platform 
-import Data.Hoodle.BBox 
+-- from hoodle-platform
+-- from this package
 
-data RItem = RItemStroke StrokeBBox 
-           | RItemImage ImageBBox Surface 
+
+
+
+
+
 

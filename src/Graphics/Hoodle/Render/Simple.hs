@@ -1,8 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+
+-- {-# LANGUAGE ExistentialQuantification, OverloadedStrings, 
+--              FlexibleInstances, FlexibleContexts,  
+--              TypeFamilies, CPP #-}
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.Simple 
+-- Module      : Graphics.Hoodle.Render.Simple
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,68 +15,45 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-- Simplest rendering of hoodle
+--
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.Simple where 
+module Graphics.Hoodle.Render.Simple where
 
-import Graphics.Rendering.Cairo
-import Control.Applicative
-import Control.Monad
-import Data.Strict.Tuple hiding (fst,snd)
-import Data.Hoodle.Simple
-import Data.Hoodle.Predefined 
+import           Control.Applicative 
+import           Control.Lens
+import           Control.Monad.State hiding (mapM_)
+-- import           Data.ByteString hiding (putStrLn)
+import qualified Data.ByteString as S
+import           Data.Foldable 
 import qualified Data.Map as M
-import qualified Data.ByteString.Char8 as S
+import           Data.Strict.Tuple hiding (fst,snd)
+import           Graphics.Rendering.Cairo
+--
+-- from hoodle-platform
+import Data.Hoodle.Predefined 
+import Data.Hoodle.Simple
+-- from this package
+--- import Graphics.Hoodle.Render.BBox 
+-- import Graphics.Hoodle.Render.Generic
+--
+import Prelude hiding (mapM_)
 
 
 -- | 
-drawOneStroke :: Stroke -> Render ()
-drawOneStroke s = do 
-  case s of
-    Stroke _ _ w d -> do  
-      let opacity = if stroke_tool s == "highlighter" 
-                    then predefined_highlighter_opacity
-                    else 1.0
-      case M.lookup (stroke_color s) predefined_pencolor of
-        Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-        Nothing -> setSourceRGBA 0 0 0 1
-      
-      setLineWidth w
-      setLineCap LineCapRound
-      setLineJoin LineJoinRound
-      drawOneStrokeCurve d
-      stroke
-    VWStroke _ _ d -> do  
-      let opacity = if stroke_tool s == "highlighter" 
-                    then predefined_highlighter_opacity
-                    else 1.0
-      case M.lookup (stroke_color s) predefined_pencolor of
-        Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-        Nothing -> setSourceRGBA 0 0 0 1
-      
-      setFillRule FillRuleWinding
-      drawOneVWStrokeCurve d
-      fill 
-    Img _ (x,y) (Dim w h) -> do  
-      setSourceRGBA 0 0 0 1
-      setLineWidth 10
-      rectangle x y w h
-      stroke
-
-   
--- | 
-drawOneStrokeCurve :: [Pair Double Double] -> Render ()
-drawOneStrokeCurve ((x0 :!: y0) : xs) = do 
+drawStrokeCurve :: [Pair Double Double] -> Render ()
+drawStrokeCurve ((x0 :!: y0) : xs) = do 
   x0 `seq` y0 `seq` moveTo x0 y0
   mapM_ f xs 
     where f (x :!: y) = x `seq` y `seq` lineTo x y 
-drawOneStrokeCurve [] = return ()
+drawStrokeCurve [] = return ()
 
 -- | 
-drawOneVWStrokeCurve :: [(Double,Double,Double)] -> Render ()
-drawOneVWStrokeCurve [] = return ()
-drawOneVWStrokeCurve (_:[]) = return ()
-drawOneVWStrokeCurve ((xo,yo,_zo) : xs) = do 
+drawVWStrokeCurve :: [(Double,Double,Double)] -> Render ()
+drawVWStrokeCurve [] = return ()
+drawVWStrokeCurve (_:[]) = return ()
+drawVWStrokeCurve ((xo,yo,_zo) : xs) = do 
     moveTo xo yo
     let ((xlast,ylast,_zlast):rxs) = reverse xs 
     foldM_ forward (xo,yo) xs 
@@ -88,34 +70,66 @@ drawOneVWStrokeCurve ((xo,yo,_zo) : xs) = do
                                       return (x,y)
 
 
--- | general background drawing (including pdf file)
-cairoDrawBackground :: Page -> Render () 
-cairoDrawBackground page = do 
-  let Dim w h = page_dim page 
-  case page_bkg page of 
-    Background typ col sty -> cairoDrawBkg (Dim w h) (Background typ col sty)
-    BackgroundPdf _ _mdomain _mfilename _pagenum -> 
-      error "in cairoDrawBackground, pdf drawing is not defined yet"
-      -- cairoDrawPdfBkg (Dim w h) mdomain mfilename pagenum   
+-- | render stroke 
+renderStrk :: Stroke -> Render ()
+renderStrk s@(Stroke _ _ w d) = do 
+    let opacity = if stroke_tool s == "highlighter" 
+                  then predefined_highlighter_opacity
+                  else 1.0
+    case M.lookup (stroke_color s) predefined_pencolor of
+      Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
+      Nothing -> setSourceRGBA 0 0 0 1
+    setLineWidth w
+    setLineCap LineCapRound
+    setLineJoin LineJoinRound
+    drawStrokeCurve d
+    stroke
+renderStrk s@(VWStroke _ _ d) = do 
+    let opacity = if stroke_tool s == "highlighter" 
+                  then predefined_highlighter_opacity
+                  else 1.0
+    case M.lookup (stroke_color s) predefined_pencolor of
+      Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
+      Nothing -> setSourceRGBA 0 0 0 1
+    setFillRule FillRuleWinding
+    drawVWStrokeCurve d
+    fill 
+
+-- | render image 
+renderImg :: Image -> Render () 
+renderImg (Image _ (x,y) (Dim w h)) = do  
+      setSourceRGBA 0 0 0 1
+      setLineWidth 10
+      rectangle x y w h
+      stroke
+
+
+-- | render item 
+renderItm :: Item -> Render () 
+renderItm (ItemStroke strk) = renderStrk strk
+renderItm (ItemImage img) = renderImg img
+
+
 
 -- | 
-cairoDrawBkg :: Dimension -> Background -> Render () 
-cairoDrawBkg (Dim w h) (Background _typ col sty) = do 
-  let c = M.lookup col predefined_bkgcolor  
-  case c of 
-    Just (r,g,b,_a) -> setSourceRGB r g b 
-    Nothing        -> setSourceRGB 1 1 1 
-  rectangle 0 0 w h 
-  fill
-  cairoDrawRuling w h sty
-cairoDrawBkg (Dim w h) (BackgroundPdf _typ _mdomain _mfilename _pagenum) = do 
-  setSourceRGBA 1 1 1 1
-  rectangle 0 0 w h 
-  fill
+renderBkg :: (Background,Dimension) -> Render () 
+renderBkg (Background _typ col sty,Dim w h) = do 
+    let c = M.lookup col predefined_bkgcolor  
+    case c of 
+      Just (r,g,b,_a) -> setSourceRGB r g b 
+      Nothing        -> setSourceRGB 1 1 1 
+    rectangle 0 0 w h 
+    fill
+    drawRuling w h sty
+renderBkg (BackgroundPdf _ _ _ _,Dim w h) = do 
+    setSourceRGBA 1 1 1 1
+    rectangle 0 0 w h 
+    fill
+
 
 -- | 
-cairoDrawRuling :: Double -> Double -> S.ByteString -> Render () 
-cairoDrawRuling w h style = do
+drawRuling :: Double -> Double -> S.ByteString -> Render () 
+drawRuling w h style = do
   let drawHorizRules = do 
       let (r,g,b,a) = predefined_RULING_COLOR         
       setSourceRGBA r g b a 
@@ -155,14 +169,14 @@ cairoDrawRuling w h style = do
       mapM_ drawonegraphhoriz [0,predefined_RULING_GRAPHSPACING..h-1]
     _ -> return ()     
 
+
 -- |
-cairoDrawPage :: Page -> Render ()
-cairoDrawPage page = do 
-  let strokes = (layer_strokes . (!!0) . page_layers) page 
-  cairoDrawBackground page
+renderPage :: Page -> Render ()
+renderPage page = do 
+  let itms = (view items . (!!0) . view layers) page 
+  renderBkg (view background page,view dimension page)
   setLineCap LineCapRound
   setLineJoin LineJoinRound
-  mapM_ drawOneStroke strokes
+  mapM_ renderItm itms
   stroke
-
 

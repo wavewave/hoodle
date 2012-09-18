@@ -26,11 +26,13 @@ Library
                    containers == 0.4.*, 
                    lens >= 2.4 && < 2.7,
                    TypeCompose == 0.9.*, 
-                   cereal == 0.3.*
+                   cereal == 0.3.*, 
+                   cairo == 0.12.*
   Exposed-Modules: 
                    Data.Hoodle.Generic
                    Data.Hoodle.Simple
                    Data.Hoodle.BBox
+                   Data.Hoodle.BBoxImg 
                    Data.Hoodle.Map
                    Data.Hoodle.Buffer
                    Data.Hoodle.Predefined 

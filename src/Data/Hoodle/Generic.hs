@@ -28,7 +28,7 @@ import Prelude hiding ((.),id)
 
 -- | 
 data GHoodle s a = GHoodle { gtitle :: ByteString 
-                             , gpages :: s a }  
+                           , gpages :: s a }  
 
 -- | 
 data GPage b s a = GPage { gdimension :: Dimension 

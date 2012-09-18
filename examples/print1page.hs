@@ -8,8 +8,8 @@ import System.Environment
 import Data.Hoodle.Simple 
 import Text.Hoodle.Parse.Attoparsec 
 -- from this package
-import Graphics.Hoodle.Render.SimpleNew 
-
+-- import Graphics.Hoodle.Render.SimpleNew 
+import Graphics.Hoodle.Render.Simple 
 
 -- | 
 main :: IO ()   
@@ -25,7 +25,7 @@ main = do
     Just hoo -> do 
       let fstpage = head (hoodle_pages hoo) 
           Dim w h = page_dim fstpage 
-          cairowork s = renderWith s (evalStateT (cairoDrawPage fstpage) ())
+          cairowork s = renderWith s (cairoDrawPage fstpage) 
       let action 
             | mod == "svg" = withSVGSurface outfile w h cairowork 
             | mod == "pdf" = withPDFSurface outfile w h cairowork

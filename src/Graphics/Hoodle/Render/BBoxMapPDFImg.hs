@@ -4,7 +4,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.BBoxMapPDF 
+-- Module      : Graphics.Hoodle.Render.BBoxMapPDFImg
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.BBoxMapPDF where
+module Graphics.Hoodle.Render.BBoxMapPDFImg where
 
 -- from others
 import           Control.Applicative

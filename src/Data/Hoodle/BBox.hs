@@ -12,48 +12,93 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.Hoodle.BBox where
+module Data.Hoodle.BBox 
+( BBox
+, StrokeBBox
+, mkStrokeBBox
+, ImageBBox 
+, mkImageBBox
+, mkbbox
+, mkbboxF
+, bboxFromStroke
+, bboxFromImage
+, dimToBBox
+, xformBBox
+, inflate
+, moveBBoxToOrigin
+, moveBBoxByOffset
+, moveBBoxULCornerTo
+, intersectBBox
+, unionBBox
+, ULMaybe (..) 
+, IntersectBBox (..) 
+, UnionBBox (..)
+, Maybeable (..)
+) where
 
-import Control.Applicative 
-import Control.Monad
--- import qualified Data.Sequence as Seq
-import Data.Hoodle.Generic
+import           Control.Applicative 
+import           Control.Monad
+import qualified Data.Foldable as F
+import           Data.Monoid
+import           Data.Serialize
+import           Data.Strict.Tuple 
+-- from this package
 import Data.Hoodle.Simple
 import Data.Hoodle.Util
-import Data.Strict.Tuple 
-import qualified Data.Foldable as F
-import Data.Monoid
+-- 
 import Prelude hiding (fst,snd)
 import qualified Prelude as Prelude (fst,snd)
-import Data.Serialize
+
+
 
 -- | bounding box type 
-
 data BBox = BBox { bbox_upperleft :: (Double,Double) 
                  , bbox_lowerright :: (Double,Double) } 
           deriving (Show,Eq,Ord)
 
 -- | 
-
 instance Serialize BBox where
     put BBox{..} = put bbox_upperleft >> put bbox_lowerright  
     get = liftM2 BBox get get 
 
 
 -- | 
-
-data StrokeBBox = StrokeBBox { strokebbox_stroke :: Stroke 
-                             , strokebbox_bbox :: BBox } 
+data StrokeBBox = StrokeBBox { strkbbx_strk :: Stroke 
+                             , strkbbx_bbx :: BBox } 
                 deriving (Show,Eq,Ord)
   
 -- |
-
 instance Serialize StrokeBBox where
-  put StrokeBBox{..} = put strokebbox_stroke >> put strokebbox_bbox
+  put StrokeBBox{..} = put strkbbx_strk >> put strkbbx_bbx
   get = liftM2 StrokeBBox get get
   
+-- | smart constructor for StrokeBBox 
+mkStrokeBBox :: Stroke -> StrokeBBox
+mkStrokeBBox strk = 
+  StrokeBBox { strkbbx_strk = strk
+             , strkbbx_bbx = bboxFromStroke strk
+             } 
+
+-- | 
+data ImageBBox = ImageBBox { imgbbx_img :: Image 
+                           , imgbbx_bbx :: BBox } 
+                deriving (Show,Eq,Ord)
+  
+-- |
+instance Serialize ImageBBox where
+  put ImageBBox{..} = put imgbbx_img >> put imgbbx_bbx
+  get = ImageBBox <$> get <*> get
+  
+-- | smart constructor for ImageBBox 
+mkImageBBox :: Image -> ImageBBox
+mkImageBBox img = 
+  ImageBBox { imgbbx_img = img
+            , imgbbx_bbx = bboxFromImage img
+            } 
 
 
+
+{-
 
 type TLayerBBox = GLayer [] StrokeBBox 
 
@@ -64,9 +109,11 @@ type THoodleBBox = GHoodle [] TPageBBox
 instance GStrokeable StrokeBBox where  
   gFromStroke = mkStrokeBBoxFromStroke 
   gToStroke = strokeFromStrokeBBox
+-}
+
+
 
 -- |
-  
 mkbbox :: [Pair Double Double] -> BBox 
 mkbbox lst = let xs = map fst lst 
                  ys = map snd lst
@@ -74,7 +121,6 @@ mkbbox lst = let xs = map fst lst
                       , bbox_lowerright = (maximum xs, maximum ys) } 
                  
 -- |                 
-
 mkbboxF :: (F.Foldable m, Functor m) => m (Double,Double) -> BBox 
 mkbboxF lst = 
   let xs = fmap Prelude.fst lst  
@@ -89,12 +135,15 @@ bboxFromStroke (VWStroke _ _ dat) =
   let dat' = map ((,) <$> fst3 <*> snd3) dat 
       widthmax = F.maximum (map trd3 dat)
   in inflate (mkbboxF dat') widthmax
-bboxFromStroke (Img _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
-
 
 -- |
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
+
+-- | 
+bboxFromImage :: Image -> BBox 
+bboxFromImage (Image _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
+
 
 -- | general transform BBox         
 xformBBox :: ((Double,Double) -> (Double,Double)) -> BBox -> BBox 
@@ -117,7 +166,6 @@ moveBBoxULCornerTo :: (Double,Double) -> BBox -> BBox
 moveBBoxULCornerTo (x,y) b@(BBox (x0,y0) _) = moveBBoxByOffset (x-x0,y-y0) b 
 
 -- |
-
 intersectBBox :: BBox -> BBox -> Maybe BBox
 intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do 
   guard $ (x1 <= x3 && x3 <= x2) || (x3 <= x1 && x1 <= x4 ) 
@@ -129,7 +177,6 @@ intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do
   return (BBox (x5,y5) (x6,y6))
   
 -- |  
-     
 unionBBox :: BBox -> BBox -> BBox
 unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = 
   let x5 = if x1 < x3 then x1 else x3
@@ -139,7 +186,6 @@ unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) =
   in BBox (x5,y5) (x6,y6)
   
 -- |
-     
 data ULMaybe a = Bottom | Middle a | Top      
 
 deriving instance Show a => Show (ULMaybe a)
@@ -147,12 +193,10 @@ deriving instance Show a => Show (ULMaybe a)
 deriving instance Eq a => Eq (ULMaybe a)
                                      
 -- |
-
 newtype IntersectBBox = Intersect { unIntersect :: ULMaybe BBox } 
                         deriving (Show,Eq)
 
 -- |
-
 newtype UnionBBox = Union { unUnion :: ULMaybe BBox }
                     deriving (Show,Eq)
      
@@ -174,7 +218,6 @@ instance Monoid (UnionBBox) where
   mempty = Union Bottom
   
 -- |
-
 class Maybeable a where
   type ElemType a :: *
   toMaybe :: a -> Maybe (ElemType a) 
@@ -196,15 +239,9 @@ instance Maybeable UnionBBox where
   fromMaybe Nothing = Union Top 
   fromMaybe (Just x) = Union (Middle x)
 
+
+{-
 -- |
-
-mkStrokeBBoxFromStroke :: Stroke -> StrokeBBox
-mkStrokeBBoxFromStroke str = 
-  StrokeBBox { strokebbox_stroke = str 
-             , strokebbox_bbox = bboxFromStroke str
-             } 
-
--- |
-
 strokeFromStrokeBBox :: StrokeBBox -> Stroke 
 strokeFromStrokeBBox = strokebbox_stroke 
+-}

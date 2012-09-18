@@ -15,7 +15,7 @@
 module Data.Hoodle.Generic where
 
 -- from other packages
-import Control.Applicative
+-- import Control.Applicative
 import Control.Category
 import Control.Lens 
 import Data.ByteString hiding (map,zip)

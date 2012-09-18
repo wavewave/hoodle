@@ -29,9 +29,10 @@ Library
                    cereal == 0.3.*, 
                    cairo == 0.12.*
   Exposed-Modules: 
+                   Data.Hoodle.BBox
                    Data.Hoodle.Generic
+                   Data.Hoodle.Generic.Simple
                    Data.Hoodle.Simple
---                   Data.Hoodle.BBox
 --                   Data.Hoodle.BBoxImg 
 --                   Data.Hoodle.Map
 --                   Data.Hoodle.Buffer

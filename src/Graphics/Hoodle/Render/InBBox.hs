@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.BBox 
+-- Module      : Graphics.Hoodle.Render.InBBox 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,117 +10,43 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-- render hoodle within a bounding box by hittest
+-- 
+-----------------------------------------------------------------------------
 
 module Graphics.Hoodle.Render.BBox where
 
-import Graphics.Rendering.Cairo
-import Graphics.Hoodle.Render.Simple
-import Graphics.Hoodle.Render.HitTest
-import Graphics.Hoodle.Render.Type 
-
+import           Control.Lens 
+import           Data.Foldable
+import qualified Data.Map as M
+import           Graphics.Rendering.Cairo
+-- from hoodle-platform 
 import Data.Hoodle.Generic
-import Data.Hoodle.Map
 import Data.Hoodle.Simple
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
-
-import Data.Foldable
-import Data.Monoid 
-import qualified Data.Map as M
-
-import Data.ByteString hiding (map, minimum, maximum, concat, concatMap, filter )
-
+-- from this package
+import Graphics.Hoodle.Render.Background 
+import Graphics.Hoodle.Render.Type 
+import Graphics.Hoodle.Render.Type.Background
+import Graphics.Hoodle.Render.Type.Item
+-- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
--- | 
-clipBBox :: Maybe BBox -> Render ()
-clipBBox (Just (BBox (x1,y1) (x2,y2))) = do {resetClip; rectangle x1 y1 (x2-x1) (y2-y1); clip}
-clipBBox Nothing = resetClip 
 
--- | 
-clearBBox :: Maybe BBox -> Render ()        
-clearBBox Nothing = return ()
-clearBBox (Just (BBox (x1,y1) (x2,y2))) = do 
-    save
-    setSourceRGBA 0 0 0 0
-    setOperator OperatorSource
-    rectangle x1 y1 (x2-x1) (y2-y1) 
-    fill
-    restore
-
-
-cairoOneStrokeSelected :: StrokeBBox -> Render ()
-cairoOneStrokeSelected sbbox = do 
-  let s = gToStroke sbbox 
-  case s of     
-    Img _ _ _ -> cairoOneStrokeBBoxOnly sbbox 
-    _ -> do     
-      case M.lookup (stroke_color s) predefined_pencolor of 
-        Just (r,g,b,a) -> setSourceRGBA r g b a
-        Nothing -> setSourceRGBA 0 0 0 1 
-      case s of
-        Stroke _ _ w d -> do  
-          setLineWidth (w * 4.0) 
-          setLineCap LineCapRound
-          setLineJoin LineJoinRound
-          drawOneStrokeCurve d
-          stroke
-          setSourceRGBA 1 1 1 1
-          setLineWidth w
-          drawOneStrokeCurve . stroke_data $ s 
-          stroke
-        VWStroke _ _ d -> do  
-          setFillRule FillRuleWinding
-          drawOneVWStrokeCurve $ map (\(x,y,z)->(x,y,4*z)) d
-          fill  
-          setSourceRGBA 1 1 1 1
-          drawOneVWStrokeCurve d     
-          fill
-        _ -> error "in cairoOneStrokeSelected"
-    
-    
-    
-cairoOneStrokeBBoxOnly :: StrokeBBox -> Render () 
-cairoOneStrokeBBoxOnly sbbox = do  
-  let s = gToStroke sbbox
-  -- case M.lookup (stroke_color s) predefined_pencolor of 
-  --   Just (r,g,b,a) -> setSourceRGBA r g b a
-  --   Nothing -> setSourceRGBA 0 0 0 1 
-  setSourceRGBA 0 0 0 1
-  -- setLineWidth (stroke_width s) 
-  setLineWidth 10
-  let BBox (x1,y1) (x2,y2) = strokebbox_bbox sbbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
-  
-cairoDrawPageBBoxOnly :: TPageBBoxMap -> Render ()  
-cairoDrawPageBBoxOnly page = do
-    let layers =  glayers page
-    cairoDrawBackground (toPage id page)
-    mapM_ cairoDrawLayerBBoxOnly layers
-
-cairoDrawLayerBBoxOnly :: TLayerBBox -> Render () 
-cairoDrawLayerBBoxOnly  = mapM_ cairoOneStrokeBBoxOnly . gstrokes 
-
-----
-
-cairoDrawPageBBox :: Maybe BBox -> TPageBBoxMap -> Render ()
-cairoDrawPageBBox mbbox page = do 
-    cairoDrawBackgroundBBox mbbox (gdimension page) (gbackground page) 
-    mapM_ (cairoDrawLayerBBox mbbox) (glayers page)
-
-
-cairoDrawLayerBBox :: Maybe BBox -> TLayerBBox -> Render () 
-cairoDrawLayerBBox mbbox layer = do  
+-- | render RLayer within BBox after hittest items
+renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render () 
+renderRLayer_InBBox mbbox layer = do  
   clipBBox mbbox 
   let hittestbbox = case mbbox of 
-                       Nothing -> NotHitted [] 
-                                  :- Hitted (gstrokes layer) 
-                                  :- Empty 
-                       Just bbox -> mkHitTestBBoxBBox bbox (gstrokes layer)
-  mapM_ drawOneStroke . map gToStroke . concatMap unHitted  . getB $ hittestbbox
+        Nothing -> NotHitted [] 
+                   :- Hitted (view gitems layer) 
+                   :- Empty 
+        Just bbox -> (mkHitTestBBoxBBox bbox . view gitems) layer
+  (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
   resetClip
 
+{-
 cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()
 cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do 
     let mbbox2 = toMaybe $ fromMaybe mbbox `mappend` (Intersect (Middle (dimToBBox dim)))
@@ -136,6 +62,16 @@ cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do
         cairoDrawRulingBBox bbox w h sty
 cairoDrawBackgroundBBox _ _  (BackgroundPdf _ _ _ _) = 
     error "BackgroundPdf in cairoDrawBackgroundBBox"
+
+
+
+cairoDrawPageBBox :: Maybe BBox -> TPageBBoxMap -> Render ()
+cairoDrawPageBBox mbbox page = do 
+    cairoDrawBackgroundBBox mbbox (gdimension page) (gbackground page) 
+    mapM_ (cairoDrawLayerBBox mbbox) (glayers page)
+
+
+
 
 cairoDrawRulingBBox :: BBox -> Double -> Double -> ByteString -> Render () 
 cairoDrawRulingBBox (BBox (x1,y1) (x2,y2)) w h style = do
@@ -183,3 +119,4 @@ cairoDrawRulingBBox (BBox (x1,y1) (x2,y2)) w h style = do
       mapM_ drawonegraphvert  graphXs 
       mapM_ drawonegraphhoriz graphYs
     _ -> return ()     
+-}

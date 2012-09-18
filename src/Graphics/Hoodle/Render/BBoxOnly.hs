@@ -31,7 +31,6 @@ import Graphics.Hoodle.Render.Background
 import Graphics.Hoodle.Render.Type 
 import Graphics.Hoodle.Render.Type.Background
 import Graphics.Hoodle.Render.Type.Item
-
 -- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 

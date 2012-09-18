@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.Type.Hitted 
+-- Module      : Graphics.Hoodle.Render.Type.HitTest 
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.Type.Hitted where
+module Graphics.Hoodle.Render.Type.HitTest where
 
 import Data.Hoodle.BBox
 --

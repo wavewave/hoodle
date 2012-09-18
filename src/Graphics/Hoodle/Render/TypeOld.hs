@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -10,25 +10,17 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- Renderable Hoodle Type  
--- 
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.Type where
+module Graphics.Hoodle.Render.Type ( 
+  module Graphics.Hoodle.Render.Type.Hitted,
+  module Graphics.Hoodle.Render.Type.Select
+  ) where
 
--- from this package
-import Data.Hoodle.Generic
-import Data.Hoodle.Simple
+import Graphics.Hoodle.Render.Type.Hitted
+import Graphics.Hoodle.Render.Type.Select
 
--- | 
-type RNLayer = GLayer () [] Stroke 
-
--- | 
-type RNPage = GPage Background [] SLayer 
-
--- |
-type RNHoodle = GHoodle [] SPage 
-
+ 
 
 
 

@@ -48,17 +48,18 @@ Library
 
   Exposed-Modules: 
                    -- Graphics.Hoodle.Render.SimpleNew 
-                   Graphics.Hoodle.Render.Simple
-                   Graphics.Hoodle.Render.BBox
-                   Graphics.Hoodle.Render.Generic
-                   Graphics.Hoodle.Render.PDFBackground
+                   -- Graphics.Hoodle.Render.Simple
+                   -- Graphics.Hoodle.Render.BBox
+                   -- Graphics.Hoodle.Render.Generic
+                   -- Graphics.Hoodle.Render.PDFBackground
                    -- Graphics.Hoodle.Render.BBoxMapPDF
-                   Graphics.Hoodle.Render.BBoxMapPDFImg
-                   Graphics.Hoodle.Render.HitTest
-                   Graphics.Hoodle.Render.Type
-                   Graphics.Hoodle.Render.Type.Hitted
-                   -- Graphics.Hoodle.Render.Type.HoodleRender 
-                   Graphics.Hoodle.Render.Type.Select
+                   -- Graphics.Hoodle.Render.BBoxMapPDFImg
+                   -- Graphics.Hoodle.Render.HitTest
+                   -- Graphics.Hoodle.Render.Type
+                   -- Graphics.Hoodle.Render.Type.Hitted
+                   -- Graphics.Hoodle.Render.Type.BBoxMapPDFImg
+                   -- Graphics.Hoodle.Render.Type.Select
+                   Graphics.Hoodle.Render.Type.Item
 
   if flag(poppler)
     cpp-options: -DPOPPLER

@@ -29,6 +29,7 @@ import           Data.Traversable
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
+import           Data.Hoodle.BBoxImg
 import           Data.Hoodle.Buffer
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Map
@@ -40,55 +41,28 @@ import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.PDFBackground
 import           Graphics.Hoodle.Render.Simple
 import           Graphics.Hoodle.Render.Type 
+import           Graphics.Hoodle.Render.Type.BBoxMapPDFImg
 -- 
 import Prelude hiding ((.),id,mapM, mapM_, sequence )
 
 -- | 
-type TPageBBoxMapPDF = TPageBBoxMapBkg BackgroundPDFDrawable 
+updateLayerBufImg :: Maybe BBox -> TLayerBBoxBufImg LyBuf -> IO (TLayerBBoxBufImg LyBuf)
+updateLayerBufImg mbbox lyr = do 
+  case view g_buffer lyr of 
+    LyBuf (Just sfc) -> do 
+      renderWith sfc $ do 
+        clearBBox mbbox        
+        cairoDrawLayerBBox mbbox (gcast lyr :: TLayerBBoxImg)
+      return lyr
+    _ -> return lyr
+
+
 
 -- | 
-type THoodleBBoxMapPDF = THoodleBBoxMapBkg BackgroundPDFDrawable
+emptyTLayerBBoxBufImg :: IO (TLayerBBoxBufImg LyBuf)
+emptyTLayerBBoxBufImg = updateLayerBufImg Nothing $ gcast emptyLayer 
 
--- | 
-type TTempPageSelectPDF = GPage BackgroundPDFDrawable (TLayerSelectInPage []) TLayerBBox
-
--- | 
-type TTempHoodleSelectPDF = GSelect (IntMap TPageBBoxMapPDF) (Maybe (Int, TTempPageSelectPDF))
-
--- | 
-newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
-
--- | 
-type instance StrokeTypeFromLayer (TLayerBBoxBuf b) = StrokeBBox 
-
--- | 
-type TPageBBoxMapPDFBuf = 
-  TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
-  
--- |   
-type THoodleBBoxMapPDFBuf = 
-  THoodleBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
-  
--- |
-type TTempPageSelectPDFBuf = 
-  GPage BackgroundPDFDrawable (TLayerSelectInPageBuf ZipperSelect) (TLayerBBoxBuf LyBuf)
-
--- | 
-type TTempHoodleSelectPDFBuf = 
-  GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
-
--- | 
-instance GCast (TLayerBBox)  (TLayerBBoxBuf LyBuf) where
-  gcast lyr = GLayerBuf (LyBuf Nothing) (view g_strokes lyr) 
-
--- | 
-instance GCast Layer (TLayerBBoxBuf LyBuf) where
-  gcast lyr = gcast (fromLayer lyr :: TLayerBBox)
-
--- | 
-emptyTLayerBBoxBufLyBuf :: IO (TLayerBBoxBuf LyBuf)
-emptyTLayerBBoxBufLyBuf = updateLayerBuf Nothing $ gcast emptyLayer 
-
+{-
 -- | 
 instance GBackgroundable BackgroundPDFDrawable where 
   gFromBackground = bkgPDFFromBkg 
@@ -248,16 +222,6 @@ mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do
   return $ GLayerBuf { gbuffer = LyBuf (Just sfc), 
                        gbstrokes = strs }  -- temporary
 
--- | 
-updateLayerBuf :: Maybe BBox -> TLayerBBoxBuf LyBuf -> IO (TLayerBBoxBuf LyBuf)
-updateLayerBuf mbbox lyr = do 
-  case view g_buffer lyr of 
-    LyBuf (Just sfc) -> do 
-      renderWith sfc $ do 
-        clearBBox mbbox        
-        cairoDrawLayerBBox mbbox (gcast lyr :: TLayerBBox)
-      return lyr
-    _ -> return lyr
     
 -- | 
 mkTPageBBoxMapPDFBufFromNoBuf :: TPageBBoxMapPDF -> IO TPageBBoxMapPDFBuf
@@ -340,3 +304,4 @@ instance RenderOptionable (InBBox TPageBBoxMapPDFBuf) where
     cairoRenderOption (DrawPDFInBBox mbbox) (view g_background page, view g_dimension page)
     mapM_ (cairoRenderOption opt . InBBox) .  view g_layers $ page
 
+-}

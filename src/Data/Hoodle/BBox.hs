@@ -15,14 +15,19 @@
 module Data.Hoodle.BBox 
 ( BBox
 , StrokeBBox
+, strkbbx_strk
+, strkbbx_bbx
 , mkStrokeBBox
 , ImageBBox 
+, imgbbx_img
+, imgbbx_bbx
 , mkImageBBox
 , mkbbox
 , mkbboxF
 , bboxFromStroke
 , bboxFromImage
 , dimToBBox
+, bboxToDim
 , xformBBox
 , inflate
 , moveBBoxToOrigin
@@ -139,6 +144,12 @@ bboxFromStroke (VWStroke _ _ dat) =
 -- |
 dimToBBox :: Dimension -> BBox 
 dimToBBox (Dim w h) = BBox (0,0) (w,h)
+
+-- |
+-- |
+bboxToDim :: BBox -> Dimension
+bboxToDim (BBox (x1,y1) (x2,y2)) = Dim (x2-x1) (y2-y1)
+
 
 -- | 
 bboxFromImage :: Image -> BBox 

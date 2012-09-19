@@ -32,13 +32,16 @@ Library
                    Data.Hoodle.BBox
                    Data.Hoodle.Generic
                    Data.Hoodle.Generic.Simple
+                   Data.Hoodle.Predefined 
                    Data.Hoodle.Simple
+                   Data.Hoodle.Select
+                   Data.Hoodle.Util
+                   Data.Hoodle.Zipper 
+
 --                   Data.Hoodle.BBoxImg 
 --                   Data.Hoodle.Map
 --                   Data.Hoodle.Buffer
---                   Data.Hoodle.Predefined 
---                   Data.Hoodle.Select
-                   Data.Hoodle.Util
+
   Other-Modules: 
 
  

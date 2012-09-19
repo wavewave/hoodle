@@ -19,8 +19,10 @@ module Data.Hoodle.Generic where
 import Control.Category
 import Control.Lens 
 import Data.ByteString hiding (map,zip)
+import Data.Foldable
 import Data.Functor
 import Data.IntMap hiding (map)
+import Data.Sequence (Seq,fromList)
 -- from this package
 import Data.Hoodle.Simple
 -- 
@@ -42,10 +44,11 @@ data GPage bkg cntnr lyr = GPage
 -- data GLayer cntnr itm = GLayer { glayer_itms :: cntnr itm } 
             
 -- | Generic buffered layer having generic items
-data GLayer buf cntnr itm = GLayer 
-                          { glayer_buf :: buf 
-                          , glayer_itms :: cntnr itm 
-                          } 
+data GLayer buf cntnr strk = GLayer 
+                             { glayer_buf :: buf 
+                             , glayer_strks :: cntnr strk 
+                             -- , glayer_itms :: cntnr itm 
+                             } 
                        
 {-                          
 -- |
@@ -90,82 +93,41 @@ gbackground = lens gpage_bkg (\f a -> f { gpage_bkg = a } )
 glayers :: Simple Lens (GPage bkg cntnr lyr) (cntnr lyr)
 glayers = lens gpage_lyrs (\f a -> f { gpage_lyrs = a } ) 
 
+{-
 -- |
 gitems :: Simple Lens (GLayer buf cntnr itm) (cntnr itm)
 gitems = lens glayer_itms (\f a -> f { glayer_itms = a } )
-
-{- -- |
-g_bstrokes :: Simple Lens (GLayerBuf b s a) (s a)
-g_bstrokes = lens gbstrokes (\f a -> f { gbstrokes = a } )
 -}
 
+
+-- |
+gstrokes :: Simple Lens (GLayer buf cntnr strk) (cntnr strk)
+gstrokes = lens glayer_strks (\f a -> f { glayer_strks = a } )
 
 -- |
 gbuffer :: Simple Lens (GLayer buf cntnr itm) buf 
 gbuffer = lens glayer_buf (\f a -> f { glayer_buf = a } )
 
-{-
--- |
-g_selectTitle :: Simple Lens (GSelect a b) ByteString
-g_selectTitle = lens gselectTitle (\f a -> f {gselectTitle = a})
-
--- |
-g_selectAll :: Simple Lens (GSelect a b) a 
-g_selectAll = lens gselectAll (\f a -> f {gselectAll = a} )
-
--- |
-g_selectSelected :: Simple Lens (GSelect a b) b
-g_selectSelected = lens gselectSelected (\f a -> f {gselectSelected = a})
--}
-
-{-
--- | 
-class GCast a b where 
-  gcast :: a -> b 
--}
-
-{-
--- | 
-data GSelect a b = GSelect { gselectTitle :: ByteString 
-                           , gselectAll :: a 
-                           , gselectSelected :: b
-                           }
-
--- | 
-type TLayerSimple = GLayer [] Stroke 
-
--- | 
-type TPageSimple = GPage Background [] TLayerSimple 
-
--- |
-type THoodleSimple = GHoodle [] TPageSimple 
-
--- |
-class GStrokeable a where
-  gFromStroke :: Stroke -> a 
-  gToStroke :: a -> Stroke 
-  
--- |
-instance GStrokeable Stroke where
-  gFromStroke = id
-  gToStroke = id 
--}
 
 
 -- |
-class Listable s where  
+class (Foldable s) => Listable s where  
   fromList :: [a] -> s a 
-  toList :: s a -> [a]
+--   toList :: s a -> [a]
   
 -- |
 instance Listable [] where
   fromList = id 
-  toList = id 
+--   toList = id 
   
 -- | 
 instance Listable IntMap where 
   fromList = Data.IntMap.fromList . zip [0..] 
-  toList = Data.IntMap.elems 
+--   toList = Data.IntMap.elems 
+  
+-- | 
+instance Listable Seq where
+  fromList = Data.Sequence.fromList 
 
 {-
 -- |
@@ -230,9 +192,6 @@ toPageFromBuf f = pageFromTPageSimple . bkgchange f . chgStreamToList . fmap (fm
 bkgchange :: (b -> b') -> GPage b s a -> GPage b' s a 
 bkgchange f p = p { gbackground = f (gbackground p) } 
 
--- | 
-mkTLayerSimpleFromLayer :: Layer -> TLayerSimple
-mkTLayerSimpleFromLayer = GLayer <$> layer_strokes
 
 -- | 
 mkTPageSimpleFromPage :: Page -> TPageSimple 
@@ -277,4 +236,33 @@ printLayerStructureInPage page = do
       lst = fmap (Prelude.length . (^.g_bstrokes)) (gToList lyrs)
   (Prelude.putStrLn . ("num of layers = "++) . show . Prelude.length . gToList ) lyrs 
   Prelude.putStrLn $ "layer strokes = " ++ show lst 
+-}
+
+{-
+-- | 
+type TLayerSimple = GLayer [] Stroke 
+
+-- | 
+type TPageSimple = GPage Background [] TLayerSimple 
+
+-- |
+type THoodleSimple = GHoodle [] TPageSimple 
+-}
+
+{-
+-- |
+class GStrokeable a where
+  gFromStroke :: Stroke -> a 
+  gToStroke :: a -> Stroke 
+  
+-- |
+instance GStrokeable Stroke where
+  gFromStroke = id
+  gToStroke = id 
+-}
+
+{-
+-- | 
+class GCast a b where 
+  gcast :: a -> b 
 -}

@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Data.Hoodle.BBox 
-( BBox
+( BBox (..) 
 , StrokeBBox
 , strkbbx_strk
 , strkbbx_bbx

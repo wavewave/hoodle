@@ -31,11 +31,12 @@ import Prelude hiding ((.),id,putStrLn,fst,snd,curry,uncurry)
 -- | 
 type Title = S.ByteString
 
-
+{- for the time being, I postpone 
 -- | wrapper of object embeddable in Layer
 data Item = ItemStroke Stroke
           | ItemImage Image
           deriving (Show,Eq,Ord)
+-}
 
 -- | Pen stroke item 
 data Stroke = Stroke { stroke_tool  :: !S.ByteString
@@ -83,7 +84,7 @@ instance SE.Serialize Image where
                      >> SE.put img_dim
     get = Image <$> SE.get <*> SE.get <*> SE.get
 
-
+{-
 -- | 
 instance SE.Serialize Item where
     put (ItemStroke str) = SE.putWord8 0 
@@ -95,6 +96,7 @@ instance SE.Serialize Item where
                0 -> ItemStroke <$> SE.get
                1 -> ItemImage <$> SE.get
                _ -> fail "err in Item parsing"
+-}
 
 -- |    
 instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
@@ -136,7 +138,8 @@ data Page = Page { page_dim :: !Dimension
           deriving Show 
 
 -- | 
-data Layer = Layer { layer_items :: ![Item] } 
+data Layer = --  Layer { layer_items :: ![Item] } 
+             Layer { layer_strokes :: ![Stroke] }
            deriving Show 
 
 -- | 
@@ -177,9 +180,15 @@ background = lens page_bkg (\f a -> f { page_bkg = a } )
 layers :: Simple Lens Page [Layer] 
 layers = lens page_layers (\f a -> f { page_layers = a } )
 
+{-
 -- | 
 items :: Simple Lens Layer [Item]
 items = lens layer_items (\f a -> f { layer_items = a } )
+-}
+
+-- | 
+strokes :: Simple Lens Layer [Stroke]
+strokes = lens layer_strokes (\f a -> f { layer_strokes = a } )
 
 --------------------------
 -- empty objects
@@ -191,7 +200,7 @@ emptyHoodle = Hoodle "" []
 
 -- | 
 emptyLayer :: Layer 
-emptyLayer = Layer { layer_items = [] }
+emptyLayer = Layer { layer_strokes = [] } -- { layer_items = [] }
 
 -- | 
 emptyStroke :: Stroke 

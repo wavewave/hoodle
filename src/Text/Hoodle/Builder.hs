@@ -15,6 +15,7 @@
 module Text.Hoodle.Builder where
 
 -- from other packages 
+import           Control.Lens 
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
@@ -37,36 +38,36 @@ infixl 4 <>
 
 -- | 
 builder :: Hoodle -> L.ByteString
-builder = toLazyByteString . fromHoodle
+builder = toLazyByteString . buildHoodle
 
 -- |
-fromHoodle :: Hoodle -> Builder 
-fromHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1\">\n"
-                 <> fromTitle (hoodle_title hdl) 
-                 <> mconcat (map fromPage (hoodle_pages hdl))
+buildHoodle :: Hoodle -> Builder 
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1\">\n"
+                 <> (buildTitle . view title) hdl 
+                 <> (mconcat . map buildPage . view pages) hdl
                  <> fromByteString "</hoodle>\n"
   
 -- |                  
-fromTitle :: S.ByteString -> Builder
-fromTitle title = fromByteString "<title>"
-                  <> fromByteString title
-                  <> fromByteString "</title>\n"
+buildTitle :: S.ByteString -> Builder
+buildTitle ttl = fromByteString "<title>"
+                <> fromByteString ttl
+                <> fromByteString "</title>\n"
 
 -- | 
-fromPage :: Page -> Builder 
-fromPage page = fromByteString "<page width=\""
-                <> fromByteString (toFixed 2 w)
-                <> fromByteString "\" height=\""
-                <> fromByteString (toFixed 2 h)
-                <> fromByteString "\">\n"   
-                <> fromBackground (page_bkg page)
-                <> mconcat (map fromLayer (page_layers page))
-                <> fromByteString "</page>\n"
-  where Dim w h = page_dim page
+buildPage :: Page -> Builder 
+buildPage pg = fromByteString "<page width=\""
+              <> fromByteString (toFixed 2 w)
+              <> fromByteString "\" height=\""
+              <> fromByteString (toFixed 2 h)
+              <> fromByteString "\">\n"   
+              <> (buildBackground . view background) pg 
+              <> (mconcat . map buildLayer . view layers) pg 
+              <> fromByteString "</page>\n"
+  where Dim w h = view dimension pg
   
 -- | 
-fromBackground :: Background -> Builder 
-fromBackground bkg = 
+buildBackground :: Background -> Builder 
+buildBackground bkg = 
   case bkg of  
     Background typ col sty -> 
       fromByteString "<background type=\""
@@ -92,14 +93,14 @@ fromBackground bkg =
       <> fromByteString "\"/>\n"
       
 -- | 
-fromLayer :: Layer -> Builder
-fromLayer layer = fromByteString "<layer>\n"
-                  <> mconcat (map fromStroke (layer_strokes layer))
+buildLayer :: Layer -> Builder
+buildLayer layer = fromByteString "<layer>\n"
+                  <> (mconcat . map buildStroke . view strokes) layer
                   <> fromByteString "</layer>\n"
 
 -- | 
-fromStroke :: Stroke -> Builder
-fromStroke stroke@(Stroke _ _ _ _) = 
+buildStroke :: Stroke -> Builder
+buildStroke stroke@(Stroke _ _ _ _) = 
     fromByteString "<stroke tool=\""
     <> fromByteString (stroke_tool stroke)
     <> fromByteString "\" color=\""
@@ -107,18 +108,19 @@ fromStroke stroke@(Stroke _ _ _ _) =
     <> fromByteString "\" width=\""
     <> fromByteString (toFixed 2 (stroke_width stroke))
     <> fromByteString "\">\n"
-    <> mconcat (map from2DCoord (stroke_data stroke))
+    <> mconcat (map build2D (stroke_data stroke))
     <> fromByteString "\n</stroke>\n"
-fromStroke stroke@(VWStroke _ _ _) =
+buildStroke stroke@(VWStroke _ _ _) =
     fromByteString "<stroke tool=\""
     <> fromByteString (stroke_tool stroke)
     <> fromByteString "\" color=\""
     <> fromByteString (stroke_color stroke)
     <> fromByteString "\" width=\""
-    <> mconcat (map zFrom3DCoord (stroke_vwdata stroke))
+    <> mconcat (map buildZFrm3D (stroke_vwdata stroke))
     <> fromByteString "\">\n"
-    <> mconcat (map xyFrom3DCoord (stroke_vwdata stroke))
+    <> mconcat (map buildXYFrm3D (stroke_vwdata stroke))
     <> fromByteString "\n</stroke>\n"
+{-
 fromStroke (Img bstr (x,y) (Dim w h)) =
     fromByteString "<img src=\""
     <> fromByteString bstr
@@ -131,24 +133,24 @@ fromStroke (Img bstr (x,y) (Dim w h)) =
     <> fromByteString "\" height=\""
     <> fromByteString (toFixed 2 h)
     <> fromByteString "\" />\n"
-  
+-}  
 
 
 -- | 
-from2DCoord :: Pair Double Double -> Builder 
-from2DCoord (x :!: y) = fromByteString (toFixed 2 x) 
-                      <> fromChar ' ' 
-                      <> fromByteString (toFixed 2 y) 
-                      <> fromChar ' ' 
+build2D :: Pair Double Double -> Builder 
+build2D (x :!: y) = fromByteString (toFixed 2 x) 
+                    <> fromChar ' ' 
+                    <> fromByteString (toFixed 2 y) 
+                    <> fromChar ' ' 
                       
 -- |                       
-xyFrom3DCoord :: (Double,Double,Double) -> Builder 
-xyFrom3DCoord (x,y,_) =  fromByteString (toFixed 2 x) 
-                         <> fromChar ' ' 
-                         <> fromByteString (toFixed 2 y)
-                         <> fromChar ' ' 
+buildXYFrm3D :: (Double,Double,Double) -> Builder 
+buildXYFrm3D (x,y,_) =  fromByteString (toFixed 2 x) 
+                        <> fromChar ' ' 
+                        <> fromByteString (toFixed 2 y)
+                        <> fromChar ' ' 
                          
 -- |
-zFrom3DCoord :: (Double,Double,Double) -> Builder 
-zFrom3DCoord (_,_,z) = fromByteString (toFixed 2 z) 
-                       <> fromChar ' '
+buildZFrm3D :: (Double,Double,Double) -> Builder 
+buildZFrm3D (_,_,z) = fromByteString (toFixed 2 z) 
+                      <> fromChar ' '

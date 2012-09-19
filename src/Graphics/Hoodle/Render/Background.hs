@@ -19,23 +19,26 @@
 
 module Graphics.Hoodle.Render.Background where
 
-import Control.Monad.State hiding (mapM_)
-import Data.Monoid 
-import Data.ByteString hiding (putStrLn)
+import           Control.Monad.State hiding (mapM_)
+import           Data.ByteString hiding (putStrLn,filter)
 import qualified Data.ByteString.Char8 as C
-import Graphics.Rendering.Cairo
+import           Data.Foldable (mapM_)
+import           Data.Monoid 
+import           Graphics.Rendering.Cairo
 --
 #ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif
 -- from hoodle-platform
-import Data.Hoodle.Simple
+import           Data.Hoodle.BBox
+import           Data.Hoodle.Predefined 
+import           Data.Hoodle.Simple
 -- from this package
 --- import Graphics.Hoodle.Render.BBox 
 -- import Graphics.Hoodle.Render.Generic
-import Graphics.Hoodle.Render.Simple 
-import Graphics.Hoodle.Render.Type.Background
+-- import           Graphics.Hoodle.Render.Simple 
+import           Graphics.Hoodle.Render.Type.Background
 --
 import Prelude hiding (mapM_)
   
@@ -66,20 +69,98 @@ popplerGetPageFromDoc doc pn = do
   return (Just pg, Just sfc)
 #endif
 
-renderRBkg :: (RBackground,Dimension) 
-              -> Render ()
-renderRBkg r@(RBkgSmpl _ _ _,dim) = renderBkg (rbkg2Bkg (fst r),dim)
-renderRBkg (RBkgPDF _ _ _ p _,dim) = do
-  case p of 
-    Nothing -> return () 
-    Just pg -> do 
-      let Dim w h = dim 
-      setSourceRGBA 1 1 1 1
-      rectangle 0 0 w h 
-      fill
-#ifdef POPPLER
-      PopplerPage.pageRender pg
-#endif     
+-- | draw ruling all 
+drawRuling :: Double -> Double -> ByteString -> Render () 
+drawRuling w h style = do
+  let drawHorizRules = do 
+      let (r,g,b,a) = predefined_RULING_COLOR         
+      setSourceRGBA r g b a 
+      setLineWidth predefined_RULING_THICKNESS
+      let drawonerule y = do 
+            moveTo 0 y 
+            lineTo w y
+            stroke  
+      mapM_ drawonerule [ predefined_RULING_TOPMARGIN 
+                        , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
+                        .. 
+                        h-1 ]
+  case style of 
+    "plain" -> return () 
+    "lined" -> do 
+      drawHorizRules
+      let (r2,g2,b2,a2) = predefined_RULING_MARGIN_COLOR
+      setSourceRGBA r2 g2 b2 a2 
+      setLineWidth predefined_RULING_THICKNESS
+      moveTo predefined_RULING_LEFTMARGIN 0 
+      lineTo predefined_RULING_LEFTMARGIN h
+      stroke
+    "ruled" -> drawHorizRules 
+    "graph" -> do 
+      let (r3,g3,b3,a3) = predefined_RULING_COLOR 
+      setSourceRGBA r3 g3 b3 a3 
+      setLineWidth predefined_RULING_THICKNESS
+      let drawonegraphvert x = do 
+            moveTo x 0 
+            lineTo x h
+            stroke  
+      let drawonegraphhoriz y = do 
+            moveTo 0 y
+            lineTo w y
+            stroke
+      mapM_ drawonegraphvert  [0,predefined_RULING_GRAPHSPACING..w-1] 
+      mapM_ drawonegraphhoriz [0,predefined_RULING_GRAPHSPACING..h-1]
+    _ -> return ()     
+
+
+
+-- | draw ruling  in bbox 
+drawRuling_InBBox :: BBox -> Double -> Double -> ByteString -> Render () 
+drawRuling_InBBox (BBox (x1,y1) (x2,y2)) w h style = do
+  let drawonerule y = do 
+        moveTo x1 y 
+        lineTo x2 y
+        stroke  
+  let drawonegraphvert x = do 
+        moveTo x y1 
+        lineTo x y2
+        stroke  
+  let drawonegraphhoriz y = do 
+        moveTo x1 y
+        lineTo x2 y
+        stroke
+      fullRuleYs = [ predefined_RULING_TOPMARGIN 
+                   , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
+                   .. 
+                   h-1 ]
+      ruleYs = filter (\y-> (y <= y2) && (y >= y1)) fullRuleYs
+      fullGraphXs = [0,predefined_RULING_GRAPHSPACING..w-1]          
+      fullGraphYs = [0,predefined_RULING_GRAPHSPACING..h-1]
+      graphXs = filter (\x->(x<=x2)&&(x>=x1)) fullGraphXs
+      graphYs = filter (\y->(y<=y2)&&(y>=y1)) fullGraphYs 
+  let drawHorizRules = do 
+      let (r,g,b,a) = predefined_RULING_COLOR         
+      setSourceRGBA r g b a 
+      setLineWidth predefined_RULING_THICKNESS
+      mapM_ drawonerule ruleYs
+  case style of 
+    "plain" -> return () 
+    "lined" -> do 
+      drawHorizRules
+      let (r2,g2,b2,a2) = predefined_RULING_MARGIN_COLOR
+      setSourceRGBA r2 g2 b2 a2 
+      setLineWidth predefined_RULING_THICKNESS
+      moveTo predefined_RULING_LEFTMARGIN 0 
+      lineTo predefined_RULING_LEFTMARGIN h
+      stroke
+    "ruled" -> drawHorizRules 
+    "graph" -> do 
+      let (r3,g3,b3,a3) = predefined_RULING_COLOR 
+      setSourceRGBA r3 g3 b3 a3 
+      setLineWidth predefined_RULING_THICKNESS
+      mapM_ drawonegraphvert  graphXs 
+      mapM_ drawonegraphhoriz graphYs
+    _ -> return ()     
+
 
 {-
 instance Renderable (BackgroundPDFDrawable,Dimension) where

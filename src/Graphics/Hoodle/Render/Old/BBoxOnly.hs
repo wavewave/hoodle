@@ -30,7 +30,7 @@ import Data.Hoodle.Predefined
 import Graphics.Hoodle.Render.Background 
 import Graphics.Hoodle.Render.Type 
 import Graphics.Hoodle.Render.Type.Background
-import Graphics.Hoodle.Render.Type.Item
+-- import Graphics.Hoodle.Render.Type.Item
 -- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
@@ -57,14 +57,17 @@ renderImgBBx_BBoxOnly ibbox = do
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
     
+{-
 -- | 
 renderRItem_BBoxOnly :: RItem -> Render () 
 renderRItem_BBoxOnly (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
+-}
 
 -- | 
 renderRLayer_BBoxOnly :: RLayer -> Render ()
-renderRLayer_BBoxOnly = mapM_ renderRItem_BBoxOnly . view gitems
+renderRLayer_BBoxOnly = mapM_ renderStrkBBx_BBoxOnly . view gstrokes 
+                        -- mapM_  renderRItem_BBoxOnly . view gitems
 
 -- |
 renderRBkg_BBoxOnly :: (RBackground,Dimension) -> Render ()
@@ -154,50 +157,4 @@ cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do
 cairoDrawBackgroundBBox _ _  (BackgroundPdf _ _ _ _) = 
     error "BackgroundPdf in cairoDrawBackgroundBBox"
 
-cairoDrawRulingBBox :: BBox -> Double -> Double -> ByteString -> Render () 
-cairoDrawRulingBBox (BBox (x1,y1) (x2,y2)) w h style = do
-  let drawonerule y = do 
-        moveTo x1 y 
-        lineTo x2 y
-        stroke  
-  let drawonegraphvert x = do 
-        moveTo x y1 
-        lineTo x y2
-        stroke  
-  let drawonegraphhoriz y = do 
-        moveTo x1 y
-        lineTo x2 y
-        stroke
-      fullRuleYs = [ predefined_RULING_TOPMARGIN 
-                   , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
-                   .. 
-                   h-1 ]
-      ruleYs = filter (\y-> (y <= y2) && (y >= y1)) fullRuleYs
-      fullGraphXs = [0,predefined_RULING_GRAPHSPACING..w-1]          
-      fullGraphYs = [0,predefined_RULING_GRAPHSPACING..h-1]
-      graphXs = filter (\x->(x<=x2)&&(x>=x1)) fullGraphXs
-      graphYs = filter (\y->(y<=y2)&&(y>=y1)) fullGraphYs 
-  let drawHorizRules = do 
-      let (r,g,b,a) = predefined_RULING_COLOR         
-      setSourceRGBA r g b a 
-      setLineWidth predefined_RULING_THICKNESS
-      mapM_ drawonerule ruleYs
-  case style of 
-    "plain" -> return () 
-    "lined" -> do 
-      drawHorizRules
-      let (r2,g2,b2,a2) = predefined_RULING_MARGIN_COLOR
-      setSourceRGBA r2 g2 b2 a2 
-      setLineWidth predefined_RULING_THICKNESS
-      moveTo predefined_RULING_LEFTMARGIN 0 
-      lineTo predefined_RULING_LEFTMARGIN h
-      stroke
-    "ruled" -> drawHorizRules 
-    "graph" -> do 
-      let (r3,g3,b3,a3) = predefined_RULING_COLOR 
-      setSourceRGBA r3 g3 b3 a3 
-      setLineWidth predefined_RULING_THICKNESS
-      mapM_ drawonegraphvert  graphXs 
-      mapM_ drawonegraphhoriz graphYs
-    _ -> return ()     
 -}

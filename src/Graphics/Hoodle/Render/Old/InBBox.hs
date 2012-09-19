@@ -14,11 +14,13 @@
 -- 
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.BBox where
+module Graphics.Hoodle.Render.InBBox where
 
 import           Control.Lens 
+import           Data.ByteString hiding (filter,concatMap)
 import           Data.Foldable
 import qualified Data.Map as M
+import           Data.Monoid
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import Data.Hoodle.Generic
@@ -27,44 +29,22 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
 -- from this package
 import Graphics.Hoodle.Render.Background 
+import Graphics.Hoodle.Render.Simple 
 import Graphics.Hoodle.Render.Type 
 import Graphics.Hoodle.Render.Type.Background
-import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render.Type.HitTest
+-- import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render.Util 
+import Graphics.Hoodle.Render.Util.HitTest
+
 -- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
 
--- | render RLayer within BBox after hittest items
-renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render () 
-renderRLayer_InBBox mbbox layer = do  
-  clipBBox mbbox 
-  let hittestbbox = case mbbox of 
-        Nothing -> NotHitted [] 
-                   :- Hitted (view gitems layer) 
-                   :- Empty 
-        Just bbox -> (mkHitTestBBoxBBox bbox . view gitems) layer
-  (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
-  resetClip
+
+
 
 {-
-cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()
-cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do 
-    let mbbox2 = toMaybe $ fromMaybe mbbox `mappend` (Intersect (Middle (dimToBBox dim)))
-    case mbbox2 of 
-      Nothing -> cairoDrawBkg (Dim w h) (Background typ col sty)
-      Just bbox@(BBox (x1,y1) (x2,y2)) -> do 
-        let c = M.lookup col predefined_bkgcolor  
-        case c of 
-          Just (r,g,b,_a) -> setSourceRGB r g b 
-          Nothing        -> setSourceRGB 1 1 1 
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        fill
-        cairoDrawRulingBBox bbox w h sty
-cairoDrawBackgroundBBox _ _  (BackgroundPdf _ _ _ _) = 
-    error "BackgroundPdf in cairoDrawBackgroundBBox"
-
-
-
 cairoDrawPageBBox :: Maybe BBox -> TPageBBoxMap -> Render ()
 cairoDrawPageBBox mbbox page = do 
     cairoDrawBackgroundBBox mbbox (gdimension page) (gbackground page) 

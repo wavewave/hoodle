@@ -101,13 +101,7 @@ hltStrksFilteredBy test strs = evalState (testaction test strs) False
             then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
             else return (NotHitted nhit :- Hitted hit :- hltStrksFilteredBy test rest')
 
--- | 
-hltStrksHittedByLine :: ((Double,Double),(Double,Double)) -- ^ line 
-                     -> [StrokeBBox]                      -- ^ strokes to test
-                     -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
-hltStrksHittedByLine (p1,p2) = hltStrksFilteredBy boxhittest 
-  where boxhittest s = isPointInBBox (strkbbx_bbx s) p1
-                       || isPointInBBox (strkbbx_bbx s) p2
+
 
 -- |
 hltStrksHittedByBBox :: BBox  -- ^ test bounding box
@@ -121,9 +115,16 @@ hltStrksEmbeddedByBBox :: BBox
                        -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 hltStrksEmbeddedByBBox b = hltStrksFilteredBy (isBBox2InBBox1 b . strkbbx_bbx)
 
+-- | only check if a line and bbox of strokebbox overlapped 
+hltStrksHittedByLineRough :: ((Double,Double),(Double,Double)) -- ^ line 
+                          -> [StrokeBBox]                      -- ^ strokes to test
+                          -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
+hltStrksHittedByLineRough (p1,p2) = hltStrksFilteredBy boxhittest 
+  where boxhittest s = isPointInBBox (strkbbx_bbx s) p1
+                       || isPointInBBox (strkbbx_bbx s) p2
+
 
 {-
- 
 -- |
 mkHitTestStroke :: ((Double,Double),(Double,Double))
                 -> [StrokeBBox]
@@ -139,8 +140,10 @@ hitTestStrokes _ (n:-Empty) = return (n:-Empty)
 hitTestStrokes line (n:-h:-rest) = do 
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
-  
+-}
 
+
+{-
 -- | 
 elimHitted :: AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) -> State (Maybe BBox) [StrokeBBox]
 elimHitted Empty = error "something wrong in elimHitted"

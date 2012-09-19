@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+o{-# LANGUAGE TypeFamilies #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -14,15 +14,15 @@
 
 module Graphics.Hoodle.Render.Type.Select where
 
+-- from other packages
+import Data.IntMap hiding (map)
+-- from hoodle-platform 
 import Data.Hoodle.Simple 
 import Data.Hoodle.Generic
 import Data.Hoodle.BBox
 import Data.Hoodle.Map
-import Data.IntMap hiding (map)
-
-import Graphics.Hoodle.Render.Type.Hitted 
-
-type TLayerSelect a = GLayer TEitherAlterHitted (StrokeTypeFromLayer a) 
+-- from this package
+import Graphics.Hoodle.Render.Type.HitTest
 
 type TLayerSelectBuf a = GLayerBuf (BufTypeFromLayer a) TEitherAlterHitted (StrokeTypeFromLayer a) 
 
@@ -39,10 +39,35 @@ data TLayerSelectInPage s a = TLayerSelectInPage
                               , gotherlayers :: s a
                               }
 
+
 data TLayerSelectInPageBuf s a = TLayerSelectInPageBuf
                                { gselectedlayerbuf :: TLayerSelectBuf a 
                                , gotherlayersbuf :: s a
                                }
+
+
+-- -- | 
+-- newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
+
+-- | 
+type instance StrokeTypeFromLayer (TLayerBBoxBuf b) = StrokeBBox 
+
+-- -- | 
+-- type TPageBBoxMapPDFBuf = 
+--   TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
+  
+-- -- |   
+-- type THoodleBBoxMapPDFBuf = 
+--   THoodleBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
+  
+-- |
+type TTempPageSelectPDFBuf = 
+  GPage BackgroundPDFDrawable (TLayerSelectInPageBuf ZipperSelect) (TLayerBBoxBuf LyBuf)
+
+-- | 
+type TTempHoodleSelectPDFBuf = 
+  GSelect (IntMap TPageBBoxMapPDFBuf) (Maybe (Int, TTempPageSelectPDFBuf))
+
 
 {-
 -- | deprecated 
@@ -55,3 +80,6 @@ type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
 type TTempHoodleSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))
 
 -}
+
+
+-- type TLayerSelect a = GLayer TEitherAlterHitted (StrokeTypeFromLayer a) 

@@ -143,7 +143,7 @@ hitTestStrokes line (n:-h:-rest) = do
 -}
 
 
-{-
+
 -- | 
 elimHitted :: AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) -> State (Maybe BBox) [StrokeBBox]
 elimHitted Empty = error "something wrong in elimHitted"
@@ -153,6 +153,7 @@ elimHitted (n:-h:-rest) = do
   let bbox2 = getTotalBBox (unHitted h) 
   put (merge bbox bbox2) 
   return . (unNotHitted n ++) =<< elimHitted rest
+
 
 -- | 
 merge :: Maybe BBox -> Maybe BBox -> Maybe BBox    
@@ -165,6 +166,5 @@ merge (Just (BBox (x1,y1) (x2,y2))) (Just (BBox (x3,y3) (x4,y4)))
 -- | 
 getTotalBBox :: [StrokeBBox] -> Maybe BBox 
 getTotalBBox = foldl f Nothing 
-  where f acc = merge acc . Just . strokebbox_bbox
+  where f acc = merge acc . Just . strkbbx_bbx
 
--}

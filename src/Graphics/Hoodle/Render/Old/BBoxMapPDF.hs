@@ -248,16 +248,6 @@ mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do
   return $ GLayerBuf { gbuffer = LyBuf (Just sfc), 
                        gbstrokes = strs }  -- temporary
 
--- | 
-updateLayerBuf :: Maybe BBox -> TLayerBBoxBuf LyBuf -> IO (TLayerBBoxBuf LyBuf)
-updateLayerBuf mbbox lyr = do 
-  case view g_buffer lyr of 
-    LyBuf (Just sfc) -> do 
-      renderWith sfc $ do 
-        clearBBox mbbox        
-        cairoDrawLayerBBox mbbox (gcast lyr :: TLayerBBox)
-      return lyr
-    _ -> return lyr
     
 -- | 
 mkTPageBBoxMapPDFBufFromNoBuf :: TPageBBoxMapPDF -> IO TPageBBoxMapPDFBuf
@@ -278,20 +268,6 @@ mkTHoodleBBoxMapPDFBufFromNoBuf hdl = do
  
   return $ GHoodle title pages'
 
--- | 
-resetPageBuffers :: TPageBBoxMapPDFBuf -> IO TPageBBoxMapPDFBuf 
-resetPageBuffers page = do 
-  let dim = view g_dimension page
-      mbbox = Just . dimToBBox $ dim 
-  newlayers <- mapM (updateLayerBuf mbbox) . view g_layers $ page 
-  return (set g_layers newlayers page)
-
--- | 
-resetHoodleBuffers :: THoodleBBoxMapPDFBuf -> IO THoodleBBoxMapPDFBuf 
-resetHoodleBuffers hdl = do 
-  let pages = view g_pages hdl 
-  newpages <- mapM resetPageBuffers pages
-  return . set g_pages newpages $ hdl
   
 -- |
 instance GCast (TLayerBBoxBuf a) TLayerBBox where

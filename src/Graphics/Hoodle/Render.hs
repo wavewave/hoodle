@@ -22,6 +22,7 @@ module Graphics.Hoodle.Render
   renderStrk
 , renderImg
 , renderBkg
+, renderPage
 -- * render in bbox using non R-structure 
 , renderBkg_InBBox
 
@@ -37,16 +38,25 @@ module Graphics.Hoodle.Render
 , renderRLayer_BBoxOnly
 , renderRBkg_BBoxOnly
 , renderRPage_BBoxOnly
-  
+-- * buffer update 
+, updateLayerBuf
+, updatePageBuf 
+, updateHoodleBuf 
+-- * construct R-structure from non-R-structure 
+, mkRLayer
+, cnstrctRBkg_StateT
+, cnstrctRPage_StateT
+, cnstrctRHoodle  
   
 ) where
 
 import           Control.Lens 
+import           Control.Monad.State hiding (mapM,mapM_)
 import           Data.Foldable
+import           Data.Traversable (mapM)
 import qualified Data.Map as M
 import           Data.Monoid
 import           Graphics.Rendering.Cairo
-
 -- from hoodle-platform 
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple
@@ -66,7 +76,7 @@ import Graphics.Hoodle.Render.Util
 import Graphics.Hoodle.Render.Util.HitTest 
 import Graphics.Hoodle.Render.Util.Draw 
 -- 
-import Prelude hiding (curry,uncurry,mapM_,concatMap)
+import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
 
 
@@ -257,10 +267,144 @@ renderRLayer_InBBox mbbox layer = do
   resetClip
 
 
+-------------------
+-- update buffer
+-------------------
+
+-- | 
+updateLayerBuf :: Maybe BBox -> RLayer -> IO RLayer
+updateLayerBuf mbbox lyr = do 
+  case view gbuffer lyr of 
+    LyBuf (Just sfc) -> do 
+      renderWith sfc $ do 
+        clearBBox mbbox        
+        renderRLayer_InBBox mbbox lyr 
+      return lyr
+    _ -> return lyr
 
 
+-- | 
+updatePageBuf :: RPage -> IO RPage 
+updatePageBuf pg = do 
+  let dim = view gdimension pg
+      mbbox = Just . dimToBBox $ dim 
+  nlyrs <- mapM (updateLayerBuf mbbox) . view glayers $ pg 
+  return (set glayers nlyrs pg)
+
+-- | 
+updateHoodleBuf :: RHoodle -> IO RHoodle 
+updateHoodleBuf hdl = do 
+  let pgs = view gpages hdl 
+  npgs <- mapM updatePageBuf pgs
+  return . set gpages npgs $ hdl
+
+-------
+-- smart constructor for R hoodle structures
+-------
 
 
+-- |
+cnstrctRHoodle :: Hoodle -> IO RHoodle
+cnstrctRHoodle hdl = do 
+  let ttl = view title hdl 
+      pgs = view pages hdl
+  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) Nothing 
+  return . set gtitle ttl . set gpages (fromList npgs) $ emptyGHoodle 
+    
+{-  
+-- |
+mkAllTPageBBoxMapPDF :: [Page] -> IO [TPageBBoxMapPDF]
+mkAllTPageBBoxMapPDF pgs = evalStateT (mapM mkPagePDF pgs) Nothing 
+-}
+
+-- |
+cnstrctRPage_StateT :: Page -> StateT (Maybe Context) IO RPage
+cnstrctRPage_StateT pg = do  
+  let bkg = view background pg
+      dim = view dimension pg 
+      lyrs = view layers pg
+      nlyrs = fromList . fmap mkRLayer $ lyrs 
+  nbkg <- cnstrctRBkg_StateT dim bkg
+  return . set glayers nlyrs $ emptyGPage dim nbkg 
+    
+-- GPage dim nbkg (gFromList . Prelude.map fromLayer $ ls)
+  
+mkRLayer :: Layer -> RLayer   
+mkRLayer lyr = let nstrks = map mkStrokeBBox . view strokes $ lyr 
+               in set gstrokes nstrks emptyRLayer
+  
+  
+-- |
+cnstrctRBkg_StateT :: Dimension -> Background 
+                   -> StateT (Maybe Context) IO RBackground
+cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
+  let rbkg = bkg2RBkg bkg
+  case rbkg of 
+    RBkgSmpl _c _s msfc -> do 
+      case msfc of 
+        Just _ -> return rbkg
+        Nothing -> do 
+          sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
+          renderWith sfc $ do 
+            -- cairoDrawBkg dim bkg
+            renderBkg (bkg,dim) 
+          return rbkg { rbkg_cairosurface = Just sfc}
+    RBkgPDF md mf pn _ _ -> do 
+#ifdef POPPLER
+      mctxt <- get 
+      case mctxt of
+        Nothing -> do 
+          case (md,mf) of 
+            (Just d, Just f) -> do 
+              mdoc <- liftIO $ popplerGetDocFromFile f
+              put $ Just (Context d f mdoc)
+              case mdoc of 
+                Just doc -> do  
+                  (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
+                  return (rbkg {rbkg_popplerpage = mpg, rbkg_cairosurface = msfc})
+                Nothing -> error "no pdf doc? in mkBkgPDF"
+            _ -> return rbkg 
+        Just (Context _oldd _oldf olddoc) -> do 
+          (mpage,msfc) <- case olddoc of 
+            Just doc -> do 
+              liftIO $ popplerGetPageFromDoc doc pn
+            Nothing -> return (Nothing,Nothing) 
+          return $ RBkgPDF md mf pn mpage msfc
+#else
+          return rbkg
+#endif  
+
+{-
+-- | 
+mkTLayerBBoxBufFromNoBuf :: Dimension -> TLayerBBox -> IO (TLayerBBoxBuf LyBuf)
+mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do 
+  let strs = view g_strokes lyr 
+  sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
+  renderWith sfc (cairoDrawLayerBBox (Just (BBox (0,0) (w,h))) lyr)
+  return $ GLayerBuf { gbuffer = LyBuf (Just sfc), 
+                       gbstrokes = strs }  -- temporary
+
+    
+-- | 
+mkTPageBBoxMapPDFBufFromNoBuf :: TPageBBoxMapPDF -> IO TPageBBoxMapPDFBuf
+mkTPageBBoxMapPDFBufFromNoBuf page = do 
+  let dim = view g_dimension page
+      bkg = view g_background page
+      ls =  view g_layers page
+  ls' <- mapM (mkTLayerBBoxBufFromNoBuf dim) ls
+  return . GPage dim bkg . gFromList . gToList $ ls'
+      
+-- | 
+mkTHoodleBBoxMapPDFBufFromNoBuf :: THoodleBBoxMapPDF 
+                                    -> IO THoodleBBoxMapPDFBuf
+mkTHoodleBBoxMapPDFBufFromNoBuf hdl = do 
+  let title = view g_title hdl
+      pages = view g_pages hdl 
+  pages' <- mapM mkTPageBBoxMapPDFBufFromNoBuf pages
+ 
+  return $ GHoodle title pages'
+
+-}
 
 {-
 cairoOneStrokeSelected :: StrokeBBox -> Render ()

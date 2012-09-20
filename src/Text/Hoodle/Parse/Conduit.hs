@@ -223,10 +223,10 @@ getStroke (EventBeginElement _name namecontent) =
     f acc@(Right (str@(Stroke _t _c _w _d),wdth)) (name,contents) =            
       if nameLocalName name == "tool" 
       then let ContentText txt = Prelude.head contents 
-           in Right (flip (set s_tool) str . encodeUtf8 $ txt, wdth)
+           in Right (flip (set tool) str . encodeUtf8 $ txt, wdth)
       else if nameLocalName name == "color"           
       then let ContentText txt = Prelude.head contents 
-           in Right (flip (set s_color) str . encodeUtf8 $ txt, wdth)
+           in Right (flip (set color) str . encodeUtf8 $ txt, wdth)
       else if nameLocalName name == "width" 
       then let ContentText txt = Prelude.head contents 
            in (,) str <$> getWidth id txt

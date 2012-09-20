@@ -27,7 +27,7 @@ import           Data.Char
 -- import           Data.Iteratee.Char
 import           Data.Strict.Tuple
 -- from hoodle-platform 
-import Data.Hoodle.Simple
+import qualified Data.Hoodle.Simple as H
 import Text.Hoodle.Parse.Zlib
 -- 
 import Prelude hiding (takeWhile)
@@ -65,7 +65,7 @@ headercontent :: Parser B.ByteString
 headercontent = headercontentWorker B.empty
                  
 -- | 
-stroketagopen :: Parser Stroke 
+stroketagopen :: Parser H.Stroke 
 stroketagopen = do 
   trim 
   string "<stroke"
@@ -85,14 +85,14 @@ stroketagopen = do
   width <- double 
   char '"'
   char '>' 
-  return $ Stroke tool color width []   
+  return $ H.Stroke tool color width []   
 
 -- | 
 stroketagclose :: Parser B.ByteString 
 stroketagclose = string "</stroke>"
 
 -- | 
-onestroke :: Parser Stroke 
+onestroke :: Parser H.Stroke 
 onestroke =  do trim
                 strokeinit <- stroketagopen
                 coordlist <- many $ do trim_starting_space
@@ -102,8 +102,9 @@ onestroke =  do trim
                                        skipSpace 
                                        return (x :!: y)  
                 stroketagclose 
-                return $ strokeinit { stroke_data = coordlist } 
+                return $ strokeinit { H.stroke_data = coordlist } 
 
+{-
 -- | 
 img :: Parser Stroke 
 img = do trim 
@@ -131,19 +132,16 @@ img = do trim
          trim 
          string "/>"
          return (Img fsrc (posx,posy) (Dim width height))
-         
+-}         
          
 
 -- | 
 trim :: Parser ()
 trim = trim_starting_space
 
--- | 
--- parser_hoodle :: Parser Hoodle
--- parser_hoodle = do 
                   
-
-hoodle :: Parser Hoodle 
+-- | 
+hoodle :: Parser H.Hoodle 
 hoodle  = do trim
              xmlheader <?> "xmlheader"
              trim
@@ -156,9 +154,9 @@ hoodle  = do trim
              pgs <- many1 (page <?> "page")
              trim
              hoodleclose 
-             return $ Hoodle  t pgs 
+             return $ H.Hoodle t pgs 
              
-page :: Parser Page 
+page :: Parser H.Page 
 page = do trim 
           dim <- pageheader
           trim 
@@ -167,20 +165,20 @@ page = do trim
           layers <- many1 layer
           trim
           pageclose 
-          return $ Page dim bkg layers
+          return $ H.Page dim bkg layers
          
           
-layer :: Parser Layer
+layer :: Parser H.Layer
 layer = do trim
            layerheader
            trim
            -- s1 <- onestroke 
            -- s2 <- img
            -- let strokes = [s1,s2]
-           strokes <- many (try onestroke <|> img)
+           strokes <- many onestroke -- (try onestroke <|> img)
            trim
            layerclose 
-           return $ Layer strokes
+           return $ H.Layer strokes
 
 
 title :: Parser B.ByteString 
@@ -221,7 +219,7 @@ hoodleheaderend = char '>'
 hoodleclose :: Parser B.ByteString
 hoodleclose =  string "</hoodle>"
 
-pageheader :: Parser Dimension 
+pageheader :: Parser H.Dimension 
 pageheader = do pageheaderstart  
                 trim
                 string "width=" 
@@ -235,7 +233,7 @@ pageheader = do pageheaderstart
                 char '"'
                 takeTill (inClass ">")
                 pageheaderend
-                return $ Dim w h
+                return $ H.Dim w h
                  
 pageheaderstart :: Parser B.ByteString
 pageheaderstart = string "<page"
@@ -252,7 +250,7 @@ layerheader = string "<layer>"
 layerclose :: Parser B.ByteString
 layerclose = string "</layer>"
 
-background :: Parser Background 
+background :: Parser H.Background 
 background = do 
     trim
     backgroundheader
@@ -277,7 +275,7 @@ background = do
         trim 
         takeTill (inClass "/>") 
         backgroundclose
-        return $ Background typ col sty 
+        return $ H.Background typ col sty 
       "pdf" -> do     
         trim <?> "trim0"
         (mdomain,mfilename) <- (try $ do  
@@ -302,7 +300,7 @@ background = do
         trim 
         takeTill (inClass "/>")  <?> "here takeTill"
         backgroundclose
-        return $ BackgroundPdf typ mdomain mfilename pnum 
+        return $ H.BackgroundPdf typ mdomain mfilename pnum 
         
         
         

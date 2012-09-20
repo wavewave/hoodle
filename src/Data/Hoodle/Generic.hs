@@ -1,4 +1,7 @@
-{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -21,8 +24,8 @@ import Control.Lens
 import Data.ByteString hiding (map,zip)
 import Data.Foldable
 import Data.Functor
-import Data.IntMap hiding (map)
-import Data.Sequence (Seq,fromList)
+import qualified Data.IntMap as IM --  hiding (map)
+import qualified Data.Sequence as Seq 
 -- from this package
 import Data.Hoodle.Simple
 -- 
@@ -121,13 +124,22 @@ instance Listable [] where
 --   toList = id 
   
 -- | 
-instance Listable IntMap where 
-  fromList = Data.IntMap.fromList . zip [0..] 
+instance Listable IM.IntMap where 
+  fromList = IM.fromList . zip [0..] 
 --   toList = Data.IntMap.elems 
   
 -- | 
-instance Listable Seq where
-  fromList = Data.Sequence.fromList 
+instance Listable Seq.Seq where
+  fromList = Seq.fromList 
+
+-- |
+emptyGHoodle :: (Listable m) => GHoodle m a
+emptyGHoodle = GHoodle "" (fromList [])
+
+-- | 
+emptyGPage :: (Listable cntnr) => Dimension -> bkg -> GPage bkg cntnr a 
+emptyGPage dim bkg = GPage dim bkg (fromList [])
+  
 
 {-
 -- |

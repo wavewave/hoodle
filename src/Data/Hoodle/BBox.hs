@@ -48,8 +48,8 @@ import           Data.Monoid
 import           Data.Serialize
 import           Data.Strict.Tuple 
 -- from this package
-import Data.Hoodle.Simple
-import Data.Hoodle.Util
+import           Data.Hoodle.Simple
+import           Data.Hoodle.Util
 -- 
 import Prelude hiding (fst,snd)
 import qualified Prelude as Prelude (fst,snd)

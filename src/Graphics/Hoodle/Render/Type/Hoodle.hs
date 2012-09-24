@@ -52,9 +52,14 @@ type RHoodle = GHoodle IntMap RPage
 emptyRLayer :: RLayer 
 emptyRLayer = GLayer (LyBuf Nothing) []
 
-{-
 
-cnstrctRHoodle :: Hoodle -> IO RHoodle
-cnstrctRHoodle = undefined 
+----------------------      
+----- Rendering   
+----------------------
 
--}
+-- | 
+newtype InBBox a = InBBox a
+
+-- | 
+data InBBoxOption = InBBoxOption (Maybe BBox) 
+

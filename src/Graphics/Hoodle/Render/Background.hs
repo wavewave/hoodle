@@ -162,46 +162,8 @@ drawRuling_InBBox (BBox (x1,y1) (x2,y2)) w h style = do
     _ -> return ()     
 
 
-{-
-instance Renderable (BackgroundPDFDrawable,Dimension) where
-  cairoRender = cairoRenderBackgroundPDFDrawable
 
 
-instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
-  type RenderOption (BackgroundPDFDrawable,Dimension) = BkgPDFOption 
-  cairoRenderOption DrawBkgPDF (b,dim) = cairoRenderBackgroundPDFDrawable (b,dim)
-  cairoRenderOption DrawWhite (_,Dim w h) = do 
-    setSourceRGBA 1 1 1 1
-    rectangle 0 0 w h 
-    fill 
-  cairoRenderOption DrawBuffer (b,dim) = do 
-    case b of 
-      BkgPDFSolid _ _ msfc  -> do  
-        case msfc of 
-          Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
-          Just sfc -> do 
-            setSourceSurface sfc 0 0 
-            -- setOperator OperatorSource
-            -- setAntialias AntialiasNone
-            paint 
-      BkgPDFPDF _ _ _ _ msfc -> do 
-        case msfc of 
-          Nothing -> cairoRenderOption DrawBkgPDF (b,dim)
-          Just sfc -> do 
-            setSourceSurface sfc 0 0 
-            -- setOperator OperatorSource
-            -- setAntialias AntialiasNone
-            paint 
-  cairoRenderOption (DrawPDFInBBox mbbox) (b,dim) = do 
-    case b of 
-      BkgPDFSolid _ _ _ -> do 
-        clipBBox mbbox
-        cairoRenderOption DrawBuffer (b,dim)
-        resetClip
-      BkgPDFPDF _ _ _ _ _ -> do 
-        clipBBox mbbox
-        cairoRenderOption DrawBuffer (b,dim)
-        resetClip
--}
+-- instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
       
 

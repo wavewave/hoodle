@@ -18,8 +18,10 @@
 
 module Graphics.Hoodle.Render 
 (      
+-- * dummy rendering 
+  renderRBkg_Dummy  
 -- * simple rendering using non-R-structure   
-  renderStrk
+, renderStrk
 , renderImg
 , renderBkg
 , renderPage
@@ -28,16 +30,23 @@ module Graphics.Hoodle.Render
 
 -- * simple rendering using R-structure 
 , renderRBkg
-  
+
+-- * nopdf
+, renderRBkg_NoPDF
+
 -- * render in bbox
 , renderRLayer_InBBox
+, renderRBkg_InBBox 
 
 -- * render only bbox (for debug purpose)
 , renderStrkBBx_BBoxOnly
 , renderImgBBx_BBoxOnly
 , renderRLayer_BBoxOnly
-, renderRBkg_BBoxOnly
 , renderRPage_BBoxOnly
+
+-- * render using buf 
+, renderRBkg_Buf
+
 -- * buffer update 
 , updateLayerBuf
 , updatePageBuf 
@@ -79,6 +88,15 @@ import Graphics.Hoodle.Render.Util.Draw
 import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
 
+----- 
+-- Dummy (for testing) 
+-----
+
+renderRBkg_Dummy :: (RBackground,Dimension) -> Render () 
+renderRBkg_Dummy (_,Dim w h) = do 
+    setSourceRGBA 1 1 1 1
+    rectangle 0 0 w h 
+    fill 
 
 -----
 -- simple 
@@ -180,8 +198,7 @@ renderBkg_InBBox _ _  (BackgroundPdf _ _ _ _) =
 ----
 
 -- | 
-renderRBkg :: (RBackground,Dimension) 
-              -> Render ()
+renderRBkg :: (RBackground,Dimension) -> Render ()
 renderRBkg r@(RBkgSmpl _ _ _,dim) = renderBkg (rbkg2Bkg (fst r),dim)
 renderRBkg (RBkgPDF _ _ _ p _,dim) = do
   case p of 
@@ -233,10 +250,8 @@ renderRLayer_BBoxOnly :: RLayer -> Render ()
 renderRLayer_BBoxOnly = mapM_ renderStrkBBx_BBoxOnly . view gstrokes 
                         -- mapM_  renderRItem_BBoxOnly . view gitems
 
--- |
-renderRBkg_BBoxOnly :: (RBackground,Dimension) -> Render ()
-renderRBkg_BBoxOnly r@(RBkgSmpl _ _ _,_) = renderRBkg r
-renderRBkg_BBoxOnly (RBkgPDF _ _ _ _ _,_) = return ()
+
+
 
   
 -- | render only bounding box of a StrokeBBox      
@@ -246,12 +261,35 @@ renderRPage_BBoxOnly page = do
         bkg = view gbackground page 
         lyrs =  view glayers page
     -- cairoDrawBackground (toPage id page)
-    renderRBkg_BBoxOnly (bkg,dim)
+    renderRBkg_NoPDF (bkg,dim)
     mapM_ renderRLayer_BBoxOnly lyrs
+
+-----------
+-- NoPDF -- 
+-----------
+
+-- | render background without pdf 
+renderRBkg_NoPDF :: (RBackground,Dimension) -> Render ()
+renderRBkg_NoPDF r@(RBkgSmpl _ _ _,_) = renderRBkg r
+renderRBkg_NoPDF (RBkgPDF _ _ _ _ _,_) = return ()
+
 
 ------------
 -- InBBox --
 ------------
+
+-- | background drawing in bbox 
+renderRBkg_InBBox :: Maybe BBox -> (RBackground,Dimension) -> Render ()
+renderRBkg_InBBox mbbox (b,dim) = do 
+    case b of 
+      RBkgSmpl _ _ _ -> do 
+        clipBBox mbbox
+        renderRBkg_Buf (b,dim)
+        resetClip
+      RBkgPDF _ _ _ _ _ -> do 
+        clipBBox mbbox
+        renderRBkg_Buf (b,dim)
+        resetClip
 
 
 -- | render RLayer within BBox after hittest items
@@ -266,6 +304,31 @@ renderRLayer_InBBox mbbox layer = do
   (mapM_ (renderStrk.strkbbx_strk) . concatMap unHitted  . getB) hittestbbox
   resetClip
 
+
+-----------------------
+-- draw using buffer -- 
+-----------------------
+
+-- | Background rendering using buffer
+renderRBkg_Buf :: (RBackground,Dimension) -> Render ()
+renderRBkg_Buf (b,dim) = do 
+    case b of 
+      RBkgSmpl _ _ msfc  -> do  
+        case msfc of 
+          Nothing -> renderRBkg (b,dim)
+          Just sfc -> do 
+            setSourceSurface sfc 0 0 
+            -- setOperator OperatorSource
+            -- setAntialias AntialiasNone
+            paint 
+      RBkgPDF _ _ _ _ msfc -> do 
+        case msfc of 
+          Nothing -> renderRBkg (b,dim)
+          Just sfc -> do 
+            setSourceSurface sfc 0 0 
+            -- setOperator OperatorSource
+            -- setAntialias AntialiasNone
+            paint 
 
 -------------------
 -- update buffer

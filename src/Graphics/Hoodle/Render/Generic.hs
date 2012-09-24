@@ -10,6 +10,7 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
 
 module Graphics.Hoodle.Render.Generic where
 
@@ -80,6 +81,17 @@ instance RenderOptionable StrokeBBox where
   
 
 
+  
+  
+-- | 
+instance RenderOptionable (RBackground,Dimension) where 
+  type RenderOption (RBackground,Dimension) = RBkgOpt 
+  -- cairoRenderOption :: RBkgOpt -> (RBackground,Dimension) -> Render ()
+  cairoRenderOption RBkgDrawPDF = renderRBkg
+  cairoRenderOption RBkgDrawWhite = renderRBkg_Dummy
+  cairoRenderOption RBkgDrawBuffer = renderRBkg_Buf 
+  cairoRenderOption (RBkgDrawPDFInBBox mbbox) = renderRBkg_InBBox mbbox 
+
 -- |
 cairoOptionPage :: ( RenderOptionable (b,Dimension)
                    , RenderOptionable a
@@ -99,6 +111,26 @@ instance ( RenderOptionable (b,Dimension)
   type RenderOption (GPage b s a) = (RenderOption (b,Dimension), RenderOption a)
   cairoRenderOption = cairoOptionPage
             
+
+-- | 
+instance RenderOptionable (InBBox RLayer) where
+  type RenderOption (InBBox RLayer) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) (InBBox layer) 
+    = renderRLayer_InBBox mbbox layer 
+
+-- | 
+instance RenderOptionable (InBBox RPage) where
+  type RenderOption (InBBox RPage) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
+    mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
+
+
+
+{-
+instance Renderable (BackgroundPDFDrawable,Dimension) where
+  cairoRender = cairoRenderBackgroundPDFDrawable
+-}
 
 {-
 -- |   

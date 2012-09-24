@@ -15,7 +15,9 @@
 module Graphics.Hoodle.Render.Type.Select where
 
 -- from other packages
-import Data.IntMap hiding (map)
+import Control.Compose
+import Control.Lens 
+import Data.IntMap hiding (map, fromList)
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -70,6 +72,31 @@ type TTempPageSelectPDFBuf =
 -- | 
 type TTempHoodleSelectPDFBuf = 
   GSelect (IntMap RPage) (Maybe (Int, TTempPageSelectPDFBuf))
+
+
+-- | 
+hLayer2RLayer :: TLayerSelectBuf RLayer -> RLayer 
+hLayer2RLayer l = 
+  case unTEitherAlterHitted (view gstrokes l) of
+    Left strs -> GLayer (view gbuffer l) strs 
+    Right alist -> GLayer (view gbuffer l) . Prelude.concat 
+                   $ interleave id unHitted alist
+
+-- | 
+hPage2RPage :: TTempPageSelectPDFBuf -> RPage
+hPage2RPage p = 
+  let TLayerSelectInPageBuf s others = view glayers p 
+      s' = hLayer2RLayer s
+      normalizedothers = case others of   
+        NoSelect [] -> error "something wrong in hPage2RPage" 
+        NoSelect (x:xs) -> Select (fromList (x:xs))
+        Select (O (Nothing)) -> error "something wrong in hPage2RPage"
+        Select (O (Just _)) -> others 
+      Select (O (Just sz)) = normalizedothers 
+  in GPage (view gdimension p) (view gbackground p) (Select . O . Just $ replace s' sz)
+
+
+
 
 
 {-

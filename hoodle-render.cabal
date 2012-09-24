@@ -49,7 +49,6 @@ Library
   Exposed-Modules: 
                    -- Graphics.Hoodle.Render.SimpleNew 
                    -- Graphics.Hoodle.Render.BBox
-                   -- Graphics.Hoodle.Render.Generic
                    -- Graphics.Hoodle.Render.PDFBackground
                    -- Graphics.Hoodle.Render.BBoxMapPDF
                    -- Graphics.Hoodle.Render.BBoxMapPDFImg
@@ -58,6 +57,7 @@ Library
                    -- Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
+                   Graphics.Hoodle.Render.Generic
                    -- Graphics.Hoodle.Render.BBoxOnly
                    Graphics.Hoodle.Render.Highlight 
                    -- Graphics.Hoodle.Render.InBBox

@@ -23,6 +23,7 @@ import Graphics.Rendering.Cairo
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple
+import Data.Hoodle.Zipper
 -- from this package
 import Graphics.Hoodle.Render.Type.Background 
 -- import Graphics.Hoodle.Render.Type.Item
@@ -41,7 +42,7 @@ type RLayer = GLayer LyBuf [] StrokeBBox -- RItem
 -- | normal rendering data structure for page 
 --   background is RBackground and container for layer is IntMap 
 --   and layer is RLayer  
-type RPage = GPage RBackground IntMap RLayer 
+type RPage = GPage RBackground ZipperSelect RLayer -- change from IntMap 
 
 -- | normal rendering data struture for hoodle 
 --   container for page is IntMap 

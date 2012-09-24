@@ -40,6 +40,3 @@ type TPageBBoxMapBkgImg b = GPage b IntMap TLayerBBoxImg
 type THoodleBBoxMapBkgImg b = GHoodle IntMap (TPageBBoxMapBkgImg b)
 
 
-emptyGHoodleMap :: GHoodle IntMap a
-emptyGHoodleMap = GHoodle "" empty
-

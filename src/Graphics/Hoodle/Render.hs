@@ -46,6 +46,7 @@ module Graphics.Hoodle.Render
 
 -- * render using buf 
 , renderRBkg_Buf
+, renderRLayer_InBBoxBuf
 
 -- * buffer update 
 , updateLayerBuf
@@ -329,6 +330,19 @@ renderRBkg_Buf (b,dim) = do
             -- setOperator OperatorSource
             -- setAntialias AntialiasNone
             paint 
+
+-- | 
+renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Render ()
+renderRLayer_InBBoxBuf mbbox lyr = do
+  case view gbuffer lyr of 
+    LyBuf (Just sfc) -> do clipBBox mbbox
+                           setSourceSurface sfc 0 0 
+                           -- setOperator OperatorSource
+                           -- setAntialias AntialiasNone
+                           paint 
+                           resetClip 
+    _ -> renderRLayer_InBBox mbbox lyr 
+
 
 -------------------
 -- update buffer

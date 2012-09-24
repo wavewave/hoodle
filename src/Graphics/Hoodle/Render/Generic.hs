@@ -79,10 +79,6 @@ instance RenderOptionable StrokeBBox where
   cairoRenderOption DrawFull = cairoRender 
   cairoRenderOption DrawBoxOnly = renderStrkBBx_BBoxOnly
   
-
-
-  
-  
 -- | 
 instance RenderOptionable (RBackground,Dimension) where 
   type RenderOption (RBackground,Dimension) = RBkgOpt 
@@ -92,6 +88,14 @@ instance RenderOptionable (RBackground,Dimension) where
   cairoRenderOption RBkgDrawBuffer = renderRBkg_Buf 
   cairoRenderOption (RBkgDrawPDFInBBox mbbox) = renderRBkg_InBBox mbbox 
 
+
+-- | 
+instance RenderOptionable (InBBox RLayer) where
+  type RenderOption (InBBox RLayer) = InBBoxOption
+  -- cairoRenderOption :: RLyrOpt -> RLayer -> Render ()  
+  cairoRenderOption (InBBoxOption mbbox) (InBBox lyr) = 
+    renderRLayer_InBBoxBuf mbbox lyr
+    
 -- |
 cairoOptionPage :: ( RenderOptionable (b,Dimension)
                    , RenderOptionable a
@@ -111,12 +115,13 @@ instance ( RenderOptionable (b,Dimension)
   type RenderOption (GPage b s a) = (RenderOption (b,Dimension), RenderOption a)
   cairoRenderOption = cairoOptionPage
             
-
+{-
 -- | 
 instance RenderOptionable (InBBox RLayer) where
   type RenderOption (InBBox RLayer) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) (InBBox layer) 
     = renderRLayer_InBBox mbbox layer 
+-}
 
 -- | 
 instance RenderOptionable (InBBox RPage) where

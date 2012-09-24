@@ -60,6 +60,7 @@ Library
                    Graphics.Hoodle.Render.Generic
                    -- Graphics.Hoodle.Render.BBoxOnly
                    Graphics.Hoodle.Render.Highlight 
+                   Graphics.Hoodle.Render.Primitive
                    -- Graphics.Hoodle.Render.InBBox
                    -- Graphics.Hoodle.Render.Item
                    -- Graphics.Hoodle.Render.Simple
@@ -70,7 +71,6 @@ Library
                    -- Graphics.Hoodle.Render.Type.Item
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
-                   Graphics.Hoodle.Render.Util.Draw 
                    Graphics.Hoodle.Render.Util.HitTest
 
 

@@ -28,8 +28,41 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
 -- from this package
 import Graphics.Hoodle.Render.Background 
+import Graphics.Hoodle.Render.Primitive 
 import Graphics.Hoodle.Render.Type 
 import Graphics.Hoodle.Render.Type.Background
 -- import Graphics.Hoodle.Render.Type.Item
 -- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
+
+
+renderStrkHltd :: StrokeBBox -> Render ()
+renderStrkHltd sbbox = do 
+    let s = strkbbx_strk sbbox 
+    case M.lookup (stroke_color s) predefined_pencolor of 
+      Just (r,g,b,a) -> setSourceRGBA r g b a
+      Nothing -> setSourceRGBA 0 0 0 1 
+    case s of
+      Stroke _ _ w d -> do  
+        setLineWidth (w * 4.0) 
+        setLineCap LineCapRound
+        setLineJoin LineJoinRound
+        drawStrokeCurve d
+        stroke
+        setSourceRGBA 1 1 1 1
+        setLineWidth w
+        drawStrokeCurve . stroke_data $ s 
+        stroke
+      VWStroke _ _ d -> do  
+        setFillRule FillRuleWinding
+        drawVWStrokeCurve $ map (\(x,y,z)->(x,y,4*z)) d
+        fill  
+        setSourceRGBA 1 1 1 1
+        drawVWStrokeCurve d     
+        fill
+    
+{-    
+    Img _ _ _ -> cairoOneStrokeBBoxOnly sbbox 
+    _ -> do     
+        _ -> error "in cairoOneStrokeSelected"
+-}  

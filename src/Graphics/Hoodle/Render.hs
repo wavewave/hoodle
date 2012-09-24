@@ -78,12 +78,12 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from this package
 -- import Graphics.Hoodle.Render.Simple 
 import Graphics.Hoodle.Render.Background 
+import Graphics.Hoodle.Render.Primitive
 import Graphics.Hoodle.Render.Type 
 import Graphics.Hoodle.Render.Type.Background
 import Graphics.Hoodle.Render.Type.HitTest
 import Graphics.Hoodle.Render.Util 
 import Graphics.Hoodle.Render.Util.HitTest 
-import Graphics.Hoodle.Render.Util.Draw 
 -- 
 import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 

@@ -1,7 +1,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.Simple
+-- Module      : Graphics.Hoodle.Render.Primitive
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Graphics.Hoodle.Render.Util.Draw 
+module Graphics.Hoodle.Render.Primitive 
 ( drawStrokeCurve 
 , drawVWStrokeCurve 
 ) where 

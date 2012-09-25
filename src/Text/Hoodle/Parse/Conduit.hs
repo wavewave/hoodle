@@ -37,7 +37,7 @@ import           Text.XML.Stream.Render
 import           Text.XML.Stream.Parse hiding (many)
 import           System.IO 
 -- from other hoodle related packages
-import           Data.Hoodle.Simple hiding (title,pages,layers,strokes)
+import           Data.Hoodle.Simple hiding (title,pages,layers,items) -- strokes
 -- from this package
 import           Text.Hoodle.Parse.Zlib
 -- 

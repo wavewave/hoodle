@@ -91,7 +91,7 @@ stroketagclose :: Parser B.ByteString
 stroketagclose = string "</stroke>"
 
 -- | 
-onestroke :: Parser H.Stroke 
+onestroke :: Parser H.Item 
 onestroke =  do trim
                 strokeinit <- stroketagopen
                 coordlist <- many $ do trim_starting_space
@@ -101,11 +101,10 @@ onestroke =  do trim
                                        skipSpace 
                                        return (x :!: y)  
                 stroketagclose 
-                return $ strokeinit { H.stroke_data = coordlist } 
+                (return. H.ItemStroke) $ strokeinit { H.stroke_data=coordlist } 
 
-{-
 -- | 
-img :: Parser Stroke 
+img :: Parser H.Item 
 img = do trim 
          string "<img"
          trim 
@@ -130,8 +129,8 @@ img = do trim
          char '"'
          trim 
          string "/>"
-         return (Img fsrc (posx,posy) (Dim width height))
--}         
+         (return . H.ItemImage) (H.Image fsrc (posx,posy) (H.Dim width height))
+         
          
 
 -- | 
@@ -174,10 +173,10 @@ layer = do trim
            -- s1 <- onestroke 
            -- s2 <- img
            -- let strokes = [s1,s2]
-           strokes <- many onestroke -- (try onestroke <|> img)
+           itms <- many (try onestroke <|> img)
            trim
            layerclose 
-           return $ H.Layer strokes
+           return $ H.Layer itms
 
 
 title :: Parser B.ByteString 

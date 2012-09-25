@@ -47,10 +47,11 @@ x2h4layer :: X.Layer -> H.Layer
 x2h4layer X.Layer {..} = H.Layer (map x2h4stroke layer_strokes)
 
 -- | 
-x2h4stroke :: X.Stroke -> H.Stroke 
+x2h4stroke :: X.Stroke -> H.Item -- H.Stroke 
 x2h4stroke X.Stroke {..} = 
-    H.Stroke stroke_tool stroke_color stroke_width stroke_data
+    H.ItemStroke (H.Stroke stroke_tool stroke_color stroke_width stroke_data)
 x2h4stroke X.VWStroke {..} = 
-    H.VWStroke stroke_tool stroke_color stroke_vwdata
+    H.ItemStroke (H.VWStroke stroke_tool stroke_color stroke_vwdata)
+    
     
 

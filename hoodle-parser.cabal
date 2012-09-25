@@ -25,20 +25,20 @@ Library
                  attoparsec == 0.10.*, 
                  bytestring == 0.9.*, 
                  containers == 0.4.*, 
-                 xml-conduit == 1.0.*,
+                 -- xml-conduit == 1.0.*,
                  conduit == 0.5.*,
                  strict == 0.3.*, 
                  attoparsec-conduit == 0.5.*,
                  hoodle-types >= 0.0.999 && < 0.2, 
                  xournal-types >= 0.4.999 && < 0.6,
-                 xml-types == 0.3.*, 
+                 -- xml-types == 0.3.*, 
                  text == 0.11.*,
                  lens >= 2.4 && < 2.7, 
                  zlib-conduit == 0.5.*
   Exposed-Modules: 
-                   Text.Hoodle.Parse
+                   -- Text.Hoodle.Parse
                    Text.Hoodle.Parse.Attoparsec
-                   Text.Hoodle.Parse.Conduit
+                   -- Text.Hoodle.Parse.Conduit -- for the time being 
                    Text.Hoodle.Parse.Zlib
                    Text.Hoodle.Translate.FromXournal
 

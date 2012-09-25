@@ -16,8 +16,10 @@
 
 module Graphics.Hoodle.Render.Type.Hoodle where
 
-
-import Data.IntMap 
+import Control.Applicative
+import Control.Lens 
+import Data.Foldable (toList)
+import qualified Data.IntMap as IM
 import Graphics.Rendering.Cairo 
 -- from hoodle-platform 
 import Data.Hoodle.BBox
@@ -47,10 +49,30 @@ type RPage = GPage RBackground ZipperSelect RLayer -- change from IntMap
 -- | normal rendering data struture for hoodle 
 --   container for page is IntMap 
 --   page is RPage
-type RHoodle = GHoodle IntMap RPage 
+type RHoodle = GHoodle IM.IntMap RPage 
 
 emptyRLayer :: RLayer 
 emptyRLayer = GLayer (LyBuf Nothing) []
+
+
+-------
+-- get simple hoodle data structure 
+-------
+
+-- | project to simple Layer out of RLayer 
+rLayer2Layer :: RLayer -> Layer
+rLayer2Layer = Layer <$> fmap strkbbx_strk . view gstrokes
+
+-- | project to simple Page out of RPage
+rPage2Page :: RPage -> Page 
+rPage2Page = Page <$> view gdimension 
+                  <*> rbkg2Bkg . view gbackground 
+                  <*> fmap rLayer2Layer . toList . view glayers
+
+-- | project to simple Hoodle out of RHoodle 
+rHoodle2Hoodle :: RHoodle -> Hoodle 
+rHoodle2Hoodle = Hoodle <$> view gtitle 
+                        <*> IM.elems . fmap rPage2Page . view gpages
 
 
 ----------------------      

@@ -50,7 +50,7 @@ do2LinesIntersect ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) =
         y43 = y4-y3
         xc = (x21*x43*(y3-y1)+y21*x43*x1-y43*x21*x3)/(y21*x43-y43*x21)
         
--- | 
+-- | previously, hitTestLineStroke
 doesLineHitStrk :: ((Double,Double),(Double,Double)) -> Stroke -> Bool
 doesLineHitStrk line1 str@(Stroke _t _c _w _d) = 
     test (stroke_data str) 
@@ -88,18 +88,32 @@ isBBox2InBBox1 b1 (BBox (ulx2,uly2) (lrx2,lry2))
 -- stroke filtering functions as AlterList --
 ---------------------------------------------
  
--- | highlight strokes filtered by a condition
+-- | previously mkHitTestALState
+hltStrksFilteredBy_StateT :: (StrokeBBox -> Bool)  -- ^ hit test condition
+                          -> [StrokeBBox]          -- ^ strokes to test 
+                          -> State Bool (AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox))
+hltStrksFilteredBy_StateT test strs = do 
+    let (nhit,rest) = break test  strs
+        (hit,rest') = break (not.test) rest 
+    modify (|| (not.null) hit) 
+    if null rest' 
+      then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
+      else return (NotHitted nhit :- Hitted hit :- hltStrksFilteredBy test rest')
+
+
+-- | highlight strokes filtered by a condition. 
+--   previously mkHitTestAL
 hltStrksFilteredBy :: (StrokeBBox -> Bool)  -- ^ hit test condition
                    -> [StrokeBBox]          -- ^ strokes to test 
                    -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
-hltStrksFilteredBy test strs = evalState (testaction test strs) False
-  where testaction test strs = do 
+hltStrksFilteredBy test strs = evalState (hltStrksFilteredBy_StateT test strs) False
+{-  where testaction test strs = do 
           let (nhit,rest) = break test  strs
               (hit,rest') = break (not.test) rest 
           modify (|| (not.null) hit) 
           if null rest' 
             then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
-            else return (NotHitted nhit :- Hitted hit :- hltStrksFilteredBy test rest')
+            else return (NotHitted nhit :- Hitted hit :- hltStrksFilteredBy test rest') -}
 
 
 
@@ -116,6 +130,7 @@ hltStrksEmbeddedByBBox :: BBox
 hltStrksEmbeddedByBBox b = hltStrksFilteredBy (isBBox2InBBox1 b . strkbbx_bbx)
 
 -- | only check if a line and bbox of strokebbox overlapped 
+--   previously, mkHitTestBBox
 hltStrksHittedByLineRough :: ((Double,Double),(Double,Double)) -- ^ line 
                           -> [StrokeBBox]                      -- ^ strokes to test
                           -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
@@ -124,13 +139,15 @@ hltStrksHittedByLineRough (p1,p2) = hltStrksFilteredBy boxhittest
                        || isPointInBBox (strkbbx_bbx s) p2
 
 
-{-
+
 -- |
 mkHitTestStroke :: ((Double,Double),(Double,Double))
                 -> [StrokeBBox]
                 -> State Bool (AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox))
-mkHitTestStroke line = mkHitTestALState (hitTestLineStroke line . gToStroke)
+mkHitTestStroke line = hltStrksFilteredBy_StateT (doesLineHitStrk line . strkbbx_strk)
   
+
+
 -- |
 hitTestStrokes :: ((Double,Double),(Double,Double))
                -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
@@ -140,7 +157,7 @@ hitTestStrokes _ (n:-Empty) = return (n:-Empty)
 hitTestStrokes line (n:-h:-rest) = do 
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
--}
+
 
 
 

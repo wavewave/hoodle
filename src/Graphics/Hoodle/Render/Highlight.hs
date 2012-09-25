@@ -26,6 +26,7 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
 -- from this package
 import Graphics.Hoodle.Render.Primitive 
+import Graphics.Hoodle.Render.Type.Item 
 -- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
@@ -60,3 +61,16 @@ renderStrkHltd sbbox = do
     _ -> do     
         _ -> error "in cairoOneStrokeSelected"
 -}  
+
+
+-- | render items highlighted 
+renderRItemHltd :: RItem -> Render ()
+renderRItemHltd (RItemStroke strk) = renderStrkHltd strk
+renderRItemHltd r@(RItemImage img _) = do 
+  setSourceRGBA 0 0 0 1
+  setLineWidth 10 
+  let BBox (x1,y1) (x2,y2) = imgbbx_bbx img
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+
+

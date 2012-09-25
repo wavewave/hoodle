@@ -32,6 +32,7 @@ import Graphics.Hoodle.Render.Type.HitTest
 --------------------------
 
 -- | hit test of whether a point in a bbox
+--   previously, hitTestBBoxPoint 
 isPointInBBox :: BBox  
               -> (Double,Double)  -- ^ point 
               -> Bool  

@@ -96,6 +96,22 @@ hPage2RPage p =
   in GPage (view gdimension p) (view gbackground p) (Select . O . Just $ replace s' sz)
 
 
+-- | 
+rPage2HPage :: RPage -> TTempPageSelectPDFBuf
+rPage2HPage p = 
+  let normalizedothers = case (view glayers p) of 
+        NoSelect [] -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf" 
+        NoSelect (x:xs) -> Select (fromList (x:xs))
+        Select (O (Nothing)) -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf"
+        others@(Select (O (Just _))) -> others 
+      Select (O (Just sz)) = normalizedothers 
+      curr  = current sz 
+      currtemp = GLayer (view gbuffer curr) (TEitherAlterHitted . Left . view gstrokes $ curr)
+  in  GPage (view gdimension p) (view gbackground p) 
+            (TLayerSelectInPageBuf currtemp normalizedothers)
+
+
+
 
 
 

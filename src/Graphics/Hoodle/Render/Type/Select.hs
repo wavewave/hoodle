@@ -36,46 +36,45 @@ import Graphics.Hoodle.Render.Type.HitTest
 -- select state rendering --
 ----------------------------
 
-type TLayerSelectBuf a = GLayer (BufTypeFromLayer a) TEitherAlterHitted (StrokeTypeFromLayer a) 
+type SLayerF a = GLayer (BufOf a) TEitherAlterHitted (StrokeOf a) 
 
 
-type family StrokeTypeFromLayer a  :: * 
+type family StrokeOf a  :: * 
      
-type family BufTypeFromLayer a :: *
+type family BufOf a :: *
      
-type instance BufTypeFromLayer (GLayer b s a) = b     
+type instance BufOf (GLayer b s a) = b     
      
-type instance StrokeTypeFromLayer RLayer = StrokeBBox 
-
-data TLayerSelectInPageBuf s a = TLayerSelectInPageBuf
-                               { gselectedlayerbuf :: TLayerSelectBuf a 
-                               , gotherlayersbuf :: s a
-                               }
+type instance StrokeOf RLayer = StrokeBBox 
 
 
--- -- | 
--- newtype LyBuf = LyBuf { mbuffer :: Maybe Surface } 
 
+data HLayersF s a = HLayersF
+                   { hlyrt_selectedLayer :: SLayerF a 
+                   , hlyrt_otherLayers :: s a
+                   }
 
--- -- | 
--- type TPageBBoxMapPDFBuf = 
---   TPageBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
+type HLayers = HLayersF ZipperSelect RLayer
   
--- -- |   
--- type THoodleBBoxMapPDFBuf = 
---   THoodleBBoxMapBkgBuf BackgroundPDFDrawable LyBuf
-  
+type HLayer = SLayerF RLayer 
+               
+selectedLayer :: Simple Lens HLayers HLayer 
+selectedLayer = lens hlyrt_selectedLayer (\f a -> f { hlyrt_selectedLayer=a })  
+
+otherLayers :: Simple Lens HLayers (ZipperSelect RLayer)
+otherLayers = lens hlyrt_otherLayers (\f a -> f { hlyrt_otherLayers=a})
+
 -- |
-type TTempPageSelectPDFBuf = 
-  GPage RBackground (TLayerSelectInPageBuf ZipperSelect) RLayer
+type HPage = 
+  GPage RBackground (HLayersF ZipperSelect) RLayer
 
 -- | 
-type TTempHoodleSelectPDFBuf = 
-  GSelect (IntMap RPage) (Maybe (Int, TTempPageSelectPDFBuf))
+type HHoodle = 
+  GSelect (IntMap RPage) (Maybe (Int, HPage))
 
 
 -- | 
-hLayer2RLayer :: TLayerSelectBuf RLayer -> RLayer 
+hLayer2RLayer :: HLayer -> RLayer 
 hLayer2RLayer l = 
   case unTEitherAlterHitted (view gstrokes l) of
     Left strs -> GLayer (view gbuffer l) strs 
@@ -83,9 +82,9 @@ hLayer2RLayer l =
                    $ interleave id unHitted alist
 
 -- | 
-hPage2RPage :: TTempPageSelectPDFBuf -> RPage
+hPage2RPage :: HPage -> RPage
 hPage2RPage p = 
-  let TLayerSelectInPageBuf s others = view glayers p 
+  let HLayersF s others = view glayers p 
       s' = hLayer2RLayer s
       normalizedothers = case others of   
         NoSelect [] -> error "something wrong in hPage2RPage" 
@@ -97,35 +96,19 @@ hPage2RPage p =
 
 
 -- | 
-mkHPage :: RPage -> TTempPageSelectPDFBuf
+mkHPage :: RPage -> HPage
 mkHPage p = 
   let normalizedothers = case (view glayers p) of 
-        NoSelect [] -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf" 
+        NoSelect [] -> error "something wrong in mkHPage" 
         NoSelect (x:xs) -> Select (fromList (x:xs))
-        Select (O (Nothing)) -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf"
+        Select (O (Nothing)) -> error "something wrong in mkHPage"
         others@(Select (O (Just _))) -> others 
       Select (O (Just sz)) = normalizedothers 
       curr  = current sz 
       currtemp = GLayer (view gbuffer curr) (TEitherAlterHitted . Left . view gstrokes $ curr)
   in  GPage (view gdimension p) (view gbackground p) 
-            (TLayerSelectInPageBuf currtemp normalizedothers)
+            (HLayersF currtemp normalizedothers)
 
 
 
 
-
-
-{-
--- | deprecated 
-
-type TTempPageSelect = GPage Background (TLayerSelectInPage []) TLayerBBox
-                       
-
--- | deprecated 
-
-type TTempHoodleSelect = GSelect (IntMap TPageBBoxMap) (Maybe (Int, TTempPageSelect))
-
--}
-
-
--- type TLayerSelect a = GLayer TEitherAlterHitted (StrokeTypeFromLayer a) 

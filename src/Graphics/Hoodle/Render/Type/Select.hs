@@ -21,7 +21,6 @@ import Data.IntMap hiding (map, fromList)
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
-import Data.Hoodle.Simple 
 import Data.Hoodle.Select
 import Data.Hoodle.Zipper
 -- import Data.Hoodle.Map

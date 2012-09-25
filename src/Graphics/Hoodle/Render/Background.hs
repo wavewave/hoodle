@@ -33,12 +33,6 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
-import           Data.Hoodle.Simple
--- from this package
---- import Graphics.Hoodle.Render.BBox 
--- import Graphics.Hoodle.Render.Generic
--- import           Graphics.Hoodle.Render.Simple 
-import           Graphics.Hoodle.Render.Type.Background
 --
 import Prelude hiding (mapM_)
   

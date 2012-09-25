@@ -20,7 +20,6 @@ module Graphics.Hoodle.Render.Primitive
 
 import           Control.Applicative
 import           Control.Monad 
-import           Data.Traversable
 import           Data.Strict.Tuple hiding (fst,snd)
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform

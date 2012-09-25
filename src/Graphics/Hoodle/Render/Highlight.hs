@@ -17,25 +17,19 @@
 
 module Graphics.Hoodle.Render.Highlight where
 
-import           Control.Lens 
-import           Data.Foldable
+-- from others
 import qualified Data.Map as M
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
-import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
 -- from this package
-import Graphics.Hoodle.Render.Background 
 import Graphics.Hoodle.Render.Primitive 
-import Graphics.Hoodle.Render.Type 
-import Graphics.Hoodle.Render.Type.Background
--- import Graphics.Hoodle.Render.Type.Item
 -- 
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
-
+-- | 
 renderStrkHltd :: StrokeBBox -> Render ()
 renderStrkHltd sbbox = do 
     let s = strkbbx_strk sbbox 

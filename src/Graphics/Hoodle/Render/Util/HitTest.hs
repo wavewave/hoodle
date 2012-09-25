@@ -23,7 +23,6 @@ import Data.Strict.Tuple
 -- from hoodle-platform
 import Data.Hoodle.Simple 
 import Data.Hoodle.BBox 
-import Data.Hoodle.Generic
 -- from this package
 import Graphics.Hoodle.Render.Type.HitTest
 

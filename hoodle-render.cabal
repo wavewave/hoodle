@@ -47,28 +47,15 @@ Library
 
 
   Exposed-Modules: 
-                   -- Graphics.Hoodle.Render.SimpleNew 
-                   -- Graphics.Hoodle.Render.BBox
-                   -- Graphics.Hoodle.Render.PDFBackground
-                   -- Graphics.Hoodle.Render.BBoxMapPDF
-                   -- Graphics.Hoodle.Render.BBoxMapPDFImg
-                   -- Graphics.Hoodle.Render.Type
-                   -- Graphics.Hoodle.Render.Type.BBoxMapPDFImg
-                   -- Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
                    Graphics.Hoodle.Render.Generic
-                   -- Graphics.Hoodle.Render.BBoxOnly
                    Graphics.Hoodle.Render.Highlight 
                    Graphics.Hoodle.Render.Primitive
-                   -- Graphics.Hoodle.Render.InBBox
-                   -- Graphics.Hoodle.Render.Item
-                   -- Graphics.Hoodle.Render.Simple
                    Graphics.Hoodle.Render.Type 
                    Graphics.Hoodle.Render.Type.Background
                    Graphics.Hoodle.Render.Type.HitTest
                    Graphics.Hoodle.Render.Type.Hoodle
-                   -- Graphics.Hoodle.Render.Type.Item
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
                    Graphics.Hoodle.Render.Util.HitTest
@@ -78,3 +65,16 @@ Library
     cpp-options: -DPOPPLER
                   
 
+                   -- Graphics.Hoodle.Render.SimpleNew 
+                   -- Graphics.Hoodle.Render.BBox
+                   -- Graphics.Hoodle.Render.PDFBackground
+                   -- Graphics.Hoodle.Render.BBoxMapPDF
+                   -- Graphics.Hoodle.Render.BBoxMapPDFImg
+                   -- Graphics.Hoodle.Render.Type
+                   -- Graphics.Hoodle.Render.Type.BBoxMapPDFImg
+                   -- Graphics.Hoodle.Render.Type.Select
+                   -- Graphics.Hoodle.Render.Type.Item
+                   -- Graphics.Hoodle.Render.BBoxOnly
+                   -- Graphics.Hoodle.Render.InBBox
+                   -- Graphics.Hoodle.Render.Item
+                   -- Graphics.Hoodle.Render.Simple

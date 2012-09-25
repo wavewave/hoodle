@@ -73,7 +73,6 @@ import Data.Hoodle.Simple
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
 #ifdef POPPLER
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif
 -- from this package
@@ -81,7 +80,6 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import Graphics.Hoodle.Render.Background 
 import Graphics.Hoodle.Render.Primitive
 import Graphics.Hoodle.Render.Type 
-import Graphics.Hoodle.Render.Type.Background
 import Graphics.Hoodle.Render.Type.HitTest
 import Graphics.Hoodle.Render.Util 
 import Graphics.Hoodle.Render.Util.HitTest 

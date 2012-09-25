@@ -24,6 +24,17 @@ import Data.Hoodle.Simple
 data RItem = RItemStroke StrokeBBox 
            | RItemImage ImageBBox (Maybe Surface)
 
+-- | 
+isStrkInRItem :: RItem -> Bool 
+isStrkInRItem (RItemStroke _) = True
+isStrkInRItem _ = False
+
+-- |
+isImgInRItem :: RItem -> Bool 
+isImgInRItem (RItemImage _ _) = True
+isImgInRItem _ = False
+
+
 -- |
 rItem2Item :: RItem -> Item 
 rItem2Item (RItemStroke strk) = (ItemStroke . strkbbx_strk) strk
@@ -33,3 +44,5 @@ rItem2Item (RItemImage img _) = (ItemImage . imgbbx_img) img
 rItemBBox :: RItem -> BBox 
 rItemBBox (RItemStroke strk) = strkbbx_bbx strk
 rItemBBox (RItemImage img _) = imgbbx_bbx img
+
+

@@ -56,6 +56,7 @@ Library
                    Graphics.Hoodle.Render.Type.Background
                    Graphics.Hoodle.Render.Type.HitTest
                    Graphics.Hoodle.Render.Type.Hoodle
+                   Graphics.Hoodle.Render.Type.Item
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
                    Graphics.Hoodle.Render.Util.HitTest
@@ -73,7 +74,6 @@ Library
                    -- Graphics.Hoodle.Render.Type
                    -- Graphics.Hoodle.Render.Type.BBoxMapPDFImg
                    -- Graphics.Hoodle.Render.Type.Select
-                   -- Graphics.Hoodle.Render.Type.Item
                    -- Graphics.Hoodle.Render.BBoxOnly
                    -- Graphics.Hoodle.Render.InBBox
                    -- Graphics.Hoodle.Render.Item

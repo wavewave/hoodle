@@ -28,7 +28,6 @@ import           Data.Char
 import           Data.Strict.Tuple
 -- from hoodle-platform 
 import qualified Data.Hoodle.Simple as H
-import Text.Hoodle.Parse.Zlib
 -- 
 import Prelude hiding (takeWhile)
 
@@ -197,7 +196,7 @@ titleclose = string "</title>"
 preview :: Parser ()
 preview = do trim 
              previewheader
-             str <- takeTill (inClass "<") 
+             _str <- takeTill (inClass "<") 
              previewclose
              trim
 
@@ -301,7 +300,7 @@ background = do
         takeTill (inClass "/>")  <?> "here takeTill"
         backgroundclose
         return $ H.BackgroundPdf typ mdomain mfilename pnum 
-        
+      _ -> fail "in parsing background"  
         
         
 alphabet :: Parser B.ByteString

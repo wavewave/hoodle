@@ -13,12 +13,7 @@
 module Text.Hoodle.Parse.Zlib where
 
 -- from other packages
-import           Control.Monad.IO.Class
-import           Data.ByteString 
 import qualified Data.ByteString.Lazy as LB
-import           Data.Conduit
-import qualified Data.Conduit.List as CL
-import           Data.Conduit.Zlib
 import           System.IO
 
 -- | check if gzip or not

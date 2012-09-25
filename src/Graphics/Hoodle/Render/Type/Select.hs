@@ -97,8 +97,8 @@ hPage2RPage p =
 
 
 -- | 
-rPage2HPage :: RPage -> TTempPageSelectPDFBuf
-rPage2HPage p = 
+mkHPage :: RPage -> TTempPageSelectPDFBuf
+mkHPage p = 
   let normalizedothers = case (view glayers p) of 
         NoSelect [] -> error "something wrong in ttemppageBBoxMapPDFBufFromTPageSelectPDFBuf" 
         NoSelect (x:xs) -> Select (fromList (x:xs))

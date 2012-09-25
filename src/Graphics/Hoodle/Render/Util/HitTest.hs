@@ -68,6 +68,7 @@ doesLineHitStrk line1 (VWStroke _t _c d) = test d
             || test ((x,y,z) : rest)
 
 -- | Do two bounding boxes intersect with each other?
+--   previously, hitTestBBoxBBox
 do2BBoxIntersect :: BBox -> BBox -> Bool  
 do2BBoxIntersect b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lry2))
   = isPointInBBox b2 (ulx1,uly1)
@@ -78,6 +79,7 @@ do2BBoxIntersect b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lr
     || isPointInBBox b1 (ulx2,uly2)
 
 -- | is the second bbox inside the first bbox?
+--   previously, hitTestInsideBBox
 isBBox2InBBox1 :: BBox -- ^ 1st bbox
                -> BBox -- ^ 2nd bbox 
                -> Bool 
@@ -118,13 +120,13 @@ hltStrksFilteredBy test strs = evalState (hltStrksFilteredBy_StateT test strs) F
 
 
 
--- |
+-- | 
 hltStrksHittedByBBox :: BBox  -- ^ test bounding box
                      -> [StrokeBBox] -- ^ strokes to test
                      -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 hltStrksHittedByBBox b = hltStrksFilteredBy (do2BBoxIntersect b . strkbbx_bbx) 
 
--- |
+-- | previously, mkHitTestInsideBBox
 hltStrksEmbeddedByBBox :: BBox 
                        -> [StrokeBBox] 
                        -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)

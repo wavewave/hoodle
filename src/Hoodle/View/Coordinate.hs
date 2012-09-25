@@ -101,15 +101,12 @@ makeDesktop2Page pfunc (DeskCoord (x,y)) =
            in Just (pagenum, PageCoord (x-x0,y-y0))
   where condition (_,(PageOrigin (x0,y0),PageDimension (Dim w h))) = 
           x >= x0 && x < x0+w && y >= y0 && y < y0+h 
-        matched = filter condition -- break undefined --  (\(x',y')->(y<y') ) 
+        matched = filter condition 
                   . catMaybes
                   . takeWhile isJust 
-                  . map ((\x-> liftM (x,) (pfunc x)) . PageNum)
+                  . map ((\x'-> liftM (x',) (pfunc x')) . PageNum)
                   $ [0..] 
     
-
-{-  let 
-    in undefined -- Just (PageNum (length prev-1),PageCoord (x,y- last prev)) -}
 
 
 -- |   

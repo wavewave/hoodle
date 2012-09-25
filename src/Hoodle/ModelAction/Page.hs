@@ -19,14 +19,11 @@ import           Control.Category
 import           Control.Lens
 import           Control.Monad (liftM)
 import qualified Data.IntMap as M
--- import           Data.Label
 import           Data.Traversable (mapM)
 import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Zipper 
-import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Util

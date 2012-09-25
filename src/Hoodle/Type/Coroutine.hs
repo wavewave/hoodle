@@ -15,13 +15,12 @@
 module Hoodle.Type.Coroutine where
 
 -- from other packages 
-import           Control.Applicative 
-import           Control.Concurrent 
+import           Control.Applicative
+import           Control.Concurrent
 import           Control.Lens 
-import           Control.Monad.Error 
+import           Control.Monad.Error
 import           Control.Monad.Reader 
 import           Control.Monad.State
-import           Control.Monad.Trans.Free
 -- import           Data.IORef 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn 

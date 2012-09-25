@@ -17,7 +17,6 @@ import Control.Category
 import qualified Data.IntMap as IM
 import Control.Lens
 import Control.Monad.State 
-import Control.Monad.Trans.Crtn
 import qualified Control.Monad.State as St
 import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- 
@@ -32,7 +31,6 @@ import Hoodle.Type.Canvas
 import Hoodle.Type.HoodleState
 import Hoodle.Type.PageArrangement
 import Hoodle.Device
--- import Hoodle.View.Draw
 import Hoodle.View.Coordinate
 import Hoodle.Coroutine.EventConnect
 import Hoodle.Coroutine.Draw
@@ -46,7 +44,6 @@ import Hoodle.Coroutine.Pen
 import Prelude hiding ((.), id)
 
 -- |
-
 eraserStart :: CanvasId 
                -> PointerCoord 
                -> MainCoroutine () 

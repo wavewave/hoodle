@@ -60,5 +60,5 @@ callback4Clip callbk (Just str) = do
                bstr' <- B64.decode bstr
                Se.decode bstr' 
     case r of 
-      Left err -> callbk (GotClipboardContent Nothing)
+      Left _err -> callbk (GotClipboardContent Nothing)
       Right cnt -> callbk (GotClipboardContent (Just cnt))

@@ -33,9 +33,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Predefined
 import Data.Hoodle.Select
 import Data.Hoodle.Simple (Dimension(..))
-import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Generic
-import Graphics.Hoodle.Render.Background
 import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Type
 import Graphics.Hoodle.Render.Type.HitTest 

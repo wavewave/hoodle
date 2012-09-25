@@ -15,12 +15,10 @@
 module Hoodle.Coroutine.File where
 
 -- from other packages
-import           Control.Applicative
 import           Control.Category
 import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
-import           Data.Foldable (toList)
 import           Control.Lens
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory

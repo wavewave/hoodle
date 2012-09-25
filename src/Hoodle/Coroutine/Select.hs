@@ -20,7 +20,6 @@ import           Control.Lens
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.State
--- import           Data.Label
 import           Data.Monoid 
 import qualified Data.IntMap as M
 import           Data.Sequence (Seq,(|>))
@@ -30,15 +29,11 @@ import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.Matrix as Mat
 import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
--- import           Graphics.Hoodle.Render.BBox
-import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Generic
--- import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Util
 import           Graphics.Hoodle.Render.Util.HitTest
 import           Graphics.Hoodle.Render.Type

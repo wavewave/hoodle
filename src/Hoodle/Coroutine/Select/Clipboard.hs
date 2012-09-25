@@ -15,14 +15,10 @@
 module Hoodle.Coroutine.Select.Clipboard where
 
 -- from other packages
-import           Control.Applicative 
-import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad.State 
-import           Data.IORef
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
-import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
@@ -38,7 +34,6 @@ import           Hoodle.Coroutine.Mode
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Clipboard
-import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event 
@@ -122,7 +117,6 @@ pasteToSelection = do
               epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
               tpage = either mkHPage id epage
               layerselect = view (glayers.selectedLayer) tpage 
-              ls  = view glayers tpage
               gbuf = view gbuffer layerselect
               newlayerselect = case getActiveLayer tpage of 
                 Left strs -> (GLayer gbuf . TEitherAlterHitted . Right) (strs :- Hitted nclipstrs :- Empty)

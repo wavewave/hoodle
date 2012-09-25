@@ -316,7 +316,7 @@ defaultPenInfo =
           } 
                                            
 makeLenses ''PenDraw
-makeLenses ''ViewInfo
+-- makeLenses ''ViewInfo
 makeLenses ''PenInfo
 makeLenses ''PenHighlighterEraserSet
 makeLenses ''WidthColorStyle 
@@ -351,10 +351,3 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo =
       arr' = ContinuousArrangement cdim ddim func (ViewPortBBox nbbox)
   in set (viewInfo.pageArrangement) arr' cinfo
      
-{- 
--- | 
-pageArrEitherFromCanvasInfoBox :: CanvasInfoBox 
-                 -> Either (PageArrangement SinglePage) (PageArrangement ContinuousPage)
-pageArrEitherFromCanvasInfoBox (CanvasInfoBox cinfo) = 
-  pageArrEither . view (viewInfo.pageArrangement) $ cinfo 
--}

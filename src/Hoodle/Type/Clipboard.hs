@@ -16,38 +16,31 @@ module Hoodle.Type.Clipboard where
 
 import           Control.Category
 import           Control.Lens
-import           Control.Lens.TH
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 --
 import Prelude hiding ((.), id)
 
 -- |
-
 newtype Clipboard = Clipboard { unClipboard :: [StrokeBBox] }
 
 -- |
-
 emptyClipboard :: Clipboard
 emptyClipboard = Clipboard []
 
 -- |
-
 isEmpty :: Clipboard -> Bool 
 isEmpty = null . unClipboard 
 
 -- |
-
 getClipContents :: Clipboard -> [StrokeBBox] 
 getClipContents = unClipboard
 
 -- |
-
 replaceClipContents :: [StrokeBBox] -> Clipboard -> Clipboard
 replaceClipContents strs _ = Clipboard strs 
 
 -- |
-
 data SelectType = SelectRegionWork 
                 | SelectRectangleWork 
                 | SelectVerticalSpaceWork
@@ -55,7 +48,6 @@ data SelectType = SelectRegionWork
                 deriving (Show,Eq,Ord) 
 
 -- |
-
 data SelectInfo = SelectInfo { _selectType :: SelectType
                              }
              deriving (Show) 

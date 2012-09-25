@@ -25,7 +25,6 @@ import qualified Data.Map as M
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.Predefined
 import           Data.Hoodle.BBox
 -- from this package

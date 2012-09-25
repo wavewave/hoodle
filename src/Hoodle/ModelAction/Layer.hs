@@ -21,7 +21,6 @@ import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (get)
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Select
 import           Data.Hoodle.Zipper
 import           Graphics.Hoodle.Render.Type
 -- 

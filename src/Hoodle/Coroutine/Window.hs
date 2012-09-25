@@ -17,13 +17,11 @@ module Hoodle.Coroutine.Window where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State 
--- import Data.Label
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Time.Clock 
 --
-import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 --

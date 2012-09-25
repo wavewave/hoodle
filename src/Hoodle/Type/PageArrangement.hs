@@ -30,7 +30,7 @@ import Hoodle.Type.Alias
 import Hoodle.Util
 -- 
 import Prelude hiding ((.),id)
-import Debug.Trace
+
 
 -- | 
 
@@ -192,9 +192,7 @@ deskDimCont :: DesktopConstraint -> Hoodle EditMode -> DesktopDimension
 deskDimCont cnstrnt hdl = 
     let pgs = toList . view gpages $ hdl
         len = length pgs 
-        olst = map (fromJust . pageArrFuncCont cnstrnt hdl . PageNum) [0..len-1] 
-        -- dlst = map (view gdimension) pgs
-        -- odlst = zip olst dlst
+        olst = map (fromJust . pageArrFuncCont cnstrnt hdl . PageNum) [0..len-1]
         f (PageOrigin (x,y),PageDimension (Dim w h)) (Dim w' h') = 
           let w'' = if w' < x+w then x+w else w' 
               h'' = if h' < y+h then y+h else h' 

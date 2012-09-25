@@ -24,9 +24,7 @@ import Data.IORef
 import Graphics.UI.Gtk hiding (get,set)
 --
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
 import Data.Hoodle.Zipper
-import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type 
 -- 
 import Hoodle.Accessor

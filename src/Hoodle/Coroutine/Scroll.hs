@@ -17,7 +17,6 @@ import           Control.Lens
 import           Control.Monad
 import           Control.Monad.State 
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.BBox
 -- from this package
 import           Hoodle.Type.Event 

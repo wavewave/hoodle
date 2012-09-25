@@ -30,7 +30,6 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.FilePath (takeExtension)
 -- from hoodle-platform 
 import           Data.Hoodle.Simple
-import qualified Data.Xournal.Simple as X
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Background 
 -- import qualified Text.Hoodle.Parse.Conduit as PC

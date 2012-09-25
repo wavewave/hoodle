@@ -26,7 +26,6 @@ import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 -- import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Driver
-import           Control.Monad.Trans.Crtn.EventHandler
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Data.Hoodle.Select

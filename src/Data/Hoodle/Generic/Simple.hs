@@ -23,7 +23,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 
 -- | 
-type SLayer = GLayer () [] Stroke -- Item 
+type SLayer = GLayer () [] Item  -- Strokes 
 
 -- | 
 type SPage = GPage Background [] SLayer 
@@ -33,7 +33,7 @@ type SHoodle = GHoodle [] SPage
 
 -- | smart constructor for SLayer 
 mkSLayer :: Layer -> SLayer
-mkSLayer = GLayer () <$> view strokes -- items
+mkSLayer = GLayer () <$> view items -- strokes 
 
 -- | smart constructor for SPage
 mkSPage :: Page -> SPage 

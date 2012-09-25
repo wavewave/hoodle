@@ -47,10 +47,10 @@ data GPage bkg cntnr lyr = GPage
 -- data GLayer cntnr itm = GLayer { glayer_itms :: cntnr itm } 
             
 -- | Generic buffered layer having generic items
-data GLayer buf cntnr strk = GLayer 
+data GLayer buf cntnr itm = GLayer 
                              { glayer_buf :: buf 
-                             , glayer_strks :: cntnr strk 
-                             -- , glayer_itms :: cntnr itm 
+                             -- , glayer_strks :: cntnr strk 
+                             , glayer_itms :: cntnr itm 
                              } 
                        
 {-                          
@@ -96,16 +96,17 @@ gbackground = lens gpage_bkg (\f a -> f { gpage_bkg = a } )
 glayers :: Simple Lens (GPage bkg cntnr lyr) (cntnr lyr)
 glayers = lens gpage_lyrs (\f a -> f { gpage_lyrs = a } ) 
 
-{-
+
 -- |
 gitems :: Simple Lens (GLayer buf cntnr itm) (cntnr itm)
 gitems = lens glayer_itms (\f a -> f { glayer_itms = a } )
--}
 
 
+{-
 -- |
 gstrokes :: Simple Lens (GLayer buf cntnr strk) (cntnr strk)
 gstrokes = lens glayer_strks (\f a -> f { glayer_strks = a } )
+-}
 
 -- |
 gbuffer :: Simple Lens (GLayer buf cntnr itm) buf 

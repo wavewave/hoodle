@@ -14,9 +14,9 @@
 
 module Data.Hoodle.BBox 
 ( BBox (..) 
-, StrokeBBox
-, strkbbx_strk
-, strkbbx_bbx
+, StrokeBBox (..)
+-- , strkbbx_strk
+-- , strkbbx_bbx
 , mkStrokeBBox
 , ImageBBox 
 , imgbbx_img

@@ -195,14 +195,13 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
           newpage = case epage of 
                       Left pagebbox -> makePageSelectMode pagebbox selectstrs 
                       Right tpage -> 
-                        let ls = view glayers tpage 
-                            currlayer = gselectedlayerbuf ls
-                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            npage = set glayers (ls {gselectedlayerbuf=newlayer}) tpage 
-                      -- tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                        let currlayer = view (glayers.selectedLayer) tpage
+                            newlayer = set gstrokes (TEitherAlterHitted (Right selectstrs)) currlayer                   
+                              -- GLayer (view gbuffer currlayer))
+                            npage = set (glayers.selectedLayer) newlayer tpage 
+                              -- (ls {gselectedlayerbuf=newlayer}) tpage 
                         in npage
           newthdl = set gselSelected (Just (cpn,newpage)) thdl 
-                    -- { gselectSelected = Just (cpn,newpage) } 
           ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       put . set hoodleModeState (SelectState newthdl) 
@@ -420,15 +419,14 @@ selectPenColorChanged pcolor = do
   xstate <- get
   let SelectState thdl = view hoodleModeState xstate 
       Just (n,tpage) = view gselSelected thdl
-      slayer = gselectedlayerbuf . view glayers $ tpage
+      slayer = view (glayers.selectedLayer) tpage
   case unTEitherAlterHitted . view gstrokes $ slayer of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
-          ls = view glayers tpage 
-          newpage = set glayers (ls { gselectedlayerbuf = GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer) }) tpage 
+          newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n
       commit =<< liftIO (updatePageAll (SelectState newthdl)
                         . set hoodleModeState (SelectState newthdl) $ xstate )
@@ -440,15 +438,14 @@ selectPenWidthChanged pwidth = do
   xstate <- get
   let SelectState thdl = view hoodleModeState xstate 
       Just (n,tpage) = view gselSelected thdl
-      slayer = gselectedlayerbuf . view glayers $ tpage
+      slayer = view (glayers.selectedLayer) tpage
   case unTEitherAlterHitted . view gstrokes $ slayer  of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
-          ls = view glayers tpage 
-          newpage = set glayers (ls { gselectedlayerbuf = GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer) }) tpage
+          newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
       commit =<< liftIO (updatePageAll (SelectState newthdl) 
                          . set hoodleModeState (SelectState newthdl) $ xstate )
@@ -531,16 +528,12 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
                             currlayer = maybe (error "newSelectLasso") id mcurrlayer 
                             newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
                             tpg = mkHPage npagebbox 
-                            ls = view glayers tpg 
-                            npg = set glayers (ls {gselectedlayerbuf=newlayer}) tpg
-   --  tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+                            npg = set (glayers.selectedLayer) newlayer tpg
                         in npg 
                       Right tpage -> 
-                        let ls = view glayers tpage 
-                            currlayer = gselectedlayerbuf ls
+                        let currlayer = view (glayers.selectedLayer) tpage
                             newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            npage = set glayers (ls { gselectedlayerbuf = newlayer }) tpage 
-                              -- tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                            npage = set (glayers.selectedLayer) newlayer tpage 
                         in npage
           newthdl = set gselSelected (Just (cpn,newpage)) thdl 
       let ui = view gtkUIManager xstate

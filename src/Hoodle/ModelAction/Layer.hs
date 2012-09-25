@@ -23,6 +23,7 @@ import qualified Graphics.UI.Gtk as Gtk (get)
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Data.Hoodle.Zipper
+import           Graphics.Hoodle.Render.Type
 -- 
 import           Hoodle.Util
 import           Hoodle.Type.Alias
@@ -30,7 +31,7 @@ import           Hoodle.Type.Alias
 import Prelude hiding ((.),id)
 
 -- | 
-getCurrentLayerOrSet :: Page EditMode -> (Maybe (Layer EditMode), Page EditMode)
+getCurrentLayerOrSet :: Page EditMode -> (Maybe RLayer, Page EditMode)
 getCurrentLayerOrSet pg = 
   let olayers = view glayers pg
       nlayers = case olayers of 
@@ -41,7 +42,7 @@ getCurrentLayerOrSet pg =
       Select osz -> (return . current =<< unO osz, set glayers nlayers pg)
 
 -- | 
-adjustCurrentLayer :: Layer EditMode -> Page EditMode -> Page EditMode
+adjustCurrentLayer :: RLayer -> Page EditMode -> Page EditMode
 adjustCurrentLayer nlayer pg = 
   let (molayer,pg') = getCurrentLayerOrSet pg
   in maybe (set glayers (Select .O . Just . singletonSZ $ nlayer) pg')

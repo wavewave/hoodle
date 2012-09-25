@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Select 
@@ -112,13 +114,31 @@ changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) =
 -}  
 
 -- |
-getActiveLayer :: Page SelectMode -> Either [StrokeBBox] (TAlterHitted StrokeBBox)
-getActiveLayer = unTEitherAlterHitted . view gstrokes . gselectedlayerbuf . view glayers
+getActiveLayer :: Page SelectMode ->  
+                  Either [StrokeBBox] (TAlterHitted StrokeBBox)
+getActiveLayer = unTEitherAlterHitted . view (glayers.selectedLayer.gstrokes)
+
+{-  = let ls = view glayers tpg :: HLayers
+        slyr = view selectedLayer ls 
+        strks = view gstrokes slyr 
+    in undefined --  unTEitherAlterHitted strks 
+-}    
+{-    
+    unTEitherAlterHitted 
+                 . view gstrokes 
+                 . view selectedLayer 
+                 . view glayers 
+-}                 
+                 
+
+
 
 -- |
 getSelectedStrokes :: Page SelectMode -> [StrokeBBox]
 getSelectedStrokes = either (const []) (concatMap unHitted . getB) . getActiveLayer   
   
+
+
 -- | start a select mode with alter list selection 
 makePageSelectMode :: Page EditMode  -- ^ base page 
                       -> TAlterHitted StrokeBBox -- ^ current selection layer (active layer will be replaced)
@@ -128,32 +148,31 @@ makePageSelectMode page alist =
         clyr = maybeError "makePageSelectMode" mcurrlayer 
         nlyr= GLayer (view gbuffer clyr) (TEitherAlterHitted (Right alist))
         tpg = mkHPage npage 
-        ls = view glayers tpg 
-        npg = set glayers (ls {gselectedlayerbuf=nlyr}) tpg
-              -- tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+        npg = set (glayers.selectedLayer) nlyr tpg
     in npg 
+
 
 -- | get unselected part of page and make an ordinary page
 deleteSelected :: Page SelectMode -> Page SelectMode 
 deleteSelected tpage =
     let activelayer = getActiveLayer tpage
-        ls = view glayers tpage
-        buf = view gbuffer . gselectedlayerbuf $ ls 
+        -- ls = view glayers tpage
+        buf = view (glayers.selectedLayer.gbuffer) tpage 
     in case activelayer of 
          Left _ -> tpage 
          Right alist -> 
            let leftstrs = concat (getA alist)
                layer' = GLayer buf . TEitherAlterHitted . Left $ leftstrs 
-           in set glayers (ls {gselectedlayerbuf=layer'}) tpage 
-              -- tpage { glayers = ls { gselectedlayerbuf = layer' }}   
+           in set (glayers.selectedLayer) layer' tpage 
+
 
 -- | modify the whole selection using a function
 changeSelectionBy :: ((Double,Double) -> (Double,Double))
                      -> Page SelectMode -> Page SelectMode
 changeSelectionBy func tpage = 
   let activelayer = getActiveLayer tpage
-      ls = view glayers tpage
-      buf = view gbuffer . gselectedlayerbuf $ ls 
+      -- ls = view glayers tpage
+      buf = view (glayers.selectedLayer.gbuffer) tpage
   in case activelayer of 
        Left _ -> tpage 
        Right alist -> 
@@ -161,9 +180,10 @@ changeSelectionBy func tpage =
                             (Hitted . map (changeStrokeBy func) . unHitted) 
                             alist 
              layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
-         in set glayers (ls {gselectedlayerbuf = layer'}) tpage 
-         -- tpage { glayers = ls { gselectedlayerbuf = layer' }}
+         in set (glayers.selectedLayer) layer' tpage 
+
    
+
 -- | special case of offset modification
 changeSelectionByOffset :: (Double,Double) -> Page SelectMode -> Page SelectMode
 changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
@@ -171,6 +191,7 @@ changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
 -- |
 offsetFunc :: (Double,Double) -> (Double,Double) -> (Double,Double) 
 offsetFunc (offx,offy) = \(x,y)->(x+offx,y+offy)
+
 
 -- |
 updateTempHoodleSelect :: Hoodle SelectMode -> Page SelectMode -> Int 
@@ -200,7 +221,8 @@ calculateWholeBBox = toMaybe . mconcat . map ( Union . Middle. strkbbx_bbx )
 -- |     
 hitInSelection :: Page SelectMode -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
-  let activelayer = unTEitherAlterHitted . view gstrokes .  gselectedlayerbuf . view glayers $ tpage
+  let activelayer = getActiveLayer tpage 
+        -- unTEitherAlterHitted . view (glayers.selectedLayer.gstrokes) $ tpage
   in case activelayer of 
        Left _ -> False   
        Right alist -> 
@@ -215,7 +237,8 @@ hitInSelection tpage point =
 -- |    
 getULBBoxFromSelected :: Page SelectMode -> ULMaybe BBox 
 getULBBoxFromSelected tpage = 
-  let activelayer = unTEitherAlterHitted . view gstrokes .  gselectedlayerbuf . view glayers $ tpage
+  let activelayer = getActiveLayer tpage 
+        --  unTEitherAlterHitted . view gstrokes .  gselectedlayerbuf . view glayers $ tpage
   in case activelayer of 
        Left _ -> Bottom
        Right alist -> bbox4AllStrokes . takeHittedStrokes $ alist  

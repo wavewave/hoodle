@@ -362,7 +362,7 @@ drawContHoodleBuf =
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
   let layers = view glayers tpg 
-      slayer = gselectedlayerbuf layers 
+      slayer = view selectedLayer layers 
   case unTEitherAlterHitted . view gstrokes $ slayer of
     Right alist -> do 
       clipBBox mbbox

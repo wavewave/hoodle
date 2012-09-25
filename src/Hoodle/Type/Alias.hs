@@ -34,15 +34,15 @@ type family Layer a :: *
      
 
 
-type instance Layer EditMode = RLayer 
-type instance Layer SelectMode = TLayerSelectInPageBuf ZipperSelect RLayer
+-- type instance Layer EditMode = RLayer 
+-- type instance Layer SelectMode = HLayers
 
 type instance Page EditMode = RPage
-type instance Page SelectMode = TTempPageSelectPDFBuf 
+type instance Page SelectMode = HPage 
 
 
 type instance Hoodle EditMode = RHoodle
-type instance Hoodle SelectMode = TTempHoodleSelectPDFBuf 
+type instance Hoodle SelectMode = HHoodle 
 
 
 

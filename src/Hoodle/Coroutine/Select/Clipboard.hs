@@ -51,13 +51,12 @@ deleteSelection = do
   xstate <- get
   let SelectState thdl = view hoodleModeState xstate 
       Just (n,tpage) = view gselSelected thdl
-      slayer = gselectedlayerbuf . view glayers $ tpage
+      slayer = view (glayers.selectedLayer) tpage
   case unTEitherAlterHitted . view gstrokes $ slayer of 
     Left _ -> return () 
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
-          oldlayers = view glayers tpage
-          newpage = set glayers (oldlayers {gselectedlayerbuf=GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)}) tpage 
+          newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
       newxstate <- liftIO $ updatePageAll (SelectState newthdl) 
                             . set hoodleModeState (SelectState newthdl)
@@ -122,7 +121,7 @@ pasteToSelection = do
               nclipstrs = adjustStrokePosition4Paste geometry (PageNum pagenum) stks
               epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
               tpage = either mkHPage id epage
-              layerselect = gselectedlayerbuf . view glayers $ tpage 
+              layerselect = view (glayers.selectedLayer) tpage 
               ls  = view glayers tpage
               gbuf = view gbuffer layerselect
               newlayerselect = case getActiveLayer tpage of 
@@ -131,7 +130,7 @@ pasteToSelection = do
                                (concat (interleave id unHitted alist) 
                                  :- Hitted nclipstrs 
                                  :- Empty )
-              tpage' = set glayers (ls {gselectedlayerbuf=newlayerselect}) tpage
+              tpage' = set (glayers.selectedLayer) newlayerselect tpage
           thdl' <- liftIO $ updateTempHoodleSelectIO thdl tpage' pagenum 
           xstate' <- liftIO $ updatePageAll (SelectState thdl') 
                               . set hoodleModeState (SelectState thdl') 

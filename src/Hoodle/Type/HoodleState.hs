@@ -98,7 +98,7 @@ import Prelude hiding ((.), id)
 -- | 
 
 data HoodleModeState = ViewAppendState { unView :: RHoodle }
-                     | SelectState { tempSelect :: TTempHoodleSelectPDFBuf }
+                     | SelectState { tempSelect :: HHoodle }
                     
 -- | 
 

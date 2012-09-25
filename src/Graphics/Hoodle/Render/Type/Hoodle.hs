@@ -28,7 +28,7 @@ import Data.Hoodle.Simple
 import Data.Hoodle.Zipper
 -- from this package
 import Graphics.Hoodle.Render.Type.Background 
--- import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render.Type.Item
 
 ----------------------------
 -- normal state rendering --
@@ -39,7 +39,7 @@ newtype LyBuf = LyBuf (Maybe Surface)
 -- | normal rendering data structure for layer, R for rendering
 --   buffer is Surface, container for item = list 
 --   and StrokeBBox as contained items
-type RLayer = GLayer LyBuf [] StrokeBBox -- RItem 
+type RLayer = GLayer LyBuf [] RItem -- StrokeBBox 
 
 -- | normal rendering data structure for page 
 --   background is RBackground and container for layer is IntMap 
@@ -61,7 +61,9 @@ emptyRLayer = GLayer (LyBuf Nothing) []
 
 -- | project to simple Layer out of RLayer 
 rLayer2Layer :: RLayer -> Layer
-rLayer2Layer = Layer <$> fmap strkbbx_strk . view gstrokes
+rLayer2Layer = Layer <$> fmap rItem2Item . view gitems 
+
+ -- strkbbx_strk . view gstrokes
 
 -- | project to simple Page out of RPage
 rPage2Page :: RPage -> Page 

@@ -25,6 +25,7 @@ import Data.Hoodle.Simple
 import Data.Hoodle.BBox 
 -- from this package
 import Graphics.Hoodle.Render.Type.HitTest
+import Graphics.Hoodle.Render.Type.Item 
 
 --------------------------
 -- hit test collections --
@@ -85,6 +86,54 @@ isBBox2InBBox1 :: BBox -- ^ 1st bbox
 isBBox2InBBox1 b1 (BBox (ulx2,uly2) (lrx2,lry2)) 
   = isPointInBBox b1 (ulx2,uly2) && isPointInBBox b1 (lrx2,lry2)
 
+--------------------------------------------------------
+-- item filtering functions that results in AlterList -- 
+--------------------------------------------------------
+
+-- | 
+hltItmsFilteredBy_StateT :: (RItem -> Bool)  -- ^ hit test condition
+                         -> [RItem]          -- ^ strokes to test 
+                         -> State Bool (AlterList (NotHitted RItem) (Hitted RItem))
+hltItmsFilteredBy_StateT test itms = do 
+    let (nhit,rest) = break test itms
+        (hit,rest') = break (not.test) rest 
+    modify (|| (not.null) hit) 
+    if null rest' 
+      then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
+      else return (NotHitted nhit :- Hitted hit :- hltItmsFilteredBy test rest')
+
+
+-- | highlight strokes filtered by a condition. 
+--   previously mkHitTestAL
+hltItmsFilteredBy :: (RItem -> Bool)  -- ^ hit test condition
+                  -> [RItem]          -- ^ strokes to test 
+                  -> AlterList (NotHitted RItem) (Hitted RItem)
+hltItmsFilteredBy test is = evalState (hltItmsFilteredBy_StateT test is) False
+
+
+
+-- | 
+hltItmsHittedByBBox :: BBox  -- ^ test bounding box
+                    -> [RItem] -- ^ items to test
+                    -> AlterList (NotHitted RItem) (Hitted RItem)
+hltItmsHittedByBBox b = hltItmsFilteredBy (do2BBoxIntersect b . rItemBBox) 
+
+-- | 
+hltItmsEmbeddedByBBox :: BBox 
+                      -> [RItem] 
+                      -> AlterList (NotHitted RItem) (Hitted RItem)
+hltItmsEmbeddedByBBox b = hltItmsFilteredBy (isBBox2InBBox1 b . rItemBBox)
+
+-- | only check if a line and bbox of item overlapped 
+hltItmsHittedByLineRough :: ((Double,Double),(Double,Double)) -- ^ line 
+                         -> [RItem] -- ^ items to test
+                          -> AlterList (NotHitted RItem) (Hitted RItem)
+hltItmsHittedByLineRough (p1,p2) = hltItmsFilteredBy boxhittest 
+  where boxhittest s = isPointInBBox (rItemBBox s) p1
+                       || isPointInBBox (rItemBBox s) p2
+
+
+
 
 ---------------------------------------------
 -- stroke filtering functions as AlterList --
@@ -109,13 +158,6 @@ hltStrksFilteredBy :: (StrokeBBox -> Bool)  -- ^ hit test condition
                    -> [StrokeBBox]          -- ^ strokes to test 
                    -> AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox)
 hltStrksFilteredBy test strs = evalState (hltStrksFilteredBy_StateT test strs) False
-{-  where testaction test strs = do 
-          let (nhit,rest) = break test  strs
-              (hit,rest') = break (not.test) rest 
-          modify (|| (not.null) hit) 
-          if null rest' 
-            then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
-            else return (NotHitted nhit :- Hitted hit :- hltStrksFilteredBy test rest') -}
 
 
 

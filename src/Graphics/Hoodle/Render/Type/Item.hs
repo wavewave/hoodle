@@ -19,7 +19,17 @@ module Graphics.Hoodle.Render.Type.Item where
 import Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import Data.Hoodle.BBox 
+import Data.Hoodle.Simple
 
 data RItem = RItemStroke StrokeBBox 
-           | RItemImage ImageBBox Surface 
+           | RItemImage ImageBBox (Maybe Surface)
 
+-- |
+rItem2Item :: RItem -> Item 
+rItem2Item (RItemStroke strk) = (ItemStroke . strkbbx_strk) strk
+rItem2Item (RItemImage img _) = (ItemImage . imgbbx_img) img
+
+-- | 
+rItemBBox :: RItem -> BBox 
+rItemBBox (RItemStroke strk) = strkbbx_bbx strk
+rItemBBox (RItemImage img _) = imgbbx_bbx img

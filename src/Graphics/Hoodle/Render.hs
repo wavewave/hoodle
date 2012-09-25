@@ -24,13 +24,14 @@ module Graphics.Hoodle.Render
 , renderStrk
 , renderImg
 , renderBkg
+, renderItem 
 , renderPage
 -- * render in bbox using non R-structure 
 , renderBkg_InBBox
 
 -- * simple rendering using R-structure 
 , renderRBkg
-
+, renderRItem 
 -- * nopdf
 , renderRBkg_NoPDF
 
@@ -41,6 +42,7 @@ module Graphics.Hoodle.Render
 -- * render only bbox (for debug purpose)
 , renderStrkBBx_BBoxOnly
 , renderImgBBx_BBoxOnly
+, renderRItem_BBoxOnly
 , renderRLayer_BBoxOnly
 , renderRPage_BBoxOnly
 
@@ -134,13 +136,10 @@ renderImg (Image _ (x,y) (Dim w h)) = do
       rectangle x y w h
       stroke
 
-{-
 -- | render item 
-renderItm :: Item -> Render () 
-renderItm (ItemStroke strk) = renderStrk strk
-renderItm (ItemImage img) = renderImg img
--}
-
+renderItem :: Item -> Render () 
+renderItem (ItemStroke strk) = renderStrk strk
+renderItem (ItemImage img) = renderImg img
 
 -- | render background without any constraint 
 renderBkg :: (Background,Dimension) -> Render () 
@@ -167,7 +166,7 @@ renderPage page = do
   setLineCap LineCapRound
   setLineJoin LineJoinRound
   -- mapM_ renderItm  itms
-  mapM_ (mapM renderStrk . view strokes) . view layers $ page
+  mapM_ (mapM renderItem . view items) . view layers $ page
   stroke
 
 --- 
@@ -211,6 +210,10 @@ renderRBkg (RBkgPDF _ _ _ p _,dim) = do
       PopplerPage.pageRender pg
 #endif     
 
+-- |
+renderRItem :: RItem -> Render () 
+renderRItem = renderRItem_BBoxOnly
+
 --------------
 -- BBoxOnly --
 --------------
@@ -237,17 +240,19 @@ renderImgBBx_BBoxOnly ibbox = do
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
     
-{-
+
 -- | 
 renderRItem_BBoxOnly :: RItem -> Render () 
 renderRItem_BBoxOnly (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
--}
+
 
 -- | 
 renderRLayer_BBoxOnly :: RLayer -> Render ()
-renderRLayer_BBoxOnly = mapM_ renderStrkBBx_BBoxOnly . view gstrokes 
-                        -- mapM_  renderRItem_BBoxOnly . view gitems
+renderRLayer_BBoxOnly = mapM_  renderRItem_BBoxOnly . view gitems
+
+  
+  -- mapM_ renderStrkBBx_BBoxOnly . view gstrokes 
 
 
 
@@ -297,10 +302,10 @@ renderRLayer_InBBox mbbox layer = do
   clipBBox mbbox 
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
-                   :- Hitted (view gstrokes layer) 
+                   :- Hitted (view gitems layer) 
                    :- Empty 
-        Just bbox -> (hltStrksHittedByBBox bbox . view gstrokes) layer
-  (mapM_ (renderStrk.strkbbx_strk) . concatMap unHitted  . getB) hittestbbox
+        Just bbox -> (hltItmsHittedByBBox bbox . view gitems) layer
+  (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
   resetClip
 
 
@@ -402,13 +407,17 @@ cnstrctRPage_StateT pg = do
   nbkg <- cnstrctRBkg_StateT dim bkg
   return . set glayers nlyrs $ emptyGPage dim nbkg 
     
--- GPage dim nbkg (gFromList . Prelude.map fromLayer $ ls)
-  
+-- |   
 mkRLayer :: Layer -> RLayer   
-mkRLayer lyr = let nstrks = map mkStrokeBBox . view strokes $ lyr 
-               in set gstrokes nstrks emptyRLayer
+mkRLayer lyr = let nitms = map mkRItem . view items $ lyr 
+               in set gitems nitms emptyRLayer
   
-  
+-- | 
+mkRItem :: Item -> RItem 
+mkRItem (ItemStroke strk) = RItemStroke (mkStrokeBBox strk)
+mkRItem (ItemImage img) = RItemImage (mkImageBBox img) Nothing 
+                  
+                  
 -- |
 cnstrctRBkg_StateT :: Dimension -> Background 
                    -> StateT (Maybe Context) IO RBackground
@@ -449,106 +458,3 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
           return rbkg
 #endif  
 
-{-
--- | 
-mkTLayerBBoxBufFromNoBuf :: Dimension -> TLayerBBox -> IO (TLayerBBoxBuf LyBuf)
-mkTLayerBBoxBufFromNoBuf (Dim w h) lyr = do 
-  let strs = view g_strokes lyr 
-  sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
-  renderWith sfc (cairoDrawLayerBBox (Just (BBox (0,0) (w,h))) lyr)
-  return $ GLayerBuf { gbuffer = LyBuf (Just sfc), 
-                       gbstrokes = strs }  -- temporary
-
-    
--- | 
-mkTPageBBoxMapPDFBufFromNoBuf :: TPageBBoxMapPDF -> IO TPageBBoxMapPDFBuf
-mkTPageBBoxMapPDFBufFromNoBuf page = do 
-  let dim = view g_dimension page
-      bkg = view g_background page
-      ls =  view g_layers page
-  ls' <- mapM (mkTLayerBBoxBufFromNoBuf dim) ls
-  return . GPage dim bkg . gFromList . gToList $ ls'
-      
--- | 
-mkTHoodleBBoxMapPDFBufFromNoBuf :: THoodleBBoxMapPDF 
-                                    -> IO THoodleBBoxMapPDFBuf
-mkTHoodleBBoxMapPDFBufFromNoBuf hdl = do 
-  let title = view g_title hdl
-      pages = view g_pages hdl 
-  pages' <- mapM mkTPageBBoxMapPDFBufFromNoBuf pages
- 
-  return $ GHoodle title pages'
-
--}
-
-{-
-cairoOneStrokeSelected :: StrokeBBox -> Render ()
-cairoOneStrokeSelected sbbox = do 
-  let s = gToStroke sbbox 
-  case s of     
-    Img _ _ _ -> cairoOneStrokeBBoxOnly sbbox 
-    _ -> do     
-      case M.lookup (stroke_color s) predefined_pencolor of 
-        Just (r,g,b,a) -> setSourceRGBA r g b a
-        Nothing -> setSourceRGBA 0 0 0 1 
-      case s of
-        Stroke _ _ w d -> do  
-          setLineWidth (w * 4.0) 
-          setLineCap LineCapRound
-          setLineJoin LineJoinRound
-          drawOneStrokeCurve d
-          stroke
-          setSourceRGBA 1 1 1 1
-          setLineWidth w
-          drawOneStrokeCurve . stroke_data $ s 
-          stroke
-        VWStroke _ _ d -> do  
-          setFillRule FillRuleWinding
-          drawOneVWStrokeCurve $ map (\(x,y,z)->(x,y,4*z)) d
-          fill  
-          setSourceRGBA 1 1 1 1
-          drawOneVWStrokeCurve d     
-          fill
-        _ -> error "in cairoOneStrokeSelected"
--}    
-    
-{-
-cairoDrawLayerBBoxOnly :: TLayerBBox -> Render () 
-cairoDrawLayerBBoxOnly  = mapM_ cairoOneStrokeBBoxOnly . gstrokes 
-
-----
-
-cairoDrawPageBBox :: Maybe BBox -> TPageBBoxMap -> Render ()
-cairoDrawPageBBox mbbox page = do 
-    cairoDrawBackgroundBBox mbbox (gdimension page) (gbackground page) 
-    mapM_ (cairoDrawLayerBBox mbbox) (glayers page)
-
-
-cairoDrawLayerBBox :: Maybe BBox -> TLayerBBox -> Render () 
-cairoDrawLayerBBox mbbox layer = do  
-  clipBBox mbbox 
-  let hittestbbox = case mbbox of 
-                       Nothing -> NotHitted [] 
-                                  :- Hitted (gstrokes layer) 
-                                  :- Empty 
-                       Just bbox -> mkHitTestBBoxBBox bbox (gstrokes layer)
-  mapM_ drawOneStroke . map gToStroke . concatMap unHitted  . getB $ hittestbbox
-  resetClip
-
-cairoDrawBackgroundBBox :: Maybe BBox -> Dimension -> Background -> Render ()
-cairoDrawBackgroundBBox mbbox dim@(Dim w h) (Background typ col sty) = do 
-    let mbbox2 = toMaybe $ fromMaybe mbbox `mappend` (Intersect (Middle (dimToBBox dim)))
-    case mbbox2 of 
-      Nothing -> cairoDrawBkg (Dim w h) (Background typ col sty)
-      Just bbox@(BBox (x1,y1) (x2,y2)) -> do 
-        let c = M.lookup col predefined_bkgcolor  
-        case c of 
-          Just (r,g,b,_a) -> setSourceRGB r g b 
-          Nothing        -> setSourceRGB 1 1 1 
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        fill
-        cairoDrawRulingBBox bbox w h sty
-cairoDrawBackgroundBBox _ _  (BackgroundPdf _ _ _ _) = 
-    error "BackgroundPdf in cairoDrawBackgroundBBox"
-
--}

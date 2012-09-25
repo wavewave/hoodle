@@ -25,26 +25,26 @@ import Data.Hoodle.Select
 import Data.Hoodle.Zipper
 -- import Data.Hoodle.Map
 -- from this package
-import Graphics.Hoodle.Render.Type.Hoodle 
 import Graphics.Hoodle.Render.Type.Background
 import Graphics.Hoodle.Render.Type.HitTest
-
+import Graphics.Hoodle.Render.Type.Hoodle 
+import Graphics.Hoodle.Render.Type.Item 
 
 
 ----------------------------
 -- select state rendering --
 ----------------------------
 
-type SLayerF a = GLayer (BufOf a) TEitherAlterHitted (StrokeOf a) 
+type SLayerF a = GLayer (BufOf a) TEitherAlterHitted (ItmOf a) 
 
 
-type family StrokeOf a  :: * 
+type family ItmOf a  :: * 
      
 type family BufOf a :: *
      
 type instance BufOf (GLayer b s a) = b     
      
-type instance StrokeOf RLayer = StrokeBBox 
+type instance ItmOf RLayer = RItem 
 
 
 
@@ -75,7 +75,7 @@ type HHoodle =
 -- | 
 hLayer2RLayer :: HLayer -> RLayer 
 hLayer2RLayer l = 
-  case unTEitherAlterHitted (view gstrokes l) of
+  case unTEitherAlterHitted (view gitems l) of
     Left strs -> GLayer (view gbuffer l) strs 
     Right alist -> GLayer (view gbuffer l) . Prelude.concat 
                    $ interleave id unHitted alist
@@ -104,7 +104,7 @@ mkHPage p =
         others@(Select (O (Just _))) -> others 
       Select (O (Just sz)) = normalizedothers 
       curr  = current sz 
-      currtemp = GLayer (view gbuffer curr) (TEitherAlterHitted . Left . view gstrokes $ curr)
+      currtemp = GLayer (view gbuffer curr) (TEitherAlterHitted . Left . view gitems $ curr)
   in  GPage (view gdimension p) (view gbackground p) 
             (HLayersF currtemp normalizedothers)
 

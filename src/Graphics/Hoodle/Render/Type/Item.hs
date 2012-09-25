@@ -34,6 +34,17 @@ isImgInRItem :: RItem -> Bool
 isImgInRItem (RItemImage _ _) = True
 isImgInRItem _ = False
 
+-- | 
+findStrkInRItem :: RItem -> Maybe StrokeBBox 
+findStrkInRItem (RItemStroke strk) = Just strk
+findStrkInRItem _ = Nothing 
+
+-- | 
+findImgInRItem :: RItem -> Maybe ImageBBox
+findImgInRItem (RItemImage img _ ) = Just img 
+findImgInRItem _ = Nothing 
+
+
 
 -- |
 rItem2Item :: RItem -> Item 

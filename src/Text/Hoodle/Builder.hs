@@ -95,8 +95,12 @@ buildBackground bkg =
 -- | 
 buildLayer :: Layer -> Builder
 buildLayer layer = fromByteString "<layer>\n"
-                  <> (mconcat . map buildStroke . view strokes) layer
+                  <> (mconcat . map buildItem . view items) layer
                   <> fromByteString "</layer>\n"
+
+buildItem :: Item -> Builder
+buildItem (ItemStroke strk) = buildStroke strk
+buildItem (ItemImage img) = buildImage img
 
 -- | 
 buildStroke :: Stroke -> Builder
@@ -120,8 +124,9 @@ buildStroke stroke@(VWStroke _ _ _) =
     <> fromByteString "\">\n"
     <> mconcat (map buildXYFrm3D (stroke_vwdata stroke))
     <> fromByteString "\n</stroke>\n"
-{-
-fromStroke (Img bstr (x,y) (Dim w h)) =
+
+buildImage :: Image -> Builder 
+buildImage (Image bstr (x,y) (Dim w h)) =
     fromByteString "<img src=\""
     <> fromByteString bstr
     <> fromByteString "\" x=\"" 
@@ -133,7 +138,7 @@ fromStroke (Img bstr (x,y) (Dim w h)) =
     <> fromByteString "\" height=\""
     <> fromByteString (toFixed 2 h)
     <> fromByteString "\" />\n"
--}  
+
 
 
 -- | 

@@ -27,7 +27,9 @@ import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic 
+import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render.Type 
+import           Graphics.Hoodle.Render.Type.HitTest
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
@@ -48,14 +50,14 @@ deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   xstate <- get
   let SelectState thdl = view hoodleModeState xstate 
-      Just (n,tpage) = gselectSelected thdl
-      slayer = gselectedlayerbuf . glayers $ tpage
-  case unTEitherAlterHitted . view g_bstrokes $ slayer of 
+      Just (n,tpage) = view gselSelected thdl
+      slayer = gselectedlayerbuf . view glayers $ tpage
+  case unTEitherAlterHitted . view gstrokes $ slayer of 
     Left _ -> return () 
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
-          oldlayers = glayers tpage
-          newpage = tpage { glayers = oldlayers { gselectedlayerbuf = GLayerBuf (view g_buffer slayer) (TEitherAlterHitted newlayer) } } 
+          oldlayers = view glayers tpage
+          newpage = set glayers (oldlayers {gselectedlayerbuf=GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)}) tpage 
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
       newxstate <- liftIO $ updatePageAll (SelectState newthdl) 
                             . set hoodleModeState (SelectState newthdl)
@@ -119,17 +121,17 @@ pasteToSelection = do
               hdlmodst@(SelectState thdl) = view hoodleModeState xstate
               nclipstrs = adjustStrokePosition4Paste geometry (PageNum pagenum) stks
               epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
-              tpage = either gcast id epage
-              layerselect = gselectedlayerbuf . glayers $ tpage 
-              ls  = glayers tpage
-              gbuf = view g_buffer layerselect
+              tpage = either mkHPage id epage
+              layerselect = gselectedlayerbuf . view glayers $ tpage 
+              ls  = view glayers tpage
+              gbuf = view gbuffer layerselect
               newlayerselect = case getActiveLayer tpage of 
-                Left strs -> (GLayerBuf gbuf . TEitherAlterHitted . Right) (strs :- Hitted nclipstrs :- Empty)
-                Right alist -> (GLayerBuf gbuf . TEitherAlterHitted . Right) 
+                Left strs -> (GLayer gbuf . TEitherAlterHitted . Right) (strs :- Hitted nclipstrs :- Empty)
+                Right alist -> (GLayer gbuf . TEitherAlterHitted . Right) 
                                (concat (interleave id unHitted alist) 
                                  :- Hitted nclipstrs 
                                  :- Empty )
-              tpage' = tpage { glayers = ls { gselectedlayerbuf = newlayerselect } } 
+              tpage' = set glayers (ls {gselectedlayerbuf=newlayerselect}) tpage
           thdl' <- liftIO $ updateTempHoodleSelectIO thdl tpage' pagenum 
           xstate' <- liftIO $ updatePageAll (SelectState thdl') 
                               . set hoodleModeState (SelectState thdl') 

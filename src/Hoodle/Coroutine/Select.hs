@@ -31,14 +31,18 @@ import qualified Graphics.Rendering.Cairo.Matrix as Mat
 import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn 
+import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
-import           Graphics.Hoodle.Render.BBox
-import           Graphics.Hoodle.Render.BBoxMapPDFImg
+-- import           Graphics.Hoodle.Render.BBox
+import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Generic
-import           Graphics.Hoodle.Render.HitTest
+-- import           Graphics.Hoodle.Render.Generic
+import           Graphics.Hoodle.Render.Util
+import           Graphics.Hoodle.Render.Util.HitTest
 import           Graphics.Hoodle.Render.Type
+import           Graphics.Hoodle.Render.Type.HitTest
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Device
@@ -121,7 +125,7 @@ selectRectStart cid = commonPenStart rectaction cid
                   _ -> return () 
               action (Right tpage) | hitInSelection tpage (x,y) = do
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
-              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
+              action (Right tpage) | otherwise = newSelectAction (hPage2RPage tpage)
               action (Left page) = newSelectAction page
           xstate <- get 
           let hdlmodst = view hoodleModeState xstate 
@@ -150,14 +154,14 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
                          (prev,otime) tempselection 
     moveact _xstate _cinfo (_pcoord,(x,y)) = do 
       let bbox = BBox orig (x,y)
-          hittestbbox = mkHitTestInsideBBox bbox strs
+          hittestbbox = hltStrksEmbeddedByBBox bbox strs
           hittedstrs = concat . map unHitted . getB $ hittestbbox
       page <- getCurrentPageCvsId cid
       let (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fstrs || (not.null) sstrs ) $ do 
         let xformfunc = cairoXform4PageCoordinate geometry pnum 
-            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strokebbox_bbox) $ fstrs
+            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strkbbx_bbx) $ fstrs
             renderfunc = do   
               xformfunc 
               case ulbbox of 
@@ -165,7 +169,7 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
                   cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
                   mapM_ renderSelectedStroke hittedstrs
                 Middle sbbox -> do 
-                  let redrawee = filter (hitTestBBoxBBox sbbox.strokebbox_bbox) hittedstrs  
+                  let redrawee = filter (do2BBoxIntersect sbbox.strkbbx_bbx) hittedstrs  
                   cairoRenderOption (InBBoxOption (Just sbbox)) (InBBox page)
                   clipBBox (Just sbbox)
                   mapM_ renderSelectedStroke redrawee 
@@ -185,18 +189,20 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
           epage = getCurrentPageEitherFromHoodleModeState cinfo (view hoodleModeState xstate)
           cpn = view currentPageNum cinfo 
           bbox = BBox orig (x,y)
-          hittestbbox = mkHitTestInsideBBox bbox strs
+          hittestbbox = hltStrksEmbeddedByBBox bbox strs
           selectstrs = fmapAL unNotHitted id hittestbbox
           SelectState thdl = view hoodleModeState xstate
           newpage = case epage of 
                       Left pagebbox -> makePageSelectMode pagebbox selectstrs 
                       Right tpage -> 
-                        let ls = glayers tpage 
+                        let ls = view glayers tpage 
                             currlayer = gselectedlayerbuf ls
-                            newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            npage = set glayers (ls {gselectedlayerbuf=newlayer}) tpage 
+                      -- tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
                         in npage
-          newthdl = thdl { gselectSelected = Just (cpn,newpage) } 
+          newthdl = set gselSelected (Just (cpn,newpage)) thdl 
+                    -- { gselectSelected = Just (cpn,newpage) } 
           ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       put . set hoodleModeState (SelectState newthdl) 
@@ -218,7 +224,7 @@ startMoveSelect :: CanvasId
 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage = do  
     strimage <- liftIO $ mkStrokesNImage geometry tpage
     tsel <- createTempSelectRender pnum geometry
-              (gcast tpage :: Page EditMode) 
+              (hPage2RPage tpage) 
               strimage 
     moveSelect cid pnum geometry cidmove cidup (x,y) ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)                  
@@ -287,10 +293,10 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
             return (xst,nthdl,strs)       
           Left _ -> error "this is impossible, in moveSelect" 
       let maction = do 
-            page <- M.lookup (unPageNum newpgn) (view g_selectAll nthdl1)
+            page <- M.lookup (unPageNum newpgn) (view gselAll nthdl1)
             let (mcurrlayer,npage) = getCurrentLayerOrSet page
             currlayer <- mcurrlayer 
-            let oldstrs = view g_bstrokes currlayer
+            let oldstrs = view gstrokes currlayer
             let newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) selectedstrs 
                 alist = oldstrs :- Hitted newstrs :- Empty 
                 ntpage = makePageSelectMode npage alist  
@@ -341,7 +347,7 @@ startResizeSelect handle cid pnum geometry cidmove cidup bbox
                   ((x,y),ctime) tpage = do  
     strimage <- liftIO $ mkStrokesNImage geometry tpage  
     tsel <- createTempSelectRender pnum geometry 
-              (gcast tpage :: Page EditMode) 
+              (hPage2RPage tpage) 
               strimage 
     resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)  
@@ -413,16 +419,16 @@ selectPenColorChanged :: PenColor -> MainCoroutine ()
 selectPenColorChanged pcolor = do 
   xstate <- get
   let SelectState thdl = view hoodleModeState xstate 
-      Just (n,tpage) = gselectSelected thdl
-      slayer = gselectedlayerbuf . glayers $ tpage
-  case unTEitherAlterHitted . view g_bstrokes $ slayer of 
+      Just (n,tpage) = view gselSelected thdl
+      slayer = gselectedlayerbuf . view glayers $ tpage
+  case unTEitherAlterHitted . view gstrokes $ slayer of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
-          ls = glayers tpage 
-          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (view g_buffer slayer) (TEitherAlterHitted newlayer) }} 
+          ls = view glayers tpage 
+          newpage = set glayers (ls { gselectedlayerbuf = GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer) }) tpage 
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n
       commit =<< liftIO (updatePageAll (SelectState newthdl)
                         . set hoodleModeState (SelectState newthdl) $ xstate )
@@ -433,16 +439,16 @@ selectPenWidthChanged :: Double -> MainCoroutine ()
 selectPenWidthChanged pwidth = do 
   xstate <- get
   let SelectState thdl = view hoodleModeState xstate 
-      Just (n,tpage) = gselectSelected thdl
-      slayer = gselectedlayerbuf . view g_layers $ tpage
-  case unTEitherAlterHitted . view g_bstrokes $ slayer  of 
+      Just (n,tpage) = view gselSelected thdl
+      slayer = gselectedlayerbuf . view glayers $ tpage
+  case unTEitherAlterHitted . view gstrokes $ slayer  of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
-          ls = view g_layers tpage 
-          newpage = tpage { glayers = ls { gselectedlayerbuf = GLayerBuf (view g_buffer slayer) (TEitherAlterHitted newlayer) }} 
+          ls = view glayers tpage 
+          newpage = set glayers (ls { gselectedlayerbuf = GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer) }) tpage
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
       commit =<< liftIO (updatePageAll (SelectState newthdl) 
                          . set hoodleModeState (SelectState newthdl) $ xstate )
@@ -474,7 +480,7 @@ selectLassoStart cid = commonPenStart lassoAction cid
                                         bbox ((x,y),ctime) tpage)
                           (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
-              action (Right tpage) | otherwise = newSelectAction (gcast tpage :: Page EditMode )
+              action (Right tpage) | otherwise = (newSelectAction . hPage2RPage) tpage 
               action (Left page) = newSelectAction page
           xstate <- get 
           let hdlmodst = view hoodleModeState xstate 
@@ -516,25 +522,27 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
           hdlmodst = view hoodleModeState xstate 
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           cpn = view currentPageNum cinfo 
-          hittestlasso = mkHitTestAL (hitLassoStroke (nlasso |> orig)) strs
+          hittestlasso = hltStrksFilteredBy (hitLassoStroke (nlasso |> orig)) strs
           selectstrs = fmapAL unNotHitted id hittestlasso
           SelectState thdl = view hoodleModeState xstate
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
                             currlayer = maybe (error "newSelectLasso") id mcurrlayer 
-                            newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            tpg = gcast npagebbox 
-                            ls = view g_layers tpg 
-                            npg = tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
+                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            tpg = mkHPage npagebbox 
+                            ls = view glayers tpg 
+                            npg = set glayers (ls {gselectedlayerbuf=newlayer}) tpg
+   --  tpg { glayers = ls { gselectedlayerbuf = newlayer}  }
                         in npg 
                       Right tpage -> 
-                        let ls = glayers tpage 
+                        let ls = view glayers tpage 
                             currlayer = gselectedlayerbuf ls
-                            newlayer = GLayerBuf (view g_buffer currlayer) (TEitherAlterHitted (Right selectstrs))
-                            npage = tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
+                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            npage = set glayers (ls { gselectedlayerbuf = newlayer }) tpage 
+                              -- tpage { glayers = ls { gselectedlayerbuf = newlayer } } 
                         in npage
-          newthdl = thdl { gselectSelected = Just (cpn,newpage) } 
+          newthdl = set gselSelected (Just (cpn,newpage)) thdl 
       let ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
       put . set hoodleModeState (SelectState newthdl) 

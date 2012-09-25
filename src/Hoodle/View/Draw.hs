@@ -28,15 +28,19 @@ import Data.Maybe hiding (fromMaybe)
 import Data.Monoid
 import Data.Sequence
 -- from hoodle-platform 
-import Data.Hoodle.Simple (Dimension(..))
-import Data.Hoodle.Predefined
-import Data.Hoodle.Generic
 import Data.Hoodle.BBox
-import Graphics.Hoodle.Render.Type
-import Graphics.Hoodle.Render.BBox 
-import Graphics.Hoodle.Render.BBoxMapPDFImg
-import Graphics.Hoodle.Render.PDFBackground
+import Data.Hoodle.Generic
+import Data.Hoodle.Predefined
+import Data.Hoodle.Select
+import Data.Hoodle.Simple (Dimension(..))
+import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Generic
+import Graphics.Hoodle.Render.Background
+import Graphics.Hoodle.Render.Highlight
+import Graphics.Hoodle.Render.Type
+import Graphics.Hoodle.Render.Type.HitTest 
+import Graphics.Hoodle.Render.Util 
+-- import Graphics.Hoodle.Render.Generic
 -- from this package
 import Hoodle.Type.Canvas
 import Hoodle.Type.Alias 
@@ -182,8 +186,9 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z)
 
 -- | 
     
-drawFuncGen :: (GPageable em) => em -> 
-               ((PageNum,Page em) -> Maybe BBox -> Render ()) -> DrawingFunction SinglePage em
+drawFuncGen :: em 
+               -> ((PageNum,Page em) -> Maybe BBox -> Render ()) 
+               -> DrawingFunction SinglePage em
 drawFuncGen _typ render = SinglePageDraw func 
   where func isCurrentCvs canvas (pnum,page) vinfo mbbox = do 
           let arr = view pageArrangement vinfo
@@ -229,7 +234,7 @@ drawContPageGen render = ContPageDraw func
               pnum = PageNum . view currentPageNum $ cinfo 
               canvas = view drawArea cinfo 
           geometry <- makeCanvasGeometry pnum arr canvas
-          let pgs = view g_pages hdl 
+          let pgs = view gpages hdl 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
@@ -252,17 +257,7 @@ drawContPageGen render = ContPageDraw func
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
 
-              {- emphasispagerender (pn,pg) = do 
-                identityMatrix 
-                cairoXform4PageCoordinate geometry pn
-                let Dim w h = view g_dimension pg 
-                setSourceRGBA 1.0 0 0 0.2
-                rectangle 0 0 w h 
-                fill  -}
-
-
 -- |
-
 cairoBBox :: BBox -> Render () 
 cairoBBox bbox = do 
   let (x1,y1) = bbox_upperleft bbox
@@ -271,7 +266,6 @@ cairoBBox bbox = do
   stroke
 
 -- |
-
 drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> Render ()) 
                       -> ((PageNum, Page SelectMode) -> Maybe BBox -> Render ())
                       -> DrawingFunction ContinuousPage SelectMode
@@ -279,11 +273,11 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
   where func isCurrentCvs cinfo mbbox thdl = do 
           let arr = view (viewInfo.pageArrangement) cinfo
               pnum = PageNum . view currentPageNum $ cinfo 
-              mtpage = view g_selectSelected thdl 
+              mtpage = view gselSelected thdl 
               canvas = view drawArea cinfo 
           geometry <- makeCanvasGeometry pnum arr canvas
-          let pgs = view g_selectAll thdl 
-              hdl = GHoodle (view g_selectTitle thdl) pgs 
+          let pgs = view gselAll thdl 
+              hdl = GHoodle (view gselTitle thdl) pgs 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
@@ -308,28 +302,20 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 resetClip 
           doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
 
-              {- emphasispagerender (pn,pg) = do 
-                identityMatrix 
-                cairoXform4PageCoordinate geometry pn
-                let Dim w h = view g_dimension pg 
-                setSourceRGBA 1.0 0 0 0.2
-                rectangle 0 0 w h 
-                fill  -}
-
 
 -- |
-
 drawPageClearly :: DrawingFunction SinglePage EditMode
-drawPageClearly = drawFuncGen EditMode $ \(_,page) _mbbox -> 
-                     cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )
+drawPageClearly = drawFuncGen EditMode $ \(_,page) mbbox -> 
+                     cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+                     -- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
 
 -- |
-
 drawPageSelClearly :: DrawingFunction SinglePage SelectMode         
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
-  where rendercontent (_pnum,tpg)  _mbbox = do
-          let pg' = gcast tpg :: Page EditMode
-          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast pg' :: TPageBBoxMapPDF)
+  where rendercontent (_pnum,tpg)  mbbox = do
+          let pg' = hPage2RPage tpg 
+          -- cairoRenderOption (RBkgDrawPDF,DrawFull) pg' 
+          cairoRenderOption (InBBoxOption mbbox) (InBBox pg') 
         renderselect (_pnum,tpg) mbbox = do 
           cairoHittedBoxDraw tpg mbbox
 
@@ -337,16 +323,17 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
         
 drawContHoodleClearly :: DrawingFunction ContinuousPage EditMode
 drawContHoodleClearly = 
-  drawContPageGen $ \(_,page) _mbbox -> 
-                       cairoRenderOption (DrawBkgPDF,DrawFull) 
-                                         (gcast page :: TPageBBoxMapPDF )
+  drawContPageGen $ \(_,page) mbbox -> 
+                       cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+                       -- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
 
 -- |
 
 drawContHoodleSelClearly :: DrawingFunction ContinuousPage SelectMode
 drawContHoodleSelClearly = drawContPageSelGen renderother renderselect 
-  where renderother (_,page) _mbbox  = 
-          cairoRenderOption (DrawBkgPDF,DrawFull) (gcast page :: TPageBBoxMapPDF )    
+  where renderother (_,page) mbbox  = 
+          -- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+          cairoRenderOption (InBBoxOption mbbox) (InBBox page)
         renderselect (_pnum,tpg) mbbox =  
           cairoHittedBoxDraw tpg mbbox
 
@@ -360,8 +347,8 @@ drawBuf = drawFuncGen EditMode $ \(_,page) mbbox -> cairoRenderOption (InBBoxOpt
 drawSelBuf :: DrawingFunction SinglePage SelectMode
 drawSelBuf = drawFuncSelGen rencont rensel  
   where rencont (_pnum,tpg) mbbox = do 
-          let page = (gcast tpg :: Page EditMode)
-          cairoRenderOption (InBBoxOption mbbox) (InBBox (gcast page :: TPageBBoxMapPDF))
+          let page = hPage2RPage tpg 
+          cairoRenderOption (InBBoxOption mbbox) (InBBox page)
         rensel (_pnum,tpg) mbbox = do 
           cairoHittedBoxDraw tpg mbbox  
              
@@ -374,15 +361,15 @@ drawContHoodleBuf =
 -- |
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
-  let layers = view g_layers tpg 
+  let layers = view glayers tpg 
       slayer = gselectedlayerbuf layers 
-  case unTEitherAlterHitted . view g_bstrokes $ slayer of
+  case unTEitherAlterHitted . view gstrokes $ slayer of
     Right alist -> do 
       clipBBox mbbox
       setSourceRGBA 0.0 0.0 1.0 1.0
       let hitstrs = concatMap unHitted (getB alist)
       mapM_ renderSelectedStroke hitstrs  
-      let ulbbox = unUnion . mconcat . fmap (Union .Middle . strokebbox_bbox) 
+      let ulbbox = unUnion . mconcat . fmap (Union .Middle . strkbbx_bbx) 
                    $ hitstrs 
       case ulbbox of 
         Middle bbox -> renderSelectHandle bbox 
@@ -421,7 +408,7 @@ renderSelectedStroke :: StrokeBBox -> Render ()
 renderSelectedStroke str = do 
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1
-  cairoOneStrokeSelected str
+  renderStrkHltd str
 
 -- |
 

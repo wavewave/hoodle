@@ -29,6 +29,7 @@ import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.EventHandler
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
+import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 -- from this package
@@ -262,7 +263,7 @@ menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do 
-  totalnumofpages <- (either (M.size. view g_pages) (M.size . view g_selectAll) 
+  totalnumofpages <- (either (M.size. view gpages) (M.size . view gselAll) 
                       . hoodleModeStateEither . view hoodleModeState) <$> get 
   changePage (const (totalnumofpages-1))
 menuEventProcess MenuNewPageBefore = newPage PageBefore 

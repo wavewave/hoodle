@@ -21,6 +21,7 @@ import           Control.Monad.State
 import qualified Data.IntMap as M
 -- from hoodle-platform
 import           Data.Hoodle.Generic
+import           Data.Hoodle.Select
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
@@ -74,7 +75,7 @@ changePageInHoodleModeState :: Int -> HoodleModeState
                                -> (Bool,Int,Page EditMode,HoodleModeState)
 changePageInHoodleModeState npgnum hdlmodst =
     let ehdl = hoodleModeStateEither hdlmodst 
-        pgs = either (view g_pages) (view g_selectAll) ehdl
+        pgs = either (view gpages) (view gselAll) ehdl
         totnumpages = M.size pgs
         lpage = maybeError "changePage" (M.lookup (totnumpages-1) pgs)
         (isChanged,npgnum',npage',ehdl') 
@@ -82,7 +83,7 @@ changePageInHoodleModeState npgnum hdlmodst =
             let npage = newSinglePageFromOld lpage
                 npages = M.insert totnumpages npage pgs 
             in (True,totnumpages,npage,
-                either (Left . set g_pages npages) (Right. set g_selectAll npages) ehdl )
+                either (Left . set gpages npages) (Right. set gselAll npages) ehdl )
           | otherwise = let npg = if npgnum < 0 then 0 else npgnum
                             pg = maybeError "changePage" (M.lookup npg pgs)
                         in (False,npg,pg,ehdl) 
@@ -103,7 +104,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
           page <- getCurrentPageCvsId cid
           let zmode = maybe (view (viewInfo.zoomMode) cinfo) id mzmode  
-              pdim = PageDimension $ view g_dimension page
+              pdim = PageDimension $ view gdimension page
               xy = either (const (0,0)) (unPageCoord.snd) 
                      (getCvsOriginInPage geometry)
               cdim = canvasDim geometry 
@@ -224,10 +225,10 @@ deleteCurrentPage = do
 deletePageInHoodle :: Hoodle EditMode -> PageNum -> IO (Hoodle EditMode)
 deletePageInHoodle hdl (PageNum pgn) = do 
   putStrLn "deletePageInHoodle is called"
-  let pagelst = M.elems . view g_pages $ hdl 
+  let pagelst = M.elems . view gpages $ hdl 
       (pagesbefore,_cpage:pagesafter) = splitAt pgn pagelst
       npagelst = pagesbefore ++ pagesafter
-      nhdl = set g_pages (M.fromList . zip [0..] $ npagelst) hdl
+      nhdl = set gpages (M.fromList . zip [0..] $ npagelst) hdl
   return nhdl
 
 

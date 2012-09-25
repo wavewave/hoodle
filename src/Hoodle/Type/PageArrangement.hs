@@ -18,6 +18,7 @@ module Hoodle.Type.PageArrangement where
 import           Control.Applicative
 import           Control.Category ((.))
 import           Control.Lens
+import           Data.Foldable (toList)
 import           Data.Maybe (fromJust)
 -- from hoodle-platform 
 import Data.Hoodle.Simple (Dimension(..))
@@ -150,7 +151,7 @@ makeContinuousArrangement :: ZoomMode
                           -> PageArrangement ContinuousPage
 makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch)) 
                                 hdl (pnum,PageCoord (xpos,ypos)) = 
-  let dim = view g_dimension . head . gToList . view g_pages $ hdl
+  let dim = view gdimension . head . toList . view gpages $ hdl
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       cnstrnt = DesktopWidthConstrained (cw/sinvx)     
       (PageOrigin (x0,y0),_) = maybeError "makeContArr" $ pageArrFuncCont cnstrnt hdl pnum 
@@ -166,17 +167,7 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
         | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
         | otherwise            = (y1,y2)
       vport = ViewPortBBox (BBox (x1',y1') (x2',y2') )
-  in trace ("ddim = " ++ show ddim ++ 
-            "\n(x0,y0) = " ++ show (x0,y0) ++
-            "\n(xpos,ypos) = " ++ show (xpos,ypos) ++ 
-            "\nvport = " ++ show vport ++
-            "\n(x1,y1) = " ++ show (x1,y1) ++ 
-            "\n(x2,y2) = " ++ show (x2,y2)
-             ) 
-     
-     
-     $  ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport 
-
+  in ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport 
 
 -- |
 pageArrFuncCont :: DesktopConstraint
@@ -190,19 +181,19 @@ pageArrFuncCont (DesktopWidthConstrained w') hdl (PageNum n)
   where addf (x,y) (w,h) = if x+2*w+predefinedPageSpacing < w'   
                              then (x+w+predefinedPageSpacing,y)
                              else (0,y+h+predefinedPageSpacing)
-        pgs = gToList . view g_pages $ hdl 
+        pgs = toList . view gpages $ hdl 
         len = length pgs 
-        pdims = map (view g_dimension) pgs 
-        wh2xyFrmPg = ((,) <$> dim_width <*> dim_height) . view g_dimension
+        pdims = map (view gdimension) pgs 
+        wh2xyFrmPg = ((,) <$> dim_width <*> dim_height) . view gdimension
         xys = scanl addf (0,0) . map wh2xyFrmPg $ pgs  
 
 -- |
 deskDimCont :: DesktopConstraint -> Hoodle EditMode -> DesktopDimension 
 deskDimCont cnstrnt hdl = 
-    let pgs = gToList . view g_pages $ hdl
+    let pgs = toList . view gpages $ hdl
         len = length pgs 
         olst = map (fromJust . pageArrFuncCont cnstrnt hdl . PageNum) [0..len-1] 
-        -- dlst = map (view g_dimension) pgs
+        -- dlst = map (view gdimension) pgs
         -- odlst = zip olst dlst
         f (PageOrigin (x,y),PageDimension (Dim w h)) (Dim w' h') = 
           let w'' = if w' < x+w then x+w else w' 

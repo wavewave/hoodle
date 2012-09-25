@@ -23,8 +23,8 @@ import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- 
 import Data.Hoodle.Generic
 import Data.Hoodle.BBox
-import Graphics.Hoodle.Render.HitTest
-import Graphics.Hoodle.Render.BBoxMapPDFImg
+import Graphics.Hoodle.Render.Util.HitTest
+import Graphics.Hoodle.Render
 -- 
 import Hoodle.Type.Event
 import Hoodle.Type.Coroutine
@@ -76,7 +76,7 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
     upact _ = disconnect connidmove >> disconnect connidup >> invalidateAll
     moveact xstate cvsInfo (_pcoord,(x,y)) = do 
       let line = ((x0,y0),(x,y))
-          hittestbbox = mkHitTestBBox line strs   
+          hittestbbox = hltStrksHittedByLineRough line strs   
           (hitteststroke,hitState) = 
             St.runState (hitTestStrokes line hittestbbox) False
       if hitState 
@@ -89,9 +89,9 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
           let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf maybebbox 
-                          . set g_bstrokes newstrokes $ currlayer 
+                          . set gstrokes newstrokes $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-              newhdlbbox = over g_pages (IM.adjust (const newpagebbox) pgnum) currhdl
+              newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
               newhdlmodst = ViewAppendState newhdlbbox
           commit . set hoodleModeState newhdlmodst 
             =<< (liftIO (updatePageAll newhdlmodst xstate))

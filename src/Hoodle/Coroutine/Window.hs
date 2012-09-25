@@ -59,7 +59,7 @@ canvasConfigureGenUpdate updatefunc cid cdim
         fcont cinfo = do 
           xstate <- get
           page <- getCurrentPageCvsId cid
-          let pdim = PageDimension (view g_dimension page)
+          let pdim = PageDimension (view gdimension page)
           let cinfo' = updateCanvasDimForContSingle pdim cdim cinfo 
           return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
   

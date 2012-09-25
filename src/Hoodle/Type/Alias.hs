@@ -15,45 +15,58 @@
 module Hoodle.Type.Alias where
 
 import Data.Hoodle.Generic
-import Data.Hoodle.Buffer
+-- import Data.Hoodle.Buffer
 import Data.Hoodle.Select
+import Data.Hoodle.Zipper 
+-- import Graphics.Hoodle.Render.Type.Select
+import Graphics.Hoodle.Render
+import Graphics.Hoodle.Render.Background
+import Graphics.Hoodle.Render.Type
+import Graphics.Hoodle.Render.Type.Background 
 import Graphics.Hoodle.Render.Type.Select
-import Graphics.Hoodle.Render.BBoxMapPDFImg
-import Graphics.Hoodle.Render.PDFBackground
 
 data EditMode = EditMode 
 data SelectMode = SelectMode 
 
 type family Hoodle a :: *
--- type family Page a :: * 
+type family Page a :: * 
 type family Layer a :: * 
      
+
+
+type instance Layer EditMode = RLayer 
+type instance Layer SelectMode = TLayerSelectInPageBuf ZipperSelect RLayer
+
+type instance Page EditMode = RPage
+type instance Page SelectMode = TTempPageSelectPDFBuf 
+
+
+type instance Hoodle EditMode = RHoodle
+type instance Hoodle SelectMode = TTempHoodleSelectPDFBuf 
+
+
+
+{-
 class GPageable a where  
   type AssocBkg a :: *
-  type AssocStream a :: * -> *
+  type AssocContainer a :: * -> *
   type AssocLayer a :: *
        
        
-type Page a = GPage (AssocBkg a) (AssocStream a) (AssocLayer a)
+type Page a = GPage (AssocBkg a) (AssocContainer a) (AssocLayer a)
 
 instance GPageable EditMode where
-  type AssocBkg EditMode = BackgroundPDFDrawable
-  type AssocStream EditMode = ZipperSelect
-  type AssocLayer EditMode = TLayerBBoxBuf LyBuf 
+  type AssocBkg EditMode = RBackground
+  type AssocContainer EditMode = IntMap -- ZipperSelect
+  type AssocLayer EditMode = RLayer 
   
 instance GPageable SelectMode where
-  type AssocBkg SelectMode = BackgroundPDFDrawable
-  type AssocStream SelectMode = TLayerSelectInPageBuf ZipperSelect
-  type AssocLayer SelectMode = TLayerBBoxBuf LyBuf
-  
+  type AssocBkg SelectMode = RBackground
+  type AssocContainer SelectMode = TLayerSelectInPageBuf ZipperSelect
+  type AssocLayer SelectMode = RLayer
+-}  
   
 -- type instance Page EditMode = TPageBBoxMapPDFBuf
 -- type instance Page SelectMode = TTempPageSelectPDFBuf 
 
-
-type instance Layer EditMode = TLayerBBoxBuf LyBuf
-type instance Layer SelectMode = TLayerSelectInPageBuf ZipperSelect (TLayerBBoxBuf LyBuf)
-
-type instance Hoodle EditMode = THoodleBBoxMapPDFBuf 
-type instance Hoodle SelectMode = TTempHoodleSelectPDFBuf 
 

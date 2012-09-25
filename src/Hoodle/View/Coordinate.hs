@@ -19,6 +19,7 @@ import           Control.Applicative
 import           Control.Category
 import           Control.Lens
 import           Control.Monad 
+import           Data.Foldable (toList)
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Monoid
@@ -177,9 +178,9 @@ getPagesInViewPortRange :: CanvasGeometry -> Hoodle EditMode -> [PageNum]
 getPagesInViewPortRange geometry hdl = 
   let ViewPortBBox bbox = canvasViewPort geometry
       ivbbox = Intersect (Middle bbox)
-      pagemap = view g_pages hdl 
-      pnums = map PageNum [ 0 .. (length . gToList $ pagemap)-1 ]
-      pgcheck n pg = let Dim w h = view g_dimension pg  
+      pagemap = view gpages hdl 
+      pnums = map PageNum [ 0 .. (length . toList $ pagemap)-1 ]
+      pgcheck n pg = let Dim w h = view gdimension pg  
                          DeskCoord ul = page2Desktop geometry (PageNum n,PageCoord (0,0)) 
                          DeskCoord lr = page2Desktop geometry (PageNum n,PageCoord (w,h))
                          inbbox = Intersect (Middle (BBox ul lr))

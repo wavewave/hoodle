@@ -25,7 +25,9 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render.BBoxMapPDFImg
+import           Data.Hoodle.Zipper 
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Util
 import           Hoodle.Type.Alias
@@ -41,13 +43,13 @@ import           Prelude hiding ((.),id,mapM)
 
 -- |
 getPageMap :: HoodleModeState -> M.IntMap (Page EditMode)
-getPageMap = either (view g_pages) (view g_selectAll) . hoodleModeStateEither 
+getPageMap = either (view gpages) (view gselAll) . hoodleModeStateEither 
   
 -- |             
 setPageMap :: M.IntMap (Page EditMode) -> HoodleModeState -> HoodleModeState
 setPageMap nmap = 
-  either (ViewAppendState . set g_pages nmap)
-         (SelectState . set g_selectSelected Nothing . set g_selectAll nmap )
+  either (ViewAppendState . set gpages nmap)
+         (SelectState . set gselSelected Nothing . set gselAll nmap )
   . hoodleModeStateEither
   
 -- |
@@ -78,7 +80,7 @@ adjustPage hdlmodst = selectBox fsingle fsingle
 -- | 
 getPageFromGHoodleMap :: Int -> GHoodle M.IntMap a -> a
 getPageFromGHoodleMap pagenum = 
-  maybeError ("getPageFromGHoodleMap " ++ show pagenum) . M.lookup pagenum . view g_pages
+  maybeError ("getPageFromGHoodleMap " ++ show pagenum) . M.lookup pagenum . view gpages
 
 
 -- | 
@@ -92,7 +94,7 @@ updateCvsInfoFrmHoodle hdl cinfobox = selectBoxAction fsingle fcont cinfobox
           geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas
           let cdim = canvasDim geometry 
               pg = getPageFromGHoodleMap pagenum hdl 
-              pdim = PageDimension $ view g_dimension pg
+              pdim = PageDimension $ view gdimension pg
               (hadj,vadj) = view adjustments cinfo
           (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
           let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
@@ -123,10 +125,10 @@ updatePage :: HoodleModeState -> CanvasInfoBox -> IO CanvasInfoBox
 updatePage (ViewAppendState hdl) cinfobox = updateCvsInfoFrmHoodle hdl cinfobox
 updatePage (SelectState thdl) cinfobox = selectBoxAction fsingle fcont cinfobox
   where fsingle _cinfo = do 
-          let hdl = GHoodle (view g_selectTitle thdl) (view g_selectAll thdl)
+          let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
           updateCvsInfoFrmHoodle hdl cinfobox
         fcont _cinfo = do 
-          let hdl = GHoodle (view g_selectTitle thdl) (view g_selectAll thdl)
+          let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
           updateCvsInfoFrmHoodle hdl cinfobox
 
 -- | 
@@ -146,7 +148,7 @@ setPageSingle xstate pnum cinfo = do
   geometry <- getCvsGeomFrmCvsInfo cinfo
   let cdim = canvasDim geometry 
   let pg = getPageFromGHoodleMap (unPageNum pnum) hdl
-      pdim = PageDimension (view g_dimension pg)
+      pdim = PageDimension (view gdimension pg)
       zmode = view (viewInfo.zoomMode) cinfo
       arr = makeSingleArrangement zmode pdim cdim (0,0)  
   return $ set currentPageNum (unPageNum pnum)
@@ -167,8 +169,9 @@ setPageCont xstate pnum cinfo = do
 
 -- | 
 newSinglePageFromOld :: Page EditMode -> Page EditMode 
-newSinglePageFromOld = 
-  set g_layers (NoSelect [GLayerBuf (LyBuf Nothing) []]) 
+newSinglePageFromOld = set glayers (fromList [emptyRLayer])
+  
+  -- (NoSelect [emptyRLayer]) 
 
 
 -- | 
@@ -177,13 +180,13 @@ addNewPageInHoodle :: AddDirection
                    -> Int 
                    -> IO (Hoodle EditMode)
 addNewPageInHoodle dir hdl cpn = do 
-  let pagelst = M.elems . view g_pages $ hdl
+  let pagelst = M.elems . view gpages $ hdl
       (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
       npage = newSinglePageFromOld cpage
       npagelst = case dir of 
                    PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                    PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
-      nhdl = set g_pages (M.fromList . zip [0..] $ npagelst) hdl
+      nhdl = set gpages (M.fromList . zip [0..] $ npagelst) hdl
   return nhdl
 
 -- | 

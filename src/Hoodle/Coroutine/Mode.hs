@@ -24,7 +24,9 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 --
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Graphics.Hoodle.Render.BBoxMapPDFImg
+import           Data.Hoodle.Select
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Type 
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Scroll
@@ -52,19 +54,19 @@ modeChange command = case command of
         noaction xstate = const (return xstate)
         whenselect :: HoodleState -> Hoodle SelectMode -> MainCoroutine HoodleState
         whenselect xstate thdl = do 
-          let pages = view g_selectAll thdl
-              mselect = view g_selectSelected thdl
+          let pages = view gselAll thdl
+              mselect = view gselSelected thdl
           npages <- maybe (return pages) 
                           (\(spgn,spage) -> do 
-                             npage <- liftIO $ resetPageBuffers (gcast spage)  
+                             npage <- (liftIO.updatePageBuf.hPage2RPage) spage  
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           return . flip (set hoodleModeState) xstate 
-            . ViewAppendState . GHoodle (view g_selectTitle thdl) $ npages 
+            . ViewAppendState . GHoodle (view gselTitle thdl) $ npages 
         whenedit :: HoodleState -> Hoodle EditMode -> MainCoroutine HoodleState   
         whenedit xstate hdl = return . flip (set hoodleModeState) xstate 
                               . SelectState  
-                              $ GSelect (view g_title hdl) (gpages hdl) Nothing
+                              $ GSelect (view gtitle hdl) (view gpages hdl) Nothing
 
 -- | 
 
@@ -91,7 +93,7 @@ viewModeChange command = do
               canvas = view drawArea cinfo 
               cpn = PageNum . view currentPageNum $ cinfo 
 
-              pdim = PageDimension (view g_dimension page )
+              pdim = PageDimension (view gdimension page)
               ViewPortBBox bbox = view (viewInfo.pageArrangement.viewPortBBox) cinfo       
               (x0,y0) = bbox_upperleft bbox 
               (xpos,ypos) = maybe (0,0) (unPageCoord.snd) $ desktop2Page geometry (DeskCoord (x0,y0))  

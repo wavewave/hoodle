@@ -16,7 +16,8 @@ import Control.Monad.State
 -- from hoodle-platform
 import Data.Hoodle.BBox
 import Graphics.Hoodle.Render.Type 
-import Graphics.Hoodle.Render.HitTest
+import Graphics.Hoodle.Render.Type.HitTest
+import Graphics.Hoodle.Render.Util.HitTest
 
 -- |
 

@@ -20,6 +20,7 @@ import           Control.Category
 import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
+import           Data.Foldable (toList)
 import           Control.Lens
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
@@ -27,6 +28,8 @@ import           System.FilePath
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
+import           Data.Hoodle.Select
+import           Graphics.Hoodle.Render.Type
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Coroutine.Draw
@@ -79,10 +82,11 @@ fileSave = do
         -- this is rather temporary not to make mistake 
         if takeExtension filename == ".hdl" 
           then do 
-             let hdlmodst = view hoodleModeState xstate
+             {- let hdlmodst = view hoodleModeState xstate
              let hdl = case hdlmodst of 
-                   ViewAppendState hdlmap -> Hoodle <$> view g_title <*> gToList . fmap (toPageFromBuf gToBackground) . view g_pages $ hdlmap 
-                   SelectState thdl -> Hoodle <$> gselectTitle <*> gToList . fmap (toPageFromBuf gToBackground) . gselectAll $ thdl 
+                   ViewAppendState hdlmap -> Hoodle <$> view gtitle <*> toList . fmap (toPageFromBuf gToBackground) . view gpages $ hdlmap 
+                   SelectState thdl -> Hoodle <$> gselTitle <*> toList . fmap (toPageFromBuf gToBackground) . gselAll $ thdl  -}
+             let hdl = (rHoodle2Hoodle . getHoodle) xstate 
              liftIO . L.writeFile filename . builder $ hdl
              put . set isSaved True $ xstate 
              let ui = view gtkUIManager xstate
@@ -125,10 +129,11 @@ fileOpen = do
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
     xstate <- get 
-    let hdlmodst = view hoodleModeState xstate
-    let hdl = case hdlmodst of 
+    -- let hdlmodst = view hoodleModeState xstate
+    let hdl = (rHoodle2Hoodle . getHoodle) xstate
+    {-     case hdlmodst of 
           ViewAppendState hdlmap -> gcast hdlmap
-          SelectState thdl -> gcast thdl
+          SelectState thdl -> gcast thdl -}
     maybe (defSaveAsAction xstate hdl) (\f -> liftIO (f hdl))
           (hookSaveAsAction xstate) 
   where 
@@ -155,16 +160,15 @@ fileSaveAs = do
                   let ntitle = B.pack . snd . splitFileName $ filename 
                   let (hdlmodst',hdl') = case view hoodleModeState xstate of
                         ViewAppendState hdlmap -> 
-                          if view g_title hdlmap == "untitled"
-                            then ( ViewAppendState . set g_title ntitle
+                          if view gtitle hdlmap == "untitled"
+                            then ( ViewAppendState . set gtitle ntitle
                                    $ hdlmap
-                                 , (set s_title ntitle hdl))
+                                 , (set title ntitle hdl))
                             else (ViewAppendState hdlmap,hdl)
                         SelectState thdl -> 
-                          if gselectTitle thdl == "untitled"
-                            then ( SelectState $ 
-                                     thdl { gselectTitle = ntitle }
-                                 , set s_title ntitle hdl)  
+                          if view gselTitle thdl == "untitled"
+                            then ( SelectState $ set gselTitle ntitle thdl 
+                                 , set title ntitle hdl)  
                             else (SelectState thdl,hdl)
                   let xstateNew = set currFileName (Just filename) 
                                 . set hoodleModeState hdlmodst' $ xstate 

@@ -11,7 +11,7 @@
 --
 module Hoodle.Type.Undo where
 
-import Data.Hoodle.Select
+import Data.Hoodle.Zipper 
 
 data UndoTable a = UndoTable { undo_allowednum :: Int
                              , undo_totalnum :: Int 

@@ -22,6 +22,7 @@ import qualified Graphics.UI.Gtk as Gtk (get)
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
+import           Data.Hoodle.Zipper
 -- 
 import           Hoodle.Util
 import           Hoodle.Type.Alias
@@ -31,21 +32,21 @@ import Prelude hiding ((.),id)
 -- | 
 getCurrentLayerOrSet :: Page EditMode -> (Maybe (Layer EditMode), Page EditMode)
 getCurrentLayerOrSet pg = 
-  let olayers = view g_layers pg
+  let olayers = view glayers pg
       nlayers = case olayers of 
                   NoSelect _ -> selectFirst olayers
                   Select _ -> olayers  
   in case nlayers of
-      NoSelect _ -> (Nothing, set g_layers nlayers pg)
-      Select osz -> (return . current =<< unO osz, set g_layers nlayers pg)
+      NoSelect _ -> (Nothing, set glayers nlayers pg)
+      Select osz -> (return . current =<< unO osz, set glayers nlayers pg)
 
 -- | 
 adjustCurrentLayer :: Layer EditMode -> Page EditMode -> Page EditMode
 adjustCurrentLayer nlayer pg = 
   let (molayer,pg') = getCurrentLayerOrSet pg
-  in maybe (set g_layers (Select .O . Just . singletonSZ $ nlayer) pg')
-           (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . view g_layers $  pg'
-                    in set g_layers (Select . O . Just . replace nlayer $ layerzipper) pg' )
+  in maybe (set glayers (Select .O . Just . singletonSZ $ nlayer) pg')
+           (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . view glayers $  pg'
+                    in set glayers (Select . O . Just . replace nlayer $ layerzipper) pg' )
            molayer 
 
 -- | 

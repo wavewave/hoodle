@@ -26,7 +26,8 @@ import           Data.Strict.Tuple hiding (uncurry)
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
-import           Graphics.Hoodle.Render.BBoxMapPDFImg
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Type
 -- from this package 
 import           Hoodle.ModelAction.Layer
 import           Hoodle.ModelAction.Page
@@ -38,10 +39,10 @@ import Prelude hiding ((.), id)
 
 -- | 
 addPDraw :: PenInfo 
-            -> THoodleBBoxMapPDFBuf 
+            -> RHoodle
             -> PageNum 
             -> Seq (Double,Double,Double) 
-            -> IO (THoodleBBoxMapPDFBuf,BBox) 
+            -> IO (RHoodle,BBox) 
                        -- ^ new hoodle and bbox in page coordinate
 addPDraw pinfo hdl (PageNum pgnum) pdraw = do 
     let ptype = view penType pinfo
@@ -67,13 +68,13 @@ addPDraw pinfo hdl (PageNum pgnum) pdraw = do
                              , stroke_vwdata = map (\(x,y,z)->(x,y,pwidth*z)) . toList $ pdraw
                              }
                                            
-        newstrokebbox = mkStrokeBBoxFromStroke newstroke
-        bbox = strokebbox_bbox newstrokebbox
+        newstrokebbox = mkStrokeBBox newstroke
+        bbox = strkbbx_bbx newstrokebbox
     newlayerbbox <- updateLayerBuf (Just bbox)
-                    . set g_bstrokes (view g_bstrokes currlayer ++ [newstrokebbox]) 
+                    . set gstrokes (view gstrokes currlayer ++ [newstrokebbox]) 
                     $ currlayer
 
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-        newhdlbbox = set g_pages (IM.adjust (const newpagebbox) pgnum (view g_pages hdl) ) hdl 
+        newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
     return (newhdlbbox,bbox)
 

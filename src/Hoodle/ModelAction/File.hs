@@ -15,8 +15,6 @@
 module Hoodle.ModelAction.File where
 
 -- from other package
-
-
 import           Control.Category
 import           Control.Lens
 import           Control.Monad
@@ -33,10 +31,10 @@ import           System.FilePath (takeExtension)
 -- from hoodle-platform 
 import           Data.Hoodle.Simple
 import qualified Data.Xournal.Simple as X
-import           Graphics.Hoodle.Render.BBoxMapPDFImg
-import           Graphics.Hoodle.Render.PDFBackground
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Background 
 -- import qualified Text.Hoodle.Parse.Conduit as PC
-import           Text.Hoodle.Parse.Attoparsec as PA
+import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Xournal.Parse.Conduit as XP
 import           Text.Hoodle.Translate.FromXournal
 -- from this package
@@ -79,8 +77,7 @@ getFileContent (Just fname) xstate = do
               return $ set currFileName (Just fname) nxstate               
         else getFileContent Nothing xstate      
 getFileContent Nothing xstate = do   
-    newhdl <- mkTHoodleBBoxMapPDFBufFromNoBuf <=< mkTHoodleBBoxMapPDF 
-              $ defaultHoodle 
+    newhdl <- cnstrctRHoodle defaultHoodle 
     let newhdlstate = ViewAppendState newhdl 
         xstate' = set currFileName Nothing 
                   . set hoodleModeState newhdlstate
@@ -91,7 +88,7 @@ getFileContent Nothing xstate = do
     
 constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 
 constructNewHoodleStateFromHoodle hdl' xstate = do 
-    hdl <- mkTHoodleBBoxMapPDFBufFromNoBuf <=< mkTHoodleBBoxMapPDF $ hdl'
+    hdl <- cnstrctRHoodle hdl'
     let startinghoodleModeState = ViewAppendState hdl
     return $ set hoodleModeState startinghoodleModeState xstate
 
@@ -111,8 +108,8 @@ makeNewHoodleWithPDF fp = do
       pg <- Poppler.documentGetPage doc 0 
       (w,h) <- PopplerPage.pageGetSize pg
       let dim = Dim w h 
-          hdl = set s_title fname 
-              . set s_pages (map (createPage dim fname) [1..n]) 
+          hdl = set title fname 
+              . set pages (map (createPage dim fname) [1..n]) 
               $ emptyHoodle
       return (Just hdl)
 #else

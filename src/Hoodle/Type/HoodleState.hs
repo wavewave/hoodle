@@ -74,8 +74,10 @@ import           Graphics.UI.Gtk hiding (Clipboard, get,set)
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Map
-import           Graphics.Hoodle.Render.BBoxMapPDFImg
+import           Data.Hoodle.Select
+-- import           Data.Hoodle.Map
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Type
 -- from this package 
 import           Hoodle.Device
 import           Hoodle.Script.Hook
@@ -95,8 +97,8 @@ import Prelude hiding ((.), id)
 
 -- | 
 
-data HoodleModeState = ViewAppendState { unView :: THoodleBBoxMapPDFBuf }
-                  | SelectState { tempSelect :: TTempHoodleSelectPDFBuf }
+data HoodleModeState = ViewAppendState { unView :: RHoodle }
+                     | SelectState { tempSelect :: TTempHoodleSelectPDFBuf }
                     
 -- | 
 
@@ -137,7 +139,7 @@ makeLenses ''HoodleState
 emptyHoodleState :: HoodleState 
 emptyHoodleState = 
   HoodleState  
-  { _hoodleModeState = ViewAppendState emptyGHoodleMap
+  { _hoodleModeState = ViewAppendState emptyGHoodle
   , _currFileName = Nothing 
   , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
   , _currentCanvas = error "emtpyHoodleState.currentCanvas"
@@ -167,7 +169,7 @@ emptyHoodleState =
 
 getHoodle :: HoodleState -> Hoodle EditMode 
 getHoodle = either id makehdl . hoodleModeStateEither . view hoodleModeState 
-  where makehdl thdl = GHoodle (view g_selectTitle thdl) (view g_selectAll thdl)
+  where makehdl thdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
 
 
 -- | 
@@ -213,7 +215,7 @@ currentCanvasInfo = lens getter setter
 resetHoodleModeStateBuffers :: HoodleModeState -> IO HoodleModeState 
 resetHoodleModeStateBuffers hdlmodestate1 = 
   case hdlmodestate1 of 
-    ViewAppendState hdl -> liftIO . liftM ViewAppendState . resetHoodleBuffers $ hdl
+    ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf $ hdl
     _ -> return hdlmodestate1
 
 -- |
@@ -305,13 +307,13 @@ getCurrentPageFromHoodleModeState cinfo hdlmodst =
 getCurrentPageDimFromHoodleModeState :: (ViewMode a) => CanvasInfo a 
                               -> HoodleModeState -> PageDimension
 getCurrentPageDimFromHoodleModeState cinfo =                               
-  PageDimension . view g_dimension . getCurrentPageFromHoodleModeState cinfo
+  PageDimension . view gdimension . getCurrentPageFromHoodleModeState cinfo
 
 
 -- | 
 
 getPageMapFromHoodleModeState :: HoodleModeState -> M.IntMap (Page EditMode)
-getPageMapFromHoodleModeState = either (view g_pages) (view g_selectAll) . hoodleModeStateEither 
+getPageMapFromHoodleModeState = either (view gpages) (view gselAll) . hoodleModeStateEither 
   
       
 -- | 

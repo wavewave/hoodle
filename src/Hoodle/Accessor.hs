@@ -28,6 +28,7 @@ import qualified Graphics.UI.Gtk as Gtk (set)
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
+import           Data.Hoodle.Select
 -- from this package
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.Type
@@ -73,7 +74,7 @@ getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =
     in case hdlmodst of 
          ViewAppendState _hdl -> Left page
          SelectState thdl ->  
-           case view g_selectSelected thdl of 
+           case view gselSelected thdl of 
              Nothing -> Left page
              Just (n,tpage) -> if cpn == n 
                                  then Right tpage
@@ -84,7 +85,7 @@ getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   page <- getCurrentPageCurr
-  return [s| l <- gToList (view g_layers page), s <- view g_bstrokes l ]
+  return [s| l <- toList (view glayers page), s <- view gstrokes l ]
   
 -- | 
 
@@ -93,7 +94,7 @@ getAllStrokeBBoxInCurrentLayer = do
   page <- getCurrentPageCurr
   let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
       currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-  return (view g_bstrokes currlayer)
+  return (view gstrokes currlayer)
       
 -- |
 
@@ -214,6 +215,6 @@ getGeometry4CurrCvs xstate = do
 -- | 
 
 bbox4AllStrokes :: (Foldable t, Functor t) => t StrokeBBox -> ULMaybe BBox 
-bbox4AllStrokes = unUnion . fold . fmap (Union . Middle . strokebbox_bbox)
+bbox4AllStrokes = unUnion . fold . fmap (Union . Middle . strkbbx_bbx)
 
 

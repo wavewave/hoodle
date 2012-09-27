@@ -50,7 +50,8 @@ Library
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
                    Graphics.Hoodle.Render.Generic
-                   Graphics.Hoodle.Render.Highlight 
+                   Graphics.Hoodle.Render.Highlight
+                   Graphics.Hoodle.Render.Item  
                    Graphics.Hoodle.Render.Primitive
                    Graphics.Hoodle.Render.Type 
                    Graphics.Hoodle.Render.Type.Background

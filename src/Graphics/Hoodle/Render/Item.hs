@@ -32,4 +32,4 @@ cnstrctRItem (ItemImage img) = do
         Dim w h = bboxToDim bbx
     sfc <- createImageSurface FormatARGB32 (floor w) (floor h) 
     -- rendering is not implemented yet
-    return (RItemImage imgbbx sfc)
+    return (RItemImage imgbbx (Just sfc))

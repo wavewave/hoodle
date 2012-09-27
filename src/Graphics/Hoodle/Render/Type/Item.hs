@@ -55,9 +55,10 @@ rItem2Item :: RItem -> Item
 rItem2Item (RItemStroke strk) = (ItemStroke . strkbbx_strk) strk
 rItem2Item (RItemImage img _) = (ItemImage . imgbbx_img) img
 
+{-
 -- | 
 rItemBBox :: RItem -> BBox 
 rItemBBox (RItemStroke strk) = strkbbx_bbx strk
 rItemBBox (RItemImage img _) = imgbbx_bbx img
 
-
+-}

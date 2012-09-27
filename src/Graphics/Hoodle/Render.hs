@@ -304,7 +304,7 @@ renderRLayer_InBBox mbbox layer = do
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
                    :- Empty 
-        Just bbox -> (hltItmsHittedByBBox bbox . view gitems) layer
+        Just bbox -> (hltHittedByBBox bbox . view gitems) layer
   (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
   resetClip
 

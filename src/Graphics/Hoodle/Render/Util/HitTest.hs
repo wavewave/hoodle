@@ -91,46 +91,49 @@ isBBox2InBBox1 b1 (BBox (ulx2,uly2) (lrx2,lry2))
 --------------------------------------------------------
 
 -- | 
-hltItmsFilteredBy_StateT :: (RItem -> Bool)  -- ^ hit test condition
-                         -> [RItem]          -- ^ strokes to test 
-                         -> State Bool (AlterList (NotHitted RItem) (Hitted RItem))
-hltItmsFilteredBy_StateT test itms = do 
+hltFilteredBy_StateT :: (a -> Bool)  -- ^ hit test condition
+                     -> [a]          -- ^ strokes to test 
+                     -> State Bool (AlterList (NotHitted a) (Hitted a))
+hltFilteredBy_StateT test itms = do 
     let (nhit,rest) = break test itms
         (hit,rest') = break (not.test) rest 
     modify (|| (not.null) hit) 
     if null rest' 
       then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
-      else return (NotHitted nhit :- Hitted hit :- hltItmsFilteredBy test rest')
+      else return (NotHitted nhit :- Hitted hit :- hltFilteredBy test rest')
 
 
 -- | highlight strokes filtered by a condition. 
 --   previously mkHitTestAL
-hltItmsFilteredBy :: (RItem -> Bool)  -- ^ hit test condition
-                  -> [RItem]          -- ^ strokes to test 
-                  -> AlterList (NotHitted RItem) (Hitted RItem)
-hltItmsFilteredBy test is = evalState (hltItmsFilteredBy_StateT test is) False
+hltFilteredBy :: (a -> Bool)  -- ^ hit test condition
+              -> [a]          -- ^ strokes to test 
+              -> AlterList (NotHitted a) (Hitted a)
+hltFilteredBy test is = evalState (hltFilteredBy_StateT test is) False
 
 
 
 -- | 
-hltItmsHittedByBBox :: BBox  -- ^ test bounding box
-                    -> [RItem] -- ^ items to test
-                    -> AlterList (NotHitted RItem) (Hitted RItem)
-hltItmsHittedByBBox b = hltItmsFilteredBy (do2BBoxIntersect b . rItemBBox) 
+hltHittedByBBox :: (BBoxable a) => 
+                   BBox  -- ^ test bounding box
+                -> [a] -- ^ items to test
+                -> AlterList (NotHitted a) (Hitted a)
+hltHittedByBBox b = hltFilteredBy (do2BBoxIntersect b . getBBox) 
 
 -- | 
-hltItmsEmbeddedByBBox :: BBox 
-                      -> [RItem] 
-                      -> AlterList (NotHitted RItem) (Hitted RItem)
-hltItmsEmbeddedByBBox b = hltItmsFilteredBy (isBBox2InBBox1 b . rItemBBox)
+hltEmbeddedByBBox :: (BBoxable a) =>
+                     BBox 
+                  -> [a] 
+                  -> AlterList (NotHitted a) (Hitted a)
+hltEmbeddedByBBox b = hltFilteredBy (isBBox2InBBox1 b . getBBox)
 
 -- | only check if a line and bbox of item overlapped 
-hltItmsHittedByLineRough :: ((Double,Double),(Double,Double)) -- ^ line 
-                         -> [RItem] -- ^ items to test
-                          -> AlterList (NotHitted RItem) (Hitted RItem)
-hltItmsHittedByLineRough (p1,p2) = hltItmsFilteredBy boxhittest 
-  where boxhittest s = isPointInBBox (rItemBBox s) p1
-                       || isPointInBBox (rItemBBox s) p2
+hltHittedByLineRough :: (BBoxable a) => 
+                        ((Double,Double),(Double,Double)) -- ^ line 
+                     -> [a] -- ^ items to test
+                     -> AlterList (NotHitted a) (Hitted a)
+hltHittedByLineRough (p1,p2) = hltFilteredBy boxhittest 
+  where boxhittest s = isPointInBBox (getBBox s) p1
+                       || isPointInBBox (getBBox s) p2
 
 
 -- |
@@ -138,7 +141,7 @@ hltItmsHittedByLine_StateT :: ((Double,Double),(Double,Double))
                            -> [RItem]
                            -> State Bool RItemHitted
                               -- (AlterList (NotHitted RItem) (Hitted RItem))
-hltItmsHittedByLine_StateT line = hltItmsFilteredBy_StateT test  
+hltItmsHittedByLine_StateT line = hltFilteredBy_StateT test  
   where test (RItemStroke strk) = (doesLineHitStrk line . strkbbx_strk) strk
         test _ = False 
   
@@ -162,6 +165,7 @@ hltItmsHittedByLineFrmSelected_StateT line (n:-h:-rest) = do
 -- stroke filtering functions as AlterList --
 ---------------------------------------------
  
+{-  
 -- | previously mkHitTestALState
 hltStrksFilteredBy_StateT :: (StrokeBBox -> Bool)  -- ^ hit test condition
                           -> [StrokeBBox]          -- ^ strokes to test 
@@ -173,7 +177,6 @@ hltStrksFilteredBy_StateT test strs = do
     if null rest' 
       then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
       else return (NotHitted nhit :- Hitted hit :- hltStrksFilteredBy test rest')
-
 
 -- | highlight strokes filtered by a condition. 
 --   previously mkHitTestAL
@@ -225,7 +228,7 @@ hitTestStrokes line (n:-h:-rest) = do
   h' <- mkHitTestStroke line (unHitted h)
   (n:-) . (h':-) <$> hitTestStrokes line rest
 
-
+-}
 
 
 -- | 

@@ -19,9 +19,9 @@ module Data.Hoodle.BBox
 -- , strkbbx_strk
 -- , strkbbx_bbx
 , mkStrokeBBox
-, ImageBBox 
-, imgbbx_img
-, imgbbx_bbx
+, ImageBBox (..)
+-- , imgbbx_img
+-- , imgbbx_bbx
 , mkImageBBox
 , mkbbox
 , mkbboxF
@@ -40,6 +40,7 @@ module Data.Hoodle.BBox
 , IntersectBBox (..) 
 , UnionBBox (..)
 , Maybeable (..)
+, bbox4All
 ) where
 
 import           Control.Applicative 
@@ -245,3 +246,6 @@ instance Maybeable UnionBBox where
   fromMaybe (Just x) = Union (Middle x)
 
 
+-- | 
+bbox4All :: (F.Foldable t, Functor t, BBoxable a) => t a -> ULMaybe BBox 
+bbox4All = unUnion . F.fold . fmap (Union . Middle . getBBox)

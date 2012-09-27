@@ -212,7 +212,8 @@ renderRBkg (RBkgPDF _ _ _ p _,dim) = do
 
 -- |
 renderRItem :: RItem -> Render () 
-renderRItem = renderRItem_BBoxOnly
+renderRItem (RItemStroke strk) = renderStrk (strkbbx_strk strk)
+renderRItem (RItemImage img _) = renderImg (imgbbx_img img) 
 
 --------------
 -- BBoxOnly --

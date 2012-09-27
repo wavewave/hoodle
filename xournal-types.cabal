@@ -24,8 +24,7 @@ Library
                    bytestring == 0.9.*, 
                    strict == 0.3.*, 
                    containers == 0.4.*, 
-                   -- fclabels == 1.1.*, 
-                   lens >= 2.4 && < 2.6,
+                   lens >= 2.4 && < 2.7,
                    TypeCompose == 0.9.*, 
                    cereal == 0.3.*
   Exposed-Modules: 

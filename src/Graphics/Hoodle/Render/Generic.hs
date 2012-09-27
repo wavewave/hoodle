@@ -88,6 +88,11 @@ instance RenderOptionable (RBackground,Dimension) where
   cairoRenderOption RBkgDrawBuffer = renderRBkg_Buf 
   cairoRenderOption (RBkgDrawPDFInBBox mbbox) = renderRBkg_InBBox mbbox 
 
+-- | 
+instance RenderOptionable RLayer where
+  type RenderOption RLayer = StrokeBBoxOption 
+  cairoRenderOption DrawFull = cairoRender
+  cairoRenderOption DrawBoxOnly = renderRLayer_BBoxOnly 
 
 -- | 
 instance RenderOptionable (InBBox RLayer) where

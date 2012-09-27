@@ -14,6 +14,7 @@
 
 module Data.Hoodle.BBox 
 ( BBox (..) 
+, BBoxable (..) 
 , StrokeBBox (..)
 -- , strkbbx_strk
 -- , strkbbx_bbx

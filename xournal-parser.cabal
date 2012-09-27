@@ -32,17 +32,9 @@ Library
                  xournal-types >= 0.4.999 && < 0.6, 
                  xml-types == 0.3.*, 
                  text == 0.11.*,
-                 -- fclabels == 1.1.*, 
-                 lens >= 2.4 && < 2.6, 
+                 lens >= 2.4 && < 2.7, 
                  zlib-conduit == 0.5.*
 
-                 -- iteratee >= 0.7 && < 0.9, 
-                 -- attoparsec-iteratee == 0.4.*, 
-
-                 --  zlib-enum == 0.2.*
-                 -- iteratee-compress == 0.3.*, 
-                 -- enumerator >= 0.4.13 && < 0.5, 
-                 -- xml-enumerator == 0.4.*,                
   Exposed-Modules: 
                    Text.Xournal.Parse
                    Text.Xournal.Parse.Conduit

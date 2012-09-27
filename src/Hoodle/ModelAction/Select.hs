@@ -114,7 +114,7 @@ changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) =
 changeImageBy :: ((Double,Double)->(Double,Double)) -> ImageBBox -> ImageBBox
 changeImageBy func (ImageBBox (Image bstr (x,y) (Dim w h)) _bbox) = 
   let (x1,y1) = func (x,y) 
-      (x2,y2) = func (x+w,y+w)
+      (x2,y2) = func (x+w,y+h)
       nimg = Image bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in mkImageBBox nimg 
 

@@ -81,26 +81,6 @@ getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =
                                  then Right tpage
                                  else Left page
 
-{-
--- | 
-getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
-getAllStrokeBBoxInCurrentPage = do 
-  page <- getCurrentPageCurr
-  return [ s | l <- toList (view glayers page)
-             , s <- (catMaybes . map findStrkInRItem . view gitems) l ]
-  
--}
-
-{-
--- | 
-getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
-getAllStrokeBBoxInCurrentLayer = do 
-  page <- getCurrentPageCurr
-  let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
-      currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-  (return . catMaybes . map findStrkInRItem . view gitems) currlayer
--}      
-
 -- | 
 rItmsInCurrLyr :: MainCoroutine [RItem] 
 rItmsInCurrLyr = do 
@@ -109,9 +89,6 @@ rItmsInCurrLyr = do
       currlayer = maybe (error "rItmsInCurrLyr") id mcurrlayer
   (return . view gitems) currlayer
       
-
-
-
 -- |
 otherCanvas :: HoodleState -> [Int] 
 otherCanvas = M.keys . getCanvasInfoMap 
@@ -131,7 +108,6 @@ changeCurrentCanvasId cid = do
     return xst
 
 -- | reflect UI for current canvas info 
-
 reflectUI :: UIManager -> CanvasInfoBox -> MainCoroutine ()
 reflectUI ui cinfobox = do 
     xstate <- St.get
@@ -149,14 +125,12 @@ reflectUI ui cinfobox = do
           liftIO $ Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
   
 -- | 
-
 printViewPortBBox :: CanvasId -> MainCoroutine ()
 printViewPortBBox cid = do 
   cvsInfo <- return . getCanvasInfo cid =<< St.get 
   liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
 
 -- | 
-
 printViewPortBBoxAll :: MainCoroutine () 
 printViewPortBBoxAll = do 
   xstate <- St.get 
@@ -165,21 +139,18 @@ printViewPortBBoxAll = do
   mapM_ printViewPortBBox cids 
 
 -- | 
-  
 printViewPortBBoxCurr :: MainCoroutine ()
 printViewPortBBoxCurr = do 
   cvsInfo <- return . view currentCanvasInfo =<< St.get 
   liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
 
 -- | 
-  
 printModes :: CanvasId -> MainCoroutine ()
 printModes cid = do 
   cvsInfo <- return . getCanvasInfo cid =<< St.get 
   liftIO $ printCanvasMode cid cvsInfo
 
 -- |
-
 printCanvasMode :: CanvasId -> CanvasInfoBox -> IO ()
 printCanvasMode cid cvsInfo = do 
   let zmode = unboxGet (viewInfo.zoomMode) cvsInfo
@@ -194,7 +165,6 @@ printCanvasMode cid cvsInfo = do
   putStrLn $ show (cid,incid,zmode,arrmode)
 
 -- |
-  
 printModesAll :: MainCoroutine () 
 printModesAll = do 
   xstate <- St.get 
@@ -203,7 +173,6 @@ printModesAll = do
   mapM_ printModes cids 
 
 -- | 
-
 getCanvasGeometryCvsId :: CanvasId -> HoodleState -> IO CanvasGeometry 
 getCanvasGeometryCvsId cid xstate = do 
   let cinfobox = getCanvasInfo cid xstate
@@ -215,7 +184,6 @@ getCanvasGeometryCvsId cid xstate = do
   boxAction fsingle cinfobox
 
 -- |
-
 getGeometry4CurrCvs :: HoodleState -> IO CanvasGeometry 
 getGeometry4CurrCvs xstate = do 
   let cinfobox = view currentCanvasInfo xstate
@@ -226,5 +194,24 @@ getGeometry4CurrCvs xstate = do
                 . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox
   
+{-
+-- | 
+getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
+getAllStrokeBBoxInCurrentPage = do 
+  page <- getCurrentPageCurr
+  return [ s | l <- toList (view glayers page)
+             , s <- (catMaybes . map findStrkInRItem . view gitems) l ]
+  
+-}
+
+{-
+-- | 
+getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
+getAllStrokeBBoxInCurrentLayer = do 
+  page <- getCurrentPageCurr
+  let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
+      currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
+  (return . catMaybes . map findStrkInRItem . view gitems) currlayer
+-}      
 
 

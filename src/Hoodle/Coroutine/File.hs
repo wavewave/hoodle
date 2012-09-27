@@ -264,16 +264,6 @@ fileLoadImage = do
             let xstateNew = set hoodleModeState (ViewAppendState newhdlbbox) xstate
             put xstateNew 
             invalidateAll 
-              
-              
-{-            mhdl <- liftIO $ makeNewHoodleWithPDF filename 
-            flip (maybe (return ())) mhdl $ \hdl -> do 
-              xstateNew <- return . set currFileName Nothing 
-                           =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
-              commit xstateNew 
-              liftIO $ setTitleFromFileName xstateNew             
-              invalidateAll  -}
-              
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileLoadImage " 

@@ -304,16 +304,15 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
 -- |
 drawPageClearly :: DrawingFunction SinglePage EditMode
 drawPageClearly = drawFuncGen EditMode $ \(_,page) mbbox -> 
-                     cairoRenderOption (InBBoxOption mbbox) (InBBox page)
-                     -- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+                     cairoRenderOption (RBkgDrawPDF,DrawFull) page 
 
 -- |
 drawPageSelClearly :: DrawingFunction SinglePage SelectMode         
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
   where rendercontent (_pnum,tpg)  mbbox = do
           let pg' = hPage2RPage tpg 
-          -- cairoRenderOption (RBkgDrawPDF,DrawFull) pg' 
-          cairoRenderOption (InBBoxOption mbbox) (InBBox pg') 
+          cairoRenderOption (RBkgDrawPDF,DrawFull) pg' 
+          -- cairoRenderOption (InBBoxOption mbbox) (InBBox pg') 
         renderselect (_pnum,tpg) mbbox = do 
           cairoHittedBoxDraw tpg mbbox
 
@@ -322,16 +321,15 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
 drawContHoodleClearly :: DrawingFunction ContinuousPage EditMode
 drawContHoodleClearly = 
   drawContPageGen $ \(_,page) mbbox -> 
-                       cairoRenderOption (InBBoxOption mbbox) (InBBox page)
-                       -- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+                       cairoRenderOption (RBkgDrawPDF,DrawFull) page 
 
 -- |
 
 drawContHoodleSelClearly :: DrawingFunction ContinuousPage SelectMode
 drawContHoodleSelClearly = drawContPageSelGen renderother renderselect 
   where renderother (_,page) mbbox  = 
-          -- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-          cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+          cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+          -- cairoRenderOption (InBBoxOption mbbox) (InBBox page)
         renderselect (_pnum,tpg) mbbox =  
           cairoHittedBoxDraw tpg mbbox
 

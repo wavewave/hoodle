@@ -55,7 +55,7 @@ module Graphics.Hoodle.Render
 , updatePageBuf 
 , updateHoodleBuf 
 -- * construct R-structure from non-R-structure 
-, mkRLayer
+, cnstrctRLayer
 , cnstrctRBkg_StateT
 , cnstrctRPage_StateT
 , cnstrctRHoodle  
@@ -80,6 +80,7 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from this package
 -- import Graphics.Hoodle.Render.Simple 
 import Graphics.Hoodle.Render.Background 
+import Graphics.Hoodle.Render.Item 
 import Graphics.Hoodle.Render.Primitive
 import Graphics.Hoodle.Render.Type 
 import Graphics.Hoodle.Render.Type.HitTest
@@ -160,12 +161,9 @@ renderBkg (BackgroundPdf _ _ _ _,Dim w h) = do
 -- |
 renderPage :: Page -> Render ()
 renderPage page = do 
-  -- let itms = (view items . (!!0) . view layers) page 
-  -- let lyrs = view layers page 
   renderBkg (view background page,view dimension page)
   setLineCap LineCapRound
   setLineJoin LineJoinRound
-  -- mapM_ renderItm  itms
   mapM_ (mapM renderItem . view items) . view layers $ page
   stroke
 
@@ -213,7 +211,24 @@ renderRBkg (RBkgPDF _ _ _ p _,dim) = do
 -- |
 renderRItem :: RItem -> Render () 
 renderRItem (RItemStroke strk) = renderStrk (strkbbx_strk strk)
-renderRItem (RItemImage img _) = renderImg (imgbbx_img img) 
+renderRItem (RItemImage img msfc) = do  
+  case msfc of
+    Nothing -> renderImg (imgbbx_img img)
+    Just sfc -> do 
+      let (x,y) = (img_pos . imgbbx_img) img
+          BBox (x1,y1) (x2,y2) = getBBox img
+      ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
+      iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
+      clipBBox (Just (getBBox img))
+      save 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      setSourceSurface sfc 0 0 
+      paint 
+      restore
+      resetClip 
+  
+  -- renderImg (imgbbx_img img) 
 
 --------------
 -- BBoxOnly --
@@ -404,11 +419,18 @@ cnstrctRPage_StateT pg = do
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg
-      nlyrs = fromList . fmap mkRLayer $ lyrs 
+  nlyrs <- liftIO $ (liftM fromList . mapM cnstrctRLayer) lyrs 
   nbkg <- cnstrctRBkg_StateT dim bkg
   return . set glayers nlyrs $ emptyGPage dim nbkg 
     
--- |   
+
+cnstrctRLayer :: Layer -> IO RLayer 
+cnstrctRLayer lyr = do 
+  nitms <- (mapM cnstrctRItem . view items) lyr 
+  return (set gitems nitms emptyRLayer)
+
+
+{- -- |   
 mkRLayer :: Layer -> RLayer   
 mkRLayer lyr = let nitms = map mkRItem . view items $ lyr 
                in set gitems nitms emptyRLayer
@@ -417,7 +439,7 @@ mkRLayer lyr = let nitms = map mkRItem . view items $ lyr
 mkRItem :: Item -> RItem 
 mkRItem (ItemStroke strk) = RItemStroke (mkStrokeBBox strk)
 mkRItem (ItemImage img) = RItemImage (mkImageBBox img) Nothing 
-                  
+-}                  
                   
 -- |
 cnstrctRBkg_StateT :: Dimension -> Background 

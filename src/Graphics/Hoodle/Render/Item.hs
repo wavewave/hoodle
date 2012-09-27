@@ -16,6 +16,7 @@
 
 module Graphics.Hoodle.Render.Item where
 
+import qualified Data.ByteString.Char8 as C8
 import Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import Data.Hoodle.BBox 
@@ -30,6 +31,10 @@ cnstrctRItem (ItemImage img) = do
     let imgbbx = mkImageBBox img
         bbx = imgbbx_bbx imgbbx
         Dim w h = bboxToDim bbx
-    sfc <- createImageSurface FormatARGB32 (floor w) (floor h) 
+        filesrc = C8.unpack (img_src img)
+    sfc <- imageSurfaceCreateFromPNG filesrc
+    -- createImageSurface FormatARGB32 (floor w) (floor h) 
     -- rendering is not implemented yet
+    
+    
     return (RItemImage imgbbx (Just sfc))

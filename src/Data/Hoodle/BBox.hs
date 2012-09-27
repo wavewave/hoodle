@@ -67,11 +67,17 @@ instance Serialize BBox where
     get = liftM2 BBox get get 
 
 
+class BBoxable a where 
+  getBBox :: a -> BBox
+
 -- | 
 data StrokeBBox = StrokeBBox { strkbbx_strk :: Stroke 
                              , strkbbx_bbx :: BBox } 
                 deriving (Show,Eq,Ord)
   
+instance BBoxable StrokeBBox where
+  getBBox = strkbbx_bbx
+                         
 -- |
 instance Serialize StrokeBBox where
   put StrokeBBox{..} = put strkbbx_strk >> put strkbbx_bbx
@@ -89,6 +95,9 @@ data ImageBBox = ImageBBox { imgbbx_img :: Image
                            , imgbbx_bbx :: BBox } 
                 deriving (Show,Eq,Ord)
   
+instance BBoxable ImageBBox where
+  getBBox = imgbbx_bbx
+
 -- |
 instance Serialize ImageBBox where
   put ImageBBox{..} = put imgbbx_img >> put imgbbx_bbx
@@ -100,22 +109,6 @@ mkImageBBox img =
   ImageBBox { imgbbx_img = img
             , imgbbx_bbx = bboxFromImage img
             } 
-
-
-
-{-
-
-type TLayerBBox = GLayer [] StrokeBBox 
-
-type TPageBBox = GPage Background [] TLayerBBox 
-
-type THoodleBBox = GHoodle [] TPageBBox
-
-instance GStrokeable StrokeBBox where  
-  gFromStroke = mkStrokeBBoxFromStroke 
-  gToStroke = strokeFromStrokeBBox
--}
-
 
 
 -- |
@@ -251,8 +244,3 @@ instance Maybeable UnionBBox where
   fromMaybe (Just x) = Union (Middle x)
 
 
-{-
--- |
-strokeFromStrokeBBox :: StrokeBBox -> Stroke 
-strokeFromStrokeBBox = strokebbox_stroke 
--}

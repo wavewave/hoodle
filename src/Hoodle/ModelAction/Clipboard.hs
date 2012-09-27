@@ -23,6 +23,8 @@ import qualified Data.Serialize as Se
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
+import           Data.Hoodle.Simple
+-- import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.ModelAction.Select
 import           Hoodle.Script.Hook
@@ -31,23 +33,23 @@ import           Hoodle.Type.HoodleState
 --
 
 -- | 
-updateClipboard :: HoodleState -> [StrokeBBox] -> IO HoodleState 
-updateClipboard xstate strs 
-  | null strs = return xstate
+updateClipboard :: HoodleState -> [Item] -> IO HoodleState 
+updateClipboard xstate itms 
+  | null itms = return xstate
   | otherwise = do 
     let ui = view gtkUIManager xstate
     hdltag <- atomNew "hoodle"
     -- tgttag <- atomNew "Stroke"
     -- seltag <- atomNew "Stroke"
     clipbd <- clipboardGet hdltag
-    let bstr = C8.unpack . B64.encode . Se.encode $ strs 
+    let bstr = C8.unpack . B64.encode . Se.encode $ itms 
     clipboardSetText clipbd bstr
     togglePaste ui True 
     case (view hookSet xstate) of 
       Nothing -> return () 
       Just hset -> case afterUpdateClipboardHook hset of 
                      Nothing -> return () 
-                     Just uchook -> liftIO $ uchook strs 
+                     Just uchook -> liftIO $ uchook itms 
     return xstate
 
 

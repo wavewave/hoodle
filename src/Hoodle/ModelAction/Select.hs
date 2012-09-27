@@ -34,15 +34,12 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Select 
 import           Data.Hoodle.Simple hiding (Page,Hoodle)
--- import           Graphics.Hoodle.Render.BBox
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Util 
 import           Graphics.Hoodle.Render.Util.HitTest
--- import           Graphics.Hoodle.Render.Simple
 -- from this package
-import           Hoodle.Accessor (bbox4AllStrokes)
 import           Hoodle.ModelAction.Layer
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Alias
@@ -89,6 +86,13 @@ isBBoxDeltaSmallerThan delta pnum geometry
   where coordtrans (x,y) = unCvsCoord . desktop2Canvas geometry . page2Desktop geometry 
                            $ (pnum,PageCoord (x,y))
 
+-- |    
+changeItemBy :: ((Double,Double)->(Double,Double)) -> RItem -> RItem
+changeItemBy func (RItemStroke strk) = RItemStroke (changeStrokeBy func strk)
+changeItemBy func (RItemImage img sfc) = RItemImage (changeImageBy func img) sfc
+    
+
+
 -- | modify stroke using a function
 changeStrokeBy :: ((Double,Double)->(Double,Double)) -> StrokeBBox -> StrokeBBox
 changeStrokeBy func (StrokeBBox (Stroke t c w ds) _bbox) = 
@@ -105,44 +109,30 @@ changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) =
       nstrk = VWStroke t c newds 
       nbbox = bboxFromStroke nstrk 
   in  StrokeBBox nstrk nbbox
-{- changeStrokeBy func (StrokeBBox (Img bstr (x,y) (Dim w h)) _bbox) = 
+
+-- | 
+changeImageBy :: ((Double,Double)->(Double,Double)) -> ImageBBox -> ImageBBox
+changeImageBy func (ImageBBox (Image bstr (x,y) (Dim w h)) _bbox) = 
   let (x1,y1) = func (x,y) 
       (x2,y2) = func (x+w,y+w)
-      nimg = Img bstr (x1,y1) (Dim (x2-x1) (y2-y1))
-      nbbox = bboxFromStroke nimg
-  in StrokeBBox nimg nbbox
--}  
+      nimg = Image bstr (x1,y1) (Dim (x2-x1) (y2-y1))
+  in mkImageBBox nimg 
+
+--       nbbox = bboxFromImage nimg
+--  in ImageBBox nimg nbbox
 
 -- |
-getActiveLayer :: Page SelectMode ->  
-                  Either [StrokeBBox] (TAlterHitted StrokeBBox)
-getActiveLayer = unTEitherAlterHitted . view (glayers.selectedLayer.gstrokes)
-
-{-  = let ls = view glayers tpg :: HLayers
-        slyr = view selectedLayer ls 
-        strks = view gstrokes slyr 
-    in undefined --  unTEitherAlterHitted strks 
--}    
-{-    
-    unTEitherAlterHitted 
-                 . view gstrokes 
-                 . view selectedLayer 
-                 . view glayers 
--}                 
-                 
-
-
+rItmsInActiveLyr :: Page SelectMode -> Either [RItem] (TAlterHitted RItem)
+rItmsInActiveLyr = unTEitherAlterHitted.view (glayers.selectedLayer.gitems)
 
 -- |
-getSelectedStrokes :: Page SelectMode -> [StrokeBBox]
-getSelectedStrokes = either (const []) (concatMap unHitted . getB) . getActiveLayer   
+getSelectedItms :: Page SelectMode -> [RItem]
+getSelectedItms = either (const []) (concatMap unHitted . getB) . rItmsInActiveLyr   
   
-
-
 -- | start a select mode with alter list selection 
 makePageSelectMode :: Page EditMode  -- ^ base page 
-                      -> TAlterHitted StrokeBBox -- ^ current selection layer (active layer will be replaced)
-                      -> Page SelectMode -- ^ resultant select mode page
+                   -> TAlterHitted RItem -- ^ current selection layer (active layer will be replaced)
+                   -> Page SelectMode -- ^ resultant select mode page
 makePageSelectMode page alist =  
     let (mcurrlayer,npage) = getCurrentLayerOrSet page
         clyr = maybeError "makePageSelectMode" mcurrlayer 
@@ -155,8 +145,7 @@ makePageSelectMode page alist =
 -- | get unselected part of page and make an ordinary page
 deleteSelected :: Page SelectMode -> Page SelectMode 
 deleteSelected tpage =
-    let activelayer = getActiveLayer tpage
-        -- ls = view glayers tpage
+    let activelayer = rItmsInActiveLyr tpage
         buf = view (glayers.selectedLayer.gbuffer) tpage 
     in case activelayer of 
          Left _ -> tpage 
@@ -170,14 +159,13 @@ deleteSelected tpage =
 changeSelectionBy :: ((Double,Double) -> (Double,Double))
                      -> Page SelectMode -> Page SelectMode
 changeSelectionBy func tpage = 
-  let activelayer = getActiveLayer tpage
-      -- ls = view glayers tpage
+  let activelayer = rItmsInActiveLyr tpage
       buf = view (glayers.selectedLayer.gbuffer) tpage
   in case activelayer of 
        Left _ -> tpage 
        Right alist -> 
          let alist' =fmapAL id 
-                            (Hitted . map (changeStrokeBy func) . unHitted) 
+                            (Hitted . map (changeItemBy func) . unHitted) 
                             alist 
              layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
          in set (glayers.selectedLayer) layer' tpage 
@@ -221,27 +209,22 @@ calculateWholeBBox = toMaybe . mconcat . map ( Union . Middle. strkbbx_bbx )
 -- |     
 hitInSelection :: Page SelectMode -> (Double,Double) -> Bool 
 hitInSelection tpage point = 
-  let activelayer = getActiveLayer tpage 
-        -- unTEitherAlterHitted . view (glayers.selectedLayer.gstrokes) $ tpage
-  in case activelayer of 
-       Left _ -> False   
-       Right alist -> 
-         let Union bboxall = mconcat
-                             . map ( Union . Middle. strkbbx_bbx ) 
-                             . takeHittedStrokes $ alist
-         
-         in  case bboxall of 
-               Middle bbox -> isPointInBBox bbox point 
-               _ -> False 
+   case rItmsInActiveLyr tpage of 
+     Left _ -> False   
+     Right alist -> 
+       let Union bboxall = mconcat
+                           . map ( Union . Middle. getBBox ) 
+                           . takeHitted $ alist
+       in  case bboxall of 
+             Middle bbox -> isPointInBBox bbox point 
+             _ -> False 
           
 -- |    
 getULBBoxFromSelected :: Page SelectMode -> ULMaybe BBox 
 getULBBoxFromSelected tpage = 
-  let activelayer = getActiveLayer tpage 
-        --  unTEitherAlterHitted . view gstrokes .  gselectedlayerbuf . view glayers $ tpage
-  in case activelayer of 
-       Left _ -> Bottom
-       Right alist -> bbox4AllStrokes . takeHittedStrokes $ alist  
+    case rItmsInActiveLyr tpage of 
+      Left _ -> Bottom
+      Right alist -> bbox4All . takeHitted $ alist  
 
 -- |
 hitInHandle :: Page SelectMode -> (Double,Double) -> Bool 
@@ -250,13 +233,6 @@ hitInHandle tpage point =
     Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox point)
     _ -> False
     
--- |
-takeHittedStrokes :: AlterList [StrokeBBox] (Hitted StrokeBBox) -> [StrokeBBox] 
-takeHittedStrokes = concatMap unHitted . getB 
-
--- |
-isAnyHitted :: AlterList [StrokeBBox] (Hitted StrokeBBox) -> Bool 
-isAnyHitted = not . null . takeHittedStrokes
 
 -- |
 toggleCutCopyDelete :: UIManager -> Bool -> IO ()
@@ -297,11 +273,23 @@ changeStrokeWidth pwidth str =
           -- Img b w h -> Img b w h
     in str { strkbbx_strk = nstrsmpl } 
 
+-- | 
+changeItemStrokeWidth :: Double -> RItem -> RItem 
+changeItemStrokeWidth pwidth (RItemStroke strk) = RItemStroke (changeStrokeWidth pwidth strk)
+changeItemStrokeWidth _ r = r 
+
+-- | 
+changeItemStrokeColor :: PenColor -> RItem -> RItem 
+changeItemStrokeColor pcolor (RItemStroke strk) = RItemStroke (changeStrokeColor pcolor strk)
+changeItemStrokeColor _ r = r 
+
+
+
 -- |
-newtype CmpStrokeBBox = CmpStrokeBBox { unCmpStrokeBBox :: StrokeBBox }
-                      deriving Show
-instance Eq CmpStrokeBBox where
-  CmpStrokeBBox str1==CmpStrokeBBox str2 = strkbbx_bbx str1==strkbbx_bbx str2  
+newtype CmpBBox a = CmpBBox { unCmpBBox :: a }
+               -- deriving Show
+instance (BBoxable a) => Eq (CmpBBox a) where
+  CmpBBox s1 == CmpBBox s2 = getBBox s1 == getBBox s2  
   
 -- |
 isSame :: DI -> Bool   
@@ -316,12 +304,12 @@ separateFS = foldr f ([],[])
         f (B,_x) (fs,ss) = (fs,ss)
         
 -- |
-getDiffStrokeBBox :: [StrokeBBox] -> [StrokeBBox] -> [(DI, StrokeBBox)]
-getDiffStrokeBBox lst1 lst2 = 
-  let nlst1 = fmap CmpStrokeBBox lst1 
-      nlst2 = fmap CmpStrokeBBox lst2 
+getDiffBBox :: (BBoxable a) => [a] -> [a] -> [(DI,a)]
+getDiffBBox lst1 lst2 = 
+  let nlst1 = fmap CmpBBox lst1 
+      nlst2 = fmap CmpBBox lst2 
       diffresult = getDiff nlst1 nlst2 
-  in map (\(x,y)->(x,unCmpStrokeBBox y)) diffresult
+  in map (\(x,y)->(x,unCmpBBox y)) diffresult
 
 -- |
 checkIfHandleGrasped :: BBox -> (Double,Double) -> Maybe Handle
@@ -376,15 +364,24 @@ wrappingAngle lst p =
   where f (q',theta) q = let theta' = angleBAC p q' q
                          in theta' `seq` (q,theta'+theta)  
                           
-mappingDegree :: Seq (Double,Double) -> (Double,Double) -> Int                        
+mappingDegree :: Seq (Double,Double) -> (Double,Double) -> Int    
 mappingDegree lst = round . (/(2.0*pi)) . wrappingAngle lst 
 
-
+-- | 
 hitLassoPoint :: Seq (Double,Double) -> (Double,Double) -> Bool 
 hitLassoPoint lst = odd . mappingDegree lst
 
+-- | 
 hitLassoStroke :: Seq (Double,Double) -> StrokeBBox -> Bool 
 hitLassoStroke lst = all (hitLassoPoint lst) . getXYtuples . strkbbx_strk
+
+-- | 
+hitLassoItem :: Seq (Double,Double) -> RItem -> Bool 
+hitLassoItem lst (RItemStroke strk) = hitLassoStroke lst strk 
+hitLassoItem lst (RItemImage img _) = 
+    hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
+    && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
+  where BBox (x1,y1) (x2,y2) = getBBox img
 
 
 data TempSelectRender a = TempSelectRender { tempSurface :: Surface  
@@ -392,18 +389,18 @@ data TempSelectRender a = TempSelectRender { tempSurface :: Surface
                                            , tempSelectInfo :: a 
                                            } 
 
-type TempSelection = TempSelectRender [StrokeBBox]
+type TempSelection = TempSelectRender [RItem]
 
-data StrokesNImage = StrokesNImage { strokes :: [StrokeBBox]
-                                   , strbbox :: Maybe BBox 
-                                   , imageSurface :: Surface } 
+data ItmsNImg = ItmsNImg { itmNimg_itms :: [RItem]
+                         , itmNimg_mbbx :: Maybe BBox 
+                         , imageSurface :: Surface } 
 
 
 -- | 
-mkStrokesNImage :: CanvasGeometry -> Page SelectMode -> IO StrokesNImage 
-mkStrokesNImage _geometry tpage = do 
-  let strs = getSelectedStrokes tpage
-      drawselection = mapM_ (renderStrk.strkbbx_strk) strs 
+mkItmsNImg :: CanvasGeometry -> Page SelectMode -> IO ItmsNImg
+mkItmsNImg _geometry tpage = do 
+  let itms = getSelectedItms tpage
+      drawselection = mapM_ (renderItem.rItem2Item) itms 
       Dim cw ch = view gdimension tpage 
       mbbox = case getULBBoxFromSelected tpage of 
                 Middle bbox -> Just bbox 
@@ -415,20 +412,20 @@ mkStrokesNImage _geometry tpage = do
     fill 
     setSourceRGBA 0 0 0 1
     drawselection
-  return $ StrokesNImage strs mbbox sfc
+  return $ ItmsNImg itms mbbox sfc
 
 -- | 
 drawTempSelectImage :: CanvasGeometry 
-                       -> TempSelectRender StrokesNImage 
-                       -> Matrix -- ^ transformation matrix
-                       -> Render ()
+                    -> TempSelectRender ItmsNImg 
+                    -> Matrix -- ^ transformation matrix
+                    -> Render ()
 drawTempSelectImage geometry tempselection xformmat = do 
     let sfc = imageSurface (tempSelectInfo tempselection)
         CanvasDimension (Dim cw ch) = canvasDim geometry 
         invxformmat = invert xformmat 
         newvbbox = BBox (transformPoint invxformmat (0,0)) 
                         (transformPoint invxformmat (cw,ch))
-        mbbox = strbbox (tempSelectInfo tempselection)
+        mbbox = itmNimg_mbbx (tempSelectInfo tempselection)
         newmbbox = case unIntersect (Intersect (Middle newvbbox) `mappend` fromMaybe mbbox) of 
                      Middle bbox -> Just bbox 
                      _ -> Just newvbbox
@@ -441,11 +438,11 @@ drawTempSelectImage geometry tempselection xformmat = do
 
 
 -- | 
-tempSelected :: TempSelection -> [StrokeBBox]
+tempSelected :: TempSelection -> [RItem]
 tempSelected = tempSelectInfo 
 
-mkTempSelection :: Surface -> (Double,Double) -> [StrokeBBox] -> TempSelection
-mkTempSelection sfc (w,h) strs = TempSelectRender sfc (w,h) strs 
+mkTempSelection :: Surface -> (Double,Double) -> [RItem] -> TempSelection
+mkTempSelection sfc (w,h) = TempSelectRender sfc (w,h)  
 
 -- | update the content of temp selection. should not be often updated
 updateTempSelection :: TempSelectRender a -> Render () -> Bool -> IO ()
@@ -472,12 +469,12 @@ getNewCoordTime (prev,otime) (x,y) = do
     return (willUpdate,(nprev,nntime))
 
 -- | 
-adjustStrokePosition4Paste :: CanvasGeometry -> PageNum -> [StrokeBBox] -> [StrokeBBox]
-adjustStrokePosition4Paste geometry pgn strs = 
-    case bboxStrs of 
-      Middle (BBox (xs0,ys0) _) -> fmap (changeStrokeBy (offsetFunc (x0-xs0,y0-ys0))) strs  
-      _ -> strs 
-  where bboxStrs = bbox4AllStrokes strs
+adjustItemPosition4Paste :: CanvasGeometry -> PageNum -> [RItem] -> [RItem]
+adjustItemPosition4Paste geometry pgn itms = 
+    case bbox of 
+      Middle (BBox (xs0,ys0) _) -> fmap (changeItemBy (offsetFunc (x0-xs0,y0-ys0))) itms  
+      _ -> itms 
+  where bbox = bbox4All itms
         ViewPortBBox (BBox (xv0,yv0) _) = canvasViewPort geometry 
         (x0,y0) = maybe (0,0) 
                     (\(pgn',norigin) -> if pgn == pgn' then unPageCoord norigin else (0,0))

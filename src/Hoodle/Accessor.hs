@@ -22,13 +22,14 @@ import qualified Control.Monad.State as St hiding (mapM_)
 import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
--- import           Data.Label
+import           Data.Maybe (catMaybes)
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
+import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.Type
@@ -80,29 +81,42 @@ getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =
                                  then Right tpage
                                  else Left page
 
+{-
 -- | 
-
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentPage = do 
   page <- getCurrentPageCurr
-  return [s| l <- toList (view glayers page), s <- view gstrokes l ]
+  return [ s | l <- toList (view glayers page)
+             , s <- (catMaybes . map findStrkInRItem . view gitems) l ]
   
--- | 
+-}
 
+{-
+-- | 
 getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
 getAllStrokeBBoxInCurrentLayer = do 
   page <- getCurrentPageCurr
   let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
       currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-  return (view gstrokes currlayer)
-      
--- |
+  (return . catMaybes . map findStrkInRItem . view gitems) currlayer
+-}      
 
+-- | 
+rItmsInCurrLyr :: MainCoroutine [RItem] 
+rItmsInCurrLyr = do 
+  page <- getCurrentPageCurr
+  let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
+      currlayer = maybe (error "rItmsInCurrLyr") id mcurrlayer
+  (return . view gitems) currlayer
+      
+
+
+
+-- |
 otherCanvas :: HoodleState -> [Int] 
 otherCanvas = M.keys . getCanvasInfoMap 
 
 -- | 
-
 changeCurrentCanvasId :: CanvasId -> MainCoroutine HoodleState 
 changeCurrentCanvasId cid = do 
     xstate1 <- St.get
@@ -212,9 +226,5 @@ getGeometry4CurrCvs xstate = do
                 . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox
   
--- | 
-
-bbox4AllStrokes :: (Foldable t, Functor t) => t StrokeBBox -> ULMaybe BBox 
-bbox4AllStrokes = unUnion . fold . fmap (Union . Middle . strkbbx_bbx)
 
 

@@ -24,6 +24,8 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Select
+import           Data.Hoodle.Simple
+import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type 
 import           Graphics.Hoodle.Render.Type.HitTest
 -- from this package 
@@ -47,7 +49,7 @@ deleteSelection = do
   let SelectState thdl = view hoodleModeState xstate 
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
-  case unTEitherAlterHitted . view gstrokes $ slayer of 
+  case unTEitherAlterHitted . view gitems $ slayer of 
     Left _ -> return () 
     Right alist -> do 
       let newlayer = Left . concat . getA $ alist
@@ -75,15 +77,15 @@ copySelection = do
         fsingle xstate cinfo = maybe (return xstate) id $ do  
           let hdlmodst = view hoodleModeState xstate
           let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
-          eitherMaybe epage `pipe` getActiveLayer 
-                            `pipe` (Right . liftIO . updateClipboard xstate . takeHittedStrokes)
+          eitherMaybe epage `pipe` rItmsInActiveLyr 
+                            `pipe` (Right . liftIO . updateClipboard xstate . map rItem2Item . takeHitted)
           where eitherMaybe (Left _) = Nothing
                 eitherMaybe (Right a) = Just a 
                 x `pipe` a = x >>= eitherMaybe . a 
                 infixl 6 `pipe`
 
 -- |
-getClipFromGtk :: MainCoroutine (Maybe [StrokeBBox])
+getClipFromGtk :: MainCoroutine (Maybe [Item])
 getClipFromGtk = do 
     let action = Left . ActionOrder $ 
                    \evhandler -> do 
@@ -102,34 +104,35 @@ getClipFromGtk = do
 -- | 
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = do 
-    mstrks <- getClipFromGtk 
-    case mstrks of 
+    mitms <- getClipFromGtk 
+    case mitms of 
       Nothing -> return () 
-      Just strks -> do 
-        modeChange ToSelectMode >>updateXState (pasteAction strks) >> invalidateAll  
-  where pasteAction stks xst = boxAction (fsimple stks xst) . view currentCanvasInfo 
-                               $ xst
-        fsimple stks xstate cinfo = do 
-          geometry <- liftIO (getGeometry4CurrCvs xstate)
-          let pagenum = view currentPageNum cinfo 
-              hdlmodst@(SelectState thdl) = view hoodleModeState xstate
-              nclipstrs = adjustStrokePosition4Paste geometry (PageNum pagenum) stks
-              epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
-              tpage = either mkHPage id epage
-              layerselect = view (glayers.selectedLayer) tpage 
-              gbuf = view gbuffer layerselect
-              newlayerselect = case getActiveLayer tpage of 
-                Left strs -> (GLayer gbuf . TEitherAlterHitted . Right) (strs :- Hitted nclipstrs :- Empty)
-                Right alist -> (GLayer gbuf . TEitherAlterHitted . Right) 
-                               (concat (interleave id unHitted alist) 
-                                 :- Hitted nclipstrs 
-                                 :- Empty )
-              tpage' = set (glayers.selectedLayer) newlayerselect tpage
-          thdl' <- liftIO $ updateTempHoodleSelectIO thdl tpage' pagenum 
-          xstate' <- liftIO $ updatePageAll (SelectState thdl') 
-                              . set hoodleModeState (SelectState thdl') 
-                              $ xstate 
-          commit xstate' 
-          let ui = view gtkUIManager xstate' 
-          liftIO $ toggleCutCopyDelete ui True
-          return xstate' 
+      Just itms -> do 
+        ritms <- liftIO (mapM cnstrctRItem itms)
+        modeChange ToSelectMode >>updateXState (pasteAction ritms) >> invalidateAll  
+  where 
+    pasteAction itms xst = boxAction (fsimple itms xst) . view currentCanvasInfo $ xst
+    fsimple itms xstate cinfo = do 
+      geometry <- liftIO (getGeometry4CurrCvs xstate)
+      let pagenum = view currentPageNum cinfo 
+          hdlmodst@(SelectState thdl) = view hoodleModeState xstate
+          nclipitms = adjustItemPosition4Paste geometry (PageNum pagenum) itms
+          epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
+          tpage = either mkHPage id epage
+          layerselect = view (glayers.selectedLayer) tpage 
+          gbuf = view gbuffer layerselect
+          newlayerselect = case rItmsInActiveLyr tpage of 
+            Left nitms -> (GLayer gbuf . TEitherAlterHitted . Right) (nitms :- Hitted nclipitms :- Empty)
+            Right alist -> (GLayer gbuf . TEitherAlterHitted . Right) 
+                           (concat (interleave id unHitted alist) 
+                            :- Hitted nclipitms 
+                            :- Empty )
+          tpage' = set (glayers.selectedLayer) newlayerselect tpage
+      thdl' <- liftIO $ updateTempHoodleSelectIO thdl tpage' pagenum 
+      xstate' <- liftIO $ updatePageAll (SelectState thdl') 
+                 . set hoodleModeState (SelectState thdl') 
+                 $ xstate 
+      commit xstate' 
+      let ui = view gtkUIManager xstate' 
+      liftIO $ toggleCutCopyDelete ui True
+      return xstate' 

@@ -71,7 +71,7 @@ addPDraw pinfo hdl (PageNum pgnum) pdraw = do
         newstrokebbox = mkStrokeBBox newstroke
         bbox = strkbbx_bbx newstrokebbox
     newlayerbbox <- updateLayerBuf (Just bbox)
-                    . set gstrokes (view gstrokes currlayer ++ [newstrokebbox]) 
+                    . over gitems (++[RItemStroke newstrokebbox]) 
                     $ currlayer
 
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 

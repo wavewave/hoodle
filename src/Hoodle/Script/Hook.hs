@@ -20,7 +20,7 @@ import Data.Hoodle.BBox
 
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , afterSaveHook :: Maybe (Hoodle -> IO ())
-                 , afterUpdateClipboardHook :: Maybe ([StrokeBBox] -> IO ())
+                 , afterUpdateClipboardHook :: Maybe ([Item] -> IO ())
                  } 
 
 

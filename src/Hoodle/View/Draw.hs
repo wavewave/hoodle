@@ -361,14 +361,14 @@ cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render ()
 cairoHittedBoxDraw tpg mbbox = do   
   let layers = view glayers tpg 
       slayer = view selectedLayer layers 
-  case unTEitherAlterHitted . view gstrokes $ slayer of
+  case unTEitherAlterHitted . view gitems $ slayer of
     Right alist -> do 
       clipBBox mbbox
       setSourceRGBA 0.0 0.0 1.0 1.0
-      let hitstrs = concatMap unHitted (getB alist)
-      mapM_ renderSelectedStroke hitstrs  
-      let ulbbox = unUnion . mconcat . fmap (Union .Middle . strkbbx_bbx) 
-                   $ hitstrs 
+      let hititms = concatMap unHitted (getB alist)
+      mapM_ renderSelectedItem hititms -- renderSelectedStroke 
+      let ulbbox = unUnion . mconcat . fmap (Union .Middle . getBBox) 
+                   $ hititms
       case ulbbox of 
         Middle bbox -> renderSelectHandle bbox 
         _ -> return () 
@@ -401,7 +401,6 @@ renderBoxSelection bbox = do
   stroke
 
 -- |
-
 renderSelectedStroke :: StrokeBBox -> Render () 
 renderSelectedStroke str = do 
   setLineWidth 1.5
@@ -409,7 +408,13 @@ renderSelectedStroke str = do
   renderStrkHltd str
 
 -- |
+renderSelectedItem :: RItem -> Render () 
+renderSelectedItem itm = do 
+  setLineWidth 1.5
+  setSourceRGBA 0 0 1 1
+  renderRItemHltd itm
 
+-- |
 renderSelectHandle :: BBox -> Render () 
 renderSelectHandle bbox = do 
   setLineWidth predefinedLassoWidth

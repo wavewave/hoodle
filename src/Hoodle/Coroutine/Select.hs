@@ -99,12 +99,12 @@ dealWithOneTimeSelectMode action terminator = do
 selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 selectRectStart cid = commonPenStart rectaction cid
   where rectaction cinfo pnum geometry (cidup,cidmove) (x,y) = do
-          strs <- getAllStrokeBBoxInCurrentLayer
+          itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page = 
                 dealWithOneTimeSelectMode 
                   (do tsel <- createTempSelectRender pnum geometry page [] 
-                      newSelectRectangle cid pnum geometry cidmove cidup strs 
+                      newSelectRectangle cid pnum geometry cidmove cidup itms 
                                          (x,y) ((x,y),ctime) tsel
                       surfaceFinish (tempSurface tsel)) 
                   (disconnect cidmove >> disconnect cidup) 
@@ -132,12 +132,12 @@ newSelectRectangle :: CanvasId
                    -> PageNum 
                    -> CanvasGeometry
                    -> ConnectId DrawingArea -> ConnectId DrawingArea
-                   -> [StrokeBBox] 
+                   -> [RItem] 
                    -> (Double,Double)
                    -> ((Double,Double),UTCTime)
                    -> TempSelection 
                    -> MainCoroutine () 
-newSelectRectangle cid pnum geometry connidmove connidup strs orig 
+newSelectRectangle cid pnum geometry connidmove connidup itms orig 
                    (prev,otime) tempselection = do  
     r <- nextevent
     xst <- get 
@@ -145,38 +145,38 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
                                (moveact xstate cinfo) (upact xstate cinfo)
-    defact = newSelectRectangle cid pnum geometry connidmove connidup strs orig 
+    defact = newSelectRectangle cid pnum geometry connidmove connidup itms orig 
                          (prev,otime) tempselection 
     moveact _xstate _cinfo (_pcoord,(x,y)) = do 
       let bbox = BBox orig (x,y)
-          hittestbbox = hltStrksEmbeddedByBBox bbox strs
-          hittedstrs = concat . map unHitted . getB $ hittestbbox
+          hittestbbox = hltEmbeddedByBBox bbox itms
+          hitteditms = takeHitted hittestbbox
       page <- getCurrentPageCvsId cid
-      let (fstrs,sstrs) = separateFS $ getDiffStrokeBBox (tempSelected tempselection) hittedstrs 
+      let (fitms,sitms) = separateFS $ getDiffBBox (tempSelected tempselection) hitteditms 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
-      when ((not.null) fstrs || (not.null) sstrs ) $ do 
+      when ((not.null) fitms || (not.null) sitms) $ do 
         let xformfunc = cairoXform4PageCoordinate geometry pnum 
-            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . strkbbx_bbx) $ fstrs
+            ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . getBBox) $ fitms
             renderfunc = do   
               xformfunc 
               case ulbbox of 
                 Top -> do 
                   cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-                  mapM_ renderSelectedStroke hittedstrs
+                  mapM_ renderSelectedItem hitteditms
                 Middle sbbox -> do 
-                  let redrawee = filter (do2BBoxIntersect sbbox.strkbbx_bbx) hittedstrs  
+                  let redrawee = filter (do2BBoxIntersect sbbox.getBBox) hitteditms  
                   cairoRenderOption (InBBoxOption (Just sbbox)) (InBBox page)
                   clipBBox (Just sbbox)
-                  mapM_ renderSelectedStroke redrawee 
+                  mapM_ renderSelectedItem redrawee 
                 Bottom -> return ()
-              mapM_ renderSelectedStroke sstrs 
+              mapM_ renderSelectedItem sitms 
         liftIO $ updateTempSelection tempselection renderfunc False
       when willUpdate $  
         invalidateTemp cid (tempSurface tempselection) 
                            (renderBoxSelection bbox) 
-      newSelectRectangle cid pnum geometry connidmove connidup strs orig 
+      newSelectRectangle cid pnum geometry connidmove connidup itms orig 
                          (ncoord,ntime)
-                         tempselection { tempSelectInfo = hittedstrs }
+                         tempselection { tempSelectInfo = hitteditms }
     upact xstate cinfo pcoord = do       
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
@@ -184,21 +184,19 @@ newSelectRectangle cid pnum geometry connidmove connidup strs orig
           epage = getCurrentPageEitherFromHoodleModeState cinfo (view hoodleModeState xstate)
           cpn = view currentPageNum cinfo 
           bbox = BBox orig (x,y)
-          hittestbbox = hltStrksEmbeddedByBBox bbox strs
-          selectstrs = fmapAL unNotHitted id hittestbbox
+          hittestbbox = hltEmbeddedByBBox bbox itms
+          selectitms = fmapAL unNotHitted id hittestbbox
           SelectState thdl = view hoodleModeState xstate
           newpage = case epage of 
-                      Left pagebbox -> makePageSelectMode pagebbox selectstrs 
+                      Left pagebbox -> makePageSelectMode pagebbox selectitms 
                       Right tpage -> 
                         let currlayer = view (glayers.selectedLayer) tpage
-                            newlayer = set gstrokes (TEitherAlterHitted (Right selectstrs)) currlayer                   
-                              -- GLayer (view gbuffer currlayer))
+                            newlayer = set gitems (TEitherAlterHitted (Right selectitms)) currlayer  
                             npage = set (glayers.selectedLayer) newlayer tpage 
-                              -- (ls {gselectedlayerbuf=newlayer}) tpage 
                         in npage
           newthdl = set gselSelected (Just (cpn,newpage)) thdl 
           ui = view gtkUIManager xstate
-      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
+      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
       disconnect connidmove
@@ -216,13 +214,13 @@ startMoveSelect :: CanvasId
                    -> Page SelectMode
                    -> MainCoroutine () 
 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage = do  
-    strimage <- liftIO $ mkStrokesNImage geometry tpage
+    itmimage <- liftIO $ mkItmsNImg geometry tpage
     tsel <- createTempSelectRender pnum geometry
               (hPage2RPage tpage) 
-              strimage 
+              itmimage 
     moveSelect cid pnum geometry cidmove cidup (x,y) ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)                  
-    surfaceFinish (imageSurface strimage)
+    surfaceFinish (imageSurface itmimage)
 
 -- | 
 moveSelect :: CanvasId
@@ -232,7 +230,7 @@ moveSelect :: CanvasId
               -> ConnectId DrawingArea
               -> (Double,Double)
               -> ((Double,Double),UTCTime)
-              -> TempSelectRender StrokesNImage
+              -> TempSelectRender ItmsNImg
               -> MainCoroutine ()
 moveSelect cid pnum geometry connidmove connidup orig@(x0,y0) 
            (prev,otime) tempselection = do
@@ -276,23 +274,23 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
     chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
       let hdlmodst@(SelectState thdl) = view hoodleModeState xstate
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
-      (xstate1,nthdl1,selectedstrs) <- 
+      (xstate1,nthdl1,selecteditms) <- 
         case epage of 
           Right oldtpage -> do 
-            let strs = getSelectedStrokes oldtpage
+            let itms = getSelectedItms oldtpage
             let oldtpage' = deleteSelected oldtpage
             nthdl <- liftIO $ updateTempHoodleSelectIO thdl oldtpage' (unPageNum oldpgn)
             xst <- return . set hoodleModeState (SelectState nthdl)
                      =<< (liftIO (updatePageAll (SelectState nthdl) xstate)) 
-            return (xst,nthdl,strs)       
+            return (xst,nthdl,itms)       
           Left _ -> error "this is impossible, in moveSelect" 
       let maction = do 
             page <- M.lookup (unPageNum newpgn) (view gselAll nthdl1)
             let (mcurrlayer,npage) = getCurrentLayerOrSet page
             currlayer <- mcurrlayer 
-            let oldstrs = view gstrokes currlayer
-            let newstrs = map (changeStrokeBy (offsetFunc (x-x0,y-y0))) selectedstrs 
-                alist = oldstrs :- Hitted newstrs :- Empty 
+            let olditms = view gitems currlayer
+            let newitms = map (changeItemBy (offsetFunc (x-x0,y-y0))) selecteditms 
+                alist = olditms :- Hitted newitms :- Empty 
                 ntpage = makePageSelectMode npage alist  
                 coroutineaction = do 
                   nthdl2 <- liftIO $ updateTempHoodleSelectIO nthdl1 ntpage (unPageNum newpgn)  
@@ -308,7 +306,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
       disconnect connidmove
       disconnect connidup 
       invalidateAll 
-      
+    ----
     ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
           hdlmodst@(SelectState thdl) = view hoodleModeState xstate
@@ -339,13 +337,13 @@ startResizeSelect :: Handle
                      -> MainCoroutine () 
 startResizeSelect handle cid pnum geometry cidmove cidup bbox 
                   ((x,y),ctime) tpage = do  
-    strimage <- liftIO $ mkStrokesNImage geometry tpage  
+    itmimage <- liftIO $ mkItmsNImg geometry tpage  
     tsel <- createTempSelectRender pnum geometry 
               (hPage2RPage tpage) 
-              strimage 
+              itmimage 
     resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)  
-    surfaceFinish (imageSurface strimage)
+    surfaceFinish (imageSurface itmimage)
   
 
 -- | 
@@ -357,7 +355,7 @@ resizeSelect :: Handle
                 -> ConnectId DrawingArea
                 -> BBox
                 -> ((Double,Double),UTCTime)
-                -> TempSelectRender StrokesNImage
+                -> TempSelectRender ItmsNImg
                 -> MainCoroutine ()
 resizeSelect handle cid pnum geometry connidmove connidup origbbox 
              (prev,otime) tempselection = do
@@ -415,11 +413,11 @@ selectPenColorChanged pcolor = do
   let SelectState thdl = view hoodleModeState xstate 
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
-  case unTEitherAlterHitted . view gstrokes $ slayer of 
+  case unTEitherAlterHitted . view gitems $ slayer of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
-                     (Hitted . map (changeStrokeColor pcolor) . unHitted) alist
+                     (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
           newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n
@@ -434,11 +432,11 @@ selectPenWidthChanged pwidth = do
   let SelectState thdl = view hoodleModeState xstate 
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
-  case unTEitherAlterHitted . view gstrokes $ slayer  of 
+  case unTEitherAlterHitted . view gitems $ slayer  of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
-                     (Hitted . map (changeStrokeWidth pwidth) . unHitted) alist
+                     (Hitted . map (changeItemStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
           newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
@@ -452,12 +450,12 @@ selectPenWidthChanged pwidth = do
 selectLassoStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 selectLassoStart cid = commonPenStart lassoAction cid 
   where lassoAction cinfo pnum geometry (cidup,cidmove) (x,y) = do 
-          strs <- getAllStrokeBBoxInCurrentLayer
+          itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page =    
                 dealWithOneTimeSelectMode 
                   (do tsel <- createTempSelectRender pnum geometry page [] 
-                      newSelectLasso cinfo pnum geometry cidmove cidup strs 
+                      newSelectLasso cinfo pnum geometry cidmove cidup itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                       surfaceFinish (tempSurface tsel))
                   (disconnect cidmove >> disconnect cidup )
@@ -484,26 +482,26 @@ newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> PageNum 
                   -> CanvasGeometry
                   -> ConnectId DrawingArea -> ConnectId DrawingArea
-                  -> [StrokeBBox] 
+                  -> [RItem] 
                   -> (Double,Double)
                   -> ((Double,Double),UTCTime)
                   -> Seq (Double,Double)
                   -> TempSelection 
                   -> MainCoroutine ()
-newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso tsel = do
+newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig (prev,otime) lasso tsel = do
     r <- nextevent 
     fsingle r cvsInfo 
   where  
     fsingle r cinfo = penMoveAndUpOnly r pnum geometry defact
                         (moveact cinfo) (upact cinfo)
-    defact = newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig 
+    defact = newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig 
                (prev,otime) lasso tsel
     moveact cinfo (_pcoord,(x,y)) = do 
       let nlasso = lasso |> (x,y)
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
         invalidateTemp (view canvasId cinfo) (tempSurface tsel) (renderLasso nlasso) 
-      newSelectLasso cinfo pnum geometry cidmove cidup strs orig 
+      newSelectLasso cinfo pnum geometry cidmove cidup itms orig 
                      (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
       xstate <- get 
@@ -514,25 +512,25 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup strs orig (prev,otime) lasso 
           hdlmodst = view hoodleModeState xstate 
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           cpn = view currentPageNum cinfo 
-          hittestlasso = hltStrksFilteredBy (hitLassoStroke (nlasso |> orig)) strs
-          selectstrs = fmapAL unNotHitted id hittestlasso
+          hittestlasso = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
+          selectitms = fmapAL unNotHitted id hittestlasso
           SelectState thdl = view hoodleModeState xstate
           newpage = case epage of 
                       Left pagebbox -> 
                         let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
                             currlayer = maybe (error "newSelectLasso") id mcurrlayer 
-                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectitms))
                             tpg = mkHPage npagebbox 
                             npg = set (glayers.selectedLayer) newlayer tpg
                         in npg 
                       Right tpage -> 
                         let currlayer = view (glayers.selectedLayer) tpage
-                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectstrs))
+                            newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectitms))
                             npage = set (glayers.selectedLayer) newlayer tpage 
                         in npage
           newthdl = set gselSelected (Just (cpn,newpage)) thdl 
       let ui = view gtkUIManager xstate
-      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectstrs)
+      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
       disconnect cidmove

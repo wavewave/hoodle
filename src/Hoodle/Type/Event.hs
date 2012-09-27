@@ -15,7 +15,8 @@ module Hoodle.Type.Event where
 -- from other package
 import Graphics.UI.Gtk
 -- from hoodle-platform
-import Data.Hoodle.BBox
+-- import Data.Hoodle.BBox
+import Data.Hoodle.Simple
 -- from this package
 import Hoodle.Device 
 import Hoodle.Type.Clipboard
@@ -43,7 +44,7 @@ data MyEvent = Initialized
              | ToSinglePage
              | ToContSinglePage
              | Menu MenuEvent 
-             | GotClipboardContent (Maybe [StrokeBBox])
+             | GotClipboardContent (Maybe [Item])
              | ActionOrdered
              deriving (Show,Eq,Ord)
 

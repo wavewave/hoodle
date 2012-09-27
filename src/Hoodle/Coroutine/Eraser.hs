@@ -22,8 +22,9 @@ import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- 
 import Data.Hoodle.Generic
 import Data.Hoodle.BBox
-import Graphics.Hoodle.Render.Util.HitTest
 import Graphics.Hoodle.Render
+import Graphics.Hoodle.Render.Type.Item 
+import Graphics.Hoodle.Render.Util.HitTest
 -- 
 import Hoodle.Type.Event
 import Hoodle.Type.Coroutine
@@ -49,8 +50,8 @@ eraserStart :: CanvasId
                -> MainCoroutine () 
 eraserStart cid = commonPenStart eraserAction cid  
   where eraserAction _cinfo pnum geometry (cidup,cidmove) (x,y) = do 
-          strs <- getAllStrokeBBoxInCurrentLayer
-          eraserProcess cid pnum geometry cidup cidmove strs (x,y)
+          itms <- rItmsInCurrLyr
+          eraserProcess cid pnum geometry cidup cidmove itms (x,y)
 
 -- |
 
@@ -58,10 +59,10 @@ eraserProcess :: CanvasId
               -> PageNum 
               -> CanvasGeometry
               -> ConnectId DrawingArea -> ConnectId DrawingArea 
-              -> [StrokeBBox] 
+              -> [RItem] -- [StrokeBBox] 
               -> (Double,Double)
               -> MainCoroutine () 
-eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do 
+eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do 
     r <- nextevent 
     xst <- get
     boxAction (f r xst) . getCanvasInfo cid $ xst 
@@ -69,13 +70,13 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
     f :: (ViewMode a) => MyEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                                  (moveact xstate cvsInfo) upact
-    defact = eraserProcess cid pnum geometry connidup connidmove strs (x0,y0)
+    defact = eraserProcess cid pnum geometry connidup connidmove itms (x0,y0)
     upact _ = disconnect connidmove >> disconnect connidup >> invalidateAll
     moveact xstate cvsInfo (_pcoord,(x,y)) = do 
       let line = ((x0,y0),(x,y))
-          hittestbbox = hltStrksHittedByLineRough line strs   
-          (hitteststroke,hitState) = 
-            St.runState (hitTestStrokes line hittestbbox) False
+          hittestbbox = hltHittedByLineRough line itms
+          (hittestitem,hitState) = 
+            St.runState (hltItmsHittedByLineFrmSelected_StateT line hittestbbox) False
       if hitState 
         then do 
           page <- getCurrentPageCvsId cid 
@@ -83,17 +84,17 @@ eraserProcess cid pnum geometry connidmove connidup strs (x0,y0) = do
               pgnum       = view currentPageNum cvsInfo
               (mcurrlayer, currpage) = getCurrentLayerOrSet page
               currlayer = maybe (error "eraserProcess") id mcurrlayer
-          let (newstrokes,maybebbox1) = St.runState (eraseHitted hitteststroke) Nothing
+          let (newitms,maybebbox1) = St.runState (eraseHitted hittestitem) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf maybebbox 
-                          . set gstrokes newstrokes $ currlayer 
+                          . set gitems newitms $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
               newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
               newhdlmodst = ViewAppendState newhdlbbox
           commit . set hoodleModeState newhdlmodst 
             =<< (liftIO (updatePageAll newhdlmodst xstate))
           invalidateWithBuf cid 
-          newstrs <- getAllStrokeBBoxInCurrentLayer
-          eraserProcess cid pnum geometry connidup connidmove newstrs (x,y)
-        else eraserProcess cid pnum geometry connidmove connidup strs (x,y) 
+          nitms <- rItmsInCurrLyr
+          eraserProcess cid pnum geometry connidup connidmove nitms (x,y)
+        else eraserProcess cid pnum geometry connidmove connidup itms (x,y) 
             

@@ -72,3 +72,10 @@ newtype TEitherAlterHitted a =
           }
 
 
+-- |
+takeHitted :: AlterList [a] (Hitted a) -> [a] 
+takeHitted = concatMap unHitted . getB 
+
+-- |
+isAnyHitted :: AlterList [a] (Hitted a) -> Bool 
+isAnyHitted = not . null . takeHitted

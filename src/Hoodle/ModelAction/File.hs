@@ -56,14 +56,6 @@ getFileContent (Just fname) xstate = do
           Done _ h -> constructNewHoodleStateFromHoodle h xstate 
                       >>= return . set currFileName (Just fname)
           _ -> print r >> return xstate 
-               
-{-        PC.parseHoodleFile fname >>= \x -> case x of  
-          Left str -> do
-            putStrLn $ "file reading error : " ++ str 
-            return xstate 
-          Right hdlcontent -> do 
-            nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
-            return $ set currFileName (Just fname) nxstate -}
       else if ext == ".xoj" 
         then do 
           XP.parseXojFile fname >>= \x -> case x of  
@@ -83,8 +75,8 @@ getFileContent Nothing xstate = do
                   $ xstate 
     return xstate' 
                   
+
 -- |
-    
 constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 
 constructNewHoodleStateFromHoodle hdl' xstate = do 
     hdl <- cnstrctRHoodle hdl'
@@ -92,7 +84,6 @@ constructNewHoodleStateFromHoodle hdl' xstate = do
     return $ set hoodleModeState startinghoodleModeState xstate
 
 -- | 
-
 makeNewHoodleWithPDF :: FilePath -> IO (Maybe Hoodle)
 makeNewHoodleWithPDF fp = do 
 #ifdef POPPLER

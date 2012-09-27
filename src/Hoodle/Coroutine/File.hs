@@ -16,27 +16,33 @@ module Hoodle.Coroutine.File where
 
 -- from other packages
 import           Control.Category
-import           Control.Monad.State
-import           Data.ByteString.Char8 as B (pack)
-import qualified Data.ByteString.Lazy as L
 import           Control.Lens
+import           Control.Monad.State
+import           Data.ByteString.Char8 as B (pack,unpack)
+import qualified Data.ByteString.Lazy as L
+import qualified Data.IntMap as IM
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.FilePath
 -- from hoodle-platform
+import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.ModelAction.File
+import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
+import          Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.HoodleState
 --
@@ -220,7 +226,57 @@ fileAnnotatePDF = do
               invalidateAll  
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
-      _ -> error "??? in fileOpen " 
+      _ -> error "??? in fileAnnoPDF " 
+    return ()
+
+
+-- | 
+fileLoadImage :: MainCoroutine ()
+fileLoadImage = do 
+    xstate <- get
+    cwd <- liftIO getCurrentDirectory
+    dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
+                                            FileChooserActionOpen 
+                                            [ ("OK", ResponseOk) 
+                                            , ("Cancel", ResponseCancel) ]
+    liftIO $ fileChooserSetCurrentFolder dialog cwd
+    res <- liftIO $ dialogRun dialog
+    case res of 
+      ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
+      ResponseOk ->  do
+        mfilename <- liftIO $ fileChooserGetFilename dialog 
+        case mfilename of 
+          Nothing -> return () 
+          Just filename -> do 
+            liftIO $ putStrLn filename 
+            let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+                hdl = getHoodle xstate 
+                (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+                currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
+            newitem <- (liftIO . cnstrctRItem . ItemImage) 
+                         (Image (B.pack filename) (100,100) (Dim 300 300))
+            newlayerbbox <- liftIO 
+                            . updateLayerBuf (Just (getBBox newitem))
+                            . over gitems (++[newitem]) 
+                            $ currlayer
+            let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+                newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
+            let xstateNew = set hoodleModeState (ViewAppendState newhdlbbox) xstate
+            put xstateNew 
+            invalidateAll 
+              
+              
+{-            mhdl <- liftIO $ makeNewHoodleWithPDF filename 
+            flip (maybe (return ())) mhdl $ \hdl -> do 
+              xstateNew <- return . set currFileName Nothing 
+                           =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
+              commit xstateNew 
+              liftIO $ setTitleFromFileName xstateNew             
+              invalidateAll  -}
+              
+        liftIO $ widgetDestroy dialog
+      ResponseCancel -> liftIO $ widgetDestroy dialog
+      _ -> error "??? in fileLoadImage " 
     return ()
 
 

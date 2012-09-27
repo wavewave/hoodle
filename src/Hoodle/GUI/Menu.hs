@@ -61,6 +61,7 @@ uiDecl = [verbatim|<ui>
     <menu action="FMA">
        <menuitem action="NEWA" />
        <menuitem action="ANNPDFA" /> 
+       <menuitem action="LDIMGA" />
        <menuitem action="OPENA" />                        
        <menuitem action="SAVEA" />                        
        <menuitem action="SAVEASA" />                        
@@ -394,6 +395,7 @@ getMenuUI evar = do
   -- file menu
   newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (justMenu MenuNew)
   annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDF" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
+  ldimga <- actionNewAndRegister "LDIMGA" "Load Image" (Just "Just a Stub") Nothing (justMenu MenuLoadImage)
   opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)
   savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (justMenu MenuSave)
   saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (justMenu MenuSaveAs)
@@ -510,7 +512,7 @@ getMenuUI evar = do
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   -- actionGroupAddActionWithAccel agr undoa (Just "<control>z")   
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
-        [ newa, annpdfa, opena, savea, saveasa, recenta, printa, exporta, quita
+        [ newa, annpdfa, ldimga, opena, savea, saveasa, recenta, printa, exporta, quita
         {- , netcopya, netpastea -}
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera

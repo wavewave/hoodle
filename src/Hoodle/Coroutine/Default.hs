@@ -270,6 +270,7 @@ menuEventProcess MenuNewPageAfter = newPage PageAfter
 menuEventProcess MenuDeletePage = deleteCurrentPage
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
+menuEventProcess MenuLoadImage = fileLoadImage
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen

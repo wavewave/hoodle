@@ -52,6 +52,7 @@ data MyEvent = Initialized
 
 data MenuEvent = MenuNew 
                | MenuAnnotatePDF
+               | MenuLoadImage
                | MenuOpen 
                | MenuSave
                | MenuSaveAs

@@ -24,6 +24,10 @@ import Data.Hoodle.Simple
 data RItem = RItemStroke StrokeBBox 
            | RItemImage ImageBBox (Maybe Surface)
 
+instance BBoxable RItem where
+  getBBox (RItemStroke strk) = getBBox strk
+  getBBox (RItemImage img _) = getBBox img 
+
 -- | 
 isStrkInRItem :: RItem -> Bool 
 isStrkInRItem (RItemStroke _) = True

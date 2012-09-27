@@ -133,6 +133,29 @@ hltItmsHittedByLineRough (p1,p2) = hltItmsFilteredBy boxhittest
                        || isPointInBBox (rItemBBox s) p2
 
 
+-- |
+hltItmsHittedByLine_StateT :: ((Double,Double),(Double,Double))
+                           -> [RItem]
+                           -> State Bool RItemHitted
+                              -- (AlterList (NotHitted RItem) (Hitted RItem))
+hltItmsHittedByLine_StateT line = hltItmsFilteredBy_StateT test  
+  where test (RItemStroke strk) = (doesLineHitStrk line . strkbbx_strk) strk
+        test _ = False 
+  
+
+
+-- |
+hltItmsHittedByLineFrmSelected_StateT :: 
+  ((Double,Double),(Double,Double))
+  -> RItemHitted -- AlterList (NotHitted RItem) (Hitted RItem)
+  -> State Bool (AlterList (NotHitted RItem) RItemHitted)
+hltItmsHittedByLineFrmSelected_StateT _ Empty 
+  = error "something is wrong, invariant broken"
+hltItmsHittedByLineFrmSelected_StateT _ (n:-Empty) = return (n:-Empty)
+hltItmsHittedByLineFrmSelected_StateT line (n:-h:-rest) = do 
+  h' <- hltItmsHittedByLine_StateT line (unHitted h)
+  (n:-) . (h':-) <$> hltItmsHittedByLineFrmSelected_StateT line rest
+
 
 
 ---------------------------------------------

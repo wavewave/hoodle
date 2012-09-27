@@ -15,6 +15,8 @@
 module Graphics.Hoodle.Render.Type.HitTest where
 
 import Data.Hoodle.BBox
+-- 
+import Graphics.Hoodle.Render.Type.Item 
 --
 import Prelude hiding (fst,snd)
 
@@ -34,6 +36,9 @@ newtype Hitted a = Hitted { unHitted :: [a] }
 
 -- | 
 type StrokeHitted = AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) 
+
+-- | 
+type RItemHitted = AlterList (NotHitted RItem) (Hitted RItem) 
 
 -- | 
 fmapAL :: (a -> c) -> (b -> d) -> AlterList a b -> AlterList c d

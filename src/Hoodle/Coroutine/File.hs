@@ -122,6 +122,20 @@ fileSave = do
              S.afterSaveHook hdl
            else fileExtensionInvalid >> fileSaveAs 
 
+-- | 
+fileLoad :: FilePath -> MainCoroutine () 
+fileLoad filename = do
+    xstate <- get 
+    xstate' <- liftIO $ getFileContent (Just filename) xstate
+    ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
+    xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
+    put . set isSaved True 
+      $ xstateNew 
+    liftIO $ setTitleFromFileName xstateNew  
+    clearUndoHistory 
+    invalidateAll 
+
+
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
@@ -138,7 +152,8 @@ fileOpen = do
         mfilename <- liftIO $ fileChooserGetFilename dialog 
         case mfilename of 
           Nothing -> return () 
-          Just filename -> do 
+          Just filename -> fileLoad filename 
+                           {- do 
             xstate <- get 
             xstate' <- liftIO $ getFileContent (Just filename) xstate
             ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
@@ -147,7 +162,7 @@ fileOpen = do
                   $ xstateNew 
             liftIO $ setTitleFromFileName xstateNew  
             clearUndoHistory 
-            invalidateAll 
+            invalidateAll -}
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileOpen " 
@@ -217,6 +232,13 @@ fileReload = do
       Just filename -> do
         if not (view isSaved xstate) 
           then do
+            b <- okCancelMessageBox "Discard changes and reload the file?" 
+            case b of 
+              True -> fileLoad filename 
+              False -> return ()
+          else fileLoad filename
+{-           
+          then do
             dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
               MessageQuestion ButtonsOkCancel 
               "Discard changes and reload the file?" 
@@ -225,17 +247,7 @@ fileReload = do
               ResponseOk -> (liftIO (widgetDestroy dialog)) >> action filename 
               _ -> liftIO $ widgetDestroy dialog
             return () 
-          else action filename 
-  where action filename = do          
-          xstate <- get 
-          xstate' <- liftIO $ getFileContent (Just filename) xstate
-          ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
-          xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
-          put . set isSaved True 
-            $ xstateNew 
-          liftIO $ setTitleFromFileName xstateNew  
-          clearUndoHistory 
-          invalidateAll 
+          else action filename -}
 
 -- | 
 fileExtensionInvalid :: MainCoroutine ()

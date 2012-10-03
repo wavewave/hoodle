@@ -25,6 +25,8 @@ import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.FilePath
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn.Event
+import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
@@ -42,18 +44,44 @@ import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
-import          Hoodle.Type.Canvas
+import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 --
 import Prelude hiding ((.),id)
+
+-- | 
+okCancelMessageBox :: String -> MainCoroutine Bool 
+okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go 
+  where 
+    action = Left . ActionOrder $ 
+               \evhandler -> do 
+                 dialog <- messageDialogNew Nothing [DialogModal]
+                   MessageQuestion ButtonsOkCancel msg 
+                 res <- dialogRun dialog 
+                 let b = case res of 
+                           ResponseOk -> True
+                           _ -> False
+                 widgetDestroy dialog 
+                 return (OkCancelResult b)
+    go = do r <- nextevent                   
+            case r of 
+              OkCancelResult b -> return b  
+              _ -> go 
 
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
     xstate <- get 
     if not (view isSaved xstate)
-      then do 
+      then do  
+        b <- okCancelMessageBox "Current canvas is not saved yet. Will you proceed without save?" 
+        case b of 
+          True -> action 
+          False -> return () 
+      else action 
+{-      then do 
         dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
           MessageQuestion ButtonsOkCancel 
           "Current canvas is not saved yet. Will you proceed without save?" 
@@ -63,7 +91,7 @@ askIfSave action = do
                            action
           _ -> do liftIO $ widgetDestroy dialog
         return () 
-      else action  
+      else action  -}
 
 -- | 
 fileNew :: MainCoroutine () 
@@ -86,10 +114,6 @@ fileSave = do
         -- this is rather temporary not to make mistake 
         if takeExtension filename == ".hdl" 
           then do 
-             {- let hdlmodst = view hoodleModeState xstate
-             let hdl = case hdlmodst of 
-                   ViewAppendState hdlmap -> Hoodle <$> view gtitle <*> toList . fmap (toPageFromBuf gToBackground) . view gpages $ hdlmap 
-                   SelectState thdl -> Hoodle <$> gselTitle <*> toList . fmap (toPageFromBuf gToBackground) . gselAll $ thdl  -}
              let hdl = (rHoodle2Hoodle . getHoodle) xstate 
              liftIO . L.writeFile filename . builder $ hdl
              put . set isSaved True $ xstate 
@@ -133,11 +157,7 @@ fileOpen = do
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
     xstate <- get 
-    -- let hdlmodst = view hoodleModeState xstate
     let hdl = (rHoodle2Hoodle . getHoodle) xstate
-    {-     case hdlmodst of 
-          ViewAppendState hdlmap -> gcast hdlmap
-          SelectState thdl -> gcast thdl -}
     maybe (defSaveAsAction xstate hdl) (\f -> liftIO (f hdl))
           (hookSaveAsAction xstate) 
   where 
@@ -216,8 +236,6 @@ fileReload = do
           liftIO $ setTitleFromFileName xstateNew  
           clearUndoHistory 
           invalidateAll 
-
-
 
 -- | 
 fileExtensionInvalid :: MainCoroutine ()

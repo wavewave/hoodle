@@ -46,10 +46,10 @@ data MyEvent = Initialized
              | Menu MenuEvent 
              | GotClipboardContent (Maybe [Item])
              | ActionOrdered
+             | OkCancelResult Bool 
              deriving (Show,Eq,Ord)
 
 -- | 
-
 data MenuEvent = MenuNew 
                | MenuAnnotatePDF
                | MenuLoadImage

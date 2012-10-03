@@ -64,11 +64,35 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go
                            ResponseOk -> True
                            _ -> False
                  widgetDestroy dialog 
-                 return (OkCancelResult b)
+                 return (OkCancel b)
     go = do r <- nextevent                   
             case r of 
-              OkCancelResult b -> return b  
+              OkCancel b -> return b  
               _ -> go 
+
+-- | 
+fileChooser :: MainCoroutine (Maybe FilePath) 
+fileChooser = modify (tempQueue %~ enqueue action) >> go 
+  where 
+    go = do r <- nextevent                   
+            case r of 
+              FileChosen b -> return b  
+              _ -> go 
+    action = Left . ActionOrder $ \evhandler -> do 
+      dialog <- fileChooserDialogNew Nothing Nothing 
+                  FileChooserActionOpen 
+                  [ ("OK", ResponseOk) 
+                  , ("Cancel", ResponseCancel) ]
+      cwd <- getCurrentDirectory                  
+      fileChooserSetCurrentFolder dialog cwd 
+      res <- dialogRun dialog
+      mr <- case res of 
+              ResponseDeleteEvent -> return Nothing
+              ResponseOk ->  fileChooserGetFilename dialog 
+              ResponseCancel -> return Nothing 
+              _ -> putStrLn "??? in fileOpen" >> return Nothing 
+      widgetDestroy dialog
+      return (FileChosen mr)
 
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
@@ -81,17 +105,6 @@ askIfSave action = do
           True -> action 
           False -> return () 
       else action 
-{-      then do 
-        dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
-          MessageQuestion ButtonsOkCancel 
-          "Current canvas is not saved yet. Will you proceed without save?" 
-        res <- liftIO $ dialogRun dialog
-        case res of
-          ResponseOk -> do liftIO $ widgetDestroy dialog
-                           action
-          _ -> do liftIO $ widgetDestroy dialog
-        return () 
-      else action  -}
 
 -- | 
 fileNew :: MainCoroutine () 
@@ -139,7 +152,11 @@ fileLoad filename = do
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
-    cwd <- liftIO getCurrentDirectory
+  mfilename <- fileChooser 
+  case mfilename of 
+    Nothing -> return ()
+    Just filename -> fileLoad filename 
+{-    cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
@@ -153,20 +170,10 @@ fileOpen = do
         case mfilename of 
           Nothing -> return () 
           Just filename -> fileLoad filename 
-                           {- do 
-            xstate <- get 
-            xstate' <- liftIO $ getFileContent (Just filename) xstate
-            ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
-            xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
-            put . set isSaved True 
-                  $ xstateNew 
-            liftIO $ setTitleFromFileName xstateNew  
-            clearUndoHistory 
-            invalidateAll -}
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileOpen " 
-    return ()
+    return () -}
 
 -- | main coroutine for save as 
 fileSaveAs :: MainCoroutine () 
@@ -237,17 +244,6 @@ fileReload = do
               True -> fileLoad filename 
               False -> return ()
           else fileLoad filename
-{-           
-          then do
-            dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
-              MessageQuestion ButtonsOkCancel 
-              "Discard changes and reload the file?" 
-            res <- liftIO $ dialogRun dialog
-            case res of
-              ResponseOk -> (liftIO (widgetDestroy dialog)) >> action filename 
-              _ -> liftIO $ widgetDestroy dialog
-            return () 
-          else action filename -}
 
 -- | 
 fileExtensionInvalid :: MainCoroutine ()

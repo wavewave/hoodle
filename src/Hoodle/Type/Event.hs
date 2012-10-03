@@ -46,8 +46,10 @@ data MyEvent = Initialized
              | Menu MenuEvent 
              | GotClipboardContent (Maybe [Item])
              | ActionOrdered
-             | OkCancelResult Bool 
+             | OkCancel Bool 
+             | FileChosen (Maybe FilePath)
              deriving (Show,Eq,Ord)
+
 
 -- | 
 data MenuEvent = MenuNew 

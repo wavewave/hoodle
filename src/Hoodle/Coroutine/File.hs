@@ -266,13 +266,7 @@ fileLoadImage = do
       newitem <- (liftIO . cnstrctRItem . ItemImage) 
                  (Image (B.pack filename) (100,100) (Dim 300 300))
       let otheritems = view gitems currlayer  
-      -- newlayerbbox <- liftIO 
-      --                . updateLayerBuf (Just (getBBox newitem))
-      --                 . over gitems (++[newitem]) 
-      --                $ currlayer
-      let ntpg = makePageSelectMode currpage ([] :- (Hitted [newitem]) :- otheritems :- Empty) -- TAlterHitted RItem = AlterList [a] (Hitted a) 
-      --  let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-          -- newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
+      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
       nxstate <- get 
       let thdl = case view hoodleModeState nxstate of

@@ -236,20 +236,6 @@ defaultEventProcess ev = -- for debugging
                                liftIO $ putStrLn "------------------"
                                return () 
 
--- |
-askQuitProgram :: MainCoroutine () 
-askQuitProgram = do 
-  dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
-                       MessageQuestion ButtonsOkCancel 
-                       "Current canvas is not saved yet. Will you close hoodle?" 
-  res <- liftIO $ dialogRun dialog
-  case res of
-    ResponseOk -> do 
-      liftIO $ widgetDestroy dialog
-      liftIO $ mainQuit
-    _ -> do 
-      liftIO $ widgetDestroy dialog
-      return ()
 
 -- |
 menuEventProcess :: MenuEvent -> MainCoroutine () 

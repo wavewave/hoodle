@@ -51,6 +51,22 @@ import           Hoodle.Type.HoodleState
 --
 import Prelude hiding ((.),id)
 
+-- |
+okMessageBox :: String -> MainCoroutine () 
+okMessageBox msg = modify (tempQueue %~ enqueue action) >> go 
+  where 
+    go = do r <- nextevent                   
+            case r of 
+              GotOk -> return ()  
+              _ -> go 
+    action = Left . ActionOrder $ 
+               \evhandler -> do 
+                 dialog <- messageDialogNew Nothing [DialogModal]
+                   MessageQuestion ButtonsOk msg 
+                 _res <- dialogRun dialog 
+                 widgetDestroy dialog 
+                 return GotOk 
+
 -- | 
 okCancelMessageBox :: String -> MainCoroutine Bool 
 okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go 
@@ -71,8 +87,8 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go
               _ -> go 
 
 -- | 
-fileChooser :: MainCoroutine (Maybe FilePath) 
-fileChooser = modify (tempQueue %~ enqueue action) >> go 
+fileChooser :: FileChooserAction -> MainCoroutine (Maybe FilePath) 
+fileChooser choosertyp = modify (tempQueue %~ enqueue action) >> go 
   where 
     go = do r <- nextevent                   
             case r of 
@@ -80,7 +96,7 @@ fileChooser = modify (tempQueue %~ enqueue action) >> go
               _ -> go 
     action = Left . ActionOrder $ \evhandler -> do 
       dialog <- fileChooserDialogNew Nothing Nothing 
-                  FileChooserActionOpen 
+                  choosertyp -- FileChooserActionOpen 
                   [ ("OK", ResponseOk) 
                   , ("Cancel", ResponseCancel) ]
       cwd <- getCurrentDirectory                  
@@ -152,7 +168,7 @@ fileLoad filename = do
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
-  mfilename <- fileChooser 
+  mfilename <- fileChooser FileChooserActionOpen
   case mfilename of 
     Nothing -> return ()
     Just filename -> fileLoad filename 
@@ -186,8 +202,36 @@ fileSaveAs = do
     hookSaveAsAction xstate = do 
       hset <- view hookSet xstate
       saveAsHook hset
-    defSaveAsAction xstate hdl = do 
-      cwd <- liftIO getCurrentDirectory
+    defSaveAsAction xstate hdl = 
+        fileChooser FileChooserActionSave 
+        >>= maybe (return ()) (action xstate hdl) 
+      where action xstate hdl filename = 
+              if takeExtension filename == ".hdl" 
+              then do 
+                let ntitle = B.pack . snd . splitFileName $ filename 
+                    (hdlmodst',hdl') = case view hoodleModeState xstate of
+                       ViewAppendState hdlmap -> 
+                         if view gtitle hdlmap == "untitled"
+                           then ( ViewAppendState . set gtitle ntitle
+                                  $ hdlmap
+                                , (set title ntitle hdl))
+                           else (ViewAppendState hdlmap,hdl)
+                       SelectState thdl -> 
+                         if view gselTitle thdl == "untitled"
+                           then ( SelectState $ set gselTitle ntitle thdl 
+                                , set title ntitle hdl)  
+                           else (SelectState thdl,hdl)
+                    xstateNew = set currFileName (Just filename) 
+                              . set hoodleModeState hdlmodst' $ xstate 
+                liftIO . L.writeFile filename . builder $ hdl'
+                put . set isSaved True $ xstateNew    
+                let ui = view gtkUIManager xstateNew
+                liftIO $ toggleSave ui False
+                liftIO $ setTitleFromFileName xstateNew 
+                S.afterSaveHook hdl'
+              else fileExtensionInvalid
+          
+{-      cwd <- liftIO getCurrentDirectory
       dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                               FileChooserActionSave 
                                               [ ("OK", ResponseOk) 
@@ -228,7 +272,7 @@ fileSaveAs = do
           liftIO $ widgetDestroy dialog
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileSaveAs"
-      return ()
+      return () -}
 
 -- | main coroutine for open a file 
 fileReload :: MainCoroutine ()
@@ -247,20 +291,33 @@ fileReload = do
 
 -- | 
 fileExtensionInvalid :: MainCoroutine ()
-fileExtensionInvalid = do 
-    dialog <- liftIO $ messageDialogNew Nothing [DialogModal]
+fileExtensionInvalid = okMessageBox "only .hdl extension is supported for save"
+    
+{-
+dialog <- liftIO $ messageDialogNew Nothing [DialogModal]
                          MessageQuestion ButtonsOk
-                         "only .hdl extension is supported for save"
+
     _res <- liftIO $ dialogRun dialog
     liftIO $ widgetDestroy dialog
-
+-}
 
 
 -- | 
 fileAnnotatePDF :: MainCoroutine ()
-fileAnnotatePDF = do 
-    xstate <- get
-    cwd <- liftIO getCurrentDirectory
+fileAnnotatePDF = 
+    fileChooser FileChooserActionOpen >>= maybe (return ()) action 
+  where 
+    action filename = do  
+      xstate <- get 
+      mhdl <- liftIO $ makeNewHoodleWithPDF filename 
+      flip (maybe (return ())) mhdl $ \hdl -> do 
+        xstateNew <- return . set currFileName Nothing 
+                     =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
+        commit xstateNew 
+        liftIO $ setTitleFromFileName xstateNew             
+        invalidateAll  
+      
+{-    cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
                                             [ ("OK", ResponseOk) 
@@ -284,13 +341,34 @@ fileAnnotatePDF = do
         liftIO $ widgetDestroy dialog
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileAnnoPDF " 
-    return ()
+    return () -}
 
 
 -- | 
 fileLoadImage :: MainCoroutine ()
 fileLoadImage = do 
-    xstate <- get
+    fileChooser FileChooserActionOpen >>= maybe (return ()) action 
+  where 
+    action filename = do  
+      xstate <- get 
+      liftIO $ putStrLn filename 
+      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+          hdl = getHoodle xstate 
+          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+          currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
+      newitem <- (liftIO . cnstrctRItem . ItemImage) 
+                 (Image (B.pack filename) (100,100) (Dim 300 300))
+      newlayerbbox <- liftIO 
+                      . updateLayerBuf (Just (getBBox newitem))
+                      . over gitems (++[newitem]) 
+                      $ currlayer
+      let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+          newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
+          xstateNew = set hoodleModeState (ViewAppendState newhdlbbox) xstate
+      put xstateNew 
+      invalidateAll 
+
+{-    xstate <- get
     cwd <- liftIO getCurrentDirectory
     dialog <- liftIO $ fileChooserDialogNew Nothing Nothing 
                                             FileChooserActionOpen 
@@ -325,7 +403,29 @@ fileLoadImage = do
       ResponseCancel -> liftIO $ widgetDestroy dialog
       _ -> error "??? in fileLoadImage " 
     return ()
+-}
 
 
+-- |
+askQuitProgram :: MainCoroutine () 
+askQuitProgram = do 
+    b <- okCancelMessageBox "Current canvas is not saved yet. Will you close hoodle?" 
+    case b of 
+      True -> liftIO mainQuit
+      False -> return ()
+  
+{-  
+  dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
+                       MessageQuestion ButtonsOkCancel 
+                       "Current canvas is not saved yet. Will you close hoodle?" 
+  res <- liftIO $ dialogRun dialog
+  case res of
+    ResponseOk -> do 
+      liftIO $ widgetDestroy dialog
+      liftIO $ mainQuit
+    _ -> do 
+      liftIO $ widgetDestroy dialog
+      return ()
 
+-}
 

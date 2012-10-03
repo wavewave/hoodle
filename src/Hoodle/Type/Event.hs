@@ -44,10 +44,11 @@ data MyEvent = Initialized
              | ToSinglePage
              | ToContSinglePage
              | Menu MenuEvent 
-             | GotClipboardContent (Maybe [Item])
              | ActionOrdered
+             | GotOk
              | OkCancel Bool 
              | FileChosen (Maybe FilePath)
+             | GotClipboardContent (Maybe [Item])
              deriving (Show,Eq,Ord)
 
 

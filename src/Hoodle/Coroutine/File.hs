@@ -21,6 +21,7 @@ import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.IntMap as IM
+import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.FilePath
@@ -151,7 +152,37 @@ fileSave = do
              let ui = view gtkUIManager xstate
              liftIO $ toggleSave ui False
              S.afterSaveHook hdl
-           else fileExtensionInvalid >> fileSaveAs 
+           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
+
+
+-- | interleaving a monadic action between each pair of subsequent actions
+sequence1_ :: (Monad m) => m () -> [m ()] -> m () 
+sequence1_ _ []  = return () 
+sequence1_ _ [a] = a 
+sequence1_ i (a:as) = a >> i >> sequence1_ i as 
+
+-- | 
+renderjob :: Hoodle -> FilePath -> IO () 
+renderjob h ofp = do 
+  let p = head (hoodle_pages h) 
+  let Dim width height = page_dim p  
+  withPDFSurface ofp width height $ \s -> renderWith s $  
+    (sequence1_ showPage . map renderPage . hoodle_pages) h 
+
+
+-- | 
+fileExport :: MainCoroutine ()
+fileExport = fileChooser FileChooserActionSave >>= maybe (return ()) action 
+  where 
+    action filename = 
+      -- this is rather temporary not to make mistake 
+      if takeExtension filename /= ".pdf" 
+      then fileExtensionInvalid (".pdf","export") >> fileExport 
+      else do      
+        xstate <- get 
+        let hdl = (rHoodle2Hoodle . getHoodle) xstate 
+        liftIO (renderjob hdl filename) 
+
 
 -- | 
 fileLoad :: FilePath -> MainCoroutine () 
@@ -190,8 +221,9 @@ fileSaveAs = do
         fileChooser FileChooserActionSave 
         >>= maybe (return ()) (action xstate hdl) 
       where action xstate hdl filename = 
-              if takeExtension filename == ".hdl" 
-              then do 
+              if takeExtension filename /= ".hdl" 
+              then fileExtensionInvalid (".hdl","save")
+              else do 
                 let ntitle = B.pack . snd . splitFileName $ filename 
                     (hdlmodst',hdl') = case view hoodleModeState xstate of
                        ViewAppendState hdlmap -> 
@@ -213,7 +245,6 @@ fileSaveAs = do
                 liftIO $ toggleSave ui False
                 liftIO $ setTitleFromFileName xstateNew 
                 S.afterSaveHook hdl'
-              else fileExtensionInvalid
           
 
 -- | main coroutine for open a file 
@@ -232,8 +263,12 @@ fileReload = do
           else fileLoad filename
 
 -- | 
-fileExtensionInvalid :: MainCoroutine ()
-fileExtensionInvalid = okMessageBox "only .hdl extension is supported for save"
+fileExtensionInvalid :: (String,String) -> MainCoroutine ()
+fileExtensionInvalid (ext,act) = 
+  okMessageBox $ "only " 
+                 ++ ext 
+                 ++ " extension is supported for " 
+                 ++ act 
     
 -- | 
 fileAnnotatePDF :: MainCoroutine ()

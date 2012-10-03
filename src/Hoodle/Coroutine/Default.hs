@@ -264,6 +264,7 @@ menuEventProcess MenuOpen = askIfSave fileOpen
 menuEventProcess MenuSave = fileSave 
 menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuReload = fileReload 
+menuEventProcess MenuExport = fileExport 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
 menuEventProcess MenuPaste = pasteToSelection

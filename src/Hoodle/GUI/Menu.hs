@@ -543,7 +543,7 @@ getMenuUI evar = do
   actionGroupAddRadioActions agr colormods 0 (assignColor evar) 
  
   let disabledActions = 
-        [ recenta, printa, exporta
+        [ recenta, printa {- , exporta-}
         , cuta, copya, {- pastea, -} deletea
         , fscra,  setzma
         , shwlayera, hidlayera

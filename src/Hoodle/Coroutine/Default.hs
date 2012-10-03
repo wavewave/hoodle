@@ -26,6 +26,7 @@ import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 -- import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Driver
+import           Control.Monad.Trans.Crtn.EventHandler 
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Data.Hoodle.Select
@@ -33,7 +34,7 @@ import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 -- from this package
 import           Hoodle.Accessor
-import           Hoodle.Coroutine.Callback
+-- import           Hoodle.Coroutine.Callback
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
@@ -74,7 +75,7 @@ initCoroutine devlst window mfname mhook maxundo  = do
   putMVar evar Nothing 
   let st0new = set deviceList devlst  
             . set rootOfRootWindow window 
-            . set callBack (bouncecallback evar) 
+            . set callBack (eventHandler evar) 
             $ emptyHoodleState 
   ui <- getMenuUI evar    
   putStrLn "hi"  

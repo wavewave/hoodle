@@ -21,10 +21,12 @@ import           Control.Monad.Trans
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
+-- 
+import           Control.Monad.Trans.Crtn.EventHandler 
 -- from this package
 import           Hoodle.Config 
 import           Hoodle.Coroutine
-import           Hoodle.Coroutine.Callback
+-- import           Hoodle.Coroutine.Callback
 import           Hoodle.Device
 import           Hoodle.ModelAction.Window
 import           Hoodle.Script.Hook
@@ -77,10 +79,10 @@ startGUI mfname mhook = do
   boxPackEnd vbox (view rootWindow st0) PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
   window `on` deleteEvent $ do
-    liftIO $ bouncecallback tref (Menu MenuQuit)
+    liftIO $ eventHandler tref (Menu MenuQuit)
     return True
   widgetShowAll window
-  bouncecallback tref Initialized     
+  eventHandler tref Initialized     
   mainGUI 
   return ()
   

@@ -23,9 +23,10 @@ import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
 -- from hoodle-platform 
+import           Control.Monad.Trans.Crtn.EventHandler
 import           Data.Hoodle.Predefined 
 -- from this package
-import           Hoodle.Coroutine.Callback
+-- import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
 import           Hoodle.Type.Clipboard
 import           Hoodle.Util.Verbatim
@@ -372,7 +373,7 @@ actionNewAndRegisterRef evar name label tooltip stockId myevent = do
       Nothing -> return a 
       Just ev -> do 
         a `on` actionActivated $ do 
-          bouncecallback evar ev
+          eventHandler evar ev
         return a
 
 -- | 
@@ -476,13 +477,13 @@ getMenuUI evar = do
   -- options menu 
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
-    bouncecallback evar (Menu MenuUseXInput)
+    eventHandler evar (Menu MenuUseXInput)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
-    bouncecallback evar (Menu MenuPressureSensitivity)
+    eventHandler evar (Menu MenuPressureSensitivity)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
 
   
@@ -591,13 +592,13 @@ getMenuUI evar = do
 
 -- | 
 assignViewMode :: EventVar -> RadioAction -> IO ()
-assignViewMode evar a = viewModeToMyEvent a >>= bouncecallback evar
+assignViewMode evar a = viewModeToMyEvent a >>= eventHandler evar
     
 -- | 
 assignPenMode :: EventVar -> RadioAction -> IO ()
 assignPenMode evar a = do 
     v <- radioActionGetCurrentValue a
-    bouncecallback evar (AssignPenMode (int2PenType v))
+    eventHandler evar (AssignPenMode (int2PenType v))
 
       
 -- | 
@@ -605,13 +606,13 @@ assignColor :: EventVar -> RadioAction -> IO ()
 assignColor evar a = do 
     v <- radioActionGetCurrentValue a
     let c = int2Color v
-    bouncecallback evar (PenColorChanged c)
+    eventHandler evar (PenColorChanged c)
 
 -- | 
 assignPoint :: EventVar -> RadioAction -> IO ()  
 assignPoint evar a = do 
     v <- radioActionGetCurrentValue a
-    bouncecallback evar (PenWidthChanged v)
+    eventHandler evar (PenWidthChanged v)
 
 -- | 
 int2PenType :: Int -> Either PenType SelectType 

@@ -92,7 +92,6 @@ Library
                    Hoodle.Accessor
                    Hoodle.Config
                    Hoodle.Coroutine
-                   Hoodle.Coroutine.Callback
                    Hoodle.Coroutine.Commit
                    Hoodle.Coroutine.Default
                    Hoodle.Coroutine.Draw

@@ -276,6 +276,7 @@ menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen
 menuEventProcess MenuSave = fileSave 
 menuEventProcess MenuSaveAs = fileSaveAs
+menuEventProcess MenuReload = fileReload 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
 menuEventProcess MenuPaste = pasteToSelection

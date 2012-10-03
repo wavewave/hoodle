@@ -65,7 +65,8 @@ uiDecl = [verbatim|<ui>
        <menuitem action="OPENA" />                        
        <menuitem action="SAVEA" />                        
        <menuitem action="SAVEASA" />                        
-       <separator />
+       <menuitem action="RELOADA" />
+       <separator /> 
        <menuitem action="RECENTA" />                        
        <separator /> 
        <menuitem action="PRINTA" />                        
@@ -399,6 +400,7 @@ getMenuUI evar = do
   opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)
   savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (justMenu MenuSave)
   saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (justMenu MenuSaveAs)
+  reloada <- actionNewAndRegister "RELOADA" "Reload File" (Just "Just a Stub") Nothing (justMenu MenuReload)
   recenta <- actionNewAndRegister "RECENTA" "Recent Document" (Just "Just a Stub") Nothing (justMenu MenuRecentDocument)
   printa  <- actionNewAndRegister "PRINTA" "Print" (Just "Just a Stub") Nothing (justMenu MenuPrint)
   exporta <- actionNewAndRegister "EXPORTA" "Export" (Just "Just a Stub") Nothing (justMenu MenuExport)
@@ -512,7 +514,7 @@ getMenuUI evar = do
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   -- actionGroupAddActionWithAccel agr undoa (Just "<control>z")   
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
-        [ newa, annpdfa, ldimga, opena, savea, saveasa, recenta, printa, exporta, quita
+        [ newa, annpdfa, ldimga, opena, savea, saveasa, reloada, recenta, printa, exporta, quita
         {- , netcopya, netpastea -}
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
@@ -556,7 +558,7 @@ getMenuUI evar = do
         , defaulta         
         ] 
       enabledActions = 
-        [ opena, savea, saveasa, quita, pastea, fstpagea, prvpagea, nxtpagea, lstpagea
+        [ opena, savea, saveasa, reloada, quita, pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha 
         ]
   --

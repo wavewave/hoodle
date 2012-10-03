@@ -188,6 +188,37 @@ fileSaveAs = do
         _ -> error "??? in fileSaveAs"
       return ()
 
+-- | main coroutine for open a file 
+fileReload :: MainCoroutine ()
+fileReload = do 
+    xstate <- get
+    case view currFileName xstate of 
+      Nothing -> return () 
+      Just filename -> do
+        if not (view isSaved xstate) 
+          then do
+            dialog <- liftIO $ messageDialogNew Nothing [DialogModal] 
+              MessageQuestion ButtonsOkCancel 
+              "Discard changes and reload the file?" 
+            res <- liftIO $ dialogRun dialog
+            case res of
+              ResponseOk -> (liftIO (widgetDestroy dialog)) >> action filename 
+              _ -> liftIO $ widgetDestroy dialog
+            return () 
+          else action filename 
+  where action filename = do          
+          xstate <- get 
+          xstate' <- liftIO $ getFileContent (Just filename) xstate
+          ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
+          xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
+          put . set isSaved True 
+            $ xstateNew 
+          liftIO $ setTitleFromFileName xstateNew  
+          clearUndoHistory 
+          invalidateAll 
+
+
+
 -- | 
 fileExtensionInvalid :: MainCoroutine ()
 fileExtensionInvalid = do 

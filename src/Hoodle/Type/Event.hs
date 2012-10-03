@@ -56,6 +56,7 @@ data MenuEvent = MenuNew
                | MenuOpen 
                | MenuSave
                | MenuSaveAs
+               | MenuReload
                | MenuRecentDocument
                | MenuPrint 
                | MenuExport 

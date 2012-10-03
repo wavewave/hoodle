@@ -49,6 +49,8 @@ data MyEvent = Initialized
              | OkCancel Bool 
              | FileChosen (Maybe FilePath)
              | GotClipboardContent (Maybe [Item])
+             -- | EventConnected
+             | EventDisconnected
              deriving (Show,Eq,Ord)
 
 

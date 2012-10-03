@@ -20,6 +20,9 @@ import Control.Category
 import Control.Lens
 import Control.Monad.State 
 -- 
+import Control.Monad.Trans.Crtn.Event
+import Control.Monad.Trans.Crtn.Queue 
+-- 
 import Hoodle.Type.Event
 import Hoodle.Type.Canvas
 import Hoodle.Type.HoodleState
@@ -30,8 +33,16 @@ import Prelude hiding ((.), id)
 
 -- |
 
-disconnect :: (WidgetClass w) => ConnectId w -> MainCoroutine () 
-disconnect = liftIO . signalDisconnect
+disconnect :: (WidgetClass w) => [ConnectId w] -> MainCoroutine () 
+disconnect is = modify (tempQueue %~ enqueue action) >> go 
+  where 
+    go = do r <- nextevent 
+            case r of
+              EventDisconnected -> return ()
+              _ -> go 
+    action = Left . ActionOrder $ 
+      \evhandler -> mapM_ signalDisconnect is >> return EventDisconnected
+--   liftIO . signalDisconnect
 
 -- |
 

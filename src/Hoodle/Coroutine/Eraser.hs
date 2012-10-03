@@ -71,7 +71,7 @@ eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                                  (moveact xstate cvsInfo) upact
     defact = eraserProcess cid pnum geometry connidup connidmove itms (x0,y0)
-    upact _ = disconnect connidmove >> disconnect connidup >> invalidateAll
+    upact _ = disconnect [connidmove,connidup] >> invalidateAll
     moveact xstate cvsInfo (_pcoord,(x,y)) = do 
       let line = ((x0,y0),(x,y))
           hittestbbox = hltHittedByLineRough line itms

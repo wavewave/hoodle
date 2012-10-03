@@ -107,7 +107,7 @@ selectRectStart cid = commonPenStart rectaction cid
                       newSelectRectangle cid pnum geometry cidmove cidup itms 
                                          (x,y) ((x,y),ctime) tsel
                       surfaceFinish (tempSurface tsel)) 
-                  (disconnect cidmove >> disconnect cidup) 
+                  (disconnect [cidmove,cidup]) 
           let 
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
@@ -199,8 +199,7 @@ newSelectRectangle cid pnum geometry connidmove connidup itms orig
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
-      disconnect connidmove
-      disconnect connidup 
+      disconnect [connidmove, connidup]
       invalidateAll 
 
 
@@ -303,8 +302,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
             return coroutineaction
       xstate2 <- maybe (return xstate1) id maction 
       commit xstate2
-      disconnect connidmove
-      disconnect connidup 
+      disconnect [connidmove, connidup]
       invalidateAll 
     ----
     ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
@@ -319,8 +317,7 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
           commit . set hoodleModeState (SelectState newthdl)
                  =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
         Left _ -> error "this is impossible, in moveSelect" 
-      disconnect connidmove
-      disconnect connidup 
+      disconnect [connidmove, connidup]
       invalidateAll 
       
 
@@ -400,8 +397,7 @@ resizeSelect handle cid pnum geometry connidmove connidup origbbox
           commit . set hoodleModeState (SelectState newthdl)
                  =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
         Left _ -> error "this is impossible, in resizeSelect" 
-      disconnect connidmove
-      disconnect connidup 
+      disconnect [connidmove, connidup]
       invalidateAll
       return ()    
 
@@ -458,7 +454,7 @@ selectLassoStart cid = commonPenStart lassoAction cid
                       newSelectLasso cinfo pnum geometry cidmove cidup itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                       surfaceFinish (tempSurface tsel))
-                  (disconnect cidmove >> disconnect cidup )
+                  (disconnect [cidmove, cidup] )
           let action (Right tpage) | hitInSelection tpage (x,y) = 
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage
               action (Right tpage) | hitInHandle tpage (x,y) = 
@@ -533,8 +529,7 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig (prev,otime) lasso 
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
-      disconnect cidmove
-      disconnect cidup 
+      disconnect [cidmove, cidup]
       invalidateAll 
 
 

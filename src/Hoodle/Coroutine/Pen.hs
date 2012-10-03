@@ -143,7 +143,7 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
            liftIO $ drawCurvebitGen pressureType canvas geometry 
                       pwidth pcolRGBA pnum ((x0,y0),z0) ((x,y),z)
            penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y,z)) ((x,y),z) )
-        (\_ -> disconnect connidmove >> disconnect connidup >> return pdraw )
+        (\_ -> disconnect [connidmove,connidup] >> return pdraw )
 
 -- | 
     

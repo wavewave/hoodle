@@ -34,13 +34,16 @@ import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
+import           Graphics.Hoodle.Render.Type.HitTest 
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Mode 
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
+import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
@@ -262,14 +265,22 @@ fileLoadImage = do
           currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
       newitem <- (liftIO . cnstrctRItem . ItemImage) 
                  (Image (B.pack filename) (100,100) (Dim 300 300))
-      newlayerbbox <- liftIO 
-                      . updateLayerBuf (Just (getBBox newitem))
-                      . over gitems (++[newitem]) 
-                      $ currlayer
-      let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
-          newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
-          xstateNew = set hoodleModeState (ViewAppendState newhdlbbox) xstate
-      put xstateNew 
+      let otheritems = view gitems currlayer  
+      -- newlayerbbox <- liftIO 
+      --                . updateLayerBuf (Just (getBBox newitem))
+      --                 . over gitems (++[newitem]) 
+      --                $ currlayer
+      let ntpg = makePageSelectMode currpage ([] :- (Hitted [newitem]) :- otheritems :- Empty) -- TAlterHitted RItem = AlterList [a] (Hitted a) 
+      --  let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+          -- newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
+      modeChange ToSelectMode 
+      nxstate <- get 
+      let thdl = case view hoodleModeState nxstate of
+                   SelectState thdl -> thdl
+                   _ -> error "fileLoadImage"
+          nthdl = set gselSelected (Just (pgnum,ntpg)) thdl 
+          nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+      put nxstate2
       invalidateAll 
 
 -- |

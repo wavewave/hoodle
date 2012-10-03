@@ -137,9 +137,9 @@ makePageSelectMode page alist =
     let (mcurrlayer,npage) = getCurrentLayerOrSet page
         clyr = maybeError "makePageSelectMode" mcurrlayer 
         nlyr= GLayer (view gbuffer clyr) (TEitherAlterHitted (Right alist))
-        tpg = mkHPage npage 
-        npg = set (glayers.selectedLayer) nlyr tpg
-    in npg 
+        -- tpg = mkHPage npage 
+        -- npg = set (glayers.selectedLayer) nlyr tpg
+    in set (glayers.selectedLayer) nlyr (mkHPage npage) 
 
 
 -- | get unselected part of page and make an ordinary page

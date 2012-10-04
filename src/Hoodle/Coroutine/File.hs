@@ -307,8 +307,13 @@ fileLoadImage = do
       let thdl = case view hoodleModeState nxstate of
                    SelectState thdl -> thdl
                    _ -> error "fileLoadImage"
-          nthdl = set gselSelected (Just (pgnum,ntpg)) thdl 
-          nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+          opgs = view gselAll thdl 
+{-          npgs = adjust    ntpg 
+          nthdl = set gselSelected (Just (pgnum,ntpg)) 
+                  . set gselAll (pages) 
+                  $ thdl -}
+      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
       put nxstate2
       invalidateAll 
 

@@ -41,7 +41,7 @@ Library
                    cairo == 0.12.*, 
                    strict == 0.3.*, 
                    bytestring == 0.9.*,
-                   lens >= 2.4 && < 2.6, 
+                   lens >= 2.4 && < 2.7, 
                    hoodle-types >= 0.0.999 && < 0.2,
                    TypeCompose == 0.9.*
 

@@ -116,12 +116,15 @@ initViewModeIOAction = do
   put xstate 
   return xstate 
 
--- |
+-- | initialization according to the setting 
 initialize :: MyEvent -> MainCoroutine ()
 initialize ev = do  
     liftIO $ putStrLn $ show ev 
     case ev of 
-      Initialized -> return () 
+      Initialized -> do return () 
+                        -- additional initialization goes here
+                        viewModeChange ToContSinglePage
+                        pageZoomChange (Zoom 0.3)  
       _ -> do ev' <- nextevent
               initialize ev'
 

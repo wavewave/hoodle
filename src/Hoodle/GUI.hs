@@ -41,7 +41,7 @@ startGUI :: Maybe FilePath -> Maybe Hook -> IO ()
 startGUI mfname mhook = do 
   initGUI
   window <- windowNew   
-  windowSetDefaultSize window 600 400
+  windowSetDefaultSize window 800 400
   cfg <- loadConfigFile   
   devlst <- initDevice cfg 
   maxundo <- getMaxUndo cfg >>= 

@@ -78,7 +78,6 @@ initCoroutine devlst window mfname mhook maxundo  = do
             . set callBack (eventHandler evar) 
             $ emptyHoodleState 
   ui <- getMenuUI evar    
-  putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
       initcvsbox = CanvasSinglePage initcvs
@@ -91,15 +90,13 @@ initCoroutine devlst window mfname mhook maxundo  = do
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs $ st4
+          
   st6 <- getFileContent mfname st5
   vbox <- vBoxNew False 0 
   let startingXstate = set rootContainer (castToBox vbox) st6
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
-      
   putMVar evar . Just $ (driver simplelogger startworld)
-      
-      
   return (evar,startingXstate,ui,vbox)
 
 

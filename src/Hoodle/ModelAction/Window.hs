@@ -187,7 +187,9 @@ eventConnect xstate (VSplit wconf1 wconf2) = do
 
 constructFrame :: HoodleState -> WindowConfig 
                   -> IO (HoodleState,Widget,WindowConfig)
-constructFrame = constructFrame' (CanvasSinglePage defaultCvsInfoSinglePage)
+constructFrame hst wcfg = do 
+  putStrLn "in constructFrame"
+  constructFrame' (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
 
 
 
@@ -198,6 +200,8 @@ constructFrame' :: CanvasInfoBox ->
                    -> IO (HoodleState,Widget,WindowConfig)
 constructFrame' template oxstate (Node cid) = do 
     let ocmap = getCanvasInfoMap oxstate 
+
+        
     (cinfobox,_cmap,xstate) <- case M.lookup cid ocmap of 
       Just cinfobox' -> return (cinfobox',ocmap,oxstate)
       Nothing -> do 
@@ -205,7 +209,7 @@ constructFrame' template oxstate (Node cid) = do
             cmap' = M.insert cid cinfobox' ocmap
             xstate' = maybe oxstate id (setCanvasInfoMap cmap' oxstate)
         return (cinfobox',cmap',xstate')
-    ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage2 xstate) cinfobox
+    ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage1 xstate) cinfobox
     let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
     let scrwin = fmap4CvsInfoBox (castToWidget.view scrolledWindow) ncinfobox
     return (xstate', scrwin, Node cid)

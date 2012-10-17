@@ -60,7 +60,7 @@ hscrollBarMoved cid v =
     changeCurrentCanvasId cid 
     >> updateXState (return . hscrollmoveAction) 
     >> invalidate cid 
-  where hscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
+  where hscrollmoveAction = over currentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
           in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
@@ -72,7 +72,7 @@ vscrollBarMoved cid v =
     chkCvsIdNInvalidate cid 
     >> updateXState (return . vscrollmoveAction) 
     >> invalidate cid
-  where vscrollmoveAction = modifyCurrentCanvasInfo (selectBox fsimple fsimple)
+  where vscrollmoveAction = over currentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
           in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
@@ -93,13 +93,13 @@ vscrollMove cid = do
     case ev of
       VScrollBarMoved cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"
-        updateXState $ return.modifyCurrentCanvasInfo 
+        updateXState $ return . over currentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
         invalidateWithBuf cid 
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"        
-        updateXState $ return.modifyCurrentCanvasInfo 
+        updateXState $ return. over currentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 
         return ()

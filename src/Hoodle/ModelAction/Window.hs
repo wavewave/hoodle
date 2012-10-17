@@ -164,11 +164,9 @@ eventConnect :: HoodleState -> WindowConfig
 eventConnect xstate (Node cid) = do 
     let cmap = getCanvasInfoMap xstate 
         cinfobox = maybeError "eventConnect" $ M.lookup cid cmap
-    case cinfobox of       
-      CanvasInfoBox cinfo -> do 
-        ncinfo <- reinitCanvasInfoStage2 xstate cinfo 
-        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
-        return (xstate', Node cid)
+    ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage2 xstate) cinfobox
+    let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
+    return (xstate', Node cid)        
 eventConnect xstate (HSplit wconf1 wconf2) = do  
     (xstate',wconf1') <- eventConnect xstate wconf1 
     (xstate'',wconf2') <- eventConnect xstate' wconf2 
@@ -178,13 +176,18 @@ eventConnect xstate (VSplit wconf1 wconf2) = do
     (xstate'',wconf2') <- eventConnect xstate' wconf2 
     return (xstate'',VSplit wconf1' wconf2')
     
+{-    case cinfobox of       
+      CanvasInfoBox cinfo -> do 
+        ncinfo <- reinitCanvasInfoStage2 xstate cinfo 
+        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate -}
+
 
 
 -- | default construct frame     
 
 constructFrame :: HoodleState -> WindowConfig 
                   -> IO (HoodleState,Widget,WindowConfig)
-constructFrame = constructFrame' (CanvasInfoBox defaultCvsInfoSinglePage)
+constructFrame = constructFrame' (CanvasSinglePage defaultCvsInfoSinglePage)
 
 
 
@@ -202,11 +205,10 @@ constructFrame' template oxstate (Node cid) = do
             cmap' = M.insert cid cinfobox' ocmap
             xstate' = maybe oxstate id (setCanvasInfoMap cmap' oxstate)
         return (cinfobox',cmap',xstate')
-    case cinfobox of       
-      CanvasInfoBox cinfo -> do 
-        ncinfo <- reinitCanvasInfoStage1 xstate cinfo 
-        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate
-        return (xstate', castToWidget . view scrolledWindow $ ncinfo, Node cid)
+    ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage2 xstate) cinfobox
+    let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
+    let scrwin = fmap4CvsInfoBox (castToWidget.view scrolledWindow) ncinfobox
+    return (xstate', scrwin, Node cid)
 constructFrame' template xstate (HSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     
     (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
@@ -240,3 +242,7 @@ constructFrame' template xstate (VSplit wconf1 wconf2) = do
   
 
 
+{-    case cinfobox of       
+      CanvasInfoBox cinfo -> do 
+        ncinfo <- reinitCanvasInfoStage1 xstate cinfo 
+        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate -}

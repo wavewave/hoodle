@@ -54,8 +54,8 @@ module Hoodle.Type.HoodleState
 , updateFromCanvasInfoAsCurrentCanvas
 , setCanvasId
 , modifyCanvasInfo
-, modifyCurrentCanvasInfo
-, modifyCurrCvsInfoM
+-- , modifyCurrentCanvasInfo
+-- , modifyCurrCvsInfoM
 , hoodleModeStateEither
 , getCurrentPageFromHoodleModeState
 , getCurrentPageDimFromHoodleModeState
@@ -251,7 +251,10 @@ updateFromCanvasInfoAsCurrentCanvas cinfobox xstate =
 -- | 
 
 setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
-setCanvasId cid (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
+setCanvasId cid = insideAction4CvsInfoBox (set canvasId cid) 
+  
+  
+  -- (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
 
 
 -- | 
@@ -264,16 +267,16 @@ modifyCanvasInfo cid f xstate =
     $ xstate 
   
 
+{-
 -- | should be deprecated
-
 modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
                         -> HoodleState
                         -> HoodleState
 modifyCurrentCanvasInfo f = over currentCanvasInfo f  
-  
+-}
 
+{-
 -- | should be deprecated 
-        
 modifyCurrCvsInfoM :: (Monad m) => (CanvasInfoBox -> m CanvasInfoBox) 
                       -> HoodleState
                       -> m HoodleState
@@ -284,7 +287,7 @@ modifyCurrCvsInfoM f st = do
   let cinfomap = getCanvasInfoMap st
       ncinfomap = M.adjust (const ncinfobox) cid cinfomap 
   maybe (return st) return (setCanvasInfoMap ncinfomap st) 
-
+-}
 
 -- | 
 

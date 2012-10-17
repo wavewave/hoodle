@@ -54,7 +54,7 @@ changePage modifyfn = updateXState changePageAction
               (b,npgnum',_selectedpage,xojst') = changePageInHoodleModeState npgnum xojst
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
-          xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
+          xstatefinal <- return . over currentCanvasInfo (const ncvsInfo) $ xstate'
           when b (commit xstatefinal)
           return xstatefinal 
         
@@ -65,7 +65,7 @@ changePage modifyfn = updateXState changePageAction
               (b,npgnum',_selectedpage,xojst') = changePageInHoodleModeState npgnum xojst
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
-          xstatefinal <- return . modifyCurrentCanvasInfo (const ncvsInfo) $ xstate'
+          xstatefinal <- return . over currentCanvasInfo (const ncvsInfo) $ xstate'
           when b (commit xstatefinal)
           return xstatefinal 
 
@@ -109,7 +109,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
                      (getCvsOriginInPage geometry)
               cdim = canvasDim geometry 
               narr = makeSingleArrangement zmode pdim cdim xy  
-              ncinfobox = CanvasInfoBox
+              ncinfobox = CanvasSinglePage
                           . set (viewInfo.pageArrangement) narr
                           . set (viewInfo.zoomMode) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
@@ -122,7 +122,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
               origcoord = either (const (cpn,PageCoord (0,0))) id 
                             (getCvsOriginInPage geometry)
               narr = makeContinuousArrangement zmode cdim hdl origcoord
-              ncinfobox = CanvasInfoBox
+              ncinfobox = CanvasContPage
                           . set (viewInfo.pageArrangement) narr
                           . set (viewInfo.zoomMode) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate

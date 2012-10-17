@@ -31,6 +31,7 @@ import           Graphics.Hoodle.Render.Type
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Draw
+import           Hoodle.ModelAction.Page
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
@@ -83,7 +84,7 @@ viewModeChange command = do
           selectBoxAction (whensing xst) (noaction xst) . view currentCanvasInfo $ xst
         noaction :: HoodleState -> a -> MainCoroutine HoodleState  
         noaction xstate = const (return xstate)
-
+        -------------------------------------
         whencont xstate cinfo = do 
           geometry <- liftIO $ getGeometry4CurrCvs xstate 
           cdim <- liftIO $  return . canvasDim $ geometry 
@@ -108,10 +109,10 @@ viewModeChange command = do
                                   (view vertAdjustment cinfo)
                                   (view horizAdjConnId cinfo)
                                   (view vertAdjConnId cinfo)
-          liftIO $ putStrLn " after "                                   
-          liftIO $ printCanvasMode (getCurrentCanvasId xstate) (CanvasInfoBox ncinfo)
-          return $ set currentCanvasInfo (CanvasInfoBox ncinfo) xstate
-
+          -- liftIO $ putStrLn " after "                                   
+          -- liftIO $ printCanvasMode (getCurrentCanvasId xstate) (CanvasSinglePage ncinfo)
+          return $ set currentCanvasInfo (CanvasSinglePage ncinfo) xstate 
+        -------------------------------------
         whensing xstate cinfo = do 
           cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs xstate 
           let zmode = view (viewInfo.zoomMode) cinfo
@@ -119,7 +120,6 @@ viewModeChange command = do
               cpn = PageNum . view currentPageNum $ cinfo 
               (hadj,vadj) = view adjustments cinfo 
           (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
-
           let arr = makeContinuousArrangement zmode cdim (getHoodle xstate) 
                                                     (cpn, PageCoord (xpos,ypos))
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
@@ -137,7 +137,11 @@ viewModeChange command = do
                                       (view vertAdjConnId cinfo)
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
               ncinfo = over currentPageNum (const (unPageNum ncpn)) ncinfotemp
+          return . over currentCanvasInfo (const (CanvasContPage ncinfo)) $ xstate
 
-          return . modifyCurrentCanvasInfo (const (CanvasInfoBox ncinfo)) $ xstate
 
-
+          {-
+          let hdl = getHoodle xstate
+          cinfo' <- liftIO $ updateCvsInfoFrmHoodle hdl cinfo 
+          return . modifyCurrentCanvasInfo (const cinfo') $ xstate
+          -}

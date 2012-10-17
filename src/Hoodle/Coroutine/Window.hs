@@ -53,13 +53,13 @@ canvasConfigureGenUpdate updatefunc cid cdim
   where fsingle cinfo = do 
           xstate <- get 
           let cinfo' = updateCanvasDimForSingle cdim cinfo 
-          return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate
+          return $ setCanvasInfo (cid,CanvasSinglePage cinfo') xstate
         fcont cinfo = do 
           xstate <- get
           page <- getCurrentPageCvsId cid
           let pdim = PageDimension (view gdimension page)
           let cinfo' = updateCanvasDimForContSingle pdim cdim cinfo 
-          return $ setCanvasInfo (cid,CanvasInfoBox cinfo') xstate 
+          return $ setCanvasInfo (cid,CanvasContPage cinfo') xstate 
   
 -- | 
 
@@ -99,25 +99,26 @@ eitherSplit stype = do
     case enewfstate of 
       Left _ -> return ()
       Right fstate' -> do 
-        case maybeError "eitherSplit" . M.lookup currcid $ cmap of 
-          CanvasInfoBox oldcinfo -> do 
-            liftIO $ putStrLn "called here"
-            let rtwin = view rootWindow xstate
-                rtcntr = view rootContainer xstate 
-            liftIO $ containerRemove rtcntr rtwin
-            (xstate'',win,fstate'') <- 
-              liftIO $ constructFrame' (CanvasInfoBox oldcinfo) xstate fstate'
-            let xstate3 = set frameState fstate'' 
+        let cinfobox = maybeError "eitherSplit" . M.lookup currcid $ cmap 
+        let f oldcinfo = do   
+              -- liftIO $ putStrLn "called here"
+              let rtwin = view rootWindow xstate
+                  rtcntr = view rootContainer xstate 
+              liftIO $ containerRemove rtcntr rtwin
+              (xstate'',win,fstate'') <- 
+                liftIO $ constructFrame' cinfobox xstate fstate'
+              let xstate3 = set frameState fstate'' 
                             . set rootWindow win 
                             $ xstate''
-            put xstate3 
-            liftIO $ boxPackEnd rtcntr win PackGrow 0 
-            liftIO $ widgetShowAll rtcntr  
-            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
-            xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
-            put xstate5 
-            canvasZoomUpdateAll
-            invalidateAll 
+              put xstate3 
+              liftIO $ boxPackEnd rtcntr win PackGrow 0 
+              liftIO $ widgetShowAll rtcntr  
+              (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
+              xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
+              put xstate5 
+              canvasZoomUpdateAll
+              invalidateAll 
+        fmap4CvsInfoBox f cinfobox --  \oldcinfo -> do 
 
 
 -- | 
@@ -133,31 +134,31 @@ deleteCanvas = do
       Left _ -> return ()
       Right Nothing -> return ()
       Right (Just fstate') -> do 
-        case maybeError "deleteCanvas" (M.lookup currcid cmap) of
-          CanvasInfoBox _oldcinfo -> do 
-            let cmap' = M.delete currcid cmap
-                newcurrcid = maximum (M.keys cmap')
-            xstate0 <- changeCurrentCanvasId newcurrcid 
-            let xstate1 = maybe xstate0 id $ setCanvasInfoMap cmap' xstate0
-            put xstate1
-            let rtwin = view rootWindow xstate1
-                rtcntr = view rootContainer xstate1 
-            liftIO $ containerRemove rtcntr rtwin
-            (xstate'',win,fstate'') <- liftIO $ constructFrame xstate1 fstate'
-            let xstate3 = set frameState fstate'' 
+        let cinfobox = maybeError "deleteCanvas" (M.lookup currcid cmap) 
+            f oldcinfo = do 
+              let cmap' = M.delete currcid cmap
+                  newcurrcid = maximum (M.keys cmap')
+              xstate0 <- changeCurrentCanvasId newcurrcid 
+              let xstate1 = maybe xstate0 id $ setCanvasInfoMap cmap' xstate0
+              put xstate1
+              let rtwin = view rootWindow xstate1
+                  rtcntr = view rootContainer xstate1 
+              liftIO $ containerRemove rtcntr rtwin
+              (xstate'',win,fstate'') <- liftIO $ constructFrame xstate1 fstate'
+              let xstate3 = set frameState fstate'' 
                             . set rootWindow win 
                             $ xstate''
-            put xstate3
-            liftIO $ boxPackEnd rtcntr win PackGrow 0 
-            liftIO $ widgetShowAll rtcntr  
-            (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
-            canvasZoomUpdateAll
-            xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
-            put xstate5 
-            invalidateAll 
+              put xstate3
+              liftIO $ boxPackEnd rtcntr win PackGrow 0 
+              liftIO $ widgetShowAll rtcntr  
+              (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
+              canvasZoomUpdateAll
+              xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
+              put xstate5 
+              invalidateAll 
+        fmap4CvsInfoBox f cinfobox               
             
 -- | 
-
 paneMoveStart :: MainCoroutine () 
 paneMoveStart = do 
     ev <- nextevent 

@@ -81,7 +81,7 @@ initCoroutine devlst window mfname mhook maxundo  = do
   putStrLn "hi"  
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
-      initcvsbox = CanvasInfoBox initcvs
+      initcvsbox = CanvasSinglePage initcvs
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
             $ st1 { _cvsInfoMap = M.empty } 

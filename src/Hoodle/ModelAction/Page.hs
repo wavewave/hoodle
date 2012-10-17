@@ -82,58 +82,74 @@ getPageFromGHoodleMap pagenum =
 
 -- | 
 updateCvsInfoFrmHoodle :: Hoodle EditMode -> CanvasInfoBox -> IO CanvasInfoBox
-updateCvsInfoFrmHoodle hdl cinfobox = selectBoxAction fsingle fcont cinfobox
-  where fsingle cinfo = do 
-          let pagenum = view currentPageNum cinfo 
-          let oarr = view (viewInfo.pageArrangement) cinfo 
-              canvas = view drawArea cinfo 
-              zmode = view (viewInfo.zoomMode) cinfo
-          geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas
-          let cdim = canvasDim geometry 
-              pg = getPageFromGHoodleMap pagenum hdl 
-              pdim = PageDimension $ view gdimension pg
-              (hadj,vadj) = view adjustments cinfo
-          (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
-          let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
-          return . CanvasInfoBox 
-                 . set currentPageNum pagenum  
-                 . set (viewInfo.pageArrangement) arr $ cinfo
-        fcont cinfo = do 
-          let pagenum = view currentPageNum cinfo 
-          let oarr = view (viewInfo.pageArrangement) cinfo 
-              canvas = view drawArea cinfo 
-              zmode = view (viewInfo.zoomMode) cinfo
-              (hadj,vadj) = view adjustments cinfo
-          (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
-                               <*> adjustmentGetValue vadj 
-          geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas 
-          let ulcoord = maybeError "updateCvsFromHoodle" $ 
-                          desktop2Page geometry (DeskCoord (xdesk,ydesk))
-          let cdim = canvasDim geometry 
-          let arr = makeContinuousArrangement zmode cdim hdl ulcoord 
-          return . CanvasInfoBox
-                 . set currentPageNum pagenum  
-                 . set (viewInfo.pageArrangement) arr $ cinfo 
-
+updateCvsInfoFrmHoodle hdl (CanvasSinglePage cinfo) = do
+    let pagenum = view currentPageNum cinfo 
+        oarr = view (viewInfo.pageArrangement) cinfo 
+        canvas = view drawArea cinfo 
+        zmode = view (viewInfo.zoomMode) cinfo
+    geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas
+    let cdim = canvasDim geometry 
+        pg = getPageFromGHoodleMap pagenum hdl 
+        pdim = PageDimension $ view gdimension pg
+        (hadj,vadj) = view adjustments cinfo
+    (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
+    let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
+        vinfo = view viewInfo cinfo 
+        nvinfo = xfrmViewInfo (const arr) vinfo
+    return 
+      . CanvasSinglePage 
+      . set currentPageNum pagenum
+      . xfrmCvsInfo (const nvinfo) $ cinfo 
+    -- return . CanvasInfoBox 
+    --   . set currentPageNum pagenum  
+    --   . set (viewInfo.pageArrangement) arr $ cinfo
+updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do         
+    let pagenum = view currentPageNum cinfo 
+        oarr = view (viewInfo.pageArrangement) cinfo 
+        canvas = view drawArea cinfo 
+        zmode = view (viewInfo.zoomMode) cinfo
+        (hadj,vadj) = view adjustments cinfo
+    (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
+                         <*> adjustmentGetValue vadj 
+    geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas 
+    let ulcoord = maybeError "updateCvsFromHoodle" $ 
+                    desktop2Page geometry (DeskCoord (xdesk,ydesk))
+    let cdim = canvasDim geometry 
+    let arr = makeContinuousArrangement zmode cdim hdl ulcoord 
+        vinfo = view viewInfo cinfo 
+        nvinfo = xfrmViewInfo (const arr) vinfo
+    return 
+      . CanvasContPage 
+      . set currentPageNum pagenum
+      . xfrmCvsInfo (const nvinfo) $ cinfo 
+        
+--    return . CanvasInfoBox
+--      . set currentPageNum pagenum  
+--      . set (viewInfo.pageArrangement) arr $ cinfo 
+--  selectBoxAction fsingle fcont cinfobox
+--   where fsingle cinfo = do 
               
 
 -- |
 updatePage :: HoodleModeState -> CanvasInfoBox -> IO CanvasInfoBox 
-updatePage (ViewAppendState hdl) cinfobox = updateCvsInfoFrmHoodle hdl cinfobox
-updatePage (SelectState thdl) cinfobox = selectBoxAction fsingle fcont cinfobox
-  where fsingle _cinfo = do 
-          let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
-          updateCvsInfoFrmHoodle hdl cinfobox
-        fcont _cinfo = do 
-          let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
-          updateCvsInfoFrmHoodle hdl cinfobox
+updatePage (ViewAppendState hdl) c = updateCvsInfoFrmHoodle hdl c
+updatePage (SelectState thdl) c = do 
+    let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
+    updateCvsInfoFrmHoodle hdl c
+
+--     boxAction f cinfobox
+--  where f :: (ViewMode a) => ViewModeSumType -> CanvasInfo a -> IO CanvasInfoBox
+--         f mode cinfo = do 
+--        fcont _cinfo = do 
+--          let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
+--          updateCvsInfoFrmHoodle VMContPage hdl cinfobox
 
 -- | 
 setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox
 setPage xstate pnum cid = do  
   let cinfobox =  getCanvasInfo cid xstate
-  selectBoxAction (liftM CanvasInfoBox . setPageSingle xstate pnum) 
-                  (liftM CanvasInfoBox . setPageCont xstate pnum)
+  selectBoxAction (liftM CanvasSinglePage . setPageSingle xstate pnum) 
+                  (liftM CanvasContPage . setPageCont xstate pnum)
                   cinfobox
 
 -- | setPageSingle : in Single Page mode   

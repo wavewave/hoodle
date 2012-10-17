@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell, TypeOperators, ExistentialQuantification,
-             Rank2Types, GADTs #-}
+             Rank2Types, GADTs, RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -61,14 +61,18 @@ module Hoodle.Type.Canvas
 , penSet
 , variableWidthPen
 -- * for box
+, xfrmCvsInfo
+, xfrmViewInfo
 , getDrawAreaFromBox
 , unboxGet
-, fmapBox 
+, fmap4CvsInfoBox
+, insideAction4CvsInfoBox
+, insideAction4CvsInfoBoxF
 , boxAction
 , selectBoxAction
 , selectBox
 -- , pageArrEitherFromCanvasInfoBox
-, viewModeBranch
+-- , viewModeBranch
 -- * others
 -- , getPage
 , updateCanvasDimForSingle
@@ -104,6 +108,13 @@ data ViewInfo a  = (ViewMode a) =>
                    ViewInfo { _zoomMode :: ZoomMode 
                             , _pageArrangement :: PageArrangement a } 
 
+xfrmViewInfo :: (ViewMode a, ViewMode b) => 
+                (PageArrangement a -> PageArrangement b) 
+             -> ViewInfo a 
+             -> ViewInfo b
+xfrmViewInfo f ViewInfo {..} = 
+    ViewInfo { _zoomMode = _zoomMode
+             , _pageArrangement = f _pageArrangement }
 
 -- | 
 emptyPenDraw :: PenDraw
@@ -140,6 +151,21 @@ data CanvasInfo a =
                                , _horizAdjConnId :: Maybe (ConnectId Adjustment)
                                , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                                }
+    
+xfrmCvsInfo :: (ViewMode a, ViewMode b) => 
+               (ViewInfo a -> ViewInfo b) 
+            -> CanvasInfo a -> CanvasInfo b 
+xfrmCvsInfo f CanvasInfo {..} = 
+    CanvasInfo { _canvasId = _canvasId
+               , _drawArea = _drawArea 
+               , _scrolledWindow = _scrolledWindow
+               , _viewInfo = f _viewInfo
+               , _currentPageNum = _currentPageNum 
+               , _horizAdjustment = _horizAdjustment
+               , _vertAdjustment = _vertAdjustment
+               , _horizAdjConnId = _horizAdjConnId
+               , _vertAdjConnId = _vertAdjConnId 
+               }
     
 defaultCvsInfoSinglePage :: CanvasInfo SinglePage
 defaultCvsInfoSinglePage = 
@@ -200,46 +226,78 @@ adjustments = lens getter setter
                          <*> (snd `for` vertAdjustment) -}
 
 -- |
-data CanvasInfoBox = forall a. (ViewMode a) => CanvasInfoBox (CanvasInfo a) 
+data CanvasInfoBox = CanvasSinglePage (CanvasInfo SinglePage) 
+                   | CanvasContPage (CanvasInfo ContinuousPage)
 
+
+
+-- | apply a funtion to Generic CanvasInfo 
+fmap4CvsInfoBox :: (forall a. (ViewMode a)=> CanvasInfo a -> r) -> CanvasInfoBox -> r 
+fmap4CvsInfoBox f (CanvasSinglePage x) = f x 
+fmap4CvsInfoBox f (CanvasContPage x) = f x 
+
+-- | fmap-like operation for box
+insideAction4CvsInfoBox :: (forall a. CanvasInfo a -> CanvasInfo a)
+                    -> CanvasInfoBox -> CanvasInfoBox
+insideAction4CvsInfoBox f (CanvasSinglePage x) = CanvasSinglePage (f x)
+insideAction4CvsInfoBox f (CanvasContPage x) = CanvasContPage (f x)
+
+
+-- | fmap-like operation for box
+insideAction4CvsInfoBoxF :: (Functor f) => 
+                            (forall a. (ViewMode a) => CanvasInfo a -> f (CanvasInfo a))
+                         -> CanvasInfoBox -> f CanvasInfoBox
+insideAction4CvsInfoBoxF f (CanvasSinglePage x) = fmap CanvasSinglePage (f x)
+insideAction4CvsInfoBoxF f (CanvasContPage x) = fmap CanvasContPage (f x)
+
+
+  
 -- |
 getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
 getDrawAreaFromBox = unboxGet drawArea
 
 -- | 
 unboxGet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
-unboxGet f (CanvasInfoBox x) = view f x
+unboxGet f x = fmap4CvsInfoBox (view f) x
 
--- | fmap-like operation for box
-fmapBox :: (forall a. (ViewMode a) => CanvasInfo a -> CanvasInfo a)
-        -> CanvasInfoBox -> CanvasInfoBox
-fmapBox f (CanvasInfoBox cinfo) = CanvasInfoBox (f cinfo)
+
+
 
 -- | 
 boxAction :: Monad m => (forall a. ViewMode a => CanvasInfo a -> m b) 
              -> CanvasInfoBox -> m b 
-boxAction f (CanvasInfoBox cinfo) = f cinfo 
+boxAction f c = fmap4CvsInfoBox f c 
+  -- f (CanvasInfoBox cinfo) = f cinfo 
 
 -- | either-like operation
 selectBoxAction :: (Monad m) => 
                    (CanvasInfo SinglePage -> m a) 
                 -> (CanvasInfo ContinuousPage -> m a) -> CanvasInfoBox -> m a 
-selectBoxAction fsingle fcont (CanvasInfoBox cinfo) = 
-  case view (viewInfo.pageArrangement) cinfo of 
+selectBoxAction fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
+selectBoxAction _fsingle fcont (CanvasContPage cinfo) = fcont cinfo 
+  
+  
+{-  case view (viewInfo.pageArrangement) cinfo of 
     SingleArrangement _ _ _ ->  fsingle cinfo 
     ContinuousArrangement _ _ _ _ -> fcont cinfo 
+-}
 
+  
 -- |     
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
           -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
           -> CanvasInfoBox -> CanvasInfoBox 
-selectBox fsingle fcont = 
-  let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
-      idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
-  in runIdentity . idaction   
+selectBox fs _fc (CanvasSinglePage cinfo) = CanvasSinglePage (fs cinfo)
+selectBox _fs fc (CanvasContPage cinfo)= CanvasContPage (fc cinfo)
+
+  
+--  let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
+--      idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
+--  in runIdentity . idaction   
 
 
--- | 
+
+{-
 viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
                -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage) 
                -> CanvasInfo v -> CanvasInfo v 
@@ -247,6 +305,7 @@ viewModeBranch fsingle fcont cinfo =
   case view (viewInfo.pageArrangement) cinfo of 
     SingleArrangement _ _ _ ->  fsingle cinfo 
     ContinuousArrangement _ _ _ _ -> fcont cinfo 
+-}
 
 -- |
 type CanvasInfoMap = M.IntMap CanvasInfoBox

@@ -293,9 +293,12 @@ moveSelect cid pnum geometry connidmove connidup orig@(x0,y0)
                 ntpage = makePageSelectMode npage alist  
                 coroutineaction = do 
                   nthdl2 <- liftIO $ updateTempHoodleSelectIO nthdl1 ntpage (unPageNum newpgn)  
-                  let ncinfo = set currentPageNum (unPageNum newpgn) $ cinfo 
+                  let -- ncinfo = set currentPageNum (unPageNum newpgn) $ cinfo 
+                      cibox = view currentCanvasInfo xstate1 
+                      ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum newpgn)) cibox 
                       cmap = getCanvasInfoMap xstate1 
-                      cmap' = M.adjust (const (CanvasInfoBox ncinfo)) cid cmap
+                      -- cmap' = M.adjust (const (CanvasInfoBox ncinfo)) cid cmap
+                      cmap' = M.adjust (const ncibox) cid cmap 
                       xst = maybe xstate1 id $ setCanvasInfoMap cmap' xstate1
                   return . set hoodleModeState (SelectState nthdl2)
                     =<< (liftIO (updatePageAll (SelectState nthdl2) xst)) 

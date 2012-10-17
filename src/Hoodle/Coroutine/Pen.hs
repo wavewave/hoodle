@@ -49,19 +49,27 @@ import Prelude hiding ((.), id)
 
 
 -- | page switch if pen click a page different than the current page
-penPageSwitch :: (ViewMode a) => 
-                 CanvasInfo a -> PageNum -> MainCoroutine (CanvasInfo a)
-penPageSwitch cinfo pgn = do (xst,cinfo') <- get >>= switchact 
+penPageSwitch :: -- (ViewMode a) => 
+                 -- CanvasInfo a -> 
+                 PageNum -> MainCoroutine CanvasInfoBox -- (CanvasInfo a)
+penPageSwitch {- cinfo -} pgn = do 
+    xstate <- get
+    let cibox = view currentCanvasInfo xstate     
+        -- ncinfo = set currentPageNum (unPageNum pgn) cinfo 
+        ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum pgn)) cibox 
+    put (set currentCanvasInfo ncibox xstate) 
+    return ncibox 
+        
+{-
+        mfunc = const (return . CanvasInfoBox $ ncinfo)  
+  (xst,cinfo') <- get >>= switchact 
                              put xst     
                              return cinfo'
   where switchact xst = do 
-          let ncinfo = set currentPageNum (unPageNum pgn) cinfo 
-              mfunc = const (return . CanvasInfoBox $ ncinfo)  
           return . (,ncinfo) =<< modifyCurrCvsInfoM mfunc xst
-
+-}
 
 -- | Common Pen Work starting point 
-
 commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeometry  
                     -> (ConnectId DrawingArea, ConnectId DrawingArea) 
                     -> (Double,Double) -> MainCoroutine () )
@@ -83,7 +91,9 @@ commonPenStart action cid pcoord = do
           maybeFlip pagecoord (return ()) 
             $ \(pgn,PageCoord (x,y)) -> do 
                  nCvsInfo <- if (cpn /= pgn) 
-                               then penPageSwitch cvsInfo pgn
+                               then do penPageSwitch pgn
+                                       -- temporary dirty fix 
+                                       return (set currentPageNum (unPageNum pgn) cvsInfo )
                                else return cvsInfo                   
                  connidup   <- connectPenUp nCvsInfo 
                  connidmove <- connectPenMove nCvsInfo
@@ -91,7 +101,6 @@ commonPenStart action cid pcoord = do
 
       
 -- | enter pen drawing mode
-
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (ConnectId DrawingArea, ConnectId DrawingArea) -> (Double,Double) -> MainCoroutine ()
@@ -146,7 +155,6 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
         (\_ -> disconnect [connidmove,connidup] >> return pdraw )
 
 -- | 
-    
 skipIfNotInSamePage :: Monad m => 
                        PageNum -> CanvasGeometry -> PointerCoord 
                        -> m a 
@@ -157,7 +165,6 @@ skipIfNotInSamePage  pgn geometry pcoord skipaction ordaction =
     skipaction (\_ _ -> skipaction ) (\_ (_,PageCoord xy)->ordaction (pcoord,xy)) 
   
 -- |       
-
 switchActionEnteringDiffPage :: Monad m => 
                                 PageNum -> CanvasGeometry -> PointerCoord 
                                 -> m a 
@@ -173,7 +180,6 @@ switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction 
                                                                  
         
 -- | in page action  
-    
 penMoveAndUpOnly :: Monad m => MyEvent 
                     -> PageNum 
                     -> CanvasGeometry 
@@ -187,6 +193,7 @@ penMoveAndUpOnly r pgn geometry defact moveaction upaction =
     PenUp _ pcoord -> upaction pcoord  
     _ -> defact 
   
+-- | 
 penMoveAndUpInterPage :: Monad m => MyEvent 
                       -> PageNum 
                       -> CanvasGeometry 

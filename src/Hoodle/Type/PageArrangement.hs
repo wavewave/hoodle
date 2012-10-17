@@ -37,7 +37,8 @@ import Prelude hiding ((.),id)
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
               deriving (Show,Eq)
 
--- | 
+-- | sum type class (later, will be replaced by Kind promotion) 
+data ViewModeSumType = VMSinglePage | VMContPage 
 
 class ViewMode a 
 

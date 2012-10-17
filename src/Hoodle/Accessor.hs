@@ -53,8 +53,11 @@ getCurrentPageCurr = do
   xstate <- St.get 
   let hdlmodst = view hoodleModeState xstate
       cinfobox = view currentCanvasInfo xstate 
-  case cinfobox of 
-    CanvasInfoBox cinfo -> return (getCurrentPageFromHoodleModeState cinfo hdlmodst)
+  return $ fmap4CvsInfoBox (\x->getCurrentPageFromHoodleModeState x hdlmodst) cinfobox
+
+  
+{- case cinfobox of 
+    CanvasInfoBox cinfo ->  -}
 
 -- | 
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
@@ -62,8 +65,11 @@ getCurrentPageCvsId cid = do
   xstate <- St.get 
   let hdlmodst = view hoodleModeState xstate
       cinfobox = getCanvasInfo cid xstate 
-  case cinfobox of 
-    CanvasInfoBox cinfo -> return (getCurrentPageFromHoodleModeState cinfo hdlmodst)
+  return $ fmap4CvsInfoBox (\c->getCurrentPageFromHoodleModeState c hdlmodst) cinfobox
+
+  
+{-  case cinfobox of 
+    CanvasInfoBox cinfo -> return -}
 
 -- | 
 getCurrentPageEitherFromHoodleModeState :: 

@@ -131,7 +131,7 @@ fileNew = do
     xstate <- get
     xstate' <- liftIO $ getFileContent Nothing xstate 
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
-    xstate'' <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
+    xstate'' <- return $ over currentCanvasInfo (const ncvsinfo) xstate'
     liftIO $ setTitleFromFileName xstate''
     commit xstate'' 
     invalidateAll 
@@ -190,7 +190,7 @@ fileLoad filename = do
     xstate <- get 
     xstate' <- liftIO $ getFileContent (Just filename) xstate
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
-    xstateNew <- return $ modifyCurrentCanvasInfo (const ncvsinfo) xstate'
+    xstateNew <- return $ over currentCanvasInfo (const ncvsinfo) xstate'
     put . set isSaved True 
       $ xstateNew 
     liftIO $ setTitleFromFileName xstateNew  

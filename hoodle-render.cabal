@@ -16,7 +16,7 @@ Source-repository head
 
 Flag Poppler
   Description: Enable poppler support
-  Default:     True
+  Default:     False
 
 Library
   hs-source-dirs: src

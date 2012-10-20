@@ -86,6 +86,7 @@ stroketagopen = do
   char '>' 
   return $ H.Stroke tool color width []   
 
+  
 -- | 
 stroketagclose :: Parser B.ByteString 
 stroketagclose = string "</stroke>"

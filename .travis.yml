@@ -1,3 +1,3 @@
 language: haskell
-before_install: sh ./builddep.sh
-
+install: sh ./builddep.sh
+         cabal install 

@@ -1,5 +1,9 @@
 #!/bin/bash 
 
+cabal install transformers
+
+ghc-pkg list
+
 mkdir deps
 git clone https://github.com/wavewave/devadmin.git deps/devadmin
 cd deps/devadmin ; cabal install ; cd ../../

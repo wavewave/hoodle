@@ -23,10 +23,10 @@ import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
 -- from hoodle-platform 
-import           Control.Monad.Trans.Crtn.EventHandler
+-- import           Control.Monad.Trans.Crtn.EventHandler
 import           Data.Hoodle.Predefined 
 -- from this package
--- import           Hoodle.Coroutine.Callback
+import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
 import           Hoodle.Type.Clipboard
 import           Hoodle.Util.Verbatim

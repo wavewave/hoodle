@@ -15,12 +15,15 @@
 module Hoodle.GUI where
 
 import           Control.Category
+import           Control.Exception
 import           Control.Lens
 import           Control.Monad.Trans 
--- import           Data.Label
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
+import           System.Environment
+import           System.FilePath
+import           System.IO
 -- 
 import           Control.Monad.Trans.Crtn.EventHandler 
 -- from this package
@@ -34,7 +37,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 --
-import           Prelude hiding ((.),id)
+import           Prelude hiding ((.),id,catch)
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
@@ -83,7 +86,13 @@ startGUI mfname mhook = do
     liftIO $ eventHandler tref (Menu MenuQuit)
     return True
   widgetShowAll window
-  eventHandler tref Initialized     
-  mainGUI 
+  let mainaction = do eventHandler tref Initialized     
+                      mainGUI 
+  mainaction `catch` \(e :: SomeException) -> do 
+    homepath <- getEnv "HOME"
+    outh <- openFile (homepath </> ".hoodle.d" </> "error.log") WriteMode 
+    hPutStrLn outh "error occured"
+    hClose outh 
+
   return ()
   

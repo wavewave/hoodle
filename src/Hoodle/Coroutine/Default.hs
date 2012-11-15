@@ -133,8 +133,6 @@ initialize ev = do
 guiProcess :: MyEvent -> MainCoroutine ()
 guiProcess ev = do 
   initialize ev
-  liftIO $ putStrLn "hi!"
-  liftIO $ putStrLn "welcome to hoodle"
   changePage (const 0)
   xstate <- initViewModeIOAction 
   let cinfoMap  = getCanvasInfoMap xstate

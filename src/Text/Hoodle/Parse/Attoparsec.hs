@@ -64,8 +64,18 @@ headercontent :: Parser B.ByteString
 headercontent = headercontentWorker B.empty
                  
 -- | 
-stroketagopen :: Parser H.Stroke 
-stroketagopen = do 
+data StrokeWidth = SingleWidth Double | VarWidth [Double] 
+
+
+-- | 
+data XmlStroke = XmlStroke { xstrk_tool :: B.ByteString  
+                           , xstrk_color :: B.ByteString
+                           , xstrk_width :: StrokeWidth
+                           , xstrk_xydata :: [Pair Double Double] }
+
+-- | 
+xmlstroketagopen :: Parser XmlStroke 
+xmlstroketagopen = do 
   trim 
   string "<stroke"
   trim 
@@ -80,31 +90,64 @@ stroketagopen = do
   char '"'
   trim 
   string "width="
-  char '"'
-  width <- double 
-  char '"'
+  -- width <- double 
+  width <- strokewidth 
   char '>' 
-  return $ H.Stroke tool color width []   
+  return $ XmlStroke tool color width []   
+
+strokewidth :: Parser StrokeWidth   
+strokewidth = do 
+    char '"'
+    wlst <- many $ do trim_starting_space
+                      w <- double
+                      skipSpace 
+                      return w
+    char '"'
+    let msw | length wlst == 1 = return (SingleWidth (head wlst)) 
+            | length wlst == 0 = fail "no width"
+            | otherwise = return (VarWidth wlst)
+    msw
 
   
 -- | 
-stroketagclose :: Parser B.ByteString 
-stroketagclose = string "</stroke>"
+xmlstroketagclose :: Parser ()
+xmlstroketagclose = string "</stroke>" >> return ()
+
+
+-- | 
+xmlstroke :: Parser XmlStroke                 
+xmlstroke = do 
+    trim 
+    strokeinit <- xmlstroketagopen
+    coordlist <- many $ do trim_starting_space
+                           x <- double
+                           skipSpace 
+                           y <- double
+                           skipSpace 
+                           return (x :!: y)  
+    xmlstroketagclose 
+    return $ strokeinit { xstrk_xydata = coordlist } 
+
 
 -- | 
 onestroke :: Parser H.Item 
-onestroke =  do trim
-                strokeinit <- stroketagopen
-                coordlist <- many $ do trim_starting_space
-                                       x <- double
-                                       skipSpace 
-                                       y <- double
-                                       skipSpace 
-                                       return (x :!: y)  
-                stroketagclose 
-                (return. H.ItemStroke) $ strokeinit { H.stroke_data=coordlist } 
+onestroke =  do 
+    xstrk <- xmlstroke 
+    let r = case xstrk_width xstrk of 
+              SingleWidth w -> (H.Stroke <$> xstrk_tool 
+                                 <*> xstrk_color 
+                                 <*> pure w 
+                                 <*> xstrk_xydata ) xstrk
+              VarWidth ws -> let xyz = mkXYZ (xstrk_xydata xstrk) ws
+                             in (H.VWStroke <$> xstrk_tool <*> xstrk_color   
+                                  <*> pure xyz) xstrk
+    (return . H.ItemStroke) r 
 
 -- | 
+mkXYZ :: [Pair Double Double] -> [Double] -> [(Double,Double,Double)]
+mkXYZ = zipWith f where f (x :!: y) z = (x,y,z)
+
+-- |  
 img :: Parser H.Item 
 img = do trim 
          string "<img"

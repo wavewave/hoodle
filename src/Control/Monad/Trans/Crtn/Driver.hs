@@ -13,12 +13,10 @@ import Data.Foldable
 -- 
 import Control.Monad.Trans.Crtn 
 import Control.Monad.Trans.Crtn.Event 
--- import Control.Monad.Trans.Crtn.IOActor 
 import Control.Monad.Trans.Crtn.Logger 
 import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.World  
 -- 
-import Debug.Trace
 
 -- | signature of IO event driver
 data DrvOp e i o where 

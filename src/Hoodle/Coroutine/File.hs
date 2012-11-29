@@ -18,9 +18,8 @@ module Hoodle.Coroutine.File where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State
-import           Data.ByteString.Char8 as B (pack,unpack)
+import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
-import qualified Data.IntMap as IM
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
@@ -28,7 +27,6 @@ import           System.FilePath
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
-import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
@@ -64,7 +62,7 @@ okMessageBox msg = modify (tempQueue %~ enqueue action) >> go
               GotOk -> return ()  
               _ -> go 
     action = Left . ActionOrder $ 
-               \evhandler -> do 
+               \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOk msg 
                  _res <- dialogRun dialog 
@@ -76,7 +74,7 @@ okCancelMessageBox :: String -> MainCoroutine Bool
 okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go 
   where 
     action = Left . ActionOrder $ 
-               \evhandler -> do 
+               \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel msg 
                  res <- dialogRun dialog 
@@ -98,7 +96,7 @@ fileChooser choosertyp = modify (tempQueue %~ enqueue action) >> go
             case r of 
               FileChosen b -> return b  
               _ -> go 
-    action = Left . ActionOrder $ \evhandler -> do 
+    action = Left . ActionOrder $ \_evhandler -> do 
       dialog <- fileChooserDialogNew Nothing Nothing choosertyp 
                   [ ("OK", ResponseOk) 
                   , ("Cancel", ResponseCancel) ]
@@ -220,25 +218,25 @@ fileSaveAs = do
     defSaveAsAction xstate hdl = 
         fileChooser FileChooserActionSave 
         >>= maybe (return ()) (action xstate hdl) 
-      where action xstate hdl filename = 
+      where action xst' hd filename = 
               if takeExtension filename /= ".hdl" 
               then fileExtensionInvalid (".hdl","save")
               else do 
                 let ntitle = B.pack . snd . splitFileName $ filename 
-                    (hdlmodst',hdl') = case view hoodleModeState xstate of
+                    (hdlmodst',hdl') = case view hoodleModeState xst' of
                        ViewAppendState hdlmap -> 
                          if view gtitle hdlmap == "untitled"
                            then ( ViewAppendState . set gtitle ntitle
                                   $ hdlmap
-                                , (set title ntitle hdl))
-                           else (ViewAppendState hdlmap,hdl)
+                                , (set title ntitle hd))
+                           else (ViewAppendState hdlmap,hd)
                        SelectState thdl -> 
                          if view gselTitle thdl == "untitled"
                            then ( SelectState $ set gselTitle ntitle thdl 
-                                , set title ntitle hdl)  
-                           else (SelectState thdl,hdl)
+                                , set title ntitle hd)  
+                           else (SelectState thdl,hd)
                     xstateNew = set currFileName (Just filename) 
-                              . set hoodleModeState hdlmodst' $ xstate 
+                              . set hoodleModeState hdlmodst' $ xst'
                 liftIO . L.writeFile filename . builder $ hdl'
                 put . set isSaved True $ xstateNew    
                 let ui = view gtkUIManager xstateNew
@@ -264,11 +262,11 @@ fileReload = do
 
 -- | 
 fileExtensionInvalid :: (String,String) -> MainCoroutine ()
-fileExtensionInvalid (ext,act) = 
+fileExtensionInvalid (ext,a) = 
   okMessageBox $ "only " 
                  ++ ext 
                  ++ " extension is supported for " 
-                 ++ act 
+                 ++ a 
     
 -- | 
 fileAnnotatePDF :: MainCoroutine ()
@@ -305,13 +303,8 @@ fileLoadImage = do
       modeChange ToSelectMode 
       nxstate <- get 
       let thdl = case view hoodleModeState nxstate of
-                   SelectState thdl -> thdl
+                   SelectState thdl' -> thdl'
                    _ -> error "fileLoadImage"
-          opgs = view gselAll thdl 
-{-          npgs = adjust    ntpg 
-          nthdl = set gselSelected (Just (pgnum,ntpg)) 
-                  . set gselAll (pages) 
-                  $ thdl -}
       nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
       let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
       put nxstate2

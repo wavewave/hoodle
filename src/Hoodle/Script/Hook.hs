@@ -13,11 +13,8 @@
 module Hoodle.Script.Hook where 
 
 import Data.Hoodle.Simple 
-import Data.Hoodle.BBox
-
 
 -- | 
-
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , afterSaveHook :: Maybe (Hoodle -> IO ())
                  , afterUpdateClipboardHook :: Maybe ([Item] -> IO ())

@@ -22,7 +22,6 @@ import qualified Data.ByteString.Char8 as C8
 import qualified Data.Serialize as Se 
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
-import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
 -- import           Graphics.Hoodle.Render.Type
 -- from this package

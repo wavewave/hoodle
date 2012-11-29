@@ -22,11 +22,9 @@ import qualified Control.Monad.State as St hiding (mapM_)
 import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
-import           Data.Maybe (catMaybes)
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 -- from hoodle-platform 
-import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render.Type

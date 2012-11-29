@@ -21,7 +21,6 @@ import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
-import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple

@@ -32,7 +32,6 @@ import Hoodle.Type.Coroutine
 import Prelude hiding ((.), id)
 
 -- |
-
 disconnect :: (WidgetClass w) => [ConnectId w] -> MainCoroutine () 
 disconnect is = modify (tempQueue %~ enqueue action) >> go 
   where 
@@ -41,11 +40,10 @@ disconnect is = modify (tempQueue %~ enqueue action) >> go
               EventDisconnected -> return ()
               _ -> go 
     action = Left . ActionOrder $ 
-      \evhandler -> mapM_ signalDisconnect is >> return EventDisconnected
+      \_ -> mapM_ signalDisconnect is >> return EventDisconnected
 --   liftIO . signalDisconnect
 
 -- |
-
 connectPenUp :: CanvasInfo a -> MainCoroutine (ConnectId DrawingArea) 
 connectPenUp cinfo = do 
   let cid = view canvasId cinfo
@@ -53,7 +51,6 @@ connectPenUp cinfo = do
   connPenUp canvas cid 
 
 -- |
-
 connectPenMove :: CanvasInfo a -> MainCoroutine (ConnectId DrawingArea) 
 connectPenMove cinfo = do 
   let cid = view canvasId cinfo

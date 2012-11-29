@@ -82,7 +82,6 @@ module Hoodle.Type.Canvas
 import           Control.Applicative ((<*>),(<$>))
 import           Control.Category
 import           Control.Lens
-import           Control.Monad.Identity (Identity(..))
 import qualified Data.IntMap as M
 import           Data.Sequence
 import           Graphics.UI.Gtk hiding (get,set)

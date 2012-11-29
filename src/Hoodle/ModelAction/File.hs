@@ -20,7 +20,6 @@ import           Control.Lens
 import           Control.Monad
 import           Data.Attoparsec 
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as C
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set)
 #ifdef POPPLER
@@ -31,8 +30,6 @@ import           System.FilePath (takeExtension)
 -- from hoodle-platform 
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render
-import           Graphics.Hoodle.Render.Background 
--- import qualified Text.Hoodle.Parse.Conduit as PC
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Xournal.Parse.Conduit as XP
 import           Text.Hoodle.Translate.FromXournal

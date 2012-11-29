@@ -88,7 +88,7 @@ startGUI mfname mhook = do
   widgetShowAll window
   let mainaction = do eventHandler tref Initialized     
                       mainGUI 
-  mainaction `catch` \(e :: SomeException) -> do 
+  mainaction `catch` \(_e :: SomeException) -> do 
     homepath <- getEnv "HOME"
     outh <- openFile (homepath </> ".hoodle.d" </> "error.log") WriteMode 
     hPutStrLn outh "error occured"

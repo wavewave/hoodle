@@ -31,7 +31,6 @@ import           Graphics.Hoodle.Render.Type
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Draw
-import           Hoodle.ModelAction.Page
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine

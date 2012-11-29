@@ -20,16 +20,17 @@ import           Control.Lens
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
 import           Data.Maybe
+-- import           Data.Time
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Environment
 import           System.FilePath
 import           System.IO
 -- 
-import           Control.Monad.Trans.Crtn.EventHandler 
+-- import           Control.Monad.Trans.Crtn.EventHandler 
 -- from this package
 import           Hoodle.Config 
 import           Hoodle.Coroutine
--- import           Hoodle.Coroutine.Callback
+import           Hoodle.Coroutine.Callback
 import           Hoodle.Device
 import           Hoodle.ModelAction.Window
 import           Hoodle.Script.Hook
@@ -93,6 +94,8 @@ startGUI mfname mhook = do
     outh <- openFile (homepath </> ".hoodle.d" </> "error.log") WriteMode 
     hPutStrLn outh "error occured"
     hClose outh 
-
   return ()
-  
+
+
+
+

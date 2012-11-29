@@ -23,10 +23,10 @@ import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
 -- from hoodle-platform 
-import           Control.Monad.Trans.Crtn.EventHandler
+-- import           Control.Monad.Trans.Crtn.EventHandler
 import           Data.Hoodle.Predefined 
 -- from this package
--- import           Hoodle.Coroutine.Callback
+import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
 import           Hoodle.Type.Clipboard
 import           Hoodle.Util.Verbatim
@@ -237,11 +237,11 @@ uiDecl = [verbatim|<ui>
     <toolitem action="HIGHLTA"     />                     
     <toolitem action="TEXTA"       />                     
     <separator />     
-    <toolitem action="DEFAULTA"    />    
-    <toolitem action="DEFPENA"     />                     
-    <toolitem action="SHPRECA"     />   
-    <toolitem action="RULERA"      />                     
-    <separator />
+    <!-- <toolitem action="DEFAULTA"    />    --> 
+    <!-- <toolitem action="DEFPENA"     />    -->                  
+    <!-- <toolitem action="SHPRECA"     />    -->  
+    <!-- <toolitem action="RULERA"      />    -->                 
+    <!-- <separator />                        -->
     <toolitem action="SELREGNA"    />    
     <toolitem action="SELRECTA"    />                     
     <toolitem action="VERTSPA"     />                     
@@ -586,8 +586,10 @@ getMenuUI evar = do
   actionSetSensitive ra6 True
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
+  toolbarSetIconSize (castToToolbar toolbar1) IconSizeSmallToolbar
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
+  toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
   return ui   
 
 -- | 

@@ -45,16 +45,15 @@ getFileContent :: Maybe FilePath
                -> IO HoodleState 
 getFileContent (Just fname) xstate = do 
     let ext = takeExtension fname
-    if ext == ".hdl" 
-      then do  
+    case ext of 
+      ".hdl" -> do 
         bstr <- B.readFile fname
         let r = parse PA.hoodle bstr
         case r of 
           Done _ h -> constructNewHoodleStateFromHoodle h xstate 
                       >>= return . set currFileName (Just fname)
           _ -> print r >> return xstate 
-      else if ext == ".xoj" 
-        then do 
+      ".xoj" -> do 
           XP.parseXojFile fname >>= \x -> case x of  
             Left str -> do
               putStrLn $ "file reading error : " ++ str 
@@ -63,7 +62,14 @@ getFileContent (Just fname) xstate = do
               let hdlcontent = mkHoodleFromXournal xojcontent 
               nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
               return $ set currFileName (Just fname) nxstate               
-        else getFileContent Nothing xstate      
+      ".pdf" -> do 
+        mhdl <- makeNewHoodleWithPDF fname 
+        case mhdl of 
+          Nothing -> getFileContent Nothing xstate 
+          Just hdl -> do 
+            newhdlstate <- constructNewHoodleStateFromHoodle hdl xstate 
+            return . set currFileName Nothing $ newhdlstate 
+      _ -> getFileContent Nothing xstate      
 getFileContent Nothing xstate = do   
     newhdl <- cnstrctRHoodle defaultHoodle 
     let newhdlstate = ViewAppendState newhdl 
@@ -72,6 +78,8 @@ getFileContent Nothing xstate = do
                   $ xstate 
     return xstate' 
                   
+      
+      
 
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 

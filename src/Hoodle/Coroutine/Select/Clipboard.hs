@@ -40,27 +40,30 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event 
 import           Hoodle.Type.PageArrangement 
 import           Hoodle.Type.HoodleState 
-
+ 
 -- |
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   xstate <- get
-  let SelectState thdl = view hoodleModeState xstate 
-      Just (n,tpage) = view gselSelected thdl
-      slayer = view (glayers.selectedLayer) tpage
-  case unTEitherAlterHitted . view gitems $ slayer of 
-    Left _ -> return () 
-    Right alist -> do 
-      let newlayer = Left . concat . getA $ alist
-          newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
-      newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
-      newxstate <- liftIO $ updatePageAll (SelectState newthdl) 
-                            . set hoodleModeState (SelectState newthdl)
-                            $ xstate 
-      commit newxstate 
-      let ui = view gtkUIManager newxstate
-      liftIO $ toggleCutCopyDelete ui False 
-      invalidateAll 
+  case view hoodleModeState xstate of
+    SelectState thdl -> do 
+      let Just (n,tpage) = view gselSelected thdl
+          slayer = view (glayers.selectedLayer) tpage
+      case unTEitherAlterHitted . view gitems $ slayer of 
+        Left _ -> return () 
+        Right alist -> do 
+          let newlayer = Left . concat . getA $ alist
+              newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
+          newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
+          newxstate <- liftIO $ updatePageAll (SelectState newthdl) 
+                              . set hoodleModeState (SelectState newthdl)
+                              $ xstate 
+          commit newxstate 
+          let ui = view gtkUIManager newxstate
+          liftIO $ toggleCutCopyDelete ui False 
+          invalidateAll 
+    _ -> return ()
+        
 
 
 -- | 

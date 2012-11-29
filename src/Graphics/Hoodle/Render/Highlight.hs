@@ -14,7 +14,6 @@
 --
 -----------------------------------------------------------------------------
 
-
 module Graphics.Hoodle.Render.Highlight where
 
 -- from others
@@ -66,7 +65,7 @@ renderStrkHltd sbbox = do
 -- | render items highlighted 
 renderRItemHltd :: RItem -> Render ()
 renderRItemHltd (RItemStroke strk) = renderStrkHltd strk
-renderRItemHltd r@(RItemImage img _) = do 
+renderRItemHltd (RItemImage img _) = do 
   setSourceRGBA 0 0 0 1
   setLineWidth 10 
   let BBox (x1,y1) (x2,y2) = imgbbx_bbx img

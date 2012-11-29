@@ -19,7 +19,6 @@ import Control.Compose
 import Control.Lens 
 import Data.IntMap hiding (map, fromList)
 -- from hoodle-platform 
-import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import Data.Hoodle.Zipper

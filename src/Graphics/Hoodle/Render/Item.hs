@@ -29,12 +29,7 @@ cnstrctRItem :: Item -> IO RItem
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (mkStrokeBBox strk))
 cnstrctRItem (ItemImage img) = do 
     let imgbbx = mkImageBBox img
-        bbx = imgbbx_bbx imgbbx
-        Dim w h = bboxToDim bbx
         filesrc = C8.unpack (img_src img)
     sfc <- imageSurfaceCreateFromPNG filesrc
-    -- createImageSurface FormatARGB32 (floor w) (floor h) 
     -- rendering is not implemented yet
-    
-    
     return (RItemImage imgbbx (Just sfc))

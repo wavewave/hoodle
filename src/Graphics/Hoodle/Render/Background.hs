@@ -21,9 +21,7 @@ module Graphics.Hoodle.Render.Background where
 
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
-import qualified Data.ByteString.Char8 as C
 import           Data.Foldable (mapM_)
-import           Data.Monoid 
 import           Graphics.Rendering.Cairo
 --
 #ifdef POPPLER

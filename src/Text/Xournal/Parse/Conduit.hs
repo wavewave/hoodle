@@ -41,7 +41,6 @@ import           Data.Xournal.Simple
 -- from this package
 import           Text.Xournal.Parse.Zlib
 -- 
-import           Debug.Trace
 import           Prelude hiding ((.),id,dropWhile)
  
 
@@ -210,10 +209,10 @@ pBkg = do dropWhile (not.isStart "background")
 -- | 
           
 pLayer :: Monad m => Event -> Sink Event m (Either String Layer) 
-pLayer ev = do strokes <- many0event ("stroke","layer") pStroke 
-               dropWhile (not.isEnd "layer")
-               CL.drop 1 
-               return (Layer <$> strokes)
+pLayer _ev = do strokes <- many0event ("stroke","layer") pStroke 
+                dropWhile (not.isEnd "layer")
+                CL.drop 1 
+                return (Layer <$> strokes)
 
 -- | 
                
@@ -318,7 +317,7 @@ getBackground (EventBeginElement _name namecontent) =
       then let ContentText txt = Prelude.head contents 
            in Right . (\x -> Background t c x) . encodeUtf8 $ txt 
       else acc 
-    f acc@(Right bkg@(BackgroundPdf t d f p)) (name,contents) =            
+    f acc@(Right bkg@(BackgroundPdf t d fi p)) (name,contents) =            
       if nameLocalName name == "type" 
       then let ContentText txt = Prelude.head contents 
            in if txt == "pdf" 
@@ -326,13 +325,13 @@ getBackground (EventBeginElement _name namecontent) =
               else Right (toBkgNoPdf (encodeUtf8 txt) bkg)
       else if nameLocalName name == "domain"           
       then let ContentText txt = Prelude.head contents 
-           in Right . (\x -> BackgroundPdf t x f p) . Just . encodeUtf8 $ txt 
+           in Right . (\x -> BackgroundPdf t x fi p) . Just . encodeUtf8 $ txt 
       else if nameLocalName name == "filename" 
       then let ContentText txt = Prelude.head contents 
            in Right . (\x -> BackgroundPdf t d x p) . Just . encodeUtf8 $ txt 
       else if nameLocalName name == "pageno" 
       then let ContentText txt = Prelude.head contents 
-           in (\x -> BackgroundPdf t d f x) . fst <$> decimal txt 
+           in (\x -> BackgroundPdf t d fi x) . fst <$> decimal txt 
       else acc 
 getBackground _ = Left "not a background"
            

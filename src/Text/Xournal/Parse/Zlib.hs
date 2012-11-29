@@ -13,31 +13,8 @@
 module Text.Xournal.Parse.Zlib where
 
 -- from other packages
-import           Control.Monad.IO.Class
-import           Data.ByteString 
 import qualified Data.ByteString.Lazy as LB
-import           Data.Conduit
-import qualified Data.Conduit.List as CL
-import           Data.Conduit.Zlib
 import           System.IO
-
--- import Data.Iteratee.ZLib as IZ
--- import Data.Iteratee as I
--- import Codec.Zlib.Enum as EZ
--- import Data.Enumerator as E
-
-
--- |
-
--- ungzipXoj :: MonadIO m => I.Enumerator ByteString m a
--- ungzipXoj = IZ.enumInflate IZ.GZip IZ.defaultDecompressParams
-
--- | 
-
--- gunzipXojEnum :: MonadIO m => E.Enumeratee ByteString ByteString m a
--- gunzipXojEnum = EZ.decompress EZ.defaultWindowBits  
-
-
 
 -- | check if gzip or not
 

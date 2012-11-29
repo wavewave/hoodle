@@ -74,7 +74,7 @@ Library
                      transformers == 0.3.*,
                      transformers-free == 1.0.*,
                      hoodle-types >= 0.0.999 && < 0.2 ,
-                     hoodle-parser == 0.0.999 && < 0.2,
+                     hoodle-parser >= 0.0.999 && < 0.2,
                      xournal-parser >= 0.4.999 && < 0.6,
                      hoodle-render >= 0.0.999 && < 0.2,
                      hoodle-builder >= 0.0.999 && < 0.2,

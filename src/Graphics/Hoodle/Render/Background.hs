@@ -25,6 +25,8 @@ import           Data.Foldable (mapM_)
 import           Graphics.Rendering.Cairo
 --
 #ifdef POPPLER
+import qualified Data.ByteString.Char8 as C
+import           Data.Monoid
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif

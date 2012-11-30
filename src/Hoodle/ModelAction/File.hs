@@ -23,8 +23,10 @@ import qualified Data.ByteString as B
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set)
 #ifdef POPPLER
+import qualified Data.ByteString.Char8 as C
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+import           Graphics.Hoodle.Render.Background
 #endif
 import           System.FilePath (takeExtension)
 -- from hoodle-platform 

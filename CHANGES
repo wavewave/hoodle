@@ -1,3 +1,5 @@
+hxournal 
+
 0.5: 12 Dec 2011
    * First public release. basic pen operation, eraser operation, rectangular selection and file operations are implemented
 
@@ -29,5 +31,8 @@
 0.6.6: 28 Feb 2012 
    * scripting support, zoom in/out implemented. page functions are implemented
 
-0.6.7: ?
+hoodle : 
+
+0.1: 29 Nov 2012
+   * new hoodle format, load image, pdf export, simplify namespace to Hoodle
 

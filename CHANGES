@@ -28,3 +28,8 @@
 
 0.6.6: 28 Feb 2012 
    * scripting support, zoom in/out implemented. page functions are implemented
+
+0.7: 29 Nov 2012
+   * new hoodle format, load image, pdf export, simplify namespace to Hoodle
+
+

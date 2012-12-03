@@ -20,6 +20,7 @@ import           Control.Lens
 import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
+import qualified Data.IntMap as IM
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
@@ -30,7 +31,8 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render
+-- import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
@@ -160,13 +162,14 @@ sequence1_ _ [a] = a
 sequence1_ i (a:as) = a >> i >> sequence1_ i as 
 
 -- | 
-renderjob :: Hoodle -> FilePath -> IO () 
+renderjob :: RHoodle -> FilePath -> IO () 
 renderjob h ofp = do 
-  let p = head (hoodle_pages h) 
-  let Dim width height = page_dim p  
+  let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
+  let Dim width height = view gdimension p  
+  let rf = cairoRenderOption (InBBoxOption Nothing) :: InBBox RPage -> Render ()
   withPDFSurface ofp width height $ \s -> renderWith s $  
-    (sequence1_ showPage . map renderPage . hoodle_pages) h 
-
+    -- (sequence1_ showPage . map renderPage . hoodle_pages) h 
+    (sequence1_ showPage . map (rf . InBBox) . IM.elems . view gpages ) h 
 
 -- | 
 fileExport :: MainCoroutine ()
@@ -178,7 +181,7 @@ fileExport = fileChooser FileChooserActionSave >>= maybe (return ()) action
       then fileExtensionInvalid (".pdf","export") >> fileExport 
       else do      
         xstate <- get 
-        let hdl = (rHoodle2Hoodle . getHoodle) xstate 
+        let hdl = getHoodle xstate -- (rHoodle2Hoodle . getHoodle) xstate 
         liftIO (renderjob hdl filename) 
 
 

@@ -112,23 +112,21 @@ updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do
     (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
                          <*> adjustmentGetValue vadj 
     geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas 
-    let ulcoord = maybeError "updateCvsFromHoodle" $ 
-                    desktop2Page geometry (DeskCoord (xdesk,ydesk))
-    let cdim = canvasDim geometry 
-    let arr = makeContinuousArrangement zmode cdim hdl ulcoord 
-        vinfo = view viewInfo cinfo 
-        nvinfo = xfrmViewInfo (const arr) vinfo
-    return 
-      . CanvasContPage 
-      . set currentPageNum pagenum
-      . xfrmCvsInfo (const nvinfo) $ cinfo 
-        
---    return . CanvasInfoBox
---      . set currentPageNum pagenum  
---      . set (viewInfo.pageArrangement) arr $ cinfo 
---  selectBoxAction fsingle fcont cinfobox
---   where fsingle cinfo = do 
-              
+    case desktop2Page geometry (DeskCoord (xdesk,ydesk)) of
+      Nothing -> return (CanvasContPage cinfo)
+      Just ulcoord -> do 
+        let cdim = canvasDim geometry 
+        let arr = makeContinuousArrangement zmode cdim hdl ulcoord 
+            vinfo = view viewInfo cinfo 
+            nvinfo = xfrmViewInfo (const arr) vinfo
+        return 
+          . CanvasContPage 
+          . set currentPageNum pagenum
+          . xfrmCvsInfo (const nvinfo) $ cinfo 
+
+   
+--     let ulcoord = maybeError "updateCvsFromHoodle" $ 
+            
 
 -- |
 updatePage :: HoodleModeState -> CanvasInfoBox -> IO CanvasInfoBox 

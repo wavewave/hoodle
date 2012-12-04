@@ -34,5 +34,10 @@ hxournal
 hoodle : 
 
 0.1: 29 Nov 2012
-   * new hoodle format, load image, pdf export, simplify namespace to Hoodle
+   * new hoodle format   
+   * simplify namespace to Hoodle
+   * inter-process clipboard support using GtkClipboard
+   * Image embedding support 
+   * pdf export support 
+
 

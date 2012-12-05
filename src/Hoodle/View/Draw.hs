@@ -203,7 +203,7 @@ drawFuncGen _typ render = SinglePageDraw func
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
-                clipBBox (fmap (flip inflate 1) mbboxnew) 
+                clipBBox (fmap (flip inflate 1) mbboxnew) -- ad hoc ? 
                 render (pnum,page) mbboxnew flag
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
                 resetClip 
@@ -308,14 +308,14 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
 
 
 -- |
-drawPageClearly :: DrawingFunction SinglePage EditMode
-drawPageClearly = drawFuncGen EditMode f 
+drawSinglePage :: DrawingFunction SinglePage EditMode
+drawSinglePage = drawFuncGen EditMode f 
   where f (_,page) _ Clear = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
         f (_,page) mbbox Efficient = cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
 
 -- |
-drawPageSelClearly :: DrawingFunction SinglePage SelectMode         
-drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
+drawSinglePageSel :: DrawingFunction SinglePage SelectMode         
+drawSinglePageSel = drawFuncSelGen rendercontent renderselect 
   where rendercontent (_pnum,tpg) mbbox flag = do
           let pg' = hPage2RPage tpg 
           case flag of 
@@ -326,15 +326,15 @@ drawPageSelClearly = drawFuncSelGen rendercontent renderselect
 
 -- | 
         
-drawContHoodleClearly :: DrawingFunction ContinuousPage EditMode
-drawContHoodleClearly = drawContPageGen f 
+drawContHoodle :: DrawingFunction ContinuousPage EditMode
+drawContHoodle = drawContPageGen f 
   where f (_,page) _ Clear = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
         f (_,page) mbbox Efficient = cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
 
 -- |
 
-drawContHoodleSelClearly :: DrawingFunction ContinuousPage SelectMode
-drawContHoodleSelClearly = drawContPageSelGen renderother renderselect 
+drawContHoodleSel :: DrawingFunction ContinuousPage SelectMode
+drawContHoodleSel = drawContPageSelGen renderother renderselect 
   where renderother (_,page) mbbox flag = 
           case flag of 
             Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) page

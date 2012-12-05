@@ -102,7 +102,7 @@ invalidateInBBox :: Maybe BBox -- ^ desktop coord
                     -> CanvasId -> MainCoroutine ()
 invalidateInBBox mbbox flag cid = do 
   invalidateGeneral cid mbbox flag 
-    drawPageClearly drawPageSelClearly drawContHoodleClearly drawContHoodleSelClearly
+    drawSinglePage drawSinglePageSel drawContHoodle drawContHoodleSel
 
 -- | 
 

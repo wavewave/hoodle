@@ -55,19 +55,10 @@ penPageSwitch :: -- (ViewMode a) =>
 penPageSwitch {- cinfo -} pgn = do 
     xstate <- get
     let cibox = view currentCanvasInfo xstate     
-        -- ncinfo = set currentPageNum (unPageNum pgn) cinfo 
         ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum pgn)) cibox 
     put (set currentCanvasInfo ncibox xstate) 
     return ncibox 
         
-{-
-        mfunc = const (return . CanvasInfoBox $ ncinfo)  
-  (xst,cinfo') <- get >>= switchact 
-                             put xst     
-                             return cinfo'
-  where switchact xst = do 
-          return . (,ncinfo) =<< modifyCurrCvsInfoM mfunc xst
--}
 
 -- | Common Pen Work starting point 
 commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeometry  

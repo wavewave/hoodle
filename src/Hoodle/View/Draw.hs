@@ -303,33 +303,36 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
 
 -- |
 drawPageClearly :: DrawingFunction SinglePage EditMode
-drawPageClearly = drawFuncGen EditMode $ \(_,page) _mbbox -> 
-                     cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+drawPageClearly = drawFuncGen EditMode f 
+  where f (_,page) Nothing = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+        f (_,page) (Just bbox) = cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page) 
 
 -- |
 drawPageSelClearly :: DrawingFunction SinglePage SelectMode         
 drawPageSelClearly = drawFuncSelGen rendercontent renderselect 
-  where rendercontent (_pnum,tpg)  _mbbox = do
+  where rendercontent (_pnum,tpg)  mbbox = do
           let pg' = hPage2RPage tpg 
-          cairoRenderOption (RBkgDrawPDF,DrawFull) pg' 
-          -- cairoRenderOption (InBBoxOption mbbox) (InBBox pg') 
+          case mbbox of 
+            Nothing -> cairoRenderOption (RBkgDrawPDF,DrawFull) pg' 
+            Just bbox -> cairoRenderOption (InBBoxOption (Just bbox)) (InBBox pg') 
         renderselect (_pnum,tpg) mbbox = do 
           cairoHittedBoxDraw tpg mbbox
 
 -- | 
         
 drawContHoodleClearly :: DrawingFunction ContinuousPage EditMode
-drawContHoodleClearly = 
-  drawContPageGen $ \(_,page) _mbbox -> 
-                       cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+drawContHoodleClearly = drawContPageGen f 
+  where f (_,page) Nothing = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+        f (_,page) (Just bbox) = cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page) 
 
 -- |
 
 drawContHoodleSelClearly :: DrawingFunction ContinuousPage SelectMode
 drawContHoodleSelClearly = drawContPageSelGen renderother renderselect 
-  where renderother (_,page) _mbbox  = 
-          cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-          -- cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+  where renderother (_,page) mbbox  = 
+          case mbbox of 
+            Nothing -> cairoRenderOption (RBkgDrawPDF,DrawFull) page
+            Just bbox -> cairoRenderOption (InBBoxOption (Just bbox)) (InBBox page)
         renderselect (_pnum,tpg) mbbox =  
           cairoHittedBoxDraw tpg mbbox
 

@@ -24,8 +24,6 @@ import Data.Hoodle.Simple
 -- from this package 
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type 
--- import Graphics.Hoodle.Render.Simple
--- import Graphics.Hoodle.Render.BBox
 -- 
 import Prelude hiding (mapM_)
 
@@ -49,12 +47,6 @@ instance Renderable StrokeBBox where
 instance Renderable RLayer where
   cairoRender = renderRLayer_InBBox Nothing 
   
-{-  
--- | 
-instance Renderable RPage where
-  cairoRender = renderRPage 
--}
-
 -- | 
 class RenderOptionable a where   
   type RenderOption a :: *
@@ -120,62 +112,15 @@ instance ( RenderOptionable (b,Dimension)
   type RenderOption (GPage b s a) = (RenderOption (b,Dimension), RenderOption a)
   cairoRenderOption = cairoOptionPage
             
-{-
--- | 
-instance RenderOptionable (InBBox RLayer) where
-  type RenderOption (InBBox RLayer) = InBBoxOption 
-  cairoRenderOption (InBBoxOption mbbox) (InBBox layer) 
-    = renderRLayer_InBBox mbbox layer 
--}
-
 -- | 
 instance RenderOptionable (InBBox RPage) where
   type RenderOption (InBBox RPage) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
+    let mbboxtemp = mbbox >>= \bbox -> return (inflate bbox 2.0) -- this is due to a thin unexpected grey margin. 
+    cairoRenderOption (RBkgDrawPDFInBBox mbboxtemp) (view gbackground page, view gdimension page) 
     mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
 
 
 
-{-
-instance Renderable (BackgroundPDFDrawable,Dimension) where
-  cairoRender = cairoRenderBackgroundPDFDrawable
--}
 
-{-
--- |   
-cairoLayer :: (Renderable a, Foldable s) => GLayer buf s a -> Render ()
-cairoLayer = mapM_ cairoRender . gstrokes 
-
--- | 
-instance (Renderable a, Foldable s) => Renderable (GLayer s a) where
-  cairoRender = cairoLayer 
-
--- | 
-cairoPage :: (Renderable (b,Dimension), Renderable a, Foldable s) =>  
-             GPage b s a -> Render ()
-cairoPage p = do 
-  cairoRender (gbackground p,gdimension p)
-  mapM_ cairoRender (glayers p)
-
--- | 
-instance (Renderable (b,Dimension), Renderable a, Foldable s) 
-         => Renderable (GPage b s a) where
-  cairoRender = cairoPage 
--}
-
-
-
-{-
--- | 
-cairoOptionLayer :: (RenderOptionable a, Foldable s) => 
-                    RenderOption a -> GLayer s a -> Render () 
-cairoOptionLayer opt = mapM_ (cairoRenderOption opt) . gstrokes 
-
--- | 
-instance (RenderOptionable a, Foldable s) => 
-         RenderOptionable (GLayer s a) where
-  type RenderOption (GLayer s a) = RenderOption a
-  cairoRenderOption = cairoOptionLayer 
--}
 

@@ -106,7 +106,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                  =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
           let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
               nbbox = xformBBox f bbox 
-          invalidateAllInBBox (Just (inflate nbbox 2.0))
+          invalidateAllInBBox (Just (inflate nbbox 2.0)) Efficient
 
 -- | main pen coordinate adding process
 -- | now being changed

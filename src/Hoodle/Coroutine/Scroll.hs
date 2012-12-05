@@ -28,6 +28,7 @@ import qualified Hoodle.ModelAction.Adjustment as A
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
+import           Hoodle.View.Draw
 --
 import           Prelude hiding ((.), id)
 
@@ -95,7 +96,8 @@ vscrollMove cid = do
         when (cid /= cid') $ error "something wrong in vscrollMove"
         updateXState $ return . over currentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
-        invalidateWithBuf cid 
+        -- invalidateWithBuf cid 
+        invalidateInBBox Nothing Efficient cid 
         vscrollMove cid 
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"        

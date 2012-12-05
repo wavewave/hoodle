@@ -47,13 +47,13 @@ data DrawingFunctionSet =
                      }
 
 -- | 
-invalidateGeneral :: CanvasId -> Maybe BBox 
+invalidateGeneral :: CanvasId -> Maybe BBox -> DrawFlag 
                   -> DrawingFunction SinglePage EditMode
                   -> DrawingFunction SinglePage SelectMode
                   -> DrawingFunction ContinuousPage EditMode
                   -> DrawingFunction ContinuousPage SelectMode
                   -> MainCoroutine () 
-invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do 
+invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do 
     xst <- get 
     selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
   where fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
@@ -65,20 +65,20 @@ invalidateGeneral cid mbbox drawf drawfsel drawcont drawcontsel = do
             Left page -> do  
               liftIO (unSinglePageDraw drawf isCurrentCvs 
                         <$> view drawArea <*> pure (cpn,page) 
-                        <*> view viewInfo <*> pure mbbox $ cvsInfo )
+                        <*> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
             Right tpage -> do 
               liftIO (unSinglePageDraw drawfsel isCurrentCvs
                         <$> view drawArea <*> pure (cpn,tpage) 
-                        <*> view viewInfo <*> pure mbbox $ cvsInfo )
+                        <*> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
         fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
         fcont xstate cvsInfo = do 
           let hdlmodst = view hoodleModeState xstate 
               isCurrentCvs = cid == getCurrentCanvasId xstate
           case hdlmodst of 
             ViewAppendState hdl -> do  
-              liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox hdl)
+              liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox hdl flag)
             SelectState thdl -> 
-              liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox thdl)
+              liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox thdl flag)
           
 -- |         
 
@@ -93,31 +93,33 @@ invalidateOther = do
 -- | invalidate clear 
 
 invalidate :: CanvasId -> MainCoroutine () 
-invalidate = invalidateInBBox Nothing 
+invalidate = invalidateInBBox Nothing Clear  
 
 -- | 
 
 invalidateInBBox :: Maybe BBox -- ^ desktop coord
+                    -> DrawFlag 
                     -> CanvasId -> MainCoroutine ()
-invalidateInBBox mbbox cid = do 
-  invalidateGeneral cid mbbox
+invalidateInBBox mbbox flag cid = do 
+  invalidateGeneral cid mbbox flag 
     drawPageClearly drawPageSelClearly drawContHoodleClearly drawContHoodleSelClearly
 
 -- | 
 
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
+                       -> DrawFlag
                        -> MainCoroutine ()
-invalidateAllInBBox mbbox = do                        
+invalidateAllInBBox mbbox flag = do                        
   xstate <- get
   let cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
-  forM_ keys (invalidateInBBox mbbox)
+  forM_ keys (invalidateInBBox mbbox flag)
 
 -- | 
 
 invalidateAll :: MainCoroutine () 
-invalidateAll = invalidateAllInBBox Nothing
-
+invalidateAll = invalidateAllInBBox Nothing Clear 
+ 
 -- | Invalidate Current canvas
 
 invalidateCurrent :: MainCoroutine () 
@@ -160,10 +162,9 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
                      paint 
                      xformfunc 
                      rndr 
-      
+{-      
 -- | Drawing using layer buffer
- 
-invalidateWithBuf :: CanvasId -> MainCoroutine () 
+ invalidateWithBuf :: CanvasId -> MainCoroutine () 
 invalidateWithBuf = invalidateWithBufInBBox Nothing
   
 -- | Drawing using layer buffer in BBox  
@@ -171,6 +172,7 @@ invalidateWithBuf = invalidateWithBufInBBox Nothing
 invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
 invalidateWithBufInBBox mbbox cid =  
   invalidateGeneral cid mbbox drawBuf drawSelBuf drawContHoodleBuf drawContHoodleSelClearly
+-}
 
 -- | check current canvas id and new active canvas id and invalidate if it's changed. 
 

@@ -15,6 +15,7 @@ module Hoodle.Coroutine.Callback where
 import Control.Concurrent
 import Control.Exception
 import Data.Time
+import System.Directory
 import System.Environment
 import System.FilePath
 import System.Locale
@@ -45,7 +46,9 @@ patternerr e = errorlog (show e)
 errorlog :: String -> IO ()
 errorlog str = do 
   homepath <- getEnv "HOME"
-  outh <- openFile (homepath </> ".hoodle.d" </> "error.log") AppendMode 
+  let dir = homepath </> ".hoodle.d"
+  createDirectoryIfMissing False dir
+  outh <- openFile (dir </> "error.log") AppendMode 
   utctime <- getCurrentTime 
   let timestr = formatTime defaultTimeLocale "%F %H:%M:%S %Z" utctime
   hPutStr outh (timestr ++ " : " )  

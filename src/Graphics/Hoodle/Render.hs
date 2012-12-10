@@ -194,9 +194,9 @@ renderBkg_InBBox _ _  (BackgroundPdf _ _ _ _) =
 ----
 
 -- | 
-renderRBkg :: (RBackground,Dimension) -> Render ()
-renderRBkg r@(RBkgSmpl _ _ _,dim) = renderBkg (rbkg2Bkg (fst r),dim)
-renderRBkg (RBkgPDF _ _ _ p _,dim) = do
+renderRBkg :: (RBackground,Dimension) -> Render (RBackground,Dimension)
+renderRBkg (r@(RBkgSmpl _ _ _),dim) = renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
+renderRBkg (r@(RBkgPDF _ _ _ p _),dim) = do
   case p of 
     Nothing -> return () 
     Just pg -> do 
@@ -207,11 +207,12 @@ renderRBkg (RBkgPDF _ _ _ p _,dim) = do
 #ifdef POPPLER
       PopplerPage.pageRender pg
 #endif     
+  return (r,dim) 
 
 -- |
-renderRItem :: RItem -> Render () 
-renderRItem (RItemStroke strk) = renderStrk (strkbbx_strk strk)
-renderRItem (RItemImage img msfc) = do  
+renderRItem :: RItem -> Render RItem  
+renderRItem itm@(RItemStroke strk) = renderStrk (strkbbx_strk strk) >> return itm
+renderRItem itm@(RItemImage img msfc) = do  
   case msfc of
     Nothing -> renderImg (imgbbx_img img)
     Just sfc -> do 
@@ -227,8 +228,7 @@ renderRItem (RItemImage img msfc) = do
       paint 
       restore
       resetClip 
-  
-  -- renderImg (imgbbx_img img) 
+  return itm 
 
 --------------
 -- BBoxOnly --
@@ -267,11 +267,6 @@ renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
 renderRLayer_BBoxOnly :: RLayer -> Render ()
 renderRLayer_BBoxOnly = mapM_  renderRItem_BBoxOnly . view gitems
 
-  
-  -- mapM_ renderStrkBBx_BBoxOnly . view gstrokes 
-
-
-
 
   
 -- | render only bounding box of a StrokeBBox      
@@ -280,7 +275,6 @@ renderRPage_BBoxOnly page = do
     let dim = view gdimension page
         bkg = view gbackground page 
         lyrs =  view glayers page
-    -- cairoDrawBackground (toPage id page)
     renderRBkg_NoPDF (bkg,dim)
     mapM_ renderRLayer_BBoxOnly lyrs
 
@@ -290,7 +284,7 @@ renderRPage_BBoxOnly page = do
 
 -- | render background without pdf 
 renderRBkg_NoPDF :: (RBackground,Dimension) -> Render ()
-renderRBkg_NoPDF r@(RBkgSmpl _ _ _,_) = renderRBkg r
+renderRBkg_NoPDF r@(RBkgSmpl _ _ _,_) = renderRBkg r >> return ()
 renderRBkg_NoPDF (RBkgPDF _ _ _ _ _,_) = return ()
 
 
@@ -299,7 +293,9 @@ renderRBkg_NoPDF (RBkgPDF _ _ _ _ _,_) = return ()
 ------------
 
 -- | background drawing in bbox 
-renderRBkg_InBBox :: Maybe BBox -> (RBackground,Dimension) -> Render ()
+renderRBkg_InBBox :: Maybe BBox 
+                  -> (RBackground,Dimension) 
+                  -> Render (RBackground,Dimension)
 renderRBkg_InBBox mbbox (b,dim) = do 
     case b of 
       RBkgSmpl _ _ _ -> do 
@@ -310,10 +306,11 @@ renderRBkg_InBBox mbbox (b,dim) = do
         clipBBox mbbox
         renderRBkg_Buf (b,dim)
         resetClip
+    return (b,dim)
 
 
 -- | render RLayer within BBox after hittest items
-renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render () 
+renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render RLayer
 renderRLayer_InBBox mbbox layer = do  
   clipBBox mbbox 
   let hittestbbox = case mbbox of 
@@ -323,6 +320,7 @@ renderRLayer_InBBox mbbox layer = do
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
   (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
   resetClip
+  return layer 
 
 
 -----------------------
@@ -330,38 +328,34 @@ renderRLayer_InBBox mbbox layer = do
 -----------------------
 
 -- | Background rendering using buffer
-renderRBkg_Buf :: (RBackground,Dimension) -> Render ()
+renderRBkg_Buf :: (RBackground,Dimension) 
+               -> Render (RBackground,Dimension)
 renderRBkg_Buf (b,dim) = do 
     case b of 
       RBkgSmpl _ _ msfc  -> do  
         case msfc of 
-          Nothing -> renderRBkg (b,dim)
+          Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
             setSourceSurface sfc 0 0 
-            -- setOperator OperatorSource
-            -- setAntialias AntialiasNone
             paint 
       RBkgPDF _ _ _ _ msfc -> do 
         case msfc of 
-          Nothing -> renderRBkg (b,dim)
+          Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
             setSourceSurface sfc 0 0 
-            -- setOperator OperatorSource
-            -- setAntialias AntialiasNone
             paint 
+    return (b,dim)
 
 -- | 
-renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Render ()
+renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Render RLayer 
 renderRLayer_InBBoxBuf mbbox lyr = do
-  case view gbuffer lyr of 
-    LyBuf (Just sfc) -> do clipBBox mbbox
-                           setSourceSurface sfc 0 0 
-                           -- setOperator OperatorSource
-                           -- setAntialias AntialiasNone
-                           paint 
-                           resetClip 
-    _ -> renderRLayer_InBBox mbbox lyr 
-
+    case view gbuffer lyr of 
+      LyBuf (Just sfc) -> do clipBBox mbbox
+                             setSourceSurface sfc 0 0 
+                             paint 
+                             resetClip 
+      _ -> renderRLayer_InBBox mbbox lyr >> return () 
+    return lyr 
 
 -------------------
 -- update buffer
@@ -407,11 +401,6 @@ cnstrctRHoodle hdl = do
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) Nothing 
   return . set gtitle ttl . set gpages (fromList npgs) $ emptyGHoodle 
     
-{-  
--- |
-mkAllTPageBBoxMapPDF :: [Page] -> IO [TPageBBoxMapPDF]
-mkAllTPageBBoxMapPDF pgs = evalStateT (mapM mkPagePDF pgs) Nothing 
--}
 
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) IO RPage
@@ -429,18 +418,7 @@ cnstrctRLayer lyr = do
   nitms <- (mapM cnstrctRItem . view items) lyr 
   return (set gitems nitms emptyRLayer)
 
-
-{- -- |   
-mkRLayer :: Layer -> RLayer   
-mkRLayer lyr = let nitms = map mkRItem . view items $ lyr 
-               in set gitems nitms emptyRLayer
-  
--- | 
-mkRItem :: Item -> RItem 
-mkRItem (ItemStroke strk) = RItemStroke (mkStrokeBBox strk)
-mkRItem (ItemImage img) = RItemImage (mkImageBBox img) Nothing 
--}                  
-                  
+                 
 -- |
 cnstrctRBkg_StateT :: Dimension -> Background 
                    -> StateT (Maybe Context) IO RBackground
@@ -452,9 +430,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
         Just _ -> return rbkg
         Nothing -> do 
           sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
-          renderWith sfc $ do 
-            -- cairoDrawBkg dim bkg
-            renderBkg (bkg,dim) 
+          renderWith sfc $ renderBkg (bkg,dim) 
           return rbkg { rbkg_cairosurface = Just sfc}
     RBkgPDF md mf pn _ _ -> do 
 #ifdef POPPLER

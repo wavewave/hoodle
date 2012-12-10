@@ -14,6 +14,7 @@
 
 module Graphics.Hoodle.Render.Generic where
 
+import Control.Applicative
 import Control.Lens
 import Data.Foldable
 import Graphics.Rendering.Cairo
@@ -27,21 +28,25 @@ import Graphics.Hoodle.Render.Type
 -- 
 import Prelude hiding (mapM_)
 
+-- | temporary util
+passarg :: (Monad m) => (a -> m ()) -> a -> m a
+passarg f a = f a >> return a
+
 -- | 
 class Renderable a where 
-  cairoRender :: a -> Render ()
+  cairoRender :: a -> Render a
                  
 -- | 
 instance Renderable (Background,Dimension) where
-  cairoRender = renderBkg 
+  cairoRender = passarg renderBkg 
 
 -- | 
 instance Renderable Stroke where 
-  cairoRender = renderStrk 
+  cairoRender = passarg renderStrk 
 
 -- | 
 instance Renderable StrokeBBox where
-  cairoRender = renderStrk . strkbbx_strk
+  cairoRender = passarg (renderStrk . strkbbx_strk)
   
 -- | 
 instance Renderable RLayer where
@@ -50,7 +55,7 @@ instance Renderable RLayer where
 -- | 
 class RenderOptionable a where   
   type RenderOption a :: *
-  cairoRenderOption :: RenderOption a -> a -> Render ()
+  cairoRenderOption :: RenderOption a -> a -> Render a
 
 -- | 
 instance RenderOptionable (Background,Dimension) where
@@ -69,14 +74,14 @@ data StrokeBBoxOption = DrawFull | DrawBoxOnly
 instance RenderOptionable StrokeBBox where
   type RenderOption StrokeBBox = StrokeBBoxOption
   cairoRenderOption DrawFull = cairoRender 
-  cairoRenderOption DrawBoxOnly = renderStrkBBx_BBoxOnly
+  cairoRenderOption DrawBoxOnly = passarg renderStrkBBx_BBoxOnly
   
 -- | 
 instance RenderOptionable (RBackground,Dimension) where 
   type RenderOption (RBackground,Dimension) = RBkgOpt 
   -- cairoRenderOption :: RBkgOpt -> (RBackground,Dimension) -> Render ()
   cairoRenderOption RBkgDrawPDF = renderRBkg
-  cairoRenderOption RBkgDrawWhite = renderRBkg_Dummy
+  cairoRenderOption RBkgDrawWhite = passarg renderRBkg_Dummy
   cairoRenderOption RBkgDrawBuffer = renderRBkg_Buf 
   cairoRenderOption (RBkgDrawPDFInBBox mbbox) = renderRBkg_InBBox mbbox 
 
@@ -84,14 +89,13 @@ instance RenderOptionable (RBackground,Dimension) where
 instance RenderOptionable RLayer where
   type RenderOption RLayer = StrokeBBoxOption 
   cairoRenderOption DrawFull = cairoRender
-  cairoRenderOption DrawBoxOnly = renderRLayer_BBoxOnly 
+  cairoRenderOption DrawBoxOnly = passarg renderRLayer_BBoxOnly 
 
 -- | 
 instance RenderOptionable (InBBox RLayer) where
   type RenderOption (InBBox RLayer) = InBBoxOption
-  -- cairoRenderOption :: RLyrOpt -> RLayer -> Render ()  
   cairoRenderOption (InBBoxOption mbbox) (InBBox lyr) = 
-    renderRLayer_InBBoxBuf mbbox lyr
+    InBBox <$> renderRLayer_InBBoxBuf mbbox lyr
     
 -- |
 cairoOptionPage :: ( RenderOptionable (b,Dimension)
@@ -99,10 +103,11 @@ cairoOptionPage :: ( RenderOptionable (b,Dimension)
                    , Foldable s) => 
                    (RenderOption (b,Dimension), RenderOption a) 
                    -> GPage b s a 
-                   -> Render ()
+                   -> Render (GPage b s a)
 cairoOptionPage (optb,opta) p = do 
     cairoRenderOption optb (view gbackground p, view gdimension p)
     mapM_ (cairoRenderOption opta) (view glayers p)
+    return p 
   
 -- | 
 instance ( RenderOptionable (b,Dimension)
@@ -119,7 +124,7 @@ instance RenderOptionable (InBBox RPage) where
     let mbboxtemp = mbbox >>= \bbox -> return (inflate bbox 2.0) -- this is due to a thin unexpected grey margin. 
     cairoRenderOption (RBkgDrawPDFInBBox mbboxtemp) (view gbackground page, view gdimension page) 
     mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
-
+    return (InBBox page) 
 
 
 

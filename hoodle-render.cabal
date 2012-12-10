@@ -1,5 +1,5 @@
 Name:		hoodle-render
-Version:	0.1.0.0.999
+Version:	0.1.999
 Synopsis:       Hoodle file renderer
 Description: 	Rendering library using cairo for hoodle file format
 License: 	BSD3

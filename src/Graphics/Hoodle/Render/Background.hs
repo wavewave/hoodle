@@ -156,8 +156,5 @@ drawRuling_InBBox (BBox (x1,y1) (x2,y2)) w h style = do
     _ -> return ()     
 
 
-
-
--- instance RenderOptionable (BackgroundPDFDrawable,Dimension) where
       
 

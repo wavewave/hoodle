@@ -17,27 +17,28 @@ module Hoodle.Coroutine.Window where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State 
-import           Graphics.UI.Gtk hiding (get,set)
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Time.Clock 
+import           Graphics.UI.Gtk hiding (get,set)
 --
-import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
+import           Data.Hoodle.Simple (Dimension(..))
 --
+import           Hoodle.Accessor
+import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Page
+import           Hoodle.ModelAction.Page
+import           Hoodle.ModelAction.Window
 import           Hoodle.Type.Canvas
-import           Hoodle.Type.Event
-import           Hoodle.Type.Window
-import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Event
+import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Predefined
+import           Hoodle.Type.Window
 import           Hoodle.Util
-import           Hoodle.ModelAction.Window
-import           Hoodle.ModelAction.Page
-import           Hoodle.Coroutine.Page
-import           Hoodle.Coroutine.Draw
-import           Hoodle.Accessor
+import           Hoodle.View.Draw
 --
 import Prelude hiding ((.),id)
 
@@ -161,7 +162,8 @@ paneMoveStart :: MainCoroutine ()
 paneMoveStart = do 
     ev <- nextevent 
     case ev of 
-      UpdateCanvas cid -> invalidateWithBuf cid >> paneMoveStart 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> paneMoveStart 
+                          -- invalidateWithBuf cid >> paneMoveStart        
       PaneMoveEnd -> do 
         -- canvasZoomUpdateAll 
         return () 

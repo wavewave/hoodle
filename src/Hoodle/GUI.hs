@@ -22,6 +22,7 @@ import qualified Data.IntMap as M
 import           Data.Maybe
 -- import           Data.Time
 import           Graphics.UI.Gtk hiding (get,set)
+import           System.Directory
 import           System.Environment
 import           System.FilePath
 import           System.IO
@@ -91,7 +92,9 @@ startGUI mfname mhook = do
                       mainGUI 
   mainaction `catch` \(_e :: SomeException) -> do 
     homepath <- getEnv "HOME"
-    outh <- openFile (homepath </> ".hoodle.d" </> "error.log") WriteMode 
+    let dir = homepath </> ".hoodle.d"
+    createDirectoryIfMissing False dir
+    outh <- openFile (dir </> "error.log") WriteMode 
     hPutStrLn outh "error occured"
     hClose outh 
   return ()

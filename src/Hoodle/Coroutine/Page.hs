@@ -36,8 +36,11 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Enum
 import           Hoodle.Util
 import           Hoodle.View.Coordinate
+import           Hoodle.View.Draw
 -- 
 import Prelude hiding ((.), id)
+import Debug.Trace
+
 
 -- | change page of current canvas using a modify function
 
@@ -143,7 +146,8 @@ canvasZoomUpdateBufAll = do
     mapM_ updatefunc klst 
   where 
     updatefunc cid 
-      = canvasZoomUpdateGenRenderCvsId  (invalidateWithBuf cid) cid Nothing
+      = canvasZoomUpdateGenRenderCvsId  (invalidateInBBox Nothing Efficient cid) cid Nothing
+        -- canvasZoomUpdateGenRenderCvsId  (invalidateWithBuf cid) cid Nothing
 -- |
           
 canvasZoomUpdateAll :: MainCoroutine () 

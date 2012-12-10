@@ -33,6 +33,7 @@ import Hoodle.Type.HoodleState
 import Hoodle.Type.PageArrangement
 import Hoodle.Device
 import Hoodle.View.Coordinate
+import Hoodle.View.Draw
 import Hoodle.Coroutine.EventConnect
 import Hoodle.Coroutine.Draw
 import Hoodle.Coroutine.Commit
@@ -93,7 +94,8 @@ eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do
               newhdlmodst = ViewAppendState newhdlbbox
           commit . set hoodleModeState newhdlmodst 
             =<< (liftIO (updatePageAll newhdlmodst xstate))
-          invalidateWithBuf cid 
+          -- invalidateWithBuf cid 
+          invalidateInBBox Nothing Efficient cid 
           nitms <- rItmsInCurrLyr
           eraserProcess cid pnum geometry connidup connidmove nitms (x,y)
         else eraserProcess cid pnum geometry connidmove connidup itms (x,y) 

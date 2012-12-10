@@ -23,32 +23,25 @@ Library
   ghc-options: 	-Wall -fno-warn-orphans -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
 
-  if flag(poppler)
-    Build-Depends: base == 4.*, 
-                   mtl == 2.*, 
-                   containers == 0.4.*, 
-                   cairo == 0.12.*, 
-                   strict == 0.3.*, 
-                   bytestring == 0.9.*,
-                   poppler == 0.12.*, 
-                   lens >= 2.4 && < 2.7, 
-                   hoodle-types >= 0.0.999 && < 0.2,
-                   TypeCompose == 0.9.*
-  else
-    Build-Depends: base == 4.*, 
-                   mtl == 2.*, 
-                   containers == 0.4.*, 
-                   cairo == 0.12.*, 
-                   strict == 0.3.*, 
-                   bytestring == 0.9.*,
-                   lens >= 2.4 && < 2.7, 
-                   hoodle-types >= 0.0.999 && < 0.2,
-                   TypeCompose == 0.9.*
+  Build-Depends: base == 4.*, 
+                 mtl == 2.*, 
+                 containers == 0.4.*, 
+                 cairo == 0.12.*, 
+                 strict == 0.3.*, 
+                 bytestring == 0.9.*,
+                 lens >= 2.4, 
+                 hoodle-types >= 0.0.999 && < 0.2,
+                 TypeCompose == 0.9.*
 
+  if flag(poppler)
+    Build-Depends: poppler == 0.12.*
+  else 
+    Build-Depends: 
 
   Exposed-Modules: 
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
+                   Graphics.Hoodle.Render.Debug
                    Graphics.Hoodle.Render.Generic
                    Graphics.Hoodle.Render.Highlight
                    Graphics.Hoodle.Render.Item  

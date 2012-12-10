@@ -24,6 +24,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 -- from this package 
 import Graphics.Hoodle.Render
+import Graphics.Hoodle.Render.Debug
 import Graphics.Hoodle.Render.Type 
 -- 
 import Prelude hiding (mapM_)

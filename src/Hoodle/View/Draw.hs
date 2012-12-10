@@ -310,37 +310,47 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
 -- |
 drawSinglePage :: DrawingFunction SinglePage EditMode
 drawSinglePage = drawFuncGen EditMode f 
-  where f (_,page) _ Clear = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-        f (_,page) mbbox Efficient = cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
+  where f (_,page) _ Clear = do 
+          cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+          return ()
+        f (_,page) mbbox Efficient = do 
+          cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
+          return ()
 
 -- |
 drawSinglePageSel :: DrawingFunction SinglePage SelectMode         
-drawSinglePageSel = drawFuncSelGen rendercontent renderselect 
+drawSinglePageSel = drawFuncSelGen rendercontent renderselect
   where rendercontent (_pnum,tpg) mbbox flag = do
           let pg' = hPage2RPage tpg 
           case flag of 
-            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) pg' 
-            Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox pg') 
+            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) pg' >> return ()
+            Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox pg') >> return ()
+          return ()
         renderselect (_pnum,tpg) mbbox _flag = do 
           cairoHittedBoxDraw tpg mbbox
+          return ()
 
 -- | 
         
 drawContHoodle :: DrawingFunction ContinuousPage EditMode
-drawContHoodle = drawContPageGen f 
+drawContHoodle = drawContPageGen f  
   where f (_,page) _ Clear = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+                             >> return ()
         f (_,page) mbbox Efficient = cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
+                                     >> return ()
 
 -- |
 
 drawContHoodleSel :: DrawingFunction ContinuousPage SelectMode
 drawContHoodleSel = drawContPageSelGen renderother renderselect 
-  where renderother (_,page) mbbox flag = 
+  where renderother (_,page) mbbox flag = do
           case flag of 
-            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) page
-            Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
-        renderselect (_pnum,tpg) mbbox _flag =  
+            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) page >> return ()
+            Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox page) >> return () 
+          return ()
+        renderselect (_pnum,tpg) mbbox _flag = do
           cairoHittedBoxDraw tpg mbbox 
+          return ()
 
 
 {-

@@ -202,7 +202,7 @@ drawFuncGen _typ render = SinglePageDraw func
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
-                clipBBox (fmap (flip inflate 1) mbboxnew) -- ad hoc ? 
+                -- clipBBox (fmap (flip inflate 1) mbboxnew) -- ad hoc ? 
                 pg <- render (pnum,page) mbboxnew flag
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
                 resetClip 
@@ -250,7 +250,7 @@ drawContPageGen render = ContPageDraw func
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 let pgmbbox = fmap (getBBoxInPageCoord geometry pn) mbboxnew
-                clipBBox (fmap (flip inflate 1) pgmbbox)     
+                -- clipBBox (fmap (flip inflate 1) pgmbbox) -- ad hoc     
                 render (pn,pg) pgmbbox flag
               renderfunc = do
                 xformfunc 

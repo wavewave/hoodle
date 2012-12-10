@@ -66,19 +66,23 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
               liftIO (unSinglePageDraw drawf isCurrentCvs 
                         <$> view drawArea <*> pure (cpn,page) 
                         <*> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+              return ()
             Right tpage -> do 
               liftIO (unSinglePageDraw drawfsel isCurrentCvs
                         <$> view drawArea <*> pure (cpn,tpage) 
                         <*> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+              return ()
         fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
         fcont xstate cvsInfo = do 
           let hdlmodst = view hoodleModeState xstate 
               isCurrentCvs = cid == getCurrentCanvasId xstate
           case hdlmodst of 
             ViewAppendState hdl -> do  
-              liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox hdl flag)
-            SelectState thdl -> 
-              liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox thdl flag)
+              hdl' <- liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox hdl flag)
+              put (set hoodleModeState (ViewAppendState hdl') xstate)
+            SelectState thdl -> do 
+              thdl' <- liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox thdl flag)
+              put (set hoodleModeState (SelectState thdl') xstate) 
           
 -- |         
 

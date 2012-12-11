@@ -34,7 +34,7 @@ Library
                  TypeCompose == 0.9.*
 
   if flag(poppler)
-    Build-Depends: poppler == 0.12.*
+    Build-Depends: poppler >= 0.12.2.1
   else 
     Build-Depends: 
 

@@ -41,9 +41,7 @@ import           Hoodle.View.Draw
 import Prelude hiding ((.), id)
 import Debug.Trace
 
-
 -- | change page of current canvas using a modify function
-
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
                       >> adjustScrollbarWithGeometryCurrent
@@ -130,16 +128,13 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
                           . set (viewInfo.zoomMode) zmode $ cinfo
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
 
-
 -- | 
-
 canvasZoomUpdateCvsId :: CanvasId 
                          -> Maybe ZoomMode 
                          -> MainCoroutine ()
 canvasZoomUpdateCvsId = canvasZoomUpdateGenRenderCvsId invalidateAll
   
 -- | 
-
 canvasZoomUpdateBufAll :: MainCoroutine () 
 canvasZoomUpdateBufAll = do 
     klst <- liftM (M.keys . getCanvasInfoMap) get
@@ -148,8 +143,8 @@ canvasZoomUpdateBufAll = do
     updatefunc cid 
       = canvasZoomUpdateGenRenderCvsId  (invalidateInBBox Nothing Efficient cid) cid Nothing
         -- canvasZoomUpdateGenRenderCvsId  (invalidateWithBuf cid) cid Nothing
+
 -- |
-          
 canvasZoomUpdateAll :: MainCoroutine () 
 canvasZoomUpdateAll = do 
   klst <- liftM (M.keys . getCanvasInfoMap) get
@@ -157,19 +152,16 @@ canvasZoomUpdateAll = do
 
 
 -- | 
-
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine () 
 canvasZoomUpdate mzmode = do  
   cid <- (liftM (getCurrentCanvasId) get)
   canvasZoomUpdateCvsId cid mzmode
 
 -- |
-
 pageZoomChange :: ZoomMode -> MainCoroutine () 
 pageZoomChange = canvasZoomUpdate . Just 
 
 -- | 
-
 pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
 pageZoomChangeRel rzmode = do 
     boxAction fsingle . view currentCanvasInfo =<< get 
@@ -184,7 +176,6 @@ pageZoomChangeRel rzmode = do
       pageZoomChange (Zoom nratio)
 
 -- |
-
 newPage :: AddDirection -> MainCoroutine () 
 newPage dir = updateXState npgBfrAct 
               >> commit_ 
@@ -205,7 +196,6 @@ newPage dir = updateXState npgBfrAct
           return xstate
       
 -- | delete current page of current canvas
-          
 deleteCurrentPage :: MainCoroutine ()           
 deleteCurrentPage = do 
     updateXState delpgact >> commit_ >> canvasZoomUpdateAll >> invalidateAll
@@ -225,10 +215,8 @@ deleteCurrentPage = do
           return xstate
       
 -- | delete designated page
-          
 deletePageInHoodle :: Hoodle EditMode -> PageNum -> IO (Hoodle EditMode)
 deletePageInHoodle hdl (PageNum pgn) = do 
-  putStrLn "deletePageInHoodle is called"
   let pagelst = M.elems . view gpages $ hdl 
       (pagesbefore,_cpage:pagesafter) = splitAt pgn pagelst
       npagelst = pagesbefore ++ pagesafter

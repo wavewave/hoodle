@@ -62,7 +62,7 @@ Library
                    base64-bytestring == 0.1.*, 
                    old-locale >= 1.0 
   if flag(poppler) 
-    Build-Depends:   poppler == 0.12.* 
+    Build-Depends:   poppler >= 0.12.2.1 
   else 
     Build-Depends:
 

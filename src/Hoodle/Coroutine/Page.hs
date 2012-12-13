@@ -39,7 +39,6 @@ import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
 import Prelude hiding ((.), id)
-import Debug.Trace
 
 -- | change page of current canvas using a modify function
 changePage :: (Int -> Int) -> MainCoroutine () 

@@ -14,15 +14,12 @@
 
 module Hoodle.View.Draw where
 
-import Control.Applicative ((<$>))
+-- import Control.Applicative ((<$>))
 import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
 import Control.Category ((.))
 import           Control.Lens
 import Control.Monad (when)
-
--- import Data.Label
-
 import Data.Foldable
 import qualified Data.IntMap as M
 import Data.Maybe hiding (fromMaybe)
@@ -50,8 +47,6 @@ import Hoodle.Type.Enum
 import Hoodle.View.Coordinate
 -- 
 import Prelude hiding ((.),id,mapM_,concatMap)
-import Debug.Trace
-
 
 -- | 
 data DrawFlag = Clear | Efficient

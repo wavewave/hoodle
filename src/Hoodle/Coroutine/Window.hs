@@ -19,7 +19,7 @@ import           Control.Lens
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Data.Maybe
-import           Data.Time.Clock 
+-- import           Data.Time.Clock 
 import           Graphics.UI.Gtk hiding (get,set)
 --
 import           Data.Hoodle.Generic
@@ -35,7 +35,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
-import           Hoodle.Type.Predefined
+-- import           Hoodle.Type.Predefined
 import           Hoodle.Type.Window
 import           Hoodle.Util
 import           Hoodle.View.Draw
@@ -43,7 +43,6 @@ import           Hoodle.View.Draw
 import Prelude hiding ((.),id)
 
 -- | canvas configure with general zoom update func
-
 canvasConfigureGenUpdate :: MainCoroutine () 
                             -> CanvasId 
                             -> CanvasDimension 
@@ -63,14 +62,13 @@ canvasConfigureGenUpdate updatefunc cid cdim
           return $ setCanvasInfo (cid,CanvasContPage cinfo') xstate 
   
 -- | 
-
 doCanvasConfigure :: CanvasId 
                      -> CanvasDimension 
                      -> MainCoroutine () 
 doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
 
 -- | 
-
+{-
 canvasConfigure' :: CanvasId -> CanvasDimension -> MainCoroutine () 
 canvasConfigure' cid cdim = do
     xstate <- get 
@@ -85,10 +83,9 @@ canvasConfigure' cid cdim = do
           if dtime > predefinedWinReconfTimeBound
              then defaction 
              else return ()
-
+-}
 
 -- | 
-
 eitherSplit :: SplitType -> MainCoroutine () 
 eitherSplit stype = do
     xstate <- get
@@ -101,9 +98,9 @@ eitherSplit stype = do
       Left _ -> return ()
       Right fstate' -> do 
         let cinfobox = maybeError "eitherSplit" . M.lookup currcid $ cmap 
-        -- liftIO $ putStrLn "called here"
         let rtwin = view rootWindow xstate
             rtcntr = view rootContainer xstate 
+            rtrwin = view rootOfRootWindow xstate 
         liftIO $ containerRemove rtcntr rtwin
         (xstate'',win,fstate'') <- 
           liftIO $ constructFrame' cinfobox xstate fstate'
@@ -113,16 +110,15 @@ eitherSplit stype = do
         put xstate3 
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
+        -- liftIO $ widgetShowAll win 
+        liftIO $ widgetQueueDraw rtrwin
         (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
         xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
         put xstate5 
         canvasZoomUpdateAll
         invalidateAll 
-        -- fmap4CvsInfoBox f cinfobox --  \oldcinfo -> do 
-
 
 -- | 
-
 deleteCanvas :: MainCoroutine () 
 deleteCanvas = do 
     xstate <- get
@@ -134,14 +130,14 @@ deleteCanvas = do
       Left _ -> return ()
       Right Nothing -> return ()
       Right (Just fstate') -> do 
-        let -- cinfobox = maybeError "deleteCanvas" (M.lookup currcid cmap) 
-            cmap' = M.delete currcid cmap
+        let cmap' = M.delete currcid cmap
             newcurrcid = maximum (M.keys cmap')
         xstate0 <- changeCurrentCanvasId newcurrcid 
         let xstate1 = maybe xstate0 id $ setCanvasInfoMap cmap' xstate0
         put xstate1
         let rtwin = view rootWindow xstate1
             rtcntr = view rootContainer xstate1 
+            rtrwin = view rootOfRootWindow xstate1 
         liftIO $ containerRemove rtcntr rtwin
         (xstate'',win,fstate'') <- liftIO $ constructFrame xstate1 fstate'
         let xstate3 = set frameState fstate'' 
@@ -150,6 +146,7 @@ deleteCanvas = do
         put xstate3
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
+        liftIO $ widgetQueueDraw rtrwin
         (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
         canvasZoomUpdateAll
         xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
@@ -163,9 +160,7 @@ paneMoveStart = do
     ev <- nextevent 
     case ev of 
       UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> paneMoveStart 
-                          -- invalidateWithBuf cid >> paneMoveStart        
       PaneMoveEnd -> do 
-        -- canvasZoomUpdateAll 
         return () 
       CanvasConfigure cid w' h'-> do 
         canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h')) 
@@ -173,9 +168,7 @@ paneMoveStart = do
       _ -> paneMoveStart
        
 
-
--- | 
-
+-- | not yet implemented?
 paneMoved :: MainCoroutine () 
 paneMoved = do 
   liftIO $ putStrLn "pane moved called"

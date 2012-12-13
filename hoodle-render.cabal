@@ -1,5 +1,5 @@
 Name:		hoodle-render
-Version:	0.1.999
+Version:	0.2
 Synopsis:       Hoodle file renderer
 Description: 	Rendering library using cairo for hoodle file format
 License: 	BSD3
@@ -30,7 +30,7 @@ Library
                  strict == 0.3.*, 
                  bytestring == 0.9.*,
                  lens >= 2.4, 
-                 hoodle-types >= 0.0.999 && < 0.2,
+                 hoodle-types >= 0.1 && < 0.2,
                  TypeCompose == 0.9.*
 
   if flag(poppler)
@@ -54,21 +54,5 @@ Library
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
                    Graphics.Hoodle.Render.Util.HitTest
-
-
   if flag(poppler)
     cpp-options: -DPOPPLER
-                  
-
-                   -- Graphics.Hoodle.Render.SimpleNew 
-                   -- Graphics.Hoodle.Render.BBox
-                   -- Graphics.Hoodle.Render.PDFBackground
-                   -- Graphics.Hoodle.Render.BBoxMapPDF
-                   -- Graphics.Hoodle.Render.BBoxMapPDFImg
-                   -- Graphics.Hoodle.Render.Type
-                   -- Graphics.Hoodle.Render.Type.BBoxMapPDFImg
-                   -- Graphics.Hoodle.Render.Type.Select
-                   -- Graphics.Hoodle.Render.BBoxOnly
-                   -- Graphics.Hoodle.Render.InBBox
-                   -- Graphics.Hoodle.Render.Item
-                   -- Graphics.Hoodle.Render.Simple

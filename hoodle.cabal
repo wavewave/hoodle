@@ -39,7 +39,7 @@ Library
                    cmdargs >= 0.7 && < 0.11,
                    configurator == 0.2.*,
                    dyre == 0.8.*, 
-                   hoodle-core == 0.8
+                   hoodle-core == 0.8.0.999
   Exposed-Modules: 
                    Hoodle.ProgType
                    Hoodle.Job

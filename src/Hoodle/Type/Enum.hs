@@ -75,17 +75,19 @@ convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
 convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
 
 convertRGBAToHex :: (Double,Double,Double,Double) -> B.ByteString 
-convertRGBAToHex (r,g,b,a) = B.pack ( ("#"++) 
-                                      . hexify r  
-                                      . hexify g
-                                      . hexify b
-                                      . hexify a $ "" )
+convertRGBAToHex = B.pack . rgbaToHEX 
+
+ -- B.pack ( ("#"++) 
+                             --          . hexify r  
+                             --         . hexify g
+                             --          . hexify b
+                             --         . hexify a $ "" )
 
 
-hexify :: Double -> ShowS 
-hexify x = if x >= 1.0 
-             then ("ff"++)  
-             else showHex (floor (x*256.0) :: Int)
+-- hexify :: Double -> ShowS 
+-- hexify x = if x >= 1.0 
+--             then ("ff"++)  
+--             else showHex (floor (x*256.0) :: Int)
 
 convertPenColorToByteString :: PenColor-> B.ByteString 
 convertPenColorToByteString pcol = 

@@ -46,7 +46,7 @@ module Graphics.Hoodle.Render
 , cnstrctRHoodle  
 ) where
 
-import           Control.Lens 
+import           Control.Lens (view,set,over)
 import           Control.Monad.State hiding (mapM,mapM_)
 import           Data.Foldable
 import           Data.Traversable (mapM)

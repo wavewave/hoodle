@@ -55,13 +55,14 @@ predefined_pencolor =
              , ("yellow"    , hexToRGBA 0xffff00ff)
              , ("white"     , hexToRGBA 0xffffffff) ] 
 
-{-
+-- | need to be refined. 
 getPenColor :: B.ByteString -> Maybe (Double,Double,Double,Double) 
 getPenColor b | (not . B.null) b = 
   case B.head b of 
-    '#' -> B.tail b 
--}
+    '#' -> Just (hexToRGBA . (read  :: String -> Integer) . B.unpack $ ("0x" `B.append` (B.tail b) ))
+    _ -> M.lookup b predefined_pencolor 
 
+-- | 
 predefined_bkgcolor :: M.Map B.ByteString (Double,Double,Double,Double)
 predefined_bkgcolor = 
   M.fromList [ (""      , hexToRGBA 0xffffffff) 

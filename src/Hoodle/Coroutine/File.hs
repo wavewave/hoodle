@@ -38,6 +38,7 @@ import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
 import           Text.Hoodle.Builder 
 -- from this package 
+import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Mode 
@@ -185,6 +186,21 @@ fileExport = fileChooser FileChooserActionSave >>= maybe (return ()) action
         let hdl = getHoodle xstate -- (rHoodle2Hoodle . getHoodle) xstate 
         liftIO (renderjob hdl filename) 
 
+
+-- | 
+exportCurrentPageAsSVG :: MainCoroutine ()
+exportCurrentPageAsSVG = fileChooser FileChooserActionSave >>= maybe (return ()) action 
+  where 
+    action filename = 
+      -- this is rather temporary not to make mistake 
+      if takeExtension filename /= ".svg" 
+      then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
+      else do      
+        liftIO $ print "exportCurrentPageAsSVG executed"
+        cpg <- getCurrentPageCurr
+        let Dim w h = view gdimension cpg 
+        liftIO $ withSVGSurface filename w h $ \s -> renderWith s $ 
+         cairoRenderOption (InBBoxOption Nothing) (InBBox cpg) >> return ()
 
 -- | 
 fileLoad :: FilePath -> MainCoroutine () 

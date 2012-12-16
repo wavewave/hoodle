@@ -16,12 +16,14 @@ module Hoodle.Coroutine.Mode where
 
 import           Control.Applicative
 import           Control.Category
--- import Data.Label
 import           Control.Lens
+import           Control.Monad.State 
 import           Control.Monad.Trans
 import qualified Data.IntMap as M
-import           Graphics.UI.Gtk (adjustmentGetValue)
---
+import           Graphics.UI.Gtk hiding (get,set) -- (adjustmentGetValue)
+-- from hoodle-platform
+import           Control.Monad.Trans.Crtn.Event 
+import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -29,11 +31,12 @@ import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type 
 -- from this package
 import           Hoodle.Accessor
-import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Scroll
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+-- import           Hoodle.Type.Enum 
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
@@ -69,7 +72,6 @@ modeChange command = case command of
                               $ GSelect (view gtitle hdl) (view gpages hdl) Nothing
 
 -- | 
-
 viewModeChange :: MyEvent -> MainCoroutine () 
 viewModeChange command = do 
     case command of 
@@ -87,7 +89,6 @@ viewModeChange command = do
         whencont xstate cinfo = do 
           geometry <- liftIO $ getGeometry4CurrCvs xstate 
           cdim <- liftIO $  return . canvasDim $ geometry 
-                  --  =<< getCanvasGeometry xstate 
           page <- getCurrentPageCurr
           let zmode = view (viewInfo.zoomMode) cinfo
               canvas = view drawArea cinfo 
@@ -108,8 +109,6 @@ viewModeChange command = do
                                   (view vertAdjustment cinfo)
                                   (view horizAdjConnId cinfo)
                                   (view vertAdjConnId cinfo)
-          -- liftIO $ putStrLn " after "                                   
-          -- liftIO $ printCanvasMode (getCurrentCanvasId xstate) (CanvasSinglePage ncinfo)
           return $ set currentCanvasInfo (CanvasSinglePage ncinfo) xstate 
         -------------------------------------
         whensing xstate cinfo = do 
@@ -139,8 +138,3 @@ viewModeChange command = do
           return . over currentCanvasInfo (const (CanvasContPage ncinfo)) $ xstate
 
 
-          {-
-          let hdl = getHoodle xstate
-          cinfo' <- liftIO $ updateCvsInfoFrmHoodle hdl cinfo 
-          return . modifyCurrentCanvasInfo (const cinfo') $ xstate
-          -}

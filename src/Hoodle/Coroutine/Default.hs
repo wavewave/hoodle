@@ -27,8 +27,10 @@ import           Graphics.UI.Gtk hiding (get,set)
 -- import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Driver
 -- import           Control.Monad.Trans.Crtn.EventHandler 
+import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
+import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
@@ -184,9 +186,8 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
-    PenColorChanged c -> do  
-      modify (penInfo.currentTool.penColor .~ c)
-      selectPenColorChanged c
+    PenColorChanged c -> do modify (penInfo.currentTool.penColor .~ c)
+                            selectPenColorChanged c
     PenWidthChanged v -> do 
       st <- get 
       let ptype = view (penInfo.penType) st
@@ -310,7 +311,38 @@ menuEventProcess MenuPressureSensitivity = updateXState pressSensAction
           b <- liftIO $ toggleActionGetActive pressrsensa
           return (set (penInfo.variableWidthPen) b xstate) 
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
+menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 
+-- | 
+colorPick :: MainCoroutine () 
+colorPick = do mc <- colorPickerBox "Pen Color" 
+               maybe (return ())  
+                     (\c->modify (penInfo.currentTool.penColor .~ c)) 
+                     mc 
 
+-- | 
+colorConvert :: Color -> PenColor 
+colorConvert (Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/65536.0) (realToFrac b/65536.0) 1.0 
+
+-- | 
+colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
+colorPickerBox msg = modify (tempQueue %~ enqueue action) >> go 
+  where 
+    action = Left . ActionOrder $ 
+               \_evhandler -> do 
+                 dialog <- colorSelectionDialogNew msg
+                 res <- dialogRun dialog 
+                 mc <- case res of 
+                         ResponseOk -> do 
+                              clrsel <- colorSelectionDialogGetColor dialog 
+                              clr <- colorSelectionGetCurrentColor clrsel     
+                              return (Just (colorConvert clr))
+                         _ -> return Nothing 
+                 widgetDestroy dialog 
+                 return (ColorChosen mc)
+    go = do r <- nextevent                   
+            case r of 
+              ColorChosen mc -> return mc 
+              _ -> go 

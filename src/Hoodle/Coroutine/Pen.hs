@@ -132,7 +132,9 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
                ptype  = view (penInfo.penType) xstate
                pcolor = view (penInfo.currentTool.penColor) xstate 
                pwidth = view (penInfo.currentTool.penWidth) xstate 
-               (pcr,pcg,pcb,pca)= fromJust (M.lookup pcolor penColorRGBAmap) 
+               (pcr,pcg,pcb,pca) = convertPenColorToRGBA pcolor 
+
+                 -- fromJust (M.lookup pcolor penColorRGBAmap) 
                opacity = case ptype of 
                   HighlighterWork -> predefined_highlighter_opacity 
                   _ -> 1.0

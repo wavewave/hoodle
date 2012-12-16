@@ -48,6 +48,7 @@ data MyEvent = Initialized
              | GotOk
              | OkCancel Bool 
              | FileChosen (Maybe FilePath)
+             | ColorChosen (Maybe PenColor) 
              | GotClipboardContent (Maybe [Item])
              -- | EventConnected
              | EventDisconnected
@@ -119,6 +120,7 @@ data MenuEvent = MenuNew
                | MenuEraserOptions 
                | MenuHighlighterOptions
                | MenuTextFont
+               | MenuColorPicker
                | MenuDefaultPen 
                | MenuDefaultEraser 
                | MenuDefaultHighlighter

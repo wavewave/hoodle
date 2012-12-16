@@ -165,7 +165,8 @@ uiDecl = [verbatim|<ui>
          <menuitem action="ORANGEA" />
          <menuitem action="YELLOWA" />
          <menuitem action="WHITEA" />
-       </menu> 
+       </menu>
+       <menuitem action="CLRPCKA" /> 
        <menu action="PENOPTA"> 
          <menuitem action="PENVERYFINEA" />     
          <menuitem action="PENFINEA" />                          
@@ -438,7 +439,7 @@ getMenuUI evar = do
   vsplita <- actionNewAndRegister "VSPLITA" "Vertical Split" (Just "vertical split") Nothing (justMenu MenuVSplit)
   delcvsa <- actionNewAndRegister "DELCVSA" "Delete Current Canvas" (Just "delete current canvas") Nothing (justMenu MenuDelCanvas)
 
-  -- journal menu 
+  -- page menu 
   newpgba <- actionNewAndRegister "NEWPGBA" "New Page Before" (Just "Just a Stub") Nothing (justMenu MenuNewPageBefore)
   newpgaa <- actionNewAndRegister "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing (justMenu MenuNewPageAfter)
   newpgea <- actionNewAndRegister "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing (justMenu MenuNewPageAtEnd)
@@ -466,6 +467,7 @@ getMenuUI evar = do
   -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
   -- handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (justMenu MenuHandTool) 
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
+  clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") Nothing (justMenu MenuColorPicker ) 
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (justMenu MenuEraserOptions)
   hiltropta <- actionNewAndRegister "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing (justMenu MenuHighlighterOptions)
@@ -525,7 +527,7 @@ getMenuUI evar = do
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
-        , shpreca, rulera, clra, penopta 
+        , shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa

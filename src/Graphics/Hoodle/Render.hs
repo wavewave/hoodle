@@ -85,21 +85,21 @@ renderStrk s@(Stroke _ _ w d) = do
     let opacity = if stroke_tool s == "highlighter" 
                   then predefined_highlighter_opacity
                   else 1.0
-    case M.lookup (stroke_color s) predefined_pencolor of
+    case getPenColor (stroke_color s) of 
       Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-      Nothing -> setSourceRGBA 0 0 0 1
+      Nothing -> setSourceRGBA 0.5 0.5 0.5 1
     setLineWidth w
     setLineCap LineCapRound
     setLineJoin LineJoinRound
     drawStrokeCurve d
-    stroke
+    stroke 
 renderStrk s@(VWStroke _ _ d) = do 
     let opacity = if stroke_tool s == "highlighter" 
                   then predefined_highlighter_opacity
                   else 1.0
-    case M.lookup (stroke_color s) predefined_pencolor of
+    case getPenColor (stroke_color s) of
       Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-      Nothing -> setSourceRGBA 0 0 0 1
+      Nothing -> setSourceRGBA 0.5 0.5 0.5 1
     setFillRule FillRuleWinding
     drawVWStrokeCurve d
     fill 

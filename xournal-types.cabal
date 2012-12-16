@@ -1,5 +1,5 @@
 Name:		xournal-types
-Version:	0.5
+Version:	0.5.0
 Synopsis:	Data types for programs for xournal file format
 Description: 	Xournal file format data type including generic interface
 License: 	BSD3
@@ -21,10 +21,10 @@ Library
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                    base == 4.*, 
-                   bytestring == 0.9.*, 
+                   bytestring >= 0.9, 
                    strict == 0.3.*, 
-                   containers == 0.4.*, 
-                   lens >= 2.4 && < 2.7,
+                   containers >= 0.4, 
+                   lens >= 2.4,
                    TypeCompose == 0.9.*, 
                    cereal == 0.3.*
   Exposed-Modules: 

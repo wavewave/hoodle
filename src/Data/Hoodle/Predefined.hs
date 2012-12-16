@@ -35,7 +35,7 @@ hexToRGBA n =
 
 rgbaToHEX :: (Double,Double,Double,Double) -> String
 rgbaToHEX (r,g,b,a) = 
-  let i :: Integer = round (255*a) + round (256*255*b) + round (256*256*255*g) + round (256*256*256*255*r) 
+  let i :: Integer = floor (255*a) + 256*floor (255*b) + 256*256*floor (255*g) + 256*256*256*floor (255*r) 
   in printf "#%08x" i
 
 predefined_highlighter_opacity :: Double 

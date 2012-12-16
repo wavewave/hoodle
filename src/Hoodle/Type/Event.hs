@@ -95,7 +95,6 @@ data MenuEvent = MenuNew
                | MenuNewPageAfter 
                | MenuNewPageAtEnd 
                | MenuDeletePage
-               | MenuExportPageSVG
                | MenuNewLayer
                | MenuNextLayer
                | MenuPrevLayer 

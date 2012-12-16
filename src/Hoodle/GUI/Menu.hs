@@ -120,8 +120,6 @@ uiDecl = [verbatim|<ui>
        <menuitem action="NEWPGEA" />
        <menuitem action="DELPGA" />       
        <separator />
-       <menuitem action="EXPSVGA" /> 
-       <separator /> 
        <menuitem action="NEWLYRA" />
        <menuitem action="NEXTLAYERA" />
        <menuitem action="PREVLAYERA" />
@@ -391,7 +389,7 @@ getMenuUI evar = do
   fma     <- actionNewAndRegister "FMA"   "File" Nothing Nothing Nothing
   ema     <- actionNewAndRegister "EMA"   "Edit" Nothing Nothing Nothing
   vma     <- actionNewAndRegister "VMA"   "View" Nothing Nothing Nothing
-  jma     <- actionNewAndRegister "JMA"   "Page" Nothing Nothing Nothing
+  jma     <- actionNewAndRegister "JMA"   "Journal" Nothing Nothing Nothing
   tma     <- actionNewAndRegister "TMA"   "Tools" Nothing Nothing Nothing
   oma     <- actionNewAndRegister "OMA"   "Options" Nothing Nothing Nothing
   hma     <- actionNewAndRegister "HMA"   "Help" Nothing Nothing Nothing
@@ -443,7 +441,6 @@ getMenuUI evar = do
   newpgaa <- actionNewAndRegister "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing (justMenu MenuNewPageAfter)
   newpgea <- actionNewAndRegister "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing (justMenu MenuNewPageAtEnd)
   delpga  <- actionNewAndRegister "DELPGA"  "Delete Page"     (Just "Just a Stub") Nothing (justMenu MenuDeletePage)
-  expsvga <- actionNewAndRegister "EXPSVGA" "Export Current Page to SVG" (Just "Just a Stub") Nothing (justMenu MenuExportPageSVG) 
   newlyra <- actionNewAndRegister "NEWLYRA" "New Layer"       (Just "Just a Stub") Nothing (justMenu MenuNewLayer)
   nextlayera <- actionNewAndRegister "NEXTLAYERA" "Next Layer" (Just "Just a Stub") Nothing (justMenu MenuNextLayer)
   prevlayera <- actionNewAndRegister "PREVLAYERA" "Prev Layer" (Just "Just a Stub") Nothing (justMenu MenuPrevLayer)
@@ -523,7 +520,7 @@ getMenuUI evar = do
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa
-        , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
+        , newpgba, newpgaa, newpgea, delpga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera, clra, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta

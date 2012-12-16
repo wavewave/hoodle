@@ -253,7 +253,6 @@ menuEventProcess MenuLastPage = do
 menuEventProcess MenuNewPageBefore = newPage PageBefore 
 menuEventProcess MenuNewPageAfter = newPage PageAfter
 menuEventProcess MenuDeletePage = deleteCurrentPage
-menuEventProcess MenuExportPageSVG = exportCurrentPageAsSVG 
 menuEventProcess MenuNew  = askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadImage = fileLoadImage

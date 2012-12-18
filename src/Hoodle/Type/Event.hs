@@ -51,7 +51,7 @@ data MyEvent = Initialized
              | ColorChosen (Maybe PenColor) 
              | GotClipboardContent (Maybe [Item])
              | ContextMenuCreated
-             | GotContextMenuSignal String
+             | GotContextMenuSignal ContextMenuEvent
              -- | EventConnected
              | EventDisconnected
              deriving (Show,Eq,Ord)
@@ -149,6 +149,10 @@ data MenuEvent = MenuNew
                | MenuDefault
                deriving (Show, Ord, Eq)
   
+data ContextMenuEvent = ContextMenuMakeSVG 
+                      deriving (Show, Ord, Eq) 
+
+
 viewModeToMyEvent :: RadioAction -> IO MyEvent
 viewModeToMyEvent a = do 
     v <- radioActionGetCurrentValue a

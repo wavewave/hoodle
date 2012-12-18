@@ -185,7 +185,7 @@ fileExport = fileChooser FileChooserActionSave >>= maybe (return ()) action
         liftIO (renderjob hdl filename) 
 
 
--- | 
+-- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()
 exportCurrentPageAsSVG = fileChooser FileChooserActionSave >>= maybe (return ()) action 
   where 

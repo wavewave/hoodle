@@ -276,12 +276,6 @@ selectBoxAction fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
 selectBoxAction _fsingle fcont (CanvasContPage cinfo) = fcont cinfo 
   
   
-{-  case view (viewInfo.pageArrangement) cinfo of 
-    SingleArrangement _ _ _ ->  fsingle cinfo 
-    ContinuousArrangement _ _ _ _ -> fcont cinfo 
--}
-
-  
 -- |     
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
           -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)

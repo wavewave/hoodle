@@ -456,7 +456,7 @@ selectLassoStart cid = commonPenStart lassoAction cid
                       newSelectLasso cinfo pnum geometry cidmove cidup itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                       surfaceFinish (tempSurface tsel)
-                      showContextMenu 
+                      showContextMenu (pnum,(x,y))
                   )
                   (disconnect [cidmove, cidup] )
           let action (Right tpage) | hitInSelection tpage (x,y) = 

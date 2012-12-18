@@ -21,6 +21,8 @@ import Data.Hoodle.Simple
 import Hoodle.Device 
 import Hoodle.Type.Clipboard
 import Hoodle.Type.Enum
+import Hoodle.Type.Canvas
+import Hoodle.Type.PageArrangement
 
 -- | 
 
@@ -158,6 +160,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuCut 
                       | CMenuCopy
                       | CMenuDelete
+                      | CMenuCanvasView CanvasId PageNum Double Double  
                       deriving (Show, Ord, Eq) 
 
 -- | 

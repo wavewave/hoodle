@@ -89,7 +89,6 @@ dealWithOneTimeSelectMode action terminator = do
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
       action >> updateXState (return . set isOneTimeSelectMode YesAfterSelect)
-             >> showContextMenu 
     YesAfterSelect -> do 
       terminator 
       updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 
@@ -456,7 +455,9 @@ selectLassoStart cid = commonPenStart lassoAction cid
                   (do tsel <- createTempSelectRender pnum geometry page [] 
                       newSelectLasso cinfo pnum geometry cidmove cidup itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
-                      surfaceFinish (tempSurface tsel))
+                      surfaceFinish (tempSurface tsel)
+                      showContextMenu 
+                  )
                   (disconnect [cidmove, cidup] )
           let action (Right tpage) | hitInSelection tpage (x,y) = 
                 startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage

@@ -149,10 +149,12 @@ data MenuEvent = MenuNew
                | MenuDefault
                deriving (Show, Ord, Eq)
   
+-- |                         
 data ContextMenuEvent = ContextMenuMakeSVG 
+                      | ContextMenuMakePDF
                       deriving (Show, Ord, Eq) 
 
-
+-- | 
 viewModeToMyEvent :: RadioAction -> IO MyEvent
 viewModeToMyEvent a = do 
     v <- radioActionGetCurrentValue a

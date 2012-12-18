@@ -49,7 +49,7 @@ import           Hoodle.Type.HoodleState
 import Prelude hiding ((.),id)
 
 processContextMenu :: ContextMenuEvent -> MainCoroutine () 
-processContextMenu ContextMenuMakeSVG = do 
+processContextMenu ctxtmenu = do 
   xstate <- get
   case view hoodleModeState xstate of 
     SelectState thdl -> do 
@@ -65,22 +65,42 @@ processContextMenu ContextMenuMakeSVG = do
                   ulbbox = unUnion . mconcat . fmap (Union . Middle . getBBox) 
                            $ hititms 
               case ulbbox of 
-                Middle bbox -> exportCurrentSelectionAsSVG hititms bbox
+                Middle bbox -> 
+                  case ctxtmenu of 
+                    ContextMenuMakeSVG -> exportCurrentSelectionAsSVG hititms bbox
+                    ContextMenuMakePDF -> exportCurrentSelectionAsPDF hititms bbox
                 _ -> return () 
             Left _ -> do liftIO $ putStrLn "not exist"
     _ -> return () 
 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
-exportCurrentSelectionAsSVG hititms (BBox (ulx,uly) (lrx,lry)) = 
+exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
     fileChooser FileChooserActionSave >>= maybe (return ()) action 
   where 
     action filename =
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".svg" 
-      then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
+      then fileExtensionInvalid (".svg","export") 
+           >> exportCurrentSelectionAsSVG hititms bbox
       else do      
         liftIO $ print "exportCurrentSelectionAsSVG executed"
         liftIO $ withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
+          translate (-ulx) (-uly)
+          mapM_ renderRItem  hititms
+
+
+exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine () 
+exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
+    fileChooser FileChooserActionSave >>= maybe (return ()) action 
+  where 
+    action filename =
+      -- this is rather temporary not to make mistake 
+      if takeExtension filename /= ".pdf" 
+      then fileExtensionInvalid (".svg","export") 
+           >> exportCurrentSelectionAsPDF hititms bbox
+      else do      
+        liftIO $ print "exportCurrentSelectionAsPDF executed"
+        liftIO $ withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
           translate (-ulx) (-uly)
           mapM_ renderRItem  hititms
 
@@ -94,17 +114,15 @@ showContextMenu = modify (tempQueue %~ enqueue action)
                      menu <- menuNew 
                      menuSetTitle menu "MyMenu"
                      menuitem1 <- menuItemNewWithLabel "Make SVG"
-                     -- menuitem2 <- menuItemNewWithLabel "test2"
+                     menuitem2 <- menuItemNewWithLabel "Make PDF"
                      menuitem1 `on` menuItemActivate $ do  
-                       -- liftIO $ putStrLn "test1 called" 
                        evhandler (GotContextMenuSignal ContextMenuMakeSVG)
                        return ()
-                     {- menuitem2 `on` menuItemActivate $ do   
-                       -- liftIO $ putStrLn "test2 called" 
-                       evhandler (GotContextMenuSignal "test2 called") 
-                       return () -}
+                     menuitem2 `on` menuItemActivate $ do   
+                       evhandler (GotContextMenuSignal ContextMenuMakePDF) 
+                       return () 
                      menuAttach menu menuitem1 0 1 0 1 
-                     -- menuAttach menu menuitem2 0 1 1 2
+                     menuAttach menu menuitem2 0 1 1 2
                      widgetShowAll menu 
                      menuPopup menu Nothing 
                      putStrLn "showContextMenu"

@@ -42,6 +42,7 @@ import           Graphics.Hoodle.Render.Type.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Device
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.ContextMenu 
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.EventConnect
 import           Hoodle.Coroutine.Mode
@@ -88,6 +89,7 @@ dealWithOneTimeSelectMode action terminator = do
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
       action >> updateXState (return . set isOneTimeSelectMode YesAfterSelect)
+             >> showContextMenu 
     YesAfterSelect -> do 
       terminator 
       updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 

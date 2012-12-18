@@ -162,6 +162,7 @@ viewAppendMode = do
   case r1 of 
     PenDown cid pbtn pcoord -> do 
       ptype <- getPenType 
+      liftIO $ print (ptype,pbtn) 
       case (ptype,pbtn) of 
         (PenWork,PenButton1) -> penStart cid pcoord 
         (PenWork,PenButton2) -> eraserStart cid pcoord 

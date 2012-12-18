@@ -148,10 +148,16 @@ data MenuEvent = MenuNew
                | MenuAbout
                | MenuDefault
                deriving (Show, Ord, Eq)
-  
+
+-- |
+data ImgType = SVG | PDF 
+               deriving (Show, Ord, Eq) 
+                        
 -- |                         
-data ContextMenuEvent = ContextMenuMakeSVG 
-                      | ContextMenuMakePDF
+data ContextMenuEvent = CMenuSaveSelectionAs ImgType
+                      | CMenuCut 
+                      | CMenuCopy
+                      | CMenuDelete
                       deriving (Show, Ord, Eq) 
 
 -- | 

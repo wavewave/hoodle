@@ -42,6 +42,7 @@ import           Graphics.Hoodle.Render.Type.HitTest
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.Select.Clipboard 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
@@ -49,7 +50,7 @@ import           Hoodle.Type.HoodleState
 import Prelude hiding ((.),id)
 
 processContextMenu :: ContextMenuEvent -> MainCoroutine () 
-processContextMenu ctxtmenu = do 
+processContextMenu (CMenuSaveSelectionAs ityp) = do 
   xstate <- get
   case view hoodleModeState xstate of 
     SelectState thdl -> do 
@@ -66,12 +67,16 @@ processContextMenu ctxtmenu = do
                            $ hititms 
               case ulbbox of 
                 Middle bbox -> 
-                  case ctxtmenu of 
-                    ContextMenuMakeSVG -> exportCurrentSelectionAsSVG hititms bbox
-                    ContextMenuMakePDF -> exportCurrentSelectionAsPDF hititms bbox
+                  case ityp of 
+                    SVG -> exportCurrentSelectionAsSVG hititms bbox
+                    PDF -> exportCurrentSelectionAsPDF hititms bbox
                 _ -> return () 
             Left _ -> do liftIO $ putStrLn "not exist"
     _ -> return () 
+processContextMenu CMenuCut = cutSelection
+processContextMenu CMenuCopy = copySelection
+processContextMenu CMenuDelete = deleteSelection
+    
 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
 exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
@@ -115,14 +120,27 @@ showContextMenu = modify (tempQueue %~ enqueue action)
                      menuSetTitle menu "MyMenu"
                      menuitem1 <- menuItemNewWithLabel "Make SVG"
                      menuitem2 <- menuItemNewWithLabel "Make PDF"
+                     menuitem3 <- menuItemNewWithLabel "Cut"
+                     menuitem4 <- menuItemNewWithLabel "Copy"
+                     menuitem5 <- menuItemNewWithLabel "Delete"
                      menuitem1 `on` menuItemActivate $ do  
-                       evhandler (GotContextMenuSignal ContextMenuMakeSVG)
-                       return ()
+                       evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
+                       -- return ()
                      menuitem2 `on` menuItemActivate $ do   
-                       evhandler (GotContextMenuSignal ContextMenuMakePDF) 
-                       return () 
+                       evhandler (GotContextMenuSignal (CMenuSaveSelectionAs PDF))
+                       -- return () 
+                     menuitem3 `on` menuItemActivate $ do   
+                       evhandler (GotContextMenuSignal (CMenuCut))     
+                     menuitem4 `on` menuItemActivate $ do   
+                       evhandler (GotContextMenuSignal (CMenuCopy))
+                     menuitem5 `on` menuItemActivate $ do   
+                       evhandler (GotContextMenuSignal (CMenuDelete))     
+                       
                      menuAttach menu menuitem1 0 1 0 1 
                      menuAttach menu menuitem2 0 1 1 2
+                     menuAttach menu menuitem3 1 2 0 1                     
+                     menuAttach menu menuitem4 1 2 1 2                     
+                     menuAttach menu menuitem5 1 2 2 3                     
                      widgetShowAll menu 
                      menuPopup menu Nothing 
                      putStrLn "showContextMenu"

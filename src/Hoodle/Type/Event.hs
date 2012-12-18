@@ -50,6 +50,7 @@ data MyEvent = Initialized
              | FileChosen (Maybe FilePath)
              | ColorChosen (Maybe PenColor) 
              | GotClipboardContent (Maybe [Item])
+             | ContextMenuCreated
              -- | EventConnected
              | EventDisconnected
              deriving (Show,Eq,Ord)

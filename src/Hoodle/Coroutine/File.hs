@@ -58,12 +58,10 @@ import Prelude hiding ((.),id)
 
 -- |
 okMessageBox :: String -> MainCoroutine () 
-okMessageBox msg = modify (tempQueue %~ enqueue action) >> go 
+okMessageBox msg = modify (tempQueue %~ enqueue action) 
+                   >> waitSomeEvent (==GotOk) 
+                   >> return () 
   where 
-    go = do r <- nextevent                   
-            case r of 
-              GotOk -> return ()  
-              _ -> go 
     action = Left . ActionOrder $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
@@ -74,8 +72,11 @@ okMessageBox msg = modify (tempQueue %~ enqueue action) >> go
 
 -- | 
 okCancelMessageBox :: String -> MainCoroutine Bool 
-okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go 
+okCancelMessageBox msg = modify (tempQueue %~ enqueue action) 
+                         >> waitSomeEvent p >>= return . p 
   where 
+    p (OkCancel b) = True 
+    p _ = False 
     action = Left . ActionOrder $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
@@ -86,14 +87,11 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action) >> go
                            _ -> False
                  widgetDestroy dialog 
                  return (OkCancel b)
-    go = do r <- nextevent                   
-            case r of 
-              OkCancel b -> return b  
-              _ -> go 
 
 -- | 
 fileChooser :: FileChooserAction -> MainCoroutine (Maybe FilePath) 
-fileChooser choosertyp = modify (tempQueue %~ enqueue action) >> go 
+fileChooser choosertyp = modify (tempQueue %~ enqueue action) 
+                         >> go 
   where 
     go = do r <- nextevent                   
             case r of 

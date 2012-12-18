@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.ContextMenu
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2012 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -56,6 +56,15 @@ import           Hoodle.Type.HoodleState
 --
 import Prelude hiding ((.),id)
 
+
 showContextMenu :: MainCoroutine () 
-showContextMenu = do 
-  liftIO $ putStrLn "showContextMenu"
+showContextMenu = modify (tempQueue %~ enqueue action) 
+                  >> waitSomeEvent (==ContextMenuCreated) 
+                  >> return () 
+  where action = Left . ActionOrder $ 
+                   \_evhandler -> do 
+                     menu <- liftIO menuNew 
+                     liftIO $ menuPopup menu Nothing 
+                     liftIO $ putStrLn "showContextMenu"
+                     return ContextMenuCreated 
+

@@ -51,6 +51,7 @@ data MyEvent = Initialized
              | ColorChosen (Maybe PenColor) 
              | GotClipboardContent (Maybe [Item])
              | ContextMenuCreated
+             | GotContextMenuSignal String
              -- | EventConnected
              | EventDisconnected
              deriving (Show,Eq,Ord)

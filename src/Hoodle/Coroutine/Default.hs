@@ -38,6 +38,7 @@ import           Data.Hoodle.Generic
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.ContextMenu
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
@@ -230,6 +231,7 @@ defaultEventProcess (PenWidthChanged v) = do
       let w = int2Point ptype v
       let stNew = set (penInfo.currentTool.penWidth) w st 
       put stNew 
+defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess ev = -- for debugging
                             do liftIO $ putStrLn "--- no default ---"
                                liftIO $ print ev 

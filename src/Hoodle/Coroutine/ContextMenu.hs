@@ -39,32 +39,38 @@ import           Graphics.Hoodle.Render.Type.HitTest
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Accessor
-import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.Commit
-import           Hoodle.Coroutine.Mode 
-import           Hoodle.ModelAction.File
-import           Hoodle.ModelAction.Layer 
-import           Hoodle.ModelAction.Page
-import           Hoodle.ModelAction.Select
-import           Hoodle.ModelAction.Window
-import qualified Hoodle.Script.Coroutine as S
-import           Hoodle.Script.Hook
-import           Hoodle.Type.Canvas
+import           Hoodle.Coroutine.File
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 --
 import Prelude hiding ((.),id)
 
+processContextMenu :: String -> MainCoroutine () 
+processContextMenu str = okMessageBox str 
 
 showContextMenu :: MainCoroutine () 
 showContextMenu = modify (tempQueue %~ enqueue action) 
                   >> waitSomeEvent (==ContextMenuCreated) 
                   >> return () 
   where action = Left . ActionOrder $ 
-                   \_evhandler -> do 
-                     menu <- liftIO menuNew 
-                     liftIO $ menuPopup menu Nothing 
-                     liftIO $ putStrLn "showContextMenu"
+                   \evhandler -> do 
+                     menu <- menuNew 
+                     menuSetTitle menu "MyMenu"
+                     menuitem1 <- menuItemNewWithLabel "test1"
+                     menuitem2 <- menuItemNewWithLabel "test2"
+                     menuitem1 `on` menuItemActivate $ do  
+                       -- liftIO $ putStrLn "test1 called" 
+                       evhandler (GotContextMenuSignal "test1 called")
+                       return ()
+                     menuitem2 `on` menuItemActivate $ do   
+                       -- liftIO $ putStrLn "test2 called" 
+                       evhandler (GotContextMenuSignal "test2 called") 
+                       return ()
+                     menuAttach menu menuitem1 0 1 0 1 
+                     menuAttach menu menuitem2 0 1 1 2
+                     widgetShowAll menu 
+                     menuPopup menu Nothing 
+                     putStrLn "showContextMenu"
                      return ContextMenuCreated 
 

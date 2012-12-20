@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, RankNTypes #-}
+{-# LANGUAGE GADTs, RankNTypes, ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -18,7 +18,8 @@ module Control.Monad.Trans.Crtn.Object where
 
 -- from other packages
 import Control.Monad.State 
-import Control.Monad.Error 
+-- import Control.Monad.Error 
+import Control.Monad.Trans.Either 
 -- from this package
 import Control.Monad.Trans.Crtn
 
@@ -50,13 +51,17 @@ type SObjBT s m = CrtnT (Res s) (Arg s) m
 
 
 -- | convenient error state monad for object  
-type EStT s m = ErrorT (CrtnErr ()) (StateT s m)  
+type EStT s m = EitherT CrtnErr (StateT s m)  
 
 -- |  
-query :: (Monad m) => CObjT s m r -> EStT (SObjT s m ()) m r  
+query :: forall m s r. (Monad m) => CObjT s m r -> EStT (SObjT s m ()) m r  
 query cli = do 
   qserv <- lift get 
-  (qserv',r) <- mapErrorT lift (qserv <==| cli )
+  let result :: m (Either CrtnErr (SrvT (Arg s) (Res s) m (), r))
+      result = runEitherT (qserv <==| cli)
+      r2 :: StateT (SObjT s m ()) m (Either CrtnErr (SrvT (Arg s) (Res s) m (), r))
+      r2 = lift result
+  (qserv',r) <- EitherT r2 
   lift (put qserv')
   return r
   

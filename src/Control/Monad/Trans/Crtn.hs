@@ -17,9 +17,10 @@
 
 module Control.Monad.Trans.Crtn where 
 
-import Control.Monad.Error
+-- import Control.Monad.Error
 import Control.Monad.Reader 
 import Control.Monad.State 
+import Control.Monad.Trans.Either 
 import Control.Monad.Trans.Free
 
 
@@ -98,17 +99,18 @@ type SrvT req ans m = ReaderT req (CrtnT ans req m)
 type CliT req ans = CrtnT req ans  
 
 -- | type for coroutine status after execution
-data CrtnErr r = NoError 
-               | ServerFinished r 
-               | Other String 
+data CrtnErr = ServerFinished  
+             | Other String 
 
 -- | 
-deriving instance (Show r) => Show (CrtnErr r) 
+deriving instance Show CrtnErr 
 
+{- 
 -- | 
 instance Error (CrtnErr r) where 
   noMsg = NoError 
   strMsg str = Other str 
+-}
 
 -----------------------------
 -- communication combinator 
@@ -118,7 +120,7 @@ instance Error (CrtnErr r) where
 (<==|) :: Monad m => 
           SrvT req ans m r'    -- ^ server coroutine
        -> CliT req ans m r  -- ^ client coroutine
-       -> ErrorT (CrtnErr r') m (SrvT req ans m r', r)
+       -> EitherT CrtnErr m (SrvT req ans m r', r)
 s <==| c = do 
     y <- lift (runFreeT c)
     case y of
@@ -126,15 +128,8 @@ s <==| c = do
       Free (Rqst rq af) -> do 
         x <- lift (runFreeT (runReaderT s rq))
         case x of 
-          Pure r' -> throwError (ServerFinished r')
+          Pure r' -> left ServerFinished
           Free (Rqst ans rf) -> (ReaderT rf) <==| (af ans)
-
-{-
--- | synonym of connectE
-(<==>) :: Monad m => SrvT req ans m r' -> CliT req ans m r
-          -> ErrorT (CrtnErr r') m (SrvT req ans m r', r)
-(<==>) = connectE
- -}         
 
 
 ----------------------

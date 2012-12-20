@@ -16,7 +16,8 @@ module Control.Monad.Trans.Crtn.EventHandler where
   
 import Control.Concurrent.MVar 
 import Control.Monad.State 
-import Control.Monad.Error
+-- import Control.Monad.Error
+import Control.Monad.Trans.Either
 -- from this package 
 -- import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event 
@@ -37,5 +38,5 @@ eventHandler evar ev = do
           Right Nothing -> return () 
           Right (Just (ActionOrder act)) -> 
             act (eventHandler evar) >>= eventHandler evar 
-  where eaction = runStateT (runErrorT $ fire ev) 
+  where eaction = runStateT (runEitherT $ fire ev) 
                   

@@ -16,7 +16,8 @@
 
 module Control.Monad.Trans.Crtn.World where 
 
-import Control.Monad.Error 
+-- import Control.Monad.Error 
+-- import Control.Monad.Trans.Either 
 -- 
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event 

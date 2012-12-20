@@ -18,9 +18,10 @@ module Hoodle.Type.Coroutine where
 import           Control.Applicative
 import           Control.Concurrent
 import           Control.Lens 
-import           Control.Monad.Error
+-- import           Control.Monad.Error
 import           Control.Monad.Reader 
 import           Control.Monad.State
+import           Control.Monad.Trans.Either 
 -- import           Data.IORef 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn 
@@ -69,7 +70,7 @@ world xstate initmc = ReaderT staction
           -> Arg (WorldOp MyEvent DriverB) 
           -> StateT HoodleState WorldObjB () 
     go mcobj (Arg GiveEvent ev) = do 
-      Right mcobj' <- runErrorT $ liftM fst (mcobj <==| doEvent ev)
+      Right mcobj' <- runEitherT $ liftM fst (mcobj <==| doEvent ev)
       req <- lift $ request (Res GiveEvent ())
       go mcobj' req  
     go mcobj (Arg FlushLog logobj) = do  
@@ -77,7 +78,7 @@ world xstate initmc = ReaderT staction
       let msg = logf "" 
       if ((not.null) msg)
         then do 
-          Right logobj' <- lift . lift $ runErrorT $ 
+          Right logobj' <- lift . lift $ runEitherT $ 
             liftM fst (logobj <==| writeLog msg)
           modify (tempLog .~ id)
           req <- lift $ request (Res FlushLog logobj')

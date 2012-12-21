@@ -23,10 +23,13 @@ module Data.Hoodle.BBox
 -- , imgbbx_img
 -- , imgbbx_bbx
 , mkImageBBox
+, SVGBBox (..)
+, mkSVGBBox
 , mkbbox
 , mkbboxF
 , bboxFromStroke
 , bboxFromImage
+, bboxFromSVG
 , dimToBBox
 , bboxToDim
 , xformBBox
@@ -113,6 +116,28 @@ mkImageBBox img =
             } 
 
 
+-- | 
+data SVGBBox = SVGBBox { svgbbx_svg :: SVG
+                       , svgbbx_bbx :: BBox } 
+               deriving (Show,Eq,Ord)
+  
+instance BBoxable SVGBBox where
+  getBBox = svgbbx_bbx
+
+-- |
+instance Serialize SVGBBox where
+  put SVGBBox{..} = put svgbbx_svg >> put svgbbx_bbx
+  get = SVGBBox <$> get <*> get
+  
+-- | smart constructor for ImageBBox 
+mkSVGBBox :: SVG -> SVGBBox
+mkSVGBBox svg = 
+  SVGBBox { svgbbx_svg = svg
+          , svgbbx_bbx = bboxFromSVG svg
+          } 
+
+
+
 -- |
 mkbbox :: [Pair Double Double] -> BBox 
 mkbbox lst = let xs = map fst lst 
@@ -149,6 +174,11 @@ bboxToDim (BBox (x1,y1) (x2,y2)) = Dim (x2-x1) (y2-y1)
 -- | 
 bboxFromImage :: Image -> BBox 
 bboxFromImage (Image _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
+
+
+-- | 
+bboxFromSVG :: SVG -> BBox 
+bboxFromSVG (SVG _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
 
 
 -- | general transform BBox         

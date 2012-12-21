@@ -158,11 +158,11 @@ buildSVG (SVG mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString "\" height=\""
     <> fromByteString (toFixed 2 h)
     <> fromByteString "\" >\n"
-    <> maybe mempty (\txt->fromByteString "<text>" <> fromByteString txt <> fromByteString "</text>") mtxt 
-    <> maybe mempty (\cmd->fromByteString "<command>" <> fromByteString cmd <> fromByteString "</command>") mcmd 
-    <> fromByteString "<render>" 
+    <> maybe mempty (\txt->fromByteString "<text><![CDATA[" <> fromByteString txt <> fromByteString "]]></text>") mtxt 
+    <> maybe mempty (\cmd->fromByteString "<command><![CDATA[" <> fromByteString cmd <> fromByteString "]]></command>") mcmd 
+    <> fromByteString "<render><![CDATA[" 
     <> fromByteString rdr 
-    <> fromByteString "</render>"
+    <> fromByteString "]]></render>"
     <> fromByteString "</svgobject>"
 
 -- | 

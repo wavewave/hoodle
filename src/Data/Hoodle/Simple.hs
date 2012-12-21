@@ -34,6 +34,7 @@ type Title = S.ByteString
 -- | wrapper of object embeddable in Layer
 data Item = ItemStroke Stroke
           | ItemImage Image
+          | ItemSVG SVG
           deriving (Show,Eq,Ord)
 
 
@@ -56,7 +57,12 @@ data Image = Image { img_src :: S.ByteString
                    } 
              deriving (Show,Eq,Ord)
 
-
+data SVG = SVG { svg_text :: Maybe S.ByteString
+               , svg_command :: Maybe S.ByteString 
+               , svg_render :: S.ByteString
+               , svg_pos :: (Double,Double)
+               , svg_dim :: !Dimension }  
+           deriving (Show,Eq,Ord)
 
 -- | 
 instance SE.Serialize Stroke where
@@ -83,6 +89,16 @@ instance SE.Serialize Image where
                      >> SE.put img_dim
     get = Image <$> SE.get <*> SE.get <*> SE.get
 
+-- | 
+instance SE.Serialize SVG where
+    put SVG {..} = SE.put svg_text
+                   >> SE.put svg_command 
+                   >> SE.put svg_render
+                   >> SE.put svg_pos
+                   >> SE.put svg_dim
+    get = SVG <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get
+
+
 
 -- | 
 instance SE.Serialize Item where
@@ -90,10 +106,13 @@ instance SE.Serialize Item where
                            >> SE.put str 
     put (ItemImage img) = SE.putWord8 1 
                           >> SE.put img
+    put (ItemSVG svg) = SE.putWord8 2
+                        >> SE.put svg 
     get = do tag <- SE.getWord8 
              case tag of 
                0 -> ItemStroke <$> SE.get
                1 -> ItemImage <$> SE.get
+               2 -> ItemSVG <$> SE.get
                _ -> fail "err in Item parsing"
 
 -- |    

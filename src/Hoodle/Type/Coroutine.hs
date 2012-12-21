@@ -1,4 +1,8 @@
-{-# LANGUAGE GADTs, ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -42,13 +46,17 @@ data MainOp i o where
 doEvent :: (Monad m) => MyEvent -> CObjT MainOp m () 
 doEvent ev = request (Arg DoEvent ev) >> return ()
 
+instance (Monad m) => MonadState HoodleState (EStT HoodleState m) where
+  get = lift get
+  put = lift . put 
+
 -- |
 type MainCoroutine = MainObjB 
                      
-type MainObjB = SObjBT MainOp (StateT HoodleState WorldObjB)
+type MainObjB = SObjBT MainOp (EStT HoodleState WorldObjB)
 
 -- | 
-type MainObj = SObjT MainOp (StateT HoodleState WorldObjB)
+type MainObj = SObjT MainOp (EStT HoodleState WorldObjB)
 
 -- | 
 nextevent :: MainCoroutine MyEvent 
@@ -67,35 +75,35 @@ world :: HoodleState -> MainObj () -> WorldObj ()
 world xstate initmc = ReaderT staction  
   where 
     staction req = runStateT erract xstate >> return ()
-      where erract = go initmc req 
-    --   where erract = do r <- runEitherT (go initmc req) 
-    --                   case r of 
-    --                      Left e -> error (show e)
-    --                      Right r' -> return r' 
+      -- where erract = go initmc req 
+      where erract = do r <- runEitherT (go initmc req) 
+                        case r of 
+                          Left e -> error (show e)
+                          Right r' -> return r' 
     go :: MainObj() -- (ReaderT (Arg MainOp MainCoroutine ()) 
           -> Arg (WorldOp MyEvent DriverB) 
-          -> StateT HoodleState WorldObjB () 
+          -> EStT HoodleState WorldObjB () 
     go mcobj (Arg GiveEvent ev) = do 
       Right mcobj' <- liftM (fmap fst) (mcobj <==| doEvent ev)
-      req <- lift $ request (Res GiveEvent ())
+      req <- lift . lift $ request (Res GiveEvent ())
       go mcobj' req  
     go mcobj (Arg FlushLog logobj) = do  
       logf <- (^. tempLog) <$> get  
       let msg = logf "" 
       if ((not.null) msg)
         then do 
-          Right logobj' <- lift . lift $ liftM (fmap fst) (logobj <==| writeLog msg)
+          Right logobj' <- lift . lift . lift $ liftM (fmap fst) (logobj <==| writeLog msg)
           modify (tempLog .~ id)
-          req <- lift $ request (Res FlushLog logobj')
+          req <- lift . lift $ request (Res FlushLog logobj')
           go mcobj req 
         else do 
-          req <- lift $ request Ign 
+          req <- lift . lift $ request Ign 
           go mcobj req 
     go mcobj (Arg FlushQueue ()) = do 
       q <- (^. tempQueue) <$> get 
       let lst = fqueue q ++ reverse (bqueue q)
       modify (tempQueue .~ emptyQueue)
-      req <- lift $ request (Res FlushQueue lst)
+      req <- lift .  lift $ request (Res FlushQueue lst)
       go mcobj req 
 
 

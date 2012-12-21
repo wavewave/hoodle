@@ -379,13 +379,19 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel "latex input"
                  vbox <- dialogGetUpper dialog
-                 entry <- entryNew 
-                 boxPackStart vbox entry PackGrow 0
+                 -- entry <- entryNew 
+                 -- boxPackStart vbox entry PackGrow 0
+                 txtvw <- textViewNew
+                 boxPackStart vbox txtvw PackGrow 0 
                  widgetShowAll dialog
                  res <- dialogRun dialog 
                  case res of 
                    ResponseOk -> do 
-                     l <- entryGetText entry
+                     -- l <- entryGetText entry
+                     buf <- textViewGetBuffer txtvw 
+                     istart <- textBufferGetStartIter buf
+                     iend <- textBufferGetEndIter buf
+                     l <- textBufferGetText buf istart iend True
                      widgetDestroy dialog
                      tdir <- getTemporaryDirectory
                      writeFile (tdir </> "latextest.tex") l 

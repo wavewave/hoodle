@@ -98,12 +98,22 @@ renderImgBBx_BBoxOnly ibbox = do
     let BBox (x1,y1) (x2,y2) = imgbbx_bbx ibbox
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
+
+renderSVGBBx_BBoxOnly :: SVGBBox -> Render () 
+renderSVGBBx_BBoxOnly svg = do 
+    setSourceRGBA 0 0 0 1
+    setLineWidth 10
+    let BBox (x1,y1) (x2,y2) = getBBox svg
+    rectangle x1 y1 (x2-x1) (y2-y1)
+    stroke
+
     
 
 -- | 
 renderRItem_BBoxOnly :: RItem -> Render () 
 renderRItem_BBoxOnly (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
+renderRItem_BBoxOnly (RItemSVG svg _) = renderSVGBBx_BBoxOnly svg
 
 
 -- | 

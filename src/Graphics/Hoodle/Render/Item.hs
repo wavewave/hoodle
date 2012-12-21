@@ -17,7 +17,8 @@
 module Graphics.Hoodle.Render.Item where
 
 import qualified Data.ByteString.Char8 as C8
-import Graphics.Rendering.Cairo
+import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo.SVG as RSVG
 -- from hoodle-platform 
 import Data.Hoodle.BBox 
 import Data.Hoodle.Simple
@@ -33,3 +34,8 @@ cnstrctRItem (ItemImage img) = do
     sfc <- imageSurfaceCreateFromPNG filesrc
     -- rendering is not implemented yet
     return (RItemImage imgbbx (Just sfc))
+cnstrctRItem (ItemSVG svg@(SVG _ _ bstr (x,y) _)) = do 
+    let str = C8.unpack bstr 
+        svgbbx = mkSVGBBox svg
+    rsvg <- RSVG.svgNewFromString str
+    return (RItemSVG svgbbx (Just rsvg))

@@ -48,6 +48,8 @@ module Graphics.Hoodle.Render
 
 import           Control.Lens (view,set,over)
 import           Control.Monad.State hiding (mapM,mapM_)
+import qualified Data.ByteString as B
+import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import           Data.Traversable (mapM)
 import qualified Data.Map as M
@@ -61,6 +63,7 @@ import Data.Hoodle.Predefined
 #ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif
+import qualified Graphics.Rendering.Cairo.SVG as RSVG
 -- from this package
 -- import Graphics.Hoodle.Render.Simple 
 import Graphics.Hoodle.Render.Background 
@@ -104,7 +107,7 @@ renderStrk s@(VWStroke _ _ d) = do
     drawVWStrokeCurve d
     fill 
 
--- | render image 
+-- | render image : not fully implemented 
 renderImg :: Image -> Render () 
 renderImg (Image _ (x,y) (Dim w h)) = do  
       setSourceRGBA 0 0 0 1
@@ -112,10 +115,34 @@ renderImg (Image _ (x,y) (Dim w h)) = do
       rectangle x y w h
       stroke
 
+-- | render svg : not fully implemented 
+renderSVG :: SVG -> Render () 
+renderSVG svg@(SVG _ _ bstr (x,y) (Dim w h)) = do  
+    let str = C.unpack bstr 
+
+    RSVG.withSvgFromString str $ \rsvg -> do 
+      let svgbbx = mkSVGBBox svg
+      let (x,y) = (svg_pos . svgbbx_svg) svgbbx
+          BBox (x1,y1) (x2,y2) = getBBox svgbbx
+          (ix',iy') = RSVG.svgGetSize rsvg
+          ix = fromIntegral ix' 
+          iy = fromIntegral iy'
+      clipBBox (Just (getBBox svgbbx))
+      save 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      RSVG.svgRender rsvg 
+      restore
+      resetClip 
+
+      return () 
+
+
 -- | render item 
 renderItem :: Item -> Render () 
 renderItem (ItemStroke strk) = renderStrk strk
 renderItem (ItemImage img) = renderImg img
+renderItem (ItemSVG svg) = renderSVG svg
 
 -- | render background without any constraint 
 renderBkg :: (Background,Dimension) -> Render () 
@@ -204,7 +231,26 @@ renderRItem itm@(RItemImage img msfc) = do
       restore
       resetClip 
   return itm 
+renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
+  case mrsvg of
+    Nothing -> renderSVG (svgbbx_svg svgbbx)
+    Just rsvg -> do 
+      let (x,y) = (svg_pos . svgbbx_svg) svgbbx
+          BBox (x1,y1) (x2,y2) = getBBox svgbbx
+          (ix',iy') = RSVG.svgGetSize rsvg
+          ix = fromIntegral ix' 
+          iy = fromIntegral iy'
+      clipBBox (Just (getBBox svgbbx))
+      save 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      RSVG.svgRender rsvg 
+      restore
+      resetClip 
 
+      return () 
+
+  return itm 
 
 
 ------------

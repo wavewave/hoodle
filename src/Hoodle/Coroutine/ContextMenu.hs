@@ -31,7 +31,7 @@ import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple
+import           Data.Hoodle.Simple hiding (SVG)
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render
 -- import           Graphics.Hoodle.Render.Generic

@@ -90,6 +90,7 @@ isBBoxDeltaSmallerThan delta pnum geometry
 changeItemBy :: ((Double,Double)->(Double,Double)) -> RItem -> RItem
 changeItemBy func (RItemStroke strk) = RItemStroke (changeStrokeBy func strk)
 changeItemBy func (RItemImage img sfc) = RItemImage (changeImageBy func img) sfc
+changeItemBy func (RItemSVG svg rsvg) = RItemSVG (changeSVGBy func svg) rsvg
     
 
 
@@ -117,6 +118,14 @@ changeImageBy func (ImageBBox (Image bstr (x,y) (Dim w h)) _bbox) =
       (x2,y2) = func (x+w,y+h)
       nimg = Image bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in mkImageBBox nimg 
+
+-- | 
+changeSVGBy :: ((Double,Double)->(Double,Double)) -> SVGBBox -> SVGBBox
+changeSVGBy func (SVGBBox (SVG t c bstr (x,y) (Dim w h)) _bbox) = 
+  let (x1,y1) = func (x,y) 
+      (x2,y2) = func (x+w,y+h)
+      nsvg = SVG t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
+  in mkSVGBBox nsvg 
 
 --       nbbox = bboxFromImage nimg
 --  in ImageBBox nimg nbbox
@@ -382,6 +391,11 @@ hitLassoItem lst (RItemImage img _) =
     hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
     && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
   where BBox (x1,y1) (x2,y2) = getBBox img
+hitLassoItem lst (RItemSVG svg _) = 
+    hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
+    && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
+  where BBox (x1,y1) (x2,y2) = getBBox svg
+
 
 
 data TempSelectRender a = TempSelectRender { tempSurface :: Surface  

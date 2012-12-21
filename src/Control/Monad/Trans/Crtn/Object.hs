@@ -58,7 +58,7 @@ query :: forall m s r. (Monad m) => CObjT s m r -> EStT (SObjT s m ()) m r
 query cli = do 
   qserv <- lift get 
   let result :: m (Either CrtnErr (SrvT (Arg s) (Res s) m (), r))
-      result = runEitherT (qserv <==| cli)
+      result = qserv <==| cli
       r2 :: StateT (SObjT s m ()) m (Either CrtnErr (SrvT (Arg s) (Res s) m (), r))
       r2 = lift result
   (qserv',r) <- EitherT r2 

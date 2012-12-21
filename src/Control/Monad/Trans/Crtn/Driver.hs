@@ -65,9 +65,9 @@ singleDispatch :: (Monad m) =>
                     , [EvOrAct e])
 singleDispatch (Right ev) (logobj,worldobj,evacc) = do
     Right (logobj',worldobj',events) <- 
-      runEitherT $ do (worldobj1,_)  <- worldobj  <==| giveEvent ev
-                      (worldobj2,logobj1) <- worldobj1 <==| flushLog logobj
-                      (worldobj3,events) <- worldobj2 <==| flushQueue 
+      runEitherT $ do (worldobj1,_)  <- EitherT (worldobj  <==| giveEvent ev)
+                      (worldobj2,logobj1) <- EitherT (worldobj1 <==| flushLog logobj)
+                      (worldobj3,events) <- EitherT (worldobj2 <==| flushQueue)
                       return (logobj1,worldobj3,events)
     return (logobj',worldobj',evacc++events) 
 singleDispatch (Left act) (logobj,worldobj,evacc) = do 

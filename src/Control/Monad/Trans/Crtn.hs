@@ -120,15 +120,16 @@ instance Error (CrtnErr r) where
 (<==|) :: Monad m => 
           SrvT req ans m r'    -- ^ server coroutine
        -> CliT req ans m r  -- ^ client coroutine
-       -> EitherT CrtnErr m (SrvT req ans m r', r)
+       -> m (Either CrtnErr (SrvT req ans m r', r)) 
+       -- -> EitherT CrtnErr m (SrvT req ans m r', r)
 s <==| c = do 
-    y <- lift (runFreeT c)
+    y <- runFreeT c -- lift (runFreeT c)
     case y of
-      Pure r -> return (s,r)
+      Pure r -> return (Right (s,r))
       Free (Rqst rq af) -> do 
-        x <- lift (runFreeT (runReaderT s rq))
+        x <- runFreeT (runReaderT s rq) -- lift (runFreeT (runReaderT s rq))
         case x of 
-          Pure r' -> left ServerFinished
+          Pure r' -> return (Left ServerFinished) -- left ServerFinished
           Free (Rqst ans rf) -> (ReaderT rf) <==| (af ans)
 
 

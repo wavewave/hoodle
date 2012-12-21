@@ -63,14 +63,20 @@ type WorldObjB = SObjBT (WorldOp MyEvent DriverB) DriverB
 
 -- | 
 world :: HoodleState -> MainObj () -> WorldObj ()
+-- world :: HoodleState -> (ReaderT (Arg MainOp) MainCoroutine ()) -> WorldObj ()
 world xstate initmc = ReaderT staction  
   where 
-    staction req = runStateT (go initmc req) xstate >> return ()
-    go :: MainObj () 
+    staction req = runStateT erract xstate >> return ()
+      where erract = go initmc req 
+    --   where erract = do r <- runEitherT (go initmc req) 
+    --                   case r of 
+    --                      Left e -> error (show e)
+    --                      Right r' -> return r' 
+    go :: MainObj() -- (ReaderT (Arg MainOp MainCoroutine ()) 
           -> Arg (WorldOp MyEvent DriverB) 
           -> StateT HoodleState WorldObjB () 
     go mcobj (Arg GiveEvent ev) = do 
-      Right mcobj' <- runEitherT $ liftM fst (mcobj <==| doEvent ev)
+      Right mcobj' <- liftM (fmap fst) (mcobj <==| doEvent ev)
       req <- lift $ request (Res GiveEvent ())
       go mcobj' req  
     go mcobj (Arg FlushLog logobj) = do  
@@ -78,8 +84,7 @@ world xstate initmc = ReaderT staction
       let msg = logf "" 
       if ((not.null) msg)
         then do 
-          Right logobj' <- lift . lift $ runEitherT $ 
-            liftM fst (logobj <==| writeLog msg)
+          Right logobj' <- lift . lift $ liftM (fmap fst) (logobj <==| writeLog msg)
           modify (tempLog .~ id)
           req <- lift $ request (Res FlushLog logobj')
           go mcobj req 

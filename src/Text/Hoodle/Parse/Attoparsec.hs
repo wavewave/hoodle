@@ -203,28 +203,41 @@ svg_footer :: Parser ()
 svg_footer = string "</svgobject>" >> return ()
 
 svg_text :: Parser B.ByteString 
-svg_text = undefined 
+svg_text = do 
+    string "<text>"
+    str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
+    string "</text>"
+    return (B.pack str) 
 
 svg_command :: Parser B.ByteString 
-svg_command = undefined 
+svg_command = do 
+    string "<command>"
+    str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
+    string "</command>"
+    return (B.pack str)
 
 svg_render :: Parser B.ByteString 
 svg_render = do 
-  str <- string "<render>" *> manyTill anyChar (try (string "</render>"))
+  string "<render>"
+  str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
+  string "</render>"
   return (B.pack str)
 
 
 svg_obj :: Parser H.Item 
 svg_obj = do (xy,dim) <- svg_header
              trim 
-             -- svg_text
-             -- trim 
-             -- svg_command 
-             -- trim 
+             (mt,mc) <- (try (do t <- svg_text 
+                                 trim 
+                                 c <- svg_command 
+                                 return (Just t, Just c)) 
+                         <|> try (svg_text >>= \t -> return (Just t, Nothing))
+                         <|> return (Nothing,Nothing))
+             trim 
              bstr <- svg_render 
              trim 
              svg_footer
-             (return . H.ItemSVG) (H.SVG Nothing Nothing bstr xy dim)
+             (return . H.ItemSVG) (H.SVG mt mc bstr xy dim)
 
                                   
 

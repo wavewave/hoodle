@@ -49,7 +49,7 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1\">\n"
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1.1\">\n"
                  <> (buildTitle . view title) hdl 
                  <> (mconcat . map buildPage . view pages) hdl
                  <> fromByteString "</hoodle>\n"
@@ -108,6 +108,7 @@ buildLayer layer = fromByteString "<layer>\n"
 buildItem :: Item -> Builder
 buildItem (ItemStroke strk) = buildStroke strk
 buildItem (ItemImage img) = buildImage img
+buildItem (ItemSVG svg) = buildSVG svg 
 
 -- | 
 buildStroke :: Stroke -> Builder
@@ -146,7 +147,23 @@ buildImage (Image bstr (x,y) (Dim w h)) =
     <> fromByteString (toFixed 2 h)
     <> fromByteString "\" />\n"
 
-
+buildSVG :: SVG -> Builder 
+buildSVG (SVG mtxt mcmd rdr (x,y) (Dim w h)) =
+    fromByteString "<svgobject x=\"" 
+    <> fromByteString (toFixed 2 x)
+    <> fromByteString "\" y=\""
+    <> fromByteString (toFixed 2 y)
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 w)
+    <> fromByteString "\" height=\""
+    <> fromByteString (toFixed 2 h)
+    <> fromByteString "\" >\n"
+    <> maybe mempty (\txt->fromByteString "<text>" <> fromByteString txt <> fromByteString "</text>") mtxt 
+    <> maybe mempty (\cmd->fromByteString "<command>" <> fromByteString cmd <> fromByteString "</command>") mcmd 
+    <> fromByteString "<render>" 
+    <> fromByteString rdr 
+    <> fromByteString "</render>"
+    <> fromByteString "</svgobject>"
 
 -- | 
 build2D :: Pair Double Double -> Builder 

@@ -64,12 +64,16 @@ singleDispatch :: (Monad m) =>
                     , World e (SObjBT (DrvOp e) m) ()
                     , [EvOrAct e])
 singleDispatch (Right ev) (logobj,worldobj,evacc) = do
-    Right (logobj',worldobj',events) <- 
+    -- Right (logobj',worldobj',events) <- 
+    r <- 
       runEitherT $ do (worldobj1,_)  <- EitherT (worldobj  <==| giveEvent ev)
                       (worldobj2,logobj1) <- EitherT (worldobj1 <==| flushLog logobj)
                       (worldobj3,events) <- EitherT (worldobj2 <==| flushQueue)
                       return (logobj1,worldobj3,events)
-    return (logobj',worldobj',evacc++events) 
+    case r of 
+      Left _ -> -- resuming original (this must be refined. resume point must be defined ) 
+                return (logobj,worldobj,evacc)
+      Right (logobj',worldobj',events) -> return (logobj',worldobj',evacc++events) 
 singleDispatch (Left act) (logobj,worldobj,evacc) = do 
     Arg Dispatch ev <- request (Res Dispatch (Just act))
     return (logobj,worldobj,evacc++[Right ev]) 

@@ -15,9 +15,13 @@ module Hoodle.Util where
 import Data.Maybe
 import Data.Hoodle.Simple
 
--- import Data.Time.Clock 
--- import Data.Time.Format
--- import System.Locale
+import System.Directory 
+import System.Environment 
+import System.FilePath
+import System.IO
+import Data.Time.Clock 
+import Data.Time.Format
+import System.Locale
 
 -- for test
 -- import Blaze.ByteString.Builder
@@ -70,6 +74,20 @@ waitUntil p act = do
     else waitUntil p act  
 
 -- | for debugging
+errorlog :: String -> IO ()
+errorlog str = do 
+  homepath <- getEnv "HOME"
+  let dir = homepath </> ".hoodle.d"
+  createDirectoryIfMissing False dir
+  outh <- openFile (dir </> "error.log") AppendMode 
+  utctime <- getCurrentTime 
+  let timestr = formatTime defaultTimeLocale "%F %H:%M:%S %Z" utctime
+  hPutStr outh (timestr ++ " : " )  
+  hPutStrLn outh str
+  hClose outh 
+
+
+
 {-
 timeShow :: String -> IO () 
 timeShow msg = 

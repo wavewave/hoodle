@@ -37,6 +37,7 @@ import           Control.Monad.Trans.Crtn.World
 -- from this package
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
+import           Hoodle.Util
 -- 
 
 -- |
@@ -78,8 +79,8 @@ world xstate initmc = ReaderT staction
       -- where erract = go initmc req 
       where erract = do r <- runEitherT (go initmc req) 
                         case r of 
-                          Left e -> error (show e)
-                          Right r' -> return r' 
+                          Left e -> liftIO (errorlog (show e)) 
+                          Right r' -> return () --  return r' 
     go :: MainObj() -- (ReaderT (Arg MainOp MainCoroutine ()) 
           -> Arg (WorldOp MyEvent DriverB) 
           -> EStT HoodleState WorldObjB () 

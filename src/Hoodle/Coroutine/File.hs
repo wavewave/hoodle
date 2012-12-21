@@ -55,7 +55,8 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 --
 import Prelude hiding ((.),id)
-
+import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Crtn
 -- |
 okMessageBox :: String -> MainCoroutine () 
 okMessageBox msg = modify (tempQueue %~ enqueue action) 
@@ -127,6 +128,7 @@ askIfSave action = do
 -- | 
 fileNew :: MainCoroutine () 
 fileNew = do  
+    lift $ EitherT (return (Left (Other "fileNew") ))
     xstate <- get
     xstate' <- liftIO $ getFileContent Nothing xstate 
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')

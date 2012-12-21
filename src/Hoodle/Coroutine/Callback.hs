@@ -25,6 +25,8 @@ import System.Exit
 import Control.Monad.Trans.Crtn.Driver
 import qualified Control.Monad.Trans.Crtn.EventHandler as E
 -- 
+import Hoodle.Util
+-- 
 import Prelude hiding (catch)
 
 eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()
@@ -43,15 +45,3 @@ errorcall e = errorlog (show e)
 patternerr :: PatternMatchFail -> IO ()
 patternerr e = errorlog (show e) 
   
-errorlog :: String -> IO ()
-errorlog str = do 
-  homepath <- getEnv "HOME"
-  let dir = homepath </> ".hoodle.d"
-  createDirectoryIfMissing False dir
-  outh <- openFile (dir </> "error.log") AppendMode 
-  utctime <- getCurrentTime 
-  let timestr = formatTime defaultTimeLocale "%F %H:%M:%S %Z" utctime
-  hPutStr outh (timestr ++ " : " )  
-  hPutStrLn outh str
-  hClose outh 
-

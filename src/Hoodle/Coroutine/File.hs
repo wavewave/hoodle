@@ -18,6 +18,7 @@ module Hoodle.Coroutine.File where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State
+import           Data.ByteString (readFile)
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.IntMap as IM
@@ -51,10 +52,11 @@ import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
-import           Hoodle.Type.Event
+import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState
+import           Hoodle.Util
 --
-import Prelude hiding ((.),id)
+import Prelude hiding ((.),id,readFile)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Crtn
 -- |
@@ -304,8 +306,8 @@ fileAnnotatePDF =
       
 
 -- | 
-fileLoadImage :: MainCoroutine ()
-fileLoadImage = do 
+fileLoadPNG :: MainCoroutine ()
+fileLoadPNG = do 
     fileChooser FileChooserActionOpen >>= maybe (return ()) action 
   where 
     action filename = do  
@@ -314,8 +316,58 @@ fileLoadImage = do
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
           hdl = getHoodle xstate 
           (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-          currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
+          currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
       newitem <- (liftIO . cnstrctRItem . ItemImage) 
+                 (Image (B.pack filename) (100,100) (Dim 300 300))
+      let otheritems = view gitems currlayer  
+      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+      modeChange ToSelectMode 
+      nxstate <- get 
+      thdl <- case view hoodleModeState nxstate of
+                SelectState thdl' -> return thdl'
+                _ -> (lift . EitherT . return . Left . Other) "fileLoadPNG"
+      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+      put nxstate2
+      invalidateAll 
+
+-- | 
+fileLoadSVG :: MainCoroutine ()
+fileLoadSVG = do 
+    fileChooser FileChooserActionOpen >>= maybe (return ()) action 
+  where 
+    action filename = do 
+      xstate <- get 
+      liftIO $ putStrLn filename 
+      bstr <- liftIO $ readFile filename 
+      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+          hdl = getHoodle xstate 
+          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+          currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
+                   (SVG Nothing Nothing bstr (100,100) (Dim 300 300))
+      let otheritems = view gitems currlayer  
+      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+      modeChange ToSelectMode 
+      nxstate <- get 
+      thdl <- case view hoodleModeState nxstate of
+                SelectState thdl' -> return thdl'
+                _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
+      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+      put nxstate2
+      invalidateAll 
+
+
+
+{- do  
+      xstate <- get 
+      liftIO $ putStrLn filename 
+      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+          hdl = getHoodle xstate 
+          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+          currlayer = maybeError "something wrong in addPDraw" mcurrlayer 
+      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
                  (Image (B.pack filename) (100,100) (Dim 300 300))
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
@@ -323,11 +375,13 @@ fileLoadImage = do
       nxstate <- get 
       let thdl = case view hoodleModeState nxstate of
                    SelectState thdl' -> thdl'
-                   _ -> error "fileLoadImage"
+                   _ -> (lift . EitherT . Left . Other) "fileLoadPNG"
       nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
       let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
       put nxstate2
       invalidateAll 
+-}
+
 
 -- |
 askQuitProgram :: MainCoroutine () 

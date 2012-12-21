@@ -62,7 +62,8 @@ uiDecl = [verbatim|<ui>
     <menu action="FMA">
        <menuitem action="NEWA" />
        <menuitem action="ANNPDFA" /> 
-       <menuitem action="LDIMGA" />
+       <menuitem action="LDPNGA" />
+       <menuitem action="LDSVGA" />
        <menuitem action="OPENA" />                        
        <menuitem action="SAVEA" />                        
        <menuitem action="SAVEASA" />                        
@@ -400,7 +401,8 @@ getMenuUI evar = do
   -- file menu
   newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (justMenu MenuNew)
   annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDF" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
-  ldimga <- actionNewAndRegister "LDIMGA" "Load Image" (Just "Just a Stub") Nothing (justMenu MenuLoadImage)
+  ldpnga <- actionNewAndRegister "LDPNGA" "Load PNG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNG)
+  ldsvga <- actionNewAndRegister "LDSVGA" "Load SVG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadSVG)
   opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)
   savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (justMenu MenuSave)
   saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (justMenu MenuSaveAs)
@@ -520,7 +522,7 @@ getMenuUI evar = do
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   -- actionGroupAddActionWithAccel agr undoa (Just "<control>z")   
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
-        [ newa, annpdfa, ldimga, opena, savea, saveasa, reloada, recenta, printa, exporta, quita
+        [ newa, annpdfa, ldpnga, ldsvga, opena, savea, saveasa, reloada, recenta, printa, exporta, quita
         {- , netcopya, netpastea -}
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera

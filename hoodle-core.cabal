@@ -53,6 +53,7 @@ Library
                    either >= 3, 
                    errors >= 1.3, 
                    lens >= 2.4,
+                   process >= 1.1, 
                    configurator == 0.2.*,
                    time >= 1.2, 
                    TypeCompose == 0.9.*, 

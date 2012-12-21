@@ -25,7 +25,11 @@ import qualified Data.IntMap as IM
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
+import           System.Environment 
+import           System.Exit 
 import           System.FilePath
+import           System.Process 
+import           System.IO (writeFile)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
@@ -358,6 +362,51 @@ fileLoadSVG = do
       put nxstate2
       invalidateAll 
 
+
+fileLaTeX :: MainCoroutine () 
+fileLaTeX = do modify (tempQueue %~ enqueue action) 
+               minput <- go
+               case minput of 
+                 Nothing -> return () 
+                 Just (latex,svg) -> afteraction (latex,svg) 
+  where 
+    go = do r <- nextevent
+            case r of 
+              LaTeXInput input -> return input 
+              _ -> go 
+    action = Left . ActionOrder $ 
+               \_evhandler -> do 
+                 l <- getLine 
+                 tdir <- getTemporaryDirectory
+                 writeFile (tdir </> "latextest.tex") l 
+                 let cmd = "LD_LIBRARY_PATH=/home/wavewave/usr/lib lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
+                 print cmd 
+                 excode <- system cmd 
+                 case excode of 
+                   ExitSuccess -> do 
+                     svg <- readFile (tdir </> "latextest.svg")
+                     return (LaTeXInput (Just (B.pack l,svg)))
+                   _ -> return (LaTeXInput Nothing)
+
+    afteraction (latex,svg) = do 
+      xstate <- get 
+      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+          hdl = getHoodle xstate 
+          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+          currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
+          (SVG (Just latex) Nothing svg (100,100) (Dim 300 300))
+      let otheritems = view gitems currlayer  
+      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+      modeChange ToSelectMode 
+      nxstate <- get 
+      thdl <- case view hoodleModeState nxstate of
+                SelectState thdl' -> return thdl'
+                _ -> (lift . EitherT . return . Left . Other) "fileLaTeX"
+      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+      put nxstate2
+      invalidateAll 
 
 
 {- do  

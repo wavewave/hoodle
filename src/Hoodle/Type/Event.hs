@@ -12,6 +12,7 @@
 
 module Hoodle.Type.Event where
 
+import Data.ByteString 
 -- from other package
 import Graphics.UI.Gtk
 -- from hoodle-platform
@@ -54,6 +55,7 @@ data MyEvent = Initialized
              | GotClipboardContent (Maybe [Item])
              | ContextMenuCreated
              | GotContextMenuSignal ContextMenuEvent
+             | LaTeXInput (Maybe (ByteString,ByteString))
              -- | EventConnected
              | EventDisconnected
              deriving (Show,Eq,Ord)
@@ -64,6 +66,7 @@ data MenuEvent = MenuNew
                | MenuAnnotatePDF
                | MenuLoadPNG
                | MenuLoadSVG
+               | MenuLaTeX
                | MenuOpen 
                | MenuSave
                | MenuSaveAs

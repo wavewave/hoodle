@@ -262,6 +262,7 @@ menuEventProcess MenuNew  = askIfSave fileNew
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNG = fileLoadPNG
 menuEventProcess MenuLoadSVG = fileLoadSVG
+menuEventProcess MenuLaTeX = fileLaTeX
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen

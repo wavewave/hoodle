@@ -97,7 +97,7 @@ eitherSplit stype = do
     case enewfstate of 
       Left _ -> return ()
       Right fstate' -> do 
-        let cinfobox = maybeError "eitherSplit" . M.lookup currcid $ cmap 
+        cinfobox <- maybeError "eitherSplit" . M.lookup currcid $ cmap 
         let rtwin = view rootWindow xstate
             rtcntr = view rootContainer xstate 
             rtrwin = view rootOfRootWindow xstate 

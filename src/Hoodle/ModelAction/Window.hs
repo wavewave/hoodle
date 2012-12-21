@@ -36,7 +36,6 @@ import Prelude hiding ((.),id)
 
 
 -- | set frame title according to file name
-
 setTitleFromFileName :: HoodleState -> IO () 
 setTitleFromFileName xstate = do 
   case view currFileName xstate of
@@ -46,21 +45,18 @@ setTitleFromFileName xstate = do
                              [ windowTitle := takeFileName filename] 
 
 -- | 
-
 newCanvasId :: CanvasInfoMap -> CanvasId 
 newCanvasId cmap = 
   let cids = M.keys cmap 
   in  (maximum cids) + 1  
 
 -- | initialize CanvasInfo with creating windows and connect events
-
 initCanvasInfo :: ViewMode a => HoodleState -> CanvasId -> IO (CanvasInfo a)
 initCanvasInfo xstate cid = 
   minimalCanvasInfo xstate cid >>= connectDefaultEventCanvasInfo xstate
   
 
 -- | only creating windows 
-
 minimalCanvasInfo :: ViewMode a => HoodleState -> CanvasId -> IO (CanvasInfo a)
 minimalCanvasInfo _xstate cid = do 
     canvas <- drawingAreaNew
@@ -163,7 +159,7 @@ eventConnect :: HoodleState -> WindowConfig
                 -> IO (HoodleState,WindowConfig)
 eventConnect xstate (Node cid) = do 
     let cmap = getCanvasInfoMap xstate 
-        cinfobox = maybeError "eventConnect" $ M.lookup cid cmap
+        cinfobox = maybeError' "eventConnect" $ M.lookup cid cmap
     ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage2 xstate) cinfobox
     let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
     return (xstate', Node cid)        

@@ -53,8 +53,6 @@ uncurry4 f (x,y,z,w) = f x y z w
 maybeRead :: Read a => String -> Maybe a 
 maybeRead = fmap fst . listToMaybe . reads 
 
-maybeError :: String -> Maybe a -> a
-maybeError str = maybe (error str) id 
 
 getLargestWidth :: Hoodle -> Double 
 getLargestWidth hdl = 
@@ -86,6 +84,9 @@ errorlog str = do
   hPutStrLn outh str
   hClose outh 
 
+-- | 
+maybeError' :: String -> Maybe a -> a
+maybeError' str = maybe (error str) id
 
 
 {-

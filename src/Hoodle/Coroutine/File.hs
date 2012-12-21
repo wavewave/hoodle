@@ -128,7 +128,6 @@ askIfSave action = do
 -- | 
 fileNew :: MainCoroutine () 
 fileNew = do  
-    lift $ EitherT (return (Left (Other "fileNew") ))
     xstate <- get
     xstate' <- liftIO $ getFileContent Nothing xstate 
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')

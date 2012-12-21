@@ -77,7 +77,7 @@ changePageInHoodleModeState npgnum hdlmodst =
     let ehdl = hoodleModeStateEither hdlmodst 
         pgs = either (view gpages) (view gselAll) ehdl
         totnumpages = M.size pgs
-        lpage = maybeError "changePage" (M.lookup (totnumpages-1) pgs)
+        lpage = maybeError' "changePage" (M.lookup (totnumpages-1) pgs)
         (isChanged,npgnum',npage',ehdl') 
           | npgnum >= totnumpages = 
             let npage = newSinglePageFromOld lpage
@@ -85,7 +85,7 @@ changePageInHoodleModeState npgnum hdlmodst =
             in (True,totnumpages,npage,
                 either (Left . set gpages npages) (Right. set gselAll npages) ehdl )
           | otherwise = let npg = if npgnum < 0 then 0 else npgnum
-                            pg = maybeError "changePage" (M.lookup npg pgs)
+                            pg = maybeError' "changePage" (M.lookup npg pgs)
                         in (False,npg,pg,ehdl) 
     in (isChanged,npgnum',npage',either ViewAppendState SelectState ehdl')
 

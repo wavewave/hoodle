@@ -224,7 +224,7 @@ getCanvasInfo :: CanvasId -> HoodleState -> CanvasInfoBox
 getCanvasInfo cid xstate = 
   let cinfoMap = getCanvasInfoMap xstate
       maybeCvs = M.lookup cid cinfoMap
-  in maybeError ("no canvas with id = " ++ show cid) maybeCvs
+  in maybeError' ("no canvas with id = " ++ show cid) maybeCvs
 
 -- | 
 
@@ -297,16 +297,14 @@ hoodleModeStateEither hdlmodst = case hdlmodst of
                             SelectState thdl -> Right thdl 
 
 -- | 
- 
 getCurrentPageFromHoodleModeState :: (ViewMode a) => CanvasInfo a 
                               -> HoodleModeState -> Page EditMode 
 getCurrentPageFromHoodleModeState cinfo hdlmodst = 
   let cpn = view currentPageNum cinfo 
       pagemap = getPageMapFromHoodleModeState hdlmodst   
-  in maybeError "updatePageFromCanvasToHoodle" $ M.lookup cpn pagemap 
+  in maybeError' "updatePageFromCanvasToHoodle" $ M.lookup cpn pagemap 
 
 -- | 
-
 getCurrentPageDimFromHoodleModeState :: (ViewMode a) => CanvasInfo a 
                               -> HoodleModeState -> PageDimension
 getCurrentPageDimFromHoodleModeState cinfo =                               

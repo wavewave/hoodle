@@ -18,10 +18,12 @@ import           Control.Applicative
 import           Control.Category
 import           Control.Lens
 import           Control.Monad (liftM)
+import           Control.Monad.Trans.Either
 import qualified Data.IntMap as M
 import           Data.Traversable (mapM)
 import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render.Type
@@ -77,7 +79,7 @@ adjustPage hdlmodst = selectBox fsingle fsingle
 -- | 
 getPageFromGHoodleMap :: Int -> GHoodle M.IntMap a -> a
 getPageFromGHoodleMap pagenum = 
-  maybeError ("getPageFromGHoodleMap " ++ show pagenum) . M.lookup pagenum . view gpages
+  maybeError' ("getPageFromGHoodleMap " ++ show pagenum) . M.lookup pagenum . view gpages
 
 
 -- | 
@@ -100,9 +102,6 @@ updateCvsInfoFrmHoodle hdl (CanvasSinglePage cinfo) = do
       . CanvasSinglePage 
       . set currentPageNum pagenum
       . xfrmCvsInfo (const nvinfo) $ cinfo 
-    -- return . CanvasInfoBox 
-    --   . set currentPageNum pagenum  
-    --   . set (viewInfo.pageArrangement) arr $ cinfo
 updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do         
     let pagenum = view currentPageNum cinfo 
         oarr = view (viewInfo.pageArrangement) cinfo 
@@ -116,17 +115,13 @@ updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do
       Nothing -> return (CanvasContPage cinfo)
       Just ulcoord -> do 
         let cdim = canvasDim geometry 
-        let arr = makeContinuousArrangement zmode cdim hdl ulcoord 
-            vinfo = view viewInfo cinfo 
+            arr = makeContinuousArrangement zmode cdim hdl ulcoord
+        let vinfo = view viewInfo cinfo 
             nvinfo = xfrmViewInfo (const arr) vinfo
         return 
           . CanvasContPage 
           . set currentPageNum pagenum
           . xfrmCvsInfo (const nvinfo) $ cinfo 
-
-   
---     let ulcoord = maybeError "updateCvsFromHoodle" $ 
-            
 
 -- |
 updatePage :: HoodleModeState -> CanvasInfoBox -> IO CanvasInfoBox 
@@ -134,13 +129,6 @@ updatePage (ViewAppendState hdl) c = updateCvsInfoFrmHoodle hdl c
 updatePage (SelectState thdl) c = do 
     let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
     updateCvsInfoFrmHoodle hdl c
-
---     boxAction f cinfobox
---  where f :: (ViewMode a) => ViewModeSumType -> CanvasInfo a -> IO CanvasInfoBox
---         f mode cinfo = do 
---        fcont _cinfo = do 
---          let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
---          updateCvsInfoFrmHoodle VMContPage hdl cinfobox
 
 -- | 
 setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox

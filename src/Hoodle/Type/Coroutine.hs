@@ -122,3 +122,9 @@ type EventVar = MVar (Maybe (Driver ()))
 
 
 
+-- | 
+maybeError :: String -> Maybe a -> MainCoroutine a
+maybeError str = maybe (lift . hoistEither . Left . Other $ str) return 
+
+
+

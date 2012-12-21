@@ -376,18 +376,37 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
               _ -> go 
     action = Left . ActionOrder $ 
                \_evhandler -> do 
-                 l <- getLine 
-                 tdir <- getTemporaryDirectory
-                 writeFile (tdir </> "latextest.tex") l 
-                 let cmd = "LD_LIBRARY_PATH=/home/wavewave/usr/lib lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
-                 print cmd 
-                 excode <- system cmd 
-                 case excode of 
-                   ExitSuccess -> do 
-                     svg <- readFile (tdir </> "latextest.svg")
-                     return (LaTeXInput (Just (B.pack l,svg)))
-                   _ -> return (LaTeXInput Nothing)
+                 dialog <- messageDialogNew Nothing [DialogModal]
+                   MessageQuestion ButtonsOkCancel "latex input"
+                 vbox <- dialogGetUpper dialog
+                 entry <- entryNew 
+                 boxPackStart vbox entry PackGrow 0
+                 widgetShowAll dialog
+                 res <- dialogRun dialog 
+                 case res of 
+                   ResponseOk -> do 
+                     l <- entryGetText entry
+                     widgetDestroy dialog
+                     tdir <- getTemporaryDirectory
+                     writeFile (tdir </> "latextest.tex") l 
+                     let cmd = "lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
+                     print cmd 
+                     excode <- system cmd 
+                     case excode of 
+                       ExitSuccess -> do 
+                         svg <- readFile (tdir </> "latextest.svg")
+                         return (LaTeXInput (Just (B.pack l,svg)))
+                       _ -> return (LaTeXInput Nothing)
 
+                   _ -> do 
+                     widgetDestroy dialog
+                     return (LaTeXInput Nothing)
+
+{-
+
+
+                 l <- getLine 
+-}
     afteraction (latex,svg) = do 
       xstate <- get 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate

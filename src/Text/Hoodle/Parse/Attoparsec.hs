@@ -19,7 +19,7 @@ module Text.Hoodle.Parse.Attoparsec where
 import           Control.Applicative 
 import           Data.Attoparsec
 import           Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
-                                      , isHorizontalSpace)
+                                      , isHorizontalSpace, anyChar)
 -- import qualified Data.Attoparsec.Iteratee as AI
 import qualified Data.ByteString.Char8 as B hiding (map) 
 import           Data.Char 
@@ -175,7 +175,58 @@ img = do trim
          string "/>"
          (return . H.ItemImage) (H.Image fsrc (posx,posy) (H.Dim width height))
          
-         
+
+svg_header :: Parser ((Double,Double),H.Dimension)
+svg_header = do trim 
+                string "<svgobject"
+                trim 
+                string "x=\""
+                posx <- double 
+                char '"'
+                trim
+                string "y=\""
+                posy <- double
+                char '"'
+                trim 
+                string "width=\""
+                width <- double
+                char '"'
+                trim 
+                string "height=\""
+                height <- double
+                char '"'
+                trim 
+                string ">"
+                return ((posx,posy),H.Dim width height) 
+
+svg_footer :: Parser () 
+svg_footer = string "</svgobject>" >> return ()
+
+svg_text :: Parser B.ByteString 
+svg_text = undefined 
+
+svg_command :: Parser B.ByteString 
+svg_command = undefined 
+
+svg_render :: Parser B.ByteString 
+svg_render = do 
+  str <- string "<render>" *> manyTill anyChar (try (string "</render>"))
+  return (B.pack str)
+
+
+svg_obj :: Parser H.Item 
+svg_obj = do (xy,dim) <- svg_header
+             trim 
+             -- svg_text
+             -- trim 
+             -- svg_command 
+             -- trim 
+             bstr <- svg_render 
+             trim 
+             svg_footer
+             (return . H.ItemSVG) (H.SVG Nothing Nothing bstr xy dim)
+
+                                  
 
 -- | 
 trim :: Parser ()
@@ -212,12 +263,12 @@ page = do trim
           
 layer :: Parser H.Layer
 layer = do trim
-           layerheader
+           layerheader <?> "layer"
            trim
            -- s1 <- onestroke 
            -- s2 <- img
            -- let strokes = [s1,s2]
-           itms <- many (try onestroke <|> img)
+           itms <- many (try onestroke <|> try img <|> svg_obj)
            trim
            layerclose 
            return $ H.Layer itms

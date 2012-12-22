@@ -407,12 +407,6 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
                    _ -> do 
                      widgetDestroy dialog
                      return (LaTeXInput Nothing)
-
-{-
-
-
-                 l <- getLine 
--}
     afteraction (latex,svg) = do 
       xstate <- get 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
@@ -420,7 +414,7 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
           (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
           currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
       newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-          (SVG (Just latex) Nothing svg (100,100) (Dim 300 300))
+          (SVG (Just latex) Nothing svg (100,100) (Dim 300 50))
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
@@ -433,28 +427,6 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
       put nxstate2
       invalidateAll 
 
-
-{- do  
-      xstate <- get 
-      liftIO $ putStrLn filename 
-      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
-          hdl = getHoodle xstate 
-          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-          currlayer = maybeError "something wrong in addPDraw" mcurrlayer 
-      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-                 (Image (B.pack filename) (100,100) (Dim 300 300))
-      let otheritems = view gitems currlayer  
-      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
-      modeChange ToSelectMode 
-      nxstate <- get 
-      let thdl = case view hoodleModeState nxstate of
-                   SelectState thdl' -> thdl'
-                   _ -> (lift . EitherT . Left . Other) "fileLoadPNG"
-      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-      put nxstate2
-      invalidateAll 
--}
 
 
 -- |

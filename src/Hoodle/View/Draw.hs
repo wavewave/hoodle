@@ -123,6 +123,7 @@ doubleBufferDraw win geometry _xform rndr (Intersect ibbox) = do
   let action = withImageSurface FormatARGB32 (floor cw) (floor ch) $ 
         \tempsurface -> do 
           renderWith tempsurface $ do 
+            clipBBox mbbox' 
             setSourceRGBA 0.5 0.5 0.5 1
             rectangle 0 0 cw ch 
             fill 

@@ -22,6 +22,7 @@ import           Data.Maybe
 import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
+import           System.IO 
 -- from hoodle-platform 
 -- import           Control.Monad.Trans.Crtn.EventHandler
 import           Data.Hoodle.Predefined 
@@ -29,7 +30,7 @@ import           Data.Hoodle.Predefined
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
 import           Hoodle.Type.Clipboard
-import           Hoodle.Util.Verbatim
+-- import           Hoodle.Util.Verbatim
 --
 import Prelude hiding ((.),id)
 import Paths_hoodle_core
@@ -39,237 +40,10 @@ import Paths_hoodle_core
 justMenu :: MenuEvent -> Maybe MyEvent
 justMenu = Just . Menu 
 
--- |
-
-uiDeclTest :: String 
-uiDeclTest = [verbatim|<ui> 
-  <menubar>
-    <menu action="VMA">
-       <menuitem action="CONTA" />
-       <menuitem action="ONEPAGEA" />
-       <separator />
-       <menuitem action="FSCRA" />
-       <separator />
-    </menu>
-  </menubar>
-</ui>|]
-
 -- | 
-
-uiDecl :: String 
-uiDecl = [verbatim|<ui> 
-  <menubar>
-    <menu action="FMA">
-       <menuitem action="NEWA" />
-       <menuitem action="ANNPDFA" /> 
-       <menuitem action="LDPNGA" />
-       <menuitem action="LDSVGA" />
-       <menuitem action="LATEXA" />
-       <menuitem action="OPENA" />                        
-       <menuitem action="SAVEA" />                        
-       <menuitem action="SAVEASA" />                        
-       <menuitem action="RELOADA" />
-       <separator /> 
-       <menuitem action="RECENTA" />                        
-       <separator /> 
-       <menuitem action="PRINTA" />                        
-       <menuitem action="EXPORTA" />
-       <separator /> 
-       <menuitem action="QUITA" />
-    </menu>
-    <menu action="EMA">
-       <menuitem action="UNDOA" />
-       <menuitem action="REDOA" />                       
-       <separator />
-       <menuitem action="CUTA" />                        
-       <menuitem action="COPYA" />                        
-       <menuitem action="PASTEA" />                        
-       <menuitem action="DELETEA" />
-       <separator />
-       <menuitem action="NETCOPYA" />
-       <menuitem action="NETPASTEA" />
-    </menu>
-    <menu action="VMA">
-       <menuitem action="CONTA" />
-       <menuitem action="ONEPAGEA" />
-       <separator />
-       <menuitem action="FSCRA" />
-       <separator />
-       <menu action="ZOOMA" >
-         <menuitem action="ZMINA" />
-         <menuitem action="ZMOUTA" />                          
-         <menuitem action="NRMSIZEA" />                          
-         <menuitem action="PGWDTHA" />                          
-         <menuitem action="PGHEIGHTA" />
-         <menuitem action="SETZMA" />                          
-       </menu>
-       <separator />
-       <menuitem action="FSTPAGEA" />
-       <menuitem action="PRVPAGEA" />
-       <menuitem action="NXTPAGEA" />
-       <menuitem action="LSTPAGEA" />
-       <separator />
-       <menuitem action="SHWLAYERA" />
-       <menuitem action="HIDLAYERA" />
-       <separator />
-       <menuitem action="HSPLITA" />
-       <menuitem action="VSPLITA" />
-       <menuitem action="DELCVSA" />
-    </menu>
-    <menu action="JMA">
-       <menuitem action="NEWPGBA" />
-       <menuitem action="NEWPGAA" />
-       <menuitem action="NEWPGEA" />
-       <menuitem action="DELPGA" />       
-       <separator />
-       <menuitem action="EXPSVGA" /> 
-       <separator /> 
-       <menuitem action="NEWLYRA" />
-       <menuitem action="NEXTLAYERA" />
-       <menuitem action="PREVLAYERA" />
-       <menuitem action="GOTOLAYERA" />
-       <menuitem action="DELLYRA" />       
-       <separator />
-       <menuitem action="PPSIZEA" />
-       <menuitem action="PPCLRA" />
-       <menuitem action="PPSTYA" />
-       <menuitem action="APALLPGA" />
-       <separator />
-       <menuitem action="LDBKGA" />
-       <menuitem action="BKGSCRSHTA" />
-       <separator />
-       <menuitem action="DEFPPA" />                        
-       <menuitem action="SETDEFPPA" />    
-    </menu>
-    <menu action="TMA">
-       <menuitem action="PENA" />
-       <menuitem action="ERASERA" />
-       <menuitem action="HIGHLTA" />
-       <menuitem action="TEXTA" />       
-       <separator />
-       <menuitem action="SHPRECA" />
-       <menuitem action="RULERA" />       
-       <separator />
-       <menuitem action="SELREGNA" />
-       <menuitem action="SELRECTA" />
-       <menuitem action="VERTSPA" />
-       <menuitem action="HANDA" />
-       <separator />
-       <menu action="CLRA"> 
-         <menuitem action="BLACKA" />     
-         <menuitem action="BLUEA" />                          
-         <menuitem action="REDA" />                          
-         <menuitem action="GREENA" />                          
-         <menuitem action="GRAYA" />                          
-         <menuitem action="LIGHTBLUEA" />                          
-         <menuitem action="LIGHTGREENA" />                          
-         <menuitem action="MAGENTAA" />
-         <menuitem action="ORANGEA" />
-         <menuitem action="YELLOWA" />
-         <menuitem action="WHITEA" />
-       </menu>
-       <menuitem action="CLRPCKA" /> 
-       <menu action="PENOPTA"> 
-         <menuitem action="PENVERYFINEA" />     
-         <menuitem action="PENFINEA" />                          
-         <menuitem action="PENMEDIUMA" />                          
-         <menuitem action="PENTHICKA" />                          
-         <menuitem action="PENVERYTHICKA" />                      
-         <menuitem action="PENULTRATHICKA" />     
-       </menu>
-       <menuitem action="ERASROPTA" />                        
-       <menuitem action="HILTROPTA" />                        
-       <menuitem action="TXTFNTA" />                        
-       <separator />
-       <menuitem action="DEFPENA" />                        
-       <menuitem action="DEFERSRA" />    
-       <menuitem action="DEFHILTRA" />                        
-       <menuitem action="DEFTXTA" />
-       <menuitem action="SETDEFOPTA" />                        
-    </menu>
-    <menu action="OMA">
-       <menuitem action="UXINPUTA" />
-       <menuitem action="DCRDCOREA" />                        
-       <menuitem action="ERSRTIPA" />                        
-       <menuitem action="PRESSRSENSA" />                        
-       <menuitem action="PGHILTA" />                        
-       <menuitem action="MLTPGVWA" />                        
-       <menuitem action="MLTPGA" />                        
-       <menuitem action="BTN2MAPA" />                        
-       <menuitem action="BTN3MAPA" />                        
-       <separator />
-       <menuitem action="ANTIALIASBMPA" />                        
-       <menuitem action="PRGRSBKGA" />                        
-       <menuitem action="PRNTPPRULEA" />                        
-       <menuitem action="LFTHNDSCRBRA" />                        
-       <menuitem action="SHRTNMENUA" />   
-       <separator />
-       <menuitem action="AUTOSAVEPREFA" />                        
-       <menuitem action="SAVEPREFA" />
-       <menuitem action="RELAUNCHA" />
-    </menu>
-    <menu action="HMA">
-       <menuitem action="ABOUTA" />
-    </menu>
-  </menubar>
-  <toolbar name="toolbar1" > 
-    <toolitem action="SAVEA" />
-    <toolitem action="NEWA" />
-    <toolitem action="OPENA" />
-    <separator />
-    <toolitem action="CUTA" />
-    <toolitem action="COPYA" />
-    <toolitem action="PASTEA" />
-    <separator /> 
-    <toolitem action="UNDOA" /> 
-    <toolitem action="REDOA" /> 
-    <separator /> 
-    <toolitem action="FSTPAGEA" />
-    <toolitem action="PRVPAGEA" />
-    <toolitem action="NXTPAGEA" />
-    <toolitem action="LSTPAGEA" />
-    <separator />
-    <toolitem action="ZMOUTA" />      
-    <toolitem action="NRMSIZEA" />                                        
-    <toolitem action="ZMINA" />
-    <toolitem action="PGWDTHA" />                          
-    <toolitem action="SETZMA" />
-    <toolitem action="FSCRA" />
-  </toolbar>
-  <toolbar name="toolbar2" > 
-    <toolitem action="PENA"        />
-    <toolitem action="ERASERA"     />                     
-    <toolitem action="HIGHLTA"     />                     
-    <toolitem action="TEXTA"       />                     
-    <separator />     
-    <!-- <toolitem action="DEFAULTA"    />    --> 
-    <!-- <toolitem action="DEFPENA"     />    -->                  
-    <!-- <toolitem action="SHPRECA"     />    -->  
-    <!-- <toolitem action="RULERA"      />    -->                 
-    <!-- <separator />                        -->
-    <toolitem action="SELREGNA"    />    
-    <toolitem action="SELRECTA"    />                     
-    <toolitem action="VERTSPA"     />                     
-    <toolitem action="HANDA"       />                     
-    <separator />                     
-    <toolitem action="PENFINEA"       />    
-    <toolitem action="PENMEDIUMA"       />                     
-    <toolitem action="PENTHICKA"       />   
-    <separator />
-    <toolitem action="BLACKA"      />                     
-    <toolitem action="BLUEA"       />                     
-    <toolitem action="REDA"        />                     
-    <toolitem action="GREENA"      />                     
-    <toolitem action="GRAYA"       />                     
-    <toolitem action="LIGHTBLUEA"  />                      
-    <toolitem action="LIGHTGREENA" />                     
-    <toolitem action="MAGENTAA"    />                     
-    <toolitem action="ORANGEA"     />                     
-    <toolitem action="YELLOWA"     />                     
-    <toolitem action="WHITEA"      />                     
-  </toolbar>
-</ui>
-|]
+-- uiDecl :: String 
+-- uiDecl = [verbatim|
+-- |]
 
 iconList :: [ (String,String) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
@@ -302,14 +76,12 @@ iconList = [ ("fullscreen.png" , "myfullscreen")
            ]
 
 -- | 
-
 viewmods :: [RadioActionEntry] 
 viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
            , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
            ]
            
 -- | 
-
 pointmods :: [RadioActionEntry] 
 pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothing 0
             , RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
@@ -578,7 +350,9 @@ getMenuUI evar = do
   -- 
   -- radio actions
   --
-  ui <- uiManagerNew 
+  ui <- uiManagerNew
+  
+  uiDecl <- readFile (resDir </> "menu.xml")   
   uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
   -- Just ra1 <- actionGroupGetAction agr "ONEPAGEA"

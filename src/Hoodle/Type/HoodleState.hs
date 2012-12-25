@@ -133,8 +133,96 @@ data HoodleState =
                 , _tempLog :: String -> String 
                 } 
 
+-- | lens for hoodleModeState
+hoodleModeState :: Simple Lens HoodleState HoodleModeState
+hoodleModeState = lens _hoodleModeState (\f a -> f { _hoodleModeState = a } )
 
-makeLenses ''HoodleState 
+-- | lens for currFileName
+currFileName :: Simple Lens HoodleState (Maybe FilePath)
+currFileName = lens _currFileName (\f a -> f { _currFileName = a } )
+
+-- | lens for cvsInfoMap
+cvsInfoMap :: Simple Lens HoodleState CanvasInfoMap
+cvsInfoMap = lens _cvsInfoMap (\f a -> f { _cvsInfoMap = a } )
+
+-- | lens for currentCanvas
+currentCanvas :: Simple Lens HoodleState (CanvasId,CanvasInfoBox)
+currentCanvas = lens _currentCanvas (\f a -> f { _currentCanvas = a } )
+
+-- | lens for frameState
+frameState :: Simple Lens HoodleState WindowConfig
+frameState = lens _frameState (\f a -> f { _frameState = a } )
+
+-- | lens for rootWindow
+rootWindow :: Simple Lens HoodleState Widget
+rootWindow = lens _rootWindow (\f a -> f { _rootWindow = a } )
+
+-- | lens for rootContainer
+rootContainer :: Simple Lens HoodleState Box
+rootContainer = lens _rootContainer (\f a -> f { _rootContainer = a } )
+
+-- | lens for rootOfRootWindow
+rootOfRootWindow :: Simple Lens HoodleState Window
+rootOfRootWindow = lens _rootOfRootWindow (\f a -> f { _rootOfRootWindow = a } )
+
+-- | lens for currentPenDraw
+currentPenDraw :: Simple Lens HoodleState PenDraw
+currentPenDraw = lens _currentPenDraw (\f a -> f { _currentPenDraw = a } )
+
+-- | lens for callBack
+callBack :: Simple Lens HoodleState (MyEvent -> IO ())
+callBack = lens _callBack (\f a -> f { _callBack = a } )
+
+-- | lens for deviceList
+deviceList :: Simple Lens HoodleState DeviceList 
+deviceList = lens _deviceList (\f a -> f { _deviceList = a } )
+
+-- | lens for penInfo
+penInfo :: Simple Lens HoodleState PenInfo
+penInfo = lens _penInfo (\f a -> f { _penInfo = a } )
+
+-- | lens for selectInfo
+selectInfo :: Simple Lens HoodleState SelectInfo
+selectInfo = lens _selectInfo (\f a -> f { _selectInfo = a } )
+
+-- | lens for gtkUIManager
+gtkUIManager :: Simple Lens HoodleState UIManager
+gtkUIManager = lens _gtkUIManager (\f a -> f { _gtkUIManager = a } )
+
+-- | lens for isSaved
+isSaved :: Simple Lens HoodleState Bool
+isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
+
+-- | lens for undoTable
+undoTable :: Simple Lens HoodleState (UndoTable HoodleModeState)
+undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
+
+-- | lens for isOneTimeSelectMode
+isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
+isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
+
+-- | lens for pageModeSignal
+pageModeSignal :: Simple Lens HoodleState (Maybe (ConnectId RadioAction))
+pageModeSignal = lens _pageModeSignal (\f a -> f { _pageModeSignal = a } )
+
+-- | lens for lastTimeCanvasConfigure
+lastTimeCanvasConfigure :: Simple Lens HoodleState (Maybe UTCTime)
+lastTimeCanvasConfigure = lens _lastTimeCanvasConfigure (\f a -> f { _lastTimeCanvasConfigure = a } )
+
+-- | lens for hookSet
+hookSet :: Simple Lens HoodleState (Maybe Hook)
+hookSet = lens _hookSet (\f a -> f { _hookSet = a } )
+
+-- | lens for tempQueue
+tempQueue :: Simple Lens HoodleState (Queue (Either (ActionOrder MyEvent) MyEvent))
+tempQueue = lens _tempQueue (\f a -> f { _tempQueue = a } )
+
+-- | lens for tempLog
+tempLog :: Simple Lens HoodleState (String -> String)
+tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
+
+
+-- makeLenses ''HoodleState 
 
 emptyHoodleState :: HoodleState 
 emptyHoodleState = 

@@ -103,7 +103,11 @@ type CanvasId = Int
 -- |
 data PenDraw = PenDraw { _points :: Seq (Double,Double) } 
              deriving (Show)
-                      
+
+-- | lens for zoomMode 
+points :: Simple Lens PenDraw (Seq (Double,Double))
+points = lens _points (\f a -> f { _points = a } )
+
 -- | 
 data ViewInfo a  = (ViewMode a) => 
                    ViewInfo { _zoomMode :: ZoomMode 
@@ -303,6 +307,15 @@ data WidthColorStyle = WidthColorStyle { _penWidth :: Double
                                        , _penColor :: PenColor } 
                      deriving (Show)
                        
+-- | lens for penWidth
+penWidth :: Simple Lens WidthColorStyle Double
+penWidth = lens _penWidth (\f a -> f { _penWidth = a } )
+
+-- | lens for penColor
+penColor :: Simple Lens WidthColorStyle PenColor
+penColor = lens _penColor (\f a -> f { _penColor = a } )
+
+
 -- | 
 data PenHighlighterEraserSet = PenHighlighterEraserSet 
                                { _currPen :: WidthColorStyle 
@@ -310,6 +323,26 @@ data PenHighlighterEraserSet = PenHighlighterEraserSet
                                , _currEraser :: WidthColorStyle 
                                , _currText :: WidthColorStyle}
                              deriving (Show) 
+
+-- | lens for currPen
+currPen :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currPen = lens _currPen (\f a -> f { _currPen = a } )
+
+-- | lens for currHighlighter
+currHighlighter :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currHighlighter = lens _currHighlighter (\f a -> f { _currHighlighter = a } )
+
+-- | lens for currEraser
+currEraser :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currEraser = lens _currEraser (\f a -> f { _currEraser = a } )
+
+-- | lens for currText
+currText :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currText = lens _currText (\f a -> f { _currText = a } )
+
+
+
+
                      
 -- | 
 data PenInfo = PenInfo { _penType :: PenType
@@ -317,6 +350,22 @@ data PenInfo = PenInfo { _penType :: PenType
                        , _variableWidthPen :: Bool 
                        } 
              deriving (Show) 
+
+-- | lens for penType
+penType :: Simple Lens PenInfo PenType 
+penType = lens _penType (\f a -> f { _penType = a } )
+
+-- | lens for penSet
+penSet :: Simple Lens PenInfo PenHighlighterEraserSet
+penSet = lens _penSet (\f a -> f { _penSet = a } )
+
+-- | lens for variableWidthPen
+variableWidthPen :: Simple Lens PenInfo Bool
+variableWidthPen = lens _variableWidthPen (\f a -> f { _variableWidthPen = a } )
+
+
+
+
 
 -- | 
 currentTool :: Simple Lens PenInfo WidthColorStyle 
@@ -362,11 +411,15 @@ defaultPenInfo =
           , _variableWidthPen = False
           } 
                                            
-makeLenses ''PenDraw
--- makeLenses ''ViewInfo
-makeLenses ''PenInfo
-makeLenses ''PenHighlighterEraserSet
-makeLenses ''WidthColorStyle 
+
+
+
+
+
+-- makeLenses ''PenDraw
+-- makeLenses ''PenInfo
+-- makeLenses ''PenHighlighterEraserSet
+-- makeLenses ''WidthColorStyle 
 
 -- | 
 updateCanvasDimForSingle :: CanvasDimension 

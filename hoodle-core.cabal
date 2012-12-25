@@ -15,6 +15,7 @@ Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
                 resource/*.png
+                resource/*.xml
                 CHANGES
                 Config.hs
 Source-repository head
@@ -116,7 +117,7 @@ Library
                    Hoodle.Type.Window
                    Hoodle.Type.HoodleState
                    Hoodle.Util
-                   Hoodle.Util.Verbatim 
+                   -- Hoodle.Util.Verbatim 
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
   Other-Modules: 

@@ -52,4 +52,8 @@ data SelectInfo = SelectInfo { _selectType :: SelectType
                              }
              deriving (Show) 
 
-makeLenses ''SelectInfo
+
+selectType :: Simple Lens SelectInfo SelectType 
+selectType = lens _selectType (\f a -> f { _selectType = a })
+
+-- makeLenses ''SelectInfo

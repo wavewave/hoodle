@@ -381,7 +381,13 @@ updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = do
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = SingleArrangement cdim pdim (ViewPortBBox nbbox)
   maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
-  msfc <- Just <$> createImageSurface FormatARGB32 (floor w') (floor h') 
+  msfc <- fmap Just $ do 
+            sfc <- createImageSurface FormatARGB32 (floor w') (floor h')
+            renderWith sfc $ do 
+              setSourceRGBA 0.5 0.5 0.5 1 
+              rectangle 0 0 w' h' 
+              fill 
+            return sfc 
   return $ (set (viewInfo.pageArrangement) arr' . set mDrawSurface msfc) cinfo
      
 -- | 
@@ -399,6 +405,12 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousArrangement cdim ddim func (ViewPortBBox nbbox)
   maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
-  msfc <- Just <$> createImageSurface FormatARGB32 (floor w') (floor h') 
+  msfc <- fmap Just $ do 
+            sfc <- createImageSurface FormatARGB32 (floor w') (floor h')
+            renderWith sfc $ do 
+              setSourceRGBA 0.5 0.5 0.5 1 
+              rectangle 0 0 w' h' 
+              fill 
+            return sfc 
   return $ (set (viewInfo.pageArrangement) arr'.set mDrawSurface msfc) cinfo
      

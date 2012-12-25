@@ -41,6 +41,7 @@ module Hoodle.Type.Canvas
 , pageArrangement 
 , canvasId
 , drawArea 
+, mDrawSurface
 , scrolledWindow
 , viewInfo
 , currentPageNum 
@@ -84,6 +85,7 @@ import           Control.Category
 import           Control.Lens
 import qualified Data.IntMap as M
 import           Data.Sequence
+import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- 
 import           Data.Hoodle.Simple (Dimension(..))
@@ -142,6 +144,7 @@ pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 data CanvasInfo a = 
     (ViewMode a) => CanvasInfo { _canvasId :: CanvasId
                                , _drawArea :: DrawingArea
+                               , _mDrawSurface :: Maybe Surface 
                                , _scrolledWindow :: ScrolledWindow
                                , _viewInfo :: ViewInfo a
                                , _currentPageNum :: Int
@@ -150,13 +153,15 @@ data CanvasInfo a =
                                , _horizAdjConnId :: Maybe (ConnectId Adjustment)
                                , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                                }
-    
+
+-- |     
 xfrmCvsInfo :: (ViewMode a, ViewMode b) => 
                (ViewInfo a -> ViewInfo b) 
             -> CanvasInfo a -> CanvasInfo b 
 xfrmCvsInfo f CanvasInfo {..} = 
     CanvasInfo { _canvasId = _canvasId
                , _drawArea = _drawArea 
+               , _mDrawSurface = _mDrawSurface
                , _scrolledWindow = _scrolledWindow
                , _viewInfo = f _viewInfo
                , _currentPageNum = _currentPageNum 
@@ -165,11 +170,13 @@ xfrmCvsInfo f CanvasInfo {..} =
                , _horizAdjConnId = _horizAdjConnId
                , _vertAdjConnId = _vertAdjConnId 
                }
-    
+
+-- |     
 defaultCvsInfoSinglePage :: CanvasInfo SinglePage
 defaultCvsInfoSinglePage = 
   CanvasInfo { _canvasId = error "cvsid"
              , _drawArea = error "DrawingArea"
+             , _mDrawSurface = Nothing 
              , _scrolledWindow = error "ScrolledWindow"
              , _viewInfo = defaultViewInfoSinglePage
              , _currentPageNum = 0 
@@ -186,6 +193,11 @@ canvasId = lens _canvasId (\f a -> f { _canvasId = a })
 -- | 
 drawArea :: Simple Lens (CanvasInfo a) DrawingArea
 drawArea = lens _drawArea (\f a -> f { _drawArea = a })
+
+-- | 
+mDrawSurface :: Simple Lens (CanvasInfo a) (Maybe Surface) 
+mDrawSurface = lens _mDrawSurface (\f a -> f { _mDrawSurface = a })
+
 
 -- | 
 scrolledWindow :: Simple Lens (CanvasInfo a) ScrolledWindow
@@ -283,23 +295,6 @@ selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
 selectBox fs _fc (CanvasSinglePage cinfo) = CanvasSinglePage (fs cinfo)
 selectBox _fs fc (CanvasContPage cinfo)= CanvasContPage (fc cinfo)
 
-  
---  let idaction :: CanvasInfoBox -> Identity CanvasInfoBox
---      idaction = selectBoxAction (return . CanvasInfoBox . fsingle) (return . CanvasInfoBox . fcont)
---  in runIdentity . idaction   
-
-
-
-{-
-viewModeBranch :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
-               -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage) 
-               -> CanvasInfo v -> CanvasInfo v 
-viewModeBranch fsingle fcont cinfo = 
-  case view (viewInfo.pageArrangement) cinfo of 
-    SingleArrangement _ _ _ ->  fsingle cinfo 
-    ContinuousArrangement _ _ _ _ -> fcont cinfo 
--}
-
 -- |
 type CanvasInfoMap = M.IntMap CanvasInfoBox
 
@@ -376,8 +371,8 @@ makeLenses ''WidthColorStyle
 -- | 
 updateCanvasDimForSingle :: CanvasDimension 
                             -> CanvasInfo SinglePage  
-                            -> CanvasInfo SinglePage 
-updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = 
+                            -> IO (CanvasInfo SinglePage)
+updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = do 
   let zmode = view (viewInfo.zoomMode) cinfo
       SingleArrangement _ pdim (ViewPortBBox bbox)
         = view (viewInfo.pageArrangement) cinfo
@@ -385,15 +380,17 @@ updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo =
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = SingleArrangement cdim pdim (ViewPortBBox nbbox)
-  in set (viewInfo.pageArrangement) arr' cinfo
+  maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
+  msfc <- Just <$> createImageSurface FormatARGB32 (floor w') (floor h') 
+  return $ (set (viewInfo.pageArrangement) arr' . set mDrawSurface msfc) cinfo
      
 -- | 
 
 updateCanvasDimForContSingle :: PageDimension 
                                 -> CanvasDimension 
                                 -> CanvasInfo ContinuousPage 
-                                -> CanvasInfo ContinuousPage 
-updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = 
+                                -> IO (CanvasInfo ContinuousPage) 
+updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do 
   let zmode = view (viewInfo.zoomMode) cinfo
       ContinuousArrangement _ ddim  func (ViewPortBBox bbox) 
         = view (viewInfo.pageArrangement) cinfo
@@ -401,5 +398,7 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo =
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousArrangement cdim ddim func (ViewPortBBox nbbox)
-  in set (viewInfo.pageArrangement) arr' cinfo
+  maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
+  msfc <- Just <$> createImageSurface FormatARGB32 (floor w') (floor h') 
+  return $ (set (viewInfo.pageArrangement) arr'.set mDrawSurface msfc) cinfo
      

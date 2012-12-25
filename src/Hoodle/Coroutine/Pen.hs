@@ -106,7 +106,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                  =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
           let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
               nbbox = xformBBox f bbox 
-          invalidateAllInBBox (Just (inflate nbbox 2.0)) Efficient
+          -- invalidateAllInBBox (Just (inflate nbbox 2.0)) Efficient
+          invalidateAllInBBox (Just nbbox) Efficient
 
 -- | main pen coordinate adding process
 -- | now being changed
@@ -129,6 +130,7 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
            let canvas = view drawArea cvsInfo
+               msfc = view mDrawSurface cvsInfo 
                ptype  = view (penInfo.penType) xstate
                pcolor = view (penInfo.currentTool.penColor) xstate 
                pwidth = view (penInfo.currentTool.penWidth) xstate 
@@ -142,7 +144,7 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
            let pressureType = case view (penInfo.variableWidthPen) xstate of 
                                 True -> Pressure
                                 False -> NoPressure
-           liftIO $ drawCurvebitGen pressureType canvas geometry 
+           liftIO $ drawCurvebitGen pressureType (canvas,msfc) geometry 
                       pwidth pcolRGBA pnum ((x0,y0),z0) ((x,y),z)
            penProcess cid pnum geometry connidmove connidup (pdraw |> (x,y,z)) ((x,y),z) )
         (\_ -> disconnect [connidmove,connidup] >> return pdraw )

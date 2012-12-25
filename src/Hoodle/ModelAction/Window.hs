@@ -67,7 +67,7 @@ minimalCanvasInfo _xstate cid = do
     scrolledWindowSetHAdjustment scrwin hadj 
     scrolledWindowSetVAdjustment scrwin vadj 
     -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
-    return $ CanvasInfo cid canvas scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing
+    return $ CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing
 
 
 -- | only connect events 

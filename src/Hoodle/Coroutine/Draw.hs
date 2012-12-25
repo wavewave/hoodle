@@ -61,16 +61,16 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
           let cpn = PageNum . view currentPageNum $ cvsInfo 
               isCurrentCvs = cid == getCurrentCanvasId xstate
               epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState xstate)
+              cvs = view drawArea cvsInfo
+              msfc = view mDrawSurface cvsInfo 
           case epage of 
             Left page -> do  
-              liftIO (unSinglePageDraw drawf isCurrentCvs 
-                        <$> view drawArea <*> pure (cpn,page) 
-                        <*> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+              liftIO (unSinglePageDraw drawf isCurrentCvs (cvs,msfc) (cpn,page)
+                      <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
               return ()
             Right tpage -> do 
-              liftIO (unSinglePageDraw drawfsel isCurrentCvs
-                        <$> view drawArea <*> pure (cpn,tpage) 
-                        <*> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+              liftIO (unSinglePageDraw drawfsel isCurrentCvs (cvs,msfc) (cpn,tpage)
+                      <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
               return ()
         fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
         fcont xstate cvsInfo = do 

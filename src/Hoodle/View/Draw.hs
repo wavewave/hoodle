@@ -15,6 +15,7 @@
 module Hoodle.View.Draw where
 
 -- import Control.Applicative ((<$>))
+import Control.Concurrent
 import Graphics.UI.Gtk hiding (get)
 import Graphics.Rendering.Cairo
 import Control.Category ((.))
@@ -58,7 +59,7 @@ type family DrawingFunction v :: * -> *
 
 newtype SinglePageDraw a = 
   SinglePageDraw { unSinglePageDraw :: Bool 
-                                       -> DrawingArea 
+                                       -> (DrawingArea, Maybe Surface) 
                                        -> (PageNum, Page a) 
                                        -> ViewInfo SinglePage 
                                        -> Maybe BBox 
@@ -85,7 +86,6 @@ type instance DrawingFunction SinglePage = SinglePageDraw
 type instance DrawingFunction ContinuousPage = ContPageDraw
 
 -- | 
-
 getCanvasViewPort :: CanvasGeometry -> ViewPortBBox 
 getCanvasViewPort geometry = 
   let DeskCoord (x0,y0) = canvas2Desktop geometry (CvsCoord (0,0)) 
@@ -94,14 +94,12 @@ getCanvasViewPort geometry =
   in ViewPortBBox (BBox (x0,y0) (x1,y1))
 
 -- | 
-
 getBBoxInPageCoord :: CanvasGeometry -> PageNum -> BBox -> BBox  
 getBBoxInPageCoord geometry pnum bbox = 
   let DeskCoord (x0,y0) = page2Desktop geometry (pnum,PageCoord (0,0))  
   in moveBBoxByOffset (-x0,-y0) bbox
      
 -- | 
-
 getViewableBBox :: CanvasGeometry 
                    -> Maybe BBox   -- ^ in desktop coordinate 
                    -> IntersectBBox
@@ -110,33 +108,53 @@ getViewableBBox geometry mbbox =
   in (fromMaybe mbbox :: IntersectBBox) `mappend` (Intersect (Middle vportbbox))
                
 -- | common routine for double buffering 
-
-doubleBufferDraw :: DrawWindow -> CanvasGeometry -> Render () -> Render a 
+doubleBufferDraw :: (DrawWindow, Maybe Surface)  
+                    -> CanvasGeometry -> Render () -> Render a
                     -> IntersectBBox
                     -> IO (Maybe a)
-doubleBufferDraw win geometry _xform rndr (Intersect ibbox) = do 
+doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do 
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
         Middle bbox -> Just (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord) bbox)
         Bottom -> Nothing 
-  let action = withImageSurface FormatARGB32 (floor cw) (floor ch) $ 
-        \tempsurface -> do 
-          renderWith tempsurface $ do 
-            clipBBox mbbox' 
-            setSourceRGBA 0.5 0.5 0.5 1
-            rectangle 0 0 cw ch 
-            fill 
-            rndr 
-          renderWithDrawable win $ do 
-            clipBBox mbbox'
-            setSourceSurface tempsurface 0 0   
-            setOperator OperatorSource 
-            paint 
+  let action = do 
+        case msfc of 
+	  Nothing -> do 
+	    renderWithDrawable win $ do 
+	      clipBBox mbbox'
+              setSourceRGBA 0.5 0.5 0.5 1
+              rectangle 0 0 cw ch 
+	      rndr 
+              return () 
+	  Just sfc -> do 
+	    renderWith sfc $ do 
+	      clipBBox mbbox' 
+              setSourceRGBA 0.5 0.5 0.5 1
+              rectangle 0 0 cw ch 
+	      rndr 
+	    renderWithDrawable win $ do 
+	      setSourceSurface sfc 0 0   
+	      setOperator OperatorSource 
+	      paint 
+        return ()      
   case ibbox of
     Top -> action >> return Nothing 
     Middle _ -> action >> return Nothing 
     Bottom -> return Nothing 
+
+-- withImageSurface FormatARGB32 (floor cw) (floor ch) $ 
+        -- \tempsurface -> do 
+        --   renderWith tempsurface $ do 
+        --     setSourceRGBA 0.5 0 0 1
+        --    rectangle 0 0 cw ch 
+       --      fill
+       --      rndr
+	      -- setSourceSurface tempsurface 0 0 
+	      -- setOperator OperatorSource
+	      -- paint 
+
+
 
 -- | 
 
@@ -154,7 +172,7 @@ data PressureMode = NoPressure | Pressure
   
 -- | 
 drawCurvebitGen  :: PressureMode 
-                    ->  DrawingArea 
+                    -> (DrawingArea, Maybe Surface)
                     -> CanvasGeometry 
                     -> Double 
                     -> (Double,Double,Double,Double) 
@@ -162,7 +180,7 @@ drawCurvebitGen  :: PressureMode
                     -> ((Double,Double),Double) 
                     -> ((Double,Double),Double) 
                     -> IO () 
-drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
+drawCurvebitGen pmode (canvas,msfc) geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     cairoXform4PageCoordinate geometry pnum 
@@ -189,7 +207,7 @@ drawFuncGen :: em
                -> ((PageNum,Page em) -> Maybe BBox -> DrawFlag -> Render (Page em)) 
                -> DrawingFunction SinglePage em
 drawFuncGen _typ render = SinglePageDraw func 
-  where func isCurrentCvs canvas (pnum,page) vinfo mbbox flag = do 
+  where func isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
           win <- widgetGetDrawWindow canvas
@@ -203,7 +221,7 @@ drawFuncGen _typ render = SinglePageDraw func
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
                 resetClip 
                 return pg 
-          doubleBufferDraw win geometry xformfunc renderfunc ibboxnew 
+          doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew 
           >>= maybe (return page) return 
 
 
@@ -232,6 +250,7 @@ drawContPageGen render = ContPageDraw func
           let arr = view (viewInfo.pageArrangement) cinfo
               pnum = PageNum . view currentPageNum $ cinfo 
               canvas = view drawArea cinfo 
+              msfc = view mDrawSurface cinfo
           geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = view gpages hdl 
           let drawpgs = catMaybes . map f 
@@ -253,7 +272,7 @@ drawContPageGen render = ContPageDraw func
                 mapM_ onepagerender drawpgs 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 resetClip 
-          doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
+          doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
           return hdl 
 
 
@@ -275,6 +294,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               pnum = PageNum . view currentPageNum $ cinfo 
               mtpage = view gselSelected thdl 
               canvas = view drawArea cinfo 
+              msfc = view mDrawSurface cinfo 
           geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = view gselAll thdl 
               hdl = GHoodle (view gselTitle thdl) pgs 
@@ -300,7 +320,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 resetClip 
-          doubleBufferDraw win geometry xformfunc renderfunc ibboxnew
+          doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
           return thdl
 
 

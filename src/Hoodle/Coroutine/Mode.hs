@@ -102,6 +102,7 @@ viewModeChange command = do
           let nvinfo = ViewInfo (view zoomMode (view viewInfo cinfo)) arr 
               ncinfo = CanvasInfo (view canvasId cinfo)
                                   canvas
+                                  (view mDrawSurface cinfo)
                                   (view scrolledWindow cinfo)
                                   nvinfo 
                                   (unPageNum cpn)
@@ -126,6 +127,7 @@ viewModeChange command = do
               nvinfo = ViewInfo (view zoomMode vinfo) arr 
               ncinfotemp = CanvasInfo (view canvasId cinfo)
                                       (view drawArea cinfo)
+                                      (view mDrawSurface cinfo)
                                       (view scrolledWindow cinfo)
                                       nvinfo 
                                       (view currentPageNum cinfo)

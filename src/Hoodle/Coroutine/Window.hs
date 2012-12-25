@@ -52,13 +52,13 @@ canvasConfigureGenUpdate updatefunc cid cdim
     >> updatefunc 
   where fsingle cinfo = do 
           xstate <- get 
-          let cinfo' = updateCanvasDimForSingle cdim cinfo 
+          cinfo' <- liftIO $ updateCanvasDimForSingle cdim cinfo 
           return $ setCanvasInfo (cid,CanvasSinglePage cinfo') xstate
         fcont cinfo = do 
           xstate <- get
           page <- getCurrentPageCvsId cid
           let pdim = PageDimension (view gdimension page)
-          let cinfo' = updateCanvasDimForContSingle pdim cdim cinfo 
+          cinfo' <- liftIO $ updateCanvasDimForContSingle pdim cdim cinfo 
           return $ setCanvasInfo (cid,CanvasContPage cinfo') xstate 
   
 -- | 
@@ -66,24 +66,6 @@ doCanvasConfigure :: CanvasId
                      -> CanvasDimension 
                      -> MainCoroutine () 
 doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
-
--- | 
-{-
-canvasConfigure' :: CanvasId -> CanvasDimension -> MainCoroutine () 
-canvasConfigure' cid cdim = do
-    xstate <- get 
-    ctime <- liftIO getCurrentTime 
-    maybe defaction (chkaction ctime) (view lastTimeCanvasConfigure xstate) 
-  where defaction = do 
-          ntime <- liftIO getCurrentTime
-          doCanvasConfigure cid cdim          
-          updateXState (return . set lastTimeCanvasConfigure (Just ntime))    
-        chkaction ctime otime = do  
-          let dtime = diffUTCTime ctime otime 
-          if dtime > predefinedWinReconfTimeBound
-             then defaction 
-             else return ()
--}
 
 -- | 
 eitherSplit :: SplitType -> MainCoroutine () 

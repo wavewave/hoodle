@@ -332,7 +332,7 @@ updateLayerBuf mbbox lyr = do
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
       renderWith sfc $ do 
-        clearBBox mbbox        
+        -- clearBBox mbbox        
         renderRLayer_InBBox mbbox lyr 
       return lyr
     _ -> return lyr

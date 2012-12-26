@@ -326,7 +326,8 @@ getMenuUI evar = do
   let disabledActions = 
         [ recenta, printa {- , exporta-}
         , cuta, copya, {- pastea, -} deletea
-        , fscra,  setzma
+        {- , fscra -}
+        ,  setzma
         , shwlayera, hidlayera
         , newpgea, {- delpga, -} ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa

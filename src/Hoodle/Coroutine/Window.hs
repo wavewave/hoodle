@@ -153,7 +153,24 @@ paneMoveStart = do
 -- | not yet implemented?
 paneMoved :: MainCoroutine () 
 paneMoved = do 
-  liftIO $ putStrLn "pane moved called"
+    liftIO $ putStrLn "pane moved called"
+    
+-- |
+fullScreen :: MainCoroutine ()
+fullScreen = do 
+    xst <- get 
+    let b = view isFullScreen xst
+        rwin = view rootOfRootWindow xst 
+    if b 
+      then do 
+        liftIO $ windowUnfullscreen rwin
+        modify (over isFullScreen (const False))
+      else do 
+        liftIO $ windowFullscreen rwin 
+        modify (over isFullScreen (const True))
+
+           
+    
   
   
 

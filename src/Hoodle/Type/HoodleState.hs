@@ -33,6 +33,7 @@ module Hoodle.Type.HoodleState
 , gtkUIManager
 , isSaved
 , undoTable
+, isFullScreen 
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure
@@ -125,6 +126,7 @@ data HoodleState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable HoodleModeState
+                , _isFullScreen :: Bool 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
@@ -197,6 +199,10 @@ isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
 undoTable :: Simple Lens HoodleState (UndoTable HoodleModeState)
 undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
 
+-- | lens for isFullScreen
+isFullScreen :: Simple Lens HoodleState Bool
+isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
+
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
@@ -245,6 +251,7 @@ emptyHoodleState =
   , _isSaved = False 
   , _undoTable = emptyUndo 1 
   -- , _isEventBlocked = False 
+  , _isFullScreen = False
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      

@@ -327,6 +327,7 @@ menuEventProcess MenuPressureSensitivity = updateXState pressSensAction
           return (set (penInfo.variableWidthPen) b xstate) 
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 
+menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

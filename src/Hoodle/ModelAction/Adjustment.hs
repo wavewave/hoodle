@@ -38,8 +38,11 @@ adjustScrollbarWithGeometry geometry ((hadj,mconnidh),(vadj,mconnidv)) = do
   adjustmentSetUpper vadj h 
   adjustmentSetValue hadj x0 
   adjustmentSetValue vadj y0
-  adjustmentSetPageSize hadj (min xsize w)
-  adjustmentSetPageSize vadj (min ysize h)
+  print (xsize,ysize) 
+  adjustmentSetPageSize hadj xsize -- (min xsize w)
+  adjustmentSetPageSize vadj ysize --  (min ysize h)
+  adjustmentSetPageIncrement hadj (xsize*0.9)
+  adjustmentSetPageIncrement vadj (ysize*0.9)
   maybe (return ()) signalUnblock mconnidh
   maybe (return ()) signalUnblock mconnidv
 

@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Scroll 
@@ -17,8 +19,10 @@ import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.State 
+import           Control.Monad.Trans.Either
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.BBox
 -- from this package
 import           Hoodle.Type.Event 
@@ -95,31 +99,23 @@ vscrollMove cid v0 = do
     geometry <- liftIO (getCanvasGeometryCvsId cid xst)
     case ev of
       VScrollBarMoved cid' v -> do 
-        when (cid /= cid') $ error "something wrong in vscrollMove"
-        -- xst <- get 
-        -- let vadj = unboxGet vertAdjustment . snd . view currentCanvas $ xst 
-        -- vorig <- liftIO $ adjustmentGetValue vadj 
-        -- liftIO$ print (v0,v)
+        when (cid /= cid') $ 
+          (lift . hoistEither . Left . Other) "something wrong in vscrollMove"
         xst <- get 
         let b = view doesSmoothScroll xst 
         let diff = (v - v0) 
             lst'  | (diff < 20 && diff > -20) = [v]
                   | (diff < 5 &&diff > -5) = []
-                  | otherwise = [v0 + n*delta | n <- [1..10] ]
-                                where delta = (v-v0)/10
+                  | otherwise = let m :: Int = floor (minimum [20, (abs diff) / 10.0])
+                                    delta = diff / fromIntegral m            
+                                in [v0 + fromIntegral n*delta | n <- [1..m] ]
             lst | b  = lst'                     
                 | otherwise = [v] 
-         {-   
-            lst' = [v0 + n*delta | n <- [ 1..4] ] 
-            lst | (delta < 20 &&delta > -20 ) = lst'
-                | (delta < 5 && delta> -5 ) = [] 
-                | otherwise = lst' ++ [v] -}
         forM_ lst $ \v' -> do 
           updateXState $ return . over currentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v'))
-          -- invalidateWithBuf cid 
           invalidateInBBox Nothing Efficient cid 
-          -- liftIO $ threadDelay 1000
+          -- liftIO $ threadDelay (floor (100 * abs diff))
         vscrollMove cid v
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"        

@@ -47,14 +47,11 @@ addPDraw :: PenInfo
 addPDraw pinfo hdl (PageNum pgnum) pdraw = do 
     let ptype = view penType pinfo
         pcolor = view (currentTool.penColor) pinfo
-        {- mpcolname = M.lookup pcolor penColorNameMap
-        pcolname = case mpcolname of 
-                     Nothing -> (converRGBAToHex . convertPenColorToRGBA) pcolor
-                     Just n -> n -}
         pcolname = convertPenColorToByteString pcolor 
         pwidth = view (currentTool.penWidth) pinfo
         pvwpen = view variableWidthPen pinfo
         (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+        dim = view gdimension currpage
         currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
         ptool = case ptype of 
                   PenWork -> "pen" 
@@ -74,7 +71,7 @@ addPDraw pinfo hdl (PageNum pgnum) pdraw = do
                                            
         newstrokebbox = mkStrokeBBox newstroke
         bbox = strkbbx_bbx newstrokebbox
-    newlayerbbox <- updateLayerBuf (Just bbox)
+    newlayerbbox <- updateLayerBuf dim (Just bbox)
                     . over gitems (++[RItemStroke newstrokebbox]) 
                     $ currlayer
 

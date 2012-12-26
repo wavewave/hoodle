@@ -206,7 +206,7 @@ defaultEventProcess (UpdateCanvas cid) = invalidate cid
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
 defaultEventProcess (VScrollBarMoved cid v) = vscrollBarMoved cid v
-defaultEventProcess (VScrollBarStart cid _v) = vscrollStart cid 
+defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid v 
 defaultEventProcess PaneMoveStart = paneMoveStart 
 defaultEventProcess (CanvasConfigure cid w' h') = 
   doCanvasConfigure cid (CanvasDimension (Dim w' h'))

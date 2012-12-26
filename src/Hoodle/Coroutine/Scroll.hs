@@ -13,9 +13,11 @@
 module Hoodle.Coroutine.Scroll where
 
 import           Control.Category
+import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.State 
+import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 -- from this package
@@ -79,33 +81,50 @@ vscrollBarMoved cid v =
           in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
 
 -- | 
-vscrollStart :: CanvasId -> MainCoroutine () 
-vscrollStart cid = do 
+vscrollStart :: CanvasId -> Double -> MainCoroutine () 
+vscrollStart cid v = do 
   chkCvsIdNInvalidate cid 
-  vscrollMove cid 
+  vscrollMove cid v
         
 
 -- |                   
-vscrollMove :: CanvasId -> MainCoroutine () 
-vscrollMove cid = do    
+vscrollMove :: CanvasId -> Double -> MainCoroutine () 
+vscrollMove cid v0 = do    
     ev <- nextevent 
     xst <- get 
     geometry <- liftIO (getCanvasGeometryCvsId cid xst)
     case ev of
       VScrollBarMoved cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"
-        updateXState $ return . over currentCanvasInfo 
-                         (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v))
-        -- invalidateWithBuf cid 
-        invalidateInBBox Nothing Efficient cid 
-        vscrollMove cid 
+        -- xst <- get 
+        -- let vadj = unboxGet vertAdjustment . snd . view currentCanvas $ xst 
+        -- vorig <- liftIO $ adjustmentGetValue vadj 
+        liftIO$ print (v0,v)
+        let diff = (v - v0) 
+            lst  | (diff < 20 && diff > -20) = [v]
+                 | (diff < 5 &&diff > -5) = []
+                 | otherwise = [v0 + n*delta | n <- [1..10] ]
+                               where delta = (v-v0)/10
+                               
+         {-   
+            lst' = [v0 + n*delta | n <- [ 1..4] ] 
+            lst | (delta < 20 &&delta > -20 ) = lst'
+                | (delta < 5 && delta> -5 ) = [] 
+                | otherwise = lst' ++ [v] -}
+        forM_ lst $ \v' -> do 
+          updateXState $ return . over currentCanvasInfo 
+                         (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v'))
+          -- invalidateWithBuf cid 
+          invalidateInBBox Nothing Efficient cid 
+          -- liftIO $ threadDelay 1000
+        vscrollMove cid v
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ error "something wrong in vscrollMove"        
         updateXState $ return. over currentCanvasInfo 
                          (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
         invalidate cid' 
         return ()
-      VScrollBarStart cid' _v -> vscrollStart cid' 
+      VScrollBarStart cid' v -> vscrollStart cid' v 
       _ -> return ()       
   where scrollmovecanvas v cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo

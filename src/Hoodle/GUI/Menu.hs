@@ -243,7 +243,7 @@ getMenuUI evar = do
   -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
   -- handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (justMenu MenuHandTool) 
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
-  clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") Nothing (justMenu MenuColorPicker ) 
+  clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just stockSelectColor) (justMenu MenuColorPicker ) 
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (justMenu MenuEraserOptions)
   hiltropta <- actionNewAndRegister "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing (justMenu MenuHighlighterOptions)

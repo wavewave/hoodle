@@ -197,6 +197,7 @@
     <toolitem action="PENMEDIUMA"       />                     
     <toolitem action="PENTHICKA"       />   
     <separator />
+    <toolitem action="CLRPCKA"     />
     <toolitem action="BLACKA"      />                     
     <toolitem action="BLUEA"       />                     
     <toolitem action="REDA"        />                     

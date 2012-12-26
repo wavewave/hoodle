@@ -334,11 +334,20 @@ colorConvert (Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/6553
 
 -- | 
 colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
-colorPickerBox msg = modify (tempQueue %~ enqueue action) >> go 
+colorPickerBox msg = do 
+   xst <- get 
+   let pcolor = view ( penInfo.currentTool.penColor) xst   
+   modify (tempQueue %~ enqueue (action pcolor)) >> go 
   where 
-    action = Left . ActionOrder $ 
+    action pcolor = 
+      Left . ActionOrder $ 
                \_evhandler -> do 
                  dialog <- colorSelectionDialogNew msg
+                 csel <- colorSelectionDialogGetColor dialog
+                 let (r,g,b,a) =  convertPenColorToRGBA pcolor 
+                     color = Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
+                
+                 colorSelectionSetCurrentColor csel color
                  res <- dialogRun dialog 
                  mc <- case res of 
                          ResponseOk -> do 

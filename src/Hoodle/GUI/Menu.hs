@@ -259,6 +259,9 @@ getMenuUI evar = do
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (Menu MenuUseXInput)
+  smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
+  smthscra `on` actionToggled $ do 
+    eventHandler evar (Menu MenuSmoothScroll)
 --               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
@@ -314,6 +317,7 @@ getMenuUI evar = do
         ] 
     
   actionGroupAddAction agr uxinputa 
+  actionGroupAddAction agr smthscra
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))

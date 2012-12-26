@@ -131,7 +131,6 @@ initialize ev = do
       _ -> do ev' <- nextevent
               initialize ev'
 
-
 -- |
 guiProcess :: MyEvent -> MainCoroutine ()
 guiProcess ev = do 
@@ -147,9 +146,6 @@ guiProcess ev = do
                                                 (fromIntegral h')) 
   mapM_ f assocs
   sequence_ (repeat dispatchMode)
-
-
-
 
 -- | 
 dispatchMode :: MainCoroutine () 
@@ -313,6 +309,17 @@ menuEventProcess MenuUseXInput = do
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
+menuEventProcess MenuSmoothScroll = do 
+  xstate <- get 
+  let ui = view gtkUIManager xstate 
+  agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                    case x of 
+                      [] -> error "No action group? "
+                      y:_ -> return y )
+  smthscra <- liftIO (actionGroupGetAction agr "SMTHSCRA") 
+              >>= maybe (error "MenuSmoothScroll") (return . castToToggleAction)
+  b <- liftIO $ toggleActionGetActive smthscra
+  modify (set doesSmoothScroll b) 
 menuEventProcess MenuPressureSensitivity = updateXState pressSensAction 
   where pressSensAction xstate = do 
           let ui = view gtkUIManager xstate 

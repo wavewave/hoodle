@@ -130,6 +130,7 @@
     </menu>
     <menu action="OMA">
        <menuitem action="UXINPUTA" />
+       <menuitem action="SMTHSCRA" />
        <menuitem action="DCRDCOREA" />                        
        <menuitem action="ERSRTIPA" />                        
        <menuitem action="PRESSRSENSA" />                        

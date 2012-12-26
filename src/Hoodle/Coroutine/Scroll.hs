@@ -99,13 +99,16 @@ vscrollMove cid v0 = do
         -- xst <- get 
         -- let vadj = unboxGet vertAdjustment . snd . view currentCanvas $ xst 
         -- vorig <- liftIO $ adjustmentGetValue vadj 
-        liftIO$ print (v0,v)
+        -- liftIO$ print (v0,v)
+        xst <- get 
+        let b = view doesSmoothScroll xst 
         let diff = (v - v0) 
-            lst  | (diff < 20 && diff > -20) = [v]
-                 | (diff < 5 &&diff > -5) = []
-                 | otherwise = [v0 + n*delta | n <- [1..10] ]
-                               where delta = (v-v0)/10
-                               
+            lst'  | (diff < 20 && diff > -20) = [v]
+                  | (diff < 5 &&diff > -5) = []
+                  | otherwise = [v0 + n*delta | n <- [1..10] ]
+                                where delta = (v-v0)/10
+            lst | b  = lst'                     
+                | otherwise = [v] 
          {-   
             lst' = [v0 + n*delta | n <- [ 1..4] ] 
             lst | (delta < 20 &&delta > -20 ) = lst'

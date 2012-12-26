@@ -34,6 +34,7 @@ module Hoodle.Type.HoodleState
 , isSaved
 , undoTable
 , isFullScreen 
+, doesSmoothScroll 
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure
@@ -127,6 +128,7 @@ data HoodleState =
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable HoodleModeState
                 , _isFullScreen :: Bool 
+                , _doesSmoothScroll :: Bool 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
@@ -203,6 +205,10 @@ undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
 isFullScreen :: Simple Lens HoodleState Bool
 isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
 
+-- | lens for isFullScreen
+doesSmoothScroll :: Simple Lens HoodleState Bool
+doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
+
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
@@ -252,6 +258,7 @@ emptyHoodleState =
   , _undoTable = emptyUndo 1 
   -- , _isEventBlocked = False 
   , _isFullScreen = False
+  , _doesSmoothScroll = False
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      

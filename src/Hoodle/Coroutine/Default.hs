@@ -221,7 +221,7 @@ defaultEventProcess (AssignPenMode t) =
         xst <- get 
         let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
         win <- liftIO $ widgetGetDrawWindow cvs 
-        cursor <- liftIO $ cursorNew Tcross 
+        cursor <- liftIO $ cursorNew BlankCursor 
         liftIO $ drawWindowSetCursor win (Just cursor) 
         modify (penInfo.penType .~ pm)
         modeChange ToViewAppendMode

@@ -47,5 +47,5 @@ predefinedPageSpacing = 10
 -- | 
 
 predefinedZoomStepFactor :: Double
-predefinedZoomStepFactor = 1.5
+predefinedZoomStepFactor = 1.10
 

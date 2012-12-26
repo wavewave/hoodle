@@ -122,10 +122,9 @@ instance ( RenderOptionable (b,Dimension)
 instance RenderOptionable (InBBox RPage) where
   type RenderOption (InBBox RPage) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
-    let mbboxtemp = mbbox
-       --  >>= \bbox -> return (inflate bbox 2.0) -- this is due to a thin unexpected grey margin. 
-    cairoRenderOption (RBkgDrawPDFInBBox mbboxtemp) (view gbackground page, view gdimension page) 
-    mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
+    --  mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
+    mapM_ (cairoRenderOption (InBBoxOption mbbox) . InBBox ) . view glayers $ page
     return (InBBox page) 
 
 

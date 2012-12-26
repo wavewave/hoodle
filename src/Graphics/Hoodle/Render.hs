@@ -315,27 +315,41 @@ renderRBkg_Buf (b,dim) = do
 renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Render RLayer 
 renderRLayer_InBBoxBuf mbbox lyr = do
     case view gbuffer lyr of 
-      LyBuf (Just sfc) -> do clipBBox mbbox
-                             setSourceSurface sfc 0 0 
-                             paint 
-                             resetClip 
-      _ -> renderRLayer_InBBox mbbox lyr >> return () 
-    return lyr 
+      LyBuf (Just sfc) -> do 
+        clipBBox mbbox
+        setSourceSurface sfc 0 0 
+        paint 
+        resetClip 
+        return lyr 
+      _ -> do 
+        renderRLayer_InBBox mbbox lyr         
+        return lyr 
 
 -------------------
 -- update buffer
 -------------------
 
 -- | 
-updateLayerBuf :: Maybe BBox -> RLayer -> IO RLayer
-updateLayerBuf mbbox lyr = do 
+updateLayerBuf :: Dimension -> Maybe BBox -> RLayer -> IO RLayer
+updateLayerBuf (Dim w h) mbbox lyr = do 
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
       renderWith sfc $ do 
         -- clearBBox mbbox        
         renderRLayer_InBBox mbbox lyr 
       return lyr
-    _ -> return lyr
+    _ -> do 
+      return lyr 
+      {- 
+      -- liftIO $ putStrLn "renderRLayer_InBBoxBuf"
+      sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
+      renderWith sfc $ do 
+        clipBBox mbbox    
+        setSourceSurface sfc 0 0 
+        paint 
+        resetClip
+      return (set gbuffer (LyBuf (Just sfc)) lyr) 
+      -}
 
 
 -- | 
@@ -343,7 +357,7 @@ updatePageBuf :: RPage -> IO RPage
 updatePageBuf pg = do 
   let dim = view gdimension pg
       mbbox = Just . dimToBBox $ dim 
-  nlyrs <- mapM (updateLayerBuf mbbox) . view glayers $ pg 
+  nlyrs <- mapM (updateLayerBuf dim mbbox) . view glayers $ pg 
   return (set glayers nlyrs pg)
 
 -- | 

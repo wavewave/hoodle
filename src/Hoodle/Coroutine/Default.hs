@@ -217,10 +217,20 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        -- put . set (penInfo.penType) pm =<< get 
+        -- put . set (penInfo.penType) pm =<< get
+        xst <- get 
+        let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
+        win <- liftIO $ widgetGetDrawWindow cvs 
+        cursor <- liftIO $ cursorNew Tcross 
+        liftIO $ drawWindowSetCursor win (Just cursor) 
         modify (penInfo.penType .~ pm)
         modeChange ToViewAppendMode
       Right sm -> do 
+        xst <- get 
+        let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
+        win <- liftIO $ widgetGetDrawWindow cvs 
+        -- cursor <- cursorNew Dot 
+        liftIO $ drawWindowSetCursor win Nothing 
         modify (selectInfo.selectType .~ sm)
         modeChange ToSelectMode 
 defaultEventProcess (PenColorChanged c) = 

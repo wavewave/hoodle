@@ -18,6 +18,10 @@ import Data.Hoodle.Simple
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , afterSaveHook :: Maybe (Hoodle -> IO ())
                  , afterUpdateClipboardHook :: Maybe ([Item] -> IO ())
+                 , customContextMenuTitle :: Maybe String 
+                 , customContextMenuHook :: Maybe ([Item] -> IO ())
                  } 
 
 
+defaultHook :: Hook 
+defaultHook = Hook Nothing Nothing Nothing Nothing Nothing 

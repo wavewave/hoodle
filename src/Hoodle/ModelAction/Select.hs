@@ -146,8 +146,6 @@ makePageSelectMode page alist =
     let (mcurrlayer,npage) = getCurrentLayerOrSet page
         clyr = maybeError' "makePageSelectMode" mcurrlayer 
         nlyr= GLayer (view gbuffer clyr) (TEitherAlterHitted (Right alist))
-        -- tpg = mkHPage npage 
-        -- npg = set (glayers.selectedLayer) nlyr tpg
     in set (glayers.selectedLayer) nlyr (mkHPage npage) 
 
 

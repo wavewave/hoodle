@@ -15,8 +15,10 @@
 module Hoodle.Coroutine.ContextMenu where
 
 -- from other packages
+import           Control.Applicative
 import           Control.Category
 import           Control.Lens
+import           Control.Monad.Trans.Maybe 
 import           Control.Monad.State
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
@@ -46,6 +48,8 @@ import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard 
 import           Hoodle.ModelAction.Page 
+import           Hoodle.ModelAction.Select
+import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
@@ -63,20 +67,15 @@ processContextMenu (CMenuSaveSelectionAs ityp) = do
       case view gselSelected thdl of 
         Nothing -> return () 
         Just (_,tpg) -> do 
-          let ealist = unTEitherAlterHitted 
-                       . view gitems . view selectedLayer . view glayers $ tpg 
-          case ealist of 
-            Right alist -> do 
-              let hititms = concatMap unHitted (getB alist) 
-                  ulbbox = unUnion . mconcat . fmap (Union . Middle . getBBox) 
-                           $ hititms 
-              case ulbbox of 
-                Middle bbox -> 
-                  case ityp of 
-                    SVG -> exportCurrentSelectionAsSVG hititms bbox
-                    PDF -> exportCurrentSelectionAsPDF hititms bbox
-                _ -> return () 
-            Left _ -> do liftIO $ putStrLn "not exist"
+          let hititms = getSelectedItms tpg  
+              ulbbox = unUnion . mconcat . fmap (Union . Middle . getBBox) 
+                         $ hititms 
+          case ulbbox of 
+            Middle bbox -> 
+              case ityp of 
+                SVG -> exportCurrentSelectionAsSVG hititms bbox
+                PDF -> exportCurrentSelectionAsPDF hititms bbox
+            _ -> return () 
     _ -> return () 
 processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
@@ -87,31 +86,29 @@ processContextMenu (CMenuCanvasView cid pnum x y) = do
     let cmap = view cvsInfoMap xstate 
     let mcinfobox = IM.lookup cid cmap 
     case mcinfobox of 
-      Nothing -> liftIO $ putStrLn "what?"
+      Nothing -> liftIO $ putStrLn "error in processContextMenu"
       Just cinfobox -> do 
-        liftIO $ putStrLn "okay"
-        -- let cinfobox'= selectBox single cont cinfobox 
         cinfobox' <- liftIO (setPage xstate pnum cid)
         put $ set cvsInfoMap (IM.adjust (const cinfobox') cid cmap) xstate 
         adjustScrollbarWithGeometryCvsId cid 
         invalidateAll 
---   where single = over currentPageNum (const pnum) 
---         cont = over currentPageNum (const pnum) 
-{-      
-  where scrollmovecanvas v cvsInfo = 
-          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
-          in over (viewInfo.pageArrangement.viewPortBBox) 
-                  (apply (moveBBoxULCornerTo (fst vm_orig,v))) cvsInfo 
-             
-        scrollmovecanvasCont geometry v cvsInfo = 
-          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
-              cpn = PageNum . view currentPageNum $ cvsInfo 
-              ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (0,v))
-          in  over currentPageNum (const (unPageNum ncpn)) 
-              . over (viewInfo.pageArrangement.viewPortBBox) 
-                       (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cvsInfo 
--}
-  
+processContextMenu CMenuCustom = do 
+    xst <- get 
+    case view hoodleModeState xst of 
+      SelectState thdl -> do 
+        liftIO $ putStrLn "SelectState"
+        case view gselSelected thdl of 
+          Nothing -> return () 
+          Just (_,tpg) -> do 
+            let hititms = (map rItem2Item . getSelectedItms) tpg  
+            maybe (return ()) liftIO $ do 
+              hset <- view hookSet xst    
+              customContextMenuHook hset <*> pure hititms  
+      _ -> return () 
+    
+
+
+          
 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
 exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
@@ -150,10 +147,10 @@ showContextMenu (pnum,(x,y)) = do
     xstate <- get
     let cids = IM.keys . view cvsInfoMap $ xstate
         cid = fst . view currentCanvas $ xstate 
-    modify (tempQueue %~ enqueue (action cid cids)) 
+    modify (tempQueue %~ enqueue (action xstate cid cids)) 
     >> waitSomeEvent (==ContextMenuCreated) 
     >> return () 
-  where action cid cids  
+  where action xstate cid cids  
           = Left . ActionOrder $ 
               \evhandler -> do 
                 menu <- menuNew 
@@ -163,6 +160,7 @@ showContextMenu (pnum,(x,y)) = do
                 menuitem3 <- menuItemNewWithLabel "Cut"
                 menuitem4 <- menuItemNewWithLabel "Copy"
                 menuitem5 <- menuItemNewWithLabel "Delete"
+
                 menuitem1 `on` menuItemActivate $   
                   evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
                 menuitem2 `on` menuItemActivate $ 
@@ -178,6 +176,13 @@ showContextMenu (pnum,(x,y)) = do
                 menuAttach menu menuitem3 1 2 0 1                     
                 menuAttach menu menuitem4 1 2 1 2                     
                 menuAttach menu menuitem5 1 2 2 3    
+                case (customContextMenuTitle =<< view hookSet xstate) of 
+                  Nothing -> return () 
+                  Just title -> do 
+                    custommenu <- menuItemNewWithLabel title  
+                    custommenu `on` menuItemActivate $ 
+                      evhandler (GotContextMenuSignal (CMenuCustom))
+                    menuAttach menu custommenu 1 2 3 4 
                 runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
                 widgetShowAll menu 
                 menuPopup menu Nothing 

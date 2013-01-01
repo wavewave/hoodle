@@ -112,7 +112,7 @@ processContextMenu CMenuCustom = do
 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
 exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
-    fileChooser FileChooserActionSave >>= maybe (return ()) action 
+    fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename =
       -- this is rather temporary not to make mistake 
@@ -128,7 +128,7 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine () 
 exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
-    fileChooser FileChooserActionSave >>= maybe (return ()) action 
+    fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename =
       -- this is rather temporary not to make mistake 

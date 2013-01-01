@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -96,9 +96,8 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
                  return (OkCancel b)
 
 -- | 
-fileChooser :: FileChooserAction -> MainCoroutine (Maybe FilePath) 
-fileChooser choosertyp = modify (tempQueue %~ enqueue action) 
-                         >> go 
+fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
+fileChooser choosertyp mfname = modify (tempQueue %~ enqueue action) >> go 
   where 
     go = do r <- nextevent                   
             case r of 
@@ -110,6 +109,7 @@ fileChooser choosertyp = modify (tempQueue %~ enqueue action)
                   , ("Cancel", ResponseCancel) ]
       cwd <- getCurrentDirectory                  
       fileChooserSetCurrentFolder dialog cwd 
+      maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
       res <- dialogRun dialog
       mr <- case res of 
               ResponseDeleteEvent -> return Nothing
@@ -180,7 +180,7 @@ renderjob h ofp = do
 
 -- | 
 fileExport :: MainCoroutine ()
-fileExport = fileChooser FileChooserActionSave >>= maybe (return ()) action 
+fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename = 
       -- this is rather temporary not to make mistake 
@@ -194,7 +194,7 @@ fileExport = fileChooser FileChooserActionSave >>= maybe (return ()) action
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()
-exportCurrentPageAsSVG = fileChooser FileChooserActionSave >>= maybe (return ()) action 
+exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename = 
       -- this is rather temporary not to make mistake 
@@ -224,7 +224,7 @@ fileLoad filename = do
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
-  mfilename <- fileChooser FileChooserActionOpen
+  mfilename <- fileChooser FileChooserActionOpen Nothing
   case mfilename of 
     Nothing -> return ()
     Just filename -> fileLoad filename 
@@ -240,9 +240,11 @@ fileSaveAs = do
     hookSaveAsAction xstate = do 
       hset <- view hookSet xstate
       saveAsHook hset
-    defSaveAsAction xstate hdl = 
-        fileChooser FileChooserActionSave 
-        >>= maybe (return ()) (action xstate hdl) 
+    defSaveAsAction xstate hdl = do 
+        let msuggestedact = view hookSet xstate >>= fileNameSuggestionHook 
+        (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact 
+        mr <- fileChooser FileChooserActionSave msuggested 
+        maybe (return ()) (action xstate hdl) mr 
       where action xst' hd filename = 
               if takeExtension filename /= ".hdl" 
               then fileExtensionInvalid (".hdl","save")
@@ -296,7 +298,7 @@ fileExtensionInvalid (ext,a) =
 -- | 
 fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = 
-    fileChooser FileChooserActionOpen >>= maybe (return ()) action 
+    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do  
       xstate <- get 
@@ -312,7 +314,7 @@ fileAnnotatePDF =
 -- | 
 fileLoadPNG :: MainCoroutine ()
 fileLoadPNG = do 
-    fileChooser FileChooserActionOpen >>= maybe (return ()) action 
+    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do  
       xstate <- get 
@@ -338,7 +340,7 @@ fileLoadPNG = do
 -- | 
 fileLoadSVG :: MainCoroutine ()
 fileLoadSVG = do 
-    fileChooser FileChooserActionOpen >>= maybe (return ()) action 
+    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do 
       xstate <- get 

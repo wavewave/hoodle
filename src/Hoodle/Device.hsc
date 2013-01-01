@@ -109,8 +109,6 @@ getPointer devlst = do
                                         _ -> rbtn 
                       
                       let tst = (rbtnfinal,pcoord)
-                        -- (,) rbtn <$> (liftIO $ coord ptr x y dev axf)
-                      -- liftIO $ print tst 
                       return tst 
   where 
     getInfo ptr = do 

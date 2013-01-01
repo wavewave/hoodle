@@ -20,8 +20,15 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , afterUpdateClipboardHook :: Maybe ([Item] -> IO ())
                  , customContextMenuTitle :: Maybe String 
                  , customContextMenuHook :: Maybe ([Item] -> IO ())
+                 , fileNameSuggestionHook :: Maybe (IO String) 
                  } 
 
 
 defaultHook :: Hook 
-defaultHook = Hook Nothing Nothing Nothing Nothing Nothing 
+defaultHook = Hook { saveAsHook = Nothing
+                   , afterSaveHook = Nothing  
+                   , afterUpdateClipboardHook = Nothing
+                   , customContextMenuTitle = Nothing 
+                   , customContextMenuHook = Nothing 
+                   , fileNameSuggestionHook = Nothing 
+                   }

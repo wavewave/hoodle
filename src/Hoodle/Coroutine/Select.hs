@@ -514,11 +514,11 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig (prev,otime) lasso 
           cpn = view currentPageNum cinfo 
           hittestlasso1 = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
           selectitms1 = fmapAL unNotHitted id hittestlasso1
-          selecteditms1 = getB selectitms1 
-          hittestlasso2 = hltFilteredBy (\itm->isPointInBBox (getBBox itm) (x,y)) itms
+          selecteditms1 = (concatMap unHitted . getB) selectitms1 
+          hittestlasso2 = flip hltFilteredBy itms $ 
+                            \itm-> (not.isStrkInRItem) itm 
+                                   && isPointInBBox (getBBox itm) (x,y)
           selectitms2 = fmapAL unNotHitted id hittestlasso2
-
-
           selectitms 
             | (not.null) selecteditms1 = selectitms1 
             | otherwise = selectitms2

@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Type.Item 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -30,6 +30,11 @@ instance BBoxable RItem where
   getBBox (RItemStroke strk) = getBBox strk
   getBBox (RItemImage img _) = getBBox img 
   getBBox (RItemSVG svg _) = getBBox svg 
+
+instance Show RItem where
+  show (RItemStroke strk) = "RItemStroke " ++ show strk
+  show (RItemImage img _) = "RItemImage " ++ show img 
+  show (RItemSVG svg _) = "RItemSVG " ++ show svg
 
 -- | 
 isStrkInRItem :: RItem -> Bool 

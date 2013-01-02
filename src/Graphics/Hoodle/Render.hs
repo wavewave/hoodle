@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -134,7 +134,6 @@ renderSVG svg@(SVG _ _ bstr (x,y) (Dim w h)) = do
       RSVG.svgRender rsvg 
       restore
       resetClip 
-
       return () 
 
 

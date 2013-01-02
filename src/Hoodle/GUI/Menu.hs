@@ -98,7 +98,7 @@ penmods :: [RadioActionEntry]
 penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0 
           , RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
           , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
-          , RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
+--           , RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
           , RadioActionEntry "SELREGNA" "Select Region"     (Just "mylasso")        Nothing Nothing 4
           , RadioActionEntry "SELRECTA" "Select Rectangle" (Just "myrectselect")        Nothing Nothing 5
           , RadioActionEntry "VERTSPA" "Vertical Space"    (Just "mystretch")        Nothing Nothing 6
@@ -236,6 +236,7 @@ getMenuUI evar = do
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultPaper)
   
   -- tools menu
+  texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
   rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
   -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
@@ -306,7 +307,7 @@ getMenuUI evar = do
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
-        , shpreca, rulera, clra, clrpcka, penopta 
+        , texta, shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa
@@ -346,7 +347,7 @@ getMenuUI evar = do
         ] 
       enabledActions = 
         [ opena, savea, saveasa, reloada, quita, pastea, fstpagea, prvpagea, nxtpagea, lstpagea
-        , clra, penopta, zooma, nrmsizea, pgwdtha 
+        , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
         ]
   --
   mapM_ (\x->actionSetSensitive x True) enabledActions  
@@ -409,7 +410,7 @@ int2PenType :: Int -> Either PenType SelectType
 int2PenType 0 = Left PenWork
 int2PenType 1 = Left EraserWork
 int2PenType 2 = Left HighlighterWork
-int2PenType 3 = Left TextWork 
+-- int2PenType 3 = Left TextWork 
 int2PenType 4 = Right SelectRegionWork
 int2PenType 5 = Right SelectRectangleWork
 int2PenType 6 = Right SelectVerticalSpaceWork
@@ -436,12 +437,12 @@ int2Point EraserWork 2 = predefined_eraser_medium
 int2Point EraserWork 3 = predefined_eraser_thick
 int2Point EraserWork 4 = predefined_eraser_verythick
 int2Point EraserWork 5 = predefined_eraser_ultrathick
-int2Point TextWork 0 = predefined_veryfine
-int2Point TextWork 1 = predefined_fine
-int2Point TextWork 2 = predefined_medium
-int2Point TextWork 3 = predefined_thick
-int2Point TextWork 4 = predefined_verythick
-int2Point TextWork 5 = predefined_ultrathick
+-- int2Point TextWork 0 = predefined_veryfine
+-- int2Point TextWork 1 = predefined_fine
+-- int2Point TextWork 2 = predefined_medium
+-- int2Point TextWork 3 = predefined_thick
+-- int2Point TextWork 4 = predefined_verythick
+-- int2Point TextWork 5 = predefined_ultrathick
 int2Point _ _ = error "No such point"
 
 -- | 

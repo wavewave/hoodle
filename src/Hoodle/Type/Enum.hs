@@ -35,8 +35,9 @@ data ZoomModeRel = ZoomIn | ZoomOut
 data PenType = PenWork 
              | HighlighterWork 
              | EraserWork 
-             | TextWork 
              deriving (Show,Eq,Ord)
+
+-- TextWork 
 
 -- | 
 data PenColor = ColorBlack

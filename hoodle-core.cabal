@@ -39,6 +39,7 @@ Library
                    strict == 0.3.*,
                    gtk == 0.12.*, 
                    cairo == 0.12.*,
+                   pango == 0.12.*,
                    attoparsec == 0.10.*,
                    coroutine-object >= 0.1.999, 
                    transformers == 0.3.*,
@@ -88,6 +89,7 @@ Library
                    Hoodle.Coroutine.Scroll
                    Hoodle.Coroutine.Select
                    Hoodle.Coroutine.Select.Clipboard
+                   Hoodle.Coroutine.TextInput
                    Hoodle.Coroutine.Window
                    Hoodle.Device
                    Hoodle.GUI

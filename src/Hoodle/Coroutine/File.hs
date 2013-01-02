@@ -18,6 +18,7 @@ module Hoodle.Coroutine.File where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State
+import           Control.Monad.Trans.Either
 import           Data.ByteString (readFile)
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
@@ -31,6 +32,7 @@ import           System.FilePath
 import           System.Process 
 import           System.IO (writeFile)
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic
@@ -61,8 +63,8 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 --
 import Prelude hiding ((.),id,readFile)
-import           Control.Monad.Trans.Either
-import           Control.Monad.Trans.Crtn
+
+
 -- |
 okMessageBox :: String -> MainCoroutine () 
 okMessageBox msg = modify (tempQueue %~ enqueue action) 

@@ -86,8 +86,8 @@
        <menuitem action="PENA" />
        <menuitem action="ERASERA" />
        <menuitem action="HIGHLTA" />
-       <menuitem action="TEXTA" />       
        <separator />
+       <menuitem action="TEXTA" /> 
        <menuitem action="SHPRECA" />
        <menuitem action="RULERA" />       
        <separator />
@@ -182,8 +182,8 @@
     <toolitem action="PENA"        />
     <toolitem action="ERASERA"     />                     
     <toolitem action="HIGHLTA"     />                     
-    <toolitem action="TEXTA"       />                     
     <separator />     
+    <toolitem action="TEXTA"       />  
     <!-- <toolitem action="DEFAULTA"    />    --> 
     <!-- <toolitem action="DEFPENA"     />    -->                  
     <!-- <toolitem action="SHPRECA"     />    -->  

@@ -374,14 +374,14 @@ currentTool = lens chooser setter
                           PenWork -> _currPen . _penSet $ pinfo
                           HighlighterWork -> _currHighlighter . _penSet $ pinfo
                           EraserWork -> _currEraser . _penSet $ pinfo
-                          TextWork -> _currText . _penSet $ pinfo 
+                          -- TextWork -> _currText . _penSet $ pinfo 
         setter pinfo wcs = 
           let pset = _penSet pinfo
               psetnew = case _penType pinfo of 
                           PenWork -> pset { _currPen = wcs }
                           HighlighterWork -> pset { _currHighlighter = wcs }
                           EraserWork -> pset { _currEraser = wcs }
-                          TextWork -> pset { _currText = wcs }
+                          -- TextWork -> pset { _currText = wcs }
           in  pinfo { _penSet = psetnew } 
 
 -- |         

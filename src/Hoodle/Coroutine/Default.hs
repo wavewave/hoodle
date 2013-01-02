@@ -49,6 +49,7 @@ import           Hoodle.Coroutine.Pen
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
 import           Hoodle.Coroutine.Select.Clipboard
+import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
@@ -334,6 +335,7 @@ menuEventProcess MenuPressureSensitivity = updateXState pressSensAction
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
+menuEventProcess MenuText = textInput 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

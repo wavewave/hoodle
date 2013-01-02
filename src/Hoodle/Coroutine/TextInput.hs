@@ -28,6 +28,7 @@ import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.ByteString (readFile)
 import qualified Data.ByteString.Char8 as B (pack)
+import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Item 
@@ -96,19 +97,29 @@ makePangoTextSVGInsert str = do
         hdl = getHoodle xstate 
         (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
         currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
-
-        rdr = do setSourceRGBA 0 0 0 1
-                 layout <- createLayout str
-                 liftIO $ layoutSetWidth layout (Just 300)
-                 liftIO $ layoutSetWrap layout WrapAnywhere 
-                 updateLayout layout 
-                 showLayout layout 
+        pangordr = do 
+          ctxt <- cairoCreateContext Nothing 
+          layout <- layoutEmpty ctxt   
+          layoutSetWidth layout (Just 300)
+          layoutSetWrap layout WrapAnywhere 
+          layoutSetText layout str 
+          (_,reclog) <- layoutGetExtents layout 
+          let PangoRectangle x y w h = reclog 
+          return (layout,BBox (x,y) (x+w,y+h)) 
+        rdr layout = do setSourceRGBA 0 0 0 1
+                        -- layout <- createLayout str
+                        -- liftIO $ layoutSetWidth layout (Just 300)
+                        -- liftIO $ layoutSetWrap layout WrapAnywhere 
+                        updateLayout layout 
+                        showLayout layout 
+    (layout,BBox (x0,y0) (x1,y1)) <- liftIO pangordr 
+    
     tdir <- liftIO $ getTemporaryDirectory 
     let tfile = tdir </> "embedded.svg"
-    liftIO $ withSVGSurface tfile 300 100 $ \s -> renderWith s rdr 
+    liftIO $ withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> renderWith s (rdr layout)
     svg <- liftIO $ readFile tfile 
     newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-                 (SVG (Just (B.pack str)) Nothing svg (100,100) (Dim 300 100))
+                 (SVG (Just (B.pack str)) Nothing svg (100,100) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
     modeChange ToSelectMode 

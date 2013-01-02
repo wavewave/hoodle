@@ -488,9 +488,7 @@ newSelectLasso :: (ViewMode a) => CanvasInfo a
                   -> Seq (Double,Double)
                   -> TempSelection 
                   -> MainCoroutine ()
-newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig (prev,otime) lasso tsel = do
-    r <- nextevent 
-    fsingle r cvsInfo 
+newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig (prev,otime) lasso tsel = nextevent >>= flip fsingle cvsInfo 
   where  
     fsingle r cinfo = penMoveAndUpOnly r pnum geometry defact
                         (moveact cinfo) (upact cinfo)

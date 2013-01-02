@@ -512,8 +512,16 @@ newSelectLasso cvsInfo pnum geometry cidmove cidup itms orig (prev,otime) lasso 
           hdlmodst = view hoodleModeState xstate 
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           cpn = view currentPageNum cinfo 
-          hittestlasso = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
-          selectitms = fmapAL unNotHitted id hittestlasso
+          hittestlasso1 = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
+          selectitms1 = fmapAL unNotHitted id hittestlasso1
+          selecteditms1 = getB selectitms1 
+          hittestlasso2 = hltFilteredBy (\itm->isPointInBBox (getBBox itm) (x,y)) itms
+          selectitms2 = fmapAL unNotHitted id hittestlasso2
+
+
+          selectitms 
+            | (not.null) selecteditms1 = selectitms1 
+            | otherwise = selectitms2
           SelectState thdl = view hoodleModeState xstate
           newpage = case epage of 
                       Left pagebbox -> 

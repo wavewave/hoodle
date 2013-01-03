@@ -1,8 +1,10 @@
 #!/bin/bash 
 
-sudo apt-get install cadaver libghc-hscolour-dev libghc-hstringtemplate-dev gtk2hs-buildtools libghc-gtk-dev libghc-gtk-doc 
+sudo apt-get install cadaver 
+#libghc-hscolour-dev libghc-hstringtemplate-dev gtk2hs-buildtools libghc-gtk-dev libghc-gtk-doc 
 
 cabal install transformers
+cabal install hscolour 
 
 mkdir deps
 git clone https://github.com/wavewave/devadmin.git deps/devadmin

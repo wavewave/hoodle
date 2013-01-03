@@ -12,10 +12,17 @@ cd deps/devadmin ; cabal install --force-reinstalls ; cd ../../
 $HOME/.cabal/bin/build cloneall --config=build.conf
 
 cabal install gtk2hs-buildtools
+
+# for dep installation
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
-
+# for documentation of dep packages
 $HOME/.cabal/bin/build haddockboot --config=build.conf 
+
+# for documentation of this package
+cabal install  --enable-documentation
+cabal haddock --hyperlink-source
+cabal copy 
 
 echo "machine $SRVR"'\n'"login $SRVRID"'\n'"password $SRVRPKEY" > $HOME/.netrc 
 chmod 0600 $HOME/.netrc 

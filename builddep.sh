@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+sudo apt-get install libghc-hstringtemplate-dev 
+
 mkdir deps
 git clone https://github.com/wavewave/devadmin.git deps/devadmin
 cd deps/devadmin ; cabal install ; cd ../../

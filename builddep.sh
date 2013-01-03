@@ -1,0 +1,3 @@
+echo $HOODLEAUTH
+
+cabal install 

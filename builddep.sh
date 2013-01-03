@@ -1,3 +1,3 @@
-echo $HOODLEAUTH
+echo $HOODLEAUTHOR
 
 cabal install 

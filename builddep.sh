@@ -12,7 +12,7 @@ $HOME/.cabal/bin/build cloneall --config=build.conf
 #cabal install gtk2hs-buildtools
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
-cabal install --enable-tests
+#cabal install --enable-tests
 
 build haddockboot 
 
@@ -20,7 +20,7 @@ echo "machine $SRVR"'\n'"login $SRVRID"'\n'"password $SRVRPKEY" > $HOME/.netrc
 chmod 0600 $HOME/.netrc 
 
 tar cvzf hoodle.tar.gz $HOME/.cabal/share/doc/hoodle* $HOME/.cabal/share/doc/xournal* $HOME/.cabal/share/doc/coroutine-object*
-echo "open http://$SRVR:$SRVRPORT$SRVRDIR"'\n'"put hoodle-types.tar.gz"'\n'" "  > script 
+echo "open http://$SRVR:$SRVRPORT$SRVRDIR"'\n'"put hoodle.tar.gz"'\n'" "  > script 
 
 cadaver < script  
 

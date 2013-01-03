@@ -2,6 +2,8 @@
 
 sudo apt-get install cadaver 
 
+cabal install transformers
+cabal install hscolour
 # libghc-hscolour-dev libghc-hstringtemplate-dev gtk2hs-buildtools libghc-gtk-dev libghc-gtk-doc 
 
 mkdir deps

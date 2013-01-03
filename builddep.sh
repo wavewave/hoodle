@@ -1,4 +1,4 @@
-cabal install 
+cabal install --enable-documentation 
 
 echo "$SRVRPKEY" > whoisit 
 

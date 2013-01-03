@@ -11,7 +11,7 @@ git clone https://github.com/wavewave/devadmin.git deps/devadmin
 cd deps/devadmin ; cabal install --force-reinstalls ; cd ../../
 $HOME/.cabal/bin/build cloneall --config=build.conf
 
-#cabal install gtk2hs-buildtools
+cabal install gtk2hs-buildtools
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
 # this is needed for checking

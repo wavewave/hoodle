@@ -2,11 +2,11 @@ cabal install --enable-documentation
 
 sudo apt-get install cadaver
 
-echo "login $SRVRID"$'\n'"password $SRVRPKEY" > $HOME/.netrc 
+echo "machine $SRVR"$'\n'"login $SRVRID"$'\n'"password $SRVRPKEY" > $HOME/.netrc 
 chmod 0600 $HOME/.netrc 
 
 tar cvzf hoodle-types.tar.gz $HOME/.cabal/share/doc/hoodle-types*
-echo "open $SRVR"$'\n'"put hoodle-types.tar.gz"$'\n'" "  > script 
+echo "open $SRVR:$SRVRPORT$SRVRDIR"$'\n'"put hoodle-types.tar.gz"$'\n'" "  > script 
 
 
 #chmod 0600 whoisit

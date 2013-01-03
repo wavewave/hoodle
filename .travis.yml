@@ -1,5 +1,9 @@
 language: haskell
 env:
   global:
-    - secure: "CdgSWzMlFvw6QYxbAG2ljG9UZKP4M3uXHMh/h/jPgAfIWE0AXU2EVGqQyTEp\nG2UbXEnz1B6eBLIwHwX9b2/CJRQVp7I+FzyH5VPDlNmc7IZwuyQQNKmgC5H/\nhWmWgc570kRAGxUfk1PBoNOvSL1jnDIU/Ngo1jHF5VxqkOhmjuk="
+    secure: "f2hYI4bYqXoz9gNF2J+CK9vsS4i3F9WBhc231LUPtgzazaWb/wwcHGqAfzx4\nk06fCTCs9EvM3mF4/Os8pFVHEDU92kWDmu5LRFeCb/1D4Go4Xcqw5lzpv+3b\nkRNOtz9+wYpu8/yg+1J0FwVyw1LBLe08svFE1gYz38edKo4aneY="
+    secure: "cFEt6lc3Agy0MWMeXikEAbMI5CFQ5d4U8IyWtOoiZorUSt7JeU2YDCAnHnv1\nPCkEHLJmWslJTpC0SUF4SZykwyUri4fTwY7gBLFyjINU194QjaQOI9nfnMsu\nv2Klz6QFdQAv7qBn9RvRsPkN/QjyOj2sHryNZmsF9e95wO+wMZQ="
+  secure: "FMIBuPWuuMYC+rMXZdDiind45tdEyjJeeqiGUN+6rBkuIkX6Kz34pDmHK98g\nt+6ZueeC0bOSXQpScm7nV4Mtjq6Wu8HekPHraj0xh2axC/DODuHkFONhRJfg\n+vdHPtFrTlf7UZpfamlogEn7cjbvjzBbdQOIPX982EEL/b/VWyQ="
+
+
 install:  sh ./builddep.sh 

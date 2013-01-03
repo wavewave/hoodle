@@ -10,7 +10,10 @@ $HOME/.cabal/bin/build cloneall --config=build.conf
 #cabal install gtk2hs-buildtools
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
-build haddockboot 
+# this is needed for checking
+cabal install --enable-tests
+
+$HOME/.cabal/bin/build haddockboot --config=build.conf 
 
 echo "machine $SRVR"'\n'"login $SRVRID"'\n'"password $SRVRPKEY" > $HOME/.netrc 
 chmod 0600 $HOME/.netrc 

@@ -8,14 +8,12 @@ cabal install hscolour
 
 mkdir deps
 git clone https://github.com/wavewave/devadmin.git deps/devadmin
-cd deps/devadmin ; cabal install ; cd ../../
+cd deps/devadmin ; cabal install --force-reinstalls ; cd ../../
 $HOME/.cabal/bin/build cloneall --config=build.conf
 
 cabal install gtk2hs-buildtools
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
-# this is needed for checking
-cabal install --enable-tests
 
 $HOME/.cabal/bin/build haddockboot --config=build.conf 
 
@@ -30,3 +28,6 @@ cadaver < script
 rm script 
 rm $HOME/.netrc 
 
+
+# this is needed for checking
+cabal install --enable-tests

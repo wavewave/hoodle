@@ -14,10 +14,7 @@ echo "open http://$SRVR:$SRVRPORT$SRVRDIR"'\n'"put hoodle-types.tar.gz"'\n'" "  
 
 #scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i whoisit hoodle-types.tar.gz $SRVRID@$SRVR:$HOME/
 
-# cadaver < script  
-cat $HOME/.netrc
-cat script 
-
+cadaver < script  
 
 rm script 
 rm $HOME/.netrc 

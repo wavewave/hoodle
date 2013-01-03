@@ -1,7 +1,6 @@
 language: haskell
 env:
   global:
-    secure: "eQvDts4XhK7CSDZcrncP2uqpFF0EqO1st3ydIhf4pnMOqvplH70+7hCoFaFp\nBwnx+qjZLk1L6hYmiqkYiBmoqMB/qIdan0i/eC5s1vSAyjug9zUc8emxBby8\nPvk6tz0kG1e/rQIjYH50DffYT5OrdT1m/5V9EPW6IucDlaySXe0="
-
+    secure: "W+MVU/iajtXr5/a3WeRE0IDgLBWBTipq34t/Z/eHybKjoPV7TDpaBXCSLdvm\nEafv/Xb2UX23guPwW9HRM0V2b8XEx/YoNzUfJk2Fy5Qq6p9I0A4G5lpEaTpF\nbgfdMJQj6nwIPFyk8KihxurD6+ELT6g2l7MPIblhi0l+DmzGJL0="
 
 install:  sh ./builddep.sh 

@@ -12,15 +12,18 @@
 
 module Hoodle.Script.Hook where 
 
+import System.FilePath 
 import Data.Hoodle.Simple 
 
 -- | 
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
-                 , afterSaveHook :: Maybe (Hoodle -> IO ())
+                 , afterSaveHook :: Maybe (FilePath -> Hoodle -> IO ())
+                 , afterOpenHook :: Maybe (FilePath -> Hoodle -> IO ())
                  , afterUpdateClipboardHook :: Maybe ([Item] -> IO ())
                  , customContextMenuTitle :: Maybe String 
                  , customContextMenuHook :: Maybe ([Item] -> IO ())
                  , fileNameSuggestionHook :: Maybe (IO String) 
+                 , recentFolderHook :: Maybe (IO FilePath)
                  } 
 
 
@@ -31,4 +34,5 @@ defaultHook = Hook { saveAsHook = Nothing
                    , customContextMenuTitle = Nothing 
                    , customContextMenuHook = Nothing 
                    , fileNameSuggestionHook = Nothing 
+                   , recentFolderHook = Nothing 
                    }

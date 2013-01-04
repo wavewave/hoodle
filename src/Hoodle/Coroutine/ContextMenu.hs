@@ -81,7 +81,7 @@ processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
 processContextMenu (CMenuCanvasView cid pnum x y) = do 
-    liftIO $ print (cid,pnum,x,y)
+    -- liftIO $ print (cid,pnum,x,y)
     xstate <- get 
     let cmap = view cvsInfoMap xstate 
     let mcinfobox = IM.lookup cid cmap 
@@ -120,7 +120,7 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsSVG hititms bbox
       else do      
-        liftIO $ print "exportCurrentSelectionAsSVG executed"
+        -- liftIO $ print "exportCurrentSelectionAsSVG executed"
         liftIO $ withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
           translate (-ulx) (-uly)
           mapM_ renderRItem  hititms
@@ -136,7 +136,7 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsPDF hititms bbox
       else do      
-        liftIO $ print "exportCurrentSelectionAsPDF executed"
+        -- liftIO $ print "exportCurrentSelectionAsPDF executed"
         liftIO $ withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
           translate (-ulx) (-uly)
           mapM_ renderRItem  hititms

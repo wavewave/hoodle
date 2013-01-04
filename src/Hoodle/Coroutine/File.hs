@@ -99,18 +99,21 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
 
 -- | 
 fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
-fileChooser choosertyp mfname = modify (tempQueue %~ enqueue action) >> go 
+fileChooser choosertyp mfname = do 
+    mrecentfolder <- S.recentFolderHook 
+    modify (tempQueue %~ enqueue (action mrecentfolder)) >> go 
   where 
     go = do r <- nextevent                   
             case r of 
               FileChosen b -> return b  
               _ -> go 
-    action = Left . ActionOrder $ \_evhandler -> do 
+    action mrf = Left . ActionOrder $ \_evhandler -> do 
       dialog <- fileChooserDialogNew Nothing Nothing choosertyp 
                   [ ("OK", ResponseOk) 
                   , ("Cancel", ResponseCancel) ]
-      cwd <- getCurrentDirectory                  
-      fileChooserSetCurrentFolder dialog cwd 
+      case mrf of 
+        Just rf -> fileChooserSetCurrentFolder dialog rf 
+        Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
       maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
       res <- dialogRun dialog
       mr <- case res of 
@@ -159,7 +162,7 @@ fileSave = do
              put . set isSaved True $ xstate 
              let ui = view gtkUIManager xstate
              liftIO $ toggleSave ui False
-             S.afterSaveHook hdl
+             S.afterSaveHook filename hdl
            else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 
 
@@ -271,7 +274,7 @@ fileSaveAs = do
                 let ui = view gtkUIManager xstateNew
                 liftIO $ toggleSave ui False
                 liftIO $ setTitleFromFileName xstateNew 
-                S.afterSaveHook hdl'
+                S.afterSaveHook filename hdl'
           
 
 -- | main coroutine for open a file 

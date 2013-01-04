@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Script.Coroutine
@@ -13,7 +15,9 @@
 module Hoodle.Script.Coroutine where
 
 import           Control.Lens
+import           Control.Monad 
 import           Control.Monad.State 
+import           Control.Monad.Trans.Maybe
 -- from hoodle-platform
 import           Data.Hoodle.Simple
 -- from this package
@@ -21,26 +25,43 @@ import qualified Hoodle.Script.Hook as H
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.HoodleState
 -- 
-import Prelude hiding ((.),id)
 
+{-
 -- |
+runHookIO2 :: (Hook -> f) -> MainCoroutine ()
+runHookIO2 a b =  
+  liftM (H.afterSaveHook <=< view hookSet) get 
+  >>= maybe (return ()) (\hk->liftIO (hk a b)) 
+-}
 
-afterSaveHook :: Hoodle -> MainCoroutine ()
-afterSaveHook hdl = do 
+-- | 
+afterSaveHook :: FilePath -> Hoodle -> MainCoroutine ()
+afterSaveHook fp hdl = do 
   xstate <- get 
   let aftersavehk = do         
         hset <- view hookSet xstate 
         H.afterSaveHook hset
-  maybe (return ()) (\f -> liftIO (f hdl)) aftersavehk      
+  maybe (return ()) (\f -> liftIO (f fp hdl)) aftersavehk      
+
 
 -- | 
-  
-saveAsHook :: Hoodle -> MainCoroutine ()
-saveAsHook hdl = do 
+saveAsHook :: FilePath -> Hoodle -> MainCoroutine ()
+saveAsHook fp hdl = do 
   xstate <- get 
   let saveashk = do         
         hset <- view hookSet xstate 
         H.saveAsHook hset
   maybe (return ()) (\f -> liftIO (f hdl)) saveashk      
 
+hoist :: (Monad m) => Maybe a -> MaybeT m a 
+hoist = MaybeT . return 
 
+-- |
+recentFolderHook :: MainCoroutine (Maybe FilePath) 
+recentFolderHook = do 
+  xstate <- get 
+  (r :: Maybe FilePath) <- runMaybeT $ do 
+    hset <- hoist (view hookSet xstate)
+    rfolder <- hoist (H.recentFolderHook hset)
+    liftIO rfolder
+  return r 

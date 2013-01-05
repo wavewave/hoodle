@@ -32,6 +32,7 @@ Library
                  svgcairo == 0.12.*,
                  strict == 0.3.*, 
                  bytestring >= 0.9,
+                 base64-bytestring >= 0.1, 
                  lens >= 2.4, 
                  hoodle-types >= 0.1.0.999,
                  TypeCompose == 0.9.*, 

@@ -2,16 +2,18 @@
   <menubar>
     <menu action="FMA">
        <menuitem action="NEWA" />
-       <menuitem action="ANNPDFA" /> 
-       <menuitem action="LDIMGA" />
-       <menuitem action="LDSVGA" />
-       <menuitem action="LATEXA" />
        <menuitem action="OPENA" />                        
        <menuitem action="SAVEA" />                        
        <menuitem action="SAVEASA" />                        
        <menuitem action="RELOADA" />
        <separator /> 
        <menuitem action="RECENTA" />                        
+       <separator /> 
+       <menuitem action="ANNPDFA" />
+       <menuitem action="LDIMGA" />
+       <menuitem action="LDSVGA" />
+       <menuitem action="LDPREIMGA" />   
+       <menuitem action="LATEXA" />
        <separator /> 
        <menuitem action="PRINTA" />                        
        <menuitem action="EXPORTA" />
@@ -26,9 +28,9 @@
        <menuitem action="COPYA" />                        
        <menuitem action="PASTEA" />                        
        <menuitem action="DELETEA" />
-       <separator />
+       <!-- <separator />
        <menuitem action="NETCOPYA" />
-       <menuitem action="NETPASTEA" />
+       <menuitem action="NETPASTEA" /> --> 
     </menu>
     <menu action="VMA">
        <menuitem action="CONTA" />

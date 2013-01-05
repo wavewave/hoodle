@@ -24,6 +24,7 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , customContextMenuHook :: Maybe ([Item] -> IO ())
                  , fileNameSuggestionHook :: Maybe (IO String) 
                  , recentFolderHook :: Maybe (IO FilePath)
+                 , embedPredefinedImageHook :: Maybe (IO FilePath) 
                  } 
 
 
@@ -35,4 +36,5 @@ defaultHook = Hook { saveAsHook = Nothing
                    , customContextMenuHook = Nothing 
                    , fileNameSuggestionHook = Nothing 
                    , recentFolderHook = Nothing 
+                   , embedPredefinedImageHook = Nothing 
                    }

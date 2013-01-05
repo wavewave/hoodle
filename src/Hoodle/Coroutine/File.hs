@@ -138,6 +138,10 @@ askIfSave action = do
           False -> return () 
       else action 
 
+
+
+
+
 -- | 
 fileNew :: MainCoroutine () 
 fileNew = do  
@@ -478,4 +482,31 @@ askQuitProgram = do
       True -> liftIO mainQuit
       False -> return ()
   
+-- | 
+embedPredefinedImage :: MainCoroutine () 
+embedPredefinedImage = do 
+    liftIO $ putStrLn "embedPredefinedImage"
+    mpredefined <- S.embedPredefinedImageHook 
+    liftIO $ print mpredefined
+    case mpredefined of 
+      Nothing -> return () 
+      Just filename -> do 
+        xstate <- get 
+        let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+            hdl = getHoodle xstate 
+            (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+            currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+            isembedded = True
+        newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
 
+        let otheritems = view gitems currlayer  
+        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+        modeChange ToSelectMode 
+        nxstate <- get 
+        thdl <- case view hoodleModeState nxstate of
+                  SelectState thdl' -> return thdl'
+                  _ -> (lift . EitherT . return . Left . Other) "embedPredefinedImage"
+        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+        let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+        put nxstate2
+        invalidateAll 

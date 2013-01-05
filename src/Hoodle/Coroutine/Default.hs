@@ -317,6 +317,7 @@ menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuText = textInput 
+menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

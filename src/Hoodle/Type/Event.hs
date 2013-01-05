@@ -65,14 +65,15 @@ data MyEvent = Initialized
 -- | 
 data MenuEvent = MenuNew 
                | MenuAnnotatePDF
-               | MenuLoadPNGorJPG
-               | MenuLoadSVG
-               | MenuLaTeX
                | MenuOpen 
                | MenuSave
                | MenuSaveAs
                | MenuReload
                | MenuRecentDocument
+               | MenuLoadPNGorJPG
+               | MenuLoadSVG
+               | MenuLaTeX
+               | MenuEmbedPredefinedImage
                | MenuPrint 
                | MenuExport 
                | MenuQuit 

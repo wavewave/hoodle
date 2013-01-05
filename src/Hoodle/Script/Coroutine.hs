@@ -65,3 +65,13 @@ recentFolderHook = do
     rfolder <- hoist (H.recentFolderHook hset)
     liftIO rfolder
   return r 
+
+-- | 
+embedPredefinedImageHook :: MainCoroutine (Maybe FilePath) 
+embedPredefinedImageHook = do 
+  xstate <- get 
+  (r :: Maybe FilePath) <- runMaybeT $ do 
+    hset <- hoist (view hookSet xstate)
+    rfilename <- hoist (H.embedPredefinedImageHook hset)
+    liftIO rfilename 
+  return r 

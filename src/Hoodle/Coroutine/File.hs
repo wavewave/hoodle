@@ -20,9 +20,11 @@ import           Control.Lens
 import           Control.Monad.State
 import           Control.Monad.Trans.Either
 import           Data.ByteString (readFile)
+import           Data.ByteString.Base64 
 import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
 import qualified Data.IntMap as IM
+import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
@@ -328,8 +330,9 @@ fileLoadPNGorJPG = do
           hdl = getHoodle xstate 
           (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
           currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
-      newitem <- (liftIO . cnstrctRItem . ItemImage) 
-                 (Image (B.pack filename) (100,100) (Dim 300 300))
+          isembedded = view doesEmbedImage xstate 
+      newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
+      
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
@@ -342,6 +345,37 @@ fileLoadPNGorJPG = do
       put nxstate2
       invalidateAll 
 
+{-      newitem <- (liftIO . cnstrctRItem . ItemImage) 
+                 (Image (B.pack filename) (100,100) (Dim 300 300)) -}
+
+
+-- | 
+makeNewItemImage :: Bool  -- ^ isEmbedded?
+                    -> FilePath 
+                    -> IO Item
+makeNewItemImage isembedded filename = 
+    if isembedded 
+      then let fileext = takeExtension filename 
+               imgaction 
+                 | fileext == ".PNG" || fileext == ".png" = loadpng 
+                 | fileext == ".JPG" || fileext == ".jpg" = loadjpg 
+                 | otherwise = loadsrc 
+           in imgaction 
+      else loadsrc 
+  where loadsrc = (return . ItemImage) (Image (B.pack filename) (100,100) (Dim 300 300))
+        loadpng = do 
+          img <- loadPngFile filename
+          bstr <- savePngByteString img 
+          let b64str = encode bstr 
+              ebdsrc = "data:image/png;base64," <> b64str
+          return . ItemImage $ Image ebdsrc (100,100) (Dim 300 300)
+        loadjpg = do 
+          img <- loadJpegFile filename
+          bstr <- savePngByteString img 
+          let b64str = encode bstr 
+              ebdsrc = "data:image/png;base64," <> b64str
+          return . ItemImage $ Image ebdsrc (100,100) (Dim 300 300)          
+            
 -- | 
 fileLoadSVG :: MainCoroutine ()
 fileLoadSVG = do 

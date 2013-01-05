@@ -94,28 +94,18 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
-  let st5 = set hookSet mhook 
+  let st5 = set doesUseXInput xinputbool 
+          . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
-          . set rootWindow cvs $ st4
+          . set rootWindow cvs 
+          $ st4
           
   st6 <- getFileContent mfname st5
+  
   vbox <- vBoxNew False 0 
   
-  -- XInput extension 
-  agr <- uiManagerGetActionGroups ui >>= \x ->
-           case x of 
-             [] -> error "No action group? "
-             y:_ -> return y 
-  uxinputa <- actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
-                return (castToToggleAction x) 
-  toggleActionSetActive uxinputa xinputbool
-  let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st6
-  if xinputbool
-      then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
-      else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
-  let st7 = set doesUseXInput xinputbool st6 
-  let startingXstate = set rootContainer (castToBox vbox) st7
+  let startingXstate = set rootContainer (castToBox vbox) st6
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -188,7 +178,7 @@ viewAppendMode = do
         (PenWork,EraserButton) -> eraserStart cid pcoord
         (EraserWork,_)      -> eraserStart cid pcoord 
         (HighlighterWork,_) -> highlighterStart cid pcoord
-        _ -> return () 
+        -- _ -> return () 
     _ -> defaultEventProcess r1
 
 -- |
@@ -312,6 +302,38 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
+  xstate <- get 
+  b <- updateFlagFromToggleUI "UXINPUTA" doesUseXInput 
+  let cmap = getCanvasInfoMap xstate
+      canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
+  
+  if b
+    then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
+    else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
+menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" doesSmoothScroll >> return ()
+menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" doesEmbedImage >> return ()
+menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
+menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
+menuEventProcess MenuColorPicker = colorPick 
+menuEventProcess MenuFullScreen = fullScreen
+menuEventProcess MenuText = textInput 
+menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
+
+
+{- updateXState pressSensAction 
+  where pressSensAction xstate = do 
+          let ui = view gtkUIManager xstate 
+          agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                            case x of 
+                              [] -> error "No action group? "
+                              y:_ -> return y )
+          pressrsensa <- liftIO (actionGroupGetAction agr "PRESSRSENSA") 
+              >>= maybe (error "MenuPressureSensitivity") 
+                        (return . castToToggleAction)
+          b <- liftIO $ toggleActionGetActive pressrsensa
+          return (set (penInfo.variableWidthPen) b xstate) -}
+
+
 {-
 do 
   xstate <- get 
@@ -323,15 +345,6 @@ do
   uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA") 
               >>= maybe (error "MenuUseXInput") (return . castToToggleAction)
   b <- liftIO $ toggleActionGetActive uxinputa -}
-  xstate <- get 
-  b <- updateFlagFromToggleUI "UXINPUTA" doesUseXInput 
-  let cmap = getCanvasInfoMap xstate
-      canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
-  
-  if b
-    then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
-    else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
-menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" doesSmoothScroll >> return ()
 {-  xstate <- get 
   let ui = view gtkUIManager xstate 
   agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
@@ -342,23 +355,8 @@ menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" doesSmooth
               >>= maybe (error "MenuSmoothScroll") (return . castToToggleAction)
   b <- liftIO $ toggleActionGetActive smthscra
   modify (set doesSmoothScroll b) -}
-menuEventProcess MenuPressureSensitivity = updateXState pressSensAction 
-  where pressSensAction xstate = do 
-          let ui = view gtkUIManager xstate 
-          agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
-                            case x of 
-                              [] -> error "No action group? "
-                              y:_ -> return y )
-          pressrsensa <- liftIO (actionGroupGetAction agr "PRESSRSENSA") 
-              >>= maybe (error "MenuPressureSensitivity") 
-                        (return . castToToggleAction)
-          b <- liftIO $ toggleActionGetActive pressrsensa
-          return (set (penInfo.variableWidthPen) b xstate) 
-menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
-menuEventProcess MenuColorPicker = colorPick 
-menuEventProcess MenuFullScreen = fullScreen
-menuEventProcess MenuText = textInput 
-menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
+
+
 
 
 -- | 

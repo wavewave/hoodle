@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-sudo apt-get install cadaver 
+sudo apt-get install cadaver libgd2-xpm-dev 
 
 cabal install transformers
 cabal install hscolour

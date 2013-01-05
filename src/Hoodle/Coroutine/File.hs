@@ -349,8 +349,6 @@ fileLoadPNGorJPG = do
       put nxstate2
       invalidateAll 
 
-{-      newitem <- (liftIO . cnstrctRItem . ItemImage) 
-                 (Image (B.pack filename) (100,100) (Dim 300 300)) -}
 
 
 -- | 
@@ -369,16 +367,22 @@ makeNewItemImage isembedded filename =
   where loadsrc = (return . ItemImage) (Image (B.pack filename) (100,100) (Dim 300 300))
         loadpng = do 
           img <- loadPngFile filename
+          (w,h) <- imageSize img 
+          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
+                  | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
           bstr <- savePngByteString img 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) (Dim 300 300)
+          return . ItemImage $ Image ebdsrc (100,100) dim -- (Dim 300 300)
         loadjpg = do 
           img <- loadJpegFile filename
+          (w,h) <- imageSize img 
+          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
+                  | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
           bstr <- savePngByteString img 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) (Dim 300 300)          
+          return . ItemImage $ Image ebdsrc (100,100) dim -- (Dim 300 300)   
             
 -- | 
 fileLoadSVG :: MainCoroutine ()

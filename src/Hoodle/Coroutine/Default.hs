@@ -71,10 +71,14 @@ import           Hoodle.Type.HoodleState
 import Prelude hiding ((.), id)
 
 -- |
-initCoroutine :: DeviceList -> Window -> Maybe FilePath -> Maybe Hook 
-                 -> Int -- ^ maxundo 
-                 -> IO (EventVar,HoodleState,UIManager,VBox)
-initCoroutine devlst window mfname mhook maxundo  = do 
+initCoroutine :: DeviceList 
+              -> Window 
+              -> Maybe FilePath 
+              -> Maybe Hook 
+              -> Int -- ^ maxundo 
+              -> Bool -- ^ xinputbool 
+              -> IO (EventVar,HoodleState,UIManager,VBox)
+initCoroutine devlst window mfname mhook maxundo xinputbool = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   let st0new = set deviceList devlst  
@@ -97,7 +101,21 @@ initCoroutine devlst window mfname mhook maxundo  = do
           
   st6 <- getFileContent mfname st5
   vbox <- vBoxNew False 0 
-  let startingXstate = set rootContainer (castToBox vbox) st6
+  
+  -- XInput extension 
+  agr <- uiManagerGetActionGroups ui >>= \x ->
+           case x of 
+             [] -> error "No action group? "
+             y:_ -> return y 
+  uxinputa <- actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                return (castToToggleAction x) 
+  toggleActionSetActive uxinputa xinputbool
+  let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st6
+  if xinputbool
+      then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
+      else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
+  let st7 = set doesUseXInput xinputbool st6 
+  let startingXstate = set rootContainer (castToBox vbox) st7
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -294,6 +312,8 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
+{-
+do 
   xstate <- get 
   let ui = view gtkUIManager xstate 
   agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
@@ -302,15 +322,17 @@ menuEventProcess MenuUseXInput = do
                       y:_ -> return y )
   uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA") 
               >>= maybe (error "MenuUseXInput") (return . castToToggleAction)
-  b <- liftIO $ toggleActionGetActive uxinputa
+  b <- liftIO $ toggleActionGetActive uxinputa -}
+  xstate <- get 
+  b <- updateFlagFromToggleUI "UXINPUTA" doesUseXInput 
   let cmap = getCanvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
   
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
-menuEventProcess MenuSmoothScroll = do 
-  xstate <- get 
+menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" doesSmoothScroll >> return ()
+{-  xstate <- get 
   let ui = view gtkUIManager xstate 
   agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                     case x of 
@@ -319,7 +341,7 @@ menuEventProcess MenuSmoothScroll = do
   smthscra <- liftIO (actionGroupGetAction agr "SMTHSCRA") 
               >>= maybe (error "MenuSmoothScroll") (return . castToToggleAction)
   b <- liftIO $ toggleActionGetActive smthscra
-  modify (set doesSmoothScroll b) 
+  modify (set doesSmoothScroll b) -}
 menuEventProcess MenuPressureSensitivity = updateXState pressSensAction 
   where pressSensAction xstate = do 
           let ui = view gtkUIManager xstate 

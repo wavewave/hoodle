@@ -34,7 +34,9 @@ module Hoodle.Type.HoodleState
 , isSaved
 , undoTable
 , isFullScreen 
+, doesUseXInput 
 , doesSmoothScroll 
+, doesEmbedImage
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure
@@ -128,7 +130,9 @@ data HoodleState =
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable HoodleModeState
                 , _isFullScreen :: Bool 
+                , _doesUseXInput :: Bool 
                 , _doesSmoothScroll :: Bool 
+                , _doesEmbedImage :: Bool 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
@@ -205,9 +209,17 @@ undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
 isFullScreen :: Simple Lens HoodleState Bool
 isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
 
--- | lens for isFullScreen
+-- | flag for XInput extension (needed for using full power of wacom)
+doesUseXInput :: Simple Lens HoodleState Bool
+doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
+
+-- | flag for smooth scrolling 
 doesSmoothScroll :: Simple Lens HoodleState Bool
 doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
+
+-- | flag for embedding image as base64 in hdl file 
+doesEmbedImage :: Simple Lens HoodleState Bool
+doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
 
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
@@ -258,7 +270,9 @@ emptyHoodleState =
   , _undoTable = emptyUndo 1 
   -- , _isEventBlocked = False 
   , _isFullScreen = False
+  , _doesUseXInput = False
   , _doesSmoothScroll = False
+  , _doesEmbedImage = False 
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      

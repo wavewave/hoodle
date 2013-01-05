@@ -51,9 +51,10 @@ startGUI mfname mhook = do
   devlst <- initDevice cfg 
   maxundo <- getMaxUndo cfg >>= 
                \mmax -> maybe (return 50) (return . id) mmax
-  (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  
-  setTitleFromFileName st0
   xinputbool <- getXInputConfig cfg 
+  (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  xinputbool
+  setTitleFromFileName st0
+  {- 
   agr <- uiManagerGetActionGroups ui >>= \x ->
            case x of 
              [] -> error "No action group? "
@@ -65,6 +66,7 @@ startGUI mfname mhook = do
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
+  -}
   maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
   let menubar = case maybeMenubar of 
                   Just x  -> x 

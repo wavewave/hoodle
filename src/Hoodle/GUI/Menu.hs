@@ -263,7 +263,10 @@ getMenuUI evar = do
   smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
   smthscra `on` actionToggled $ do 
     eventHandler evar (Menu MenuSmoothScroll)
---               AndRegister "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing (justMenu MenuUseXInput)
+
+  ebdimga <- toggleActionNew "EBDIMGA" "Embed PNG/JPG Image" (Just "Just a stub") Nothing
+  ebdimga `on` actionToggled $ do 
+    eventHandler evar (Menu MenuEmbedImage)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
@@ -319,6 +322,7 @@ getMenuUI evar = do
     
   actionGroupAddAction agr uxinputa 
   actionGroupAddAction agr smthscra
+  actionGroupAddAction agr ebdimga
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))

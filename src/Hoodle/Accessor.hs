@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeOperators, GADTs, ScopedTypeVariables  #-}
+{-# LANGUAGE TypeOperators, GADTs, ScopedTypeVariables, Rank2Types  #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -203,6 +203,26 @@ getGeometry4CurrCvs xstate = do
                 . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox
   
+-- | update flag in HoodleState when corresponding toggle UI changed 
+updateFlagFromToggleUI :: String  -- ^ UI toggle button id
+                       -> Simple Lens HoodleState Bool -- ^ lens for flag 
+                       -> MainCoroutine Bool
+updateFlagFromToggleUI toggleid lensforflag = do 
+  xstate <- St.get 
+  let ui = view gtkUIManager xstate 
+  agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+                    case x of 
+                      [] -> error "No action group? "
+                      y:_ -> return y )
+  togglea <- liftIO (actionGroupGetAction agr toggleid) 
+             >>= maybe (error "updateFlagFromToggleUI") 
+                       (return . castToToggleAction)
+  b <- liftIO $ toggleActionGetActive togglea
+  St.modify (set lensforflag b) 
+  return b 
+
+
+
 {-
 -- | 
 getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 

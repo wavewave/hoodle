@@ -221,14 +221,14 @@ renderRItem itm@(RItemImage img msfc) = do
           BBox (x1,y1) (x2,y2) = getBBox img
       ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
       iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
-      clipBBox (Just (getBBox img))
+      -- clipBBox (Just (getBBox img))
       save 
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       setSourceSurface sfc 0 0 
       paint 
       restore
-      resetClip 
+      -- resetClip 
   return itm 
 renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
   case mrsvg of

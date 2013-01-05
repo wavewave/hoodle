@@ -39,9 +39,9 @@ cnstrctRItem (ItemImage img) = do
         filesrc = C8.unpack (img_src img)
         filesrcext = takeExtension filesrc 
         imgaction 
-          | filesrcext == "PNG" || filesrcext == "png" = 
+          | filesrcext == ".PNG" || filesrcext == ".png" = 
               Just <$> imageSurfaceCreateFromPNG filesrc
-          | filesrcext == "JPG" || filesrcext == "jpg" = 
+          | filesrcext == ".JPG" || filesrcext == ".jpg" = 
               Just <$> getJPGandCreateSurface filesrc 
           | otherwise = return Nothing 
     msfc <- imgaction

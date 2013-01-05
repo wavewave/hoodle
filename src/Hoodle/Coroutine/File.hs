@@ -317,8 +317,8 @@ fileAnnotatePDF =
       
 
 -- | 
-fileLoadPNG :: MainCoroutine ()
-fileLoadPNG = do 
+fileLoadPNGorJPG :: MainCoroutine ()
+fileLoadPNGorJPG = do 
     fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do  
@@ -336,7 +336,7 @@ fileLoadPNG = do
       nxstate <- get 
       thdl <- case view hoodleModeState nxstate of
                 SelectState thdl' -> return thdl'
-                _ -> (lift . EitherT . return . Left . Other) "fileLoadPNG"
+                _ -> (lift . EitherT . return . Left . Other) "fileLoadPNGorJPG"
       nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
       let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
       put nxstate2

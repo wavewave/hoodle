@@ -3,7 +3,7 @@
     <menu action="FMA">
        <menuitem action="NEWA" />
        <menuitem action="ANNPDFA" /> 
-       <menuitem action="LDPNGA" />
+       <menuitem action="LDIMGA" />
        <menuitem action="LDSVGA" />
        <menuitem action="LATEXA" />
        <menuitem action="OPENA" />                        

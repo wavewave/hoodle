@@ -174,7 +174,7 @@ getMenuUI evar = do
   -- file menu
   newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (justMenu MenuNew)
   annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDF" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
-  ldpnga <- actionNewAndRegister "LDPNGA" "Load PNG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNG)
+  ldpnga <- actionNewAndRegister "LDIMGA" "Load PNG or JPG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNGorJPG)
   ldsvga <- actionNewAndRegister "LDSVGA" "Load SVG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadSVG)
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") Nothing (justMenu MenuLaTeX)
   opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)

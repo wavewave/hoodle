@@ -65,7 +65,7 @@ data MyEvent = Initialized
 -- | 
 data MenuEvent = MenuNew 
                | MenuAnnotatePDF
-               | MenuLoadPNG
+               | MenuLoadPNGorJPG
                | MenuLoadSVG
                | MenuLaTeX
                | MenuOpen 

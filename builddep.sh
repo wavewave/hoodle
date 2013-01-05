@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-sudo apt-get install cadaver 
+sudo apt-get install cadaver libgd2-xpm-dev
 #libghc-hscolour-dev libghc-hstringtemplate-dev gtk2hs-buildtools libghc-gtk-dev libghc-gtk-doc 
 
 cabal install transformers

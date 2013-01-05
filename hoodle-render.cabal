@@ -25,6 +25,8 @@ Library
 
   Build-Depends: base == 4.*, 
                  mtl == 2.*, 
+                 filepath, 
+                 directory, 
                  containers >= 0.4, 
                  cairo == 0.12.*, 
                  svgcairo == 0.12.*,
@@ -32,7 +34,8 @@ Library
                  bytestring >= 0.9,
                  lens >= 2.4, 
                  hoodle-types >= 0.1.0.999,
-                 TypeCompose == 0.9.*
+                 TypeCompose == 0.9.*, 
+                 gd >= 3000.7 
 
   if flag(poppler)
     Build-Depends: poppler >= 0.12.2.2

@@ -106,7 +106,6 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                  =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
           let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
               nbbox = xformBBox f bbox 
-          -- invalidateAllInBBox (Just (inflate nbbox 2.0)) Efficient
           invalidateAllInBBox (Just nbbox) Efficient
 
 -- | main pen coordinate adding process
@@ -135,8 +134,6 @@ penProcess cid pnum geometry connidmove connidup pdraw ((x0,y0),z0) = do
                pcolor = view (penInfo.currentTool.penColor) xstate 
                pwidth = view (penInfo.currentTool.penWidth) xstate 
                (pcr,pcg,pcb,pca) = convertPenColorToRGBA pcolor 
-
-                 -- fromJust (M.lookup pcolor penColorRGBAmap) 
                opacity = case ptype of 
                   HighlighterWork -> predefined_highlighter_opacity 
                   _ -> 1.0

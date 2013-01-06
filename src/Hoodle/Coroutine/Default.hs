@@ -21,7 +21,7 @@ import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.IntMap as M
-import           Data.IntMap.Lens 
+-- import           Data.IntMap.Lens 
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform

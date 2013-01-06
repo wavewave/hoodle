@@ -102,11 +102,15 @@ makeNewHoodleWithPDF fp = do
       return Nothing 
     Just doc -> do 
       n <- Poppler.documentGetNPages doc 
-      pg <- Poppler.documentGetPage doc 0 
-      (w,h) <- PopplerPage.pageGetSize pg
-      let dim = Dim w h 
-          hdl = set title fname 
-              . set pages (map (createPage dim fname) [1..n]) 
+
+      let createPageAct i = do 
+            pg <- Poppler.documentGetPage doc (i-1) 
+            (w,h) <- PopplerPage.pageGetSize pg
+            let dim = Dim w h 
+            return (createPage dim fname i) 
+      pgs <- mapM createPageAct [1..n]
+      let hdl = set title fname 
+              . set pages pgs
               $ emptyHoodle
       return (Just hdl)
 #else

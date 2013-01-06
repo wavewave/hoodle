@@ -56,6 +56,10 @@ data RBackground = RBkgSmpl
 #endif
                    , rbkg_cairosurface :: Maybe Surface } 
 
+isRBkgSmpl :: RBackground -> Bool 
+isRBkgSmpl (RBkgSmpl _ _ _) = True 
+isRBkgSmpl _ = False 
+
 data RBkgOpt = RBkgDrawPDF 
              | RBkgDrawWhite 
              | RBkgDrawBuffer

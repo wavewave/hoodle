@@ -21,7 +21,7 @@ Library
   Build-Depends: 
                    base == 4.*,
                    hoodle-types >= 0.1.0.999,
-                   lens >= 2.4,
+                   lens >= 2.5,
                    blaze-builder == 0.3.*, 
                    strict == 0.3.*, 
                    bytestring >= 0.9

@@ -33,7 +33,7 @@ Library
                  strict == 0.3.*, 
                  bytestring >= 0.9,
                  base64-bytestring >= 0.1, 
-                 lens >= 2.4, 
+                 lens >= 2.5, 
                  hoodle-types >= 0.1.0.999,
                  TypeCompose == 0.9.*, 
                  gd >= 3000.7 

@@ -121,8 +121,15 @@ colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       
             , RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0              
             ]
 
--- |
+-- | 
+bkgstyles :: [RadioActionEntry] 
+bkgstyles = [ RadioActionEntry "BKGGRAPHA" "Graph" Nothing Nothing Nothing 3 
+            , RadioActionEntry "BKGPLAINA" "Plain" Nothing Nothing Nothing 0
+            , RadioActionEntry "BKGLINEDA" "Lined" Nothing Nothing Nothing 1
+            , RadioActionEntry "BKGRULEDA" "Ruled" Nothing Nothing Nothing 2 
+            ]
 
+-- | 
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
                    -> IO ()
 iconResourceAdd iconfac resdir (fp,stid) = do 
@@ -231,7 +238,15 @@ getMenuUI evar = do
   dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (justMenu MenuDeleteLayer)
   ppsizea <- actionNewAndRegister "PPSIZEA" "Paper Size"      (Just "Just a Stub") Nothing (justMenu MenuPaperSize)
   ppclra  <- actionNewAndRegister "PPCLRA"  "Paper Color"     (Just "Just a Stub") Nothing (justMenu MenuPaperColor)
-  ppstya  <- actionNewAndRegister "PPSTYA"  "Paper Style"     (Just "Just a Stub") Nothing (justMenu MenuPaperStyle)
+  -- ppstya  <- actionNewAndRegister "PPSTYA"  "Paper Style"     (Just "Just a Stub") Nothing (justMenu MenuPaperStyle)
+  
+  ppstya <- actionNewAndRegister "PPSTYA"   "Paper Style" Nothing Nothing Nothing
+  {-
+  bkgplaina <- actionNewAndRegister "BKGPLAINA" "Plain" Nothing Nothing Nothing 
+  bkglineda <- actionNewAndRegister "BKGLINEDA" "Lined" Nothing Nothing Nothing 
+  bkgruleda <- actionNewAndRegister "BKGRULEDA" "Ruled" Nothing Nothing Nothing 
+  bkggrapha <- actionNewAndRegister "BKGGRAPHA" "Graph" Nothing Nothing Nothing 
+  -}
   apallpga<- actionNewAndRegister "APALLPGA" "Apply To All Pages" (Just "Just a Stub") Nothing (justMenu MenuApplyToAllPages)
   ldbkga  <- actionNewAndRegister "LDBKGA"  "Load Background" (Just "Just a Stub") Nothing (justMenu MenuLoadBackground)
   bkgscrshta <- actionNewAndRegister "BKGSCRSHTA" "Background Screenshot" (Just "Just a Stub") Nothing (justMenu MenuBackgroundScreenshot)
@@ -310,7 +325,8 @@ getMenuUI evar = do
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
-        , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
+        , ppstya {- , bkgplaina, bkglineda, bkgruleda, bkggrapha -}
+        , apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , texta, shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
@@ -327,12 +343,12 @@ getMenuUI evar = do
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
-  
-  
   actionGroupAddRadioActions agr pointmods 0 (assignPoint evar)
   actionGroupAddRadioActions agr penmods   0 (assignPenMode evar)
   actionGroupAddRadioActions agr colormods 0 (assignColor evar) 
- 
+  actionGroupAddRadioActions agr bkgstyles 2 (assignBkgStyle evar)
+  
+  
   let disabledActions = 
         [ recenta, printa {- , exporta-}
         , cuta, copya, {- pastea, -} deletea
@@ -340,7 +356,8 @@ getMenuUI evar = do
         ,  setzma
         , shwlayera, hidlayera
         , newpgea, {- delpga, -} ppsizea, ppclra
-        , ppstya, apallpga, ldbkga, bkgscrshta, defppa, setdefppa
+        {- , ppstya -} 
+        , apallpga, ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
@@ -410,6 +427,14 @@ assignPoint evar a = do
     v <- radioActionGetCurrentValue a
     eventHandler evar (PenWidthChanged v)
 
+
+-- | 
+assignBkgStyle :: EventVar -> RadioAction -> IO ()
+assignBkgStyle evar a = do 
+    v <- radioActionGetCurrentValue a 
+    let sty = int2BkgStyle v 
+    eventHandler evar (BackgroundStyleChanged sty) 
+
 -- | 
 int2PenType :: Int -> Either PenType SelectType 
 int2PenType 0 = Left PenWork
@@ -464,3 +489,11 @@ int2Color 8  = ColorOrange
 int2Color 9  = ColorYellow
 int2Color 10 = ColorWhite
 int2Color _ = error "No such color"
+
+
+int2BkgStyle :: Int -> BackgroundStyle 
+int2BkgStyle 0 = BkgStylePlain 
+int2BkgStyle 1 = BkgStyleLined
+int2BkgStyle 2 = BkgStyleRuled
+int2BkgStyle 3 = BkgStyleGraph
+int2BkgStyle _ = BkgStyleRuled 

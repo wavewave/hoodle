@@ -22,6 +22,8 @@ import qualified Data.IntMap as M
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
+import qualified Data.Hoodle.Simple as S
+import           Graphics.Hoodle.Render.Type.Background
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
@@ -51,7 +53,8 @@ changePage modifyfn = updateXState changePageAction
           let xojst = view hoodleModeState $ xstate  
               npgnum = modifyfn (view currentPageNum cvsInfo)
               cid = view canvasId cvsInfo
-              (b,npgnum',_selectedpage,xojst') = changePageInHoodleModeState npgnum xojst
+              bsty = view backgroundStyle xstate 
+              (b,npgnum',_selectedpage,xojst') = changePageInHoodleModeState bsty npgnum xojst
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . over currentCanvasInfo (const ncvsInfo) $ xstate'
@@ -59,10 +62,11 @@ changePage modifyfn = updateXState changePageAction
           return xstatefinal 
         
         fcont xstate cvsInfo = do 
-          let xojst = view hoodleModeState $ xstate  
+          let xojst = view hoodleModeState xstate  
               npgnum = modifyfn (view currentPageNum cvsInfo)
               cid = view canvasId cvsInfo
-              (b,npgnum',_selectedpage,xojst') = changePageInHoodleModeState npgnum xojst
+              bsty = view backgroundStyle xstate 
+              (b,npgnum',_selectedpage,xojst') = changePageInHoodleModeState bsty npgnum xojst
           xstate' <- liftIO $ updatePageAll xojst' xstate 
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . over currentCanvasInfo (const ncvsInfo) $ xstate'
@@ -71,19 +75,27 @@ changePage modifyfn = updateXState changePageAction
 
 
 -- | 
-changePageInHoodleModeState :: Int -> HoodleModeState 
-                               -> (Bool,Int,Page EditMode,HoodleModeState)
-changePageInHoodleModeState npgnum hdlmodst =
+changePageInHoodleModeState :: BackgroundStyle 
+                            -> Int  -- ^ new page number 
+                            -> HoodleModeState 
+                            -> (Bool,Int,Page EditMode,HoodleModeState)
+changePageInHoodleModeState bsty npgnum hdlmodst =
     let ehdl = hoodleModeStateEither hdlmodst 
         pgs = either (view gpages) (view gselAll) ehdl
         totnumpages = M.size pgs
         lpage = maybeError' "changePage" (M.lookup (totnumpages-1) pgs)
         (isChanged,npgnum',npage',ehdl') 
           | npgnum >= totnumpages = 
-            let npage = newSinglePageFromOld lpage
+            let cbkg = view gbackground lpage
+                nbkg 
+                  | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
+                                      in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty } 
+                  | otherwise = cbkg 
+                npage = set gbackground nbkg 
+                        . newSinglePageFromOld $ lpage
                 npages = M.insert totnumpages npage pgs 
             in (True,totnumpages,npage,
-                either (Left . set gpages npages) (Right. set gselAll npages) ehdl )
+                 either (Left . set gpages npages) (Right. set gselAll npages) ehdl )
           | otherwise = let npg = if npgnum < 0 then 0 else npgnum
                             pg = maybeError' "changePage" (M.lookup npg pgs)
                         in (False,npg,pg,ehdl) 
@@ -187,7 +199,8 @@ newPage dir = updateXState npgBfrAct
     fsimple xstate cinfo = do 
       case view hoodleModeState xstate of 
         ViewAppendState hdl -> do 
-          hdl' <- liftIO $ addNewPageInHoodle dir hdl (view currentPageNum cinfo)
+          let bsty = view backgroundStyle xstate 
+              hdl' = addNewPageInHoodle bsty dir hdl (view currentPageNum cinfo)
           return =<< liftIO . updatePageAll (ViewAppendState hdl')
                      . set hoodleModeState  (ViewAppendState hdl') $ xstate 
         SelectState _ -> do 

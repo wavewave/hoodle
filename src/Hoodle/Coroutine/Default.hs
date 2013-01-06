@@ -21,6 +21,7 @@ import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.IntMap as M
+import           Data.IntMap.Lens 
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
@@ -32,8 +33,9 @@ import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..))
+import           Data.Hoodle.Simple (Dimension(..), bkg_style)
 import           Data.Hoodle.Generic
+import           Graphics.Hoodle.Render.Type.Background
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
@@ -55,6 +57,8 @@ import           Hoodle.Coroutine.Window
 import           Hoodle.Device
 import           Hoodle.GUI.Menu
 import           Hoodle.ModelAction.File
+import           Hoodle.ModelAction.Layer 
+import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window 
 import           Hoodle.Script
 import           Hoodle.Script.Hook
@@ -245,6 +249,24 @@ defaultEventProcess (PenWidthChanged v) = do
       let w = int2Point ptype v
       let stNew = set (penInfo.currentTool.penWidth) w st 
       put stNew 
+defaultEventProcess (BackgroundStyleChanged bsty) = do
+    modify (backgroundStyle .~ bsty)
+    xstate <- get 
+    let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+        hdl = getHoodle xstate 
+        pgs = view gpages hdl 
+        (_,cpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+        cbkg = view gbackground cpage
+        nbkg 
+          | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
+                              in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty } 
+          | otherwise = cbkg 
+        npage = set gbackground nbkg cpage 
+        npgs = set (at pgnum) (Just npage) pgs 
+        nhdl = set gpages npgs hdl 
+    modeChange ToViewAppendMode     
+    modify (set hoodleModeState (ViewAppendState nhdl))
+    invalidateAll 
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess ev = -- for debugging
                             do liftIO $ putStrLn "--- no default ---"

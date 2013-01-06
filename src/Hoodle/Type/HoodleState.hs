@@ -33,6 +33,7 @@ module Hoodle.Type.HoodleState
 , gtkUIManager
 , isSaved
 , undoTable
+, backgroundStyle 
 , isFullScreen 
 , doesUseXInput 
 , doesSmoothScroll 
@@ -85,6 +86,7 @@ import           Graphics.Hoodle.Render.Type
 -- from this package 
 import           Hoodle.Device
 import           Hoodle.Script.Hook
+import           Hoodle.Type.Enum 
 import           Hoodle.Type.Event 
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Clipboard
@@ -129,6 +131,7 @@ data HoodleState =
                 , _gtkUIManager :: UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable HoodleModeState
+                , _backgroundStyle :: BackgroundStyle 
                 , _isFullScreen :: Bool 
                 , _doesUseXInput :: Bool 
                 , _doesSmoothScroll :: Bool 
@@ -205,6 +208,10 @@ isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
 undoTable :: Simple Lens HoodleState (UndoTable HoodleModeState)
 undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
 
+-- | background style = plain, lined, ruled, graph
+backgroundStyle :: Simple Lens HoodleState BackgroundStyle
+backgroundStyle = lens _backgroundStyle (\f a -> f { _backgroundStyle = a } )
+
 -- | lens for isFullScreen
 isFullScreen :: Simple Lens HoodleState Bool
 isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
@@ -269,6 +276,7 @@ emptyHoodleState =
   , _isSaved = False 
   , _undoTable = emptyUndo 1 
   -- , _isEventBlocked = False 
+  , _backgroundStyle = BkgStyleLined
   , _isFullScreen = False
   , _doesUseXInput = False
   , _doesSmoothScroll = False

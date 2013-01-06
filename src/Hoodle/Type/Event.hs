@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Event 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -36,6 +36,7 @@ data MyEvent = Initialized
              | PenColorChanged PenColor
              | PenWidthChanged Int -- (PenType -> Double)
              | AssignPenMode (Either PenType SelectType) 
+             | BackgroundStyleChanged BackgroundStyle 
              | HScrollBarMoved Int Double
              | VScrollBarMoved Int Double 
              | VScrollBarStart Int Double

@@ -26,6 +26,7 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
+import qualified Data.Hoodle.Simple as S
 import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Util
@@ -174,19 +175,27 @@ newSinglePageFromOld = set glayers (fromList [emptyRLayer])
 
 
 -- | 
-addNewPageInHoodle :: AddDirection  
+addNewPageInHoodle :: BackgroundStyle
+                   -> AddDirection  
                    -> Hoodle EditMode
                    -> Int 
-                   -> IO (Hoodle EditMode)
-addNewPageInHoodle dir hdl cpn = do 
+                   -> Hoodle EditMode  -- IO (Hoodle EditMode)
+addNewPageInHoodle bsty dir hdl cpn = 
   let pagelst = M.elems . view gpages $ hdl
       (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
-      npage = newSinglePageFromOld cpage
+      cbkg = view gbackground cpage
+      nbkg 
+        | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
+                            in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty } 
+        | otherwise = cbkg 
+      npage = set gbackground nbkg 
+              . newSinglePageFromOld 
+              $ cpage
       npagelst = case dir of 
                    PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                    PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
       nhdl = set gpages (M.fromList . zip [0..] $ npagelst) hdl
-  return nhdl
+  in nhdl -- return nhdl
 
 -- | 
 relZoomRatio :: CanvasGeometry -> ZoomModeRel -> Double

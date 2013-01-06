@@ -75,7 +75,12 @@
        <separator />
        <menuitem action="PPSIZEA" />
        <menuitem action="PPCLRA" />
-       <menuitem action="PPSTYA" />
+       <menu action="PPSTYA">
+         <menuitem action="BKGPLAINA" />
+         <menuitem action="BKGLINEDA" />
+         <menuitem action="BKGRULEDA" />
+         <menuitem action="BKGGRAPHA" />
+       </menu>
        <menuitem action="APALLPGA" />
        <separator />
        <menuitem action="LDBKGA" />

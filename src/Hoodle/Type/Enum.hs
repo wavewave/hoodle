@@ -54,6 +54,12 @@ data PenColor = ColorBlack
               | ColorRGBA Double Double Double Double 
               deriving (Show,Eq,Ord)
 
+data BackgroundStyle = BkgStylePlain 
+                     | BkgStyleLined
+                     | BkgStyleRuled
+                     | BkgStyleGraph
+                     deriving (Show,Eq,Ord)
+
 penColorNameMap :: M.Map PenColor B.ByteString                        
 penColorNameMap = M.fromList [ (ColorBlack, "black")
                              , (ColorBlue , "blue")
@@ -97,3 +103,11 @@ convertPenColorToByteString pcol =
                      Nothing -> (convertRGBAToHex . convertPenColorToRGBA) pcol
                      Just n -> n
     in pcolname 
+
+
+convertBackgroundStyleToByteString :: BackgroundStyle -> B.ByteString 
+convertBackgroundStyleToByteString BkgStylePlain = "plain"
+convertBackgroundStyleToByteString BkgStyleLined = "lined"
+convertBackgroundStyleToByteString BkgStyleRuled = "ruled"
+convertBackgroundStyleToByteString BkgStyleGraph = "graph"
+

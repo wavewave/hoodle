@@ -199,12 +199,15 @@ selectMode = do
     PenColorChanged c -> do modify (penInfo.currentTool.penColor .~ c)
                             selectPenColorChanged c
     PenWidthChanged v -> do 
-      st <- get 
+      w <- flip int2Point v . view (penInfo.penType) <$> get     
+      modify (penInfo.currentTool.penWidth .~ w) 
+      selectPenWidthChanged w 
+{-      st <- get 
       let ptype = view (penInfo.penType) st
       let w = int2Point ptype v
       selectPenWidthChanged w
       let stNew = set (penInfo.currentTool.penWidth) w st 
-      put stNew  
+      put stNew  -} 
     _ -> defaultEventProcess r1
 
 
@@ -328,7 +331,6 @@ menuEventProcess MenuUseXInput = do
   b <- updateFlagFromToggleUI "UXINPUTA" doesUseXInput 
   let cmap = getCanvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
-  
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
@@ -340,6 +342,23 @@ menuEventProcess MenuColorPicker = colorPick
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuText = textInput 
 menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
+menuEventProcess MenuApplyToAllPages = do 
+    xstate <- get 
+    let bsty = view backgroundStyle xstate 
+    let hdl = getHoodle xstate 
+        pgs = view gpages hdl 
+        changeBkg cpage = 
+          let cbkg = view gbackground cpage
+              nbkg 
+                | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
+                                    in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty } 
+                | otherwise = cbkg 
+          in set gbackground nbkg cpage 
+        npgs = fmap changeBkg pgs 
+        nhdl = set gpages npgs hdl 
+    modeChange ToViewAppendMode     
+    modify (set hoodleModeState (ViewAppendState nhdl))
+    invalidateAll 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

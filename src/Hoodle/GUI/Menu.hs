@@ -238,15 +238,7 @@ getMenuUI evar = do
   dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (justMenu MenuDeleteLayer)
   ppsizea <- actionNewAndRegister "PPSIZEA" "Paper Size"      (Just "Just a Stub") Nothing (justMenu MenuPaperSize)
   ppclra  <- actionNewAndRegister "PPCLRA"  "Paper Color"     (Just "Just a Stub") Nothing (justMenu MenuPaperColor)
-  -- ppstya  <- actionNewAndRegister "PPSTYA"  "Paper Style"     (Just "Just a Stub") Nothing (justMenu MenuPaperStyle)
-  
   ppstya <- actionNewAndRegister "PPSTYA"   "Paper Style" Nothing Nothing Nothing
-  {-
-  bkgplaina <- actionNewAndRegister "BKGPLAINA" "Plain" Nothing Nothing Nothing 
-  bkglineda <- actionNewAndRegister "BKGLINEDA" "Lined" Nothing Nothing Nothing 
-  bkgruleda <- actionNewAndRegister "BKGRULEDA" "Ruled" Nothing Nothing Nothing 
-  bkggrapha <- actionNewAndRegister "BKGGRAPHA" "Graph" Nothing Nothing Nothing 
-  -}
   apallpga<- actionNewAndRegister "APALLPGA" "Apply To All Pages" (Just "Just a Stub") Nothing (justMenu MenuApplyToAllPages)
   ldbkga  <- actionNewAndRegister "LDBKGA"  "Load Background" (Just "Just a Stub") Nothing (justMenu MenuLoadBackground)
   bkgscrshta <- actionNewAndRegister "BKGSCRSHTA" "Background Screenshot" (Just "Just a Stub") Nothing (justMenu MenuBackgroundScreenshot)
@@ -356,8 +348,8 @@ getMenuUI evar = do
         ,  setzma
         , shwlayera, hidlayera
         , newpgea, {- delpga, -} ppsizea, ppclra
-        {- , ppstya -} 
-        , apallpga, ldbkga, bkgscrshta, defppa, setdefppa
+        {- , ppstya, apallpga -} 
+        , ldbkga, bkgscrshta, defppa, setdefppa
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta

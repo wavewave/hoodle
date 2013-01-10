@@ -412,7 +412,7 @@ data ItmsNImg = ItmsNImg { itmNimg_itms :: [RItem]
 mkItmsNImg :: CanvasGeometry -> Page SelectMode -> IO ItmsNImg
 mkItmsNImg _geometry tpage = do 
   let itms = getSelectedItms tpage
-      drawselection = mapM_ (renderItem.rItem2Item) itms 
+      drawselection = mapM_ renderRItem itms -- (renderItem.rItem2Item) itms 
       Dim cw ch = view gdimension tpage 
       mbbox = case getULBBoxFromSelected tpage of 
                 Middle bbox -> Just bbox 

@@ -231,17 +231,17 @@ defaultEventProcess (AssignPenMode t) =
         -- put . set (penInfo.penType) pm =<< get
         xst <- get 
         let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
-        win <- liftIO $ widgetGetDrawWindow cvs 
-        cursor <- liftIO $ cursorNew BlankCursor 
-        liftIO $ drawWindowSetCursor win (Just cursor) 
+        -- win <- liftIO $ widgetGetDrawWindow cvs 
+        -- cursor <- liftIO $ cursorNew BlankCursor 
+        -- liftIO $ drawWindowSetCursor win (Just cursor) 
         modify (penInfo.penType .~ pm)
         modeChange ToViewAppendMode
       Right sm -> do 
         xst <- get 
         let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
-        win <- liftIO $ widgetGetDrawWindow cvs 
+        -- win <- liftIO $ widgetGetDrawWindow cvs 
         -- cursor <- cursorNew Dot 
-        liftIO $ drawWindowSetCursor win Nothing 
+        -- liftIO $ drawWindowSetCursor win Nothing 
         modify (selectInfo.selectType .~ sm)
         modeChange ToSelectMode 
 defaultEventProcess (PenColorChanged c) = 

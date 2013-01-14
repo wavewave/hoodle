@@ -241,7 +241,7 @@ emphasisCanvasRender pcolor geometry = do
   let CanvasDimension (Dim cw ch) = canvasDim geometry 
   let (r,g,b,a) = convertPenColorToRGBA pcolor
   setSourceRGBA r g b a 
-  setLineWidth 10
+  setLineWidth 2
   rectangle 0 0 cw ch 
   stroke
 

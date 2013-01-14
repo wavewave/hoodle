@@ -58,10 +58,6 @@ getCurrentPageCurr = do
       cinfobox = view currentCanvasInfo xstate 
   return $ fmap4CvsInfoBox (\x->getCurrentPageFromHoodleModeState x hdlmodst) cinfobox
 
-  
-{- case cinfobox of 
-    CanvasInfoBox cinfo ->  -}
-
 -- | 
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
 getCurrentPageCvsId cid = do 
@@ -70,9 +66,6 @@ getCurrentPageCvsId cid = do
       cinfobox = getCanvasInfo cid xstate 
   return $ fmap4CvsInfoBox (\c->getCurrentPageFromHoodleModeState c hdlmodst) cinfobox
 
-  
-{-  case cinfobox of 
-    CanvasInfoBox cinfo -> return -}
 
 -- | 
 getCurrentPageEitherFromHoodleModeState :: 

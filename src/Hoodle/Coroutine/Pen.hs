@@ -49,14 +49,13 @@ import Prelude hiding ((.), id)
 
 
 -- | page switch if pen click a page different than the current page
-penPageSwitch :: -- (ViewMode a) => 
-                 -- CanvasInfo a -> 
-                 PageNum -> MainCoroutine CanvasInfoBox -- (CanvasInfo a)
-penPageSwitch {- cinfo -} pgn = do 
+penPageSwitch :: PageNum -> MainCoroutine CanvasInfoBox 
+penPageSwitch pgn = do 
     xstate <- get
     let cibox = view currentCanvasInfo xstate     
         ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum pgn)) cibox 
     put (set currentCanvasInfo ncibox xstate) 
+    invalidateAll 
     return ncibox 
         
 
@@ -83,7 +82,7 @@ commonPenStart action cid pcoord = do
             $ \(pgn,PageCoord (x,y)) -> do 
                  nCvsInfo <- if (cpn /= pgn) 
                                then do penPageSwitch pgn
-                                       -- temporary dirty fix 
+                                    -- temporary dirty fix 
                                        return (set currentPageNum (unPageNum pgn) cvsInfo )
                                else return cvsInfo                   
                  connidup   <- connectPenUp nCvsInfo 

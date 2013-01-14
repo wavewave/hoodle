@@ -245,6 +245,19 @@ emphasisCanvasRender pcolor geometry = do
   rectangle 0 0 cw ch 
   stroke
 
+emphasisPageRender :: CanvasGeometry -> (PageNum,Page EditMode) -> Render ()
+emphasisPageRender geometry (pn,pg) = do 
+    save
+    identityMatrix 
+    cairoXform4PageCoordinate geometry pn 
+    let Dim w h = view gdimension pg 
+    setSourceRGBA 0 0 1.0 1 
+    setLineWidth 2 
+    rectangle 0 0 w h 
+    stroke
+    restore 
+
+
 -- |
 drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> DrawFlag -> Render ()) 
                    -> DrawingFunction ContinuousPage EditMode
@@ -256,6 +269,7 @@ drawContPageGen render = ContPageDraw func
               msfc = view mDrawSurface cinfo
           geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = view gpages hdl 
+              mcpg = view (at (unPageNum pnum)) pgs 
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
@@ -273,6 +287,7 @@ drawContPageGen render = ContPageDraw func
               renderfunc = do
                 xformfunc 
                 mapM_ onepagerender drawpgs 
+                maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 resetClip 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -298,9 +313,10 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               mtpage = view gselSelected thdl 
               canvas = view drawArea cinfo 
               msfc = view mDrawSurface cinfo 
-          geometry <- makeCanvasGeometry pnum arr canvas
-          let pgs = view gselAll thdl 
+              pgs = view gselAll thdl 
+              mcpg = view (at (unPageNum pnum)) pgs 
               hdl = GHoodle (view gselTitle thdl) pgs 
+          geometry <- makeCanvasGeometry pnum arr canvas
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
@@ -321,6 +337,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 xformfunc 
                 mapM_ onepagerender drawpgs 
                 maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
+                maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 resetClip 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -370,28 +387,6 @@ drawContHoodleSel = drawContPageSelGen renderother renderselect
           cairoHittedBoxDraw tpg mbbox 
           return ()
 
-
-{-
--- |
-drawBuf :: DrawingFunction SinglePage EditMode
-drawBuf = drawFuncGen EditMode $ \(_,page) mbbox _ -> cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
-  
--- |
-drawSelBuf :: DrawingFunction SinglePage SelectMode
-drawSelBuf = drawFuncSelGen rencont rensel  
-  where rencont (_pnum,tpg) mbbox _ = do 
-          let page = hPage2RPage tpg 
-          cairoRenderOption (InBBoxOption mbbox) (InBBox page)
-        rensel (_pnum,tpg) mbbox _ = do 
-          cairoHittedBoxDraw tpg mbbox  
-             
--- | 
-drawContHoodleBuf :: DrawingFunction ContinuousPage EditMode
-drawContHoodleBuf = 
-  drawContPageGen $ \(_,page) mbbox _ -> 
-                       cairoRenderOption (InBBoxOption mbbox) (InBBox page)   
--}
-
 -- |
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
 cairoHittedBoxDraw tpg mbbox = do   
@@ -412,7 +407,6 @@ cairoHittedBoxDraw tpg mbbox = do
     Left _ -> return ()  
 
 -- | 
-
 renderLasso :: Seq (Double,Double) -> Render ()
 renderLasso lst = do 
   setLineWidth predefinedLassoWidth
@@ -425,7 +419,6 @@ renderLasso lst = do
                   stroke 
 
 -- |
-
 renderBoxSelection :: BBox -> Render () 
 renderBoxSelection bbox = do
   setLineWidth predefinedLassoWidth

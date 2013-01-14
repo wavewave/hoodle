@@ -46,7 +46,7 @@ import Prelude hiding ((.), id)
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
                       >> adjustScrollbarWithGeometryCurrent
-                      >> invalidateCurrent
+                      >> invalidateAll -- invalidateCurrent
   where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
                                . view currentCanvasInfo $ xst
         fsingle xstate cvsInfo = do 

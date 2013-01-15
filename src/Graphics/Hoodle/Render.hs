@@ -302,7 +302,7 @@ renderRBkg_Buf (b,dim) = do
           Just sfc -> do 
             setSourceSurface sfc 0 0 
             paint 
-      RBkgPDF _ _ _ _ msfc -> do 
+      RBkgPDF _ _ _n _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
@@ -334,7 +334,6 @@ updateLayerBuf (Dim w h) mbbox lyr = do
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
       renderWith sfc $ do 
-        -- clearBBox mbbox        
         renderRLayer_InBBox mbbox lyr 
       return lyr
     _ -> do 

@@ -44,7 +44,7 @@ do2LinesIntersect :: ((Double,Double),(Double,Double)) -- ^ line1
                   -> ((Double,Double),(Double,Double)) -- ^ line2 
                   -> Bool 
 do2LinesIntersect ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) = 
-    (x2-xc)*(xc-x1)>=0 && (x3-xc)*(xc-x4) >=0 
+    (x2-xc)*(xc-x1)>0 && (x3-xc)*(xc-x4) >0 
   where x21 = x2-x1 
         x43 = x4-x3 
         y21 = y2-y1 
@@ -53,8 +53,7 @@ do2LinesIntersect ((x1,y1),(x2,y2)) ((x3,y3),(x4,y4)) =
         
 -- | previously, hitTestLineStroke
 doesLineHitStrk :: ((Double,Double),(Double,Double)) -> Stroke -> Bool
-doesLineHitStrk line1 str@(Stroke _t _c _w _d) = 
-    test (stroke_data str) 
+doesLineHitStrk line1 str@(Stroke _t _c _w _d) = test (stroke_data str) 
   where test [] = False
         test ((_:!:_):[]) = False
         test ((x0:!:y0):(x:!:y):rest) 
@@ -80,16 +79,6 @@ do2BBoxIntersect b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lr
              || uly2 <= uly1 && uly1 <= lry2 
              || uly2 <= lry1 && lry1 <= lry2
   
-  
-  {-   isPointInBBox b2 (ulx1,uly1)
-    || isPointInBBox b2 (lrx1,lry1)
-    || isPointInBBox b2 (lrx1,uly1)
-    || isPointInBBox b2 (ulx1,lry1)
-    || isPointInBBox b1 (ulx2,uly2)
-    || isPointInBBox b1 (lrx2,lry2)
-    || isPointInBBox b1 (lrx2,uly2)
-    || isPointInBBox b1 (ulx2,lry2) -} 
-
 -- | is the second bbox inside the first bbox?
 --   previously, hitTestInsideBBox
 isBBox2InBBox1 :: BBox -- ^ 1st bbox
@@ -157,8 +146,6 @@ hltItmsHittedByLine_StateT line = hltFilteredBy_StateT test
   where test (RItemStroke strk) = (doesLineHitStrk line . strkbbx_strk) strk
         test _ = False 
   
-
-
 -- |
 hltItmsHittedByLineFrmSelected_StateT :: 
   ((Double,Double),(Double,Double))

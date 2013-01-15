@@ -221,6 +221,7 @@ startMoveSelect cid pnum geometry cidmove cidup ((x,y),ctime) tpage = do
     moveSelect cid pnum geometry cidmove cidup (x,y) ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)                  
     surfaceFinish (imageSurface itmimage)
+    invalidateAll 
 
 -- | 
 moveSelect :: CanvasId
@@ -343,7 +344,7 @@ startResizeSelect handle cid pnum geometry cidmove cidup bbox
     resizeSelect handle cid pnum geometry cidmove cidup bbox ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)  
     surfaceFinish (imageSurface itmimage)
-  
+    invalidateAll 
 
 -- | 
 resizeSelect :: Handle 

@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs, Rank2Types, TypeFamilies #-}
+{-# LANGUAGE GADTs, Rank2Types, TypeFamilies, ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -14,9 +14,12 @@
 
 module Hoodle.View.Draw where
 
--- import Control.Applicative ((<$>))
+import Control.Applicative 
 import Control.Concurrent
-import Graphics.UI.Gtk hiding (get)
+import Control.Monad (liftM)
+import Control.Monad.Trans
+import Control.Monad.Trans.Maybe
+import Graphics.UI.Gtk hiding (get,set)
 import Graphics.Rendering.Cairo
 import Control.Category ((.))
 import           Control.Lens
@@ -47,7 +50,7 @@ import Hoodle.Type.Predefined
 import Hoodle.Type.Enum
 import Hoodle.View.Coordinate
 -- 
-import Prelude hiding ((.),id,mapM_,concatMap)
+import Prelude hiding ((.),id,mapM_,concatMap,foldr)
 
 -- | 
 data DrawFlag = Clear | Efficient
@@ -127,9 +130,9 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
               rectangle 0 0 cw ch 
               fill 
 	      rndr 
-              return () 
+              -- return () 
 	  Just sfc -> do 
-	    renderWith sfc $ do 
+	    r <- renderWith sfc $ do 
 	      clipBBox (fmap (flip inflate (-1.0)) mbbox')
               setSourceRGBA 0.5 0.5 0.5 1
               rectangle 0 0 cw ch 
@@ -140,27 +143,14 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
 	      setSourceSurface sfc 0 0   
 	      setOperator OperatorSource 
 	      paint 
-        return ()      
+            return r 
+        -- return ()      
   case ibbox of
-    Top -> action >> return Nothing 
-    Middle _ -> action >> return Nothing 
+    Top -> Just <$> action -- >> return Nothing 
+    Middle _ -> Just <$> action -- >> return Nothing 
     Bottom -> return Nothing 
 
--- withImageSurface FormatARGB32 (floor cw) (floor ch) $ 
-        -- \tempsurface -> do 
-        --   renderWith tempsurface $ do 
-        --     setSourceRGBA 0.5 0 0 1
-        --    rectangle 0 0 cw ch 
-       --      fill
-       --      rndr
-	      -- setSourceSurface tempsurface 0 0 
-	      -- setOperator OperatorSource
-	      -- paint 
-
-
-
 -- | 
-
 cairoXform4PageCoordinate :: CanvasGeometry -> PageNum -> Render () 
 cairoXform4PageCoordinate geometry pnum = do 
   let CvsCoord (x0,y0) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (0,0))
@@ -259,10 +249,11 @@ emphasisPageRender geometry (pn,pg) = do
 
 
 -- |
-drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> DrawFlag -> Render ()) 
+drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox -> DrawFlag -> Render (Int,Page EditMode)) 
                    -> DrawingFunction ContinuousPage EditMode
 drawContPageGen render = ContPageDraw func 
-  where func isCurrentCvs cinfo mbbox hdl flag = do 
+  where func :: Bool -> CanvasInfo ContinuousPage ->Maybe BBox -> Hoodle EditMode -> DrawFlag -> IO (Hoodle EditMode)
+        func isCurrentCvs cinfo mbbox hdl flag = do 
           let arr = view (viewInfo.pageArrangement) cinfo
               pnum = PageNum . view currentPageNum $ cinfo 
               canvas = view drawArea cinfo 
@@ -286,28 +277,26 @@ drawContPageGen render = ContPageDraw func
                 render (pn,pg) pgmbbox flag
               renderfunc = do
                 xformfunc 
-                mapM_ onepagerender drawpgs 
+                -- mapM_ onepagerender drawpgs 
+                ndrawpgs <- mapM onepagerender drawpgs 
+                let npgs = foldr rfunc pgs ndrawpgs   
+                       where rfunc (k,pg) m = M.adjust (const pg) k m 
+                let nhdl = set gpages npgs hdl  
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 resetClip 
+                return nhdl 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
-          return hdl 
+          >>= maybe (return hdl) return  
 
 
 -- |
-cairoBBox :: BBox -> Render () 
-cairoBBox bbox = do 
-  let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
-
--- |
-drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> DrawFlag -> Render ()) 
-                      -> ((PageNum, Page SelectMode) -> Maybe BBox -> DrawFlag -> Render ())
+drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox -> DrawFlag -> Render (Int,Page EditMode)) 
+                      -> ((PageNum, Page SelectMode) -> Maybe BBox -> DrawFlag -> Render (Int,Page SelectMode))
                       -> DrawingFunction ContinuousPage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
-  where func isCurrentCvs cinfo mbbox thdl flag = do 
+  where func :: Bool -> CanvasInfo ContinuousPage ->Maybe BBox -> Hoodle SelectMode ->DrawFlag -> IO (Hoodle SelectMode) 
+        func isCurrentCvs cinfo mbbox thdl flag = do 
           let arr = view (viewInfo.pageArrangement) cinfo
               pnum = PageNum . view currentPageNum $ cinfo 
               mtpage = view gselSelected thdl 
@@ -329,19 +318,31 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 rendergen (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag
+              selpagerender :: (PageNum, Page SelectMode) -> Render (Int, Page SelectMode) 
               selpagerender (pn,pg) = do 
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
-                rendersel (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag 
+                rendersel (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag
+              renderfunc :: Render (Hoodle SelectMode)
               renderfunc = do
                 xformfunc 
-                mapM_ onepagerender drawpgs 
-                maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
+                ndrawpgs <- mapM onepagerender drawpgs 
+                let npgs = foldr rfunc pgs ndrawpgs   
+                       where rfunc (k,pg) m = M.adjust (const pg) k m 
+                let nthdl :: Hoodle SelectMode 
+                    nthdl = set gselAll npgs thdl  
+                let act :: MaybeT Render (Int,Page SelectMode)
+                    act = do (n,tpage) <- MaybeT (return mtpage)
+                             lift (selpagerender (PageNum n,tpage))
+                r <- runMaybeT act
+                let nthdl2 = set gselSelected r nthdl
+            -- maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 resetClip 
+                return nthdl2  
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
-          return thdl
+          >>= maybe (return thdl) return 
 
 
 -- |
@@ -370,22 +371,21 @@ drawSinglePageSel = drawFuncSelGen rendercontent renderselect
 -- | 
 drawContHoodle :: DrawingFunction ContinuousPage EditMode
 drawContHoodle = drawContPageGen f  
-  where f (_,page) _ Clear = cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-                             >> return ()
-        f (_,page) mbbox Efficient = cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
-                                     >> return ()
+  where f (PageNum n,page) _ Clear = (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+                                 
+        f (PageNum n,page) mbbox Efficient = (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+
 
 -- |
 drawContHoodleSel :: DrawingFunction ContinuousPage SelectMode
 drawContHoodleSel = drawContPageSelGen renderother renderselect 
-  where renderother (_,page) mbbox flag = do
+  where renderother (PageNum n,page) mbbox flag = do
           case flag of 
-            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) page >> return ()
-            Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox page) >> return () 
-          return ()
-        renderselect (_pnum,tpg) mbbox _flag = do
+            Clear -> (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+            Efficient -> (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+        renderselect (PageNum n,tpg) mbbox _flag = do
           cairoHittedBoxDraw tpg mbbox 
-          return ()
+          return (n,tpg)
 
 -- |
 cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
@@ -478,3 +478,12 @@ renderSelectHandle bbox = do
   rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
   fill
 
+{-
+-- |
+cairoBBox :: BBox -> Render () 
+cairoBBox bbox = do 
+  let (x1,y1) = bbox_upperleft bbox
+      (x2,y2) = bbox_lowerright bbox
+  rectangle x1 y1 (x2-x1) (y2-y1)
+  stroke
+-}

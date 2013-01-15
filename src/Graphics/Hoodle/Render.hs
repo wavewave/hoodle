@@ -284,7 +284,23 @@ renderRLayer_InBBox mbbox layer = do
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
   (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
   resetClip
-  return layer 
+  -- return layer 
+  -- simply twice rendering if whole redraw happening 
+  case view gbuffer layer of 
+    LyBuf (Just sfc) -> do 
+      liftIO $ renderWith sfc $ do 
+        -- renderRLayer_InBBox mbbox lyr 
+        clipBBox mbbox 
+        setSourceRGBA 0 0 0 0 
+        setOperator OperatorSource
+        paint
+        setOperator OperatorOver
+        (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
+        resetClip 
+        return layer 
+    _ -> return layer 
+  
+
 
 
 -----------------------
@@ -322,7 +338,7 @@ renderRLayer_InBBoxBuf mbbox lyr = do
         return lyr 
       _ -> do 
         renderRLayer_InBBox mbbox lyr         
-        return lyr 
+        -- return lyr 
 
 -------------------
 -- update buffer

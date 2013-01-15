@@ -16,7 +16,9 @@ module Graphics.Hoodle.Render.Generic where
 
 import Control.Applicative
 import Control.Lens
+import Control.Monad hiding (mapM_,mapM)
 import Data.Foldable
+import Data.Traversable 
 import Graphics.Rendering.Cairo
 -- from hoodle-platform
 import Data.Hoodle.BBox
@@ -27,7 +29,7 @@ import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Debug
 import Graphics.Hoodle.Render.Type 
 -- 
-import Prelude hiding (mapM_)
+import Prelude hiding (mapM_,mapM)
 
 -- | temporary util
 passarg :: (Monad m) => (a -> m ()) -> a -> m a
@@ -124,8 +126,10 @@ instance RenderOptionable (InBBox RPage) where
   cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
     cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
     --  mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
-    mapM_ (cairoRenderOption (InBBoxOption mbbox) . InBBox ) . view glayers $ page
-    return (InBBox page) 
+    let lyrs = view glayers page
+    nlyrs <- mapM (liftM unInBBox . cairoRenderOption (InBBoxOption mbbox) . InBBox ) lyrs
+    let npage = set glayers nlyrs page
+    return (InBBox npage) 
 
 
 

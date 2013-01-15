@@ -82,7 +82,7 @@ rHoodle2Hoodle = Hoodle <$> view gtitle
 ----------------------
 
 -- | 
-newtype InBBox a = InBBox a
+newtype InBBox a = InBBox { unInBBox :: a }
 
 -- | 
 data InBBoxOption = InBBoxOption (Maybe BBox) 

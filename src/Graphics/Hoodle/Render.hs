@@ -336,18 +336,20 @@ updateLayerBuf (Dim w h) mbbox lyr = do
       renderWith sfc $ do 
         renderRLayer_InBBox mbbox lyr 
       return lyr
-    _ -> do 
-      return lyr 
-      {- 
-      -- liftIO $ putStrLn "renderRLayer_InBBoxBuf"
+    LyBuf Nothing -> do 
+      -- return lyr 
       sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
       renderWith sfc $ do 
-        clipBBox mbbox    
-        setSourceSurface sfc 0 0 
-        paint 
-        resetClip
+        renderRLayer_InBBox Nothing lyr
       return (set gbuffer (LyBuf (Just sfc)) lyr) 
-      -}
+      
+       
+      -- liftIO $ putStrLn "renderRLayer_InBBoxBuf"
+         -- clipBBox mbbox    
+        -- setSourceSurface sfc 0 0 
+        -- paint 
+        -- resetClip
+
 
 
 -- | 

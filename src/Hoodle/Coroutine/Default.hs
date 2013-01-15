@@ -106,10 +106,14 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
           $ st4
           
   st6 <- getFileContent mfname st5
-  
+  -- very dirty, need to be cleaned 
+  let hdlst6 = view hoodleModeState st6
+  hdlst7 <- resetHoodleModeStateBuffers hdlst6
+  let st7 = set hoodleModeState hdlst7 st6
+  -- 
   vbox <- vBoxNew False 0 
-  
-  let startingXstate = set rootContainer (castToBox vbox) st6
+  -- 
+  let startingXstate = set rootContainer (castToBox vbox) st7
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -228,7 +232,6 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        -- put . set (penInfo.penType) pm =<< get
         xst <- get 
         let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
         -- win <- liftIO $ widgetGetDrawWindow cvs 
@@ -360,45 +363,6 @@ menuEventProcess MenuApplyToAllPages = do
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
-
-
-{- updateXState pressSensAction 
-  where pressSensAction xstate = do 
-          let ui = view gtkUIManager xstate 
-          agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
-                            case x of 
-                              [] -> error "No action group? "
-                              y:_ -> return y )
-          pressrsensa <- liftIO (actionGroupGetAction agr "PRESSRSENSA") 
-              >>= maybe (error "MenuPressureSensitivity") 
-                        (return . castToToggleAction)
-          b <- liftIO $ toggleActionGetActive pressrsensa
-          return (set (penInfo.variableWidthPen) b xstate) -}
-
-
-{-
-do 
-  xstate <- get 
-  let ui = view gtkUIManager xstate 
-  agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
-                    case x of 
-                      [] -> error "No action group? "
-                      y:_ -> return y )
-  uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA") 
-              >>= maybe (error "MenuUseXInput") (return . castToToggleAction)
-  b <- liftIO $ toggleActionGetActive uxinputa -}
-{-  xstate <- get 
-  let ui = view gtkUIManager xstate 
-  agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
-                    case x of 
-                      [] -> error "No action group? "
-                      y:_ -> return y )
-  smthscra <- liftIO (actionGroupGetAction agr "SMTHSCRA") 
-              >>= maybe (error "MenuSmoothScroll") (return . castToToggleAction)
-  b <- liftIO $ toggleActionGetActive smthscra
-  modify (set doesSmoothScroll b) -}
-
-
 
 
 -- | 

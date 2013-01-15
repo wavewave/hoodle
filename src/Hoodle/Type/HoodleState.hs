@@ -336,11 +336,14 @@ currentCanvasInfo = lens getter setter
           cmap' = M.adjust (const a) cid (_cvsInfoMap f)
       in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
 
+-- | 
 resetHoodleModeStateBuffers :: HoodleModeState -> IO HoodleModeState 
 resetHoodleModeStateBuffers hdlmodestate1 = 
   case hdlmodestate1 of 
     ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf $ hdl
     _ -> return hdlmodestate1
+
+
 
 -- |
     

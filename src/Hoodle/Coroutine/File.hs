@@ -51,6 +51,7 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Mode 
+import           Hoodle.Coroutine.Scroll
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
@@ -229,7 +230,24 @@ fileLoad filename = do
       $ xstateNew 
     liftIO $ setTitleFromFileName xstateNew  
     clearUndoHistory 
+    modeChange ToViewAppendMode 
+    resetHoodleBuffers 
     invalidateAll 
+    applyActionToAllCVS adjustScrollbarWithGeometryCvsId
+
+-- let hdlmodst = view hoodleModeState xstate1
+--     hdlmodst' <- liftIO $ resetHoodleModeStateBuffers hdlmodst    
+--     let xstate' = set hoodleModeState hdlmodst' xstate1
+
+resetHoodleBuffers :: MainCoroutine () 
+resetHoodleBuffers = do 
+    liftIO $ putStrLn "resetHoodleBuffers called"
+    xst <- get 
+    nhdlst <- liftIO $ resetHoodleModeStateBuffers (view hoodleModeState xst)
+    let nxst = set hoodleModeState nhdlst xst
+    put nxst     
+
+
 
 
 -- | main coroutine for open a file 

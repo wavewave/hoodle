@@ -95,12 +95,10 @@ invalidateOther = do
   mapM_ invalidate (filter (/=currCvsId) keys)
   
 -- | invalidate clear 
-
 invalidate :: CanvasId -> MainCoroutine () 
 invalidate = invalidateInBBox Nothing Clear  
 
 -- | 
-
 invalidateInBBox :: Maybe BBox -- ^ desktop coord
                     -> DrawFlag 
                     -> CanvasId -> MainCoroutine ()
@@ -108,16 +106,19 @@ invalidateInBBox mbbox flag cid = do
   invalidateGeneral cid mbbox flag 
     drawSinglePage drawSinglePageSel drawContHoodle drawContHoodleSel
 
--- | 
 
+
+-- | 
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
                        -> DrawFlag
                        -> MainCoroutine ()
-invalidateAllInBBox mbbox flag = do                        
+invalidateAllInBBox mbbox flag = applyActionToAllCVS (invalidateInBBox mbbox flag)
+{-   do                        
   xstate <- get
   let cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
   forM_ keys (invalidateInBBox mbbox flag)
+-}
 
 -- | 
 

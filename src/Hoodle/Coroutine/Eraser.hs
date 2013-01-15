@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Eraser 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -95,7 +95,6 @@ eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do
               newhdlmodst = ViewAppendState newhdlbbox
           commit . set hoodleModeState newhdlmodst 
             =<< (liftIO (updatePageAll newhdlmodst xstate))
-          -- invalidateWithBuf cid 
           invalidateInBBox Nothing Efficient cid 
           nitms <- rItmsInCurrLyr
           eraserProcess cid pnum geometry connidup connidmove nitms (x,y)

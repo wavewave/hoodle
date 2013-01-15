@@ -79,6 +79,7 @@ vscrollBarMoved cid v =
     chkCvsIdNInvalidate cid 
     >> updateXState (return . vscrollmoveAction) 
     >> invalidate cid
+       -- invalidateInBBox Nothing Efficient cid 
   where vscrollmoveAction = over currentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
@@ -101,41 +102,20 @@ vscrollMove cid v0 = do
       VScrollBarMoved cid' v -> do 
         when (cid /= cid') $ 
           (lift . hoistEither . Left . Other) "something wrong in vscrollMove"
-        
-        {-  xst <- get 
-        let b = view doesSmoothScroll xst 
-        let diff = (v - v0) 
-            lst'  | (diff < 20 && diff > -20) = [v]
-                  | (diff < 5 &&diff > -5) = []
-                  | otherwise = let m :: Int = floor (minimum [20, (abs diff) / 10.0])
-                                    delta = diff / fromIntegral m            
-                                in [v0 + fromIntegral n*delta | n <- [1..m] ]
-            lst | b  = lst'                     
-                | otherwise = [v] 
-        forM_ lst $ \v' -> do 
-          updateXState $ return . over currentCanvasInfo 
-                         (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v'))
-          invalidateInBBox Nothing Efficient cid 
-          -- liftIO $ threadDelay (floor (100 * abs diff)) -}
         smoothScroll cid geometry v0 v 
         vscrollMove cid v 
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ 
-          (lift . hoistEither . Left . Other) "something wrong in vscrollMove"          
-        {-   
-        updateXState $ return. over currentCanvasInfo 
-                         (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v)) 
-        invalidate cid' -}
+          (lift . hoistEither . Left . Other) "something wrong in vscrollMove" 
         smoothScroll cid geometry v0 v
+        invalidateAll 
         return ()
       VScrollBarStart cid' v -> vscrollStart cid' v 
       _ -> return ()       
 
 
 
-
-
-
+-- | 
 smoothScroll :: CanvasId -> CanvasGeometry -> Double -> Double -> MainCoroutine () 
 smoothScroll cid geometry v0 v = do 
     xst <- get 

@@ -17,8 +17,8 @@ module Hoodle.Accessor where
 import           Control.Applicative
 import           Control.Category
 import           Control.Lens
-import           Control.Monad hiding (mapM_)
-import qualified Control.Monad.State as St hiding (mapM_)
+import           Control.Monad hiding (mapM_, forM_)
+import qualified Control.Monad.State as St hiding (mapM_, forM_)
 import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
@@ -108,6 +108,14 @@ changeCurrentCanvasId cid = do
         ui = view gtkUIManager xst                      
     reflectUI ui cinfo
     return xst
+
+-- | apply an action to all canvases 
+applyActionToAllCVS :: (CanvasId -> MainCoroutine ()) -> MainCoroutine () 
+applyActionToAllCVS action = do 
+  xstate <- St.get 
+  let cinfoMap  = getCanvasInfoMap xstate
+      keys = M.keys cinfoMap 
+  forM_ keys action
 
 -- | reflect UI for current canvas info 
 reflectUI :: UIManager -> CanvasInfoBox -> MainCoroutine ()

@@ -148,11 +148,13 @@ showContextMenu (pnum,(x,y)) = do
     when (view doesUsePopUpMenu xstate) $ do 
       let cids = IM.keys . view cvsInfoMap $ xstate
           cid = fst . view currentCanvas $ xstate 
-          mselitms = case view hoodleModeState xstate of 
+          mselitms = fmap (\x->if null x then Nothing else Just x) 
+                       (getSelectedItmsFromHoodleState xstate)
+{-            case view hoodleModeState xstate of 
                        ViewAppendState _ -> Nothing 
                        SelectState thdl -> do 
                          lst <- fmap (getSelectedItms.snd) (view gselSelected thdl)
-                         if null lst then Nothing else return lst 
+                         if null lst then Nothing else return lst -} 
       modify (tempQueue %~ enqueue (action xstate mselitms cid cids)) 
       >> waitSomeEvent (==ContextMenuCreated) 
       >> return () 

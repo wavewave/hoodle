@@ -41,8 +41,9 @@ import           Graphics.Hoodle.Render.Util
 import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package
 import           Hoodle.ModelAction.Layer
-import           Hoodle.Type.Enum
 import           Hoodle.Type.Alias
+import           Hoodle.Type.Enum
+import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Predefined 
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
@@ -137,6 +138,12 @@ rItmsInActiveLyr = unTEitherAlterHitted.view (glayers.selectedLayer.gitems)
 -- |
 getSelectedItms :: Page SelectMode -> [RItem]
 getSelectedItms = either (const []) (concatMap unHitted . getB) . rItmsInActiveLyr   
+-- |
+getSelectedItmsFromHoodleState :: HoodleState -> Maybe [RItem] 
+getSelectedItmsFromHoodleState xstate = 
+  case view hoodleModeState xstate of 
+    ViewAppendState _ -> Nothing 
+    SelectState thdl -> fmap (getSelectedItms.Prelude.snd) (view gselSelected thdl)
   
 -- | start a select mode with alter list selection 
 makePageSelectMode :: Page EditMode  -- ^ base page 

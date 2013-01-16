@@ -61,6 +61,7 @@ getPenColor b | (not . B.null) b =
   case B.head b of 
     '#' -> Just (hexToRGBA . (read  :: String -> Integer) . B.unpack $ ("0x" `B.append` (B.tail b) ))
     _ -> M.lookup b predefined_pencolor 
+getPenColor _ | otherwise = Nothing 
 
 -- | 
 predefined_bkgcolor :: M.Map B.ByteString (Double,Double,Double,Double)

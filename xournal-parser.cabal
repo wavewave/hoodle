@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.5.0.0.999
+Version:	0.5.0.1
 Synopsis:       Xournal file parser
 Description: 	Text parser for xournal xml file
 Homepage:       http://ianwookim.org/hxournal
@@ -29,7 +29,7 @@ Library
                  conduit == 0.5.*,
                  strict == 0.3.*, 
                  attoparsec-conduit == 0.5.*,
-                 xournal-types >= 0.5.0.0.999, 
+                 xournal-types >= 0.5.0.1, 
                  xml-types == 0.3.*, 
                  text == 0.11.*,
                  lens >= 2.5, 

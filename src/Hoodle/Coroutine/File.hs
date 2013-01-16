@@ -213,7 +213,6 @@ exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (re
       if takeExtension filename /= ".svg" 
       then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
       else do      
-        liftIO $ print "exportCurrentPageAsSVG executed"
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
         liftIO $ withSVGSurface filename w h $ \s -> renderWith s $ 

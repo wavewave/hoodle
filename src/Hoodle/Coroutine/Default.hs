@@ -338,6 +338,7 @@ menuEventProcess MenuUseXInput = do
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" doesSmoothScroll >> return ()
+menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" doesUsePopUpMenu >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" doesEmbedImage >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication

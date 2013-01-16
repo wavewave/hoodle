@@ -53,8 +53,9 @@ import Hoodle.View.Coordinate
 import Prelude hiding ((.),id,mapM_,concatMap,foldr)
 
 -- | 
-data DrawFlag = Clear | Efficient
-
+data DrawFlag = Clear | BkgEfficient | Efficient
+              deriving (Eq,Ord,Show)
+                       
 -- | 
 type family DrawingFunction v :: * -> * 
 
@@ -351,6 +352,9 @@ drawSinglePage = drawFuncGen EditMode f
   where f (_,page) _ Clear = do 
           pg' <- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
           return pg' 
+        f(_,page) mbbox BkgEfficient = do 
+          InBBoxBkgBuf pg' <- cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page) 
+          return pg' 
         f (_,page) mbbox Efficient = do 
           InBBox pg' <- cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
           return pg' 
@@ -362,6 +366,7 @@ drawSinglePageSel = drawFuncSelGen rendercontent renderselect
           let pg' = hPage2RPage tpg 
           case flag of 
             Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) pg' >> return ()
+            BkgEfficient -> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf pg') >> return ()            
             Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox pg') >> return ()
           return ()
         renderselect (_pnum,tpg) mbbox _flag = do 
@@ -372,7 +377,7 @@ drawSinglePageSel = drawFuncSelGen rendercontent renderselect
 drawContHoodle :: DrawingFunction ContinuousPage EditMode
 drawContHoodle = drawContPageGen f  
   where f (PageNum n,page) _ Clear = (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-                                 
+        f (PageNum n,page) mbbox BkgEfficient = (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page)                  
         f (PageNum n,page) mbbox Efficient = (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
 
 
@@ -382,6 +387,7 @@ drawContHoodleSel = drawContPageSelGen renderother renderselect
   where renderother (PageNum n,page) mbbox flag = do
           case flag of 
             Clear -> (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+            BkgEfficient -> (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page)            
             Efficient -> (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
         renderselect (PageNum n,tpg) mbbox _flag = do
           cairoHittedBoxDraw tpg mbbox 

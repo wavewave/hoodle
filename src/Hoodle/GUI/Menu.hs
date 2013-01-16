@@ -273,7 +273,9 @@ getMenuUI evar = do
   smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
   smthscra `on` actionToggled $ do 
     eventHandler evar (Menu MenuSmoothScroll)
-
+  popmenua <- toggleActionNew "POPMENUA" "Use Popup Menu" (Just "Just a stub") Nothing
+  popmenua `on` actionToggled $ do 
+    eventHandler evar (Menu MenuUsePopUpMenu)    
   ebdimga <- toggleActionNew "EBDIMGA" "Embed PNG/JPG Image" (Just "Just a stub") Nothing
   ebdimga `on` actionToggled $ do 
     eventHandler evar (Menu MenuEmbedImage)
@@ -331,6 +333,7 @@ getMenuUI evar = do
     
   actionGroupAddAction agr uxinputa 
   actionGroupAddAction agr smthscra
+  actionGroupAddAction agr popmenua 
   actionGroupAddAction agr ebdimga
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)

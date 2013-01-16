@@ -138,6 +138,7 @@
     <menu action="OMA">
        <menuitem action="UXINPUTA" />
        <menuitem action="SMTHSCRA" />
+       <menuitem action="POPMENUA" /> 
        <menuitem action="EBDIMGA" />
        <menuitem action="DCRDCOREA" />                        
        <menuitem action="ERSRTIPA" />                        

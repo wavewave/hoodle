@@ -37,6 +37,7 @@ module Hoodle.Type.HoodleState
 , isFullScreen 
 , doesUseXInput 
 , doesSmoothScroll 
+, doesUsePopUpMenu
 , doesEmbedImage
 , isOneTimeSelectMode
 , pageModeSignal
@@ -135,6 +136,7 @@ data HoodleState =
                 , _isFullScreen :: Bool 
                 , _doesUseXInput :: Bool 
                 , _doesSmoothScroll :: Bool 
+                , _doesUsePopUpMenu :: Bool 
                 , _doesEmbedImage :: Bool 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
@@ -224,6 +226,10 @@ doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
 doesSmoothScroll :: Simple Lens HoodleState Bool
 doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
 
+-- | flag for using popup menu
+doesUsePopUpMenu :: Simple Lens HoodleState Bool
+doesUsePopUpMenu = lens _doesUsePopUpMenu (\f a -> f { _doesUsePopUpMenu = a } )
+
 -- | flag for embedding image as base64 in hdl file 
 doesEmbedImage :: Simple Lens HoodleState Bool
 doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
@@ -280,6 +286,7 @@ emptyHoodleState =
   , _isFullScreen = False
   , _doesUseXInput = False
   , _doesSmoothScroll = False
+  , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing

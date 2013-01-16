@@ -145,11 +145,12 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
 showContextMenu :: (PageNum,(Double,Double)) -> MainCoroutine () 
 showContextMenu (pnum,(x,y)) = do 
     xstate <- get
-    let cids = IM.keys . view cvsInfoMap $ xstate
-        cid = fst . view currentCanvas $ xstate 
-    modify (tempQueue %~ enqueue (action xstate cid cids)) 
-    >> waitSomeEvent (==ContextMenuCreated) 
-    >> return () 
+    when (view doesUsePopUpMenu xstate) $ do 
+      let cids = IM.keys . view cvsInfoMap $ xstate
+          cid = fst . view currentCanvas $ xstate 
+      modify (tempQueue %~ enqueue (action xstate cid cids)) 
+      >> waitSomeEvent (==ContextMenuCreated) 
+      >> return () 
   where action xstate cid cids  
           = Left . ActionOrder $ 
               \evhandler -> do 

@@ -42,4 +42,14 @@ hoodle
    * Image embedding support 
    * pdf export support 
 
-
+0.1.1: 16 Jan 2013 
+   * context menu support 
+   * text input support (experimental latex support with lasem installed)
+   * SVG import support
+   * JPG import support 
+   * image can be embedded
+   * full screen support 
+   * color picker menu and toolbar button 
+   * experimental smooth scrolling support 
+   * rendering engine improved
+ 

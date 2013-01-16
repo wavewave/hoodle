@@ -69,7 +69,8 @@ doesLineHitStrk line1 (VWStroke _t _c d) = test d
 -- | Do two bounding boxes intersect with each other?
 --   previously, hitTestBBoxBBox
 do2BBoxIntersect :: BBox -> BBox -> Bool  
-do2BBoxIntersect b1@(BBox (ulx1,uly1) (lrx1,lry1)) b2@(BBox (ulx2,uly2) (lrx2,lry2)) = p1 && p2
+do2BBoxIntersect (BBox (ulx1,uly1) (lrx1,lry1)) (BBox (ulx2,uly2) (lrx2,lry2)) 
+    = p1 && p2
   where p1 =    ulx1 <= ulx2 && ulx2 <= lrx1 
              || ulx1 <= lrx2 && lrx2 <= lrx1
              || ulx2 <= ulx1 && ulx1 <= lrx2

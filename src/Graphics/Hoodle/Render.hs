@@ -46,9 +46,8 @@ module Graphics.Hoodle.Render
 , cnstrctRHoodle  
 ) where
 
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set)
 import           Control.Monad.State hiding (mapM,mapM_)
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import           Data.Traversable (mapM)
@@ -117,9 +116,8 @@ renderImg (Image _ (x,y) (Dim w h)) = do
 
 -- | render svg : not fully implemented 
 renderSVG :: SVG -> Render () 
-renderSVG svg@(SVG _ _ bstr (x,y) (Dim w h)) = do  
+renderSVG svg@(SVG _ _ bstr _ _) = do  
     let str = C.unpack bstr 
-
     RSVG.withSvgFromString str $ \rsvg -> do 
       let svgbbx = mkSVGBBox svg
       let (x,y) = (svg_pos . svgbbx_svg) svgbbx

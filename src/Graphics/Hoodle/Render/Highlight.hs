@@ -55,13 +55,6 @@ renderStrkHltd sbbox = do
         drawVWStrokeCurve d     
         fill
     
-{-    
-    Img _ _ _ -> cairoOneStrokeBBoxOnly sbbox 
-    _ -> do     
-        _ -> error "in cairoOneStrokeSelected"
--}  
-
-
 -- | render items highlighted 
 renderRItemHltd :: RItem -> Render ()
 renderRItemHltd (RItemStroke strk) = renderStrkHltd strk

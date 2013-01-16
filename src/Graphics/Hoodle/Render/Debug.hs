@@ -45,9 +45,9 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
-#ifdef POPPLER
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-#endif
+-- #ifdef POPPLER
+-- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+-- #endif
 -- from this package
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type 

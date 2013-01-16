@@ -26,7 +26,6 @@ import           Graphics.GD.ByteString
 import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           System.Directory
-import           System.Environment 
 import           System.FilePath 
 -- from hoodle-platform 
 import Data.Hoodle.BBox 
@@ -57,7 +56,7 @@ cnstrctRItem (ItemImage img) = do
               | otherwise = return Nothing 
         msfc <- imgaction
         return (RItemImage imgbbx msfc)
-cnstrctRItem (ItemSVG svg@(SVG _ _ bstr (x,y) _)) = do 
+cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         svgbbx = mkSVGBBox svg
     rsvg <- RSVG.svgNewFromString str
@@ -79,11 +78,6 @@ getJPGandCreateSurface fp = do
     img <- loadJpegFile fp  
     bstr <- savePngByteString img
     saveTempPNGToCreateSurface bstr 
-{-    tdir <- getTemporaryDirectory 
-    let tfile = tdir </> "temp.png"
-    B.writeFile tfile bstr 
-    imageSurfaceCreateFromPNG tfile  -}
-
 
 -- | 
 saveTempPNGToCreateSurface :: C8.ByteString -> IO Surface

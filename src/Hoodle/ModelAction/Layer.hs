@@ -15,7 +15,7 @@ module Hoodle.ModelAction.Layer where
 -- from other packages
 import           Control.Category
 import           Control.Compose
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set)
 import           Data.IORef
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (get)

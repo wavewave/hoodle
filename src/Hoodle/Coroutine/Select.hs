@@ -97,6 +97,7 @@ dealWithOneTimeSelectMode action terminator = do
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
+--   (dev note: need to be refactored with selectLassoStart)
 selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 selectRectStart cid = commonPenStart rectaction cid
   where rectaction cinfo pnum geometry (cidup,cidmove) (x,y) = do
@@ -107,7 +108,9 @@ selectRectStart cid = commonPenStart rectaction cid
                   (do tsel <- createTempSelectRender pnum geometry page [] 
                       newSelectRectangle cid pnum geometry cidmove cidup itms 
                                          (x,y) ((x,y),ctime) tsel
-                      surfaceFinish (tempSurface tsel)) 
+                      surfaceFinish (tempSurface tsel) 
+                      showContextMenu (pnum,(x,y))
+                  )
                   (disconnect [cidmove,cidup]) 
           let 
               action (Right tpage) | hitInHandle tpage (x,y) = 

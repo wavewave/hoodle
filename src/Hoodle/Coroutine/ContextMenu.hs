@@ -187,7 +187,6 @@ showContextMenu (pnum,(x,y)) = do
                 runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
                 widgetShowAll menu 
                 menuPopup menu Nothing 
-                putStrLn "showContextMenu"
                 return ContextMenuCreated 
 
         makeMenu evhdlr mn currcid cid 

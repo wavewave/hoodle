@@ -87,3 +87,7 @@ newtype InBBox a = InBBox { unInBBox :: a }
 -- | 
 data InBBoxOption = InBBoxOption (Maybe BBox) 
 
+-- |
+newtype InBBoxBkgBuf a = InBBoxBkgBuf { unInBBoxBkgBuf :: a }
+
+

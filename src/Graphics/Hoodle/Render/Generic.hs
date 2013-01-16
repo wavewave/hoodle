@@ -131,6 +131,16 @@ instance RenderOptionable (InBBox RPage) where
     let npage = set glayers nlyrs page
     return (InBBox npage) 
 
+-- | 
+instance RenderOptionable (InBBoxBkgBuf RPage) where
+  type RenderOption (InBBoxBkgBuf RPage) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page) = do 
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
+    --  mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
+    let lyrs = view glayers page
+    nlyrs <- mapM (renderRLayer_InBBox mbbox) lyrs
+    let npage = set glayers nlyrs page
+    return (InBBoxBkgBuf npage) 
 
 
 

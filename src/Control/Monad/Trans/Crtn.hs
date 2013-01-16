@@ -20,7 +20,6 @@ module Control.Monad.Trans.Crtn where
 -- import Control.Monad.Error
 import Control.Monad.Reader 
 import Control.Monad.State 
-import Control.Monad.Trans.Either 
 import Control.Monad.Trans.Free
 
 
@@ -105,13 +104,6 @@ data CrtnErr = ServerFinished
 -- | 
 deriving instance Show CrtnErr 
 
-{- 
--- | 
-instance Error (CrtnErr r) where 
-  noMsg = NoError 
-  strMsg str = Other str 
--}
-
 -----------------------------
 -- communication combinator 
 -------------------------------
@@ -121,17 +113,15 @@ instance Error (CrtnErr r) where
           SrvT req ans m r'    -- ^ server coroutine
        -> CliT req ans m r  -- ^ client coroutine
        -> m (Either CrtnErr (SrvT req ans m r', r)) 
-       -- -> EitherT CrtnErr m (SrvT req ans m r', r)
 s <==| c = do 
-    y <- runFreeT c -- lift (runFreeT c)
+    y <- runFreeT c 
     case y of
       Pure r -> return (Right (s,r))
       Free (Rqst rq af) -> do 
-        x <- runFreeT (runReaderT s rq) -- lift (runFreeT (runReaderT s rq))
+        x <- runFreeT (runReaderT s rq) 
         case x of 
-          Pure r' -> return (Left ServerFinished) -- left ServerFinished
+          Pure _r' -> return (Left ServerFinished) 
           Free (Rqst ans rf) -> (ReaderT rf) <==| (af ans)
-
 
 ----------------------
 -- some utility 

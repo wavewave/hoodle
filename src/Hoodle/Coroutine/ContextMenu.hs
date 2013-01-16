@@ -148,35 +148,43 @@ showContextMenu (pnum,(x,y)) = do
     when (view doesUsePopUpMenu xstate) $ do 
       let cids = IM.keys . view cvsInfoMap $ xstate
           cid = fst . view currentCanvas $ xstate 
-      modify (tempQueue %~ enqueue (action xstate cid cids)) 
+          mselitms = case view hoodleModeState xstate of 
+                       ViewAppendState _ -> Nothing 
+                       SelectState thdl -> do 
+                         lst <- fmap (getSelectedItms.snd) (view gselSelected thdl)
+                         if null lst then Nothing else return lst 
+      modify (tempQueue %~ enqueue (action xstate mselitms cid cids)) 
       >> waitSomeEvent (==ContextMenuCreated) 
       >> return () 
-  where action xstate cid cids  
+  where action xstate msitms cid cids  
           = Left . ActionOrder $ 
               \evhandler -> do 
                 menu <- menuNew 
                 menuSetTitle menu "MyMenu"
-                menuitem1 <- menuItemNewWithLabel "Make SVG"
-                menuitem2 <- menuItemNewWithLabel "Make PDF"
-                menuitem3 <- menuItemNewWithLabel "Cut"
-                menuitem4 <- menuItemNewWithLabel "Copy"
-                menuitem5 <- menuItemNewWithLabel "Delete"
+                case msitms of 
+                  Nothing -> return ()
+                  Just _ -> do 
+                    menuitem1 <- menuItemNewWithLabel "Make SVG"
+                    menuitem2 <- menuItemNewWithLabel "Make PDF"
+                    menuitem3 <- menuItemNewWithLabel "Cut"
+                    menuitem4 <- menuItemNewWithLabel "Copy"
+                    menuitem5 <- menuItemNewWithLabel "Delete"
 
-                menuitem1 `on` menuItemActivate $   
-                  evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
-                menuitem2 `on` menuItemActivate $ 
-                  evhandler (GotContextMenuSignal (CMenuSaveSelectionAs PDF))
-                menuitem3 `on` menuItemActivate $ 
-                  evhandler (GotContextMenuSignal (CMenuCut))     
-                menuitem4 `on` menuItemActivate $    
-                  evhandler (GotContextMenuSignal (CMenuCopy))
-                menuitem5 `on` menuItemActivate $    
-                  evhandler (GotContextMenuSignal (CMenuDelete))     
-                menuAttach menu menuitem1 0 1 0 1 
-                menuAttach menu menuitem2 0 1 1 2
-                menuAttach menu menuitem3 1 2 0 1                     
-                menuAttach menu menuitem4 1 2 1 2                     
-                menuAttach menu menuitem5 1 2 2 3    
+                    menuitem1 `on` menuItemActivate $   
+                      evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
+                    menuitem2 `on` menuItemActivate $ 
+                      evhandler (GotContextMenuSignal (CMenuSaveSelectionAs PDF))
+                    menuitem3 `on` menuItemActivate $ 
+                      evhandler (GotContextMenuSignal (CMenuCut))     
+                    menuitem4 `on` menuItemActivate $    
+                      evhandler (GotContextMenuSignal (CMenuCopy))
+                    menuitem5 `on` menuItemActivate $    
+                      evhandler (GotContextMenuSignal (CMenuDelete))     
+                    menuAttach menu menuitem1 0 1 0 1 
+                    menuAttach menu menuitem2 0 1 1 2
+                    menuAttach menu menuitem3 1 2 0 1                     
+                    menuAttach menu menuitem4 1 2 1 2                     
+                    menuAttach menu menuitem5 1 2 2 3    
                 case (customContextMenuTitle =<< view hookSet xstate) of 
                   Nothing -> return () 
                   Just title -> do 
@@ -192,7 +200,7 @@ showContextMenu (pnum,(x,y)) = do
         makeMenu evhdlr mn currcid cid 
           = when (currcid /= cid) $ do 
               n <- get
-              mi <- liftIO $ menuItemNewWithLabel (show cid)
+              mi <- liftIO $ menuItemNewWithLabel ("Show here in cvs" ++ show cid)
               liftIO $ mi `on` menuItemActivate $ 
                 evhdlr (GotContextMenuSignal (CMenuCanvasView cid pnum x y)) 
               liftIO $ menuAttach mn mi 2 3 n (n+1) 

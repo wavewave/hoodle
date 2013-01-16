@@ -18,28 +18,28 @@ module Hoodle.Coroutine.ContextMenu where
 import           Control.Applicative
 import           Control.Category
 import           Control.Lens
-import           Control.Monad.Trans.Maybe 
+-- import           Control.Monad.Trans.Maybe 
 import           Control.Monad.State
-import           Data.ByteString.Char8 as B (pack)
-import qualified Data.ByteString.Lazy as L
+-- import           Data.ByteString.Char8 as B (pack)
+-- import qualified Data.ByteString.Lazy as L
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
-import           System.Directory
+-- import           System.Directory
 import           System.FilePath
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple hiding (SVG)
+-- import           Data.Hoodle.Generic
+-- import           Data.Hoodle.Simple hiding (SVG)
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render
 -- import           Graphics.Hoodle.Render.Generic
 -- import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
-import           Graphics.Hoodle.Render.Type.HitTest 
+-- import           Graphics.Hoodle.Render.Type.HitTest 
 -- import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Accessor
@@ -50,7 +50,7 @@ import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.ModelAction.Page 
 import           Hoodle.ModelAction.Select
 import           Hoodle.Script.Hook
-import           Hoodle.Type.Canvas
+-- import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
@@ -80,14 +80,14 @@ processContextMenu (CMenuSaveSelectionAs ityp) = do
 processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
-processContextMenu (CMenuCanvasView cid pnum x y) = do 
+processContextMenu (CMenuCanvasView cid pnum _x _y) = do 
     -- liftIO $ print (cid,pnum,x,y)
     xstate <- get 
     let cmap = view cvsInfoMap xstate 
     let mcinfobox = IM.lookup cid cmap 
     case mcinfobox of 
       Nothing -> liftIO $ putStrLn "error in processContextMenu"
-      Just cinfobox -> do 
+      Just _cinfobox -> do 
         cinfobox' <- liftIO (setPage xstate pnum cid)
         put $ set cvsInfoMap (IM.adjust (const cinfobox') cid cmap) xstate 
         adjustScrollbarWithGeometryCvsId cid 
@@ -184,8 +184,8 @@ showContextMenu (pnum,(x,y)) = do
                     menuAttach menu menuitem5 1 2 2 3    
                 case (customContextMenuTitle =<< view hookSet xstate) of 
                   Nothing -> return () 
-                  Just title -> do 
-                    custommenu <- menuItemNewWithLabel title  
+                  Just ttl -> do 
+                    custommenu <- menuItemNewWithLabel ttl  
                     custommenu `on` menuItemActivate $ 
                       evhandler (GotContextMenuSignal (CMenuCustom))
                     menuAttach menu custommenu 1 2 3 4 

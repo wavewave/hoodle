@@ -17,7 +17,7 @@ module Hoodle.Type.Enum where
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import           Data.Maybe 
-import           Numeric (showHex)
+-- import           Numeric (showHex)
 -- 
 import           Data.Hoodle.Predefined
 
@@ -84,17 +84,6 @@ convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
 convertRGBAToHex :: (Double,Double,Double,Double) -> B.ByteString 
 convertRGBAToHex = B.pack . rgbaToHEX 
 
- -- B.pack ( ("#"++) 
-                             --          . hexify r  
-                             --         . hexify g
-                             --          . hexify b
-                             --         . hexify a $ "" )
-
-
--- hexify :: Double -> ShowS 
--- hexify x = if x >= 1.0 
---             then ("ff"++)  
---             else showHex (floor (x*256.0) :: Int)
 
 convertPenColorToByteString :: PenColor-> B.ByteString 
 convertPenColorToByteString pcol = 

@@ -18,12 +18,12 @@ import           Control.Applicative
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State 
-import           Control.Monad.Trans
+-- import           Control.Monad.Trans
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set) -- (adjustmentGetValue)
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn.Event 
-import           Control.Monad.Trans.Crtn.Queue 
+-- import           Control.Monad.Trans.Crtn.Event 
+-- import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select

@@ -232,16 +232,16 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        xst <- get 
-        let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
+        -- xst <- get 
+        -- let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
         -- win <- liftIO $ widgetGetDrawWindow cvs 
         -- cursor <- liftIO $ cursorNew BlankCursor 
         -- liftIO $ drawWindowSetCursor win (Just cursor) 
         modify (penInfo.penType .~ pm)
         modeChange ToViewAppendMode
       Right sm -> do 
-        xst <- get 
-        let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
+        -- xst <- get 
+        -- let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
         -- win <- liftIO $ widgetGetDrawWindow cvs 
         -- cursor <- cursorNew Dot 
         -- liftIO $ drawWindowSetCursor win Nothing 
@@ -390,7 +390,7 @@ colorPickerBox msg = do
                \_evhandler -> do 
                  dialog <- colorSelectionDialogNew msg
                  csel <- colorSelectionDialogGetColor dialog
-                 let (r,g,b,a) =  convertPenColorToRGBA pcolor 
+                 let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
                      color = Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
                 
                  colorSelectionSetCurrentColor csel color

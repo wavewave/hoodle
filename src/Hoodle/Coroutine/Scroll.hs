@@ -15,12 +15,12 @@
 module Hoodle.Coroutine.Scroll where
 
 import           Control.Category
-import           Control.Concurrent
+-- import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
-import           Graphics.UI.Gtk hiding (get,set)
+-- import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.BBox
@@ -133,16 +133,16 @@ smoothScroll cid geometry v0 v = do
                      (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v'))
       invalidateInBBox Nothing Efficient cid 
       -- liftIO $ threadDelay (floor (100 * abs diff))
-  where scrollmovecanvas v cvsInfo = 
+  where scrollmovecanvas vv cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
           in over (viewInfo.pageArrangement.viewPortBBox) 
-                  (apply (moveBBoxULCornerTo (fst vm_orig,v))) cvsInfo 
-             
-        scrollmovecanvasCont geometry v cvsInfo = 
+                  (apply (moveBBoxULCornerTo (fst vm_orig,vv))) cvsInfo 
+        -- 
+        scrollmovecanvasCont geom vv cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
               cpn = PageNum . view currentPageNum $ cvsInfo 
-              ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (0,v))
+              ncpn = maybe cpn fst $ desktop2Page geom (DeskCoord (0,vv))
           in  over currentPageNum (const (unPageNum ncpn)) 
               . over (viewInfo.pageArrangement.viewPortBBox) 
-                       (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cvsInfo 
+                       (apply (moveBBoxULCornerTo (fst vm_orig,vv))) $ cvsInfo 
 

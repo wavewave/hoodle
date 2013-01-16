@@ -15,7 +15,7 @@
 module Hoodle.Script.Coroutine where
 
 import           Control.Lens
-import           Control.Monad 
+-- import           Control.Monad 
 import           Control.Monad.State 
 import           Control.Monad.Trans.Maybe
 -- from hoodle-platform
@@ -43,10 +43,9 @@ afterSaveHook fp hdl = do
         H.afterSaveHook hset
   maybe (return ()) (\f -> liftIO (f fp hdl)) aftersavehk      
 
-
 -- | 
 saveAsHook :: FilePath -> Hoodle -> MainCoroutine ()
-saveAsHook fp hdl = do 
+saveAsHook _fp hdl = do 
   xstate <- get 
   let saveashk = do         
         hset <- view hookSet xstate 

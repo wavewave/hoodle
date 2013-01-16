@@ -80,8 +80,8 @@ world xstate initmc = ReaderT staction
       where erract = do r <- runEitherT (go initmc req) 
                         case r of 
                           Left e -> liftIO (errorlog (show e)) 
-                          Right r' -> return () --  return r' 
-    go :: MainObj() -- (ReaderT (Arg MainOp MainCoroutine ()) 
+                          Right _r' -> return () --  return r' 
+    go :: MainObj() 
           -> Arg (WorldOp MyEvent DriverB) 
           -> EStT HoodleState WorldObjB () 
     go mcobj (Arg GiveEvent ev) = do 

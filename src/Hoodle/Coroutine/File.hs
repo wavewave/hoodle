@@ -28,11 +28,11 @@ import           Graphics.GD.ByteString
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
-import           System.Environment 
+-- import           System.Environment 
 import           System.Exit 
 import           System.FilePath
 import           System.Process 
-import           System.IO (writeFile)
+-- import           System.IO (writeFile)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event
@@ -87,7 +87,7 @@ okCancelMessageBox :: String -> MainCoroutine Bool
 okCancelMessageBox msg = modify (tempQueue %~ enqueue action) 
                          >> waitSomeEvent p >>= return . p 
   where 
-    p (OkCancel b) = True 
+    p (OkCancel b) = b -- True 
     p _ = False 
     action = Left . ActionOrder $ 
                \_evhandler -> do 

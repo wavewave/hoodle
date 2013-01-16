@@ -12,7 +12,7 @@
 
 module Hoodle.Script.Hook where 
 
-import System.FilePath 
+-- import System.FilePath 
 import Data.Hoodle.Simple 
 
 -- | 
@@ -31,6 +31,7 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
 defaultHook :: Hook 
 defaultHook = Hook { saveAsHook = Nothing
                    , afterSaveHook = Nothing  
+                   , afterOpenHook = Nothing 
                    , afterUpdateClipboardHook = Nothing
                    , customContextMenuTitle = Nothing 
                    , customContextMenuHook = Nothing 

@@ -17,10 +17,10 @@ module Hoodle.Type.PageArrangement where
 -- from other packages
 import           Control.Applicative
 import           Control.Category ((.))
-import           Control.Error.Util (note)
+-- import           Control.Error.Util (note)
 import           Control.Lens
 import           Data.Foldable (toList)
-import           Data.Maybe (fromJust)
+-- import           Data.Maybe (fromJust)
 -- from hoodle-platform 
 import Data.Hoodle.Simple (Dimension(..))
 import Data.Hoodle.Generic

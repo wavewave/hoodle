@@ -15,8 +15,8 @@
 module Hoodle.View.Draw where
 
 import Control.Applicative 
-import Control.Concurrent
-import Control.Monad (liftM)
+-- import Control.Concurrent
+-- import Control.Monad (liftM)
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Graphics.UI.Gtk hiding (get,set)
@@ -174,7 +174,7 @@ drawCurvebitGen  :: PressureMode
                     -> ((Double,Double),Double) 
                     -> ((Double,Double),Double) 
                     -> IO () 
-drawCurvebitGen pmode (canvas,msfc) geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
+drawCurvebitGen pmode (canvas,_msfc) geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     cairoXform4PageCoordinate geometry pnum 
@@ -332,10 +332,8 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                        where rfunc (k,pg) m = M.adjust (const pg) k m 
                 let nthdl :: Hoodle SelectMode 
                     nthdl = set gselAll npgs thdl  
-                let act :: MaybeT Render (Int,Page SelectMode)
-                    act = do (n,tpage) <- MaybeT (return mtpage)
-                             lift (selpagerender (PageNum n,tpage))
-                r <- runMaybeT act
+                r <- runMaybeT $ do (n,tpage) <- MaybeT (return mtpage)
+                                    lift (selpagerender (PageNum n,tpage)) 
                 let nthdl2 = set gselSelected r nthdl
             -- maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 

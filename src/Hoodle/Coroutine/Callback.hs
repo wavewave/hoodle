@@ -14,11 +14,11 @@ module Hoodle.Coroutine.Callback where
 
 import Control.Concurrent
 import Control.Exception
-import Data.Time
-import System.Directory
-import System.Environment
-import System.FilePath
-import System.Locale
+-- import Data.Time
+-- import System.Directory
+-- import System.Environment
+-- import System.FilePath
+-- import System.Locale
 import System.IO
 import System.Exit
 --

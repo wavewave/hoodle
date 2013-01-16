@@ -18,12 +18,12 @@ import           Control.Applicative
 import           Control.Category
 import           Control.Lens
 import           Control.Monad (liftM)
-import           Control.Monad.Trans.Either
+-- import           Control.Monad.Trans.Either
 import qualified Data.IntMap as M
 import           Data.Traversable (mapM)
 import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn 
+-- import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import qualified Data.Hoodle.Simple as S

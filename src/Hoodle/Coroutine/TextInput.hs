@@ -17,7 +17,7 @@ module Hoodle.Coroutine.TextInput where
 import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.State 
-import           Control.Monad.Trans
+-- import           Control.Monad.Trans
 import           Control.Monad.Trans.Either
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
@@ -32,15 +32,15 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Item 
-import           Graphics.Hoodle.Render.Type
+-- import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           System.Directory 
 -- import           System.Environment
-import           System.Exit 
+-- import           System.Exit 
 import           System.FilePath 
-import           System.Process 
+-- import           System.Process 
 --
-import           Hoodle.Accessor
+-- import           Hoodle.Accessor
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select

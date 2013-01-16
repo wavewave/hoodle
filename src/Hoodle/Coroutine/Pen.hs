@@ -21,7 +21,7 @@ import           Control.Monad
 import           Control.Monad.State
 -- import Control.Monad.Trans
 import           Data.Sequence hiding (filter)
-import qualified Data.Map as M
+-- import qualified Data.Map as M
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform

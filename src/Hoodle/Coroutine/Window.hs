@@ -37,7 +37,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 -- import           Hoodle.Type.Predefined
 import           Hoodle.Type.Window
-import           Hoodle.Util
+-- import           Hoodle.Util
 import           Hoodle.View.Draw
 --
 import Prelude hiding ((.),id)

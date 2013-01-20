@@ -74,3 +74,13 @@ embedPredefinedImageHook = do
     rfilename <- hoist (H.embedPredefinedImageHook hset)
     liftIO rfilename 
   return r 
+  
+-- | temporary
+embedPredefinedImage2Hook :: MainCoroutine (Maybe FilePath) 
+embedPredefinedImage2Hook = do 
+  xstate <- get 
+  (r :: Maybe FilePath) <- runMaybeT $ do 
+    hset <- hoist (view hookSet xstate)
+    rfilename <- hoist (H.embedPredefinedImage2Hook hset)
+    liftIO rfilename 
+  return r 

@@ -75,6 +75,7 @@ data MenuEvent = MenuNew
                | MenuLoadSVG
                | MenuLaTeX
                | MenuEmbedPredefinedImage
+               | MenuEmbedPredefinedImage2
                | MenuPrint 
                | MenuExport 
                | MenuQuit 

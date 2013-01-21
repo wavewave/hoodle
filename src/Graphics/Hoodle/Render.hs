@@ -274,7 +274,7 @@ renderRBkg_InBBox mbbox (b,dim) = do
 -- | render RLayer within BBox after hittest items
 renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render RLayer
 renderRLayer_InBBox mbbox layer = do  
-  clipBBox mbbox 
+  clipBBox (fmap (flip inflate 1) mbbox) 
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
@@ -288,7 +288,7 @@ renderRLayer_InBBox mbbox layer = do
     LyBuf (Just sfc) -> do 
       liftIO $ renderWith sfc $ do 
         -- renderRLayer_InBBox mbbox lyr 
-        clipBBox mbbox 
+        clipBBox (fmap (flip inflate 1) mbbox )
         setSourceRGBA 0 0 0 0 
         setOperator OperatorSource
         paint

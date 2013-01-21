@@ -18,39 +18,29 @@ module Hoodle.Coroutine.ContextMenu where
 import           Control.Applicative
 import           Control.Category
 import           Control.Lens
--- import           Control.Monad.Trans.Maybe 
 import           Control.Monad.State
--- import           Data.ByteString.Char8 as B (pack)
--- import qualified Data.ByteString.Lazy as L
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
--- import           System.Directory
 import           System.FilePath
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
--- import           Data.Hoodle.Generic
--- import           Data.Hoodle.Simple hiding (SVG)
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render
--- import           Graphics.Hoodle.Render.Generic
--- import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
--- import           Graphics.Hoodle.Render.Type.HitTest 
--- import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard 
+import           Hoodle.Coroutine.Select.Transform 
 import           Hoodle.ModelAction.Page 
 import           Hoodle.ModelAction.Select
 import           Hoodle.Script.Hook
--- import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
@@ -92,11 +82,23 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
         put $ set cvsInfoMap (IM.adjust (const cinfobox') cid cmap) xstate 
         adjustScrollbarWithGeometryCvsId cid 
         invalidateAll 
-processContextMenu CMenuCustom = do 
+processContextMenu CMenuRotateCW = rotateSelection CW
+processContextMenu CMenuRotateCCW = rotateSelection CCW
+processContextMenu CMenuCustom =  
+    either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
+  where action thdl = do    
+          xst <- get 
+          case view gselSelected thdl of 
+            Nothing -> return () 
+            Just (_,tpg) -> do 
+              let hititms = (map rItem2Item . getSelectedItms) tpg  
+              maybe (return ()) liftIO $ do 
+                hset <- view hookSet xst    
+                customContextMenuHook hset <*> pure hititms
+{-    
     xst <- get 
     case view hoodleModeState xst of 
       SelectState thdl -> do 
-        liftIO $ putStrLn "SelectState"
         case view gselSelected thdl of 
           Nothing -> return () 
           Just (_,tpg) -> do 
@@ -105,11 +107,9 @@ processContextMenu CMenuCustom = do
               hset <- view hookSet xst    
               customContextMenuHook hset <*> pure hititms  
       _ -> return () 
-    
-
-
+-}    
           
-
+-- | 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
 exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
     fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
@@ -120,7 +120,6 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsSVG hititms bbox
       else do      
-        -- liftIO $ print "exportCurrentSelectionAsSVG executed"
         liftIO $ withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
           translate (-ulx) (-uly)
           mapM_ renderRItem  hititms
@@ -166,7 +165,8 @@ showContextMenu (pnum,(x,y)) = do
                     menuitem3 <- menuItemNewWithLabel "Cut"
                     menuitem4 <- menuItemNewWithLabel "Copy"
                     menuitem5 <- menuItemNewWithLabel "Delete"
-
+                    menuitem6 <- menuItemNewWithLabel "RotateCW"
+                    menuitem7 <- menuItemNewWithLabel "RotateCCW"
                     menuitem1 `on` menuItemActivate $   
                       evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
                     menuitem2 `on` menuItemActivate $ 
@@ -177,18 +177,24 @@ showContextMenu (pnum,(x,y)) = do
                       evhandler (GotContextMenuSignal (CMenuCopy))
                     menuitem5 `on` menuItemActivate $    
                       evhandler (GotContextMenuSignal (CMenuDelete))     
-                    menuAttach menu menuitem1 0 1 0 1 
-                    menuAttach menu menuitem2 0 1 1 2
+                    menuitem6 `on` menuItemActivate $ 
+                      evhandler (GotContextMenuSignal (CMenuRotateCW))
+                    menuitem7 `on` menuItemActivate $ 
+                      evhandler (GotContextMenuSignal (CMenuRotateCCW)) 
+                    menuAttach menu menuitem1 0 1 1 2 
+                    menuAttach menu menuitem2 0 1 2 3
                     menuAttach menu menuitem3 1 2 0 1                     
                     menuAttach menu menuitem4 1 2 1 2                     
                     menuAttach menu menuitem5 1 2 2 3    
+                    menuAttach menu menuitem6 1 2 3 4 
+                    menuAttach menu menuitem7 1 2 4 5 
                 case (customContextMenuTitle =<< view hookSet xstate) of 
                   Nothing -> return () 
                   Just ttl -> do 
                     custommenu <- menuItemNewWithLabel ttl  
                     custommenu `on` menuItemActivate $ 
                       evhandler (GotContextMenuSignal (CMenuCustom))
-                    menuAttach menu custommenu 1 2 3 4 
+                    menuAttach menu custommenu 0 1 0 1 
                 runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
                 widgetShowAll menu 
                 menuPopup menu Nothing 

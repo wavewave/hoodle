@@ -173,6 +173,8 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuCopy
                       | CMenuDelete
                       | CMenuCanvasView CanvasId PageNum Double Double  
+                      | CMenuRotateCW
+                      | CMenuRotateCCW 
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

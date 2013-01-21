@@ -50,6 +50,7 @@ import           Hoodle.Coroutine.Pen
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine

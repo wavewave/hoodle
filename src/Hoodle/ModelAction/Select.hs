@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Select 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -41,6 +41,7 @@ import           Graphics.Hoodle.Render.Util
 import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package
 import           Hoodle.ModelAction.Layer
+import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Enum
 import           Hoodle.Type.HoodleState
@@ -87,53 +88,9 @@ isBBoxDeltaSmallerThan delta pnum geometry
   where coordtrans (x,y) = unCvsCoord . desktop2Canvas geometry . page2Desktop geometry 
                            $ (pnum,PageCoord (x,y))
 
--- |    
-changeItemBy :: ((Double,Double)->(Double,Double)) -> RItem -> RItem
-changeItemBy func (RItemStroke strk) = RItemStroke (changeStrokeBy func strk)
-changeItemBy func (RItemImage img sfc) = RItemImage (changeImageBy func img) sfc
-changeItemBy func (RItemSVG svg rsvg) = RItemSVG (changeSVGBy func svg) rsvg
-    
-
-
--- | modify stroke using a function
-changeStrokeBy :: ((Double,Double)->(Double,Double)) -> StrokeBBox -> StrokeBBox
-changeStrokeBy func (StrokeBBox (Stroke t c w ds) _bbox) = 
-  let change ( x :!: y )  = let (nx,ny) = func (x,y) 
-                            in nx :!: ny
-      newds = map change ds 
-      nstrk = Stroke t c w newds 
-      nbbox = bboxFromStroke nstrk 
-  in  StrokeBBox nstrk nbbox
-changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) = 
-  let change (x,y,z) = let (nx,ny) = func (x,y) 
-                       in (nx,ny,z)
-      newds = map change ds 
-      nstrk = VWStroke t c newds 
-      nbbox = bboxFromStroke nstrk 
-  in  StrokeBBox nstrk nbbox
-
--- | 
-changeImageBy :: ((Double,Double)->(Double,Double)) -> ImageBBox -> ImageBBox
-changeImageBy func (ImageBBox (Image bstr (x,y) (Dim w h)) _bbox) = 
-  let (x1,y1) = func (x,y) 
-      (x2,y2) = func (x+w,y+h)
-      nimg = Image bstr (x1,y1) (Dim (x2-x1) (y2-y1))
-  in mkImageBBox nimg 
-
--- | 
-changeSVGBy :: ((Double,Double)->(Double,Double)) -> SVGBBox -> SVGBBox
-changeSVGBy func (SVGBBox (SVG t c bstr (x,y) (Dim w h)) _bbox) = 
-  let (x1,y1) = func (x,y) 
-      (x2,y2) = func (x+w,y+h)
-      nsvg = SVG t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
-  in mkSVGBBox nsvg 
-
 --       nbbox = bboxFromImage nimg
 --  in ImageBBox nimg nbbox
 
--- |
-rItmsInActiveLyr :: Page SelectMode -> Either [RItem] (TAlterHitted RItem)
-rItmsInActiveLyr = unTEitherAlterHitted.view (glayers.selectedLayer.gitems)
 
 -- |
 getSelectedItms :: Page SelectMode -> [RItem]
@@ -168,31 +125,6 @@ deleteSelected tpage =
                layer' = GLayer buf . TEitherAlterHitted . Left $ leftstrs 
            in set (glayers.selectedLayer) layer' tpage 
 
-
--- | modify the whole selection using a function
-changeSelectionBy :: ((Double,Double) -> (Double,Double))
-                     -> Page SelectMode -> Page SelectMode
-changeSelectionBy func tpage = 
-  let activelayer = rItmsInActiveLyr tpage
-      buf = view (glayers.selectedLayer.gbuffer) tpage
-  in case activelayer of 
-       Left _ -> tpage 
-       Right alist -> 
-         let alist' =fmapAL id 
-                            (Hitted . map (changeItemBy func) . unHitted) 
-                            alist 
-             layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
-         in set (glayers.selectedLayer) layer' tpage 
-
-   
-
--- | special case of offset modification
-changeSelectionByOffset :: (Double,Double) -> Page SelectMode -> Page SelectMode
-changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
-
--- |
-offsetFunc :: (Double,Double) -> (Double,Double) -> (Double,Double) 
-offsetFunc (offx,offy) = \(x,y)->(x+offx,y+offy)
 
 
 -- |

@@ -206,12 +206,6 @@ selectMode = do
       w <- flip int2Point v . view (penInfo.penType) <$> get     
       modify (penInfo.currentTool.penWidth .~ w) 
       selectPenWidthChanged w 
-{-      st <- get 
-      let ptype = view (penInfo.penType) st
-      let w = int2Point ptype v
-      selectPenWidthChanged w
-      let stNew = set (penInfo.currentTool.penWidth) w st 
-      put stNew  -} 
     _ -> defaultEventProcess r1
 
 

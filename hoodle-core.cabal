@@ -91,6 +91,7 @@ Library
                    Hoodle.Coroutine.Scroll
                    Hoodle.Coroutine.Select
                    Hoodle.Coroutine.Select.Clipboard
+                   Hoodle.Coroutine.Select.Transform
                    Hoodle.Coroutine.TextInput
                    Hoodle.Coroutine.Window
                    Hoodle.Device
@@ -104,6 +105,7 @@ Library
                    Hoodle.ModelAction.Page
                    Hoodle.ModelAction.Pen 
                    Hoodle.ModelAction.Select
+                   Hoodle.ModelAction.Select.Transform
                    Hoodle.ModelAction.Window
                    Hoodle.Script
                    Hoodle.Script.Coroutine

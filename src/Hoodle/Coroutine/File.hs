@@ -564,3 +564,35 @@ embedPredefinedImage2 = do
                      $ nxstate
         put nxstate2
         invalidateAll         
+        
+-- | this is temporary. I will remove it
+embedPredefinedImage3 :: MainCoroutine () 
+embedPredefinedImage3 = do 
+    liftIO $ putStrLn "embedPredefinedImage3"
+    mpredefined <- S.embedPredefinedImage3Hook 
+    liftIO $ print mpredefined
+    case mpredefined of 
+      Nothing -> return () 
+      Just filename -> do 
+        xstate <- get 
+        let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+            hdl = getHoodle xstate 
+            (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+            currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+            isembedded = True
+        newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
+
+        let otheritems = view gitems currlayer  
+        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+        modeChange ToSelectMode 
+        nxstate <- get 
+        thdl <- case view hoodleModeState nxstate of
+                  SelectState thdl' -> return thdl'
+                  _ -> (lift . EitherT . return . Left . Other) "embedPredefinedImage3"
+        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+        let nxstate2 = set isOneTimeSelectMode YesAfterSelect 
+                     . set hoodleModeState (SelectState nthdl) 
+                     $ nxstate
+        put nxstate2
+        invalidateAll         
+        

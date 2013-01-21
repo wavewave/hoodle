@@ -341,6 +341,7 @@ menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuText = textInput 
 menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
 menuEventProcess MenuEmbedPredefinedImage2 = embedPredefinedImage2 
+menuEventProcess MenuEmbedPredefinedImage3 = embedPredefinedImage3 
 menuEventProcess MenuApplyToAllPages = do 
     xstate <- get 
     let bsty = view backgroundStyle xstate 

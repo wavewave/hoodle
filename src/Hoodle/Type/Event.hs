@@ -76,6 +76,7 @@ data MenuEvent = MenuNew
                | MenuLaTeX
                | MenuEmbedPredefinedImage
                | MenuEmbedPredefinedImage2
+               | MenuEmbedPredefinedImage3                 
                | MenuPrint 
                | MenuExport 
                | MenuQuit 

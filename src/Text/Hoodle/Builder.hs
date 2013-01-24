@@ -21,7 +21,7 @@ import qualified Data.ByteString.Char8 as SC
 import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
--- import Data.Double.Conversion.ByteString 
+import Data.Double.Conversion.ByteString 
 #if MIN_VERSION_base(4,5,0) 
 import Data.Monoid hiding ((<>)) 
 #else
@@ -38,10 +38,12 @@ infixl 4 <>
 (<>) = mappend 
 
 -- | 
-toFixed :: Int -> Double -> S.ByteString
-toFixed 2 x = SC.pack . show . (*0.01) . fromIntegral . floor 
-               $ x*100
+{- toFixed :: Int -> Double -> S.ByteString
+toFixed 2 x = printf "%.2f" x
+              -- SC.pack . show . (*0.01) . fromIntegral . floor 
+              --  $ x*100
 toFixed _ _ = error "undefined toFixed"
+-}
 
 -- | 
 builder :: Hoodle -> L.ByteString

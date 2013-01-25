@@ -16,7 +16,7 @@ module Hoodle.Coroutine.Select where
 
 -- from other package 
 import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set)
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.State

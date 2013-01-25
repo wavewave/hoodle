@@ -16,7 +16,7 @@ module Hoodle.Coroutine.Pen where
 
 -- from other packages
 import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set)
 import           Control.Monad
 import           Control.Monad.State
 -- import Control.Monad.Trans

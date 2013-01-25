@@ -19,7 +19,7 @@ import qualified Data.IntMap as M
 import Control.Compose
 import Control.Category
 -- import Data.Label
-import Control.Lens 
+import Control.Lens (view,set)
 import Data.IORef
 import Graphics.UI.Gtk hiding (get,set)
 --

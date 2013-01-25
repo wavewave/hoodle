@@ -22,7 +22,7 @@ import Control.Monad.Trans.Maybe
 import Graphics.UI.Gtk hiding (get,set)
 import Graphics.Rendering.Cairo
 import Control.Category ((.))
-import           Control.Lens
+import           Control.Lens (view,set,at)
 import Control.Monad (when)
 import Data.Foldable
 import qualified Data.IntMap as M

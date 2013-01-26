@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, StandaloneDeriving, RecordWildCards #-}
+{-# LANGUAGE TypeFamilies, StandaloneDeriving, RecordWildCards, MultiParamTypeClasses #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -15,16 +15,17 @@
 module Data.Hoodle.BBox 
 ( BBox (..) 
 , BBoxable (..) 
-, StrokeBBox (..)
+, BBoxed (..)
+-- , StrokeBBox (..)
 -- , strkbbx_strk
 -- , strkbbx_bbx
-, mkStrokeBBox
-, ImageBBox (..)
+-- , mkStrokeBBox
+-- , ImageBBox (..)
 -- , imgbbx_img
 -- , imgbbx_bbx
-, mkImageBBox
-, SVGBBox (..)
-, mkSVGBBox
+-- , mkImageBBox
+-- , SVGBBox (..)
+-- , mkSVGBBox
 , mkbbox
 , mkbboxF
 , bboxFromStroke
@@ -48,6 +49,7 @@ module Data.Hoodle.BBox
 
 import           Control.Applicative 
 import           Control.Monad
+import           Control.Monad.Identity
 import qualified Data.Foldable as F
 import           Data.Monoid
 import           Data.Serialize
@@ -72,10 +74,44 @@ instance Serialize BBox where
     get = liftM2 BBox get get 
 
 
-class BBoxable a where 
-  getBBox :: a -> BBox
 
+data BBoxed a = BBoxed { bbxed_content :: a 
+                       , getBBox :: BBox } 
+
+deriving instance (Show a) => Show (BBoxed a) 
+deriving instance (Eq a) => Eq (BBoxed a)
+deriving instance (Ord a) => Ord (BBoxed a)
+
+-- |
+class (Monad m) => BBoxable m a where 
+  makeBBoxed :: a -> m (BBoxed a)
+
+instance BBoxable Identity Stroke where 
+  makeBBoxed strk = return (BBoxed strk (bboxFromStroke strk))
+
+instance BBoxable Identity Image where 
+  makeBBoxed img = return (BBoxed img (bboxFromImage img)) 
+
+instance BBoxable Identity SVG where 
+  makeBBoxed svg = return (BBoxed svg (bboxFromSVG svg))
+
+
+{-
 -- | 
+instance BBoxable (BBoxed a) where 
+  getBBox = bbxed_box
+-}
+
+
+{-
+-- | 
+instance (Serialize a) => Serialize (BBoxed a) where 
+  put StrokeBBox{..} = put strkbbx_strk >> put strkbbx_bbx
+  get = liftM2 StrokeBBox get get
+-}
+
+ 
+{- 
 data StrokeBBox = StrokeBBox { strkbbx_strk :: Stroke 
                              , strkbbx_bbx :: BBox } 
                 deriving (Show,Eq,Ord)
@@ -87,14 +123,19 @@ instance BBoxable StrokeBBox where
 instance Serialize StrokeBBox where
   put StrokeBBox{..} = put strkbbx_strk >> put strkbbx_bbx
   get = liftM2 StrokeBBox get get
+-}
   
+{-
 -- | smart constructor for StrokeBBox 
 mkStrokeBBox :: Stroke -> StrokeBBox
 mkStrokeBBox strk = 
   StrokeBBox { strkbbx_strk = strk
              , strkbbx_bbx = bboxFromStroke strk
              } 
+-}
 
+
+{-
 -- | 
 data ImageBBox = ImageBBox { imgbbx_img :: Image 
                            , imgbbx_bbx :: BBox } 
@@ -107,6 +148,7 @@ instance BBoxable ImageBBox where
 instance Serialize ImageBBox where
   put ImageBBox{..} = put imgbbx_img >> put imgbbx_bbx
   get = ImageBBox <$> get <*> get
+
   
 -- | smart constructor for ImageBBox 
 mkImageBBox :: Image -> ImageBBox
@@ -114,8 +156,9 @@ mkImageBBox img =
   ImageBBox { imgbbx_img = img
             , imgbbx_bbx = bboxFromImage img
             } 
+-}
 
-
+{-
 -- | 
 data SVGBBox = SVGBBox { svgbbx_svg :: SVG
                        , svgbbx_bbx :: BBox } 
@@ -135,7 +178,7 @@ mkSVGBBox svg =
   SVGBBox { svgbbx_svg = svg
           , svgbbx_bbx = bboxFromSVG svg
           } 
-
+-}
 
 
 -- |
@@ -277,5 +320,5 @@ instance Maybeable UnionBBox where
 
 
 -- | 
-bbox4All :: (F.Foldable t, Functor t, BBoxable a) => t a -> ULMaybe BBox 
+bbox4All :: (F.Foldable t, Functor t)  => t (BBoxed a) -> ULMaybe BBox 
 bbox4All = unUnion . F.fold . fmap (Union . Middle . getBBox)

@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Data.Hoodle.Simple 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -35,6 +35,7 @@ type Title = S.ByteString
 data Item = ItemStroke Stroke
           | ItemImage Image
           | ItemSVG SVG
+          --  | ItemLink Link
           deriving (Show,Eq,Ord)
 
 
@@ -63,6 +64,16 @@ data SVG = SVG { svg_text :: Maybe S.ByteString
                , svg_pos :: (Double,Double)
                , svg_dim :: !Dimension }  
            deriving (Show,Eq,Ord)
+                    
+{-
+data Link = Link { link_id :: String 
+                 , link_text :: Maybe S.ByteString
+                 , link_command :: Maybe S.ByteString 
+                 , link_render :: S.ByteString
+                 , link_pos :: (Double,Double)
+                 , link_dim :: !Dimension }  
+           deriving (Show,Eq,Ord)                    
+-}                    
 
 -- | 
 instance SE.Serialize Stroke where
@@ -97,7 +108,19 @@ instance SE.Serialize SVG where
                    >> SE.put svg_pos
                    >> SE.put svg_dim
     get = SVG <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get
-
+    
+    
+{-
+-- | 
+instance SE.Serialize Link where
+    put Link {..} = SE.put link_id
+                    >> SE.put link_text
+                    >> SE.put link_command 
+                    >> SE.put link_render
+                    >> SE.put link_pos
+                    >> SE.put link_dim
+    get = SVG <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get    
+-}
 
 
 -- | 
@@ -108,11 +131,14 @@ instance SE.Serialize Item where
                           >> SE.put img
     put (ItemSVG svg) = SE.putWord8 2
                         >> SE.put svg 
+    -- put (ItemLink lnk) = SE.putWord8 3
+    --                      >> SE.put lnk                         
     get = do tag <- SE.getWord8 
              case tag of 
                0 -> ItemStroke <$> SE.get
                1 -> ItemImage <$> SE.get
                2 -> ItemSVG <$> SE.get
+               -- 3 -> ItemLink <$> SE.get
                _ -> fail "err in Item parsing"
 
 -- |    

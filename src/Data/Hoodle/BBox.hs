@@ -14,7 +14,8 @@
 
 module Data.Hoodle.BBox 
 ( BBox (..) 
-, BBoxable (..) 
+, GetBBoxable (..) 
+, MakeBBoxedable (..) 
 , BBoxed (..)
 -- , StrokeBBox (..)
 -- , strkbbx_strk
@@ -76,23 +77,32 @@ instance Serialize BBox where
 
 
 data BBoxed a = BBoxed { bbxed_content :: a 
-                       , getBBox :: BBox } 
+                       , bbxed_bbx :: BBox } 
 
 deriving instance (Show a) => Show (BBoxed a) 
 deriving instance (Eq a) => Eq (BBoxed a)
 deriving instance (Ord a) => Ord (BBoxed a)
 
+-- | 
+class GetBBoxable a where 
+  getBBox :: a -> BBox 
+  
+instance GetBBoxable (BBoxed a) where
+  getBBox = bbxed_bbx 
+
 -- |
-class (Monad m) => BBoxable m a where 
+class (Monad m) => MakeBBoxedable m a where 
   makeBBoxed :: a -> m (BBoxed a)
 
-instance BBoxable Identity Stroke where 
+
+
+instance MakeBBoxedable Identity Stroke where 
   makeBBoxed strk = return (BBoxed strk (bboxFromStroke strk))
 
-instance BBoxable Identity Image where 
+instance MakeBBoxedable Identity Image where 
   makeBBoxed img = return (BBoxed img (bboxFromImage img)) 
 
-instance BBoxable Identity SVG where 
+instance MakeBBoxedable Identity SVG where 
   makeBBoxed svg = return (BBoxed svg (bboxFromSVG svg))
 
 

@@ -16,6 +16,7 @@ module Hoodle.ModelAction.Pen where
 
 import           Control.Category
 import           Control.Lens
+import           Control.Monad.Identity (runIdentity)
 import           Data.Foldable
 import qualified Data.IntMap as IM
 import           Data.Maybe
@@ -69,8 +70,8 @@ addPDraw pinfo hdl (PageNum pgnum) pdraw = do
                              , stroke_vwdata = map (\(x,y,z)->(x,y,pwidth*z)) . toList $ pdraw
                              }
                                            
-        newstrokebbox = mkStrokeBBox newstroke
-        bbox = strkbbx_bbx newstrokebbox
+        newstrokebbox = runIdentity (makeBBoxed newstroke)
+        bbox = getBBox newstrokebbox
     newlayerbbox <- updateLayerBuf dim (Just bbox)
                     . over gitems (++[RItemStroke newstrokebbox]) 
                     $ currlayer

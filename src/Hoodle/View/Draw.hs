@@ -34,7 +34,7 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Predefined
 import Data.Hoodle.Select
-import Data.Hoodle.Simple (Dimension(..))
+import Data.Hoodle.Simple (Dimension(..),Stroke(..))
 import Graphics.Hoodle.Render.Generic
 import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Type
@@ -434,7 +434,7 @@ renderBoxSelection bbox = do
   stroke
 
 -- |
-renderSelectedStroke :: StrokeBBox -> Render () 
+renderSelectedStroke :: BBoxed Stroke -> Render () 
 renderSelectedStroke str = do 
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1

@@ -18,6 +18,7 @@ module Hoodle.ModelAction.Select.Transform where
 import           Control.Category
 import           Control.Lens
 import           Control.Monad
+import           Control.Monad.Identity (runIdentity)
 import           Data.Algorithm.Diff
 import           Data.Foldable (foldl')
 import qualified Data.IntMap as M
@@ -28,7 +29,7 @@ import           Data.Strict.Tuple
 import           Data.Time.Clock
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Cairo.Matrix ( invert, transformPoint )
-import           Graphics.UI.Gtk hiding (get,set)
+import           Graphics.UI.Gtk hiding (get,set,Image)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
@@ -64,37 +65,39 @@ changeItemBy func (RItemSVG svg rsvg) = RItemSVG (changeSVGBy func svg) rsvg
 
 
 -- | modify stroke using a function
-changeStrokeBy :: ((Double,Double)->(Double,Double)) -> StrokeBBox -> StrokeBBox
-changeStrokeBy func (StrokeBBox (Stroke t c w ds) _bbox) = 
+changeStrokeBy :: ((Double,Double)->(Double,Double)) -> BBoxed Stroke -> BBoxed Stroke
+changeStrokeBy func (BBoxed (Stroke t c w ds) _bbox) = 
   let change ( x :!: y )  = let (nx,ny) = func (x,y) 
                             in nx :!: ny
       newds = map change ds 
       nstrk = Stroke t c w newds 
-      nbbox = bboxFromStroke nstrk 
-  in  StrokeBBox nstrk nbbox
-changeStrokeBy func (StrokeBBox (VWStroke t c ds) _bbox) = 
+  in runIdentity (makeBBoxed nstrk) 
+--       nbbox = bboxFromStroke nstrk 
+--   in  BBoxed nstrk nbbox
+changeStrokeBy func (BBoxed (VWStroke t c ds) _bbox) = 
   let change (x,y,z) = let (nx,ny) = func (x,y) 
                        in (nx,ny,z)
       newds = map change ds 
       nstrk = VWStroke t c newds 
-      nbbox = bboxFromStroke nstrk 
-  in  StrokeBBox nstrk nbbox
+  in runIdentity (makeBBoxed nstrk)
+--       nbbox = bboxFromStroke nstrk 
+--   in  BBoxed nstrk nbbox
 
 -- | 
-changeImageBy :: ((Double,Double)->(Double,Double)) -> ImageBBox -> ImageBBox
-changeImageBy func (ImageBBox (Image bstr (x,y) (Dim w h)) _bbox) = 
+changeImageBy :: ((Double,Double)->(Double,Double)) -> BBoxed Image -> BBoxed Image
+changeImageBy func (BBoxed (Image bstr (x,y) (Dim w h)) _bbox) = 
   let (x1,y1) = func (x,y) 
       (x2,y2) = func (x+w,y+h)
       nimg = Image bstr (x1,y1) (Dim (x2-x1) (y2-y1))
-  in mkImageBBox nimg 
+  in runIdentity (makeBBoxed nimg)
 
 -- | 
-changeSVGBy :: ((Double,Double)->(Double,Double)) -> SVGBBox -> SVGBBox
-changeSVGBy func (SVGBBox (SVG t c bstr (x,y) (Dim w h)) _bbox) = 
+changeSVGBy :: ((Double,Double)->(Double,Double)) -> BBoxed SVG -> BBoxed SVG
+changeSVGBy func (BBoxed (SVG t c bstr (x,y) (Dim w h)) _bbox) = 
   let (x1,y1) = func (x,y) 
       (x2,y2) = func (x+w,y+h)
       nsvg = SVG t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
-  in mkSVGBBox nsvg 
+  in runIdentity (makeBBoxed nsvg)
 
 
 -- | modify the whole selection using a function

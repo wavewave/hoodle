@@ -19,7 +19,7 @@ import Graphics.Hoodle.Render.Type.HitTest
 import Graphics.Hoodle.Render.Util.HitTest
 
 -- |
-eraseHitted :: (BBoxable a) => 
+eraseHitted :: (GetBBoxable a) => 
                AlterList (NotHitted a) (AlterList (NotHitted a) (Hitted a)) 
                -> State (Maybe BBox) [a]
 eraseHitted Empty = error "something wrong in eraseHitted"

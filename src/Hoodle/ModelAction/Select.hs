@@ -149,8 +149,8 @@ updateTempHoodleSelectIO thdl tpage pagenum = do
             $ thdl 
   
 -- |   
-calculateWholeBBox :: [StrokeBBox] -> Maybe BBox  
-calculateWholeBBox = toMaybe . mconcat . map ( Union . Middle. strkbbx_bbx ) 
+calculateWholeBBox :: [BBoxed Stroke] -> Maybe BBox  
+calculateWholeBBox = toMaybe . mconcat . map ( Union . Middle. getBBox ) 
   
 -- |     
 hitInSelection :: Page SelectMode -> (Double,Double) -> Bool 
@@ -204,20 +204,20 @@ togglePaste ui b = do
     actionSetSensitive pastea b
 
 -- |
-changeStrokeColor :: PenColor -> StrokeBBox -> StrokeBBox
+changeStrokeColor :: PenColor -> BBoxed Stroke -> BBoxed Stroke
 changeStrokeColor pcolor str =
   let Just cname = Map.lookup pcolor penColorNameMap 
-      strsmpl = strkbbx_strk str 
-  in str { strkbbx_strk = set color cname strsmpl } 
+      strsmpl = bbxed_content str 
+  in str { bbxed_content = set color cname strsmpl } 
       
 -- |
-changeStrokeWidth :: Double -> StrokeBBox -> StrokeBBox
+changeStrokeWidth :: Double -> BBoxed Stroke -> BBoxed Stroke
 changeStrokeWidth pwidth str = 
-    let nstrsmpl = case strkbbx_strk str of 
+    let nstrsmpl = case bbxed_content str of 
           Stroke t c _w d -> Stroke t c pwidth d
           VWStroke t c d -> Stroke t c pwidth (map (\(x,y,_z) -> (x:!:y)) d)
           -- Img b w h -> Img b w h
-    in str { strkbbx_strk = nstrsmpl } 
+    in str { bbxed_content = nstrsmpl } 
 
 -- | 
 changeItemStrokeWidth :: Double -> RItem -> RItem 
@@ -234,7 +234,7 @@ changeItemStrokeColor _ r = r
 -- |
 newtype CmpBBox a = CmpBBox { unCmpBBox :: a }
                -- deriving Show
-instance (BBoxable a) => Eq (CmpBBox a) where
+instance (GetBBoxable a) => Eq (CmpBBox a) where
   CmpBBox s1 == CmpBBox s2 = getBBox s1 == getBBox s2  
   
 -- |
@@ -250,7 +250,7 @@ separateFS = foldr f ([],[])
         f (B,_x) (fs,ss) = (fs,ss)
         
 -- |
-getDiffBBox :: (BBoxable a) => [a] -> [a] -> [(DI,a)]
+getDiffBBox :: (GetBBoxable a) => [a] -> [a] -> [(DI,a)]
 getDiffBBox lst1 lst2 = 
   let nlst1 = fmap CmpBBox lst1 
       nlst2 = fmap CmpBBox lst2 
@@ -318,8 +318,8 @@ hitLassoPoint :: Seq (Double,Double) -> (Double,Double) -> Bool
 hitLassoPoint lst = odd . mappingDegree lst
 
 -- | 
-hitLassoStroke :: Seq (Double,Double) -> StrokeBBox -> Bool 
-hitLassoStroke lst = all (hitLassoPoint lst) . getXYtuples . strkbbx_strk
+hitLassoStroke :: Seq (Double,Double) -> BBoxed Stroke -> Bool 
+hitLassoStroke lst = all (hitLassoPoint lst) . getXYtuples . bbxed_content
 
 -- | 
 hitLassoItem :: Seq (Double,Double) -> RItem -> Bool 

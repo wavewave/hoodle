@@ -330,5 +330,5 @@ instance Maybeable UnionBBox where
 
 
 -- | 
-bbox4All :: (F.Foldable t, Functor t)  => t (BBoxed a) -> ULMaybe BBox 
+bbox4All :: (F.Foldable t, Functor t, GetBBoxable a)  => t a -> ULMaybe BBox 
 bbox4All = unUnion . F.fold . fmap (Union . Middle . getBBox)

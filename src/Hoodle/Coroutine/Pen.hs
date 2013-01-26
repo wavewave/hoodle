@@ -32,7 +32,6 @@ import           Hoodle.Accessor
 import           Hoodle.Device 
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.EventConnect
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
 import           Hoodle.Type.Canvas
@@ -61,7 +60,6 @@ penPageSwitch pgn = do
 
 -- | Common Pen Work starting point 
 commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeometry  
-                    {- -> (ConnectId DrawingArea, ConnectId DrawingArea) -}
                     -> (Double,Double) -> MainCoroutine () )
                -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
@@ -85,21 +83,19 @@ commonPenStart action cid pcoord = do
                                     -- temporary dirty fix 
                                        return (set currentPageNum (unPageNum pgn) cvsInfo )
                                else return cvsInfo                   
-                 -- connidup   <- connectPenUp nCvsInfo 
-                 -- connidmove <- connectPenMove nCvsInfo
-                 action nCvsInfo pgn geometry {- (connidup,connidmove) -} (x,y) 
+                 action nCvsInfo pgn geometry (x,y) 
 
       
 -- | enter pen drawing mode
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid pcoord = commonPenStart penAction cid pcoord
-  where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> {- (ConnectId DrawingArea, ConnectId DrawingArea) -> -} (Double,Double) -> MainCoroutine ()
-        penAction _cinfo pnum geometry {- (cidmove,cidup) -} (x,y) = do 
+  where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (Double,Double) -> MainCoroutine ()
+        penAction _cinfo pnum geometry (x,y) = do 
           xstate <- get
           let PointerCoord _ _ _ z = pcoord 
           let currhdl = unView . view hoodleModeState $ xstate        
               pinfo = view penInfo xstate
-          pdraw <-penProcess cid pnum geometry {- cidmove cidup -} (empty |> (x,y,z)) ((x,y),z) 
+          pdraw <-penProcess cid pnum geometry (empty |> (x,y,z)) ((x,y),z) 
           (newhdl,bbox) <- liftIO $ addPDraw pinfo currhdl pnum pdraw
           commit . set hoodleModeState (ViewAppendState newhdl) 
                  =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
@@ -111,10 +107,9 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
 -- | now being changed
 penProcess :: CanvasId -> PageNum 
            -> CanvasGeometry
-           -- -> ConnectId DrawingArea -> ConnectId DrawingArea 
            -> Seq (Double,Double,Double) -> ((Double,Double),Double) 
            -> MainCoroutine (Seq (Double,Double,Double))
-penProcess cid pnum geometry {- connidmove connidup -} pdraw ((x0,y0),z0) = do 
+penProcess cid pnum geometry pdraw ((x0,y0),z0) = do 
     r <- nextevent
     xst <- get 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
@@ -124,7 +119,7 @@ penProcess cid pnum geometry {- connidmove connidup -} pdraw ((x0,y0),z0) = do
                -> MainCoroutine (Seq (Double,Double,Double))
     fsingle r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
-        (penProcess cid pnum geometry {- connidmove connidup -} pdraw ((x0,y0),z0))
+        (penProcess cid pnum geometry pdraw ((x0,y0),z0))
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
            let canvas = view drawArea cvsInfo
@@ -142,8 +137,8 @@ penProcess cid pnum geometry {- connidmove connidup -} pdraw ((x0,y0),z0) = do
                                 False -> NoPressure
            liftIO $ drawCurvebitGen pressureType (canvas,msfc) geometry 
                       pwidth pcolRGBA pnum ((x0,y0),z0) ((x,y),z)
-           penProcess cid pnum geometry {- connidmove connidup -} (pdraw |> (x,y,z)) ((x,y),z) )
-        (\_ -> {- disconnect [connidmove,connidup] >> -} return pdraw )
+           penProcess cid pnum geometry (pdraw |> (x,y,z)) ((x,y),z) )
+        (\_ -> return pdraw )
 
 -- | 
 skipIfNotInSamePage :: Monad m => 

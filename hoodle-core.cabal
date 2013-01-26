@@ -81,7 +81,7 @@ Library
                    Hoodle.Coroutine.Default
                    Hoodle.Coroutine.Draw
                    Hoodle.Coroutine.Eraser
-                   Hoodle.Coroutine.EventConnect
+                   -- Hoodle.Coroutine.EventConnect
                    Hoodle.Coroutine.File
                    Hoodle.Coroutine.Highlighter
                    Hoodle.Coroutine.Layer

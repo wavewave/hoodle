@@ -12,14 +12,12 @@
 --
 
 module Hoodle.Coroutine 
-( module Hoodle.Coroutine.EventConnect
-, module Hoodle.Coroutine.Default
+( module Hoodle.Coroutine.Default
 , module Hoodle.Coroutine.Pen
 , module Hoodle.Coroutine.Eraser
 , module Hoodle.Coroutine.Highlighter
 ) where 
 
-import Hoodle.Coroutine.EventConnect
 import Hoodle.Coroutine.Default
 import Hoodle.Coroutine.Pen
 import Hoodle.Coroutine.Eraser

@@ -22,11 +22,11 @@ import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import Data.Hoodle.BBox 
 import Data.Hoodle.Simple
 
-data RItem = RItemStroke StrokeBBox 
-           | RItemImage ImageBBox (Maybe Surface)
-           | RItemSVG SVGBBox (Maybe RSVG.SVG)
+data RItem = RItemStroke (BBoxed Stroke)
+           | RItemImage (BBoxed Image) (Maybe Surface)
+           | RItemSVG (BBoxed SVG) (Maybe RSVG.SVG)
 
-instance BBoxable RItem where
+instance GetBBoxable RItem where
   getBBox (RItemStroke strk) = getBBox strk
   getBBox (RItemImage img _) = getBBox img 
   getBBox (RItemSVG svg _) = getBBox svg 
@@ -53,18 +53,18 @@ isSVGInRItem _ = False
 
 
 -- | 
-findStrkInRItem :: RItem -> Maybe StrokeBBox 
+findStrkInRItem :: RItem -> Maybe (BBoxed Stroke)
 findStrkInRItem (RItemStroke strk) = Just strk
 findStrkInRItem _ = Nothing 
 
 -- | 
-findImgInRItem :: RItem -> Maybe ImageBBox
+findImgInRItem :: RItem -> Maybe (BBoxed Image)
 findImgInRItem (RItemImage img _ ) = Just img 
 findImgInRItem _ = Nothing 
 
 
 -- | 
-findSVGInRItem :: RItem -> Maybe SVGBBox
+findSVGInRItem :: RItem -> Maybe (BBoxed SVG)
 findSVGInRItem (RItemSVG svg _) = Just svg 
 findSVGInRItem _ = Nothing 
 
@@ -72,9 +72,9 @@ findSVGInRItem _ = Nothing
 
 -- |
 rItem2Item :: RItem -> Item 
-rItem2Item (RItemStroke strk) = (ItemStroke . strkbbx_strk) strk
-rItem2Item (RItemImage img _) = (ItemImage . imgbbx_img) img
-rItem2Item (RItemSVG svg _) = (ItemSVG. svgbbx_svg) svg
+rItem2Item (RItemStroke strk) = (ItemStroke . bbxed_content) strk
+rItem2Item (RItemImage img _) = (ItemImage . bbxed_content) img
+rItem2Item (RItemSVG svg _) = (ItemSVG. bbxed_content) svg
 
 {-
 -- | 

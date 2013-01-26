@@ -47,6 +47,7 @@ module Graphics.Hoodle.Render
 ) where
 
 import           Control.Lens (view,set)
+import           Control.Monad.Identity (runIdentity)
 import           Control.Monad.State hiding (mapM,mapM_)
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
@@ -119,8 +120,8 @@ renderSVG :: SVG -> Render ()
 renderSVG svg@(SVG _ _ bstr _ _) = do  
     let str = C.unpack bstr 
     RSVG.withSvgFromString str $ \rsvg -> do 
-      let svgbbx = mkSVGBBox svg
-      let (x,y) = (svg_pos . svgbbx_svg) svgbbx
+      let svgbbx = runIdentity (makeBBoxed svg)
+      let (x,y) = (svg_pos . bbxed_content) svgbbx
           BBox (x1,y1) (x2,y2) = getBBox svgbbx
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
@@ -210,12 +211,12 @@ renderRBkg (r@(RBkgPDF _ _ _ p _),dim) = do
 
 -- |
 renderRItem :: RItem -> Render RItem  
-renderRItem itm@(RItemStroke strk) = renderStrk (strkbbx_strk strk) >> return itm
+renderRItem itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
 renderRItem itm@(RItemImage img msfc) = do  
   case msfc of
-    Nothing -> renderImg (imgbbx_img img)
+    Nothing -> renderImg (bbxed_content img)
     Just sfc -> do 
-      let (x,y) = (img_pos . imgbbx_img) img
+      let (x,y) = (img_pos . bbxed_content) img
           BBox (x1,y1) (x2,y2) = getBBox img
       ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
       iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
@@ -230,9 +231,9 @@ renderRItem itm@(RItemImage img msfc) = do
   return itm 
 renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
   case mrsvg of
-    Nothing -> renderSVG (svgbbx_svg svgbbx)
+    Nothing -> renderSVG (bbxed_content svgbbx)
     Just rsvg -> do 
-      let (x,y) = (svg_pos . svgbbx_svg) svgbbx
+      let (x,y) = (svg_pos . bbxed_content) svgbbx
           BBox (x1,y1) (x2,y2) = getBBox svgbbx
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 

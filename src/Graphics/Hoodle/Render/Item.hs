@@ -19,6 +19,7 @@ module Graphics.Hoodle.Render.Item where
 
 import           Control.Applicative
 import           Control.Monad 
+import           Control.Monad.Identity 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 import           Data.ByteString.Base64 
@@ -36,9 +37,9 @@ import Graphics.Hoodle.Render.Type.Item
 
 -- | construct renderable item 
 cnstrctRItem :: Item -> IO RItem 
-cnstrctRItem (ItemStroke strk) = return (RItemStroke (mkStrokeBBox strk))
+cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem (ItemImage img) = do 
-    let imgbbx = mkImageBBox img
+    let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
         embed = getByteStringIfEmbeddedPNG src 
     case embed of         
@@ -58,7 +59,7 @@ cnstrctRItem (ItemImage img) = do
         return (RItemImage imgbbx msfc)
 cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
-        svgbbx = mkSVGBBox svg
+        svgbbx = runIdentity (makeBBoxed svg)
     rsvg <- RSVG.svgNewFromString str
     return (RItemSVG svgbbx (Just rsvg))
 

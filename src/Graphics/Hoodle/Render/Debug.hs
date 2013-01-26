@@ -78,28 +78,28 @@ renderRBkg_NoPDF (RBkgPDF _ _ _ _ _,_) = return ()
 --------------
 
 -- | render only bounding box of a StrokeBBox      
-renderStrkBBx_BBoxOnly :: StrokeBBox -> Render () 
+renderStrkBBx_BBoxOnly :: BBoxed Stroke -> Render () 
 renderStrkBBx_BBoxOnly sbbox = do  
-    let s = strkbbx_strk sbbox
+    let s = bbxed_content sbbox
     case M.lookup (stroke_color s) predefined_pencolor of 
       Just (r,g,b,a) -> setSourceRGBA r g b a
       Nothing -> setSourceRGBA 0 0 0 1 
     setSourceRGBA 0 0 0 1
     setLineWidth (stroke_width s) 
-    let BBox (x1,y1) (x2,y2) = strkbbx_bbx sbbox
+    let BBox (x1,y1) (x2,y2) = getBBox sbbox
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
   
 -- |     
-renderImgBBx_BBoxOnly :: ImageBBox -> Render () 
+renderImgBBx_BBoxOnly :: BBoxed Image -> Render () 
 renderImgBBx_BBoxOnly ibbox = do 
     setSourceRGBA 0 0 0 1
     setLineWidth 10
-    let BBox (x1,y1) (x2,y2) = imgbbx_bbx ibbox
+    let BBox (x1,y1) (x2,y2) = getBBox ibbox
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
 
-renderSVGBBx_BBoxOnly :: SVGBBox -> Render () 
+renderSVGBBx_BBoxOnly :: BBoxed SVG -> Render () 
 renderSVGBBx_BBoxOnly svg = do 
     setSourceRGBA 0 0 0 1
     setLineWidth 10

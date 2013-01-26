@@ -30,9 +30,9 @@ import Graphics.Hoodle.Render.Type.Item
 import Prelude hiding (fst,snd,curry,uncurry,mapM_,concatMap)
 
 -- | 
-renderStrkHltd :: StrokeBBox -> Render ()
+renderStrkHltd :: BBoxed Stroke -> Render ()
 renderStrkHltd sbbox = do 
-    let s = strkbbx_strk sbbox 
+    let s = bbxed_content sbbox 
     case M.lookup (stroke_color s) predefined_pencolor of 
       Just (r,g,b,a) -> setSourceRGBA r g b a
       Nothing -> setSourceRGBA 0 0 0 1 
@@ -61,7 +61,7 @@ renderRItemHltd (RItemStroke strk) = renderStrkHltd strk
 renderRItemHltd (RItemImage img _) = do 
   setSourceRGBA 0 0 0 1
   setLineWidth 10 
-  let BBox (x1,y1) (x2,y2) = imgbbx_bbx img
+  let BBox (x1,y1) (x2,y2) = getBBox img
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
 renderRItemHltd (RItemSVG svg _) = do 

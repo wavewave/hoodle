@@ -48,8 +48,8 @@ instance Renderable Stroke where
   cairoRender = passarg renderStrk 
 
 -- | 
-instance Renderable StrokeBBox where
-  cairoRender = passarg (renderStrk . strkbbx_strk)
+instance Renderable (BBoxed Stroke) where
+  cairoRender = passarg (renderStrk . bbxed_content)
   
 -- | 
 instance Renderable RLayer where
@@ -74,8 +74,8 @@ instance RenderOptionable Stroke where
 data StrokeBBoxOption = DrawFull | DrawBoxOnly 
 
 -- | 
-instance RenderOptionable StrokeBBox where
-  type RenderOption StrokeBBox = StrokeBBoxOption
+instance RenderOptionable (BBoxed Stroke) where
+  type RenderOption (BBoxed Stroke) = StrokeBBoxOption
   cairoRenderOption DrawFull = cairoRender 
   cairoRenderOption DrawBoxOnly = passarg renderStrkBBx_BBoxOnly
   

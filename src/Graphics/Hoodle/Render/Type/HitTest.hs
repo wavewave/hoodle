@@ -14,7 +14,10 @@
 
 module Graphics.Hoodle.Render.Type.HitTest where
 
+
+-- 
 import Data.Hoodle.BBox
+import Data.Hoodle.Simple
 -- 
 import Graphics.Hoodle.Render.Type.Item 
 --
@@ -35,7 +38,7 @@ newtype Hitted a = Hitted { unHitted :: [a] }
                    deriving (Show)
 
 -- | 
-type StrokeHitted = AlterList (NotHitted StrokeBBox) (Hitted StrokeBBox) 
+type StrokeHitted = AlterList (NotHitted (BBoxed Stroke)) (Hitted (BBoxed Stroke))
 
 -- | 
 type RItemHitted = AlterList (NotHitted RItem) (Hitted RItem) 

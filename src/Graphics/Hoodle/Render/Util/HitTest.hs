@@ -115,21 +115,21 @@ hltFilteredBy test is = evalState (hltFilteredBy_StateT test is) False
 
 
 -- | 
-hltHittedByBBox :: (BBoxable a) => 
+hltHittedByBBox :: (GetBBoxable a) => 
                    BBox  -- ^ test bounding box
                 -> [a] -- ^ items to test
                 -> AlterList (NotHitted a) (Hitted a)
 hltHittedByBBox b = hltFilteredBy (do2BBoxIntersect b . getBBox) 
 
 -- | 
-hltEmbeddedByBBox :: (BBoxable a) =>
+hltEmbeddedByBBox :: (GetBBoxable a) =>
                      BBox 
                   -> [a] 
                   -> AlterList (NotHitted a) (Hitted a)
 hltEmbeddedByBBox b = hltFilteredBy (isBBox2InBBox1 b . getBBox)
 
 -- | only check if a line and bbox of item overlapped 
-hltHittedByLineRough :: (BBoxable a) => 
+hltHittedByLineRough :: (GetBBoxable a) => 
                         ((Double,Double),(Double,Double)) -- ^ line 
                      -> [a] -- ^ items to test
                      -> AlterList (NotHitted a) (Hitted a)
@@ -144,7 +144,7 @@ hltItmsHittedByLine_StateT :: ((Double,Double),(Double,Double))
                            -> State Bool RItemHitted
                               -- (AlterList (NotHitted RItem) (Hitted RItem))
 hltItmsHittedByLine_StateT line = hltFilteredBy_StateT test  
-  where test (RItemStroke strk) = (doesLineHitStrk line . strkbbx_strk) strk
+  where test (RItemStroke strk) = (doesLineHitStrk line . bbxed_content) strk
         test _ = False 
   
 -- |
@@ -232,7 +232,7 @@ hitTestStrokes line (n:-h:-rest) = do
 
 
 -- | 
-elimHitted :: (BBoxable a) => 
+elimHitted :: (GetBBoxable a) => 
               AlterList (NotHitted a) (Hitted a) -> State (Maybe BBox) [a]
 elimHitted Empty = error "something wrong in elimHitted"
 elimHitted (n:-Empty) = return (unNotHitted n)
@@ -252,7 +252,7 @@ merge (Just (BBox (x1,y1) (x2,y2))) (Just (BBox (x3,y3) (x4,y4)))
   = Just (BBox (min x1 x3, min y1 y3) (max x2 x4,max y2 y4))  
     
 -- | 
-getTotalBBox :: (BBoxable a) => [a] -> Maybe BBox 
+getTotalBBox :: (GetBBoxable a) => [a] -> Maybe BBox 
 getTotalBBox = foldl f Nothing 
   where f acc = merge acc . Just . getBBox
 

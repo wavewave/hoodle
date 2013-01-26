@@ -45,7 +45,7 @@ Library
                    coroutine-object >= 0.2, 
                    transformers == 0.3.*,
                    transformers-free == 1.0.*,
-                   hoodle-types >= 0.1.1,
+                   hoodle-types >= 0.1.999,
                    hoodle-parser >= 0.1.1,
                    xournal-parser >= 0.5.0.1,
                    hoodle-render >= 0.2.1,

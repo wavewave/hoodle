@@ -98,6 +98,10 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                  liftIO (callback (PenUp cid p))
     _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
                   liftIO $ callback (UpdateCanvas cid) 
+    canvas `on` motionNotifyEvent $ tryEvent $ do 
+      (_,p) <- getPointer dev
+      liftIO $ callback (PenMove cid p)
+
 
     {-
     canvas `on` enterNotifyEvent $ tryEvent $ do 

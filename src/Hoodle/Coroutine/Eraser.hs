@@ -34,7 +34,7 @@ import Hoodle.Type.PageArrangement
 import Hoodle.Device
 import Hoodle.View.Coordinate
 import Hoodle.View.Draw
-import Hoodle.Coroutine.EventConnect
+-- import Hoodle.Coroutine.EventConnect
 import Hoodle.Coroutine.Draw
 import Hoodle.Coroutine.Commit
 import Hoodle.Accessor
@@ -50,20 +50,20 @@ eraserStart :: CanvasId
                -> PointerCoord 
                -> MainCoroutine () 
 eraserStart cid = commonPenStart eraserAction cid  
-  where eraserAction _cinfo pnum geometry (cidup,cidmove) (x,y) = do 
+  where eraserAction _cinfo pnum geometry {- (cidup,cidmove) -} (x,y) = do 
           itms <- rItmsInCurrLyr
-          eraserProcess cid pnum geometry cidup cidmove itms (x,y)
+          eraserProcess cid pnum geometry {- cidup cidmove -} itms (x,y)
 
 -- |
 
 eraserProcess :: CanvasId
               -> PageNum 
               -> CanvasGeometry
-              -> ConnectId DrawingArea -> ConnectId DrawingArea 
-              -> [RItem] -- [StrokeBBox] 
+              {- -> ConnectId DrawingArea -> ConnectId DrawingArea -}
+              -> [RItem] 
               -> (Double,Double)
               -> MainCoroutine () 
-eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do 
+eraserProcess cid pnum geometry {- connidmove connidup -} itms (x0,y0) = do 
     r <- nextevent 
     xst <- get
     boxAction (f r xst) . getCanvasInfo cid $ xst 
@@ -71,8 +71,8 @@ eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do
     f :: (ViewMode a) => MyEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                                  (moveact xstate cvsInfo) upact
-    defact = eraserProcess cid pnum geometry connidup connidmove itms (x0,y0)
-    upact _ = disconnect [connidmove,connidup] >> invalidateAll
+    defact = eraserProcess cid pnum geometry {- connidup connidmove -} itms (x0,y0)
+    upact _ = {- disconnect [connidmove,connidup] >> -} invalidateAll
     moveact xstate cvsInfo (_pcoord,(x,y)) = do 
       let line = ((x0,y0),(x,y))
           hittestbbox = hltHittedByLineRough line itms
@@ -97,6 +97,6 @@ eraserProcess cid pnum geometry connidmove connidup itms (x0,y0) = do
             =<< (liftIO (updatePageAll newhdlmodst xstate))
           invalidateInBBox Nothing Efficient cid 
           nitms <- rItmsInCurrLyr
-          eraserProcess cid pnum geometry connidup connidmove nitms (x,y)
-        else eraserProcess cid pnum geometry connidmove connidup itms (x,y) 
+          eraserProcess cid pnum geometry {- connidup connidmove -} nitms (x,y)
+        else eraserProcess cid pnum geometry {- connidmove connidup -} itms (x,y) 
             

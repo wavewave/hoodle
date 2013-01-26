@@ -31,6 +31,7 @@ import Hoodle.Type.Coroutine
 -- 
 import Prelude hiding ((.), id)
 
+{-
 -- |
 disconnect :: (WidgetClass w) => [ConnectId w] -> MainCoroutine () 
 disconnect is = modify (tempQueue %~ enqueue action) >> go 
@@ -76,3 +77,4 @@ connPenUp c cid = do
   liftIO (c `on` buttonReleaseEvent $ tryEvent $ do 
              (_,p) <- getPointer dev
              liftIO (callbk (PenMove cid p)))
+-}

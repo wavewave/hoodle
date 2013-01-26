@@ -92,7 +92,6 @@ eitherSplit stype = do
         put xstate3 
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
-        -- liftIO $ widgetShowAll win 
         liftIO $ widgetQueueDraw rtrwin
         (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
         xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4

@@ -85,8 +85,8 @@ hPage2RPage p =
   let HLayersF s others = view glayers p 
       s' = hLayer2RLayer s
       normalizedothers = case others of   
-        NoSelect [] -> error "something wrong in hPage2RPage" 
-        NoSelect (x:xs) -> Select (fromList (x:xs))
+        -- NoSelect [] -> error "something wrong in hPage2RPage" 
+        -- NoSelect (x:xs) -> Select (fromList (x:xs))
         Select (O (Nothing)) -> error "something wrong in hPage2RPage"
         Select (O (Just _)) -> others 
       Select (O (Just sz)) = normalizedothers 
@@ -97,8 +97,8 @@ hPage2RPage p =
 mkHPage :: RPage -> HPage
 mkHPage p = 
   let normalizedothers = case (view glayers p) of 
-        NoSelect [] -> error "something wrong in mkHPage" 
-        NoSelect (x:xs) -> Select (fromList (x:xs))
+        -- NoSelect [] -> error "something wrong in mkHPage" 
+        -- NoSelect (x:xs) -> Select (fromList (x:xs))
         Select (O (Nothing)) -> error "something wrong in mkHPage"
         others@(Select (O (Just _))) -> others 
       Select (O (Just sz)) = normalizedothers 

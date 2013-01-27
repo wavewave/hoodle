@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Data.Hoodle.Zipper 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -26,10 +26,12 @@ import Data.Sequence hiding (fromList)
 import Data.Traversable
 -- from this package
 import Data.Hoodle.Generic
--- import Data.Hoodle.Select
 
 -- 
 import Prelude hiding (zipWith, length, splitAt)
+
+-- | 
+type NonEmptyList a = (a,[a])
 
 -- |
 newtype SeqZipper a = SZ { unSZ :: (a, (Seq a,Seq a)) } 
@@ -142,11 +144,15 @@ deleteCurrent (SZ (_,(xs,ys))) =
                 zs :> z -> Just (SZ (z,(zs,ys)))
     z :< zs -> Just (SZ (z,(xs,zs)))
 
+
+fromNonEmptyList :: NonEmptyList a -> SeqZipper a 
+fromNonEmptyList (x,xs) = SZ (x, (empty,fromList xs) )
+
 -- |
-data ZipperSelect a = Select { zipper :: (Maybe :. SeqZipper) a }
+type ZipperSelect = SeqZipper  -- Select { zipper :: (Maybe :. SeqZipper) a }
   {- NoSelect { allelems :: [a] } | -} 
                     
-
+{-
 -- | 
 deriving instance Functor ZipperSelect 
 
@@ -155,7 +161,9 @@ deriving instance Foldable ZipperSelect
 
 -- |
 deriving instance Traversable ZipperSelect
+-}
 
+{-
 -- |
 instance Listable (Maybe :. SeqZipper) where
   fromList [] = O Nothing 
@@ -169,15 +177,15 @@ instance Listable ZipperSelect where
   fromList xs = Select (fromList xs) -- NoSelect xs
 --   toList (NoSelect xs) = xs 
 --   toList (Select xs) = toList xs
-
+-}
 
 -- |
 selectFirst :: ZipperSelect a -> ZipperSelect a 
+selectFirst = goFirst 
 -- selectFirst (NoSelect []) = NoSelect []
 -- selectFirst (NoSelect lst@(_:_))  = Select . fromList $ lst
-selectFirst a@(Select (O Nothing)) = a -- NoSelect []
-selectFirst (Select (O msz)) = Select . O $ return . goFirst =<<  msz
-
+-- selectFirst a@(Select (O Nothing)) = a -- NoSelect []
+-- (Select (O msz)) = Select . O $ return . goFirst =<<  msz
 
 
 

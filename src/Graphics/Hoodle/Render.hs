@@ -56,10 +56,11 @@ import qualified Data.Map as M
 import           Data.Monoid
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
-import Data.Hoodle.Generic
-import Data.Hoodle.Simple
-import Data.Hoodle.BBox
-import Data.Hoodle.Predefined 
+import           Data.Hoodle.Generic
+import           Data.Hoodle.Simple
+import           Data.Hoodle.BBox
+import           Data.Hoodle.Predefined 
+import           Data.Hoodle.Zipper 
 #ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 #endif
@@ -402,9 +403,12 @@ cnstrctRPage_StateT pg = do
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg
-  nlyrs <- liftIO $ (liftM fromList . mapM cnstrctRLayer) lyrs 
+  nlyrs_lst <- liftIO $ mapM cnstrctRLayer lyrs
+  let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
+  -- nlyrs <- liftIO $ (liftM fromList . mapM cnstrctRLayer) lyrs 
+      nlyrs = fromNonEmptyList nlyrs_nonemptylst 
   nbkg <- cnstrctRBkg_StateT dim bkg
-  return . set glayers nlyrs $ emptyGPage dim nbkg 
+  return $ GPage dim nbkg nlyrs -- emptyGPage dim nbkg 
     
 
 cnstrctRLayer :: Layer -> IO RLayer 

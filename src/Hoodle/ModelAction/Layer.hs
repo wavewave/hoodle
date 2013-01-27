@@ -29,16 +29,19 @@ import           Hoodle.Type.Alias
 -- 
 import Prelude hiding ((.),id)
 
+
 -- | 
 getCurrentLayerOrSet :: Page EditMode -> (Maybe RLayer, Page EditMode)
 getCurrentLayerOrSet pg = 
   let olayers = view glayers pg
       nlayers = case olayers of 
-                  NoSelect _ -> selectFirst olayers
+                  -- NoSelect _ -> selectFirst olayers
                   Select _ -> olayers  
   in case nlayers of
-      NoSelect _ -> (Nothing, set glayers nlayers pg)
+      -- NoSelect _ -> (Nothing, set glayers nlayers pg)
       Select osz -> (return . current =<< unO osz, set glayers nlayers pg)
+
+
 
 -- | 
 adjustCurrentLayer :: RLayer -> Page EditMode -> Page EditMode

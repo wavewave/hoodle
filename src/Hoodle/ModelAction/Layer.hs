@@ -15,7 +15,7 @@ module Hoodle.ModelAction.Layer where
 -- from other packages
 import           Control.Category
 import           Control.Compose
-import           Control.Lens (view,set)
+import           Control.Lens (view,set,over)
 import           Data.IORef
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (get)
@@ -30,6 +30,7 @@ import           Hoodle.Type.Alias
 import Prelude hiding ((.),id)
 
 
+{-
 -- | 
 getCurrentLayerOrSet :: Page EditMode -> (Maybe RLayer, Page EditMode)
 getCurrentLayerOrSet pg = 
@@ -40,17 +41,24 @@ getCurrentLayerOrSet pg =
   in case nlayers of
       -- NoSelect _ -> (Nothing, set glayers nlayers pg)
       Select osz -> (return . current =<< unO osz, set glayers nlayers pg)
+-}
+
+-- |
+getCurrentLayer :: Page EditMode -> RLayer
+getCurrentLayer = current . view glayers 
 
 
 
 -- | 
 adjustCurrentLayer :: RLayer -> Page EditMode -> Page EditMode
-adjustCurrentLayer nlayer pg = 
-  let (molayer,pg') = getCurrentLayerOrSet pg
+adjustCurrentLayer nlayer = over glayers (replace nlayer)
+
+
+{-  let (molayer,pg') = getCurrentLayerOrSet pg
   in maybe (set glayers (Select .O . Just . singletonSZ $ nlayer) pg')
            (const $ let layerzipper = maybe (error "adjustCurrentLayer") id . unO . zipper . view glayers $  pg'
                     in set glayers (Select . O . Just . replace nlayer $ layerzipper) pg' )
-           molayer 
+           molayer  -}
 
 -- | 
 layerChooseDialog :: IORef Int -> Int -> Int -> IO Dialog

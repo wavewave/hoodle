@@ -85,11 +85,7 @@ getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =
 
 -- | 
 rItmsInCurrLyr :: MainCoroutine [RItem] 
-rItmsInCurrLyr = do 
-  page <- getCurrentPageCurr
-  let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
-      currlayer = maybe (error "rItmsInCurrLyr") id mcurrlayer
-  (return . view gitems) currlayer
+rItmsInCurrLyr = return . view gitems . getCurrentLayer =<< getCurrentPageCurr
       
 -- |
 otherCanvas :: HoodleState -> [Int] 

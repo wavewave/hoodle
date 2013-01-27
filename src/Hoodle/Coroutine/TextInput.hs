@@ -95,8 +95,8 @@ makePangoTextSVGInsert str = do
     liftIO $ putStrLn str 
     let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
         hdl = getHoodle xstate 
-        (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-        currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+        currpage = getPageFromGHoodleMap pgnum hdl
+        currlayer = getCurrentLayer currpage
         pangordr = do 
           ctxt <- cairoCreateContext Nothing 
           layout <- layoutEmpty ctxt   

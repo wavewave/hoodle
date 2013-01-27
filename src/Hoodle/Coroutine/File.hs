@@ -349,8 +349,8 @@ fileLoadPNGorJPG = do
       liftIO $ putStrLn filename 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
           hdl = getHoodle xstate 
-          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-          currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+          currpage = getPageFromGHoodleMap pgnum hdl
+          currlayer = getCurrentLayer currpage
           isembedded = view doesEmbedImage xstate 
       newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
       
@@ -412,8 +412,8 @@ fileLoadSVG = do
       bstr <- liftIO $ readFile filename 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
           hdl = getHoodle xstate 
-          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-          currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+          currpage = getPageFromGHoodleMap pgnum hdl
+          currlayer = getCurrentLayer currpage
       newitem <- (liftIO . cnstrctRItem . ItemSVG) 
                    (SVG Nothing Nothing bstr (100,100) (Dim 300 300))
       let otheritems = view gitems currlayer  
@@ -477,8 +477,8 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
       xstate <- get 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
           hdl = getHoodle xstate 
-          (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-          currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+          currpage = getPageFromGHoodleMap pgnum hdl
+          currlayer = getCurrentLayer currpage
       newitem <- (liftIO . cnstrctRItem . ItemSVG) 
           (SVG (Just latex) Nothing svg (100,100) (Dim 300 50))
       let otheritems = view gitems currlayer  
@@ -515,8 +515,8 @@ embedPredefinedImage = do
         xstate <- get 
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
-            (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-            currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+            currpage = getPageFromGHoodleMap pgnum hdl
+            currlayer = getCurrentLayer currpage
             isembedded = True
         newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
 
@@ -546,8 +546,8 @@ embedPredefinedImage2 = do
         xstate <- get 
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
-            (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-            currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+            currpage = getPageFromGHoodleMap pgnum hdl
+            currlayer = getCurrentLayer currpage
             isembedded = True
         newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
 
@@ -577,8 +577,8 @@ embedPredefinedImage3 = do
         xstate <- get 
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
-            (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
-            currlayer = maybeError' "something wrong in addPDraw" mcurrlayer 
+            currpage = getPageFromGHoodleMap pgnum hdl
+            currlayer = getCurrentLayer currpage
             isembedded = True
         newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
 

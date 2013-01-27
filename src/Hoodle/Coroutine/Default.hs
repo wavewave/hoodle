@@ -186,7 +186,7 @@ viewAppendMode = do
         (PenWork,EraserButton) -> eraserStart cid pcoord
         (EraserWork,_)      -> eraserStart cid pcoord 
         (HighlighterWork,_) -> highlighterStart cid pcoord
-        -- _ -> return () 
+    PenMove cid pcoord -> liftIO $ putStrLn "pen moved in view append"
     _ -> defaultEventProcess r1
 
 -- |
@@ -200,6 +200,7 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
+    PenMove cid pcoord -> liftIO $ putStrLn "pen move in selectmode"
     PenColorChanged c -> do modify (penInfo.currentTool.penColor .~ c)
                             selectPenColorChanged c
     PenWidthChanged v -> do 
@@ -255,7 +256,7 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
     let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
         hdl = getHoodle xstate 
         pgs = view gpages hdl 
-        (_,cpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+        cpage = getPageFromGHoodleMap pgnum hdl
         cbkg = view gbackground cpage
         nbkg 
           | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 

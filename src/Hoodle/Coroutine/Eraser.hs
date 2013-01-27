@@ -82,13 +82,12 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
           let currhdl     = unView . view hoodleModeState $ xstate 
               dim         = view gdimension page
               pgnum       = view currentPageNum cvsInfo
-              (mcurrlayer, currpage) = getCurrentLayerOrSet page
-              currlayer = maybe (error "eraserProcess") id mcurrlayer
+              currlayer = getCurrentLayer page
           let (newitms,maybebbox1) = St.runState (eraseHitted hittestitem) Nothing
               maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf dim maybebbox 
                           . set gitems newitms $ currlayer 
-          let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+          let newpagebbox = adjustCurrentLayer newlayerbbox page 
               newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
               newhdlmodst = ViewAppendState newhdlbbox
           commit . set hoodleModeState newhdlmodst 

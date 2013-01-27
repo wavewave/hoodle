@@ -27,6 +27,7 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import qualified Data.Hoodle.Simple as S
+import           Data.Hoodle.Zipper 
 import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Util
@@ -169,7 +170,7 @@ setPageCont xstate pnum cinfo = do
 
 -- | 
 newSinglePageFromOld :: Page EditMode -> Page EditMode 
-newSinglePageFromOld = set glayers (fromList [emptyRLayer])
+newSinglePageFromOld = set glayers (fromNonEmptyList (emptyRLayer,[]))
   
   -- (NoSelect [emptyRLayer]) 
 

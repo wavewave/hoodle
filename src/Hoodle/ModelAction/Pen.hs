@@ -51,9 +51,9 @@ addPDraw pinfo hdl (PageNum pgnum) pdraw = do
         pcolname = convertPenColorToByteString pcolor 
         pwidth = view (currentTool.penWidth) pinfo
         pvwpen = view variableWidthPen pinfo
-        (mcurrlayer,currpage) = getCurrentLayerOrSet (getPageFromGHoodleMap pgnum hdl)
+        currpage = getPageFromGHoodleMap pgnum hdl
+        currlayer = getCurrentLayer currpage
         dim = view gdimension currpage
-        currlayer = maybe (error "something wrong in addPDraw") id mcurrlayer 
         ptool = case ptype of 
                   PenWork -> "pen" 
                   HighlighterWork -> "highlighter"

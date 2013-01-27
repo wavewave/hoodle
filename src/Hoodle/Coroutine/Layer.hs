@@ -57,63 +57,47 @@ layerAction action = do
 makeNewLayer :: MainCoroutine () 
 makeNewLayer = layerAction newlayeraction >>= commit 
   where newlayeraction hdlmodst cpn page = do 
-          let (_,currpage) = getCurrentLayerOrSet page
-              Select (O (Just lyrzipper)) = view glayers currpage  
-          -- emptylyr <- liftIO ( emptyRLayer) 
-          let emptylyr = emptyRLayer 
-          let nlyrzipper = appendGoLast lyrzipper emptylyr 
-              npage = set glayers (Select (O (Just nlyrzipper))) currpage
+          let lyrzipper = view glayers page  
+              emptylyr = emptyRLayer 
+              nlyrzipper = appendGoLast lyrzipper emptylyr 
+              npage = set glayers nlyrzipper page
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst 
                 
 
 gotoNextLayer :: MainCoroutine ()
 gotoNextLayer = layerAction nextlayeraction >>= put
   where nextlayeraction hdlmodst cpn page = do 
-          let (_,currpage) = getCurrentLayerOrSet page
-              Select (O (Just lyrzipper)) = view glayers currpage  
-          let mlyrzipper = moveRight lyrzipper 
-          
-              npage = maybe currpage (\x-> set glayers (Select (O (Just x))) currpage) mlyrzipper
-          case mlyrzipper of 
-            Nothing -> liftIO $ putStrLn "Nothing"
-            Just _ -> liftIO $ putStrLn "Just"
+          let lyrzipper = view glayers page  
+              mlyrzipper = moveRight lyrzipper 
+              npage = maybe page (\x-> set glayers x page) mlyrzipper
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
 
 gotoPrevLayer :: MainCoroutine ()
 gotoPrevLayer = layerAction prevlayeraction >>= put
   where prevlayeraction hdlmodst cpn page = do 
-          let (_,currpage) = getCurrentLayerOrSet page
-              Select (O (Just lyrzipper)) = view glayers currpage  
-          let mlyrzipper = moveLeft lyrzipper 
-              npage = maybe currpage (\x -> set glayers (Select (O (Just x))) currpage) mlyrzipper
-          case mlyrzipper of 
-            Nothing -> liftIO $ putStrLn "Nothing"
-            Just _ -> liftIO $ putStrLn "Just"
+          let lyrzipper = view glayers page  
+              mlyrzipper = moveLeft lyrzipper 
+              npage = maybe page (\x -> set glayers x page) mlyrzipper
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
 
 
 gotoLayerAt :: Int -> MainCoroutine ()
 gotoLayerAt n = layerAction gotoaction >>= put
   where gotoaction hdlmodst cpn page = do 
-          let (_,currpage) = getCurrentLayerOrSet page
-              Select (O (Just lyrzipper)) = view glayers currpage  
-          let mlyrzipper = moveTo n lyrzipper 
-              npage = maybe currpage (\x -> set glayers (Select (O (Just x))) currpage) mlyrzipper
+          let lyrzipper = view glayers page  
+              mlyrzipper = moveTo n lyrzipper 
+              npage = maybe page (\x -> set glayers x page) mlyrzipper
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
 
 
 deleteCurrentLayer :: MainCoroutine ()
 deleteCurrentLayer = layerAction deletelayeraction >>= commit
   where deletelayeraction hdlmodst cpn page = do 
-          let (mcurrlayer,currpage) = getCurrentLayerOrSet page
-          flip (maybe (return hdlmodst)) mcurrlayer $  
-            const $ do 
-              let Select (O (Just lyrzipper)) = view glayers currpage  
-                  mlyrzipper = deleteCurrent lyrzipper 
-                  npage = maybe currpage 
-                            (\x -> set glayers (Select (O (Just x))) currpage) 
-                            mlyrzipper
-              return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
+          let currlayer = getCurrentLayer page
+              lyrzipper = view glayers page  
+              mlyrzipper = deleteCurrent lyrzipper 
+              npage = maybe page (\x -> set glayers x page) mlyrzipper
+          return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
@@ -124,8 +108,7 @@ startGotoLayerAt =
       let hdlmodst = view hoodleModeState xstate
       let epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
           page = either id (hPage2RPage) epage 
-          (_,currpage) = getCurrentLayerOrSet page
-          Select (O (Just lyrzipper)) = view glayers currpage
+          lyrzipper = view glayers page
           cidx = currIndex lyrzipper
           len  = lengthSZ lyrzipper 
       lref <- liftIO $ newIORef cidx

@@ -283,12 +283,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
           Left _ -> error "this is impossible, in moveSelect" 
       let maction = do 
             page <- M.lookup (unPageNum newpgn) (view gselAll nthdl1)
-            let (mcurrlayer,npage) = getCurrentLayerOrSet page
-            currlayer <- mcurrlayer 
+            let currlayer = getCurrentLayer page
             let olditms = view gitems currlayer
             let newitms = map (changeItemBy (offsetFunc (x-x0,y-y0))) selecteditms 
                 alist = olditms :- Hitted newitms :- Empty 
-                ntpage = makePageSelectMode npage alist  
+                ntpage = makePageSelectMode page alist  
                 coroutineaction = do 
                   nthdl2 <- liftIO $ updateTempHoodleSelectIO nthdl1 ntpage (unPageNum newpgn)  
                   let cibox = view currentCanvasInfo xstate1 
@@ -511,10 +510,9 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
           SelectState thdl = view hoodleModeState xstate
           newpage = case epage of 
                       Left pagebbox -> 
-                        let (mcurrlayer,npagebbox) = getCurrentLayerOrSet pagebbox
-                            currlayer = maybe (error "newSelectLasso") id mcurrlayer 
+                        let currlayer= getCurrentLayer pagebbox
                             newlayer = GLayer (view gbuffer currlayer) (TEitherAlterHitted (Right selectitms))
-                            tpg = mkHPage npagebbox 
+                            tpg = mkHPage pagebbox 
                             npg = set (glayers.selectedLayer) newlayer tpg
                         in npg 
                       Right tpage -> 

@@ -107,10 +107,9 @@ makePageSelectMode :: Page EditMode  -- ^ base page
                    -> TAlterHitted RItem -- ^ current selection layer (active layer will be replaced)
                    -> Page SelectMode -- ^ resultant select mode page
 makePageSelectMode page alist =  
-    let (mcurrlayer,npage) = getCurrentLayerOrSet page
-        clyr = maybeError' "makePageSelectMode" mcurrlayer 
+    let clyr = getCurrentLayer page
         nlyr= GLayer (view gbuffer clyr) (TEitherAlterHitted (Right alist))
-    in set (glayers.selectedLayer) nlyr (mkHPage npage) 
+    in set (glayers.selectedLayer) nlyr (mkHPage page) 
 
 
 -- | get unselected part of page and make an ordinary page

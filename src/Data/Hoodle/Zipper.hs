@@ -143,24 +143,18 @@ deleteCurrent (SZ (_,(xs,ys))) =
     z :< zs -> Just (SZ (z,(xs,zs)))
 
 -- |
-data ZipperSelect a = NoSelect { allelems :: [a] }  
-                    | Select { zipper :: (Maybe :. SeqZipper) a }
+data ZipperSelect a = Select { zipper :: (Maybe :. SeqZipper) a }
+  {- NoSelect { allelems :: [a] } | -} 
+                    
 
 -- | 
 deriving instance Functor ZipperSelect 
 
--- |
-selectFirst :: ZipperSelect a -> ZipperSelect a 
-selectFirst (NoSelect []) = NoSelect []
-selectFirst (NoSelect lst@(_:_))  = Select . fromList $ lst
-selectFirst (Select (O Nothing)) = NoSelect []
-selectFirst (Select (O msz)) = Select . O $ return . goFirst =<<  msz
+-- | 
+deriving instance Foldable ZipperSelect
 
-{-
-instance Foldable (Maybe :. SeqZipper) where 
-  foldMap f (O Nothing) = mempty 
-  foldMap f (O (Just (SZ (x,(xs,ys))))) = foldMap f xs `mappend` f x `mappend` foldMap f ys 
--}
+-- |
+deriving instance Traversable ZipperSelect
 
 -- |
 instance Listable (Maybe :. SeqZipper) where
@@ -169,18 +163,22 @@ instance Listable (Maybe :. SeqZipper) where
 --   toList (O Nothing) = [] 
 --   toList (O (Just (SZ (x,(xs,ys))))) = toList xs ++ (x : toList ys)
 
--- | 
-deriving instance Foldable ZipperSelect
-
--- |
-deriving instance Traversable ZipperSelect
-
 
 -- |
 instance Listable ZipperSelect where
-  fromList xs = NoSelect xs
+  fromList xs = Select (fromList xs) -- NoSelect xs
 --   toList (NoSelect xs) = xs 
 --   toList (Select xs) = toList xs
+
+
+-- |
+selectFirst :: ZipperSelect a -> ZipperSelect a 
+-- selectFirst (NoSelect []) = NoSelect []
+-- selectFirst (NoSelect lst@(_:_))  = Select . fromList $ lst
+selectFirst a@(Select (O Nothing)) = a -- NoSelect []
+selectFirst (Select (O msz)) = Select . O $ return . goFirst =<<  msz
+
+
 
 
 

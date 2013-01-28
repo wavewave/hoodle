@@ -45,3 +45,5 @@ Library
                    Hoodle.Job
                    Hoodle.Command 
                    Hoodle.StartUp
+  Other-Modules: 
+                   Paths_hoodle

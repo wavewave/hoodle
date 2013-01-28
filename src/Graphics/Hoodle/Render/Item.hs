@@ -50,10 +50,14 @@ cnstrctRItem (ItemImage img) = do
         let filesrc = C8.unpack (img_src img)
             filesrcext = takeExtension filesrc 
             imgaction 
-              | filesrcext == ".PNG" || filesrcext == ".png" = 
-                  Just <$> imageSurfaceCreateFromPNG filesrc
-              | filesrcext == ".JPG" || filesrcext == ".jpg" = 
-                  Just <$> getJPGandCreateSurface filesrc 
+              | filesrcext == ".PNG" || filesrcext == ".png" = do 
+                  b <- doesFileExist filesrc 
+                  if b then Just <$> imageSurfaceCreateFromPNG filesrc
+                       else return Nothing 
+              | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
+                  b <- doesFileExist filesrc 
+                  if b then Just <$> getJPGandCreateSurface filesrc 
+                       else return Nothing 
               | otherwise = return Nothing 
         msfc <- imgaction
         return (RItemImage imgbbx msfc)

@@ -47,9 +47,11 @@ data MainOp i o where
 doEvent :: (Monad m) => MyEvent -> CObjT MainOp m () 
 doEvent ev = request (Arg DoEvent ev) >> return ()
 
+{-
 instance (Monad m) => MonadState HoodleState (EStT HoodleState m) where
   get = lift get
   put = lift . put 
+-}
 
 -- |
 type MainCoroutine = MainObjB 

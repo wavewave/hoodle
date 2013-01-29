@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.File 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -28,11 +28,9 @@ import           Graphics.GD.ByteString
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
--- import           System.Environment 
 import           System.Exit 
 import           System.FilePath
 import           System.Process 
--- import           System.IO (writeFile)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event
@@ -40,7 +38,6 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
--- import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
@@ -328,10 +325,13 @@ fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = 
     fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
+    warning = do 
+      okMessageBox "cannot load the pdf file. Check your hoodle compiled with poppler library" 
+      invalidateAll 
     action filename = do  
       xstate <- get 
       mhdl <- liftIO $ makeNewHoodleWithPDF filename 
-      flip (maybe (return ())) mhdl $ \hdl -> do 
+      flip (maybe warning) mhdl $ \hdl -> do 
         xstateNew <- return . set currFileName Nothing 
                      =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
         commit xstateNew 

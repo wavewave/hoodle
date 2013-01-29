@@ -114,7 +114,7 @@ makeNewHoodleWithPDF fp = do
               $ emptyHoodle
       return (Just hdl)
 #else
-  error "makeNewHoodleWithPDF should not be used without poppler lib"
+      return Nothing
 #endif
       
 -- | 

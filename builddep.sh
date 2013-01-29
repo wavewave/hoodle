@@ -17,24 +17,12 @@ cabal install gtk2hs-buildtools
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
 # for documentation of dep packages
-$HOME/.cabal/bin/build haddockboot --config=build.conf 
+#$HOME/.cabal/bin/build haddockboot --config=build.conf 
 
 # for documentation of this package
-cabal install  --enable-documentation
-cabal haddock --hyperlink-source
-cabal copy 
-
-echo "machine $SRVR"'\n'"login $SRVRID"'\n'"password $SRVRPKEY" > $HOME/.netrc 
-chmod 0600 $HOME/.netrc 
-
-tar cvzf hoodle-core.tar.gz $HOME/.cabal/share/doc/hoodle* $HOME/.cabal/share/doc/xournal* $HOME/.cabal/share/doc/coroutine-object*
-echo "open http://$SRVR:$SRVRPORT$SRVRDIR"'\n'"put hoodle-core.tar.gz"'\n'" "  > script 
-
-cadaver < script  
-
-rm script 
-rm $HOME/.netrc 
-
+#cabal install  --enable-documentation
+#cabal haddock --hyperlink-source
+#cabal copy 
 
 # this is needed for checking
 cabal install --enable-tests

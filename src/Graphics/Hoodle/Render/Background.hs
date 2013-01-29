@@ -35,8 +35,15 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 --
 import Prelude hiding (mapM_)
-  
-  
+
+isPopplerEnabled :: Bool  
+#ifdef POPPLER
+isPopplerEnabled = True 
+#else
+isPopplerEnabled = False
+#endif
+ 
+
 #ifdef POPPLER
 popplerGetDocFromFile :: ByteString -> IO (Maybe Poppler.Document)
 popplerGetDocFromFile fp = 

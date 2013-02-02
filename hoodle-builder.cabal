@@ -29,6 +29,7 @@ Library
                  
   Exposed-Modules: 
                    Text.Hoodle.Builder
+                   Text.Hoodle.Builder.V0_1_1
   Other-Modules: 
 
  

@@ -2,8 +2,8 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Builder 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Module      : Text.Hoodle.Builder.V0_1_1
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Builder where
+module Text.Hoodle.Builder.V0_1_1 where
 
 -- from other packages 
 import           Control.Lens 
@@ -29,7 +29,7 @@ import Data.Monoid
 #endif 
 import Data.Strict.Tuple
 -- from this package 
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple.V0_1_1
 
 infixl 4 <>
 
@@ -100,13 +100,6 @@ buildBackground bkg =
       <> fromByteString "\" pageno=\""
       <> fromString (show pageno)
       <> fromByteString "\"/>\n"
-    BackgroundEmbedPdf typ src -> 
-      fromByteString "<background type=\""
-      <> fromByteString typ 
-      <> fromByteString "\" src=\""
-      <> fromByteString src 
-      <> fromByteString "\"/>\n"
-
       
 -- | 
 buildLayer :: Layer -> Builder

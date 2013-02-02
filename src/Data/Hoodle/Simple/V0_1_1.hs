@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Hoodle.Simple 
+-- Module      : Data.Hoodle.Simple.V0_1_1
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,9 +11,11 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-- Hoodle version 0.1.1 format 
+--
 ----------------------------------------------------------------------------- 
 
-module Data.Hoodle.Simple where
+module Data.Hoodle.Simple.V0_1_1 where
 
 -- from other packages
 import           Control.Applicative 
@@ -167,8 +169,6 @@ data Background = Background { bkg_type :: !S.ByteString
                                 , bkg_filename :: Maybe S.ByteString
                                 , bkg_pageno :: Int
                                 }
-                | BackgroundEmbedPdf { bkg_type :: S.ByteString
-                                     , bkg_pdfsrc :: S.ByteString } 
                 deriving Show 
 
 -- | 
@@ -245,7 +245,7 @@ emptyHoodle = Hoodle "" []
 
 -- | 
 emptyLayer :: Layer 
-emptyLayer = Layer { layer_items = [] } 
+emptyLayer = Layer { layer_items = [] } --  { layer_strokes = [] }
 
 -- | 
 emptyStroke :: Stroke 

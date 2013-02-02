@@ -351,7 +351,7 @@ fileLoadPNGorJPG = do
           hdl = getHoodle xstate 
           currpage = getPageFromGHoodleMap pgnum hdl
           currlayer = getCurrentLayer currpage
-          isembedded = view doesEmbedImage xstate 
+          isembedded = view (settings.doesEmbedImage) xstate 
       newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
       
       let otheritems = view gitems currlayer  

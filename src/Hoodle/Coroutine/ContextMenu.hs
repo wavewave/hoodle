@@ -144,7 +144,7 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
 showContextMenu :: (PageNum,(Double,Double)) -> MainCoroutine () 
 showContextMenu (pnum,(x,y)) = do 
     xstate <- get
-    when (view doesUsePopUpMenu xstate) $ do 
+    when (view (settings.doesUsePopUpMenu) xstate) $ do 
       let cids = IM.keys . view cvsInfoMap $ xstate
           cid = fst . view currentCanvas $ xstate 
           mselitms = do lst <- getSelectedItmsFromHoodleState xstate

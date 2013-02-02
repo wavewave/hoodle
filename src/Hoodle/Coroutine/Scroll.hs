@@ -119,7 +119,7 @@ vscrollMove cid v0 = do
 smoothScroll :: CanvasId -> CanvasGeometry -> Double -> Double -> MainCoroutine () 
 smoothScroll cid geometry v0 v = do 
     xst <- get 
-    let b = view doesSmoothScroll xst 
+    let b = view (settings.doesSmoothScroll) xst 
     let diff = (v - v0) 
         lst'  | (diff < 20 && diff > -20) = [v]
               | (diff < 5 &&diff > -5) = []

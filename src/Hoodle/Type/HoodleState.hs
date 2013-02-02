@@ -35,18 +35,20 @@ module Hoodle.Type.HoodleState
 , undoTable
 , backgroundStyle 
 , isFullScreen 
-, doesUseXInput 
-, doesSmoothScroll 
-, doesUsePopUpMenu
-, doesEmbedImage
+, settings
 , isOneTimeSelectMode
 , pageModeSignal
 , lastTimeCanvasConfigure
 , hookSet 
 , tempLog 
 , tempQueue 
+, doesUseXInput 
+, doesSmoothScroll 
+, doesUsePopUpMenu
+, doesEmbedImage
 -- | others 
 , emptyHoodleState
+, defaultSettings 
 , getHoodle
 -- | additional lenses 
 , getCanvasInfoMap 
@@ -124,7 +126,6 @@ data HoodleState =
                 , _rootContainer :: Box
                 , _rootOfRootWindow :: Window
                 , _currentPenDraw :: PenDraw
-    --            , _clipboard :: Clipboard
                 , _callBack ::  MyEvent -> IO ()
                 , _deviceList :: DeviceList
                 , _penInfo :: PenInfo
@@ -134,10 +135,7 @@ data HoodleState =
                 , _undoTable :: UndoTable HoodleModeState
                 , _backgroundStyle :: BackgroundStyle 
                 , _isFullScreen :: Bool 
-                , _doesUseXInput :: Bool 
-                , _doesSmoothScroll :: Bool 
-                , _doesUsePopUpMenu :: Bool 
-                , _doesEmbedImage :: Bool 
+                , _settings :: Settings 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
@@ -145,6 +143,7 @@ data HoodleState =
                 , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
                 , _tempLog :: String -> String 
                 } 
+
 
 -- | lens for hoodleModeState
 hoodleModeState :: Simple Lens HoodleState HoodleModeState
@@ -218,21 +217,9 @@ backgroundStyle = lens _backgroundStyle (\f a -> f { _backgroundStyle = a } )
 isFullScreen :: Simple Lens HoodleState Bool
 isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
 
--- | flag for XInput extension (needed for using full power of wacom)
-doesUseXInput :: Simple Lens HoodleState Bool
-doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
-
--- | flag for smooth scrolling 
-doesSmoothScroll :: Simple Lens HoodleState Bool
-doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
-
--- | flag for using popup menu
-doesUsePopUpMenu :: Simple Lens HoodleState Bool
-doesUsePopUpMenu = lens _doesUsePopUpMenu (\f a -> f { _doesUsePopUpMenu = a } )
-
--- | flag for embedding image as base64 in hdl file 
-doesEmbedImage :: Simple Lens HoodleState Bool
-doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
+-- | 
+settings :: Simple Lens HoodleState Settings 
+settings = lens _settings (\f a -> f { _settings = a } )
 
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
@@ -259,8 +246,33 @@ tempLog :: Simple Lens HoodleState (String -> String)
 tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 
 
--- makeLenses ''HoodleState 
+-- | A set of Hoodle settings 
+data Settings = 
+  Settings { _doesUseXInput :: Bool 
+           , _doesSmoothScroll :: Bool 
+           , _doesUsePopUpMenu :: Bool 
+           , _doesEmbedImage :: Bool 
+           } 
 
+-- | flag for XInput extension (needed for using full power of wacom)
+doesUseXInput :: Simple Lens Settings Bool
+doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
+
+-- | flag for smooth scrolling 
+doesSmoothScroll :: Simple Lens Settings Bool
+doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
+
+-- | flag for using popup menu
+doesUsePopUpMenu :: Simple Lens Settings Bool
+doesUsePopUpMenu = lens _doesUsePopUpMenu (\f a -> f { _doesUsePopUpMenu = a } )
+
+-- | flag for embedding image as base64 in hdl file 
+doesEmbedImage :: Simple Lens Settings Bool
+doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
+
+
+
+-- | default hoodle state 
 emptyHoodleState :: HoodleState 
 emptyHoodleState = 
   HoodleState  
@@ -284,10 +296,7 @@ emptyHoodleState =
   -- , _isEventBlocked = False 
   , _backgroundStyle = BkgStyleLined
   , _isFullScreen = False
-  , _doesUseXInput = False
-  , _doesSmoothScroll = False
-  , _doesUsePopUpMenu = True 
-  , _doesEmbedImage = True 
+  , _settings = defaultSettings
   , _isOneTimeSelectMode = NoOneTimeSelectMode
   , _pageModeSignal = Nothing
   , _lastTimeCanvasConfigure = Nothing                      
@@ -296,15 +305,23 @@ emptyHoodleState =
   , _tempLog = id 
   }
 
--- | 
+-- | default settings
+defaultSettings :: Settings
+defaultSettings = 
+  Settings 
+  { _doesUseXInput = False
+  , _doesSmoothScroll = False
+  , _doesUsePopUpMenu = True 
+  , _doesEmbedImage = True 
+  } 
 
+-- | 
 getHoodle :: HoodleState -> Hoodle EditMode 
 getHoodle = either id makehdl . hoodleModeStateEither . view hoodleModeState 
   where makehdl thdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
 
 
 -- | 
-        
 getCurrentCanvasId :: HoodleState -> CanvasId
 getCurrentCanvasId = fst . _currentCanvas 
   

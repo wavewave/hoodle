@@ -56,9 +56,9 @@ startGUI mfname mhook = do
   (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  xinputbool
   setTitleFromFileName st0
   -- need for refactoring
-  setToggleUIForFlag "UXINPUTA" doesUseXInput st0 
-  setToggleUIForFlag "POPMENUA" doesUsePopUpMenu st0 
-  setToggleUIForFlag "EBDIMGA" doesEmbedImage st0 
+  setToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
+  setToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0 
+  setToggleUIForFlag "EBDIMGA" (settings.doesEmbedImage) st0 
   -- 
   let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0
   if xinputbool

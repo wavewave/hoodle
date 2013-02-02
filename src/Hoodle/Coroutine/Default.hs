@@ -98,7 +98,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
-  let st5 = set doesUseXInput xinputbool 
+  let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
@@ -326,15 +326,15 @@ menuEventProcess MenuGotoLayer = startGotoLayerAt
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
   xstate <- get 
-  b <- updateFlagFromToggleUI "UXINPUTA" doesUseXInput 
+  b <- updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput)
   let cmap = getCanvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
-menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" doesSmoothScroll >> return ()
-menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" doesUsePopUpMenu >> return ()
-menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" doesEmbedImage >> return ()
+menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
+menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
+menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 

@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Parse.Attoparsec
+-- Module      : Text.Hoodle.Parse.V0_1_1.Attoparsec
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 -- 
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Parse.Attoparsec where
+module Text.Hoodle.Parse.V0_1_1.Attoparsec where
 
 import           Control.Applicative 
 import           Data.Attoparsec
@@ -24,7 +24,7 @@ import qualified Data.ByteString.Char8 as B hiding (map)
 import           Data.Char 
 import           Data.Strict.Tuple
 -- from hoodle-platform 
-import qualified Data.Hoodle.Simple as H
+import qualified Data.Hoodle.Simple.V0_1_1 as H
 -- 
 import Prelude hiding (takeWhile)
 
@@ -404,14 +404,6 @@ background = do
         takeTill (inClass "/>")  <?> "here takeTill"
         backgroundclose
         return $ H.BackgroundPdf typ mdomain mfilename pnum 
-      "embedpdf" -> do     
-        trim <?> "trim0"
-        string "src="
-        char '"'
-        str <- manyTill anyChar (try (char '"'))
-        trim 
-        backgroundclose
-        return $ H.BackgroundEmbedPdf  typ (B.pack str) 
       _ -> fail "in parsing background"  
         
         

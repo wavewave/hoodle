@@ -32,6 +32,7 @@ Library
                  lens >= 2.5
   Exposed-Modules: 
                    Text.Hoodle.Parse.Attoparsec
+                   Text.Hoodle.Parse.V0_1_1.Attoparsec
                    Text.Hoodle.Parse.Zlib
                    Text.Hoodle.Translate.FromXournal
 

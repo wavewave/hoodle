@@ -22,6 +22,7 @@ import           Control.Monad
 import           Control.Monad.Identity 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
+import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64 
 import           Graphics.GD.ByteString
 import           Graphics.Rendering.Cairo
@@ -29,8 +30,9 @@ import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           System.Directory
 import           System.FilePath 
 -- from hoodle-platform 
-import Data.Hoodle.BBox 
-import Data.Hoodle.Simple
+import           Data.Hoodle.BBox 
+import           Data.Hoodle.Simple
+import           Hoodle.Util.Process 
 -- from this package
 import Graphics.Hoodle.Render.Type.Item 
 
@@ -87,7 +89,10 @@ getJPGandCreateSurface fp = do
 -- | 
 saveTempPNGToCreateSurface :: C8.ByteString -> IO Surface
 saveTempPNGToCreateSurface bstr = do 
+    pipeActionWith (B.writeFile "/dev/stdout" bstr) imageSurfaceCreateFromPNG 
+
+{-
     tdir <- getTemporaryDirectory 
     let tfile = tdir </> "temp.png"
-    B.writeFile tfile bstr 
     imageSurfaceCreateFromPNG tfile 
+-}

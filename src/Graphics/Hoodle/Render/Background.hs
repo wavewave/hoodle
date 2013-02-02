@@ -51,14 +51,21 @@ popplerGetDocFromFile fp =
     (C.unpack ("file://localhost" `mappend` fp)) Nothing 
 #endif
 
+{-
+getByteStringIfEmbeddedPDF 
+
+#ifdef POPPLER
+popplerGetDocFromDataURI :: ByteString -> IO (Maybe Poppler.Document) 
+popplerGetDocFromDataURI dat = undefined 
+#endif
+-}
+
+
 #ifdef POPPLER             
 popplerGetPageFromDoc :: Poppler.Document 
                       -> Int -- ^ page number 
                       -> IO (Maybe Poppler.Page, Maybe Surface)
 popplerGetPageFromDoc doc pn = do   
-  -- n <- Poppler.documentGetNPages doc  
-  -- putStrLn $ "pages : " ++ (show n)
-  -- putStrLn $ "current page = " ++ show pn
   pg <- Poppler.documentGetPage doc (pn-1) 
   (w,h) <- PopplerPage.pageGetSize pg
   sfc <- createImageSurface FormatARGB32 (floor w) (floor h)

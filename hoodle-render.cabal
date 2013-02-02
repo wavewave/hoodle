@@ -36,7 +36,8 @@ Library
                  lens >= 2.5, 
                  hoodle-types >= 0.1.999,
                  TypeCompose == 0.9.*, 
-                 gd >= 3000.7 
+                 gd >= 3000.7, 
+                 hoodle-common >= 0.0.999 
 
   if flag(poppler)
     Build-Depends: poppler >= 0.12.2.2

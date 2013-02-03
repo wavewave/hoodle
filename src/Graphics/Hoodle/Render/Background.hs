@@ -70,8 +70,10 @@ popplerGetDocFromDataURI dat = do
   case mdecoded of 
     Nothing -> return Nothing 
     Just decoded -> do 
-      pipeActionWith (C.writeFile "/dev/stdout" decoded) 
-        (\fn -> popplerGetDocFromFile (C.pack fn))
+      C.writeFile "/tmp/popplertest.pdf" decoded 
+      popplerGetDocFromFile "/tmp/popplertest.pdf"
+      -- pipeActionWith (C.writeFile "/dev/stdout" decoded) 
+      --   (\fn -> popplerGetDocFromFile (C.pack fn))
 #endif
 
 

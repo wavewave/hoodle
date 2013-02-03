@@ -119,8 +119,9 @@ data MenuEvent = MenuNew
                | MenuPaperColor
                | MenuPaperStyle 
                | MenuApplyToAllPages 
-               | MenuLoadBackground
-               | MenuBackgroundScreenshot 
+               | MenuEmbedAllPDFBkg
+               --  | MenuLoadBackground
+               --  | MenuBackgroundScreenshot 
                | MenuDefaultPaper
                | MenuSetAsDefaultPaper
                | MenuText 

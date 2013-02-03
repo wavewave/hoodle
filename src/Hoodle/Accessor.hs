@@ -235,24 +235,5 @@ setToggleUIForFlag toggleid lensforflag xstate = do
   toggleActionSetActive togglea b
   return b 
 
-{-
--- | 
-getAllStrokeBBoxInCurrentPage :: MainCoroutine [StrokeBBox] 
-getAllStrokeBBoxInCurrentPage = do 
-  page <- getCurrentPageCurr
-  return [ s | l <- toList (view glayers page)
-             , s <- (catMaybes . map findStrkInRItem . view gitems) l ]
-  
--}
-
-{-
--- | 
-getAllStrokeBBoxInCurrentLayer :: MainCoroutine [StrokeBBox] 
-getAllStrokeBBoxInCurrentLayer = do 
-  page <- getCurrentPageCurr
-  let (mcurrlayer, _currpage) = getCurrentLayerOrSet page
-      currlayer = maybe (error "getAllStrokeBBoxInCurrentLayer") id mcurrlayer
-  (return . catMaybes . map findStrkInRItem . view gitems) currlayer
--}      
 
 

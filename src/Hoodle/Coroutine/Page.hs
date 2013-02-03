@@ -88,8 +88,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst =
           | npgnum >= totnumpages = 
             let cbkg = view gbackground lpage
                 nbkg 
-                  | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
-                                      in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty } 
+                  | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty } 
                   | otherwise = cbkg 
                 npage = set gbackground nbkg 
                         . newSinglePageFromOld $ lpage
@@ -100,6 +99,9 @@ changePageInHoodleModeState bsty npgnum hdlmodst =
                             pg = maybeError' "changePage" (M.lookup npg pgs)
                         in (False,npg,pg,ehdl) 
     in (isChanged,npgnum',npage',either ViewAppendState SelectState ehdl')
+
+{-let bkg = rbkg2Bkg cbkg 
+                                      in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty }  -}
 
 -- | 
 canvasZoomUpdateGenRenderCvsId :: MainCoroutine () 

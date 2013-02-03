@@ -85,8 +85,9 @@
        </menu>
        <menuitem action="APALLPGA" />
        <separator />
-       <menuitem action="LDBKGA" />
-       <menuitem action="BKGSCRSHTA" />
+       <menuitem action="EMBEDBKGPDFA" />
+       <!-- <menuitem action="LDBKGA" /> -->
+       <!-- <menuitem action="BKGSCRSHTA" /> -->
        <separator />
        <menuitem action="DEFPPA" />                        
        <menuitem action="SETDEFPPA" />    

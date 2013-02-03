@@ -186,7 +186,7 @@ viewAppendMode = do
         (PenWork,EraserButton) -> eraserStart cid pcoord
         (EraserWork,_)      -> eraserStart cid pcoord 
         (HighlighterWork,_) -> highlighterStart cid pcoord
-    PenMove cid pcoord -> liftIO $ putStrLn "pen moved in view append"
+    PenMove cid pcoord -> return () --  liftIO $ putStrLn "pen moved in view append"
     _ -> defaultEventProcess r1
 
 -- |
@@ -200,7 +200,7 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
-    PenMove cid pcoord -> liftIO $ putStrLn "pen move in selectmode"
+    PenMove cid pcoord -> return () -- liftIO $ putStrLn "pen move in selectmode"
     PenColorChanged c -> do modify (penInfo.currentTool.penColor .~ c)
                             selectPenColorChanged c
     PenWidthChanged v -> do 
@@ -259,8 +259,7 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
         cpage = getPageFromGHoodleMap pgnum hdl
         cbkg = view gbackground cpage
         nbkg 
-          | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
-                              in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty } 
+          | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
           | otherwise = cbkg 
         npage = set gbackground nbkg cpage 
         npgs = set (at pgnum) (Just npage) pgs 
@@ -268,6 +267,8 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
     modeChange ToViewAppendMode     
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
+{- let bkg = rbkg2Bkg cbkg 
+                              in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty }  -}
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess ev = -- for debugging
                             do liftIO $ putStrLn "--- no default ---"
@@ -351,8 +352,9 @@ menuEventProcess MenuApplyToAllPages = do
         changeBkg cpage = 
           let cbkg = view gbackground cpage
               nbkg 
-                | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
-                                    in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty } 
+                | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
+{- let bkg = rbkg2Bkg cbkg 
+                                    in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty } -}
                 | otherwise = cbkg 
           in set gbackground nbkg cpage 
         npgs = fmap changeBkg pgs 
@@ -360,6 +362,7 @@ menuEventProcess MenuApplyToAllPages = do
     modeChange ToViewAppendMode     
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
+menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

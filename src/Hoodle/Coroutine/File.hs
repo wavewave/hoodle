@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -17,16 +19,20 @@ module Hoodle.Coroutine.File where
 -- from other packages
 import           Control.Category
 import           Control.Lens
-import           Control.Monad.State
+import           Control.Monad.State hiding (mapM)
 import           Control.Monad.Trans.Either
-import           Data.ByteString (readFile)
+import           Data.ByteString (readFile,concat)
+import qualified Data.ByteString as S (writeFile,hGet)
 import           Data.ByteString.Base64 
-import           Data.ByteString.Char8 as B (pack)
+import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
+import           Data.Traversable (mapM)
 import qualified Data.IntMap as IM
 import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory
 import           System.Exit 
 import           System.FilePath
@@ -42,6 +48,7 @@ import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
+import           Hoodle.Util.Process
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Accessor
@@ -56,13 +63,14 @@ import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
+-- import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 --
-import Prelude hiding ((.),id,readFile)
+import Prelude hiding ((.),id,readFile,concat,mapM)
 
 
 -- |
@@ -231,9 +239,6 @@ fileLoad filename = do
     invalidateAll 
     applyActionToAllCVS adjustScrollbarWithGeometryCvsId
 
--- let hdlmodst = view hoodleModeState xstate1
---     hdlmodst' <- liftIO $ resetHoodleModeStateBuffers hdlmodst    
---     let xstate' = set hoodleModeState hdlmodst' xstate1
 
 resetHoodleBuffers :: MainCoroutine () 
 resetHoodleBuffers = do 
@@ -596,3 +601,45 @@ embedPredefinedImage3 = do
         put nxstate2
         invalidateAll         
         
+-- | 
+embedPDFInPage :: RPage -> IO RPage
+embedPDFInPage pg = do 
+#ifdef POPPLER
+    let Dim w h = view gdimension pg 
+        bkg = view gbackground pg   
+    case bkg of 
+      RBkgPDF _ f n mpdf msfc -> do 
+        case mpdf of 
+          Nothing -> return pg 
+          Just pdf -> do 
+            {-bstr <- pipeAction (withPDFSurface "/dev/stdout" w h $ \sfc -> 
+                                 renderWith sfc (PopplerPage.pageRender pdf))
+                               (return . concat . L.toChunks) -}
+            -- S.writeFile "embedtest.pdf" bstr
+            let args = ["A="++B.unpack f, "cat", "A"++ show n, "output", "-"] 
+            print args 
+            (_,Just hout,_,_) <- createProcess (proc "pdftk" args) { std_out = CreatePipe } 
+            
+
+            bstr <- L.hGetContents hout
+
+            let -- bstr = B.pack str 
+                b64str = (encode . concat . L.toChunks) bstr 
+                ebdsrc = "data:application/x-pdf;base64," <> b64str
+            let nbkg = RBkgEmbedPDF ebdsrc mpdf msfc 
+            return (set gbackground nbkg pg)
+      _ -> return pg 
+#else
+    return pg 
+#endif
+
+-- | 
+embedAllPDFBackground :: MainCoroutine () 
+embedAllPDFBackground = do 
+  xst <- get 
+  let hdl = getHoodle xst
+  npgs <- liftIO . mapM embedPDFInPage . view gpages $ hdl
+  let nhdl = set gpages npgs hdl
+  modeChange ToViewAppendMode
+  commit (set hoodleModeState (ViewAppendState nhdl) xst)
+  invalidateAll   

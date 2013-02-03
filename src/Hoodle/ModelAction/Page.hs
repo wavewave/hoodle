@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Page 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -180,14 +180,13 @@ addNewPageInHoodle :: BackgroundStyle
                    -> AddDirection  
                    -> Hoodle EditMode
                    -> Int 
-                   -> Hoodle EditMode  -- IO (Hoodle EditMode)
+                   -> Hoodle EditMode 
 addNewPageInHoodle bsty dir hdl cpn = 
   let pagelst = M.elems . view gpages $ hdl
       (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
       cbkg = view gbackground cpage
       nbkg 
-        | isRBkgSmpl cbkg = let bkg = rbkg2Bkg cbkg 
-                            in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty } 
+        | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
         | otherwise = cbkg 
       npage = set gbackground nbkg 
               . newSinglePageFromOld 
@@ -196,7 +195,11 @@ addNewPageInHoodle bsty dir hdl cpn =
                    PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                    PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
       nhdl = set gpages (M.fromList . zip [0..] $ npagelst) hdl
-  in nhdl -- return nhdl
+  in nhdl 
+
+
+                 -- let bkg = rbkg2Bkg cbkg 
+                          -- in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty } 
 
 -- | 
 relZoomRatio :: CanvasGeometry -> ZoomModeRel -> Double

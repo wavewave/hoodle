@@ -19,13 +19,16 @@
 
 module Graphics.Hoodle.Render.Background where
 
+import           Control.Applicative
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
 import           Graphics.Rendering.Cairo
 --
 #ifdef POPPLER
+import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
+import qualified Data.Map as M
 import           Data.Monoid
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -33,7 +36,11 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
+import           Data.Hoodle.Simple
+import           Hoodle.Util.Process
 --
+import           Graphics.Hoodle.Render.Type.Background
+-- 
 import Prelude hiding (mapM_)
 
 isPopplerEnabled :: Bool  
@@ -51,14 +58,25 @@ popplerGetDocFromFile fp =
     (C.unpack ("file://localhost" `mappend` fp)) Nothing 
 #endif
 
-{-
-getByteStringIfEmbeddedPDF 
+getByteStringIfEmbeddedPDF :: ByteString -> Maybe ByteString 
+getByteStringIfEmbeddedPDF bstr = do 
+    guard (C.length bstr > 30)
+    let (header,dat) = C.splitAt 30 bstr 
+    guard (header == "data:application/x-pdf;base64,") 
+    either (const Nothing) return (decode dat)
+
+
 
 #ifdef POPPLER
 popplerGetDocFromDataURI :: ByteString -> IO (Maybe Poppler.Document) 
-popplerGetDocFromDataURI dat = undefined 
+popplerGetDocFromDataURI dat = do 
+  let mdecoded = getByteStringIfEmbeddedPDF dat 
+  case mdecoded of 
+    Nothing -> return Nothing 
+    Just decoded -> do 
+      pipeActionWith (C.writeFile "/dev/stdout" decoded) 
+        (\fn -> popplerGetDocFromFile (C.pack fn))
 #endif
--}
 
 
 #ifdef POPPLER             
@@ -169,6 +187,73 @@ drawRuling_InBBox (BBox (x1,y1) (x2,y2)) w h style = do
       mapM_ drawonegraphhoriz graphYs
     _ -> return ()     
 
+
+-- | render background without any constraint 
+renderBkg :: (Background,Dimension) -> Render () 
+renderBkg (Background _typ col sty,Dim w h) = do 
+    let c = M.lookup col predefined_bkgcolor  
+    case c of 
+      Just (r,g,b,_a) -> setSourceRGB r g b 
+      Nothing        -> setSourceRGB 1 1 1 
+    rectangle 0 0 w h 
+    fill
+    drawRuling w h sty
+renderBkg (BackgroundPdf _ _ _ _,Dim w h) = do 
+    setSourceRGBA 1 1 1 1
+    rectangle 0 0 w h 
+    fill
+renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do 
+    setSourceRGBA 1 1 1 1
+    rectangle 0 0 w h 
+    fill
+
+
+
+-- |
+cnstrctRBkg_StateT :: Dimension -> Background 
+                   -> StateT (Maybe Context) IO RBackground
+cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
+  let rbkg = bkg2RBkg bkg
+  case rbkg of 
+    RBkgSmpl _c _s msfc -> do 
+      case msfc of 
+        Just _ -> return rbkg
+        Nothing -> do 
+          sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
+          renderWith sfc $ renderBkg (bkg,dim) 
+          return rbkg { rbkg_cairosurface = Just sfc}
+    RBkgPDF md mf pn _ _ -> do 
+#ifdef POPPLER
+      mctxt <- get 
+      case mctxt of
+        Nothing -> do 
+          case (md,mf) of 
+            (Just d, Just f) -> do 
+              mdoc <- liftIO $ popplerGetDocFromFile f
+              put $ Just (Context d f mdoc)
+              case mdoc of 
+                Just doc -> do  
+                  (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
+                  return (rbkg {rbkg_popplerpage = mpg, rbkg_cairosurface = msfc})
+                Nothing -> error "no pdf doc? in mkBkgPDF"
+            _ -> return rbkg 
+        Just (Context _oldd _oldf olddoc) -> do 
+          (mpage,msfc) <- case olddoc of 
+            Just doc -> do 
+              liftIO $ popplerGetPageFromDoc doc pn
+            Nothing -> return (Nothing,Nothing) 
+          return $ RBkgPDF md mf pn mpage msfc
+#else
+          return rbkg
+#endif  
+    RBkgEmbedPDF s _ _ -> do 
+#ifdef POPPLER
+      mdoc <- liftIO $ popplerGetDocFromDataURI s
+      let mio = popplerGetPageFromDoc <$> mdoc <*> pure 1 
+      maybe (return rbkg) (\act -> liftIO act >>= \(mpg,msfc)->return (RBkgEmbedPDF s mpg msfc)) mio
+#else
+      return rbkg
+#endif  
 
       
 

@@ -55,6 +55,15 @@ data RBackground = RBkgSmpl
                    , rbkg_popplerpage :: Maybe ()
 #endif
                    , rbkg_cairosurface :: Maybe Surface } 
+                 | RBkgEmbedPDF
+                   { rbkg_src :: ByteString
+#ifdef POPPLER
+                   , rbkg_popplerpage :: Maybe Poppler.Page 
+#else    
+                   , rbkg_popplerpage :: Maybe ()
+#endif
+                   , rbkg_cairosurface :: Maybe Surface } 
+
 
 isRBkgSmpl :: RBackground -> Bool 
 isRBkgSmpl (RBkgSmpl _ _ _) = True 
@@ -69,8 +78,14 @@ data RBkgOpt = RBkgDrawPDF
 rbkg2Bkg :: RBackground -> Background 
 rbkg2Bkg (RBkgSmpl c s _) = Background "solid" c s 
 rbkg2Bkg (RBkgPDF d f n _ _ ) = BackgroundPdf "pdf" d f n 
+rbkg2Bkg (RBkgEmbedPDF s _ _) = BackgroundEmbedPdf "embedpdf" s
+
 
 -- |
 bkg2RBkg :: Background -> RBackground
 bkg2RBkg (Background _t c s) = RBkgSmpl c s Nothing
 bkg2RBkg (BackgroundPdf _t md mf pn) = RBkgPDF md mf pn Nothing Nothing
+bkg2RBkg (BackgroundEmbedPdf _ s) = RBkgEmbedPDF s Nothing Nothing 
+
+
+

@@ -21,7 +21,7 @@ module Graphics.Hoodle.Render.Debug
 -- * dummy rendering 
   renderRBkg_Dummy  
 -- * render in bbox using non R-structure 
-, renderBkg_InBBox
+-- , renderBkg_InBBox
 -- * nopdf
 , renderRBkg_NoPDF
 -- * render only bbox (for debug purpose)
@@ -72,6 +72,7 @@ renderRBkg_Dummy (_,Dim w h) = do
 renderRBkg_NoPDF :: (RBackground,Dimension) -> Render ()
 renderRBkg_NoPDF r@(RBkgSmpl _ _ _,_) = renderRBkg r >> return ()
 renderRBkg_NoPDF (RBkgPDF _ _ _ _ _,_) = return ()
+renderRBkg_NoPDF (RBkgEmbedPDF _ _ _,_) = return ()
 
 --------------
 -- BBoxOnly --

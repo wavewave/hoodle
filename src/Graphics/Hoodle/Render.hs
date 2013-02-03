@@ -25,7 +25,7 @@ module Graphics.Hoodle.Render
 , renderItem 
 , renderPage
 -- * render in bbox using non R-structure 
-, renderBkg_InBBox
+-- , renderBkg_InBBox
 -- * simple rendering using R-structure 
 , renderRBkg
 , renderRItem 
@@ -53,7 +53,7 @@ import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import           Data.Traversable (mapM)
 import qualified Data.Map as M
-import           Data.Monoid
+-- import           Data.Monoid
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
@@ -143,21 +143,6 @@ renderItem (ItemStroke strk) = renderStrk strk
 renderItem (ItemImage img) = renderImg img
 renderItem (ItemSVG svg) = renderSVG svg
 
--- | render background without any constraint 
-renderBkg :: (Background,Dimension) -> Render () 
-renderBkg (Background _typ col sty,Dim w h) = do 
-    let c = M.lookup col predefined_bkgcolor  
-    case c of 
-      Just (r,g,b,_a) -> setSourceRGB r g b 
-      Nothing        -> setSourceRGB 1 1 1 
-    rectangle 0 0 w h 
-    fill
-    drawRuling w h sty
-renderBkg (BackgroundPdf _ _ _ _,Dim w h) = do 
-    setSourceRGBA 1 1 1 1
-    rectangle 0 0 w h 
-    fill
-
 
 -- |
 renderPage :: Page -> Render ()
@@ -172,7 +157,7 @@ renderPage page = do
 -- non-R but in bbox 
 --- 
 
-
+{-
 -- | render Background in BBox 
 renderBkg_InBBox :: Maybe BBox -> Dimension -> Background -> Render ()
 renderBkg_InBBox mbbox dim@(Dim w h) (Background typ col sty) = do 
@@ -189,6 +174,9 @@ renderBkg_InBBox mbbox dim@(Dim w h) (Background typ col sty) = do
         drawRuling_InBBox bbox w h sty
 renderBkg_InBBox _ _  (BackgroundPdf _ _ _ _) = 
     error "BackgroundPdf in renderBkg_InBBox"
+renderBkg_InBBox _ _  (BackgroundEmbedPdf _ _ _) = 
+    error "BackgroundPdf in renderBkg_InBBox"
+-}
 
 -----
 -- R-structure 
@@ -198,6 +186,18 @@ renderBkg_InBBox _ _  (BackgroundPdf _ _ _ _) =
 renderRBkg :: (RBackground,Dimension) -> Render (RBackground,Dimension)
 renderRBkg (r@(RBkgSmpl _ _ _),dim) = renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
 renderRBkg (r@(RBkgPDF _ _ _ p _),dim) = do
+  case p of 
+    Nothing -> return () 
+    Just pg -> do 
+      let Dim w h = dim 
+      setSourceRGBA 1 1 1 1
+      rectangle 0 0 w h 
+      fill
+#ifdef POPPLER
+      PopplerPage.pageRender pg
+#endif     
+  return (r,dim)
+renderRBkg (r@(RBkgEmbedPDF _ p _),dim) = do
   case p of 
     Nothing -> return () 
     Just pg -> do 
@@ -270,6 +270,10 @@ renderRBkg_InBBox mbbox (b,dim) = do
         clipBBox mbbox
         renderRBkg_Buf (b,dim)
         resetClip
+      RBkgEmbedPDF _ _ _ -> do 
+        clipBBox mbbox
+        renderRBkg_Buf (b,dim)
+        resetClip
     return (b,dim)
 
 
@@ -324,6 +328,13 @@ renderRBkg_Buf (b,dim) = do
           Just sfc -> do 
             setSourceSurface sfc 0 0 
             paint 
+      RBkgEmbedPDF _ _ msfc -> do 
+        case msfc of 
+          Nothing -> renderRBkg (b,dim) >> return ()
+          Just sfc -> do 
+            setSourceSurface sfc 0 0 
+            paint 
+
     return (b,dim)
 
 -- | 
@@ -359,15 +370,6 @@ updateLayerBuf (Dim w h) mbbox lyr = do
         renderRLayer_InBBox Nothing lyr
       return (set gbuffer (LyBuf (Just sfc)) lyr) 
       
-       
-      -- liftIO $ putStrLn "renderRLayer_InBBoxBuf"
-         -- clipBBox mbbox    
-        -- setSourceSurface sfc 0 0 
-        -- paint 
-        -- resetClip
-
-
-
 -- | 
 updatePageBuf :: RPage -> IO RPage 
 updatePageBuf pg = do 
@@ -417,41 +419,3 @@ cnstrctRLayer lyr = do
   return (set gitems nitms emptyRLayer)
 
                  
--- |
-cnstrctRBkg_StateT :: Dimension -> Background 
-                   -> StateT (Maybe Context) IO RBackground
-cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
-  let rbkg = bkg2RBkg bkg
-  case rbkg of 
-    RBkgSmpl _c _s msfc -> do 
-      case msfc of 
-        Just _ -> return rbkg
-        Nothing -> do 
-          sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
-          renderWith sfc $ renderBkg (bkg,dim) 
-          return rbkg { rbkg_cairosurface = Just sfc}
-    RBkgPDF md mf pn _ _ -> do 
-#ifdef POPPLER
-      mctxt <- get 
-      case mctxt of
-        Nothing -> do 
-          case (md,mf) of 
-            (Just d, Just f) -> do 
-              mdoc <- liftIO $ popplerGetDocFromFile f
-              put $ Just (Context d f mdoc)
-              case mdoc of 
-                Just doc -> do  
-                  (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
-                  return (rbkg {rbkg_popplerpage = mpg, rbkg_cairosurface = msfc})
-                Nothing -> error "no pdf doc? in mkBkgPDF"
-            _ -> return rbkg 
-        Just (Context _oldd _oldf olddoc) -> do 
-          (mpage,msfc) <- case olddoc of 
-            Just doc -> do 
-              liftIO $ popplerGetPageFromDoc doc pn
-            Nothing -> return (Nothing,Nothing) 
-          return $ RBkgPDF md mf pn mpage msfc
-#else
-          return rbkg
-#endif  
-

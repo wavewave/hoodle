@@ -1,10 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
--- {-# LANGUAGE ExistentialQuantification, OverloadedStrings, 
---              FlexibleInstances, FlexibleContexts,  
---              TypeFamilies, CPP #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.PDFBackground 
@@ -209,13 +205,53 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
 
 
 
--- |
+-- | this has some bugs. need to fix 
 cnstrctRBkg_StateT :: Dimension -> Background 
                    -> StateT (Maybe Context) IO RBackground
 cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
-  let rbkg = bkg2RBkg bkg
-  case rbkg of 
-    RBkgSmpl _c _s msfc -> do 
+  case bkg of 
+    Background _t c s -> do 
+      sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
+      renderWith sfc $ renderBkg (bkg,dim) 
+      return (RBkgSmpl c s (Just sfc))
+    BackgroundPdf _t md mf pn -> do 
+      case (md,mf) of 
+        (Just d, Just f) -> do 
+#ifdef POPPLER
+           mdoc <- liftIO $ popplerGetDocFromFile f
+           put $ Just (Context d f mdoc)
+           case mdoc of 
+             Just doc -> do  
+               (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
+               return (RBkgPDF md f pn mpg msfc)
+             Nothing -> error "error1 in cnstrctRBkg_StateT"
+#else
+           return (RBkgPDF md f pn Nothing Nothing)
+#endif  
+        _ -> do 
+          mctxt <- get
+          case mctxt of  
+            Just (Context oldd oldf olddoc) -> do 
+              (mpage,msfc) <- case olddoc of 
+                Just doc -> do 
+                  liftIO $ popplerGetPageFromDoc doc pn
+                Nothing -> error "error2 in cnstrctRBkg_StateT" 
+              return (RBkgPDF (Just oldd) oldf pn mpage msfc)
+            Nothing -> error "error3 in cnstrctRBkg_StateT" 
+    BackgroundEmbedPdf _ s -> do 
+      let rbkg = RBkgEmbedPDF s Nothing Nothing 
+#ifdef POPPLER
+      mdoc <- liftIO $ popplerGetDocFromDataURI s
+      let mio = popplerGetPageFromDoc <$> mdoc <*> pure 1 
+      maybe (return rbkg) (\act -> liftIO act >>= \(mpg,msfc)->return (RBkgEmbedPDF s mpg msfc)) mio
+#else
+      return rbkg
+#endif  
+
+
+
+
+{-    RBkgSmpl _c _s msfc -> do 
       case msfc of 
         Just _ -> return rbkg
         Nothing -> do 
@@ -255,5 +291,6 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       return rbkg
 #endif  
 
+-}
       
 

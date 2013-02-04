@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Script.Hook
--- Copyright   : (c) 2012 Ian-Woo Kim
+-- Copyright   : (c) 2012, 2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -14,6 +14,8 @@ module Hoodle.Script.Hook where
 
 -- import System.FilePath 
 import Data.Hoodle.Simple 
+import Graphics.Hoodle.Render.Type.Hoodle
+-- 
 
 -- | 
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
@@ -22,6 +24,7 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , afterUpdateClipboardHook :: Maybe ([Item] -> IO ())
                  , customContextMenuTitle :: Maybe String 
                  , customContextMenuHook :: Maybe ([Item] -> IO ())
+                 , customAutosavePage :: Maybe (RPage -> IO ())
                  , fileNameSuggestionHook :: Maybe (IO String) 
                  , recentFolderHook :: Maybe (IO FilePath)
                  , embedPredefinedImageHook :: Maybe (IO FilePath) 
@@ -37,6 +40,7 @@ defaultHook = Hook { saveAsHook = Nothing
                    , afterUpdateClipboardHook = Nothing
                    , customContextMenuTitle = Nothing 
                    , customContextMenuHook = Nothing 
+                   , customAutosavePage = Nothing 
                    , fileNameSuggestionHook = Nothing 
                    , recentFolderHook = Nothing 
                    , embedPredefinedImageHook = Nothing 

@@ -84,6 +84,12 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
         invalidateAll 
 processContextMenu CMenuRotateCW = rotateSelection CW
 processContextMenu CMenuRotateCCW = rotateSelection CCW
+processContextMenu CMenuAutosavePage = do 
+    xst <- get 
+    pg <- getCurrentPageCurr 
+    maybe (return ()) liftIO $ do 
+      hset <- view hookSet xst
+      customAutosavePage hset <*> pure pg 
 processContextMenu CMenuCustom =  
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -95,19 +101,6 @@ processContextMenu CMenuCustom =
               maybe (return ()) liftIO $ do 
                 hset <- view hookSet xst    
                 customContextMenuHook hset <*> pure hititms
-{-    
-    xst <- get 
-    case view hoodleModeState xst of 
-      SelectState thdl -> do 
-        case view gselSelected thdl of 
-          Nothing -> return () 
-          Just (_,tpg) -> do 
-            let hititms = (map rItem2Item . getSelectedItms) tpg  
-            maybe (return ()) liftIO $ do 
-              hset <- view hookSet xst    
-              customContextMenuHook hset <*> pure hititms  
-      _ -> return () 
--}    
           
 -- | 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
@@ -165,8 +158,8 @@ showContextMenu (pnum,(x,y)) = do
                     menuitem3 <- menuItemNewWithLabel "Cut"
                     menuitem4 <- menuItemNewWithLabel "Copy"
                     menuitem5 <- menuItemNewWithLabel "Delete"
-                    menuitem6 <- menuItemNewWithLabel "RotateCW"
-                    menuitem7 <- menuItemNewWithLabel "RotateCCW"
+                    {- menuitem6 <- menuItemNewWithLabel "RotateCW"
+                    menuitem7 <- menuItemNewWithLabel "RotateCCW" -}
                     menuitem1 `on` menuItemActivate $   
                       evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
                     menuitem2 `on` menuItemActivate $ 
@@ -177,17 +170,17 @@ showContextMenu (pnum,(x,y)) = do
                       evhandler (GotContextMenuSignal (CMenuCopy))
                     menuitem5 `on` menuItemActivate $    
                       evhandler (GotContextMenuSignal (CMenuDelete))     
-                    menuitem6 `on` menuItemActivate $ 
+                    {- menuitem6 `on` menuItemActivate $ 
                       evhandler (GotContextMenuSignal (CMenuRotateCW))
                     menuitem7 `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuRotateCCW)) 
+                      evhandler (GotContextMenuSignal (CMenuRotateCCW)) -}
                     menuAttach menu menuitem1 0 1 1 2 
                     menuAttach menu menuitem2 0 1 2 3
                     menuAttach menu menuitem3 1 2 0 1                     
                     menuAttach menu menuitem4 1 2 1 2                     
                     menuAttach menu menuitem5 1 2 2 3    
-                    menuAttach menu menuitem6 1 2 3 4 
-                    menuAttach menu menuitem7 1 2 4 5 
+                    {- menuAttach menu menuitem6 1 2 3 4 
+                    menuAttach menu menuitem7 1 2 4 5 -}
                 case (customContextMenuTitle =<< view hookSet xstate) of 
                   Nothing -> return () 
                   Just ttl -> do 
@@ -195,6 +188,12 @@ showContextMenu (pnum,(x,y)) = do
                     custommenu `on` menuItemActivate $ 
                       evhandler (GotContextMenuSignal (CMenuCustom))
                     menuAttach menu custommenu 0 1 0 1 
+                
+                menuitem8 <- menuItemNewWithLabel "Autosave This Page Image"
+                menuitem8 `on` menuItemActivate $ 
+                  evhandler (GotContextMenuSignal (CMenuAutosavePage))
+                menuAttach menu menuitem8 1 2 3 4 
+                    
                 runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
                 widgetShowAll menu 
                 menuPopup menu Nothing 

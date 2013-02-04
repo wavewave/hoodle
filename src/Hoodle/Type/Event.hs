@@ -177,6 +177,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuCanvasView CanvasId PageNum Double Double  
                       | CMenuRotateCW
                       | CMenuRotateCCW 
+                      | CMenuAutosavePage
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

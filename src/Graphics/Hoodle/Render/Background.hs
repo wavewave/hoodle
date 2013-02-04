@@ -21,10 +21,10 @@ import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
 import           Graphics.Rendering.Cairo
 --
+import qualified Data.Map as M
 #ifdef POPPLER
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
-import qualified Data.Map as M
 import           Data.Monoid
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -54,13 +54,14 @@ popplerGetDocFromFile fp =
     (C.unpack ("file://localhost" `mappend` fp)) Nothing 
 #endif
 
+#ifdef POPPLER
 getByteStringIfEmbeddedPDF :: ByteString -> Maybe ByteString 
 getByteStringIfEmbeddedPDF bstr = do 
     guard (C.length bstr > 30)
     let (header,dat) = C.splitAt 30 bstr 
     guard (header == "data:application/x-pdf;base64,") 
     either (const Nothing) return (decode dat)
-
+#endif
 
 
 #ifdef POPPLER
@@ -236,7 +237,11 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
             Just (Context oldd oldf olddoc) -> do 
               (mpage,msfc) <- case olddoc of 
                 Just doc -> do 
+#ifdef POPPLER
                   liftIO $ popplerGetPageFromDoc doc pn
+#else
+                  return (Nothing,Nothing)
+#endif
                 Nothing -> error "error2 in cnstrctRBkg_StateT" 
               return (RBkgPDF (Just oldd) oldf pn mpage msfc)
             Nothing -> error "error3 in cnstrctRBkg_StateT" 

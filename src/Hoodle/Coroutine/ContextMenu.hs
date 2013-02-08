@@ -19,16 +19,19 @@ import           Control.Applicative
 import           Control.Category
 import           Control.Lens
 import           Control.Monad.State
+import qualified Data.ByteString.Char8 as B
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.FilePath
+import           System.Process
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Select
+import           Data.Hoodle.Simple (link_location)
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 -- from this package 
@@ -180,11 +183,16 @@ showContextMenu (pnum,(x,y)) = do
                     menuAttach menu menuitem5 1 2 2 3    
                     case sitms of 
                       sitm : [] -> do 
-                        menuitemsingle <- menuItemNewWithLabel "SingleItem" 
-                        menuitemsingle `on` menuItemActivate $
-                          print "single item" 
-                        menuAttach menu menuitemsingle 0 1 3 4 
-                      
+                        case sitm of 
+                          RItemLink lnk _ -> do 
+                            let fp = (B.unpack . link_location . bbxed_content) lnk
+                                cmdargs = [fp]
+                            menuitemlnk <- menuItemNewWithLabel ("Open "++fp) 
+                            menuitemlnk `on` menuItemActivate $ do
+                              createProcess (proc "hoodle" cmdargs)  
+                              return () 
+                            menuAttach menu menuitemlnk 0 1 3 4 
+                          _ -> return () 
                       _ -> return () 
                     {- menuAttach menu menuitem6 1 2 3 4 
                     menuAttach menu menuitem7 1 2 4 5 -}

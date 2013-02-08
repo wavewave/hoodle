@@ -98,6 +98,7 @@
        <menuitem action="HIGHLTA" />
        <separator />
        <menuitem action="TEXTA" /> 
+       <menuitem action="LINKA" />
        <menuitem action="SHPRECA" />
        <menuitem action="RULERA" />       
        <separator />

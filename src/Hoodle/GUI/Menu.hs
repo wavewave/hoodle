@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI.Menu 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -248,6 +248,7 @@ getMenuUI evar = do
   
   -- tools menu
   texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
+  linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just "mylink") (justMenu MenuAddLink)
   shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
   rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
   -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
@@ -322,7 +323,7 @@ getMenuUI evar = do
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
         , apallpga, embedbkgpdfa, {- ldbkga, bkgscrshta, -} defppa, setdefppa
-        , texta, shpreca, rulera, clra, clrpcka, penopta 
+        , texta, linka, shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa

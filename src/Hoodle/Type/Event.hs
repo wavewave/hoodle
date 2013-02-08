@@ -58,6 +58,7 @@ data MyEvent = Initialized
              | GotContextMenuSignal ContextMenuEvent
              | LaTeXInput (Maybe (ByteString,ByteString))
              | TextInput (Maybe String) 
+             | AddLink (Maybe (String,FilePath))
              -- | EventConnected
              | EventDisconnected
              deriving (Show,Eq,Ord)
@@ -125,6 +126,7 @@ data MenuEvent = MenuNew
                | MenuDefaultPaper
                | MenuSetAsDefaultPaper
                | MenuText 
+               | MenuAddLink
                | MenuShapeRecognizer
                | MenuRuler
                | MenuSelectRegion

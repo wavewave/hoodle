@@ -125,6 +125,8 @@ buildItem :: Item -> Builder
 buildItem (ItemStroke strk) = buildStroke strk
 buildItem (ItemImage img) = buildImage img
 buildItem (ItemSVG svg) = buildSVG svg 
+buildItem (ItemLink lnk) = buildLink lnk
+
 
 -- | 
 buildStroke :: Stroke -> Builder
@@ -179,7 +181,32 @@ buildSVG (SVG mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString "<render><![CDATA[" 
     <> fromByteString rdr 
     <> fromByteString "]]></render>"
-    <> fromByteString "</svgobject>"
+    <> fromByteString "</svgobject>\n"
+
+buildLink :: Link -> Builder 
+buildLink (Link i typ loc mtxt mcmd rdr (x,y) (Dim w h)) =
+    fromByteString "<link id=\""  
+    <> fromByteString i 
+    <> fromByteString "\" type=\"" 
+    <> fromByteString typ
+    <> fromByteString "\" location=\""
+    <> fromByteString loc
+    <> fromByteString "\" x=\"" 
+    <> fromByteString (toFixed 2 x)
+    <> fromByteString "\" y=\""
+    <> fromByteString (toFixed 2 y)
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 w)
+    <> fromByteString "\" height=\""
+    <> fromByteString (toFixed 2 h)
+    <> fromByteString "\" >\n"
+    <> maybe mempty (\txt->fromByteString "<text><![CDATA[" <> fromByteString txt <> fromByteString "]]></text>") mtxt 
+    <> maybe mempty (\cmd->fromByteString "<command><![CDATA[" <> fromByteString cmd <> fromByteString "]]></command>") mcmd 
+    <> fromByteString "<render><![CDATA[" 
+    <> fromByteString rdr 
+    <> fromByteString "]]></render>"
+    <> fromByteString "</link>\n"
+
 
 -- | 
 build2D :: Pair Double Double -> Builder 

@@ -105,6 +105,8 @@ instance MakeBBoxedable Identity Image where
 instance MakeBBoxedable Identity SVG where 
   makeBBoxed svg = return (BBoxed svg (bboxFromSVG svg))
 
+instance MakeBBoxedable Identity Link where
+  makeBBoxed lnk = return (BBoxed lnk (bboxFromLink lnk))
 
 {-
 -- | 
@@ -232,6 +234,10 @@ bboxFromImage (Image _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
 -- | 
 bboxFromSVG :: SVG -> BBox 
 bboxFromSVG (SVG _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
+
+-- | 
+bboxFromLink :: Link -> BBox 
+bboxFromLink (Link _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
 
 
 -- | general transform BBox         

@@ -15,12 +15,15 @@
 module Data.Hoodle.Select where
 
 -- from other packages
+import Control.Applicative
 import Control.Lens
 import Data.ByteString 
--- 
+--
+import Data.Hoodle.Generic 
 
 -- | 
 data GSelect a b = GSelect { gselect_ttl :: ByteString 
+                           , gselect_embeddedpdf :: Maybe ByteString 
                            , gselect_all :: a 
                            , gselect_selected :: b
                            }
@@ -31,6 +34,10 @@ gselTitle :: Simple Lens (GSelect a b) ByteString
 gselTitle = lens gselect_ttl (\f a -> f {gselect_ttl = a})
 
 -- |
+gselEmbeddedPdf :: Simple Lens (GSelect a b) (Maybe ByteString)
+gselEmbeddedPdf = lens gselect_embeddedpdf (\f a -> f {gselect_embeddedpdf = a})
+
+-- |
 gselAll :: Simple Lens (GSelect a b) a 
 gselAll = lens gselect_all (\f a -> f {gselect_all = a} )
 
@@ -39,3 +46,14 @@ gselSelected :: Simple Lens (GSelect a b) b
 gselSelected = lens gselect_selected (\f a -> f {gselect_selected = a})
 
 
+gSelect2GHoodle :: GSelect (m a) b -> GHoodle m a 
+gSelect2GHoodle = GHoodle <$> view gselTitle 
+                          <*> view gselEmbeddedPdf 
+                          <*> view gselAll 
+
+
+gHoodle2GSelect :: GHoodle m a -> GSelect (m a) (Maybe b)
+gHoodle2GSelect = GSelect <$> view gtitle 
+                          <*> view gembeddedpdf
+                          <*> view gpages
+                          <*> pure Nothing 

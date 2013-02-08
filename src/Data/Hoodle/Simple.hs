@@ -173,6 +173,7 @@ data Background = Background { bkg_type :: !S.ByteString
 
 -- | 
 data Hoodle = Hoodle { hoodle_title :: !Title
+                     , hoodle_embeddedpdf :: Maybe S.ByteString
                      , hoodle_pages :: ![Page] }
              deriving Show 
 
@@ -210,6 +211,10 @@ title :: Simple Lens Hoodle Title
 title = lens hoodle_title (\f a -> f { hoodle_title = a } )
 
 -- | 
+embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)
+embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
+
+-- | 
 pages :: Simple Lens Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
 
@@ -241,7 +246,7 @@ strokes = lens layer_strokes (\f a -> f { layer_strokes = a } )
 
 -- | 
 emptyHoodle :: Hoodle
-emptyHoodle = Hoodle "" [] 
+emptyHoodle = Hoodle "" Nothing [] 
 
 -- | 
 emptyLayer :: Layer 
@@ -267,7 +272,7 @@ defaultPage = Page { page_dim = Dim  612.0 792.0
 
 -- | 
 defaultHoodle :: Hoodle 
-defaultHoodle = Hoodle "untitled" [ defaultPage  ] 
+defaultHoodle = Hoodle "untitled" Nothing [ defaultPage  ] 
 
 -- | 
 newPageFromOld :: Page -> Page

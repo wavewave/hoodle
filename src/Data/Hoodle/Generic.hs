@@ -34,6 +34,7 @@ import Prelude hiding ((.),id)
 -- | Generic Hoodle data having generic pages
 data GHoodle cntnr pg = GHoodle 
                         { ghoodle_ttl :: ByteString 
+                        , ghoodle_embeddedpdf :: Maybe ByteString 
                         , ghoodle_pgs :: cntnr pg }  
 
 -- | Generic page data having dimension, generic background
@@ -69,7 +70,7 @@ instance (Functor cntnr) => Functor (GPage bkg cntnr) where
   
 -- | 
 instance (Functor cntnr) => Functor (GHoodle cntnr) where
-  fmap f (GHoodle ttl pgs) = GHoodle ttl (fmap f pgs)
+  fmap f (GHoodle ttl pdf pgs) = GHoodle ttl pdf (fmap f pgs)
 
 ------------------------------
 -- lenses for Generic types --
@@ -79,6 +80,10 @@ instance (Functor cntnr) => Functor (GHoodle cntnr) where
 -- |
 gtitle :: Simple Lens (GHoodle cntnr pg) ByteString
 gtitle = lens ghoodle_ttl (\f a -> f { ghoodle_ttl = a } )
+
+-- | 
+gembeddedpdf :: Simple Lens (GHoodle cntnr pg) (Maybe ByteString)
+gembeddedpdf = lens ghoodle_embeddedpdf (\f a -> f { ghoodle_embeddedpdf = a } )
 
 -- |
 gpages :: Simple Lens (GHoodle cntnr pg) (cntnr pg)
@@ -129,7 +134,7 @@ instance Listable Seq.Seq where
 
 -- |
 emptyGHoodle :: (Listable m) => GHoodle m a
-emptyGHoodle = GHoodle "" (fromList [])
+emptyGHoodle = GHoodle "" Nothing (fromList [])
 
 -- | 
 emptyGPage :: (Listable cntnr) => Dimension -> bkg -> GPage bkg cntnr a 

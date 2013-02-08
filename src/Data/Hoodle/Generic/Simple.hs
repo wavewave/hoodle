@@ -46,6 +46,7 @@ mkSPage = GPage
 mkSHoodle :: Hoodle -> SHoodle 
 mkSHoodle = GHoodle 
             <$> view title 
+            <*> view embeddedPdf 
             <*> map mkSPage . view pages
 
 -- | 
@@ -58,5 +59,5 @@ spage2Page (GPage dim bkg lyrs) = Page dim bkg (map slayer2Layer lyrs)
 
 -- | 
 shoodle2Hoodle :: SHoodle -> Hoodle
-shoodle2Hoodle (GHoodle ttl pgs) = Hoodle ttl (map spage2Page pgs)
+shoodle2Hoodle (GHoodle ttl pdf pgs) = Hoodle ttl pdf (map spage2Page pgs)
 

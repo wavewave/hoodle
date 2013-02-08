@@ -305,7 +305,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               msfc = view mDrawSurface cinfo 
               pgs = view gselAll thdl 
               mcpg = view (at (unPageNum pnum)) pgs 
-              hdl = GHoodle (view gselTitle thdl) pgs 
+              hdl = gSelect2GHoodle thdl  
           geometry <- makeCanvasGeometry pnum arr canvas
           let drawpgs = catMaybes . map f 
                         $ (getPagesInViewPortRange geometry hdl) 
@@ -335,7 +335,6 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 r <- runMaybeT $ do (n,tpage) <- MaybeT (return mtpage)
                                     lift (selpagerender (PageNum n,tpage)) 
                 let nthdl2 = set gselSelected r nthdl
-            -- maybe (return ()) (\(n,tpage)-> selpagerender (PageNum n,tpage)) mtpage
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 resetClip 
@@ -401,7 +400,7 @@ cairoHittedBoxDraw tpg mbbox = do
       clipBBox mbbox
       setSourceRGBA 0.0 0.0 1.0 1.0
       let hititms = concatMap unHitted (getB alist)
-      mapM_ renderSelectedItem hititms -- renderSelectedStroke 
+      mapM_ renderSelectedItem hititms 
       let ulbbox = unUnion . mconcat . fmap (Union .Middle . getBBox) 
                    $ hititms
       case ulbbox of 

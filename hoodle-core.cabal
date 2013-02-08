@@ -61,7 +61,6 @@ Library
                    process >= 1.1, 
                    configurator == 0.2.*,
                    time >= 1.2, 
-                   TypeCompose == 0.9.*, 
                    Diff == 0.1.*,
                    dyre >= 0.8.11, 
                    cereal == 0.3.5.*,

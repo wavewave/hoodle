@@ -129,8 +129,9 @@ updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do
 updatePage :: HoodleModeState -> CanvasInfoBox -> IO CanvasInfoBox 
 updatePage (ViewAppendState hdl) c = updateCvsInfoFrmHoodle hdl c
 updatePage (SelectState thdl) c = do 
-    let hdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
+    let hdl = gSelect2GHoodle thdl 
     updateCvsInfoFrmHoodle hdl c
+ -- GHoodle (view gselTitle thdl) (view gselAll thdl)
 
 -- | 
 setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox

@@ -222,7 +222,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
         (Just d, Just f) -> do 
 #ifdef POPPLER
            mdoc <- liftIO $ popplerGetDocFromFile f
-           put $ Just (Context d f mdoc)
+           put $ Just (Context d f mdoc Nothing)
            case mdoc of 
              Just doc -> do  
                (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
@@ -234,7 +234,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
         _ -> do 
           mctxt <- get
           case mctxt of  
-            Just (Context oldd oldf olddoc) -> do 
+            Just (Context oldd oldf olddoc _) -> do 
               (mpage,msfc) <- case olddoc of 
                 Just doc -> do 
 #ifdef POPPLER
@@ -245,13 +245,22 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
                 Nothing -> error "error2 in cnstrctRBkg_StateT" 
               return (RBkgPDF (Just oldd) oldf pn mpage msfc)
             Nothing -> error "error3 in cnstrctRBkg_StateT" 
-    BackgroundEmbedPdf _ s -> do 
-      let rbkg = RBkgEmbedPDF s Nothing Nothing 
+    BackgroundEmbedPdf _ pn -> do 
+      let rbkg = RBkgEmbedPDF pn Nothing Nothing 
 #ifdef POPPLER
-      -- mdoc <- liftIO $ popplerGetDocFromDataURI s
-      -- let mio = popplerGetPageFromDoc <$> mdoc <*> pure 1 
-      -- maybe (return rbkg) (\act -> liftIO act >>= \(mpg,msfc)->return (RBkgEmbedPDF s mpg msfc)) mio
-      return rbkg 
+      mctxt <- get
+      case mctxt of  
+        Just (Context _ _ _ mdoc) -> do 
+          (mpage,msfc) <- case mdoc of 
+            Just doc -> do 
+#ifdef POPPLER
+              liftIO $ popplerGetPageFromDoc doc pn
+#else
+              return (Nothing,Nothing)
+#endif
+            Nothing -> error "error4 in cnstrctRBkg_StateT" 
+          return (RBkgEmbedPDF pn mpage msfc)
+        Nothing -> error "error5 in cnstrctRBkg_StateT" 
 #else
       return rbkg
 #endif  

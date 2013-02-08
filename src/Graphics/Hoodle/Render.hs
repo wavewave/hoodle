@@ -395,8 +395,15 @@ cnstrctRHoodle :: Hoodle -> IO RHoodle
 cnstrctRHoodle hdl = do 
   let ttl = view title hdl 
       pgs = view pages hdl
-  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) Nothing 
-  return . set gtitle ttl . set gpages (fromList npgs) $ emptyGHoodle 
+      embeddedsrc = view embeddedPdf hdl 
+#ifdef POPPLER
+  mdoc <- maybe (return Nothing) (\src -> liftIO $ popplerGetDocFromDataURI src)
+            embeddedsrc
+#else 
+  let mdoc = Nothing 
+#endif 
+  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) (Just (Context "" "" Nothing mdoc)) 
+  return . set gtitle ttl . set gembeddedpdf embeddedsrc . set gpages (fromList npgs) $ emptyGHoodle 
     
 
 -- |

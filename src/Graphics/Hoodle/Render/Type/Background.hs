@@ -34,8 +34,10 @@ data Context = Context { ctxt_domain :: ByteString
                        , ctxt_filename :: ByteString 
 #ifdef POPPLER
                        , ctxt_doc :: Maybe Poppler.Document
+                       , ctxt_embeddeddoc :: Maybe Poppler.Document
 #else
                        , ctxt_doc :: Maybe ()
+                       , ctxt_embeddeddoc :: Maybe () 
 #endif 
                        }
 

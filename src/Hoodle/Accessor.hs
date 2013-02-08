@@ -37,10 +37,6 @@ import           Hoodle.Type.PageArrangement
 --
 import           Prelude hiding ((.),id,mapM_)
 
--- | 
-waitSomeEvent :: (MyEvent -> Bool) -> MainCoroutine MyEvent 
-waitSomeEvent p = do r <- nextevent
-                     if  p r then return r else waitSomeEvent p  
 
 -- | update state
 updateXState :: (HoodleState -> MainCoroutine HoodleState) -> MainCoroutine ()

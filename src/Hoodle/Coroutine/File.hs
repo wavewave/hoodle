@@ -73,8 +73,19 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
+import           Hoodle.View.Draw
 --
 import Prelude hiding ((.),id,readFile,concat,mapM)
+
+
+-- | 
+waitSomeEvent :: (MyEvent -> Bool) -> MainCoroutine MyEvent 
+waitSomeEvent p = do 
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
+                          >> waitSomeEvent p  -- this is temporary
+      _ -> if  p r then return r else waitSomeEvent p  
 
 
 -- |
@@ -118,7 +129,8 @@ fileChooser choosertyp mfname = do
     go = do r <- nextevent                   
             case r of 
               FileChosen b -> return b  
-              _ -> go 
+              UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go  -- this is temporary
+              o -> liftIO (print o) >> go 
     action mrf = Left . ActionOrder $ \_evhandler -> do 
       dialog <- fileChooserDialogNew Nothing Nothing choosertyp 
                   [ ("OK", ResponseOk) 

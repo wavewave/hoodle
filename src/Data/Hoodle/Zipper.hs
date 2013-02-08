@@ -19,7 +19,6 @@
 module Data.Hoodle.Zipper where
 
 import Control.Applicative hiding (empty)
-import Control.Compose
 import Data.Foldable
 import Data.Monoid
 import Data.Sequence hiding (fromList)

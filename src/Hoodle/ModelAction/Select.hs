@@ -47,7 +47,7 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Predefined 
 import           Hoodle.Type.PageArrangement
-import           Hoodle.Util
+
 import           Hoodle.View.Coordinate
 -- 
 import Prelude hiding ((.),id)
@@ -331,7 +331,10 @@ hitLassoItem lst (RItemSVG svg _) =
     hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
     && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
   where BBox (x1,y1) (x2,y2) = getBBox svg
-
+hitLassoItem lst (RItemLink lnk _) = 
+    hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
+    && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
+  where BBox (x1,y1) (x2,y2) = getBBox lnk
 
 
 data TempSelectRender a = TempSelectRender { tempSurface :: Surface  

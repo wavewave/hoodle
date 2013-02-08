@@ -17,38 +17,16 @@ module Hoodle.ModelAction.Select.Transform where
 -- from other package
 import           Control.Category
 import           Control.Lens
-import           Control.Monad
 import           Control.Monad.Identity (runIdentity)
-import           Data.Algorithm.Diff
-import           Data.Foldable (foldl')
-import qualified Data.IntMap as M
-import qualified Data.Map as Map 
-import           Data.Monoid
-import           Data.Sequence (ViewL(..),viewl,Seq)
 import           Data.Strict.Tuple
-import           Data.Time.Clock
-import           Graphics.Rendering.Cairo
-import           Graphics.Rendering.Cairo.Matrix ( invert, transformPoint )
-import           Graphics.UI.Gtk hiding (get,set,Image)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Select 
 import           Data.Hoodle.Simple hiding (Page,Hoodle)
-import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
-import           Graphics.Hoodle.Render.Util 
-import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package
-import           Hoodle.ModelAction.Layer
 import           Hoodle.Type.Alias
-import           Hoodle.Type.Enum
-import           Hoodle.Type.HoodleState
-import           Hoodle.Type.Predefined 
-import           Hoodle.Type.PageArrangement
-import           Hoodle.Util
-import           Hoodle.View.Coordinate
 -- 
 import Prelude hiding ((.),id)
 
@@ -61,6 +39,7 @@ changeItemBy :: ((Double,Double)->(Double,Double)) -> RItem -> RItem
 changeItemBy func (RItemStroke strk) = RItemStroke (changeStrokeBy func strk)
 changeItemBy func (RItemImage img sfc) = RItemImage (changeImageBy func img) sfc
 changeItemBy func (RItemSVG svg rsvg) = RItemSVG (changeSVGBy func svg) rsvg
+changeItemBy func (RItemLink lnk rsvg) = RItemLink (changeLinkBy func lnk) rsvg
     
 
 
@@ -98,6 +77,17 @@ changeSVGBy func (BBoxed (SVG t c bstr (x,y) (Dim w h)) _bbox) =
       (x2,y2) = func (x+w,y+h)
       nsvg = SVG t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in runIdentity (makeBBoxed nsvg)
+     
+-- | 
+changeLinkBy :: ((Double,Double)->(Double,Double)) -> BBoxed Link -> BBoxed Link
+changeLinkBy func (BBoxed (Link i typ loc t c bstr (x,y) (Dim w h)) _bbox) = 
+  let (x1,y1) = func (x,y) 
+      (x2,y2) = func (x+w,y+h)
+      nlnk = Link i typ loc t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
+  in runIdentity (makeBBoxed nlnk)     
+
+
+
 
 
 -- | modify the whole selection using a function

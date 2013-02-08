@@ -23,7 +23,7 @@ import           Control.Monad.State
 import           Data.Sequence hiding (filter)
 -- import qualified Data.Map as M
 import           Data.Maybe 
-import           Graphics.UI.Gtk hiding (get,set,disconnect)
+-- import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
 import           Data.Hoodle.Predefined
 import           Data.Hoodle.BBox

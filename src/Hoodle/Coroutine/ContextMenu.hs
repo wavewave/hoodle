@@ -128,7 +128,6 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsPDF hititms bbox
       else do      
-        -- liftIO $ print "exportCurrentSelectionAsPDF executed"
         liftIO $ withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
           translate (-ulx) (-uly)
           mapM_ renderRItem  hititms
@@ -152,7 +151,7 @@ showContextMenu (pnum,(x,y)) = do
                 menuSetTitle menu "MyMenu"
                 case msitms of 
                   Nothing -> return ()
-                  Just _ -> do 
+                  Just sitms -> do 
                     menuitem1 <- menuItemNewWithLabel "Make SVG"
                     menuitem2 <- menuItemNewWithLabel "Make PDF"
                     menuitem3 <- menuItemNewWithLabel "Cut"
@@ -179,6 +178,14 @@ showContextMenu (pnum,(x,y)) = do
                     menuAttach menu menuitem3 1 2 0 1                     
                     menuAttach menu menuitem4 1 2 1 2                     
                     menuAttach menu menuitem5 1 2 2 3    
+                    case sitms of 
+                      sitm : [] -> do 
+                        menuitemsingle <- menuItemNewWithLabel "SingleItem" 
+                        menuitemsingle `on` menuItemActivate $
+                          print "single item" 
+                        menuAttach menu menuitemsingle 0 1 3 4 
+                      
+                      _ -> return () 
                     {- menuAttach menu menuitem6 1 2 3 4 
                     menuAttach menu menuitem7 1 2 4 5 -}
                 case (customContextMenuTitle =<< view hookSet xstate) of 

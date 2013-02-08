@@ -17,11 +17,11 @@ module Hoodle.Coroutine.Select.Transform where
 -- from other packages
 import Control.Lens 
 import Control.Monad.State 
-import Control.Monad.Trans
+-- import Control.Monad.Trans
 -- from hoodle-platform 
-import Data.Hoodle.Generic
+
 import Data.Hoodle.Select 
-import Graphics.Hoodle.Render.Type.Hoodle
+-- import Graphics.Hoodle.Render.Type.Hoodle
 -- from this package
 import Hoodle.Coroutine.Draw 
 import Hoodle.Coroutine.Commit 
@@ -37,7 +37,7 @@ data RotateDirection = CW | CCW
                               
 
 rotateSelection :: RotateDirection -> MainCoroutine () 
-rotateSelection dir = do 
+rotateSelection _dir = do 
     liftIO $ putStrLn "rotateSelection"
     either (const (return ())) action 
       . hoodleModeStateEither 

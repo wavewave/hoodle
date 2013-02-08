@@ -439,12 +439,14 @@ renderSelectedStroke str = do
   setSourceRGBA 0 0 1 1
   renderStrkHltd str
 
+
 -- |
 renderSelectedItem :: RItem -> Render () 
 renderSelectedItem itm = do 
   setLineWidth 1.5
   setSourceRGBA 0 0 1 1
   renderRItemHltd itm
+
 
 -- |
 renderSelectHandle :: BBox -> Render () 

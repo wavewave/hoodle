@@ -100,11 +100,11 @@ buildBackground bkg =
       <> fromByteString "\" pageno=\""
       <> fromString (show pageno)
       <> fromByteString "\"/>\n"
-    BackgroundEmbedPdf typ src -> 
+    BackgroundEmbedPdf typ pageno -> 
       fromByteString "<background type=\""
       <> fromByteString typ 
-      <> fromByteString "\" src=\""
-      <> fromByteString src 
+      <> fromByteString "\" pageno=\""
+      <> fromString (show pageno)
       <> fromByteString "\"/>\n"
 
       

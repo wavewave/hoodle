@@ -248,56 +248,11 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
     BackgroundEmbedPdf _ s -> do 
       let rbkg = RBkgEmbedPDF s Nothing Nothing 
 #ifdef POPPLER
-      mdoc <- liftIO $ popplerGetDocFromDataURI s
-      let mio = popplerGetPageFromDoc <$> mdoc <*> pure 1 
-      maybe (return rbkg) (\act -> liftIO act >>= \(mpg,msfc)->return (RBkgEmbedPDF s mpg msfc)) mio
+      -- mdoc <- liftIO $ popplerGetDocFromDataURI s
+      -- let mio = popplerGetPageFromDoc <$> mdoc <*> pure 1 
+      -- maybe (return rbkg) (\act -> liftIO act >>= \(mpg,msfc)->return (RBkgEmbedPDF s mpg msfc)) mio
+      return rbkg 
 #else
       return rbkg
 #endif  
-
-
-
-
-{-    RBkgSmpl _c _s msfc -> do 
-      case msfc of 
-        Just _ -> return rbkg
-        Nothing -> do 
-          sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
-          renderWith sfc $ renderBkg (bkg,dim) 
-          return rbkg { rbkg_cairosurface = Just sfc}
-    RBkgPDF md mf pn _ _ -> do 
-#ifdef POPPLER
-      mctxt <- get 
-      case mctxt of
-        Nothing -> do 
-          case (md,mf) of 
-            (Just d, Just f) -> do 
-              mdoc <- liftIO $ popplerGetDocFromFile f
-              put $ Just (Context d f mdoc)
-              case mdoc of 
-                Just doc -> do  
-                  (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
-                  return (rbkg {rbkg_popplerpage = mpg, rbkg_cairosurface = msfc})
-                Nothing -> error "no pdf doc? in mkBkgPDF"
-            _ -> return rbkg 
-        Just (Context _oldd _oldf olddoc) -> do 
-          (mpage,msfc) <- case olddoc of 
-            Just doc -> do 
-              liftIO $ popplerGetPageFromDoc doc pn
-            Nothing -> return (Nothing,Nothing) 
-          return $ RBkgPDF md mf pn mpage msfc
-#else
-          return rbkg
-#endif  
-    RBkgEmbedPDF s _ _ -> do 
-#ifdef POPPLER
-      mdoc <- liftIO $ popplerGetDocFromDataURI s
-      let mio = popplerGetPageFromDoc <$> mdoc <*> pure 1 
-      maybe (return rbkg) (\act -> liftIO act >>= \(mpg,msfc)->return (RBkgEmbedPDF s mpg msfc)) mio
-#else
-      return rbkg
-#endif  
-
--}
-      
 

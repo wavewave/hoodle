@@ -199,22 +199,22 @@ svg_header = do trim
 svg_footer :: Parser () 
 svg_footer = string "</svgobject>" >> return ()
 
-svg_text :: Parser B.ByteString 
-svg_text = do 
+textCDATA :: Parser B.ByteString 
+textCDATA = do 
     string "<text>"
     str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
     string "</text>"
     return (B.pack str) 
 
-svg_command :: Parser B.ByteString 
-svg_command = do 
+commandCDATA :: Parser B.ByteString 
+commandCDATA = do 
     string "<command>"
     str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
     string "</command>"
     return (B.pack str)
 
-svg_render :: Parser B.ByteString 
-svg_render = do 
+renderCDATA :: Parser B.ByteString 
+renderCDATA = do 
   string "<render>"
   str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
   string "</render>"
@@ -224,19 +224,63 @@ svg_render = do
 svg_obj :: Parser H.Item 
 svg_obj = do (xy,dim) <- svg_header
              trim 
-             (mt,mc) <- (try (do t <- svg_text 
+             (mt,mc) <- (try (do t <- textCDATA 
                                  trim 
-                                 c <- svg_command 
+                                 c <- commandCDATA 
                                  return (Just t, Just c)) 
-                         <|> try (svg_text >>= \t -> return (Just t, Nothing))
+                         <|> try (textCDATA >>= \t -> return (Just t, Nothing))
                          <|> return (Nothing,Nothing))
              trim 
-             bstr <- svg_render 
+             bstr <- renderCDATA 
              trim 
              svg_footer
              (return . H.ItemSVG) (H.SVG mt mc bstr xy dim)
 
                                   
+
+link_header :: Parser (B.ByteString,B.ByteString,B.ByteString,(Double,Double),H.Dimension)
+link_header = do 
+    trim 
+    string "<link"
+    trim 
+    i <- B.pack <$> (string "id=\"" *> manyTill anyChar (try (char '"')))
+    trim 
+    typ <- B.pack <$> (string "type=\"" *> manyTill anyChar (try (char '"')))
+    trim 
+    loc <- B.pack <$> (string "location=\"" *> manyTill anyChar (try (char '"')))
+    trim 
+    posx <- string "x=\"" *> double <* char '"'
+    trim
+    posy <- string "y=\"" *> double <* char '"'
+    trim 
+    width <- string "width=\"" *> double <* char '"'
+    trim 
+    height <- string "height=\"" *> double <* char '"'
+    trim 
+    string ">"
+    return (i,typ,loc,(posx,posy),H.Dim width height) 
+
+link_footer :: Parser () 
+link_footer = string "</link>" >> return ()
+
+
+link :: Parser H.Item 
+link = do 
+    (i,typ,loc,xy,dim) <- link_header
+    trim 
+    (mt,mc) <- (try (do t <- textCDATA 
+                        trim 
+                        c <- commandCDATA 
+                        return (Just t, Just c)) 
+                <|> try (textCDATA >>= \t -> return (Just t, Nothing))
+                <|> return (Nothing,Nothing))
+    trim 
+    bstr <- renderCDATA 
+    trim 
+    link_footer
+    (return . H.ItemLink) (H.Link i typ loc mt mc bstr xy dim)
+
+
 
 -- | 
 trim :: Parser ()

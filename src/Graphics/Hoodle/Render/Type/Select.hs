@@ -15,7 +15,6 @@
 module Graphics.Hoodle.Render.Type.Select where
 
 -- from other packages
-import Control.Compose
 import Control.Lens 
 import Data.IntMap hiding (map, fromList)
 -- from hoodle-platform 
@@ -84,26 +83,13 @@ hPage2RPage :: HPage -> RPage
 hPage2RPage p = 
   let HLayersF s others = view glayers p 
       s' = hLayer2RLayer s
-{-      normalizedothers = case others of   
-        -- NoSelect [] -> error "something wrong in hPage2RPage" 
-        -- NoSelect (x:xs) -> Select (fromList (x:xs))
-        Select (O (Nothing)) -> error "something wrong in hPage2RPage"
-        Select (O (Just _)) -> others 
-      Select (O (Just sz)) = normalizedothers -}
   in GPage (view gdimension p) (view gbackground p) (replace s' others)
 
 
 -- | 
 mkHPage :: RPage -> HPage
 mkHPage p = 
-  let {- normalizedothers = case (view glayers p) of 
-        -- NoSelect [] -> error "something wrong in mkHPage" 
-        -- NoSelect (x:xs) -> Select (fromList (x:xs))
-        Select (O (Nothing)) -> error "something wrong in mkHPage"
-        others@(Select (O (Just _))) -> others 
-      Select (O (Just sz)) = normalizedothers 
-      -}
-      sz = view glayers p 
+  let sz = view glayers p 
       curr  = current sz 
       currtemp = GLayer (view gbuffer curr) (TEitherAlterHitted . Left . view gitems $ curr)
   in  GPage (view gdimension p) (view gbackground p) 

@@ -51,8 +51,9 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1.1\">\n"
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1.999\">\n"
                  <> (buildTitle . view title) hdl 
+                 <> (maybe mempty buildEmbeddedPdf . view embeddedPdf) hdl 
                  <> (mconcat . map buildPage . view pages) hdl
                  <> fromByteString "</hoodle>\n"
   
@@ -61,6 +62,12 @@ buildTitle :: S.ByteString -> Builder
 buildTitle ttl = fromByteString "<title>"
                 <> fromByteString ttl
                 <> fromByteString "</title>\n"
+
+-- | 
+buildEmbeddedPdf :: S.ByteString -> Builder 
+buildEmbeddedPdf pdf = fromByteString "<embeddedpdf src=\""
+                       <> fromByteString pdf
+                       <> fromByteString "\"/>\n"
 
 -- | 
 buildPage :: Page -> Builder 

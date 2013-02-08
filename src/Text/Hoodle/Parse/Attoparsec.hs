@@ -406,12 +406,13 @@ background = do
         return $ H.BackgroundPdf typ mdomain mfilename pnum 
       "embedpdf" -> do     
         trim <?> "trim0"
-        string "src="
+        string "pageno="
         char '"'
-        str <- manyTill anyChar (try (char '"'))
+        pnum <- decimal <?> "embedpdf decimal" -- str <- manyTill anyChar (try (char '"'))
+        char '"'
         trim 
         backgroundclose
-        return $ H.BackgroundEmbedPdf  typ (B.pack str) 
+        return $ H.BackgroundEmbedPdf  typ pnum -- (B.pack str) 
       _ -> fail "in parsing background"  
         
         
@@ -427,10 +428,6 @@ alphanumsharp = takeWhile1 (\w -> (w >= 65 && w <= 90)
 -- | need to be reimplemented
 parseFileName :: Parser B.ByteString
 parseFileName = takeTill (inClass ['"'])
-                -- takeWhilw1 (\w -> (w >= 65 && w <= 90) 
-                --                   || (w >= 97 && w <= 122)
-                --                   || (w >= 48 && w <= 57)
-                --                   || (w == 35) 
 
 
 -- |
@@ -440,22 +437,4 @@ backgroundheader = string "<background"
 -- | 
 backgroundclose :: Parser B.ByteString
 backgroundclose = string "/>"
-
-{-
-iter_hoodle :: Iter.Iteratee B.ByteString IO Hoodle
-iter_hoodle = AI.parserToIteratee parser_hoodle 
-
-read_hoodle :: String -> IO Hoodle 
-read_hoodle str = Iter.fileDriver iter_hoodle str 
-
-read_xojgz :: String -> IO Hoodle 
-read_xojgz str =  Iter.fileDriver (Iter.joinIM (ungzipXoj iter_hoodle)) str
-
-
-cat_hoodlegz :: String -> IO () 
-cat_hoodlegz str = Iter.fileDriver 
-                      (Iter.joinIM (ungzipXoj printLinesUnterminated)) str 
-
-onlyresult (Done _ r) = r 
--}
 

@@ -2,8 +2,8 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Builder 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Module      : Text.Hoodle.Translate.FromXournal 
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -22,7 +22,7 @@ import qualified Data.Hoodle.Simple as H
 -- | 
 mkHoodleFromXournal :: X.Xournal -> H.Hoodle 
 mkHoodleFromXournal X.Xournal {..} = 
-    H.Hoodle xoj_title (map x2h4Page xoj_pages) 
+    H.Hoodle xoj_title Nothing (map x2h4Page xoj_pages) 
     
 -- |     
 x2h4Page :: X.Page -> H.Page

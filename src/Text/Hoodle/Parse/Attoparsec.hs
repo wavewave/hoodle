@@ -252,12 +252,12 @@ hoodle  = do trim
              trim
              t <- title <?> "title"
              trim
-             (try (preview >> return ())
-              <|> return ()) 
+             pdf <- (try (Just <$> embeddedpdf)
+                     <|> return Nothing )
              pgs <- many1 (page <?> "page")
              trim
              hoodleclose 
-             return $ H.Hoodle t pgs 
+             return $ H.Hoodle t pdf pgs 
              
 page :: Parser H.Page 
 page = do trim 
@@ -297,18 +297,15 @@ titleheader = string "<title>"
 titleclose :: Parser B.ByteString
 titleclose = string "</title>"
 
-preview :: Parser ()
-preview = do trim 
-             previewheader
-             _str <- takeTill (inClass "<") 
-             previewclose
-             trim
+embeddedpdf :: Parser (B.ByteString) 
+embeddedpdf = do string "<embeddedpdf" 
+                 trim 
+                 string "src=\""
+                 str <- manyTill anyChar (try (char '"'))
+                 trim 
+                 string "/>" 
+                 return (B.pack str)
 
-previewheader :: Parser B.ByteString 
-previewheader = string "<preview>"
-
-previewclose :: Parser B.ByteString 
-previewclose = string "</preview>"
 
 hoodleheader :: Parser B.ByteString
 hoodleheader = hoodleheaderstart *> takeTill (inClass ">") <* hoodleheaderend

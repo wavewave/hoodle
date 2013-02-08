@@ -317,8 +317,8 @@ defaultSettings =
 
 -- | 
 getHoodle :: HoodleState -> Hoodle EditMode 
-getHoodle = either id makehdl . hoodleModeStateEither . view hoodleModeState 
-  where makehdl thdl = GHoodle (view gselTitle thdl) (view gselAll thdl)
+getHoodle = either id gSelect2GHoodle . hoodleModeStateEither . view hoodleModeState 
+--   where makehdl thdl = GHoodle (view gselTitle thdl) (view gembeddedpdf thdl) (view gselAll thdl)
 
 
 -- | 

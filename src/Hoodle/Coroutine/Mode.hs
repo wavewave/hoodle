@@ -64,12 +64,15 @@ modeChange command = case command of
                              npage <- (liftIO.updatePageBuf.hPage2RPage) spage  
                              return $ M.adjust (const npage) spgn pages )
                           mselect
+          let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  
+ 
           return . flip (set hoodleModeState) xstate 
-            . ViewAppendState . GHoodle (view gselTitle thdl) $ npages 
+            . ViewAppendState . gSelect2GHoodle $ nthdl  
         whenedit :: HoodleState -> Hoodle EditMode -> MainCoroutine HoodleState   
-        whenedit xstate hdl = return . flip (set hoodleModeState) xstate 
-                              . SelectState  
-                              $ GSelect (view gtitle hdl) (view gpages hdl) Nothing
+        whenedit xstate = return . flip (set hoodleModeState) xstate 
+                          . SelectState  
+                          . gHoodle2GSelect 
+                          -- $ GSelect (view gtitle hdl) (view gpages hdl) Nothing
 
 -- | 
 viewModeChange :: MyEvent -> MainCoroutine () 

@@ -16,7 +16,6 @@ module Hoodle.Coroutine.Layer where
 
 import Control.Monad.State
 import qualified Data.IntMap as M
-import Control.Compose
 import Control.Category
 -- import Data.Label
 import Control.Lens (view,set)

@@ -628,7 +628,7 @@ embedPDFInPage pg = do
             let -- bstr = B.pack str 
                 b64str = (encode . concat . L.toChunks) bstr 
                 ebdsrc = "data:application/x-pdf;base64," <> b64str
-            let nbkg = RBkgEmbedPDF ebdsrc mpdf msfc 
+            let nbkg = RBkgEmbedPDF n mpdf msfc 
             return (set gbackground nbkg pg)
       _ -> return pg 
 #else

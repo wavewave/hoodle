@@ -168,7 +168,7 @@ data Background = Background { bkg_type :: !S.ByteString
                                 , bkg_pageno :: Int
                                 }
                 | BackgroundEmbedPdf { bkg_type :: S.ByteString
-                                     , bkg_pdfsrc :: S.ByteString } 
+                                     , bkg_pageno :: Int } 
                 deriving Show 
 
 -- | 

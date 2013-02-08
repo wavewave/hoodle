@@ -105,10 +105,12 @@ okMessageBox msg = modify (tempQueue %~ enqueue action)
 -- | 
 okCancelMessageBox :: String -> MainCoroutine Bool 
 okCancelMessageBox msg = modify (tempQueue %~ enqueue action) 
-                         >> waitSomeEvent p >>= return . p 
+                         >> waitSomeEvent p >>= return . q
   where 
-    p (OkCancel b) = b -- True 
+    p (OkCancel b) = True 
     p _ = False 
+    q (OkCancel b) = b 
+    q _ = False 
     action = Left . ActionOrder $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]

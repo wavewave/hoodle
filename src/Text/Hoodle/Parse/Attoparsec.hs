@@ -322,7 +322,7 @@ layer = do trim
            -- s1 <- onestroke 
            -- s2 <- img
            -- let strokes = [s1,s2]
-           itms <- many (try onestroke <|> try img <|> svg_obj)
+           itms <- many (try onestroke <|> try img <|> try svg_obj <|> link)
            trim
            layerclose 
            return $ H.Layer itms

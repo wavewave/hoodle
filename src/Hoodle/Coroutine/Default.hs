@@ -108,6 +108,13 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
   st6 <- getFileContent mfname st5
   -- very dirty, need to be cleaned 
   let hdlst6 = view hoodleModeState st6
+  
+  -----
+  -- let ViewAppendState hdl = hdlst6
+  -- print (view gembeddedpdf hdl )
+  ----
+  
+  
   hdlst7 <- resetHoodleModeStateBuffers hdlst6
   let st7 = set hoodleModeState hdlst7 st6
   -- 

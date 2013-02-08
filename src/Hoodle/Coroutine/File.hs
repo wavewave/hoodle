@@ -24,8 +24,10 @@ import           Control.Monad.Trans.Either
 import           Data.ByteString (readFile,concat)
 import qualified Data.ByteString as S (writeFile,hGet)
 import           Data.ByteString.Base64 
-import           Data.ByteString.Char8 as B (pack,unpack)
+import           Data.ByteString.Char8 as B (pack,unpack,ByteString(..))
 import qualified Data.ByteString.Lazy as L
+--- import           Data.List (intercale ) 
+import           Data.Maybe
 import           Data.Traversable (mapM)
 import qualified Data.IntMap as IM
 import           Graphics.GD.ByteString 
@@ -603,10 +605,48 @@ embedPredefinedImage3 = do
         put nxstate2
         invalidateAll         
         
+-- | this is very temporary, need to be changed.     
+findFirstPDFFile :: [(Int,RPage)] -> Maybe B.ByteString
+findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
+                      in if null ys then Nothing else head ys 
+  where f (_,p) = case view gbackground p of 
+                    RBkgPDF _ f _ _ _ -> Just f
+                    _ -> Nothing 
+      
+findAllPDFPages :: [(Int,RPage)] -> [Int]
+findAllPDFPages = catMaybes . map f
+  where f (n,p) = case view gbackground p of 
+                    RBkgPDF _ f _ _ _ -> Just n
+                    _ -> Nothing 
+
+replacePDFPages :: [(Int,RPage)] -> [(Int,RPage)] 
+replacePDFPages xs = map f xs 
+  where f (n,p) = case view gbackground p of 
+                    RBkgPDF _ f pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
+                    _ -> (n,p) 
+        
 -- | 
-embedPDFInPage :: RPage -> IO RPage
-embedPDFInPage pg = do 
-#ifdef POPPLER
+embedPDFInHoodle :: RHoodle -> IO RHoodle
+embedPDFInHoodle hdl = do 
+    let pgs = (IM.toAscList . view gpages) hdl  
+        mfn = findFirstPDFFile pgs
+        allpdfpg = findAllPDFPages pgs 
+        
+    case mfn of 
+      Nothing -> return hdl 
+      Just fn -> do 
+        let fnstr = B.unpack fn 
+            pglst = map show allpdfpg 
+            cmdargs =  [fnstr, "cat"] ++ pglst ++ ["output", "-"]
+        print cmdargs 
+        (_,Just hout,_,_) <- createProcess (proc "pdftk" cmdargs) { std_out = CreatePipe } 
+        bstr <- L.hGetContents hout
+        let b64str = (encode . concat . L.toChunks) bstr 
+            ebdsrc = Just ("data:application/x-pdf;base64," <> b64str)
+            npgs = (IM.fromAscList . replacePDFPages) pgs 
+        (return . set gembeddedpdf ebdsrc . set gpages npgs) hdl
+{-        
+        
     let Dim w h = view gdimension pg 
         bkg = view gbackground pg   
     case bkg of 
@@ -614,10 +654,6 @@ embedPDFInPage pg = do
         case mpdf of 
           Nothing -> return pg 
           Just pdf -> do 
-            {-bstr <- pipeAction (withPDFSurface "/dev/stdout" w h $ \sfc -> 
-                                 renderWith sfc (PopplerPage.pageRender pdf))
-                               (return . concat . L.toChunks) -}
-            -- S.writeFile "embedtest.pdf" bstr
             let args = ["A="++B.unpack f, "cat", "A"++ show n, "output", "-"] 
             print args 
             (_,Just hout,_,_) <- createProcess (proc "pdftk" args) { std_out = CreatePipe } 
@@ -631,17 +667,14 @@ embedPDFInPage pg = do
             let nbkg = RBkgEmbedPDF n mpdf msfc 
             return (set gbackground nbkg pg)
       _ -> return pg 
-#else
-    return pg 
-#endif
+-}
 
 -- | 
 embedAllPDFBackground :: MainCoroutine () 
 embedAllPDFBackground = do 
   xst <- get 
   let hdl = getHoodle xst
-  npgs <- liftIO . mapM embedPDFInPage . view gpages $ hdl
-  let nhdl = set gpages npgs hdl
+  nhdl <- liftIO . embedPDFInHoodle $ hdl
   modeChange ToViewAppendMode
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   

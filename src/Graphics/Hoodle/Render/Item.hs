@@ -22,7 +22,7 @@ import           Control.Monad
 import           Control.Monad.Identity 
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
-import qualified Data.ByteString.Lazy as LB
+-- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64 
 import           Graphics.GD.ByteString
 import           Graphics.Rendering.Cairo
@@ -68,6 +68,12 @@ cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do
         svgbbx = runIdentity (makeBBoxed svg)
     rsvg <- RSVG.svgNewFromString str
     return (RItemSVG svgbbx (Just rsvg))
+cnstrctRItem (ItemLink lnk@(Link _ _ _ _ _ bstr _ _)) = do 
+    let str = C8.unpack bstr 
+        lnkbbx = runIdentity (makeBBoxed lnk)
+    rsvg <- RSVG.svgNewFromString str
+    return (RItemLink lnkbbx (Just rsvg))
+
 
 -- | get embedded png image. If not, just give me nothing. 
 getByteStringIfEmbeddedPNG :: C8.ByteString -> Maybe C8.ByteString 

@@ -15,7 +15,7 @@
 
 module Graphics.Hoodle.Render.Background where
 
-import           Control.Applicative
+-- import           Control.Applicative
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
@@ -33,7 +33,7 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 import           Data.Hoodle.Simple
-import           Hoodle.Util.Process
+-- import           Hoodle.Util.Process
 --
 import           Graphics.Hoodle.Render.Type.Background
 -- 
@@ -246,7 +246,6 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
               return (RBkgPDF (Just oldd) oldf pn mpage msfc)
             Nothing -> error "error3 in cnstrctRBkg_StateT" 
     BackgroundEmbedPdf _ pn -> do 
-      let rbkg = RBkgEmbedPDF pn Nothing Nothing 
 #ifdef POPPLER
       mctxt <- get
       case mctxt of  
@@ -262,6 +261,6 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
           return (RBkgEmbedPDF pn mpage msfc)
         Nothing -> error "error5 in cnstrctRBkg_StateT" 
 #else
-      return rbkg
+      return (RBkgEmbedPDF pn Nothing Nothing)
 #endif  
 

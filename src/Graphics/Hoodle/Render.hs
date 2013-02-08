@@ -52,7 +52,7 @@ import           Control.Monad.State hiding (mapM,mapM_)
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import           Data.Traversable (mapM)
-import qualified Data.Map as M
+-- import qualified Data.Map as M
 -- import           Data.Monoid
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
@@ -116,7 +116,7 @@ renderImg (Image _ (x,y) (Dim w h)) = do
       rectangle x y w h
       stroke
 
--- | render svg : not fully implemented 
+-- | render svg  
 renderSVG :: SVG -> Render () 
 renderSVG svg@(SVG _ _ bstr _ _) = do  
     let str = C.unpack bstr 
@@ -136,13 +136,33 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
       resetClip 
       return () 
 
+-- | render svg  
+renderLink :: Link -> Render () 
+renderLink lnk@(Link _ _ _ _ _ bstr _ _) = do  
+    let str = C.unpack bstr 
+    RSVG.withSvgFromString str $ \rsvg -> do 
+      let lnkbbx = runIdentity (makeBBoxed lnk)
+      let (x,y) = (link_pos . bbxed_content) lnkbbx
+          BBox (x1,y1) (x2,y2) = getBBox lnkbbx
+          (ix',iy') = RSVG.svgGetSize rsvg
+          ix = fromIntegral ix' 
+          iy = fromIntegral iy'
+      clipBBox (Just (getBBox lnkbbx))
+      save 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      RSVG.svgRender rsvg 
+      restore
+      resetClip 
+      return () 
+
 
 -- | render item 
 renderItem :: Item -> Render () 
 renderItem (ItemStroke strk) = renderStrk strk
 renderItem (ItemImage img) = renderImg img
 renderItem (ItemSVG svg) = renderSVG svg
-
+renderItem (ItemLink lnk) = renderLink lnk
 
 -- |
 renderPage :: Page -> Render ()
@@ -153,30 +173,6 @@ renderPage page = do
   mapM_ (mapM renderItem . view items) . view layers $ page
   stroke
 
---- 
--- non-R but in bbox 
---- 
-
-{-
--- | render Background in BBox 
-renderBkg_InBBox :: Maybe BBox -> Dimension -> Background -> Render ()
-renderBkg_InBBox mbbox dim@(Dim w h) (Background typ col sty) = do 
-    let mbbox2 = toMaybe $ fromMaybe mbbox `mappend` (Intersect (Middle (dimToBBox dim)))
-    case mbbox2 of 
-      Nothing -> renderBkg (Background typ col sty,Dim w h)
-      Just bbox@(BBox (x1,y1) (x2,y2)) -> do 
-        let c = M.lookup col predefined_bkgcolor  
-        case c of 
-          Just (r,g,b,_a) -> setSourceRGB r g b 
-          Nothing        -> setSourceRGB 1 1 1 
-        rectangle x1 y1 (x2-x1) (y2-y1)
-        fill
-        drawRuling_InBBox bbox w h sty
-renderBkg_InBBox _ _  (BackgroundPdf _ _ _ _) = 
-    error "BackgroundPdf in renderBkg_InBBox"
-renderBkg_InBBox _ _  (BackgroundEmbedPdf _ _ _) = 
-    error "BackgroundPdf in renderBkg_InBBox"
--}
 
 -----
 -- R-structure 
@@ -246,10 +242,27 @@ renderRItem itm@(RItemSVG svgbbx mrsvg) = do
       RSVG.svgRender rsvg 
       restore
       resetClip 
-
       return () 
-
   return itm 
+renderRItem itm@(RItemLink lnkbbx mrsvg) = do 
+  case mrsvg of
+    Nothing -> renderLink (bbxed_content lnkbbx)
+    Just rsvg -> do 
+      let (x,y) = (link_pos . bbxed_content) lnkbbx
+          BBox (x1,y1) (x2,y2) = getBBox lnkbbx
+          (ix',iy') = RSVG.svgGetSize rsvg
+          ix = fromIntegral ix' 
+          iy = fromIntegral iy'
+      clipBBox (Just (getBBox lnkbbx))
+      save 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      RSVG.svgRender rsvg 
+      restore
+      resetClip 
+      return () 
+  return itm 
+
 
 
 ------------

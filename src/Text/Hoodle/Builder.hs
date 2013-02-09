@@ -211,7 +211,7 @@ buildLink (Link i typ loc mtxt mcmd rdr (x,y) (Dim w h)) =
 buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
     fromByteString "<link id=\""  
     <> fromByteString i 
-    <> fromByteString "\" type=\"linkedocid\" linkedid=\"" 
+    <> fromByteString "\" type=\"linkdocid\" linkedid=\"" 
     <> fromByteString docid 
     <> fromByteString "\" location=\""
     <> fromByteString loc

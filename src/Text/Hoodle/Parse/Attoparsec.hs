@@ -238,7 +238,7 @@ svg_obj = do (xy,dim) <- svg_header
 
                                   
 
-link_header :: Parser (B.ByteString,B.ByteString,B.ByteString,(Double,Double),H.Dimension)
+link_header :: Parser (B.ByteString,B.ByteString,Maybe B.ByteString,B.ByteString,(Double,Double),H.Dimension)
 link_header = do 
     trim 
     string "<link"
@@ -247,6 +247,10 @@ link_header = do
     trim 
     typ <- B.pack <$> (string "type=\"" *> manyTill anyChar (try (char '"')))
     trim 
+    mlid <- case typ of 
+      "simple" -> return Nothing 
+      "linkdocid" -> Just<$>(string "linkedid=\"" *> takeTill (inClass "\"")<* char '"')
+    trim    
     loc <- B.pack <$> (string "location=\"" *> manyTill anyChar (try (char '"')))
     trim 
     posx <- string "x=\"" *> double <* char '"'
@@ -258,7 +262,7 @@ link_header = do
     height <- string "height=\"" *> double <* char '"'
     trim 
     string ">"
-    return (i,typ,loc,(posx,posy),H.Dim width height) 
+    return (i,typ,mlid,loc,(posx,posy),H.Dim width height) 
 
 link_footer :: Parser () 
 link_footer = string "</link>" >> return ()
@@ -266,7 +270,7 @@ link_footer = string "</link>" >> return ()
 
 link :: Parser H.Item 
 link = do 
-    (i,typ,loc,xy,dim) <- link_header
+    (i,typ,mlid,loc,xy,dim) <- link_header
     trim 
     (mt,mc) <- (try (do t <- textCDATA 
                         trim 
@@ -278,7 +282,10 @@ link = do
     bstr <- renderCDATA 
     trim 
     link_footer
-    (return . H.ItemLink) (H.Link i typ loc mt mc bstr xy dim)
+    return . H.ItemLink $ 
+      flip ($) mlid $ maybe (H.Link i typ loc mt mc bstr xy dim)
+                            (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim) 
+
 
 
 

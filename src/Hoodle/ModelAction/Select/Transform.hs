@@ -85,6 +85,11 @@ changeLinkBy func (BBoxed (Link i typ loc t c bstr (x,y) (Dim w h)) _bbox) =
       (x2,y2) = func (x+w,y+h)
       nlnk = Link i typ loc t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in runIdentity (makeBBoxed nlnk)     
+changeLinkBy func (BBoxed (LinkDocID i lid loc t c bstr (x,y) (Dim w h)) _bbox) = 
+  let (x1,y1) = func (x,y) 
+      (x2,y2) = func (x+w,y+h)
+      nlnk = LinkDocID i lid loc t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
+  in runIdentity (makeBBoxed nlnk)          
 
 
 

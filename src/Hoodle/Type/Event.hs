@@ -18,6 +18,7 @@ import Graphics.UI.Gtk
 -- from hoodle-platform
 -- import Data.Hoodle.BBox
 import Data.Hoodle.Simple
+import Graphics.Hoodle.Render.Type.Item 
 -- from this package
 import Hoodle.Device 
 import Hoodle.Type.Clipboard
@@ -180,6 +181,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuRotateCW
                       | CMenuRotateCCW 
                       | CMenuAutosavePage
+                      | CMenuLinkConvert Link
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

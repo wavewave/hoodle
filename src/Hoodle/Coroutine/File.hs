@@ -83,8 +83,8 @@ waitSomeEvent :: (MyEvent -> Bool) -> MainCoroutine MyEvent
 waitSomeEvent p = do 
     r <- nextevent
     case r of 
-      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
-                          >> waitSomeEvent p  -- this is temporary
+      UpdateCanvas cid -> -- this is temporary
+                          invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
       _ -> if  p r then return r else waitSomeEvent p  
 
 
@@ -131,7 +131,8 @@ fileChooser choosertyp mfname = do
     go = do r <- nextevent                   
             case r of 
               FileChosen b -> return b  
-              UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go  -- this is temporary
+              UpdateCanvas cid -> -- this is temporary
+                                  invalidateInBBox Nothing Efficient cid >> go  
               o -> liftIO (print o) >> go 
     action mrf = Left . ActionOrder $ \_evhandler -> do 
       dialog <- fileChooserDialogNew Nothing Nothing choosertyp 
@@ -141,9 +142,7 @@ fileChooser choosertyp mfname = do
         Just rf -> fileChooserSetCurrentFolder dialog rf 
         Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
       maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
-      print "a"
       res <- dialogRun dialog
-      print "b"
       mr <- case res of 
               ResponseDeleteEvent -> return Nothing
               ResponseOk ->  fileChooserGetFilename dialog 

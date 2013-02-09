@@ -286,13 +286,22 @@ link = do
 trim :: Parser ()
 trim = trim_starting_space
 
+-- | 
+checkHoodleVersion :: Parser B.ByteString
+checkHoodleVersion = do trim 
+                        xmlheader
+                        trim 
+                        hoodleheaderstart
+                        trim 
+                        hoodleversion 
+
                   
 -- | 
 hoodle :: Parser H.Hoodle 
 hoodle  = do trim
              xmlheader <?> "xmlheader"
              trim
-             hoodleheader <?> "hoodleheader"
+             (v,hid) <- hoodleheader <?> "hoodleheader"
              trim
              t <- title <?> "title"
              trim
@@ -301,7 +310,7 @@ hoodle  = do trim
              pgs <- many1 (page <?> "page")
              trim
              hoodleclose 
-             return $ H.Hoodle t pdf pgs 
+             return $ H.Hoodle hid t pdf pgs 
              
 page :: Parser H.Page 
 page = do trim 
@@ -319,9 +328,6 @@ layer :: Parser H.Layer
 layer = do trim
            layerheader <?> "layer"
            trim
-           -- s1 <- onestroke 
-           -- s2 <- img
-           -- let strokes = [s1,s2]
            itms <- many (try onestroke <|> try img <|> try svg_obj <|> link)
            trim
            layerclose 
@@ -351,11 +357,25 @@ embeddedpdf = do string "<embeddedpdf"
                  return (B.pack str)
 
 
-hoodleheader :: Parser B.ByteString
-hoodleheader = hoodleheaderstart *> takeTill (inClass ">") <* hoodleheaderend
+hoodleheader :: Parser (B.ByteString,B.ByteString)
+hoodleheader = do hoodleheaderstart 
+                  trim 
+                  v <- hoodleversion
+                  trim 
+                  hid <- hoodleid
+                  trim 
+                  char '>' -- takeTill (inClass ">") <* hoodleheaderend
+                  return (v,hid)
 
 hoodleheaderstart :: Parser B.ByteString 
 hoodleheaderstart = string "<hoodle"
+
+
+hoodleversion :: Parser B.ByteString 
+hoodleversion = string "version=\"" *> takeTill (inClass "\"") <* char '"'
+
+hoodleid :: Parser B.ByteString 
+hoodleid = string "id=\"" *> takeTill (inClass "\"") <* char '"'
 
 hoodleheaderend :: Parser Char
 hoodleheaderend = char '>'

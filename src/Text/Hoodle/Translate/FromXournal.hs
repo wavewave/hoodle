@@ -16,13 +16,16 @@ module Text.Hoodle.Translate.FromXournal
 ( mkHoodleFromXournal      
 ) where
 
+import Control.Applicative
+import Control.Lens
+-- 
 import qualified Data.Xournal.Simple as X 
 import qualified Data.Hoodle.Simple as H
 
 -- | 
-mkHoodleFromXournal :: X.Xournal -> H.Hoodle 
+mkHoodleFromXournal :: X.Xournal -> IO H.Hoodle 
 mkHoodleFromXournal X.Xournal {..} = 
-    H.Hoodle xoj_title Nothing (map x2h4Page xoj_pages) 
+    set H.title xoj_title . set H.pages (map x2h4Page xoj_pages) <$> H.emptyHoodle 
     
 -- |     
 x2h4Page :: X.Page -> H.Page

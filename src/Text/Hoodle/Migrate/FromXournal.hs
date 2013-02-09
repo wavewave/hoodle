@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Translate.FromXournal 
+-- Module      : Text.Hoodle.Migrate.FromXournal 
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -12,7 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Translate.FromXournal 
+module Text.Hoodle.Migrate.FromXournal 
 ( mkHoodleFromXournal      
 ) where
 

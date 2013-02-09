@@ -27,15 +27,18 @@ Library
                  containers >= 0.4, 
                  strict == 0.3.*, 
                  hoodle-types >= 0.1.9999, 
+                 -- hoodle-builder >= 0.1.9999,
                  xournal-types >= 0.5.0.1,
                  text == 0.11.*,
-                 lens >= 2.5
+                 lens >= 2.5, 
+                 either >= 3.1
   Exposed-Modules: 
+                   Text.Hoodle.Migrate.FromXournal
+                   Text.Hoodle.Migrate.V0_1_999_to_V0_1_9999
                    Text.Hoodle.Parse.Attoparsec
                    Text.Hoodle.Parse.Attoparsec.V0_1_1
                    Text.Hoodle.Parse.Attoparsec.V0_1_999
                    Text.Hoodle.Parse.Zlib
-                   Text.Hoodle.Translate.FromXournal
 
 
 

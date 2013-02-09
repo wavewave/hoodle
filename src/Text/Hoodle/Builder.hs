@@ -208,6 +208,28 @@ buildLink (Link i typ loc mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString rdr 
     <> fromByteString "]]></render>"
     <> fromByteString "</link>\n"
+buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
+    fromByteString "<link id=\""  
+    <> fromByteString i 
+    <> fromByteString "\" type=\"linkedocid\" linkedid=\"" 
+    <> fromByteString docid 
+    <> fromByteString "\" location=\""
+    <> fromByteString loc
+    <> fromByteString "\" x=\"" 
+    <> fromByteString (toFixed 2 x)
+    <> fromByteString "\" y=\""
+    <> fromByteString (toFixed 2 y)
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 w)
+    <> fromByteString "\" height=\""
+    <> fromByteString (toFixed 2 h)
+    <> fromByteString "\" >\n"
+    <> maybe mempty (\txt->fromByteString "<text><![CDATA[" <> fromByteString txt <> fromByteString "]]></text>") mtxt 
+    <> maybe mempty (\cmd->fromByteString "<command><![CDATA[" <> fromByteString cmd <> fromByteString "]]></command>") mcmd 
+    <> fromByteString "<render><![CDATA[" 
+    <> fromByteString rdr 
+    <> fromByteString "]]></render>"
+    <> fromByteString "</link>\n"    
 
 
 -- | 

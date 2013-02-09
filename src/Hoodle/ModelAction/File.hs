@@ -34,15 +34,27 @@ import           System.FilePath (takeExtension)
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render
 import qualified Text.Hoodle.Parse.Attoparsec as PA
+import qualified Text.Hoodle.Migrate.V0_1_999_to_V0_1_9999 as MV
 import qualified Text.Xournal.Parse.Conduit as XP
-import           Text.Hoodle.Translate.FromXournal
+import           Text.Hoodle.Migrate.FromXournal
 -- from this package
 import           Hoodle.Type.HoodleState
 -- 
 -- import Prelude hiding ((.),id)
 
--- | get file content from xournal file and update xournal state 
 
+-- | check hoodle version and migrate if necessary 
+checkVersionAndMigrate :: B.ByteString -> IO (Either String Hoodle) 
+checkVersionAndMigrate bstr = do 
+  case parseOnly PA.checkHoodleVersion bstr of 
+    Left str -> error str 
+    Right v -> do 
+      if ( v < "0.1.9999" ) 
+        then MV.migrate bstr
+        else return (parseOnly PA.hoodle bstr)
+
+
+-- | get file content from xournal file and update xournal state 
 getFileContent :: Maybe FilePath 
                -> HoodleState 
                -> IO HoodleState 
@@ -51,11 +63,17 @@ getFileContent (Just fname) xstate = do
     case ext of 
       ".hdl" -> do 
         bstr <- B.readFile fname
-        let r = parse PA.hoodle bstr
+        r <- checkVersionAndMigrate bstr 
+        case r of 
+          Left err -> putStrLn err >> return xstate 
+          Right h -> constructNewHoodleStateFromHoodle h xstate 
+                     >>= return . set currFileName (Just fname)
+        {- let r = parse PA.hoodle bstr
         case r of 
           Done _ h -> constructNewHoodleStateFromHoodle h xstate 
                       >>= return . set currFileName (Just fname)
-          _ -> print r >> return xstate 
+          _ -> print r >> return xstate  -}
+                
       ".xoj" -> do 
           XP.parseXojFile fname >>= \x -> case x of  
             Left str -> do

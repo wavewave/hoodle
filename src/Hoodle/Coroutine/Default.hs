@@ -86,10 +86,10 @@ initCoroutine :: DeviceList
 initCoroutine devlst window mfname mhook maxundo xinputbool = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
-  let st0new = set deviceList devlst  
+  st0new <- set deviceList devlst  
             . set rootOfRootWindow window 
             . set callBack (eventHandler evar) 
-            $ emptyHoodleState 
+            <$> emptyHoodleState 
   ui <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 

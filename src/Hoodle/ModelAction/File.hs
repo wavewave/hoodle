@@ -15,7 +15,8 @@
 module Hoodle.ModelAction.File where
 
 -- from other package
-import           Control.Category
+import           Control.Applicative
+-- import           Control.Category
 import           Control.Lens
 import           Control.Monad
 import           Data.Attoparsec 
@@ -38,7 +39,7 @@ import           Text.Hoodle.Translate.FromXournal
 -- from this package
 import           Hoodle.Type.HoodleState
 -- 
-import Prelude hiding ((.),id)
+-- import Prelude hiding ((.),id)
 
 -- | get file content from xournal file and update xournal state 
 
@@ -61,7 +62,7 @@ getFileContent (Just fname) xstate = do
               putStrLn $ "file reading error : " ++ str 
               return xstate 
             Right xojcontent -> do 
-              let hdlcontent = mkHoodleFromXournal xojcontent 
+              hdlcontent <- mkHoodleFromXournal xojcontent 
               nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
               return $ set currFileName (Just fname) nxstate               
       ".pdf" -> do 
@@ -73,7 +74,7 @@ getFileContent (Just fname) xstate = do
             return . set currFileName Nothing $ newhdlstate 
       _ -> getFileContent Nothing xstate      
 getFileContent Nothing xstate = do   
-    newhdl <- cnstrctRHoodle defaultHoodle 
+    newhdl <- cnstrctRHoodle =<< defaultHoodle 
     let newhdlstate = ViewAppendState newhdl 
         xstate' = set currFileName Nothing 
                   . set hoodleModeState newhdlstate
@@ -109,9 +110,7 @@ makeNewHoodleWithPDF fp = do
             let dim = Dim w h 
             return (createPage dim fname i) 
       pgs <- mapM createPageAct [1..n]
-      let hdl = set title fname 
-              . set pages pgs
-              $ emptyHoodle
+      hdl <- set title fname . set pages pgs <$> emptyHoodle
       return (Just hdl)
 #else
       return Nothing

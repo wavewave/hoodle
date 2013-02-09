@@ -273,37 +273,39 @@ doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
 
 
 -- | default hoodle state 
-emptyHoodleState :: HoodleState 
-emptyHoodleState = 
-  HoodleState  
-  { _hoodleModeState = ViewAppendState emptyGHoodle
-  , _currFileName = Nothing 
-  , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
-  , _currentCanvas = error "emtpyHoodleState.currentCanvas"
-  , _frameState = error "emptyHoodleState.frameState" 
-  , _rootWindow = error "emtpyHoodleState.rootWindow"
-  , _rootContainer = error "emptyHoodleState.rootContainer"
-  , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
-  , _currentPenDraw = emptyPenDraw 
-  -- , _clipboard = emptyClipboard
-  , _callBack = error "emtpyHoodleState.callBack"
-  , _deviceList = error "emtpyHoodleState.deviceList"
-  , _penInfo = defaultPenInfo 
-  , _selectInfo = SelectInfo SelectRectangleWork 
-  , _gtkUIManager = error "emptyHoodleState.gtkUIManager"
-  , _isSaved = False 
-  , _undoTable = emptyUndo 1 
-  -- , _isEventBlocked = False 
-  , _backgroundStyle = BkgStyleLined
-  , _isFullScreen = False
-  , _settings = defaultSettings
-  , _isOneTimeSelectMode = NoOneTimeSelectMode
-  , _pageModeSignal = Nothing
-  , _lastTimeCanvasConfigure = Nothing                      
-  , _hookSet = Nothing
-  , _tempQueue = emptyQueue
-  , _tempLog = id 
-  }
+emptyHoodleState :: IO HoodleState 
+emptyHoodleState = do
+  hdl <- emptyGHoodle
+  return $
+    HoodleState  
+    { _hoodleModeState = ViewAppendState hdl 
+    , _currFileName = Nothing 
+    , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
+    , _currentCanvas = error "emtpyHoodleState.currentCanvas"
+    , _frameState = error "emptyHoodleState.frameState" 
+    , _rootWindow = error "emtpyHoodleState.rootWindow"
+    , _rootContainer = error "emptyHoodleState.rootContainer"
+    , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
+    , _currentPenDraw = emptyPenDraw 
+    -- , _clipboard = emptyClipboard
+    , _callBack = error "emtpyHoodleState.callBack"
+    , _deviceList = error "emtpyHoodleState.deviceList"
+    , _penInfo = defaultPenInfo 
+    , _selectInfo = SelectInfo SelectRectangleWork 
+    , _gtkUIManager = error "emptyHoodleState.gtkUIManager"
+    , _isSaved = False 
+    , _undoTable = emptyUndo 1 
+    -- , _isEventBlocked = False 
+    , _backgroundStyle = BkgStyleLined
+    , _isFullScreen = False
+    , _settings = defaultSettings
+    , _isOneTimeSelectMode = NoOneTimeSelectMode
+    , _pageModeSignal = Nothing
+    , _lastTimeCanvasConfigure = Nothing                      
+    , _hookSet = Nothing
+    , _tempQueue = emptyQueue
+    , _tempLog = id 
+    }
 
 -- | default settings
 defaultSettings :: Settings

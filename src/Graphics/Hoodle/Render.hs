@@ -406,7 +406,8 @@ updateHoodleBuf hdl = do
 -- |
 cnstrctRHoodle :: Hoodle -> IO RHoodle
 cnstrctRHoodle hdl = do 
-  let ttl = view title hdl 
+  let hid = view hoodleID hdl 
+      ttl = view title hdl 
       pgs = view pages hdl
       embeddedsrc = view embeddedPdf hdl 
 #ifdef POPPLER
@@ -416,7 +417,9 @@ cnstrctRHoodle hdl = do
   let mdoc = Nothing 
 #endif 
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) (Just (Context "" "" Nothing mdoc)) 
-  return . set gtitle ttl . set gembeddedpdf embeddedsrc . set gpages (fromList npgs) $ emptyGHoodle 
+  return $ GHoodle hid ttl embeddedsrc (fromList npgs)          
+   
+  -- set gtitle ttl . set gembeddedpdf embeddedsrc . set gpages (fromList npgs) <$> emptyGHoodle 
     
 
 -- |
@@ -427,7 +430,6 @@ cnstrctRPage_StateT pg = do
       lyrs = view layers pg
   nlyrs_lst <- liftIO $ mapM cnstrctRLayer lyrs
   let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
-  -- nlyrs <- liftIO $ (liftM fromList . mapM cnstrctRLayer) lyrs 
       nlyrs = fromNonEmptyList nlyrs_nonemptylst 
   nbkg <- cnstrctRBkg_StateT dim bkg
   return $ GPage dim nbkg nlyrs -- emptyGPage dim nbkg 

@@ -34,7 +34,7 @@ Library
                  bytestring >= 0.9,
                  base64-bytestring >= 0.1, 
                  lens >= 2.5, 
-                 hoodle-types >= 0.1.999,
+                 hoodle-types >= 0.1.9999,
                  gd >= 3000.7, 
                  hoodle-common >= 0.0.999 
 

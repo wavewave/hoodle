@@ -108,90 +108,6 @@ instance MakeBBoxedable Identity SVG where
 instance MakeBBoxedable Identity Link where
   makeBBoxed lnk = return (BBoxed lnk (bboxFromLink lnk))
 
-{-
--- | 
-instance BBoxable (BBoxed a) where 
-  getBBox = bbxed_box
--}
-
-
-{-
--- | 
-instance (Serialize a) => Serialize (BBoxed a) where 
-  put StrokeBBox{..} = put strkbbx_strk >> put strkbbx_bbx
-  get = liftM2 StrokeBBox get get
--}
-
- 
-{- 
-data StrokeBBox = StrokeBBox { strkbbx_strk :: Stroke 
-                             , strkbbx_bbx :: BBox } 
-                deriving (Show,Eq,Ord)
-  
-instance BBoxable StrokeBBox where
-  getBBox = strkbbx_bbx
-                         
--- |
-instance Serialize StrokeBBox where
-  put StrokeBBox{..} = put strkbbx_strk >> put strkbbx_bbx
-  get = liftM2 StrokeBBox get get
--}
-  
-{-
--- | smart constructor for StrokeBBox 
-mkStrokeBBox :: Stroke -> StrokeBBox
-mkStrokeBBox strk = 
-  StrokeBBox { strkbbx_strk = strk
-             , strkbbx_bbx = bboxFromStroke strk
-             } 
--}
-
-
-{-
--- | 
-data ImageBBox = ImageBBox { imgbbx_img :: Image 
-                           , imgbbx_bbx :: BBox } 
-                deriving (Show,Eq,Ord)
-  
-instance BBoxable ImageBBox where
-  getBBox = imgbbx_bbx
-
--- |
-instance Serialize ImageBBox where
-  put ImageBBox{..} = put imgbbx_img >> put imgbbx_bbx
-  get = ImageBBox <$> get <*> get
-
-  
--- | smart constructor for ImageBBox 
-mkImageBBox :: Image -> ImageBBox
-mkImageBBox img = 
-  ImageBBox { imgbbx_img = img
-            , imgbbx_bbx = bboxFromImage img
-            } 
--}
-
-{-
--- | 
-data SVGBBox = SVGBBox { svgbbx_svg :: SVG
-                       , svgbbx_bbx :: BBox } 
-               deriving (Show,Eq,Ord)
-  
-instance BBoxable SVGBBox where
-  getBBox = svgbbx_bbx
-
--- |
-instance Serialize SVGBBox where
-  put SVGBBox{..} = put svgbbx_svg >> put svgbbx_bbx
-  get = SVGBBox <$> get <*> get
-  
--- | smart constructor for ImageBBox 
-mkSVGBBox :: SVG -> SVGBBox
-mkSVGBBox svg = 
-  SVGBBox { svgbbx_svg = svg
-          , svgbbx_bbx = bboxFromSVG svg
-          } 
--}
-
 
 -- |
 mkbbox :: [Pair Double Double] -> BBox 
@@ -238,6 +154,7 @@ bboxFromSVG (SVG _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
 -- | 
 bboxFromLink :: Link -> BBox 
 bboxFromLink (Link _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
+bboxFromLink (LinkDocID _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
 
 
 -- | general transform BBox         

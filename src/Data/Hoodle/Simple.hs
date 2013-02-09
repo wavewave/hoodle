@@ -75,9 +75,16 @@ data Link = Link { link_id :: ByteString
                  , link_render :: ByteString
                  , link_pos :: (Double,Double)
                  , link_dim :: !Dimension }  
+          | LinkDocID { link_id :: ByteString
+                      , link_linkeddocid :: ByteString 
+                      , link_location :: ByteString 
+                      , link_text :: Maybe ByteString
+                      , link_command :: Maybe ByteString 
+                      , link_render :: ByteString
+                      , link_pos :: (Double,Double)
+                      , link_dim :: !Dimension }  
            deriving (Show,Eq,Ord)                    
                     
-
 -- | 
 instance SE.Serialize Stroke where
     put Stroke{..} = SE.putWord8 0 
@@ -116,16 +123,32 @@ instance SE.Serialize SVG where
 
 -- | 
 instance SE.Serialize Link where
-    put Link {..} = SE.put link_id
-                    >> SE.put link_type
-                    >> SE.put link_location
-                    >> SE.put link_text
-                    >> SE.put link_command 
-                    >> SE.put link_render
-                    >> SE.put link_pos
-                    >> SE.put link_dim
-    get = Link <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get 
-               <*> SE.get <*> SE.get
+    put Link {..}      = SE.putWord8 0 
+                         >> SE.put link_id
+                         >> SE.put link_type
+                         >> SE.put link_location
+                         >> SE.put link_text
+                         >> SE.put link_command 
+                         >> SE.put link_render
+                         >> SE.put link_pos
+                         >> SE.put link_dim
+    put LinkDocID {..} = SE.putWord8 1 
+                         >> SE.put link_id
+                         >> SE.put link_linkeddocid 
+                         >> SE.put link_location
+                         >> SE.put link_text
+                         >> SE.put link_command 
+                         >> SE.put link_render
+                         >> SE.put link_pos
+                         >> SE.put link_dim
+                    
+    get = do tag <- SE.getWord8 
+             case tag of 
+               0 -> Link      <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get 
+                              <*> SE.get <*> SE.get <*> SE.get
+               1 -> LinkDocID <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get 
+                              <*> SE.get <*> SE.get <*> SE.get
+               _ -> fail "err in Link parsing"
 
 
 -- | 

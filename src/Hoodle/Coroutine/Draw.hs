@@ -106,32 +106,21 @@ invalidateInBBox mbbox flag cid = do
   invalidateGeneral cid mbbox flag 
     drawSinglePage drawSinglePageSel drawContHoodle drawContHoodleSel
 
-
-
 -- | 
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
                        -> DrawFlag
                        -> MainCoroutine ()
 invalidateAllInBBox mbbox flag = applyActionToAllCVS (invalidateInBBox mbbox flag)
-{-   do                        
-  xstate <- get
-  let cinfoMap  = getCanvasInfoMap xstate
-      keys = M.keys cinfoMap 
-  forM_ keys (invalidateInBBox mbbox flag)
--}
 
 -- | 
-
 invalidateAll :: MainCoroutine () 
 invalidateAll = invalidateAllInBBox Nothing Clear 
  
 -- | Invalidate Current canvas
-
 invalidateCurrent :: MainCoroutine () 
 invalidateCurrent = invalidate . getCurrentCanvasId =<< get
        
 -- | Drawing temporary gadgets
-
 invalidateTemp :: CanvasId -> Surface ->  Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
     xst <- get 

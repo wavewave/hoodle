@@ -141,7 +141,9 @@ fileChooser choosertyp mfname = do
         Just rf -> fileChooserSetCurrentFolder dialog rf 
         Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
       maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
+      print "a"
       res <- dialogRun dialog
+      print "b"
       mr <- case res of 
               ResponseDeleteEvent -> return Nothing
               ResponseOk ->  fileChooserGetFilename dialog 

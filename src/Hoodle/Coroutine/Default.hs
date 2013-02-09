@@ -46,6 +46,7 @@ import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Highlighter
 import           Hoodle.Coroutine.Layer 
+import           Hoodle.Coroutine.Link
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Coroutine.Scroll
@@ -186,7 +187,7 @@ viewAppendMode = do
         (PenWork,EraserButton) -> eraserStart cid pcoord
         (EraserWork,_)      -> eraserStart cid pcoord 
         (HighlighterWork,_) -> highlighterStart cid pcoord
-    PenMove cid pcoord -> return () --  liftIO $ putStrLn "pen moved in view append"
+    PenMove cid pcoord -> notifyLink cid pcoord
     _ -> defaultEventProcess r1
 
 -- |
@@ -200,7 +201,7 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
-    PenMove cid pcoord -> return () -- liftIO $ putStrLn "pen move in selectmode"
+    PenMove cid pcoord -> notifyLink cid pcoord 
     PenColorChanged c -> do modify (penInfo.currentTool.penColor .~ c)
                             selectPenColorChanged c
     PenWidthChanged v -> do 
@@ -354,8 +355,6 @@ menuEventProcess MenuApplyToAllPages = do
           let cbkg = view gbackground cpage
               nbkg 
                 | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
-{- let bkg = rbkg2Bkg cbkg 
-                                    in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty } -}
                 | otherwise = cbkg 
           in set gbackground nbkg cpage 
         npgs = fmap changeBkg pgs 

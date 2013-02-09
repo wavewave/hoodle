@@ -87,6 +87,7 @@ Library
                    Hoodle.Coroutine.File
                    Hoodle.Coroutine.Highlighter
                    Hoodle.Coroutine.Layer
+                   Hoodle.Coroutine.Link
                    Hoodle.Coroutine.Mode
                    Hoodle.Coroutine.Page
                    Hoodle.Coroutine.Pen

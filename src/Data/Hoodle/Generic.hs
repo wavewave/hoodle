@@ -21,11 +21,12 @@ module Data.Hoodle.Generic where
 -- import Control.Applicative
 import Control.Category
 import Control.Lens 
-import Data.ByteString hiding (map,zip)
+import Data.ByteString.Char8 hiding (map,zip)
 import Data.Foldable
 import Data.Functor
 import qualified Data.IntMap as IM --  hiding (map)
 import qualified Data.Sequence as Seq 
+import Data.UUID.V4 
 -- from this package
 import Data.Hoodle.Simple
 -- 
@@ -33,7 +34,8 @@ import Prelude hiding ((.),id)
 
 -- | Generic Hoodle data having generic pages
 data GHoodle cntnr pg = GHoodle 
-                        { ghoodle_ttl :: ByteString 
+                        { ghoodle_id :: ByteString 
+                        , ghoodle_ttl :: ByteString 
                         , ghoodle_embeddedpdf :: Maybe ByteString 
                         , ghoodle_pgs :: cntnr pg }  
 
@@ -70,12 +72,15 @@ instance (Functor cntnr) => Functor (GPage bkg cntnr) where
   
 -- | 
 instance (Functor cntnr) => Functor (GHoodle cntnr) where
-  fmap f (GHoodle ttl pdf pgs) = GHoodle ttl pdf (fmap f pgs)
+  fmap f (GHoodle hid ttl pdf pgs) = GHoodle hid ttl pdf (fmap f pgs)
 
 ------------------------------
 -- lenses for Generic types --
 ------------------------------
 
+-- | 
+ghoodleID :: Simple Lens (GHoodle cntnr pg) ByteString 
+ghoodleID = lens ghoodle_id (\f a -> f { ghoodle_id = a } )
 
 -- |
 gtitle :: Simple Lens (GHoodle cntnr pg) ByteString
@@ -133,8 +138,10 @@ instance Listable Seq.Seq where
   fromList = Seq.fromList 
 
 -- |
-emptyGHoodle :: (Listable m) => GHoodle m a
-emptyGHoodle = GHoodle "" Nothing (fromList [])
+emptyGHoodle :: (Listable m) => IO (GHoodle m a)
+emptyGHoodle = do 
+  uuid <- nextRandom
+  return $ GHoodle ((pack.show) uuid) "" Nothing (fromList [])
 
 -- | 
 emptyGPage :: (Listable cntnr) => Dimension -> bkg -> GPage bkg cntnr a 

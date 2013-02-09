@@ -22,12 +22,15 @@ import Data.ByteString
 import Data.Hoodle.Generic 
 
 -- | 
-data GSelect a b = GSelect { gselect_ttl :: ByteString 
+data GSelect a b = GSelect { gselect_id :: ByteString 
+                           , gselect_ttl :: ByteString 
                            , gselect_embeddedpdf :: Maybe ByteString 
                            , gselect_all :: a 
                            , gselect_selected :: b
                            }
 
+gselHoodleID :: Simple Lens (GSelect a b) ByteString 
+gselHoodleID = lens gselect_id (\f a -> f { gselect_id = a } )
 
 -- |
 gselTitle :: Simple Lens (GSelect a b) ByteString
@@ -47,13 +50,15 @@ gselSelected = lens gselect_selected (\f a -> f {gselect_selected = a})
 
 
 gSelect2GHoodle :: GSelect (m a) b -> GHoodle m a 
-gSelect2GHoodle = GHoodle <$> view gselTitle 
+gSelect2GHoodle = GHoodle <$> view gselHoodleID
+                          <*> view gselTitle 
                           <*> view gselEmbeddedPdf 
                           <*> view gselAll 
 
 
 gHoodle2GSelect :: GHoodle m a -> GSelect (m a) (Maybe b)
-gHoodle2GSelect = GSelect <$> view gtitle 
+gHoodle2GSelect = GSelect <$> view ghoodleID
+                          <*> view gtitle 
                           <*> view gembeddedpdf
                           <*> view gpages
                           <*> pure Nothing 

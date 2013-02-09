@@ -18,18 +18,19 @@ module Data.Hoodle.Simple where
 -- from other packages
 import           Control.Applicative 
 import           Control.Lens 
-import qualified Data.ByteString as S
+-- import qualified Data.ByteString as S
 import           Data.ByteString.Char8 hiding (map)
+import           Data.UUID.V4 
 -- import           Data.Label
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
 -- from this package
 import           Data.Hoodle.Util
 -- 
-import Prelude hiding ((.),id,putStrLn,fst,snd,curry,uncurry)
+import Prelude hiding (putStrLn,fst,snd,curry,uncurry)
 
 -- | 
-type Title = S.ByteString
+type Title = ByteString
 
 -- | wrapper of object embeddable in Layer
 data Item = ItemStroke Stroke
@@ -40,38 +41,38 @@ data Item = ItemStroke Stroke
 
 
 -- | Pen stroke item 
-data Stroke = Stroke { stroke_tool  :: !S.ByteString
-                     , stroke_color :: !S.ByteString
+data Stroke = Stroke { stroke_tool  :: !ByteString
+                     , stroke_color :: !ByteString
                      , stroke_width :: !Double
                      , stroke_data  :: ![Pair Double Double]
                      }
-            | VWStroke { stroke_tool :: S.ByteString 
-                       , stroke_color :: S.ByteString 
+            | VWStroke { stroke_tool :: ByteString 
+                       , stroke_color :: ByteString 
                        , stroke_vwdata :: [(Double,Double,Double)] 
                        }
             deriving (Show,Eq,Ord)
 
 -- | Image item 
-data Image = Image { img_src :: S.ByteString
+data Image = Image { img_src :: ByteString
                    , img_pos :: (Double,Double)
                    , img_dim :: !Dimension
                    } 
              deriving (Show,Eq,Ord)
 
-data SVG = SVG { svg_text :: Maybe S.ByteString
-               , svg_command :: Maybe S.ByteString 
-               , svg_render :: S.ByteString
+data SVG = SVG { svg_text :: Maybe ByteString
+               , svg_command :: Maybe ByteString 
+               , svg_render :: ByteString
                , svg_pos :: (Double,Double)
                , svg_dim :: !Dimension }  
            deriving (Show,Eq,Ord)
                     
 
-data Link = Link { link_id :: S.ByteString 
-                 , link_type :: S.ByteString 
-                 , link_location :: S.ByteString
-                 , link_text :: Maybe S.ByteString
-                 , link_command :: Maybe S.ByteString 
-                 , link_render :: S.ByteString
+data Link = Link { link_id :: ByteString 
+                 , link_type :: ByteString 
+                 , link_location :: ByteString
+                 , link_text :: Maybe ByteString
+                 , link_command :: Maybe ByteString 
+                 , link_render :: ByteString
                  , link_pos :: (Double,Double)
                  , link_dim :: !Dimension }  
            deriving (Show,Eq,Ord)                    
@@ -162,22 +163,23 @@ instance SE.Serialize Dimension where
   get = Dim <$> SE.get <*> SE.get
 
 -- | 
-data Background = Background { bkg_type :: !S.ByteString 
-                             , bkg_color :: !S.ByteString 
-                             , bkg_style :: !S.ByteString 
+data Background = Background { bkg_type :: !ByteString 
+                             , bkg_color :: !ByteString 
+                             , bkg_style :: !ByteString 
                              }
-                | BackgroundPdf { bkg_type :: S.ByteString 
-                                , bkg_domain :: Maybe S.ByteString
-                                , bkg_filename :: Maybe S.ByteString
+                | BackgroundPdf { bkg_type :: ByteString 
+                                , bkg_domain :: Maybe ByteString
+                                , bkg_filename :: Maybe ByteString
                                 , bkg_pageno :: Int
                                 }
-                | BackgroundEmbedPdf { bkg_type :: S.ByteString
+                | BackgroundEmbedPdf { bkg_type :: ByteString
                                      , bkg_pageno :: Int } 
                 deriving Show 
 
 -- | 
-data Hoodle = Hoodle { hoodle_title :: !Title
-                     , hoodle_embeddedpdf :: Maybe S.ByteString
+data Hoodle = Hoodle { hoodle_id :: ByteString
+                     , hoodle_title :: !Title
+                     , hoodle_embeddedpdf :: Maybe ByteString
                      , hoodle_pages :: ![Page] }
              deriving Show 
 
@@ -208,6 +210,10 @@ tool = lens stroke_tool (\f a -> f { stroke_tool = a })
 -- | 
 color :: Simple Lens Stroke ByteString 
 color = lens stroke_color (\f a -> f { stroke_color = a } )
+
+-- |
+hoodleID :: Simple Lens Hoodle ByteString 
+hoodleID = lens hoodle_id (\f a -> f { hoodle_id = a } )
 
 -- | 
 title :: Simple Lens Hoodle Title
@@ -243,8 +249,10 @@ items = lens layer_items (\f a -> f { layer_items = a } )
 --------------------------
 
 -- | 
-emptyHoodle :: Hoodle
-emptyHoodle = Hoodle "" Nothing [] 
+emptyHoodle :: IO Hoodle
+emptyHoodle = do
+  uuid <- nextRandom
+  return $ Hoodle ((pack.show) uuid) "" Nothing [] 
 
 -- | 
 emptyLayer :: Layer 
@@ -269,9 +277,10 @@ defaultPage = Page { page_dim = Dim  612.0 792.0
                    } 
 
 -- | 
-defaultHoodle :: Hoodle 
-defaultHoodle = Hoodle "untitled" Nothing [ defaultPage  ] 
-
+defaultHoodle :: IO Hoodle 
+defaultHoodle = 
+    (set title "untitled".set embeddedPdf Nothing . set pages [defaultPage])
+    <$> emptyHoodle 
 -- | 
 newPageFromOld :: Page -> Page
 newPageFromOld page = 

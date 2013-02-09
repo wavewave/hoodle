@@ -73,6 +73,11 @@ cnstrctRItem (ItemLink lnk@(Link _ _ _ _ _ bstr _ _)) = do
         lnkbbx = runIdentity (makeBBoxed lnk)
     rsvg <- RSVG.svgNewFromString str
     return (RItemLink lnkbbx (Just rsvg))
+cnstrctRItem (ItemLink lnk@(LinkDocID _ _ _ _ _ bstr _ _)) = do 
+    let str = C8.unpack bstr 
+        lnkbbx = runIdentity (makeBBoxed lnk)
+    rsvg <- RSVG.svgNewFromString str
+    return (RItemLink lnkbbx (Just rsvg))    
 
 
 -- | get embedded png image. If not, just give me nothing. 

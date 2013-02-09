@@ -138,7 +138,8 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
 
 -- | render svg  
 renderLink :: Link -> Render () 
-renderLink lnk@(Link _ _ _ _ _ bstr _ _) = do  
+renderLink lnk = do  
+    let bstr = link_render lnk 
     let str = C.unpack bstr 
     RSVG.withSvgFromString str $ \rsvg -> do 
       let lnkbbx = runIdentity (makeBBoxed lnk)

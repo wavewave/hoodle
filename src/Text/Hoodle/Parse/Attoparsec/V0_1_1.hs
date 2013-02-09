@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Parse.V0_1_1.Attoparsec
+-- Module      : Text.Hoodle.Parse.Attoparsec.V0_1_1
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 -- 
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Parse.V0_1_1.Attoparsec where
+module Text.Hoodle.Parse.Attoparsec.V0_1_1 where
 
 import           Control.Applicative 
 import           Data.Attoparsec

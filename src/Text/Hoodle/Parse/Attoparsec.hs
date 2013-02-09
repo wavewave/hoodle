@@ -250,6 +250,7 @@ link_header = do
     mlid <- case typ of 
       "simple" -> return Nothing 
       "linkdocid" -> Just<$>(string "linkedid=\"" *> takeTill (inClass "\"")<* char '"')
+      _ -> fail "unknown link type"
     trim    
     loc <- B.pack <$> (string "location=\"" *> manyTill anyChar (try (char '"')))
     trim 

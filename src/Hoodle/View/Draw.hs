@@ -499,8 +499,11 @@ renderTestWidget :: Maybe BBox -> CanvasCoordinate -> Render ()
 renderTestWidget mbbox (CvsCoord (x,y)) = do 
   identityMatrix 
   clipBBox mbbox 
-  setSourceRGBA 0.5 0.5 0.5 0.5 
+  setSourceRGBA 0.5 0.5 0.5 0.3 
   rectangle x y 100 100 
+  fill 
+  setSourceRGBA 0.7 0.2 0.2 0.5
+  rectangle (x+30) (y+30) 40 40 
   fill 
   resetClip 
 
@@ -513,3 +516,27 @@ cairoBBox bbox = do
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
 -}
+
+-- | 
+canvasImageSurface :: CanvasGeometry -> Hoodle EditMode -> IO (Surface,Surface)
+canvasImageSurface geometry hdl = do 
+  let ViewPortBBox bbx = getCanvasViewPort geometry 
+      BBox (x0,y0) (x1,y1) = xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) bbx
+      w = (x1-x0)
+      h = (y1-y0)
+  let pgs = view gpages hdl 
+      drawpgs = (catMaybes . map f . getPagesInViewPortRange geometry) hdl 
+        where f k = maybe Nothing (\a -> Just (k,a)) . M.lookup (unPageNum k) $ pgs
+      onepagerender (pn,pg) = do 
+        identityMatrix 
+        cairoXform4PageCoordinate geometry pn
+        cairoRenderOption (RBkgDrawPDF,DrawFull) pg
+      renderfunc = do 
+        setSourceRGBA 0.5 0.5 0.5 1
+        rectangle 0 0 w h 
+        fill 
+        mapM_ onepagerender drawpgs 
+  sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
+  sfc2 <- createImageSurface FormatARGB32 (floor w) (floor h)
+  renderWith sfc renderfunc 
+  return (sfc,sfc2) 

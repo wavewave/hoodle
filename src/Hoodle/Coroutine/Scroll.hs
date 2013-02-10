@@ -39,6 +39,26 @@ import           Hoodle.View.Draw
 import           Prelude hiding ((.), id)
 
 -- | 
+moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))
+                  -> MainCoroutine () 
+moveViewPortBy rndr cid f = 
+    updateXState (return . act) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
+  where     
+    act xst = let cinfobox = getCanvasInfo cid xst 
+                  ncinfobox = selectBox moveact moveact cinfobox       
+              in setCanvasInfo (cid,ncinfobox) xst
+    moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+    moveact cinfo = 
+      let BBox (x0,y0) _ = 
+            (unViewPortBBox . view (viewInfo.pageArrangement.viewPortBBox)) cinfo
+          DesktopDimension ddim = 
+            view (viewInfo.pageArrangement.desktopDimension) cinfo
+      in over (viewInfo.pageArrangement.viewPortBBox) 
+           (xformViewPortFitInSize ddim (moveBBoxULCornerTo (f (x0,y0)))) 
+           cinfo
+
+
+-- | 
 adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
 adjustScrollbarWithGeometryCvsId cid = do
   xstate <- get
@@ -64,19 +84,23 @@ adjustScrollbarWithGeometryCurrent = do
 -- | 
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
 hscrollBarMoved cid v = 
-    changeCurrentCanvasId cid 
+  changeCurrentCanvasId cid
+  >> moveViewPortBy (invalidate cid) cid (\(x,y)->(v,y))
+{-    changeCurrentCanvasId cid 
     >> updateXState (return . hscrollmoveAction) 
     >> invalidate cid 
   where hscrollmoveAction = over currentCanvasInfo (selectBox fsimple fsimple)
         fsimple cinfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
           in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
-
+-}
 
 -- | 
 vscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
-vscrollBarMoved cid v = 
-    chkCvsIdNInvalidate cid 
+vscrollBarMoved cid v = chkCvsIdNInvalidate cid 
+                        >> moveViewPortBy (invalidate cid) cid (\(x,y)->(x,v))
+  
+{-                        
     >> updateXState (return . vscrollmoveAction) 
     >> invalidate cid
        -- invalidateInBBox Nothing Efficient cid 
@@ -84,6 +108,8 @@ vscrollBarMoved cid v =
         fsimple cinfo =  
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
           in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
+-}
+
 
 -- | 
 vscrollStart :: CanvasId -> Double -> MainCoroutine () 

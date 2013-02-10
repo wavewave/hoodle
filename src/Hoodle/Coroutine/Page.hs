@@ -143,7 +143,6 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord
               ncinfobox = CanvasContPage
                           . set (viewInfo.pageArrangement) narr
                           . set (viewInfo.zoomMode) zmode $ cinfo
-          liftIO $ print (view viewPortBBox narr)
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
 
 -- | 
@@ -257,20 +256,3 @@ deletePageInHoodle hdl (PageNum pgn) = do
 -}
 
 
-moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))
-                  -> MainCoroutine () 
-moveViewPortBy rndr cid f = 
-    updateXState (return . act) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
-  where     
-    act xst = let cinfobox = getCanvasInfo cid xst 
-                  ncinfobox = selectBox moveact moveact cinfobox       
-              in setCanvasInfo (cid,ncinfobox) xst
-    moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
-    moveact cinfo = 
-      let BBox (x0,y0) _ = 
-            (unViewPortBBox . view (viewInfo.pageArrangement.viewPortBBox)) cinfo
-          DesktopDimension ddim = 
-            view (viewInfo.pageArrangement.desktopDimension) cinfo
-      in over (viewInfo.pageArrangement.viewPortBBox) 
-           (xformViewPortFitInSize ddim (moveBBoxULCornerTo (f (x0,y0)))) 
-           cinfo

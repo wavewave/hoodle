@@ -30,9 +30,13 @@ import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Util
 import           Graphics.Hoodle.Render.Util.HitTest
 -- 
+import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Page
+import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
 import           Hoodle.Device
+import           Hoodle.ModelAction.Page 
 import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
@@ -84,6 +88,27 @@ widgetCheckPen cid pcoord act = do
 widgetCheckPen cid pcoord act = act  
 
 
+findZoomXform :: ((Double,Double),(Double,Double),(Double,Double)) 
+                 -> (Double,(Double,Double))
+findZoomXform ((xo,yo),(x0,y0),(x,y)) = 
+    let tx = if x0 > xo then x - x0 else x0 - x 
+        ty = if y0 > yo then y - y0 else y0 - y
+        ztx = 1 + tx / 200
+        zty = 1 + ty / 200
+        zx | ztx > 5 = 5  
+           | ztx < 0.2 = 0.2
+           | otherwise = ztx
+        zy | zty > 5 = 5  
+           | zty < 0.2 = 0.2
+           | otherwise = zty                                          
+        z | zx >= 1 && zy >= 1 = max zx zy
+          | zx < 1 && zy < 1 = min zx zy 
+          | otherwise = zx
+        xtrans = (1 -z)*xo/z
+        ytrans = (1- z)*yo/z 
+    in (z,(xtrans,ytrans))
+
+-- | 
 startWidgetAction :: WidgetMode 
                      -> CanvasId 
                      -> CanvasGeometry 
@@ -100,11 +125,55 @@ startWidgetAction mode cid geometry (sfc,sfc2)
       ctime <- liftIO getCurrentTime 
       let dtime = diffUTCTime ctime otime 
           willUpdate = dtime > dtime_bound 
-      if willUpdate  
-        then do 
+      when willUpdate $ 
+        movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord      
+      if willUpdate
+        then 
+          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime
+        else      
+          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
+      
+    PenUp _ pcoord -> do 
+      
+      movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord 
+      case mode of 
+        Zooming -> do 
+          let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
+              ccoord@(CvsCoord (xo,yo)) = CvsCoord (xw+50,yw+50)
+              (z,(xtrans,ytrans)) = findZoomXform ((xo,yo),(x0,y0),(x,y))
+              nratio = zoomRatioFrmRelToCurr geometry z
+              
+              mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
+              
+          pageZoomChange (Zoom nratio) 
+          case mpgcoord of 
+            Nothing -> return () 
+            Just pgcoord -> do 
+              xst <- get
+              geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
+              let DeskCoord (xd,yd) = page2Desktop geometry pgcoord 
+                  DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
+                  act xst =  
+                    let cinfobox = getCanvasInfo cid xst 
+                        nwpos = CvsCoord (xw+x-x0,yw+y-y0)
+                        moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+                        moveact cinfo = 
+                          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
+                          in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (xd-xd0,yd-yd0))) $ cinfo
+                        ncinfobox = selectBox moveact moveact cinfobox       
+                    in setCanvasInfo (cid,ncinfobox) xst
+                  
+              updateXState (return . act) 
+              canvasZoomUpdateCvsId cid Nothing            
+              
+        _ -> return ()
+      invalidate cid 
+    _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
+
+
+movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) pcoord = do 
           let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
           xst <- get 
-          
           case mode of
             Moving -> do 
               let cinfobox = getCanvasInfo cid xst 
@@ -126,22 +195,11 @@ startWidgetAction mode cid geometry (sfc,sfc2)
               let cinfobox = getCanvasInfo cid xst               
               let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
               let (xo,yo) = (xw+50,yw+50)
-              let tx = if x0 > xo then x - x0 else x0 - x 
-                  ty = if y0 > yo then y - y0 else y0 - y
-                  ztx = 1 + tx / 200
-                  zty = 1 + ty / 200
-                  zx | ztx > 5 = 5  
-                     | ztx < 0.2 = 0.2
-                     | otherwise = ztx
-                  zy | zty > 5 = 5  
-                     | zty < 0.2 = 0.2
-                     | otherwise = zty                                          
-                  z | zx >= 1 && zy >= 1 = max zx zy
-                    | zx < 1 && zy < 1 = min zx zy 
-                    | otherwise = zx
+                  (z,(xtrans,ytrans)) = findZoomXform ((xo,yo),(x0,y0),(x,y)) 
               renderWith sfc2 $ do 
                   save
                   scale z z
+                  translate xtrans ytrans 
                   setSourceSurface sfc 0 0 
                   setOperator OperatorSource 
                   paint
@@ -160,15 +218,4 @@ startWidgetAction mode cid geometry (sfc,sfc2)
                   setSourceSurface sfc2 0 0 
                   setOperator OperatorSource 
                   paint
-
-          -- liftIO $ putStrLn $ "(w,h) =" ++ show (w,h)
           liftIO $ boxAction drawact cinfobox
-          -- invalidateInBBox Nothing Efficient cid 
-            
-            
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime
-        else      
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
-    PenUp _ pcoord -> invalidateAll -- return () 
-    _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
-

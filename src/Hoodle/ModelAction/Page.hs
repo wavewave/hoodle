@@ -199,10 +199,7 @@ addNewPageInHoodle bsty dir hdl cpn =
   in nhdl 
 
 
-                 -- let bkg = rbkg2Bkg cbkg 
-                          -- in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty } 
-
--- | 
+-- | need to be refactored into zoomRatioFrmRelToCurr (rename zoomRatioRelPredefined)
 relZoomRatio :: CanvasGeometry -> ZoomModeRel -> Double
 relZoomRatio geometry rzmode =   
     let CvsCoord (cx0,_cy0) = desktop2Canvas geometry (DeskCoord (0,0))
@@ -212,3 +209,9 @@ relZoomRatio geometry rzmode =
           ZoomOut -> 1.0/predefinedZoomStepFactor
     in (cx1-cx0) * scalefactor
      
+-- |
+zoomRatioFrmRelToCurr :: CanvasGeometry -> Double -> Double 
+zoomRatioFrmRelToCurr geometry z = 
+    let CvsCoord (cx0,_cy0) = desktop2Canvas geometry (DeskCoord (0,0))
+        CvsCoord (cx1,_cy1) = desktop2Canvas geometry (DeskCoord (1,1))
+    in (cx1-cx0) * z

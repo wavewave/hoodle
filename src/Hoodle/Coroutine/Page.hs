@@ -139,6 +139,9 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
               ncinfobox = CanvasContPage
                           . set (viewInfo.pageArrangement) narr
                           . set (viewInfo.zoomMode) zmode $ cinfo
+          liftIO $ putStrLn $ "canvasViewPort = " ++ show (canvasViewPort geometry)
+          liftIO $ print origcoord 
+         
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
 
 -- | 

@@ -507,15 +507,6 @@ renderTestWidget mbbox (CvsCoord (x,y)) = do
   fill 
   resetClip 
 
-{-
--- |
-cairoBBox :: BBox -> Render () 
-cairoBBox bbox = do 
-  let (x1,y1) = bbox_upperleft bbox
-      (x2,y2) = bbox_lowerright bbox
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke
--}
 
 -- | 
 canvasImageSurface :: CanvasGeometry -> Hoodle EditMode -> IO (Surface,Surface)

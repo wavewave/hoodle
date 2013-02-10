@@ -509,10 +509,20 @@ renderTestWidget mbbox (CvsCoord (x,y)) = do
 
 
 -- | 
-canvasImageSurface :: CanvasGeometry -> Hoodle EditMode -> IO (Surface,Surface)
+canvasImageSurface :: CanvasGeometry 
+                      -- -> Maybe Double  -- ^ multiply 
+                      -> Hoodle EditMode 
+                      -> IO (Surface,Surface)
 canvasImageSurface geometry hdl = do 
   let ViewPortBBox bbx = getCanvasViewPort geometry 
-      BBox (x0,y0) (x1,y1) = xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) bbx
+      {- nbbx = case mmulti of
+               Nothing -> bbx 
+               Just z -> let (x0,y0) = bbox_upperleft bbx 
+                             (x1,y1) = bbox_lowerright bbx
+                             w = x1-x0
+                             h = y1-y0 
+                         in BBox (x0-z*w,y0-z*h) (x1+z*w,y0+z*h) -}
+      BBox (x0,y0) (x1,y1) = xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) bbx 
       w = (x1-x0)
       h = (y1-y0)
   let pgs = view gpages hdl 

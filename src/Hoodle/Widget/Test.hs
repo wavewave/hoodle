@@ -84,22 +84,22 @@ widgetCheckPen cid pcoord act = do
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
            liftIO $ surfaceFinish sfc 
            liftIO $ surfaceFinish sfc2
-         else act 
-widgetCheckPen cid pcoord act = act  
+         else do 
+           act 
 
 
 findZoomXform :: ((Double,Double),(Double,Double),(Double,Double)) 
                  -> (Double,(Double,Double))
 findZoomXform ((xo,yo),(x0,y0),(x,y)) = 
-    let tx = if x0 > xo then x - x0 else x0 - x 
-        ty = if y0 > yo then y - y0 else y0 - y
+    let tx = x - x0 --  if x0 > xo then x - x0 else x0 - x 
+        ty = y - y0 -- if y0 > yo then y - y0 else y0 - y
         ztx = 1 + tx / 200
         zty = 1 + ty / 200
-        zx | ztx > 5 = 5  
-           | ztx < 0.2 = 0.2
+        zx | ztx > 2 = 2  
+           | ztx < 0.5 = 0.5
            | otherwise = ztx
-        zy | zty > 5 = 5  
-           | zty < 0.2 = 0.2
+        zy | zty > 2 = 2  
+           | zty < 0.5 = 0.5
            | otherwise = zty                                          
         z | zx >= 1 && zy >= 1 = max zx zy
           | zx < 1 && zy < 1 = min zx zy 
@@ -143,31 +143,58 @@ startWidgetAction mode cid geometry (sfc,sfc2)
               (z,(xtrans,ytrans)) = findZoomXform ((xo,yo),(x0,y0),(x,y))
               nratio = zoomRatioFrmRelToCurr geometry z
               
-              mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
+              mpnpgxy = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
               
-          pageZoomChange (Zoom nratio) 
-          case mpgcoord of 
+          -- pageZoomChange (Zoom nratio) 
+          canvasZoomUpdateGenRenderCvsId (return ()) cid (Just (Zoom nratio)) Nothing 
+          
+          case mpnpgxy of 
             Nothing -> return () 
-            Just pgcoord -> do 
-              xst <- get
-              geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
-              let DeskCoord (xd,yd) = page2Desktop geometry pgcoord 
+            Just pnpgxy@(pnum,pgxy) -> do 
+              xstate <- get
+              let hdl = getHoodle xstate
+              geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+              let -- PageCoord (xp,yp) = pgxy
+                  DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
                   DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
+                  DeskCoord (xco,yco) = canvas2Desktop geometry (CvsCoord (0,0))
+                  -- npgxy =  PageCoord (xp-(xd0-xco),yp-(yd0-yco))
+                  -- npnpgxy = (pnum,npgxy)
                   act xst =  
                     let cinfobox = getCanvasInfo cid xst 
                         nwpos = CvsCoord (xw+x-x0,yw+y-y0)
                         moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
                         moveact cinfo = 
-                          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
-                          in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (xd-xd0,yd-yd0))) $ cinfo
+                          let BBox (xorig0,yorig0) _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
+                              DesktopDimension ddim = view (viewInfo.pageArrangement.desktopDimension) cinfo
+                              {- zmode = view (viewInfo.zoomMode) cinfo
+                              cdim = canvasDim geometry 
+                              narr = makeContinousArrangement zmode cdim npgpgxy -}
+                          in over (viewInfo.pageArrangement.viewPortBBox) (applyGuard ddim (moveBBoxULCornerTo (xorig0+xd-xd0,yorig0+yd-yd0))) $ cinfo
                         ncinfobox = selectBox moveact moveact cinfobox       
                     in setCanvasInfo (cid,ncinfobox) xst
                   
               updateXState (return . act) 
-              canvasZoomUpdateCvsId cid Nothing            
+              -- canvasZoomUpdateAll
+              adjustScrollbarWithGeometryCvsId cid 
               
+              liftIO $putStrLn "IWKIMTEST"
+              liftIO$ print (xd0,yd0,xd,yd)
+              -- invalidateAll 
+              -- canvasZoomUpdateGenRenderCvsId invalidateAll cid Nothing (Just npnpgxy)    
+              -- return ()     
         _ -> return ()
       invalidate cid 
+      
+      -- IWKIM
+      test_xstate <- get
+      test_geometry <- liftIO $ getCanvasGeometryCvsId cid test_xstate
+      let test_dcoord = canvas2Desktop test_geometry (CvsCoord (0,0))
+      liftIO $ print "test IWKIIIIM"
+      liftIO (print test_dcoord)
+      -- ENDIWKIM
+
+      
     _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
 
 

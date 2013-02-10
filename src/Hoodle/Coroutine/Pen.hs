@@ -103,6 +103,10 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
               nbbox = xformBBox f bbox 
           invalidateAllInBBox (Just nbbox) BkgEfficient -- Efficient
           
+    
+          
+
+
 -- | main pen coordinate adding process
 -- | now being changed
 penProcess :: CanvasId -> PageNum 

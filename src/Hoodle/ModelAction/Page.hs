@@ -113,6 +113,15 @@ updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do
     (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
                          <*> adjustmentGetValue vadj 
     geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas 
+    
+    -- IWKIM
+    let test_dcoord = canvas2Desktop geometry (CvsCoord (0,0))
+    print "test IWKIIIIM4"
+    (print test_dcoord)
+    print (xdesk,ydesk)
+    -- ENDIWKIM
+    
+    
     case desktop2Page geometry (DeskCoord (xdesk,ydesk)) of
       Nothing -> return (CanvasContPage cinfo)
       Just ulcoord -> do 

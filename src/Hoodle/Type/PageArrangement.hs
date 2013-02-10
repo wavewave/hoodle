@@ -16,7 +16,7 @@ module Hoodle.Type.PageArrangement where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Category ((.))
+-- import           Control.Category ((.))
 -- import           Control.Error.Util (note)
 import           Control.Lens
 import           Data.Foldable (toList)
@@ -30,8 +30,8 @@ import Hoodle.Type.Predefined
 import Hoodle.Type.Alias
 import Hoodle.Util
 -- 
-import Prelude hiding ((.),id)
-
+-- import Prelude hiding ((.),id)
+import Debug.Trace
 
 -- | 
 
@@ -108,6 +108,30 @@ apply :: (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox
 apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 {-# INLINE apply #-}
 
+
+-- | 
+applyGuard :: Dimension -> (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox
+applyGuard (Dim w h) f (ViewPortBBox bbx) = 
+  let BBox (x1,y1) (x2,y2) = f bbx 
+      -- (bw,bh) = (xpos1-xpos,ypos1-ypos)
+      -- (x1,y1) = (xpos+x0,ypos+y0) 
+      -- (x2,y2) = (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy) 
+      (x1',x2') 
+        | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
+        | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
+        | x1<0 = (0,x2-x1)
+        | otherwise            = (x1,x2)
+      (y1',y2') 
+        | y2>h && h-(y2-y1)>0  = (h-(y2-y1),h)
+        | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
+        | y1 <0 = (0,y2-y1)
+        | otherwise            = (y1,y2)
+  in trace ("applyGuard" ++ show (w,h) ++ "\n" ++ show (x1,y1,x2,y2,x1',y1',x2',y2')) $ 
+       ViewPortBBox (BBox (x1',y1') (x2',y2') )
+      
+      
+      
+
 -- | data structure for coordinate arrangement of pages in desktop coordinate
 data PageArrangement a where
   SingleArrangement :: CanvasDimension 
@@ -159,7 +183,7 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
       ddim@(DesktopDimension (Dim w h)) = deskDimCont cnstrnt hdl 
       (x1,y1) = (xpos+x0,ypos+y0) 
       (x2,y2) = (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy) 
-      (x1',x2') 
+{-      (x1',x2') 
         | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
         | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
         | otherwise            = (x1,x2)
@@ -167,7 +191,8 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
         | y2>h && h-(y2-y1)>0  = (h-(y2-y1),h)
         | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
         | otherwise            = (y1,y2)
-      vport = ViewPortBBox (BBox (x1',y1') (x2',y2') )
+      vport = ViewPortBBox (BBox (x1',y1') (x2',y2') ) -}
+      vport = applyGuard (Dim w h) id (ViewPortBBox (BBox (x1,y1) (x2,y2)))
   in ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport
 
 -- |

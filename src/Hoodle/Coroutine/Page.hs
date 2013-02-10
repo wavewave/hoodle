@@ -107,8 +107,9 @@ changePageInHoodleModeState bsty npgnum hdlmodst =
 canvasZoomUpdateGenRenderCvsId :: MainCoroutine () 
                                   -> CanvasId 
                                   -> Maybe ZoomMode 
+                                  -> Maybe (PageNum,PageCoordinate) 
                                   -> MainCoroutine ()
-canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode 
+canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord 
   = updateXState zoomUpdateAction 
     >> adjustScrollbarWithGeometryCvsId cid
     >> renderfunc
@@ -133,22 +134,23 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode
               cpn = PageNum $ view currentPageNum cinfo 
               cdim = canvasDim geometry 
               hdl = getHoodle xstate 
-              origcoord = either (const (cpn,PageCoord (0,0))) id 
-                            (getCvsOriginInPage geometry)
+              origcoord = case mcoord of
+                            Just coord -> coord 
+                            Nothing -> either (const (cpn,PageCoord (0,0))) id 
+                                         (getCvsOriginInPage geometry)
               narr = makeContinuousArrangement zmode cdim hdl origcoord
               ncinfobox = CanvasContPage
                           . set (viewInfo.pageArrangement) narr
                           . set (viewInfo.zoomMode) zmode $ cinfo
-          liftIO $ putStrLn $ "canvasViewPort = " ++ show (canvasViewPort geometry)
-          liftIO $ print origcoord 
-         
+          liftIO $ print (view viewPortBBox narr)
           return . modifyCanvasInfo cid (const ncinfobox) $ xstate
 
 -- | 
 canvasZoomUpdateCvsId :: CanvasId 
                          -> Maybe ZoomMode 
                          -> MainCoroutine ()
-canvasZoomUpdateCvsId = canvasZoomUpdateGenRenderCvsId invalidateAll
+canvasZoomUpdateCvsId cid mzmode = 
+  canvasZoomUpdateGenRenderCvsId invalidateAll cid mzmode Nothing
   
 -- | 
 canvasZoomUpdateBufAll :: MainCoroutine () 
@@ -157,8 +159,8 @@ canvasZoomUpdateBufAll = do
     mapM_ updatefunc klst 
   where 
     updatefunc cid 
-      = canvasZoomUpdateGenRenderCvsId  (invalidateInBBox Nothing Efficient cid) cid Nothing
-        -- canvasZoomUpdateGenRenderCvsId  (invalidateWithBuf cid) cid Nothing
+      = canvasZoomUpdateGenRenderCvsId  (invalidateInBBox Nothing Efficient cid) cid Nothing Nothing 
+
 
 -- |
 canvasZoomUpdateAll :: MainCoroutine () 

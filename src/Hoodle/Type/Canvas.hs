@@ -30,6 +30,7 @@ module Hoodle.Type.Canvas
 -- * default constructor 
 , defaultViewInfoSinglePage 
 , defaultCvsInfoSinglePage
+, defaultCanvasWidgets
 , defaultPenWCS
 , defaultEraserWCS
 , defaultTextWCS
@@ -51,6 +52,8 @@ module Hoodle.Type.Canvas
 , horizAdjConnId 
 , vertAdjConnId
 , adjustments 
+, canvasWidgets
+, testWidgetPosition
 , currentTool 
 , penWidth
 , penColor
@@ -96,6 +99,7 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 --
 import Prelude hiding ((.), id)
+
 
 -- |
 type CanvasId = Int 
@@ -144,6 +148,12 @@ zoomMode = lens _zoomMode (\f a -> f { _zoomMode = a } )
 pageArrangement :: Simple Lens (ViewInfo a) (PageArrangement a)
 pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 
+-- | 
+data CanvasWidgets = 
+  CanvasWidgets { _testWidgetPosition :: CanvasCoordinate
+                }   
+
+
 -- |
 data CanvasInfo a = 
     (ViewMode a) => CanvasInfo { _canvasId :: CanvasId
@@ -156,7 +166,16 @@ data CanvasInfo a =
                                , _vertAdjustment :: Adjustment 
                                , _horizAdjConnId :: Maybe (ConnectId Adjustment)
                                , _vertAdjConnId :: Maybe (ConnectId Adjustment)
+                               , _canvasWidgets :: CanvasWidgets
                                }
+
+-- | default hoodle widgets
+defaultCanvasWidgets :: CanvasWidgets
+defaultCanvasWidgets = 
+  CanvasWidgets
+  { _testWidgetPosition = CvsCoord (100,100)
+  }   
+
 
 -- |     
 xfrmCvsInfo :: (ViewMode a, ViewMode b) => 
@@ -173,6 +192,7 @@ xfrmCvsInfo f CanvasInfo {..} =
                , _vertAdjustment = _vertAdjustment
                , _horizAdjConnId = _horizAdjConnId
                , _vertAdjConnId = _vertAdjConnId 
+               , _canvasWidgets = _canvasWidgets
                }
 
 -- |     
@@ -188,6 +208,7 @@ defaultCvsInfoSinglePage =
              , _vertAdjustment = error "vadjust"
              , _horizAdjConnId = Nothing
              , _vertAdjConnId =  Nothing
+             , _canvasWidgets = defaultCanvasWidgets
              }
 
 -- | 
@@ -237,8 +258,14 @@ adjustments = lens getter setter
   where getter = (,) <$> view horizAdjustment <*> view vertAdjustment 
         setter f (h,v) = set horizAdjustment h . set vertAdjustment v $ f
   
-  {- Lens $ (,) <$> (fst `for` horizAdjustment)
-                         <*> (snd `for` vertAdjustment) -}
+-- | 
+canvasWidgets :: Simple Lens (CanvasInfo a) CanvasWidgets 
+canvasWidgets = lens _canvasWidgets (\f a -> f { _canvasWidgets = a } )
+
+-- | 
+testWidgetPosition :: Simple Lens CanvasWidgets CanvasCoordinate
+testWidgetPosition = lens _testWidgetPosition (\f a -> f { _testWidgetPosition = a} )
+
 
 -- |
 data CanvasInfoBox = CanvasSinglePage (CanvasInfo SinglePage) 

@@ -72,6 +72,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.HoodleState
+import           Hoodle.Widget.Test 
 --
 import Prelude hiding ((.), id)
 
@@ -176,17 +177,18 @@ viewAppendMode = do
   r1 <- nextevent 
   case r1 of 
     PenDown cid pbtn pcoord -> do 
-      ptype <- getPenType 
-      case (ptype,pbtn) of 
-        (PenWork,PenButton1) -> penStart cid pcoord 
-        (PenWork,PenButton2) -> eraserStart cid pcoord 
-        (PenWork,PenButton3) -> do 
-          updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
-          modeChange ToSelectMode
-          selectLassoStart cid pcoord
-        (PenWork,EraserButton) -> eraserStart cid pcoord
-        (EraserWork,_)      -> eraserStart cid pcoord 
-        (HighlighterWork,_) -> highlighterStart cid pcoord
+      widgetCheckPen cid pcoord $ do 
+        ptype <- getPenType 
+        case (ptype,pbtn) of 
+          (PenWork,PenButton1) -> penStart cid pcoord
+          (PenWork,PenButton2) -> eraserStart cid pcoord 
+          (PenWork,PenButton3) -> do 
+            updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
+            modeChange ToSelectMode
+            selectLassoStart cid pcoord
+          (PenWork,EraserButton) -> eraserStart cid pcoord
+          (EraserWork,_)      -> eraserStart cid pcoord 
+          (HighlighterWork,_) -> highlighterStart cid pcoord
     PenMove cid pcoord -> notifyLink cid pcoord
     _ -> defaultEventProcess r1
 

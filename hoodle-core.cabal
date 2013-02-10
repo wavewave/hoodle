@@ -129,6 +129,7 @@ Library
                    Hoodle.Util
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
+                   Hoodle.Widget.Test
   Other-Modules: 
                    Paths_hoodle_core
   c-sources: 

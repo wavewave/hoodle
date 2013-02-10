@@ -15,8 +15,6 @@
 module Hoodle.View.Draw where
 
 import Control.Applicative 
--- import Control.Concurrent
--- import Control.Monad (liftM)
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Graphics.UI.Gtk hiding (get,set)
@@ -40,7 +38,6 @@ import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Type
 import Graphics.Hoodle.Render.Type.HitTest 
 import Graphics.Hoodle.Render.Util 
--- import Graphics.Hoodle.Render.Generic
 -- from this package
 import Hoodle.Type.Canvas
 import Hoodle.Type.Alias 
@@ -212,7 +209,12 @@ drawFuncGen _typ render = SinglePageDraw func
                 xformfunc 
                 -- clipBBox (fmap (flip inflate 1) mbboxnew) -- ad hoc ? 
                 pg <- render (pnum,page) mbboxnew flag
+                -- Start Widget
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
+                -- widget test
+                -- let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew 
+                -- renderTestWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
+                -- End Widget
                 resetClip 
                 return pg 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew 
@@ -284,7 +286,12 @@ drawContPageGen render = ContPageDraw func
                        where rfunc (k,pg) m = M.adjust (const pg) k m 
                 let nhdl = set gpages npgs hdl  
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
+                -- Start Widget 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
+                -- widget test
+                let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
+                renderTestWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) -- (CvsCoord (100,100))
+                -- End Widget
                 resetClip 
                 return nhdl 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -336,7 +343,12 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                                     lift (selpagerender (PageNum n,tpage)) 
                 let nthdl2 = set gselSelected r nthdl
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
+                -- Start Widget
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
+                -- widget test
+                let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
+                renderTestWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
+                -- End Widget 
                 resetClip 
                 return nthdl2  
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -482,6 +494,15 @@ renderSelectHandle bbox = do
   setSourceRGBA 0.5 0 0.2 0.8
   rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
   fill
+
+renderTestWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
+renderTestWidget mbbox (CvsCoord (x,y)) = do 
+  identityMatrix 
+  clipBBox mbbox 
+  setSourceRGBA 0.5 0.5 0.5 0.5 
+  rectangle x y 100 100 
+  fill 
+  resetClip 
 
 {-
 -- |

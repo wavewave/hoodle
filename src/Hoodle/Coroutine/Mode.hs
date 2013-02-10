@@ -113,6 +113,7 @@ viewModeChange command = do
                                   (view vertAdjustment cinfo)
                                   (view horizAdjConnId cinfo)
                                   (view vertAdjConnId cinfo)
+                                  (view canvasWidgets cinfo)
           return $ set currentCanvasInfo (CanvasSinglePage ncinfo) xstate 
         -------------------------------------
         whensing xstate cinfo = do 
@@ -138,6 +139,7 @@ viewModeChange command = do
                                       vadj 
                                       (view horizAdjConnId cinfo)
                                       (view vertAdjConnId cinfo)
+                                      (view canvasWidgets cinfo) 
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
               ncinfo = over currentPageNum (const (unPageNum ncpn)) ncinfotemp
           return . over currentCanvasInfo (const (CanvasContPage ncinfo)) $ xstate

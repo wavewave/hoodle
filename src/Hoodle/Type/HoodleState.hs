@@ -221,6 +221,7 @@ isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
 settings :: Simple Lens HoodleState Settings 
 settings = lens _settings (\f a -> f { _settings = a } )
 
+
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
@@ -253,6 +254,7 @@ data Settings =
            , _doesUsePopUpMenu :: Bool 
            , _doesEmbedImage :: Bool 
            } 
+  
 
 -- | flag for XInput extension (needed for using full power of wacom)
 doesUseXInput :: Simple Lens Settings Bool
@@ -269,7 +271,6 @@ doesUsePopUpMenu = lens _doesUsePopUpMenu (\f a -> f { _doesUsePopUpMenu = a } )
 -- | flag for embedding image as base64 in hdl file 
 doesEmbedImage :: Simple Lens Settings Bool
 doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
-
 
 
 -- | default hoodle state 
@@ -316,12 +317,11 @@ defaultSettings =
   , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 
   } 
+  
 
 -- | 
 getHoodle :: HoodleState -> Hoodle EditMode 
 getHoodle = either id gSelect2GHoodle . hoodleModeStateEither . view hoodleModeState 
---   where makehdl thdl = GHoodle (view gselTitle thdl) (view gembeddedpdf thdl) (view gselAll thdl)
-
 
 -- | 
 getCurrentCanvasId :: HoodleState -> CanvasId
@@ -369,10 +369,7 @@ resetHoodleModeStateBuffers hdlmodestate1 =
     ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf $ hdl
     _ -> return hdlmodestate1
 
-
-
 -- |
-    
 getCanvasInfo :: CanvasId -> HoodleState -> CanvasInfoBox 
 getCanvasInfo cid xstate = 
   let cinfoMap = getCanvasInfoMap xstate
@@ -380,7 +377,6 @@ getCanvasInfo cid xstate =
   in maybeError' ("no canvas with id = " ++ show cid) maybeCvs
 
 -- | 
-
 setCanvasInfo :: (CanvasId,CanvasInfoBox) -> HoodleState -> HoodleState 
 setCanvasInfo (cid,cinfobox) xstate = 
   let cmap = getCanvasInfoMap xstate
@@ -390,7 +386,6 @@ setCanvasInfo (cid,cinfobox) xstate =
 
 
 -- | change current canvas. this is the master function  
-
 updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> HoodleState -> HoodleState
 updateFromCanvasInfoAsCurrentCanvas cinfobox xstate = 
   let cid = unboxGet canvasId cinfobox 
@@ -402,48 +397,18 @@ updateFromCanvasInfoAsCurrentCanvas cinfobox xstate =
             , _cvsInfoMap = cmap' }
 
 -- | 
-
 setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
 setCanvasId cid = insideAction4CvsInfoBox (set canvasId cid) 
-  
-  
-  -- (CanvasInfoBox cinfo) = CanvasInfoBox (cinfo { _canvasId = cid })
-
 
 -- | 
-
 modifyCanvasInfo :: CanvasId -> (CanvasInfoBox -> CanvasInfoBox) -> HoodleState
                     -> HoodleState
 modifyCanvasInfo cid f xstate =  
     maybe xstate id . flip setCanvasInfoMap xstate 
                     . M.adjust f cid . getCanvasInfoMap 
     $ xstate 
-  
-
-{-
--- | should be deprecated
-modifyCurrentCanvasInfo :: (CanvasInfoBox -> CanvasInfoBox) 
-                        -> HoodleState
-                        -> HoodleState
-modifyCurrentCanvasInfo f = over currentCanvasInfo f  
--}
-
-{-
--- | should be deprecated 
-modifyCurrCvsInfoM :: (Monad m) => (CanvasInfoBox -> m CanvasInfoBox) 
-                      -> HoodleState
-                      -> m HoodleState
-modifyCurrCvsInfoM f st = do 
-  let cinfobox = view currentCanvasInfo st 
-      cid = getCurrentCanvasId st 
-  ncinfobox <- f cinfobox
-  let cinfomap = getCanvasInfoMap st
-      ncinfomap = M.adjust (const ncinfobox) cid cinfomap 
-  maybe (return st) return (setCanvasInfoMap ncinfomap st) 
--}
 
 -- | 
-
 hoodleModeStateEither :: HoodleModeState -> Either (Hoodle EditMode) (Hoodle SelectMode) 
 hoodleModeStateEither hdlmodst = case hdlmodst of 
                             ViewAppendState hdl -> Left hdl

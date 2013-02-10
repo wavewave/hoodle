@@ -170,11 +170,9 @@ device2Desktop geometry (PointerCoord typ x y _z) =
 device2Desktop _geometry NoPointerCoord = error "NoPointerCoordinate device2Desktop"
          
 -- | 
-
-getPagesInViewPortRange :: CanvasGeometry -> Hoodle EditMode -> [PageNum]
-getPagesInViewPortRange geometry hdl = 
-  let ViewPortBBox bbox = canvasViewPort geometry
-      ivbbox = Intersect (Middle bbox)
+getPagesInRange :: CanvasGeometry ->ViewPortBBox-> Hoodle EditMode -> [PageNum]
+getPagesInRange geometry (ViewPortBBox bbox) hdl =  
+  let ivbbox = Intersect (Middle bbox)
       pagemap = view gpages hdl 
       pnums = map PageNum [ 0 .. (length . toList $ pagemap)-1 ]
       pgcheck n pg = let Dim w h = view gdimension pg  
@@ -187,6 +185,14 @@ getPagesInViewPortRange geometry hdl =
                           _ -> True 
       f (PageNum n) = maybe False (pgcheck n) . M.lookup n $ pagemap 
   in filter f pnums
+  
+
+
+-- | 
+getPagesInViewPortRange :: CanvasGeometry -> Hoodle EditMode -> [PageNum]
+getPagesInViewPortRange geometry hdl = 
+  let vport = canvasViewPort geometry
+  in getPagesInRange geometry vport hdl 
 
 -- | 
 

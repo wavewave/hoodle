@@ -509,35 +509,44 @@ renderTestWidget mbbox (CvsCoord (x,y)) = do
 
 
 -- | 
-canvasImageSurface :: CanvasGeometry 
-                      -- -> Maybe Double  -- ^ multiply 
-                      -> Hoodle EditMode 
-                      -> IO (Surface,Surface)
-canvasImageSurface geometry hdl = do 
-  let ViewPortBBox bbx = getCanvasViewPort geometry 
-      {- nbbx = case mmulti of
-               Nothing -> bbx 
-               Just z -> let (x0,y0) = bbox_upperleft bbx 
-                             (x1,y1) = bbox_lowerright bbx
-                             w = x1-x0
-                             h = y1-y0 
-                         in BBox (x0-z*w,y0-z*h) (x1+z*w,y0+z*h) -}
-      BBox (x0,y0) (x1,y1) = xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) bbx 
-      w = (x1-x0)
-      h = (y1-y0)
+canvasImageSurface :: Maybe Double  -- ^ multiply 
+                   -> CanvasGeometry
+                   -> Hoodle EditMode 
+                   -> IO (Surface,Surface)
+canvasImageSurface mmulti geometry hdl = do 
+  let ViewPortBBox bbx_desk = getCanvasViewPort geometry 
+      nbbx_desk = case mmulti of
+                    Nothing -> bbx_desk 
+                    Just z -> let (x0,y0) = bbox_upperleft bbx_desk
+                                  (x1,y1) = bbox_lowerright bbx_desk
+                                  Dim ws_desk hs_desk = bboxToDim bbx_desk
+                              in BBox (x0-z*ws_desk,y0-z*hs_desk) (x1+z*ws_desk,y1+z*hs_desk) 
+      nbbx_cvs = 
+        xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) nbbx_desk
+      nvport = ViewPortBBox nbbx_desk
+      Dim w_desk h_desk = bboxToDim nbbx_desk
+      Dim w_cvs  h_cvs  = bboxToDim nbbx_cvs
   let pgs = view gpages hdl 
-      drawpgs = (catMaybes . map f . getPagesInViewPortRange geometry) hdl 
+      drawpgs = (catMaybes . map f . getPagesInRange geometry nvport) hdl 
         where f k = maybe Nothing (\a -> Just (k,a)) . M.lookup (unPageNum k) $ pgs
+      
       onepagerender (pn,pg) = do 
         identityMatrix 
+        case mmulti of 
+          Nothing -> return ()
+          Just z -> do 
+            let (ws_cvs,hs_cvs) = (w_cvs/(2*z+1),h_cvs/(2*z+1)) 
+            translate (z*ws_cvs) (z*hs_cvs)
         cairoXform4PageCoordinate geometry pn
         cairoRenderOption (RBkgDrawPDF,DrawFull) pg
       renderfunc = do 
         setSourceRGBA 0.5 0.5 0.5 1
-        rectangle 0 0 w h 
+        rectangle 0 0 w_cvs h_cvs        
         fill 
+        
         mapM_ onepagerender drawpgs 
-  sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
-  sfc2 <- createImageSurface FormatARGB32 (floor w) (floor h)
+  print (Prelude.length drawpgs)
+  sfc <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
+  sfc2 <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
   renderWith sfc renderfunc 
   return (sfc,sfc2) 

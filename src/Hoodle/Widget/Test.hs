@@ -25,6 +25,7 @@ import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
+import           Data.Hoodle.Simple
 import           Data.Hoodle.Zipper
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Util
@@ -79,7 +80,11 @@ widgetCheckPen cid pcoord act = do
                         True -> Zooming 
                         False -> Moving 
            let hdl = getHoodle xst
-           (sfc,sfc2) <- liftIO (canvasImageSurface geometry hdl)
+           (sfc,sfc2) <- 
+             case mode of 
+               Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
+               Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
+
            
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
            liftIO $ surfaceFinish sfc 
@@ -88,9 +93,10 @@ widgetCheckPen cid pcoord act = do
            act 
 
 
-findZoomXform :: ((Double,Double),(Double,Double),(Double,Double)) 
-                 -> (Double,(Double,Double))
-findZoomXform ((xo,yo),(x0,y0),(x,y)) = 
+findZoomXform :: Dimension 
+               -> ((Double,Double),(Double,Double),(Double,Double)) 
+               -> (Double,(Double,Double))
+findZoomXform (Dim w h) ((xo,yo),(x0,y0),(x,y)) = 
     let tx = x - x0 --  if x0 > xo then x - x0 else x0 - x 
         ty = y - y0 -- if y0 > yo then y - y0 else y0 - y
         ztx = 1 + tx / 200
@@ -104,8 +110,8 @@ findZoomXform ((xo,yo),(x0,y0),(x,y)) =
         z | zx >= 1 && zy >= 1 = max zx zy
           | zx < 1 && zy < 1 = min zx zy 
           | otherwise = zx
-        xtrans = (1 -z)*xo/z
-        ytrans = (1- z)*yo/z 
+        xtrans = (1 -z)*xo/z-w
+        ytrans = (1- z)*yo/z-h 
     in (z,(xtrans,ytrans))
 
 -- | 
@@ -139,8 +145,9 @@ startWidgetAction mode cid geometry (sfc,sfc2)
       case mode of 
         Zooming -> do 
           let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
+              CanvasDimension cdim = canvasDim geometry 
               ccoord@(CvsCoord (xo,yo)) = CvsCoord (xw+50,yw+50)
-              (z,(xtrans,ytrans)) = findZoomXform ((xo,yo),(x0,y0),(x,y))
+              (z,(_,_)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
               nratio = zoomRatioFrmRelToCurr geometry z
               
               mpnpgxy = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
@@ -148,31 +155,13 @@ startWidgetAction mode cid geometry (sfc,sfc2)
           
           case mpnpgxy of 
             Nothing -> return () 
-            Just pnpgxy@(pnum,pgxy) -> do 
+            Just pnpgxy -> do 
               xstate <- get
-              let hdl = getHoodle xstate
               geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
               let DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
                   DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
-                  DeskCoord (xco,yco) = canvas2Desktop geometry (CvsCoord (0,0))
               moveViewPortBy (return ()) cid 
                 (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
-{-                  act xst =  
-                    let cinfobox = getCanvasInfo cid xst 
-                        nwpos = CvsCoord (xw+x-x0,yw+y-y0)
-                        moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
-                        moveact cinfo = 
-                          let BBox (xorig0,yorig0) _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
-                              DesktopDimension ddim = view (viewInfo.pageArrangement.desktopDimension) cinfo
-
-                          in over (viewInfo.pageArrangement.viewPortBBox) 
-                             (xformViewPortFitInSize 
-                                ddim (moveBBoxULCornerTo (xorig0+xd-xd0,yorig0+yd-yd0))) $ cinfo
-                        ncinfobox = selectBox moveact moveact cinfobox       
-                    in setCanvasInfo (cid,ncinfobox) xst
-                  
-              updateXState (return . act) 
-              adjustScrollbarWithGeometryCvsId cid -}
         _ -> return ()
       invalidate cid 
       
@@ -199,11 +188,14 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                 setOperator OperatorOver
                 renderTestWidget Nothing nwpos 
               
-            Zooming -> do -- return () 
+            Zooming -> do 
               let cinfobox = getCanvasInfo cid xst               
               let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
               let (xo,yo) = (xw+50,yw+50)
-                  (z,(xtrans,ytrans)) = findZoomXform ((xo,yo),(x0,y0),(x,y)) 
+                  CanvasDimension cdim = canvasDim geometry 
+                  -- cdim_desk= Dim (z*w) (z*y)
+                  (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
+              liftIO $ print (xtrans,ytrans)
               renderWith sfc2 $ do 
                   save
                   scale z z

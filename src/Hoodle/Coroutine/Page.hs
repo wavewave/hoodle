@@ -20,6 +20,7 @@ import           Control.Monad
 import           Control.Monad.State
 import qualified Data.IntMap as M
 -- from hoodle-platform
+import           Data.Hoodle.BBox (BBox(..), moveBBoxULCornerTo)
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import qualified Data.Hoodle.Simple as S
@@ -243,4 +244,33 @@ deletePageInHoodle hdl (PageNum pgn) = do
   return nhdl
 
 
+{-
+    geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+    let DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
+        DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
+        DeskCoord (xco,yco) = canvas2Desktop geometry (CvsCoord (0,0))
 
+(xorig0+xd-xd0,yorig0+yd-yd0))
+              nwpos = CvsCoord (xw+x-x0,yw+y-y0)
+
+
+-}
+
+
+moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))
+                  -> MainCoroutine () 
+moveViewPortBy rndr cid f = 
+    updateXState (return . act) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
+  where     
+    act xst = let cinfobox = getCanvasInfo cid xst 
+                  ncinfobox = selectBox moveact moveact cinfobox       
+              in setCanvasInfo (cid,ncinfobox) xst
+    moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+    moveact cinfo = 
+      let BBox (x0,y0) _ = 
+            (unViewPortBBox . view (viewInfo.pageArrangement.viewPortBBox)) cinfo
+          DesktopDimension ddim = 
+            view (viewInfo.pageArrangement.desktopDimension) cinfo
+      in over (viewInfo.pageArrangement.viewPortBBox) 
+           (xformViewPortFitInSize ddim (moveBBoxULCornerTo (f (x0,y0)))) 
+           cinfo

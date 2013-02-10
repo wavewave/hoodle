@@ -144,8 +144,6 @@ startWidgetAction mode cid geometry (sfc,sfc2)
               nratio = zoomRatioFrmRelToCurr geometry z
               
               mpnpgxy = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
-              
-          -- pageZoomChange (Zoom nratio) 
           canvasZoomUpdateGenRenderCvsId (return ()) cid (Just (Zoom nratio)) Nothing 
           
           case mpnpgxy of 
@@ -154,46 +152,29 @@ startWidgetAction mode cid geometry (sfc,sfc2)
               xstate <- get
               let hdl = getHoodle xstate
               geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
-              let -- PageCoord (xp,yp) = pgxy
-                  DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
+              let DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
                   DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
                   DeskCoord (xco,yco) = canvas2Desktop geometry (CvsCoord (0,0))
-                  -- npgxy =  PageCoord (xp-(xd0-xco),yp-(yd0-yco))
-                  -- npnpgxy = (pnum,npgxy)
-                  act xst =  
+              moveViewPortBy (return ()) cid 
+                (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
+{-                  act xst =  
                     let cinfobox = getCanvasInfo cid xst 
                         nwpos = CvsCoord (xw+x-x0,yw+y-y0)
                         moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
                         moveact cinfo = 
                           let BBox (xorig0,yorig0) _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
                               DesktopDimension ddim = view (viewInfo.pageArrangement.desktopDimension) cinfo
-                              {- zmode = view (viewInfo.zoomMode) cinfo
-                              cdim = canvasDim geometry 
-                              narr = makeContinousArrangement zmode cdim npgpgxy -}
-                          in over (viewInfo.pageArrangement.viewPortBBox) (applyGuard ddim (moveBBoxULCornerTo (xorig0+xd-xd0,yorig0+yd-yd0))) $ cinfo
+
+                          in over (viewInfo.pageArrangement.viewPortBBox) 
+                             (xformViewPortFitInSize 
+                                ddim (moveBBoxULCornerTo (xorig0+xd-xd0,yorig0+yd-yd0))) $ cinfo
                         ncinfobox = selectBox moveact moveact cinfobox       
                     in setCanvasInfo (cid,ncinfobox) xst
                   
               updateXState (return . act) 
-              -- canvasZoomUpdateAll
-              adjustScrollbarWithGeometryCvsId cid 
-              
-              liftIO $putStrLn "IWKIMTEST"
-              liftIO$ print (xd0,yd0,xd,yd)
-              -- invalidateAll 
-              -- canvasZoomUpdateGenRenderCvsId invalidateAll cid Nothing (Just npnpgxy)    
-              -- return ()     
+              adjustScrollbarWithGeometryCvsId cid -}
         _ -> return ()
       invalidate cid 
-      
-      -- IWKIM
-      test_xstate <- get
-      test_geometry <- liftIO $ getCanvasGeometryCvsId cid test_xstate
-      let test_dcoord = canvas2Desktop test_geometry (CvsCoord (0,0))
-      liftIO $ print "test IWKIIIIM"
-      liftIO (print test_dcoord)
-      -- ENDIWKIM
-
       
     _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
 

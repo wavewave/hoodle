@@ -110,12 +110,9 @@ apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 
 
 -- | 
-applyGuard :: Dimension -> (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox
-applyGuard (Dim w h) f (ViewPortBBox bbx) = 
+xformViewPortFitInSize :: Dimension -> (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox
+xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) = 
   let BBox (x1,y1) (x2,y2) = f bbx 
-      -- (bw,bh) = (xpos1-xpos,ypos1-ypos)
-      -- (x1,y1) = (xpos+x0,ypos+y0) 
-      -- (x2,y2) = (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy) 
       (x1',x2') 
         | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
         | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
@@ -126,8 +123,7 @@ applyGuard (Dim w h) f (ViewPortBBox bbx) =
         | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
         | y1 <0 = (0,y2-y1)
         | otherwise            = (y1,y2)
-  in trace ("applyGuard" ++ show (w,h) ++ "\n" ++ show (x1,y1,x2,y2,x1',y1',x2',y2')) $ 
-       ViewPortBBox (BBox (x1',y1') (x2',y2') )
+  in ViewPortBBox (BBox (x1',y1') (x2',y2') )
       
       
       
@@ -179,10 +175,16 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
   let dim = view gdimension . head . toList . view gpages $ hdl
       (sinvx,sinvy) = getRatioPageCanvas zmode (PageDimension dim) cdim 
       cnstrnt = DesktopWidthConstrained (cw/sinvx)     
-      (PageOrigin (x0,y0),_) = maybeError' "makeContArr" (pageArrFuncCont cnstrnt hdl pnum)
-      ddim@(DesktopDimension (Dim w h)) = deskDimCont cnstrnt hdl 
+      -- default to zero if error 
+      (PageOrigin (x0,y0),_) = maybe (PageOrigin (0,0),PageDimension (Dim cw ch)) 
+                                     id (pageArrFuncCont cnstrnt hdl pnum)
+      ddim@(DesktopDimension iddim) = deskDimCont cnstrnt hdl 
       (x1,y1) = (xpos+x0,ypos+y0) 
       (x2,y2) = (xpos+x0+cw/sinvx,ypos+y0+ch/sinvy) 
+      ovport =ViewPortBBox (BBox (x1,y1) (x2,y2))
+      vport = xformViewPortFitInSize iddim id ovport
+  in ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport
+
 {-      (x1',x2') 
         | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
         | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
@@ -192,8 +194,7 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
         | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
         | otherwise            = (y1,y2)
       vport = ViewPortBBox (BBox (x1',y1') (x2',y2') ) -}
-      vport = applyGuard (Dim w h) id (ViewPortBBox (BBox (x1,y1) (x2,y2)))
-  in ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport
+
 
 -- |
 pageArrFuncCont :: DesktopConstraint

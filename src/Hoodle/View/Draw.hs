@@ -499,8 +499,11 @@ renderTestWidget :: Maybe BBox -> CanvasCoordinate -> Render ()
 renderTestWidget mbbox (CvsCoord (x,y)) = do 
   identityMatrix 
   clipBBox mbbox 
-  setSourceRGBA 0.5 0.5 0.5 0.3 
+  setSourceRGBA 0.5 0.5 0.2 0.3 
   rectangle x y 100 100 
+  fill 
+  setSourceRGBA 0.2 0.2 0.7 0.5
+  rectangle (x+10) (y+10) 80 80
   fill 
   setSourceRGBA 0.7 0.2 0.2 0.5
   rectangle (x+30) (y+30) 40 40 

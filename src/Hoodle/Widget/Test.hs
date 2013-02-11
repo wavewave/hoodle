@@ -52,7 +52,7 @@ import           Hoodle.View.Draw
 import Prelude hiding ((.),id)
 
 
-data WidgetMode = Moving | Zooming
+data WidgetMode = Moving | Zooming | Panning
 
 widgetCheckPen :: CanvasId -> PointerCoord 
                -> MainCoroutine () 
@@ -70,20 +70,22 @@ widgetCheckPen cid pcoord act = do
       let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
       let owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.testWidgetPosition) cinfo
           obbox = BBox (x0,y0) (x0+100,y0+100) 
-          ibbox = BBox (x0+30,y0+30) (x0+70,y0+70)
+          pbbox = BBox (x0+10,y0+10) (x0+90,y0+90)
+          zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
               
           
       if (isPointInBBox obbox (x,y))  
          then do 
            ctime <- liftIO getCurrentTime 
-           let mode = case  isPointInBBox ibbox (x,y) of 
-                        True -> Zooming 
-                        False -> Moving 
+           let mode | isPointInBBox zbbox (x,y) = Zooming 
+                    | isPointInBBox pbbox (x,y) = Panning
+                    | otherwise = Moving 
            let hdl = getHoodle xst
            (sfc,sfc2) <- 
              case mode of 
                Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
                Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
+               Panning -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
 
            
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
@@ -114,6 +116,22 @@ findZoomXform (Dim w h) ((xo,yo),(x0,y0),(x,y)) =
         ytrans = (1- z)*yo/z-h 
     in (z,(xtrans,ytrans))
 
+-- |
+findPanXform :: Dimension 
+             -> ((Double,Double),(Double,Double)) 
+             -> (Double,Double)
+findPanXform (Dim w h) ((x0,y0),(x,y)) = 
+    let tx = x - x0 
+        ty = y - y0 
+        dx | tx > w = w 
+           | tx < (-w) = -w 
+           | otherwise = tx 
+        dy | ty > h = h 
+           | ty < (-h) = -h 
+           | otherwise = ty 
+    in ((dx-w),(dy-h))
+
+
 -- | 
 startWidgetAction :: WidgetMode 
                      -> CanvasId 
@@ -140,8 +158,7 @@ startWidgetAction mode cid geometry (sfc,sfc2)
           startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
       
     PenUp _ pcoord -> do 
-      
-      movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord 
+      -- movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord 
       case mode of 
         Zooming -> do 
           let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
@@ -162,9 +179,18 @@ startWidgetAction mode cid geometry (sfc,sfc2)
                   DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
               moveViewPortBy (return ()) cid 
                 (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
+        Panning -> do 
+          let -- ccoord@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
+              -- CanvasDimension cdim@(Dim w h) = canvasDim geometry 
+              (x_d,y_d) = (unDeskCoord . device2Desktop geometry) pcoord  
+              (x0_d,y0_d) = (unDeskCoord . canvas2Desktop geometry) 
+                              (CvsCoord (x0,y0))
+              (dx_d,dy_d) = (x_d-x0_d,y_d-y0_d)
+          liftIO $ putStrLn $ "dx_d,dy_d =" ++ show (dx_d,dy_d)
+          moveViewPortBy (return ()) cid 
+            (\(xorig,yorig)->(xorig-dx_d,yorig-dy_d))                 
         _ -> return ()
       invalidate cid 
-      
     _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
 
 
@@ -187,15 +213,13 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                 paint
                 setOperator OperatorOver
                 renderTestWidget Nothing nwpos 
-              
             Zooming -> do 
               let cinfobox = getCanvasInfo cid xst               
               let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
               let (xo,yo) = (xw+50,yw+50)
                   CanvasDimension cdim = canvasDim geometry 
-                  -- cdim_desk= Dim (z*w) (z*y)
                   (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
-              liftIO $ print (xtrans,ytrans)
+              -- liftIO $ print (xtrans,ytrans)
               renderWith sfc2 $ do 
                   save
                   scale z z
@@ -206,7 +230,26 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                   setOperator OperatorOver
                   restore
                   renderTestWidget Nothing pos 
-              
+            Panning -> do 
+              let cinfobox = getCanvasInfo cid xst               
+              let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
+              let (xo,yo) = (xw+50,yw+50)
+                  CanvasDimension cdim = canvasDim geometry 
+                  (xtrans,ytrans) = findPanXform cdim ((x0,y0),(x,y))
+              liftIO $ print (xtrans,ytrans)
+              renderWith sfc2 $ do 
+                  save
+                  translate xtrans ytrans 
+                  setSourceSurface sfc 0 0 
+                  setOperator OperatorSource 
+                  paint
+                  setOperator OperatorOver
+                  restore
+                  renderTestWidget Nothing pos 
+            
+            
+            
+            
           xst2 <- get 
           let cinfobox = getCanvasInfo cid xst2 
               drawact :: (ViewMode a) => CanvasInfo a -> IO ()

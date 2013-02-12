@@ -64,24 +64,24 @@ startGUI mfname mhook = do
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
-  
-  maybeMenubar <- uiManagerGetWidget ui "/ui/menubar"
-  let menubar = case maybeMenubar of 
-                  Just x  -> x 
-                  Nothing -> error "cannot get menubar from string"
-  
-  maybeToolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
-  let toolbar1 = case maybeToolbar1 of 
-                   Just x  -> x     
-                   Nothing -> error "cannot get toolbar from string"
-  maybeToolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
-  let toolbar2 = case maybeToolbar2 of 
-                   Just x  -> x     
-                   Nothing -> error "cannot get toolbar from string" 
+  -- 
+  menubar <- uiManagerGetWidget ui "/ui/menubar" 
+             >>= maybe (error "GUI.hs:no menubar") return 
+  toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1" 
+              >>= maybe (error "GUI.hs:no toolbar1") return 
+  toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
+              >>= maybe (error "GUI.hs:no toolbar2") return 
+  handlebox1 <- handleBoxNew 
+  containerAdd handlebox1 toolbar1 
+  handlebox2 <- handleBoxNew 
+  containerAdd handlebox2 toolbar2
+  -- containerAdd handlebox toolbar2 PackNatural 0 
+  --
   containerAdd window vbox
   boxPackStart vbox menubar PackNatural 0 
-  boxPackStart vbox toolbar1 PackNatural 0
-  boxPackStart vbox toolbar2 PackNatural 0 
+  -- boxPackStart vbox toolbar1 PackNatural 0
+  boxPackStart vbox handlebox1 PackNatural 0 
+  boxPackStart vbox handlebox2 PackNatural 0 
   boxPackEnd vbox (view rootWindow st0) PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
   window `on` deleteEvent $ do
@@ -102,3 +102,15 @@ startGUI mfname mhook = do
 
 
 
+  {- let menubar = case maybeMenubar of 
+                  Just x  -> x 
+                  Nothing -> error "cannot get menubar from string" 
+  
+  maybeToolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
+  let toolbar1 = case maybeToolbar1 of 
+                   Just x  -> x     
+                   Nothing -> error "cannot get toolbar from string"
+  maybeToolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
+  let toolbar2 = case maybeToolbar2 of 
+                   Just x  -> x     
+                   Nothing -> error "cannot get toolbar from string"  -}

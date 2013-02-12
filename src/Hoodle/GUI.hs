@@ -71,17 +71,23 @@ startGUI mfname mhook = do
               >>= maybe (error "GUI.hs:no toolbar1") return 
   toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
               >>= maybe (error "GUI.hs:no toolbar2") return 
-  handlebox1 <- handleBoxNew 
+  {- handlebox1 <- handleBoxNew 
   containerAdd handlebox1 toolbar1 
   handlebox2 <- handleBoxNew 
   containerAdd handlebox2 toolbar2
-  -- containerAdd handlebox toolbar2 PackNatural 0 
+  widgetSetSizeRequest handlebox1 400 (-1)
+  widgetSetSizeRequest handlebox2 400 (-1)
+  -- windowSetTransientFor handlebox1 window
+  -- windowSetTransientFor handlebox2 window -}
   --
   containerAdd window vbox
+  -- containerAdd window handlebox1
+  -- containerAdd window handlebox2 
   boxPackStart vbox menubar PackNatural 0 
-  -- boxPackStart vbox toolbar1 PackNatural 0
-  boxPackStart vbox handlebox1 PackNatural 0 
-  boxPackStart vbox handlebox2 PackNatural 0 
+  boxPackStart vbox toolbar1 PackNatural 0
+  boxPackStart vbox toolbar2 PackNatural 0  
+  -- boxPackStart vbox handlebox1 PackNatural 0 
+  -- boxPackStart vbox handlebox2 PackNatural 0 
   boxPackEnd vbox (view rootWindow st0) PackGrow 0 
   -- cursorDot <- cursorNew BlankCursor  
   window `on` deleteEvent $ do

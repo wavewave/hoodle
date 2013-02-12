@@ -503,12 +503,28 @@ renderTestWidget mbbox (CvsCoord (x,y)) = do
   rectangle x y 100 100 
   fill 
   setSourceRGBA 0.2 0.2 0.7 0.5
-  rectangle (x+10) (y+10) 80 80
+  rectangle (x+10) (y+10) 40 80
+  fill 
+  setSourceRGBA 0.2 0.7 0.2 0.5 
+  rectangle (x+50) (y+10) 40 80
   fill 
   setSourceRGBA 0.7 0.2 0.2 0.5
   rectangle (x+30) (y+30) 40 40 
-  fill 
+  fill  
   resetClip 
+
+
+{-
+renderTestWidget2 :: Surface -> Maybe BBox -> CanvasCoordinate -> Render () 
+renderTestWidget2 sfc mbbox (CvsCoord (x,y)) = do 
+  identityMatrix 
+  clipBBox mbbox 
+  setSourceSurface sfc 0 0 
+  setOperator OperatorOver
+  paint
+  resetClip 
+-}
+
 
 
 -- | 

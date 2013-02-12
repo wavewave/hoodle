@@ -53,6 +53,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Util
+import           Hoodle.View.Draw
 -- 
 import Prelude hiding (readFile)
 
@@ -93,9 +94,12 @@ textInput = do
 
 addLink :: MainCoroutine ()
 addLink = do 
+    -- xst <- get 
+    -- let rtrwin = view rootOfRootWindow xst
+    -- liftIO $ widgetQueueDraw rtrwin 
     mfilename <- fileChooser FileChooserActionOpen Nothing 
-  
-    modify (tempQueue %~ enqueue (action mfilename)) 
+    return ()
+{-    modify (tempQueue %~ enqueue (action mfilename)) 
     minput <- go
     case minput of 
       Nothing -> return () 
@@ -104,7 +108,9 @@ addLink = do
     go = do r <- nextevent
             case r of 
               AddLink minput -> return minput 
-              _ -> go 
+              UpdateCanvas cid -> -- this is temporary 
+                                  (invalidateInBBox Nothing Efficient cid) >> go 
+              _ -> liftIO (print r) >> go 
     action mfn = Left . ActionOrder $ 
                    \_evhandler -> do 
                      dialog <- messageDialogNew Nothing [DialogModal]
@@ -125,7 +131,7 @@ addLink = do
                        _ -> do 
                          widgetDestroy dialog
                          return (AddLink Nothing)
-
+-}
 
 
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 

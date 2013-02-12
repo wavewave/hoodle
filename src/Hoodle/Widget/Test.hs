@@ -52,7 +52,7 @@ import           Hoodle.View.Draw
 import Prelude hiding ((.),id)
 
 
-data WidgetMode = Moving | Zooming | Panning
+data WidgetMode = Moving | Zooming | Panning Bool 
 
 widgetCheckPen :: CanvasId -> PointerCoord 
                -> MainCoroutine () 
@@ -70,7 +70,8 @@ widgetCheckPen cid pcoord act = do
       let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
       let owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.testWidgetPosition) cinfo
           obbox = BBox (x0,y0) (x0+100,y0+100) 
-          pbbox = BBox (x0+10,y0+10) (x0+90,y0+90)
+          pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
+          pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
           zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
               
           
@@ -78,14 +79,15 @@ widgetCheckPen cid pcoord act = do
          then do 
            ctime <- liftIO getCurrentTime 
            let mode | isPointInBBox zbbox (x,y) = Zooming 
-                    | isPointInBBox pbbox (x,y) = Panning
+                    | isPointInBBox pbbox1 (x,y) = Panning False
+                    | isPointInBBox pbbox2 (x,y) = Panning True 
                     | otherwise = Moving 
            let hdl = getHoodle xst
            (sfc,sfc2) <- 
              case mode of 
                Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
                Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
-               Panning -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
+               Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
 
            
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
@@ -176,7 +178,7 @@ startWidgetAction mode cid geometry (sfc,sfc2)
                   DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
               moveViewPortBy (return ()) cid 
                 (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
-        Panning -> do 
+        Panning _ -> do 
           let (x_d,y_d) = (unDeskCoord . device2Desktop geometry) pcoord  
               (x0_d,y0_d) = (unDeskCoord . canvas2Desktop geometry) 
                               (CvsCoord (x0,y0))
@@ -229,12 +231,27 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                   setOperator OperatorOver
                   restore
                   renderTestWidget Nothing pos 
-            Panning -> do 
+            Panning b -> do 
               let cinfobox = getCanvasInfo cid xst               
-              let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
-              let (xo,yo) = (xw+50,yw+50)
                   CanvasDimension cdim = canvasDim geometry 
                   (xtrans,ytrans) = findPanXform cdim ((x0,y0),(x,y))
+              let CanvasDimension (Dim cw ch) = canvasDim geometry 
+                  nposx | xw+x-x0 < -50 = -50 
+                        | xw+x-x0 > cw-50 = cw-50 
+                        | otherwise = xw+x-x0
+                  nposy | yw+y-y0 < -50 = -50 
+                        | yw+y-y0 > ch-50 = ch-50 
+                        | otherwise = yw+y-y0                             
+                  nwpos = if b 
+                          then CvsCoord (nposx,nposy) 
+                          else 
+                            runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox)
+                  changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+                  changeact cinfo =  
+                    set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
+                  ncinfobox = selectBox changeact changeact  cinfobox
+              put (setCanvasInfo (cid,ncinfobox) xst)
+                  
               renderWith sfc2 $ do 
                   save
                   translate xtrans ytrans 
@@ -243,7 +260,7 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                   paint
                   setOperator OperatorOver
                   restore
-                  renderTestWidget Nothing pos 
+                  renderTestWidget Nothing nwpos 
           --   
           xst2 <- get 
           let cinfobox = getCanvasInfo cid xst2 

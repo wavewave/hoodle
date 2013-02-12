@@ -18,7 +18,9 @@ module Hoodle.Coroutine.File where
 
 -- from other packages
 import           Control.Category
+import           Control.Concurrent
 import           Control.Lens
+import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM)
 import           Control.Monad.Trans.Either
 import           Data.ByteString (readFile,concat)
@@ -126,7 +128,14 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
 fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
 fileChooser choosertyp mfname = do 
     mrecentfolder <- S.recentFolderHook 
-    modify (tempQueue %~ enqueue (action mrecentfolder)) >> go 
+    -- liftIO $ threadDelay 1000000
+    xst <- get 
+    let rtrwin = view rootOfRootWindow xst 
+        rtwin  = view rootWindow xst
+        rtcntr = view rootContainer xst 
+    liftIO $ widgetQueueDraw rtrwin 
+        
+    modify (tempQueue %~ enqueue (action rtrwin mrecentfolder)) >> go 
   where 
     go = do r <- nextevent                   
             case r of 
@@ -134,14 +143,22 @@ fileChooser choosertyp mfname = do
               UpdateCanvas cid -> -- this is temporary
                                   invalidateInBBox Nothing Efficient cid >> go  
               o -> liftIO (print o) >> go 
-    action mrf = Left . ActionOrder $ \_evhandler -> do 
-      dialog <- fileChooserDialogNew Nothing Nothing choosertyp 
+    action win mrf = Left . ActionOrder $ \_evhandler -> do 
+      dialog <- fileChooserDialogNew Nothing (Just win) choosertyp 
                   [ ("OK", ResponseOk) 
                   , ("Cancel", ResponseCancel) ]
       case mrf of 
         Just rf -> fileChooserSetCurrentFolder dialog rf 
         Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
       maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
+      -- windowSetTransientFor dialog win
+      -- windowSetModal dialog True 
+      -- widgetGrabFocus dialog 
+      -- print =<< windowIsActive dialog 
+      -- print =<< windowHasToplevelFocus dialog
+      --   !!!!!! really hackish solution !!!!!!
+      whileM_ (liftM (>0) eventsPending) (mainIterationDo False)
+      
       res <- dialogRun dialog
       mr <- case res of 
               ResponseDeleteEvent -> return Nothing

@@ -181,31 +181,64 @@ renderPage page = do
 
 -- | 
 renderRBkg :: (RBackground,Dimension) -> Render (RBackground,Dimension)
-renderRBkg (r@(RBkgSmpl _ _ _),dim) = renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
-renderRBkg (r@(RBkgPDF _ _ _ p _),dim) = do
-  case p of 
-    Nothing -> return () 
-    Just pg -> do 
+renderRBkg (r,dim) = 
+    case r of 
+      (RBkgSmpl _ _ _) -> 
+        drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
+        -- renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
+      (RBkgPDF _ _ _ p _) -> 
+        maybe (return (r,dim)) 
+              (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p
+      (RBkgEmbedPDF _ p _) -> 
+        maybe (return (r,dim)) 
+              (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p 
+  where 
+    drawBkgAndRecord rdr = do 
+      rdr 
+      case rbkg_cairosurface r of
+        Nothing -> return ()
+        Just sfc -> liftIO $ renderWith sfc rdr
+      return (r,dim)
+    bkgPdfRender pg = do 
       let Dim w h = dim 
       setSourceRGBA 1 1 1 1
       rectangle 0 0 w h 
       fill
 #ifdef POPPLER
       PopplerPage.pageRender pg
-#endif     
-  return (r,dim)
-renderRBkg (r@(RBkgEmbedPDF _ p _),dim) = do
-  case p of 
-    Nothing -> return () 
-    Just pg -> do 
-      let Dim w h = dim 
-      setSourceRGBA 1 1 1 1
-      rectangle 0 0 w h 
-      fill
+#endif
+
+{-
+        case p of 
+          Nothing -> return () 
+          Just pg -> do 
+            let Dim w h = dim 
+            setSourceRGBA 1 1 1 1
+            rectangle 0 0 w h 
+            fill
 #ifdef POPPLER
-      PopplerPage.pageRender pg
+            PopplerPage.pageRender pg
 #endif     
-  return (r,dim) 
+        return (r,dim) 
+-}
+
+
+{-
+  case view gbuffer layer of 
+    LyBuf (Just sfc) -> do 
+      liftIO $ renderWith sfc $ do 
+        -- renderRLayer_InBBox mbbox lyr 
+        clipBBox (fmap (flip inflate 1) mbbox )
+        setSourceRGBA 0 0 0 0 
+        setOperator OperatorSource
+        paint
+        setOperator OperatorOver
+        (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
+        resetClip 
+        return layer 
+    _ -> return layer 
+-}
+
 
 -- |
 renderRItem :: RItem -> Render RItem  
@@ -275,7 +308,12 @@ renderRBkg_InBBox :: Maybe BBox
                   -> (RBackground,Dimension) 
                   -> Render (RBackground,Dimension)
 renderRBkg_InBBox mbbox (b,dim) = do 
-    case b of 
+    clipBBox mbbox
+    renderRBkg_Buf (b,dim)
+    resetClip
+    return (b,dim)
+
+{-    case b of 
       RBkgSmpl _ _ _ -> do 
         clipBBox mbbox
         renderRBkg_Buf (b,dim)
@@ -287,8 +325,7 @@ renderRBkg_InBBox mbbox (b,dim) = do
       RBkgEmbedPDF _ _ _ -> do 
         clipBBox mbbox
         renderRBkg_Buf (b,dim)
-        resetClip
-    return (b,dim)
+        resetClip -}
 
 
 -- | render RLayer within BBox after hittest items

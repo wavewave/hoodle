@@ -98,8 +98,7 @@ addLink = do
     -- let rtrwin = view rootOfRootWindow xst
     -- liftIO $ widgetQueueDraw rtrwin 
     mfilename <- fileChooser FileChooserActionOpen Nothing 
-    return ()
-{-    modify (tempQueue %~ enqueue (action mfilename)) 
+    modify (tempQueue %~ enqueue (action mfilename)) 
     minput <- go
     case minput of 
       Nothing -> return () 
@@ -131,7 +130,7 @@ addLink = do
                        _ -> do 
                          widgetDestroy dialog
                          return (AddLink Nothing)
--}
+
 
 
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 

@@ -242,8 +242,23 @@ showContextMenu (pnum,(x,y)) = do
                                       menuitemcvt `on` menuItemActivate $ do
                                         evhandler (GotContextMenuSignal (CMenuLinkConvert lnk))
                                       menuAttach menu menuitemcvt 0 1 4 5 
-                              LinkDocID _ _ _ _ _ _ _ _ -> return ()
-                              
+                              LinkDocID i lid fp txt cmd rdr pos dim -> do 
+                                case (lookupPathFromId =<< view hookSet xstate) of
+                                  Nothing -> return () 
+                                  Just f -> do 
+                                    rp <- f (B.unpack lid)
+                                    case rp of 
+                                      Nothing -> return ()
+                                      Just fp' -> 
+                                        if (B.unpack fp) == fp' 
+                                        then return ()
+                                          else do 
+                                            let lnk = LinkDocID i lid (B.pack fp') txt cmd rdr pos dim
+                                            menuitemcvt <- menuItemNewWithLabel ("Correct Path to " ++ show fp') 
+                                            menuitemcvt `on` menuItemActivate $ do
+                                              evhandler (GotContextMenuSignal (CMenuLinkConvert lnk))
+                                            menuAttach menu menuitemcvt 0 1 4 5 
+                                   
 
 
 

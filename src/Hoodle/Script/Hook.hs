@@ -30,6 +30,7 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , embedPredefinedImageHook :: Maybe (IO FilePath) 
                  , embedPredefinedImage2Hook :: Maybe (IO FilePath)
                  , embedPredefinedImage3Hook :: Maybe (IO FilePath)
+                 , lookupPathFromId :: Maybe (String -> IO (Maybe FilePath))
                  } 
 
 

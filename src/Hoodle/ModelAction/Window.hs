@@ -102,6 +102,24 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       (_,p) <- getPointer dev
       liftIO $ callback (PenMove cid p)
 
+    -- drag and drop setting
+    dragDestSet canvas [DestDefaultMotion, DestDefaultDrop] [ActionCopy]
+    dragDestAddTextTargets canvas
+    canvas `on` dragDataReceived $ \dc pos id ts -> do 
+      s <- selectionDataGetText 
+      liftIO $ callback (GotLink s pos)
+      
+      {-
+      liftIO . putStrLn $ case s of 
+        Nothing -> "didn't understand the drop"
+        Just s -> "understood. here it is : <" ++ s ++ ">" ++ " and pos is <" ++ show pos ++ ">" 
+    -}
+    {-     
+    dragSourceSet canvas [Button1] [ActionCopy]
+    dragSourceAddTextTargets canvas
+    canvas `on` dragBegin $ \dc -> do 
+      liftIO $ putStrLn "dragging"
+    -}    
 
     {-
     canvas `on` enterNotifyEvent $ tryEvent $ do 

@@ -19,6 +19,7 @@ import           Control.Lens
 import           Control.Monad.State 
 -- import           Control.Monad.Trans
 import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Maybe
 import           Data.UUID.V4
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
@@ -41,7 +42,7 @@ import           System.Directory
 import           System.FilePath 
 -- import           System.Process 
 --
--- import           Hoodle.Accessor
+import           Hoodle.Accessor
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
@@ -52,7 +53,9 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState 
+import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
+import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
 import Prelude hiding (readFile)
@@ -92,6 +95,35 @@ textInput = do
                      return (TextInput Nothing)
 
 
+gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 
+gotLink mstr (x,y) = do 
+  xst <- get 
+  let cid = getCurrentCanvasId xst
+  mr <- runMaybeT $ do 
+    str <- (MaybeT . return) mstr 
+    let (str1,rem1) = break (== ',') str 
+    guard ((not.null) rem1)
+    return (B.pack str1,tail rem1) 
+  case mr of 
+    Nothing -> liftIO $ putStrLn "nothing"
+    Just (uuidbstr,fp) -> do 
+      let fn = takeFileName fp 
+      rdr <- liftIO (makePangoTextSVG fn) 
+      geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
+      let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
+          mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
+          rdr' = case mpgcoord of 
+                   Nothing -> rdr 
+                   Just (_,PageCoord (x',y')) -> 
+                     let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
+                     in (fst rdr,bbox')
+      liftIO $ print mpgcoord 
+      liftIO $ print (snd rdr')
+      linkInsert "simple" (uuidbstr,fp) fn rdr' 
+  liftIO $ putStrLn "gotLink"
+  liftIO $ print mstr 
+  liftIO $ print (x,y)
+
 addLink :: MainCoroutine ()
 addLink = do 
     -- xst <- get 
@@ -102,14 +134,18 @@ addLink = do
     minput <- go
     case minput of 
       Nothing -> return () 
-      Just (str,fname) -> liftIO (makePangoTextSVG str) >>= linkInsert "simple" fname str
+      Just (str,fname) -> do 
+        uuid <- liftIO $ nextRandom
+        let uuidbstr = B.pack (show uuid)
+        rdr <- liftIO (makePangoTextSVG str) 
+        linkInsert "simple" (uuidbstr,fname) str rdr 
   where 
     go = do r <- nextevent
             case r of 
               AddLink minput -> return minput 
               UpdateCanvas cid -> -- this is temporary 
                                   (invalidateInBBox Nothing Efficient cid) >> go 
-              _ -> liftIO (print r) >> go 
+              _ -> go 
     action mfn = Left . ActionOrder $ 
                    \_evhandler -> do 
                      dialog <- messageDialogNew Nothing [DialogModal]
@@ -160,21 +196,22 @@ svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do
   
   
 
-linkInsert :: B.ByteString -> FilePath -> String 
-              -> (B.ByteString,BBox) -> MainCoroutine ()
-linkInsert typ fname str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
+linkInsert :: B.ByteString 
+              -> (B.ByteString,FilePath)
+              -> String 
+              -> (B.ByteString,BBox) 
+              -> MainCoroutine ()
+linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
     let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
   
-    uuid <- liftIO $ nextRandom
-    let uuidbstr = B.pack (show uuid)
     newitem <- (liftIO . cnstrctRItem . ItemLink) 
                  (Link uuidbstr typ (B.pack fname)
                        (Just (B.pack str)) Nothing svgbstr 
-                      (100,100) (Dim (x1-x0) (y1-y0)))  
+                      (x0,y0) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  
@@ -195,7 +232,7 @@ makePangoTextSVG str = do
     let pangordr = do 
           ctxt <- cairoCreateContext Nothing 
           layout <- layoutEmpty ctxt   
-          layoutSetWidth layout (Just 300)
+          layoutSetWidth layout (Just 400)
           layoutSetWrap layout WrapAnywhere 
           layoutSetText layout str 
           (_,reclog) <- layoutGetExtents layout 
@@ -210,7 +247,7 @@ makePangoTextSVG str = do
     let tfile = tdir </> "embedded.svg"
     withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> renderWith s (rdr layout)
     bstr <- B.readFile tfile 
-    return (bstr,bbx)
+    return (bstr,BBox (x0,y0) (x1,y1)) -- this 20 is just arbitrary.. 
 
 
 {-                     tdir <- getTemporaryDirectory

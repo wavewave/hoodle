@@ -20,7 +20,9 @@ import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State 
+import qualified Data.ByteString.Char8 as B
 import qualified Data.IntMap as M
+import           Data.IORef 
 -- import           Data.IntMap.Lens 
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
@@ -141,7 +143,6 @@ initViewModeIOAction = do
 -- | initialization according to the setting 
 initialize :: MyEvent -> MainCoroutine ()
 initialize ev = do  
-    liftIO $ putStrLn $ show ev 
     case ev of 
       Initialized -> do return () 
                         -- additional initialization goes here
@@ -273,9 +274,21 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
 {- let bkg = rbkg2Bkg cbkg 
                               in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty }  -}
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
+defaultEventProcess (GetHoodleFileInfo ref) = do 
+  xst <- get
+  let hdl = getHoodle xst 
+      uuid = B.unpack (view ghoodleID hdl)
+  case view currFileName xst of 
+    Nothing -> liftIO $ writeIORef ref Nothing
+    Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
+defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    
+  
+ 
+  
+  
 defaultEventProcess ev = -- for debugging
                             do liftIO $ putStrLn "--- no default ---"
-                               liftIO $ print ev 
+                               -- liftIO $ print ev 
                                liftIO $ putStrLn "------------------"
                                return () 
 

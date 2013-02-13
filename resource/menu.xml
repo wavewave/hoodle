@@ -190,6 +190,8 @@
     <toolitem action="PGWDTHA" />                          
     <toolitem action="SETZMA" />
     <toolitem action="FSCRA" />
+    <separator /> 
+    <toolitem action="LINKA" />
   </toolbar>
   <toolbar name="toolbar2" > 
     <toolitem action="PENA"        />

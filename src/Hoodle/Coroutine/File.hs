@@ -93,7 +93,7 @@ waitSomeEvent p = do
 -- |
 okMessageBox :: String -> MainCoroutine () 
 okMessageBox msg = modify (tempQueue %~ enqueue action) 
-                   >> waitSomeEvent (==GotOk) 
+                   >> waitSomeEvent (\x->case x of GotOk -> True ; _ -> False) 
                    >> return () 
   where 
     action = Left . ActionOrder $ 
@@ -142,7 +142,7 @@ fileChooser choosertyp mfname = do
               FileChosen b -> return b  
               UpdateCanvas cid -> -- this is temporary
                                   invalidateInBBox Nothing Efficient cid >> go  
-              o -> liftIO (print o) >> go 
+              _ -> go 
     action win mrf = Left . ActionOrder $ \_evhandler -> do 
       dialog <- fileChooserDialogNew Nothing (Just win) choosertyp 
                   [ ("OK", ResponseOk) 

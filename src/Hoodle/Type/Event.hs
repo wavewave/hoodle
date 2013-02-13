@@ -12,8 +12,9 @@
 
 module Hoodle.Type.Event where
 
-import Data.ByteString 
 -- from other package
+import Data.ByteString 
+import Data.IORef
 import Graphics.UI.Gtk
 -- from hoodle-platform
 -- import Data.Hoodle.BBox
@@ -60,9 +61,12 @@ data MyEvent = Initialized
              | LaTeXInput (Maybe (ByteString,ByteString))
              | TextInput (Maybe String) 
              | AddLink (Maybe (String,FilePath))
-             -- | EventConnected
              | EventDisconnected
-             deriving (Show,Eq,Ord)
+             | GetHoodleFileInfo (IORef (Maybe String))
+             | GotLink (Maybe String) (Int,Int)
+--              deriving (Show,Eq,Ord)
+
+             --  | EventConnected
 
 
 -- | 

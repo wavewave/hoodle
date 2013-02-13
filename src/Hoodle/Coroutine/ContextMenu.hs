@@ -179,7 +179,7 @@ showContextMenu (pnum,(x,y)) = do
           mselitms = do lst <- getSelectedItmsFromHoodleState xstate
                         if null lst then Nothing else Just lst 
       modify (tempQueue %~ enqueue (action xstate mselitms cid cids)) 
-      >> waitSomeEvent (==ContextMenuCreated) 
+      >> waitSomeEvent (\x->case x of ContextMenuCreated -> True ; _ -> False) 
       >> return () 
   where action xstate msitms cid cids  
           = Left . ActionOrder $ 

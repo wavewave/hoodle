@@ -83,12 +83,12 @@ widgetCheckPen cid pcoord act = do
                     | isPointInBBox pbbox2 (x,y) = Panning True 
                     | otherwise = Moving 
            let hdl = getHoodle xst
-           (sfc,sfc2) <- 
+           (sfc,Dim wsfc hsfc) <- 
              case mode of 
                Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
                Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
                Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
-
+           sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
            
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
            liftIO $ surfaceFinish sfc 

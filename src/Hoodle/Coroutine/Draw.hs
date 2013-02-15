@@ -103,8 +103,10 @@ invalidateInBBox :: Maybe BBox -- ^ desktop coord
                     -> DrawFlag 
                     -> CanvasId -> MainCoroutine ()
 invalidateInBBox mbbox flag cid = do 
+  xst <- get 
+  geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
   invalidateGeneral cid mbbox flag 
-    drawSinglePage drawSinglePageSel drawContHoodle drawContHoodleSel
+    drawSinglePage (drawSinglePageSel geometry) drawContHoodle (drawContHoodleSel geometry)
 
 -- | 
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 

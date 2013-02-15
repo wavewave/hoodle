@@ -67,15 +67,18 @@ createTempSelectRender :: PageNum -> CanvasGeometry -> Page EditMode
                           -> a 
                           -> MainCoroutine (TempSelectRender a) 
 createTempSelectRender pnum geometry page x = do 
+    xst <- get
+    let hdl = getHoodle xst
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
         xformfunc = cairoXform4PageCoordinate geometry pnum 
         renderfunc = do   
           xformfunc 
           cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
           return ()
-    tempsurface <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch)  
+    -- tempsurface <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch)  
+    (tempsurface,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
     let tempselection = TempSelectRender tempsurface (cw,ch) x
-    liftIO $ updateTempSelection tempselection renderfunc True
+    -- liftIO $ updateTempSelection tempselection renderfunc True
     return tempselection 
 
 
@@ -486,7 +489,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
       let nlasso = lasso |> (x,y)
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
-        invalidateTemp (view canvasId cinfo) (tempSurface tsel) (renderLasso nlasso) 
+        invalidateTemp (view canvasId cinfo) (tempSurface tsel) (renderLasso geometry nlasso) 
       newSelectLasso cinfo pnum geometry itms orig (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
       xstate <- get 

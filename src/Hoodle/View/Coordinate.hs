@@ -53,7 +53,6 @@ data CanvasGeometry =
   } 
 
 -- | make a canvas geometry data structure from current status 
-
 makeCanvasGeometry :: PageNum 
                       -> PageArrangement vm 
                       -> DrawingArea 

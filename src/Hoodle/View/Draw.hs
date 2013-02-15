@@ -369,8 +369,8 @@ drawSinglePage = drawFuncGen EditMode f
           return pg' 
 
 -- |
-drawSinglePageSel :: DrawingFunction SinglePage SelectMode         
-drawSinglePageSel = drawFuncSelGen rendercontent renderselect
+drawSinglePageSel :: CanvasGeometry -> DrawingFunction SinglePage SelectMode    
+drawSinglePageSel geometry = drawFuncSelGen rendercontent renderselect
   where rendercontent (_pnum,tpg) mbbox flag = do
           let pg' = hPage2RPage tpg 
           case flag of 
@@ -379,7 +379,7 @@ drawSinglePageSel = drawFuncSelGen rendercontent renderselect
             Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox pg') >> return ()
           return ()
         renderselect (_pnum,tpg) mbbox _flag = do 
-          cairoHittedBoxDraw tpg mbbox
+          cairoHittedBoxDraw geometry tpg mbbox
           return ()
 
 -- | 
@@ -391,20 +391,20 @@ drawContHoodle = drawContPageGen f
 
 
 -- |
-drawContHoodleSel :: DrawingFunction ContinuousPage SelectMode
-drawContHoodleSel = drawContPageSelGen renderother renderselect 
+drawContHoodleSel :: CanvasGeometry -> DrawingFunction ContinuousPage SelectMode
+drawContHoodleSel geometry = drawContPageSelGen renderother renderselect 
   where renderother (PageNum n,page) mbbox flag = do
           case flag of 
             Clear -> (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
             BkgEfficient -> (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page)            
             Efficient -> (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
         renderselect (PageNum n,tpg) mbbox _flag = do
-          cairoHittedBoxDraw tpg mbbox 
+          cairoHittedBoxDraw geometry tpg mbbox 
           return (n,tpg)
 
 -- |
-cairoHittedBoxDraw :: Page SelectMode -> Maybe BBox -> Render () 
-cairoHittedBoxDraw tpg mbbox = do   
+cairoHittedBoxDraw :: CanvasGeometry->Page SelectMode -> Maybe BBox -> Render () 
+cairoHittedBoxDraw geometry tpg mbbox = do   
   let layers = view glayers tpg 
       slayer = view selectedLayer layers 
   case unTEitherAlterHitted . view gitems $ slayer of
@@ -416,17 +416,20 @@ cairoHittedBoxDraw tpg mbbox = do
       let ulbbox = unUnion . mconcat . fmap (Union .Middle . getBBox) 
                    $ hititms
       case ulbbox of 
-        Middle bbox -> renderSelectHandle bbox 
+        Middle bbox -> renderSelectHandle geometry bbox 
         _ -> return () 
       resetClip
     Left _ -> return ()  
 
 -- | 
-renderLasso :: Seq (Double,Double) -> Render ()
-renderLasso lst = do 
-  setLineWidth predefinedLassoWidth
+renderLasso :: CanvasGeometry -> Seq (Double,Double) -> Render ()
+renderLasso geometry lst = do 
+  let z = canvas2DesktopRatio geometry
+  setLineWidth (predefinedLassoWidth*z)
   uncurry4 setSourceRGBA predefinedLassoColor
-  uncurry setDash predefinedLassoDash 
+  let (dasha,dashb) = predefinedLassoDash 
+      adjusteddash = (fmap (*z) dasha,dashb*z) 
+  uncurry setDash adjusteddash
   case viewl lst of 
     EmptyL -> return ()
     x :< xs -> do uncurry moveTo x
@@ -459,40 +462,51 @@ renderSelectedItem itm = do
   setSourceRGBA 0 0 1 1
   renderRItemHltd itm
 
+-- | 
+canvas2DesktopRatio :: CanvasGeometry -> Double 
+canvas2DesktopRatio geometry =
+  let DeskCoord (tx1,ty1) = canvas2Desktop geometry (CvsCoord (0,0)) 
+      DeskCoord (tx2,ty2) = canvas2Desktop geometry (CvsCoord (1,0))
+  in tx2-tx1
+
 
 -- |
-renderSelectHandle :: BBox -> Render () 
-renderSelectHandle bbox = do 
-  setLineWidth predefinedLassoWidth
+renderSelectHandle :: CanvasGeometry -> BBox -> Render () 
+renderSelectHandle geometry bbox = do 
+  let z = canvas2DesktopRatio geometry 
+  setLineWidth (predefinedLassoWidth*z)
   uncurry4 setSourceRGBA predefinedLassoColor
-  uncurry setDash predefinedLassoDash 
+  let (dasha,dashb) = predefinedLassoDash 
+      adjusteddash = (fmap (*z) dasha,dashb*z) 
+  uncurry setDash adjusteddash -- predefinedLassoDash 
   let (x1,y1) = bbox_upperleft bbox
       (x2,y2) = bbox_lowerright bbox
+      hsize = predefinedLassoHandleSize*z
   rectangle x1 y1 (x2-x1) (y2-y1)
   stroke
   setSourceRGBA 1 0 0 0.8
-  rectangle (x1-5) (y1-5) 10 10  
+  rectangle (x1-hsize) (y1-hsize) (2*hsize) (2*hsize)
   fill
   setSourceRGBA 1 0 0 0.8
-  rectangle (x1-5) (y2-5) 10 10  
+  rectangle (x1-hsize) (y2-hsize) (2*hsize) (2*hsize)
   fill
   setSourceRGBA 1 0 0 0.8
-  rectangle (x2-5) (y1-5) 10 10  
+  rectangle (x2-hsize) (y1-hsize) (2*hsize) (2*hsize)
   fill
   setSourceRGBA 1 0 0 0.8
-  rectangle (x2-5) (y2-5) 10 10  
+  rectangle (x2-hsize) (y2-hsize) (2*hsize) (2*hsize)
   fill
   setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (x1-3) (0.5*(y1+y2)-3) 6 6  
+  rectangle (x1-hsize*0.6) (0.5*(y1+y2)-hsize*0.6) (1.2*hsize) (1.2*hsize)  
   fill
   setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (x2-3) (0.5*(y1+y2)-3) 6 6  
+  rectangle (x2-hsize*0.6) (0.5*(y1+y2)-hsize*0.6) (1.2*hsize) (1.2*hsize)
   fill
   setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (0.5*(x1+x2)-3) (y1-3) 6 6  
+  rectangle (0.5*(x1+x2)-hsize*0.6) (y1-hsize*0.6) (1.2*hsize) (1.2*hsize)
   fill
   setSourceRGBA 0.5 0 0.2 0.8
-  rectangle (0.5*(x1+x2)-3) (y2-3) 6 6  
+  rectangle (0.5*(x1+x2)-hsize*0.6) (y2-hsize*0.6) (1.2*hsize) (1.2*hsize)
   fill
 
 renderTestWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
@@ -514,24 +528,11 @@ renderTestWidget mbbox (CvsCoord (x,y)) = do
   resetClip 
 
 
-{-
-renderTestWidget2 :: Surface -> Maybe BBox -> CanvasCoordinate -> Render () 
-renderTestWidget2 sfc mbbox (CvsCoord (x,y)) = do 
-  identityMatrix 
-  clipBBox mbbox 
-  setSourceSurface sfc 0 0 
-  setOperator OperatorOver
-  paint
-  resetClip 
--}
-
-
-
 -- | 
 canvasImageSurface :: Maybe Double  -- ^ multiply 
                    -> CanvasGeometry
                    -> Hoodle EditMode 
-                   -> IO (Surface,Surface)
+                   -> IO (Surface,Dimension)
 canvasImageSurface mmulti geometry hdl = do 
   let ViewPortBBox bbx_desk = getCanvasViewPort geometry 
       nbbx_desk = case mmulti of
@@ -566,6 +567,7 @@ canvasImageSurface mmulti geometry hdl = do
         mapM_ onepagerender drawpgs 
   print (Prelude.length drawpgs)
   sfc <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
-  sfc2 <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
+  -- sfc2 <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
   renderWith sfc renderfunc 
-  return (sfc,sfc2) 
+  return (sfc, Dim w_cvs h_cvs)
+  -- return (sfc,sfc2) 

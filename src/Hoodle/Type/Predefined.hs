@@ -30,14 +30,18 @@ predefinedLassoColor :: (Double,Double,Double,Double)
 predefinedLassoColor = (1.0,116.0/255.0,0,0.8)
 
 -- | 
-
 predefinedLassoWidth :: Double 
-predefinedLassoWidth = 4.0
+predefinedLassoWidth = 1.0
+
+-- | 
+predefinedLassoHandleSize :: Double 
+predefinedLassoHandleSize = 4.0 
+
 
 -- | 
 
 predefinedLassoDash :: ([Double],Double)
-predefinedLassoDash = ([10,5],10) 
+predefinedLassoDash = ([2,2],4) 
 
 -- | 
 

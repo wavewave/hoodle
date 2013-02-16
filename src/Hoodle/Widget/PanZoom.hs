@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      : Hoodle.Widget.Test
+-- Module      : Hoodle.Widget.PanZoom
 -- Copyright   : (c) 2013 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Hoodle.Widget.Test where
+module Hoodle.Widget.PanZoom where
 
 -- from other packages
 import           Control.Category
@@ -214,7 +214,7 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                 setOperator OperatorSource 
                 paint
                 setOperator OperatorOver
-                renderTestWidget Nothing nwpos 
+                renderPanZoomWidget Nothing nwpos 
             Zooming -> do 
               let cinfobox = getCanvasInfo cid xst               
               let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
@@ -230,7 +230,7 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                   paint
                   setOperator OperatorOver
                   restore
-                  renderTestWidget Nothing pos 
+                  renderPanZoomWidget Nothing pos 
             Panning b -> do 
               let cinfobox = getCanvasInfo cid xst               
                   CanvasDimension cdim = canvasDim geometry 
@@ -260,7 +260,7 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                   paint
                   setOperator OperatorOver
                   restore
-                  renderTestWidget Nothing nwpos 
+                  renderPanZoomWidget Nothing nwpos 
           --   
           xst2 <- get 
           let cinfobox = getCanvasInfo cid xst2 

@@ -74,7 +74,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.HoodleState
-import           Hoodle.Widget.Test 
+import           Hoodle.Widget.PanZoom
 --
 import Prelude hiding ((.), id)
 

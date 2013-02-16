@@ -290,7 +290,7 @@ drawContPageGen render = ContPageDraw func
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 -- widget test
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                renderTestWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) -- (CvsCoord (100,100))
+                renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) -- (CvsCoord (100,100))
                 -- End Widget
                 resetClip 
                 return nhdl 
@@ -347,7 +347,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 -- widget test
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                renderTestWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
+                renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
                 -- End Widget 
                 resetClip 
                 return nthdl2  
@@ -509,8 +509,8 @@ renderSelectHandle geometry bbox = do
   rectangle (0.5*(x1+x2)-hsize*0.6) (y2-hsize*0.6) (1.2*hsize) (1.2*hsize)
   fill
 
-renderTestWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
-renderTestWidget mbbox (CvsCoord (x,y)) = do 
+renderPanZoomWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
+renderPanZoomWidget mbbox (CvsCoord (x,y)) = do 
   identityMatrix 
   clipBBox mbbox 
   setSourceRGBA 0.5 0.5 0.2 0.3 

@@ -147,6 +147,10 @@ deleteCurrent (SZ (_,(xs,ys))) =
 fromNonEmptyList :: NonEmptyList a -> SeqZipper a 
 fromNonEmptyList (x,xs) = SZ (x, (empty,fromList xs) )
 
+
+toSeq :: SeqZipper a -> Seq a
+toSeq (SZ (x,(x1s,x2s))) = x1s >< (x <| x2s)
+
 -- |
 type ZipperSelect = SeqZipper  -- Select { zipper :: (Maybe :. SeqZipper) a }
   {- NoSelect { allelems :: [a] } | -} 

@@ -96,12 +96,9 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
       let (itms,npg,hltedLayers) = splitPageByHLine y cpg 
           nhdl = set (gpages.at n) (Just npg) hdl 
           mbbx = (toMaybe . mconcat . fmap (Union . Middle . getBBox)) itms 
-
-      -- liftIO $ print bbx 
       case mbbx of
         Nothing -> return ()   
         Just bbx -> do 
-          liftIO $ print bbx
           (sfcbkg,Dim w h) <- liftIO $ canvasImageSurface Nothing geometry nhdl 
           sfcitm <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
           sfctot <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
@@ -195,8 +192,9 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
     f :: (ViewMode a) => MyEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                            (moveact xstate cvsInfo) upact
-                           
+    -------------------------------------------------------------  
     defact = verticalSpaceProcess cid geometry pinfo (x0,y0) sfcs otime
+    -------------------------------------------------------------    
     upact pcoord = do 
       let mpgcoord = (desktop2Page geometry . device2Desktop geometry) pcoord
       case mpgcoord of 
@@ -226,8 +224,7 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                 invalidateAll 
               else do 
                 addNewPageAndMoveBelow (pnum,hltedLayers,bbx)
-                -- invalidateAll   
-                
+    -------------------------------------------------------------
     moveact xstate cvsInfo (pcoord,(x,y)) = 
       processWithDefTimeInterval 
         (verticalSpaceProcess cid geometry pinfo (x0,y0) sfcs)
@@ -238,16 +235,21 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                mode | by1 + y - y0 > h = OverPage
                     | y > y0 = GoingDown
                     | otherwise = GoingUp 
+               z = canvas2DesktopRatio geometry 
                drawguide = do 
                  identityMatrix 
                  cairoXform4PageCoordinate geometry pnum 
-                 setSourceRGBA 0 0 0 1 
+                 setLineWidth (predefinedLassoWidth*z)
+                 case mode of
+                   GoingUp -> setSourceRGBA 0.1 0.8 0.1 0.4
+                   GoingDown -> setSourceRGBA 0.1 0.1 0.8 0.4 
+                   OverPage -> setSourceRGBA 0.8 0.1 0.1 0.4
                  moveTo 0 y0
                  lineTo w y0 
                  stroke 
                  moveTo 0 y
                  lineTo w y
-                 stroke 
+                 stroke  
                  case mode of
                    GoingUp -> setSourceRGBA 0.1 0.8 0.1 0.2 >> rectangle 0 y w (y0-y)                    
                    GoingDown -> setSourceRGBA 0.1 0.1 0.8 0.2 >> rectangle 0 y0 w (y-y0)
@@ -267,41 +269,8 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
              setSourceSurface sfctot 0 0 
              setOperator OperatorSource 
              paint 
-
            verticalSpaceProcess cid geometry pinfo (x0,y0) sfcs ctime)
         otime 
 
         
     
-{-    
-
-    f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
-                                 (moveact xstate cvsInfo) upact
-    defact = verticalSpaceProcess cid pnum geometry itms (x0,y0)
-    upact _ = invalidateAll
-    moveact xstate cvsInfo (_pcoord,(x,y)) = do 
-      let line = ((x0,y0),(x,y))
-          hittestbbox = hltHittedByLineRough line itms
-          (hittestitem,hitState) = 
-            St.runState (hltItmsHittedByLineFrmSelected_StateT line hittestbbox) False
-      if hitState 
-        then do 
-          page <- getCurrentPageCvsId cid 
-          let currhdl     = unView . view hoodleModeState $ xstate 
-              dim         = view gdimension page
-              pgnum       = view currentPageNum cvsInfo
-              currlayer = getCurrentLayer page
-          let (newitms,maybebbox1) = St.runState (eraseHitted hittestitem) Nothing
-              maybebbox = fmap (flip inflate 2.0) maybebbox1
-          newlayerbbox <- liftIO . updateLayerBuf dim maybebbox 
-                          . set gitems newitms $ currlayer 
-          let newpagebbox = adjustCurrentLayer newlayerbbox page 
-              newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
-              newhdlmodst = ViewAppendState newhdlbbox
-          commit . set hoodleModeState newhdlmodst 
-            =<< (liftIO (updatePageAll newhdlmodst xstate))
-          invalidateInBBox Nothing Efficient cid 
-          nitms <- rItmsInCurrLyr
-          verticalSpaceProcess cid pnum geometry nitms (x,y)
-        else verticalSpaceProcess cid pnum geometry itms (x,y) 
-  -}          

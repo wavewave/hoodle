@@ -148,7 +148,8 @@ initialize ev = do
       Initialized -> do return () 
                         -- additional initialization goes here
                         viewModeChange ToContSinglePage
-                        pageZoomChange (Zoom 0.3)  
+                        -- pageZoomChange (Zoom 0.3)  
+                        pageZoomChange FitWidth
       _ -> do ev' <- nextevent
               initialize ev'
 
@@ -192,6 +193,7 @@ viewAppendMode = do
           (EraserWork,_)      -> eraserStart cid pcoord 
           (HighlighterWork,_) -> highlighterStart cid pcoord
           (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
+          (VerticalSpaceWork,_) -> return () 
     PenMove cid pcoord -> notifyLink cid pcoord
     _ -> defaultEventProcess r1
 

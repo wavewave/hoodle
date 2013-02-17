@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Type.HitTest 
@@ -31,11 +33,11 @@ infixr 6 :-
 
 -- | 
 newtype NotHitted a = NotHitted { unNotHitted :: [a] } 
-                    deriving (Show)
+                    deriving (Show,Functor)
 
 -- | 
 newtype Hitted a = Hitted { unHitted :: [a] } 
-                   deriving (Show)
+                   deriving (Show,Functor)
 
 -- | 
 type StrokeHitted = AlterList (NotHitted (BBoxed Stroke)) (Hitted (BBoxed Stroke))

@@ -101,8 +101,6 @@ changePageInHoodleModeState bsty npgnum hdlmodst =
                         in (False,npg,pg,ehdl) 
     in (isChanged,npgnum',npage',either ViewAppendState SelectState ehdl')
 
-{-let bkg = rbkg2Bkg cbkg 
-                                      in bkg2RBkg bkg { S.bkg_style = convertBackgroundStyleToByteString bsty }  -}
 
 -- | 
 canvasZoomUpdateGenRenderCvsId :: MainCoroutine () 
@@ -242,17 +240,5 @@ deletePageInHoodle hdl (PageNum pgn) = do
       nhdl = set gpages (M.fromList . zip [0..] $ npagelst) hdl
   return nhdl
 
-
-{-
-    geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
-    let DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
-        DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
-        DeskCoord (xco,yco) = canvas2Desktop geometry (CvsCoord (0,0))
-
-(xorig0+xd-xd0,yorig0+yd-yd0))
-              nwpos = CvsCoord (xw+x-x0,yw+y-y0)
-
-
--}
 
 

@@ -12,12 +12,13 @@
 
 module Hoodle.Coroutine.VerticalSpace where
 
+import Control.Applicative
 import Control.Category
 -- import Data.Label
 import qualified Data.IntMap as IM
 import Control.Lens
 import Control.Monad hiding (mapM_)
-import Control.Monad.State (get)
+import Control.Monad.State (get,put)
 -- import qualified Control.Monad.State as St
 import Data.Foldable 
 import           Data.Monoid
@@ -50,6 +51,7 @@ import Hoodle.Type.Alias
 import Hoodle.Type.Event
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Canvas
+import Hoodle.Type.Enum 
 import Hoodle.Type.HoodleState
 import Hoodle.Type.PageArrangement
 import Hoodle.Type.Predefined 
@@ -65,8 +67,6 @@ import Hoodle.Util
 --
 import Prelude hiding ((.), id, concat,concatMap,mapM_)
 
--- | 
-data VerticalSpaceMode = GoingUp | GoingDown | OverPage 
 
 
 -- | 
@@ -118,6 +118,62 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
           liftIO $ mapM_ surfaceFinish [sfcbkg,sfcitm,sfctot]
 
           
+
+-- |
+addNewPageAndMoveBelow :: (PageNum,SeqZipper RItemHitted,BBox) 
+                          -> MainCoroutine () 
+addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = 
+    updateXState npgBfrAct 
+    >> commit_ 
+    >> canvasZoomUpdateAll >> invalidateAll
+  where
+    npgBfrAct xst = boxAction (fsimple xst) . view currentCanvasInfo $ xst
+    fsimple :: (ViewMode a) => HoodleState -> CanvasInfo a 
+                       -> MainCoroutine HoodleState
+    fsimple xstate cinfo = do 
+      case view hoodleModeState xstate of 
+        ViewAppendState hdl -> do 
+          let bsty = view backgroundStyle xstate 
+              hdl' = addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
+              hdl'' = moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl' 
+              nhdlmodst = ViewAppendState hdl''
+          return =<< liftIO . updatePageAll nhdlmodst
+                     . set hoodleModeState nhdlmodst $ xstate 
+            
+
+            
+        SelectState _ -> do 
+          liftIO $ putStrLn " not implemented yet"
+          return xstate
+            
+            
+moveBelowToNewPage :: (PageNum,SeqZipper RItemHitted,BBox) 
+                      -> Hoodle EditMode
+                      -> Hoodle EditMode
+moveBelowToNewPage (pnum@(PageNum n),hltedLayers,BBox (x0,y0) _) hdl = 
+    let mpg = view (gpages.at n) hdl 
+        mpg2 = view (gpages.at (n+1)) hdl 
+    in case (,) <$> mpg <*> mpg2 of    
+      Nothing -> hdl 
+      Just (pg,pg2) ->  
+        let nhlyrs = -- 10 is just a predefined number 
+              fmap (fmapAL id 
+                     (fmap (changeItemBy (\(x',y')->(x',y'+10-y0)))))
+                   hltedLayers
+            nlyrs = fmap ((\x -> set gitems x emptyRLayer) 
+                          . concatMap unNotHitted 
+                          . getA ) nhlyrs -- hltedLayers
+            npg = set glayers nlyrs pg 
+            nnlyrs = fmap ((\x -> set gitems x emptyRLayer)
+                          . concatMap unHitted
+                          . getB ) nhlyrs
+            npg2 = set glayers nnlyrs pg2
+            
+            nhdl = ( set (gpages.at (n+1)) (Just npg2)
+                   . set (gpages.at n) (Just npg) ) hdl 
+        in nhdl 
+
+
 -- |
 verticalSpaceProcess :: CanvasId
                      -> CanvasGeometry
@@ -149,6 +205,7 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
           if cpn /= pnum 
           then invalidateAll 
           else do 
+            -- add space  within this page
             let BBox (bx0,by0) (bx1,by1) = bbx
             if by1 + y - y0 < h 
               then do 
@@ -167,7 +224,9 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                     nhdl = set (gpages.at n) (Just npg) hdl 
                 commit (set hoodleModeState (ViewAppendState nhdl) xst)
                 invalidateAll 
-              else invalidateAll   
+              else do 
+                addNewPageAndMoveBelow (pnum,hltedLayers,bbx)
+                -- invalidateAll   
                 
     moveact xstate cvsInfo (pcoord,(x,y)) = 
       processWithDefTimeInterval 
@@ -179,7 +238,6 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                mode | by1 + y - y0 > h = OverPage
                     | y > y0 = GoingDown
                     | otherwise = GoingUp 
-                 
                drawguide = do 
                  identityMatrix 
                  cairoXform4PageCoordinate geometry pnum 
@@ -194,7 +252,6 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                    GoingUp -> setSourceRGBA 0.1 0.8 0.1 0.2 >> rectangle 0 y w (y0-y)                    
                    GoingDown -> setSourceRGBA 0.1 0.1 0.8 0.2 >> rectangle 0 y0 w (y-y0)
                    OverPage -> setSourceRGBA 0.8 0.1 0.1 0.2 >> rectangle 0 y0 w (y-y0)
-
                  fill
            liftIO $ renderWith sfctot $ do 
              setSourceSurface sfcbkg 0 0

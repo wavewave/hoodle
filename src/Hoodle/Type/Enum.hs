@@ -61,6 +61,11 @@ data BackgroundStyle = BkgStylePlain
                      | BkgStyleGraph
                      deriving (Show,Eq,Ord)
 
+
+-- | 
+data VerticalSpaceMode = GoingUp | GoingDown | OverPage 
+
+
 penColorNameMap :: M.Map PenColor B.ByteString                        
 penColorNameMap = M.fromList [ (ColorBlack, "black")
                              , (ColorBlue , "blue")

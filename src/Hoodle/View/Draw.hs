@@ -571,3 +571,4 @@ canvasImageSurface mmulti geometry hdl = do
   renderWith sfc renderfunc 
   return (sfc, Dim w_cvs h_cvs)
   -- return (sfc,sfc2) 
+

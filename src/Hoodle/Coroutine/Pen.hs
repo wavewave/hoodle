@@ -23,6 +23,7 @@ import           Control.Monad.State
 import           Data.Sequence hiding (filter)
 -- import qualified Data.Map as M
 import           Data.Maybe 
+import           Data.Time.Clock 
 -- import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
 import           Data.Hoodle.Predefined
@@ -39,6 +40,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Predefined 
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 import           Hoodle.View.Coordinate
@@ -207,7 +209,28 @@ penMoveAndUpInterPage r pgn geometry defact moveaction upaction =
     _ -> defact 
   
 
-  
+
+-- | process action when last time was before time diff limit, otherwise
+--   just do default action.
+processWithTimeInterval :: (Monad m, MonadIO m) =>         
+                           NominalDiffTime   -- ^ time diff
+                        -> (UTCTime -> m a)  -- ^ not larger than time diff bound
+                        -> (UTCTime -> m a)  -- ^ larger than time diff bound 
+                        -> UTCTime           -- ^ last updated time
+                        -> m a
+processWithTimeInterval tdiffbound defact updateact otime = do  
+    ctime <- liftIO getCurrentTime 
+    let dtime = diffUTCTime ctime otime 
+    if dtime > tdiffbound then updateact ctime else defact otime 
+
+-- |
+processWithDefTimeInterval :: (Monad m, MonadIO m) =>         
+                                 (UTCTime -> m a)  -- ^ not larger than time diff bound
+                              -> (UTCTime -> m a)  -- ^ larger than time diff bound 
+                              -> UTCTime           -- ^ last updated time
+                              -> m a
+processWithDefTimeInterval = processWithTimeInterval dtime_bound 
+
                    
 
 

@@ -34,6 +34,7 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Page
+import           Hoodle.Coroutine.Pen 
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
 import           Hoodle.Device
@@ -77,7 +78,6 @@ widgetCheckPen cid pcoord act = do
           
       if (isPointInBBox obbox (x,y))  
          then do 
-           ctime <- liftIO getCurrentTime 
            let mode | isPointInBBox zbbox (x,y) = Zooming 
                     | isPointInBBox pbbox1 (x,y) = Panning False
                     | isPointInBBox pbbox2 (x,y) = Panning True 
@@ -89,7 +89,7 @@ widgetCheckPen cid pcoord act = do
                Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
                Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
            sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
-           
+           ctime <- liftIO getCurrentTime 
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
            liftIO $ surfaceFinish sfc 
            liftIO $ surfaceFinish sfc2
@@ -148,16 +148,11 @@ startWidgetAction mode cid geometry (sfc,sfc2)
   r <- nextevent
   case r of 
     PenMove _ pcoord -> do 
-      ctime <- liftIO getCurrentTime 
-      let dtime = diffUTCTime ctime otime 
-          willUpdate = dtime > dtime_bound 
-      when willUpdate $ 
-        movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord      
-      if willUpdate
-        then 
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime
-        else      
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime 
+      processWithDefTimeInterval
+        (startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy) 
+        (\ctime -> movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord 
+                   >> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime)
+        otime 
     PenUp _ pcoord -> do 
       case mode of 
         Zooming -> do 
@@ -274,3 +269,15 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
                   setOperator OperatorSource 
                   paint
           liftIO $ boxAction drawact cinfobox
+
+      
+{-      ctime <- liftIO getCurrentTime 
+      let dtime = diffUTCTime ctime otime 
+          willUpdate = dtime > dtime_bound 
+      when willUpdate $ 
+        movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord      
+      if willUpdate
+        then 
+          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime
+        else      
+          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime  -}

@@ -558,7 +558,8 @@ canvasImageSurface mmulti geometry hdl = do
             let (ws_cvs,hs_cvs) = (w_cvs/(2*z+1),h_cvs/(2*z+1)) 
             translate (z*ws_cvs) (z*hs_cvs)
         cairoXform4PageCoordinate geometry pn
-        cairoRenderOption (RBkgDrawPDF,DrawFull) pg
+        -- cairoRenderOption (RBkgDrawPDF,DrawFull) pg
+        cairoRenderOption (InBBoxOption Nothing) (InBBox pg)
       renderfunc = do 
         setSourceRGBA 0.5 0.5 0.5 1
         rectangle 0 0 w_cvs h_cvs        

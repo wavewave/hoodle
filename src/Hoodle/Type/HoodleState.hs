@@ -38,6 +38,7 @@ module Hoodle.Type.HoodleState
 , settings
 , isOneTimeSelectMode
 , pageModeSignal
+, penModeSignal
 , lastTimeCanvasConfigure
 , hookSet 
 , tempLog 
@@ -138,6 +139,7 @@ data HoodleState =
                 , _settings :: Settings 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _pageModeSignal :: Maybe (ConnectId RadioAction)
+                , _penModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 , _hookSet :: Maybe Hook
                 , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
@@ -230,6 +232,12 @@ isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMod
 pageModeSignal :: Simple Lens HoodleState (Maybe (ConnectId RadioAction))
 pageModeSignal = lens _pageModeSignal (\f a -> f { _pageModeSignal = a } )
 
+
+-- | lens for penModeSignal
+penModeSignal :: Simple Lens HoodleState (Maybe (ConnectId RadioAction))
+penModeSignal = lens _penModeSignal (\f a -> f { _penModeSignal = a } )
+
+
 -- | lens for lastTimeCanvasConfigure
 lastTimeCanvasConfigure :: Simple Lens HoodleState (Maybe UTCTime)
 lastTimeCanvasConfigure = lens _lastTimeCanvasConfigure (\f a -> f { _lastTimeCanvasConfigure = a } )
@@ -245,6 +253,7 @@ tempQueue = lens _tempQueue (\f a -> f { _tempQueue = a } )
 -- | lens for tempLog
 tempLog :: Simple Lens HoodleState (String -> String)
 tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
+
 
 
 -- | A set of Hoodle settings 
@@ -302,6 +311,7 @@ emptyHoodleState = do
     , _settings = defaultSettings
     , _isOneTimeSelectMode = NoOneTimeSelectMode
     , _pageModeSignal = Nothing
+    -- , _penModeSignal = Nothing                        
     , _lastTimeCanvasConfigure = Nothing                      
     , _hookSet = Nothing
     , _tempQueue = emptyQueue

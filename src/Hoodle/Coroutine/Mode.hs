@@ -45,10 +45,12 @@ import           Hoodle.View.Coordinate
 import Prelude hiding ((.),id, mapM_, mapM)
 
 modeChange :: MyEvent -> MainCoroutine () 
-modeChange command = case command of 
-                       ToViewAppendMode -> updateXState select2edit >> invalidateAll 
-                       ToSelectMode     -> updateXState edit2select >> invalidateAll 
-                       _ -> return ()
+modeChange command = do 
+    case command of 
+      ToViewAppendMode -> updateXState select2edit >> invalidateAll 
+      ToSelectMode     -> updateXState edit2select >> invalidateAll 
+      _ -> return ()
+    reflectUI
   where select2edit xst =  
           either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState $ xst
         edit2select xst = 

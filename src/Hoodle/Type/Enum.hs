@@ -14,6 +14,7 @@
 
 module Hoodle.Type.Enum where
 
+import           Control.Lens 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import           Data.Maybe 
@@ -64,6 +65,23 @@ data BackgroundStyle = BkgStylePlain
 
 -- | 
 data VerticalSpaceMode = GoingUp | GoingDown | OverPage 
+
+-- |
+data SelectType = SelectRegionWork 
+                | SelectRectangleWork 
+                | SelectHandToolWork 
+                deriving (Show,Eq,Ord) 
+
+-- |
+data SelectInfo = SelectInfo { _selectType :: SelectType
+                             }
+             deriving (Show) 
+
+
+selectType :: Simple Lens SelectInfo SelectType 
+selectType = lens _selectType (\f a -> f { _selectType = a })
+
+
 
 
 penColorNameMap :: M.Map PenColor B.ByteString                        

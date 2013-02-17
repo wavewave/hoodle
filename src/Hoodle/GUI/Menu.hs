@@ -381,8 +381,6 @@ getMenuUI evar = do
   uiDecl <- readFile (resDir </> "menu.xml")   
   uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
-  -- Just ra1 <- actionGroupGetAction agr "ONEPAGEA"
-  -- Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 1]  
   Just ra2 <- actionGroupGetAction agr "PENFINEA"
   Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
   Just ra3 <- actionGroupGetAction agr "SELREGNA"
@@ -446,6 +444,17 @@ int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
 
 -- | 
+penType2Int :: Either PenType SelectType -> Int 
+penType2Int (Left PenWork)              = 0
+penType2Int (Left EraserWork)           = 1
+penType2Int (Left HighlighterWork)      = 2 
+penType2Int (Left VerticalSpaceWork)    = 6
+penType2Int (Right SelectRegionWork)    = 4 
+penType2Int (Right SelectRectangleWork) = 5 
+penType2Int (Right SelectHandToolWork)  = 7 
+
+
+-- | 
 int2Point :: PenType -> Int -> Double 
 int2Point PenWork 0 = predefined_veryfine 
 int2Point PenWork 1 = predefined_fine
@@ -465,12 +474,6 @@ int2Point EraserWork 2 = predefined_eraser_medium
 int2Point EraserWork 3 = predefined_eraser_thick
 int2Point EraserWork 4 = predefined_eraser_verythick
 int2Point EraserWork 5 = predefined_eraser_ultrathick
--- int2Point TextWork 0 = predefined_veryfine
--- int2Point TextWork 1 = predefined_fine
--- int2Point TextWork 2 = predefined_medium
--- int2Point TextWork 3 = predefined_thick
--- int2Point TextWork 4 = predefined_verythick
--- int2Point TextWork 5 = predefined_ultrathick
 int2Point _ _ = error "No such point"
 
 -- | 

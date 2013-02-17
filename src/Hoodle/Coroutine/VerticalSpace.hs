@@ -107,8 +107,6 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
             cairoXform4PageCoordinate geometry pnum
             mapM_ renderRItem itms
           ctime <- liftIO getCurrentTime 
-          
-          -- liftIO (splitPageByHLine y cpg )
           verticalSpaceProcess cid geometry (bbx,hltedLayers,pnum,cpg) (x,y) 
             (sfcbkg,sfcitm,sfctot) ctime 
 

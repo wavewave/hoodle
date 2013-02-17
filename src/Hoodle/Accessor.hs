@@ -29,6 +29,7 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render.Type
 -- from this package
+import           Hoodle.GUI.Menu
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.Type
 import           Hoodle.Type.Alias
@@ -95,11 +96,14 @@ changeCurrentCanvasId cid = do
           (\xst -> do St.put xst 
                       return xst)
           (setCurrentCanvasId cid xstate1)
-    xst <- St.get
+    reflectUI
+    St.get     
+    
+{-    xst <- St.get
     let cinfo = view currentCanvasInfo xst               
         ui = view gtkUIManager xst                      
     reflectUI ui cinfo
-    return xst
+    return xst -}
 
 -- | apply an action to all canvases 
 applyActionToAllCVS :: (CanvasId -> MainCoroutine ()) -> MainCoroutine () 
@@ -109,23 +113,63 @@ applyActionToAllCVS action = do
       keys = M.keys cinfoMap 
   forM_ keys action
 
+{- reflectUI_ :: MainCoroutine () 
+reflectUI_ = do 
+  let ui = view gtkUIMag
+    let cinfo = view currentCanvasInfo xst               
+        ui = view gtkUIManager xst                      
+    reflectUI ui cinfo
+      
+  reflectUI -}
+
 -- | reflect UI for current canvas info 
-reflectUI :: UIManager -> CanvasInfoBox -> MainCoroutine ()
-reflectUI ui cinfobox = do 
+reflectUI :: MainCoroutine ()
+reflectUI = do 
     xstate <- St.get
+    let cinfobox = view currentCanvasInfo xstate 
+        ui = view gtkUIManager xstate       
     let mconnid = view pageModeSignal xstate
     liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
-    Just ra1 <- liftIO $ actionGroupGetAction (head agr) "ONEPAGEA"
-    selectBoxAction (fsingle ra1) (fcont ra1) cinfobox 
+    ra1 <- maybe (error "reflectUI") return =<< 
+             liftIO (actionGroupGetAction (head agr) "ONEPAGEA")
+    pma <- maybe (error "reflectUI") return =<<  
+             liftIO (actionGroupGetAction (head agr) "PENFINEA")
+    let wra1 = castToRadioAction ra1 
+        wpma = castToRadioAction wpma
+    
+    
+    selectBoxAction (pgmodupdate_s wra1) (pgmodupdate_c wra1) cinfobox 
+
+    -- liftIO $ actionSetSensitive wpma False
+    -- boxAction (penmodupdate xstate wpma) cinfobox
+    -- liftIO $ actionSetSensitive wpma True 
+    
     liftIO $ maybe (return ()) signalUnblock mconnid 
     return ()
-  where fsingle ra1 _cinfo = do
-          let wra1 = castToRadioAction ra1           
+  where (#) :: a -> (a -> b) -> b 
+        (#) = flip ($)
+        pgmodupdate_s wra1 _cinfo = do
           liftIO $ Gtk.set wra1 [radioActionCurrentValue := 1 ] 
-        fcont ra1 _cinfo = do
-          liftIO $ Gtk.set (castToRadioAction ra1) [radioActionCurrentValue := 0 ] 
-  
+        pgmodupdate_c wra1 _cinfo = do
+          liftIO $ Gtk.set wra1 [radioActionCurrentValue := 0 ] 
+            
+        penmodupdate xst wpma _cinfo = do 
+          let pmodv = hoodleModeStateEither (view hoodleModeState xst) #  
+                either (\_ -> (penType2Int. Left .view (penInfo.penType)) xst)
+                       (\_ -> (penType2Int. Right .view (selectInfo.selectType)) xst)
+          liftIO $ Gtk.set wpma [radioActionCurrentValue := pmodv ] 
+          
+            
+{-
+          hoodleModeStateEither xst
+            ViewAppendState _ -> do 
+
+penType2Int 
+              let     view (penInfo.penType) xst
+          liftIO $ Gtk.set wpma [radioActionCurrentValue := pmodv ] -}
+ 
+
 -- | 
 printViewPortBBox :: CanvasId -> MainCoroutine ()
 printViewPortBBox cid = do 

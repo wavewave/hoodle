@@ -41,19 +41,5 @@ getClipContents = unClipboard
 replaceClipContents :: [BBoxed Stroke] -> Clipboard -> Clipboard
 replaceClipContents strs _ = Clipboard strs 
 
--- |
-data SelectType = SelectRegionWork 
-                | SelectRectangleWork 
-                | SelectHandToolWork 
-                deriving (Show,Eq,Ord) 
-
--- |
-data SelectInfo = SelectInfo { _selectType :: SelectType
-                             }
-             deriving (Show) 
-
-
-selectType :: Simple Lens SelectInfo SelectType 
-selectType = lens _selectType (\f a -> f { _selectType = a })
 
 -- makeLenses ''SelectInfo

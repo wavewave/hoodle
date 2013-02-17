@@ -132,12 +132,14 @@ initViewModeIOAction = do
   let ui = view gtkUIManager oxstate
   agr <- liftIO $ uiManagerGetActionGroups ui 
   Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
+  -- Just pma <- liftIO $ actionGroupGetAction (head agr) "PENFINEA"
   let wra = castToRadioAction ra 
-  connid <- liftIO $ wra `on` radioActionChanged $ \x -> do 
+      --  wpma = castToRadioAction pma 
+  connid_wra <- liftIO $ wra `on` radioActionChanged $ \x -> do 
     y <- viewModeToMyEvent x 
     view callBack oxstate y 
     return () 
-  let xstate = set pageModeSignal (Just connid) oxstate
+  let xstate = set pageModeSignal (Just connid_wra) oxstate
   put xstate 
   return xstate 
 

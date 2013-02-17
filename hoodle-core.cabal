@@ -97,6 +97,7 @@ Library
                    Hoodle.Coroutine.Select.Clipboard
                    Hoodle.Coroutine.Select.Transform
                    Hoodle.Coroutine.TextInput
+                   Hoodle.Coroutine.VerticalSpace 
                    Hoodle.Coroutine.Window
                    Hoodle.Device
                    Hoodle.GUI

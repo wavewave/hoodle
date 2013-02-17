@@ -388,7 +388,7 @@ getMenuUI evar = do
   Just ra3 <- actionGroupGetAction agr "SELREGNA"
   actionSetSensitive ra3 True 
   Just ra4 <- actionGroupGetAction agr "VERTSPA"
-  actionSetSensitive ra4 False
+  actionSetSensitive ra4 True
   Just ra5 <- actionGroupGetAction agr "HANDA"
   actionSetSensitive ra5 False
   Just ra6 <- actionGroupGetAction agr "CONTA"
@@ -441,7 +441,7 @@ int2PenType 2 = Left HighlighterWork
 -- int2PenType 3 = Left TextWork 
 int2PenType 4 = Right SelectRegionWork
 int2PenType 5 = Right SelectRectangleWork
-int2PenType 6 = Right SelectVerticalSpaceWork
+int2PenType 6 = Left VerticalSpaceWork
 int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
 

@@ -187,7 +187,7 @@ penMoveAndUpOnly :: Monad m => MyEvent
                     -> m a
 penMoveAndUpOnly r pgn geometry defact moveaction upaction = 
   case r of 
-    PenMove _ pcoord -> skipIfNotInSamePage pgn geometry pcoord defact moveaction  
+    PenMove _ pcoord -> skipIfNotInSamePage pgn geometry pcoord defact moveaction
     PenUp _ pcoord -> upaction pcoord  
     _ -> defact 
   
@@ -206,6 +206,9 @@ penMoveAndUpInterPage r pgn geometry defact moveaction upaction =
     PenUp _ pcoord -> upaction pcoord  
     _ -> defact 
   
+
+  
+                   
 
 
 

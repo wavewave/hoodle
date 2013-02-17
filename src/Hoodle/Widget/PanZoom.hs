@@ -157,7 +157,7 @@ startWidgetAction mode cid geometry (sfc,sfc2)
         then 
           startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime
         else      
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
+          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime 
     PenUp _ pcoord -> do 
       case mode of 
         Zooming -> do 

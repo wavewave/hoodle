@@ -44,7 +44,6 @@ replaceClipContents strs _ = Clipboard strs
 -- |
 data SelectType = SelectRegionWork 
                 | SelectRectangleWork 
-                | SelectVerticalSpaceWork
                 | SelectHandToolWork 
                 deriving (Show,Eq,Ord) 
 

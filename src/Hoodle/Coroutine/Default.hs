@@ -56,6 +56,7 @@ import           Hoodle.Coroutine.Select
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.VerticalSpace 
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
 import           Hoodle.GUI.Menu
@@ -190,6 +191,7 @@ viewAppendMode = do
           (PenWork,EraserButton) -> eraserStart cid pcoord
           (EraserWork,_)      -> eraserStart cid pcoord 
           (HighlighterWork,_) -> highlighterStart cid pcoord
+          (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
     PenMove cid pcoord -> notifyLink cid pcoord
     _ -> defaultEventProcess r1
 
@@ -271,8 +273,6 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
     modeChange ToViewAppendMode     
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
-{- let bkg = rbkg2Bkg cbkg 
-                              in bkg2RBkg bkg { bkg_style = convertBackgroundStyleToByteString bsty }  -}
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess (GetHoodleFileInfo ref) = do 
   xst <- get

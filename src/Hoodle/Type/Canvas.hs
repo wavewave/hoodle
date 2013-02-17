@@ -332,6 +332,7 @@ type CanvasInfoMap = M.IntMap CanvasInfoBox
 -- | 
 data WidthColorStyle = WidthColorStyle { _penWidth :: Double
                                        , _penColor :: PenColor } 
+                     | NoWidthColorStyle 
                      deriving (Show)
                        
 -- | lens for penWidth
@@ -348,7 +349,9 @@ data PenHighlighterEraserSet = PenHighlighterEraserSet
                                { _currPen :: WidthColorStyle 
                                , _currHighlighter :: WidthColorStyle 
                                , _currEraser :: WidthColorStyle 
-                               , _currText :: WidthColorStyle}
+                               , _currText :: WidthColorStyle
+                               , _currVerticalSpace :: WidthColorStyle 
+                               }
                              deriving (Show) 
 
 -- | lens for currPen
@@ -366,6 +369,11 @@ currEraser = lens _currEraser (\f a -> f { _currEraser = a } )
 -- | lens for currText
 currText :: Simple Lens PenHighlighterEraserSet WidthColorStyle
 currText = lens _currText (\f a -> f { _currText = a } )
+
+-- | lens for currText
+currVerticalSpace :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currVerticalSpace = lens _currVerticalSpace 
+                      (\f a -> f { _currVerticalSpace = a } )
 
 
 
@@ -401,6 +409,8 @@ currentTool = lens chooser setter
                           PenWork -> _currPen . _penSet $ pinfo
                           HighlighterWork -> _currHighlighter . _penSet $ pinfo
                           EraserWork -> _currEraser . _penSet $ pinfo
+                          VerticalSpaceWork -> NoWidthColorStyle
+                          
                           -- TextWork -> _currText . _penSet $ pinfo 
         setter pinfo wcs = 
           let pset = _penSet pinfo
@@ -408,6 +418,7 @@ currentTool = lens chooser setter
                           PenWork -> pset { _currPen = wcs }
                           HighlighterWork -> pset { _currHighlighter = wcs }
                           EraserWork -> pset { _currEraser = wcs }
+                          VerticalSpaceWork -> pset 
                           -- TextWork -> pset { _currText = wcs }
           in  pinfo { _penSet = psetnew } 
 
@@ -434,7 +445,9 @@ defaultPenInfo =
           , _penSet = PenHighlighterEraserSet { _currPen = defaultPenWCS
                                               , _currHighlighter = defaultHighligherWCS
                                               , _currEraser = defaultEraserWCS
-                                              , _currText = defaultTextWCS }
+                                              , _currText = defaultTextWCS 
+                                              , _currVerticalSpace = NoWidthColorStyle 
+                                              }
           , _variableWidthPen = False
           } 
                                            

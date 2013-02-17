@@ -66,6 +66,10 @@ import Hoodle.Util
 import Prelude hiding ((.), id, concat,concatMap,mapM_)
 
 -- | 
+data VerticalSpaceMode = GoingUp | GoingDown | OverPage 
+
+
+-- | 
 splitPageByHLine :: Double -> Page EditMode 
                  -> ([RItem],Page EditMode,SeqZipper RItemHitted) 
 splitPageByHLine y pg = (hitted,set glayers unhitted pg,hltedLayers)
@@ -115,7 +119,6 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
 
           
 -- |
-
 verticalSpaceProcess :: CanvasId
                      -> CanvasGeometry
                      -> (BBox,SeqZipper RItemHitted,PageNum,Page EditMode)
@@ -172,6 +175,10 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
         (\ctime -> do 
            let CvsCoord (x_cvs,y_cvs) = 
                  (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (x,y))
+               BBox (bx0,by0) (bx1,by1) = bbx                 
+               mode | by1 + y - y0 > h = OverPage
+                    | y > y0 = GoingDown
+                    | otherwise = GoingUp 
                  
                drawguide = do 
                  identityMatrix 
@@ -183,6 +190,12 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                  moveTo 0 y
                  lineTo w y
                  stroke 
+                 case mode of
+                   GoingUp -> setSourceRGBA 0.1 0.8 0.1 0.2 >> rectangle 0 y w (y0-y)                    
+                   GoingDown -> setSourceRGBA 0.1 0.1 0.8 0.2 >> rectangle 0 y0 w (y-y0)
+                   OverPage -> setSourceRGBA 0.8 0.1 0.1 0.2 >> rectangle 0 y0 w (y-y0)
+
+                 fill
            liftIO $ renderWith sfctot $ do 
              setSourceSurface sfcbkg 0 0
              setOperator OperatorSource
@@ -190,7 +203,7 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
              setSourceSurface sfcitm 0 (y_cvs-y0_cvs)
              setOperator OperatorOver
              paint
-             drawguide
+             drawguide 
            let canvas = view drawArea cvsInfo 
            win <- liftIO $ widgetGetDrawWindow canvas
            liftIO $ renderWithDrawable win $ do 

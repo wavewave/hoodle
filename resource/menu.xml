@@ -207,7 +207,7 @@
     <toolitem action="SELREGNA"    />    
     <toolitem action="SELRECTA"    />                     
     <toolitem action="VERTSPA"     />                     
-    <toolitem action="HANDA"       />                     
+    <toolitem action="HANDA"       />                    
     <separator />                     
     <toolitem action="PENFINEA"       />    
     <toolitem action="PENMEDIUMA"       />                     

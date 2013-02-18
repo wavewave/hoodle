@@ -17,7 +17,8 @@
 module Hoodle.GUI.Menu where
 
 -- from other packages
-import           Control.Category
+-- import           Control.Category
+import           Control.Monad
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
@@ -32,7 +33,7 @@ import           Hoodle.Type
 import           Hoodle.Type.Clipboard
 -- import           Hoodle.Util.Verbatim
 --
-import Prelude hiding ((.),id)
+-- import Prelude hiding ((.),id)
 import Paths_hoodle_core
 
 -- | 
@@ -162,7 +163,7 @@ actionNewAndRegisterRef evar name label tooltip stockId myevent = do
 
 -- | 
 
-getMenuUI :: EventVar -> IO UIManager
+getMenuUI :: EventVar -> IO (UIManager,Maybe (ConnectId RadioAction))
 getMenuUI evar = do 
   let actionNewAndRegister = actionNewAndRegisterRef evar  
   -- icons   
@@ -341,7 +342,12 @@ getMenuUI evar = do
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
   actionGroupAddRadioActions agr pointmods 0 (assignPoint evar)
-  actionGroupAddRadioActions agr penmods   0 (assignPenMode evar)
+  mpenmodconnid <- 
+    actionGroupAddRadioActionsAndGetConnID agr penmods   0 (assignPenMode evar)
+  
+  -- actionGroupAddRadioActions agr penmods 0 (const (putStrLn "penmod" >> return ()))
+  -- let mpenmodconnid = Nothing 
+  
   actionGroupAddRadioActions agr colormods 0 (assignColor evar) 
   actionGroupAddRadioActions agr bkgstyles 2 (assignBkgStyle evar)
   
@@ -391,13 +397,40 @@ getMenuUI evar = do
   actionSetSensitive ra5 False
   Just ra6 <- actionGroupGetAction agr "CONTA"
   actionSetSensitive ra6 True
+  Just ra7 <- actionGroupGetAction agr "PENA"
+  actionSetSensitive ra6 True  
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar1) IconSizeSmallToolbar
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
-  return ui   
+  return (ui,mpenmodconnid)   
+
+
+-- |
+actionGroupAddRadioActionsAndGetConnID :: ActionGroup 
+                                       -> [RadioActionEntry]
+                                       -> Int  
+                                       -> (RadioAction -> IO ()) 
+                                       -> IO (Maybe (ConnectId RadioAction))
+actionGroupAddRadioActionsAndGetConnID self entries value onChange = do 
+  group <- foldM 
+    (\group (n,RadioActionEntry name label stockId accelerator tooltip value) -> do
+     action <- radioActionNew name label tooltip stockId value
+     case group of 
+       Nothing -> return () 
+       Just group -> radioActionSetGroup action group
+     when (n==value) (toggleActionSetActive action True)
+     actionGroupAddActionWithAccel self action accelerator
+     return (Just action))
+    Nothing (zip [0..] entries)
+  case group of 
+    Nothing -> return Nothing 
+    Just group -> do 
+      connid <- (group `on` radioActionChanged) onChange
+      return (Just connid)
+
 
 -- | 
 assignViewMode :: EventVar -> RadioAction -> IO ()

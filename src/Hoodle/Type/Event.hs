@@ -64,6 +64,10 @@ data MyEvent = Initialized
              | EventDisconnected
              | GetHoodleFileInfo (IORef (Maybe String))
              | GotLink (Maybe String) (Int,Int)
+             deriving Show
+                      
+instance Show (IORef a) where                      
+  show x = "IORef"
 --              deriving (Show,Eq,Ord)
 
              --  | EventConnected

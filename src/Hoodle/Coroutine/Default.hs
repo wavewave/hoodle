@@ -26,6 +26,7 @@ import           Data.IORef
 -- import           Data.IntMap.Lens 
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk (set) 
 -- from hoodle-platform
 -- import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Driver
@@ -94,7 +95,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
             . set rootOfRootWindow window 
             . set callBack (eventHandler evar) 
             <$> emptyHoodleState 
-  ui <- getMenuUI evar    
+  (ui,mpenmodconnid) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
       initcvsbox = CanvasSinglePage initcvs
@@ -108,6 +109,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs 
+          . set penModeSignal mpenmodconnid 
           $ st4
           
   st6 <- getFileContent mfname st5
@@ -132,15 +134,15 @@ initViewModeIOAction = do
   let ui = view gtkUIManager oxstate
   agr <- liftIO $ uiManagerGetActionGroups ui 
   Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
-  -- Just pma <- liftIO $ actionGroupGetAction (head agr) "PENFINEA"
   let wra = castToRadioAction ra 
-      --  wpma = castToRadioAction pma 
   connid_wra <- liftIO $ wra `on` radioActionChanged $ \x -> do 
     y <- viewModeToMyEvent x 
     view callBack oxstate y 
-    return () 
-  let xstate = set pageModeSignal (Just connid_wra) oxstate
+
+  let xstate = set pageModeSignal (Just connid_wra) $ oxstate 
   put xstate 
+  reflectViewModeUI  
+  reflectPenModeUI
   return xstate 
 
 -- | initialization according to the setting 

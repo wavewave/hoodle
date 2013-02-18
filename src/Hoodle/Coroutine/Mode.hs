@@ -21,6 +21,7 @@ import           Control.Monad.State
 -- import           Control.Monad.Trans
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set) -- (adjustmentGetValue)
+import qualified Graphics.UI.Gtk as Gtk (set)
 -- from hoodle-platform
 -- import           Control.Monad.Trans.Crtn.Event 
 -- import           Control.Monad.Trans.Crtn.Queue 
@@ -33,10 +34,11 @@ import           Graphics.Hoodle.Render.Type
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Scroll
+import           Hoodle.GUI.Menu
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
--- import           Hoodle.Type.Enum 
+import           Hoodle.Type.Enum 
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
@@ -50,7 +52,26 @@ modeChange command = do
       ToViewAppendMode -> updateXState select2edit >> invalidateAll 
       ToSelectMode     -> updateXState edit2select >> invalidateAll 
       _ -> return ()
-    reflectUI
+    liftIO $ putStrLn "modeChange called"
+    -- reflectUI
+    liftIO $ putStrLn "hello"
+    reflectViewModeUI
+    reflectPenModeUI
+{-    xst <- get 
+    let ui = view gtkUIManager xst 
+        mpenmodconnid = view penModeSignal xst 
+    agr <- liftIO $ uiManagerGetActionGroups ui 
+    Just pma <- liftIO $ actionGroupGetAction (head agr) "PENA"
+    let wpma = castToRadioAction pma 
+    let (#) = flip ($)
+        pmodv = hoodleModeStateEither (view hoodleModeState xst) #  
+                  either (\_ -> (penType2Int. Left .view (penInfo.penType)) xst)
+                         (\_ -> (penType2Int. Right .view (selectInfo.selectType)) xst)
+        
+    liftIO $ maybe (return ()) signalBlock mpenmodconnid         
+    liftIO $ Gtk.set wpma [radioActionCurrentValue := pmodv]
+    liftIO $ maybe (return ()) signalBlock mpenmodconnid     -}
+    liftIO $ putStrLn "endhello"
   where select2edit xst =  
           either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState $ xst
         edit2select xst = 
@@ -67,13 +88,13 @@ modeChange command = do
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  
- 
           return . flip (set hoodleModeState) xstate 
             . ViewAppendState . gSelect2GHoodle $ nthdl  
         whenedit :: HoodleState -> Hoodle EditMode -> MainCoroutine HoodleState   
-        whenedit xstate = return . flip (set hoodleModeState) xstate 
+        whenedit xstate hdl = do 
+          return . flip (set hoodleModeState) xstate 
                           . SelectState  
-                          . gHoodle2GSelect 
+                          . gHoodle2GSelect $ hdl 
                           -- $ GSelect (view gtitle hdl) (view gpages hdl) Nothing
 
 -- | 

@@ -341,14 +341,12 @@ getMenuUI evar = do
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   actionGroupAddRadioActions agr viewmods 0 (const (return ()))
-  actionGroupAddRadioActions agr pointmods 0 (assignPoint evar)
+  mpointconnid <- 
+    actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr penmods   0 (assignPenMode evar)
-  
-  -- actionGroupAddRadioActions agr penmods 0 (const (putStrLn "penmod" >> return ()))
-  -- let mpenmodconnid = Nothing 
-  
-  actionGroupAddRadioActions agr colormods 0 (assignColor evar) 
+  mcolorconnid <-  
+    actionGroupAddRadioActionsAndGetConnID agr colormods 0 (assignColor evar) 
   actionGroupAddRadioActions agr bkgstyles 2 (assignBkgStyle evar)
   
   

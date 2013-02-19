@@ -36,17 +36,22 @@ module Hoodle.Type.HoodleState
 , backgroundStyle 
 , isFullScreen 
 , settings
+, uiComponentSignalHandler
 , isOneTimeSelectMode
-, pageModeSignal
-, penModeSignal
 , lastTimeCanvasConfigure
 , hookSet 
 , tempLog 
 , tempQueue 
+-- 
 , doesUseXInput 
 , doesSmoothScroll 
 , doesUsePopUpMenu
 , doesEmbedImage
+-- 
+, penModeSignal
+, pageModeSignal
+, penPointSignal
+, penColorSignal
 -- | others 
 , emptyHoodleState
 , defaultSettings 
@@ -137,9 +142,10 @@ data HoodleState =
                 , _backgroundStyle :: BackgroundStyle 
                 , _isFullScreen :: Bool 
                 , _settings :: Settings 
+                , _uiComponentSignalHandler :: UIComponentSignalHandler 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
-                , _pageModeSignal :: Maybe (ConnectId RadioAction)
-                , _penModeSignal :: Maybe (ConnectId RadioAction)
+                -- , _pageModeSignal :: Maybe (ConnectId RadioAction)
+                -- , _penModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 , _hookSet :: Maybe Hook
                 , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
@@ -223,19 +229,14 @@ isFullScreen = lens _isFullScreen (\f a -> f { _isFullScreen = a } )
 settings :: Simple Lens HoodleState Settings 
 settings = lens _settings (\f a -> f { _settings = a } )
 
+-- | 
+uiComponentSignalHandler :: Simple Lens HoodleState UIComponentSignalHandler
+uiComponentSignalHandler = lens _uiComponentSignalHandler (\f a -> f { _uiComponentSignalHandler = a })
 
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
 
--- | lens for pageModeSignal
-pageModeSignal :: Simple Lens HoodleState (Maybe (ConnectId RadioAction))
-pageModeSignal = lens _pageModeSignal (\f a -> f { _pageModeSignal = a } )
-
-
--- | lens for penModeSignal
-penModeSignal :: Simple Lens HoodleState (Maybe (ConnectId RadioAction))
-penModeSignal = lens _penModeSignal (\f a -> f { _penModeSignal = a } )
 
 
 -- | lens for lastTimeCanvasConfigure
@@ -254,6 +255,30 @@ tempQueue = lens _tempQueue (\f a -> f { _tempQueue = a } )
 tempLog :: Simple Lens HoodleState (String -> String)
 tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 
+
+-- | 
+data UIComponentSignalHandler = 
+  UIComponentSignalHandler{ _penModeSignal :: Maybe (ConnectId RadioAction)
+                          , _pageModeSignal :: Maybe (ConnectId RadioAction)
+                          , _penPointSignal :: Maybe (ConnectId RadioAction)
+                          , _penColorSignal :: Maybe (ConnectId RadioAction)
+                          } 
+
+-- | lens for penModeSignal
+penModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+penModeSignal = lens _penModeSignal (\f a -> f { _penModeSignal = a } )
+
+-- | lens for pageModeSignal
+pageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+pageModeSignal = lens _pageModeSignal (\f a -> f { _pageModeSignal = a } )
+
+-- | lens for penPointSignal
+penPointSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+penPointSignal = lens _penPointSignal (\f a -> f { _penPointSignal = a } )
+
+-- | lens for penColorSignal
+penColorSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+penColorSignal = lens _penColorSignal (\f a -> f { _penColorSignal = a } )
 
 
 -- | A set of Hoodle settings 
@@ -309,14 +334,24 @@ emptyHoodleState = do
     , _backgroundStyle = BkgStyleLined
     , _isFullScreen = False
     , _settings = defaultSettings
+    , _uiComponentSignalHandler = defaultUIComponentSignalHandler 
     , _isOneTimeSelectMode = NoOneTimeSelectMode
-    , _pageModeSignal = Nothing
+    -- , _pageModeSignal = Nothing
     -- , _penModeSignal = Nothing                        
     , _lastTimeCanvasConfigure = Nothing                      
     , _hookSet = Nothing
     , _tempQueue = emptyQueue
     , _tempLog = id 
     }
+
+defaultUIComponentSignalHandler :: UIComponentSignalHandler
+defaultUIComponentSignalHandler = 
+  UIComponentSignalHandler{ _penModeSignal = Nothing 
+                          , _pageModeSignal = Nothing 
+                          , _penPointSignal = Nothing 
+                          , _penColorSignal = Nothing 
+                          } 
+
 
 -- | default settings
 defaultSettings :: Settings

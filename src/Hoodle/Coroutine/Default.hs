@@ -110,7 +110,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs 
-          . set penModeSignal mpenmodconnid 
+          . set (uiComponentSignalHandler.penModeSignal) mpenmodconnid 
           $ st4
           
   st6 <- getFileContent mfname st5
@@ -140,7 +140,7 @@ initViewModeIOAction = do
     y <- viewModeToMyEvent x 
     view callBack oxstate y 
 
-  let xstate = set pageModeSignal (Just connid_wra) $ oxstate 
+  let xstate = set (uiComponentSignalHandler.pageModeSignal) (Just connid_wra) $ oxstate 
   put xstate 
   reflectViewModeUI  
   reflectPenModeUI

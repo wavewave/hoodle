@@ -31,13 +31,14 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.Enum 
 import Hoodle.Type.HoodleState
 import Hoodle.Type.Event
+
 -- | reflect view mode UI for current canvas info 
 reflectViewModeUI :: MainCoroutine ()
 reflectViewModeUI = do 
     xstate <- St.get
     let cinfobox = view currentCanvasInfo xstate 
         ui = view gtkUIManager xstate       
-    let mconnid = view pageModeSignal xstate
+    let mconnid = view (uiComponentSignalHandler.pageModeSignal) xstate
     liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
     ra1 <- maybe (error "reflectUI") return =<< 
@@ -51,17 +52,16 @@ reflectViewModeUI = do
         pgmodupdate_c wra1 _cinfo = do
           liftIO $ Gtk.set wra1 [radioActionCurrentValue := 0 ] 
 
+-- | 
 reflectPenModeUI :: MainCoroutine ()
 reflectPenModeUI = do 
     xst <- St.get 
     let ui = view gtkUIManager xst 
-        mpenmodconnid = view penModeSignal xst 
+        mpenmodconnid = view (uiComponentSignalHandler.penModeSignal) xst 
     agr <- liftIO $ uiManagerGetActionGroups ui 
     Just pma <- liftIO $ actionGroupGetAction (head agr) "PENA"
     let wpma = castToRadioAction pma 
     penmodupdate xst wpma mpenmodconnid   
-  
-  
   where (#) :: a -> (a -> b) -> b 
         (#) = flip ($)
         penmodupdate xst wpma mpenmodconnid  = do 

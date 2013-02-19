@@ -16,6 +16,8 @@ module Hoodle.Type.HoodleState
 ( HoodleState(..)
 , HoodleModeState(..)
 , IsOneTimeSelectMode(..)
+, Settings(..)
+, UIComponentSignalHandler(..)
 -- | labels
 , hoodleModeState
 , currFileName
@@ -55,6 +57,7 @@ module Hoodle.Type.HoodleState
 -- | others 
 , emptyHoodleState
 , defaultSettings 
+, defaultUIComponentSignalHandler
 , getHoodle
 -- | additional lenses 
 , getCanvasInfoMap 

@@ -17,7 +17,7 @@
 module Hoodle.GUI.Menu where
 
 -- from other packages
--- import           Control.Category
+import           Control.Lens (view,set)
 import           Control.Monad
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (set,get)
@@ -31,6 +31,7 @@ import           Data.Hoodle.Predefined
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
 import           Hoodle.Type.Clipboard
+import           Hoodle.Type.HoodleState 
 -- import           Hoodle.Util.Verbatim
 --
 -- import Prelude hiding ((.),id)
@@ -91,6 +92,7 @@ pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothin
             , RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4 
             , RadioActionEntry "PENULTRATHICKA" "Ultra Thick" Nothing Nothing Nothing 5   
             , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2              
+--             , RadioActionEntry "NOWIDTH" "Unknown" Nothing Nothing Nothing 999 
             ]            
 
 -- | 
@@ -120,6 +122,7 @@ colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       
             , RadioActionEntry "YELLOWA"     "Yellow"     (Just "myyellow")     Nothing Nothing 9
             , RadioActionEntry "WHITEA"      "White"      (Just "mywhite")      Nothing Nothing 10
             , RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0              
+---             , RadioActionEntry "NOCOLOR"     "Unknown"    Nothing Nothing Nothing 999 
             ]
 
 -- | 
@@ -163,7 +166,7 @@ actionNewAndRegisterRef evar name label tooltip stockId myevent = do
 
 -- | 
 
-getMenuUI :: EventVar -> IO (UIManager,Maybe (ConnectId RadioAction))
+getMenuUI :: EventVar -> IO (UIManager,UIComponentSignalHandler)
 getMenuUI evar = do 
   let actionNewAndRegister = actionNewAndRegisterRef evar  
   -- icons   
@@ -340,7 +343,8 @@ getMenuUI evar = do
   actionGroupAddAction agr ebdimga
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
-  actionGroupAddRadioActions agr viewmods 0 (const (return ()))
+  mpgmodconnid <- 
+    actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) -- const (return ()))
   mpointconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
@@ -403,7 +407,12 @@ getMenuUI evar = do
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
-  return (ui,mpenmodconnid)   
+  
+  
+  let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
+                                 . set pageModeSignal mpgmodconnid 
+                                 $ defaultUIComponentSignalHandler 
+  return (ui,uicomponentsignalhandler)   
 
 
 -- |
@@ -507,6 +516,36 @@ int2Point EraserWork 4 = predefined_eraser_verythick
 int2Point EraserWork 5 = predefined_eraser_ultrathick
 int2Point _ _ = error "No such point"
 
+similarTo :: Double -> Double -> Bool
+similarTo v w = (v < w + eps) && (v > w - eps) 
+  where eps = 1e-2
+
+-- | 
+point2Int :: PenType -> Double -> Int 
+point2Int PenWork v  
+  | v `similarTo` predefined_veryfine   = 0
+  | v `similarTo` predefined_fine       = 1
+  | v `similarTo` predefined_medium     = 2
+  | v `similarTo` predefined_thick      = 3 
+  | v `similarTo` predefined_verythick  = 4
+  | v `similarTo` predefined_ultrathick = 5
+point2Int HighlighterWork v 
+  | v `similarTo` predefined_highlighter_fine       = 1
+  | v `similarTo` predefined_highlighter_veryfine   = 0
+  | v `similarTo` predefined_highlighter_medium     = 2
+  | v `similarTo` predefined_highlighter_thick      = 3 
+  | v `similarTo` predefined_highlighter_verythick  = 4
+  | v `similarTo` predefined_highlighter_ultrathick = 5  
+point2Int EraserWork v
+  | v `similarTo` predefined_eraser_veryfine   = 0
+  | v `similarTo` predefined_eraser_fine       = 1
+  | v `similarTo` predefined_eraser_medium     = 2
+  | v `similarTo` predefined_eraser_thick      = 3 
+  | v `similarTo` predefined_eraser_verythick  = 4
+  | v `similarTo` predefined_eraser_ultrathick = 5  
+point2Int _ _  = 0 -- for the time being 
+
+
 -- | 
 int2Color :: Int -> PenColor
 int2Color 0  = ColorBlack 
@@ -521,6 +560,21 @@ int2Color 8  = ColorOrange
 int2Color 9  = ColorYellow
 int2Color 10 = ColorWhite
 int2Color _ = error "No such color"
+
+
+color2Int :: PenColor -> Int 
+color2Int ColorBlack      = 0
+color2Int ColorBlue       = 1
+color2Int ColorRed        = 2
+color2Int ColorGreen      = 3
+color2Int ColorGray       = 4
+color2Int ColorLightBlue  = 5
+color2Int ColorLightGreen = 6
+color2Int ColorMagenta    = 7 
+color2Int ColorOrange     = 8 
+color2Int ColorYellow     = 9
+color2Int ColorWhite      = 10
+color2Int _ = 0  -- just for the time being 
 
 
 int2BkgStyle :: Int -> BackgroundStyle 

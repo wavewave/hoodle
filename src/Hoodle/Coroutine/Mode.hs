@@ -54,6 +54,8 @@ modeChange command = do
       ToSelectMode     -> updateXState edit2select >> invalidateAll 
       _ -> return ()
     reflectPenModeUI
+    reflectPenColorUI
+    reflectPenWidthUI
   where select2edit xst =  
           either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState $ xst
         edit2select xst = 

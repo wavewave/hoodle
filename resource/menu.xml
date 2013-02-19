@@ -212,6 +212,7 @@
     <toolitem action="PENFINEA"       />    
     <toolitem action="PENMEDIUMA"       />                     
     <toolitem action="PENTHICKA"       />   
+ <!--     <toolitem action="NOWIDTH"        /> --> 
     <separator />
     <toolitem action="CLRPCKA"     />
     <toolitem action="BLACKA"      />                     
@@ -224,6 +225,7 @@
     <toolitem action="MAGENTAA"    />                     
     <toolitem action="ORANGEA"     />                     
     <toolitem action="YELLOWA"     />                     
-    <toolitem action="WHITEA"      />                     
+    <toolitem action="WHITEA"      />   
+ <!--    <toolitem action="NOCOLOR" />    --> 
   </toolbar>
 </ui>

@@ -44,6 +44,10 @@ testHoodle hdlstate = do
   L.putStrLn (builder hdlsimple)
 -}
 
+(#) :: a -> (a -> b) -> b 
+(#) = flip ($)
+infixr 0 #
+
 maybeFlip :: Maybe a -> b -> (a->b) -> b  
 maybeFlip m n j = maybe n j m   
 

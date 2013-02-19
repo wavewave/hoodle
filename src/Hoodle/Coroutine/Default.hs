@@ -96,7 +96,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
             . set rootOfRootWindow window 
             . set callBack (eventHandler evar) 
             <$> emptyHoodleState 
-  (ui,mpenmodconnid) <- getMenuUI evar    
+  (ui,uicompsighdlr) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
       initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
       initcvsbox = CanvasSinglePage initcvs
@@ -110,7 +110,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs 
-          . set (uiComponentSignalHandler.penModeSignal) mpenmodconnid 
+          . set uiComponentSignalHandler uicompsighdlr -- mpenmodconnid 
           $ st4
           
   st6 <- getFileContent mfname st5
@@ -127,7 +127,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
   putMVar evar . Just $ (driver simplelogger startworld)
   return (evar,startingXstate,ui,vbox)
 
-
+{-
 -- | 
 initViewModeIOAction :: MainCoroutine HoodleState
 initViewModeIOAction = do 
@@ -146,6 +146,8 @@ initViewModeIOAction = do
   reflectPenModeUI
   return xstate 
 
+-}
+
 -- | initialization according to the setting 
 initialize :: MyEvent -> MainCoroutine ()
 initialize ev = do  
@@ -163,7 +165,13 @@ guiProcess :: MyEvent -> MainCoroutine ()
 guiProcess ev = do 
   initialize ev
   changePage (const 0)
-  xstate <- initViewModeIOAction 
+  -- xstate <- initViewModeIOAction 
+  xstate <- get 
+  reflectViewModeUI
+  reflectPenModeUI
+  reflectPenColorUI  
+  reflectPenWidthUI
+  
   let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox

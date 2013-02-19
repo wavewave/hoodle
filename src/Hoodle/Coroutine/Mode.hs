@@ -35,6 +35,7 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.GUI.Menu
+import           Hoodle.GUI.Reflect
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
@@ -52,26 +53,7 @@ modeChange command = do
       ToViewAppendMode -> updateXState select2edit >> invalidateAll 
       ToSelectMode     -> updateXState edit2select >> invalidateAll 
       _ -> return ()
-    liftIO $ putStrLn "modeChange called"
-    -- reflectUI
-    liftIO $ putStrLn "hello"
-    reflectViewModeUI
     reflectPenModeUI
-{-    xst <- get 
-    let ui = view gtkUIManager xst 
-        mpenmodconnid = view penModeSignal xst 
-    agr <- liftIO $ uiManagerGetActionGroups ui 
-    Just pma <- liftIO $ actionGroupGetAction (head agr) "PENA"
-    let wpma = castToRadioAction pma 
-    let (#) = flip ($)
-        pmodv = hoodleModeStateEither (view hoodleModeState xst) #  
-                  either (\_ -> (penType2Int. Left .view (penInfo.penType)) xst)
-                         (\_ -> (penType2Int. Right .view (selectInfo.selectType)) xst)
-        
-    liftIO $ maybe (return ()) signalBlock mpenmodconnid         
-    liftIO $ Gtk.set wpma [radioActionCurrentValue := pmodv]
-    liftIO $ maybe (return ()) signalBlock mpenmodconnid     -}
-    liftIO $ putStrLn "endhello"
   where select2edit xst =  
           either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState $ xst
         edit2select xst = 

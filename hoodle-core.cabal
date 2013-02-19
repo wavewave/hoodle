@@ -102,6 +102,7 @@ Library
                    Hoodle.Device
                    Hoodle.GUI
                    Hoodle.GUI.Menu
+                   Hoodle.GUI.Reflect 
                    Hoodle.ModelAction.Adjustment
                    Hoodle.ModelAction.Clipboard
                    Hoodle.ModelAction.Eraser

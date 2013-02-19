@@ -61,6 +61,7 @@ import           Hoodle.Coroutine.VerticalSpace
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
 import           Hoodle.GUI.Menu
+import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page

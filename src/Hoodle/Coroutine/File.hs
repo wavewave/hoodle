@@ -225,11 +225,12 @@ renderjob :: RHoodle -> FilePath -> IO ()
 renderjob h ofp = do 
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let Dim width height = view gdimension p  
-  let rf :: InBBox RPage -> Render ()
-      rf x = cairoRenderOption (InBBoxOption Nothing) x >> return ()  
+  let -- rf :: InBBox RPage -> Render ()
+      -- rf x = cairoRenderOption (InBBoxOption Nothing) x >> return ()  
+      rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
   withPDFSurface ofp width height $ \s -> renderWith s $  
     -- (sequence1_ showPage . map renderPage . hoodle_pages) h 
-    (sequence1_ showPage . map (rf . InBBox) . IM.elems . view gpages ) h 
+    (sequence1_ showPage . map rf . IM.elems . view gpages ) h 
 
 -- | 
 fileExport :: MainCoroutine ()

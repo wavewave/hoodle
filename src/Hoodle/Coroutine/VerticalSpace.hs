@@ -16,7 +16,7 @@ import Control.Applicative
 import Control.Category
 -- import Data.Label
 import qualified Data.IntMap as IM
-import Control.Lens
+import Control.Lens (view,set,at)
 import Control.Monad hiding (mapM_)
 import Control.Monad.State (get,put)
 -- import qualified Control.Monad.State as St

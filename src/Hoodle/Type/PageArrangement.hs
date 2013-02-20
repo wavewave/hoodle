@@ -30,8 +30,6 @@ import Hoodle.Type.Predefined
 import Hoodle.Type.Alias
 import Hoodle.Util
 -- 
--- import Prelude hiding ((.),id)
-import Debug.Trace
 
 -- | 
 

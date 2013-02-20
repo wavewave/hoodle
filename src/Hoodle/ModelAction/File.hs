@@ -67,13 +67,7 @@ getFileContent (Just fname) xstate = do
         case r of 
           Left err -> putStrLn err >> return xstate 
           Right h -> constructNewHoodleStateFromHoodle h xstate 
-                     >>= return . set currFileName (Just fname)
-        {- let r = parse PA.hoodle bstr
-        case r of 
-          Done _ h -> constructNewHoodleStateFromHoodle h xstate 
-                      >>= return . set currFileName (Just fname)
-          _ -> print r >> return xstate  -}
-                
+                     >>= return . set (hoodleFileControl.hoodleFileName) (Just fname)
       ".xoj" -> do 
           XP.parseXojFile fname >>= \x -> case x of  
             Left str -> do
@@ -82,19 +76,19 @@ getFileContent (Just fname) xstate = do
             Right xojcontent -> do 
               hdlcontent <- mkHoodleFromXournal xojcontent 
               nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
-              return $ set currFileName (Just fname) nxstate               
+              return $ set (hoodleFileControl.hoodleFileName) (Just fname) nxstate               
       ".pdf" -> do 
         mhdl <- makeNewHoodleWithPDF fname 
         case mhdl of 
           Nothing -> getFileContent Nothing xstate 
           Just hdl -> do 
             newhdlstate <- constructNewHoodleStateFromHoodle hdl xstate 
-            return . set currFileName Nothing $ newhdlstate 
+            return . set (hoodleFileControl.hoodleFileName) Nothing $ newhdlstate 
       _ -> getFileContent Nothing xstate      
 getFileContent Nothing xstate = do   
     newhdl <- cnstrctRHoodle =<< defaultHoodle 
     let newhdlstate = ViewAppendState newhdl 
-        xstate' = set currFileName Nothing 
+        xstate' = set (hoodleFileControl.hoodleFileName) Nothing 
                   . set hoodleModeState newhdlstate
                   $ xstate 
     return xstate' 

@@ -199,7 +199,7 @@ fileNew = do
 fileSave :: MainCoroutine ()
 fileSave = do 
     xstate <- get 
-    case view currFileName xstate of
+    case view (hoodleFileControl.hoodleFileName) xstate of
       Nothing -> fileSaveAs 
       Just filename -> do     
         -- this is rather temporary not to make mistake 
@@ -329,7 +329,7 @@ fileSaveAs = do
                            then ( SelectState $ set gselTitle ntitle thdl 
                                 , set title ntitle hd)  
                            else (SelectState thdl,hd)
-                    xstateNew = set currFileName (Just filename) 
+                    xstateNew = set (hoodleFileControl.hoodleFileName) (Just filename) 
                               . set hoodleModeState hdlmodst' $ xst'
                 liftIO . L.writeFile filename . builder $ hdl'
                 put . set isSaved True $ xstateNew    
@@ -343,7 +343,7 @@ fileSaveAs = do
 fileReload :: MainCoroutine ()
 fileReload = do 
     xstate <- get
-    case view currFileName xstate of 
+    case view (hoodleFileControl.hoodleFileName) xstate of 
       Nothing -> return () 
       Just filename -> do
         if not (view isSaved xstate) 
@@ -374,7 +374,7 @@ fileAnnotatePDF =
       xstate <- get 
       mhdl <- liftIO $ makeNewHoodleWithPDF filename 
       flip (maybe warning) mhdl $ \hdl -> do 
-        xstateNew <- return . set currFileName Nothing 
+        xstateNew <- return . set (hoodleFileControl.hoodleFileName) Nothing 
                      =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
         commit xstateNew 
         liftIO $ setTitleFromFileName xstateNew             

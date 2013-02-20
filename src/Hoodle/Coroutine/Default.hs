@@ -293,7 +293,7 @@ defaultEventProcess (GetHoodleFileInfo ref) = do
   xst <- get
   let hdl = getHoodle xst 
       uuid = B.unpack (view ghoodleID hdl)
-  case view currFileName xst of 
+  case view (hoodleFileControl.hoodleFileName) xst of 
     Nothing -> liftIO $ writeIORef ref Nothing
     Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    

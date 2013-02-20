@@ -20,7 +20,7 @@ module Hoodle.Type.HoodleState
 , UIComponentSignalHandler(..)
 -- | labels
 , hoodleModeState
-, currFileName
+, hoodleFileControl
 , cvsInfoMap
 , currentCanvas
 , frameState
@@ -45,6 +45,8 @@ module Hoodle.Type.HoodleState
 , tempLog 
 , tempQueue 
 -- 
+, hoodleFileName 
+--
 , doesUseXInput 
 , doesSmoothScroll 
 , doesUsePopUpMenu
@@ -127,7 +129,7 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
 
 data HoodleState = 
   HoodleState { _hoodleModeState :: HoodleModeState
-                , _currFileName :: Maybe FilePath
+                , _hoodleFileControl :: HoodleFileControl
                 , _cvsInfoMap :: CanvasInfoMap 
                 , _currentCanvas :: (CanvasId,CanvasInfoBox)
                 , _frameState :: WindowConfig 
@@ -160,9 +162,13 @@ data HoodleState =
 hoodleModeState :: Simple Lens HoodleState HoodleModeState
 hoodleModeState = lens _hoodleModeState (\f a -> f { _hoodleModeState = a } )
 
--- | lens for currFileName
-currFileName :: Simple Lens HoodleState (Maybe FilePath)
-currFileName = lens _currFileName (\f a -> f { _currFileName = a } )
+
+
+-- | 
+hoodleFileControl :: Simple Lens HoodleState HoodleFileControl
+hoodleFileControl = lens _hoodleFileControl (\f a -> f { _hoodleFileControl = a })
+
+
 
 -- | lens for cvsInfoMap
 cvsInfoMap :: Simple Lens HoodleState CanvasInfoMap
@@ -260,6 +266,14 @@ tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 
 
 -- | 
+data HoodleFileControl = 
+  HoodleFileControl { _hoodleFileName :: Maybe FilePath } 
+
+-- | lens for currFileName
+hoodleFileName :: Simple Lens HoodleFileControl (Maybe FilePath)
+hoodleFileName = lens _hoodleFileName (\f a -> f { _hoodleFileName = a } )
+
+-- | 
 data UIComponentSignalHandler = 
   UIComponentSignalHandler{ _penModeSignal :: Maybe (ConnectId RadioAction)
                           , _pageModeSignal :: Maybe (ConnectId RadioAction)
@@ -317,7 +331,8 @@ emptyHoodleState = do
   return $
     HoodleState  
     { _hoodleModeState = ViewAppendState hdl 
-    , _currFileName = Nothing 
+    , _hoodleFileControl = emptyHoodleFileControl 
+    -- , _currFileName = Nothing 
     , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
     , _currentCanvas = error "emtpyHoodleState.currentCanvas"
     , _frameState = error "emptyHoodleState.frameState" 
@@ -346,6 +361,11 @@ emptyHoodleState = do
     , _tempQueue = emptyQueue
     , _tempLog = id 
     }
+
+emptyHoodleFileControl :: HoodleFileControl 
+emptyHoodleFileControl = 
+  HoodleFileControl { _hoodleFileName = Nothing } 
+
 
 defaultUIComponentSignalHandler :: UIComponentSignalHandler
 defaultUIComponentSignalHandler = 

@@ -1,5 +1,5 @@
 Name:		hoodle
-Version:	0.1.999
+Version:	0.2
 Synopsis:	Executable for hoodle
 Description: 	Hoodle is a pen notetaking program written in haskell. 
 Homepage:       http://ianwookim.org/hoodle
@@ -39,7 +39,7 @@ Library
                    cmdargs >= 0.7,
                    configurator == 0.2.*,
                    dyre >= 0.8.11, 
-                   hoodle-core >= 0.9.999
+                   hoodle-core == 0.10
   Exposed-Modules: 
                    Hoodle.ProgType
                    Hoodle.Job

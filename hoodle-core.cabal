@@ -1,5 +1,5 @@
 Name:		hoodle-core
-Version:	0.9.999
+Version:	0.10
 Synopsis:	Core library for hoodle
 Description: 	Hoodle is a pen notetaking program written in haskell. 
                 hoodle-core is the core library written in haskell and 
@@ -10,7 +10,7 @@ License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 7.4 
+Tested-with:    GHC == 7.4, GHC == 7.6
 Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
@@ -45,12 +45,12 @@ Library
                    coroutine-object >= 0.2, 
                    transformers == 0.3.*,
                    transformers-free == 1.0.*,
-                   hoodle-types >= 0.1.9999,
-                   hoodle-common >= 0.0.999, 
-                   hoodle-parser >= 0.1.9999,
+                   hoodle-types >= 0.2,
+                   hoodle-common >= 0.1, 
+                   hoodle-parser >= 0.2,
                    xournal-parser >= 0.5.0.1,
-                   hoodle-render >= 0.2.999,
-                   hoodle-builder >= 0.1.9999,
+                   hoodle-render >= 0.3,
+                   hoodle-builder >= 0.2,
                    containers >= 0.4,
                    template-haskell == 2.*,
                    bytestring >= 0.9, 

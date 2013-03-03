@@ -33,6 +33,7 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           Graphics.Hoodle.Render.Background
 #endif
+import           System.Directory (canonicalizePath)
 import           System.FilePath (takeExtension)
 import           System.Process
 -- from hoodle-platform 
@@ -161,7 +162,8 @@ makeNewHoodleWithPDF :: Bool              -- ^ doesEmbedPDF
                      -> IO (Maybe Hoodle) 
 makeNewHoodleWithPDF doesembed fp = do 
 #ifdef POPPLER
-  let fname = C.pack fp 
+  canonicalfp <- canonicalizePath fp 
+  let fname = C.pack canonicalfp 
   mdoc <- popplerGetDocFromFile fname
   case mdoc of 
     Nothing -> do 
@@ -179,7 +181,7 @@ makeNewHoodleWithPDF doesembed fp = do
       hdl <- set title fname . set pages pgs <$> emptyHoodle
       nhdl <- if doesembed 
                 then do 
-                  bstr <- C.readFile fp 
+                  bstr <- C.readFile canonicalfp 
                   let ebdsrc = makeEmbeddedPdfSrcString bstr 
                   return (set embeddedPdf (Just ebdsrc) hdl)
                 else return hdl 

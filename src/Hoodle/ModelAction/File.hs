@@ -1,9 +1,11 @@
-{-# LANGUAGE OverloadedStrings, CPP, GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.File 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -20,19 +22,25 @@ import           Control.Applicative
 import           Control.Lens
 import           Control.Monad
 import           Data.Attoparsec 
-import qualified Data.ByteString as B
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set)
 #ifdef POPPLER
+import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
+import qualified Data.IntMap as IM
+import           Data.Monoid ((<>))
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           Graphics.Hoodle.Render.Background
 #endif
 import           System.FilePath (takeExtension)
+import           System.Process
 -- from hoodle-platform 
+import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Type.Background 
+import           Graphics.Hoodle.Render.Type.Hoodle
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Hoodle.Migrate.V0_1_999_to_V0_1_9999 as MV
 import qualified Text.Xournal.Parse.Conduit as XP
@@ -44,7 +52,7 @@ import           Hoodle.Type.HoodleState
 
 
 -- | check hoodle version and migrate if necessary 
-checkVersionAndMigrate :: B.ByteString -> IO (Either String Hoodle) 
+checkVersionAndMigrate :: C.ByteString -> IO (Either String Hoodle) 
 checkVersionAndMigrate bstr = do 
   case parseOnly PA.checkHoodleVersion bstr of 
     Left str -> error str 
@@ -52,7 +60,6 @@ checkVersionAndMigrate bstr = do
       if ( v < "0.1.9999" ) 
         then MV.migrate bstr
         else return (parseOnly PA.hoodle bstr)
-
 
 -- | get file content from xournal file and update xournal state 
 getFileContent :: Maybe FilePath 
@@ -62,7 +69,7 @@ getFileContent (Just fname) xstate = do
     let ext = takeExtension fname
     case ext of 
       ".hdl" -> do 
-        bstr <- B.readFile fname
+        bstr <- C.readFile fname
         r <- checkVersionAndMigrate bstr 
         case r of 
           Left err -> putStrLn err >> return xstate 
@@ -78,7 +85,8 @@ getFileContent (Just fname) xstate = do
               nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
               return $ set (hoodleFileControl.hoodleFileName) (Just fname) nxstate               
       ".pdf" -> do 
-        mhdl <- makeNewHoodleWithPDF fname 
+        let doesembed = view (settings.doesEmbedPDF) xstate
+        mhdl <- makeNewHoodleWithPDF doesembed fname 
         case mhdl of 
           Nothing -> getFileContent Nothing xstate 
           Just hdl -> do 
@@ -92,9 +100,6 @@ getFileContent Nothing xstate = do
                   . set hoodleModeState newhdlstate
                   $ xstate 
     return xstate' 
-                  
-      
-      
 
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 
@@ -103,9 +108,58 @@ constructNewHoodleStateFromHoodle hdl' xstate = do
     let startinghoodleModeState = ViewAppendState hdl
     return $ set hoodleModeState startinghoodleModeState xstate
 
+-- | this is very temporary, need to be changed.     
+findFirstPDFFile :: [(Int,RPage)] -> Maybe C.ByteString
+findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
+                      in if null ys then Nothing else head ys 
+  where f (_,p) = case view gbackground p of 
+                    RBkgPDF _ f _ _ _ -> Just f
+                    _ -> Nothing 
+      
+findAllPDFPages :: [(Int,RPage)] -> [Int]
+findAllPDFPages = catMaybes . map f
+  where f (n,p) = case view gbackground p of 
+                    RBkgPDF _ f _ _ _ -> Just n
+                    _ -> Nothing 
+
+replacePDFPages :: [(Int,RPage)] -> [(Int,RPage)] 
+replacePDFPages xs = map f xs 
+  where f (n,p) = case view gbackground p of 
+                    RBkgPDF _ f pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
+                    _ -> (n,p) 
+        
 -- | 
-makeNewHoodleWithPDF :: FilePath -> IO (Maybe Hoodle)
-makeNewHoodleWithPDF fp = do 
+embedPDFInHoodle :: RHoodle -> IO RHoodle
+embedPDFInHoodle hdl = do 
+    let pgs = (IM.toAscList . view gpages) hdl  
+        mfn = findFirstPDFFile pgs
+        allpdfpg = findAllPDFPages pgs 
+        
+    case mfn of 
+      Nothing -> return hdl 
+      Just fn -> do 
+        let fnstr = C.unpack fn 
+            pglst = map show allpdfpg 
+            cmdargs =  [fnstr, "cat"] ++ pglst ++ ["output", "-"]
+        print cmdargs 
+        (_,Just hout,_,_) <- createProcess (proc "pdftk" cmdargs) { std_out = CreatePipe } 
+        bstr <- C.hGetContents hout
+        {- let b64str = (encode . concat . L.toChunks) bstr 
+            ebdsrc = Just ("data:application/x-pdf;base64," <> b64str) -}
+        let ebdsrc = makeEmbeddedPdfSrcString bstr -- . concat . L.toChunks) bstr 
+            npgs = (IM.fromAscList . replacePDFPages) pgs 
+        (return . set gembeddedpdf (Just ebdsrc) . set gpages npgs) hdl
+
+
+
+makeEmbeddedPdfSrcString :: C.ByteString -> C.ByteString 
+makeEmbeddedPdfSrcString = ("data:application/x-pdf;base64," <>) . encode
+
+-- | 
+makeNewHoodleWithPDF :: Bool              -- ^ doesEmbedPDF
+                     -> FilePath          -- ^ pdf file
+                     -> IO (Maybe Hoodle) 
+makeNewHoodleWithPDF doesembed fp = do 
 #ifdef POPPLER
   let fname = C.pack fp 
   mdoc <- popplerGetDocFromFile fname
@@ -120,22 +174,36 @@ makeNewHoodleWithPDF fp = do
             pg <- Poppler.documentGetPage doc (i-1) 
             (w,h) <- PopplerPage.pageGetSize pg
             let dim = Dim w h 
-            return (createPage dim fname i) 
+            return (createPage doesembed dim fname i) 
       pgs <- mapM createPageAct [1..n]
       hdl <- set title fname . set pages pgs <$> emptyHoodle
-      return (Just hdl)
+      nhdl <- if doesembed 
+                then do 
+                  bstr <- C.readFile fp 
+                  let ebdsrc = makeEmbeddedPdfSrcString bstr 
+                  return (set embeddedPdf (Just ebdsrc) hdl)
+                else return hdl 
+      return (Just nhdl)
 #else
       return Nothing
 #endif
       
 -- | 
       
-createPage :: Dimension -> B.ByteString -> Int -> Page
-createPage dim fn n 
-  | n == 1 = let bkg = BackgroundPdf "pdf" (Just "absolute") (Just fn ) n 
-             in  Page dim bkg [emptyLayer]
-  | otherwise = let bkg = BackgroundPdf "pdf" Nothing Nothing n 
-                in Page dim bkg [emptyLayer]
+createPage :: Bool         -- ^ does embed pdf?
+           -> Dimension 
+           -> C.ByteString 
+           -> Int 
+           -> Page
+createPage doesembed dim fn n =
+    let bkg   
+          | not doesembed && n == 1 
+            = BackgroundPdf "pdf" (Just "absolute") (Just fn ) n 
+          | not doesembed && n /= 1 
+            = BackgroundPdf "pdf" Nothing Nothing n 
+          | doesembed 
+            = BackgroundEmbedPdf "embedpdf" n 
+    in Page dim bkg [emptyLayer]
                    
 -- |                    
 

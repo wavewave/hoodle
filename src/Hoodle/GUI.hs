@@ -61,6 +61,7 @@ startGUI mfname mhook = do
   setToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
   setToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0 
   setToggleUIForFlag "EBDIMGA" (settings.doesEmbedImage) st0 
+  setToggleUIForFlag "EBDPDFA" (settings.doesEmbedPDF) st0
   -- 
   let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0
   if xinputbool

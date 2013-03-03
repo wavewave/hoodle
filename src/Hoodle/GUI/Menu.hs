@@ -285,6 +285,9 @@ getMenuUI evar = do
   ebdimga <- toggleActionNew "EBDIMGA" "Embed PNG/JPG Image" (Just "Just a stub") Nothing
   ebdimga `on` actionToggled $ do 
     eventHandler evar (Menu MenuEmbedImage)
+  ebdpdfa <- toggleActionNew "EBDPDFA" "Embed PDF" (Just "Just a stub") Nothing
+  ebdpdfa `on` actionToggled $ do 
+    eventHandler evar (Menu MenuEmbedPDF)
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
@@ -341,6 +344,7 @@ getMenuUI evar = do
   actionGroupAddAction agr smthscra
   actionGroupAddAction agr popmenua 
   actionGroupAddAction agr ebdimga
+  actionGroupAddAction agr ebdpdfa
   actionGroupAddAction agr pressrsensa
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   mpgmodconnid <- 

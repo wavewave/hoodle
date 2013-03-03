@@ -157,6 +157,7 @@ data MenuEvent = MenuNew
                | MenuSmoothScroll
                | MenuUsePopUpMenu
                | MenuEmbedImage
+               | MenuEmbedPDF
                | MenuDiscardCoreEvents 
                | MenuEraserTip 
                | MenuPressureSensitivity

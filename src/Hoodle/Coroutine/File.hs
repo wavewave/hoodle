@@ -372,7 +372,8 @@ fileAnnotatePDF =
       invalidateAll 
     action filename = do  
       xstate <- get 
-      mhdl <- liftIO $ makeNewHoodleWithPDF filename 
+      let doesembed = view (settings.doesEmbedPDF) xstate
+      mhdl <- liftIO $ makeNewHoodleWithPDF doesembed filename 
       flip (maybe warning) mhdl $ \hdl -> do 
         xstateNew <- return . set (hoodleFileControl.hoodleFileName) Nothing 
                      =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
@@ -638,46 +639,6 @@ embedPredefinedImage3 = do
         put nxstate2
         invalidateAll         
         
--- | this is very temporary, need to be changed.     
-findFirstPDFFile :: [(Int,RPage)] -> Maybe B.ByteString
-findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
-                      in if null ys then Nothing else head ys 
-  where f (_,p) = case view gbackground p of 
-                    RBkgPDF _ f _ _ _ -> Just f
-                    _ -> Nothing 
-      
-findAllPDFPages :: [(Int,RPage)] -> [Int]
-findAllPDFPages = catMaybes . map f
-  where f (n,p) = case view gbackground p of 
-                    RBkgPDF _ f _ _ _ -> Just n
-                    _ -> Nothing 
-
-replacePDFPages :: [(Int,RPage)] -> [(Int,RPage)] 
-replacePDFPages xs = map f xs 
-  where f (n,p) = case view gbackground p of 
-                    RBkgPDF _ f pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
-                    _ -> (n,p) 
-        
--- | 
-embedPDFInHoodle :: RHoodle -> IO RHoodle
-embedPDFInHoodle hdl = do 
-    let pgs = (IM.toAscList . view gpages) hdl  
-        mfn = findFirstPDFFile pgs
-        allpdfpg = findAllPDFPages pgs 
-        
-    case mfn of 
-      Nothing -> return hdl 
-      Just fn -> do 
-        let fnstr = B.unpack fn 
-            pglst = map show allpdfpg 
-            cmdargs =  [fnstr, "cat"] ++ pglst ++ ["output", "-"]
-        print cmdargs 
-        (_,Just hout,_,_) <- createProcess (proc "pdftk" cmdargs) { std_out = CreatePipe } 
-        bstr <- L.hGetContents hout
-        let b64str = (encode . concat . L.toChunks) bstr 
-            ebdsrc = Just ("data:application/x-pdf;base64," <> b64str)
-            npgs = (IM.fromAscList . replacePDFPages) pgs 
-        (return . set gembeddedpdf ebdsrc . set gpages npgs) hdl
 {-        
         
     let Dim w h = view gdimension pg 

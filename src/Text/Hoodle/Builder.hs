@@ -51,7 +51,7 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.1.9999\" id=\""
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2\" id=\""
                  <> fromByteString (view hoodleID hdl) 
                  <> fromByteString "\">\n" 
                  <> (buildTitle . view title) hdl 

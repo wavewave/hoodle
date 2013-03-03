@@ -180,9 +180,15 @@ askIfSave action = do
           False -> return () 
       else action 
 
-
-
-
+-- | 
+askIfOverwrite :: FilePath -> MainCoroutine () -> MainCoroutine () 
+askIfOverwrite fp action = do 
+    b <- liftIO $ doesFileExist fp 
+    if b 
+      then do 
+        r <- okCancelMessageBox ("Overwrite " ++ fp ++ "???") 
+        if r then action else return () 
+      else action 
 
 -- | 
 fileNew :: MainCoroutine () 
@@ -225,11 +231,8 @@ renderjob :: RHoodle -> FilePath -> IO ()
 renderjob h ofp = do 
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let Dim width height = view gdimension p  
-  let -- rf :: InBBox RPage -> Render ()
-      -- rf x = cairoRenderOption (InBBoxOption Nothing) x >> return ()  
-      rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
+  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
   withPDFSurface ofp width height $ \s -> renderWith s $  
-    -- (sequence1_ showPage . map renderPage . hoodle_pages) h 
     (sequence1_ showPage . map rf . IM.elems . view gpages ) h 
 
 -- | 
@@ -242,7 +245,7 @@ fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) act
       then fileExtensionInvalid (".pdf","export") >> fileExport 
       else do      
         xstate <- get 
-        let hdl = getHoodle xstate -- (rHoodle2Hoodle . getHoodle) xstate 
+        let hdl = getHoodle xstate 
         liftIO (renderjob hdl filename) 
 
 
@@ -316,27 +319,28 @@ fileSaveAs = do
               if takeExtension filename /= ".hdl" 
               then fileExtensionInvalid (".hdl","save")
               else do 
-                let ntitle = B.pack . snd . splitFileName $ filename 
-                    (hdlmodst',hdl') = case view hoodleModeState xst' of
-                       ViewAppendState hdlmap -> 
-                         if view gtitle hdlmap == "untitled"
-                           then ( ViewAppendState . set gtitle ntitle
-                                  $ hdlmap
-                                , (set title ntitle hd))
-                           else (ViewAppendState hdlmap,hd)
-                       SelectState thdl -> 
-                         if view gselTitle thdl == "untitled"
-                           then ( SelectState $ set gselTitle ntitle thdl 
-                                , set title ntitle hd)  
-                           else (SelectState thdl,hd)
-                    xstateNew = set (hoodleFileControl.hoodleFileName) (Just filename) 
-                              . set hoodleModeState hdlmodst' $ xst'
-                liftIO . L.writeFile filename . builder $ hdl'
-                put . set isSaved True $ xstateNew    
-                let ui = view gtkUIManager xstateNew
-                liftIO $ toggleSave ui False
-                liftIO $ setTitleFromFileName xstateNew 
-                S.afterSaveHook filename hdl'
+                askIfOverwrite filename $ do 
+                  let ntitle = B.pack . snd . splitFileName $ filename 
+                      (hdlmodst',hdl') = case view hoodleModeState xst' of
+                         ViewAppendState hdlmap -> 
+                           if view gtitle hdlmap == "untitled"
+                             then ( ViewAppendState . set gtitle ntitle
+                                    $ hdlmap
+                                  , (set title ntitle hd))
+                             else (ViewAppendState hdlmap,hd)
+                         SelectState thdl -> 
+                           if view gselTitle thdl == "untitled"
+                             then ( SelectState $ set gselTitle ntitle thdl 
+                                  , set title ntitle hd)  
+                             else (SelectState thdl,hd)
+                      xstateNew = set (hoodleFileControl.hoodleFileName) (Just filename) 
+                                . set hoodleModeState hdlmodst' $ xst'
+                  liftIO . L.writeFile filename . builder $ hdl'
+                  put . set isSaved True $ xstateNew    
+                  let ui = view gtkUIManager xstateNew
+                  liftIO $ toggleSave ui False
+                  liftIO $ setTitleFromFileName xstateNew 
+                  S.afterSaveHook filename hdl'
           
 
 -- | main coroutine for open a file 
@@ -433,7 +437,7 @@ makeNewItemImage isembedded filename =
           bstr <- savePngByteString img 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) dim -- (Dim 300 300)
+          return . ItemImage $ Image ebdsrc (100,100) dim 
         loadjpg = do 
           img <- loadJpegFile filename
           (w,h) <- imageSize img 
@@ -442,7 +446,7 @@ makeNewItemImage isembedded filename =
           bstr <- savePngByteString img 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) dim -- (Dim 300 300)   
+          return . ItemImage $ Image ebdsrc (100,100) dim 
             
 -- | 
 fileLoadSVG :: MainCoroutine ()
@@ -488,15 +492,12 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel "latex input"
                  vbox <- dialogGetUpper dialog
-                 -- entry <- entryNew 
-                 -- boxPackStart vbox entry PackGrow 0
                  txtvw <- textViewNew
                  boxPackStart vbox txtvw PackGrow 0 
                  widgetShowAll dialog
                  res <- dialogRun dialog 
                  case res of 
                    ResponseOk -> do 
-                     -- l <- entryGetText entry
                      buf <- textViewGetBuffer txtvw 
                      istart <- textBufferGetStartIter buf
                      iend <- textBufferGetEndIter buf
@@ -639,30 +640,6 @@ embedPredefinedImage3 = do
         put nxstate2
         invalidateAll         
         
-{-        
-        
-    let Dim w h = view gdimension pg 
-        bkg = view gbackground pg   
-    case bkg of 
-      RBkgPDF _ f n mpdf msfc -> do 
-        case mpdf of 
-          Nothing -> return pg 
-          Just pdf -> do 
-            let args = ["A="++B.unpack f, "cat", "A"++ show n, "output", "-"] 
-            print args 
-            (_,Just hout,_,_) <- createProcess (proc "pdftk" args) { std_out = CreatePipe } 
-            
-
-            bstr <- L.hGetContents hout
-
-            let -- bstr = B.pack str 
-                b64str = (encode . concat . L.toChunks) bstr 
-                ebdsrc = "data:application/x-pdf;base64," <> b64str
-            let nbkg = RBkgEmbedPDF n mpdf msfc 
-            return (set gbackground nbkg pg)
-      _ -> return pg 
--}
-
 -- | 
 embedAllPDFBackground :: MainCoroutine () 
 embedAllPDFBackground = do 

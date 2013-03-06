@@ -14,9 +14,9 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-render
 
-Flag Poppler
-  Description: Enable poppler support
-  Default:     False
+-- Flag Poppler
+--   Description: Enable poppler support
+--   Default:     False
 
 Library
   hs-source-dirs: src
@@ -36,12 +36,13 @@ Library
                  lens >= 2.5, 
                  hoodle-types >= 0.2,
                  gd >= 3000.7, 
-                 hoodle-common >= 0.1 
+                 hoodle-common >= 0.1,
+                 poppler >= 0.12.2.2
 
-  if flag(poppler)
-    Build-Depends: poppler >= 0.12.2.2
-  else 
-    Build-Depends: 
+--   if flag(poppler)
+--    Build-Depends: poppler >= 0.12.2.2
+--  else 
+--     Build-Depends: 
 
   Exposed-Modules: 
                    Graphics.Hoodle.Render 
@@ -59,5 +60,6 @@ Library
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
                    Graphics.Hoodle.Render.Util.HitTest
-  if flag(poppler)
-    cpp-options: -DPOPPLER
+
+--  if flag(poppler)
+--    cpp-options: -DPOPPLER

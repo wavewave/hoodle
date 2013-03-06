@@ -17,9 +17,7 @@ module Graphics.Hoodle.Render.Type.Background where
 
 import           Data.ByteString 
 import           Graphics.Rendering.Cairo
-#ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-#endif
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple 
@@ -32,13 +30,8 @@ import Prelude hiding (mapM_)
 -- | 
 data Context = Context { ctxt_domain :: ByteString
                        , ctxt_filename :: ByteString 
-#ifdef POPPLER
                        , ctxt_doc :: Maybe Poppler.Document
                        , ctxt_embeddeddoc :: Maybe Poppler.Document
-#else
-                       , ctxt_doc :: Maybe ()
-                       , ctxt_embeddeddoc :: Maybe () 
-#endif 
                        }
 
 -- |
@@ -51,19 +44,11 @@ data RBackground = RBkgSmpl
                    { rbkg_domain :: Maybe ByteString
                    , rbkg_filename :: ByteString
                    , rbkg_pageno :: Int 
-#ifdef POPPLER
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-#else    
-                   , rbkg_popplerpage :: Maybe ()
-#endif
                    , rbkg_cairosurface :: Maybe Surface } 
                  | RBkgEmbedPDF
                    { rbkg_pageno :: Int
-#ifdef POPPLER
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-#else    
-                   , rbkg_popplerpage :: Maybe ()
-#endif
                    , rbkg_cairosurface :: Maybe Surface } 
 
 
@@ -83,12 +68,5 @@ rbkg2Bkg (RBkgPDF d f n _ _ ) = BackgroundPdf "pdf" d (Just f) n
 rbkg2Bkg (RBkgEmbedPDF n _ _) = BackgroundEmbedPdf "embedpdf" n
 
 
-{-
--- |
-bkg2RBkg :: Background -> RBackground
-bkg2RBkg (Background _t c s) = RBkgSmpl c s Nothing
-bkg2RBkg (BackgroundPdf _t md mf pn) = RBkgPDF md mf pn Nothing Nothing
-bkg2RBkg (BackgroundEmbedPdf _ s) = RBkgEmbedPDF s Nothing Nothing 
--}
 
 

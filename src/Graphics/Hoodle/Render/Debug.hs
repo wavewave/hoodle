@@ -45,9 +45,6 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined 
--- #ifdef POPPLER
--- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
--- #endif
 -- from this package
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type 
@@ -108,6 +105,14 @@ renderSVGBBx_BBoxOnly svg = do
     rectangle x1 y1 (x2-x1) (y2-y1)
     stroke
 
+renderLnkBBx_BBoxOnly :: BBoxed Link -> Render () 
+renderLnkBBx_BBoxOnly lnk = do 
+    setSourceRGBA 0 0 0 1
+    setLineWidth 10
+    let BBox (x1,y1) (x2,y2) = getBBox lnk
+    rectangle x1 y1 (x2-x1) (y2-y1)
+    stroke
+
     
 
 -- | 
@@ -115,6 +120,7 @@ renderRItem_BBoxOnly :: RItem -> Render ()
 renderRItem_BBoxOnly (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
 renderRItem_BBoxOnly (RItemSVG svg _) = renderSVGBBx_BBoxOnly svg
+renderRItem_BBoxOnly (RItemLink lnk _) = renderLnkBBx_BBoxOnly lnk
 
 
 -- | 

@@ -15,56 +15,50 @@
 
 module Graphics.Hoodle.Render.Background where
 
--- import           Control.Applicative
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
 import           Graphics.Rendering.Cairo
 --
 import qualified Data.Map as M
-#ifdef POPPLER
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-#endif
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 import           Data.Hoodle.Simple
--- import           Hoodle.Util.Process
 --
 import           Graphics.Hoodle.Render.Type.Background
 -- 
 import Prelude hiding (mapM_)
 
+{-
 isPopplerEnabled :: Bool  
 #ifdef POPPLER
 isPopplerEnabled = True 
 #else
 isPopplerEnabled = False
 #endif
- 
+-} 
 
-#ifdef POPPLER
+-- |
 popplerGetDocFromFile :: ByteString -> IO (Maybe Poppler.Document)
 popplerGetDocFromFile fp = 
   Poppler.documentNewFromFile 
     (C.unpack ("file://localhost" `mappend` fp)) Nothing 
-#endif
 
-#ifdef POPPLER
+-- |
 getByteStringIfEmbeddedPDF :: ByteString -> Maybe ByteString 
 getByteStringIfEmbeddedPDF bstr = do 
     guard (C.length bstr > 30)
     let (header,dat) = C.splitAt 30 bstr 
     guard (header == "data:application/x-pdf;base64,") 
     either (const Nothing) return (decode dat)
-#endif
 
-
-#ifdef POPPLER
+-- | 
 popplerGetDocFromDataURI :: ByteString -> IO (Maybe Poppler.Document) 
 popplerGetDocFromDataURI dat = do 
   let mdecoded = getByteStringIfEmbeddedPDF dat 
@@ -73,12 +67,9 @@ popplerGetDocFromDataURI dat = do
     Just decoded -> do 
       C.writeFile "/tmp/popplertest.pdf" decoded 
       popplerGetDocFromFile "/tmp/popplertest.pdf"
-      -- pipeActionWith (C.writeFile "/dev/stdout" decoded) 
-      --   (\fn -> popplerGetDocFromFile (C.pack fn))
-#endif
 
 
-#ifdef POPPLER             
+-- |
 popplerGetPageFromDoc :: Poppler.Document 
                       -> Int -- ^ page number 
                       -> IO (Maybe Poppler.Page, Maybe Surface)
@@ -92,7 +83,6 @@ popplerGetPageFromDoc doc pn = do
     fill
     PopplerPage.pageRender pg
   return (Just pg, Just sfc)
-#endif
 
 -- | draw ruling all 
 drawRuling :: Double -> Double -> ByteString -> Render () 
@@ -220,7 +210,6 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
     BackgroundPdf _t md mf pn -> do 
       case (md,mf) of 
         (Just d, Just f) -> do 
-#ifdef POPPLER
            mdoc <- liftIO $ popplerGetDocFromFile f
            put $ Just (Context d f mdoc Nothing)
            case mdoc of 
@@ -228,39 +217,24 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
                (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
                return (RBkgPDF md f pn mpg msfc)
              Nothing -> error "error1 in cnstrctRBkg_StateT"
-#else
-           return (RBkgPDF md f pn Nothing Nothing)
-#endif  
         _ -> do 
           mctxt <- get
           case mctxt of  
             Just (Context oldd oldf olddoc _) -> do 
               (mpage,msfc) <- case olddoc of 
                 Just doc -> do 
-#ifdef POPPLER
                   liftIO $ popplerGetPageFromDoc doc pn
-#else
-                  return (Nothing,Nothing)
-#endif
                 Nothing -> error "error2 in cnstrctRBkg_StateT" 
               return (RBkgPDF (Just oldd) oldf pn mpage msfc)
             Nothing -> error "error3 in cnstrctRBkg_StateT" 
     BackgroundEmbedPdf _ pn -> do 
-#ifdef POPPLER
       mctxt <- get
       case mctxt of  
         Just (Context _ _ _ mdoc) -> do 
           (mpage,msfc) <- case mdoc of 
             Just doc -> do 
-#ifdef POPPLER
               liftIO $ popplerGetPageFromDoc doc pn
-#else
-              return (Nothing,Nothing)
-#endif
             Nothing -> error "error4 in cnstrctRBkg_StateT" 
           return (RBkgEmbedPDF pn mpage msfc)
         Nothing -> error "error5 in cnstrctRBkg_StateT" 
-#else
-      return (RBkgEmbedPDF pn Nothing Nothing)
-#endif  
 

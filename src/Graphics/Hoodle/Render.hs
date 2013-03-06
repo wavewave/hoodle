@@ -61,9 +61,7 @@ import           Data.Hoodle.Simple
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 import           Data.Hoodle.Zipper 
-#ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-#endif
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 -- from this package
 -- import Graphics.Hoodle.Render.Simple 
@@ -204,40 +202,8 @@ renderRBkg (r,dim) =
       setSourceRGBA 1 1 1 1
       rectangle 0 0 w h 
       fill
-#ifdef POPPLER
       PopplerPage.pageRender pg
-#endif
 
-{-
-        case p of 
-          Nothing -> return () 
-          Just pg -> do 
-            let Dim w h = dim 
-            setSourceRGBA 1 1 1 1
-            rectangle 0 0 w h 
-            fill
-#ifdef POPPLER
-            PopplerPage.pageRender pg
-#endif     
-        return (r,dim) 
--}
-
-
-{-
-  case view gbuffer layer of 
-    LyBuf (Just sfc) -> do 
-      liftIO $ renderWith sfc $ do 
-        -- renderRLayer_InBBox mbbox lyr 
-        clipBBox (fmap (flip inflate 1) mbbox )
-        setSourceRGBA 0 0 0 0 
-        setOperator OperatorSource
-        paint
-        setOperator OperatorOver
-        (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
-        resetClip 
-        return layer 
-    _ -> return layer 
--}
 
 
 -- |
@@ -251,14 +217,12 @@ renderRItem itm@(RItemImage img msfc) = do
           BBox (x1,y1) (x2,y2) = getBBox img
       ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
       iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
-      -- clipBBox (Just (getBBox img))
       save 
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       setSourceSurface sfc 0 0 
       paint 
       restore
-      -- resetClip 
   return itm 
 renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
   case mrsvg of
@@ -448,17 +412,11 @@ cnstrctRHoodle hdl = do
       ttl = view title hdl 
       pgs = view pages hdl
       embeddedsrc = view embeddedPdf hdl 
-#ifdef POPPLER
   mdoc <- maybe (return Nothing) (\src -> liftIO $ popplerGetDocFromDataURI src)
             embeddedsrc
-#else 
-  let mdoc = Nothing 
-#endif 
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) (Just (Context "" "" Nothing mdoc)) 
   return $ GHoodle hid ttl embeddedsrc (fromList npgs)          
    
-  -- set gtitle ttl . set gembeddedpdf embeddedsrc . set gpages (fromList npgs) <$> emptyGHoodle 
-    
 
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) IO RPage
@@ -470,9 +428,9 @@ cnstrctRPage_StateT pg = do
   let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
       nlyrs = fromNonEmptyList nlyrs_nonemptylst 
   nbkg <- cnstrctRBkg_StateT dim bkg
-  return $ GPage dim nbkg nlyrs -- emptyGPage dim nbkg 
+  return $ GPage dim nbkg nlyrs 
     
-
+-- |
 cnstrctRLayer :: Layer -> IO RLayer 
 cnstrctRLayer lyr = do 
   nitms <- (mapM cnstrctRItem . view items) lyr 

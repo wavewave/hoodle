@@ -67,7 +67,8 @@ Library
                    base64-bytestring >= 0.1, 
                    old-locale >= 1.0, 
                    uuid >= 1.2.7, 
-                   monad-loops >= 0.3
+                   monad-loops >= 0.3, 
+                   network 
   if flag(poppler) 
     Build-Depends:   poppler >= 0.12.2.2 
   else 

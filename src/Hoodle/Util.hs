@@ -1,7 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Util 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -12,8 +14,11 @@
 
 module Hoodle.Util where
 
+import Control.Applicative 
+import Data.Attoparsec.Char8 
+import qualified Data.ByteString.Char8 as B
 import Data.Maybe
-import Data.Hoodle.Simple
+import Network.URI
 
 import System.Directory 
 import System.Environment 
@@ -22,6 +27,10 @@ import System.IO
 import Data.Time.Clock 
 import Data.Time.Format
 import System.Locale
+-- 
+import Data.Hoodle.Simple
+
+
 
 -- for test
 -- import Blaze.ByteString.Builder
@@ -92,6 +101,33 @@ errorlog str = do
 maybeError' :: String -> Maybe a -> a
 maybeError' str = maybe (error str) id
 
+
+
+data UrlPath = FileUrl FilePath 
+
+-- | 
+urlParse :: String -> Maybe UrlPath 
+urlParse str = 
+  if length str < 7 
+    then Just (FileUrl str) 
+    else 
+      let p = string "file://" *> manyTill anyChar (satisfy (inClass "\r\n"))
+          r = parseOnly p (B.pack str)
+      in case r of 
+           Left _ -> Just (FileUrl str) 
+           Right f -> Just (FileUrl (unEscapeString f))
+    
+    
+{-    
+    case str of
+    
+           _ -> Just (FileUrl str) 
+-}
+    
+    
+    {- 
+           'f':'i':'l':'e':':':'/':'/':fp -> Just (FileUrl (head (lines fp)))
+ -}
 
 {-
 timeShow :: String -> IO () 

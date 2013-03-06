@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-sudo apt-get install libgd2-xpm-dev 
+sudo apt-get install libgd2-xpm-dev libpoppler-glib-dev
 
 cabal install transformers
 cabal install hscolour

@@ -1,6 +1,6 @@
 #!/bin/bash 
 
-sudo apt-get install cadaver libgd2-xpm-dev 
+sudo apt-get install libgd2-xpm-dev 
 
 cabal install transformers
 cabal install hscolour
@@ -17,12 +17,16 @@ cabal install gtk2hs-buildtools
 $HOME/.cabal/bin/build bootstrap --config=build.conf
 
 # for documentation of dep packages
-#$HOME/.cabal/bin/build haddockboot --config=build.conf 
+$HOME/.cabal/bin/build haddockboot --config=build.conf 
 
 # for documentation of this package
-#cabal install  --enable-documentation
-#cabal haddock --hyperlink-source
-#cabal copy 
+cabal install  --enable-documentation
+cabal haddock --hyperlink-source
+cabal copy 
+
+tar cvzf hoodle-core.tar.gz $HOME/.cabal/share/doc/hoodle* $HOME/.cabal/share/doc/xournal* $HOME/.cabal/share/doc/coroutine-object*
+echo $CR | curl --digest -T hoodle-core.tar.gz -K - $SRVRURL 
+
 
 # this is needed for checking
 cabal install --enable-tests

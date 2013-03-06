@@ -24,7 +24,6 @@ import           Control.Monad
 import           Data.Attoparsec 
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set)
-#ifdef POPPLER
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import qualified Data.IntMap as IM
@@ -32,7 +31,6 @@ import           Data.Monoid ((<>))
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           Graphics.Hoodle.Render.Background
-#endif
 import           System.Directory (canonicalizePath)
 import           System.FilePath (takeExtension)
 import           System.Process
@@ -161,7 +159,6 @@ makeNewHoodleWithPDF :: Bool              -- ^ doesEmbedPDF
                      -> FilePath          -- ^ pdf file
                      -> IO (Maybe Hoodle) 
 makeNewHoodleWithPDF doesembed fp = do 
-#ifdef POPPLER
   canonicalfp <- canonicalizePath fp 
   let fname = C.pack canonicalfp 
   mdoc <- popplerGetDocFromFile fname
@@ -186,9 +183,6 @@ makeNewHoodleWithPDF doesembed fp = do
                   return (set embeddedPdf (Just ebdsrc) hdl)
                 else return hdl 
       return (Just nhdl)
-#else
-      return Nothing
-#endif
       
 -- | 
       

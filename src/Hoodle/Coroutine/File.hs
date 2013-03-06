@@ -35,10 +35,8 @@ import qualified Data.IntMap as IM
 import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
-#ifdef POPPLER
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-#endif
 import           System.Directory
 import           System.Exit 
 import           System.FilePath

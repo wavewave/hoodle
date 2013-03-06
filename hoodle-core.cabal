@@ -22,9 +22,9 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-core
 
-Flag Poppler
-  Description: Enable poppler support
-  Default:     False
+-- Flag Poppler
+--  Description: Enable poppler support
+--  Default:     False
 
 
 Library
@@ -68,11 +68,13 @@ Library
                    old-locale >= 1.0, 
                    uuid >= 1.2.7, 
                    monad-loops >= 0.3, 
-                   network 
-  if flag(poppler) 
-    Build-Depends:   poppler >= 0.12.2.2 
-  else 
-    Build-Depends:
+                   network, 
+                   poppler >= 0.12.2.2
+                   
+--   if flag(poppler) 
+--     Build-Depends:    
+--   else 
+--     Build-Depends:
 
 
   Exposed-Modules: 
@@ -143,5 +145,6 @@ Library
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
   cc-options:      -Wno-pointer-to-int-cast
-  if flag(poppler)
-    cpp-options: -DPOPPLER
+
+--   if flag(poppler)
+--    cpp-options: -DPOPPLER

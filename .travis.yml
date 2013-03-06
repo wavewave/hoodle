@@ -1,4 +1,8 @@
 language: haskell
 
+env:
+  global:
+    secure: "RdjQI1oohrTGHCrDt3wNUpzo6v973TxyLN/3676ZXgFeXTsvo5CPZtwUonpR\na9mZBClJbAvDJD3W9blUuCuF/KE/XGWztnhB9O2nY1ng9c/7k3me0sMLylYO\n9N4Gk2IIOcBZSLrbGLQm45Qg5/58E9XDet4OvQUTZqEYqaoWdWc="   
+
 install:  sh ./builddep.sh
 

@@ -109,6 +109,11 @@ gotLink mstr (x,y) = do
           let ext = takeExtension file 
           if ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG" 
             then do 
+              let isembedded = view (settings.doesEmbedImage) xst 
+              nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded file) 
+              insertItemAt Nothing nitm 
+            
+{-            
               currpage <- getCurrentPageCurr 
               let isembedded = view (settings.doesEmbedImage) xst 
                   pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xst
@@ -128,7 +133,7 @@ gotLink mstr (x,y) = do
               let nxst2 = set hoodleModeState (SelectState nthdl) nxst
               put nxst2
               invalidateAll 
-              
+-}              
               
 {-              let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 

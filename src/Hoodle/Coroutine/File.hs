@@ -74,6 +74,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState
+import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 import           Hoodle.View.Draw
 --
@@ -392,7 +393,11 @@ fileLoadPNGorJPG = do
     fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do  
-      xstate <- get 
+      xst <- get 
+      let isembedded = view (settings.doesEmbedImage) xst 
+      nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
+      insertItemAt Nothing nitm 
+{-      xstate <- get 
       liftIO $ putStrLn filename 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
           hdl = getHoodle xstate 
@@ -411,8 +416,58 @@ fileLoadPNGorJPG = do
       nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
       let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
       put nxstate2
-      invalidateAll 
+      invalidateAll  
+-}
 
+
+insertItemAt :: Maybe (PageNum,PageCoordinate) 
+                -> RItem 
+                -> MainCoroutine () 
+insertItemAt mpcoord ritm = do 
+    xst <- get   
+    let hdl = getHoodle xst 
+    let (pgnum,mpos) = case mpcoord of 
+          Just (PageNum n,pos) -> (n,Just pos)
+          Nothing -> ((unboxGet currentPageNum.view currentCanvasInfo) xst,Nothing)
+    let pg = getPageFromGHoodleMap pgnum hdl
+        lyr = getCurrentLayer pg 
+        oitms = view gitems lyr  
+        ntpg = makePageSelectMode pg (oitms :- (Hitted [ritm]) :- Empty)  
+    modeChange ToSelectMode 
+    nxst <- get 
+    thdl <- case view hoodleModeState nxst of
+      SelectState thdl' -> return thdl'
+      _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
+    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+    let nxst2 = set hoodleModeState (SelectState nthdl) nxst
+    put nxst2
+    invalidateAll  
+        
+        
+                               
+{-
+      liftIO $ putStrLn filename 
+      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+          hdl = getHoodle xstate 
+          currpage = getPageFromGHoodleMap pgnum hdl
+          currlayer = getCurrentLayer currpage
+          isembedded = view (settings.doesEmbedImage) xstate 
+      newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
+      
+      let otheritems = view gitems currlayer  
+      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+      modeChange ToSelectMode 
+      nxstate <- get 
+      thdl <- case view hoodleModeState nxstate of
+                SelectState thdl' -> return thdl'
+                _ -> (lift . EitherT . return . Left . Other) "fileLoadPNGorJPG"
+      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+      put nxstate2
+      invalidateAll  
+-}
+  
+  
 
 
 -- | 

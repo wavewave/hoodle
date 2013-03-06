@@ -117,17 +117,6 @@ urlParse str =
            Left _ -> Just (FileUrl str) 
            Right f -> Just (FileUrl (unEscapeString f))
     
-    
-{-    
-    case str of
-    
-           _ -> Just (FileUrl str) 
--}
-    
-    
-    {- 
-           'f':'i':'l':'e':':':'/':'/':fp -> Just (FileUrl (head (lines fp)))
- -}
 
 {-
 timeShow :: String -> IO () 

@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.Select.Clipboard where
 
 -- from other packages
-import           Control.Lens
+import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State 
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 

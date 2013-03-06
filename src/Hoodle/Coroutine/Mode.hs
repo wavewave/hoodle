@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Mode 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,8 +15,7 @@
 module Hoodle.Coroutine.Mode where
 
 import           Control.Applicative
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad.State 
 -- import           Control.Monad.Trans
 import qualified Data.IntMap as M
@@ -45,7 +44,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.View.Coordinate
 --
-import Prelude hiding ((.),id, mapM_, mapM)
+import Prelude hiding (mapM_, mapM)
 
 modeChange :: MyEvent -> MainCoroutine () 
 modeChange command = do 

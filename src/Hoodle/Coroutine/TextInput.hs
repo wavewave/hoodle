@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
-import           Control.Lens
+import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State 
 -- import           Control.Monad.Trans
 import           Control.Monad.Trans.Either

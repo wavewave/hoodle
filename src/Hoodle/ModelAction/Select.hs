@@ -15,8 +15,7 @@
 module Hoodle.ModelAction.Select where
 
 -- from other package
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad
 import           Data.Algorithm.Diff
 import           Data.Foldable (foldl')
@@ -50,8 +49,6 @@ import           Hoodle.Type.PageArrangement
 
 import           Hoodle.View.Coordinate
 -- 
-import Prelude hiding ((.),id)
-
 
 -- |
 data Handle = HandleTL

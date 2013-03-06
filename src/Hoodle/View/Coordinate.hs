@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Coordinate
--- Copyright   : (c) 2012 Ian-Woo Kim
+-- Copyright   : (c) 2012,2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -16,8 +16,7 @@ module Hoodle.View.Coordinate where
 
 
 import           Control.Applicative
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad 
 import           Data.Foldable (toList)
 import qualified Data.IntMap as M
@@ -34,7 +33,6 @@ import Hoodle.Type.Canvas
 import Hoodle.Type.PageArrangement
 import Hoodle.Type.Alias
 -- 
-import Prelude hiding ((.),id)
 
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 

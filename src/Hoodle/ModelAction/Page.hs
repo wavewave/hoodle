@@ -15,8 +15,7 @@
 module Hoodle.ModelAction.Page where
 
 import           Control.Applicative
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad (liftM)
 -- import           Control.Monad.Trans.Either
 import qualified Data.IntMap as M
@@ -39,7 +38,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Predefined
 import           Hoodle.View.Coordinate
 -- 
-import           Prelude hiding ((.),id,mapM)
+import           Prelude hiding (mapM)
 
 
 -- |

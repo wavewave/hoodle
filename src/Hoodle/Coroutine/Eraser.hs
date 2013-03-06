@@ -12,11 +12,9 @@
 
 module Hoodle.Coroutine.Eraser where
 
-import Control.Category
--- import Data.Label
 import qualified Data.IntMap as IM
-import Control.Lens
-import Control.Monad.State 
+import           Control.Lens (view,set,over)
+import           Control.Monad.State 
 import qualified Control.Monad.State as St
 -- import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- 
@@ -42,7 +40,6 @@ import Hoodle.ModelAction.Eraser
 import Hoodle.ModelAction.Layer
 import Hoodle.Coroutine.Pen 
 --
-import Prelude hiding ((.), id)
 
 -- |
 eraserStart :: CanvasId 

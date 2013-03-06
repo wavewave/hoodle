@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.Select.Transform where
 
 -- from other packages
-import Control.Lens 
+import Control.Lens (view,set,over)
 import Control.Monad.State 
 -- import Control.Monad.Trans
 -- from hoodle-platform 

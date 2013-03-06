@@ -14,8 +14,7 @@
 
 module Hoodle.Coroutine.Window where
 
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Data.Maybe
@@ -40,7 +39,6 @@ import           Hoodle.Type.Window
 -- import           Hoodle.Util
 import           Hoodle.View.Draw
 --
-import Prelude hiding ((.),id)
 
 -- | canvas configure with general zoom update func
 canvasConfigureGenUpdate :: MainCoroutine () 

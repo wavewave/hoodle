@@ -18,8 +18,7 @@ module Hoodle.ModelAction.File where
 
 -- from other package
 import           Control.Applicative
--- import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad
 import           Data.Attoparsec 
 import           Data.Maybe 

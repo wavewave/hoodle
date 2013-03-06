@@ -17,7 +17,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative ((<$>))
 import           Control.Category
 import           Control.Concurrent 
-import           Control.Lens
+import           Control.Lens (view,set,over,at,(.~),(%~))
 import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.ByteString.Char8 as B

@@ -14,8 +14,7 @@
 
 module Hoodle.Coroutine.Page where
 
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad
 import           Control.Monad.State
 import qualified Data.IntMap as M
@@ -41,7 +40,6 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
-import Prelude hiding ((.), id)
 
 -- | change page of current canvas using a modify function
 changePage :: (Int -> Int) -> MainCoroutine () 

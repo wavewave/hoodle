@@ -17,9 +17,8 @@
 module Hoodle.Coroutine.File where
 
 -- from other packages
-import           Control.Category
 import           Control.Concurrent
-import           Control.Lens
+import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM)
 import           Control.Monad.Trans.Either
@@ -78,7 +77,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 import           Hoodle.View.Draw
 --
-import Prelude hiding ((.),id,readFile,concat,mapM)
+import Prelude hiding (readFile,concat,mapM)
 
 
 -- | 

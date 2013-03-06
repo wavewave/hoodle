@@ -16,9 +16,8 @@ module Hoodle.Coroutine.Draw where
 
 -- from other packages
 import           Control.Applicative 
-import           Control.Category
 import qualified Data.IntMap as M
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.State
@@ -36,7 +35,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState
 import           Hoodle.View.Draw
 -- 
-import Prelude hiding ((.),id)
+
 
 -- |
 data DrawingFunctionSet = 

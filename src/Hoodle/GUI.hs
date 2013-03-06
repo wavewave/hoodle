@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -14,9 +14,8 @@
 
 module Hoodle.GUI where
 
-import           Control.Category
 import           Control.Exception
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
@@ -42,7 +41,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 --
-import           Prelude hiding ((.),id,catch)
+import           Prelude hiding (catch)
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 

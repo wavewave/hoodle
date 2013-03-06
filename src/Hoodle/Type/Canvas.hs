@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Canvas 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -84,8 +84,7 @@ module Hoodle.Type.Canvas
 ) where
 
 import           Control.Applicative ((<*>),(<$>))
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (Simple(..),Lens(..),view,set,over,lens)
 import qualified Data.IntMap as M
 import           Data.Sequence
 import           Graphics.Rendering.Cairo
@@ -98,7 +97,6 @@ import           Data.Hoodle.Predefined
 import           Hoodle.Type.Enum 
 import           Hoodle.Type.PageArrangement
 --
-import Prelude hiding ((.), id)
 
 
 -- |

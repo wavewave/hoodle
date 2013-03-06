@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Window 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,8 +15,7 @@
 module Hoodle.ModelAction.Window where
 
 -- from other packages
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set)
@@ -31,7 +30,7 @@ import           Hoodle.Type.Window
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 -- 
-import Prelude hiding ((.),id)
+
 
 
 

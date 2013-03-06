@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Pen 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -14,8 +14,7 @@
 
 module Hoodle.ModelAction.Pen where
 
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad.Identity (runIdentity)
 import           Data.Foldable
 import qualified Data.IntMap as IM
@@ -36,7 +35,6 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 --
-import Prelude hiding ((.), id)
 
 -- | 
 addPDraw :: PenInfo 

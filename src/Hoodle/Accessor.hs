@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Accessor 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,9 +15,8 @@
 module Hoodle.Accessor where
 
 import           Control.Applicative
--- import           Control.Category
 import           Control.Concurrent (threadDelay)
-import           Control.Lens
+import           Control.Lens (Simple,Lens(..),view,set,over)
 import           Control.Monad hiding (mapM_, forM_)
 import           Control.Monad.Loops 
 import qualified Control.Monad.State as St hiding (mapM_, forM_)

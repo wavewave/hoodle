@@ -14,9 +14,8 @@
 
 module Hoodle.Coroutine.Scroll where
 
-import           Control.Category
 -- import           Control.Concurrent
-import           Control.Lens
+import           Control.Lens (view,set,over)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
@@ -36,7 +35,6 @@ import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import           Prelude hiding ((.), id)
 
 -- | 
 moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))

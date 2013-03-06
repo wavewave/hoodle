@@ -14,7 +14,7 @@
 
 module Hoodle.Type.Enum where
 
-import           Control.Lens 
+import           Control.Lens (Simple(..),Lens(..),view,set,over,lens)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import           Data.Maybe 

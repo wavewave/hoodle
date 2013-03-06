@@ -18,7 +18,7 @@ module Hoodle.Type.PageArrangement where
 import           Control.Applicative
 -- import           Control.Category ((.))
 -- import           Control.Error.Util (note)
-import           Control.Lens
+import           Control.Lens (Simple(..),Lens(..),view,set,over,lens)
 import           Data.Foldable (toList)
 -- import           Data.Maybe (fromJust)
 -- from hoodle-platform 

@@ -18,8 +18,7 @@
 module Hoodle.Coroutine.Link where
 
 import           Control.Applicative
-import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either 
 import           Control.Monad.Trans.Maybe 
@@ -60,7 +59,7 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import Prelude hiding ((.),id, mapM_, mapM)
+import Prelude hiding (mapM_, mapM)
 
 notifyLink :: CanvasId -> PointerCoord -> MainCoroutine () 
 notifyLink cid pcoord = do 

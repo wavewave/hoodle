@@ -17,7 +17,7 @@ module Hoodle.Coroutine.ContextMenu where
 -- from other packages
 import           Control.Applicative
 import           Control.Category
-import           Control.Lens
+import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State
 import           Data.Attoparsec 
 import qualified Data.ByteString.Char8 as B

@@ -13,7 +13,6 @@
 module Hoodle.ModelAction.Item where
 
 -- from other packages
-import           Control.Category
 import           Control.Lens (view,set,over)
 import           Data.IORef
 import           Graphics.UI.Gtk hiding (get,set)
@@ -26,6 +25,6 @@ import           Graphics.Hoodle.Render.Type
 import           Hoodle.Util
 import           Hoodle.Type.Alias
 -- 
-import Prelude hiding ((.),id)
+
 
 

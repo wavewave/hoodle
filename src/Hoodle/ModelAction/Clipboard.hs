@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Clipboard 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,7 +15,7 @@
 module Hoodle.ModelAction.Clipboard where
 
 -- from other package
-import           Control.Lens 
+import           Control.Lens (view,set,over)
 import           Control.Monad.Trans
 import qualified Data.ByteString.Base64 as B64 
 import qualified Data.ByteString.Char8 as C8

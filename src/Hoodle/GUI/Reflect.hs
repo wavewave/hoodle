@@ -14,7 +14,7 @@
 
 module Hoodle.GUI.Reflect where
 
-import Control.Lens
+import Control.Lens (view,set,Simple(..),Lens(..),(%~))
 import Control.Monad
 -- import Control.Monad.Loops
 import qualified Control.Monad.State as St

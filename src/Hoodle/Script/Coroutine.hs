@@ -14,8 +14,7 @@
 
 module Hoodle.Script.Coroutine where
 
-import           Control.Lens
--- import           Control.Monad 
+import           Control.Lens (view,set,over)
 import           Control.Monad.State 
 import           Control.Monad.Trans.Maybe
 -- from hoodle-platform

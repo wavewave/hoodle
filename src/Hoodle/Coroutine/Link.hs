@@ -111,29 +111,13 @@ gotLink mstr (x,y) = do
             then do 
               let isembedded = view (settings.doesEmbedImage) xst 
               nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded file) 
-              insertItemAt Nothing nitm 
+              geometry <- liftIO $ getCanvasGeometryCvsId cid xst               
+              let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
+                  mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) 
+                               ccoord 
+              
+              insertItemAt mpgcoord nitm 
             
-{-            
-              currpage <- getCurrentPageCurr 
-              let isembedded = view (settings.doesEmbedImage) xst 
-                  pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xst
-                  hdl = getHoodle xst
-                  currlayer = getCurrentLayer currpage 
-              geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
-              nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded file)
-              let oitms = view gitems currlayer 
-                  ntpg = makePageSelectMode currpage 
-                           (oitms :- (Hitted [nitm]) :- Empty)
-              modeChange ToSelectMode 
-              nxst <- get 
-              thdl <- case view hoodleModeState nxst of
-                        SelectState thdl' -> return thdl'
-                        _  -> (lift . EitherT . return . Left . Other) "fileLoadPNGorJPG"
-              nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-              let nxst2 = set hoodleModeState (SelectState nthdl) nxst
-              put nxst2
-              invalidateAll 
--}              
               
 {-              let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 

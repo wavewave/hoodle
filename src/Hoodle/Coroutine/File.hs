@@ -47,6 +47,7 @@ import           System.Process
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
+import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
@@ -66,6 +67,7 @@ import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
@@ -397,27 +399,6 @@ fileLoadPNGorJPG = do
       let isembedded = view (settings.doesEmbedImage) xst 
       nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
       insertItemAt Nothing nitm 
-{-      xstate <- get 
-      liftIO $ putStrLn filename 
-      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
-          hdl = getHoodle xstate 
-          currpage = getPageFromGHoodleMap pgnum hdl
-          currlayer = getCurrentLayer currpage
-          isembedded = view (settings.doesEmbedImage) xstate 
-      newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
-      
-      let otheritems = view gitems currlayer  
-      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
-      modeChange ToSelectMode 
-      nxstate <- get 
-      thdl <- case view hoodleModeState nxstate of
-                SelectState thdl' -> return thdl'
-                _ -> (lift . EitherT . return . Left . Other) "fileLoadPNGorJPG"
-      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-      put nxstate2
-      invalidateAll  
--}
 
 
 insertItemAt :: Maybe (PageNum,PageCoordinate) 
@@ -426,13 +407,19 @@ insertItemAt :: Maybe (PageNum,PageCoordinate)
 insertItemAt mpcoord ritm = do 
     xst <- get   
     let hdl = getHoodle xst 
-    let (pgnum,mpos) = case mpcoord of 
+        (pgnum,mpos) = case mpcoord of 
           Just (PageNum n,pos) -> (n,Just pos)
           Nothing -> ((unboxGet currentPageNum.view currentCanvasInfo) xst,Nothing)
+        (ulx,uly) = (bbox_upperleft.getBBox) ritm
+        nitm = case mpos of 
+                 Nothing -> ritm 
+                 Just (PageCoord (nx,ny)) -> 
+                   changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly)) ritm
+          
     let pg = getPageFromGHoodleMap pgnum hdl
         lyr = getCurrentLayer pg 
         oitms = view gitems lyr  
-        ntpg = makePageSelectMode pg (oitms :- (Hitted [ritm]) :- Empty)  
+        ntpg = makePageSelectMode pg (oitms :- (Hitted [nitm]) :- Empty)  
     modeChange ToSelectMode 
     nxst <- get 
     thdl <- case view hoodleModeState nxst of

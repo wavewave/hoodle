@@ -78,7 +78,6 @@ modeChange command = do
           return . flip (set hoodleModeState) xstate 
                           . SelectState  
                           . gHoodle2GSelect $ hdl 
-                          -- $ GSelect (view gtitle hdl) (view gpages hdl) Nothing
 
 -- | 
 viewModeChange :: MyEvent -> MainCoroutine () 

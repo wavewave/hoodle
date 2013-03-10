@@ -9,10 +9,10 @@ module SampleActor where
 import Control.Applicative
 import Control.Category
 import Control.Concurrent 
-import Control.Monad.Error 
+-- import Control.Monad.Error 
 import Control.Monad.Reader
 import Control.Monad.State
--- import Data.Lens.Common 
+import Control.Monad.Trans.Either
 import Control.Lens 
 -- 
 import Control.Monad.Trans.Crtn

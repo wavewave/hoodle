@@ -8,9 +8,9 @@ module Sample where
 
 import Control.Applicative
 import Control.Category
-import Control.Monad.Error 
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Monad.Trans.Either
 -- import Data.Lens.Common 
 import Control.Lens
 -- 
@@ -34,19 +34,21 @@ world = ReaderT staction
     staction req = do runStateT (go req) initWorld
                       return ()
     go :: (MonadIO m) => 
-          Arg (WorldOp Event m) 
-          -> StateT (WorldAttrib (SObjBT (WorldOp Event m) m)) (SObjBT (WorldOp Event m) m) () 
+           Arg (WorldOp Event m) 
+           -> StateT (WorldAttrib (SObjBT (WorldOp Event m) m)) (SObjBT (WorldOp Event m) m) () 
     go (Arg GiveEvent ev) = do
-      dobj <- (^. worldActor.objDoor) <$> get  
+      dobj <- (^. worldActor.objDoor) <$> get
       mobj <- (^. worldActor.objMessageBoard) <$> get 
       aobj <- (^. worldActor.objAir) <$> get 
       Right (dobj',mobj',aobj') <- 
-        runErrorT $ (,,) <$> liftM fst (dobj <==| giveEventSub ev) 
-                         <*> liftM fst (mobj <==| giveEventSub ev) 
-                         <*> liftM fst (aobj <==| giveEventSub ev)
+        runEitherT $ do 
+          d1 <- fst <$> EitherT (dobj <==| giveEventSub ev)
+          m1 <- fst <$> EitherT (mobj <==| giveEventSub ev)
+          a1 <- fst <$> EitherT (aobj <==| giveEventSub ev)
+          return (d1,m1,a1)
       modify (  (worldActor.objDoor .~ dobj') 
               . (worldActor.objMessageBoard .~ mobj')
-              . (worldActor.objAir .~ aobj') )
+              . (worldActor.objAir .~ aobj') ) 
       req <- lift (request (Res GiveEvent ()))
       go req   
     go (Arg FlushLog (logobj :: LogServer m ())) = do
@@ -54,8 +56,7 @@ world = ReaderT staction
       let msg = logf "" 
       if ((not . null) msg) 
         then do 
-          let l1 = runErrorT (logobj <==| writeLog ("[World] " ++ (logf ""))) 
-          Right (logobj',_) <- lift . lift $ l1
+          Right (logobj',_) <- (lift.lift) (logobj <==| writeLog ("[World] " ++ (logf "")))
           modify (worldState.tempLog .~ id)
           req <- lift (request (Res FlushLog logobj'))
           go req  
@@ -68,5 +69,4 @@ world = ReaderT staction
       modify (worldState.tempQueue .~ emptyQueue)
       req <- lift (request (Res FlushQueue lst))
       go req 
-      
-      
+     

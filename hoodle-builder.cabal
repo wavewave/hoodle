@@ -30,7 +30,7 @@ Library
   Exposed-Modules: 
                    Text.Hoodle.Builder
                    Text.Hoodle.Builder.V0_1_1
-                   Text.Hoodle.Builder.V0_1_999
+                   -- Text.Hoodle.Builder.V0_1_999
   Other-Modules: 
 
  

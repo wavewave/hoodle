@@ -1,5 +1,7 @@
+{-# LANGUAGE PackageImports #-}
+
 import Control.Monad
-import Control.Monad.State 
+import "mtl" Control.Monad.State 
 import Data.Attoparsec
 import qualified Data.ByteString as B
 import Graphics.Rendering.Cairo
@@ -9,7 +11,8 @@ import Data.Hoodle.Simple
 import Text.Hoodle.Parse.Attoparsec 
 -- from this package
 -- import Graphics.Hoodle.Render.SimpleNew 
-import Graphics.Hoodle.Render.Simple 
+import Graphics.Hoodle.Render
+-- import Graphics.Hoodle.Render.Generic
 
 -- | 
 main :: IO ()   
@@ -25,7 +28,7 @@ main = do
     Just hoo -> do 
       let fstpage = head (hoodle_pages hoo) 
           Dim w h = page_dim fstpage 
-          cairowork s = renderWith s (cairoDrawPage fstpage) 
+          cairowork s = renderWith s (renderPage fstpage) 
       let action 
             | mod == "svg" = withSVGSurface outfile w h cairowork 
             | mod == "pdf" = withPDFSurface outfile w h cairowork

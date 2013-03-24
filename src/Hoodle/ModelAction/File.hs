@@ -40,7 +40,7 @@ import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type.Background 
 import           Graphics.Hoodle.Render.Type.Hoodle
 import qualified Text.Hoodle.Parse.Attoparsec as PA
-import qualified Text.Hoodle.Migrate.V0_1_999_to_V0_1_9999 as MV
+import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2 as MV
 import qualified Text.Xournal.Parse.Conduit as XP
 import           Text.Hoodle.Migrate.FromXournal
 -- from this package
@@ -55,7 +55,7 @@ checkVersionAndMigrate bstr = do
   case parseOnly PA.checkHoodleVersion bstr of 
     Left str -> error str 
     Right v -> do 
-      if ( v < "0.1.9999" ) 
+      if ( v <= "0.1.1" ) 
         then MV.migrate bstr
         else return (parseOnly PA.hoodle bstr)
 
@@ -142,9 +142,7 @@ embedPDFInHoodle hdl = do
         print cmdargs 
         (_,Just hout,_,_) <- createProcess (proc "pdftk" cmdargs) { std_out = CreatePipe } 
         bstr <- C.hGetContents hout
-        {- let b64str = (encode . concat . L.toChunks) bstr 
-            ebdsrc = Just ("data:application/x-pdf;base64," <> b64str) -}
-        let ebdsrc = makeEmbeddedPdfSrcString bstr -- . concat . L.toChunks) bstr 
+        let ebdsrc = makeEmbeddedPdfSrcString bstr 
             npgs = (IM.fromAscList . replacePDFPages) pgs 
         (return . set gembeddedpdf (Just ebdsrc) . set gpages npgs) hdl
 

@@ -47,7 +47,6 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard 
-import           Hoodle.Coroutine.Select.Transform 
 import           Hoodle.ModelAction.Page 
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
@@ -92,8 +91,8 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
         put $ set cvsInfoMap (IM.adjust (const cinfobox') cid cmap) xstate 
         adjustScrollbarWithGeometryCvsId cid 
         invalidateAll 
-processContextMenu CMenuRotateCW = rotateSelection CW
-processContextMenu CMenuRotateCCW = rotateSelection CCW
+processContextMenu CMenuRotateCW = return () -- rotateSelection CW
+processContextMenu CMenuRotateCCW = return () --  rotateSelection CCW
 processContextMenu CMenuAutosavePage = do 
     xst <- get 
     pg <- getCurrentPageCurr 

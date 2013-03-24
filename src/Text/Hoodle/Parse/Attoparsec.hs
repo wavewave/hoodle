@@ -309,7 +309,7 @@ hoodle :: Parser H.Hoodle
 hoodle  = do trim
              xmlheader <?> "xmlheader"
              trim
-             (v,hid) <- hoodleheader <?> "hoodleheader"
+             (_v,hid) <- hoodleheader <?> "hoodleheader"
              trim
              t <- title <?> "title"
              trim

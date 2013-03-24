@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Migrate.V0_1_999_to_V0_1_9999
+-- Module      : Text.Hoodle.Migrate.V0_1_999_to_V0_2
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 -- 
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Migrate.V0_1_999_to_V0_1_9999 where
+module Text.Hoodle.Migrate.V0_1_1_to_V0_2 where
 
 import           Control.Applicative 
 import           Control.Lens
@@ -23,12 +23,12 @@ import           Control.Monad.Trans.Either
 import           Data.Attoparsec
 import qualified Data.ByteString.Char8 as B
 --
-import qualified Data.Hoodle.Simple.V0_1_999 as OH
+import qualified Data.Hoodle.Simple.V0_1_1 as OH
 import qualified Data.Hoodle.Simple as NH
 -- import qualified Text.Hoodle.Builder as NB
 -- 
 import           Text.Hoodle.Parse.Attoparsec
-import qualified Text.Hoodle.Parse.Attoparsec.V0_1_999 as OP 
+import qualified Text.Hoodle.Parse.Attoparsec.V0_1_1 as OP 
 
 page2Page :: OH.Page -> NH.Page
 page2Page OH.Page {..} = NH.Page { NH.page_dim = dim2Dim page_dim
@@ -47,15 +47,15 @@ bkg2Bkg OH.BackgroundPdf {..} = NH.BackgroundPdf { NH.bkg_type = bkg_type
                                                  , NH.bkg_domain = bkg_domain 
                                                  , NH.bkg_filename = bkg_filename
                                               ,   NH.bkg_pageno = bkg_pageno } 
-bkg2Bkg OH.BackgroundEmbedPdf {..} = NH.BackgroundEmbedPdf { NH.bkg_type = bkg_type
-                                                           , NH.bkg_pageno = bkg_pageno }
+-- bkg2Bkg OH.BackgroundEmbedPdf {..} = NH.BackgroundEmbedPdf { NH.bkg_type = bkg_type
+--                                                            , NH.bkg_pageno = bkg_pageno }
 
 
 item2Item :: OH.Item -> NH.Item 
 item2Item (OH.ItemStroke strk) = NH.ItemStroke (stroke2Stroke strk)
-item2Item (OH.ItemImage img) = NH.ItemImage (image2Image img)
+item2Item (OH.ItemImage image) = NH.ItemImage (image2Image image)
 item2Item (OH.ItemSVG svg) = NH.ItemSVG (svg2SVG svg)
-item2Item (OH.ItemLink lnk) = NH.ItemLink (link2Link lnk)
+-- item2Item (OH.ItemLink lnk) = NH.ItemLink (link2Link lnk)
 
 stroke2Stroke :: OH.Stroke -> NH.Stroke
 stroke2Stroke OH.Stroke {..} = NH.Stroke { NH.stroke_tool = stroke_tool 
@@ -78,6 +78,7 @@ svg2SVG OH.SVG {..} = NH.SVG { NH.svg_text = svg_text
                              , NH.svg_pos = svg_pos 
                              , NH.svg_dim = dim2Dim svg_dim } 
 
+{- 
 link2Link :: OH.Link -> NH.Link
 link2Link OH.Link {..} = NH.Link { NH.link_id = link_id 
                                  , NH.link_type = link_type
@@ -87,7 +88,7 @@ link2Link OH.Link {..} = NH.Link { NH.link_id = link_id
                                  , NH.link_render = link_render
                                  , NH.link_pos = link_pos
                                  , NH.link_dim = dim2Dim link_dim }
-                                                 
+-}                                                 
                                                      
 layer2Layer :: OH.Layer -> NH.Layer
 layer2Layer OH.Layer {..} = NH.Layer { NH.layer_items = fmap item2Item layer_items } 
@@ -97,15 +98,16 @@ migrate :: B.ByteString -> IO (Either String NH.Hoodle)
 migrate bstr = do 
   runEitherT $ do 
     v <- hoistEither (parseOnly checkHoodleVersion bstr)
-    if v <= "0.1.999" 
+    if v <= "0.1.1" 
       then do  
         oh <- hoistEither (parseOnly OP.hoodle bstr)
         let ttl = view OH.title oh 
-            pdf = view OH.embeddedPdf oh 
             pgs = (fmap page2Page . view OH.pages) oh 
-        set NH.title ttl . set NH.embeddedPdf pdf . set NH.pages pgs <$> lift NH.emptyHoodle 
+        set NH.title ttl . set NH.pages pgs <$> lift NH.emptyHoodle 
       else 
         hoistEither (parseOnly hoodle bstr)
 
+            -- pdf = view OH.embeddedPdf oh 
+{- . set NH.embeddedPdf pdf -}
 
 

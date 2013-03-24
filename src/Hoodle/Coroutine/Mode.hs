@@ -17,13 +17,9 @@ module Hoodle.Coroutine.Mode where
 import           Control.Applicative
 import           Control.Lens (view,set,over)
 import           Control.Monad.State 
--- import           Control.Monad.Trans
 import qualified Data.IntMap as M
-import           Graphics.UI.Gtk hiding (get,set) -- (adjustmentGetValue)
-import qualified Graphics.UI.Gtk as Gtk (set)
+import           Graphics.UI.Gtk (adjustmentGetValue) 
 -- from hoodle-platform
--- import           Control.Monad.Trans.Crtn.Event 
--- import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -33,12 +29,10 @@ import           Graphics.Hoodle.Render.Type
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Scroll
-import           Hoodle.GUI.Menu
 import           Hoodle.GUI.Reflect
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
-import           Hoodle.Type.Enum 
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement

@@ -15,7 +15,7 @@
 module Hoodle.ModelAction.Clipboard where
 
 -- from other package
-import           Control.Lens (view,set,over)
+import           Control.Lens (view)
 import           Control.Monad.Trans
 import qualified Data.ByteString.Base64 as B64 
 import qualified Data.ByteString.Char8 as C8

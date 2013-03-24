@@ -17,7 +17,7 @@ module Hoodle.Coroutine.ContextMenu where
 -- from other packages
 import           Control.Applicative
 import           Control.Category
-import           Control.Lens (view,set,over,(%~))
+import           Control.Lens (view,set,(%~))
 import           Control.Monad.State
 import           Data.Attoparsec 
 import qualified Data.ByteString.Char8 as B
@@ -48,7 +48,6 @@ import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard 
 import           Hoodle.Coroutine.Select.Transform 
-import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Page 
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
@@ -83,7 +82,6 @@ processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
 processContextMenu (CMenuCanvasView cid pnum _x _y) = do 
-    -- liftIO $ print (cid,pnum,x,y)
     xstate <- get 
     let cmap = view cvsInfoMap xstate 
     let mcinfobox = IM.lookup cid cmap 
@@ -115,13 +113,13 @@ processContextMenu (CMenuLinkConvert nlnk) =
                   buf = view (glayers.selectedLayer.gbuffer) tpg
               ntpg <- case activelayer of 
                 Left _ -> return tpg 
-                Right (a :- b :- as ) -> liftIO $ do
+                Right (a :- _b :- as ) -> liftIO $ do
                   let nitm = ItemLink nlnk
                   nritm <- cnstrctRItem nitm
                   let alist' = (a :- Hitted [nritm] :- as )
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
-              
+                Right _ -> error "processContextMenu: activelayer"
               nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg n
               commit . set hoodleModeState (SelectState nthdl)
                 =<< (liftIO (updatePageAll (SelectState nthdl) xst))
@@ -179,7 +177,7 @@ showContextMenu (pnum,(x,y)) = do
           mselitms = do lst <- getSelectedItmsFromHoodleState xstate
                         if null lst then Nothing else Just lst 
       modify (tempQueue %~ enqueue (action xstate mselitms cid cids)) 
-      >> waitSomeEvent (\x->case x of ContextMenuCreated -> True ; _ -> False) 
+      >> waitSomeEvent (\e->case e of ContextMenuCreated -> True ; _ -> False) 
       >> return () 
   where action xstate msitms cid cids  
           = Left . ActionOrder $ 
@@ -194,8 +192,6 @@ showContextMenu (pnum,(x,y)) = do
                     menuitem3 <- menuItemNewWithLabel "Cut"
                     menuitem4 <- menuItemNewWithLabel "Copy"
                     menuitem5 <- menuItemNewWithLabel "Delete"
-                    {- menuitem6 <- menuItemNewWithLabel "RotateCW"
-                    menuitem7 <- menuItemNewWithLabel "RotateCCW" -}
                     menuitem1 `on` menuItemActivate $   
                       evhandler (GotContextMenuSignal (CMenuSaveSelectionAs SVG))
                     menuitem2 `on` menuItemActivate $ 
@@ -206,10 +202,6 @@ showContextMenu (pnum,(x,y)) = do
                       evhandler (GotContextMenuSignal (CMenuCopy))
                     menuitem5 `on` menuItemActivate $    
                       evhandler (GotContextMenuSignal (CMenuDelete))     
-                    {- menuitem6 `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuRotateCW))
-                    menuitem7 `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuRotateCCW)) -}
                     menuAttach menu menuitem1 0 1 1 2 
                     menuAttach menu menuitem2 0 1 2 3
                     menuAttach menu menuitem3 1 2 0 1                     
@@ -218,7 +210,7 @@ showContextMenu (pnum,(x,y)) = do
                     case sitms of 
                       sitm : [] -> do 
                         case sitm of 
-                          RItemLink lnkbbx msfc -> do 
+                          RItemLink lnkbbx _msfc -> do 
                             let lnk = bbxed_content lnkbbx
                             let fp = (B.unpack . link_location) lnk
                                 cmdargs = [fp]
@@ -228,35 +220,35 @@ showContextMenu (pnum,(x,y)) = do
                               return () 
                             menuAttach menu menuitemlnk 0 1 3 4 
                             case lnk of 
-                              Link i typ fp txt cmd rdr pos dim -> do 
-                                b <- doesFileExist (B.unpack fp)
+                              Link i _typ file txt cmd rdr pos dim -> do 
+                                b <- doesFileExist (B.unpack file)
                                 when b $ do 
-                                  bstr <- B.readFile (B.unpack fp)
+                                  bstr <- B.readFile (B.unpack file)
                                   case parseOnly PA.hoodle bstr of 
                                     Left str -> print str 
                                     Right hdl -> do 
                                       let uuid = view hoodleID hdl
-                                          lnk = LinkDocID i uuid fp txt cmd rdr pos dim
+                                          link = LinkDocID i uuid file txt cmd rdr pos dim
                                           
                                       menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
                                       menuitemcvt `on` menuItemActivate $ do
-                                        evhandler (GotContextMenuSignal (CMenuLinkConvert lnk))
+                                        evhandler (GotContextMenuSignal (CMenuLinkConvert link))
                                       menuAttach menu menuitemcvt 0 1 4 5 
-                              LinkDocID i lid fp txt cmd rdr pos dim -> do 
+                              LinkDocID i lid file txt cmd rdr pos dim -> do 
                                 case (lookupPathFromId =<< view hookSet xstate) of
                                   Nothing -> return () 
                                   Just f -> do 
                                     rp <- f (B.unpack lid)
                                     case rp of 
                                       Nothing -> return ()
-                                      Just fp' -> 
-                                        if (B.unpack fp) == fp' 
+                                      Just file' -> 
+                                        if (B.unpack file) == file' 
                                         then return ()
                                           else do 
-                                            let lnk = LinkDocID i lid (B.pack fp') txt cmd rdr pos dim
-                                            menuitemcvt <- menuItemNewWithLabel ("Correct Path to " ++ show fp') 
+                                            let link = LinkDocID i lid (B.pack file') txt cmd rdr pos dim
+                                            menuitemcvt <- menuItemNewWithLabel ("Correct Path to " ++ show file') 
                                             menuitemcvt `on` menuItemActivate $ do
-                                              evhandler (GotContextMenuSignal (CMenuLinkConvert lnk))
+                                              evhandler (GotContextMenuSignal (CMenuLinkConvert link))
                                             menuAttach menu menuitemcvt 0 1 4 5 
                                    
 
@@ -264,8 +256,6 @@ showContextMenu (pnum,(x,y)) = do
 
                           _ -> return () 
                       _ -> return () 
-                    {- menuAttach menu menuitem6 1 2 3 4 
-                    menuAttach menu menuitem7 1 2 4 5 -}
                 case (customContextMenuTitle =<< view hookSet xstate) of 
                   Nothing -> return () 
                   Just ttl -> do 

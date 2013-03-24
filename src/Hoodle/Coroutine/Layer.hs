@@ -92,8 +92,7 @@ gotoLayerAt n = layerAction gotoaction >>= put
 deleteCurrentLayer :: MainCoroutine ()
 deleteCurrentLayer = layerAction deletelayeraction >>= commit
   where deletelayeraction hdlmodst cpn page = do 
-          let currlayer = getCurrentLayer page
-              lyrzipper = view glayers page  
+          let lyrzipper = view glayers page  
               mlyrzipper = deleteCurrent lyrzipper 
               npage = maybe page (\x -> set glayers x page) mlyrzipper
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  

@@ -15,13 +15,10 @@
 module Hoodle.Coroutine.Select.Transform where
 
 -- from other packages
-import Control.Lens (view,set,over)
+import Control.Lens (view,set)
 import Control.Monad.State 
--- import Control.Monad.Trans
 -- from hoodle-platform 
-
 import Data.Hoodle.Select 
--- import Graphics.Hoodle.Render.Type.Hoodle
 -- from this package
 import Hoodle.Coroutine.Draw 
 import Hoodle.Coroutine.Commit 
@@ -53,7 +50,3 @@ rotateSelection _dir = do
               commit . set hoodleModeState (SelectState nthdl)
                 =<< (liftIO (updatePageAll (SelectState nthdl) xst))
               invalidateAll 
---              rItmsInActiveLyr 
-              
-              
---              let hititms = (map rItem2Item . getSelectedItms) tpg  

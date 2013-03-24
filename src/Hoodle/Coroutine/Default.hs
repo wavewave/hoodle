@@ -17,26 +17,22 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative ((<$>))
 import           Control.Category
 import           Control.Concurrent 
-import           Control.Lens (view,set,over,at,(.~),(%~))
+import           Control.Lens (view,set,at,(.~),(%~))
 import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.IntMap as M
 import           Data.IORef 
--- import           Data.IntMap.Lens 
 import           Data.Maybe
 import           Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (set) 
 -- from hoodle-platform
--- import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Driver
--- import           Control.Monad.Trans.Crtn.EventHandler 
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..), bkg_style)
+import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render.Type.Background
 -- from this package
@@ -63,13 +59,13 @@ import           Hoodle.Device
 import           Hoodle.GUI.Menu
 import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.File
-import           Hoodle.ModelAction.Layer 
+
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window 
 import           Hoodle.Script
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
-import           Hoodle.Type.Clipboard
+
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
@@ -110,7 +106,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs 
-          . set uiComponentSignalHandler uicompsighdlr -- mpenmodconnid 
+          . set uiComponentSignalHandler uicompsighdlr 
           $ st4
           
   st6 <- getFileContent mfname st5
@@ -127,26 +123,6 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
   putMVar evar . Just $ (driver simplelogger startworld)
   return (evar,startingXstate,ui,vbox)
 
-{-
--- | 
-initViewModeIOAction :: MainCoroutine HoodleState
-initViewModeIOAction = do 
-  oxstate <- get
-  let ui = view gtkUIManager oxstate
-  agr <- liftIO $ uiManagerGetActionGroups ui 
-  Just ra <- liftIO $ actionGroupGetAction (head agr) "CONTA"
-  let wra = castToRadioAction ra 
-  connid_wra <- liftIO $ wra `on` radioActionChanged $ \x -> do 
-    y <- viewModeToMyEvent x 
-    view callBack oxstate y 
-
-  let xstate = set (uiComponentSignalHandler.pageModeSignal) (Just connid_wra) $ oxstate 
-  put xstate 
-  reflectViewModeUI  
-  reflectPenModeUI
-  return xstate 
-
--}
 
 -- | initialization according to the setting 
 initialize :: MyEvent -> MainCoroutine ()
@@ -165,13 +141,11 @@ guiProcess :: MyEvent -> MainCoroutine ()
 guiProcess ev = do 
   initialize ev
   changePage (const 0)
-  -- xstate <- initViewModeIOAction 
   xstate <- get 
   reflectViewModeUI
   reflectPenModeUI
   reflectPenColorUI  
   reflectPenWidthUI
-  
   let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
@@ -248,19 +222,9 @@ defaultEventProcess ToContSinglePage = viewModeChange ToContSinglePage
 defaultEventProcess (AssignPenMode t) =  
     case t of 
       Left pm -> do 
-        -- xst <- get 
-        -- let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
-        -- win <- liftIO $ widgetGetDrawWindow cvs 
-        -- cursor <- liftIO $ cursorNew BlankCursor 
-        -- liftIO $ drawWindowSetCursor win (Just cursor) 
         modify (penInfo.penType .~ pm)
         modeChange ToViewAppendMode
       Right sm -> do 
-        -- xst <- get 
-        -- let cvs = unboxGet drawArea . snd. view currentCanvas $ xst 
-        -- win <- liftIO $ widgetGetDrawWindow cvs 
-        -- cursor <- cursorNew Dot 
-        -- liftIO $ drawWindowSetCursor win Nothing 
         modify (selectInfo.selectType .~ sm)
         modeChange ToSelectMode 
 defaultEventProcess (PenColorChanged c) = 
@@ -297,16 +261,11 @@ defaultEventProcess (GetHoodleFileInfo ref) = do
     Nothing -> liftIO $ writeIORef ref Nothing
     Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    
-  
- 
-  
-  
 defaultEventProcess ev = -- for debugging
-                            do liftIO $ putStrLn "--- no default ---"
-                               -- liftIO $ print ev 
-                               liftIO $ putStrLn "------------------"
-                               return () 
-
+                         do liftIO $ putStrLn "--- no default ---"
+                            liftIO $ print ev 
+                            liftIO $ putStrLn "------------------"
+                            return () 
 
 -- |
 menuEventProcess :: MenuEvent -> MainCoroutine () 

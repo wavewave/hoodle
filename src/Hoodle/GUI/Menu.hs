@@ -17,24 +17,17 @@
 module Hoodle.GUI.Menu where
 
 -- from other packages
-import           Control.Lens (view,set)
+import           Control.Lens (set)
 import           Control.Monad
-import           Data.Maybe
 import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
-import           System.IO 
 -- from hoodle-platform 
--- import           Control.Monad.Trans.Crtn.EventHandler
 import           Data.Hoodle.Predefined 
 -- from this package
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
-import           Hoodle.Type.Clipboard
-import           Hoodle.Type.HoodleState 
--- import           Hoodle.Util.Verbatim
 --
--- import Prelude hiding ((.),id)
 import Paths_hoodle_core
 
 -- | 
@@ -349,11 +342,11 @@ getMenuUI evar = do
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   mpgmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) -- const (return ()))
-  mpointconnid <- 
+  _mpointconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr penmods   0 (assignPenMode evar)
-  mcolorconnid <-  
+  _mcolorconnid <-  
     actionGroupAddRadioActionsAndGetConnID agr colormods 0 (assignColor evar) 
   actionGroupAddRadioActions agr bkgstyles 2 (assignBkgStyle evar)
   
@@ -403,7 +396,7 @@ getMenuUI evar = do
   actionSetSensitive ra5 False
   Just ra6 <- actionGroupGetAction agr "CONTA"
   actionSetSensitive ra6 True
-  Just ra7 <- actionGroupGetAction agr "PENA"
+  Just _ra7 <- actionGroupGetAction agr "PENA"
   actionSetSensitive ra6 True  
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
@@ -425,21 +418,21 @@ actionGroupAddRadioActionsAndGetConnID :: ActionGroup
                                        -> Int  
                                        -> (RadioAction -> IO ()) 
                                        -> IO (Maybe (ConnectId RadioAction))
-actionGroupAddRadioActionsAndGetConnID self entries value onChange = do 
-  group <- foldM 
-    (\group (n,RadioActionEntry name label stockId accelerator tooltip value) -> do
+actionGroupAddRadioActionsAndGetConnID self entries _value onChange = do 
+  mgroup <- foldM 
+    (\mgroup (n,RadioActionEntry name label stockId accelerator tooltip value) -> do
      action <- radioActionNew name label tooltip stockId value
-     case group of 
+     case mgroup of 
        Nothing -> return () 
-       Just group -> radioActionSetGroup action group
+       Just gr -> radioActionSetGroup action gr
      when (n==value) (toggleActionSetActive action True)
      actionGroupAddActionWithAccel self action accelerator
      return (Just action))
     Nothing (zip [0..] entries)
-  case group of 
+  case mgroup of 
     Nothing -> return Nothing 
-    Just group -> do 
-      connid <- (group `on` radioActionChanged) onChange
+    Just gr -> do 
+      connid <- (gr `on` radioActionChanged) onChange
       return (Just connid)
 
 

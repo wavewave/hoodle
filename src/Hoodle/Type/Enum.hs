@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Enum 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -14,11 +14,10 @@
 
 module Hoodle.Type.Enum where
 
-import           Control.Lens (Simple(..),Lens(..),view,set,over,lens)
+import           Control.Lens (Simple,Lens,lens)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import           Data.Maybe 
--- import           Numeric (showHex)
 -- 
 import           Data.Hoodle.Predefined
 
@@ -28,20 +27,18 @@ data AddDirection = PageBefore | PageAfter
                   deriving (Show,Eq,Ord,Enum)
 
 -- | relative zoom mode 
-
 data ZoomModeRel = ZoomIn | ZoomOut
                  deriving (Show,Eq,Ord,Enum)
 
--- | 
+-- | pen tool type 
 data PenType = PenWork 
              | HighlighterWork 
              | EraserWork 
              | VerticalSpaceWork 
              deriving (Show,Eq,Ord)
 
--- TextWork 
 
--- | 
+-- | predefined pen colors 
 data PenColor = ColorBlack
               | ColorBlue 
               | ColorRed
@@ -56,6 +53,7 @@ data PenColor = ColorBlack
               | ColorRGBA Double Double Double Double 
               deriving (Show,Eq,Ord)
 
+-- | predefined background styles
 data BackgroundStyle = BkgStylePlain 
                      | BkgStyleLined
                      | BkgStyleRuled
@@ -63,10 +61,10 @@ data BackgroundStyle = BkgStylePlain
                      deriving (Show,Eq,Ord)
 
 
--- | 
+-- | mode for vertical space adding 
 data VerticalSpaceMode = GoingUp | GoingDown | OverPage 
 
--- |
+-- | select tool type
 data SelectType = SelectRegionWork 
                 | SelectRectangleWork 
                 | SelectHandToolWork 
@@ -81,9 +79,7 @@ data SelectInfo = SelectInfo { _selectType :: SelectType
 selectType :: Simple Lens SelectInfo SelectType 
 selectType = lens _selectType (\f a -> f { _selectType = a })
 
-
-
-
+-- | 
 penColorNameMap :: M.Map PenColor B.ByteString                        
 penColorNameMap = M.fromList [ (ColorBlack, "black")
                              , (ColorBlue , "blue")

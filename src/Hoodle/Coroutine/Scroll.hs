@@ -14,12 +14,10 @@
 
 module Hoodle.Coroutine.Scroll where
 
--- import           Control.Concurrent
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,over)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
--- import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.BBox
@@ -83,32 +81,13 @@ adjustScrollbarWithGeometryCurrent = do
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
 hscrollBarMoved cid v = 
   changeCurrentCanvasId cid
-  >> moveViewPortBy (invalidate cid) cid (\(x,y)->(v,y))
-{-    changeCurrentCanvasId cid 
-    >> updateXState (return . hscrollmoveAction) 
-    >> invalidate cid 
-  where hscrollmoveAction = over currentCanvasInfo (selectBox fsimple fsimple)
-        fsimple cinfo = 
-          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
-          in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (v,snd vm_orig))) $ cinfo
--}
+  >> moveViewPortBy (invalidate cid) cid (\(_,y)->(v,y))
 
 -- | 
 vscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
 vscrollBarMoved cid v = chkCvsIdNInvalidate cid 
-                        >> moveViewPortBy (invalidate cid) cid (\(x,y)->(x,v))
+                        >> moveViewPortBy (invalidate cid) cid (\(x,_)->(x,v))
   
-{-                        
-    >> updateXState (return . vscrollmoveAction) 
-    >> invalidate cid
-       -- invalidateInBBox Nothing Efficient cid 
-  where vscrollmoveAction = over currentCanvasInfo (selectBox fsimple fsimple)
-        fsimple cinfo =  
-          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cinfo
-          in over (viewInfo.pageArrangement.viewPortBBox) (apply (moveBBoxULCornerTo (fst vm_orig,v))) $ cinfo
--}
-
-
 -- | 
 vscrollStart :: CanvasId -> Double -> MainCoroutine () 
 vscrollStart cid v = do 
@@ -156,7 +135,6 @@ smoothScroll cid geometry v0 v = do
       updateXState $ return . over currentCanvasInfo 
                      (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v'))
       invalidateInBBox Nothing Efficient cid 
-      -- liftIO $ threadDelay (floor (100 * abs diff))
   where scrollmovecanvas vv cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
           in over (viewInfo.pageArrangement.viewPortBBox) 

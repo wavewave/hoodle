@@ -100,8 +100,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           pdraw <-penProcess cid pnum geometry (empty |> (x,y,z)) ((x,y),z) 
           case viewl pdraw of 
             EmptyL -> return ()
-            (x,y,z) :< rest -> do 
-              if x <= 1e-3      -- this is ad hoc but.. 
+            (x1,_y1,_z1) :< _rest -> do 
+              if x1 <= 1e-3      -- this is ad hoc but.. 
                 then do 
                   liftIO $ putStrLn " horizontal line cured !" 
                   invalidateAll
@@ -111,7 +111,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                     =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
                   let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
                       nbbox = xformBBox f bbox 
-                  invalidateAllInBBox (Just nbbox) BkgEfficient -- Efficient
+                  invalidateAllInBBox (Just nbbox) BkgEfficient 
           
     
           

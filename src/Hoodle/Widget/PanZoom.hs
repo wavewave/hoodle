@@ -14,7 +14,7 @@ module Hoodle.Widget.PanZoom where
 
 -- from other packages
 import           Control.Category
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set)
 import           Control.Monad.Identity 
 import           Control.Monad.State 
 import           Data.Time.Clock 
@@ -24,11 +24,11 @@ import           Graphics.UI.Gtk hiding (get,set)
 -- import qualified Graphics.UI.Gtk as Gtk (get)
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic
+
 import           Data.Hoodle.Simple
-import           Data.Hoodle.Zipper
-import           Graphics.Hoodle.Render.Type
-import           Graphics.Hoodle.Render.Util
+
+
+
 import           Graphics.Hoodle.Render.Util.HitTest
 -- 
 import           Hoodle.Accessor
@@ -36,17 +36,17 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen 
 import           Hoodle.Coroutine.Scroll
-import           Hoodle.Coroutine.Select
+
 import           Hoodle.Device
 import           Hoodle.ModelAction.Page 
-import           Hoodle.ModelAction.Select
-import           Hoodle.Type.Alias
+
+
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Type.PageArrangement 
-import           Hoodle.Type.Predefined 
+
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
@@ -168,9 +168,9 @@ startWidgetAction mode cid geometry (sfc,sfc2)
             Nothing -> return () 
             Just pnpgxy -> do 
               xstate <- get
-              geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
-              let DeskCoord (xd,yd) = page2Desktop geometry pnpgxy
-                  DeskCoord (xd0,yd0) = canvas2Desktop geometry ccoord 
+              geom' <- liftIO $ getCanvasGeometryCvsId cid xstate
+              let DeskCoord (xd,yd) = page2Desktop geom' pnpgxy
+                  DeskCoord (xd0,yd0) = canvas2Desktop geom' ccoord 
               moveViewPortBy (return ()) cid 
                 (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
         Panning _ -> do 
@@ -185,7 +185,10 @@ startWidgetAction mode cid geometry (sfc,sfc2)
     _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
 
 
-movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) pcoord = do 
+movingRender :: WidgetMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
+                -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
+                -> MainCoroutine () 
+movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
           let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
           xst <- get 
           case mode of
@@ -262,7 +265,6 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
               drawact :: (ViewMode a) => CanvasInfo a -> IO ()
               drawact cinfo = do 
                 let canvas = view drawArea cinfo 
-                    pos = view (canvasWidgets.testWidgetPosition) cinfo
                 win <- widgetGetDrawWindow canvas
                 renderWithDrawable win $ do 
                   setSourceSurface sfc2 0 0 
@@ -271,13 +273,3 @@ movingRender mode cid geometry (sfc,sfc2) owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord 
           liftIO $ boxAction drawact cinfobox
 
       
-{-      ctime <- liftIO getCurrentTime 
-      let dtime = diffUTCTime ctime otime 
-          willUpdate = dtime > dtime_bound 
-      when willUpdate $ 
-        movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord      
-      if willUpdate
-        then 
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime
-        else      
-          startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime  -}

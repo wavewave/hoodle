@@ -17,25 +17,19 @@
 module Hoodle.Coroutine.File where
 
 -- from other packages
-import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM)
 import           Control.Monad.Trans.Either
-import           Data.ByteString (readFile,concat)
-import qualified Data.ByteString as S (writeFile,hGet)
+import           Data.ByteString (readFile)
 import           Data.ByteString.Base64 
-import           Data.ByteString.Char8 as B (pack,unpack,ByteString(..))
+import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
---- import           Data.List (intercale ) 
 import           Data.Maybe
-import           Data.Traversable (mapM)
 import qualified Data.IntMap as IM
 import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory
 import           System.Exit 
 import           System.FilePath
@@ -52,7 +46,6 @@ import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
-import           Hoodle.Util.Process
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Accessor
@@ -74,7 +67,6 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
-import           Hoodle.Util
 import           Hoodle.View.Draw
 --
 import Prelude hiding (readFile,concat,mapM)
@@ -109,7 +101,7 @@ okCancelMessageBox :: String -> MainCoroutine Bool
 okCancelMessageBox msg = modify (tempQueue %~ enqueue action) 
                          >> waitSomeEvent p >>= return . q
   where 
-    p (OkCancel b) = True 
+    p (OkCancel _) = True 
     p _ = False 
     q (OkCancel b) = b 
     q _ = False 
@@ -128,11 +120,8 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
 fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
 fileChooser choosertyp mfname = do 
     mrecentfolder <- S.recentFolderHook 
-    -- liftIO $ threadDelay 1000000
     xst <- get 
     let rtrwin = view rootOfRootWindow xst 
-        rtwin  = view rootWindow xst
-        rtcntr = view rootContainer xst 
     liftIO $ widgetQueueDraw rtrwin 
         
     modify (tempQueue %~ enqueue (action rtrwin mrecentfolder)) >> go 
@@ -151,11 +140,6 @@ fileChooser choosertyp mfname = do
         Just rf -> fileChooserSetCurrentFolder dialog rf 
         Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
       maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
-      -- windowSetTransientFor dialog win
-      -- windowSetModal dialog True 
-      -- widgetGrabFocus dialog 
-      -- print =<< windowIsActive dialog 
-      -- print =<< windowHasToplevelFocus dialog
       --   !!!!!! really hackish solution !!!!!!
       whileM_ (liftM (>0) eventsPending) (mainIterationDo False)
       
@@ -279,7 +263,7 @@ fileLoad filename = do
     invalidateAll 
     applyActionToAllCVS adjustScrollbarWithGeometryCvsId
 
-
+-- | 
 resetHoodleBuffers :: MainCoroutine () 
 resetHoodleBuffers = do 
     liftIO $ putStrLn "resetHoodleBuffers called"
@@ -287,9 +271,6 @@ resetHoodleBuffers = do
     nhdlst <- liftIO $ resetHoodleModeStateBuffers (view hoodleModeState xst)
     let nxst = set hoodleModeState nhdlst xst
     put nxst     
-
-
-
 
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
@@ -427,33 +408,6 @@ insertItemAt mpcoord ritm = do
     put nxst2
     invalidateAll  
         
-        
-                               
-{-
-      liftIO $ putStrLn filename 
-      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
-          hdl = getHoodle xstate 
-          currpage = getPageFromGHoodleMap pgnum hdl
-          currlayer = getCurrentLayer currpage
-          isembedded = view (settings.doesEmbedImage) xstate 
-      newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
-      
-      let otheritems = view gitems currlayer  
-      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
-      modeChange ToSelectMode 
-      nxstate <- get 
-      thdl <- case view hoodleModeState nxstate of
-                SelectState thdl' -> return thdl'
-                _ -> (lift . EitherT . return . Left . Other) "fileLoadPNGorJPG"
-      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-      put nxstate2
-      invalidateAll  
--}
-  
-  
-
-
 -- | 
 makeNewItemImage :: Bool  -- ^ isEmbedded?
                     -> FilePath 

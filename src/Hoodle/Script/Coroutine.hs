@@ -14,7 +14,7 @@
 
 module Hoodle.Script.Coroutine where
 
-import           Control.Lens (view,set,over)
+import           Control.Lens (view)
 import           Control.Monad.State 
 import           Control.Monad.Trans.Maybe
 -- from hoodle-platform
@@ -24,14 +24,6 @@ import qualified Hoodle.Script.Hook as H
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.HoodleState
 -- 
-
-{-
--- |
-runHookIO2 :: (Hook -> f) -> MainCoroutine ()
-runHookIO2 a b =  
-  liftM (H.afterSaveHook <=< view hookSet) get 
-  >>= maybe (return ()) (\hk->liftIO (hk a b)) 
--}
 
 -- | 
 afterSaveHook :: FilePath -> Hoodle -> MainCoroutine ()

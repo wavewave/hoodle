@@ -465,8 +465,8 @@ renderSelectedItem itm = do
 -- | 
 canvas2DesktopRatio :: CanvasGeometry -> Double 
 canvas2DesktopRatio geometry =
-  let DeskCoord (tx1,ty1) = canvas2Desktop geometry (CvsCoord (0,0)) 
-      DeskCoord (tx2,ty2) = canvas2Desktop geometry (CvsCoord (1,0))
+  let DeskCoord (tx1,_) = canvas2Desktop geometry (CvsCoord (0,0)) 
+      DeskCoord (tx2,_) = canvas2Desktop geometry (CvsCoord (1,0))
   in tx2-tx1
 
 
@@ -478,7 +478,7 @@ renderSelectHandle geometry bbox = do
   uncurry4 setSourceRGBA predefinedLassoColor
   let (dasha,dashb) = predefinedLassoDash 
       adjusteddash = (fmap (*z) dasha,dashb*z) 
-  uncurry setDash adjusteddash -- predefinedLassoDash 
+  uncurry setDash adjusteddash 
   let (x1,y1) = bbox_upperleft bbox
       (x2,y2) = bbox_lowerright bbox
       hsize = predefinedLassoHandleSize*z
@@ -544,7 +544,7 @@ canvasImageSurface mmulti geometry hdl = do
       nbbx_cvs = 
         xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) nbbx_desk
       nvport = ViewPortBBox nbbx_desk
-      Dim w_desk h_desk = bboxToDim nbbx_desk
+      -- Dim _w_desk _h_desk = bboxToDim nbbx_desk
       Dim w_cvs  h_cvs  = bboxToDim nbbx_cvs
   let pgs = view gpages hdl 
       drawpgs = (catMaybes . map f . getPagesInRange geometry nvport) hdl 
@@ -558,7 +558,6 @@ canvasImageSurface mmulti geometry hdl = do
             let (ws_cvs,hs_cvs) = (w_cvs/(2*z+1),h_cvs/(2*z+1)) 
             translate (z*ws_cvs) (z*hs_cvs)
         cairoXform4PageCoordinate geometry pn
-        -- cairoRenderOption (RBkgDrawPDF,DrawFull) pg
         cairoRenderOption (InBBoxOption Nothing) (InBBox pg)
       renderfunc = do 
         setSourceRGBA 0.5 0.5 0.5 1
@@ -568,8 +567,7 @@ canvasImageSurface mmulti geometry hdl = do
         mapM_ onepagerender drawpgs 
   print (Prelude.length drawpgs)
   sfc <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
-  -- sfc2 <- createImageSurface FormatARGB32 (floor w_cvs) (floor h_cvs)
   renderWith sfc renderfunc 
   return (sfc, Dim w_cvs h_cvs)
-  -- return (sfc,sfc2) 
+
 

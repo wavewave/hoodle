@@ -15,16 +15,13 @@
 module Hoodle.Accessor where
 
 import           Control.Applicative
-import           Control.Concurrent (threadDelay)
-import           Control.Lens (Simple,Lens(..),view,set,over)
+import           Control.Lens (Simple,Lens,view,set)
 import           Control.Monad hiding (mapM_, forM_)
-import           Control.Monad.Loops 
 import qualified Control.Monad.State as St hiding (mapM_, forM_)
 import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (set)
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -39,7 +36,6 @@ import           Hoodle.View.Coordinate
 import           Hoodle.Type.PageArrangement
 --
 import           Prelude hiding (mapM_)
-
 
 -- | update state
 updateXState :: (HoodleState -> MainCoroutine HoodleState) -> MainCoroutine ()

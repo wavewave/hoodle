@@ -18,7 +18,6 @@ import           Control.Lens (view,set,over)
 import           Control.Monad.Identity (runIdentity)
 import           Data.Foldable
 import qualified Data.IntMap as IM
-import           Data.Maybe
 -- import qualified Data.Map as M
 import           Data.Sequence hiding (take, drop)
 import           Data.Strict.Tuple hiding (uncurry)

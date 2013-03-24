@@ -12,7 +12,6 @@
 
 module Hoodle.Script.Hook where 
 
--- import System.FilePath 
 import Data.Hoodle.Simple 
 import Graphics.Hoodle.Render.Type.Hoodle
 -- 
@@ -47,4 +46,5 @@ defaultHook = Hook { saveAsHook = Nothing
                    , embedPredefinedImageHook = Nothing 
                    , embedPredefinedImage2Hook = Nothing
                    , embedPredefinedImage3Hook = Nothing 
+                   , lookupPathFromId = Nothing 
                    }

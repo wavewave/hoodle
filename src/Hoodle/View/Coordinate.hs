@@ -14,9 +14,8 @@
 
 module Hoodle.View.Coordinate where 
 
-
 import           Control.Applicative
-import           Control.Lens (view,set,over)
+import           Control.Lens (view)
 import           Control.Monad 
 import           Data.Foldable (toList)
 import qualified Data.IntMap as M

@@ -16,7 +16,7 @@ module Hoodle.ModelAction.Select.Transform where
 
 -- from other package
 import           Control.Category
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set)
 import           Control.Monad.Identity (runIdentity)
 import           Data.Strict.Tuple
 -- from hoodle-platform

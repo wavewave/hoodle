@@ -18,23 +18,19 @@
 module Hoodle.Coroutine.Link where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over,(%~))
+import           Control.Lens (view,(%~))
 import           Control.Monad.State 
-import           Control.Monad.Trans.Either 
+
 import           Control.Monad.Trans.Maybe 
 import qualified Data.ByteString.Char8 as B 
-import qualified Data.IntMap as M
+
 import           Data.UUID.V4 (nextRandom)
 import           Graphics.UI.Gtk hiding (get,set) 
 import           System.FilePath 
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic
-import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type 
 import           Graphics.Hoodle.Render.Type.HitTest 
@@ -43,15 +39,10 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File 
-import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Device 
-import           Hoodle.ModelAction.Layer 
-import           Hoodle.ModelAction.Select
-import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
--- import           Hoodle.Type.Enum 
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement

@@ -14,9 +14,7 @@
 
 module Hoodle.GUI.Reflect where
 
-import Control.Lens (view,set,Simple(..),Lens(..),(%~))
-import Control.Monad
--- import Control.Monad.Loops
+import Control.Lens (view,Simple,Lens,(%~))
 import qualified Control.Monad.State as St
 import Control.Monad.Trans 
 import           Graphics.UI.Gtk hiding (get,set)
@@ -50,14 +48,12 @@ reflectViewModeUI = do
     let cinfobox = view currentCanvasInfo xstate 
         ui = view gtkUIManager xstate       
     let mconnid = view (uiComponentSignalHandler.pageModeSignal) xstate
-    -- liftIO $ maybe (return ()) signalBlock mconnid 
     agr <- liftIO $ uiManagerGetActionGroups ui
     ra1 <- maybe (error "reflectUI") return =<< 
              liftIO (actionGroupGetAction (head agr) "ONEPAGEA")
     let wra1 = castToRadioAction ra1 
     selectBoxAction (pgmodupdate_s mconnid wra1) 
       (pgmodupdate_c mconnid wra1) cinfobox 
-    -- liftIO $ maybe (return ()) signalUnblock mconnid 
     return ()
   where pgmodupdate_s mconnid wra1 _cinfo = do
           liftIO $ blockWhile mconnid $
@@ -109,11 +105,6 @@ reflectPenWidthUI = do
                        . view (penInfo.penSet.currEraser.penWidth)) xst
         _ -> Nothing 
 
-
-
-
-
-
 -- | 
 reflectUIComponent :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
                    -> String 
@@ -127,13 +118,13 @@ reflectUIComponent lnz name f = do
     Just pma <- liftIO $ actionGroupGetAction (head agr) name 
     let wpma = castToRadioAction pma 
     update xst wpma mconnid   
-  where (#) :: a -> (a -> b) -> b 
-        (#) = flip ($)
+  where -- (#) :: a -> (a -> b) -> b 
+        -- (#) = flip ($)
         update xst wpma mconnid  = do 
           (f xst) # 
             (maybe (return ()) $ \v -> do
               let action = Left . ActionOrder $ 
-                    \evhandler -> do 
+                    \_evhandler -> do 
                       blockWhile mconnid 
                         (Gtk.set wpma [radioActionCurrentValue := v ] )
                       return ActionOrdered
@@ -144,9 +135,3 @@ reflectUIComponent lnz name f = do
                          ActionOrdered -> return ()
                          _ -> (liftIO $ print r) >>  go 
 
-
-{-
-hoodleModeStateEither (view hoodleModeState xst) #  
-                either (\_ -> (penType2Int. Left .view (penInfo.penType)) xst)
-                       (\_ -> (penType2Int. Right .view (selectInfo.selectType)) xst)
--}

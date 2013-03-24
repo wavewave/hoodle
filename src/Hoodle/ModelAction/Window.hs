@@ -15,7 +15,7 @@
 module Hoodle.ModelAction.Window where
 
 -- from other packages
-import           Control.Lens (view,set,over)
+import           Control.Lens (view)
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set)
@@ -104,7 +104,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     -- drag and drop setting
     dragDestSet canvas [DestDefaultMotion, DestDefaultDrop] [ActionCopy]
     dragDestAddTextTargets canvas
-    canvas `on` dragDataReceived $ \dc pos id ts -> do 
+    canvas `on` dragDataReceived $ \_dc pos _i _ts -> do 
       s <- selectionDataGetText 
       liftIO $ callback (GotLink s pos)
       

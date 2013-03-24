@@ -18,8 +18,7 @@ module Hoodle.ModelAction.File where
 
 -- from other package
 import           Control.Applicative
-import           Control.Lens (view,set,over)
-import           Control.Monad
+import           Control.Lens (view,set)
 import           Data.Attoparsec 
 import           Data.Maybe 
 import           Graphics.UI.Gtk hiding (get,set)
@@ -111,19 +110,19 @@ findFirstPDFFile :: [(Int,RPage)] -> Maybe C.ByteString
 findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
                       in if null ys then Nothing else head ys 
   where f (_,p) = case view gbackground p of 
-                    RBkgPDF _ f _ _ _ -> Just f
+                    RBkgPDF _ fi _ _ _ -> Just fi
                     _ -> Nothing 
       
 findAllPDFPages :: [(Int,RPage)] -> [Int]
 findAllPDFPages = catMaybes . map f
   where f (n,p) = case view gbackground p of 
-                    RBkgPDF _ f _ _ _ -> Just n
+                    RBkgPDF _ _ _ _ _ -> Just n
                     _ -> Nothing 
 
 replacePDFPages :: [(Int,RPage)] -> [(Int,RPage)] 
 replacePDFPages xs = map f xs 
   where f (n,p) = case view gbackground p of 
-                    RBkgPDF _ f pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
+                    RBkgPDF _ _ pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
                     _ -> (n,p) 
         
 -- | 
@@ -194,7 +193,7 @@ createPage doesembed dim fn n =
             = BackgroundPdf "pdf" (Just "absolute") (Just fn ) n 
           | not doesembed && n /= 1 
             = BackgroundPdf "pdf" Nothing Nothing n 
-          | doesembed 
+          | otherwise -- doesembed 
             = BackgroundEmbedPdf "embedpdf" n 
     in Page dim bkg [emptyLayer]
                    

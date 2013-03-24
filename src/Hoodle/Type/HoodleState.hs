@@ -104,7 +104,6 @@ import           Hoodle.Script.Hook
 import           Hoodle.Type.Enum 
 import           Hoodle.Type.Event 
 import           Hoodle.Type.Canvas
-import           Hoodle.Type.Clipboard
 import           Hoodle.Type.Window 
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Alias 

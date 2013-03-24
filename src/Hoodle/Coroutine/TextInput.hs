@@ -15,12 +15,9 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over,(%~))
+import           Control.Lens (view,set,(%~))
 import           Control.Monad.State 
--- import           Control.Monad.Trans
 import           Control.Monad.Trans.Either
-import           Control.Monad.Trans.Maybe
-import           Data.UUID.V4
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -28,39 +25,29 @@ import           Graphics.UI.Gtk hiding (get,set)
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
--- import           Data.ByteString (readFile)
 import qualified Data.ByteString.Char8 as B 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Item 
--- import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           System.Directory 
--- import           System.Environment
--- import           System.Exit 
 import           System.FilePath 
--- import           System.Process 
 --
-import           Hoodle.Accessor
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.Coroutine.Draw 
-import           Hoodle.Coroutine.File
+
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event hiding (SVG)
 import           Hoodle.Type.HoodleState 
-import           Hoodle.Type.PageArrangement
-import           Hoodle.Util
-import           Hoodle.View.Coordinate
-import           Hoodle.View.Draw
 -- 
 import Prelude hiding (readFile)
 
-
+-- | 
 textInput :: MainCoroutine ()
 textInput = do 
     modify (tempQueue %~ enqueue action) 
@@ -94,7 +81,7 @@ textInput = do
                      widgetDestroy dialog
                      return (TextInput Nothing)
 
-
+-- |
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 
 svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
@@ -119,9 +106,7 @@ svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do
     put nxstate2
     invalidateAll 
   
-  
-  
-
+-- |   
 linkInsert :: B.ByteString 
               -> (B.ByteString,FilePath)
               -> String 
@@ -151,8 +136,7 @@ linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
     put nxstate2
     invalidateAll 
 
-
-
+-- |
 makePangoTextSVG :: String -> IO (B.ByteString,BBox) 
 makePangoTextSVG str = do 
     let pangordr = do 
@@ -167,23 +151,11 @@ makePangoTextSVG str = do
         rdr layout = do setSourceRGBA 0 0 0 1
                         updateLayout layout 
                         showLayout layout 
-    (layout,bbx@(BBox (x0,y0) (x1,y1))) <- pangordr 
-    
+    (layout,(BBox (x0,y0) (x1,y1))) <- pangordr 
     tdir <- getTemporaryDirectory 
     let tfile = tdir </> "embedded.svg"
     withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> renderWith s (rdr layout)
     bstr <- B.readFile tfile 
-    return (bstr,BBox (x0,y0) (x1,y1)) -- this 20 is just arbitrary.. 
+    return (bstr,BBox (x0,y0) (x1,y1)) 
 
-
-{-                     tdir <- getTemporaryDirectory
-                     writeFile (tdir </> "latextest.tex") l 
-                     let cmd = "lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
-                     print cmd 
-                     excode <- system cmd 
-                     case excode of 
-                       ExitSuccess -> do 
-                         svg <- readFile (tdir </> "latextest.svg")
-                         return (LaTeXInput (Just (B.pack l,svg)))
-                       _ -> return (LaTeXInput Nothing) -}
 

@@ -27,7 +27,6 @@ import qualified Data.Sequence as Sq (empty)
 import           Data.Time.Clock
 import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.Matrix as Mat
-import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..))
@@ -66,19 +65,12 @@ import           Prelude hiding ((.), id)
 createTempSelectRender :: PageNum -> CanvasGeometry -> Page EditMode
                           -> a 
                           -> MainCoroutine (TempSelectRender a) 
-createTempSelectRender pnum geometry page x = do 
+createTempSelectRender _pnum geometry _page x = do 
     xst <- get
     let hdl = getHoodle xst
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
-        xformfunc = cairoXform4PageCoordinate geometry pnum 
-        renderfunc = do   
-          xformfunc 
-          cairoRenderOption (InBBoxOption Nothing) (InBBox page) 
-          return ()
-    -- tempsurface <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch)  
     (tempsurface,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
     let tempselection = TempSelectRender tempsurface (cw,ch) x
-    -- liftIO $ updateTempSelection tempselection renderfunc True
     return tempselection 
 
 

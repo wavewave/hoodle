@@ -15,7 +15,7 @@
 module Hoodle.ModelAction.Page where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set)
 import           Control.Monad (liftM)
 -- import           Control.Monad.Trans.Either
 import qualified Data.IntMap as M
@@ -25,7 +25,6 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 -- import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import qualified Data.Hoodle.Simple as S
 import           Data.Hoodle.Zipper 
 import           Graphics.Hoodle.Render.Type
 -- from this package

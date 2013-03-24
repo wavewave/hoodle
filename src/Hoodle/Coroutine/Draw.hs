@@ -17,7 +17,7 @@ module Hoodle.Coroutine.Draw where
 -- from other packages
 import           Control.Applicative 
 import qualified Data.IntMap as M
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set)
 import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.State

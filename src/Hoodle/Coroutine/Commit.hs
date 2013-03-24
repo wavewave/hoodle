@@ -12,7 +12,7 @@
 
 module Hoodle.Coroutine.Commit where
 
-import Control.Lens (view,set,over)
+import Control.Lens (view,set)
 import Control.Monad.Trans
 import Control.Monad.State
 -- from this package

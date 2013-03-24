@@ -23,7 +23,6 @@ module Hoodle.Type.Canvas
 , CanvasInfo (..) 
 , CanvasInfoBox (..)
 , CanvasInfoMap
--- , PenType (..) 
 , WidthColorStyle
 , PenHighlighterEraserSet
 , PenInfo
@@ -61,6 +60,7 @@ module Hoodle.Type.Canvas
 , currHighlighter
 , currEraser
 , currText
+, currVerticalSpace
 , penType
 , penSet
 , variableWidthPen
@@ -75,16 +75,13 @@ module Hoodle.Type.Canvas
 , boxAction
 , selectBoxAction
 , selectBox
--- , pageArrEitherFromCanvasInfoBox
--- , viewModeBranch
 -- * others
--- , getPage
 , updateCanvasDimForSingle
 , updateCanvasDimForContSingle
 ) where
 
 import           Control.Applicative ((<*>),(<$>))
-import           Control.Lens (Simple(..),Lens(..),view,set,over,lens)
+import           Control.Lens (Simple,Lens,view,set,lens)
 import qualified Data.IntMap as M
 import           Data.Sequence
 import           Graphics.Rendering.Cairo

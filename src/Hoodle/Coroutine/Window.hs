@@ -17,8 +17,6 @@ module Hoodle.Coroutine.Window where
 import           Control.Lens (view,set,over)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
-import           Data.Maybe
--- import           Data.Time.Clock 
 import           Graphics.UI.Gtk hiding (get,set)
 --
 import           Data.Hoodle.Generic
@@ -34,9 +32,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
--- import           Hoodle.Type.Predefined
 import           Hoodle.Type.Window
--- import           Hoodle.Util
 import           Hoodle.View.Draw
 --
 

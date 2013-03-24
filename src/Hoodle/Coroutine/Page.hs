@@ -19,10 +19,8 @@ import           Control.Monad
 import           Control.Monad.State
 import qualified Data.IntMap as M
 -- from hoodle-platform
-import           Data.Hoodle.BBox (BBox(..), moveBBoxULCornerTo)
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import qualified Data.Hoodle.Simple as S
 import           Graphics.Hoodle.Render.Type.Background
 -- from this package
 import           Hoodle.Accessor
@@ -45,7 +43,7 @@ import           Hoodle.View.Draw
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
                       >> adjustScrollbarWithGeometryCurrent
-                      >> invalidateAll -- invalidateCurrent
+                      >> invalidateAll 
   where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
                                . view currentCanvasInfo $ xst
         fsingle xstate cvsInfo = do 

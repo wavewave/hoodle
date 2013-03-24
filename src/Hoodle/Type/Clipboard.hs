@@ -14,7 +14,6 @@
 
 module Hoodle.Type.Clipboard where
 
-import           Control.Lens (view,set,over)
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -40,4 +39,3 @@ replaceClipContents :: [BBoxed Stroke] -> Clipboard -> Clipboard
 replaceClipContents strs _ = Clipboard strs 
 
 
--- makeLenses ''SelectInfo

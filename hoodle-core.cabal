@@ -110,7 +110,7 @@ Library
                    Hoodle.ModelAction.Clipboard
                    Hoodle.ModelAction.Eraser
                    Hoodle.ModelAction.File
-                   Hoodle.ModelAction.Item
+                   -- Hoodle.ModelAction.Item
                    Hoodle.ModelAction.Layer
                    Hoodle.ModelAction.Page
                    Hoodle.ModelAction.Pen 

@@ -17,12 +17,9 @@ import Data.ByteString
 import Data.IORef
 import Graphics.UI.Gtk
 -- from hoodle-platform
--- import Data.Hoodle.BBox
 import Data.Hoodle.Simple
-import Graphics.Hoodle.Render.Type.Item 
 -- from this package
 import Hoodle.Device 
-import Hoodle.Type.Clipboard
 import Hoodle.Type.Enum
 import Hoodle.Type.Canvas
 import Hoodle.Type.PageArrangement
@@ -36,7 +33,7 @@ data MyEvent = Initialized
              | PenMove Int PointerCoord
              | PenUp   Int PointerCoord 
              | PenColorChanged PenColor
-             | PenWidthChanged Int -- (PenType -> Double)
+             | PenWidthChanged Int 
              | AssignPenMode (Either PenType SelectType) 
              | BackgroundStyleChanged BackgroundStyle 
              | HScrollBarMoved Int Double
@@ -67,11 +64,7 @@ data MyEvent = Initialized
              deriving Show
                       
 instance Show (IORef a) where                      
-  show x = "IORef"
---              deriving (Show,Eq,Ord)
-
-             --  | EventConnected
-
+  show _ = "IORef"
 
 -- | 
 data MenuEvent = MenuNew 
@@ -96,8 +89,6 @@ data MenuEvent = MenuNew
                | MenuCopy 
                | MenuPaste 
                | MenuDelete
-               --    | MenuNetCopy
-               --    | MenuNetPaste
                | MenuFullScreen 
                | MenuZoom 
                | MenuZoomIn
@@ -130,8 +121,6 @@ data MenuEvent = MenuNew
                | MenuPaperStyle 
                | MenuApplyToAllPages 
                | MenuEmbedAllPDFBkg
-               --  | MenuLoadBackground
-               --  | MenuBackgroundScreenshot 
                | MenuDefaultPaper
                | MenuSetAsDefaultPaper
                | MenuText 

@@ -52,4 +52,16 @@ hoodle
    * color picker menu and toolbar button 
    * experimental smooth scrolling support 
    * rendering engine improved
- 
+
+0.2: 24 Mar 2013
+   * hoodle data format updated. now hoodle document has a unique id.  
+   * linking between documents implemented 
+   * vertical space inserting tool implemented
+   * a widget introduced for panning and zooming 
+   * drag and drop linking implemented 
+   * drag and drop image embedding implemented 
+   * poppler pdf support is mandatory 
+   * pdf can be embedded in a file
+   * toolbox ui reflects current hoodle state more correctly
+   * slimmer select box design
+   * several rendering glitches fixed 

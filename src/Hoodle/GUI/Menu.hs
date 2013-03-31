@@ -281,6 +281,11 @@ getMenuUI evar = do
   ebdpdfa <- toggleActionNew "EBDPDFA" "Embed PDF" (Just "Just a stub") Nothing
   ebdpdfa `on` actionToggled $ do 
     eventHandler evar (Menu MenuEmbedPDF)
+  -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
+  widgetona <- actionNewAndRegister "WIDGETONA" "Widgets On"  (Just "Just a stub") Nothing (justMenu MenuWidgetOn)
+  widgetoffa <- actionNewAndRegister "WIDGETOFFA" "Widgets Off" (Just "Just a stub") Nothing (justMenu MenuWidgetOff)
+    
+    
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
@@ -322,10 +327,11 @@ getMenuUI evar = do
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
-        , apallpga, embedbkgpdfa, {- ldbkga, bkgscrshta, -} defppa, setdefppa
+        , apallpga, embedbkgpdfa, defppa, setdefppa
         , texta, linka, shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
+        , widgetona, widgetoffa 
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
@@ -352,14 +358,11 @@ getMenuUI evar = do
   
   
   let disabledActions = 
-        [ recenta, printa {- , exporta-}
-        , cuta, copya, {- pastea, -} deletea
-        {- , fscra -}
+        [ recenta, printa
+        , cuta, copya, deletea
         ,  setzma
         , shwlayera, hidlayera
-        , newpgea, {- delpga, -} ppsizea, ppclra
-        {- , ppstya, apallpga -} 
-        {- , ldbkga, bkgscrshta, -}
+        , newpgea, ppsizea, ppclra
         , defppa, setdefppa
         , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta

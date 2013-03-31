@@ -145,6 +145,8 @@
        <menuitem action="POPMENUA" /> 
        <menuitem action="EBDIMGA" />
        <menuitem action="EBDPDFA" />
+       <menuitem action="WIDGETONA" />
+       <menuitem action="WIDGETOFFA" />
        <menuitem action="DCRDCOREA" />                        
        <menuitem action="ERSRTIPA" />                        
        <menuitem action="PRESSRSENSA" />                        

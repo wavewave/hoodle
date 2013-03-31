@@ -74,8 +74,6 @@ module Hoodle.Type.HoodleState
 , updateFromCanvasInfoAsCurrentCanvas
 , setCanvasId
 , modifyCanvasInfo
--- , modifyCurrentCanvasInfo
--- , modifyCurrCvsInfoM
 , hoodleModeStateEither
 , getCurrentPageFromHoodleModeState
 , getCurrentPageDimFromHoodleModeState
@@ -95,7 +93,6 @@ import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
--- import           Data.Hoodle.Map
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 -- from this package 
@@ -111,9 +108,6 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 -- 
 import Prelude hiding ((.), id)
-
-
--- type HoodleModeStateIO = StateT HoodleState IO 
 
 -- | 
 
@@ -149,8 +143,6 @@ data HoodleState =
                 , _settings :: Settings 
                 , _uiComponentSignalHandler :: UIComponentSignalHandler 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
-                -- , _pageModeSignal :: Maybe (ConnectId RadioAction)
-                -- , _penModeSignal :: Maybe (ConnectId RadioAction)
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 , _hookSet :: Maybe Hook
                 , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
@@ -327,7 +319,6 @@ doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
 -- | flag for embedding pdf background as base64 in hdl file 
 doesEmbedPDF :: Simple Lens Settings Bool
 doesEmbedPDF = lens _doesEmbedPDF (\f a -> f { _doesEmbedPDF = a } )
-
 
 -- | default hoodle state 
 emptyHoodleState :: IO HoodleState 

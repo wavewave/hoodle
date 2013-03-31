@@ -93,6 +93,7 @@ import           Data.Hoodle.Predefined
 --
 import           Hoodle.Type.Enum 
 import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Widget
 --
 
 
@@ -143,10 +144,6 @@ zoomMode = lens _zoomMode (\f a -> f { _zoomMode = a } )
 pageArrangement :: Simple Lens (ViewInfo a) (PageArrangement a)
 pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 
--- | 
-data CanvasWidgets = 
-  CanvasWidgets { _testWidgetPosition :: CanvasCoordinate
-                }   
 
 
 -- |
@@ -163,14 +160,6 @@ data CanvasInfo a =
                                , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                                , _canvasWidgets :: CanvasWidgets
                                }
-
--- | default hoodle widgets
-defaultCanvasWidgets :: CanvasWidgets
-defaultCanvasWidgets = 
-  CanvasWidgets
-  { _testWidgetPosition = CvsCoord (100,100)
-  }   
-
 
 -- |     
 xfrmCvsInfo :: (ViewMode a, ViewMode b) => 
@@ -257,9 +246,6 @@ adjustments = lens getter setter
 canvasWidgets :: Simple Lens (CanvasInfo a) CanvasWidgets 
 canvasWidgets = lens _canvasWidgets (\f a -> f { _canvasWidgets = a } )
 
--- | 
-testWidgetPosition :: Simple Lens CanvasWidgets CanvasCoordinate
-testWidgetPosition = lens _testWidgetPosition (\f a -> f { _testWidgetPosition = a} )
 
 
 -- |
@@ -298,7 +284,13 @@ unboxGet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> CanvasIn
 unboxGet f x = fmap4CvsInfoBox (view f) x
 
 
+-- | 
+unboxSet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b -> CanvasInfoBox
+unboxSet l (CanvasSinglePage a) b = CanvasSinglePage (set l b a)
+unboxSet l (CanvasContPage a) b = CanvasContPage (set l b a) 
 
+unboxLens :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
+unboxLens l = lens (unboxGet l) (unboxSet l) 
 
 -- | 
 boxAction :: Monad m => (forall a. ViewMode a => CanvasInfo a -> m b) 
@@ -370,9 +362,6 @@ currVerticalSpace :: Simple Lens PenHighlighterEraserSet WidthColorStyle
 currVerticalSpace = lens _currVerticalSpace 
                       (\f a -> f { _currVerticalSpace = a } )
 
-
-
-
                      
 -- | 
 data PenInfo = PenInfo { _penType :: PenType
@@ -393,10 +382,6 @@ penSet = lens _penSet (\f a -> f { _penSet = a } )
 variableWidthPen :: Simple Lens PenInfo Bool
 variableWidthPen = lens _variableWidthPen (\f a -> f { _variableWidthPen = a } )
 
-
-
-
-
 -- | 
 currentTool :: Simple Lens PenInfo WidthColorStyle 
 currentTool = lens chooser setter
@@ -405,8 +390,6 @@ currentTool = lens chooser setter
                           HighlighterWork -> _currHighlighter . _penSet $ pinfo
                           EraserWork -> _currEraser . _penSet $ pinfo
                           VerticalSpaceWork -> NoWidthColorStyle
-                          
-                          -- TextWork -> _currText . _penSet $ pinfo 
         setter pinfo wcs = 
           let pset = _penSet pinfo
               psetnew = case _penType pinfo of 
@@ -414,7 +397,6 @@ currentTool = lens chooser setter
                           HighlighterWork -> pset { _currHighlighter = wcs }
                           EraserWork -> pset { _currEraser = wcs }
                           VerticalSpaceWork -> pset 
-                          -- TextWork -> pset { _currText = wcs }
           in  pinfo { _penSet = psetnew } 
 
 -- |         
@@ -446,16 +428,6 @@ defaultPenInfo =
           , _variableWidthPen = False
           } 
                                            
-
-
-
-
-
--- makeLenses ''PenDraw
--- makeLenses ''PenInfo
--- makeLenses ''PenHighlighterEraserSet
--- makeLenses ''WidthColorStyle 
-
 -- | 
 updateCanvasDimForSingle :: CanvasDimension 
                             -> CanvasInfo SinglePage  

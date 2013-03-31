@@ -15,13 +15,12 @@
 module Hoodle.Widget.PanZoom where
 
 -- from other packages
-import           Control.Category
-import           Control.Lens (view,set)
+import           Control.Lens (view,set,over)
 import           Control.Monad.Identity 
 import           Control.Monad.State 
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo 
-import           Graphics.UI.Gtk hiding (get,set) 
+-- import           Graphics.UI.Gtk hiding (get,set) 
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -39,13 +38,12 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Type.PageArrangement 
+import           Hoodle.Type.Widget
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
-import Prelude hiding ((.),id)
 
-
-data WidgetMode = Moving | Zooming | Panning Bool 
+data PanZoomMode = Moving | Zooming | Panning Bool 
 
 widgetCheckPen :: CanvasId -> PointerCoord 
                -> MainCoroutine () 
@@ -122,9 +120,8 @@ findPanXform (Dim w h) ((x0,y0),(x,y)) =
            | otherwise = ty 
     in ((dx-w),(dy-h))
 
-
 -- | 
-startWidgetAction :: WidgetMode 
+startWidgetAction :: PanZoomMode 
                      -> CanvasId 
                      -> CanvasGeometry 
                      -> (Surface,Surface)
@@ -150,7 +147,6 @@ startWidgetAction mode cid geometry (sfc,sfc2)
               ccoord@(CvsCoord (xo,yo)) = CvsCoord (xw+50,yw+50)
               (z,(_,_)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
               nratio = zoomRatioFrmRelToCurr geometry z
-              
               mpnpgxy = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
           canvasZoomUpdateGenRenderCvsId (return ()) cid (Just (Zoom nratio)) Nothing 
           case mpnpgxy of 
@@ -174,7 +170,7 @@ startWidgetAction mode cid geometry (sfc,sfc2)
     _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
 
 -- | 
-movingRender :: WidgetMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
+movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
                 -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
                 -> MainCoroutine () 
 movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
@@ -232,13 +228,24 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
           --   
           xst2 <- get 
           let cinfobox = getCanvasInfo cid xst2 
-              {- drawact :: (ViewMode a) => CanvasInfo a -> IO ()
-              drawact cinfo = do 
-                let canvas = view drawArea cinfo 
-                win <- widgetGetDrawWindow canvas
-                renderWithDrawable win $ do 
-                  setSourceSurface sfc2 0 0 
-                  setOperator OperatorSource 
-                  paint -}
           liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
 
+-- | 
+turnOnPanZoom :: MainCoroutine ()
+turnOnPanZoom = do 
+  liftIO $ putStrLn "turn on pan zoom widget" 
+  
+-- | 
+turnOffPanZoom :: MainCoroutine () 
+turnOffPanZoom = do 
+  liftIO $ putStrLn "turn off pan zoom widget"
+  
+{-xst <- get
+  let cinfobox = view currentCanvasInfo xst 
+      unboxGet (widgetConfig.doesusePanZoom)
+      
+      
+  modify (over (.canvasWidgets.widgetConfig.doesUsePanZoom) not)
+  
+  
+  invalidateAll -}

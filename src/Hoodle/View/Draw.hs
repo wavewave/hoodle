@@ -39,12 +39,13 @@ import Graphics.Hoodle.Render.Type
 import Graphics.Hoodle.Render.Type.HitTest 
 import Graphics.Hoodle.Render.Util 
 -- from this package
-import Hoodle.Type.Canvas
 import Hoodle.Type.Alias 
-import Hoodle.Util
+import Hoodle.Type.Canvas
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined
 import Hoodle.Type.Enum
+import Hoodle.Type.Predefined
+import Hoodle.Type.Widget
+import Hoodle.Util
 import Hoodle.View.Coordinate
 -- 
 import Prelude hiding ((.),id,mapM_,concatMap,foldr)
@@ -312,7 +313,8 @@ drawContPageGen render = ContPageDraw func
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 -- widget test
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) -- (CvsCoord (100,100))
+                when (view (canvasWidgets.widgetConfig.doesUsePanZoom) cinfo) $
+                  renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) 
                 -- End Widget
                 resetClip 
                 return nhdl 
@@ -369,7 +371,8 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 -- widget test
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
+                when (view (canvasWidgets.widgetConfig.doesUsePanZoom) cinfo) $
+                  renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
                 -- End Widget 
                 resetClip 
                 return nthdl2  

@@ -46,7 +46,6 @@ Library
                    transformers == 0.3.*,
                    transformers-free == 1.0.*,
                    hoodle-types >= 0.2,
-                   -- hoodle-common >= 0.1, 
                    hoodle-parser >= 0.2,
                    xournal-parser >= 0.5.0.1,
                    hoodle-render >= 0.3,
@@ -70,13 +69,6 @@ Library
                    monad-loops >= 0.3, 
                    network, 
                    poppler >= 0.12.2.2
-                   
---   if flag(poppler) 
---     Build-Depends:    
---   else 
---     Build-Depends:
-
-
   Exposed-Modules: 
                    Hoodle.Accessor
                    Hoodle.Config
@@ -87,7 +79,6 @@ Library
                    Hoodle.Coroutine.Default
                    Hoodle.Coroutine.Draw
                    Hoodle.Coroutine.Eraser
-                   -- Hoodle.Coroutine.EventConnect
                    Hoodle.Coroutine.File
                    Hoodle.Coroutine.Highlighter
                    Hoodle.Coroutine.Layer
@@ -127,13 +118,13 @@ Library
                    Hoodle.Type.Coroutine
                    Hoodle.Type.Enum
                    Hoodle.Type.Event 
+                   Hoodle.Type.HoodleState
                    Hoodle.Type.PageArrangement 
                    Hoodle.Type.Predefined
                    Hoodle.Type.Undo 
                    Hoodle.Type.Window
-                   Hoodle.Type.HoodleState
+                   Hoodle.Type.Widget 
                    Hoodle.Util
-                   -- Hoodle.Util.Process
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
                    Hoodle.Widget.PanZoom

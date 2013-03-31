@@ -353,6 +353,8 @@ menuEventProcess MenuApplyToAllPages = do
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
 menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
+menuEventProcess MenuWidgetOn = turnOnPanZoom
+menuEventProcess MenuWidgetOff = turnOffPanZoom
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

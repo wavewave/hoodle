@@ -309,13 +309,10 @@ drawContPageGen render = ContPageDraw func
                        where rfunc (k,pg) m = M.adjust (const pg) k m 
                 let nhdl = set gpages npgs hdl  
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
-                -- Start Widget 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
-                -- widget test
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
                 when (view (canvasWidgets.widgetConfig.doesUsePanZoom) cinfo) $
                   renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) 
-                -- End Widget
                 resetClip 
                 return nhdl 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -367,13 +364,10 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                                     lift (selpagerender (PageNum n,tpage)) 
                 let nthdl2 = set gselSelected r nthdl
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
-                -- Start Widget
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
-                -- widget test
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
                 when (view (canvasWidgets.widgetConfig.doesUsePanZoom) cinfo) $
                   renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
-                -- End Widget 
                 resetClip 
                 return nthdl2  
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -550,6 +544,17 @@ renderPanZoomWidget mbbox (CvsCoord (x,y)) = do
   setSourceRGBA 0.7 0.2 0.2 0.5
   rectangle (x+30) (y+30) 40 40 
   fill  
+  setSourceRGBA 0.5 0.5 0.5 0.5
+  rectangle (x+90) y 10 10
+  fill
+  setSourceRGBA 0 0 0 0.7 
+  setLineWidth 1
+  moveTo (x+90) y 
+  lineTo (x+100) (y+10)
+  stroke 
+  moveTo (x+90) (y+10)
+  lineTo (x+100) y
+  stroke
   resetClip 
 
 

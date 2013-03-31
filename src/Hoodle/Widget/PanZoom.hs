@@ -43,7 +43,7 @@ import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
 
-data PanZoomMode = Moving | Zooming | Panning Bool 
+data PanZoomMode = Moving | Zooming | Panning Bool
 
 widgetCheckPen :: CanvasId -> PointerCoord 
                -> MainCoroutine () 
@@ -64,24 +64,28 @@ widgetCheckPen cid pcoord act = do
           obbox = BBox (x0,y0) (x0+100,y0+100) 
           pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
           pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
+          pbbox3 = BBox (x0+90,y0) (x0+100,y0+10)
           zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
       if (isPointInBBox obbox (x,y))  
          then do 
-           let mode | isPointInBBox zbbox (x,y) = Zooming 
-                    | isPointInBBox pbbox1 (x,y) = Panning False
-                    | isPointInBBox pbbox2 (x,y) = Panning True 
-                    | otherwise = Moving 
+           let mmode | isPointInBBox zbbox (x,y) = Just Zooming 
+                     | isPointInBBox pbbox1 (x,y) = Just (Panning False)
+                     | isPointInBBox pbbox2 (x,y) = Just (Panning True)
+                     | isPointInBBox pbbox3 (x,y) = Nothing
+                     | otherwise = Just Moving 
            let hdl = getHoodle xst
-           (sfc,Dim wsfc hsfc) <- 
-             case mode of 
-               Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
-               Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
-               Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
-           sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
-           ctime <- liftIO getCurrentTime 
-           startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
-           liftIO $ surfaceFinish sfc 
-           liftIO $ surfaceFinish sfc2
+           case mmode of 
+             Nothing -> togglePanZoom
+             Just mode -> do 
+               (sfc,Dim wsfc hsfc) <- case mode of 
+                                        Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
+                                        Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
+                                        Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
+               sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+               ctime <- liftIO getCurrentTime 
+               startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
+               liftIO $ surfaceFinish sfc 
+               liftIO $ surfaceFinish sfc2
          else act 
 
 -- | 

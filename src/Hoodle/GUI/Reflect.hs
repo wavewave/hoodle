@@ -118,9 +118,7 @@ reflectUIComponent lnz name f = do
     Just pma <- liftIO $ actionGroupGetAction (head agr) name 
     let wpma = castToRadioAction pma 
     update xst wpma mconnid   
-  where -- (#) :: a -> (a -> b) -> b 
-        -- (#) = flip ($)
-        update xst wpma mconnid  = do 
+  where update xst wpma mconnid  = do 
           (f xst) # 
             (maybe (return ()) $ \v -> do
               let action = Left . ActionOrder $ 

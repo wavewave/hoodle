@@ -181,7 +181,6 @@ makeNewHoodleWithPDF doesembed fp = do
       return (Just nhdl)
       
 -- | 
-      
 createPage :: Bool         -- ^ does embed pdf?
            -> Dimension 
            -> C.ByteString 
@@ -197,8 +196,9 @@ createPage doesembed dim fn n =
             = BackgroundEmbedPdf "embedpdf" n 
     in Page dim bkg [emptyLayer]
                    
--- |                    
 
+
+-- | this function must be moved to GUI.Reflect
 toggleSave :: UIManager -> Bool -> IO ()
 toggleSave ui b = do 
     agr <- uiManagerGetActionGroups ui >>= \x -> 

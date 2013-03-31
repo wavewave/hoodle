@@ -254,8 +254,9 @@ fileLoad filename = do
     xstate' <- liftIO $ getFileContent (Just filename) xstate
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
     xstateNew <- return $ over currentCanvasInfo (const ncvsinfo) xstate'
-    put . set isSaved True 
-      $ xstateNew 
+    put . set isSaved True $ xstateNew 
+    let ui = view gtkUIManager xstate
+    liftIO $ toggleSave ui False
     liftIO $ setTitleFromFileName xstateNew  
     clearUndoHistory 
     modeChange ToViewAppendMode 

@@ -128,11 +128,14 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
 initialize :: MyEvent -> MainCoroutine ()
 initialize ev = do  
     case ev of 
-      Initialized -> do return () 
-                        -- additional initialization goes here
+      Initialized -> do -- additional initialization goes here
                         viewModeChange ToContSinglePage
                         -- pageZoomChange (Zoom 0.3)  
                         pageZoomChange FitWidth
+                        xst <- get 
+                        let ui = view gtkUIManager xst
+                        liftIO $ toggleSave ui False
+                        put (set isSaved True xst) 
       _ -> do ev' <- nextevent
               initialize ev'
 

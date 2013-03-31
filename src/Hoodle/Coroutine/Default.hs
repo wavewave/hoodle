@@ -84,8 +84,9 @@ initCoroutine :: DeviceList
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> Bool -- ^ xinputbool 
+              -> Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,UIManager,VBox)
-initCoroutine devlst window mfname mhook maxundo xinputbool = do 
+initCoroutine devlst window mfname mhook maxundo xinputbool stbar = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -107,6 +108,7 @@ initCoroutine devlst window mfname mhook maxundo xinputbool = do
           . set frameState wconf' 
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
+          . set statusBar (Just stbar)
           $ st4
           
   st6 <- getFileContent mfname st5
@@ -133,6 +135,9 @@ initialize ev = do
                         -- pageZoomChange (Zoom 0.3)  
                         pageZoomChange FitWidth
                         xst <- get 
+                        let Just sbar = view statusBar xst 
+                        cxtid <- liftIO $ statusbarGetContextId sbar "test"
+                        liftIO $ statusbarPush sbar cxtid "Hello there" 
                         let ui = view gtkUIManager xst
                         liftIO $ toggleSave ui False
                         put (set isSaved True xst) 

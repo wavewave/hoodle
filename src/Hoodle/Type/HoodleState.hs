@@ -44,6 +44,7 @@ module Hoodle.Type.HoodleState
 , hookSet 
 , tempLog 
 , tempQueue 
+, statusBar
 -- 
 , hoodleFileName 
 --
@@ -147,6 +148,7 @@ data HoodleState =
                 , _hookSet :: Maybe Hook
                 , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
                 , _tempLog :: String -> String 
+                , _statusBar :: Maybe Statusbar
                 } 
 
 
@@ -256,6 +258,9 @@ tempQueue = lens _tempQueue (\f a -> f { _tempQueue = a } )
 tempLog :: Simple Lens HoodleState (String -> String)
 tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 
+-- | 
+statusBar :: Simple Lens HoodleState (Maybe Statusbar)
+statusBar = lens _statusBar (\f a -> f { _statusBar = a })
 
 -- | 
 data HoodleFileControl = 
@@ -356,6 +361,7 @@ emptyHoodleState = do
     , _hookSet = Nothing
     , _tempQueue = emptyQueue
     , _tempLog = id 
+    , _statusBar = Nothing 
     }
 
 emptyHoodleFileControl :: HoodleFileControl 

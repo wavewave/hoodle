@@ -51,7 +51,8 @@ startGUI mfname mhook = do
   maxundo <- getMaxUndo cfg >>= 
                \mmax -> maybe (return 50) (return . id) mmax
   xinputbool <- getXInputConfig cfg 
-  (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  xinputbool
+  statusbar <- statusbarNew 
+  (tref,st0,ui,vbox) <- initCoroutine devlst window mfname mhook maxundo  xinputbool statusbar 
   setTitleFromFileName st0
   -- need for refactoring
   setToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
@@ -74,7 +75,6 @@ startGUI mfname mhook = do
   ebox <- eventBoxNew
   label <- labelNew (Just "drag me")
   containerAdd ebox label 
-  
   dragSourceSet ebox [Button1] [ActionCopy]
   dragSourceSetIconStock ebox stockIndex
   dragSourceAddTextTargets ebox
@@ -88,6 +88,7 @@ startGUI mfname mhook = do
         readIORef ref
       maybe (return ()) (selectionDataSetText >=> const (return ())) minfo
   --
+  -- 
   hbox <- hBoxNew False 0 
   boxPackStart hbox toolbar1 PackGrow 0
   boxPackStart hbox ebox PackNatural 0
@@ -95,7 +96,8 @@ startGUI mfname mhook = do
   boxPackStart vbox menubar PackNatural 0 
   boxPackStart vbox hbox PackNatural 0
   boxPackStart vbox toolbar2 PackNatural 0  
-  boxPackEnd vbox (view rootWindow st0) PackGrow 0 
+  boxPackEnd vbox statusbar PackNatural 0 
+  boxPackStart vbox (view rootWindow st0) PackGrow 0 
   window `on` deleteEvent $ do
     liftIO $ eventHandler tref (Menu MenuQuit)
     return True

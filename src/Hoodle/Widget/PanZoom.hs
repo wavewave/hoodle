@@ -66,8 +66,6 @@ widgetCheckPen cid pcoord act = do
           pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
           pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
           zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
-              
-          
       if (isPointInBBox obbox (x,y))  
          then do 
            let mode | isPointInBBox zbbox (x,y) = Zooming 
@@ -85,10 +83,9 @@ widgetCheckPen cid pcoord act = do
            startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
            liftIO $ surfaceFinish sfc 
            liftIO $ surfaceFinish sfc2
-         else do 
-           act 
+         else act 
 
-
+-- | 
 findZoomXform :: Dimension 
                -> ((Double,Double),(Double,Double),(Double,Double)) 
                -> (Double,(Double,Double))
@@ -176,7 +173,7 @@ startWidgetAction mode cid geometry (sfc,sfc2)
       invalidate cid 
     _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
 
-
+-- | 
 movingRender :: WidgetMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
                 -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
                 -> MainCoroutine () 
@@ -200,12 +197,6 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                   ncinfobox = selectBox changeact changeact  cinfobox
               put (setCanvasInfo (cid,ncinfobox) xst)
               virtualDoubleBufferDraw sfc sfc2 (return ()) (renderPanZoomWidget Nothing nwpos)
-              {- renderWith sfc2 $ do 
-                setSourceSurface sfc 0 0 
-                setOperator OperatorSource 
-                paint
-                setOperator OperatorOver
-                renderPanZoomWidget Nothing nwpos -}
             Zooming -> do 
               let cinfobox = getCanvasInfo cid xst               
               let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
@@ -215,18 +206,6 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
               virtualDoubleBufferDraw sfc sfc2 
                 (save >> scale z z >> translate xtrans ytrans)
                 (restore >> renderPanZoomWidget Nothing pos)
-              {- 
-              renderWith sfc2 $ do 
-                  save
-                  scale z z
-                  translate xtrans ytrans 
-                  setSourceSurface sfc 0 0 
-                  setOperator OperatorSource 
-                  paint
-                  setOperator OperatorOver
-                  restore
-                  renderPanZoomWidget Nothing pos 
-            -}
             Panning b -> do 
               let cinfobox = getCanvasInfo cid xst               
                   CanvasDimension cdim = canvasDim geometry 
@@ -250,28 +229,16 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
               virtualDoubleBufferDraw sfc sfc2 
                 (save >> translate xtrans ytrans) 
                 (restore >> renderPanZoomWidget Nothing nwpos)
-              {-     
-              renderWith sfc2 $ do 
-                  save
-                  translate xtrans ytrans 
-                  setSourceSurface sfc 0 0 
-                  setOperator OperatorSource 
-                  paint
-                  setOperator OperatorOver
-                  restore
-                  renderPanZoomWidget Nothing nwpos 
-              -}
           --   
           xst2 <- get 
           let cinfobox = getCanvasInfo cid xst2 
-              drawact :: (ViewMode a) => CanvasInfo a -> IO ()
+              {- drawact :: (ViewMode a) => CanvasInfo a -> IO ()
               drawact cinfo = do 
                 let canvas = view drawArea cinfo 
                 win <- widgetGetDrawWindow canvas
                 renderWithDrawable win $ do 
                   setSourceSurface sfc2 0 0 
                   setOperator OperatorSource 
-                  paint
-          liftIO $ boxAction drawact cinfobox
+                  paint -}
+          liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
 
-      

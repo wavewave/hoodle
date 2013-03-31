@@ -124,6 +124,16 @@ virtualDoubleBufferDraw sfc sfc2 pre post =
       setOperator OperatorOver
       post  
           
+doubleBufferFlush :: ViewMode a => Surface -> CanvasInfo a -> IO () 
+doubleBufferFlush sfc cinfo = do 
+      let canvas = view drawArea cinfo 
+      win <- widgetGetDrawWindow canvas
+      renderWithDrawable win $ do 
+        setSourceSurface sfc 0 0 
+        setOperator OperatorSource 
+        paint
+  
+
 
 -- | common routine for double buffering 
 doubleBufferDraw :: (DrawWindow, Maybe Surface)  

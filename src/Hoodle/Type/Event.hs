@@ -147,8 +147,7 @@ data MenuEvent = MenuNew
                | MenuUsePopUpMenu
                | MenuEmbedImage
                | MenuEmbedPDF
-               | MenuWidgetOn
-               | MenuWidgetOff
+               | MenuWidgetToggle
                | MenuDiscardCoreEvents 
                | MenuEraserTip 
                | MenuPressureSensitivity

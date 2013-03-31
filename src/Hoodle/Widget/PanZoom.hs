@@ -51,7 +51,8 @@ widgetCheckPen :: CanvasId -> PointerCoord
 widgetCheckPen cid pcoord act = do 
     xst <- get
     let cinfobox = getCanvasInfo cid xst 
-    boxAction (f xst) cinfobox 
+        b = view (unboxLens (canvasWidgets.widgetConfig.doesUsePanZoom)) cinfobox
+    if b then boxAction (f xst) cinfobox else act 
   where 
     f xst cinfo = do 
       let cvs = view drawArea cinfo
@@ -217,10 +218,11 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                           then CvsCoord (nposx,nposy) 
                           else 
                             runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox)
-                  changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
-                  changeact cinfo =  
-                    set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
-                  ncinfobox = selectBox changeact changeact  cinfobox
+                  -- changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+                  -- changeact cinfo =  
+                  --   set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
+                  --             selectBox changeact changeact  cinfobox
+                  ncinfobox = set (unboxLens (canvasWidgets.testWidgetPosition)) nwpos cinfobox
               put (setCanvasInfo (cid,ncinfobox) xst)
               virtualDoubleBufferDraw sfc sfc2 
                 (save >> translate xtrans ytrans) 
@@ -230,22 +232,9 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
           let cinfobox = getCanvasInfo cid xst2 
           liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
 
--- | 
-turnOnPanZoom :: MainCoroutine ()
-turnOnPanZoom = do 
-  liftIO $ putStrLn "turn on pan zoom widget" 
   
 -- | 
-turnOffPanZoom :: MainCoroutine () 
-turnOffPanZoom = do 
-  liftIO $ putStrLn "turn off pan zoom widget"
-  
-{-xst <- get
-  let cinfobox = view currentCanvasInfo xst 
-      unboxGet (widgetConfig.doesusePanZoom)
-      
-      
-  modify (over (.canvasWidgets.widgetConfig.doesUsePanZoom) not)
-  
-  
-  invalidateAll -}
+togglePanZoom :: MainCoroutine () 
+togglePanZoom = do 
+  modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUsePanZoom)) not)
+  invalidateAll  

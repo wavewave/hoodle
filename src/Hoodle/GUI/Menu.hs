@@ -282,9 +282,7 @@ getMenuUI evar = do
   ebdpdfa `on` actionToggled $ do 
     eventHandler evar (Menu MenuEmbedPDF)
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
-  widgetona <- actionNewAndRegister "WIDGETONA" "Widgets On"  (Just "Just a stub") Nothing (justMenu MenuWidgetOn)
-  widgetoffa <- actionNewAndRegister "WIDGETOFFA" "Widgets Off" (Just "Just a stub") Nothing (justMenu MenuWidgetOff)
-    
+  widgettogglea <- actionNewAndRegister "WIDGETTOGGLEA" "Toggle Pan/Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuWidgetToggle)
     
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
@@ -331,7 +329,7 @@ getMenuUI evar = do
         , texta, linka, shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
-        , widgetona, widgetoffa 
+        , widgettogglea
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 

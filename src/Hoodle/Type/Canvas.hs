@@ -69,6 +69,8 @@ module Hoodle.Type.Canvas
 , xfrmViewInfo
 , getDrawAreaFromBox
 , unboxGet
+, unboxSet
+, unboxLens
 , fmap4CvsInfoBox
 , insideAction4CvsInfoBox
 , insideAction4CvsInfoBoxF

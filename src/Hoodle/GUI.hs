@@ -38,7 +38,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 --
-import           Prelude -- hiding (catch)
+import           Prelude ((.),($),String,Bool(..),const,error,flip,id,map) -- hiding (catch)
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 

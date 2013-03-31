@@ -199,18 +199,23 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                     set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
                   ncinfobox = selectBox changeact changeact  cinfobox
               put (setCanvasInfo (cid,ncinfobox) xst)
-              renderWith sfc2 $ do 
+              virtualDoubleBufferDraw sfc sfc2 (return ()) (renderPanZoomWidget Nothing nwpos)
+              {- renderWith sfc2 $ do 
                 setSourceSurface sfc 0 0 
                 setOperator OperatorSource 
                 paint
                 setOperator OperatorOver
-                renderPanZoomWidget Nothing nwpos 
+                renderPanZoomWidget Nothing nwpos -}
             Zooming -> do 
               let cinfobox = getCanvasInfo cid xst               
               let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
               let (xo,yo) = (xw+50,yw+50)
                   CanvasDimension cdim = canvasDim geometry 
                   (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
+              virtualDoubleBufferDraw sfc sfc2 
+                (save >> scale z z >> translate xtrans ytrans)
+                (restore >> renderPanZoomWidget Nothing pos)
+              {- 
               renderWith sfc2 $ do 
                   save
                   scale z z
@@ -221,6 +226,7 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                   setOperator OperatorOver
                   restore
                   renderPanZoomWidget Nothing pos 
+            -}
             Panning b -> do 
               let cinfobox = getCanvasInfo cid xst               
                   CanvasDimension cdim = canvasDim geometry 
@@ -241,7 +247,10 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                     set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
                   ncinfobox = selectBox changeact changeact  cinfobox
               put (setCanvasInfo (cid,ncinfobox) xst)
-                  
+              virtualDoubleBufferDraw sfc sfc2 
+                (save >> translate xtrans ytrans) 
+                (restore >> renderPanZoomWidget Nothing nwpos)
+              {-     
               renderWith sfc2 $ do 
                   save
                   translate xtrans ytrans 
@@ -251,6 +260,7 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                   setOperator OperatorOver
                   restore
                   renderPanZoomWidget Nothing nwpos 
+              -}
           --   
           xst2 <- get 
           let cinfobox = getCanvasInfo cid xst2 

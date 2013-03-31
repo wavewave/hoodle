@@ -108,6 +108,23 @@ getViewableBBox geometry mbbox =
   let ViewPortBBox vportbbox = getCanvasViewPort geometry  
   in (fromMaybe mbbox :: IntersectBBox) `mappend` (Intersect (Middle vportbbox))
                
+-- | double buffering within two image surfaces 
+virtualDoubleBufferDraw :: (MonadIO m) => 
+                           Surface  -- source surface 
+                        -> Surface  -- target surface 
+                        -> Render () -- pre-render before source paint 
+                        -> Render () -- post-render after source paint 
+                        -> m ()
+virtualDoubleBufferDraw sfc sfc2 pre post = 
+    renderWith sfc2 $ do 
+      pre
+      setSourceSurface sfc 0 0 
+      setOperator OperatorSource 
+      paint
+      setOperator OperatorOver
+      post  
+          
+
 -- | common routine for double buffering 
 doubleBufferDraw :: (DrawWindow, Maybe Surface)  
                     -> CanvasGeometry -> Render () -> Render a
@@ -539,12 +556,10 @@ canvasImageSurface mmulti geometry hdl = do
       nbbx_cvs = 
         xformBBox ( unCvsCoord . desktop2Canvas geometry . DeskCoord ) nbbx_desk
       nvport = ViewPortBBox nbbx_desk
-      -- Dim _w_desk _h_desk = bboxToDim nbbx_desk
       Dim w_cvs  h_cvs  = bboxToDim nbbx_cvs
   let pgs = view gpages hdl 
       drawpgs = (catMaybes . map f . getPagesInRange geometry nvport) hdl 
         where f k = maybe Nothing (\a -> Just (k,a)) . M.lookup (unPageNum k) $ pgs
-      
       onepagerender (pn,pg) = do 
         identityMatrix 
         case mmulti of 

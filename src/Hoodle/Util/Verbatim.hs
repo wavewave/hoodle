@@ -1,14 +1,15 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Util.Verbatim 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Hoodle.Util.Verbatim where
 
 import Language.Haskell.TH.Quote
@@ -21,6 +22,4 @@ verbatim = QuasiQuoter { quoteExp = litE . stringL
                        , quoteType = undefined 
                        , quoteDec = undefined
                        }
---           , quotePat = litP . stringP
---           } 
 

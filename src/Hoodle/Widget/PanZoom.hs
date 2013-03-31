@@ -8,6 +8,8 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
+-- Pan-Zoom widget drawing and action
+-- 
 -----------------------------------------------------------------------------
 
 module Hoodle.Widget.PanZoom where
@@ -20,33 +22,23 @@ import           Control.Monad.State
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo 
 import           Graphics.UI.Gtk hiding (get,set) 
--- import           Graphics.UI.Gtk hiding (get,set)
--- import qualified Graphics.UI.Gtk as Gtk (get)
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
-
 import           Data.Hoodle.Simple
-
-
-
 import           Graphics.Hoodle.Render.Util.HitTest
--- 
+-- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen 
 import           Hoodle.Coroutine.Scroll
-
 import           Hoodle.Device
 import           Hoodle.ModelAction.Page 
-
-
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Type.PageArrangement 
-
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
@@ -101,8 +93,8 @@ findZoomXform :: Dimension
                -> ((Double,Double),(Double,Double),(Double,Double)) 
                -> (Double,(Double,Double))
 findZoomXform (Dim w h) ((xo,yo),(x0,y0),(x,y)) = 
-    let tx = x - x0 --  if x0 > xo then x - x0 else x0 - x 
-        ty = y - y0 -- if y0 > yo then y - y0 else y0 - y
+    let tx = x - x0 
+        ty = y - y0 
         ztx = 1 + tx / 200
         zty = 1 + ty / 200
         zx | ztx > 2 = 2  
@@ -201,7 +193,7 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                   nposy | yw+y-y0 < -50 = -50 
                         | yw+y-y0 > ch-50 = ch-50 
                         | otherwise = yw+y-y0                             
-                  nwpos = CvsCoord (nposx,nposy) -- (xw+x-x0,yw+y-y0)
+                  nwpos = CvsCoord (nposx,nposy) 
                   changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
                   changeact cinfo =  
                     set (canvasWidgets.testWidgetPosition) nwpos $ cinfo

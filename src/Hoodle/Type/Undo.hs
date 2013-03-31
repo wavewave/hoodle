@@ -1,14 +1,15 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Undo 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
 --
+-----------------------------------------------------------------------------
+
 module Hoodle.Type.Undo where
 
 import Data.Hoodle.Zipper 

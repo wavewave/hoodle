@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Coordinate
--- Copyright   : (c) 2012,2013 Ian-Woo Kim
+-- Copyright   : (c) 2012, 2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>

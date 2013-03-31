@@ -128,7 +128,6 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
               rectangle 0 0 cw ch 
               fill 
 	      rndr 
-              -- return () 
 	  Just sfc -> do 
 	    r <- renderWith sfc $ do 
 	      clipBBox (fmap (flip inflate (-1.0)) mbbox')
@@ -142,11 +141,10 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
 	      setOperator OperatorSource 
 	      paint 
             return r 
-        -- return ()      
   case ibbox of
-    Top -> Just <$> action -- >> return Nothing 
-    Middle _ -> Just <$> action -- >> return Nothing 
-    Bottom -> return Nothing 
+    Top      -> Just <$> action 
+    Middle _ -> Just <$> action 
+    Bottom   -> return Nothing 
 
 -- | 
 cairoXform4PageCoordinate :: CanvasGeometry -> PageNum -> Render () 
@@ -207,7 +205,6 @@ drawFuncGen _typ render = SinglePageDraw func
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
-                -- clipBBox (fmap (flip inflate 1) mbboxnew) -- ad hoc ? 
                 pg <- render (pnum,page) mbboxnew flag
                 -- Start Widget
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
@@ -276,11 +273,9 @@ drawContPageGen render = ContPageDraw func
                 identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 let pgmbbox = fmap (getBBoxInPageCoord geometry pn) mbboxnew
-                -- clipBBox (fmap (flip inflate 1) pgmbbox) -- ad hoc     
                 render (pn,pg) pgmbbox flag
               renderfunc = do
                 xformfunc 
-                -- mapM_ onepagerender drawpgs 
                 ndrawpgs <- mapM onepagerender drawpgs 
                 let npgs = foldr rfunc pgs ndrawpgs   
                        where rfunc (k,pg) m = M.adjust (const pg) k m 

@@ -14,7 +14,7 @@
 
 module Hoodle.GUI where
 
-import           Control.Exception
+import           Control.Exception (SomeException(..),catch)
 import           Control.Lens (view)
 import           Control.Monad
 import           Control.Monad.Trans 
@@ -38,7 +38,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 --
-import           Prelude hiding (catch)
+import           Prelude -- hiding (catch)
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 

@@ -118,7 +118,6 @@ linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-  
     newitem <- (liftIO . cnstrctRItem . ItemLink) 
                  (Link uuidbstr typ (B.pack fname)
                        (Just (B.pack str)) Nothing svgbstr 

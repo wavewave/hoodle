@@ -35,7 +35,7 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..),SVG(..),Item(..),Link(..),hoodleID)
+import           Data.Hoodle.Simple (SVG(..),Item(..),Link(..),hoodleID)
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
@@ -48,6 +48,7 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard 
+import           Hoodle.Coroutine.TextInput 
 import           Hoodle.ModelAction.ContextMenu
 import           Hoodle.ModelAction.Page 
 import           Hoodle.ModelAction.Select
@@ -73,17 +74,6 @@ processContextMenu (CMenuSaveSelectionAs ityp) = do
                TypSVG -> exportCurrentSelectionAsSVG hititms bbox
                TypPDF -> exportCurrentSelectionAsPDF hititms bbox
            _ -> return () 
-      
-{-      
-  case view hoodleModeState xstate of 
-    SelectState thdl -> do 
-      liftIO $ putStrLn "SelectState"
-      
-      
-      case view gselSelected thdl of 
-        Nothing -> return () 
-        Just (_,tpg) -> do  
-    _ -> return () -}
 processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
@@ -132,34 +122,24 @@ processContextMenu (CMenuLinkConvert nlnk) =
               invalidateAll 
 processContextMenu CMenuCreateALink = do 
   liftIO $ putStrLn "create a link called"
-  xst <- get 
-  case getSelectedItmsFromHoodleState xst of 
+  mfilename <- fileChooser FileChooserActionOpen Nothing
+  case mfilename of 
     Nothing -> return () 
-    Just hititms -> 
-      let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-      in case ulbbox of 
-           Middle bbox{- @(BBox (ulx,uly) (lrx,lry)) -} -> do 
-{-             uuid <- liftIO $ nextRandom
-             tdir <- liftIO $ getTemporaryDirectory
-             let filename = tdir </> show uuid <.> "svg"
-                 (x,y) = (ulx,uly)
-                 (w,h) = (lrx-ulx,lry-uly)
-             liftIO $ withSVGSurface filename w h $ \s -> renderWith s $ do 
-               translate (-ulx) (-uly) 
-               mapM_ renderRItem hititms 
-             bstr <- liftIO $ B.readFile filename
-             newitem <- (liftIO . cnstrctRItem . ItemSVG)
-                           (SVG Nothing Nothing bstr (x,y) (Dim w h))
-             liftIO $ removeFile filename -}
-             svg <- liftIO $ makeSVGFromSelection hititms bbox
-             liftIO $ print svg
-           _ -> return () 
-
-      
-      
-  
-  
-
+    Just fname -> do 
+      xst <- get 
+      case getSelectedItmsFromHoodleState xst of 
+        Nothing -> return () 
+        Just hititms -> 
+          let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+          in case ulbbox of 
+               Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                 svg <- liftIO $ makeSVGFromSelection hititms bbox
+                 uuid <- liftIO $ nextRandom
+                 let uuidbstr = B.pack (show uuid) 
+                     -- bbox2 = BBox (ulx+50,uly+50) (lrx+50,lry+50)
+                 deleteSelection 
+                 linkInsert "simple" (uuidbstr,fname) "test" (svg_render svg,bbox)  
+               _ -> return () 
 processContextMenu CMenuCustom =  
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    

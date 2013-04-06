@@ -103,30 +103,9 @@ gotLink mstr (x,y) = do
               nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded file) 
               geometry <- liftIO $ getCanvasGeometryCvsId cid xst               
               let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
-                  mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) 
-                               ccoord 
-              
-              insertItemAt mpgcoord nitm 
-            
-              
-{-              let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
-                  rdr' = case mpgcoord of 
-                           Nothing -> rdr 
-                           Just (_,PageCoord (x',y')) -> 
-                             let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
-                             in (fst rdr,bbox')
-                  
-              liftIO $ print mpgcoord 
-              liftIO $ print (snd rdr')
-              linkInsert "simple" (uuidbstr,fp) fn rdr'  -}
-
-            
+              insertItemAt mpgcoord nitm 
             else return () 
-
-         
-      
-      
     Just (uuidbstr,fp) -> do 
       let fn = takeFileName fp 
       rdr <- liftIO (makePangoTextSVG fn) 

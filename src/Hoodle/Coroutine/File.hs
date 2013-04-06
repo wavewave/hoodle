@@ -64,7 +64,7 @@ import           Hoodle.Script.Hook
 -- import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
-import           Hoodle.Type.Event hiding (SVG)
+import           Hoodle.Type.Event hiding (TypSVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.View.Draw

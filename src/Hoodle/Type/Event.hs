@@ -168,7 +168,7 @@ data MenuEvent = MenuNew
                deriving (Show, Ord, Eq)
 
 -- |
-data ImgType = SVG | PDF 
+data ImgType = TypSVG | TypPDF 
                deriving (Show, Ord, Eq) 
                         
 -- |                         
@@ -181,6 +181,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuRotateCCW 
                       | CMenuAutosavePage
                       | CMenuLinkConvert Link
+                      | CMenuCreateALink 
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

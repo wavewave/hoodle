@@ -42,7 +42,7 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
-import           Hoodle.Type.Event hiding (SVG)
+import           Hoodle.Type.Event 
 import           Hoodle.Type.HoodleState 
 -- 
 import Prelude hiding (readFile)

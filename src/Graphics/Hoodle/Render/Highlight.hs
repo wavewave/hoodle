@@ -60,24 +60,8 @@ renderStrkHltd sbbox = do
 renderRItemHltd :: RItem -> Render ()
 renderRItemHltd (RItemStroke strk) = renderStrkHltd strk
 renderRItemHltd (RItemImage img _) = renderBBoxHltd img
-{-  setSourceRGBA 0 0 0 1
-  setLineWidth 10 
-  let BBox (x1,y1) (x2,y2) = getBBox img
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke -}
 renderRItemHltd (RItemSVG svg _) = renderBBoxHltd svg 
-{-  setSourceRGBA 0 0 0 1
-  setLineWidth 10 
-  let BBox (x1,y1) (x2,y2) = getBBox svg
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke -}
 renderRItemHltd (RItemLink lnk _) = renderBBoxHltd lnk
-{-  setSourceRGBA 0 0 0 1
-  setLineWidth 10 
-  let BBox (x1,y1) (x2,y2) = getBBox lnk
-  rectangle x1 y1 (x2-x1) (y2-y1)
-  stroke -}
-
 
 -- |
 renderBBoxHltd :: (GetBBoxable a) => a -> Render () 

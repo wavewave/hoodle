@@ -135,17 +135,16 @@ gotLink mstr (x,y) = do
                                    (CvsCoord (fromIntegral x,fromIntegral y))
               linkInsert "simple" (uuidbstr,url) url rdrbbx
             Just hititms -> do 
-              let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-              case ulbbox of 
-                Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
-                  svg <- liftIO $ makeSVGFromSelection hititms bbox
-                  uuidbstr <- liftIO $ B.pack . show <$> nextRandom
-                  deleteSelection 
-                  linkInsert "simple" (uuidbstr,url) url (svg_render svg,bbox)  
-                _ -> return ()          
-          
-          
-          
+              b <- okCancelMessageBox ("replace selected item with link to " ++ url  ++ "?")
+              when b $ do 
+                let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+                case ulbbox of 
+                  Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                    svg <- liftIO $ makeSVGFromSelection hititms bbox
+                    uuidbstr <- liftIO $ B.pack . show <$> nextRandom
+                    deleteSelection 
+                    linkInsert "simple" (uuidbstr,url) url (svg_render svg,bbox)  
+                  _ -> return ()          
     Just (uuidbstr,fp) -> do 
       let fn = takeFileName fp 
       case getSelectedItmsFromHoodleState xst of     
@@ -159,19 +158,19 @@ gotLink mstr (x,y) = do
                        Just (_,PageCoord (x',y')) -> 
                          let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
                          in (fst rdr,bbox')
-          -- liftIO $ print mpgcoord 
-          -- liftIO $ print (snd rdr')
           linkInsert "simple" (uuidbstr,fp) fn rdr' 
         Just hititms -> do 
-          let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-          case ulbbox of 
-            Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
-              svg <- liftIO $ makeSVGFromSelection hititms bbox
-              uuid <- liftIO $ nextRandom
-              let uuidbstr = B.pack (show uuid) 
-              deleteSelection 
-              linkInsert "simple" (uuidbstr,fp) fn (svg_render svg,bbox)  
-            _ -> return ()          
+          b <- okCancelMessageBox ("replace selected item with link to " ++ fn ++ "?")
+          when b $ do 
+            let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+            case ulbbox of 
+              Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                svg <- liftIO $ makeSVGFromSelection hititms bbox
+                uuid <- liftIO $ nextRandom
+                let uuidbstr = B.pack (show uuid) 
+                deleteSelection 
+                linkInsert "simple" (uuidbstr,fp) fn (svg_render svg,bbox)  
+              _ -> return ()          
   liftIO $ putStrLn "gotLink"
   liftIO $ print mstr 
   liftIO $ print (x,y)

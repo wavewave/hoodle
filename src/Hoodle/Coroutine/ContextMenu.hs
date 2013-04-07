@@ -58,6 +58,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement 
+import           Hoodle.Util
 --
 import Prelude hiding ((.),id)
 
@@ -229,28 +230,38 @@ showContextMenu (pnum,(x,y)) = do
                         case sitm of 
                           RItemLink lnkbbx _msfc -> do 
                             let lnk = bbxed_content lnkbbx
-                            let fp = (B.unpack . link_location) lnk
+                            maybe (return ()) 
+                                  (\urlpath -> do 
+                                    milnk <- menuOpenALink evhandler urlpath
+                                    menuAttach menu milnk 0 1 3 4    
+                                  )
+                                  (urlParse ((B.unpack . link_location) lnk))
+                            {- let fp = (B.unpack . link_location) lnk
                                 cmdargs = [fp]
                             menuitemlnk <- menuItemNewWithLabel ("Open "++fp) 
                             menuitemlnk `on` menuItemActivate $ do
                               createProcess (proc "hoodle" cmdargs)  
                               return () 
-                            menuAttach menu menuitemlnk 0 1 3 4 
+                             -}
                             case lnk of 
-                              Link i _typ file txt cmd rdr pos dim -> do 
-                                b <- doesFileExist (B.unpack file)
-                                when b $ do 
-                                  bstr <- B.readFile (B.unpack file)
-                                  case parseOnly PA.hoodle bstr of 
-                                    Left str -> print str 
-                                    Right hdl -> do 
-                                      let uuid = view hoodleID hdl
-                                          link = LinkDocID i uuid file txt cmd rdr pos dim
-                                          
-                                      menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
-                                      menuitemcvt `on` menuItemActivate $ do
-                                        evhandler (GotContextMenuSignal (CMenuLinkConvert link))
-                                      menuAttach menu menuitemcvt 0 1 4 5 
+                              Link i _typ lstr txt cmd rdr pos dim -> do 
+                                case urlParse (B.unpack lstr) of 
+                                  Nothing -> return ()
+                                  Just (HttpUrl url) -> return ()
+                                  Just (FileUrl file) -> do 
+                                    b <- doesFileExist file
+                                    when b $ do 
+                                      bstr <- B.readFile file
+                                      case parseOnly PA.hoodle bstr of 
+                                        Left str -> print str 
+                                        Right hdl -> do 
+                                          let uuid = view hoodleID hdl
+                                              link = LinkDocID i uuid (B.pack file) txt cmd rdr pos dim
+
+                                          menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
+                                          menuitemcvt `on` menuItemActivate $ do
+                                            evhandler (GotContextMenuSignal (CMenuLinkConvert link))
+                                          menuAttach menu menuitemcvt 0 1 4 5 
                               LinkDocID i lid file txt cmd rdr pos dim -> do 
                                 case (lookupPathFromId =<< view hookSet xstate) of
                                   Nothing -> return () 

@@ -29,7 +29,8 @@ import Data.Time.Format
 import System.Locale
 -- 
 import Data.Hoodle.Simple
-
+-- 
+import Debug.Trace
 
 
 -- for test
@@ -103,7 +104,10 @@ maybeError' str = maybe (error str) id
 
 
 
-data UrlPath = FileUrl FilePath 
+data UrlPath = FileUrl FilePath | HttpUrl String 
+             deriving (Show,Eq)
+
+data T = N | F | H  deriving (Show,Eq)
 
 -- | 
 urlParse :: String -> Maybe UrlPath 
@@ -111,11 +115,18 @@ urlParse str =
   if length str < 7 
     then Just (FileUrl str) 
     else 
-      let p = string "file://" *> manyTill anyChar (satisfy (inClass "\r\n"))
+      let p = do b <- (try (string "file://" *> return F)  
+                       <|> try (string "http://" *> return H) 
+                       <|> (return N) )
+                 rem <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
+                 return (b,rem) 
           r = parseOnly p (B.pack str)
       in case r of 
-           Left _ -> Just (FileUrl str) 
-           Right f -> Just (FileUrl (unEscapeString f))
+           Left _ -> Nothing -- Just (FileUrl str) 
+           Right (b,f) -> case b of 
+                            N -> Just (FileUrl f)
+                            F -> Just (FileUrl (unEscapeString f))
+                            H -> Just (HttpUrl ("http://" ++ f))
     
 
 {-

@@ -18,6 +18,7 @@ import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk
 import System.Directory 
 import System.FilePath 
+import System.Process
 -- 
 -- import Control.Monad.Trans.Crtn.Driver 
 import Data.Hoodle.BBox
@@ -26,7 +27,30 @@ import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type.Item
 --
 import Hoodle.Type.Event 
+import Hoodle.Util
 
+-- |
+menuOpenALink :: (MyEvent -> IO ()) -> UrlPath -> IO MenuItem
+menuOpenALink evhandler urlpath = do 
+    let urlname = case urlpath of 
+                    FileUrl fp -> fp 
+                    HttpUrl url -> url 
+    menuitemlnk <- menuItemNewWithLabel ("Open "++urlname) 
+    menuitemlnk `on` menuItemActivate $ do
+      case urlpath of 
+        FileUrl fp -> do 
+          let cmdargs = [fp]
+          createProcess (proc "hoodle" cmdargs)  
+          return () 
+        HttpUrl url -> do 
+          let cmdargs = [url]
+          createProcess (proc "xdg-open" cmdargs)  
+          return () 
+    return menuitemlnk
+
+
+  
+  
 -- | 
 menuCreateALink :: (MyEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
 menuCreateALink evhandler sitems = 
@@ -37,6 +61,7 @@ menuCreateALink evhandler sitems =
             evhandler (GotContextMenuSignal CMenuCreateALink)
           return (Just mi)
          
+
 -- |
 makeSVGFromSelection :: [RItem] -> BBox -> IO SVG 
 makeSVGFromSelection hititms (BBox (ulx,uly) (lrx,lry)) = do 

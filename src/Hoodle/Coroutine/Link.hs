@@ -55,6 +55,22 @@ import           Hoodle.View.Draw
 --
 import Prelude hiding (mapM_, mapM)
 
+makeTextSVGFromStringAt :: String 
+                           -> CanvasId 
+                           -> HoodleState
+                           -> CanvasCoordinate
+                           -> IO (B.ByteString, BBox)
+makeTextSVGFromStringAt str cid xst ccoord = do 
+    rdr <- makePangoTextSVG str 
+    geometry <- getCanvasGeometryCvsId cid xst 
+    let mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
+    return $ case mpgcoord of 
+               Nothing -> rdr 
+               Just (_,PageCoord (x',y')) -> 
+                 let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
+                 in (fst rdr,bbox')
+
+-- | 
 notifyLink :: CanvasId -> PointerCoord -> MainCoroutine () 
 notifyLink cid pcoord = do 
     xst <- get 
@@ -84,6 +100,7 @@ notifyLink cid pcoord = do
 gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 
 gotLink mstr (x,y) = do 
   xst <- get 
+  liftIO $ print mstr 
   let cid = getCurrentCanvasId xst
   mr <- runMaybeT $ do 
     str <- (MaybeT . return) mstr 
@@ -95,10 +112,10 @@ gotLink mstr (x,y) = do
       mr2 <- runMaybeT $ do 
         str <- (MaybeT . return) mstr 
         (MaybeT . return) (urlParse str)
+      liftIO $ putStrLn ("mr2= " ++ show mr2)
       case mr2 of  
-        Nothing -> liftIO $ putStrLn "nothing" 
+        Nothing -> return ()
         Just (FileUrl file) -> do 
-          liftIO $ print file 
           let ext = takeExtension file 
           if ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG" 
             then do 
@@ -108,7 +125,27 @@ gotLink mstr (x,y) = do
               let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
               insertItemAt mpgcoord nitm 
-            else return () 
+            else return ()  
+        Just (HttpUrl url) -> do 
+          case getSelectedItmsFromHoodleState xst of     
+            Nothing -> do 
+              liftIO $ print "here"
+              uuidbstr <- liftIO $ B.pack . show <$> nextRandom              
+              rdrbbx <- liftIO $ makeTextSVGFromStringAt url cid xst 
+                                   (CvsCoord (fromIntegral x,fromIntegral y))
+              linkInsert "simple" (uuidbstr,url) url rdrbbx
+            Just hititms -> do 
+              let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+              case ulbbox of 
+                Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                  svg <- liftIO $ makeSVGFromSelection hititms bbox
+                  uuidbstr <- liftIO $ B.pack . show <$> nextRandom
+                  deleteSelection 
+                  linkInsert "simple" (uuidbstr,url) url (svg_render svg,bbox)  
+                _ -> return ()          
+          
+          
+          
     Just (uuidbstr,fp) -> do 
       let fn = takeFileName fp 
       case getSelectedItmsFromHoodleState xst of     

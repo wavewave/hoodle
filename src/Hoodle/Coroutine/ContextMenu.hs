@@ -236,13 +236,6 @@ showContextMenu (pnum,(x,y)) = do
                                     menuAttach menu milnk 0 1 3 4    
                                   )
                                   (urlParse ((B.unpack . link_location) lnk))
-                            {- let fp = (B.unpack . link_location) lnk
-                                cmdargs = [fp]
-                            menuitemlnk <- menuItemNewWithLabel ("Open "++fp) 
-                            menuitemlnk `on` menuItemActivate $ do
-                              createProcess (proc "hoodle" cmdargs)  
-                              return () 
-                             -}
                             case lnk of 
                               Link i _typ lstr txt cmd rdr pos dim -> do 
                                 case urlParse (B.unpack lstr) of 

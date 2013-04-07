@@ -495,7 +495,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
           hittestlasso1 = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
           selectitms1 = fmapAL unNotHitted id hittestlasso1
           selecteditms1 = (concatMap unHitted . getB) selectitms1 
-          hittestlasso2 = flip hltFilteredBy itms $ 
+          hittestlasso2 = takeLastFromHitted . flip hltFilteredBy itms $ 
                             \itm-> (not.isStrkInRItem) itm 
                                    && isPointInBBox (getBBox itm) (x,y)
           selectitms2 = fmapAL unNotHitted id hittestlasso2

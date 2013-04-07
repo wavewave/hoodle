@@ -136,9 +136,8 @@ processContextMenu CMenuCreateALink = do
                  svg <- liftIO $ makeSVGFromSelection hititms bbox
                  uuid <- liftIO $ nextRandom
                  let uuidbstr = B.pack (show uuid) 
-                     -- bbox2 = BBox (ulx+50,uly+50) (lrx+50,lry+50)
                  deleteSelection 
-                 linkInsert "simple" (uuidbstr,fname) "test" (svg_render svg,bbox)  
+                 linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)  
                _ -> return () 
 processContextMenu CMenuCustom =  
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 

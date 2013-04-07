@@ -20,10 +20,9 @@ module Hoodle.Coroutine.Link where
 import           Control.Applicative
 import           Control.Lens (view,(%~))
 import           Control.Monad.State 
-
 import           Control.Monad.Trans.Maybe 
 import qualified Data.ByteString.Char8 as B 
-
+import           Data.Monoid (mconcat)
 import           Data.UUID.V4 (nextRandom)
 import           Graphics.UI.Gtk hiding (get,set) 
 import           System.FilePath 
@@ -31,6 +30,7 @@ import           System.FilePath
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
+import           Data.Hoodle.Simple (SVG(..))
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type 
 import           Graphics.Hoodle.Render.Type.HitTest 
@@ -39,8 +39,11 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File 
+import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Device 
+import           Hoodle.ModelAction.ContextMenu
+import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
@@ -108,18 +111,30 @@ gotLink mstr (x,y) = do
             else return () 
     Just (uuidbstr,fp) -> do 
       let fn = takeFileName fp 
-      rdr <- liftIO (makePangoTextSVG fn) 
-      geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
-      let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
-          mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
-          rdr' = case mpgcoord of 
-                   Nothing -> rdr 
-                   Just (_,PageCoord (x',y')) -> 
-                     let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
-                     in (fst rdr,bbox')
-      liftIO $ print mpgcoord 
-      liftIO $ print (snd rdr')
-      linkInsert "simple" (uuidbstr,fp) fn rdr' 
+      case getSelectedItmsFromHoodleState xst of     
+        Nothing -> do 
+          rdr <- liftIO (makePangoTextSVG fn) 
+          geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
+          let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
+              mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
+              rdr' = case mpgcoord of 
+                       Nothing -> rdr 
+                       Just (_,PageCoord (x',y')) -> 
+                         let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
+                         in (fst rdr,bbox')
+          -- liftIO $ print mpgcoord 
+          -- liftIO $ print (snd rdr')
+          linkInsert "simple" (uuidbstr,fp) fn rdr' 
+        Just hititms -> do 
+          let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+          case ulbbox of 
+            Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+              svg <- liftIO $ makeSVGFromSelection hititms bbox
+              uuid <- liftIO $ nextRandom
+              let uuidbstr = B.pack (show uuid) 
+              deleteSelection 
+              linkInsert "simple" (uuidbstr,fp) fn (svg_render svg,bbox)  
+            _ -> return ()          
   liftIO $ putStrLn "gotLink"
   liftIO $ print mstr 
   liftIO $ print (x,y)

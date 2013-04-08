@@ -107,7 +107,7 @@ maybeError' str = maybe (error str) id
 data UrlPath = FileUrl FilePath | HttpUrl String 
              deriving (Show,Eq)
 
-data T = N | F | H  deriving (Show,Eq)
+data T = N | F | H | HS deriving (Show,Eq)
 
 -- | 
 urlParse :: String -> Maybe UrlPath 
@@ -117,6 +117,7 @@ urlParse str =
     else 
       let p = do b <- (try (string "file://" *> return F)  
                        <|> try (string "http://" *> return H) 
+                       <|> try (string "https://" *> return HS)
                        <|> (return N) )
                  rem <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
                  return (b,rem) 
@@ -127,6 +128,7 @@ urlParse str =
                             N -> Just (FileUrl f)
                             F -> Just (FileUrl (unEscapeString f))
                             H -> Just (HttpUrl ("http://" ++ f))
+                            HS -> Just (HttpUrl ("https://" ++ f))
     
 
 {-

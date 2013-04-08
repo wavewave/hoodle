@@ -146,7 +146,8 @@ makePangoTextSVG str = do
           layoutSetText layout str 
           (_,reclog) <- layoutGetExtents layout 
           let PangoRectangle x y w h = reclog 
-          return (layout,BBox (x,y) (x+w,y+h)) 
+          -- 10 is just dirty-fix
+          return (layout,BBox (x,y) (x+w+10,y+h)) 
         rdr layout = do setSourceRGBA 0 0 0 1
                         updateLayout layout 
                         showLayout layout 

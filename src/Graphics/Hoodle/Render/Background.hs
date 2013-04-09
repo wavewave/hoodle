@@ -24,8 +24,11 @@ import qualified Data.Map as M
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
+import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+import           System.Directory
+import           System.FilePath ((</>),(<.>))
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
@@ -65,8 +68,13 @@ popplerGetDocFromDataURI dat = do
   case mdecoded of 
     Nothing -> return Nothing 
     Just decoded -> do 
-      C.writeFile "/tmp/popplertest.pdf" decoded 
-      popplerGetDocFromFile "/tmp/popplertest.pdf"
+      uuidstr <- liftM show nextRandom
+      tmpdir <- getTemporaryDirectory 
+      let tmpfile = tmpdir </> uuidstr <.> "pdf" 
+      C.writeFile tmpfile decoded 
+      mdoc <- popplerGetDocFromFile (C.pack tmpfile)
+      removeFile tmpfile 
+      return mdoc 
 
 
 -- |

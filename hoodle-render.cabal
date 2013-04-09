@@ -1,5 +1,5 @@
 Name:		hoodle-render
-Version:	0.3.0.999
+Version:	0.3.1
 Synopsis:       Hoodle file renderer
 Description: 	Rendering library using cairo for hoodle file format
 License: 	BSD3
@@ -13,10 +13,6 @@ data-files:     CHANGES
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-render
-
--- Flag Poppler
---   Description: Enable poppler support
---   Default:     False
 
 Library
   hs-source-dirs: src
@@ -39,13 +35,8 @@ Library
                  unix >= 2.5,
                  uuid >= 1.2, 
                  monad-loops >= 0.3,  
-                 -- hoodle-common >= 0.1,
                  poppler >= 0.12.2.2
 
---   if flag(poppler)
---    Build-Depends: poppler >= 0.12.2.2
---  else 
---     Build-Depends: 
 
   Exposed-Modules: 
                    Graphics.Hoodle.Render 
@@ -65,5 +56,3 @@ Library
                    Graphics.Hoodle.Render.Util.HitTest
                    Hoodle.Util.Process
 
---  if flag(poppler)
---    cpp-options: -DPOPPLER

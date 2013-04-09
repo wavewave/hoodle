@@ -65,3 +65,12 @@ hoodle
    * toolbox ui reflects current hoodle state more correctly
    * slimmer select box design
    * several rendering glitches fixed 
+
+0.2.0: 8 Apr 2013
+   * selected group of item can be transformed to a link
+   * link to external URL 
+   * when drag-and-drop link, it automatically transform currently selected item to the link
+   * drag and drop URL as a link (from address bar in web browser, such as firefox or chromium )   
+   * single image selection using wacom side button (convenient when overlapped images) 
+   * grey out save button when reading a file at first
+   * white-out bug fix when opening multiple pdf files 

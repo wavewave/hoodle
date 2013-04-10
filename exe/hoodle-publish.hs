@@ -1,54 +1,65 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
-import Control.Applicative 
-import Control.Concurrent 
-import Control.Exception hiding (try)
-import Control.Lens (_1,_2,_3,_4,view,at )
-import Control.Monad
--- import Control.Monad.Loops
-import Control.Monad.Trans
-import Control.Monad.Trans.Maybe 
-import Control.Monad.Trans.State 
-import Data.Attoparsec.Char8
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Main
+-- Copyright   : (c) 2013 Ian-Woo Kim
+--
+-- License     : GPL-3 
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+-----------------------------------------------------------------------------
+
+module Main where 
+
+import           Control.Applicative 
+import           Control.Concurrent 
+import           Control.Exception hiding (try)
+import           Control.Lens (_1,_2,_3,_4,view,at )
+import           Control.Monad
+import           Control.Monad.Trans
+import           Control.Monad.Trans.Maybe 
+import           Control.Monad.Trans.State 
+import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
-import Data.Int
+import           Data.Data
+import           Data.Typeable
+import           Data.Int
 import qualified Data.IntMap as IM
-import Data.List 
-import Data.UUID.V4
-import Graphics.Rendering.Cairo
-import Graphics.UI.Gtk (initGUI)
-import Network.HTTP.Base
-import Network.URI
-import Pdf.Toolbox.Core
-import Pdf.Toolbox.Document
-import Pdf.Toolbox.Document.Internal.Types 
-import System.Directory
-import System.Directory.Tree 
-import System.FilePath 
-import System.Environment
-import System.IO
+import           Data.List 
+import           Data.UUID.V4
+import           Graphics.Rendering.Cairo
+import           Graphics.UI.Gtk (initGUI)
+import           Network.HTTP.Base
+import           Network.URI
+import           Pdf.Toolbox.Core
+import           Pdf.Toolbox.Document
+import           Pdf.Toolbox.Document.Internal.Types 
+import           System.Console.CmdArgs
+import           System.Directory
+import           System.Directory.Tree 
+import           System.FilePath 
+import           System.Environment
+import           System.IO
 import qualified System.IO.Streams as Streams
--- import System.Posix.Files
--- import System.Posix.IO
--- import System.Posix.Process 
-import System.Process
+import           System.Process
 -- 
 import qualified Data.Hoodle.Simple as S
 import           Data.Hoodle.Generic
-import Graphics.Hoodle.Render 
-import Graphics.Hoodle.Render.Generic
--- import Graphics.Hoodle.Render.Background
-import Graphics.Hoodle.Render.Type.Background
-import Graphics.Hoodle.Render.Type.Hoodle
--- import Hoodle.Coroutine.File 
-import Text.Hoodle.Parse.Attoparsec 
-
-
+import           Graphics.Hoodle.Render 
+import           Graphics.Hoodle.Render.Generic
+import           Graphics.Hoodle.Render.Type.Background
+import           Graphics.Hoodle.Render.Type.Hoodle
+import           Text.Hoodle.Parse.Attoparsec 
 -- 
 import Debug.Trace
+
 
 
 data UrlPath = FileUrl FilePath | HttpUrl String 
@@ -327,26 +338,6 @@ renderjob h ofp = do
   withPDFSurface ofp width height $ \s -> renderWith s $  
     (sequence1_ showPage . map rf . IM.elems . view gpages ) h 
 
---------------------------------------------------------------------
---                       main                                     --
---------------------------------------------------------------------
-
--- | 
-main :: IO ()
-main = do
-  initGUI 
-  args <- getArgs 
-  let urlbase = args !! 0
-      rootpath = args !! 1
-      buildpath = args !! 2 
-      -- fn = args !! 1 
-  (r :/ r') <- build rootpath 
-  let files = catMaybes . map takeFile . flattenDir $ r' 
-      hdlfiles = filter isHdl files 
-      pairs = map ((,) <$> id
-                   <*> (buildpath </>) . flip replaceExtension "pdf" . makeRelative rootpath ) hdlfiles 
-  updatedpairs <- filterM isUpdated pairs 
-  mapM_ (createPdf urlbase rootpath) updatedpairs
 
 isUpdated :: (FilePath,FilePath) -> IO Bool 
 isUpdated (ofp,nfp) = do 
@@ -392,3 +383,41 @@ createPdf urlbase rootpath (fn,ofn) = catch action (\(e :: SomeException) -> pri
             removeFile tempfile 
 
 
+--------------------------------------------------------------------
+--          main program                                          --
+--------------------------------------------------------------------
+
+data HoodlePublish = Publish { urlbase :: String 
+                             , rootpath :: FilePath
+                             , buildpath :: FilePath
+                             }
+                     deriving (Show,Data,Typeable)
+
+
+publish :: HoodlePublish 
+publish = Publish { urlbase = def &= typ "URLBASE" &= argPos 0 
+                  , rootpath = def &= typ "ORIGNALFILEDIR" &= argPos 1 
+                  , buildpath = def &= typ "TARGETFILEDIR" &= argPos 2 
+                  }
+
+mode :: HoodlePublish 
+mode = modes [publish] 
+
+-- | 
+main :: IO ()
+main = do
+  initGUI 
+  params <- cmdArgs mode 
+  -- args <- getArgs 
+  -- let urlbase = args !! 0
+  --     rootpath = args !! 1
+  --    buildpath = args !! 2 
+      -- fn = args !! 1 
+  (r :/ r') <- build (rootpath params)
+  let files = catMaybes . map takeFile . flattenDir $ r' 
+      hdlfiles = filter isHdl files 
+      pairs = map ((,) <$> id
+                   <*> (buildpath params </>) . flip replaceExtension "pdf" . makeRelative (rootpath params)) 
+                  hdlfiles 
+  updatedpairs <- filterM isUpdated pairs 
+  mapM_ (createPdf (urlbase params) (rootpath params)) updatedpairs

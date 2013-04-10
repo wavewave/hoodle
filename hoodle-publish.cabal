@@ -27,6 +27,7 @@ Executable hoodle-publish
                    mtl > 2,
                    transformers >= 0.3,
                    lens >= 2.5,
+                   cmdargs, 
                    directory-tree, 
                    directory > 1,
                    filepath > 1, 

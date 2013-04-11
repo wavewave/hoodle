@@ -30,29 +30,7 @@ import System.Locale
 -- 
 import Data.Hoodle.Simple
 -- 
-import Debug.Trace
-
-
--- for test
--- import Blaze.ByteString.Builder
--- import Text.Hoodle.Builder 
-
-{-
-testPage :: Page Edit -> IO () 
-testPage page = do
-    let pagesimple = toPage bkgFromBkgPDF . tpageBBoxMapPDFFromTPageBBoxMapPDFBuf $ page 
-    L.putStrLn . toLazyByteString . Text.Hoodle.Builder.fromPage $ pagesimple 
--}
-
-             
-{-
-testHoodle :: HoodleState -> IO () 
-testHoodle hdlstate = do
-  let hdlsimple :: Hoodle = case hdlstate of
-                               ViewAppendState hdl -> xournalFromTHoodleSimple (gcast hdl :: THoodleSimple)
-                               SelectState thdl -> xournalFromTHoodleSimple (gcast thdl :: THoodleSimple)
-  L.putStrLn (builder hdlsimple)
--}
+-- import Debug.Trace
 
 (#) :: a -> (a -> b) -> b 
 (#) = flip ($)
@@ -123,7 +101,7 @@ urlParse str =
                  return (b,rem) 
           r = parseOnly p (B.pack str)
       in case r of 
-           Left _ -> Nothing -- Just (FileUrl str) 
+           Left _ -> Nothing  
            Right (b,f) -> case b of 
                             N -> Just (FileUrl f)
                             F -> Just (FileUrl (unEscapeString f))
@@ -131,9 +109,3 @@ urlParse str =
                             HS -> Just (HttpUrl ("https://" ++ f))
     
 
-{-
-timeShow :: String -> IO () 
-timeShow msg = 
-  putStrLn . (msg ++) . (formatTime defaultTimeLocale "%Q") 
-    =<< getCurrentTime 
--}

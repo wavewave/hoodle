@@ -126,9 +126,11 @@ Library
                    Paths_hoodle_core
   c-sources: 
                    csrc/c_initdevice.c
+                   -- csrc/XInput.c
   include-dirs:    csrc
   install-includes: 
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
-  cc-options:      -Wno-pointer-to-int-cast
-
+                   csrc/XInput.h
+  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG
+  --  extra-libraries: pthread

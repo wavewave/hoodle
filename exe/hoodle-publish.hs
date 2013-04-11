@@ -321,6 +321,8 @@ getLinks pg = do
 
 isHdl = ( == ".hdl") <$> takeExtension 
 
+isPdf = ( == ".pdf") <$> takeExtension
+
 
 -- | interleaving a monadic action between each pair of subsequent actions
 sequence1_ :: (Monad m) => m () -> [m ()] -> m () 
@@ -408,16 +410,19 @@ main :: IO ()
 main = do
   initGUI 
   params <- cmdArgs mode 
-  -- args <- getArgs 
-  -- let urlbase = args !! 0
-  --     rootpath = args !! 1
-  --    buildpath = args !! 2 
-      -- fn = args !! 1 
   (r :/ r') <- build (rootpath params)
   let files = catMaybes . map takeFile . flattenDir $ r' 
       hdlfiles = filter isHdl files 
       pairs = map ((,) <$> id
                    <*> (buildpath params </>) . flip replaceExtension "pdf" . makeRelative (rootpath params)) 
                   hdlfiles 
+      swappedpairs = map (\(x,y)->(y,x)) pairs 
+  (b :/ b') <- build (buildpath params)
+  let files2 = catMaybes . map takeFile . flattenDir $ b' 
+      pdffiles = filter isPdf files2
+      willbeerased = filter (\x -> isNothing (lookup x swappedpairs )) pdffiles 
+      
+  mapM_ removeFile willbeerased 
+      
   updatedpairs <- filterM isUpdated pairs 
   mapM_ (createPdf (urlbase params) (rootpath params)) updatedpairs

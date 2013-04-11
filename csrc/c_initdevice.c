@@ -127,12 +127,12 @@ void find_wacom( char* stylus_name, char* eraser_name)
   if (!xinput_findDevices(display, &stylus_info, &eraser_info)) {
     fprintf(stderr, "Couldn't find device.\n");
   }
-
-  printf("found stylus=%s \n", stylus_info.name ); 
-  printf("found eraser=%s \n", eraser_info.name ); 
-  strcpy(stylus_name, stylus_info.name);
-  strcpy(eraser_name, eraser_info.name); 
-
+  else { 
+    printf("found stylus=%s \n", stylus_info.name ); 
+    printf("found eraser=%s \n", eraser_info.name ); 
+    strcpy(stylus_name, stylus_info.name);
+    strcpy(eraser_name, eraser_info.name); 
+  }
   return ; 
 }
 
@@ -182,24 +182,3 @@ void initdevice( int* core, int* stylus, int* eraser,
 }
 
 
-// void extEventCanvas( void* canvas ) {
-/* Important note: we'd like ONLY the canvas window itself to receive
-   XInput events, while its child window in the GDK hierarchy (also
-   associated to the canvas widget) receives the core events.
-   This way on_canvas_... will get both types of events -- otherwise,
-   the proximity detection code in GDK is broken and we'll lose core
-   events.
-   
-   Up to GTK+ 2.10, gtk_widget_set_extension_events() only sets
-   extension events for the widget's main window itself; in GTK+ 2.11
-   also traverses GDK child windows that belong to the widget
-   and sets their extension events too. We want to avoid that.
-   So we use gdk_input_set_extension_events() directly on the canvas.
-*/
-   
-/*  // this causes GTK+ 2.11 bugs
-  gtk_widget_set_extension_events(GTK_WIDGET(canvas),GDK_EXTENSION_EVENTS_ALL); 
-*/
-
-//  gdk_input_set_extension_events(GTK_WIDGET(canvas)->window, GDK_POINTER_MOTION_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK, GDK_EXTENSION_EVENTS_ALL);
-//}

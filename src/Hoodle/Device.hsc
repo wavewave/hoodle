@@ -66,8 +66,8 @@ foreign import ccall "c_initdevice.h find_wacom" c_find_wacom
 -- | 
 initDevice :: Config -> IO DeviceList  
 initDevice cfg = do 
-  pstylusname_detect <- newCString "" 
-  perasername_detect <- newCString "" 
+  pstylusname_detect <- newCString "stylus" 
+  perasername_detect <- newCString "eraser" 
   c_find_wacom pstylusname_detect perasername_detect
   (mcore,mstylus,meraser) <- getPenDevConfig cfg 
   putStrLn $ show mstylus 

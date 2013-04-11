@@ -59,9 +59,11 @@ data PointerCoord = PointerCoord { pointerType :: PointerType
 foreign import ccall "c_initdevice.h initdevice" c_initdevice
   :: Ptr CInt -> Ptr CInt -> Ptr CInt -> CString -> CString -> CString -> IO ()
 
+
 -- | 
 foreign import ccall "c_initdevice.h find_wacom" c_find_wacom
   :: CString -> CString -> IO ()
+
 
 -- | 
 initDevice :: Config -> IO DeviceList  

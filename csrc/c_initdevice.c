@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 #include "XInput.h"
 
 //
@@ -135,6 +136,8 @@ void find_wacom( char* stylus_name, char* eraser_name)
   }
   return ; 
 }
+
+
 
 void initdevice( int* core, int* stylus, int* eraser, 
                  char* corepointername, char* stylusname, char* erasername

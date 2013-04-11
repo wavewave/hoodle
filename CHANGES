@@ -71,6 +71,7 @@ hoodle
    * link to external URL 
    * when drag-and-drop link, it automatically transform currently selected item to the link
    * drag and drop URL as a link (from address bar in web browser, such as firefox or chromium )   
+   * close button for Pan/Zoom widget
    * single image selection using wacom side button (convenient when overlapped images) 
    * grey out save button when reading a file at first
    * white-out bug fix when opening multiple pdf files 

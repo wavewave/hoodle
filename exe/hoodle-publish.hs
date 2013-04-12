@@ -305,7 +305,7 @@ writePdfFile dim urlbase (rootpath,currpath) path nlnks = do
     forM_ [0..count-1] $ \i -> do
       page <- pageNodePageByNum root i
       -- let dim = S.Dim 612.0 792.0 
-      liftIO $ print dim
+      -- liftIO $ print dim
       mannots <- runMaybeT $ do 
                    lnks <- MaybeT . return $ lookup (i+1) nlnks
                    liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 

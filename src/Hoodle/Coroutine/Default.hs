@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Coroutine.Default 
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -74,6 +74,7 @@ import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.HoodleState
 import           Hoodle.Widget.PanZoom
+import           Hoodle.Widget.Dispatch 
 --
 import Prelude hiding ((.), id)
 

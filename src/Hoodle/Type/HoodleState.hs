@@ -462,8 +462,6 @@ updateFromCanvasInfoAsCurrentCanvas cinfobox xstate =
   let cid = unboxGet canvasId cinfobox 
       cmap = getCanvasInfoMap xstate
       cmap' = M.insert cid cinfobox cmap 
-      -- implement the following later
-      -- page = gcast (unboxGet currentPage cinfobox) :: Page EditMode 
   in xstate { _currentCanvas = (cid,cinfobox)
             , _cvsInfoMap = cmap' }
 
@@ -501,13 +499,11 @@ getCurrentPageDimFromHoodleModeState cinfo =
 
 
 -- | 
-
 getPageMapFromHoodleModeState :: HoodleModeState -> M.IntMap (Page EditMode)
 getPageMapFromHoodleModeState = either (view gpages) (view gselAll) . hoodleModeStateEither 
   
       
 -- | 
-
 showCanvasInfoMapViewPortBBox :: HoodleState -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
   let cmap = getCanvasInfoMap xstate

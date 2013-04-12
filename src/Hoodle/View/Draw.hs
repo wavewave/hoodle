@@ -311,8 +311,7 @@ drawContPageGen render = ContPageDraw func
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                when (view (canvasWidgets.widgetConfig.doesUsePanZoom) cinfo) $
-                  renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo) 
+                drawWidgets cinfo mbbox_canvas 
                 resetClip 
                 return nhdl 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -366,8 +365,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                when (view (canvasWidgets.widgetConfig.doesUsePanZoom) cinfo) $
-                  renderPanZoomWidget mbbox_canvas (view (canvasWidgets.testWidgetPosition) cinfo)
+                drawWidgets cinfo mbbox_canvas
                 resetClip 
                 return nthdl2  
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -528,34 +526,6 @@ renderSelectHandle geometry bbox = do
   rectangle (0.5*(x1+x2)-hsize*0.6) (y2-hsize*0.6) (1.2*hsize) (1.2*hsize)
   fill
 
-renderPanZoomWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
-renderPanZoomWidget mbbox (CvsCoord (x,y)) = do 
-  identityMatrix 
-  clipBBox mbbox 
-  setSourceRGBA 0.5 0.5 0.2 0.3 
-  rectangle x y 100 100 
-  fill 
-  setSourceRGBA 0.2 0.2 0.7 0.5
-  rectangle (x+10) (y+10) 40 80
-  fill 
-  setSourceRGBA 0.2 0.7 0.2 0.5 
-  rectangle (x+50) (y+10) 40 80
-  fill 
-  setSourceRGBA 0.7 0.2 0.2 0.5
-  rectangle (x+30) (y+30) 40 40 
-  fill  
-  setSourceRGBA 0.5 0.5 0.5 0.5
-  rectangle (x+90) y 10 10
-  fill
-  setSourceRGBA 0 0 0 0.7 
-  setLineWidth 1
-  moveTo (x+90) y 
-  lineTo (x+100) (y+10)
-  stroke 
-  moveTo (x+90) (y+10)
-  lineTo (x+100) y
-  stroke
-  resetClip 
 
 
 -- | 
@@ -598,4 +568,54 @@ canvasImageSurface mmulti geometry hdl = do
   renderWith sfc renderfunc 
   return (sfc, Dim w_cvs h_cvs)
 
+---------------------------------------------------
+--                Widgets                        --
+---------------------------------------------------
 
+-- | 
+drawWidgets :: ViewMode a => CanvasInfo a -> Maybe BBox -> Render () 
+drawWidgets cinfo mbbox = do  
+  when (view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
+    renderPanZoomWidget mbbox (view (canvasWidgets.panZoomWidgetPosition) cinfo) 
+  when (view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) $     
+    renderLayerWidget mbbox (view (canvasWidgets.layerWidgetPosition) cinfo)
+
+-- | 
+renderPanZoomWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
+renderPanZoomWidget mbbox (CvsCoord (x,y)) = do 
+  identityMatrix 
+  clipBBox mbbox 
+  setSourceRGBA 0.5 0.5 0.2 0.3 
+  rectangle x y 100 100 
+  fill 
+  setSourceRGBA 0.2 0.2 0.7 0.5
+  rectangle (x+10) (y+10) 40 80
+  fill 
+  setSourceRGBA 0.2 0.7 0.2 0.5 
+  rectangle (x+50) (y+10) 40 80
+  fill 
+  setSourceRGBA 0.7 0.2 0.2 0.5
+  rectangle (x+30) (y+30) 40 40 
+  fill  
+  setSourceRGBA 0.5 0.5 0.5 0.5
+  rectangle (x+90) y 10 10
+  fill
+  setSourceRGBA 0 0 0 0.7 
+  setLineWidth 1
+  moveTo (x+90) y 
+  lineTo (x+100) (y+10)
+  stroke 
+  moveTo (x+90) (y+10)
+  lineTo (x+100) y
+  stroke
+  resetClip 
+
+
+-- | 
+renderLayerWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
+renderLayerWidget mbbox (CvsCoord (x,y)) = do 
+  identityMatrix 
+  clipBBox mbbox 
+  setSourceRGBA 0.5 0.5 0.2 0.3 
+  rectangle x y 100 100 
+  fill 

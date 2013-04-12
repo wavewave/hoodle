@@ -45,48 +45,50 @@ import           Hoodle.View.Draw
 
 data PanZoomMode = Moving | Zooming | Panning Bool
 
-widgetCheckPen :: CanvasId -> PointerCoord 
-               -> MainCoroutine () 
-               -> MainCoroutine ()
-widgetCheckPen cid pcoord act = do 
-    xst <- get
-    let cinfobox = getCanvasInfo cid xst 
-        b = view (unboxLens (canvasWidgets.widgetConfig.doesUsePanZoom)) cinfobox
-    if b then boxAction (f xst) cinfobox else act 
-  where 
-    f xst cinfo = do 
-      let cvs = view drawArea cinfo
-          pnum = (PageNum . view currentPageNum) cinfo 
-          arr = view (viewInfo.pageArrangement) cinfo
-      geometry <- liftIO $ makeCanvasGeometry pnum arr cvs 
-      let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
-      let owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.testWidgetPosition) cinfo
-          obbox = BBox (x0,y0) (x0+100,y0+100) 
-          pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
-          pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
-          pbbox3 = BBox (x0+90,y0) (x0+100,y0+10)
-          zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
-      if (isPointInBBox obbox (x,y))  
-         then do 
-           let mmode | isPointInBBox zbbox (x,y) = Just Zooming 
-                     | isPointInBBox pbbox1 (x,y) = Just (Panning False)
-                     | isPointInBBox pbbox2 (x,y) = Just (Panning True)
-                     | isPointInBBox pbbox3 (x,y) = Nothing
-                     | otherwise = Just Moving 
-           let hdl = getHoodle xst
-           case mmode of 
-             Nothing -> togglePanZoom
-             Just mode -> do 
-               (sfc,Dim wsfc hsfc) <- case mode of 
-                                        Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
-                                        Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
-                                        Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
-               sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
-               ctime <- liftIO getCurrentTime 
-               startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
-               liftIO $ surfaceFinish sfc 
-               liftIO $ surfaceFinish sfc2
-         else act 
+checkPointerInPanZoom :: (ViewMode a) => 
+                         (CanvasId,CanvasInfo a,CanvasGeometry) 
+                      -> PointerCoord 
+                      -> Maybe (Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate)))
+checkPointerInPanZoom (cid,cinfo,geometry) pcoord =  
+    let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
+        owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetPosition) cinfo
+        obbox = BBox (x0,y0) (x0+100,y0+100) 
+        pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
+        pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
+        pbbox3 = BBox (x0+90,y0) (x0+100,y0+10)
+        zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
+    in if (isPointInBBox obbox (x,y))  
+       then let mmode | isPointInBBox zbbox (x,y) = Just (Zooming,(oxy,owxy))
+                   | isPointInBBox pbbox1 (x,y) = Just (Panning False,(oxy,owxy))
+                   | isPointInBBox pbbox2 (x,y) = Just (Panning True,(oxy,owxy))
+                   | isPointInBBox pbbox3 (x,y) = Nothing
+                   | otherwise = Just (Moving,(oxy,owxy))
+            in (Just mmode)
+       else Nothing   
+            
+-- | 
+startPanZoomWidget :: (ViewMode a) =>
+                      (CanvasId,CanvasInfo a,CanvasGeometry)
+                   -> Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate))
+                   -> MainCoroutine ()
+startPanZoomWidget (cid,cinfo,geometry) mmode = do 
+    xst <- get 
+    let hdl = getHoodle xst
+    case mmode of 
+      Nothing -> togglePanZoom
+      Just (mode,(oxy,owxy)) -> do 
+        (sfc,Dim wsfc hsfc) <- case mode of 
+                                 Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
+                                 Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
+                                 Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
+        sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+        ctime <- liftIO getCurrentTime 
+        startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
+        liftIO $ surfaceFinish sfc 
+        liftIO $ surfaceFinish sfc2
+
+
+
 
 -- | 
 findZoomXform :: Dimension 
@@ -194,13 +196,13 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                   nwpos = CvsCoord (nposx,nposy) 
                   changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
                   changeact cinfo =  
-                    set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
+                    set (canvasWidgets.panZoomWidgetPosition) nwpos $ cinfo
                   ncinfobox = selectBox changeact changeact  cinfobox
               put (setCanvasInfo (cid,ncinfobox) xst)
               virtualDoubleBufferDraw sfc sfc2 (return ()) (renderPanZoomWidget Nothing nwpos)
             Zooming -> do 
               let cinfobox = getCanvasInfo cid xst               
-              let pos = runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox )
+              let pos = runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
               let (xo,yo) = (xw+50,yw+50)
                   CanvasDimension cdim = canvasDim geometry 
                   (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
@@ -221,12 +223,8 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                   nwpos = if b 
                           then CvsCoord (nposx,nposy) 
                           else 
-                            runIdentity (boxAction (return . view (canvasWidgets.testWidgetPosition)) cinfobox)
-                  -- changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
-                  -- changeact cinfo =  
-                  --   set (canvasWidgets.testWidgetPosition) nwpos $ cinfo
-                  --             selectBox changeact changeact  cinfobox
-                  ncinfobox = set (unboxLens (canvasWidgets.testWidgetPosition)) nwpos cinfobox
+                            runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
+                  ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetPosition)) nwpos cinfobox
               put (setCanvasInfo (cid,ncinfobox) xst)
               virtualDoubleBufferDraw sfc sfc2 
                 (save >> translate xtrans ytrans) 
@@ -240,5 +238,5 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
 -- | 
 togglePanZoom :: MainCoroutine () 
 togglePanZoom = do 
-  modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUsePanZoom)) not)
+  modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) not)
   invalidateAll  

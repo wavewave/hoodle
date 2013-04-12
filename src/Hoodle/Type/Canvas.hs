@@ -52,7 +52,7 @@ module Hoodle.Type.Canvas
 , vertAdjConnId
 , adjustments 
 , canvasWidgets
-, testWidgetPosition
+, panZoomWidgetPosition
 , currentTool 
 , penWidth
 , penColor

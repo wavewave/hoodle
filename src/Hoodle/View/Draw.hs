@@ -17,16 +17,17 @@ module Hoodle.View.Draw where
 import Control.Applicative 
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
-import Graphics.UI.Gtk hiding (get,set)
-import Graphics.Rendering.Cairo
-import Control.Category ((.))
+-- import           Control.Category ((.))
 import           Control.Lens (view,set,at)
 import Control.Monad (when)
 import Data.Foldable
 import qualified Data.IntMap as M
-import Data.Maybe hiding (fromMaybe)
-import Data.Monoid
-import Data.Sequence
+import           Data.Maybe hiding (fromMaybe)
+import           Data.Monoid
+import           Data.Sequence
+import           Graphics.UI.Gtk hiding (get,set)
+import           Graphics.Rendering.Cairo
+import           Graphics.Rendering.Pango.Cairo
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -48,7 +49,7 @@ import Hoodle.Type.Widget
 import Hoodle.Util
 import Hoodle.View.Coordinate
 -- 
-import Prelude hiding ((.),id,mapM_,concatMap,foldr)
+import Prelude hiding (mapM_,concatMap,foldr)
 
 -- | 
 data DrawFlag = Clear | BkgEfficient | Efficient
@@ -577,8 +578,8 @@ drawWidgets :: ViewMode a => CanvasInfo a -> Maybe BBox -> Render ()
 drawWidgets cinfo mbbox = do  
   when (view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
     renderPanZoomWidget mbbox (view (canvasWidgets.panZoomWidgetPosition) cinfo) 
-  when (view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) $     
-    renderLayerWidget mbbox (view (canvasWidgets.layerWidgetPosition) cinfo)
+  when (view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) $ do     
+    renderLayerWidget "1" mbbox (view (canvasWidgets.layerWidgetPosition) cinfo)
 
 -- | 
 renderPanZoomWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
@@ -612,10 +613,50 @@ renderPanZoomWidget mbbox (CvsCoord (x,y)) = do
 
 
 -- | 
-renderLayerWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
-renderLayerWidget mbbox (CvsCoord (x,y)) = do 
+renderLayerWidget :: String -> Maybe BBox -> CanvasCoordinate -> Render () 
+renderLayerWidget str mbbox (CvsCoord (x,y)) = do 
   identityMatrix 
   clipBBox mbbox 
   setSourceRGBA 0.5 0.5 0.2 0.3 
   rectangle x y 100 100 
   fill 
+  setSourceRGBA 0 0 0 0.4
+  moveTo (x+80) y 
+  lineTo (x+100) y
+  lineTo (x+100) (y+20)
+  fill 
+  setSourceRGBA 0 0 0 0.1
+  moveTo x (y+80)
+  lineTo x (y+100)
+  lineTo (x+20) (y+100)
+  fill 
+  
+  
+  
+  -- 
+  identityMatrix 
+  l1 <- createLayout "layer"
+  updateLayout l1 
+  (_,reclog) <- liftIO $ layoutGetExtents l1
+  let PangoRectangle _ _ w1 h1 = reclog 
+  moveTo x y
+  let sx1 = 50 / w1 
+      sy1 = 20 / h1 
+  scale sx1 sy1 
+  layoutPath l1
+  setSourceRGBA 0 0 0 0.4
+  fill
+  -- 
+  identityMatrix
+  l <- createLayout str 
+  updateLayout l 
+  (_,reclog) <- liftIO $ layoutGetExtents l
+  let PangoRectangle _ _ w h = reclog 
+  moveTo (x+30) (y+20)
+  let sx = 40 / w 
+      sy = 60 / h 
+  scale sx sy 
+  layoutPath l 
+  setSourceRGBA 0 0 0 0.4
+  fill
+

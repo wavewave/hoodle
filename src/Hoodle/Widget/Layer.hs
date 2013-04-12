@@ -83,6 +83,7 @@ layerWidgetEventLoop cid geometry (sfc,sfc2)
                      >> layerWidgetEventLoop cid geometry (sfc,sfc2) owxy oxy ctime)
           otime 
       PenUp _ pcoord -> invalidate cid 
+      _ -> return ()
 
 moveLayerWidget :: CanvasId 
                    -> CanvasGeometry 
@@ -108,7 +109,7 @@ moveLayerWidget cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pc
           set (canvasWidgets.layerWidgetPosition) nwpos $ cinfo
         ncinfobox = selectBox changeact changeact  cinfobox
     put (setCanvasInfo (cid,ncinfobox) xst)
-    virtualDoubleBufferDraw sfc sfc2 (return ()) (renderLayerWidget Nothing nwpos)
+    virtualDoubleBufferDraw sfc sfc2 (return ()) (renderLayerWidget "1" Nothing nwpos)
     -- 
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 

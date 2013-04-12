@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Coroutine.Layer 
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -28,6 +28,7 @@ import Graphics.Hoodle.Render.Type
 -- 
 import Hoodle.Accessor
 import Hoodle.Coroutine.Commit
+import Hoodle.Coroutine.Draw
 import Hoodle.ModelAction.Layer
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Alias 
@@ -54,7 +55,7 @@ layerAction action = do
 -- | 
 
 makeNewLayer :: MainCoroutine () 
-makeNewLayer = layerAction newlayeraction >>= commit 
+makeNewLayer = layerAction newlayeraction >>= commit >> invalidateAll 
   where newlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               emptylyr = emptyRLayer 
@@ -64,7 +65,7 @@ makeNewLayer = layerAction newlayeraction >>= commit
                 
 
 gotoNextLayer :: MainCoroutine ()
-gotoNextLayer = layerAction nextlayeraction >>= put
+gotoNextLayer = layerAction nextlayeraction >>= put >> invalidateAll 
   where nextlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = moveRight lyrzipper 
@@ -72,7 +73,7 @@ gotoNextLayer = layerAction nextlayeraction >>= put
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
 
 gotoPrevLayer :: MainCoroutine ()
-gotoPrevLayer = layerAction prevlayeraction >>= put
+gotoPrevLayer = layerAction prevlayeraction >>= put >> invalidateAll 
   where prevlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = moveLeft lyrzipper 
@@ -81,7 +82,7 @@ gotoPrevLayer = layerAction prevlayeraction >>= put
 
 
 gotoLayerAt :: Int -> MainCoroutine ()
-gotoLayerAt n = layerAction gotoaction >>= put
+gotoLayerAt n = layerAction gotoaction >>= put >> invalidateAll 
   where gotoaction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = moveTo n lyrzipper 
@@ -90,7 +91,7 @@ gotoLayerAt n = layerAction gotoaction >>= put
 
 
 deleteCurrentLayer :: MainCoroutine ()
-deleteCurrentLayer = layerAction deletelayeraction >>= commit
+deleteCurrentLayer = layerAction deletelayeraction >>= commit >> invalidateAll 
   where deletelayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = deleteCurrent lyrzipper 

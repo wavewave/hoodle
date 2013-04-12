@@ -17,6 +17,7 @@ module Hoodle.Widget.Layer where
 import Control.Lens (view,set,over)
 import Control.Monad.State 
 import Control.Monad.Trans
+import           Data.Sequence
 import           Data.Time
 import           Graphics.Rendering.Cairo
 --
@@ -25,8 +26,10 @@ import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Util.HitTest
 --
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.Layer
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Device
+import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
@@ -35,6 +38,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Widget
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
+
 
 checkPointerInLayer :: ViewMode a => 
                        (CanvasId,CanvasInfo a,CanvasGeometry) 
@@ -61,7 +65,13 @@ startLayerWidget (cid,cinfo,geometry) (oxy,owxy) = do
     (sfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)
     sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
     ctime <- liftIO getCurrentTime 
-    layerWidgetEventLoop cid geometry (sfc,sfc2) owxy oxy ctime 
+    let CvsCoord (x0,y0) = owxy 
+        CvsCoord (x,y) = oxy 
+        act 
+          | hitLassoPoint (fromList [(x0+80,y0),(x0+100,y0),(x0+100,y0+20)]) (x,y) = gotoNextLayer
+          | hitLassoPoint (fromList [(x0,y0+80),(x0,y0+100),(x0+20,y0+100)]) (x,y) = gotoPrevLayer 
+          | otherwise = layerWidgetEventLoop cid geometry (sfc,sfc2) owxy oxy ctime 
+    act
     liftIO $ surfaceFinish sfc 
     liftIO $ surfaceFinish sfc2
   
@@ -109,10 +119,11 @@ moveLayerWidget cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pc
           set (canvasWidgets.layerWidgetPosition) nwpos $ cinfo
         ncinfobox = selectBox changeact changeact  cinfobox
     put (setCanvasInfo (cid,ncinfobox) xst)
-    virtualDoubleBufferDraw sfc sfc2 (return ()) (renderLayerWidget "1" Nothing nwpos)
+    let hdl = getHoodle xst 
+
     -- 
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
-    liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
+    liftIO $ boxAction (\cinfo-> virtualDoubleBufferDraw sfc sfc2 (return ()) (drawLayerWidget hdl cinfo Nothing nwpos) >> doubleBufferFlush sfc2 cinfo) cinfobox
   
   

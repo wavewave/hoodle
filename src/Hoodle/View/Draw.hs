@@ -5,7 +5,7 @@
 -- Module      : Hoodle.View.Draw 
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -34,6 +34,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Predefined
 import Data.Hoodle.Select
 import Data.Hoodle.Simple (Dimension(..),Stroke(..))
+import Data.Hoodle.Zipper (currIndex)
 import Graphics.Hoodle.Render.Generic
 import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Type
@@ -312,7 +313,7 @@ drawContPageGen render = ContPageDraw func
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                drawWidgets cinfo mbbox_canvas 
+                drawWidgets hdl cinfo mbbox_canvas 
                 resetClip 
                 return nhdl 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -366,7 +367,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                drawWidgets cinfo mbbox_canvas
+                drawWidgets hdl cinfo mbbox_canvas
                 resetClip 
                 return nthdl2  
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -574,12 +575,13 @@ canvasImageSurface mmulti geometry hdl = do
 ---------------------------------------------------
 
 -- | 
-drawWidgets :: ViewMode a => CanvasInfo a -> Maybe BBox -> Render () 
-drawWidgets cinfo mbbox = do  
+drawWidgets :: ViewMode a => Hoodle EditMode -> CanvasInfo a -> Maybe BBox -> Render () 
+drawWidgets hdl cinfo mbbox = do  
   when (view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
     renderPanZoomWidget mbbox (view (canvasWidgets.panZoomWidgetPosition) cinfo) 
-  when (view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) $ do     
-    renderLayerWidget "1" mbbox (view (canvasWidgets.layerWidgetPosition) cinfo)
+  when (view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) 
+    (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetPosition) cinfo))
+
 
 -- | 
 renderPanZoomWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
@@ -610,6 +612,17 @@ renderPanZoomWidget mbbox (CvsCoord (x,y)) = do
   lineTo (x+100) y
   stroke
   resetClip 
+
+drawLayerWidget :: ViewMode a => 
+                   Hoodle EditMode 
+                   -> CanvasInfo a 
+                   -> Maybe BBox 
+                   -> CanvasCoordinate 
+                   -> Render ()
+drawLayerWidget hdl cinfo mbbox cvscoord = do     
+    let mn = let cpn = view currentPageNum cinfo
+             in (currIndex . view glayers) <$> view (gpages.at cpn) hdl 
+    renderLayerWidget (maybe "" show mn) mbbox cvscoord -- (view (canvasWidgets.layerWidgetPosition) cinfo)
 
 
 -- | 

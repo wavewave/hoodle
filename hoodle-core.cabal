@@ -122,6 +122,7 @@ Library
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
                    Hoodle.Widget.Dispatch
+                   Hoodle.Widget.Layer 
                    Hoodle.Widget.PanZoom
   Other-Modules: 
                    Paths_hoodle_core

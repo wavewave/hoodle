@@ -3,7 +3,7 @@
 -- Module      : Hoodle.Widget.PanZoom
 -- Copyright   : (c) 2013 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -49,7 +49,8 @@ checkPointerInPanZoom :: (ViewMode a) =>
                          (CanvasId,CanvasInfo a,CanvasGeometry) 
                       -> PointerCoord 
                       -> Maybe (Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate)))
-checkPointerInPanZoom (cid,cinfo,geometry) pcoord =  
+checkPointerInPanZoom (cid,cinfo,geometry) pcoord 
+  | b = 
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
         owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetPosition) cinfo
         obbox = BBox (x0,y0) (x0+100,y0+100) 
@@ -65,7 +66,11 @@ checkPointerInPanZoom (cid,cinfo,geometry) pcoord =
                    | otherwise = Just (Moving,(oxy,owxy))
             in (Just mmode)
        else Nothing   
-            
+  | otherwise = Nothing 
+  where b = view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo
+
+
+
 -- | 
 startPanZoomWidget :: (ViewMode a) =>
                       (CanvasId,CanvasInfo a,CanvasGeometry)
@@ -181,58 +186,58 @@ movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry -> (Surface,Surface)
                 -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
                 -> MainCoroutine () 
 movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
-          let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
-          xst <- get 
-          case mode of
-            Moving -> do 
-              let CanvasDimension (Dim cw ch) = canvasDim geometry 
-                  cinfobox = getCanvasInfo cid xst 
-                  nposx | xw+x-x0 < -50 = -50 
-                        | xw+x-x0 > cw-50 = cw-50 
-                        | otherwise = xw+x-x0
-                  nposy | yw+y-y0 < -50 = -50 
-                        | yw+y-y0 > ch-50 = ch-50 
-                        | otherwise = yw+y-y0                             
-                  nwpos = CvsCoord (nposx,nposy) 
-                  changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
-                  changeact cinfo =  
-                    set (canvasWidgets.panZoomWidgetPosition) nwpos $ cinfo
-                  ncinfobox = selectBox changeact changeact  cinfobox
-              put (setCanvasInfo (cid,ncinfobox) xst)
-              virtualDoubleBufferDraw sfc sfc2 (return ()) (renderPanZoomWidget Nothing nwpos)
-            Zooming -> do 
-              let cinfobox = getCanvasInfo cid xst               
-              let pos = runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
-              let (xo,yo) = (xw+50,yw+50)
-                  CanvasDimension cdim = canvasDim geometry 
-                  (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
-              virtualDoubleBufferDraw sfc sfc2 
-                (save >> scale z z >> translate xtrans ytrans)
-                (restore >> renderPanZoomWidget Nothing pos)
-            Panning b -> do 
-              let cinfobox = getCanvasInfo cid xst               
-                  CanvasDimension cdim = canvasDim geometry 
-                  (xtrans,ytrans) = findPanXform cdim ((x0,y0),(x,y))
-              let CanvasDimension (Dim cw ch) = canvasDim geometry 
-                  nposx | xw+x-x0 < -50 = -50 
-                        | xw+x-x0 > cw-50 = cw-50 
-                        | otherwise = xw+x-x0
-                  nposy | yw+y-y0 < -50 = -50 
-                        | yw+y-y0 > ch-50 = ch-50 
-                        | otherwise = yw+y-y0                             
-                  nwpos = if b 
-                          then CvsCoord (nposx,nposy) 
-                          else 
-                            runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
-                  ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetPosition)) nwpos cinfobox
-              put (setCanvasInfo (cid,ncinfobox) xst)
-              virtualDoubleBufferDraw sfc sfc2 
-                (save >> translate xtrans ytrans) 
-                (restore >> renderPanZoomWidget Nothing nwpos)
-          --   
-          xst2 <- get 
-          let cinfobox = getCanvasInfo cid xst2 
-          liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
+    let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
+    xst <- get 
+    case mode of
+      Moving -> do 
+        let CanvasDimension (Dim cw ch) = canvasDim geometry 
+            cinfobox = getCanvasInfo cid xst 
+            nposx | xw+x-x0 < -50 = -50 
+                  | xw+x-x0 > cw-50 = cw-50 
+                  | otherwise = xw+x-x0
+            nposy | yw+y-y0 < -50 = -50 
+                  | yw+y-y0 > ch-50 = ch-50 
+                  | otherwise = yw+y-y0                             
+            nwpos = CvsCoord (nposx,nposy) 
+            changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+            changeact cinfo =  
+              set (canvasWidgets.panZoomWidgetPosition) nwpos $ cinfo
+            ncinfobox = selectBox changeact changeact  cinfobox
+        put (setCanvasInfo (cid,ncinfobox) xst)
+        virtualDoubleBufferDraw sfc sfc2 (return ()) (renderPanZoomWidget Nothing nwpos)
+      Zooming -> do 
+        let cinfobox = getCanvasInfo cid xst               
+        let pos = runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
+        let (xo,yo) = (xw+50,yw+50)
+            CanvasDimension cdim = canvasDim geometry 
+            (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
+        virtualDoubleBufferDraw sfc sfc2 
+          (save >> scale z z >> translate xtrans ytrans)
+          (restore >> renderPanZoomWidget Nothing pos)
+      Panning b -> do 
+        let cinfobox = getCanvasInfo cid xst               
+            CanvasDimension cdim = canvasDim geometry 
+            (xtrans,ytrans) = findPanXform cdim ((x0,y0),(x,y))
+        let CanvasDimension (Dim cw ch) = canvasDim geometry 
+            nposx | xw+x-x0 < -50 = -50 
+                  | xw+x-x0 > cw-50 = cw-50 
+                  | otherwise = xw+x-x0
+            nposy | yw+y-y0 < -50 = -50 
+                  | yw+y-y0 > ch-50 = ch-50 
+                  | otherwise = yw+y-y0                             
+            nwpos = if b 
+                    then CvsCoord (nposx,nposy) 
+                    else 
+                      runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
+            ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetPosition)) nwpos cinfobox
+        put (setCanvasInfo (cid,ncinfobox) xst)
+        virtualDoubleBufferDraw sfc sfc2 
+          (save >> translate xtrans ytrans) 
+          (restore >> renderPanZoomWidget Nothing nwpos)
+    --   
+    xst2 <- get 
+    let cinfobox = getCanvasInfo cid xst2 
+    liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
 
   
 -- | 

@@ -70,7 +70,7 @@ initDevice :: Config -> IO DeviceList
 initDevice cfg = do 
   pstylusname_detect <- newCString "stylus" 
   perasername_detect <- newCString "eraser" 
-  c_find_wacom pstylusname_detect perasername_detect
+  -- c_find_wacom pstylusname_detect perasername_detect
   (mcore,mstylus,meraser) <- getPenDevConfig cfg 
   putStrLn $ show mstylus 
   putStrLn $ show meraser

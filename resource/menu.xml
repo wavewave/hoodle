@@ -20,6 +20,8 @@
        <menuitem action="PRINTA" />                        
        <menuitem action="EXPORTA" />
        <separator /> 
+       <menuitem action="SYNCPDFA" /> 
+       <separator />
        <menuitem action="QUITA" />
     </menu>
     <menu action="EMA">

@@ -17,6 +17,7 @@
 module Hoodle.Coroutine.File where
 
 -- from other packages
+import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM)
@@ -27,12 +28,14 @@ import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
 import           Data.Maybe
 import qualified Data.IntMap as IM
+import           Filesystem.Path.CurrentOS (decodeString)
 import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.Exit 
 import           System.FilePath
+import qualified System.FSNotify as FS
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
@@ -231,6 +234,41 @@ fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) act
         xstate <- get 
         let hdl = getHoodle xstate 
         liftIO (renderjob hdl filename) 
+
+
+-- | 
+fileSyncPDF :: MainCoroutine ()
+fileSyncPDF = -- fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
+              action "test.pdf"
+  where 
+    action filename = 
+      -- this is rather temporary not to make mistake 
+      if takeExtension filename /= ".pdf" 
+      then fileExtensionInvalid (".pdf","sync pdf") >> fileSyncPDF
+      else do      
+        let (filedir,_) = splitFileName filename 
+            ioact = Left . ActionOrder $ \evhandler ->do 
+              forkIO $ do 
+                print "forked" 
+                -- FS.withManager $ \wm -> do 
+                --   FS.watchDir wm (decodeString filedir) (const True) $ 
+                --     \ev -> evhandler (FSEvent (show ev))
+                --   return () 
+                let sec = 1000000
+                    go n = do  
+                      threadDelay (1 *sec)
+                      -- print ("test " ++ show n) 
+                      evhandler (FSEvent ("test" ++ show n))
+                      go (n+1)
+                go 0
+              -- threadDelay 5000000
+              return ActionOrdered
+        modify (tempQueue %~ enqueue ioact) 
+          -- liftIO $ getLine 
+          --liftIO $ putStrLn "done"
+          -- liftIO $ print filename 
+
+
 
 
 -- | need to be merged with ContextMenuEventSVG

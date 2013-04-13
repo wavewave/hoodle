@@ -307,6 +307,8 @@ menuEventProcess MenuSave = fileSave
 menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuReload = fileReload 
 menuEventProcess MenuExport = fileExport 
+menuEventProcess MenuSyncPDF = fileSyncPDF
+-- 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
 menuEventProcess MenuPaste = pasteToSelection

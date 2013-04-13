@@ -24,7 +24,7 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   base == 4.*, 
@@ -63,7 +63,9 @@ Library
                    uuid >= 1.2.7, 
                    monad-loops >= 0.3, 
                    network, 
-                   poppler >= 0.12.2.2
+                   poppler >= 0.12.2.2, 
+                   fsnotify >= 0.0.7, 
+                   system-filepath >= 0.4
   Exposed-Modules: 
                    Hoodle.Accessor
                    Hoodle.Config

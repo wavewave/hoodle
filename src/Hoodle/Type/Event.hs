@@ -3,10 +3,12 @@
 -- Module      : Hoodle.Type.Event 
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
+--
+-- GUI events in hoodle application
 --
 -----------------------------------------------------------------------------
 
@@ -61,6 +63,7 @@ data MyEvent = Initialized
              | EventDisconnected
              | GetHoodleFileInfo (IORef (Maybe String))
              | GotLink (Maybe String) (Int,Int)
+             | FSEvent String 
              deriving Show
                       
 instance Show (IORef a) where                      
@@ -82,6 +85,7 @@ data MenuEvent = MenuNew
                | MenuEmbedPredefinedImage3                 
                | MenuPrint 
                | MenuExport 
+               | MenuSyncPDF
                | MenuQuit 
                | MenuUndo 
                | MenuRedo 

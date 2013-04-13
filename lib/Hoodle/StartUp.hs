@@ -42,6 +42,7 @@ hoodleStartMain = Dyre.wrapMain $ Dyre.defaultParams
   , Dyre.configDir = Just dirHoodled
   , Dyre.realMain = hoodleMain 
   , Dyre.showError = showError 
+  , Dyre.ghcOpts = [ "-threaded" ]
   } 
 
 -- | 

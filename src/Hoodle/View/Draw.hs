@@ -34,7 +34,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Predefined
 import Data.Hoodle.Select
 import Data.Hoodle.Simple (Dimension(..),Stroke(..))
-import Data.Hoodle.Zipper (currIndex)
+import Data.Hoodle.Zipper (currIndex,current)
 import Graphics.Hoodle.Render.Generic
 import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Type
@@ -620,10 +620,35 @@ drawLayerWidget :: ViewMode a =>
                    -> CanvasCoordinate 
                    -> Render ()
 drawLayerWidget hdl cinfo mbbox cvscoord = do     
-    let mn = let cpn = view currentPageNum cinfo
-             in (currIndex . view glayers) <$> view (gpages.at cpn) hdl 
-    renderLayerWidget (maybe "" show mn) mbbox cvscoord -- (view (canvasWidgets.layerWidgetPosition) cinfo)
+    let cpn = view currentPageNum cinfo
+    runMaybeT $ do 
+      pg <- MaybeT . return $ view (gpages.at cpn) hdl
+      let 
+        
+          lyrs = view glayers pg
+          n = currIndex lyrs 
+          l = current lyrs 
+          LyBuf msfc = view gbuffer l
+      lift $ renderLayerWidget (show n) mbbox cvscoord -- (view (canvasWidgets.layerWidgetPosition) cinfo)
+      sfc <- MaybeT . return $ msfc 
+      lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
+    return () 
 
+renderLayerContent :: Maybe BBox -> Dimension -> Surface -> CanvasCoordinate -> Render ()
+renderLayerContent mbbox (Dim w h) sfc (CvsCoord (x,y)) = do 
+  identityMatrix 
+  clipBBox mbbox 
+  let sx = 200 / w
+  -- moveTo (x+100) y   
+  rectangle (x+100) y 200 (h*200/w)
+  setLineWidth 0.5 
+  setSourceRGBA 0 0 0 1 
+  stroke 
+  translate (x+100) (y) 
+  scale sx sx -- sy 
+  setSourceSurface sfc 0 0 
+  paint 
+  
 
 -- | 
 renderLayerWidget :: String -> Maybe BBox -> CanvasCoordinate -> Render () 

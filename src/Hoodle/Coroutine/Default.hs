@@ -24,6 +24,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
+import           Data.Time.Clock
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
@@ -70,6 +71,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Predefined
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.HoodleState
@@ -270,6 +272,20 @@ defaultEventProcess (GetHoodleFileInfo ref) = do
     Nothing -> liftIO $ writeIORef ref Nothing
     Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    
+defaultEventProcess (Sync ctime) = do 
+  xst <- get
+  case view (hoodleFileControl.lastSavedTime) xst of 
+    Nothing -> return ()
+    Just otime -> do 
+      let dtime = diffUTCTime ctime otime
+      if dtime < dtime_bound * 10 
+        then return () 
+        else do 
+          let ioact = Left . ActionOrder $ \evhandler -> do 
+                postGUISync (evhandler FileReloadOrdered) 
+                return ActionOrdered
+          modify (tempQueue %~ enqueue ioact)
+defaultEventProcess FileReloadOrdered = fileReload 
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
@@ -307,7 +323,7 @@ menuEventProcess MenuSave = fileSave
 menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuReload = fileReload 
 menuEventProcess MenuExport = fileExport 
-menuEventProcess MenuSyncPDF = fileSyncPDF
+menuEventProcess MenuStartSync = fileStartSync
 -- 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection

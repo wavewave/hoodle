@@ -47,6 +47,7 @@ module Hoodle.Type.HoodleState
 , statusBar
 -- 
 , hoodleFileName 
+, lastSavedTime
 --
 , doesUseXInput 
 , doesSmoothScroll 
@@ -264,11 +265,19 @@ statusBar = lens _statusBar (\f a -> f { _statusBar = a })
 
 -- | 
 data HoodleFileControl = 
-  HoodleFileControl { _hoodleFileName :: Maybe FilePath } 
+  HoodleFileControl { _hoodleFileName :: Maybe FilePath 
+                    , _lastSavedTime  :: Maybe UTCTime 
+                    } 
 
 -- | lens for currFileName
 hoodleFileName :: Simple Lens HoodleFileControl (Maybe FilePath)
 hoodleFileName = lens _hoodleFileName (\f a -> f { _hoodleFileName = a } )
+
+-- | lens for last saved time
+lastSavedTime :: Simple Lens HoodleFileControl (Maybe UTCTime) 
+lastSavedTime = lens _lastSavedTime (\f a -> f { _lastSavedTime = a } )
+
+
 
 -- | 
 data UIComponentSignalHandler = 
@@ -366,7 +375,9 @@ emptyHoodleState = do
 
 emptyHoodleFileControl :: HoodleFileControl 
 emptyHoodleFileControl = 
-  HoodleFileControl { _hoodleFileName = Nothing } 
+  HoodleFileControl { _hoodleFileName = Nothing 
+                    , _lastSavedTime = Nothing 
+                    } 
 
 
 defaultUIComponentSignalHandler :: UIComponentSignalHandler

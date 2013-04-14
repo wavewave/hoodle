@@ -17,6 +17,7 @@ module Hoodle.Type.Event where
 -- from other package
 import Data.ByteString 
 import Data.IORef
+import Data.Time.Clock
 import Graphics.UI.Gtk
 -- from hoodle-platform
 import Data.Hoodle.Simple
@@ -63,7 +64,8 @@ data MyEvent = Initialized
              | EventDisconnected
              | GetHoodleFileInfo (IORef (Maybe String))
              | GotLink (Maybe String) (Int,Int)
-             | FSEvent String 
+             | Sync UTCTime 
+             | FileReloadOrdered
              deriving Show
                       
 instance Show (IORef a) where                      
@@ -85,7 +87,7 @@ data MenuEvent = MenuNew
                | MenuEmbedPredefinedImage3                 
                | MenuPrint 
                | MenuExport 
-               | MenuSyncPDF
+               | MenuStartSync
                | MenuQuit 
                | MenuUndo 
                | MenuRedo 

@@ -20,15 +20,16 @@ module Hoodle.ModelAction.File where
 import           Control.Applicative
 import           Control.Lens (view,set)
 import           Data.Attoparsec 
-import           Data.Maybe 
-import           Graphics.UI.Gtk hiding (get,set)
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
+import qualified Data.ByteString.Lazy.Char8 as L
 import qualified Data.IntMap as IM
+import           Data.Maybe 
 import           Data.Monoid ((<>))
+import           Data.Time.Clock
+import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-import           Graphics.Hoodle.Render.Background
 import           System.Directory (canonicalizePath)
 import           System.FilePath (takeExtension)
 import           System.Process
@@ -36,8 +37,10 @@ import           System.Process
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Type.Background 
 import           Graphics.Hoodle.Render.Type.Hoodle
+import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2 as MV
 import qualified Text.Xournal.Parse.Conduit as XP
@@ -70,8 +73,11 @@ getFileContent (Just fname) xstate = do
         r <- checkVersionAndMigrate bstr 
         case r of 
           Left err -> putStrLn err >> return xstate 
-          Right h -> constructNewHoodleStateFromHoodle h xstate 
-                     >>= return . set (hoodleFileControl.hoodleFileName) (Just fname)
+          Right h -> do 
+            nxstate <- constructNewHoodleStateFromHoodle h xstate 
+            ctime <- getCurrentTime
+            return . set (hoodleFileControl.hoodleFileName) (Just fname)
+                   . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate
       ".xoj" -> do 
           XP.parseXojFile fname >>= \x -> case x of  
             Left str -> do
@@ -80,7 +86,9 @@ getFileContent (Just fname) xstate = do
             Right xojcontent -> do 
               hdlcontent <- mkHoodleFromXournal xojcontent 
               nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
-              return $ set (hoodleFileControl.hoodleFileName) (Just fname) nxstate               
+              ctime <- getCurrentTime 
+              return . set (hoodleFileControl.hoodleFileName) (Just fname) 
+                     . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate               
       ".pdf" -> do 
         let doesembed = view (settings.doesEmbedPDF) xstate
         mhdl <- makeNewHoodleWithPDF doesembed fname 
@@ -196,6 +204,22 @@ createPage doesembed dim fn n =
             = BackgroundEmbedPdf "embedpdf" n 
     in Page dim bkg [emptyLayer]
                    
+
+-- | 
+saveHoodle :: HoodleState -> IO HoodleState 
+saveHoodle xstate = do 
+    let hdl = (rHoodle2Hoodle . getHoodle) xstate 
+    case view (hoodleFileControl.hoodleFileName) xstate of 
+      Nothing -> return xstate 
+      Just filename -> do 
+        L.writeFile filename . builder $ hdl
+        ctime <- getCurrentTime 
+        let ui = view gtkUIManager xstate
+        toggleSave ui False
+        return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ xstate )
+             
+
+
 
 
 -- | this function must be moved to GUI.Reflect

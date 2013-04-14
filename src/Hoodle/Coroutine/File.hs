@@ -17,6 +17,7 @@
 module Hoodle.Coroutine.File where
 
 -- from other packages
+import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.Loops
@@ -28,7 +29,8 @@ import           Data.ByteString.Char8 as B (pack)
 import qualified Data.ByteString.Lazy as L
 import           Data.Maybe
 import qualified Data.IntMap as IM
-import           Filesystem.Path.CurrentOS (decodeString)
+import           Data.Time.Clock
+import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -198,13 +200,17 @@ fileSave = do
         -- this is rather temporary not to make mistake 
         if takeExtension filename == ".hdl" 
           then do 
+             put =<< (liftIO (saveHoodle xstate))
+             {- 
              let hdl = (rHoodle2Hoodle . getHoodle) xstate 
              liftIO . L.writeFile filename . builder $ hdl
-             put . set isSaved True $ xstate 
+             ctime <- liftIO $ getCurrentTime 
+             put . set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ xstate 
+             
              let ui = view gtkUIManager xstate
-             liftIO $ toggleSave ui False
-             S.afterSaveHook filename hdl
-           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
+             liftIO $ toggleSave ui False -}
+             (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) xstate
+          else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 
 
 -- | interleaving a monadic action between each pair of subsequent actions
@@ -237,39 +243,39 @@ fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) act
 
 
 -- | 
-fileSyncPDF :: MainCoroutine ()
-fileSyncPDF = -- fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
-              action "test.pdf"
-  where 
-    action filename = 
-      -- this is rather temporary not to make mistake 
-      if takeExtension filename /= ".pdf" 
-      then fileExtensionInvalid (".pdf","sync pdf") >> fileSyncPDF
-      else do      
-        let (filedir,_) = splitFileName filename 
-            ioact = Left . ActionOrder $ \evhandler ->do 
-              forkIO $ do 
-                print "forked" 
-                -- FS.withManager $ \wm -> do 
-                --   FS.watchDir wm (decodeString filedir) (const True) $ 
-                --     \ev -> evhandler (FSEvent (show ev))
-                --   return () 
+fileStartSync :: MainCoroutine ()
+fileStartSync = do 
+   
+  xst <- get 
+  let mf = (,) <$> view (hoodleFileControl.hoodleFileName) xst <*> view (hoodleFileControl.lastSavedTime) xst 
+  -- liftIO $ print mf 
+  maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
+  --  fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
+  where  
+    action filename lasttime  = do 
+      let ioact = Left . ActionOrder $ \evhandler ->do 
+            forkIO $ do 
+              FS.withManager $ \wm -> do 
+                origfile <- canonicalizePath filename 
+                let (filedir,_) = splitFileName origfile
+                print filedir 
+                FS.watchDir wm (decodeString filedir) (const True) $ \ev -> do 
+                  let changedfile = case ev of 
+                        FS.Added fp _ -> encodeString fp 
+                        FS.Modified fp _ -> encodeString fp 
+                        FS.Removed fp _ -> encodeString fp 
+                      changedfilename = takeFileName changedfile 
+                      changedfile' = (filedir </> changedfilename)
+                  if changedfile' == origfile 
+                    then do 
+                      ctime <- getCurrentTime 
+                      evhandler (Sync ctime)
+                    else return () 
+
                 let sec = 1000000
-                    go n = do  
-                      threadDelay (1 *sec)
-                      -- print ("test " ++ show n) 
-                      evhandler (FSEvent ("test" ++ show n))
-                      go (n+1)
-                go 0
-              -- threadDelay 5000000
-              return ActionOrdered
-        modify (tempQueue %~ enqueue ioact) 
-          -- liftIO $ getLine 
-          --liftIO $ putStrLn "done"
-          -- liftIO $ print filename 
-
-
-
+                forever (threadDelay (100 * sec))
+            return ActionOrdered
+      modify (tempQueue %~ enqueue ioact) 
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()

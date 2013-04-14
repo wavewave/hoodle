@@ -260,17 +260,20 @@ fileStartSync = do
                 let (filedir,_) = splitFileName origfile
                 print filedir 
                 FS.watchDir wm (decodeString filedir) (const True) $ \ev -> do 
-                  let changedfile = case ev of 
-                        FS.Added fp _ -> encodeString fp 
-                        FS.Modified fp _ -> encodeString fp 
-                        FS.Removed fp _ -> encodeString fp 
-                      changedfilename = takeFileName changedfile 
-                      changedfile' = (filedir </> changedfilename)
-                  if changedfile' == origfile 
-                    then do 
-                      ctime <- getCurrentTime 
-                      evhandler (Sync ctime)
-                    else return () 
+                  let mchangedfile = case ev of 
+                        FS.Added fp _ -> Just (encodeString fp)
+                        FS.Modified fp _ -> Just (encodeString fp)
+                        FS.Removed fp _ -> Nothing 
+                  case mchangedfile of 
+                    Nothing -> return ()
+                    Just changedfile -> do                       
+                      let changedfilename = takeFileName changedfile 
+                          changedfile' = (filedir </> changedfilename)
+                      if changedfile' == origfile 
+                        then do 
+                          ctime <- getCurrentTime 
+                          evhandler (Sync ctime)
+                        else return () 
 
                 let sec = 1000000
                 forever (threadDelay (100 * sec))

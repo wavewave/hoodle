@@ -60,7 +60,7 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
-import           Data.Hoodle.Zipper 
+import           Data.Hoodle.Zipper hiding (moveTo) 
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 -- from this package
@@ -177,6 +177,21 @@ renderPage page = do
 -- R-structure 
 ----
 
+drawFallBackBkg :: Dimension -> Render () 
+drawFallBackBkg (Dim w h) = do 
+  setSourceRGBA 1 1 1 1 
+  rectangle 0 0 w h 
+  fill 
+  setSourceRGBA 0 0 0 1 
+  setLineWidth 5
+  moveTo 0 0
+  lineTo w h 
+  stroke 
+  moveTo w 0 
+  lineTo 0 h
+  stroke
+  
+
 -- | 
 renderRBkg :: (RBackground,Dimension) -> Render (RBackground,Dimension)
 renderRBkg (r,dim) = 
@@ -185,10 +200,10 @@ renderRBkg (r,dim) =
         drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
         -- renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
       (RBkgPDF _ _ _ p _) -> 
-        maybe (return (r,dim)) 
+        maybe (drawFallBackBkg dim >> return (r,dim)) 
               (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p
       (RBkgEmbedPDF _ p _) -> 
-        maybe (return (r,dim)) 
+        maybe (drawFallBackBkg dim >> return (r,dim)) 
               (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p 
   where 
     drawBkgAndRecord rdr = do 

@@ -38,15 +38,6 @@ import           Graphics.Hoodle.Render.Type.Background
 -- 
 import Prelude hiding (mapM_)
 
-{-
-isPopplerEnabled :: Bool  
-#ifdef POPPLER
-isPopplerEnabled = True 
-#else
-isPopplerEnabled = False
-#endif
--} 
-
 -- |
 popplerGetDocFromFile :: ByteString -> IO (Maybe Poppler.Document)
 popplerGetDocFromFile fp = 
@@ -76,21 +67,24 @@ popplerGetDocFromDataURI dat = do
       removeFile tmpfile 
       return mdoc 
 
-
 -- |
 popplerGetPageFromDoc :: Poppler.Document 
                       -> Int -- ^ page number 
                       -> IO (Maybe Poppler.Page, Maybe Surface)
 popplerGetPageFromDoc doc pn = do   
-  pg <- Poppler.documentGetPage doc (pn-1) 
-  (w,h) <- PopplerPage.pageGetSize pg
-  sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
-  renderWith sfc $ do   
-    setSourceRGBA 1 1 1 1
-    rectangle 0 0 w h 
-    fill
-    PopplerPage.pageRender pg
-  return (Just pg, Just sfc)
+  n <- Poppler.documentGetNPages doc 
+  if pn > n 
+    then return (Nothing, Nothing)
+    else do 
+      pg <- Poppler.documentGetPage doc (pn-1) 
+      (w,h) <- PopplerPage.pageGetSize pg
+      sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
+      renderWith sfc $ do   
+        setSourceRGBA 1 1 1 1
+        rectangle 0 0 w h 
+        fill
+        PopplerPage.pageRender pg
+      return (Just pg, Just sfc)
 
 -- | draw ruling all 
 drawRuling :: Double -> Double -> ByteString -> Render () 
@@ -233,6 +227,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
                 Just doc -> do 
                   liftIO $ popplerGetPageFromDoc doc pn
                 Nothing -> error "error2 in cnstrctRBkg_StateT" 
+              maybe (liftIO $ putStrLn ( "pn = " ++ show pn )) (const (return ())) mpage 
               return (RBkgPDF (Just oldd) oldf pn mpage msfc)
             Nothing -> error "error3 in cnstrctRBkg_StateT" 
     BackgroundEmbedPdf _ pn -> do 

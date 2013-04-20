@@ -318,11 +318,13 @@ writePdfFile hdlfp dim urlbase (rootpath,currpath) path nlnks = do
                    lnks <- MaybeT . return $ lookup (i+1) nlnks
                    liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
       hdlfp' <- liftIO $ canonicalizePath hdlfp 
+      let (hdldir,hdlfn) = splitFileName hdlfp' 
+          (hdlfb,ext) = splitExtension hdlfn
       let special = if i == 0 
                     then let S.Dim w h = dim 
                          in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
                                      , annot_border = (16,16,1) 
-                                     , annot_act = OpenApp hdlfp'
+                                     , annot_act = OpenURI ("file://" ++ hdldir </>  urlEncode hdlfb ++ ".hdl")-- OpenApp hdlfp'
                                      }
                              ]
                     else []  

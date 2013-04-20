@@ -115,8 +115,10 @@ toSiteRoot = emptyException . joinPath . map parent
 
 data Annot = Annot { annot_rect :: (Int, Int, Int, Int) 
                    , annot_border :: (Int ,Int, Int) 
-                   , annot_url :: String  
+                   , annot_act :: AnnotActions
                    } 
+
+data AnnotActions = OpenURI String | OpenApp String 
 
 data AppState = AppState {
   stNextFree :: Int,
@@ -215,9 +217,14 @@ writeAnnot Annot{..} = do
                                                      , ONumber (NumInt (view _3 annot_border)) ] ) 
                          , ("A", ORef actionRef) 
                          ] 
-        actionDict = Dict [ ("S", OName "URI" ) 
-                          , ("URI", OStr (Str (B.pack annot_url)))
-                          ] 
+        actionDict = case annot_act of 
+                       OpenURI uri -> Dict [ ("S", OName "URI" ) 
+                                           , ("URI", OStr (Str (B.pack uri)))
+                                           ] 
+                       OpenApp str -> Dict [ ("S", OName "Launch" )
+                                           , ("F", OStr (Str (B.pack str)))
+                                           ] 
+
     lift.lift.lift $ writeObject annotRef $ ODict annotDict 
     lift.lift.lift $ writeObject actionRef $ ODict actionDict 
     return annotRef 
@@ -272,7 +279,7 @@ makeAnnot (S.Dim pw ph) urlbase (rootpath,currpath) lnk = do
       case urlpath of 
         HttpUrl url -> return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
                               , annot_border = (16,16,1) 
-                              , annot_url = url
+                              , annot_act = OpenURI url
                               })
         FileUrl path -> do 
           b <- doesFileExist linkpath 
@@ -284,18 +291,19 @@ makeAnnot (S.Dim pw ph) urlbase (rootpath,currpath) lnk = do
                   (fb,ext) = splitExtension fn 
               return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
                                  , annot_border = (16,16,1) 
-                                 , annot_url = urlbase </> rdir </> urlEncode fb <.> "pdf"
+                                 , annot_act = OpenURI (urlbase </> rdir </> urlEncode fb <.> "pdf")
                                  })
             else return Nothing 
 
 -- | 
-writePdfFile :: S.Dimension
+writePdfFile :: FilePath -- ^ hoodle file path
+             -> S.Dimension
              -> String -- ^ url base 
              -> (FilePath,FilePath)   -- ^ (root path, curr path)
              -> FilePath    -- ^ pdf file 
              -> [(Int,[S.Link])]
              -> StateT AppState (PdfWriter IO) ()
-writePdfFile dim urlbase (rootpath,currpath) path nlnks = do
+writePdfFile hdlfp dim urlbase (rootpath,currpath) path nlnks = do
   handle <- liftIO $ openBinaryFile path ReadMode
   res <- runPdfWithHandle handle knownFilters $ do
     encrypted <- isEncrypted
@@ -309,7 +317,21 @@ writePdfFile dim urlbase (rootpath,currpath) path nlnks = do
       mannots <- runMaybeT $ do 
                    lnks <- MaybeT . return $ lookup (i+1) nlnks
                    liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
-      writePdfPageWithAnnot dim mannots page
+      hdlfp' <- liftIO $ canonicalizePath hdlfp 
+      let special = if i == 0 
+                    then let S.Dim w h = dim 
+                         in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
+                                     , annot_border = (16,16,1) 
+                                     , annot_act = OpenApp hdlfp'
+                                     }
+                             ]
+                    else []  
+      let mannots' = case mannots of 
+                       Nothing -> Just special 
+                       Just anns -> Just (anns ++ special)
+       -- fmap (++ special) mannots 
+
+      writePdfPageWithAnnot dim mannots' page
   when (isLeft res) $ error $ show res
   liftIO $ hClose handle
 
@@ -380,7 +402,7 @@ createPdf urlbase rootpath (fn,ofn) = catch action (\(e :: SomeException) -> pri
               flip evalStateT initialAppState $ do 
                 index <- nextFreeIndex 
                 modify $ \st -> st { stRootNode = Ref index 0} 
-                writePdfFile dim urlbase (rootpath,currpath) tempfile npglnks
+                writePdfFile fn dim urlbase (rootpath,currpath) tempfile npglnks
                 writeTrailer
             removeFile tempfile 
 

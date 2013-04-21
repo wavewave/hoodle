@@ -76,6 +76,7 @@ import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.HoodleState
 import           Hoodle.Widget.PanZoom
+import           Hoodle.Widget.Layer
 import           Hoodle.Widget.Dispatch 
 --
 import Prelude hiding ((.), id)
@@ -380,7 +381,8 @@ menuEventProcess MenuApplyToAllPages = do
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
 menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
-menuEventProcess MenuWidgetToggle = togglePanZoom
+menuEventProcess MenuTogglePanZoomWidget = togglePanZoom
+menuEventProcess MenuToggleLayerWidget = toggleLayer
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

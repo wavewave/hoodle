@@ -126,4 +126,8 @@ moveLayerWidget cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pc
     let cinfobox = getCanvasInfo cid xst2 
     liftIO $ boxAction (\cinfo-> virtualDoubleBufferDraw sfc sfc2 (return ()) (drawLayerWidget hdl cinfo Nothing nwpos) >> doubleBufferFlush sfc2 cinfo) cinfobox
   
-  
+-- | 
+toggleLayer :: MainCoroutine () 
+toggleLayer = do 
+  modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not)
+  invalidateAll  

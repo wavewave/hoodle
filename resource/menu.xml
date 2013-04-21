@@ -147,7 +147,8 @@
        <menuitem action="POPMENUA" /> 
        <menuitem action="EBDIMGA" />
        <menuitem action="EBDPDFA" />
-       <menuitem action="WIDGETTOGGLEA" />
+       <menuitem action="TOGPANZOOMA" />
+       <menuitem action="TOGLAYERA" />
        <menuitem action="DCRDCOREA" />                        
        <menuitem action="ERSRTIPA" />                        
        <menuitem action="PRESSRSENSA" />                        

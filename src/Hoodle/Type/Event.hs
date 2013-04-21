@@ -153,7 +153,8 @@ data MenuEvent = MenuNew
                | MenuUsePopUpMenu
                | MenuEmbedImage
                | MenuEmbedPDF
-               | MenuWidgetToggle
+               | MenuTogglePanZoomWidget
+               | MenuToggleLayerWidget
                | MenuDiscardCoreEvents 
                | MenuEraserTip 
                | MenuPressureSensitivity

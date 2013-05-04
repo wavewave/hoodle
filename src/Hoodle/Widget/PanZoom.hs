@@ -18,6 +18,7 @@ module Hoodle.Widget.PanZoom where
 import           Control.Lens (view,set,over)
 import           Control.Monad.Identity 
 import           Control.Monad.State 
+import           Data.List (delete)
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo 
 -- import           Graphics.UI.Gtk hiding (get,set) 
@@ -86,6 +87,10 @@ startPanZoomWidget (cid,cinfo,geometry) mmode = do
                                     Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
                                     Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
                                     Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
+        -- need to draw other widgets here                             
+        let otherwidgets = delete PanZoomWidget allWidgets 
+        liftIO $ renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 
+        -- end : need to draw other widgets here ^^^
         tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
         ctime <- liftIO getCurrentTime 
         manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
@@ -132,7 +137,7 @@ findPanXform (Dim w h) ((x0,y0),(x,y)) =
            | otherwise = ty 
     in ((dx-w),(dy-h))
 
--- | 
+-- | manipulate Pan-Zoom widget until released when grabbing the widget
 manipulatePZW :: PanZoomMode 
               -> CanvasId 
               -> CanvasGeometry 

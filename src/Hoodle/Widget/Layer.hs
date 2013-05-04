@@ -17,6 +17,7 @@ module Hoodle.Widget.Layer where
 import Control.Lens (view,set,over)
 import Control.Monad.State 
 import Control.Monad.Trans
+import           Data.List (delete)
 import           Data.Sequence
 import           Data.Time
 import           Graphics.Rendering.Cairo
@@ -62,35 +63,40 @@ startLayerWidget :: ViewMode a =>
 startLayerWidget (cid,cinfo,geometry) (oxy,owxy) = do 
     xst <- get 
     let hdl = getHoodle xst
-    (sfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)
-    sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+    (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)
+    -- need to draw other widgets here                             
+    let otherwidgets = delete LayerWidget allWidgets 
+    liftIO $ renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 
+    -- end : need to draw other widgets here ^^^
+    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
     ctime <- liftIO getCurrentTime 
     let CvsCoord (x0,y0) = owxy 
         CvsCoord (x,y) = oxy 
         act 
           | hitLassoPoint (fromList [(x0+80,y0),(x0+100,y0),(x0+100,y0+20)]) (x,y) = gotoNextLayer
           | hitLassoPoint (fromList [(x0,y0+80),(x0,y0+100),(x0+20,y0+100)]) (x,y) = gotoPrevLayer 
-          | otherwise = layerWidgetEventLoop cid geometry (sfc,sfc2) owxy oxy ctime 
+          | otherwise = manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
     act
-    liftIO $ surfaceFinish sfc 
-    liftIO $ surfaceFinish sfc2
+    liftIO $ surfaceFinish srcsfc 
+    liftIO $ surfaceFinish tgtsfc
   
-layerWidgetEventLoop :: CanvasId 
-                     -> CanvasGeometry 
-                     -> (Surface,Surface) 
-                     -> CanvasCoordinate 
-                     -> CanvasCoordinate 
-                     -> UTCTime 
-                     -> MainCoroutine () 
-layerWidgetEventLoop cid geometry (sfc,sfc2) 
-                     owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do 
+-- | main event loop for layer widget
+manipulateLW :: CanvasId 
+             -> CanvasGeometry 
+             -> (Surface,Surface) 
+             -> CanvasCoordinate 
+             -> CanvasCoordinate 
+             -> UTCTime 
+             -> MainCoroutine () 
+manipulateLW cid geometry (srcsfc,tgtsfc) 
+             owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do 
     r <- nextevent
     case r of 
       PenMove _ pcoord -> do 
         processWithDefTimeInterval
-          (layerWidgetEventLoop cid geometry (sfc,sfc2) owxy oxy) 
-          (\ctime -> moveLayerWidget cid geometry (sfc,sfc2) owxy oxy pcoord 
-                     >> layerWidgetEventLoop cid geometry (sfc,sfc2) owxy oxy ctime)
+          (manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy) 
+          (\ctime -> moveLayerWidget cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
+                     >> manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
           otime 
       PenUp _ pcoord -> invalidate cid 
       _ -> return ()
@@ -102,7 +108,7 @@ moveLayerWidget :: CanvasId
                    -> CanvasCoordinate 
                    -> PointerCoord
                    -> MainCoroutine ()
-moveLayerWidget cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
+moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
     xst <- get 
     let CanvasDimension (Dim cw ch) = canvasDim geometry 
@@ -124,7 +130,9 @@ moveLayerWidget cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pc
     -- 
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
-    liftIO $ boxAction (\cinfo-> virtualDoubleBufferDraw sfc sfc2 (return ()) (drawLayerWidget hdl cinfo Nothing nwpos) >> doubleBufferFlush sfc2 cinfo) cinfobox
+    liftIO $ boxAction (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
+                                    (drawLayerWidget hdl cinfo Nothing nwpos) 
+                                 >> doubleBufferFlush tgtsfc cinfo) cinfobox
   
 -- | 
 toggleLayer :: MainCoroutine () 

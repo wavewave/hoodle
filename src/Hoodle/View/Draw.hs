@@ -20,7 +20,7 @@ import Control.Monad.Trans.Maybe
 -- import           Control.Category ((.))
 import           Control.Lens (view,set,at)
 import Control.Monad (when)
-import Data.Foldable
+import Data.Foldable hiding (elem)
 import qualified Data.IntMap as M
 import           Data.Maybe hiding (fromMaybe)
 import           Data.Monoid
@@ -127,6 +127,7 @@ virtualDoubleBufferDraw srcsfc tgtsfc pre post =
       setOperator OperatorOver
       post  
           
+-- | 
 doubleBufferFlush :: ViewMode a => Surface -> CanvasInfo a -> IO () 
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
@@ -313,7 +314,7 @@ drawContPageGen render = ContPageDraw func
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                drawWidgets hdl cinfo mbbox_canvas 
+                drawWidgets allWidgets hdl cinfo mbbox_canvas 
                 resetClip 
                 return nhdl 
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -367,7 +368,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
-                drawWidgets hdl cinfo mbbox_canvas
+                drawWidgets allWidgets hdl cinfo mbbox_canvas
                 resetClip 
                 return nthdl2  
           doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
@@ -575,11 +576,12 @@ canvasImageSurface mmulti geometry hdl = do
 ---------------------------------------------------
 
 -- | 
-drawWidgets :: ViewMode a => Hoodle EditMode -> CanvasInfo a -> Maybe BBox -> Render () 
-drawWidgets hdl cinfo mbbox = do  
-  when (view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
+drawWidgets :: ViewMode a => 
+               [WidgetItem] -> Hoodle EditMode -> CanvasInfo a -> Maybe BBox -> Render () 
+drawWidgets witms hdl cinfo mbbox = do  
+  when (PanZoomWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
     renderPanZoomWidget mbbox (view (canvasWidgets.panZoomWidgetPosition) cinfo) 
-  when (view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) 
+  when (LayerWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) 
     (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetPosition) cinfo))
 
 

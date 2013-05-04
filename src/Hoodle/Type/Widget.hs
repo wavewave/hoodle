@@ -15,7 +15,8 @@
 module Hoodle.Type.Widget 
 ( 
 -- * types
-  CanvasWidgets      
+  WidgetItem(..)
+, CanvasWidgets      
 , WidgetConfig
 -- * lenses 
 , panZoomWidgetPosition
@@ -26,11 +27,21 @@ module Hoodle.Type.Widget
 -- * defaults 
 , defaultCanvasWidgets
 , defaultWidgetConfig
+-- * utility
+, allWidgets
 ) where
 
 import Control.Lens (Simple,Lens,lens) 
 -- 
 import Hoodle.Type.PageArrangement 
+
+
+-- | 
+data WidgetItem = PanZoomWidget | LayerWidget
+                deriving (Show,Eq,Ord)
+
+-- | 
+allWidgets = [PanZoomWidget, LayerWidget] 
 
 -- | 
 data CanvasWidgets = 

@@ -264,6 +264,7 @@ fileStartSync = do
                         FS.Added fp _ -> Just (encodeString fp)
                         FS.Modified fp _ -> Just (encodeString fp)
                         FS.Removed fp _ -> Nothing 
+                  print mchangedfile 
                   case mchangedfile of 
                     Nothing -> return ()
                     Just changedfile -> do                       

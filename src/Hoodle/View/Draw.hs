@@ -118,10 +118,10 @@ virtualDoubleBufferDraw :: (MonadIO m) =>
                         -> Render () -- pre-render before source paint 
                         -> Render () -- post-render after source paint 
                         -> m ()
-virtualDoubleBufferDraw sfc sfc2 pre post = 
-    renderWith sfc2 $ do 
+virtualDoubleBufferDraw srcsfc tgtsfc pre post = 
+    renderWith tgtsfc $ do 
       pre
-      setSourceSurface sfc 0 0 
+      setSourceSurface srcsfc 0 0 
       setOperator OperatorSource 
       paint
       setOperator OperatorOver

@@ -82,15 +82,15 @@ startPanZoomWidget (cid,cinfo,geometry) mmode = do
     case mmode of 
       Nothing -> togglePanZoom
       Just (mode,(oxy,owxy)) -> do 
-        (sfc,Dim wsfc hsfc) <- case mode of 
-                                 Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
-                                 Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
-                                 Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
-        sfc2 <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+        (srcsfc,Dim wsfc hsfc) <- case mode of 
+                                    Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
+                                    Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
+                                    Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
+        tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
         ctime <- liftIO getCurrentTime 
-        startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime 
-        liftIO $ surfaceFinish sfc 
-        liftIO $ surfaceFinish sfc2
+        manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
+        liftIO $ surfaceFinish srcsfc 
+        liftIO $ surfaceFinish tgtsfc
 
 
 
@@ -133,23 +133,23 @@ findPanXform (Dim w h) ((x0,y0),(x,y)) =
     in ((dx-w),(dy-h))
 
 -- | 
-startWidgetAction :: PanZoomMode 
-                     -> CanvasId 
-                     -> CanvasGeometry 
-                     -> (Surface,Surface)
-                     -> CanvasCoordinate -- ^ original widget position
-                     -> CanvasCoordinate -- ^ where pen pressed 
-                     -> UTCTime
-                     -> MainCoroutine ()
-startWidgetAction mode cid geometry (sfc,sfc2)
-                  owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do
+manipulatePZW :: PanZoomMode 
+              -> CanvasId 
+              -> CanvasGeometry 
+              -> (Surface,Surface) -- ^ (Source Surface, Target Surface)
+              -> CanvasCoordinate -- ^ original widget position
+              -> CanvasCoordinate -- ^ where pen pressed 
+              -> UTCTime
+              -> MainCoroutine ()
+manipulatePZW mode cid geometry (srcsfc,tgtsfc)
+              owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do
   r <- nextevent
   case r of 
     PenMove _ pcoord -> do 
       processWithDefTimeInterval
-        (startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy) 
-        (\ctime -> movingRender mode cid geometry (sfc,sfc2) owxy oxy pcoord 
-                   >> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy ctime)
+        (manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy) 
+        (\ctime -> movingRender mode cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
+                   >> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
         otime 
     PenUp _ pcoord -> do 
       case mode of 
@@ -179,13 +179,13 @@ startWidgetAction mode cid geometry (sfc,sfc2)
             (\(xorig,yorig)->(xorig-dx_d,yorig-dy_d))                 
         _ -> return ()
       invalidate cid 
-    _ -> startWidgetAction mode cid geometry (sfc,sfc2) owxy oxy otime
+    _ -> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy otime
 
 -- | 
 movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
                 -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
                 -> MainCoroutine () 
-movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
+movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
     xst <- get 
     case mode of
@@ -204,14 +204,14 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
               set (canvasWidgets.panZoomWidgetPosition) nwpos $ cinfo
             ncinfobox = selectBox changeact changeact  cinfobox
         put (setCanvasInfo (cid,ncinfobox) xst)
-        virtualDoubleBufferDraw sfc sfc2 (return ()) (renderPanZoomWidget Nothing nwpos)
+        virtualDoubleBufferDraw srcsfc tgtsfc (return ()) (renderPanZoomWidget Nothing nwpos)
       Zooming -> do 
         let cinfobox = getCanvasInfo cid xst               
         let pos = runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
         let (xo,yo) = (xw+50,yw+50)
             CanvasDimension cdim = canvasDim geometry 
             (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
-        virtualDoubleBufferDraw sfc sfc2 
+        virtualDoubleBufferDraw srcsfc tgtsfc 
           (save >> scale z z >> translate xtrans ytrans)
           (restore >> renderPanZoomWidget Nothing pos)
       Panning b -> do 
@@ -231,13 +231,13 @@ movingRender mode cid geometry (sfc,sfc2) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) 
                       runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
             ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetPosition)) nwpos cinfobox
         put (setCanvasInfo (cid,ncinfobox) xst)
-        virtualDoubleBufferDraw sfc sfc2 
+        virtualDoubleBufferDraw srcsfc tgtsfc 
           (save >> translate xtrans ytrans) 
           (restore >> renderPanZoomWidget Nothing nwpos)
     --   
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
-    liftIO $ boxAction (doubleBufferFlush sfc2) cinfobox
+    liftIO $ boxAction (doubleBufferFlush tgtsfc) cinfobox
 
   
 -- | 

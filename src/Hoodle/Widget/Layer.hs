@@ -41,26 +41,30 @@ import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 
 
+
 checkPointerInLayer :: ViewMode a => 
                        (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
-                    -> Maybe (CanvasCoordinate,CanvasCoordinate)
+                    -> Maybe (Maybe (CanvasCoordinate,CanvasCoordinate))
 checkPointerInLayer (cid,cinfo,geometry) pcoord 
   | b =  
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
         owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.layerWidgetPosition) cinfo
         obbox = BBox (x0,y0) (x0+100,y0+100) 
-    in if (isPointInBBox obbox (x,y))  
-       then Just (oxy,owxy)
-       else Nothing   
+        closebbox = BBox (x0,y0) (x0+10,y0+10)
+        r | isPointInBBox closebbox (x,y) = Just Nothing 
+          | isPointInBBox obbox (x,y)     = Just (Just (oxy,owxy))
+          | otherwise                     = Nothing   
+    in r
   | otherwise = Nothing 
   where b = view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo 
 
 startLayerWidget :: ViewMode a =>
                     (CanvasId,CanvasInfo a,CanvasGeometry)
-                 -> (CanvasCoordinate,CanvasCoordinate)
+                 -> Maybe (CanvasCoordinate,CanvasCoordinate)
                  -> MainCoroutine () 
-startLayerWidget (cid,cinfo,geometry) (oxy,owxy) = do 
+startLayerWidget (cid,cinfo,geometry) Nothing = toggleLayer
+startLayerWidget (cid,cinfo,geometry) (Just (oxy,owxy)) = do 
     xst <- get 
     let hdl = getHoodle xst
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)

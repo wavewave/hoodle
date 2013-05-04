@@ -57,7 +57,7 @@ checkPointerInPanZoom (cid,cinfo,geometry) pcoord
         obbox = BBox (x0,y0) (x0+100,y0+100) 
         pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
         pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
-        pbbox3 = BBox (x0+90,y0) (x0+100,y0+10)
+        pbbox3 = BBox (x0,y0) (x0+10,y0+10)
         zbbox = BBox (x0+30,y0+30) (x0+70,y0+70)
     in if (isPointInBBox obbox (x,y))  
        then let mmode | isPointInBBox zbbox (x,y) = Just (Zooming,(oxy,owxy))

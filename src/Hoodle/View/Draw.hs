@@ -603,15 +603,15 @@ renderPanZoomWidget mbbox (CvsCoord (x,y)) = do
   rectangle (x+30) (y+30) 40 40 
   fill  
   setSourceRGBA 0.5 0.5 0.5 0.5
-  rectangle (x+90) y 10 10
+  rectangle x y 10 10
   fill
   setSourceRGBA 0 0 0 0.7 
   setLineWidth 1
-  moveTo (x+90) y 
-  lineTo (x+100) (y+10)
+  moveTo x y 
+  lineTo (x+10) (y+10)
   stroke 
-  moveTo (x+90) (y+10)
-  lineTo (x+100) y
+  moveTo x (y+10)
+  lineTo (x+10) y
   stroke
   resetClip 
 
@@ -625,13 +625,11 @@ drawLayerWidget hdl cinfo mbbox cvscoord = do
     let cpn = view currentPageNum cinfo
     runMaybeT $ do 
       pg <- MaybeT . return $ view (gpages.at cpn) hdl
-      let 
-        
-          lyrs = view glayers pg
+      let lyrs = view glayers pg
           n = currIndex lyrs 
           l = current lyrs 
           LyBuf msfc = view gbuffer l
-      lift $ renderLayerWidget (show n) mbbox cvscoord -- (view (canvasWidgets.layerWidgetPosition) cinfo)
+      lift $ renderLayerWidget (show n) mbbox cvscoord 
       sfc <- MaybeT . return $ msfc 
       lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
     return () 
@@ -641,13 +639,12 @@ renderLayerContent mbbox (Dim w h) sfc (CvsCoord (x,y)) = do
   identityMatrix 
   clipBBox mbbox 
   let sx = 200 / w
-  -- moveTo (x+100) y   
   rectangle (x+100) y 200 (h*200/w)
   setLineWidth 0.5 
   setSourceRGBA 0 0 0 1 
   stroke 
   translate (x+100) (y) 
-  scale sx sx -- sy 
+  scale sx sx 
   setSourceSurface sfc 0 0 
   paint 
   
@@ -660,6 +657,16 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
   setSourceRGBA 0.5 0.5 0.2 0.3 
   rectangle x y 100 100 
   fill 
+  rectangle x y 10 10
+  fill
+  setSourceRGBA 0 0 0 0.7 
+  setLineWidth 1
+  moveTo x y 
+  lineTo (x+10) (y+10)
+  stroke 
+  moveTo x (y+10)
+  lineTo (x+10) y
+  stroke
   setSourceRGBA 0 0 0 0.4
   moveTo (x+80) y 
   lineTo (x+100) y
@@ -670,16 +677,13 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
   lineTo x (y+100)
   lineTo (x+20) (y+100)
   fill 
-  
-  
-  
   -- 
   identityMatrix 
   l1 <- createLayout "layer"
   updateLayout l1 
   (_,reclog) <- liftIO $ layoutGetExtents l1
   let PangoRectangle _ _ w1 h1 = reclog 
-  moveTo x y
+  moveTo (x+15) y
   let sx1 = 50 / w1 
       sy1 = 20 / h1 
   scale sx1 sy1 

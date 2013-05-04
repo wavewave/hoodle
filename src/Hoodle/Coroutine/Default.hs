@@ -389,7 +389,7 @@ menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m
 -- | 
 colorPick :: MainCoroutine () 
 colorPick = do mc <- colorPickerBox "Pen Color" 
-               liftIO $ print mc 
+               -- liftIO $ print mc 
                maybe (return ())  
                      (\c->modify (penInfo.currentTool.penColor .~ c)) 
                      mc 

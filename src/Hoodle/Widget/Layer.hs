@@ -40,20 +40,23 @@ import           Hoodle.Type.Widget
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 
-
+-- |
+data LWAction = Close | ToggleShowContent | Move (CanvasCoordinate,CanvasCoordinate)
 
 checkPointerInLayer :: ViewMode a => 
                        (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
-                    -> Maybe (Maybe (CanvasCoordinate,CanvasCoordinate))
+                    -> Maybe LWAction -- (Maybe (CanvasCoordinate,CanvasCoordinate))
 checkPointerInLayer (cid,cinfo,geometry) pcoord 
   | b =  
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
-        owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.layerWidgetPosition) cinfo
+        owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.layerWidgetConfig.layerWidgetPosition) cinfo
         obbox = BBox (x0,y0) (x0+100,y0+100) 
         closebbox = BBox (x0,y0) (x0+10,y0+10)
-        r | isPointInBBox closebbox (x,y) = Just Nothing 
-          | isPointInBBox obbox (x,y)     = Just (Just (oxy,owxy))
+        r | isPointInBBox closebbox (x,y) = Just Close
+          | hitLassoPoint (fromList [(x0+90,y0+40),(x0+100,y0+50),(x0+90,y0+60)]) (x,y) = Just ToggleShowContent     
+        
+          | isPointInBBox obbox (x,y)     = Just (Move (oxy,owxy))
           | otherwise                     = Nothing   
     in r
   | otherwise = Nothing 
@@ -61,10 +64,14 @@ checkPointerInLayer (cid,cinfo,geometry) pcoord
 
 startLayerWidget :: ViewMode a =>
                     (CanvasId,CanvasInfo a,CanvasGeometry)
-                 -> Maybe (CanvasCoordinate,CanvasCoordinate)
+                 -> LWAction -- Maybe (CanvasCoordinate,CanvasCoordinate)
                  -> MainCoroutine () 
-startLayerWidget (cid,cinfo,geometry) Nothing = toggleLayer
-startLayerWidget (cid,cinfo,geometry) (Just (oxy,owxy)) = do 
+startLayerWidget (cid,cinfo,geometry) Close = toggleLayer
+startLayerWidget (cid,cinfo,geometry) ToggleShowContent = do 
+    liftIO $ putStrLn "ToggleShowContent hitted"
+    modify (over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not)
+    invalidate cid 
+startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
     let hdl = getHoodle xst
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)
@@ -126,7 +133,7 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
         nwpos = CvsCoord (nposx,nposy) 
         changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
         changeact cinfo =  
-          set (canvasWidgets.layerWidgetPosition) nwpos $ cinfo
+          set (canvasWidgets.layerWidgetConfig.layerWidgetPosition) nwpos $ cinfo
         ncinfobox = selectBox changeact changeact  cinfobox
     put (setCanvasInfo (cid,ncinfobox) xst)
     let hdl = getHoodle xst 

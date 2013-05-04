@@ -18,14 +18,18 @@ module Hoodle.Type.Widget
   WidgetItem(..)
 , CanvasWidgets      
 , WidgetConfig
+, LayerWidgetConfig 
 -- * lenses 
 , panZoomWidgetPosition
+, layerWidgetConfig
 , layerWidgetPosition
+, layerWidgetShowContent
 , widgetConfig 
 , doesUsePanZoomWidget
 , doesUseLayerWidget
 -- * defaults 
 , defaultCanvasWidgets
+, defaultLWConfig 
 , defaultWidgetConfig
 -- * utility
 , allWidgets
@@ -43,10 +47,23 @@ data WidgetItem = PanZoomWidget | LayerWidget
 -- | 
 allWidgets = [PanZoomWidget, LayerWidget] 
 
+-- |
+data LayerWidgetConfig = LWConfig { _layerWidgetPosition :: CanvasCoordinate
+                                  , _layerWidgetShowContent :: Bool
+                                  }
+-- | 
+layerWidgetPosition :: Simple Lens LayerWidgetConfig CanvasCoordinate 
+layerWidgetPosition = lens _layerWidgetPosition (\f a -> f { _layerWidgetPosition = a })
+                         
+-- | 
+layerWidgetShowContent :: Simple Lens LayerWidgetConfig Bool
+layerWidgetShowContent = lens _layerWidgetShowContent (\f a -> f { _layerWidgetShowContent = a})
+
+
 -- | 
 data CanvasWidgets = 
   CanvasWidgets { _panZoomWidgetPosition :: CanvasCoordinate
-                , _layerWidgetPosition :: CanvasCoordinate
+                , _layerWidgetConfig :: LayerWidgetConfig 
                 , _widgetConfig :: WidgetConfig 
                 }   
 
@@ -54,19 +71,27 @@ data CanvasWidgets =
 panZoomWidgetPosition :: Simple Lens CanvasWidgets CanvasCoordinate
 panZoomWidgetPosition = lens _panZoomWidgetPosition (\f a -> f { _panZoomWidgetPosition = a })
 
+
 -- | 
-layerWidgetPosition :: Simple Lens CanvasWidgets CanvasCoordinate 
-layerWidgetPosition = lens _layerWidgetPosition (\f a -> f { _layerWidgetPosition = a })
+layerWidgetConfig :: Simple Lens CanvasWidgets LayerWidgetConfig 
+layerWidgetConfig = lens _layerWidgetConfig (\f a -> f { _layerWidgetConfig = a })
+
 
 -- | default hoodle widgets
 defaultCanvasWidgets :: CanvasWidgets
 defaultCanvasWidgets = 
   CanvasWidgets
   { _panZoomWidgetPosition = CvsCoord (100,100)
-  , _layerWidgetPosition = CvsCoord (100,300)
+  , _layerWidgetConfig = defaultLWConfig 
   , _widgetConfig = defaultWidgetConfig 
   }   
 
+-- | 
+defaultLWConfig :: LayerWidgetConfig 
+defaultLWConfig = 
+  LWConfig { _layerWidgetPosition = CvsCoord (100,300) 
+           , _layerWidgetShowContent = False 
+           }
 
 data WidgetConfig = WidgetConfig { _doesUsePanZoomWidget :: Bool 
                                  , _doesUseLayerWidget :: Bool 

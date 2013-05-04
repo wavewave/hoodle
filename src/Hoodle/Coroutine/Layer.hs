@@ -118,7 +118,7 @@ startGotoLayerAt =
         ResponseOk ->  do
           liftIO $ widgetDestroy dialog
           newnum <- liftIO (readIORef lref)
-          liftIO $ putStrLn (show (newnum))
+          -- liftIO $ putStrLn (show (newnum))
           gotoLayerAt newnum
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileOpen " 

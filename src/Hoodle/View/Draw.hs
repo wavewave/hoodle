@@ -582,7 +582,7 @@ drawWidgets witms hdl cinfo mbbox = do
   when (PanZoomWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
     renderPanZoomWidget mbbox (view (canvasWidgets.panZoomWidgetPosition) cinfo) 
   when (LayerWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) 
-    (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetPosition) cinfo))
+    (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetConfig.layerWidgetPosition) cinfo))
 
 
 -- | 
@@ -623,6 +623,7 @@ drawLayerWidget :: ViewMode a =>
                    -> Render ()
 drawLayerWidget hdl cinfo mbbox cvscoord = do     
     let cpn = view currentPageNum cinfo
+        lc = view (canvasWidgets.layerWidgetConfig) cinfo 
     runMaybeT $ do 
       pg <- MaybeT . return $ view (gpages.at cpn) hdl
       let lyrs = view glayers pg
@@ -630,8 +631,9 @@ drawLayerWidget hdl cinfo mbbox cvscoord = do
           l = current lyrs 
           LyBuf msfc = view gbuffer l
       lift $ renderLayerWidget (show n) mbbox cvscoord 
-      sfc <- MaybeT . return $ msfc 
-      lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
+      when (view layerWidgetShowContent lc) $ do 
+        sfc <- MaybeT . return $ msfc 
+        lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
     return () 
 
 renderLayerContent :: Maybe BBox -> Dimension -> Surface -> CanvasCoordinate -> Render ()
@@ -667,16 +669,24 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
   moveTo x (y+10)
   lineTo (x+10) y
   stroke
+  -- upper right
   setSourceRGBA 0 0 0 0.4
   moveTo (x+80) y 
   lineTo (x+100) y
   lineTo (x+100) (y+20)
   fill 
+  -- lower left
   setSourceRGBA 0 0 0 0.1
   moveTo x (y+80)
   lineTo x (y+100)
   lineTo (x+20) (y+100)
   fill 
+  -- middle right
+  setSourceRGBA 0 0 0 0.3
+  moveTo (x+90) (y+40)
+  lineTo (x+100) (y+50)
+  lineTo (x+90) (y+60)
+  fill
   -- 
   identityMatrix 
   l1 <- createLayout "layer"

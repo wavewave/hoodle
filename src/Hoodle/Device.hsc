@@ -95,8 +95,7 @@ initDevice cfg = do
         return $ DeviceList core_val stylus_val eraser_val
                  
 -- |
-
-getPointer :: DeviceList -> EventM t (Maybe PenButton,PointerCoord)
+getPointer :: DeviceList -> EventM t (Maybe PenButton,Maybe PointerCoord)
 getPointer devlst = do 
     ptr <- ask 
     (_ty,btn,x,y,mdev,maxf) <- liftIO (getInfo ptr)
@@ -106,16 +105,20 @@ getPointer devlst = do
              | btn == 3 = Just PenButton3
              | otherwise = Nothing 
     case mdev of 
-      Nothing -> return (rbtn,PointerCoord Core x y 1.0)
+      Nothing -> -- return (rbtn,PointerCoord Core x y 1.0)
+                 return (rbtn,Nothing)
       Just dev -> case maxf of 
-                    Nothing -> return (rbtn,PointerCoord Core x y 1.0)
+                    Nothing -> return (rbtn,Just (PointerCoord Core x y 1.0))
+                               -- return (rbtn,Nothing)
                     Just axf -> do 
-                      pcoord <- liftIO $ coord ptr x y dev axf 
-                      let rbtnfinal = case pointerType pcoord of 
-                                        Eraser -> Just EraserButton
-                                        _ -> rbtn 
+                      mpcoord <- liftIO $ coord ptr x y dev axf 
+                      let rbtnfinal = case mpcoord of 
+                                        Nothing -> rbtn 
+                                        Just pcoord -> case pointerType pcoord of 
+                                                         Eraser -> Just EraserButton
+                                                         _ -> rbtn 
                       
-                      let tst = (rbtnfinal,pcoord)
+                      let tst = (rbtnfinal,mpcoord)
                       return tst 
   where 
     getInfo ptr = do 
@@ -153,20 +156,20 @@ getPointer devlst = do
         else error ("eventCoordinates: none for event type "++show ty)
 
     coord ptr x y device axf 
-          | device == dev_core devlst = return $ PointerCoord Core x y 1.0 
+          | device == dev_core devlst = return $ Just (PointerCoord Core x y 1.0)
           | device == dev_stylus devlst = do 
             (ptrax :: Ptr CDouble ) <- axf ptr 
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             (wacomz :: Double) <- peekByteOff ptrax 16
-            return $ PointerCoord Stylus wacomx wacomy wacomz
+            return $ Just (PointerCoord Stylus wacomx wacomy wacomz)
           | device == dev_eraser devlst = do 
             (ptrax :: Ptr CDouble ) <- axf ptr 
             (wacomx :: Double) <- peekByteOff ptrax 0
             (wacomy :: Double) <- peekByteOff ptrax 8
             (wacomz :: Double) <- peekByteOff ptrax 16 
-            return $ PointerCoord Eraser wacomx wacomy wacomz 
-          | otherwise = return $ PointerCoord Core x y 1.0
+            return $ Just (PointerCoord Eraser wacomx wacomy wacomz)
+          | otherwise = return Nothing -- return $ PointerCoord Core x y 1.0
 
 -- | 
     

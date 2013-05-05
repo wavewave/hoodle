@@ -90,22 +90,34 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                    Nothing -> return () 
                    Just p -> do 
                      let pbtn = maybe PenButton1 id mbtn
-                     liftIO (callback (PenDown cid pbtn p))
+                     case pbtn of 
+                       TouchButton -> liftIO (callback (TouchDown cid p))
+                       _ -> liftIO (callback (PenDown cid pbtn p))
     _confevent <- canvas `on` configureEvent $ tryEvent $ do 
                    (w,h) <- eventSize 
                    liftIO $ callback 
                      (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
     _brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
-                 (_,mp) <- getPointer dev
+                 (mbtn,mp) <- getPointer dev
                  case mp of 
                    Nothing -> return () 
                    Just p -> do
-                     liftIO (callback (PenUp cid p))
+                     let pbtn = maybe PenButton1 id mbtn
+                     case pbtn of 
+                       TouchButton -> liftIO (callback (TouchUp cid p))
+                       _ -> liftIO (callback (PenUp cid p))
+                     
     _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
                   liftIO $ callback (UpdateCanvas cid) 
     canvas `on` motionNotifyEvent $ tryEvent $ do 
-      (_,mp) <- getPointer dev
-      maybe (return ()) (\p->liftIO $ callback (PenMove cid p)) mp
+      (mbtn,mp) <- getPointer dev
+      case mp of 
+        Nothing -> return () 
+        Just p -> do 
+          let pbtn = maybe PenButton1 id mbtn      
+          case pbtn of 
+            TouchButton -> liftIO $ callback (TouchMove cid p) 
+            _ -> liftIO $ callback (PenMove cid p) 
 
     -- drag and drop setting
     dragDestSet canvas [DestDefaultMotion, DestDefaultDrop] [ActionCopy]

@@ -50,6 +50,7 @@ module Hoodle.Type.HoodleState
 , lastSavedTime
 --
 , doesUseXInput 
+, doesUseTouch
 , doesSmoothScroll 
 , doesUsePopUpMenu
 , doesEmbedImage
@@ -307,6 +308,7 @@ penColorSignal = lens _penColorSignal (\f a -> f { _penColorSignal = a } )
 -- | A set of Hoodle settings 
 data Settings = 
   Settings { _doesUseXInput :: Bool 
+           , _doesUseTouch :: Bool 
            , _doesSmoothScroll :: Bool 
            , _doesUsePopUpMenu :: Bool 
            , _doesEmbedImage :: Bool 
@@ -317,6 +319,10 @@ data Settings =
 -- | flag for XInput extension (needed for using full power of wacom)
 doesUseXInput :: Simple Lens Settings Bool
 doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
+
+-- | flag for touch
+doesUseTouch :: Simple Lens Settings Bool
+doesUseTouch = lens _doesUseTouch (\f a -> f { _doesUseTouch = a } )
 
 -- | flag for smooth scrolling 
 doesSmoothScroll :: Simple Lens Settings Bool
@@ -394,6 +400,7 @@ defaultSettings :: Settings
 defaultSettings = 
   Settings 
   { _doesUseXInput = False
+  , _doesUseTouch = True
   , _doesSmoothScroll = False
   , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 

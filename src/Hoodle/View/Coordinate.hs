@@ -144,11 +144,13 @@ core2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
 core2Desktop geometry = canvas2Desktop geometry . CvsCoord 
 
 -- |
-
 wacom2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
 wacom2Desktop geometry (x,y) = let Dim w h = unScreenDimension (screenDim geometry)
                                in screen2Desktop geometry . ScrCoord $ (w*x,h*y) 
                                   
+touch2Desktop :: CanvasGeometry -> (Double,Double) -> DesktopCoordinate
+touch2Desktop = wacom2Desktop 
+
 -- |
 
 wacom2Canvas :: CanvasGeometry -> (Double,Double) -> CanvasCoordinate                       
@@ -163,6 +165,7 @@ device2Desktop geometry (PointerCoord typ x y _z) =
     Core -> core2Desktop geometry (x,y)
     Stylus -> wacom2Desktop geometry (x,y)
     Eraser -> wacom2Desktop geometry (x,y)
+    Touch -> touch2Desktop geometry (x,y)
 device2Desktop _geometry NoPointerCoord = error "NoPointerCoordinate device2Desktop"
          
 -- | 

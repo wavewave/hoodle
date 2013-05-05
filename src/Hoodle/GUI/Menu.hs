@@ -98,8 +98,10 @@ penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Noth
           , RadioActionEntry "SELREGNA" "Select Region"     (Just "mylasso")        Nothing Nothing 4
           , RadioActionEntry "SELRECTA" "Select Rectangle" (Just "myrectselect")        Nothing Nothing 5
           , RadioActionEntry "VERTSPA" "Vertical Space"    (Just "mystretch")        Nothing Nothing 6
-          , RadioActionEntry "HANDA"   "Hand Tool"         (Just "myhand")        Nothing Nothing 7
           ]            
+
+--          , RadioActionEntry "HANDA"   "Hand Tool"         (Just "myhand")        Nothing Nothing 7
+
 
 -- | 
 
@@ -252,7 +254,6 @@ getMenuUI evar = do
   -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
   -- selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (justMenu MenuSelectRectangle)
   -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
-  -- handa     <- actionNewAndRegister "HANDA" "Hand Tool" (Just "Just a Stub") (Just "myhand") (justMenu MenuHandTool) 
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just stockSelectColor) (justMenu MenuColorPicker ) 
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
@@ -270,6 +271,10 @@ getMenuUI evar = do
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (Menu MenuUseXInput)
+  handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
+  -- handa     <- toggleActionNew "HANDA" "Use Touch" (Just "myhand") Nothing
+  -- handa `on` actionToggled $ do 
+  --   eventHandler evar (Menu MenuUseTouch)
   smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
   smthscra `on` actionToggled $ do 
     eventHandler evar (Menu MenuSmoothScroll)
@@ -340,6 +345,7 @@ getMenuUI evar = do
         ] 
     
   actionGroupAddAction agr uxinputa 
+  actionGroupAddAction agr handa 
   actionGroupAddAction agr smthscra
   actionGroupAddAction agr popmenua 
   actionGroupAddAction agr ebdimga
@@ -395,8 +401,8 @@ getMenuUI evar = do
   actionSetSensitive ra3 True 
   Just ra4 <- actionGroupGetAction agr "VERTSPA"
   actionSetSensitive ra4 True
-  Just ra5 <- actionGroupGetAction agr "HANDA"
-  actionSetSensitive ra5 False
+  -- Just ra5 <- actionGroupGetAction agr "HANDA"
+  -- actionSetSensitive ra5 False
   Just ra6 <- actionGroupGetAction agr "CONTA"
   actionSetSensitive ra6 True
   Just _ra7 <- actionGroupGetAction agr "PENA"
@@ -480,7 +486,7 @@ int2PenType 2 = Left HighlighterWork
 int2PenType 4 = Right SelectRegionWork
 int2PenType 5 = Right SelectRectangleWork
 int2PenType 6 = Left VerticalSpaceWork
-int2PenType 7 = Right SelectHandToolWork
+-- int2PenType 7 = Right SelectHandToolWork
 int2PenType _ = error "No such pentype"
 
 -- | 
@@ -491,7 +497,7 @@ penType2Int (Left HighlighterWork)      = 2
 penType2Int (Left VerticalSpaceWork)    = 6
 penType2Int (Right SelectRegionWork)    = 4 
 penType2Int (Right SelectRectangleWork) = 5 
-penType2Int (Right SelectHandToolWork)  = 7 
+-- penType2Int (Right SelectHandToolWork)  = 7 
 
 
 -- | 

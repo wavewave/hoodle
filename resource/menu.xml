@@ -107,7 +107,6 @@
        <menuitem action="SELREGNA" />
        <menuitem action="SELRECTA" />
        <menuitem action="VERTSPA" />
-       <menuitem action="HANDA" />
        <separator />
        <menu action="CLRA"> 
          <menuitem action="BLACKA" />     
@@ -143,6 +142,7 @@
     </menu>
     <menu action="OMA">
        <menuitem action="UXINPUTA" />
+       <menuitem action="HANDA" />
        <menuitem action="SMTHSCRA" />
        <menuitem action="POPMENUA" /> 
        <menuitem action="EBDIMGA" />

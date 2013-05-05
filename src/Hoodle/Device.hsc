@@ -17,32 +17,33 @@
 
 module Hoodle.Device where
 
-import Hoodle.Config
-import Data.Configurator.Types
 import Control.Applicative 
 import Control.Monad.Reader
+import Data.Configurator.Types
+import Data.Int
+import Foreign.C
 import Foreign.Marshal.Utils
 import Foreign.Ptr
-import Foreign.C
 import Foreign.Storable
 import Graphics.UI.Gtk
-import Data.Int
+--
+import Hoodle.Config
 
 -- | 
-
-data PointerType = Core | Stylus | Eraser
+data PointerType = Core | Stylus | Eraser | Touch 
                  deriving (Show,Eq,Ord)
 
 -- |
-
-data PenButton = PenButton1 | PenButton2 | PenButton3 | EraserButton
+data PenButton = PenButton1 | PenButton2 | PenButton3 | EraserButton | TouchButton
                deriving (Show,Eq,Ord)
 
 -- | 
 
 data DeviceList = DeviceList { dev_core :: CInt
                              , dev_stylus :: CInt
-                             , dev_eraser :: CInt } 
+                             , dev_eraser :: CInt 
+                             , dev_touch :: CInt  
+                             } 
                 deriving Show 
                   
 -- | 
@@ -57,7 +58,15 @@ data PointerCoord = PointerCoord { pointerType :: PointerType
 
 -- | 
 foreign import ccall "c_initdevice.h initdevice" c_initdevice
-  :: Ptr CInt -> Ptr CInt -> Ptr CInt -> CString -> CString -> CString -> IO ()
+  :: Ptr CInt -- ^ core 
+  -> Ptr CInt -- ^ stylus
+  -> Ptr CInt -- ^ eraser
+  -> Ptr CInt -- ^ touch 
+  -> CString  -- ^ core 
+  -> CString  -- ^ stylus
+  -> CString  -- ^ eraser
+  -> CString  -- ^ touch 
+  -> IO ()
 
 
 -- | 
@@ -70,29 +79,35 @@ initDevice :: Config -> IO DeviceList
 initDevice cfg = do 
   pstylusname_detect <- newCString "stylus" 
   perasername_detect <- newCString "eraser" 
+  ptouchname_detect <- newCString "touch"
   -- c_find_wacom pstylusname_detect perasername_detect
-  (mcore,mstylus,meraser) <- getPenDevConfig cfg 
+  (mcore,mstylus,meraser,mtouch) <- getPenDevConfig cfg 
   putStrLn $ show mstylus 
   putStrLn $ show meraser
+  putStrLn $ show mtouch
   with 0 $ \pcore -> 
     with 0 $ \pstylus -> 
       with 0 $ \peraser -> do 
-        pcorename <- case mcore of 
-                       Nothing -> newCString "Core Pointer"
-                       Just core -> newCString core
-        pstylusname <- case mstylus of 
-                         Nothing -> return pstylusname_detect -- newCString "stylus"
-                         Just spen -> newCString spen
-        perasername <- case meraser of 
-                         Nothing -> return perasername_detect -- newCString "eraser"
-                         Just seraser -> newCString seraser 
-                         
-        c_initdevice pcore pstylus peraser pcorename pstylusname perasername
-        
-        core_val <- peek pcore
-        stylus_val <- peek pstylus
-        eraser_val <- peek peraser
-        return $ DeviceList core_val stylus_val eraser_val
+        with 0 $ \ptouch -> do 
+          pcorename <- case mcore of 
+                         Nothing -> newCString "Core Pointer"
+                         Just core -> newCString core
+          pstylusname <- case mstylus of 
+                           Nothing -> return pstylusname_detect -- newCString "stylus"
+                           Just spen -> newCString spen
+          perasername <- case meraser of 
+                           Nothing -> return perasername_detect -- newCString "eraser"
+                           Just seraser -> newCString seraser 
+          ptouchname  <- maybe (return ptouchname_detect) newCString mtouch 
+                            
+
+          c_initdevice pcore pstylus peraser ptouch pcorename pstylusname perasername ptouchname
+
+          core_val <- peek pcore
+          stylus_val <- peek pstylus
+          eraser_val <- peek peraser
+          touch_val <- peek ptouch
+          return $ DeviceList core_val stylus_val eraser_val touch_val 
                  
 -- |
 getPointer :: DeviceList -> EventM t (Maybe PenButton,Maybe PointerCoord)
@@ -116,6 +131,7 @@ getPointer devlst = do
                                         Nothing -> rbtn 
                                         Just pcoord -> case pointerType pcoord of 
                                                          Eraser -> Just EraserButton
+                                                         Touch  -> Just TouchButton
                                                          _ -> rbtn 
                       
                       let tst = (rbtnfinal,mpcoord)
@@ -169,6 +185,12 @@ getPointer devlst = do
             (wacomy :: Double) <- peekByteOff ptrax 8
             (wacomz :: Double) <- peekByteOff ptrax 16 
             return $ Just (PointerCoord Eraser wacomx wacomy wacomz)
+          | device == dev_touch devlst = do 
+            (ptrax :: Ptr CDouble ) <- axf ptr 
+            (touchx :: Double) <- peekByteOff ptrax 0
+            (touchy :: Double) <- peekByteOff ptrax 8
+            (touchz :: Double) <- peekByteOff ptrax 16 
+            return $ Just (PointerCoord Touch touchx touchy touchz)            
           | otherwise = return Nothing -- return $ PointerCoord Core x y 1.0
 
 -- | 

@@ -150,13 +150,23 @@ manipulatePZW mode cid geometry (srcsfc,tgtsfc)
               owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do
   r <- nextevent
   case r of 
-    PenMove _ pcoord -> do 
+    PenMove _ pcoord   -> moveact pcoord 
+    TouchMove _ pcoord -> do 
+      b <- liftM (view (settings.doesUseTouch)) get
+      when b $ moveact pcoord
+    PenUp _ pcoord     -> upact pcoord 
+    TouchUp _ pcoord   -> do 
+      b <- liftM (view (settings.doesUseTouch)) get 
+      when b $ upact pcoord 
+    _ -> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy otime
+  where 
+    moveact pcoord = 
       processWithDefTimeInterval
         (manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy) 
         (\ctime -> movingRender mode cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
                    >> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
         otime 
-    PenUp _ pcoord -> do 
+    upact pcoord = do 
       case mode of 
         Zooming -> do 
           let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
@@ -184,7 +194,8 @@ manipulatePZW mode cid geometry (srcsfc,tgtsfc)
             (\(xorig,yorig)->(xorig-dx_d,yorig-dy_d))                 
         _ -> return ()
       invalidate cid 
-    _ -> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy otime
+
+
 
 -- | 
 movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
@@ -248,5 +259,21 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
 -- | 
 togglePanZoom :: MainCoroutine () 
 togglePanZoom = do 
-  modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) not)
-  invalidateAll  
+    modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) not)
+    invalidateAll  
+
+
+-- | 
+touchStart :: CanvasId -> PointerCoord -> MainCoroutine () 
+touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
+  where
+    chk :: (ViewMode a) => CanvasInfo a -> MainCoroutine () 
+    chk cinfo = do 
+      let cvs = view drawArea cinfo
+          pnum = (PageNum . view currentPageNum) cinfo 
+          arr = view (viewInfo.pageArrangement) cinfo
+      geometry <- liftIO $ makeCanvasGeometry pnum arr cvs 
+      let triplet = (cid,cinfo,geometry)
+          oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
+          owxy = oxy 
+      startPanZoomWidget triplet (Just (Panning False,(oxy,owxy)))

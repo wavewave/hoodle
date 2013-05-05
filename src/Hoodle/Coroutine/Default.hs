@@ -189,11 +189,14 @@ viewAppendMode = do
             modeChange ToSelectMode
             selectLassoStart cid pcoord
           (PenWork,EraserButton) -> eraserStart cid pcoord
+          (PenWork,_) -> return () 
           (EraserWork,_)      -> eraserStart cid pcoord 
           (HighlighterWork,_) -> highlighterStart cid pcoord
           (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
           (VerticalSpaceWork,_) -> return () 
-    PenMove cid pcoord -> notifyLink cid pcoord
+    TouchDown cid pcoord -> touchStart cid pcoord 
+    PenMove cid pcoord -> modify (set (settings.doesUseTouch) False) 
+      -- notifyLink cid pcoord
     _ -> defaultEventProcess r1
 
 -- |
@@ -351,6 +354,7 @@ menuEventProcess MenuUseXInput = do
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
+menuEventProcess MenuUseTouch = modify (set (settings.doesUseTouch) True)
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()

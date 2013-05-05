@@ -35,6 +35,9 @@ data MyEvent = Initialized
              | PenDown Int PenButton PointerCoord
              | PenMove Int PointerCoord
              | PenUp   Int PointerCoord 
+             | TouchDown Int PointerCoord
+             | TouchMove Int PointerCoord
+             | TouchUp Int PointerCoord 
              | PenColorChanged PenColor
              | PenWidthChanged Int 
              | AssignPenMode (Either PenType SelectType) 
@@ -136,7 +139,7 @@ data MenuEvent = MenuNew
                | MenuSelectRegion
                | MenuSelectRectangle
                | MenuVerticalSpace
-               | MenuHandTool
+               --   | MenuHandTool
                | MenuPenOptions
                | MenuEraserOptions 
                | MenuHighlighterOptions
@@ -149,6 +152,7 @@ data MenuEvent = MenuNew
                | MenuSetAsDefaultOption
                | MenuRelaunch
                | MenuUseXInput
+               | MenuUseTouch 
                | MenuSmoothScroll
                | MenuUsePopUpMenu
                | MenuEmbedImage

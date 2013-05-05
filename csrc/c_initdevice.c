@@ -139,14 +139,21 @@ void find_wacom( char* stylus_name, char* eraser_name)
 
 
 
-void initdevice( int* core, int* stylus, int* eraser, 
-                 char* corepointername, char* stylusname, char* erasername
-               )
+void initdevice ( int* core
+                , int* stylus
+                , int* eraser
+		, int* touch 
+                , char* corepointername
+                , char* stylusname
+                , char* erasername
+		, char* touchname
+                )
 {
   // xinput_start(); 
 
   printf("initdevice : stylusname = %s\n", stylusname );
   printf("initdevice : erasername = %s\n", erasername ); 
+  printf("initdevice : touchname = %s\n", touchname );                      
 
   GList* dev_list;
   GdkDevice* device;
@@ -171,6 +178,10 @@ void initdevice( int* core, int* stylus, int* eraser,
       if( !strcmp (device->name, erasername) ) { 
         // printf("got eraser\n");
         (*eraser) = (int) device;
+      } 
+      if( !strcmp (device->name, touchname) ) { 
+        // printf("got eraser\n");
+        (*touch) = (int) device;
       } 
     } 
     else { 

@@ -39,12 +39,13 @@ loadConfigFile = do
 getMaxUndo :: Config -> IO (Maybe Int)
 getMaxUndo c = C.lookup c "maxundo"
 
-getPenDevConfig :: Config -> IO (Maybe String, Maybe String,Maybe String) 
+getPenDevConfig :: Config -> IO (Maybe String, Maybe String,Maybe String,Maybe String) 
 getPenDevConfig c = do 
   mcore <- C.lookup c "core"
   mstylus <- C.lookup c "stylus" 
   meraser <- C.lookup c "eraser"
-  return (mcore,mstylus,meraser)
+  mtouch <- C.lookup c "touch"
+  return (mcore,mstylus,meraser,mtouch)
   
 getXInputConfig :: Config -> IO Bool 
 getXInputConfig c = do 

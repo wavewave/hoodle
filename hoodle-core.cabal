@@ -66,6 +66,7 @@ Library
                    poppler >= 0.12.2.2, 
                    fsnotify >= 0.0.7, 
                    system-filepath >= 0.4
+
   Exposed-Modules: 
                    Hoodle.Accessor
                    Hoodle.Config

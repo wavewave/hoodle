@@ -15,12 +15,15 @@
 module Hoodle.ModelAction.Window where
 
 -- from other packages
+import           Control.Concurrent 
 import           Control.Lens (view)
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
+
+
 -- from this package
 import           Hoodle.Device
 import           Hoodle.Type.Canvas
@@ -30,9 +33,6 @@ import           Hoodle.Type.Window
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 -- 
-
-
-
 
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO () 

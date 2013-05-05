@@ -271,10 +271,10 @@ getMenuUI evar = do
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (Menu MenuUseXInput)
-  handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
-  -- handa     <- toggleActionNew "HANDA" "Use Touch" (Just "myhand") Nothing
-  -- handa `on` actionToggled $ do 
-  --   eventHandler evar (Menu MenuUseTouch)
+  -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
+  handa     <- toggleActionNew "HANDA" "Use Touch" (Just "Toggle touch") (Just "myhand") 
+  handa `on` actionToggled $ do 
+    eventHandler evar (Menu MenuUseTouch)
   smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
   smthscra `on` actionToggled $ do 
     eventHandler evar (Menu MenuSmoothScroll)
@@ -413,6 +413,8 @@ getMenuUI evar = do
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
+  
+  -- Just pendropdown <- uiManagerGetWidget ui "/ui/toolbar2/PENDROPDOWN"
   
   
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 

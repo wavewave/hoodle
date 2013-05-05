@@ -56,6 +56,7 @@ startGUI mfname mhook = do
   setTitleFromFileName st0
   -- need for refactoring
   setToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
+  setToggleUIForFlag "HANDA" (settings.doesUseTouch) st0   
   setToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0 
   setToggleUIForFlag "EBDIMGA" (settings.doesEmbedImage) st0 
   setToggleUIForFlag "EBDPDFA" (settings.doesEmbedPDF) st0

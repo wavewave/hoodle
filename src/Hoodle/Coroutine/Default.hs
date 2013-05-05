@@ -195,8 +195,18 @@ viewAppendMode = do
           (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
           (VerticalSpaceWork,_) -> return () 
     TouchDown cid pcoord -> touchStart cid pcoord 
-    PenMove cid pcoord -> modify (set (settings.doesUseTouch) False) 
-      -- notifyLink cid pcoord
+    PenMove cid pcoord -> do 
+      xst <- get 
+      let b = view (settings.doesUseTouch) xst 
+      when b $ do         
+        let nxst = set (settings.doesUseTouch) False xst 
+            action = Left . ActionOrder $ \_ -> do
+                       setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
+                       return ActionOrdered
+        modify (tempQueue %~ enqueue action)
+        waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
+        put nxst
+      -- notifyLink cid pcoord 
     _ -> defaultEventProcess r1
 
 -- |
@@ -354,7 +364,9 @@ menuEventProcess MenuUseXInput = do
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
-menuEventProcess MenuUseTouch = modify (set (settings.doesUseTouch) True)
+menuEventProcess MenuUseTouch = do 
+    liftIO $ print "MenuUseTouch" 
+    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)  >> return ()
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()

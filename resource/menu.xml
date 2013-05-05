@@ -217,6 +217,7 @@
     <toolitem action="PENFINEA"       />    
     <toolitem action="PENMEDIUMA"       />                     
     <toolitem action="PENTHICKA"       />   
+ <!--   <placeholder name="PENDROPDOWN"   /> --> 
  <!--     <toolitem action="NOWIDTH"        /> --> 
     <separator />
     <toolitem action="CLRPCKA"     />

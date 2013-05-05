@@ -82,9 +82,9 @@ initDevice cfg = do
   ptouchname_detect <- newCString "touch"
   -- c_find_wacom pstylusname_detect perasername_detect
   (mcore,mstylus,meraser,mtouch) <- getPenDevConfig cfg 
-  putStrLn $ show mstylus 
-  putStrLn $ show meraser
-  putStrLn $ show mtouch
+  -- putStrLn $ show mstylus 
+  -- putStrLn $ show meraser
+  -- putStrLn $ show mtouch
   with 0 $ \pcore -> 
     with 0 $ \pstylus -> 
       with 0 $ \peraser -> do 
@@ -190,6 +190,7 @@ getPointer devlst = do
             (touchx :: Double) <- peekByteOff ptrax 0
             (touchy :: Double) <- peekByteOff ptrax 8
             (touchz :: Double) <- peekByteOff ptrax 16 
+            (touchw :: Double) <- peekByteOff ptrax 24
             return $ Just (PointerCoord Touch touchx touchy touchz)            
           | otherwise = return Nothing -- return $ PointerCoord Core x y 1.0
 

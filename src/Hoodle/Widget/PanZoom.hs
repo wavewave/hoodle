@@ -83,7 +83,7 @@ startPanZoomWidget (cid,cinfo,geometry) mmode = do
     xst <- get 
     let hdl = getHoodle xst
     case mmode of 
-      Nothing -> togglePanZoom
+      Nothing -> togglePanZoom cid
       Just (mode,(oxy,owxy)) -> do 
         (srcsfc,Dim wsfc hsfc) <- case mode of 
                                     Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
@@ -264,10 +264,13 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
 
   
 -- | 
-togglePanZoom :: MainCoroutine () 
-togglePanZoom = do 
-    modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) not)
-    invalidateAll  
+togglePanZoom :: CanvasId -> MainCoroutine () 
+togglePanZoom cid = do 
+    modify $ \xst -> 
+      let cinfobox = getCanvasInfo cid xst 
+          ncinfobox = over (unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) not cinfobox
+      in setCanvasInfo (cid,ncinfobox) xst 
+    invalidateInBBox Nothing Efficient cid 
 
 
 -- | 

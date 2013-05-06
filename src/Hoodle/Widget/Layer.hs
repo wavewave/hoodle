@@ -33,6 +33,7 @@ import           Hoodle.Device
 import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Type.PageArrangement
@@ -66,7 +67,7 @@ startLayerWidget :: ViewMode a =>
                     (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> LWAction -- Maybe (CanvasCoordinate,CanvasCoordinate)
                  -> MainCoroutine () 
-startLayerWidget (cid,cinfo,geometry) Close = toggleLayer
+startLayerWidget (cid,cinfo,geometry) Close = toggleLayer cid 
 startLayerWidget (cid,cinfo,geometry) ToggleShowContent = do 
     liftIO $ putStrLn "ToggleShowContent hitted"
     modify (over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not)
@@ -146,7 +147,10 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox
   
 -- | 
-toggleLayer :: MainCoroutine () 
-toggleLayer = do 
-  modify (over (currentCanvasInfo . unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not)
-  invalidateAll  
+toggleLayer :: CanvasId -> MainCoroutine () 
+toggleLayer cid = do 
+  modify (\xst -> 
+            let ncinfobox = (over (unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not 
+                             . getCanvasInfo cid ) xst 
+            in setCanvasInfo (cid,ncinfobox) xst)
+  invalidateInBBox Nothing Efficient cid

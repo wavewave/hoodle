@@ -17,7 +17,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative ((<$>))
 import           Control.Category
 import           Control.Concurrent 
-import           Control.Lens (view,set,at,(.~),(%~))
+import           Control.Lens (_1,view,set,at,(.~),(%~))
 import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.ByteString.Char8 as B
@@ -411,8 +411,8 @@ menuEventProcess MenuApplyToAllPages = do
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
 menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
-menuEventProcess MenuTogglePanZoomWidget = togglePanZoom
-menuEventProcess MenuToggleLayerWidget = toggleLayer
+menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
+menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

@@ -16,8 +16,11 @@ import Data.Time.Clock
 
 -- | 
 
+millisec = 1000000000
+
 dtime_bound :: NominalDiffTime 
-dtime_bound = realToFrac (picosecondsToDiffTime 100000000000)
+dtime_bound = realToFrac (picosecondsToDiffTime (25*millisec))
+  -- realToFrac (picosecondsToDiffTime 100000000000)
 
 -- | 
 

@@ -116,9 +116,11 @@ findZoomXform (Dim w h) ((xo,yo),(x0,y0),(x,y)) =
         zy | zty > 2 = 2  
            | zty < 0.5 = 0.5
            | otherwise = zty                                          
-        z | zx >= 1 && zy >= 1 = max zx zy
+        {- z | zx >= 1 && zy >= 1 = max zx zy
           | zx < 1 && zy < 1 = min zx zy 
-          | otherwise = zx
+          | otherwise = zx -}
+        -- simplified
+        z = zx 
         xtrans = (1 -z)*xo/z-w
         ytrans = (1- z)*yo/z-h 
     in (z,(xtrans,ytrans))

@@ -17,7 +17,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative ((<$>))
 import           Control.Category
 import           Control.Concurrent 
-import           Control.Lens (_1,view,set,at,(.~),(%~))
+import           Control.Lens (_1,over,view,set,at,(.~),(%~))
 import           Control.Monad.Reader
 import           Control.Monad.State 
 import qualified Data.ByteString.Char8 as B
@@ -88,10 +88,10 @@ initCoroutine :: DeviceList
               -> Maybe FilePath 
               -> Maybe Hook 
               -> Int -- ^ maxundo 
-              -> Bool -- ^ xinputbool 
+              -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
               -> Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,UIManager,VBox)
-initCoroutine devlst window mfname mhook maxundo xinputbool stbar = do 
+initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -100,7 +100,9 @@ initCoroutine devlst window mfname mhook maxundo xinputbool stbar = do
             <$> emptyHoodleState 
   (ui,uicompsighdlr) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
-      initcvs = defaultCvsInfoSinglePage { _canvasId = 1 } 
+      initcvs = set (canvasWidgets.widgetConfig.doesUsePanZoomWidget) usepz
+              . set (canvasWidgets.widgetConfig.doesUseLayerWidget) uselyr
+              $ defaultCvsInfoSinglePage { _canvasId = 1 } 
       initcvsbox = CanvasSinglePage initcvs
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
@@ -306,6 +308,18 @@ defaultEventProcess (Sync ctime) = do
                 return ActionOrdered
           modify (tempQueue %~ enqueue ioact)
 defaultEventProcess FileReloadOrdered = fileReload 
+defaultEventProcess (CustomKeyEvent str) = 
+  if str == "[]:\"Super_L\"" 
+  then do
+    xst <- liftM (over (settings.doesUseTouch) not) get 
+    put xst 
+    let action = Left . ActionOrder $ \_evhandler -> do 
+          setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
+          return ActionOrdered
+    modify (tempQueue %~ enqueue action)
+    waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    
+    toggleTouch
+  else return ()
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
@@ -370,8 +384,8 @@ menuEventProcess MenuUseXInput = do
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
-menuEventProcess MenuUseTouch = do 
-    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
+menuEventProcess MenuUseTouch = toggleTouch
+{-    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
     xst <- get 
     let devlst = view deviceList xst 
     let b = view (settings.doesUseTouch) xst
@@ -380,7 +394,7 @@ menuEventProcess MenuUseTouch = do
       let (cid,cinfobox) = view currentCanvas xst 
       put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
       invalidateInBBox Nothing Efficient cid   
-      return ()
+      return () -}
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()

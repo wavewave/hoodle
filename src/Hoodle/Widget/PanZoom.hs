@@ -22,6 +22,7 @@ import           Data.List (delete)
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo 
 import           Graphics.UI.Gtk hiding (get,set) 
+import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -303,6 +304,22 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
             then if isZoomTouch then startPanZoomWidget triplet (Just (Zooming,(oxy,oxy)))
                                 else startPanZoomWidget triplet (Just (Panning False,(oxy,oxy)))
             else return ()
+
+toggleTouch :: MainCoroutine () 
+toggleTouch = do 
+    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
+    xst <- get 
+    let devlst = view deviceList xst 
+    let b = view (settings.doesUseTouch) xst
+    when b $ do 
+      liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
+      let (cid,cinfobox) = view currentCanvas xst 
+      put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
+      invalidateInBBox Nothing Efficient cid   
+      return ()
+
+    
+
 {-        
         do 
           win <- liftIO $ widgetGetDrawWindow cvs

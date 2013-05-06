@@ -82,9 +82,18 @@ connectDefaultEventCanvasInfo xstate cinfo = do
         hadj = _horizAdjustment cinfo 
         vadj = _vertAdjustment cinfo 
 
+    widgetSetCanFocus canvas True 
+    
     _sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
     
+    _keyevent <- canvas `on` keyPressEvent $ tryEvent $ do 
+      m <- eventModifier
+      n <- eventKeyName 
+      let keystr = show m ++ ":" ++ show n
+      liftIO $ putStrLn (show m ++ ":" ++ show n)
+      liftIO $ (callback (CustomKeyEvent keystr))
     _bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
+                 liftIO $ widgetGrabFocus canvas 
                  (mbtn,mp) <- getPointer dev
                  liftIO $ print (mbtn,mp)
                  case mp of 
@@ -145,7 +154,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       liftIO $ drawWindowSetCursor win (Just cursorDot)
       return ()
     -}  
-    widgetAddEvents canvas [PointerMotionMask,Button1MotionMask]      
+    widgetAddEvents canvas [PointerMotionMask,Button1MotionMask,KeyPressMask]      
     let ui = view gtkUIManager xstate 
     agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                       case x of 

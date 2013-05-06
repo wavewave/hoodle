@@ -57,6 +57,23 @@ getXInputConfig c = do
                   "false" -> return False 
                   _ -> error "cannot understand xinput in configfile"
 
+getWidgetConfig :: Config -> IO (Bool, Bool) 
+getWidgetConfig c = do 
+    (mpanzoom :: Maybe String) <- C.lookup c "PanZoomWidget"
+    (mlayer :: Maybe String) <- C.lookup c "LayerWidget"
+
+    let panzoom = maybe True (parse "PanZoomWidget") mpanzoom 
+        layer = maybe True (parse "LayerWidget") mlayer
+        
+    print ("WidgetConfig =" ++ show (panzoom,layer) )
+    return (panzoom,layer)
+  where parse msg str = case str of
+                          "true" -> True
+                          "false" -> False 
+                          _ -> error ("cannot understand " ++ msg ++ " in configfile")
+
+         
+
 {-
 getNetworkInfo :: Config -> IO (Maybe HoodleClipClientConfiguration)
 getNetworkInfo c = do 

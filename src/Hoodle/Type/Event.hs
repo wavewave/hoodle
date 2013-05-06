@@ -69,6 +69,7 @@ data MyEvent = Initialized
              | GotLink (Maybe String) (Int,Int)
              | Sync UTCTime 
              | FileReloadOrdered
+             | CustomKeyEvent String 
              deriving Show
                       
 instance Show (IORef a) where                      

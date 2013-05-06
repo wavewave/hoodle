@@ -33,6 +33,7 @@ import           Hoodle.GUI.Reflect
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
@@ -43,8 +44,8 @@ import Prelude hiding (mapM_, mapM)
 modeChange :: MyEvent -> MainCoroutine () 
 modeChange command = do 
     case command of 
-      ToViewAppendMode -> updateXState select2edit >> invalidateAll 
-      ToSelectMode     -> updateXState edit2select >> invalidateAll 
+      ToViewAppendMode -> updateXState select2edit >> invalidateAllInBBox Nothing Efficient -- invalidateAll 
+      ToSelectMode     -> updateXState edit2select >> invalidateAllInBBox Nothing Efficient -- invalidateAll 
       _ -> return ()
     reflectPenModeUI
     reflectPenColorUI

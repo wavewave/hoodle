@@ -197,7 +197,8 @@ newSelectRectangle cid pnum geometry itms orig
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
-      invalidateAll 
+      -- invalidateAll 
+      invalidateAllInBBox Nothing Efficient
 
 
 -- | prepare for moving selection 
@@ -215,7 +216,8 @@ startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)                  
     surfaceFinish (imageSurface itmimage)
-    invalidateAll 
+    -- invalidateAll 
+    invalidateAllInBBox Nothing Efficient 
 
 -- | 
 moveSelect :: CanvasId
@@ -295,7 +297,8 @@ moveSelect cid pnum geometry orig@(x0,y0)
             return coroutineaction
       xstate2 <- maybe (return xstate1) id maction 
       commit xstate2
-      invalidateAll 
+      -- invalidateAll 
+      invalidateAllInBBox Nothing Efficient
     ----
     ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
@@ -309,7 +312,8 @@ moveSelect cid pnum geometry orig@(x0,y0)
           commit . set hoodleModeState (SelectState newthdl)
                  =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
         Left _ -> error "this is impossible, in moveSelect" 
-      invalidateAll 
+      -- invalidateAll 
+      invalidateAllInBBox Nothing Efficient 
       
 
 -- | prepare for resizing selection 
@@ -330,7 +334,8 @@ startResizeSelect handle cid pnum geometry bbox
     resizeSelect handle cid pnum geometry bbox ((x,y),ctime) tsel 
     surfaceFinish (tempSurface tsel)  
     surfaceFinish (imageSurface itmimage)
-    invalidateAll 
+    -- invalidateAll 
+    invalidateAllInBBox Nothing Efficient
 
 -- | 
 resizeSelect :: Handle 
@@ -384,7 +389,8 @@ resizeSelect handle cid pnum geometry origbbox
           commit . set hoodleModeState (SelectState newthdl)
                  =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
         Left _ -> error "this is impossible, in resizeSelect" 
-      invalidateAll
+      -- invalidateAll
+      invalidateAllInBBox Nothing Efficient
       return ()    
 
   
@@ -405,7 +411,8 @@ selectPenColorChanged pcolor = do
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n
       commit =<< liftIO (updatePageAll (SelectState newthdl)
                         . set hoodleModeState (SelectState newthdl) $ xstate )
-      invalidateAll 
+      -- invalidateAll 
+      invalidateAllInBBox Nothing Efficient
           
 -- | 
 selectPenWidthChanged :: Double -> MainCoroutine () 
@@ -424,7 +431,8 @@ selectPenWidthChanged pwidth = do
       newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
       commit =<< liftIO (updatePageAll (SelectState newthdl) 
                          . set hoodleModeState (SelectState newthdl) $ xstate )
-      invalidateAll 
+      -- invalidateAll 
+      invalidateAllInBBox Nothing Efficient 
 
 -- | main mouse pointer click entrance in lasso selection mode. 
 --   choose either starting new rectangular selection or move previously 
@@ -520,6 +528,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
-      invalidateAll 
+      -- invalidateAll 
+      invalidateAllInBBox Nothing Efficient
 
 

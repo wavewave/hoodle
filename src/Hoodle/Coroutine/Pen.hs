@@ -56,7 +56,7 @@ penPageSwitch pgn = do
     let cibox = view currentCanvasInfo xstate     
         ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum pgn)) cibox 
     put (set currentCanvasInfo ncibox xstate) 
-    invalidateAll 
+    invalidateAllInBBox Nothing Efficient
     return ncibox 
         
 

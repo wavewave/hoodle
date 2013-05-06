@@ -116,7 +116,7 @@ invalidateAllInBBox mbbox flag = applyActionToAllCVS (invalidateInBBox mbbox fla
 
 -- | 
 invalidateAll :: MainCoroutine () 
-invalidateAll = invalidateAllInBBox Nothing Clear 
+invalidateAll = invalidateAllInBBox Nothing Clear >> liftIO (putStrLn "The SLOW invalidateAll Called")
  
 -- | Invalidate Current canvas
 invalidateCurrent :: MainCoroutine () 

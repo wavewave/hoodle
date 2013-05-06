@@ -54,7 +54,7 @@ checkPointerInPanZoom :: (ViewMode a) =>
 checkPointerInPanZoom (cid,cinfo,geometry) pcoord 
   | b = 
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
-        owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetPosition) cinfo
+        owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo
         obbox = BBox (x0,y0) (x0+100,y0+100) 
         pbbox1 = BBox (x0+10,y0+10) (x0+50,y0+90)
         pbbox2 = BBox (x0+50,y0+10) (x0+90,y0+90)
@@ -218,19 +218,21 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             nwpos = CvsCoord (nposx,nposy) 
             changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
             changeact cinfo =  
-              set (canvasWidgets.panZoomWidgetPosition) nwpos $ cinfo
+              set (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) nwpos $ cinfo
             ncinfobox = selectBox changeact changeact  cinfobox
+            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox                         
         put (setCanvasInfo (cid,ncinfobox) xst)
-        virtualDoubleBufferDraw srcsfc tgtsfc (return ()) (renderPanZoomWidget Nothing nwpos)
+        virtualDoubleBufferDraw srcsfc tgtsfc (return ()) (renderPanZoomWidget isTouchZoom Nothing nwpos)
       Zooming -> do 
         let cinfobox = getCanvasInfo cid xst               
-        let pos = runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
+        let pos = runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
         let (xo,yo) = (xw+50,yw+50)
             CanvasDimension cdim = canvasDim geometry 
             (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
+            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox             
         virtualDoubleBufferDraw srcsfc tgtsfc 
           (save >> scale z z >> translate xtrans ytrans)
-          (restore >> renderPanZoomWidget Nothing pos)
+          (restore >> renderPanZoomWidget isTouchZoom Nothing pos)
       Panning b -> do 
         let cinfobox = getCanvasInfo cid xst               
             CanvasDimension cdim = canvasDim geometry 
@@ -245,12 +247,13 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             nwpos = if b 
                     then CvsCoord (nposx,nposy) 
                     else 
-                      runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetPosition)) cinfobox)
-            ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetPosition)) nwpos cinfobox
+                      runIdentity (boxAction (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
+            ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) nwpos cinfobox
+            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox 
         put (setCanvasInfo (cid,ncinfobox) xst)
         virtualDoubleBufferDraw srcsfc tgtsfc 
           (save >> translate xtrans ytrans) 
-          (restore >> renderPanZoomWidget Nothing nwpos)
+          (restore >> renderPanZoomWidget isTouchZoom Nothing nwpos)
     --   
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
@@ -276,11 +279,24 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
       geometry <- liftIO $ makeCanvasGeometry pnum arr cvs 
       let triplet = (cid,cinfo,geometry)
           oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
-          owxy = oxy 
-      b <- liftM (view (settings.doesUseTouch)) get          
-      if b 
-        then startPanZoomWidget triplet (Just (Panning False,(oxy,owxy)))
-        else return ()
+          owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo  
+          obbox = BBox (x0,y0) (x0+100,y0+100) 
+      xst <- get
+          
+      if (isPointInBBox obbox (x,y))     
+        then do 
+          let changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+              changeact = over (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) not 
+              ncinfobox = selectBox changeact changeact . getCanvasInfo cid $ xst
+          put (setCanvasInfo (cid,ncinfobox) xst)
+          invalidate cid 
+        else do 
+          let b = view (settings.doesUseTouch) xst
+              isZoomTouch = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) cinfo
+          if b 
+            then if isZoomTouch then startPanZoomWidget triplet (Just (Zooming,(oxy,oxy)))
+                                else startPanZoomWidget triplet (Just (Panning False,(oxy,oxy)))
+            else return ()
 {-        
         do 
           win <- liftIO $ widgetGetDrawWindow cvs

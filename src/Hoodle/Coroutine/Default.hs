@@ -71,11 +71,12 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
+import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Predefined
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
-import           Hoodle.Type.HoodleState
+import           Hoodle.Type.Widget
 import           Hoodle.Widget.PanZoom
 import           Hoodle.Widget.Layer
 import           Hoodle.Widget.Dispatch 
@@ -377,6 +378,8 @@ menuEventProcess MenuUseTouch = do
     let b = view (settings.doesUseTouch) xst
     when b $ do 
       liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""         
+      put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
+      invalidateAll 
       return ()
     
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
@@ -417,7 +420,6 @@ menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m
 -- | 
 colorPick :: MainCoroutine () 
 colorPick = do mc <- colorPickerBox "Pen Color" 
-               -- liftIO $ print mc 
                maybe (return ())  
                      (\c->modify (penInfo.currentTool.penColor .~ c)) 
                      mc 

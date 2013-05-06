@@ -580,14 +580,15 @@ drawWidgets :: ViewMode a =>
                [WidgetItem] -> Hoodle EditMode -> CanvasInfo a -> Maybe BBox -> Render () 
 drawWidgets witms hdl cinfo mbbox = do  
   when (PanZoomWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
-    renderPanZoomWidget mbbox (view (canvasWidgets.panZoomWidgetPosition) cinfo) 
+    renderPanZoomWidget (view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) cinfo)
+      mbbox (view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo) 
   when (LayerWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) 
     (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetConfig.layerWidgetPosition) cinfo))
 
 
 -- | 
-renderPanZoomWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
-renderPanZoomWidget mbbox (CvsCoord (x,y)) = do 
+renderPanZoomWidget :: Bool -> Maybe BBox -> CanvasCoordinate -> Render () 
+renderPanZoomWidget b mbbox (CvsCoord (x,y)) = do 
   identityMatrix 
   clipBBox mbbox 
   setSourceRGBA 0.5 0.5 0.2 0.3 
@@ -599,7 +600,7 @@ renderPanZoomWidget mbbox (CvsCoord (x,y)) = do
   setSourceRGBA 0.2 0.7 0.2 0.5 
   rectangle (x+50) (y+10) 40 80
   fill 
-  setSourceRGBA 0.7 0.2 0.2 0.5
+  setSourceRGBA 0.7 0.2 0.2 (if b then 1.0 else 0.5)
   rectangle (x+30) (y+30) 40 40 
   fill  
   setSourceRGBA 0.5 0.5 0.5 0.5

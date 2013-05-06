@@ -21,6 +21,8 @@ module Hoodle.Type.Widget
 , LayerWidgetConfig 
 -- * lenses 
 , panZoomWidgetPosition
+, panZoomWidgetTouchIsZoom
+, panZoomWidgetConfig 
 , layerWidgetConfig
 , layerWidgetPosition
 , layerWidgetShowContent
@@ -47,6 +49,20 @@ data WidgetItem = PanZoomWidget | LayerWidget
 -- | 
 allWidgets = [PanZoomWidget, LayerWidget] 
 
+
+-- | 
+data PanZoomWidgetConfig = PZWConfig { _panZoomWidgetPosition :: CanvasCoordinate
+                                     , _panZoomWidgetTouchIsZoom :: Bool  
+                                     } 
+                           
+-- | 
+panZoomWidgetPosition :: Simple Lens PanZoomWidgetConfig CanvasCoordinate
+panZoomWidgetPosition = lens _panZoomWidgetPosition (\f a -> f { _panZoomWidgetPosition = a })
+
+-- | 
+panZoomWidgetTouchIsZoom :: Simple Lens PanZoomWidgetConfig Bool 
+panZoomWidgetTouchIsZoom = lens _panZoomWidgetTouchIsZoom (\f a -> f { _panZoomWidgetTouchIsZoom = a})
+
 -- |
 data LayerWidgetConfig = LWConfig { _layerWidgetPosition :: CanvasCoordinate
                                   , _layerWidgetShowContent :: Bool
@@ -62,15 +78,14 @@ layerWidgetShowContent = lens _layerWidgetShowContent (\f a -> f { _layerWidgetS
 
 -- | 
 data CanvasWidgets = 
-  CanvasWidgets { _panZoomWidgetPosition :: CanvasCoordinate
+  CanvasWidgets { _panZoomWidgetConfig :: PanZoomWidgetConfig
                 , _layerWidgetConfig :: LayerWidgetConfig 
                 , _widgetConfig :: WidgetConfig 
                 }   
 
 -- | 
-panZoomWidgetPosition :: Simple Lens CanvasWidgets CanvasCoordinate
-panZoomWidgetPosition = lens _panZoomWidgetPosition (\f a -> f { _panZoomWidgetPosition = a })
-
+panZoomWidgetConfig :: Simple Lens CanvasWidgets PanZoomWidgetConfig 
+panZoomWidgetConfig = lens _panZoomWidgetConfig (\f a -> f { _panZoomWidgetConfig = a })
 
 -- | 
 layerWidgetConfig :: Simple Lens CanvasWidgets LayerWidgetConfig 
@@ -81,11 +96,17 @@ layerWidgetConfig = lens _layerWidgetConfig (\f a -> f { _layerWidgetConfig = a 
 defaultCanvasWidgets :: CanvasWidgets
 defaultCanvasWidgets = 
   CanvasWidgets
-  { _panZoomWidgetPosition = CvsCoord (100,100)
+  { _panZoomWidgetConfig = defaultPZWConfig 
   , _layerWidgetConfig = defaultLWConfig 
   , _widgetConfig = defaultWidgetConfig 
   }   
 
+-- | 
+defaultPZWConfig :: PanZoomWidgetConfig 
+defaultPZWConfig = 
+  PZWConfig { _panZoomWidgetPosition = CvsCoord (100,100) 
+            , _panZoomWidgetTouchIsZoom = False 
+            } 
 -- | 
 defaultLWConfig :: LayerWidgetConfig 
 defaultLWConfig = 

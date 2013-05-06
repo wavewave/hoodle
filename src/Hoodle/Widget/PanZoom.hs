@@ -21,7 +21,7 @@ import           Control.Monad.State
 import           Data.List (delete)
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo 
--- import           Graphics.UI.Gtk hiding (get,set) 
+import           Graphics.UI.Gtk hiding (get,set) 
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -29,6 +29,7 @@ import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen 
 import           Hoodle.Coroutine.Scroll
@@ -276,4 +277,43 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
       let triplet = (cid,cinfo,geometry)
           oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
           owxy = oxy 
-      startPanZoomWidget triplet (Just (Panning False,(oxy,owxy)))
+      b <- liftM (view (settings.doesUseTouch)) get          
+      if b 
+        then startPanZoomWidget triplet (Just (Panning False,(oxy,owxy)))
+        else return ()
+{-        
+        do 
+          win <- liftIO $ widgetGetDrawWindow cvs
+          startTouchWorkaround win 
+-}          
+{-        
+startTouchWorkaround :: DrawWindow -> MainCoroutine ()
+startTouchWorkaround win = do 
+  liftIO $ do
+    disable_touch
+-}
+    {- 
+    Just dpy <- displayGetDefault
+    b <- displayPointerIsGrabbed dpy 
+    putStrLn $ "startTouchWorkaround : " ++ show b
+    grab <- pointerGrab win False [PointerMotionMask,Button1MotionMask] (Just win) Nothing currentTime  
+    print grab
+    -}
+    
+{-    
+touchUp :: MainCoroutine ()
+touchUp = liftIO $ pointerUngrab currentTime 
+-}
+  
+
+{-  case 
+  waitSomeEvent (\x->case x of TouchUp _ _ -> True ; _ -> False ) 
+  return () -}
+{-        
+        do 
+          b <- liftIO $ pointerIsGrabbed 
+          liftIO $ putStrLn "==========================="
+          liftIO $ putStrLn ("is pointer grabbed = " ++ show b)
+          liftIO $ putStrLn "==========================="
+          -- liftIO $ pointerUngrab currentTime 
+-}

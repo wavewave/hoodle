@@ -196,3 +196,26 @@ void initdevice ( int* core
 }
 
 
+void enable_touch( char* touch_name ) 
+{
+  printf("enable touch: %s\n", touch_name ) ; 
+}
+
+void disable_touch( GdkDrawable *gdkwin, char* touch_name ) 
+{
+  printf("disable touch: %s\n", touch_name ); 
+  /* Display *dpy = XOpenDisplay(NULL); 
+  XIEventMask eventmask ; 
+  Window win = GDK_DRAWABLE_XID(gdkwin) ; 
+  unsigned char mask[1] = { 0 } ; 
+
+  eventmask.deviceid = 12 ; 
+  eventmask.make_len = sizeof(mask); 
+  eventmask.mask = mask ; 
+ 
+  XISelectEvents (dpy,win,&eventmask,1); 
+
+  XCloseDisplay(dpy); */ 
+  
+}
+

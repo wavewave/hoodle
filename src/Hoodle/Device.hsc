@@ -39,10 +39,14 @@ data PenButton = PenButton1 | PenButton2 | PenButton3 | EraserButton | TouchButt
 
 -- | 
 
-data DeviceList = DeviceList { dev_core :: CInt
-                             , dev_stylus :: CInt
-                             , dev_eraser :: CInt 
-                             , dev_touch :: CInt  
+data DeviceList = DeviceList { dev_core       :: CInt 
+                             , dev_core_str   :: String
+                             , dev_stylus     :: CInt
+                             , dev_stylus_str :: String
+                             , dev_eraser     :: CInt 
+                             , dev_eraser_str :: String
+                             , dev_touch      :: CInt  
+                             , dev_touch_str  :: String
                              } 
                 deriving Show 
                   
@@ -73,6 +77,17 @@ foreign import ccall "c_initdevice.h initdevice" c_initdevice
 foreign import ccall "c_initdevice.h find_wacom" c_find_wacom
   :: CString -> CString -> IO ()
 
+{- 
+-- | 
+foreign import ccall "c_initdevice.h enable_touch" c_enable_touch
+  :: CString -> IO ()
+     
+-- | 
+foreign import ccall "c_initdevice.h disable_touch" c_disable_touch
+  :: DrawWindow -> CString -> IO ()
+-}
+
+
 
 -- | 
 initDevice :: Config -> IO DeviceList  
@@ -89,16 +104,18 @@ initDevice cfg = do
     with 0 $ \pstylus -> 
       with 0 $ \peraser -> do 
         with 0 $ \ptouch -> do 
-          pcorename <- case mcore of 
-                         Nothing -> newCString "Core Pointer"
-                         Just core -> newCString core
-          pstylusname <- case mstylus of 
-                           Nothing -> return pstylusname_detect -- newCString "stylus"
-                           Just spen -> newCString spen
-          perasername <- case meraser of 
-                           Nothing -> return perasername_detect -- newCString "eraser"
-                           Just seraser -> newCString seraser 
-          ptouchname  <- maybe (return ptouchname_detect) newCString mtouch 
+          (pcorename,corename) <- case mcore of 
+            Nothing -> (,) <$> newCString "Core Pointer" <*> pure "Core Pointer"
+            Just core -> (,) <$> newCString core <*> pure core
+          (pstylusname,stylusname) <- case mstylus of 
+            Nothing -> return (pstylusname_detect,"stylus")
+            Just spen -> (,) <$> newCString spen <*> pure spen 
+          (perasername,erasername) <- case meraser of 
+            Nothing -> return (perasername_detect,"eraser")
+            Just seraser -> (,) <$> newCString seraser <*> pure seraser
+          (ptouchname,touchname) <- 
+            maybe (return (ptouchname_detect,"touch")) (\stouch->(,) <$> newCString stouch <*> pure stouch) 
+                  mtouch 
                             
 
           c_initdevice pcore pstylus peraser ptouch pcorename pstylusname perasername ptouchname
@@ -107,7 +124,7 @@ initDevice cfg = do
           stylus_val <- peek pstylus
           eraser_val <- peek peraser
           touch_val <- peek ptouch
-          return $ DeviceList core_val stylus_val eraser_val touch_val 
+          return $ DeviceList core_val corename stylus_val stylusname eraser_val erasername touch_val touchname  
                  
 -- |
 getPointer :: DeviceList -> EventM t (Maybe PenButton,Maybe PointerCoord)

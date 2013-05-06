@@ -26,6 +26,7 @@ import           Data.IORef
 import           Data.Maybe
 import           Data.Time.Clock
 import           Graphics.UI.Gtk hiding (get,set)
+import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Event 
@@ -197,11 +198,16 @@ viewAppendMode = do
     TouchDown cid pcoord -> touchStart cid pcoord 
     PenMove cid pcoord -> do 
       xst <- get 
+      let devlst = view deviceList xst 
       let b = view (settings.doesUseTouch) xst 
+          -- cvs = view (unboxLens drawArea) .  getCanvasInfo cid $ xst 
+      -- win <- liftIO $ widgetGetDrawWindow cvs 
       when b $ do         
         let nxst = set (settings.doesUseTouch) False xst 
             action = Left . ActionOrder $ \_ -> do
                        setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
+                       readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
+                       -- c_disable_touch win (dev_touch_str devlst) 
                        return ActionOrdered
         modify (tempQueue %~ enqueue action)
         waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
@@ -365,8 +371,14 @@ menuEventProcess MenuUseXInput = do
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
 menuEventProcess MenuUseTouch = do 
-    liftIO $ print "MenuUseTouch" 
-    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)  >> return ()
+    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
+    xst <- get 
+    let devlst = view deviceList xst 
+    let b = view (settings.doesUseTouch) xst
+    when b $ do 
+      liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""         
+      return ()
+    
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()

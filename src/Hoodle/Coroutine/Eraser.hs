@@ -24,21 +24,22 @@ import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type.Item 
 import Graphics.Hoodle.Render.Util.HitTest
 -- 
+import Hoodle.Accessor
+import Hoodle.Coroutine.Draw
+import Hoodle.Coroutine.Commit
+import Hoodle.Coroutine.Pen 
+import Hoodle.Device
+import Hoodle.ModelAction.Page
+import Hoodle.ModelAction.Eraser
+import Hoodle.ModelAction.Layer
+import Hoodle.Type.Enum
 import Hoodle.Type.Event
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Canvas
 import Hoodle.Type.HoodleState
 import Hoodle.Type.PageArrangement
-import Hoodle.Device
 import Hoodle.View.Coordinate
 import Hoodle.View.Draw
-import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Commit
-import Hoodle.Accessor
-import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.Eraser
-import Hoodle.ModelAction.Layer
-import Hoodle.Coroutine.Pen 
 --
 
 -- |

@@ -52,9 +52,6 @@ import Hoodle.View.Coordinate
 -- 
 import Prelude hiding (mapM_,concatMap,foldr)
 
--- | 
-data DrawFlag = Clear | BkgEfficient | Efficient
-              deriving (Eq,Ord,Show)
                        
 -- | 
 type family DrawingFunction v :: * -> * 

@@ -22,6 +22,7 @@ import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.BBox
 -- from this package
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Canvas

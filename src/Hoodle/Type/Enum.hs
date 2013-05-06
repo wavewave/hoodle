@@ -21,8 +21,12 @@ import           Data.Maybe
 -- 
 import           Data.Hoodle.Predefined
 
--- | page add direction
+-- | drawing efficiency
+data DrawFlag = Clear | BkgEfficient | Efficient
+              deriving (Eq,Ord,Show)
 
+
+-- | page add direction
 data AddDirection = PageBefore | PageAfter
                   deriving (Show,Eq,Ord,Enum)
 

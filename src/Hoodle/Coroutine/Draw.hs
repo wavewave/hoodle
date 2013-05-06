@@ -31,6 +31,7 @@ import           Hoodle.Accessor
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState
 import           Hoodle.View.Draw

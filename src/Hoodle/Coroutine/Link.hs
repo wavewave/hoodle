@@ -46,6 +46,7 @@ import           Hoodle.ModelAction.ContextMenu
 import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement

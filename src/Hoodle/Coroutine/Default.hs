@@ -67,7 +67,6 @@ import           Hoodle.ModelAction.Window
 import           Hoodle.Script
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
-
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
@@ -377,11 +376,11 @@ menuEventProcess MenuUseTouch = do
     let devlst = view deviceList xst 
     let b = view (settings.doesUseTouch) xst
     when b $ do 
-      liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""         
+      liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
+      let (cid,cinfobox) = view currentCanvas xst 
       put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
-      invalidateAll 
+      invalidateInBBox Nothing Efficient cid   
       return ()
-    
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()

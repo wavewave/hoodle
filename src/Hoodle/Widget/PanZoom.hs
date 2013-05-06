@@ -37,6 +37,7 @@ import           Hoodle.Device
 import           Hoodle.ModelAction.Page 
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Type.PageArrangement 
@@ -291,7 +292,7 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
               changeact = over (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) not 
               ncinfobox = selectBox changeact changeact . getCanvasInfo cid $ xst
           put (setCanvasInfo (cid,ncinfobox) xst)
-          invalidate cid 
+          invalidateInBBox Nothing Efficient cid 
         else do 
           let b = view (settings.doesUseTouch) xst
               isZoomTouch = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) cinfo

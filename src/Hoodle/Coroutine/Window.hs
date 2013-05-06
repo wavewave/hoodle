@@ -29,6 +29,7 @@ import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement

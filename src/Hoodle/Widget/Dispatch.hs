@@ -51,7 +51,7 @@ widgetCheckPen cid pcoord defact = boxAction chk =<< liftM (getCanvasInfo cid) g
       geometry <- liftIO $ makeCanvasGeometry pnum arr cvs 
       let triplet = (cid,cinfo,geometry)
       m <- runMaybeT $ 
-             (lift . startPanZoomWidget triplet <=< MaybeT . return . checkPointerInPanZoom triplet) pcoord
+             (lift . startPanZoomWidget PenMode triplet <=< MaybeT . return . checkPointerInPanZoom triplet) pcoord
              <|> 
              (lift . startLayerWidget triplet <=< MaybeT . return . checkPointerInLayer triplet) pcoord
       case m of        

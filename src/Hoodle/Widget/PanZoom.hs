@@ -49,6 +49,10 @@ import           Hoodle.View.Draw
 
 data PanZoomMode = Moving | Zooming | Panning Bool
 
+data PanZoomTouch = TouchMode | PenMode 
+                  deriving (Show,Eq,Ord)
+
+
 checkPointerInPanZoom :: (ViewMode a) => 
                          (CanvasId,CanvasInfo a,CanvasGeometry) 
                       -> PointerCoord 
@@ -77,10 +81,11 @@ checkPointerInPanZoom (cid,cinfo,geometry) pcoord
 
 -- | 
 startPanZoomWidget :: (ViewMode a) =>
-                      (CanvasId,CanvasInfo a,CanvasGeometry)
+                   PanZoomTouch 
+                   -> (CanvasId,CanvasInfo a,CanvasGeometry)
                    -> Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate))
                    -> MainCoroutine ()
-startPanZoomWidget (cid,cinfo,geometry) mmode = do 
+startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do 
     xst <- get 
     let hdl = getHoodle xst
     case mmode of 
@@ -96,7 +101,7 @@ startPanZoomWidget (cid,cinfo,geometry) mmode = do
         -- end : need to draw other widgets here ^^^
         tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
         ctime <- liftIO getCurrentTime 
-        manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
+        manipulatePZW (tchmode,mode) cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
         liftIO $ surfaceFinish srcsfc 
         liftIO $ surfaceFinish tgtsfc
 
@@ -143,7 +148,7 @@ findPanXform (Dim w h) ((x0,y0),(x,y)) =
     in ((dx-w),(dy-h))
 
 -- | manipulate Pan-Zoom widget until released when grabbing the widget
-manipulatePZW :: PanZoomMode 
+manipulatePZW :: (PanZoomTouch,PanZoomMode) 
               -> CanvasId 
               -> CanvasGeometry 
               -> (Surface,Surface) -- ^ (Source Surface, Target Surface)
@@ -151,25 +156,26 @@ manipulatePZW :: PanZoomMode
               -> CanvasCoordinate -- ^ where pen pressed 
               -> UTCTime
               -> MainCoroutine ()
-manipulatePZW mode cid geometry (srcsfc,tgtsfc)
+manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
               owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do
   r <- nextevent
   case r of 
-    PenMove _ pcoord   -> moveact pcoord 
-    TouchMove _ pcoord -> do 
+    PenMove _ pcoord   -> if (tchmode /= PenMode) then again otime else moveact pcoord 
+    TouchMove _ pcoord -> if (tchmode /= TouchMode) then again otime else do 
       b <- liftM (view (settings.doesUseTouch)) get
       when b $ moveact pcoord
-    PenUp _ pcoord     -> upact pcoord 
-    TouchUp _ pcoord   -> do 
+    PenUp _ pcoord     -> if (tchmode /= PenMode) then again otime else upact pcoord 
+    TouchUp _ pcoord   -> if (tchmode /= TouchMode) then again otime else do 
       b <- liftM (view (settings.doesUseTouch)) get 
       when b $ upact pcoord 
-    _ -> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy otime
+    _ -> again otime -- manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy otime
   where 
+    again t = manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy t
     moveact pcoord = 
       processWithDefTimeInterval
-        (manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy) 
+        again -- (manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy) 
         (\ctime -> movingRender mode cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
-                   >> manipulatePZW mode cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
+                   >> manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
         otime 
     upact pcoord = do 
       case mode of 
@@ -301,8 +307,8 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
           let b = view (settings.doesUseTouch) xst
               isZoomTouch = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) cinfo
           if b 
-            then if isZoomTouch then startPanZoomWidget triplet (Just (Zooming,(oxy,oxy)))
-                                else startPanZoomWidget triplet (Just (Panning False,(oxy,oxy)))
+            then if isZoomTouch then startPanZoomWidget TouchMode triplet (Just (Zooming,(oxy,oxy)))
+                                else startPanZoomWidget TouchMode triplet (Just (Panning False,(oxy,oxy)))
             else return ()
 
 toggleTouch :: MainCoroutine () 
@@ -320,39 +326,3 @@ toggleTouch = do
 
     
 
-{-        
-        do 
-          win <- liftIO $ widgetGetDrawWindow cvs
-          startTouchWorkaround win 
--}          
-{-        
-startTouchWorkaround :: DrawWindow -> MainCoroutine ()
-startTouchWorkaround win = do 
-  liftIO $ do
-    disable_touch
--}
-    {- 
-    Just dpy <- displayGetDefault
-    b <- displayPointerIsGrabbed dpy 
-    putStrLn $ "startTouchWorkaround : " ++ show b
-    grab <- pointerGrab win False [PointerMotionMask,Button1MotionMask] (Just win) Nothing currentTime  
-    print grab
-    -}
-    
-{-    
-touchUp :: MainCoroutine ()
-touchUp = liftIO $ pointerUngrab currentTime 
--}
-  
-
-{-  case 
-  waitSomeEvent (\x->case x of TouchUp _ _ -> True ; _ -> False ) 
-  return () -}
-{-        
-        do 
-          b <- liftIO $ pointerIsGrabbed 
-          liftIO $ putStrLn "==========================="
-          liftIO $ putStrLn ("is pointer grabbed = " ++ show b)
-          liftIO $ putStrLn "==========================="
-          -- liftIO $ pointerUngrab currentTime 
--}

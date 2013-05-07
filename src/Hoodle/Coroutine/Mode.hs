@@ -44,7 +44,8 @@ import Prelude hiding (mapM_, mapM)
 modeChange :: MyEvent -> MainCoroutine () 
 modeChange command = do 
     case command of 
-      ToViewAppendMode -> updateXState select2edit >> invalidateAllInBBox Nothing Efficient -- invalidateAll 
+      ToViewAppendMode -> updateXState select2edit >> invalidateAll 
+                          -- invalidateAllInBBox Nothing Efficient -- invalidateAll 
       ToSelectMode     -> updateXState edit2select >> invalidateAllInBBox Nothing Efficient -- invalidateAll 
       _ -> return ()
     reflectPenModeUI

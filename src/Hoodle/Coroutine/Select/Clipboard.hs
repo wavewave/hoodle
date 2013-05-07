@@ -62,9 +62,10 @@ deleteSelection = do
           commit newxstate 
           let ui = view gtkUIManager newxstate
           liftIO $ toggleCutCopyDelete ui False 
+          modeChange ToViewAppendMode 
           invalidateAll 
     _ -> return ()
-        
+ 
 
 
 -- | 

@@ -189,15 +189,16 @@ data PressureMode = NoPressure | Pressure
   
 -- | 
 drawCurvebitGen  :: PressureMode 
-                    -> (DrawingArea, Maybe Surface)
+                    -> DrawingArea
                     -> CanvasGeometry 
                     -> Double 
                     -> (Double,Double,Double,Double) 
                     -> PageNum 
+                    -> Seq (Double,Double,Double)
                     -> ((Double,Double),Double) 
                     -> ((Double,Double),Double) 
                     -> IO () 
-drawCurvebitGen pmode (canvas,_msfc) geometry wdth (r,g,b,a) pnum ((x0,y0),z0) ((x,y),z) = do 
+drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x,y),z) = do 
   win <- widgetGetDrawWindow canvas
   renderWithDrawable win $ do
     cairoXform4PageCoordinate geometry pnum 
@@ -205,9 +206,21 @@ drawCurvebitGen pmode (canvas,_msfc) geometry wdth (r,g,b,a) pnum ((x0,y0),z0) (
     case pmode of 
       NoPressure -> do 
         setLineWidth wdth
-        moveTo x0 y0
-        lineTo x y
-        stroke
+        -- let tw = max wdth 5
+        --     (bx1,bx2) = if x0 < x then (x0-tw,x+tw) else (x-tw,x0+tw)
+        --     (by1,by2) = if y0 < y then (y0-tw,y+tw) else (y-tw,y0+tw)
+        -- clipBBox (Just (BBox (bx1,by1) (bx2,by2)))
+        -- rectangle bx1 by1 10 10 
+        -- fill 
+        case viewl pdraw of 
+          EmptyL -> return ()
+          (xo,yo,_) :< rest -> do 
+            moveTo xo yo
+            mapM_ (\(x',y',_)-> lineTo x' y') rest 
+            lineTo x y
+            stroke
+        -- moveTo x0 y0
+        -- lineTo x y
       Pressure -> do 
         let wx0 = 0.5*(fst predefinedPenShapeAspectXY)*wdth*z0
             wy0 = 0.5*(snd predefinedPenShapeAspectXY)*wdth*z0

@@ -14,7 +14,7 @@
 
 module Hoodle.Coroutine.Scroll where
 
-import           Control.Lens (view,over)
+import           Control.Lens (view,over,_1)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
@@ -69,14 +69,15 @@ adjustScrollbarWithGeometryCvsId cid = do
 
 -- | 
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
-adjustScrollbarWithGeometryCurrent = do
-  xstate <- get
+adjustScrollbarWithGeometryCurrent = adjustScrollbarWithGeometryCvsId . view (currentCanvas._1) =<<  get 
+{-  xstate <- get
   geometry <- liftIO . getGeometry4CurrCvs $ xstate
   let cinfobox = view currentCanvasInfo xstate
   let (hadj,vadj) = unboxGet adjustments cinfobox 
       connidh = unboxGet horizAdjConnId cinfobox 
       connidv = unboxGet vertAdjConnId cinfobox
   liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
+-}
 
 -- | 
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         

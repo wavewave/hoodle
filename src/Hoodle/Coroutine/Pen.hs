@@ -137,7 +137,7 @@ penProcess cid pnum geometry pdraw ((x0,y0),z0) = do
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
            let canvas = view drawArea cvsInfo
-               msfc = view mDrawSurface cvsInfo 
+               -- msfc = view mDrawSurface cvsInfo 
                ptype  = view (penInfo.penType) xstate
                pcolor = view (penInfo.currentTool.penColor) xstate 
                pwidth = view (penInfo.currentTool.penWidth) xstate 
@@ -149,8 +149,8 @@ penProcess cid pnum geometry pdraw ((x0,y0),z0) = do
            let pressureType = case view (penInfo.variableWidthPen) xstate of 
                                 True -> Pressure
                                 False -> NoPressure
-           liftIO $ drawCurvebitGen pressureType (canvas,msfc) geometry 
-                      pwidth pcolRGBA pnum ((x0,y0),z0) ((x,y),z)
+           liftIO $ drawCurvebitGen pressureType canvas geometry 
+                      pwidth pcolRGBA pnum pdraw ((x0,y0),z0) ((x,y),z)
            penProcess cid pnum geometry (pdraw |> (x,y,z)) ((x,y),z) )
         (\_ -> return pdraw )
 

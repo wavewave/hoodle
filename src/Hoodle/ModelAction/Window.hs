@@ -83,6 +83,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
         vadj = _vertAdjustment cinfo 
 
     widgetSetCanFocus canvas True 
+    widgetGrabFocus canvas     
     
     _sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
     

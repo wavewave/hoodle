@@ -43,7 +43,7 @@ import           Hoodle.View.Draw
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = updateXState changePageAction 
                       >> adjustScrollbarWithGeometryCurrent
-                      -- >> invalidateAllInBBox Nothing Efficient  
+                      >> invalidateAllInBBox Nothing Efficient  
   where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
                                . view currentCanvasInfo $ xst
         fsingle xstate cvsInfo = do 

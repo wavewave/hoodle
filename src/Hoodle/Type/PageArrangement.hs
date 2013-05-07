@@ -108,15 +108,17 @@ apply f (ViewPortBBox bbox1) = ViewPortBBox (f bbox1)
 xformViewPortFitInSize :: Dimension -> (BBox -> BBox) -> ViewPortBBox -> ViewPortBBox
 xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) = 
   let BBox (x1,y1) (x2,y2) = f bbx 
+      xmargin = if 0.5*((x2-x1)-w) > 0 then 0.5*((x2-x1)-w) else 0
+      ymargin = if 0.5*((y2-y1)-h) > 0 then 0.5*((y2-y1)-h) else 0 
       (x1',x2') 
         | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
-        | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
-        | x1<0 = (0,x2-x1)
+        | x2>w && w-(x2-x1)<=0 = (-xmargin,-xmargin+x2-x1) -- (0,x2-x1)     
+        | x1< (-xmargin) = (-xmargin,-xmargin+x2-x1) -- (0,x2-x1)
         | otherwise            = (x1,x2)
       (y1',y2') 
         | y2>h && h-(y2-y1)>0  = (h-(y2-y1),h)
-        | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
-        | y1 <0 = (0,y2-y1)
+        | y2>h && h-(y2-y1)<=0 = (-ymargin,-ymargin+y2-y1) -- (0,y2-y1)
+        | y1 < (-ymargin) =  (-ymargin,-ymargin+y2-y1) --  (0,y2-y1)
         | otherwise            = (y1,y2)
   in ViewPortBBox (BBox (x1',y1') (x2',y2') )
       

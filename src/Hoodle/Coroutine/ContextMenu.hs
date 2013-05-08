@@ -237,8 +237,18 @@ showContextMenu (pnum,(x,y)) = do
                                   )
                                   (urlParse ((B.unpack . link_location) lnk))
                             case lnk of 
-                              Link i _typ lstr txt cmd rdr pos dim -> do 
+                              Link i _typ lstr txt cmd rdr pos dim ->  
+                                convertLinkFromSimpleToDocID lnk >>=  
+                                  maybe (return ()) (\link -> do 
+                                    let LinkDocID _ uuid _ _ _ _ _ _ = link 
+                                    menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
+                                    menuitemcvt `on` menuItemActivate $ do
+                                      evhandler (GotContextMenuSignal (CMenuLinkConvert link))
+                                    menuAttach menu menuitemcvt 0 1 4 5 
+                                  ) 
+                                {-
                                 case urlParse (B.unpack lstr) of 
+                                  
                                   Nothing -> return ()
                                   Just (HttpUrl url) -> return ()
                                   Just (FileUrl file) -> do 
@@ -254,7 +264,7 @@ showContextMenu (pnum,(x,y)) = do
                                           menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
                                           menuitemcvt `on` menuItemActivate $ do
                                             evhandler (GotContextMenuSignal (CMenuLinkConvert link))
-                                          menuAttach menu menuitemcvt 0 1 4 5 
+                                          menuAttach menu menuitemcvt 0 1 4 5  -}
                               LinkDocID i lid file txt cmd rdr pos dim -> do 
                                 case (lookupPathFromId =<< view hookSet xstate) of
                                   Nothing -> return () 

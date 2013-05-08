@@ -18,6 +18,7 @@ import           Control.Applicative
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
+import           Data.Attoparsec
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -33,17 +34,18 @@ import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type.HitTest
 import           System.Directory 
 import           System.FilePath 
+import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.Coroutine.Draw 
-
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event 
 import           Hoodle.Type.HoodleState 
+import           Hoodle.Util
 -- 
 import Prelude hiding (readFile)
 
@@ -106,6 +108,27 @@ svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do
     put nxstate2
     invalidateAll 
   
+-- |     
+convertLinkFromSimpleToDocID :: Link -> IO (Maybe Link)
+convertLinkFromSimpleToDocID (Link i _typ lstr txt cmd rdr pos dim) = do 
+    case urlParse (B.unpack lstr) of 
+      Nothing -> return Nothing
+      Just (HttpUrl url) -> return Nothing
+      Just (FileUrl file) -> do 
+        b <- doesFileExist file
+        if b 
+          then do 
+            bstr <- B.readFile file
+            case parseOnly PA.hoodle bstr of 
+              Left str -> return Nothing
+              Right hdl -> do 
+                let uuid = view hoodleID hdl
+                    link = LinkDocID i uuid (B.pack file) txt cmd rdr pos dim
+                return (Just link)
+          else return Nothing 
+convertLinkFromSimpleToDocID _ = return Nothing 
+    
+    
 -- |   
 linkInsert :: B.ByteString 
               -> (B.ByteString,FilePath)
@@ -118,10 +141,11 @@ linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-    newitem <- (liftIO . cnstrctRItem . ItemLink) 
-                 (Link uuidbstr typ (B.pack fname)
-                       (Just (B.pack str)) Nothing svgbstr 
-                      (x0,y0) (Dim (x1-x0) (y1-y0)))  
+        lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
+                  (x0,y0) (Dim (x1-x0) (y1-y0))
+    nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
+    liftIO $ print nlnk
+    newitem <- (liftIO . cnstrctRItem . ItemLink) nlnk
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  

@@ -129,8 +129,8 @@ doesUseLayerWidget = lens _doesUseLayerWidget (\f a -> f {_doesUseLayerWidget = 
 
 -- | default widget configuration 
 defaultWidgetConfig :: WidgetConfig 
-defaultWidgetConfig = WidgetConfig { _doesUsePanZoomWidget = True 
-                                   , _doesUseLayerWidget = True
+defaultWidgetConfig = WidgetConfig { _doesUsePanZoomWidget = False
+                                   , _doesUseLayerWidget = False
                                    } 
 
 

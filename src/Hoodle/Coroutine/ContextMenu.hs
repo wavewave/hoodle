@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -16,11 +17,13 @@ module Hoodle.Coroutine.ContextMenu where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Category
+-- import           Control.Category
 import           Control.Lens (view,set,(%~))
-import           Control.Monad.State
+import           Control.Monad.State hiding (mapM_,forM_)
 import           Data.Attoparsec 
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as L
+import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Data.UUID.V4 
@@ -35,12 +38,13 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (SVG(..),Item(..),Link(..),hoodleID)
+import           Data.Hoodle.Simple (SVG(..),Item(..),Link(..),hoodleID,defaultHoodle)
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import qualified Text.Hoodle.Parse.Attoparsec as PA
+import           Text.Hoodle.Builder (builder)
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit 
@@ -60,21 +64,21 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement 
 import           Hoodle.Util
 --
-import Prelude hiding ((.),id)
+import Prelude hiding (mapM_,forM_)
 
 processContextMenu :: ContextMenuEvent -> MainCoroutine () 
 processContextMenu (CMenuSaveSelectionAs ityp) = do 
   xst <- get
-  case getSelectedItmsFromHoodleState xst of
-    Nothing -> return ()
-    Just hititms ->
-      let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-      in case ulbbox of 
-           Middle bbox -> 
-             case ityp of 
-               TypSVG -> exportCurrentSelectionAsSVG hititms bbox
-               TypPDF -> exportCurrentSelectionAsPDF hititms bbox
-           _ -> return () 
+  forM_ (getSelectedItmsFromHoodleState xst) 
+        (\hititms->  
+           let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+           in case ulbbox of 
+                Middle bbox -> 
+                  case ityp of 
+                    TypSVG -> exportCurrentSelectionAsSVG hititms bbox
+                    TypPDF -> exportCurrentSelectionAsPDF hititms bbox
+                _ -> return () 
+        )
 processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
@@ -94,7 +98,7 @@ processContextMenu CMenuRotateCCW = return () --  rotateSelection CCW
 processContextMenu CMenuAutosavePage = do 
     xst <- get 
     pg <- getCurrentPageCurr 
-    maybe (return ()) liftIO $ do 
+    mapM_ liftIO $ do 
       hset <- view hookSet xst
       customAutosavePage hset <*> pure pg 
 processContextMenu (CMenuLinkConvert nlnk) = 
@@ -122,35 +126,67 @@ processContextMenu (CMenuLinkConvert nlnk) =
                 =<< (liftIO (updatePageAll (SelectState nthdl) xst))
               invalidateAll 
 processContextMenu CMenuCreateALink = do 
-  liftIO $ putStrLn "create a link called"
-  mfilename <- fileChooser FileChooserActionOpen Nothing
-  case mfilename of 
-    Nothing -> return () 
-    Just fname -> do 
-      xst <- get 
-      case getSelectedItmsFromHoodleState xst of 
-        Nothing -> return () 
-        Just hititms -> 
-          let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-          in case ulbbox of 
-               Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
-                 svg <- liftIO $ makeSVGFromSelection hititms bbox
-                 uuid <- liftIO $ nextRandom
-                 let uuidbstr = B.pack (show uuid) 
-                 deleteSelection 
-                 linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)  
-               _ -> return () 
+  -- liftIO $ putStrLn "create a link called"
+  fileChooser FileChooserActionOpen Nothing >>= mapM_ linkSelectionWithFile
+    
+    {- (\fname -> liftM getSelectedItmsFromHoodleState get >>=  
+            mapM_ (\hititms -> 
+              let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+              in case ulbbox of 
+                Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                  svg <- liftIO $ makeSVGFromSelection hititms bbox
+                  uuid <- liftIO $ nextRandom
+                  let uuidbstr = B.pack (show uuid) 
+                  deleteSelection 
+                  linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)  
+                _ -> return () )) -}
+processContextMenu CMenuAssocWithNewFile = do
+  -- liftIO $ putStrLn "CMenuAssocWithNewFile"
+  xst <- get 
+  let msuggestedact = view hookSet xst >>= fileNameSuggestionHook 
+  (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact 
+  
+  fileChooser FileChooserActionSave msuggested >>=   
+    mapM_ (\fp -> do 
+              b <- liftIO (doesFileExist fp)
+              if b 
+                then okMessageBox "The file already exist!"
+                else do 
+                  let action = Left . ActionOrder $ \_ -> do                      
+                        nhdl <- liftIO $ defaultHoodle   
+                        (L.writeFile fp . builder) nhdl 
+                        createProcess (proc "hoodle" [fp]) 
+                        return ActionOrdered 
+                  modify (tempQueue %~ enqueue action) 
+                  waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
+                  linkSelectionWithFile fp 
+                  return ()
+          ) 
 processContextMenu CMenuCustom =  
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
           xst <- get 
-          case view gselSelected thdl of 
-            Nothing -> return () 
-            Just (_,tpg) -> do 
+          forM_ (view gselSelected thdl) 
+            (\(_,tpg) -> do 
               let hititms = (map rItem2Item . getSelectedItms) tpg  
-              maybe (return ()) liftIO $ do 
-                hset <- view hookSet xst    
-                customContextMenuHook hset <*> pure hititms
+              mapM_ liftIO $ do hset <- view hookSet xst    
+                                customContextMenuHook hset <*> pure hititms)
+
+--  | 
+linkSelectionWithFile :: FilePath -> MainCoroutine ()  
+linkSelectionWithFile fname = do
+  liftM getSelectedItmsFromHoodleState get >>=  
+    mapM_ (\hititms -> 
+            let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+            in case ulbbox of 
+              Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                svg <- liftIO $ makeSVGFromSelection hititms bbox
+                uuid <- liftIO $ nextRandom
+                let uuidbstr = B.pack (show uuid) 
+                deleteSelection 
+                linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)  
+              _ -> return () )
+
           
 -- | 
 exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine () 
@@ -207,6 +243,7 @@ showContextMenu (pnum,(x,y)) = do
                     menuitem3 <- menuItemNewWithLabel "Cut"
                     menuitem4 <- menuItemNewWithLabel "Copy"
                     menuitem5 <- menuItemNewWithLabel "Delete"
+                    menuitem6 <- menuItemNewWithLabel "New File Linked Here"
                     menuitem1 `on` menuItemActivate $   
                       evhandler (GotContextMenuSignal (CMenuSaveSelectionAs TypSVG))
                     menuitem2 `on` menuItemActivate $ 
@@ -217,54 +254,33 @@ showContextMenu (pnum,(x,y)) = do
                       evhandler (GotContextMenuSignal (CMenuCopy))
                     menuitem5 `on` menuItemActivate $    
                       evhandler (GotContextMenuSignal (CMenuDelete))     
+                    menuitem6 `on` menuItemActivate $ 
+                      evhandler (GotContextMenuSignal (CMenuAssocWithNewFile))
                     menuAttach menu menuitem1 0 1 1 2 
                     menuAttach menu menuitem2 0 1 2 3
                     menuAttach menu menuitem3 1 2 0 1                     
                     menuAttach menu menuitem4 1 2 1 2                     
                     menuAttach menu menuitem5 1 2 2 3    
-                    
-                    maybe (return ()) (\mi -> menuAttach menu mi 1 2 4 5) =<< menuCreateALink evhandler sitms 
-                    
+                    menuAttach menu menuitem6 1 2 3 4 
+                    mapM_ (\mi -> menuAttach menu mi 1 2 5 6) =<< menuCreateALink evhandler sitms 
                     case sitms of 
                       sitm : [] -> do 
                         case sitm of 
                           RItemLink lnkbbx _msfc -> do 
                             let lnk = bbxed_content lnkbbx
-                            maybe (return ()) 
-                                  (\urlpath -> do 
-                                    milnk <- menuOpenALink evhandler urlpath
-                                    menuAttach menu milnk 0 1 3 4    
-                                  )
-                                  (urlParse ((B.unpack . link_location) lnk))
+                            forM_ ((urlParse . B.unpack . link_location) lnk)
+                                  (\urlpath -> do milnk <- menuOpenALink evhandler urlpath
+                                                  menuAttach menu milnk 0 1 3 4 )
                             case lnk of 
                               Link i _typ lstr txt cmd rdr pos dim ->  
                                 convertLinkFromSimpleToDocID lnk >>=  
-                                  maybe (return ()) (\link -> do 
+                                  mapM_ (\link -> do 
                                     let LinkDocID _ uuid _ _ _ _ _ _ = link 
                                     menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
                                     menuitemcvt `on` menuItemActivate $ do
                                       evhandler (GotContextMenuSignal (CMenuLinkConvert link))
                                     menuAttach menu menuitemcvt 0 1 4 5 
                                   ) 
-                                {-
-                                case urlParse (B.unpack lstr) of 
-                                  
-                                  Nothing -> return ()
-                                  Just (HttpUrl url) -> return ()
-                                  Just (FileUrl file) -> do 
-                                    b <- doesFileExist file
-                                    when b $ do 
-                                      bstr <- B.readFile file
-                                      case parseOnly PA.hoodle bstr of 
-                                        Left str -> print str 
-                                        Right hdl -> do 
-                                          let uuid = view hoodleID hdl
-                                              link = LinkDocID i uuid (B.pack file) txt cmd rdr pos dim
-
-                                          menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
-                                          menuitemcvt `on` menuItemActivate $ do
-                                            evhandler (GotContextMenuSignal (CMenuLinkConvert link))
-                                          menuAttach menu menuitemcvt 0 1 4 5  -}
                               LinkDocID i lid file txt cmd rdr pos dim -> do 
                                 case (lookupPathFromId =<< view hookSet xstate) of
                                   Nothing -> return () 
@@ -295,7 +311,7 @@ showContextMenu (pnum,(x,y)) = do
                 menuitem8 <- menuItemNewWithLabel "Autosave This Page Image"
                 menuitem8 `on` menuItemActivate $ 
                   evhandler (GotContextMenuSignal (CMenuAutosavePage))
-                menuAttach menu menuitem8 1 2 3 4 
+                menuAttach menu menuitem8 1 2 4 5 
                     
                 runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
                 widgetShowAll menu 

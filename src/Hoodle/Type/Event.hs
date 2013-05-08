@@ -194,6 +194,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuAutosavePage
                       | CMenuLinkConvert Link
                       | CMenuCreateALink 
+                      | CMenuAssocWithNewFile
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

@@ -202,14 +202,6 @@ fileSave = do
         if takeExtension filename == ".hdl" 
           then do 
              put =<< (liftIO (saveHoodle xstate))
-             {- 
-             let hdl = (rHoodle2Hoodle . getHoodle) xstate 
-             liftIO . L.writeFile filename . builder $ hdl
-             ctime <- liftIO $ getCurrentTime 
-             put . set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ xstate 
-             
-             let ui = view gtkUIManager xstate
-             liftIO $ toggleSave ui False -}
              (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) xstate
           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 

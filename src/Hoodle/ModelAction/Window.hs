@@ -92,7 +92,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       n <- eventKeyName 
       let keystr = show m ++ ":" ++ show n
       liftIO $ putStrLn (show m ++ ":" ++ show n)
-      liftIO $ (callback (CustomKeyEvent keystr))
+      liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
     _bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
                  liftIO $ widgetGrabFocus canvas 
                  (mbtn,mp) <- getPointer dev
@@ -102,12 +102,11 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                    Just p -> do 
                      let pbtn = maybe PenButton1 id mbtn
                      case pbtn of 
-                       TouchButton -> liftIO (callback (TouchDown cid p))
-                       _ -> liftIO (callback (PenDown cid pbtn p)) 
+                       TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
+                       _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
     _confevent <- canvas `on` configureEvent $ tryEvent $ do 
                    (w,h) <- eventSize 
-                   liftIO $ callback 
-                     (CanvasConfigure cid (fromIntegral w) (fromIntegral h))
+                   liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
     _brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
                  (mbtn,mp) <- getPointer dev
                  case mp of 
@@ -115,11 +114,10 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                    Just p -> do
                      let pbtn = maybe PenButton1 id mbtn
                      case pbtn of 
-                       TouchButton -> liftIO (callback (TouchUp cid p))
-                       _ -> liftIO (callback (PenUp cid p))
+                       TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
+                       _ -> (liftIO . callback . UsrEv) (PenUp cid p)
                      
-    _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
-                  liftIO $ callback (UpdateCanvas cid) 
+    _exposeev <- canvas `on` exposeEvent $ tryEvent $ (liftIO . callback . UsrEv) (UpdateCanvas cid) 
     canvas `on` motionNotifyEvent $ tryEvent $ do 
       (mbtn,mp) <- getPointer dev
       case mp of 
@@ -127,15 +125,15 @@ connectDefaultEventCanvasInfo xstate cinfo = do
         Just p -> do 
           let pbtn = maybe PenButton1 id mbtn      
           case pbtn of 
-            TouchButton -> liftIO $ callback (TouchMove cid p) 
-            _ -> liftIO $ callback (PenMove cid p)
+            TouchButton -> (liftIO . callback . UsrEv) (TouchMove cid p) 
+            _ -> (liftIO . callback . UsrEv) (PenMove cid p)
 
     -- drag and drop setting
     dragDestSet canvas [DestDefaultMotion, DestDefaultDrop] [ActionCopy]
     dragDestAddTextTargets canvas
     canvas `on` dragDataReceived $ \_dc pos _i _ts -> do 
       s <- selectionDataGetText 
-      liftIO $ callback (GotLink s pos)
+      (liftIO . callback . UsrEv) (GotLink s pos)
       
       {-
       liftIO . putStrLn $ case s of 
@@ -168,18 +166,18 @@ connectDefaultEventCanvasInfo xstate cinfo = do
          else widgetSetExtensionEvents canvas [ExtensionEventsNone]
     hadjconnid <- afterValueChanged hadj $ do 
                     v <- adjustmentGetValue hadj 
-                    callback (HScrollBarMoved cid v)
+                    (callback . UsrEv) (HScrollBarMoved cid v)
     vadjconnid <- afterValueChanged vadj $ do 
                     v <- adjustmentGetValue vadj     
-                    callback (VScrollBarMoved cid v)
+                    (callback . UsrEv) (VScrollBarMoved cid v)
     Just vscrbar <- scrolledWindowGetVScrollbar scrwin
     _bpevtvscrbar <- vscrbar `on` buttonPressEvent $ do 
                       v <- liftIO $ adjustmentGetValue vadj 
-                      liftIO (callback (VScrollBarStart cid v))
+                      liftIO ((callback . UsrEv) (VScrollBarStart cid v))
                       return False
     _brevtvscrbar <- vscrbar `on` buttonReleaseEvent $ do 
                       v <- liftIO $ adjustmentGetValue vadj 
-                      liftIO (callback (VScrollBarEnd cid v))
+                      liftIO ((callback . UsrEv) (VScrollBarEnd cid v))
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
@@ -265,10 +263,10 @@ constructFrame' template xstate (HSplit wconf1 wconf2) = do
     let callback = view callBack xstate'' 
     hpane' <- hPanedNew
     hpane' `on` buttonPressEvent $ do 
-      liftIO (callback PaneMoveStart)
+      liftIO ((callback . UsrEv) PaneMoveStart)
       return False 
     hpane' `on` buttonReleaseEvent $ do 
-      liftIO (callback PaneMoveEnd)
+      liftIO ((callback . UsrEv) PaneMoveEnd)
       return False       
     panedPack1 hpane' win1 True False
     panedPack2 hpane' win2 True False
@@ -280,10 +278,10 @@ constructFrame' template xstate (VSplit wconf1 wconf2) = do
     let callback = view callBack xstate''     
     vpane' <- vPanedNew 
     vpane' `on` buttonPressEvent $ do 
-      liftIO (callback PaneMoveStart)
+      liftIO ((callback . UsrEv) PaneMoveStart)
       return False 
     vpane' `on` buttonReleaseEvent $ do 
-      liftIO (callback PaneMoveEnd)
+      liftIO ((callback . UsrEv) PaneMoveEnd)
       return False 
     panedPack1 vpane' win1 True False
     panedPack2 vpane' win2 True False

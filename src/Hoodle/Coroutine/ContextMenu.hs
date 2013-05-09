@@ -125,23 +125,9 @@ processContextMenu (CMenuLinkConvert nlnk) =
               commit . set hoodleModeState (SelectState nthdl)
                 =<< (liftIO (updatePageAll (SelectState nthdl) xst))
               invalidateAll 
-processContextMenu CMenuCreateALink = do 
-  -- liftIO $ putStrLn "create a link called"
+processContextMenu CMenuCreateALink = 
   fileChooser FileChooserActionOpen Nothing >>= mapM_ linkSelectionWithFile
-    
-    {- (\fname -> liftM getSelectedItmsFromHoodleState get >>=  
-            mapM_ (\hititms -> 
-              let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-              in case ulbbox of 
-                Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
-                  svg <- liftIO $ makeSVGFromSelection hititms bbox
-                  uuid <- liftIO $ nextRandom
-                  let uuidbstr = B.pack (show uuid) 
-                  deleteSelection 
-                  linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)  
-                _ -> return () )) -}
 processContextMenu CMenuAssocWithNewFile = do
-  -- liftIO $ putStrLn "CMenuAssocWithNewFile"
   xst <- get 
   let msuggestedact = view hookSet xst >>= fileNameSuggestionHook 
   (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact 
@@ -152,11 +138,11 @@ processContextMenu CMenuAssocWithNewFile = do
               if b 
                 then okMessageBox "The file already exist!"
                 else do 
-                  let action = Left . ActionOrder $ \_ -> do                      
+                  let action = mkIOaction $ \_ -> do                      
                         nhdl <- liftIO $ defaultHoodle   
                         (L.writeFile fp . builder) nhdl 
                         createProcess (proc "hoodle" [fp]) 
-                        return ActionOrdered 
+                        return (UsrEv ActionOrdered)
                   modify (tempQueue %~ enqueue action) 
                   waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
                   linkSelectionWithFile fp 
@@ -245,17 +231,17 @@ showContextMenu (pnum,(x,y)) = do
                     menuitem5 <- menuItemNewWithLabel "Delete"
                     menuitem6 <- menuItemNewWithLabel "New File Linked Here"
                     menuitem1 `on` menuItemActivate $   
-                      evhandler (GotContextMenuSignal (CMenuSaveSelectionAs TypSVG))
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypSVG)))
                     menuitem2 `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuSaveSelectionAs TypPDF))
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypPDF)))
                     menuitem3 `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuCut))     
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuCut)))
                     menuitem4 `on` menuItemActivate $    
-                      evhandler (GotContextMenuSignal (CMenuCopy))
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuCopy)))
                     menuitem5 `on` menuItemActivate $    
-                      evhandler (GotContextMenuSignal (CMenuDelete))     
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuDelete)))
                     menuitem6 `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuAssocWithNewFile))
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuAssocWithNewFile)))
                     menuAttach menu menuitem1 0 1 1 2 
                     menuAttach menu menuitem2 0 1 2 3
                     menuAttach menu menuitem3 1 2 0 1                     
@@ -278,7 +264,7 @@ showContextMenu (pnum,(x,y)) = do
                                     let LinkDocID _ uuid _ _ _ _ _ _ = link 
                                     menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
                                     menuitemcvt `on` menuItemActivate $ do
-                                      evhandler (GotContextMenuSignal (CMenuLinkConvert link))
+                                      evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
                                     menuAttach menu menuitemcvt 0 1 4 5 
                                   ) 
                               LinkDocID i lid file txt cmd rdr pos dim -> do 
@@ -294,8 +280,8 @@ showContextMenu (pnum,(x,y)) = do
                                           else do 
                                             let link = LinkDocID i lid (B.pack file') txt cmd rdr pos dim
                                             menuitemcvt <- menuItemNewWithLabel ("Correct Path to " ++ show file') 
-                                            menuitemcvt `on` menuItemActivate $ do
-                                              evhandler (GotContextMenuSignal (CMenuLinkConvert link))
+                                            menuitemcvt `on` menuItemActivate $ 
+                                              evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
                                             menuAttach menu menuitemcvt 0 1 4 5 
                           _ -> return () 
                       
@@ -305,25 +291,25 @@ showContextMenu (pnum,(x,y)) = do
                   Just ttl -> do 
                     custommenu <- menuItemNewWithLabel ttl  
                     custommenu `on` menuItemActivate $ 
-                      evhandler (GotContextMenuSignal (CMenuCustom))
+                      evhandler (UsrEv (GotContextMenuSignal (CMenuCustom)))
                     menuAttach menu custommenu 0 1 0 1 
                 
                 menuitem8 <- menuItemNewWithLabel "Autosave This Page Image"
                 menuitem8 `on` menuItemActivate $ 
-                  evhandler (GotContextMenuSignal (CMenuAutosavePage))
+                  evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
                 menuAttach menu menuitem8 1 2 4 5 
                     
                 runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
                 widgetShowAll menu 
                 menuPopup menu Nothing 
-                return ContextMenuCreated 
+                return (UsrEv ContextMenuCreated)
 
         makeMenu evhdlr mn currcid cid 
           = when (currcid /= cid) $ do 
               n <- get
               mi <- liftIO $ menuItemNewWithLabel ("Show here in cvs" ++ show cid)
               liftIO $ mi `on` menuItemActivate $ 
-                evhdlr (GotContextMenuSignal (CMenuCanvasView cid pnum x y)) 
+                evhdlr (UsrEv (GotContextMenuSignal (CMenuCanvasView cid pnum x y)))
               liftIO $ menuAttach mn mi 2 3 n (n+1) 
               put (n+1) 
     

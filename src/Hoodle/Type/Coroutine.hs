@@ -42,16 +42,10 @@ import           Hoodle.Util
 
 -- |
 data MainOp i o where 
-  DoEvent :: MainOp MyEvent () 
+  DoEvent :: MainOp AllEvent () 
 
-doEvent :: (Monad m) => MyEvent -> CObjT MainOp m () 
+doEvent :: (Monad m) => AllEvent -> CObjT MainOp m () 
 doEvent ev = request (Arg DoEvent ev) >> return ()
-
-{-
-instance (Monad m) => MonadState HoodleState (EStT HoodleState m) where
-  get = lift get
-  put = lift . put 
--}
 
 -- |
 type MainCoroutine = MainObjB 
@@ -62,15 +56,20 @@ type MainObjB = SObjBT MainOp (EStT HoodleState WorldObjB)
 type MainObj = SObjT MainOp (EStT HoodleState WorldObjB)
 
 -- | 
-nextevent :: MainCoroutine MyEvent 
+nextevent :: MainCoroutine UserEvent 
 nextevent = do Arg DoEvent ev <- request (Res DoEvent ())
-               return ev 
+               case ev of
+                 SysEv sev -> sysevent sev >> nextevent 
+                 UsrEv uev -> return uev 
+
+sysevent :: SystemEvent -> MainCoroutine () 
+sysevent ev = liftIO $ print ev 
 
 -- | 
-type WorldObj = SObjT (WorldOp MyEvent DriverB) DriverB  
+type WorldObj = SObjT (WorldOp AllEvent DriverB) DriverB  
 
 -- | 
-type WorldObjB = SObjBT (WorldOp MyEvent DriverB) DriverB 
+type WorldObjB = SObjBT (WorldOp AllEvent DriverB) DriverB 
 
 -- | 
 world :: HoodleState -> MainObj () -> WorldObj ()
@@ -84,7 +83,7 @@ world xstate initmc = ReaderT staction
                           Left e -> liftIO (errorlog (show e)) 
                           Right _r' -> return () --  return r' 
     go :: MainObj() 
-          -> Arg (WorldOp MyEvent DriverB) 
+          -> Arg (WorldOp AllEvent DriverB) 
           -> EStT HoodleState WorldObjB () 
     go mcobj (Arg GiveEvent ev) = do 
       Right mcobj' <- liftM (fmap fst) (mcobj <==| doEvent ev)
@@ -113,10 +112,10 @@ world xstate initmc = ReaderT staction
 
 
 -- | 
-type Driver a = D.Driver MyEvent IO a -- SObjT MainOp IO a 
+type Driver a = D.Driver AllEvent IO a -- SObjT MainOp IO a 
 
 -- | 
-type DriverB = SObjBT (D.DrvOp MyEvent) IO  
+type DriverB = SObjBT (D.DrvOp AllEvent) IO  
 
 -- | 
 type EventVar = MVar (Maybe (Driver ()))

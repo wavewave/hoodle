@@ -30,7 +30,7 @@ import Hoodle.Type.Event
 import Hoodle.Util
 
 -- |
-menuOpenALink :: (MyEvent -> IO ()) -> UrlPath -> IO MenuItem
+menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO MenuItem
 menuOpenALink evhandler urlpath = do 
     let urlname = case urlpath of 
                     FileUrl fp -> fp 
@@ -52,13 +52,13 @@ menuOpenALink evhandler urlpath = do
   
   
 -- | 
-menuCreateALink :: (MyEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
+menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
 menuCreateALink evhandler sitems = 
   if (length . filter isLinkInRItem) sitems > 0
   then return Nothing 
   else do mi <- menuItemNewWithLabel "Create a link to..." 
           mi `on` menuItemActivate $ 
-            evhandler (GotContextMenuSignal CMenuCreateALink)
+            evhandler (UsrEv (GotContextMenuSignal CMenuCreateALink))
           return (Just mi)
          
 

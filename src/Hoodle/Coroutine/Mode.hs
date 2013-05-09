@@ -41,7 +41,7 @@ import           Hoodle.View.Coordinate
 --
 import Prelude hiding (mapM_, mapM)
 
-modeChange :: MyEvent -> MainCoroutine () 
+modeChange :: UserEvent -> MainCoroutine () 
 modeChange command = do 
     case command of 
       ToViewAppendMode -> updateXState select2edit >> invalidateAll 
@@ -76,7 +76,7 @@ modeChange command = do
                           . gHoodle2GSelect $ hdl 
 
 -- | 
-viewModeChange :: MyEvent -> MainCoroutine () 
+viewModeChange :: UserEvent -> MainCoroutine () 
 viewModeChange command = do 
     case command of 
       ToSinglePage -> updateXState cont2single >> invalidateAll 

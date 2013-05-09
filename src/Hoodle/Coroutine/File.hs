@@ -79,7 +79,7 @@ import Prelude hiding (readFile,concat,mapM)
 
 
 -- | 
-waitSomeEvent :: (MyEvent -> Bool) -> MainCoroutine MyEvent 
+waitSomeEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 
 waitSomeEvent p = do 
     r <- nextevent
     case r of 
@@ -94,13 +94,13 @@ okMessageBox msg = modify (tempQueue %~ enqueue action)
                    >> waitSomeEvent (\x->case x of GotOk -> True ; _ -> False) 
                    >> return () 
   where 
-    action = Left . ActionOrder $ 
+    action = mkIOaction $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOk msg 
                  _res <- dialogRun dialog 
                  widgetDestroy dialog 
-                 return GotOk 
+                 return (UsrEv GotOk)
 
 -- | 
 okCancelMessageBox :: String -> MainCoroutine Bool 
@@ -111,7 +111,7 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
     p _ = False 
     q (OkCancel b) = b 
     q _ = False 
-    action = Left . ActionOrder $ 
+    action = mkIOaction $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel msg 
@@ -120,7 +120,7 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
                            ResponseOk -> True
                            _ -> False
                  widgetDestroy dialog 
-                 return (OkCancel b)
+                 return (UsrEv (OkCancel b))
 
 -- | 
 fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
@@ -138,7 +138,7 @@ fileChooser choosertyp mfname = do
               UpdateCanvas cid -> -- this is temporary
                                   invalidateInBBox Nothing Efficient cid >> go  
               _ -> go 
-    action win mrf = Left . ActionOrder $ \_evhandler -> do 
+    action win mrf = mkIOaction $ \_evhandler -> do 
       dialog <- fileChooserDialogNew Nothing (Just win) choosertyp 
                   [ ("OK", ResponseOk) 
                   , ("Cancel", ResponseCancel) ]
@@ -156,7 +156,7 @@ fileChooser choosertyp mfname = do
               ResponseCancel -> return Nothing 
               _ -> putStrLn "??? in fileOpen" >> return Nothing 
       widgetDestroy dialog
-      return (FileChosen mr)
+      return (UsrEv (FileChosen mr))
 
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
@@ -246,7 +246,7 @@ fileStartSync = do
   --  fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where  
     action filename lasttime  = do 
-      let ioact = Left . ActionOrder $ \evhandler ->do 
+      let ioact = mkIOaction $ \evhandler ->do 
             forkIO $ do 
               FS.withManager $ \wm -> do 
                 origfile <- canonicalizePath filename 
@@ -266,12 +266,12 @@ fileStartSync = do
                       if changedfile' == origfile 
                         then do 
                           ctime <- getCurrentTime 
-                          evhandler (Sync ctime)
+                          evhandler (UsrEv (Sync ctime))
                         else return () 
 
                 let sec = 1000000
                 forever (threadDelay (100 * sec))
-            return ActionOrdered
+            return (UsrEv ActionOrdered)
       modify (tempQueue %~ enqueue ioact) 
 
 -- | need to be merged with ContextMenuEventSVG
@@ -522,7 +522,7 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
             case r of 
               LaTeXInput input -> return input 
               _ -> go 
-    action = Left . ActionOrder $ 
+    action = mkIOaction $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel "latex input"
@@ -546,12 +546,12 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
                      case excode of 
                        ExitSuccess -> do 
                          svg <- readFile (tdir </> "latextest.svg")
-                         return (LaTeXInput (Just (B.pack l,svg)))
-                       _ -> return (LaTeXInput Nothing)
+                         return (UsrEv (LaTeXInput (Just (B.pack l,svg))))
+                       _ -> return (UsrEv (LaTeXInput Nothing))
 
                    _ -> do 
                      widgetDestroy dialog
-                     return (LaTeXInput Nothing)
+                     return (UsrEv (LaTeXInput Nothing))
     afteraction (latex,svg) = do 
       xstate <- get 
       let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate

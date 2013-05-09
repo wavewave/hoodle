@@ -134,7 +134,7 @@ data HoodleState =
                 , _rootContainer :: Box
                 , _rootOfRootWindow :: Window
                 , _currentPenDraw :: PenDraw
-                , _callBack ::  MyEvent -> IO ()
+                , _callBack ::  AllEvent -> IO ()
                 , _deviceList :: DeviceList
                 , _penInfo :: PenInfo
                 , _selectInfo :: SelectInfo 
@@ -148,7 +148,7 @@ data HoodleState =
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 , _hookSet :: Maybe Hook
-                , _tempQueue :: Queue (Either (ActionOrder MyEvent) MyEvent)
+                , _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent)
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Statusbar
                 } 
@@ -195,7 +195,7 @@ currentPenDraw :: Simple Lens HoodleState PenDraw
 currentPenDraw = lens _currentPenDraw (\f a -> f { _currentPenDraw = a } )
 
 -- | lens for callBack
-callBack :: Simple Lens HoodleState (MyEvent -> IO ())
+callBack :: Simple Lens HoodleState (AllEvent -> IO ())
 callBack = lens _callBack (\f a -> f { _callBack = a } )
 
 -- | lens for deviceList
@@ -253,7 +253,7 @@ hookSet :: Simple Lens HoodleState (Maybe Hook)
 hookSet = lens _hookSet (\f a -> f { _hookSet = a } )
 
 -- | lens for tempQueue
-tempQueue :: Simple Lens HoodleState (Queue (Either (ActionOrder MyEvent) MyEvent))
+tempQueue :: Simple Lens HoodleState (Queue (Either (ActionOrder AllEvent) AllEvent))
 tempQueue = lens _tempQueue (\f a -> f { _tempQueue = a } )
 
 -- | lens for tempLog

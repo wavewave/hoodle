@@ -62,7 +62,7 @@ textInput = do
             case r of 
               TextInput input -> return input 
               _ -> go 
-    action = Left . ActionOrder $ 
+    action = mkIOaction $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel "text input"
@@ -78,10 +78,10 @@ textInput = do
                                           <*> textBufferGetEndIter buf
                      l <- textBufferGetText buf istart iend True
                      widgetDestroy dialog
-                     return (TextInput (Just l))
+                     return (UsrEv (TextInput (Just l)))
                    _ -> do 
                      widgetDestroy dialog
-                     return (TextInput Nothing)
+                     return (UsrEv (TextInput Nothing))
 
 -- |
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 

@@ -252,7 +252,7 @@ addLink = do
               UpdateCanvas cid -> -- this is temporary 
                                   (invalidateInBBox Nothing Efficient cid) >> go 
               _ -> go 
-    action mfn = Left . ActionOrder $ 
+    action mfn = mkIOaction $ 
                    \_evhandler -> do 
                      dialog <- messageDialogNew Nothing [DialogModal]
                                  MessageQuestion ButtonsOkCancel "add link" 
@@ -268,10 +268,10 @@ addLink = do
                                               <*> textBufferGetEndIter buf
                          l <- textBufferGetText buf istart iend True
                          widgetDestroy dialog
-                         return (AddLink ((l,) <$> mfn))
+                         return (UsrEv (AddLink ((l,) <$> mfn)))
                        _ -> do 
                          widgetDestroy dialog
-                         return (AddLink Nothing)
+                         return (UsrEv (AddLink Nothing))
 
                 
 

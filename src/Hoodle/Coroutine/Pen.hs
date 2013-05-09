@@ -129,7 +129,7 @@ penProcess cid pnum geometry pdraw ((x0,y0),z0) = do
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle :: forall b. (ViewMode b) => 
-               MyEvent -> HoodleState -> CanvasInfo b 
+               UserEvent -> HoodleState -> CanvasInfo b 
                -> MainCoroutine (Seq (Double,Double,Double))
     fsingle r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
@@ -180,7 +180,7 @@ switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction 
                                                                  
         
 -- | in page action  
-penMoveAndUpOnly :: Monad m => MyEvent 
+penMoveAndUpOnly :: Monad m => UserEvent 
                     -> PageNum 
                     -> CanvasGeometry 
                     -> m a 
@@ -194,7 +194,7 @@ penMoveAndUpOnly r pgn geometry defact moveaction upaction =
     _ -> defact 
   
 -- | 
-penMoveAndUpInterPage :: Monad m => MyEvent 
+penMoveAndUpInterPage :: Monad m => UserEvent 
                       -> PageNum 
                       -> CanvasGeometry 
                       -> m a 

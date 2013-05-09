@@ -13,7 +13,7 @@ import Control.Category
 import Data.Label
 import Prelude hiding ((.),id)
 
-clipCopyToNetworkClipboard :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+clipCopyToNetworkClipboard :: MainCoroutine () -- Iteratee UserEvent XournalStateIO ()
 clipCopyToNetworkClipboard = do 
   liftIO $ putStrLn "clipCopyToNetworkClipboard called"
   xstate <- getSt
@@ -23,7 +23,7 @@ clipCopyToNetworkClipboard = do
     liftIO $ copyContentsToNetworkClipboard ncconf clip 
 
 
-clipPasteFromNetworkClipboard :: MainCoroutine () -- Iteratee MyEvent XournalStateIO ()
+clipPasteFromNetworkClipboard :: MainCoroutine () -- Iteratee UserEvent XournalStateIO ()
 clipPasteFromNetworkClipboard = do 
   xstate <- getSt 
   let ui = get gtkUIManager xstate 

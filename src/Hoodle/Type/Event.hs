@@ -15,11 +15,13 @@
 module Hoodle.Type.Event where
 
 -- from other package
+import Control.Monad
 import Data.ByteString 
 import Data.IORef
 import Data.Time.Clock
 import Graphics.UI.Gtk
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn.Event 
 import Data.Hoodle.Simple
 -- from this package
 import Hoodle.Device 
@@ -28,49 +30,56 @@ import Hoodle.Type.Canvas
 import Hoodle.Type.PageArrangement
 
 -- | 
+data AllEvent = UsrEv UserEvent | SysEv SystemEvent
+              deriving Show 
 
-data MyEvent = Initialized
-             | CanvasConfigure Int Double Double 
-             | UpdateCanvas Int
-             | PenDown Int PenButton PointerCoord
-             | PenMove Int PointerCoord
-             | PenUp   Int PointerCoord 
-             | TouchDown Int PointerCoord
-             | TouchMove Int PointerCoord
-             | TouchUp Int PointerCoord 
-             | PenColorChanged PenColor
-             | PenWidthChanged Int 
-             | AssignPenMode (Either PenType SelectType) 
-             | BackgroundStyleChanged BackgroundStyle 
-             | HScrollBarMoved Int Double
-             | VScrollBarMoved Int Double 
-             | VScrollBarStart Int Double
-             | VScrollBarEnd   Int Double
-             | PaneMoveStart 
-             | PaneMoveEnd 
-             | ToViewAppendMode
-             | ToSelectMode
-             | ToSinglePage
-             | ToContSinglePage
-             | Menu MenuEvent 
-             | ActionOrdered
-             | GotOk
-             | OkCancel Bool 
-             | FileChosen (Maybe FilePath)
-             | ColorChosen (Maybe PenColor) 
-             | GotClipboardContent (Maybe [Item])
-             | ContextMenuCreated
-             | GotContextMenuSignal ContextMenuEvent
-             | LaTeXInput (Maybe (ByteString,ByteString))
-             | TextInput (Maybe String) 
-             | AddLink (Maybe (String,FilePath))
-             | EventDisconnected
-             | GetHoodleFileInfo (IORef (Maybe String))
-             | GotLink (Maybe String) (Int,Int)
-             | Sync UTCTime 
-             | FileReloadOrdered
-             | CustomKeyEvent String 
-             deriving Show
+-- | 
+data SystemEvent = TestSystemEvent 
+                 deriving Show 
+
+-- | 
+data UserEvent = Initialized
+               | CanvasConfigure Int Double Double 
+               | UpdateCanvas Int
+               | PenDown Int PenButton PointerCoord
+               | PenMove Int PointerCoord
+               | PenUp   Int PointerCoord 
+               | TouchDown Int PointerCoord
+               | TouchMove Int PointerCoord
+               | TouchUp Int PointerCoord 
+               | PenColorChanged PenColor
+               | PenWidthChanged Int 
+               | AssignPenMode (Either PenType SelectType) 
+               | BackgroundStyleChanged BackgroundStyle 
+               | HScrollBarMoved Int Double
+               | VScrollBarMoved Int Double 
+               | VScrollBarStart Int Double
+               | VScrollBarEnd   Int Double
+               | PaneMoveStart 
+               | PaneMoveEnd 
+               | ToViewAppendMode
+               | ToSelectMode
+               | ToSinglePage
+               | ToContSinglePage
+               | Menu MenuEvent 
+               | GotOk
+               | OkCancel Bool 
+               | FileChosen (Maybe FilePath)
+               | ColorChosen (Maybe PenColor) 
+               | GotClipboardContent (Maybe [Item])
+               | ContextMenuCreated
+               | GotContextMenuSignal ContextMenuEvent
+               | LaTeXInput (Maybe (ByteString,ByteString))
+               | TextInput (Maybe String) 
+               | AddLink (Maybe (String,FilePath))
+               | EventDisconnected
+               | GetHoodleFileInfo (IORef (Maybe String))
+               | GotLink (Maybe String) (Int,Int)
+               | Sync UTCTime 
+               | FileReloadOrdered
+               | CustomKeyEvent String 
+               | ActionOrdered                 
+               deriving Show
                       
 instance Show (IORef a) where                      
   show _ = "IORef"
@@ -199,11 +208,15 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       deriving (Show, Ord, Eq) 
 
 -- | 
-viewModeToMyEvent :: RadioAction -> IO MyEvent
-viewModeToMyEvent a = do 
+viewModeToUserEvent :: RadioAction -> IO UserEvent
+viewModeToUserEvent a = do 
     v <- radioActionGetCurrentValue a
     case v of 
       1 -> return ToSinglePage
       0 -> return ToContSinglePage
       _ -> return ToSinglePage
+
+-- | 
+mkIOaction :: ((AllEvent -> IO ()) -> IO AllEvent) -> Either (ActionOrder AllEvent) AllEvent
+mkIOaction = Left . ActionOrder  
 

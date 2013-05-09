@@ -121,11 +121,10 @@ reflectUIComponent lnz name f = do
   where update xst wpma mconnid  = do 
           (f xst) # 
             (maybe (return ()) $ \v -> do
-              let action = Left . ActionOrder $ 
-                    \_evhandler -> do 
-                      blockWhile mconnid 
-                        (Gtk.set wpma [radioActionCurrentValue := v ] )
-                      return ActionOrdered
+              let action = mkIOaction $ \_evhandler -> do 
+                    blockWhile mconnid 
+                      (Gtk.set wpma [radioActionCurrentValue := v ] )
+                    return (UsrEv ActionOrdered)
               St.modify (tempQueue %~ enqueue action)
               go)
          where go = do r <- nextevent

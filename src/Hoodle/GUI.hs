@@ -16,8 +16,9 @@ module Hoodle.GUI where
 
 import           Control.Exception (SomeException(..),catch)
 import           Control.Lens (view)
-import           Control.Monad
+import           Control.Monad hiding (mapM_)
 import           Control.Monad.Trans 
+import           Data.Foldable (mapM_)
 import qualified Data.IntMap as M
 import           Data.IORef
 import           Data.Maybe
@@ -87,9 +88,9 @@ startGUI mfname mhook = do
       -- very dirty solution but.. 
       minfo <- liftIO $ do 
         ref <- newIORef (Nothing :: Maybe String)
-        view callBack st0 (GetHoodleFileInfo ref) 
+        view callBack st0 (UsrEv (GetHoodleFileInfo ref))
         readIORef ref
-      maybe (return ()) (selectionDataSetText >=> const (return ())) minfo
+      mapM_ (selectionDataSetText >=> const (return ())) minfo
   --
   -- 
   hbox <- hBoxNew False 0 
@@ -102,11 +103,11 @@ startGUI mfname mhook = do
   boxPackEnd vbox statusbar PackNatural 0 
   boxPackStart vbox (view rootWindow st0) PackGrow 0 
   window `on` deleteEvent $ do
-    liftIO $ eventHandler tref (Menu MenuQuit)
+    liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
     return True
   widgetShowAll window
   -- 
-  let mainaction = do eventHandler tref Initialized     
+  let mainaction = do eventHandler tref (UsrEv Initialized)
                       mainGUI 
   mainaction `catch` \(_e :: SomeException) -> do 
     homepath <- getEnv "HOME"

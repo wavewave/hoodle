@@ -134,25 +134,25 @@ initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar
 
 
 -- | initialization according to the setting 
-initialize :: MyEvent -> MainCoroutine ()
+initialize :: AllEvent -> MainCoroutine ()
 initialize ev = do  
     case ev of 
-      Initialized -> do -- additional initialization goes here
-                        viewModeChange ToContSinglePage
-                        -- pageZoomChange (Zoom 0.3)  
-                        pageZoomChange FitWidth
-                        xst <- get 
-                        let Just sbar = view statusBar xst 
-                        cxtid <- liftIO $ statusbarGetContextId sbar "test"
-                        liftIO $ statusbarPush sbar cxtid "Hello there" 
-                        let ui = view gtkUIManager xst
-                        liftIO $ toggleSave ui False
-                        put (set isSaved True xst) 
+      UsrEv Initialized -> do -- additional initialization goes here
+        viewModeChange ToContSinglePage
+        -- pageZoomChange (Zoom 0.3)  
+        pageZoomChange FitWidth
+        xst <- get 
+        let Just sbar = view statusBar xst 
+        cxtid <- liftIO $ statusbarGetContextId sbar "test"
+        liftIO $ statusbarPush sbar cxtid "Hello there" 
+        let ui = view gtkUIManager xst
+        liftIO $ toggleSave ui False
+        put (set isSaved True xst) 
       _ -> do ev' <- nextevent
-              initialize ev'
+              initialize (UsrEv ev')
 
 -- |
-guiProcess :: MyEvent -> MainCoroutine ()
+guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess ev = do 
   initialize ev
   changePage (const 0)
@@ -198,20 +198,7 @@ viewAppendMode = do
           (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
           (VerticalSpaceWork,_) -> return () 
     TouchDown cid pcoord -> touchStart cid pcoord 
-    PenMove cid pcoord -> disableTouch >> notifyLink cid pcoord  --  do 
- {-     xst <- get 
-      let devlst = view deviceList xst 
-      let b = view (settings.doesUseTouch) xst 
-      when b $ do         
-        let nxst = set (settings.doesUseTouch) False xst 
-            action = Left . ActionOrder $ \_ -> do
-                       setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
-                       readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
-                       return ActionOrdered
-        modify (tempQueue %~ enqueue action)
-        waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
-        put nxst -}
-
+    PenMove cid pcoord -> disableTouch >> notifyLink cid pcoord  
     _ -> defaultEventProcess r1
 
 
@@ -222,10 +209,10 @@ disableTouch = do
     let b = view (settings.doesUseTouch) xst 
     when b $ do         
       let nxst = set (settings.doesUseTouch) False xst 
-          action = Left . ActionOrder $ \_ -> do
+          action = mkIOaction $ \_ -> do
             setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
             readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
-            return ActionOrdered
+            return (UsrEv ActionOrdered)
       modify (tempQueue %~ enqueue action)
       waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
       put nxst
@@ -255,7 +242,7 @@ selectMode = do
 
 
 -- |
-defaultEventProcess :: MyEvent -> MainCoroutine ()
+defaultEventProcess :: UserEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
@@ -319,9 +306,9 @@ defaultEventProcess (Sync ctime) = do
       if dtime < dtime_bound * 10 
         then return () 
         else do 
-          let ioact = Left . ActionOrder $ \evhandler -> do 
-                postGUISync (evhandler FileReloadOrdered) 
-                return ActionOrdered
+          let ioact = mkIOaction $ \evhandler -> do 
+                postGUISync (evhandler (UsrEv FileReloadOrdered))
+                return (UsrEv ActionOrdered)
           modify (tempQueue %~ enqueue ioact)
 defaultEventProcess FileReloadOrdered = fileReload 
 defaultEventProcess (CustomKeyEvent str) = 
@@ -329,9 +316,9 @@ defaultEventProcess (CustomKeyEvent str) =
   then do
     xst <- liftM (over (settings.doesUseTouch) not) get 
     put xst 
-    let action = Left . ActionOrder $ \_evhandler -> do 
+    let action = mkIOaction $ \_evhandler -> do 
           setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
-          return ActionOrdered
+          return (UsrEv ActionOrdered)
     modify (tempQueue %~ enqueue action)
     waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    
     toggleTouch
@@ -401,16 +388,6 @@ menuEventProcess MenuUseXInput = do
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
 menuEventProcess MenuUseTouch = toggleTouch
-{-    updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
-    xst <- get 
-    let devlst = view deviceList xst 
-    let b = view (settings.doesUseTouch) xst
-    when b $ do 
-      liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
-      let (cid,cinfobox) = view currentCanvas xst 
-      put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
-      invalidateInBBox Nothing Efficient cid   
-      return () -}
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()
@@ -465,7 +442,7 @@ colorPickerBox msg = do
    modify (tempQueue %~ enqueue (action pcolor)) >> go 
   where 
     action pcolor = 
-      Left . ActionOrder $ 
+      mkIOaction $ 
                \_evhandler -> do 
                  dialog <- colorSelectionDialogNew msg
                  csel <- colorSelectionDialogGetColor dialog
@@ -481,7 +458,7 @@ colorPickerBox msg = do
                               return (Just (colorConvert clr))
                          _ -> return Nothing 
                  widgetDestroy dialog 
-                 return (ColorChosen mc)
+                 return (UsrEv (ColorChosen mc))
     go = do r <- nextevent                   
             case r of 
               ColorChosen mc -> return mc 

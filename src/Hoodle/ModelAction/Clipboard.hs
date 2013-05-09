@@ -54,12 +54,12 @@ updateClipboard xstate itms
 
 
 -- |
-callback4Clip :: (MyEvent -> IO ()) -> Maybe String -> IO ()
-callback4Clip callbk Nothing = callbk (GotClipboardContent Nothing)
+callback4Clip :: (AllEvent -> IO ()) -> Maybe String -> IO ()
+callback4Clip callbk Nothing = callbk (UsrEv (GotClipboardContent Nothing))
 callback4Clip callbk (Just str) = do
     let r = do let bstr = C8.pack str 
                bstr' <- B64.decode bstr
                Se.decode bstr' 
     case r of 
-      Left _err -> callbk (GotClipboardContent Nothing)
-      Right cnt -> callbk (GotClipboardContent (Just cnt))
+      Left _err -> callbk (UsrEv (GotClipboardContent Nothing))
+      Right cnt -> callbk (UsrEv (GotClipboardContent (Just cnt)))

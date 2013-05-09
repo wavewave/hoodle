@@ -32,7 +32,7 @@ import Paths_hoodle_core
 
 -- | 
 
-justMenu :: MenuEvent -> Maybe MyEvent
+justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
 
 -- | 
@@ -148,7 +148,7 @@ iconResourceAdd iconfac resdir (fp,stid) = do
 actionNewAndRegisterRef :: EventVar                            
                            -> String -> String 
                            -> Maybe String -> Maybe StockId
-                           -> Maybe MyEvent 
+                           -> Maybe UserEvent 
                            -> IO Action
 actionNewAndRegisterRef evar name label tooltip stockId myevent = do 
     a <- actionNew name label tooltip stockId 
@@ -156,7 +156,7 @@ actionNewAndRegisterRef evar name label tooltip stockId myevent = do
       Nothing -> return a 
       Just ev -> do 
         a `on` actionActivated $ do 
-          eventHandler evar ev
+          eventHandler evar (UsrEv ev)
         return a
 
 -- | 
@@ -270,23 +270,23 @@ getMenuUI evar = do
   -- options menu 
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
-    eventHandler evar (Menu MenuUseXInput)
+    eventHandler evar (UsrEv (Menu MenuUseXInput))
   -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
   handa     <- toggleActionNew "HANDA" "Use Touch" (Just "Toggle touch") (Just "myhand") 
   handa `on` actionToggled $ do 
-    eventHandler evar (Menu MenuUseTouch)
+    eventHandler evar (UsrEv (Menu MenuUseTouch))
   smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
   smthscra `on` actionToggled $ do 
-    eventHandler evar (Menu MenuSmoothScroll)
+    eventHandler evar (UsrEv (Menu MenuSmoothScroll))
   popmenua <- toggleActionNew "POPMENUA" "Use Popup Menu" (Just "Just a stub") Nothing
   popmenua `on` actionToggled $ do 
-    eventHandler evar (Menu MenuUsePopUpMenu)    
+    eventHandler evar (UsrEv (Menu MenuUsePopUpMenu))
   ebdimga <- toggleActionNew "EBDIMGA" "Embed PNG/JPG Image" (Just "Just a stub") Nothing
   ebdimga `on` actionToggled $ do 
-    eventHandler evar (Menu MenuEmbedImage)
+    eventHandler evar (UsrEv (Menu MenuEmbedImage))
   ebdpdfa <- toggleActionNew "EBDPDFA" "Embed PDF" (Just "Just a stub") Nothing
   ebdpdfa `on` actionToggled $ do 
-    eventHandler evar (Menu MenuEmbedPDF)
+    eventHandler evar (UsrEv (Menu MenuEmbedPDF))
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Toggle Pan/Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
   toglayera <- actionNewAndRegister "TOGLAYERA" "Toggle Layer Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleLayerWidget)
@@ -295,7 +295,7 @@ getMenuUI evar = do
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
-    eventHandler evar (Menu MenuPressureSensitivity)
+    eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
 
   
@@ -449,13 +449,13 @@ actionGroupAddRadioActionsAndGetConnID self entries _value onChange = do
 
 -- | 
 assignViewMode :: EventVar -> RadioAction -> IO ()
-assignViewMode evar a = viewModeToMyEvent a >>= eventHandler evar
+assignViewMode evar a = viewModeToUserEvent a >>= eventHandler evar . UsrEv
     
 -- | 
 assignPenMode :: EventVar -> RadioAction -> IO ()
 assignPenMode evar a = do 
     v <- radioActionGetCurrentValue a
-    eventHandler evar (AssignPenMode (int2PenType v))
+    eventHandler evar (UsrEv (AssignPenMode (int2PenType v)))
 
       
 -- | 
@@ -463,13 +463,13 @@ assignColor :: EventVar -> RadioAction -> IO ()
 assignColor evar a = do 
     v <- radioActionGetCurrentValue a
     let c = int2Color v
-    eventHandler evar (PenColorChanged c)
+    eventHandler evar (UsrEv (PenColorChanged c))
 
 -- | 
 assignPoint :: EventVar -> RadioAction -> IO ()  
 assignPoint evar a = do 
     v <- radioActionGetCurrentValue a
-    eventHandler evar (PenWidthChanged v)
+    eventHandler evar (UsrEv (PenWidthChanged v))
 
 
 -- | 
@@ -477,7 +477,7 @@ assignBkgStyle :: EventVar -> RadioAction -> IO ()
 assignBkgStyle evar a = do 
     v <- radioActionGetCurrentValue a 
     let sty = int2BkgStyle v 
-    eventHandler evar (BackgroundStyleChanged sty) 
+    eventHandler evar (UsrEv (BackgroundStyleChanged sty))
 
 -- | 
 int2PenType :: Int -> Either PenType SelectType 

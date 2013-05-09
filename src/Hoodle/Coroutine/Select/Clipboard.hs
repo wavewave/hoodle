@@ -91,12 +91,12 @@ copySelection = do
 -- |
 getClipFromGtk :: MainCoroutine (Maybe [Item])
 getClipFromGtk = do 
-    let action = Left . ActionOrder $ 
+    let action = mkIOaction $ 
                    \evhandler -> do 
                        hdltag <- liftIO $ atomNew "hoodle"
                        clipbd <- liftIO $ clipboardGet hdltag
                        liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
-                       return ActionOrdered 
+                       return (UsrEv ActionOrdered)
     modify (tempQueue %~ enqueue action) 
     go 
   where go = do r <- nextevent 

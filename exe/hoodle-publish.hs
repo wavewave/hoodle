@@ -298,12 +298,12 @@ makeAnnot (S.Dim pw ph) urlbase (rootpath,currpath) lnk = do
 -- | 
 writePdfFile :: FilePath -- ^ hoodle file path
              -> S.Dimension
-             -> String -- ^ url base 
+             -> (String,String) -- ^ (url base, special url base (for executing an app))
              -> (FilePath,FilePath)   -- ^ (root path, curr path)
              -> FilePath    -- ^ pdf file 
              -> [(Int,[S.Link])]
              -> StateT AppState (PdfWriter IO) ()
-writePdfFile hdlfp dim urlbase (rootpath,currpath) path nlnks = do
+writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks = do
   handle <- liftIO $ openBinaryFile path ReadMode
   res <- runPdfWithHandle handle knownFilters $ do
     encrypted <- isEncrypted
@@ -324,7 +324,8 @@ writePdfFile hdlfp dim urlbase (rootpath,currpath) path nlnks = do
                     then let S.Dim w h = dim 
                          in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
                                      , annot_border = (16,16,1) 
-                                     , annot_act = OpenURI ("file://" ++ hdldir </>  urlEncode hdlfb ++ ".hdl")-- OpenApp hdlfp'
+                                     , annot_act = specialURIFunction specialurlbase (hdldir,hdlfb) 
+                                        -- OpenURI ("file://" ++ hdldir </>  urlEncode hdlfb ++ ".hdl")
                                      }
                              ]
                     else []  
@@ -336,6 +337,14 @@ writePdfFile hdlfp dim urlbase (rootpath,currpath) path nlnks = do
       writePdfPageWithAnnot dim mannots' page
   when (isLeft res) $ error $ show res
   liftIO $ hClose handle
+
+
+----- 
+specialURIFunction baseurl (hdldir,hdlfb) = 
+  OpenURI (baseurl  </>  urlEncode (hdldir </> hdlfb <.>  "hdl"))
+
+----
+
 
 getLinks :: S.Page -> [S.Link]
 getLinks pg = do 
@@ -378,8 +387,8 @@ isUpdated (ofp,nfp) = do
 
 
 
-createPdf :: String -> FilePath -> (FilePath,FilePath) -> IO ()
-createPdf urlbase rootpath (fn,ofn) = catch action (\(e :: SomeException) -> print e)
+createPdf :: (String,String) -> FilePath -> (FilePath,FilePath) -> IO ()
+createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: SomeException) -> print e)
   where 
     action = do 
       putStrLn fn 
@@ -404,7 +413,7 @@ createPdf urlbase rootpath (fn,ofn) = catch action (\(e :: SomeException) -> pri
               flip evalStateT initialAppState $ do 
                 index <- nextFreeIndex 
                 modify $ \st -> st { stRootNode = Ref index 0} 
-                writePdfFile fn dim urlbase (rootpath,currpath) tempfile npglnks
+                writePdfFile fn dim (urlbase,specialurlbase) (rootpath,currpath) tempfile npglnks
                 writeTrailer
             removeFile tempfile 
 
@@ -416,6 +425,7 @@ createPdf urlbase rootpath (fn,ofn) = catch action (\(e :: SomeException) -> pri
 data HoodlePublish = Publish { urlbase :: String 
                              , rootpath :: FilePath
                              , buildpath :: FilePath
+                             , specialurlbase :: String 
                              }
                      deriving (Show,Data,Typeable)
 
@@ -424,6 +434,7 @@ publish :: HoodlePublish
 publish = Publish { urlbase = def &= typ "URLBASE" &= argPos 0 
                   , rootpath = def &= typ "ORIGNALFILEDIR" &= argPos 1 
                   , buildpath = def &= typ "TARGETFILEDIR" &= argPos 2 
+                  , specialurlbase = def &= typ "SPECIALURLBASE" 
                   }
 
 mode :: HoodlePublish 
@@ -449,4 +460,4 @@ main = do
   mapM_ removeFile willbeerased 
       
   updatedpairs <- filterM isUpdated pairs 
-  mapM_ (createPdf (urlbase params) (rootpath params)) updatedpairs
+  mapM_ (createPdf (urlbase params,specialurlbase params) (rootpath params)) updatedpairs

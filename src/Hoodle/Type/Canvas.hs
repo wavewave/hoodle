@@ -52,6 +52,7 @@ module Hoodle.Type.Canvas
 , vertAdjConnId
 , adjustments 
 , canvasWidgets
+, notifiedItem
 -- , panZoomWidgetPosition
 , currentTool 
 , penWidth
@@ -161,6 +162,7 @@ data CanvasInfo a =
                                , _horizAdjConnId :: Maybe (ConnectId Adjustment)
                                , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                                , _canvasWidgets :: CanvasWidgets
+                               , _notifiedItem :: Maybe (PageNum,BBox) 
                                }
 
 -- |     
@@ -179,6 +181,7 @@ xfrmCvsInfo f CanvasInfo {..} =
                , _horizAdjConnId = _horizAdjConnId
                , _vertAdjConnId = _vertAdjConnId 
                , _canvasWidgets = _canvasWidgets
+               , _notifiedItem = _notifiedItem
                }
 
 -- |     
@@ -195,6 +198,7 @@ defaultCvsInfoSinglePage =
              , _horizAdjConnId = Nothing
              , _vertAdjConnId =  Nothing
              , _canvasWidgets = defaultCanvasWidgets
+             , _notifiedItem = Nothing 
              }
 
 -- | 
@@ -244,11 +248,13 @@ adjustments = lens getter setter
   where getter = (,) <$> view horizAdjustment <*> view vertAdjustment 
         setter f (h,v) = set horizAdjustment h . set vertAdjustment v $ f
   
--- | 
+-- | lens for canavs widgets
 canvasWidgets :: Simple Lens (CanvasInfo a) CanvasWidgets 
 canvasWidgets = lens _canvasWidgets (\f a -> f { _canvasWidgets = a } )
 
-
+-- | lens for notified item
+notifiedItem :: Simple Lens (CanvasInfo a) (Maybe (PageNum,BBox))
+notifiedItem = lens _notifiedItem (\f a -> f { _notifiedItem = a })
 
 -- |
 data CanvasInfoBox = CanvasSinglePage (CanvasInfo SinglePage) 
@@ -287,12 +293,12 @@ unboxGet f x = fmap4CvsInfoBox (view f) x
 
 
 -- | 
-unboxSet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b -> CanvasInfoBox
-unboxSet l (CanvasSinglePage a) b = CanvasSinglePage (set l b a)
-unboxSet l (CanvasContPage a) b = CanvasContPage (set l b a) 
+unboxSet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
+unboxSet l b (CanvasSinglePage a) = CanvasSinglePage (set l b a)
+unboxSet l b (CanvasContPage a) = CanvasContPage (set l b a) 
 
 unboxLens :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
-unboxLens l = lens (unboxGet l) (unboxSet l) 
+unboxLens l = lens (unboxGet l) (flip (unboxSet l)) 
 
 -- | 
 boxAction :: Monad m => (forall a. ViewMode a => CanvasInfo a -> m b) 

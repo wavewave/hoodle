@@ -79,11 +79,9 @@ newtype ContPageDraw a =
                       -> IO (Hoodle a) }
                     
 -- | 
-
 type instance DrawingFunction SinglePage = SinglePageDraw
 
 -- | 
-
 type instance DrawingFunction ContinuousPage = ContPageDraw
 
 -- | 
@@ -206,12 +204,6 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x
     case pmode of 
       NoPressure -> do 
         setLineWidth wdth
-        -- let tw = max wdth 5
-        --     (bx1,bx2) = if x0 < x then (x0-tw,x+tw) else (x-tw,x0+tw)
-        --     (by1,by2) = if y0 < y then (y0-tw,y+tw) else (y-tw,y0+tw)
-        -- clipBBox (Just (BBox (bx1,by1) (bx2,by2)))
-        -- rectangle bx1 by1 10 10 
-        -- fill 
         case viewl pdraw of 
           EmptyL -> return ()
           (xo,yo,_) :< rest -> do 
@@ -276,6 +268,7 @@ emphasisCanvasRender pcolor geometry = do
   rectangle 0 0 cw ch 
   stroke
 
+-- | highlight current page
 emphasisPageRender :: CanvasGeometry -> (PageNum,Page EditMode) -> Render ()
 emphasisPageRender geometry (pn,pg) = do 
     save
@@ -287,6 +280,18 @@ emphasisPageRender geometry (pn,pg) = do
     rectangle 0 0 w h 
     stroke
     restore 
+
+-- | highlight notified item (like link)
+emphasisNotifiedRender :: CanvasGeometry -> (PageNum,BBox) -> Render ()
+emphasisNotifiedRender geometry (pn,BBox (x1,y1) (x2,y2)) = do 
+    save
+    identityMatrix 
+    cairoXform4PageCoordinate geometry pn 
+    setSourceRGBA 1.0 1.0 0 0.1 
+    rectangle x1 y1 (x2-x1) (y2-y1)
+    fill 
+    restore 
+
 
 
 -- |
@@ -321,7 +326,8 @@ drawContPageGen render = ContPageDraw func
                 let npgs = foldr rfunc pgs ndrawpgs   
                        where rfunc (k,pg) m = M.adjust (const pg) k m 
                 let nhdl = set gpages npgs hdl  
-                maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
+                mapM_ (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
+                mapM_ (emphasisNotifiedRender geometry) (view notifiedItem cinfo) 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
                 drawWidgets allWidgets hdl cinfo mbbox_canvas 
@@ -376,6 +382,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                                     lift (selpagerender (PageNum n,tpage)) 
                 let nthdl2 = set gselSelected r nthdl
                 maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
+                mapM_ (emphasisNotifiedRender geometry) (view notifiedItem cinfo)                 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
                 drawWidgets allWidgets hdl cinfo mbbox_canvas

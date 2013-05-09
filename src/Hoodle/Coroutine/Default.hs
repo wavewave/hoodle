@@ -198,24 +198,39 @@ viewAppendMode = do
           (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
           (VerticalSpaceWork,_) -> return () 
     TouchDown cid pcoord -> touchStart cid pcoord 
-    PenMove cid pcoord -> do 
-      xst <- get 
+    PenMove cid pcoord -> disableTouch >> notifyLink cid pcoord  --  do 
+ {-     xst <- get 
       let devlst = view deviceList xst 
       let b = view (settings.doesUseTouch) xst 
-          -- cvs = view (unboxLens drawArea) .  getCanvasInfo cid $ xst 
-      -- win <- liftIO $ widgetGetDrawWindow cvs 
       when b $ do         
         let nxst = set (settings.doesUseTouch) False xst 
             action = Left . ActionOrder $ \_ -> do
                        setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
                        readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
-                       -- c_disable_touch win (dev_touch_str devlst) 
                        return ActionOrdered
         modify (tempQueue %~ enqueue action)
         waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
-        put nxst
-      -- notifyLink cid pcoord 
+        put nxst -}
+
     _ -> defaultEventProcess r1
+
+
+disableTouch :: MainCoroutine () 
+disableTouch = do 
+    xst <- get 
+    let devlst = view deviceList xst 
+    let b = view (settings.doesUseTouch) xst 
+    when b $ do         
+      let nxst = set (settings.doesUseTouch) False xst 
+          action = Left . ActionOrder $ \_ -> do
+            setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
+            readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
+            return ActionOrdered
+      modify (tempQueue %~ enqueue action)
+      waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
+      put nxst
+
+
 
 -- |
 selectMode :: MainCoroutine () 
@@ -228,7 +243,8 @@ selectMode = do
         SelectRectangleWork -> selectRectStart cid pcoord 
         SelectRegionWork -> selectLassoStart cid pcoord
         _ -> return ()
-    PenMove cid pcoord -> notifyLink cid pcoord 
+    PenMove cid pcoord -> disableTouch >> notifyLink cid pcoord 
+    TouchDown cid pcoord -> touchStart cid pcoord     
     PenColorChanged c -> do modify (penInfo.currentTool.penColor .~ c)
                             selectPenColorChanged c
     PenWidthChanged v -> do 

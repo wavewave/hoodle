@@ -25,11 +25,13 @@ import           Control.Monad.State hiding (mapM)
 import           Control.Monad.Trans.Either
 import           Data.ByteString (readFile)
 import           Data.ByteString.Base64 
-import           Data.ByteString.Char8 as B (pack)
+import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
+import           Data.Digest.Pure.MD5 (md5)
 import           Data.Maybe
 import qualified Data.IntMap as IM
 import           Data.Time.Clock
+import           Data.UUID.V4 
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
@@ -684,3 +686,29 @@ embedAllPDFBackground = do
   modeChange ToViewAppendMode
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
+  
+-- | 
+fileVersionSave :: MainCoroutine () 
+fileVersionSave = do 
+  xst <- get
+  liftIO $ putStrLn "version save"
+  tdir <- liftIO $ getTemporaryDirectory 
+  hdir <- liftIO $ getHomeDirectory
+  uuid <- liftIO $ nextRandom
+  let uuidstr = show uuid 
+      tempfile = tdir </> uuidstr <.> "hdl"
+      hdl  = (rHoodle2Hoodle . getHoodle ) xst  
+      hdlbstr = builder hdl 
+  liftIO (L.writeFile tempfile hdlbstr)
+  
+  ctime <- liftIO $ getCurrentTime 
+  let idstr = B.unpack (view hoodleID hdl)
+      md5str = show (md5 hdlbstr)
+      nfilename = "UUID_"++idstr++"_MD5Digest_"++md5str++"_ModTime_"++ show ctime <.> "hdl"
+      vcsdir = hdir </> ".hoodle.d" </> "vcs"
+  b <- liftIO $ doesDirectoryExist vcsdir 
+  unless b $ liftIO (createDirectory vcsdir)
+  liftIO $ renameFile tempfile (vcsdir </> nfilename)  
+  
+  
+  

@@ -101,6 +101,7 @@ data MenuEvent = MenuNew
                | MenuPrint 
                | MenuExport 
                | MenuStartSync
+               | MenuVersionSave
                | MenuQuit 
                | MenuUndo 
                | MenuRedo 

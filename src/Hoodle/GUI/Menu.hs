@@ -194,6 +194,7 @@ getMenuUI evar = do
   printa  <- actionNewAndRegister "PRINTA" "Print" (Just "Just a Stub") Nothing (justMenu MenuPrint)
   exporta <- actionNewAndRegister "EXPORTA" "Export" (Just "Just a Stub") Nothing (justMenu MenuExport)
   synca <- actionNewAndRegister "SYNCA" "Start Sync" (Just "Just a Stub") Nothing (justMenu MenuStartSync)  
+  versiona <- actionNewAndRegister "VERSIONA" "Save Version" (Just "Just a Stub") Nothing (justMenu MenuVersionSave)
   quita   <- actionNewAndRegister "QUITA" "Quit" (Just "Just a Stub") (Just stockQuit) (justMenu MenuQuit)
   
   -- edit menu
@@ -326,7 +327,8 @@ getMenuUI evar = do
   mapM_ (actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
-        [ newa, annpdfa, ldpnga, ldsvga, latexa, ldpreimga, ldpreimg2a, ldpreimg3a, opena, savea, saveasa, reloada, recenta, printa, exporta, synca, quita
+        [ newa, annpdfa, ldpnga, ldsvga, latexa, ldpreimga, ldpreimg2a, ldpreimg3a, opena, savea, saveasa
+        , reloada, recenta, printa, exporta, synca, versiona, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
         , hsplita, vsplita, delcvsa
@@ -380,7 +382,7 @@ getMenuUI evar = do
         , defaulta         
         ] 
       enabledActions = 
-        [ opena, savea, saveasa, reloada, quita, pastea, fstpagea, prvpagea, nxtpagea, lstpagea
+        [ opena, savea, saveasa, reloada, versiona, quita, pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
         ]
   --

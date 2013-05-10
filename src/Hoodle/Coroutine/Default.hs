@@ -361,6 +361,7 @@ menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuReload = fileReload 
 menuEventProcess MenuExport = fileExport 
 menuEventProcess MenuStartSync = fileStartSync
+menuEventProcess MenuVersionSave = fileVersionSave 
 -- 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection

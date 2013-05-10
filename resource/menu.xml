@@ -21,6 +21,7 @@
        <menuitem action="EXPORTA" />
        <separator /> 
        <menuitem action="SYNCA" /> 
+       <menuitem action="VERSIONA" />
        <separator />
        <menuitem action="QUITA" />
     </menu>

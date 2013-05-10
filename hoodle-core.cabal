@@ -65,7 +65,8 @@ Library
                    network, 
                    poppler >= 0.12.2.2, 
                    fsnotify >= 0.0.7, 
-                   system-filepath >= 0.4
+                   system-filepath >= 0.4, 
+                   pureMD5 
 
   Exposed-Modules: 
                    Hoodle.Accessor

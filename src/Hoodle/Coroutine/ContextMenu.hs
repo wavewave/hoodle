@@ -16,6 +16,9 @@
 module Hoodle.Coroutine.ContextMenu where
 
 -- from other packages
+
+import Control.Concurrent
+
 import           Control.Applicative
 -- import           Control.Category
 import           Control.Lens (view,set,(%~))
@@ -148,7 +151,14 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
-processContextMenu CMenuCustom =  
+processContextMenu CMenuCustom =  do
+  {- let action = mkIOaction $ \evhandler -> do 
+                 forkIO $ forever $ do 
+                   threadDelay 1000000
+                   putStrLn "hello?"
+                   evhandler (SysEv TestSystemEvent)
+                 return (UsrEv ActionOrdered)
+  modify (tempQueue %~ enqueue action) -}
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
           xst <- get 
@@ -157,6 +167,7 @@ processContextMenu CMenuCustom =
               let hititms = (map rItem2Item . getSelectedItms) tpg  
               mapM_ liftIO $ do hset <- view hookSet xst    
                                 customContextMenuHook hset <*> pure hititms)
+
 
 --  | 
 linkSelectionWithFile :: FilePath -> MainCoroutine ()  

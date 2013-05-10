@@ -313,12 +313,14 @@ hoodle  = do trim
              trim
              t <- title <?> "title"
              trim
+             revs <- many (revision <?> "revision")
+             skipSpace
              pdf <- (try (Just <$> embeddedpdf)
                      <|> return Nothing )
              pgs <- many1 (page <?> "page")
              trim
              hoodleclose 
-             return $ H.Hoodle hid t pdf pgs 
+             return $ H.Hoodle hid t revs pdf pgs 
              
 page :: Parser H.Page 
 page = do trim 
@@ -354,6 +356,20 @@ titleheader = string "<title>"
 
 titleclose :: Parser B.ByteString
 titleclose = string "</title>"
+
+revision :: Parser H.Revision 
+revision = do skipSpace
+              string "<revision" 
+              skipSpace 
+              string "revmd5=\""
+              md5str <- manyTill anyChar (try (char '"'))
+              skipSpace 
+              string "revtxt=\""
+              txtstr <- manyTill anyChar (try (char '"')) 
+              skipSpace
+              string "/>"
+              return (H.Revision (B.pack md5str) (B.pack txtstr))
+
 
 embeddedpdf :: Parser (B.ByteString) 
 embeddedpdf = do string "<embeddedpdf" 

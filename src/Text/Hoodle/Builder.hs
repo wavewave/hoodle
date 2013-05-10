@@ -51,10 +51,11 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2\" id=\""
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2.0.999\" id=\""
                  <> fromByteString (view hoodleID hdl) 
                  <> fromByteString "\">\n" 
                  <> (buildTitle . view title) hdl 
+                 <> (mconcat . map buildRevision . view revisions) hdl
                  <> (maybe mempty buildEmbeddedPdf . view embeddedPdf) hdl 
                  <> (mconcat . map buildPage . view pages) hdl
                  <> fromByteString "</hoodle>\n"
@@ -64,6 +65,14 @@ buildTitle :: S.ByteString -> Builder
 buildTitle ttl = fromByteString "<title>"
                 <> fromByteString ttl
                 <> fromByteString "</title>\n"
+                
+-- |                 
+buildRevision :: Revision -> Builder 
+buildRevision rev = fromByteString "<revision revmd5=\""
+                    <> fromByteString (view revmd5 rev)
+                    <> fromByteString "\" revtxt=\""
+                    <> fromByteString (view revtxt rev)
+                    <> fromByteString "\"/>\n"
 
 -- | 
 buildEmbeddedPdf :: S.ByteString -> Builder 

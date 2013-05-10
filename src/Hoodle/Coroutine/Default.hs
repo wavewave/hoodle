@@ -362,6 +362,7 @@ menuEventProcess MenuReload = fileReload
 menuEventProcess MenuExport = fileExport 
 menuEventProcess MenuStartSync = fileStartSync
 menuEventProcess MenuVersionSave = fileVersionSave 
+menuEventProcess MenuShowRevisions = fileShowRevisions
 -- 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
@@ -463,4 +464,6 @@ colorPickerBox msg = do
     go = do r <- nextevent                   
             case r of 
               ColorChosen mc -> return mc 
+              UpdateCanvas cid -> -- this is temporary
+                invalidateInBBox Nothing Efficient cid >> go
               _ -> go 

@@ -78,6 +78,7 @@ data UserEvent = Initialized
                | Sync UTCTime 
                | FileReloadOrdered
                | CustomKeyEvent String 
+               | GotRevision String String
                | ActionOrdered                 
                deriving Show
                       
@@ -102,6 +103,7 @@ data MenuEvent = MenuNew
                | MenuExport 
                | MenuStartSync
                | MenuVersionSave
+               | MenuShowRevisions
                | MenuQuit 
                | MenuUndo 
                | MenuRedo 
@@ -220,4 +222,6 @@ viewModeToUserEvent a = do
 -- | 
 mkIOaction :: ((AllEvent -> IO ()) -> IO AllEvent) -> Either (ActionOrder AllEvent) AllEvent
 mkIOaction = Left . ActionOrder  
+
+
 

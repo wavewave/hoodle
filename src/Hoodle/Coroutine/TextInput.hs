@@ -16,9 +16,10 @@ module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
 import           Control.Lens (view,set,(%~))
-import           Control.Monad.State 
+import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec
+import           Data.Foldable (mapM_)
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -43,16 +44,49 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event 
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Util
 -- 
-import Prelude hiding (readFile)
+import Prelude hiding (readFile,mapM_)
+
+-- | 
+textInputDialog :: MainCoroutine (Maybe String) 
+textInputDialog = do 
+  doIOaction $ \_evhandler -> do 
+                 dialog <- messageDialogNew Nothing [DialogModal]
+                   MessageQuestion ButtonsOkCancel "text input"
+                 vbox <- dialogGetUpper dialog
+                 txtvw <- textViewNew
+                 boxPackStart vbox txtvw PackGrow 0 
+                 widgetShowAll dialog
+                 res <- dialogRun dialog 
+                 case res of 
+                   ResponseOk -> do 
+                     buf <- textViewGetBuffer txtvw 
+                     (istart,iend) <- (,) <$> textBufferGetStartIter buf
+                                          <*> textBufferGetEndIter buf
+                     l <- textBufferGetText buf istart iend True
+                     widgetDestroy dialog
+                     return (UsrEv (TextInput (Just l)))
+                   _ -> do 
+                     widgetDestroy dialog
+                     return (UsrEv (TextInput Nothing))
+  let go = do r <- nextevent
+              case r of 
+                TextInput input -> return input 
+                UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go 
+                _ -> go 
+  go 
+
 
 -- | 
 textInput :: MainCoroutine ()
-textInput = do 
-    modify (tempQueue %~ enqueue action) 
+textInput = textInputDialog >>= mapM_ (\str->liftIO (makePangoTextSVG str) >>= svgInsert str)
+    
+{-
+ modify (tempQueue %~ enqueue action) 
     minput <- go
     case minput of 
       Nothing -> return () 
@@ -82,6 +116,8 @@ textInput = do
                    _ -> do 
                      widgetDestroy dialog
                      return (UsrEv (TextInput Nothing))
+-}
+
 
 -- |
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 

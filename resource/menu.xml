@@ -22,6 +22,7 @@
        <separator /> 
        <menuitem action="SYNCA" /> 
        <menuitem action="VERSIONA" />
+       <menuitem action="SHOWREVA" />
        <separator />
        <menuitem action="QUITA" />
     </menu>

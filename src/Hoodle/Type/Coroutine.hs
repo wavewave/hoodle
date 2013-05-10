@@ -21,7 +21,7 @@ module Hoodle.Type.Coroutine where
 -- from other packages 
 import           Control.Applicative
 import           Control.Concurrent
-import           Control.Lens ((^.),(.~))
+import           Control.Lens ((^.),(.~),(%~))
 -- import           Control.Monad.Error
 import           Control.Monad.Reader 
 import           Control.Monad.State
@@ -128,4 +128,7 @@ maybeError :: String -> Maybe a -> MainCoroutine a
 maybeError str = maybe (lift . hoistEither . Left . Other $ str) return 
 
 
+-- | 
+doIOaction :: ((AllEvent -> IO ()) -> IO AllEvent) -> MainCoroutine ()
+doIOaction action = modify (tempQueue %~ enqueue (mkIOaction action))
 

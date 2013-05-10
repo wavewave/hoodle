@@ -60,6 +60,7 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.Scroll
+import           Hoodle.Coroutine.TextInput
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
@@ -690,25 +691,51 @@ embedAllPDFBackground = do
 -- | 
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
-  xst <- get
-  liftIO $ putStrLn "version save"
-  tdir <- liftIO $ getTemporaryDirectory 
-  hdir <- liftIO $ getHomeDirectory
-  uuid <- liftIO $ nextRandom
-  let uuidstr = show uuid 
-      tempfile = tdir </> uuidstr <.> "hdl"
-      hdl  = (rHoodle2Hoodle . getHoodle ) xst  
-      hdlbstr = builder hdl 
-  liftIO (L.writeFile tempfile hdlbstr)
+    hdl <- liftM (rHoodle2Hoodle . getHoodle ) get
+    minput <- textInputDialog
+    doIOaction $ \_evhandler -> do 
+          putStrLn "version save"
+          tdir <- getTemporaryDirectory 
+          hdir <- getHomeDirectory
+          uuid <- nextRandom
+          let uuidstr = show uuid 
+              tempfile = tdir </> uuidstr <.> "hdl"
+              hdlbstr = builder hdl 
+          L.writeFile tempfile hdlbstr
+          ctime <- getCurrentTime 
+          let idstr = B.unpack (view hoodleID hdl)
+              md5str = show (md5 hdlbstr)
+              nfilename = "UUID_"++idstr++"_MD5Digest_"++md5str++"_ModTime_"++ show ctime <.> "hdl"
+              vcsdir = hdir </> ".hoodle.d" </> "vcs"
+          b <- doesDirectoryExist vcsdir 
+          unless b $ createDirectory vcsdir
+          renameFile tempfile (vcsdir </> nfilename)  
+          --
+          let txtstr = maybe "" id minput       
+          -- 
+          return (UsrEv (GotRevision md5str txtstr))
+    -- modify (tempQueue %~ enqueue action) 
+    r <- waitSomeEvent (\x -> case x of GotRevision _ _ -> True ; _ -> False )
+    let GotRevision md5str txtstr = r          
+        nrev = Revision (B.pack md5str) (B.pack txtstr)
+    modify (\xst -> let hdlmodst = view hoodleModeState xst 
+                    in case hdlmodst of 
+                         ViewAppendState rhdl -> 
+                           let nrhdl = over grevisions (<> [nrev]) rhdl 
+                           in set hoodleModeState (ViewAppendState nrhdl) xst 
+                         SelectState thdl -> 
+                           let nthdl = over gselRevisions (<> [nrev]) thdl
+                           in set hoodleModeState (SelectState nthdl) xst)
+    commit_ 
+
+fileShowRevisions :: MainCoroutine ()
+fileShowRevisions = do 
+  liftIO $ print "fileShowRevision"
+  hdl <- liftM getHoodle get  
+  let revs = view grevisions hdl
+      revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev) ++ ":" ++ B.unpack (view revtxt rev)) revs
+  okMessageBox revstrs
   
-  ctime <- liftIO $ getCurrentTime 
-  let idstr = B.unpack (view hoodleID hdl)
-      md5str = show (md5 hdlbstr)
-      nfilename = "UUID_"++idstr++"_MD5Digest_"++md5str++"_ModTime_"++ show ctime <.> "hdl"
-      vcsdir = hdir </> ".hoodle.d" </> "vcs"
-  b <- liftIO $ doesDirectoryExist vcsdir 
-  unless b $ liftIO (createDirectory vcsdir)
-  liftIO $ renameFile tempfile (vcsdir </> nfilename)  
   
   
   

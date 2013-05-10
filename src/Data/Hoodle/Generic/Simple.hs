@@ -47,6 +47,7 @@ mkSHoodle :: Hoodle -> SHoodle
 mkSHoodle = GHoodle 
             <$> view hoodleID
             <*> view title 
+            <*> view revisions
             <*> view embeddedPdf 
             <*> map mkSPage . view pages
 
@@ -60,5 +61,5 @@ spage2Page (GPage dim bkg lyrs) = Page dim bkg (map slayer2Layer lyrs)
 
 -- | 
 shoodle2Hoodle :: SHoodle -> Hoodle
-shoodle2Hoodle (GHoodle hid ttl pdf pgs) = Hoodle hid ttl pdf (map spage2Page pgs)
+shoodle2Hoodle (GHoodle hid ttl revs pdf pgs) = Hoodle hid ttl revs pdf (map spage2Page pgs)
 

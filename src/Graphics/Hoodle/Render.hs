@@ -425,12 +425,13 @@ cnstrctRHoodle :: Hoodle -> IO RHoodle
 cnstrctRHoodle hdl = do 
   let hid = view hoodleID hdl 
       ttl = view title hdl 
+      revs = view revisions hdl 
       pgs = view pages hdl
       embeddedsrc = view embeddedPdf hdl 
   mdoc <- maybe (return Nothing) (\src -> liftIO $ popplerGetDocFromDataURI src)
             embeddedsrc
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) (Just (Context "" "" Nothing mdoc)) 
-  return $ GHoodle hid ttl embeddedsrc (fromList npgs)          
+  return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
    
 
 -- |

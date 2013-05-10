@@ -75,6 +75,7 @@ rPage2Page = Page <$> view gdimension
 rHoodle2Hoodle :: RHoodle -> Hoodle 
 rHoodle2Hoodle = Hoodle <$> view ghoodleID
                         <*> view gtitle 
+                        <*> view grevisions
                         <*> view gembeddedpdf
                         <*> IM.elems . fmap rPage2Page . view gpages
 

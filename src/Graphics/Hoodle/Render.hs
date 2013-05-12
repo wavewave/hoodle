@@ -248,13 +248,13 @@ renderRItem itm@(RItemSVG svgbbx mrsvg) = do
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
-      clipBBox (Just (getBBox svgbbx))
+      --  clipBBox (Just (getBBox svgbbx))
       save 
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
       restore
-      resetClip 
+      -- resetClip 
       return () 
   return itm 
 renderRItem itm@(RItemLink lnkbbx mrsvg) = do 

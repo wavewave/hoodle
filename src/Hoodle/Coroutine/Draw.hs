@@ -32,6 +32,7 @@ import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
+import           Hoodle.Type.Event
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState
 import           Hoodle.View.Draw
@@ -196,6 +197,11 @@ chkCvsIdNInvalidate cid = do
   currcid <- liftM (getCurrentCanvasId) get 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
   
--- 
-
-
+-- | 
+waitSomeEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 
+waitSomeEvent p = do 
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> -- this is temporary
+                          invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
+      _ -> if  p r then return r else waitSomeEvent p  

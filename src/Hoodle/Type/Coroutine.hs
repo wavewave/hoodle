@@ -132,3 +132,5 @@ maybeError str = maybe (lift . hoistEither . Left . Other $ str) return
 doIOaction :: ((AllEvent -> IO ()) -> IO AllEvent) -> MainCoroutine ()
 doIOaction action = modify (tempQueue %~ enqueue (mkIOaction action))
 
+
+

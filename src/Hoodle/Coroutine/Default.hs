@@ -139,7 +139,6 @@ initialize ev = do
     case ev of 
       UsrEv Initialized -> do -- additional initialization goes here
         viewModeChange ToContSinglePage
-        -- pageZoomChange (Zoom 0.3)  
         pageZoomChange FitWidth
         xst <- get 
         let Just sbar = view statusBar xst 
@@ -190,7 +189,7 @@ viewAppendMode = do
           (PenWork,PenButton3) -> do 
             updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
             modeChange ToSelectMode
-            selectLassoStart cid pcoord
+            selectLassoStart PenButton3 cid pcoord
           (PenWork,EraserButton) -> eraserStart cid pcoord
           (PenWork,_) -> return () 
           (EraserWork,_)      -> eraserStart cid pcoord 
@@ -224,11 +223,11 @@ selectMode :: MainCoroutine ()
 selectMode = do 
   r1 <- nextevent 
   case r1 of 
-    PenDown cid _pbtn pcoord -> do 
+    PenDown cid pbtn pcoord -> do 
       ptype <- liftM (view (selectInfo.selectType)) get
       case ptype of 
-        SelectRectangleWork -> selectRectStart cid pcoord 
-        SelectRegionWork -> selectLassoStart cid pcoord
+        SelectRectangleWork -> selectRectStart pbtn cid pcoord 
+        SelectRegionWork -> selectLassoStart pbtn cid pcoord 
         _ -> return ()
     PenMove cid pcoord -> disableTouch >> notifyLink cid pcoord 
     TouchDown cid pcoord -> touchStart cid pcoord     

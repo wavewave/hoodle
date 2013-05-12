@@ -81,15 +81,6 @@ import           Hoodle.View.Draw
 import Prelude hiding (readFile,concat,mapM)
 
 
--- | 
-waitSomeEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 
-waitSomeEvent p = do 
-    r <- nextevent
-    case r of 
-      UpdateCanvas cid -> -- this is temporary
-                          invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
-      _ -> if  p r then return r else waitSomeEvent p  
-
 
 -- |
 okMessageBox :: String -> MainCoroutine () 

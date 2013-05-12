@@ -93,8 +93,8 @@ dealWithOneTimeSelectMode action terminator = do
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
 --   (dev note: need to be refactored with selectLassoStart)
-selectRectStart :: CanvasId -> PointerCoord -> MainCoroutine ()
-selectRectStart cid = commonPenStart rectaction cid
+selectRectStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
+selectRectStart pbtn cid = commonPenStart rectaction cid
   where rectaction cinfo pnum geometry (x,y) = do
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
@@ -107,7 +107,6 @@ selectRectStart cid = commonPenStart rectaction cid
                       showContextMenu (pnum,(x,y))
                   )
                   (return ())  
-          let 
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
@@ -117,8 +116,13 @@ selectRectStart cid = commonPenStart rectaction cid
                                         bbox ((x,y),ctime) tpage)
                           (checkIfHandleGrasped bbox (x,y))
                   _ -> return () 
-              action (Right tpage) | hitInSelection tpage (x,y) = do
-                startMoveSelect cid pnum geometry ((x,y),ctime) tpage
+              action (Right tpage) | hitInSelection tpage (x,y) = 
+                case pbtn of
+                  PenButton1 -> startMoveSelect cid pnum geometry ((x,y),ctime) tpage
+                  PenButton3 -> do 
+                    waitSomeEvent (\e -> case e of PenUp _ _ -> True ; _ -> False) 
+                    showContextMenu (pnum,(x,y))                    
+                  _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (hPage2RPage tpage)
               action (Left page) = newSelectAction page
           xstate <- get 
@@ -437,8 +441,8 @@ selectPenWidthChanged pwidth = do
 -- | main mouse pointer click entrance in lasso selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
-selectLassoStart :: CanvasId -> PointerCoord -> MainCoroutine ()
-selectLassoStart cid = commonPenStart lassoAction cid 
+selectLassoStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
+selectLassoStart pbtn cid = commonPenStart lassoAction cid 
   where lassoAction cinfo pnum geometry (x,y) = do 
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
@@ -452,7 +456,12 @@ selectLassoStart cid = commonPenStart lassoAction cid
                   )
                   (return ()) 
           let action (Right tpage) | hitInSelection tpage (x,y) = 
-                startMoveSelect cid pnum geometry ((x,y),ctime) tpage
+                case pbtn of
+                  PenButton1 -> startMoveSelect cid pnum geometry ((x,y),ctime) tpage
+                  PenButton3 -> do 
+                    waitSomeEvent (\e -> case e of PenUp _ _ -> True ; _ -> False) 
+                    showContextMenu (pnum,(x,y))                    
+                  _ -> return () 
               action (Right tpage) | hitInHandle tpage (x,y) = 
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  

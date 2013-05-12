@@ -15,7 +15,6 @@
 module Hoodle.ModelAction.Window where
 
 -- from other packages
-import           Control.Concurrent 
 import           Control.Lens (view)
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
@@ -91,12 +90,11 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       m <- eventModifier
       n <- eventKeyName 
       let keystr = show m ++ ":" ++ show n
-      liftIO $ putStrLn (show m ++ ":" ++ show n)
+      -- liftIO $ putStrLn (show m ++ ":" ++ show n)
       liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
     _bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
                  liftIO $ widgetGrabFocus canvas 
                  (mbtn,mp) <- getPointer dev
-                 liftIO $ print (mbtn,mp)
                  case mp of 
                    Nothing -> return ()
                    Just p -> do 
@@ -231,9 +229,7 @@ eventConnect xstate (VSplit wconf1 wconf2) = do
 
 constructFrame :: HoodleState -> WindowConfig 
                   -> IO (HoodleState,Widget,WindowConfig)
-constructFrame hst wcfg = do 
-  putStrLn "in constructFrame"
-  constructFrame' (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
+constructFrame hst wcfg = constructFrame' (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
 
 
 
@@ -244,8 +240,6 @@ constructFrame' :: CanvasInfoBox ->
                    -> IO (HoodleState,Widget,WindowConfig)
 constructFrame' template oxstate (Node cid) = do 
     let ocmap = getCanvasInfoMap oxstate 
-
-        
     (cinfobox,_cmap,xstate) <- case M.lookup cid ocmap of 
       Just cinfobox' -> return (cinfobox',ocmap,oxstate)
       Nothing -> do 

@@ -103,6 +103,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                        TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
                        _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
     _confevent <- canvas `on` configureEvent $ tryEvent $ do 
+      
                    (w,h) <- eventSize 
                    liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
     _brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 
@@ -114,8 +115,10 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                      case pbtn of 
                        TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
                        _ -> (liftIO . callback . UsrEv) (PenUp cid p)
-                     
-    _exposeev <- canvas `on` exposeEvent $ tryEvent $ (liftIO . callback . UsrEv) (UpdateCanvas cid) 
+    _focus <- canvas `on` focusInEvent $ tryEvent $ liftIO $ widgetGrabFocus canvas 
+    _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
+      liftIO $ widgetGrabFocus canvas       
+      (liftIO . callback . UsrEv) (UpdateCanvas cid) 
     canvas `on` motionNotifyEvent $ tryEvent $ do 
       (mbtn,mp) <- getPointer dev
       case mp of 
@@ -133,24 +136,6 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       s <- selectionDataGetText 
       (liftIO . callback . UsrEv) (GotLink s pos)
       
-      {-
-      liftIO . putStrLn $ case s of 
-        Nothing -> "didn't understand the drop"
-        Just s -> "understood. here it is : <" ++ s ++ ">" ++ " and pos is <" ++ show pos ++ ">" 
-    -}
-    {-     
-    dragSourceSet canvas [Button1] [ActionCopy]
-    dragSourceAddTextTargets canvas
-    canvas `on` dragBegin $ \dc -> do 
-      liftIO $ putStrLn "dragging"
-    -}    
-
-    {-
-    canvas `on` enterNotifyEvent $ tryEvent $ do 
-      win <- liftIO $ widgetGetDrawWindow canvas
-      liftIO $ drawWindowSetCursor win (Just cursorDot)
-      return ()
-    -}  
     widgetAddEvents canvas [PointerMotionMask,Button1MotionMask,KeyPressMask]      
     let ui = view gtkUIManager xstate 
     agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->

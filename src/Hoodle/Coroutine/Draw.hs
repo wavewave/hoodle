@@ -178,20 +178,8 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
                      paint 
                      xformfunc 
                      rndr 
-{-      
--- | Drawing using layer buffer
- invalidateWithBuf :: CanvasId -> MainCoroutine () 
-invalidateWithBuf = invalidateWithBufInBBox Nothing
-  
--- | Drawing using layer buffer in BBox  
-
-invalidateWithBufInBBox :: Maybe BBox -> CanvasId -> MainCoroutine () 
-invalidateWithBufInBBox mbbox cid =  
-  invalidateGeneral cid mbbox drawBuf drawSelBuf drawContHoodleBuf drawContHoodleSelClearly
--}
 
 -- | check current canvas id and new active canvas id and invalidate if it's changed. 
-
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
 chkCvsIdNInvalidate cid = do 
   currcid <- liftM (getCurrentCanvasId) get 

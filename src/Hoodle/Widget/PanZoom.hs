@@ -309,7 +309,8 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
           if b 
             then if isZoomTouch then startPanZoomWidget TouchMode triplet (Just (Zooming,(oxy,oxy)))
                                 else startPanZoomWidget TouchMode triplet (Just (Panning False,(oxy,oxy)))
-            else return ()
+            else waitSomeEvent (\e -> case e of TouchUp _ _ -> True ; _ -> False) >> return ()
+
 
 toggleTouch :: MainCoroutine () 
 toggleTouch = do 

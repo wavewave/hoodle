@@ -233,6 +233,7 @@ renderRItem itm@(RItemImage img msfc) = do
       ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
       iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
       save 
+      setAntialias AntialiasNone      
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       setSourceSurface sfc 0 0 
@@ -250,6 +251,7 @@ renderRItem itm@(RItemSVG svgbbx mrsvg) = do
           iy = fromIntegral iy'
       --  clipBBox (Just (getBBox svgbbx))
       save 
+      setAntialias AntialiasNone
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
@@ -268,6 +270,7 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
           iy = fromIntegral iy'
       -- clipBBox (Just (getBBox lnkbbx))
       save 
+      setAntialias AntialiasNone
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
@@ -346,7 +349,8 @@ renderRBkg_InBBox :: Maybe BBox
                   -> (RBackground,Dimension) 
                   -> Render (RBackground,Dimension)
 renderRBkg_InBBox mbbox (b,dim) = do 
-    clipBBox (fmap (flip inflate 2) mbbox)
+    clipBBox (fmap (flip inflate 1) mbbox)
+    -- clipBBox mbbox
     renderRBkg_Buf (b,dim)
     resetClip
     return (b,dim)
@@ -355,7 +359,7 @@ renderRBkg_InBBox mbbox (b,dim) = do
 -- | render RLayer within BBox after hittest items
 renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render RLayer
 renderRLayer_InBBox mbbox layer = do  
-  clipBBox (fmap (flip inflate 4) mbbox)  -- temporary
+  clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
   -- clipBBox mbbox 
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
@@ -364,14 +368,13 @@ renderRLayer_InBBox mbbox layer = do
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
   (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
   resetClip  
-  -- return layer 
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
     LyBuf (Just sfc) -> do 
       liftIO $ renderWith sfc $ do 
-        -- renderRLayer_InBBox mbbox lyr 
-        clipBBox (fmap (flip inflate 4) mbbox ) -- temporary
+        clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
         -- clipBBox mbbox 
+        setAntialias AntialiasNone
         setSourceRGBA 0 0 0 0 
         setOperator OperatorSource
         paint
@@ -398,21 +401,29 @@ renderRBkg_Buf (b,dim) = do
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
+            save
+            setAntialias AntialiasNone
             setSourceSurface sfc 0 0 
             paint 
+            restore
       RBkgPDF _ _ _n _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
+            save
+            setAntialias AntialiasNone            
             setSourceSurface sfc 0 0 
             paint 
+            restore
       RBkgEmbedPDF _ _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
+            save
+            setAntialias AntialiasNone            
             setSourceSurface sfc 0 0 
             paint 
-
+            restore
     return (b,dim)
 
 -- | 

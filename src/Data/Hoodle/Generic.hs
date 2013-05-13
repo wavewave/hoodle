@@ -36,6 +36,7 @@ import Prelude hiding ((.),id)
 data GHoodle cntnr pg = GHoodle 
                         { ghoodle_id :: ByteString 
                         , ghoodle_ttl :: ByteString 
+                        , ghoodle_revisions :: [Revision]
                         , ghoodle_embeddedpdf :: Maybe ByteString 
                         , ghoodle_pgs :: cntnr pg }  
 
@@ -72,7 +73,7 @@ instance (Functor cntnr) => Functor (GPage bkg cntnr) where
   
 -- | 
 instance (Functor cntnr) => Functor (GHoodle cntnr) where
-  fmap f (GHoodle hid ttl pdf pgs) = GHoodle hid ttl pdf (fmap f pgs)
+  fmap f (GHoodle hid ttl revs pdf pgs) = GHoodle hid ttl revs pdf (fmap f pgs)
 
 ------------------------------
 -- lenses for Generic types --
@@ -85,6 +86,10 @@ ghoodleID = lens ghoodle_id (\f a -> f { ghoodle_id = a } )
 -- |
 gtitle :: Simple Lens (GHoodle cntnr pg) ByteString
 gtitle = lens ghoodle_ttl (\f a -> f { ghoodle_ttl = a } )
+
+-- | 
+grevisions :: Simple Lens (GHoodle cntnr pg) [Revision]
+grevisions = lens ghoodle_revisions (\f a -> f { ghoodle_revisions = a } )
 
 -- | 
 gembeddedpdf :: Simple Lens (GHoodle cntnr pg) (Maybe ByteString)
@@ -141,7 +146,7 @@ instance Listable Seq.Seq where
 emptyGHoodle :: (Listable m) => IO (GHoodle m a)
 emptyGHoodle = do 
   uuid <- nextRandom
-  return $ GHoodle ((pack.show) uuid) "" Nothing (fromList [])
+  return $ GHoodle ((pack.show) uuid) "" [] Nothing (fromList [])
 
 -- | 
 emptyGPage :: (Listable cntnr) => Dimension -> bkg -> GPage bkg cntnr a 

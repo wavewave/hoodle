@@ -198,10 +198,17 @@ data Background = Background { bkg_type :: !ByteString
                 | BackgroundEmbedPdf { bkg_type :: ByteString
                                      , bkg_pageno :: Int } 
                 deriving Show 
+-- | 
+data Revision = Revision { _revmd5 :: !ByteString 
+                         , _revtxt :: !ByteString 
+                         }  
+              deriving Show 
+
 
 -- | 
 data Hoodle = Hoodle { hoodle_id :: ByteString
                      , hoodle_title :: !Title
+                     , hoodle_revisions :: [Revision]
                      , hoodle_embeddedpdf :: Maybe ByteString
                      , hoodle_pages :: ![Page] }
              deriving Show 
@@ -243,12 +250,25 @@ title :: Simple Lens Hoodle Title
 title = lens hoodle_title (\f a -> f { hoodle_title = a } )
 
 -- | 
+revisions :: Simple Lens Hoodle [Revision]
+revisions = lens hoodle_revisions (\f a -> f { hoodle_revisions = a } )
+
+-- | 
+revmd5 :: Simple Lens Revision ByteString
+revmd5 = lens _revmd5 (\f a -> f { _revmd5 = a } )
+
+-- | 
+revtxt :: Simple Lens Revision ByteString
+revtxt = lens _revtxt (\f a -> f { _revtxt = a } )
+
+-- | 
 embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)
 embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
 
 -- | 
 pages :: Simple Lens Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
+
 
 -- | 
 dimension :: Simple Lens Page Dimension 
@@ -275,7 +295,7 @@ items = lens layer_items (\f a -> f { layer_items = a } )
 emptyHoodle :: IO Hoodle
 emptyHoodle = do
   uuid <- nextRandom
-  return $ Hoodle ((pack.show) uuid) "" Nothing [] 
+  return $ Hoodle ((pack.show) uuid) "" [] Nothing [] 
 
 -- | 
 emptyLayer :: Layer 
@@ -304,6 +324,7 @@ defaultHoodle :: IO Hoodle
 defaultHoodle = 
     (set title "untitled".set embeddedPdf Nothing . set pages [defaultPage])
     <$> emptyHoodle 
+
 -- | 
 newPageFromOld :: Page -> Page
 newPageFromOld page = 

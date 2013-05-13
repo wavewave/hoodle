@@ -20,10 +20,12 @@ import Control.Lens
 import Data.ByteString 
 --
 import Data.Hoodle.Generic 
+import Data.Hoodle.Simple 
 
 -- | 
 data GSelect a b = GSelect { gselect_id :: ByteString 
                            , gselect_ttl :: ByteString 
+                           , gselect_revisions :: [Revision]
                            , gselect_embeddedpdf :: Maybe ByteString 
                            , gselect_all :: a 
                            , gselect_selected :: b
@@ -35,6 +37,10 @@ gselHoodleID = lens gselect_id (\f a -> f { gselect_id = a } )
 -- |
 gselTitle :: Simple Lens (GSelect a b) ByteString
 gselTitle = lens gselect_ttl (\f a -> f {gselect_ttl = a})
+
+-- | 
+gselRevisions :: Simple Lens (GSelect a b) [Revision]
+gselRevisions = lens gselect_revisions (\f a -> f {gselect_revisions = a } )
 
 -- |
 gselEmbeddedPdf :: Simple Lens (GSelect a b) (Maybe ByteString)
@@ -52,6 +58,7 @@ gselSelected = lens gselect_selected (\f a -> f {gselect_selected = a})
 gSelect2GHoodle :: GSelect (m a) b -> GHoodle m a 
 gSelect2GHoodle = GHoodle <$> view gselHoodleID
                           <*> view gselTitle 
+                          <*> view gselRevisions
                           <*> view gselEmbeddedPdf 
                           <*> view gselAll 
 
@@ -59,6 +66,7 @@ gSelect2GHoodle = GHoodle <$> view gselHoodleID
 gHoodle2GSelect :: GHoodle m a -> GSelect (m a) (Maybe b)
 gHoodle2GSelect = GSelect <$> view ghoodleID
                           <*> view gtitle 
+                          <*> view grevisions
                           <*> view gembeddedpdf
                           <*> view gpages
                           <*> pure Nothing 

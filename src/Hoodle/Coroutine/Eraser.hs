@@ -81,8 +81,8 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
               dim         = view gdimension page
               pgnum       = view currentPageNum cvsInfo
               currlayer = getCurrentLayer page
-          let (newitms,maybebbox1) = St.runState (eraseHitted hittestitem) Nothing
-              maybebbox = fmap (flip inflate 2.0) maybebbox1
+          let (newitms,maybebbox) = St.runState (eraseHitted hittestitem) Nothing
+              -- maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf dim maybebbox 
                           . set gitems newitms $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox page 

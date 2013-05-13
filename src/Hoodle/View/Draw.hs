@@ -156,7 +156,8 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
 	      rndr 
 	  Just sfc -> do 
 	    r <- renderWith sfc $ do 
-	      clipBBox (fmap (flip inflate (-1.0)) mbbox')
+	      -- clipBBox (fmap (flip inflate (-1.0)) mbbox') -- temporary
+              clipBBox mbbox' 
               setSourceRGBA 0.5 0.5 0.5 1
               rectangle 0 0 cw ch 
               fill

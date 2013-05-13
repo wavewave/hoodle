@@ -125,13 +125,13 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
-      clipBBox (Just (getBBox svgbbx))
+      -- clipBBox (Just (getBBox svgbbx))
       save 
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
       restore
-      resetClip 
+      -- resetClip 
       return () 
 
 -- | render svg  
@@ -266,13 +266,13 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
-      clipBBox (Just (getBBox lnkbbx))
+      -- clipBBox (Just (getBBox lnkbbx))
       save 
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
       restore
-      resetClip 
+      -- resetClip 
       return () 
   return itm 
 
@@ -282,49 +282,96 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
 -- InBBox --
 ------------
 
+{-
+renderRItem_InBBox :: Maybe BBox -> RItem -> Render RItem  
+renderRItem_InBBox _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
+renderRItem_InBBox mbbox itm@(RItemImage img msfc) = do  
+  case msfc of
+    Nothing -> renderImg (bbxed_content img)
+    Just sfc -> do 
+      let (x,y) = (img_pos . bbxed_content) img
+          BBox (x1,y1) (x2,y2) = getBBox img
+      ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
+      iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
+      save 
+      clipBBox (fmap (flip inflate 1) mbbox) 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      setSourceSurface sfc 0 0 
+      paint 
+      resetClip 
+      restore
+  return itm 
+renderRItem_InBBox mbbox itm@(RItemSVG svgbbx mrsvg) = do 
+  case mrsvg of
+    Nothing -> renderSVG (bbxed_content svgbbx)
+    Just rsvg -> do 
+      let (x,y) = (svg_pos . bbxed_content) svgbbx
+          BBox (x1,y1) (x2,y2) = getBBox svgbbx
+          (ix',iy') = RSVG.svgGetSize rsvg
+          ix = fromIntegral ix' 
+          iy = fromIntegral iy'
+      clipBBox (fmap (flip inflate 0.5) mbbox)
+      save 
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      RSVG.svgRender rsvg 
+      resetClip 
+      restore
+      return () 
+  return itm 
+renderRItem_InBBox mbbox itm@(RItemLink lnkbbx mrsvg) = do 
+  case mrsvg of
+    Nothing -> renderLink (bbxed_content lnkbbx)
+    Just rsvg -> do 
+      let (x,y) = (link_pos . bbxed_content) lnkbbx
+          BBox (x1,y1) (x2,y2) = getBBox lnkbbx
+          (ix',iy') = RSVG.svgGetSize rsvg
+          ix = fromIntegral ix' 
+          iy = fromIntegral iy'
+      save 
+      clipBBox (fmap (flip inflate 0.5) mbbox)
+      translate x y 
+      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      RSVG.svgRender rsvg 
+      resetClip 
+      restore
+      return () 
+  return itm 
+-}
+
+
 -- | background drawing in bbox 
 renderRBkg_InBBox :: Maybe BBox 
                   -> (RBackground,Dimension) 
                   -> Render (RBackground,Dimension)
 renderRBkg_InBBox mbbox (b,dim) = do 
-    clipBBox mbbox
+    clipBBox (fmap (flip inflate 2) mbbox)
     renderRBkg_Buf (b,dim)
     resetClip
     return (b,dim)
-
-{-    case b of 
-      RBkgSmpl _ _ _ -> do 
-        clipBBox mbbox
-        renderRBkg_Buf (b,dim)
-        resetClip
-      RBkgPDF _ _ _ _ _ -> do 
-        clipBBox mbbox
-        renderRBkg_Buf (b,dim)
-        resetClip
-      RBkgEmbedPDF _ _ _ -> do 
-        clipBBox mbbox
-        renderRBkg_Buf (b,dim)
-        resetClip -}
 
 
 -- | render RLayer within BBox after hittest items
 renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render RLayer
 renderRLayer_InBBox mbbox layer = do  
-  clipBBox (fmap (flip inflate 1) mbbox) 
+  clipBBox (fmap (flip inflate 4) mbbox)  -- temporary
+  -- clipBBox mbbox 
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
                    :- Empty 
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
   (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
-  resetClip
+  resetClip  
   -- return layer 
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
     LyBuf (Just sfc) -> do 
       liftIO $ renderWith sfc $ do 
         -- renderRLayer_InBBox mbbox lyr 
-        clipBBox (fmap (flip inflate 1) mbbox )
+        clipBBox (fmap (flip inflate 4) mbbox ) -- temporary
+        -- clipBBox mbbox 
         setSourceRGBA 0 0 0 0 
         setOperator OperatorSource
         paint
@@ -333,6 +380,7 @@ renderRLayer_InBBox mbbox layer = do
         resetClip 
         return layer 
     _ -> return layer 
+
   
 
 

@@ -112,8 +112,8 @@ vscrollMove cid v0 = do
       VScrollBarEnd cid' v -> do 
         when (cid /= cid') $ 
           (lift . hoistEither . Left . Other) "something wrong in vscrollMove" 
-        smoothScroll cid geometry v0 v
-        invalidateAll 
+        moveViewPortBy (invalidate cid) cid (\(x,_)->(x,v))          
+        invalidate cid 
         return ()
       VScrollBarStart cid' v -> vscrollStart cid' v 
       _ -> return ()       

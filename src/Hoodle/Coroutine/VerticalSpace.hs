@@ -163,9 +163,8 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
     boxAction (f r xst) . getCanvasInfo cid $ xst 
   where 
     Dim w h = view gdimension pg    
-    CvsCoord (_,y0_cvs) = 
-      (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (x0,y0))
-    
+    CvsCoord (_,y0_cvs) = (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (x0,y0))
+    -------------------------------------------------------------
     f :: (ViewMode a) => UserEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                            (moveact xstate cvsInfo) upact

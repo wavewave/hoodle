@@ -1,4 +1,6 @@
-{-# LANGUAGE ScopedTypeVariables, GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -278,10 +280,14 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
         pgs = view gpages hdl 
         cpage = getPageFromGHoodleMap pgnum hdl
         cbkg = view gbackground cpage
-        nbkg 
-          | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
-          | otherwise = cbkg 
-        npage = set gbackground nbkg cpage 
+        bstystr = convertBackgroundStyleToByteString bsty 
+        -- for the time being, I replace any background to solid background
+        getnbkg :: RBackground -> RBackground 
+        getnbkg (RBkgSmpl c _ _) = RBkgSmpl c bstystr Nothing 
+        getnbkg (RBkgPDF _ _ _ _ _) = RBkgSmpl "white" bstystr Nothing 
+        getnbkg (RBkgEmbedPDF _ _ _) = RBkgSmpl "white" bstystr Nothing 
+        -- 
+        npage = set gbackground (getnbkg cbkg) cpage 
         npgs = set (at pgnum) (Just npage) pgs 
         nhdl = set gpages npgs hdl 
     modeChange ToViewAppendMode     

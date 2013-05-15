@@ -73,15 +73,13 @@ type WorldObjB = SObjBT (WorldOp AllEvent DriverB) DriverB
 
 -- | 
 world :: HoodleState -> MainObj () -> WorldObj ()
--- world :: HoodleState -> (ReaderT (Arg MainOp) MainCoroutine ()) -> WorldObj ()
 world xstate initmc = ReaderT staction  
   where 
     staction req = runStateT erract xstate >> return ()
-      -- where erract = go initmc req 
       where erract = do r <- runEitherT (go initmc req) 
                         case r of 
                           Left e -> liftIO (errorlog (show e)) 
-                          Right _r' -> return () --  return r' 
+                          Right _r' -> return () 
     go :: MainObj() 
           -> Arg (WorldOp AllEvent DriverB) 
           -> EStT HoodleState WorldObjB () 

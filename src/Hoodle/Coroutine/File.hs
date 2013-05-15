@@ -721,12 +721,18 @@ fileVersionSave = do
 
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 
-  liftIO $ print "fileShowRevision"
   hdl <- liftM getHoodle get  
   let revs = view grevisions hdl
       revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev) ++ ":" ++ B.unpack (view revtxt rev)) revs
   okMessageBox revstrs
   
+fileShowUUID :: MainCoroutine ()
+fileShowUUID = do 
+  hdl <- liftM getHoodle get  
+  let uuidstr = view ghoodleID hdl
+  okMessageBox (B.unpack uuidstr)
+  
+
   
   
   

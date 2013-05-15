@@ -368,6 +368,7 @@ menuEventProcess MenuExport = fileExport
 menuEventProcess MenuStartSync = fileStartSync
 menuEventProcess MenuVersionSave = fileVersionSave 
 menuEventProcess MenuShowRevisions = fileShowRevisions
+menuEventProcess MenuShowUUID = fileShowUUID
 -- 
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection

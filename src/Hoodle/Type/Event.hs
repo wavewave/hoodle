@@ -104,6 +104,7 @@ data MenuEvent = MenuNew
                | MenuStartSync
                | MenuVersionSave
                | MenuShowRevisions
+               | MenuShowUUID
                | MenuQuit 
                | MenuUndo 
                | MenuRedo 

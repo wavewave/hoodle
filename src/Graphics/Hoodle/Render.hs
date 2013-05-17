@@ -233,7 +233,7 @@ renderRItem itm@(RItemImage img msfc) = do
       ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
       iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
       save 
-      setAntialias AntialiasNone      
+      -- setAntialias AntialiasNone      
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       setSourceSurface sfc 0 0 
@@ -251,7 +251,7 @@ renderRItem itm@(RItemSVG svgbbx mrsvg) = do
           iy = fromIntegral iy'
       --  clipBBox (Just (getBBox svgbbx))
       save 
-      setAntialias AntialiasNone
+      -- setAntialias AntialiasNone
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
@@ -270,7 +270,7 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
           iy = fromIntegral iy'
       -- clipBBox (Just (getBBox lnkbbx))
       save 
-      setAntialias AntialiasNone
+      -- setAntialias AntialiasNone
       translate x y 
       scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
@@ -374,7 +374,7 @@ renderRLayer_InBBox mbbox layer = do
       liftIO $ renderWith sfc $ do 
         clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
         -- clipBBox mbbox 
-        setAntialias AntialiasNone
+        -- setAntialias AntialiasNone
         setSourceRGBA 0 0 0 0 
         setOperator OperatorSource
         paint
@@ -402,7 +402,7 @@ renderRBkg_Buf (b,dim) = do
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
             save
-            setAntialias AntialiasNone
+            -- setAntialias AntialiasNone
             setSourceSurface sfc 0 0 
             paint 
             restore
@@ -411,7 +411,7 @@ renderRBkg_Buf (b,dim) = do
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
             save
-            setAntialias AntialiasNone            
+            -- setAntialias AntialiasNone            
             setSourceSurface sfc 0 0 
             paint 
             restore
@@ -420,7 +420,7 @@ renderRBkg_Buf (b,dim) = do
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
             save
-            setAntialias AntialiasNone            
+            -- setAntialias AntialiasNone            
             setSourceSurface sfc 0 0 
             paint 
             restore

@@ -36,7 +36,8 @@ menuOpenALink evhandler urlpath = do
                     FileUrl fp -> fp 
                     HttpUrl url -> url 
     menuitemlnk <- menuItemNewWithLabel ("Open "++urlname) 
-    menuitemlnk `on` menuItemActivate $ do
+    menuitemlnk `on` menuItemActivate $ openLinkAction urlpath 
+    {- do
       case urlpath of 
         FileUrl fp -> do 
           let cmdargs = [fp]
@@ -45,9 +46,22 @@ menuOpenALink evhandler urlpath = do
         HttpUrl url -> do 
           let cmdargs = [url]
           createProcess (proc "xdg-open" cmdargs)  
-          return () 
+          return () -}
     return menuitemlnk
 
+
+-- | 
+openLinkAction :: UrlPath -> IO () 
+openLinkAction urlpath = 
+    case urlpath of 
+      FileUrl fp -> do 
+        let cmdargs = [fp]
+        createProcess (proc "hoodle" cmdargs)  
+        return () 
+      HttpUrl url -> do 
+        let cmdargs = [url]
+        createProcess (proc "xdg-open" cmdargs)  
+        return () 
 
   
   

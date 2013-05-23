@@ -93,6 +93,7 @@ import           Graphics.UI.Gtk hiding (get,set)
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
+import           Graphics.Hoodle.Render.Type.Item
 --
 import           Hoodle.Type.Enum 
 import           Hoodle.Type.PageArrangement
@@ -162,7 +163,7 @@ data CanvasInfo a =
                                , _horizAdjConnId :: Maybe (ConnectId Adjustment)
                                , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                                , _canvasWidgets :: CanvasWidgets
-                               , _notifiedItem :: Maybe (PageNum,BBox) 
+                               , _notifiedItem :: Maybe (PageNum,BBox,RItem) 
                                }
 
 -- |     
@@ -253,7 +254,7 @@ canvasWidgets :: Simple Lens (CanvasInfo a) CanvasWidgets
 canvasWidgets = lens _canvasWidgets (\f a -> f { _canvasWidgets = a } )
 
 -- | lens for notified item
-notifiedItem :: Simple Lens (CanvasInfo a) (Maybe (PageNum,BBox))
+notifiedItem :: Simple Lens (CanvasInfo a) (Maybe (PageNum,BBox,RItem))
 notifiedItem = lens _notifiedItem (\f a -> f { _notifiedItem = a })
 
 -- |

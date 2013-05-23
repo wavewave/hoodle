@@ -79,24 +79,7 @@ notifyLink :: CanvasId -> PointerCoord -> MainCoroutine ()
 notifyLink cid pcoord = do 
     xst <- get 
     (boxAction (f xst) . getCanvasInfo cid) xst 
-    -- liftIO $ putStrLn $ " here : " ++ show (view (unboxLens notifiedItem) ncinfo)
-    -- let nxst =setCanvasInfo (cid,ncinfo) xst
-    -- put nxst 
-    -- boxAction rndr ncinfo
   where 
-    {-
-    rndr :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
-    rndr cvsInfo = do 
-      let cpn = PageNum . view currentPageNum $ cvsInfo
-          arr = view (viewInfo.pageArrangement) cvsInfo              
-          mnotifyitem = view notifiedItem cvsInfo
-          canvas = view drawArea cvsInfo
-      geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
-      forM_ mnotifyitem 
-        (\(pnum,bbx) -> do 
-            let bbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord) bbx   
-            invalidateInBBox (Just bbx_desk) Efficient cid)
-    -}
     f :: forall b. (ViewMode b) => HoodleState -> CanvasInfo b -> MainCoroutine ()
     f xst cvsInfo = do 
       let cpn = PageNum . view currentPageNum $ cvsInfo
@@ -114,7 +97,6 @@ notifyLink cid pcoord = do
               Nothing -> return Nothing
               Just page -> do 
                 let itms =  (view gitems . current . view glayers) page
-                               -- rItmsInCurrLyr    
                     lnks = filter isLinkInRItem itms           
                     hlnks = hltFilteredBy (\itm->isPointInBBox (getBBox itm) (x,y)) lnks
                     hitted = takeHitted hlnks 
@@ -122,7 +104,7 @@ notifyLink cid pcoord = do
                   Nothing -> if ((not.null) hitted) 
                              then Just <$> newNotify cvsInfo geometry pnum (head hitted) Nothing  
                              else return Nothing 
-                  Just (opnum,obbx) -> do
+                  Just (opnum,obbx,_) -> do
                     let obbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (opnum,) . PageCoord) obbx   
                     if pnum == opnum &&  isPointInBBox obbx (x,y) 
                       then return Nothing
@@ -135,23 +117,14 @@ notifyLink cid pcoord = do
                       invalidateInBBox (Just bbx_desk) Efficient cid )
     ----                                                                                      
     newNotify :: CanvasInfo a -> CanvasGeometry -> PageNum -> RItem -> Maybe BBox 
-                 -> MainCoroutine (Maybe (PageNum,BBox),BBox) 
+                 -> MainCoroutine (Maybe (PageNum,BBox,RItem),BBox) 
     newNotify cvsInfo geometry pnum lnk mobbx_desk = do        
       let bbx = getBBox lnk
           bbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord) bbx
           nbbx_desk = maybe bbx_desk (\obbx_desk->unionBBox bbx_desk obbx_desk) mobbx_desk
       liftIO $ print (pnum,bbx)
-      return (Just (pnum,bbx),nbbx_desk)
+      return (Just (pnum,bbx,lnk),nbbx_desk)
           
-
-{- when ((not.null) hitted) $ do  
-            let lnk = head hitted 
-                bbx = getBBox lnk
-                bbx_desk = xformBBox (unDeskCoord . page2Desktop geometry
-                                      . (pnum,) . PageCoord) bbx
-            invalidateInBBox (Just bbx_desk) Efficient cid 
-            return (set notifiedItem (Just (pnum,bbx)) cvsInfo) -}
-
 
 -- | got a link address (or embedded image) from drag and drop             
 gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 

@@ -283,8 +283,8 @@ emphasisPageRender geometry (pn,pg) = do
     restore 
 
 -- | highlight notified item (like link)
-emphasisNotifiedRender :: CanvasGeometry -> (PageNum,BBox) -> Render ()
-emphasisNotifiedRender geometry (pn,BBox (x1,y1) (x2,y2)) = do 
+emphasisNotifiedRender :: CanvasGeometry -> (PageNum,BBox,RItem) -> Render ()
+emphasisNotifiedRender geometry (pn,BBox (x1,y1) (x2,y2),_) = do 
     save
     identityMatrix 
     cairoXform4PageCoordinate geometry pn 

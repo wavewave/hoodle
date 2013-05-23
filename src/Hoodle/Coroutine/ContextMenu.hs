@@ -152,13 +152,6 @@ processContextMenu CMenuAssocWithNewFile = do
                   return ()
           ) 
 processContextMenu CMenuCustom =  do
-  {- let action = mkIOaction $ \evhandler -> do 
-                 forkIO $ forever $ do 
-                   threadDelay 1000000
-                   putStrLn "hello?"
-                   evhandler (SysEv TestSystemEvent)
-                 return (UsrEv ActionOrdered)
-  modify (tempQueue %~ enqueue action) -}
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
           xst <- get 

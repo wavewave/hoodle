@@ -14,14 +14,14 @@
 
 module Hoodle.GUI.Reflect where
 
-import Control.Lens (view,Simple,Lens,(%~))
+import Control.Lens (view,Simple,Lens)
 import qualified Control.Monad.State as St
 import Control.Monad.Trans 
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 --
-import Control.Monad.Trans.Crtn.Event
-import Control.Monad.Trans.Crtn.Queue
+-- import Control.Monad.Trans.Crtn.Event
+-- import Control.Monad.Trans.Crtn.Queue
 --
 import Hoodle.GUI.Menu 
 import Hoodle.Type.Canvas
@@ -121,11 +121,10 @@ reflectUIComponent lnz name f = do
   where update xst wpma mconnid  = do 
           (f xst) # 
             (maybe (return ()) $ \v -> do
-              let action = mkIOaction $ \_evhandler -> do 
+              doIOaction $ \_evhandler -> do 
                     blockWhile mconnid 
                       (Gtk.set wpma [radioActionCurrentValue := v ] )
                     return (UsrEv ActionOrdered)
-              St.modify (tempQueue %~ enqueue action)
               go)
          where go = do r <- nextevent
                        case r of

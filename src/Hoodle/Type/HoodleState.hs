@@ -55,6 +55,7 @@ module Hoodle.Type.HoodleState
 , doesUsePopUpMenu
 , doesEmbedImage
 , doesEmbedPDF
+, doesFollowLinks
 -- 
 , penModeSignal
 , pageModeSignal
@@ -313,6 +314,7 @@ data Settings =
            , _doesUsePopUpMenu :: Bool 
            , _doesEmbedImage :: Bool 
            , _doesEmbedPDF :: Bool 
+           , _doesFollowLinks :: Bool 
            } 
   
 
@@ -339,6 +341,11 @@ doesEmbedImage = lens _doesEmbedImage (\f a -> f { _doesEmbedImage = a } )
 -- | flag for embedding pdf background as base64 in hdl file 
 doesEmbedPDF :: Simple Lens Settings Bool
 doesEmbedPDF = lens _doesEmbedPDF (\f a -> f { _doesEmbedPDF = a } )
+
+-- | flag for embedding pdf background as base64 in hdl file 
+doesFollowLinks :: Simple Lens Settings Bool
+doesFollowLinks = lens _doesFollowLinks (\f a -> f { _doesFollowLinks = a } )
+
 
 -- | default hoodle state 
 emptyHoodleState :: IO HoodleState 
@@ -405,6 +412,7 @@ defaultSettings =
   , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 
   , _doesEmbedPDF = True 
+  , _doesFollowLinks = False
   } 
   
 

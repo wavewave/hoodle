@@ -290,6 +290,9 @@ getMenuUI evar = do
   ebdpdfa <- toggleActionNew "EBDPDFA" "Embed PDF" (Just "Just a stub") Nothing
   ebdpdfa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuEmbedPDF))
+  flwlnka <- toggleActionNew "FLWLNKA" "Follow Links" (Just "Just a stub") Nothing
+  flwlnka `on` actionToggled $ do 
+    eventHandler evar (UsrEv (Menu MenuFollowLinks))    
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Toggle Pan/Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
   toglayera <- actionNewAndRegister "TOGLAYERA" "Toggle Layer Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleLayerWidget)
@@ -348,13 +351,8 @@ getMenuUI evar = do
         , defaulta         
         ] 
     
-  actionGroupAddAction agr uxinputa 
-  actionGroupAddAction agr handa 
-  actionGroupAddAction agr smthscra
-  actionGroupAddAction agr popmenua 
-  actionGroupAddAction agr ebdimga
-  actionGroupAddAction agr ebdpdfa
-  actionGroupAddAction agr pressrsensa
+  mapM_ (actionGroupAddAction agr) 
+    [uxinputa, handa, smthscra, popmenua, ebdimga, ebdpdfa, flwlnka, pressrsensa]
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   mpgmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) -- const (return ()))

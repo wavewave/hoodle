@@ -171,6 +171,7 @@ data MenuEvent = MenuNew
                | MenuUsePopUpMenu
                | MenuEmbedImage
                | MenuEmbedPDF
+               | MenuFollowLinks
                | MenuTogglePanZoomWidget
                | MenuToggleLayerWidget
                | MenuDiscardCoreEvents 

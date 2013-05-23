@@ -412,7 +412,7 @@ defaultSettings =
   , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 
   , _doesEmbedPDF = True 
-  , _doesFollowLinks = False
+  , _doesFollowLinks = True
   } 
   
 

@@ -19,7 +19,6 @@ import           Control.Monad (when)
 import           Control.Monad.Identity (runIdentity)
 import           Data.Foldable
 import qualified Data.IntMap as IM
--- import qualified Data.Map as M
 import           Data.Sequence hiding (take, drop)
 import           Data.Strict.Tuple hiding (uncurry)
 import           Graphics.Rendering.Cairo
@@ -88,39 +87,15 @@ addPDraw :: PenInfo
             -> IO (RHoodle,BBox) 
                        -- ^ new hoodle and bbox in page coordinate
 addPDraw pinfo hdl (PageNum pgnum) pdraw = do 
-    let {- ptype = view penType pinfo
-        pcolor = view (currentTool.penColor) pinfo
-        pcolname = convertPenColorToByteString pcolor 
-        pwidth = view (currentTool.penWidth) pinfo
-        pvwpen = view variableWidthPen pinfo -}
-        currpage = getPageFromGHoodleMap pgnum hdl
+    let currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
         dim = view gdimension currpage
-        {- 
-        ptool = case ptype of 
-                  PenWork -> "pen" 
-                  HighlighterWork -> "highlighter"
-                  _ -> error "error in addPDraw"
-                  
-        newstroke = 
-          case pvwpen of 
-            False -> Stroke { stroke_tool = ptool 
-                            , stroke_color = pcolname 
-                            , stroke_width = pwidth
-                            , stroke_data = map (\(x,y,_)->x:!:y) . toList $ pdraw
-                          } 
-            True -> VWStroke { stroke_tool = ptool
-                             , stroke_color = pcolname                 
-                             , stroke_vwdata = map (\(x,y,z)->(x,y,pwidth*z)) . toList $ pdraw
-                             }
-        -}                                   
         newstroke = createNewStroke pinfo pdraw         
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
     newlayerbbox <- updateLayerBuf dim (Just bbox)
                     . over gitems (++[RItemStroke newstrokebbox]) 
                     $ currlayer
-
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
         newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
     return (newhdlbbox,bbox)

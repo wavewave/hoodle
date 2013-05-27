@@ -40,6 +40,7 @@ import           Graphics.Hoodle.Render.Util
 import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package
 import           Hoodle.ModelAction.Layer
+import           Hoodle.ModelAction.Pen 
 import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Enum
@@ -334,12 +335,7 @@ hitLassoItem lst (RItemLink lnk _) =
   where BBox (x1,y1) (x2,y2) = getBBox lnk
 
 
-data TempSelectRender a = TempSelectRender { tempSurface :: Surface  
-                                           , widthHeight :: (Double,Double)
-                                           , tempSelectInfo :: a 
-                                           } 
-
-type TempSelection = TempSelectRender [RItem]
+type TempSelection = TempRender [RItem]
 
 data ItmsNImg = ItmsNImg { itmNimg_itms :: [RItem]
                          , itmNimg_mbbx :: Maybe BBox 
@@ -366,16 +362,16 @@ mkItmsNImg _geometry tpage = do
 
 -- | 
 drawTempSelectImage :: CanvasGeometry 
-                    -> TempSelectRender ItmsNImg 
+                    -> TempRender ItmsNImg 
                     -> Matrix -- ^ transformation matrix
                     -> Render ()
 drawTempSelectImage geometry tempselection xformmat = do 
-    let sfc = imageSurface (tempSelectInfo tempselection)
+    let sfc = imageSurface (tempInfo tempselection)
         CanvasDimension (Dim cw ch) = canvasDim geometry 
         invxformmat = invert xformmat 
         newvbbox = BBox (transformPoint invxformmat (0,0)) 
                         (transformPoint invxformmat (cw,ch))
-        mbbox = itmNimg_mbbx (tempSelectInfo tempselection)
+        mbbox = itmNimg_mbbx (tempInfo tempselection)
         newmbbox = case unIntersect (Intersect (Middle newvbbox) `mappend` fromMaybe mbbox) of 
                      Middle bbox -> Just bbox 
                      _ -> Just newvbbox
@@ -389,13 +385,14 @@ drawTempSelectImage geometry tempselection xformmat = do
 
 -- | 
 tempSelected :: TempSelection -> [RItem]
-tempSelected = tempSelectInfo 
+tempSelected = tempInfo 
 
 mkTempSelection :: Surface -> (Double,Double) -> [RItem] -> TempSelection
-mkTempSelection sfc (w,h) = TempSelectRender sfc (w,h)  
+mkTempSelection sfc (w,h) = TempRender sfc (w,h)  
 
+{-
 -- | update the content of temp selection. should not be often updated
-updateTempSelection :: TempSelectRender a -> Render () -> Bool -> IO ()
+updateTempSelection :: TempRender a -> Render () -> Bool -> IO ()
 updateTempSelection tempselection  renderfunc isFullErase = 
   renderWith (tempSurface tempselection) $ do 
     when isFullErase $ do 
@@ -404,7 +401,9 @@ updateTempSelection tempselection  renderfunc isFullErase =
       rectangle 0 0 cw ch 
       fill 
     renderfunc    
-    
+-}    
+
+
 -- | 
 getNewCoordTime :: ((Double,Double),UTCTime) 
                    -> (Double,Double)

@@ -15,19 +15,23 @@
 module Hoodle.Coroutine.Pen where
 
 -- from other packages
-import           Control.Category
-import           Control.Lens (view,set)
-import           Control.Monad
-import           Control.Monad.State
+-- import           Control.Category
+import           Control.Lens (view,set,at)
+import           Control.Monad hiding (mapM_,forM_)
+import           Control.Monad.State hiding (mapM_,forM_)
 -- import Control.Monad.Trans
+import           Data.Foldable (mapM_,forM_)
 import           Data.Sequence hiding (filter)
 -- import qualified Data.Map as M
 import           Data.Maybe 
 import           Data.Time.Clock 
--- import           Graphics.UI.Gtk hiding (get,set,disconnect)
+import           Graphics.Rendering.Cairo
+--  import           Graphics.UI.Gtk hiding (get,set,disconnect)
 -- from hoodle-platform
 import           Data.Hoodle.Predefined
 import           Data.Hoodle.BBox
+import           Data.Hoodle.Generic (gpages)
+import           Data.Hoodle.Simple (Dimension(..))
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Device 
@@ -35,6 +39,7 @@ import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
+import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -46,7 +51,22 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import Prelude hiding ((.), id)
+import Prelude hiding (mapM_,forM_)
+
+
+
+-- |
+createTempRender :: PageNum -> CanvasGeometry -> Page EditMode -> a -> MainCoroutine (TempRender a) 
+createTempRender _pnum geometry _page x = do 
+    xst <- get
+    let hdl = getHoodle xst
+    let Dim cw ch = unCanvasDimension . canvasDim $ geometry
+    (tempsurface,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
+    let tempselection = TempRender tempsurface (cw,ch) x
+    return tempselection 
+
+
+
 
 
 -- | page switch if pen click a page different than the current page
@@ -95,23 +115,28 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
         penAction _cinfo pnum geometry (x,y) = do 
           xstate <- get
           let PointerCoord _ _ _ z = pcoord 
-          let currhdl = unView . view hoodleModeState $ xstate        
+          let currhdl = getHoodle  xstate {- unView . view hoodleModeState $ -}       
               pinfo = view penInfo xstate
-          pdraw <-penProcess cid pnum geometry (empty |> (x,y,z)) ((x,y),z) 
-          case viewl pdraw of 
-            EmptyL -> return ()
-            (x1,_y1,_z1) :< _rest -> do 
-              if x1 <= 1e-3      -- this is ad hoc but.. 
-                then do 
-                  liftIO $ putStrLn " horizontal line cured !" 
-                  invalidateAll
-                else do  
-                  (newhdl,bbox) <- liftIO $ addPDraw pinfo currhdl pnum pdraw
-                  commit . set hoodleModeState (ViewAppendState newhdl) 
-                    =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
-                  let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
-                      nbbox = xformBBox f bbox 
-                  invalidateAllInBBox (Just nbbox) BkgEfficient 
+              mpage = view (gpages . at (unPageNum pnum)) currhdl 
+          forM_ mpage $ \page -> do 
+            trdr <- createTempRender pnum geometry page (empty |> (x,y,z)) 
+            pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
+            surfaceFinish (tempSurface trdr)
+
+            case viewl pdraw of 
+              EmptyL -> return ()
+              (x1,_y1,_z1) :< _rest -> do 
+                if x1 <= 1e-3      -- this is ad hoc but.. 
+                  then do 
+                    liftIO $ putStrLn " horizontal line cured !" 
+                    invalidateAll
+                  else do  
+                    (newhdl,bbox) <- liftIO $ addPDraw pinfo currhdl pnum pdraw
+                    commit . set hoodleModeState (ViewAppendState newhdl) 
+                      =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
+                    let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
+                        nbbox = xformBBox f bbox 
+                    invalidateAllInBBox (Just nbbox) BkgEfficient 
           
     
           
@@ -121,23 +146,24 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
 -- | now being changed
 penProcess :: CanvasId -> PageNum 
            -> CanvasGeometry
-           -> Seq (Double,Double,Double) -> ((Double,Double),Double) 
+           -> TempRender (Seq (Double,Double,Double))
+           -> ((Double,Double),Double) 
            -> MainCoroutine (Seq (Double,Double,Double))
-penProcess cid pnum geometry pdraw ((x0,y0),z0) = do 
+penProcess cid pnum geometry trdr {- pdraw -} ((x0,y0),z0) = do 
     r <- nextevent
     xst <- get 
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
+    pdraw = tempInfo trdr 
     fsingle :: forall b. (ViewMode b) => 
                UserEvent -> HoodleState -> CanvasInfo b 
                -> MainCoroutine (Seq (Double,Double,Double))
     fsingle r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
-        (penProcess cid pnum geometry pdraw ((x0,y0),z0))
+        (penProcess cid pnum geometry trdr ((x0,y0),z0))
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
            let canvas = view drawArea cvsInfo
-               -- msfc = view mDrawSurface cvsInfo 
                ptype  = view (penInfo.penType) xstate
                pcolor = view (penInfo.currentTool.penColor) xstate 
                pwidth = view (penInfo.currentTool.penWidth) xstate 
@@ -149,9 +175,30 @@ penProcess cid pnum geometry pdraw ((x0,y0),z0) = do
            let pressureType = case view (penInfo.variableWidthPen) xstate of 
                                 True -> Pressure
                                 False -> NoPressure
+           --- 
+           {- 
            liftIO $ drawCurvebitGen pressureType canvas geometry 
-                      pwidth pcolRGBA pnum pdraw ((x0,y0),z0) ((x,y),z)
-           penProcess cid pnum geometry (pdraw |> (x,y,z)) ((x,y),z) )
+                      pwidth pcolRGBA pnum pdraw ((x0,y0),z0) ((x,y),z) 
+           -}
+           let xformfunc = cairoXform4PageCoordinate geometry pnum 
+               renderfunc = do 
+                 xformfunc 
+                 case viewl pdraw of 
+                   EmptyL -> return ()
+                   (x1,y1,_) :< rest -> do 
+                     let (r,g,b,a) = pcolRGBA
+                     setSourceRGBA r g b a 
+                     setLineWidth pwidth
+                     moveTo x1 y1
+                     mapM_ (\(x',y',_) -> lineTo x' y') rest
+                     lineTo x y 
+                     stroke 
+                     
+           liftIO $ updateTempRender trdr renderfunc False
+           invalidateTemp cid (tempSurface trdr) (return ())
+           ---                                
+           let ntrdr = trdr { tempInfo = pdraw |> (x,y,z) }
+           penProcess cid pnum geometry ntrdr ((x,y),z) )
         (\_ -> return pdraw )
 
 -- | 

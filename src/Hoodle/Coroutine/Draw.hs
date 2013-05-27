@@ -140,6 +140,7 @@ invalidateTemp cid tempsurface rndr = do
                      paint 
                      xformfunc 
                      rndr 
+                     emphasisCanvasRender ColorRed geometry 
 {-      
 -- | Drawing temporary gadgets more generally
 invalidateTempGen :: CanvasId -> Surface -> Render () -> Render () 

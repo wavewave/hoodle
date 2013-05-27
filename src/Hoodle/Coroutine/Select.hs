@@ -47,6 +47,7 @@ import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Pen
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
+import           Hoodle.ModelAction.Pen
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Type.Alias
@@ -61,6 +62,8 @@ import           Hoodle.View.Draw
 -- 
 import           Prelude hiding ((.), id)
 
+
+{-
 -- |
 createTempSelectRender :: PageNum -> CanvasGeometry -> Page EditMode
                           -> a 
@@ -72,7 +75,7 @@ createTempSelectRender _pnum geometry _page x = do
     (tempsurface,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
     let tempselection = TempSelectRender tempsurface (cw,ch) x
     return tempselection 
-
+-}
 
 -- | For Selection mode from pen mode with 2nd pen button
 dealWithOneTimeSelectMode :: MainCoroutine ()     -- ^ main action 
@@ -100,7 +103,7 @@ selectRectStart pbtn cid = commonPenStart rectaction cid
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page = 
                 dealWithOneTimeSelectMode 
-                  (do tsel <- createTempSelectRender pnum geometry page [] 
+                  (do tsel <- createTempRender pnum geometry page [] 
                       newSelectRectangle cid pnum geometry itms 
                                          (x,y) ((x,y),ctime) tsel
                       surfaceFinish (tempSurface tsel) 
@@ -172,13 +175,13 @@ newSelectRectangle cid pnum geometry itms orig
                   mapM_ renderSelectedItem redrawee 
                 Bottom -> return ()
               mapM_ renderSelectedItem sitms 
-        liftIO $ updateTempSelection tempselection renderfunc False
+        liftIO $ updateTempRender tempselection renderfunc False
       when willUpdate $  
         invalidateTemp cid (tempSurface tempselection) 
                            (renderBoxSelection bbox) 
       newSelectRectangle cid pnum geometry itms orig 
                          (ncoord,ntime)
-                         tempselection { tempSelectInfo = hitteditms }
+                         tempselection { tempInfo = hitteditms }
     upact xstate cinfo pcoord = do       
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
@@ -214,7 +217,7 @@ startMoveSelect :: CanvasId
                    -> MainCoroutine () 
 startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do  
     itmimage <- liftIO $ mkItmsNImg geometry tpage
-    tsel <- createTempSelectRender pnum geometry
+    tsel <- createTempRender pnum geometry
               (hPage2RPage tpage) 
               itmimage 
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
@@ -229,7 +232,7 @@ moveSelect :: CanvasId
               -> CanvasGeometry
               -> (Double,Double)
               -> ((Double,Double),UTCTime)
-              -> TempSelectRender ItmsNImg
+              -> TempRender ItmsNImg
               -> MainCoroutine ()
 moveSelect cid pnum geometry orig@(x0,y0) 
            (prev,otime) tempselection = do
@@ -332,7 +335,7 @@ startResizeSelect :: Handle
 startResizeSelect handle cid pnum geometry bbox 
                   ((x,y),ctime) tpage = do  
     itmimage <- liftIO $ mkItmsNImg geometry tpage  
-    tsel <- createTempSelectRender pnum geometry 
+    tsel <- createTempRender pnum geometry 
               (hPage2RPage tpage) 
               itmimage 
     resizeSelect handle cid pnum geometry bbox ((x,y),ctime) tsel 
@@ -348,7 +351,7 @@ resizeSelect :: Handle
                 -> CanvasGeometry
                 -> BBox
                 -> ((Double,Double),UTCTime)
-                -> TempSelectRender ItmsNImg
+                -> TempRender ItmsNImg
                 -> MainCoroutine ()
 resizeSelect handle cid pnum geometry origbbox 
              (prev,otime) tempselection = do
@@ -448,7 +451,7 @@ selectLassoStart pbtn cid = commonPenStart lassoAction cid
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page =    
                 dealWithOneTimeSelectMode 
-                  (do tsel <- createTempSelectRender pnum geometry page [] 
+                  (do tsel <- createTempRender pnum geometry page [] 
                       newSelectLasso cinfo pnum geometry itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                       surfaceFinish (tempSurface tsel)

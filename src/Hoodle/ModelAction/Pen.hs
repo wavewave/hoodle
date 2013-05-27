@@ -15,12 +15,14 @@
 module Hoodle.ModelAction.Pen where
 
 import           Control.Lens (view,set,over)
+import           Control.Monad (when)
 import           Control.Monad.Identity (runIdentity)
 import           Data.Foldable
 import qualified Data.IntMap as IM
 -- import qualified Data.Map as M
 import           Data.Sequence hiding (take, drop)
 import           Data.Strict.Tuple hiding (uncurry)
+import           Graphics.Rendering.Cairo
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -34,6 +36,28 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 --
+
+data TempRender a = TempRender { tempSurface :: Surface  
+                               , widthHeight :: (Double,Double)
+                               , tempInfo :: a 
+                               } 
+
+
+-- | update the content of temp selection. should not be often updated
+updateTempRender :: TempRender a -> Render () -> Bool -> IO ()
+updateTempRender temprender renderfunc isFullErase = 
+  renderWith (tempSurface temprender) $ do 
+    when isFullErase $ do 
+      let (cw,ch) = widthHeight temprender
+      setSourceRGBA 0.5 0.5 0.5 1
+      rectangle 0 0 cw ch 
+      fill 
+    renderfunc    
+
+
+
+
+
 
 -- | 
 addPDraw :: PenInfo 

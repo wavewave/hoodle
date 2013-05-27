@@ -33,6 +33,7 @@ import           Data.Hoodle.Predefined
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic (gpages)
 import           Data.Hoodle.Simple (Dimension(..))
+import           Graphics.Hoodle.Render (renderStrk)
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Device 
@@ -169,25 +170,30 @@ penProcess cid pnum geometry trdr {- pdraw -} ((x0,y0),z0) = do
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
            let canvas = view drawArea cvsInfo
-               ptype  = view (penInfo.penType) xstate
-               pcolor = view (penInfo.currentTool.penColor) xstate 
-               pwidth = view (penInfo.currentTool.penWidth) xstate 
-               (pcr,pcg,pcb,pca) = convertPenColorToRGBA pcolor 
-               opacity = case ptype of 
-                  HighlighterWork -> predefined_highlighter_opacity 
-                  _ -> 1.0
-               pcolRGBA = (pcr,pcg,pcb,pca*opacity) 
-           let pressureType = case view (penInfo.variableWidthPen) xstate of 
-                                True -> Pressure
-                                False -> NoPressure
+               pinfo  = view penInfo xstate
+               -- ptype  = view (penInfo.penType) xstate
+               -- pcolor = view (penInfo.currentTool.penColor) xstate 
+               -- pwidth = view (penInfo.currentTool.penWidth) xstate 
+               -- (pcr,pcg,pcb,pca) = convertPenColorToRGBA pcolor 
+               -- opacity = case ptype of 
+               --    HighlighterWork -> predefined_highlighter_opacity 
+               --    _ -> 1.0
+               -- pcolRGBA = (pcr,pcg,pcb,pca*opacity) 
+           -- let pressureType = case view (penInfo.variableWidthPen) xstate of 
+           --                      True -> Pressure
+           --                      False -> NoPressure
            --- 
            {- 
            liftIO $ drawCurvebitGen pressureType canvas geometry 
                       pwidth pcolRGBA pnum pdraw ((x0,y0),z0) ((x,y),z) 
            -}
            let xformfunc = cairoXform4PageCoordinate geometry pnum 
+               tmpstrk = createNewStroke pinfo pdraw
                renderfunc = do 
                  xformfunc 
+                 renderStrk tmpstrk
+                 
+                 {- 
                  case viewl pdraw of 
                    EmptyL -> return ()
                    (x1,y1,_) :< rest -> do 
@@ -197,7 +203,7 @@ penProcess cid pnum geometry trdr {- pdraw -} ((x0,y0),z0) = do
                      moveTo x1 y1
                      mapM_ (\(x',y',_) -> lineTo x' y') rest
                      lineTo x y 
-                     stroke 
+                     stroke -}
                      
            -- liftIO $ updateTempRender trdr renderfunc False
            -- invalidateTemp cid (tempSurfaceSrc trdr) (return ())

@@ -1,5 +1,6 @@
 #!/bin/bash 
 
+sudo apt-get update
 sudo apt-get install libgd2-noxpm-dev libpoppler-glib-dev
 
 cabal install transformers

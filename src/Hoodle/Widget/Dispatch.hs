@@ -61,8 +61,7 @@ widgetCheckPen cid pcoord defact = get >>= \xst -> boxAction (chk xst) (getCanva
              <|> 
              (lift . startLayerWidget triplet <=< MaybeT . return . checkPointerInLayer triplet) pcoord
              <|> 
-             (do liftIO $ putStrLn "widgetCheckPen test: " 
-                 guard (view (settings.doesFollowLinks) xstate)   
+             (do guard (view (settings.doesFollowLinks) xstate)   
                  (pnum,bbox,ritem) <- (MaybeT . return . view notifiedItem) cinfo
                  (pnum',PageCoord (x,y)) <- (MaybeT . return . desktop2Page geometry . device2Desktop geometry) pcoord 
                  guard (pnum == pnum') 

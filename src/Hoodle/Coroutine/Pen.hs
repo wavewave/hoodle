@@ -59,12 +59,27 @@ import Prelude hiding (mapM_)
 createTempRender :: PageNum -> CanvasGeometry -> Page EditMode -> a -> MainCoroutine (TempRender a) 
 createTempRender _pnum geometry _page x = do 
     xst <- get
+    let cinfobox = view currentCanvasInfo xst 
+        mcvssfc = view (unboxLens mDrawSurface) cinfobox 
     let hdl = getHoodle xst
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
-    (srcsfc,Dim wsfc hsfc) <- liftIO $ canvasImageSurface Nothing geometry hdl 
+        
+    srcsfc <- liftIO  $ maybe (fst <$> canvasImageSurface Nothing geometry hdl)
+                              (\cvssfc -> do 
+                                sfc <- createImageSurface FormatARGB32 (floor cw) (floor ch) 
+                                renderWith sfc $ do 
+                                  setSourceSurface cvssfc 0 0 
+                                  setOperator OperatorSource 
+                                  paint
+                                return sfc) 
+                              mcvssfc
+
+    -- (srcsfc,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
+                                  
+    
     liftIO $ renderWith srcsfc $ do 
       emphasisCanvasRender ColorRed geometry 
-    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch)  -- (floor wsfc) (floor hsfc)
     let trdr = TempRender srcsfc tgtsfc (cw,ch) x
     return trdr 
 

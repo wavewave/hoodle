@@ -249,8 +249,7 @@ defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
 defaultEventProcess (VScrollBarMoved cid v) = vscrollBarMoved cid v
 defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid v 
 defaultEventProcess PaneMoveStart = paneMoveStart 
-defaultEventProcess (CanvasConfigure cid w' h') = 
-  doCanvasConfigure cid (CanvasDimension (Dim w' h'))
+defaultEventProcess (CanvasConfigure cid w' h') = doCanvasConfigure cid (CanvasDimension (Dim w' h'))
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess ToSinglePage = viewModeChange ToSinglePage

@@ -140,26 +140,6 @@ invalidateTemp cid tempsurface rndr = do
                      paint 
                      xformfunc 
                      rndr 
-                     emphasisCanvasRender ColorRed geometry 
-{-      
--- | Drawing temporary gadgets more generally
-invalidateTempGen :: CanvasId -> Surface -> Render () -> Render () 
-                     -> MainCoroutine ()
-invalidateTempGen cid tempsurface xformfunc rndr = do 
-    xst <- get 
-    selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
-  where fsingle xstate cvsInfo = do 
-          let canvas = view drawArea cvsInfo
-              pnum = PageNum . view currentPageNum $ cvsInfo 
-          geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
-          win <- liftIO $ widgetGetDrawWindow canvas
-          liftIO $ renderWithDrawable win $ do   
-                     xformfunc 
-                     setSourceSurface tempsurface 0 0 
-                     setOperator OperatorSource 
-                     paint 
-                     rndr 
--}
 
 -- | Drawing temporary gadgets with coordinate based on base page
 

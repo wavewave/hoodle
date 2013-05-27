@@ -383,25 +383,17 @@ drawTempSelectImage geometry tempselection xformmat = do
 
 
 
+{-
 -- | 
 tempSelected :: TempSelection -> [RItem]
 tempSelected = tempInfo 
+-}
 
+{- 
 mkTempSelection :: Surface -> (Double,Double) -> [RItem] -> TempSelection
 mkTempSelection sfc (w,h) = TempRender sfc (w,h)  
+-}
 
-{-
--- | update the content of temp selection. should not be often updated
-updateTempSelection :: TempRender a -> Render () -> Bool -> IO ()
-updateTempSelection tempselection  renderfunc isFullErase = 
-  renderWith (tempSurface tempselection) $ do 
-    when isFullErase $ do 
-      let (cw,ch) = widthHeight tempselection
-      setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 cw ch 
-      fill 
-    renderfunc    
--}    
 
 
 -- | 

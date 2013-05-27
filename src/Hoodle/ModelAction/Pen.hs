@@ -37,7 +37,8 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 --
 
-data TempRender a = TempRender { tempSurface :: Surface  
+data TempRender a = TempRender { tempSurfaceSrc :: Surface  
+                               , tempSurfaceTgt :: Surface 
                                , widthHeight :: (Double,Double)
                                , tempInfo :: a 
                                } 
@@ -46,7 +47,7 @@ data TempRender a = TempRender { tempSurface :: Surface
 -- | update the content of temp selection. should not be often updated
 updateTempRender :: TempRender a -> Render () -> Bool -> IO ()
 updateTempRender temprender renderfunc isFullErase = 
-  renderWith (tempSurface temprender) $ do 
+  renderWith (tempSurfaceSrc temprender) $ do 
     when isFullErase $ do 
       let (cw,ch) = widthHeight temprender
       setSourceRGBA 0.5 0.5 0.5 1

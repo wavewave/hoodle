@@ -15,6 +15,7 @@
 module Hoodle.Coroutine.Pen where
 
 -- from other packages
+import           Control.Applicative ((<$>),(<*>))
 -- import           Control.Category
 import           Control.Lens (view,set,at)
 import           Control.Monad hiding (mapM_,forM_)
@@ -61,9 +62,12 @@ createTempRender _pnum geometry _page x = do
     xst <- get
     let hdl = getHoodle xst
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
-    (tempsurface,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
-    let tempselection = TempRender tempsurface (cw,ch) x
-    return tempselection 
+    (srcsfc,Dim wsfc hsfc) <- liftIO $ canvasImageSurface Nothing geometry hdl 
+    liftIO $ renderWith srcsfc $ do 
+      emphasisCanvasRender ColorRed geometry 
+    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+    let trdr = TempRender srcsfc tgtsfc (cw,ch) x
+    return trdr 
 
 
 
@@ -121,7 +125,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           forM_ mpage $ \page -> do 
             trdr <- createTempRender pnum geometry page (empty |> (x,y,z)) 
             pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
-            surfaceFinish (tempSurface trdr)
+            surfaceFinish (tempSurfaceSrc trdr)
+            surfaceFinish (tempSurfaceTgt trdr)            
 
             case viewl pdraw of 
               EmptyL -> return ()
@@ -194,8 +199,11 @@ penProcess cid pnum geometry trdr {- pdraw -} ((x0,y0),z0) = do
                      lineTo x y 
                      stroke 
                      
-           liftIO $ updateTempRender trdr renderfunc False
-           invalidateTemp cid (tempSurface trdr) (return ())
+           -- liftIO $ updateTempRender trdr renderfunc False
+           -- invalidateTemp cid (tempSurfaceSrc trdr) (return ())
+           let (srcsfc,tgtsfc) = (,) <$> tempSurfaceSrc <*> tempSurfaceTgt $ trdr
+           virtualDoubleBufferDraw srcsfc tgtsfc (return ()) renderfunc
+           liftIO $ doubleBufferFlush tgtsfc cvsInfo
            ---                                
            let ntrdr = trdr { tempInfo = pdraw |> (x,y,z) }
            penProcess cid pnum geometry ntrdr ((x,y),z) )

@@ -106,7 +106,7 @@ selectRectStart pbtn cid = commonPenStart rectaction cid
                   (do tsel <- createTempRender pnum geometry page [] 
                       newSelectRectangle cid pnum geometry itms 
                                          (x,y) ((x,y),ctime) tsel
-                      surfaceFinish (tempSurface tsel) 
+                      surfaceFinish (tempSurfaceSrc tsel) 
                       showContextMenu (pnum,(x,y))
                   )
                   (return ())  
@@ -157,7 +157,7 @@ newSelectRectangle cid pnum geometry itms orig
           hittestbbox = hltEmbeddedByBBox bbox itms
           hitteditms = takeHitted hittestbbox
       page <- getCurrentPageCvsId cid
-      let (fitms,sitms) = separateFS $ getDiffBBox (tempSelected tempselection) hitteditms 
+      let (fitms,sitms) = separateFS $ getDiffBBox (tempInfo tempselection) hitteditms 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fitms || (not.null) sitms) $ do 
         let xformfunc = cairoXform4PageCoordinate geometry pnum 
@@ -177,7 +177,7 @@ newSelectRectangle cid pnum geometry itms orig
               mapM_ renderSelectedItem sitms 
         liftIO $ updateTempRender tempselection renderfunc False
       when willUpdate $  
-        invalidateTemp cid (tempSurface tempselection) 
+        invalidateTemp cid (tempSurfaceSrc tempselection) 
                            (renderBoxSelection bbox) 
       newSelectRectangle cid pnum geometry itms orig 
                          (ncoord,ntime)
@@ -221,7 +221,8 @@ startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do
               (hPage2RPage tpage) 
               itmimage 
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
-    surfaceFinish (tempSurface tsel)                  
+    surfaceFinish (tempSurfaceSrc tsel)
+    surfaceFinish (tempSurfaceTgt tsel)
     surfaceFinish (imageSurface itmimage)
     -- invalidateAll 
     invalidateAllInBBox Nothing Efficient 
@@ -263,7 +264,7 @@ moveSelect cid pnum geometry orig@(x0,y0)
             (b1',b2') = xform (sfunc (0,1))
             (b1,b2) = (b1'-c1,b2'-c2)
             xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
-        invalidateTempBasePage cid (tempSurface tempselection) pnum 
+        invalidateTempBasePage cid (tempSurfaceSrc tempselection) pnum 
           (drawTempSelectImage geometry tempselection xformmat) 
       moveSelect cid pnum geometry orig (ncoord,ntime) tempselection
     upact :: (ViewMode a) => HoodleState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
@@ -339,7 +340,8 @@ startResizeSelect handle cid pnum geometry bbox
               (hPage2RPage tpage) 
               itmimage 
     resizeSelect handle cid pnum geometry bbox ((x,y),ctime) tsel 
-    surfaceFinish (tempSurface tsel)  
+    surfaceFinish (tempSurfaceSrc tsel)  
+    surfaceFinish (tempSurfaceTgt tsel)      
     surfaceFinish (imageSurface itmimage)
     -- invalidateAll 
     invalidateAllInBBox Nothing Efficient
@@ -375,7 +377,7 @@ resizeSelect handle cid pnum geometry origbbox
             (b1',b2') = xform (sfunc (0,1))
             (b1,b2) = (b1'-c1,b2'-c2)
             xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
-        invalidateTemp cid (tempSurface tempselection) 
+        invalidateTemp cid (tempSurfaceSrc tempselection) 
                            (drawTempSelectImage geometry tempselection 
                               xformmat)
       resizeSelect handle cid pnum geometry 
@@ -454,7 +456,8 @@ selectLassoStart pbtn cid = commonPenStart lassoAction cid
                   (do tsel <- createTempRender pnum geometry page [] 
                       newSelectLasso cinfo pnum geometry itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
-                      surfaceFinish (tempSurface tsel)
+                      surfaceFinish (tempSurfaceSrc tsel)
+                      surfaceFinish (tempSurfaceTgt tsel)
                       showContextMenu (pnum,(x,y))
                   )
                   (return ()) 
@@ -501,7 +504,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
       let nlasso = lasso |> (x,y)
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when willUpdate $ do 
-        invalidateTemp (view canvasId cinfo) (tempSurface tsel) (renderLasso geometry nlasso) 
+        invalidateTemp (view canvasId cinfo) (tempSurfaceSrc tsel) (renderLasso geometry nlasso) 
       newSelectLasso cinfo pnum geometry itms orig (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
       xstate <- get 

@@ -57,7 +57,7 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import Prelude hiding (mapM_, mapM,forM_)
+import Prelude hiding (mapM_)
 
 makeTextSVGFromStringAt :: String 
                            -> CanvasId 

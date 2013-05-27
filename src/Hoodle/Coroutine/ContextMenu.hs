@@ -67,7 +67,8 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement 
 import           Hoodle.Util
 --
-import Prelude hiding (mapM_,forM_)
+import Prelude hiding (mapM_) 
+
 
 processContextMenu :: ContextMenuEvent -> MainCoroutine () 
 processContextMenu (CMenuSaveSelectionAs ityp) = do 

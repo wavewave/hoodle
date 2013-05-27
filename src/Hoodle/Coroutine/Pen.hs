@@ -51,7 +51,7 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import Prelude hiding (mapM_,forM_)
+import Prelude hiding (mapM_)
 
 
 

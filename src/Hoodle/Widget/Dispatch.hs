@@ -41,7 +41,7 @@ import Hoodle.View.Draw
 import Hoodle.Widget.Layer
 import Hoodle.Widget.PanZoom
 -- 
-import Prelude hiding (forM_)
+-- import Prelude hiding (forM_)
 
 widgetCheckPen :: CanvasId 
                -> PointerCoord 

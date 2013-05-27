@@ -1,7 +1,7 @@
 #!/bin/bash 
 
 sudo apt-get update
-sudo apt-get install libgd2-xpm-dev libpoppler-glib-dev
+sudo apt-get install libgd2-xpm-dev libpoppler-glib-dev libghc-gtk-dev gtk2hs-buildtools libghc-gtk-doc 
 
 cabal install transformers
 cabal install hscolour
@@ -12,7 +12,7 @@ git clone https://github.com/wavewave/devadmin.git deps/devadmin
 cd deps/devadmin ; cabal install --force-reinstalls ; cd ../../
 $HOME/.cabal/bin/build cloneall --config=build.conf
 
-cabal install gtk2hs-buildtools
+#cabal install gtk2hs-buildtools
 
 # for dep installation
 $HOME/.cabal/bin/build bootstrap --config=build.conf

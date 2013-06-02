@@ -75,3 +75,13 @@ hoodle
    * single image selection using wacom side button (convenient when overlapped images) 
    * grey out save button when reading a file at first
    * white-out bug fix when opening multiple pdf files 
+
+0.2.1: 2 Jun 2013 
+   * touch support: touch is now used for zooming and panning
+   * any selected items can be transformed into a link
+   * layer widget (show current content of layer and navigate other layers)
+   * very simple versioning support (available under File/Save Version) 
+   * notify a linked item with transparent yellow box when hovered over
+   * page arranged at the center not left-upper corner
+   * rendering improvement especially when a pen stroke is being drawn 
+   * context menu whenever right-clicking on selected item 

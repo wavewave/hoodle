@@ -324,9 +324,7 @@ drawContPageGen render = ContPageDraw func
                 let npgs = foldr rfunc pgs ndrawpgs   
                        where rfunc (k,pg) m = M.adjust (const pg) k m 
                 let nhdl = set gpages npgs hdl  
-                -- for the time being, no emphasis 
-                -- mapM_ (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
-                -- 
+                mapM_ (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 mapM_ (emphasisNotifiedRender geometry) (view notifiedItem cinfo) 
                 when isCurrentCvs (emphasisCanvasRender ColorRed geometry)
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 
@@ -381,9 +379,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 r <- runMaybeT $ do (n,tpage) <- MaybeT (return mtpage)
                                     lift (selpagerender (PageNum n,tpage)) 
                 let nthdl2 = set gselSelected r nthdl
-                -- for the time being no emphasis
-                -- maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
-                -- 
+                maybe (return ()) (\cpg->emphasisPageRender geometry (pnum,cpg)) mcpg 
                 mapM_ (emphasisNotifiedRender geometry) (view notifiedItem cinfo)                 
                 when isCurrentCvs (emphasisCanvasRender ColorGreen geometry)  
                 let mbbox_canvas = fmap (xformBBox (unCvsCoord . desktop2Canvas geometry . DeskCoord )) mbboxnew                 

@@ -313,7 +313,12 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
               let devlst = view deviceList xst 
               doIOaction $ \_ -> do
                 setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
-                readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
+                -- ad hoc 
+                let touchstr = dev_touch_str devlst
+                when (touchstr /= "touch") $ do 
+                  readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
+                  return ()
+                -- 
                 return (UsrEv ActionOrdered)
               waitSomeEvent (\e -> case e of TouchUp _ _ -> True ; _ -> False) >> return ()
 
@@ -325,7 +330,12 @@ toggleTouch = do
     let devlst = view deviceList xst 
     let b = view (settings.doesUseTouch) xst
     when b $ do 
-      liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
+      -- ad hoc 
+      let touchstr = dev_touch_str devlst      
+      when (touchstr /= "touch") $ do 
+        liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
+        return ()
+      --
       let (cid,cinfobox) = view currentCanvas xst 
       put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
       invalidateInBBox Nothing Efficient cid   

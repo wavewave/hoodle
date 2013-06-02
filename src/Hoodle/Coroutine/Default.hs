@@ -212,7 +212,12 @@ disableTouch = do
       let nxst = set (settings.doesUseTouch) False xst 
       doIOaction $ \_ -> do
         setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
-        readProcess "xinput" [ "disable", dev_touch_str devlst ] "" 
+        let touchstr = dev_touch_str devlst
+        -- ad hoc
+        when (touchstr /= "touch") $ do 
+          readProcess "xinput" [ "disable", touchstr ] "" 
+          return ()
+        -- 
         return (UsrEv ActionOrdered)
       waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
       put nxst

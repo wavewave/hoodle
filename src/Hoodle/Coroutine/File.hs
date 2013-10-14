@@ -69,7 +69,6 @@ import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
--- import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -232,12 +231,9 @@ fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) act
 -- | 
 fileStartSync :: MainCoroutine ()
 fileStartSync = do 
-   
   xst <- get 
   let mf = (,) <$> view (hoodleFileControl.hoodleFileName) xst <*> view (hoodleFileControl.lastSavedTime) xst 
-  -- liftIO $ print mf 
   maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
-  --  fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where  
     action filename lasttime  = do 
       let ioact = mkIOaction $ \evhandler ->do 
@@ -420,20 +416,22 @@ insertItemAt :: Maybe (PageNum,PageCoordinate)
                 -> MainCoroutine () 
 insertItemAt mpcoord ritm = do 
     xst <- get   
+    geometry <- liftIO (getGeometry4CurrCvs xst) 
     let hdl = getHoodle xst 
         (pgnum,mpos) = case mpcoord of 
           Just (PageNum n,pos) -> (n,Just pos)
           Nothing -> ((unboxGet currentPageNum.view currentCanvasInfo) xst,Nothing)
         (ulx,uly) = (bbox_upperleft.getBBox) ritm
-        nitm = case mpos of 
-                 Nothing -> ritm 
-                 Just (PageCoord (nx,ny)) -> 
-                   changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly)) ritm
+        nitms = 
+          case mpos of 
+            Nothing -> adjustItemPosition4Paste geometry (PageNum pgnum) [ritm] 
+            Just (PageCoord (nx,ny)) -> 
+                   map (changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly))) [ritm]
           
     let pg = getPageFromGHoodleMap pgnum hdl
         lyr = getCurrentLayer pg 
         oitms = view gitems lyr  
-        ntpg = makePageSelectMode pg (oitms :- (Hitted [nitm]) :- Empty)  
+        ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
     modeChange ToSelectMode 
     nxst <- get 
     thdl <- case view hoodleModeState nxst of
@@ -579,13 +577,16 @@ askQuitProgram = do
 -- | 
 embedPredefinedImage :: MainCoroutine () 
 embedPredefinedImage = do 
-    liftIO $ putStrLn "embedPredefinedImage"
+    -- liftIO $ putStrLn "embedPredefinedImage"
     mpredefined <- S.embedPredefinedImageHook 
-    liftIO $ print mpredefined
+    -- liftIO $ print mpredefined
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
-        xstate <- get 
+        nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
+        insertItemAt Nothing nitm 
+
+        {-        xstate <- get 
         geometry <- liftIO (getGeometry4CurrCvs xstate)
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
@@ -608,17 +609,21 @@ embedPredefinedImage = do
                      $ nxstate
         put nxstate2
         invalidateAll 
+-}
         
 -- | this is temporary. I will remove it
 embedPredefinedImage2 :: MainCoroutine () 
 embedPredefinedImage2 = do 
-    liftIO $ putStrLn "embedPredefinedImage2"
+    -- liftIO $ putStrLn "embedPredefinedImage2"
     mpredefined <- S.embedPredefinedImage2Hook 
-    liftIO $ print mpredefined
+    -- liftIO $ print mpredefined
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
-        xstate <- get 
+        nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
+        insertItemAt Nothing nitm 
+        
+{-         xstate <- get 
         geometry <- liftIO (getGeometry4CurrCvs xstate)
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
@@ -640,17 +645,21 @@ embedPredefinedImage2 = do
                      . set hoodleModeState (SelectState nthdl) 
                      $ nxstate
         put nxstate2
-        invalidateAll         
+        invalidateAll -}
         
 -- | this is temporary. I will remove it
 embedPredefinedImage3 :: MainCoroutine () 
 embedPredefinedImage3 = do 
-    liftIO $ putStrLn "embedPredefinedImage3"
+    -- liftIO $ putStrLn "embedPredefinedImage3"
     mpredefined <- S.embedPredefinedImage3Hook 
-    liftIO $ print mpredefined
+    -- liftIO $ print mpredefined
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
+        nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
+        insertItemAt Nothing nitm 
+        
+{-
         xstate <- get 
         geometry <- liftIO (getGeometry4CurrCvs xstate)        
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
@@ -674,6 +683,7 @@ embedPredefinedImage3 = do
                      $ nxstate
         put nxstate2
         invalidateAll         
+-}
         
 -- | 
 embedAllPDFBackground :: MainCoroutine () 

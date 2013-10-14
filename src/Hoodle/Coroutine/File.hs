@@ -577,113 +577,35 @@ askQuitProgram = do
 -- | 
 embedPredefinedImage :: MainCoroutine () 
 embedPredefinedImage = do 
-    -- liftIO $ putStrLn "embedPredefinedImage"
     mpredefined <- S.embedPredefinedImageHook 
-    -- liftIO $ print mpredefined
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
         nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
         insertItemAt Nothing nitm 
 
-        {-        xstate <- get 
-        geometry <- liftIO (getGeometry4CurrCvs xstate)
-        let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
-            hdl = getHoodle xstate 
-            currpage = getPageFromGHoodleMap pgnum hdl
-            currlayer = getCurrentLayer currpage
-            isembedded = True
-        newitem' <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename)
-        let newitems = 
-              adjustItemPosition4Paste geometry (PageNum pgnum) [newitem']
-        let otheritems = view gitems currlayer  
-        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted newitems) :- Empty)  
-        modeChange ToSelectMode 
-        nxstate <- get 
-        thdl <- case view hoodleModeState nxstate of
-                  SelectState thdl' -> return thdl'
-                  _ -> (lift . EitherT . return . Left . Other) "embedPredefinedImage"
-        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-        let nxstate2 = set isOneTimeSelectMode YesAfterSelect 
-                     . set hoodleModeState (SelectState nthdl) 
-                     $ nxstate
-        put nxstate2
-        invalidateAll 
--}
         
 -- | this is temporary. I will remove it
 embedPredefinedImage2 :: MainCoroutine () 
 embedPredefinedImage2 = do 
-    -- liftIO $ putStrLn "embedPredefinedImage2"
     mpredefined <- S.embedPredefinedImage2Hook 
-    -- liftIO $ print mpredefined
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
         nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
         insertItemAt Nothing nitm 
         
-{-         xstate <- get 
-        geometry <- liftIO (getGeometry4CurrCvs xstate)
-        let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
-            hdl = getHoodle xstate 
-            currpage = getPageFromGHoodleMap pgnum hdl
-            currlayer = getCurrentLayer currpage
-            isembedded = True
-        newitem' <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename)
-        let newitems = 
-              adjustItemPosition4Paste geometry (PageNum pgnum) [newitem']  
-        let otheritems = view gitems currlayer  
-        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted newitems) :- Empty)  
-        modeChange ToSelectMode 
-        nxstate <- get 
-        thdl <- case view hoodleModeState nxstate of
-                  SelectState thdl' -> return thdl'
-                  _ -> (lift . EitherT . return . Left . Other) "embedPredefinedImage2"
-        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-        let nxstate2 = set isOneTimeSelectMode YesAfterSelect 
-                     . set hoodleModeState (SelectState nthdl) 
-                     $ nxstate
-        put nxstate2
-        invalidateAll -}
         
 -- | this is temporary. I will remove it
 embedPredefinedImage3 :: MainCoroutine () 
 embedPredefinedImage3 = do 
-    -- liftIO $ putStrLn "embedPredefinedImage3"
     mpredefined <- S.embedPredefinedImage3Hook 
-    -- liftIO $ print mpredefined
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
         nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
         insertItemAt Nothing nitm 
         
-{-
-        xstate <- get 
-        geometry <- liftIO (getGeometry4CurrCvs xstate)        
-        let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
-            hdl = getHoodle xstate 
-            currpage = getPageFromGHoodleMap pgnum hdl
-            currlayer = getCurrentLayer currpage
-            isembedded = True
-        newitem' <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename)
-        let newitems = 
-              adjustItemPosition4Paste geometry (PageNum pgnum) [newitem']
-        let otheritems = view gitems currlayer  
-        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted newitems) :- Empty)  
-        modeChange ToSelectMode 
-        nxstate <- get 
-        thdl <- case view hoodleModeState nxstate of
-                  SelectState thdl' -> return thdl'
-                  _ -> (lift . EitherT . return . Left . Other) "embedPredefinedImage3"
-        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-        let nxstate2 = set isOneTimeSelectMode YesAfterSelect 
-                     . set hoodleModeState (SelectState nthdl) 
-                     $ nxstate
-        put nxstate2
-        invalidateAll         
--}
         
 -- | 
 embedAllPDFBackground :: MainCoroutine () 

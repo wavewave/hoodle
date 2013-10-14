@@ -586,15 +586,17 @@ embedPredefinedImage = do
       Nothing -> return () 
       Just filename -> do 
         xstate <- get 
+        geometry <- liftIO (getGeometry4CurrCvs xstate)
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
             currpage = getPageFromGHoodleMap pgnum hdl
             currlayer = getCurrentLayer currpage
             isembedded = True
-        newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
-
+        newitem' <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename)
+        let newitems = 
+              adjustItemPosition4Paste geometry (PageNum pgnum) [newitem']
         let otheritems = view gitems currlayer  
-        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted newitems) :- Empty)  
         modeChange ToSelectMode 
         nxstate <- get 
         thdl <- case view hoodleModeState nxstate of
@@ -617,15 +619,17 @@ embedPredefinedImage2 = do
       Nothing -> return () 
       Just filename -> do 
         xstate <- get 
+        geometry <- liftIO (getGeometry4CurrCvs xstate)
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
             currpage = getPageFromGHoodleMap pgnum hdl
             currlayer = getCurrentLayer currpage
             isembedded = True
-        newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
-
+        newitem' <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename)
+        let newitems = 
+              adjustItemPosition4Paste geometry (PageNum pgnum) [newitem']  
         let otheritems = view gitems currlayer  
-        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted newitems) :- Empty)  
         modeChange ToSelectMode 
         nxstate <- get 
         thdl <- case view hoodleModeState nxstate of
@@ -648,15 +652,17 @@ embedPredefinedImage3 = do
       Nothing -> return () 
       Just filename -> do 
         xstate <- get 
+        geometry <- liftIO (getGeometry4CurrCvs xstate)        
         let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
             hdl = getHoodle xstate 
             currpage = getPageFromGHoodleMap pgnum hdl
             currlayer = getCurrentLayer currpage
             isembedded = True
-        newitem <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
-
+        newitem' <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename)
+        let newitems = 
+              adjustItemPosition4Paste geometry (PageNum pgnum) [newitem']
         let otheritems = view gitems currlayer  
-        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+        let ntpg = makePageSelectMode currpage (otheritems :- (Hitted newitems) :- Empty)  
         modeChange ToSelectMode 
         nxstate <- get 
         thdl <- case view hoodleModeState nxstate of

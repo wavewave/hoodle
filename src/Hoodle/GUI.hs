@@ -14,6 +14,7 @@
 
 module Hoodle.GUI where
 
+import           Control.Concurrent (threadDelay, forkIO)
 import           Control.Exception (SomeException(..),catch)
 import           Control.Lens (view)
 import           Control.Monad hiding (mapM_)
@@ -106,6 +107,16 @@ startGUI mfname mhook = do
     liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
     return True
   widgetShowAll window
+  -- 
+  -- this is a test for asynchronous events
+  -- 
+  forkIO $ forever $ do 
+    threadDelay 1000000
+    -- putStrLn "event!"
+    postGUIAsync (eventHandler tref (SysEv TestSystemEvent))
+  
+  -- 
+  -- test end
   -- 
   let mainaction = do eventHandler tref (UsrEv Initialized)
                       mainGUI 

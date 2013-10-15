@@ -41,6 +41,7 @@ data SystemEvent = TestSystemEvent | ClockUpdateEvent
 data UserEvent = Initialized
                | CanvasConfigure Int Double Double 
                | UpdateCanvas Int
+               | UpdateCanvasEfficient Int
                | PenDown Int PenButton PointerCoord
                | PenMove Int PointerCoord
                | PenUp   Int PointerCoord 

@@ -113,7 +113,7 @@ startGUI mfname mhook = do
   forkIO $ forever $ do 
     threadDelay 1000000
     -- putStrLn "event!"
-    postGUIAsync (eventHandler tref (SysEv TestSystemEvent))
+    postGUIAsync (eventHandler tref (SysEv ClockUpdateEvent))
   
   -- 
   -- test end

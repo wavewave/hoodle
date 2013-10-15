@@ -250,6 +250,8 @@ selectMode = do
 -- |
 defaultEventProcess :: UserEvent -> MainCoroutine ()
 defaultEventProcess (UpdateCanvas cid) = invalidate cid   
+defaultEventProcess (UpdateCanvasEfficient cid) = 
+  invalidateInBBox Nothing Efficient cid   
 defaultEventProcess (Menu m) = menuEventProcess m
 defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
 defaultEventProcess (VScrollBarMoved cid v) = vscrollBarMoved cid v

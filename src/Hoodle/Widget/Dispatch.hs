@@ -38,6 +38,7 @@ import Hoodle.Type.PageArrangement
 import Hoodle.Util
 import Hoodle.View.Coordinate 
 import Hoodle.View.Draw 
+import Hoodle.Widget.Clock
 import Hoodle.Widget.Layer
 import Hoodle.Widget.PanZoom
 -- 
@@ -60,6 +61,8 @@ widgetCheckPen cid pcoord defact = get >>= \xst -> boxAction (chk xst) (getCanva
              (lift . startPanZoomWidget PenMode triplet <=< MaybeT . return . checkPointerInPanZoom triplet) pcoord
              <|> 
              (lift . startLayerWidget triplet <=< MaybeT . return . checkPointerInLayer triplet) pcoord
+             <|>
+             (lift . startClockWidget triplet <=< MaybeT . return . checkPointerInClock triplet) pcoord
              <|> 
              (do guard (view (settings.doesFollowLinks) xstate)   
                  (pnum,bbox,ritem) <- (MaybeT . return . view notifiedItem) cinfo

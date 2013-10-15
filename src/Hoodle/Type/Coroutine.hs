@@ -21,12 +21,13 @@ module Hoodle.Type.Coroutine where
 -- from other packages 
 import           Control.Applicative
 import           Control.Concurrent
-import           Control.Lens ((^.),(.~),(%~))
--- import           Control.Monad.Error
+import           Control.Lens ((^.),(.~),(%~),view,set)
+
 import           Control.Monad.Reader 
 import           Control.Monad.State
 import           Control.Monad.Trans.Either 
--- import           Data.IORef 
+import           Data.Time.Clock
+import           Data.Time.LocalTime
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn 
 import           Control.Monad.Trans.Crtn.Object
@@ -35,8 +36,10 @@ import           Control.Monad.Trans.Crtn.Logger
 import           Control.Monad.Trans.Crtn.Queue 
 import           Control.Monad.Trans.Crtn.World
 -- from this package
+import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
+import           Hoodle.Type.Widget
 import           Hoodle.Util
 -- 
 
@@ -63,6 +66,27 @@ nextevent = do Arg DoEvent ev <- request (Res DoEvent ())
                  UsrEv uev -> return uev 
 
 sysevent :: SystemEvent -> MainCoroutine () 
+sysevent ClockUpdateEvent = do 
+  utctime <- liftIO $ getCurrentTime 
+  zone <- liftIO $ getCurrentTimeZone  
+  let ltime = utcToLocalTime zone utctime 
+      ltimeofday = localTimeOfDay ltime 
+      (h,m,s) :: (Int,Int,Int) = 
+        (,,) <$> (\x->todHour x `mod` 12) <*> todMin <*> (floor . todSec) 
+        $ ltimeofday
+  liftIO $ print (h,m,s)
+  xst <- get 
+  let cinfo = view currentCanvasInfo xst
+      cwgts = unboxGet canvasWidgets cinfo   
+      nwgts = set (clockWidgetConfig.clockWidgetTime) (h,m,s) cwgts
+      ncinfo = unboxSet canvasWidgets nwgts cinfo
+  put . set currentCanvasInfo ncinfo $ xst 
+              
+  when (view (widgetConfig.doesUseClockWidget) cwgts) $ do 
+    let cid = getCurrentCanvasId xst
+    modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
+
+    -- invalidateInBBox Nothing Efficient cid   
 sysevent ev = liftIO $ print ev 
 
 -- | 

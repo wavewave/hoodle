@@ -47,7 +47,7 @@ data LWAction = Close | ToggleShowContent | Move (CanvasCoordinate,CanvasCoordin
 checkPointerInLayer :: ViewMode a => 
                        (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
-                    -> Maybe LWAction -- (Maybe (CanvasCoordinate,CanvasCoordinate))
+                    -> Maybe LWAction 
 checkPointerInLayer (cid,cinfo,geometry) pcoord 
   | b =  
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord

@@ -29,6 +29,7 @@ module Hoodle.Type.Widget
 , layerWidgetShowContent
 , clockWidgetConfig
 , clockWidgetPosition
+, clockWidgetTime
 , widgetConfig 
 , doesUsePanZoomWidget
 , doesUseLayerWidget
@@ -83,11 +84,15 @@ layerWidgetShowContent = lens _layerWidgetShowContent (\f a -> f { _layerWidgetS
 
 -- |
 data ClockWidgetConfig = ClkConfig { _clockWidgetPosition :: CanvasCoordinate
+                                   , _clockWidgetTime :: (Int,Int,Int)
                                    }
      
                          
 clockWidgetPosition :: Simple Lens ClockWidgetConfig CanvasCoordinate
 clockWidgetPosition = lens _clockWidgetPosition (\f a -> f { _clockWidgetPosition = a } )
+
+clockWidgetTime :: Simple Lens ClockWidgetConfig (Int,Int,Int)
+clockWidgetTime = lens _clockWidgetTime (\f a -> f { _clockWidgetTime = a })
 
 
 -- | 
@@ -138,6 +143,7 @@ defaultLWConfig =
 defaultClkConfig :: ClockWidgetConfig 
 defaultClkConfig = 
   ClkConfig { _clockWidgetPosition = CvsCoord (500,300) 
+            , _clockWidgetTime = (3,40,28)
             }
 
 

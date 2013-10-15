@@ -65,7 +65,7 @@ checkPointerInLayer (cid,cinfo,geometry) pcoord
 
 startLayerWidget :: ViewMode a =>
                     (CanvasId,CanvasInfo a,CanvasGeometry)
-                 -> LWAction -- Maybe (CanvasCoordinate,CanvasCoordinate)
+                 -> LWAction 
                  -> MainCoroutine () 
 startLayerWidget (cid,cinfo,geometry) Close = toggleLayer cid 
 startLayerWidget (cid,cinfo,geometry) ToggleShowContent = do 

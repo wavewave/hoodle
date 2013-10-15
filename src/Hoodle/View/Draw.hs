@@ -601,7 +601,7 @@ drawWidgets witms hdl cinfo mbbox = do
     (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetConfig.layerWidgetPosition) cinfo))
 
   when (ClockWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseClockWidget) cinfo) $
-    renderClockWidget mbbox (view (canvasWidgets.clockWidgetConfig.clockWidgetPosition) cinfo)    
+    renderClockWidget mbbox (view (canvasWidgets.clockWidgetConfig) cinfo)    
 
 
 
@@ -746,12 +746,34 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
 -- Clock Widget --
 ------------------
 
-renderClockWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
-renderClockWidget mbbox (CvsCoord (x,y)) = do 
+renderClockWidget :: Maybe BBox -> ClockWidgetConfig -> Render () 
+renderClockWidget mbbox cfg = do 
+  let CvsCoord (x,y) = view clockWidgetPosition cfg 
+      (h,m,s) = view clockWidgetTime cfg
+      div2rad n x = fromIntegral x/fromIntegral n * 2.0*pi  
   identityMatrix 
   clipBBox mbbox 
   setSourceRGBA 0.5 0.5 0.2 0.3 
   arc x y 50 0.0 (2.0*pi)
   fill 
+  --
+  setSourceRGBA 1 0 0 0.7
+  setLineWidth 0.5
+  moveTo x y 
+  lineTo (x+45*sin (div2rad 60 s)) (y-45*cos (div2rad 60 s))
+  stroke
+  --
+  setSourceRGBA 0 0 0 1
+  setLineWidth 1.0
+  moveTo x y 
+  lineTo (x+50*sin (div2rad 60 m)) (y-50*cos (div2rad 60 m)) 
+  stroke
+  -- 
+  setSourceRGBA 0 0 0 1
+  setLineWidth 2.0
+  moveTo x y 
+  lineTo (x+30*sin (div2rad 12 h + div2rad 720 m)) (y-30*cos (div2rad 12 h + div2rad 720 m)) 
+  stroke
+  -- 
   resetClip 
 

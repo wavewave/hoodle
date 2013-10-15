@@ -19,6 +19,7 @@ module Hoodle.Type.Widget
 , CanvasWidgets      
 , WidgetConfig
 , LayerWidgetConfig 
+, ClockWidgetConfig
 -- * lenses 
 , panZoomWidgetPosition
 , panZoomWidgetTouchIsZoom
@@ -26,9 +27,12 @@ module Hoodle.Type.Widget
 , layerWidgetConfig
 , layerWidgetPosition
 , layerWidgetShowContent
+, clockWidgetConfig
+, clockWidgetPosition
 , widgetConfig 
 , doesUsePanZoomWidget
 , doesUseLayerWidget
+, doesUseClockWidget
 -- * defaults 
 , defaultCanvasWidgets
 , defaultLWConfig 
@@ -43,11 +47,12 @@ import Hoodle.Type.PageArrangement
 
 
 -- | 
-data WidgetItem = PanZoomWidget | LayerWidget
+data WidgetItem = PanZoomWidget | LayerWidget | ClockWidget 
                 deriving (Show,Eq,Ord)
 
 -- | 
-allWidgets = [PanZoomWidget, LayerWidget] 
+allWidgets :: [WidgetItem] 
+allWidgets = [PanZoomWidget, LayerWidget, ClockWidget] 
 
 
 -- | 
@@ -76,10 +81,20 @@ layerWidgetShowContent :: Simple Lens LayerWidgetConfig Bool
 layerWidgetShowContent = lens _layerWidgetShowContent (\f a -> f { _layerWidgetShowContent = a})
 
 
+-- |
+data ClockWidgetConfig = ClkConfig { _clockWidgetPosition :: CanvasCoordinate
+                                   }
+     
+                         
+clockWidgetPosition :: Simple Lens ClockWidgetConfig CanvasCoordinate
+clockWidgetPosition = lens _clockWidgetPosition (\f a -> f { _clockWidgetPosition = a } )
+
+
 -- | 
 data CanvasWidgets = 
   CanvasWidgets { _panZoomWidgetConfig :: PanZoomWidgetConfig
                 , _layerWidgetConfig :: LayerWidgetConfig 
+                , _clockWidgetConfig :: ClockWidgetConfig 
                 , _widgetConfig :: WidgetConfig 
                 }   
 
@@ -91,6 +106,10 @@ panZoomWidgetConfig = lens _panZoomWidgetConfig (\f a -> f { _panZoomWidgetConfi
 layerWidgetConfig :: Simple Lens CanvasWidgets LayerWidgetConfig 
 layerWidgetConfig = lens _layerWidgetConfig (\f a -> f { _layerWidgetConfig = a })
 
+-- | 
+clockWidgetConfig :: Simple Lens CanvasWidgets ClockWidgetConfig 
+clockWidgetConfig = lens _clockWidgetConfig (\f a -> f { _clockWidgetConfig = a })
+
 
 -- | default hoodle widgets
 defaultCanvasWidgets :: CanvasWidgets
@@ -98,6 +117,7 @@ defaultCanvasWidgets =
   CanvasWidgets
   { _panZoomWidgetConfig = defaultPZWConfig 
   , _layerWidgetConfig = defaultLWConfig 
+  , _clockWidgetConfig = defaultClkConfig
   , _widgetConfig = defaultWidgetConfig 
   }   
 
@@ -114,8 +134,16 @@ defaultLWConfig =
            , _layerWidgetShowContent = False 
            }
 
+-- | 
+defaultClkConfig :: ClockWidgetConfig 
+defaultClkConfig = 
+  ClkConfig { _clockWidgetPosition = CvsCoord (500,300) 
+            }
+
+
 data WidgetConfig = WidgetConfig { _doesUsePanZoomWidget :: Bool 
                                  , _doesUseLayerWidget :: Bool 
+                                 , _doesUseClockWidget :: Bool 
                                  } 
 
 -- | flag for pan zoom widget 
@@ -126,11 +154,16 @@ doesUsePanZoomWidget = lens _doesUsePanZoomWidget (\f a -> f {_doesUsePanZoomWid
 doesUseLayerWidget :: Simple Lens WidgetConfig Bool 
 doesUseLayerWidget = lens _doesUseLayerWidget (\f a -> f {_doesUseLayerWidget = a}) 
 
+-- | flag for clock widget 
+doesUseClockWidget :: Simple Lens WidgetConfig Bool 
+doesUseClockWidget = lens _doesUseClockWidget (\f a -> f {_doesUseClockWidget = a}) 
+
 
 -- | default widget configuration 
 defaultWidgetConfig :: WidgetConfig 
 defaultWidgetConfig = WidgetConfig { _doesUsePanZoomWidget = False
                                    , _doesUseLayerWidget = False
+                                   , _doesUseClockWidget = False
                                    } 
 
 

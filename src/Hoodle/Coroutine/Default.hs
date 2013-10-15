@@ -78,9 +78,10 @@ import           Hoodle.Type.Predefined
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.Widget
-import           Hoodle.Widget.PanZoom
-import           Hoodle.Widget.Layer
+import           Hoodle.Widget.Clock
 import           Hoodle.Widget.Dispatch 
+import           Hoodle.Widget.Layer
+import           Hoodle.Widget.PanZoom
 --
 import Prelude hiding ((.), id)
 
@@ -432,6 +433,7 @@ menuEventProcess MenuApplyToAllPages = do
 menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
+menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

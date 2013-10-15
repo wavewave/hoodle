@@ -5,7 +5,7 @@
 -- Module      : Hoodle.GUI.Menu 
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -206,8 +206,6 @@ getMenuUI evar = do
   copya   <- actionNewAndRegister "COPYA"   "Copy" (Just "Just a Stub") (Just stockCopy) (justMenu MenuCopy)
   pastea  <- actionNewAndRegister "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste) (justMenu MenuPaste)
   deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete) (justMenu MenuDelete)
-  -- netcopya <- actionNewAndRegister "NETCOPYA" "Copy to NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetCopy)
-  -- netpastea <- actionNewAndRegister "NETPASTEA" "Paste from NetworkClipboard" (Just "Just a Stub") Nothing (justMenu MenuNetPaste)
 
   -- view menu
   fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (justMenu MenuFullScreen)
@@ -296,6 +294,7 @@ getMenuUI evar = do
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Toggle Pan/Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
   toglayera <- actionNewAndRegister "TOGLAYERA" "Toggle Layer Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleLayerWidget)
+  togclocka <- actionNewAndRegister "TOGCLOCKA" "Toggle Clock Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleClockWidget)
     
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
   ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
@@ -343,7 +342,7 @@ getMenuUI evar = do
         , texta, linka, shpreca, rulera, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
-        , togpanzooma, toglayera
+        , togpanzooma, toglayera, togclocka
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa
         , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
         , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 

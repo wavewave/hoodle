@@ -153,6 +153,7 @@
        <menuitem action="FLWLNKA" />
        <menuitem action="TOGPANZOOMA" />
        <menuitem action="TOGLAYERA" />
+       <menuitem action="TOGCLOCKA" />
        <menuitem action="DCRDCOREA" />                        
        <menuitem action="ERSRTIPA" />                        
        <menuitem action="PRESSRSENSA" />                        

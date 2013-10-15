@@ -600,6 +600,14 @@ drawWidgets witms hdl cinfo mbbox = do
   when (LayerWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo) 
     (drawLayerWidget hdl cinfo mbbox (view (canvasWidgets.layerWidgetConfig.layerWidgetPosition) cinfo))
 
+  when (ClockWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseClockWidget) cinfo) $
+    renderClockWidget mbbox (view (canvasWidgets.clockWidgetConfig.clockWidgetPosition) cinfo)    
+
+
+
+---------------------
+-- Pan Zoom Widget --
+---------------------
 
 -- | 
 renderPanZoomWidget :: Bool -> Maybe BBox -> CanvasCoordinate -> Render () 
@@ -630,6 +638,10 @@ renderPanZoomWidget b mbbox (CvsCoord (x,y)) = do
   lineTo (x+10) y
   stroke
   resetClip 
+
+------------------
+-- Layer Widget -- 
+------------------
 
 drawLayerWidget :: ViewMode a => 
                    Hoodle EditMode 
@@ -729,4 +741,17 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
   layoutPath l 
   setSourceRGBA 0 0 0 0.4
   fill
+
+------------------
+-- Clock Widget --
+------------------
+
+renderClockWidget :: Maybe BBox -> CanvasCoordinate -> Render () 
+renderClockWidget mbbox (CvsCoord (x,y)) = do 
+  identityMatrix 
+  clipBBox mbbox 
+  setSourceRGBA 0.5 0.5 0.2 0.3 
+  arc x y 50 0.0 (2.0*pi)
+  fill 
+  resetClip 
 

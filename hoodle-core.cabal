@@ -125,6 +125,7 @@ Library
                    Hoodle.Util
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
+                   Hoodle.Widget.Clock
                    Hoodle.Widget.Dispatch
                    Hoodle.Widget.Layer 
                    Hoodle.Widget.PanZoom
@@ -132,7 +133,6 @@ Library
                    Paths_hoodle_core
   c-sources: 
                    csrc/c_initdevice.c
-                   -- csrc/XInput.c
   include-dirs:    csrc
   install-includes: 
                    csrc/c_initdevice.h

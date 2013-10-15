@@ -174,6 +174,7 @@ data MenuEvent = MenuNew
                | MenuFollowLinks
                | MenuTogglePanZoomWidget
                | MenuToggleLayerWidget
+               | MenuToggleClockWidget
                | MenuDiscardCoreEvents 
                | MenuEraserTip 
                | MenuPressureSensitivity

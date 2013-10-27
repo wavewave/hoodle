@@ -81,25 +81,20 @@ urlParse str =
                  return (b,rem) 
           r = parseOnly p (B.pack str)
       in case r of 
-           Left _ -> Nothing -- Just (FileUrl str) 
+           Left _ -> Nothing 
            Right (b,f) -> case b of 
                             N -> Just (FileUrl f)
                             F -> Just (FileUrl (unEscapeString f))
                             H -> Just (HttpUrl ("http://" ++ f))
                             HS -> Just (HttpUrl ("https://" ++ f))
     
-
-
-
 isFile (File _ _) = True
 isFile _ = False
 
 takeFile x | isFile x = (Just . file) x 
 takeFile x | otherwise = Nothing 
 
-
-
-
+{-
 -- | Get the relative url to the site root, for a given (absolute) url
 toSiteRoot :: String -> String
 toSiteRoot = emptyException . joinPath . map parent
@@ -111,7 +106,7 @@ toSiteRoot = emptyException . joinPath . map parent
     relevant "."      = False
     relevant "/"      = False
     relevant _        = True
-
+-}
 
 data Annot = Annot { annot_rect :: (Int, Int, Int, Int) 
                    , annot_border :: (Int ,Int, Int) 
@@ -312,8 +307,6 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
     count <- pageNodeNKids root
     forM_ [0..count-1] $ \i -> do
       page <- pageNodePageByNum root i
-      -- let dim = S.Dim 612.0 792.0 
-      -- liftIO $ print dim
       mannots <- runMaybeT $ do 
                    lnks <- MaybeT . return $ lookup (i+1) nlnks
                    liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
@@ -325,15 +318,12 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
                          in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
                                      , annot_border = (16,16,1) 
                                      , annot_act = specialURIFunction specialurlbase (hdldir,hdlfb) 
-                                        -- OpenURI ("file://" ++ hdldir </>  urlEncode hdlfb ++ ".hdl")
                                      }
                              ]
                     else []  
       let mannots' = case mannots of 
                        Nothing -> Just special 
                        Just anns -> Just (anns ++ special)
-       -- fmap (++ special) mannots 
-
       writePdfPageWithAnnot dim mannots' page
   when (isLeft res) $ error $ show res
   liftIO $ hClose handle

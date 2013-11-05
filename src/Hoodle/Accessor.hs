@@ -107,32 +107,41 @@ applyActionToAllCVS action = do
 
 
 -- | 
+{-
 printViewPortBBox :: CanvasId -> MainCoroutine ()
 printViewPortBBox cid = do 
   cvsInfo <- return . getCanvasInfo cid =<< St.get 
   liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
+-}
 
 -- | 
+{-
 printViewPortBBoxAll :: MainCoroutine () 
 printViewPortBBoxAll = do 
   xstate <- St.get 
   let cmap = getCanvasInfoMap xstate
       cids = M.keys cmap
   mapM_ printViewPortBBox cids 
+-}
 
 -- | 
+{-
 printViewPortBBoxCurr :: MainCoroutine ()
 printViewPortBBoxCurr = do 
   cvsInfo <- return . view currentCanvasInfo =<< St.get 
   liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
+-}
 
 -- | 
+{-
 printModes :: CanvasId -> MainCoroutine ()
 printModes cid = do 
   cvsInfo <- return . getCanvasInfo cid =<< St.get 
   liftIO $ printCanvasMode cid cvsInfo
+-}
 
 -- |
+{-
 printCanvasMode :: CanvasId -> CanvasInfoBox -> IO ()
 printCanvasMode cid cvsInfo = do 
   let zmode = unboxGet (viewInfo.zoomMode) cvsInfo
@@ -145,21 +154,24 @@ printCanvasMode cid cvsInfo = do
       arrmode = boxAction g cvsInfo  
       incid = unboxGet canvasId cvsInfo 
   putStrLn $ show (cid,incid,zmode,arrmode)
+-}
 
 -- |
+{-
 printModesAll :: MainCoroutine () 
 printModesAll = do 
   xstate <- St.get 
   let cmap = getCanvasInfoMap xstate
       cids = M.keys cmap
   mapM_ printModes cids 
+-}
 
 -- | 
 getCanvasGeometryCvsId :: CanvasId -> HoodleState -> IO CanvasGeometry 
 getCanvasGeometryCvsId cid xstate = do 
   let cinfobox = getCanvasInfo cid xstate
-      cpn = PageNum . unboxGet currentPageNum $ cinfobox 
-      canvas = unboxGet drawArea cinfobox
+      cpn = PageNum . view (unboxLens currentPageNum) $ cinfobox 
+      canvas = view (unboxLens drawArea) cinfobox
       fsingle :: CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 
@@ -169,8 +181,8 @@ getCanvasGeometryCvsId cid xstate = do
 getGeometry4CurrCvs :: HoodleState -> IO CanvasGeometry 
 getGeometry4CurrCvs xstate = do 
   let cinfobox = view currentCanvasInfo xstate
-      cpn = PageNum . unboxGet currentPageNum $ cinfobox 
-      canvas = unboxGet drawArea cinfobox
+      cpn = PageNum . view (unboxLens currentPageNum) $ cinfobox 
+      canvas = view (unboxLens drawArea) cinfobox
       fsingle :: CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 

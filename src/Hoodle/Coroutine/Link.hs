@@ -112,7 +112,7 @@ notifyLink cid pcoord = do
                            then Just <$> newNotify cvsInfo geometry pnum (head hitted) (Just obbx_desk)
                            else return (Just (Nothing,obbx_desk))
       forM_ mresult (\(mnewnotified,bbx_desk) -> do
-                      let ncinfobox = (unboxSet notifiedItem mnewnotified . getCanvasInfo cid) xst 
+                      let ncinfobox = (set (unboxLens notifiedItem) mnewnotified . getCanvasInfo cid) xst 
                       put (setCanvasInfo (cid,ncinfobox) xst)
                       invalidateInBBox (Just bbx_desk) Efficient cid )
     ----                                                                                      

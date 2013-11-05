@@ -123,7 +123,7 @@ textInput = textInputDialog >>= mapM_ (\str->liftIO (makePangoTextSVG str) >>= s
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 
 svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
-    let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+    let pgnum = view (unboxLens currentPageNum) . view currentCanvasInfo $ xstate
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
@@ -173,7 +173,7 @@ linkInsert :: B.ByteString
               -> MainCoroutine ()
 linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
-    let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage

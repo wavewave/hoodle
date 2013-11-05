@@ -486,7 +486,7 @@ setCanvasInfo (cid,cinfobox) xstate =
 -- | change current canvas. this is the master function  
 updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> HoodleState -> HoodleState
 updateFromCanvasInfoAsCurrentCanvas cinfobox xstate = 
-  let cid = unboxGet canvasId cinfobox 
+  let cid = view (unboxLens canvasId) cinfobox 
       cmap = getCanvasInfoMap xstate
       cmap' = M.insert cid cinfobox cmap 
   in xstate { _currentCanvas = (cid,cinfobox)
@@ -534,7 +534,7 @@ getPageMapFromHoodleModeState = either (view gpages) (view gselAll) . hoodleMode
 showCanvasInfoMapViewPortBBox :: HoodleState -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
   let cmap = getCanvasInfoMap xstate
-  print . map (unboxGet (viewInfo.pageArrangement.viewPortBBox)) . M.elems $ cmap 
+  print . map (view (unboxLens (viewInfo.pageArrangement.viewPortBBox))) . M.elems $ cmap 
 
 
 

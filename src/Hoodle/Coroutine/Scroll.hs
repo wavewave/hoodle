@@ -61,9 +61,9 @@ adjustScrollbarWithGeometryCvsId cid = do
   xstate <- get
   let cinfobox = getCanvasInfo cid xstate
   geometry <- liftIO (getCanvasGeometryCvsId cid xstate)
-  let (hadj,vadj) = unboxGet adjustments cinfobox 
-      connidh = unboxGet horizAdjConnId cinfobox 
-      connidv = unboxGet vertAdjConnId cinfobox
+  let (hadj,vadj) = view (unboxLens adjustments) cinfobox 
+      connidh = view (unboxLens horizAdjConnId) cinfobox 
+      connidv = view (unboxLens vertAdjConnId) cinfobox
   liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
 
 

@@ -77,9 +77,9 @@ sysevent ClockUpdateEvent = do
   liftIO $ print (h,m,s)
   xst <- get 
   let cinfo = view currentCanvasInfo xst
-      cwgts = unboxGet canvasWidgets cinfo   
+      cwgts = view (unboxLens canvasWidgets) cinfo   
       nwgts = set (clockWidgetConfig.clockWidgetTime) (h,m,s) cwgts
-      ncinfo = unboxSet canvasWidgets nwgts cinfo
+      ncinfo = set (unboxLens canvasWidgets) nwgts cinfo
   put . set currentCanvasInfo ncinfo $ xst 
               
   when (view (widgetConfig.doesUseClockWidget) cwgts) $ do 

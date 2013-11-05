@@ -281,7 +281,7 @@ defaultEventProcess (PenWidthChanged v) = do
 defaultEventProcess (BackgroundStyleChanged bsty) = do
     modify (backgroundStyle .~ bsty)
     xstate <- get 
-    let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
         hdl = getHoodle xstate 
         pgs = view gpages hdl 
         cpage = getPageFromGHoodleMap pgnum hdl

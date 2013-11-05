@@ -420,7 +420,7 @@ insertItemAt mpcoord ritm = do
     let hdl = getHoodle xst 
         (pgnum,mpos) = case mpcoord of 
           Just (PageNum n,pos) -> (n,Just pos)
-          Nothing -> ((unboxGet currentPageNum.view currentCanvasInfo) xst,Nothing)
+          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) xst,Nothing)
         (ulx,uly) = (bbox_upperleft.getBBox) ritm
         nitms = 
           case mpos of 
@@ -484,7 +484,7 @@ fileLoadSVG = do
       xstate <- get 
       liftIO $ putStrLn filename 
       bstr <- liftIO $ readFile filename 
-      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+      let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
           hdl = getHoodle xstate 
           currpage = getPageFromGHoodleMap pgnum hdl
           currlayer = getCurrentLayer currpage
@@ -546,7 +546,7 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
                      return (UsrEv (LaTeXInput Nothing))
     afteraction (latex,svg) = do 
       xstate <- get 
-      let pgnum = unboxGet currentPageNum . view currentCanvasInfo $ xstate
+      let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
           hdl = getHoodle xstate 
           currpage = getPageFromGHoodleMap pgnum hdl
           currlayer = getCurrentLayer currpage

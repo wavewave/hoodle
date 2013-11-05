@@ -108,7 +108,7 @@ commonPenStart action cid pcoord = do
     let currcid = getCurrentCanvasId oxstate
     when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
     nxstate <- get
-    boxAction f . getCanvasInfo cid $ nxstate
+    unboxAct f . getCanvasInfo cid $ nxstate
   where f :: forall b. CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
           let cpn = PageNum . view currentPageNum $ cvsInfo
@@ -171,7 +171,7 @@ penProcess :: CanvasId -> PageNum
 penProcess cid pnum geometry trdr ((x0,y0),z0) = do 
     r <- nextevent
     xst <- get 
-    boxAction (fsingle r xst) . getCanvasInfo cid $ xst
+    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     pdraw = tempInfo trdr 
     fsingle :: forall b.  

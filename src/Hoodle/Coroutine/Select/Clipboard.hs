@@ -77,7 +77,7 @@ copySelection :: MainCoroutine ()
 copySelection = do 
     updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
-          boxAction (fsingle xst) . view currentCanvasInfo $ xst
+          unboxAct (fsingle xst) . view currentCanvasInfo $ xst
         fsingle xstate cinfo = maybe (return xstate) id $ do  
           let hdlmodst = view hoodleModeState xstate
           let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
@@ -115,7 +115,7 @@ pasteToSelection = do
         ritms <- liftIO (mapM cnstrctRItem itms)
         modeChange ToSelectMode >>updateXState (pasteAction ritms) >> invalidateAll  
   where 
-    pasteAction itms xst = boxAction (fsimple itms xst) . view currentCanvasInfo $ xst
+    pasteAction itms xst = unboxAct (fsimple itms xst) . view currentCanvasInfo $ xst
     fsimple itms xstate cinfo = do 
       geometry <- liftIO (getGeometry4CurrCvs xstate)
       let pagenum = view currentPageNum cinfo 

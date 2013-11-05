@@ -5,6 +5,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -77,10 +78,11 @@ module Hoodle.Type.Canvas
 -- , unboxGet
 -- , unboxSet
 , unboxLens
-, fmap4CvsInfoBox
+, unboxAct
+-- , fmap4CvsInfoBox
 , insideAction4CvsInfoBox
 , insideAction4CvsInfoBoxF
-, boxAction
+-- , boxAction
 , selectBoxAction
 , selectBox
 -- * others
@@ -261,15 +263,20 @@ notifiedItem :: Simple Lens (CanvasInfo a) (Maybe (PageNum,BBox,RItem))
 notifiedItem = lens _notifiedItem (\f a -> f { _notifiedItem = a })
 
 -- |
-data CanvasInfoBox = CanvasSinglePage (CanvasInfo SinglePage) 
-                   | CanvasContPage (CanvasInfo ContinuousPage)
+data CanvasInfoBox where 
+  CanvasSinglePage :: CanvasInfo SinglePage -> CanvasInfoBox  
+  CanvasContPage :: CanvasInfo ContinuousPage -> CanvasInfoBox
+                   
 
-
+-- test1 :: forall (a :: ViewMode). a -> Bool 
+-- test1 = undefined
+-- test1 (_ :: SinglePage) = True 
+-- test1 (_ :: ContinuousPage) = False
 
 -- | apply a funtion to Generic CanvasInfo 
-fmap4CvsInfoBox :: (forall a. CanvasInfo a -> r) -> CanvasInfoBox -> r 
-fmap4CvsInfoBox f (CanvasSinglePage x) = f x 
-fmap4CvsInfoBox f (CanvasContPage x) = f x 
+unboxAct :: (forall a. CanvasInfo a -> r) -> CanvasInfoBox -> r 
+unboxAct f (CanvasSinglePage x) = f x 
+unboxAct f (CanvasContPage x) = f x 
 
 -- | fmap-like operation for box
 insideAction4CvsInfoBox :: (forall a. CanvasInfo a -> CanvasInfo a)
@@ -289,11 +296,11 @@ insideAction4CvsInfoBoxF f (CanvasContPage x) = fmap CanvasContPage (f x)
   
 -- |
 getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
-getDrawAreaFromBox = unboxGet drawArea
+getDrawAreaFromBox = view (unboxLens drawArea)
 
 -- | 
 unboxGet :: (forall a. Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
-unboxGet f x = fmap4CvsInfoBox (view f) x
+unboxGet f x = unboxAct (view f) x
 
 
 -- | 
@@ -304,11 +311,14 @@ unboxSet l b (CanvasContPage a) = CanvasContPage (set l b a)
 unboxLens :: (forall a. Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
 unboxLens l = lens (unboxGet l) (flip (unboxSet l)) 
 
+{-
 -- | 
 boxAction :: Monad m => (forall a. CanvasInfo a -> m b) 
              -> CanvasInfoBox -> m b 
-boxAction f c = fmap4CvsInfoBox f c 
+boxAction f c = unboxAct f c 
   -- f (CanvasInfoBox cinfo) = f cinfo 
+-}
+
 
 -- | either-like operation
 selectBoxAction :: (Monad m) => 

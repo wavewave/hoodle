@@ -140,9 +140,9 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
     -- 
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
-    liftIO $ boxAction (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
-                                    (drawLayerWidget hdl cinfo Nothing nwpos) 
-                                 >> doubleBufferFlush tgtsfc cinfo) cinfobox
+    liftIO $ unboxAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
+                                  (drawLayerWidget hdl cinfo Nothing nwpos) 
+                                >> doubleBufferFlush tgtsfc cinfo) cinfobox
   
 -- | 
 toggleLayer :: CanvasId -> MainCoroutine () 

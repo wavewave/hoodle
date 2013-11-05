@@ -176,7 +176,7 @@ pageZoomChange = canvasZoomUpdate . Just
 -- | 
 pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
 pageZoomChangeRel rzmode = do 
-    boxAction fsingle . view currentCanvasInfo =<< get 
+    unboxAct fsingle . view currentCanvasInfo =<< get 
   where 
     fsingle :: CanvasInfo a -> MainCoroutine ()
     fsingle cinfo = do 
@@ -194,7 +194,7 @@ newPage dir = updateXState npgBfrAct
               >> canvasZoomUpdateAll 
               >> invalidateAll
   where 
-    npgBfrAct xst = boxAction (fsimple xst) . view currentCanvasInfo $ xst
+    npgBfrAct xst = unboxAct (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
       case view hoodleModeState xstate of 
@@ -212,7 +212,7 @@ deleteCurrentPage :: MainCoroutine ()
 deleteCurrentPage = do 
     updateXState delpgact >> commit_ >> canvasZoomUpdateAll >> invalidateAll
   where 
-    delpgact xst = boxAction (fsimple xst) . view currentCanvasInfo $ xst
+    delpgact xst = unboxAct (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
       case view hoodleModeState xstate of 

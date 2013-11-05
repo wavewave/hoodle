@@ -224,7 +224,7 @@ constructFrame' template oxstate (Node cid) = do
         return (cinfobox',cmap',xstate')
     ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage1 xstate) cinfobox
     let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
-    let scrwin = fmap4CvsInfoBox (castToWidget.view scrolledWindow) ncinfobox
+    let scrwin = unboxAct (castToWidget.view scrolledWindow) ncinfobox
     return (xstate', scrwin, Node cid)
 constructFrame' template xstate (HSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     

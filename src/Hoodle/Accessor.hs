@@ -51,7 +51,7 @@ getCurrentPageCurr = do
   xstate <- St.get 
   let hdlmodst = view hoodleModeState xstate
       cinfobox = view currentCanvasInfo xstate 
-  return $ fmap4CvsInfoBox (\x->getCurrentPageFromHoodleModeState x hdlmodst) cinfobox
+  return $ unboxAct (flip getCurrentPageFromHoodleModeState hdlmodst) cinfobox
 
 -- | 
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
@@ -59,7 +59,7 @@ getCurrentPageCvsId cid = do
   xstate <- St.get 
   let hdlmodst = view hoodleModeState xstate
       cinfobox = getCanvasInfo cid xstate 
-  return $ fmap4CvsInfoBox (\c->getCurrentPageFromHoodleModeState c hdlmodst) cinfobox
+  return $ unboxAct (flip getCurrentPageFromHoodleModeState hdlmodst) cinfobox
 
 
 -- | 
@@ -175,7 +175,7 @@ getCanvasGeometryCvsId cid xstate = do
       fsingle :: CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 
-  boxAction fsingle cinfobox
+  unboxAct fsingle cinfobox
 
 -- |
 getGeometry4CurrCvs :: HoodleState -> IO CanvasGeometry 
@@ -186,7 +186,7 @@ getGeometry4CurrCvs xstate = do
       fsingle :: CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 
-  boxAction fsingle cinfobox
+  unboxAct fsingle cinfobox
   
 -- | update flag in HoodleState when corresponding toggle UI changed 
 updateFlagFromToggleUI :: String  -- ^ UI toggle button id

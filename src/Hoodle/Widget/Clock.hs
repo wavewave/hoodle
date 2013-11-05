@@ -132,9 +132,9 @@ moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
         cfg = view (unboxLens (canvasWidgets.clockWidgetConfig)) cinfobox
-    liftIO $ boxAction (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
-                                    (renderClockWidget Nothing cfg) 
-                                 >> doubleBufferFlush tgtsfc cinfo) cinfobox
+    liftIO $ unboxAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
+                                  (renderClockWidget Nothing cfg) 
+                                >> doubleBufferFlush tgtsfc cinfo) cinfobox
 
 
 

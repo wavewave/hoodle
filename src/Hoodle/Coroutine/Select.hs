@@ -146,7 +146,7 @@ newSelectRectangle cid pnum geometry itms orig
                    (prev,otime) tempselection = do  
     r <- nextevent
     xst <- get 
-    boxAction (fsingle r xst) . getCanvasInfo cid $ xst
+    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
                                (moveact xstate cinfo) (upact xstate cinfo)
@@ -239,7 +239,7 @@ moveSelect cid pnum geometry orig@(x0,y0)
            (prev,otime) tempselection = do
     xst <- get
     r <- nextevent 
-    boxAction (fsingle r xst) . getCanvasInfo cid $ xst 
+    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
     fsingle r xstate cinfo = 
       penMoveAndUpInterPage r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
@@ -359,7 +359,7 @@ resizeSelect handle cid pnum geometry origbbox
              (prev,otime) tempselection = do
     xst <- get
     r <- nextevent 
-    boxAction (fsingle r xst) . getCanvasInfo cid $ xst
+    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst
   where
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
     defact = resizeSelect handle cid pnum geometry 

@@ -41,14 +41,12 @@ import Hoodle.View.Draw
 import Hoodle.Widget.Clock
 import Hoodle.Widget.Layer
 import Hoodle.Widget.PanZoom
--- 
--- import Prelude hiding (forM_)
 
 widgetCheckPen :: CanvasId 
                -> PointerCoord 
                -> MainCoroutine ()    -- ^ default action 
                -> MainCoroutine ()
-widgetCheckPen cid pcoord defact = get >>= \xst -> boxAction (chk xst) (getCanvasInfo cid xst) 
+widgetCheckPen cid pcoord defact = get >>= \xst -> unboxAct (chk xst) (getCanvasInfo cid xst) 
   where 
     chk :: HoodleState -> CanvasInfo a -> MainCoroutine () 
     chk xstate cinfo = do 

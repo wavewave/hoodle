@@ -78,7 +78,7 @@ makeTextSVGFromStringAt str cid xst ccoord = do
 notifyLink :: CanvasId -> PointerCoord -> MainCoroutine () 
 notifyLink cid pcoord = do 
     xst <- get 
-    (boxAction (f xst) . getCanvasInfo cid) xst 
+    (unboxAct (f xst) . getCanvasInfo cid) xst 
   where 
     f :: forall b. HoodleState -> CanvasInfo b -> MainCoroutine ()
     f xst cvsInfo = do 

@@ -44,8 +44,7 @@ import           Hoodle.View.Draw
 -- |
 data LWAction = Close | ToggleShowContent | Move (CanvasCoordinate,CanvasCoordinate)
 
-checkPointerInLayer :: ViewMode a => 
-                       (CanvasId,CanvasInfo a,CanvasGeometry) 
+checkPointerInLayer :: (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
                     -> Maybe LWAction 
 checkPointerInLayer (cid,cinfo,geometry) pcoord 
@@ -63,8 +62,7 @@ checkPointerInLayer (cid,cinfo,geometry) pcoord
   | otherwise = Nothing 
   where b = view (canvasWidgets.widgetConfig.doesUseLayerWidget) cinfo 
 
-startLayerWidget :: ViewMode a =>
-                    (CanvasId,CanvasInfo a,CanvasGeometry)
+startLayerWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> LWAction 
                  -> MainCoroutine () 
 startLayerWidget (cid,cinfo,geometry) Close = toggleLayer cid 
@@ -132,7 +130,7 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
               | yw+y-y0 > ch-50 = ch-50 
               | otherwise = yw+y-y0                             
         nwpos = CvsCoord (nposx,nposy) 
-        changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+        changeact :: CanvasInfo a -> CanvasInfo a 
         changeact cinfo =  
           set (canvasWidgets.layerWidgetConfig.layerWidgetPosition) nwpos $ cinfo
         ncinfobox = selectBox changeact changeact  cinfobox

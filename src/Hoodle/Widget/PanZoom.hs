@@ -53,8 +53,7 @@ data PanZoomTouch = TouchMode | PenMode
                   deriving (Show,Eq,Ord)
 
 
-checkPointerInPanZoom :: (ViewMode a) => 
-                         (CanvasId,CanvasInfo a,CanvasGeometry) 
+checkPointerInPanZoom :: (CanvasId,CanvasInfo a,CanvasGeometry) 
                       -> PointerCoord 
                       -> Maybe (Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate)))
 checkPointerInPanZoom (cid,cinfo,geometry) pcoord 
@@ -80,8 +79,7 @@ checkPointerInPanZoom (cid,cinfo,geometry) pcoord
 
 
 -- | 
-startPanZoomWidget :: (ViewMode a) =>
-                   PanZoomTouch 
+startPanZoomWidget :: PanZoomTouch 
                    -> (CanvasId,CanvasInfo a,CanvasGeometry)
                    -> Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate))
                    -> MainCoroutine ()
@@ -226,7 +224,7 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
                   | yw+y-y0 > ch-50 = ch-50 
                   | otherwise = yw+y-y0                             
             nwpos = CvsCoord (nposx,nposy) 
-            changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+            changeact :: CanvasInfo a -> CanvasInfo a 
             changeact cinfo =  
               set (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) nwpos $ cinfo
             ncinfobox = selectBox changeact changeact  cinfobox
@@ -284,7 +282,7 @@ togglePanZoom cid = do
 touchStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
   where
-    chk :: (ViewMode a) => CanvasInfo a -> MainCoroutine () 
+    chk :: CanvasInfo a -> MainCoroutine () 
     chk cinfo = do 
       let cvs = view drawArea cinfo
           pnum = (PageNum . view currentPageNum) cinfo 
@@ -298,7 +296,7 @@ touchStart cid pcoord = boxAction chk =<< liftM (getCanvasInfo cid) get
           
       if (isPointInBBox obbox (x,y))     
         then do 
-          let changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+          let changeact :: CanvasInfo a -> CanvasInfo a 
               changeact = over (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) not 
               ncinfobox = selectBox changeact changeact . getCanvasInfo cid $ xst
           put (setCanvasInfo (cid,ncinfobox) xst)

@@ -267,12 +267,12 @@ moveSelect cid pnum geometry orig@(x0,y0)
         invalidateTempBasePage cid (tempSurfaceSrc tempselection) pnum 
           (drawTempSelectImage geometry tempselection xformmat) 
       moveSelect cid pnum geometry orig (ncoord,ntime) tempselection
-    upact :: (ViewMode a) => HoodleState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
+    upact :: HoodleState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
     upact xst cinfo pcoord =  
       switchActionEnteringDiffPage pnum geometry pcoord (return ()) 
         (chgaction xst cinfo) 
         (ordaction xst cinfo)
-    chgaction :: (ViewMode a) => HoodleState -> CanvasInfo a -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
+    chgaction :: HoodleState -> CanvasInfo a -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
     chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
       let hdlmodst@(SelectState thdl) = view hoodleModeState xstate
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
@@ -485,7 +485,7 @@ selectLassoStart pbtn cid = commonPenStart lassoAction cid
           action epage
           
 -- | 
-newSelectLasso :: (ViewMode a) => CanvasInfo a
+newSelectLasso :: CanvasInfo a
                   -> PageNum 
                   -> CanvasGeometry
                   -> [RItem] 

@@ -1,5 +1,10 @@
-{-# LANGUAGE TemplateHaskell, TypeOperators, ExistentialQuantification,
-             Rank2Types, GADTs, RecordWildCards #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE GADTs #-} 
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -113,12 +118,11 @@ points :: Simple Lens PenDraw (Seq (Double,Double))
 points = lens _points (\f a -> f { _points = a } )
 
 -- | 
-data ViewInfo a  = (ViewMode a) => 
-                   ViewInfo { _zoomMode :: ZoomMode 
-                            , _pageArrangement :: PageArrangement a } 
+data ViewInfo (a :: ViewMode) = 
+       ViewInfo { _zoomMode :: ZoomMode 
+                , _pageArrangement :: PageArrangement a } 
 
-xfrmViewInfo :: (ViewMode a, ViewMode b) => 
-                (PageArrangement a -> PageArrangement b) 
+xfrmViewInfo :: (PageArrangement a -> PageArrangement b) 
              -> ViewInfo a 
              -> ViewInfo b
 xfrmViewInfo f ViewInfo {..} = 
@@ -151,24 +155,23 @@ pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 
 
 -- |
-data CanvasInfo a = 
-    (ViewMode a) => CanvasInfo { _canvasId :: CanvasId
-                               , _drawArea :: DrawingArea
-                               , _mDrawSurface :: Maybe Surface 
-                               , _scrolledWindow :: ScrolledWindow
-                               , _viewInfo :: ViewInfo a
-                               , _currentPageNum :: Int
-                               , _horizAdjustment :: Adjustment
-                               , _vertAdjustment :: Adjustment 
-                               , _horizAdjConnId :: Maybe (ConnectId Adjustment)
-                               , _vertAdjConnId :: Maybe (ConnectId Adjustment)
-                               , _canvasWidgets :: CanvasWidgets
-                               , _notifiedItem :: Maybe (PageNum,BBox,RItem) 
-                               }
+data CanvasInfo (a :: ViewMode) = 
+       CanvasInfo { _canvasId :: CanvasId
+                  , _drawArea :: DrawingArea
+                  , _mDrawSurface :: Maybe Surface 
+                  , _scrolledWindow :: ScrolledWindow
+                  , _viewInfo :: ViewInfo a
+                  , _currentPageNum :: Int
+                  , _horizAdjustment :: Adjustment
+                  , _vertAdjustment :: Adjustment 
+                  , _horizAdjConnId :: Maybe (ConnectId Adjustment)                               
+                  , _vertAdjConnId :: Maybe (ConnectId Adjustment)
+                  , _canvasWidgets :: CanvasWidgets
+                  , _notifiedItem :: Maybe (PageNum,BBox,RItem) 
+                  }
 
 -- |     
-xfrmCvsInfo :: (ViewMode a, ViewMode b) => 
-               (ViewInfo a -> ViewInfo b) 
+xfrmCvsInfo :: (ViewInfo a -> ViewInfo b) 
             -> CanvasInfo a -> CanvasInfo b 
 xfrmCvsInfo f CanvasInfo {..} = 
     CanvasInfo { _canvasId = _canvasId
@@ -264,7 +267,7 @@ data CanvasInfoBox = CanvasSinglePage (CanvasInfo SinglePage)
 
 
 -- | apply a funtion to Generic CanvasInfo 
-fmap4CvsInfoBox :: (forall a. (ViewMode a)=> CanvasInfo a -> r) -> CanvasInfoBox -> r 
+fmap4CvsInfoBox :: (forall a. CanvasInfo a -> r) -> CanvasInfoBox -> r 
 fmap4CvsInfoBox f (CanvasSinglePage x) = f x 
 fmap4CvsInfoBox f (CanvasContPage x) = f x 
 
@@ -277,7 +280,7 @@ insideAction4CvsInfoBox f (CanvasContPage x) = CanvasContPage (f x)
 
 -- | fmap-like operation for box
 insideAction4CvsInfoBoxF :: (Functor f) => 
-                            (forall a. (ViewMode a) => CanvasInfo a -> f (CanvasInfo a))
+                            (forall a. CanvasInfo a -> f (CanvasInfo a))
                          -> CanvasInfoBox -> f CanvasInfoBox
 insideAction4CvsInfoBoxF f (CanvasSinglePage x) = fmap CanvasSinglePage (f x)
 insideAction4CvsInfoBoxF f (CanvasContPage x) = fmap CanvasContPage (f x)
@@ -289,20 +292,20 @@ getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea
 getDrawAreaFromBox = unboxGet drawArea
 
 -- | 
-unboxGet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
+unboxGet :: (forall a. Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
 unboxGet f x = fmap4CvsInfoBox (view f) x
 
 
 -- | 
-unboxSet :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
+unboxSet :: (forall a. Simple Lens (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
 unboxSet l b (CanvasSinglePage a) = CanvasSinglePage (set l b a)
 unboxSet l b (CanvasContPage a) = CanvasContPage (set l b a) 
 
-unboxLens :: (forall a. (ViewMode a) => Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
+unboxLens :: (forall a. Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
 unboxLens l = lens (unboxGet l) (flip (unboxSet l)) 
 
 -- | 
-boxAction :: Monad m => (forall a. ViewMode a => CanvasInfo a -> m b) 
+boxAction :: Monad m => (forall a. CanvasInfo a -> m b) 
              -> CanvasInfoBox -> m b 
 boxAction f c = fmap4CvsInfoBox f c 
   -- f (CanvasInfoBox cinfo) = f cinfo 

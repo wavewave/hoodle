@@ -63,9 +63,8 @@ getCurrentPageCvsId cid = do
 
 
 -- | 
-getCurrentPageEitherFromHoodleModeState :: 
-  (ViewMode a) => 
-  CanvasInfo a -> HoodleModeState -> Either (Page EditMode) (Page SelectMode)
+getCurrentPageEitherFromHoodleModeState 
+  :: CanvasInfo a -> HoodleModeState -> Either (Page EditMode) (Page SelectMode)
 getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =  
     let cpn = view currentPageNum cinfo 
         page = getCurrentPageFromHoodleModeState cinfo hdlmodst
@@ -161,7 +160,7 @@ getCanvasGeometryCvsId cid xstate = do
   let cinfobox = getCanvasInfo cid xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
+      fsingle :: CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox
@@ -172,7 +171,7 @@ getGeometry4CurrCvs xstate = do
   let cinfobox = view currentCanvasInfo xstate
       cpn = PageNum . unboxGet currentPageNum $ cinfobox 
       canvas = unboxGet drawArea cinfobox
-      fsingle :: (ViewMode a) => CanvasInfo a -> IO CanvasGeometry 
+      fsingle :: CanvasInfo a -> IO CanvasGeometry 
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 
   boxAction fsingle cinfobox

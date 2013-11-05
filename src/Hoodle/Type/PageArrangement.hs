@@ -1,4 +1,10 @@
-{-# LANGUAGE EmptyDataDecls, GADTs, TypeOperators, GeneralizedNewtypeDeriving, NoMonoPatBinds #-}
+{-# LANGUAGE EmptyDataDecls #-} 
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-} 
+{-# LANGUAGE NoMonoPatBinds #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE DataKinds #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -33,22 +39,20 @@ import Hoodle.Util
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
               deriving (Show,Eq)
 
--- | sum type class (later, will be replaced by Kind promotion) 
-data ViewModeSumType = VMSinglePage | VMContPage 
 
-class ViewMode a 
+data ViewMode = SinglePage | ContinuousPage 
 
--- | only one page show at a time
-data SinglePage = SinglePage
+-- class ViewMode a 
 
--- | 
-instance ViewMode SinglePage 
+--   | only one page show at a time
+-- data SinglePage = SinglePage
 
--- | continuously show pages in general
-data ContinuousPage = ContinuousPage
+-- instance ViewMode SinglePage 
 
--- | 
-instance ViewMode ContinuousPage
+--   | continuously show pages in general
+-- data ContinuousPage = ContinuousPage
+
+--   instance ViewMode ContinuousPage
 
 -- | 
 newtype PageNum = PageNum { unPageNum :: Int } 
@@ -112,13 +116,13 @@ xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) =
       ymargin = if 0.5*((y2-y1)-h) > 0 then 0.5*((y2-y1)-h) else 0 
       (x1',x2') 
         | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
-        | x2>w && w-(x2-x1)<=0 = (-xmargin,-xmargin+x2-x1) -- (0,x2-x1)     
-        | x1< (-xmargin) = (-xmargin,-xmargin+x2-x1) -- (0,x2-x1)
+        | x2>w && w-(x2-x1)<=0 = (-xmargin,-xmargin+x2-x1)
+        | x1< (-xmargin) = (-xmargin,-xmargin+x2-x1)
         | otherwise            = (x1,x2)
       (y1',y2') 
         | y2>h && h-(y2-y1)>0  = (h-(y2-y1),h)
-        | y2>h && h-(y2-y1)<=0 = (-ymargin,-ymargin+y2-y1) -- (0,y2-y1)
-        | y1 < (-ymargin) =  (-ymargin,-ymargin+y2-y1) --  (0,y2-y1)
+        | y2>h && h-(y2-y1)<=0 = (-ymargin,-ymargin+y2-y1) 
+        | y1 < (-ymargin) =  (-ymargin,-ymargin+y2-y1) 
         | otherwise            = (y1,y2)
   in ViewPortBBox (BBox (x1',y1') (x2',y2') )
       
@@ -126,7 +130,7 @@ xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) =
       
 
 -- | data structure for coordinate arrangement of pages in desktop coordinate
-data PageArrangement a where
+data PageArrangement (a :: ViewMode) where
   SingleArrangement :: CanvasDimension 
                     -> PageDimension 
                     -> ViewPortBBox 
@@ -181,16 +185,6 @@ makeContinuousArrangement zmode cdim@(CanvasDimension (Dim cw ch))
       ovport =ViewPortBBox (BBox (x1,y1) (x2,y2))
       vport = xformViewPortFitInSize iddim id ovport
   in ContinuousArrangement cdim ddim (pageArrFuncCont cnstrnt hdl) vport
-
-{-      (x1',x2') 
-        | x2>w && w-(x2-x1)>0  = (w-(x2-x1),w) 
-        | x2>w && w-(x2-x1)<=0 = (0,x2-x1)     
-        | otherwise            = (x1,x2)
-      (y1',y2') 
-        | y2>h && h-(y2-y1)>0  = (h-(y2-y1),h)
-        | y2>h && h-(y2-y1)<=0 = (0,y2-y1)
-        | otherwise            = (y1,y2)
-      vport = ViewPortBBox (BBox (x1',y1') (x2',y2') ) -}
 
 
 -- |

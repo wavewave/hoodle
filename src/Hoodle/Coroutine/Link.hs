@@ -80,7 +80,7 @@ notifyLink cid pcoord = do
     xst <- get 
     (boxAction (f xst) . getCanvasInfo cid) xst 
   where 
-    f :: forall b. (ViewMode b) => HoodleState -> CanvasInfo b -> MainCoroutine ()
+    f :: forall b. HoodleState -> CanvasInfo b -> MainCoroutine ()
     f xst cvsInfo = do 
       let cpn = PageNum . view currentPageNum $ cvsInfo
           arr = view (viewInfo.pageArrangement) cvsInfo              

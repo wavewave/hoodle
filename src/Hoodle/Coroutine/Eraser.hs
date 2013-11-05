@@ -64,7 +64,7 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
     xst <- get
     boxAction (f r xst) . getCanvasInfo cid $ xst 
   where 
-    f :: (ViewMode a) => UserEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
+    f :: UserEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
                                  (moveact xstate cvsInfo) upact
     defact = eraserProcess cid pnum geometry itms (x0,y0)
@@ -82,7 +82,6 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
               pgnum       = view currentPageNum cvsInfo
               currlayer = getCurrentLayer page
           let (newitms,maybebbox) = St.runState (eraseHitted hittestitem) Nothing
-              -- maybebbox = fmap (flip inflate 2.0) maybebbox1
           newlayerbbox <- liftIO . updateLayerBuf dim maybebbox 
                           . set gitems newitms $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox page 

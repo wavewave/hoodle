@@ -44,7 +44,7 @@ moveViewPortBy rndr cid f =
     act xst = let cinfobox = getCanvasInfo cid xst 
                   ncinfobox = selectBox moveact moveact cinfobox       
               in setCanvasInfo (cid,ncinfobox) xst
-    moveact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+    moveact :: CanvasInfo a -> CanvasInfo a 
     moveact cinfo = 
       let BBox (x0,y0) _ = 
             (unViewPortBBox . view (viewInfo.pageArrangement.viewPortBBox)) cinfo

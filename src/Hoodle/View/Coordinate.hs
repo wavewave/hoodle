@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs, TupleSections #-}
+{-# LANGUAGE GADTs #-} 
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -195,8 +196,7 @@ getPagesInViewPortRange geometry hdl =
 
 -- | 
 
-getCvsGeomFrmCvsInfo :: (ViewMode a) => 
-                        CanvasInfo a -> IO CanvasGeometry 
+getCvsGeomFrmCvsInfo :: CanvasInfo a -> IO CanvasGeometry 
 getCvsGeomFrmCvsInfo cinfo = do 
   let cpn = PageNum . view currentPageNum $ cinfo 
       canvas = view drawArea cinfo

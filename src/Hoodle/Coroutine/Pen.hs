@@ -99,7 +99,7 @@ penPageSwitch pgn = do
         
 
 -- | Common Pen Work starting point 
-commonPenStart :: (forall a. ViewMode a => CanvasInfo a -> PageNum -> CanvasGeometry  
+commonPenStart :: (forall a. CanvasInfo a -> PageNum -> CanvasGeometry  
                     -> (Double,Double) -> MainCoroutine () )
                -> CanvasId -> PointerCoord 
                -> MainCoroutine ()
@@ -109,10 +109,10 @@ commonPenStart action cid pcoord = do
     when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
     nxstate <- get
     boxAction f . getCanvasInfo cid $ nxstate
-  where f :: forall b. (ViewMode b) => CanvasInfo b -> MainCoroutine ()
+  where f :: forall b. CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
           let cpn = PageNum . view currentPageNum $ cvsInfo
-              arr = view (viewInfo.pageArrangement) cvsInfo              
+              arr = view (viewInfo.pageArrangement) cvsInfo 
               canvas = view drawArea cvsInfo
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
@@ -129,7 +129,7 @@ commonPenStart action cid pcoord = do
 -- | enter pen drawing mode
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 penStart cid pcoord = commonPenStart penAction cid pcoord
-  where penAction :: forall b. (ViewMode b) => CanvasInfo b -> PageNum -> CanvasGeometry -> (Double,Double) -> MainCoroutine ()
+  where penAction :: forall b. CanvasInfo b -> PageNum -> CanvasGeometry -> (Double,Double) -> MainCoroutine ()
         penAction _cinfo pnum geometry (x,y) = do 
           xstate <- get
           let PointerCoord _ _ _ z = pcoord 
@@ -174,7 +174,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) = do
     boxAction (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     pdraw = tempInfo trdr 
-    fsingle :: forall b. (ViewMode b) => 
+    fsingle :: forall b.  
                UserEvent -> HoodleState -> CanvasInfo b 
                -> MainCoroutine (Seq (Double,Double,Double))
     fsingle r xstate cvsInfo = 

@@ -49,13 +49,13 @@ newCanvasId cmap =
   in  (maximum cids) + 1  
 
 -- | initialize CanvasInfo with creating windows and connect events
-initCanvasInfo :: ViewMode a => HoodleState -> CanvasId -> IO (CanvasInfo a)
+initCanvasInfo :: HoodleState -> CanvasId -> IO (CanvasInfo a)
 initCanvasInfo xstate cid = 
   minimalCanvasInfo xstate cid >>= connectDefaultEventCanvasInfo xstate
   
 
 -- | only creating windows 
-minimalCanvasInfo :: ViewMode a => HoodleState -> CanvasId -> IO (CanvasInfo a)
+minimalCanvasInfo :: HoodleState -> CanvasId -> IO (CanvasInfo a)
 minimalCanvasInfo _xstate cid = do 
     canvas <- drawingAreaNew
     scrwin <- scrolledWindowNew Nothing Nothing 
@@ -64,14 +64,13 @@ minimalCanvasInfo _xstate cid = do
     vadj <- adjustmentNew 0 0 500 100 200 200 
     scrolledWindowSetHAdjustment scrwin hadj 
     scrolledWindowSetVAdjustment scrwin vadj 
-    -- scrolledWindowSetPolicy scrwin PolicyAutomatic PolicyAutomatic 
     return $ CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
 
 
 -- | only connect events 
 
-connectDefaultEventCanvasInfo :: ViewMode a =>  
-                                 HoodleState -> CanvasInfo a -> IO (CanvasInfo a )
+connectDefaultEventCanvasInfo 
+  :: HoodleState -> CanvasInfo a -> IO (CanvasInfo a )
 connectDefaultEventCanvasInfo xstate cinfo = do 
     let callback = view callBack xstate
         dev = view deviceList xstate 
@@ -90,7 +89,6 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       m <- eventModifier
       n <- eventKeyName 
       let keystr = show m ++ ":" ++ show n
-      -- liftIO $ putStrLn (show m ++ ":" ++ show n)
       liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
     _bpevent <- canvas `on` buttonPressEvent $ tryEvent $ do 
                  liftIO $ widgetGrabFocus canvas 
@@ -167,9 +165,8 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     
 -- | recreate windows from old canvas info but no event connect
 
-reinitCanvasInfoStage1 :: (ViewMode a) => 
-                           HoodleState 
-                           ->  CanvasInfo a -> IO (CanvasInfo a)
+reinitCanvasInfoStage1 
+  :: HoodleState -> CanvasInfo a -> IO (CanvasInfo a)
 reinitCanvasInfoStage1 xstate oldcinfo = do 
   let cid = view canvasId oldcinfo 
   newcinfo <- minimalCanvasInfo xstate cid      
@@ -180,8 +177,8 @@ reinitCanvasInfoStage1 xstate oldcinfo = do
     
 -- | event connect
 
-reinitCanvasInfoStage2 :: (ViewMode a) => 
-                           HoodleState -> CanvasInfo a -> IO (CanvasInfo a)
+reinitCanvasInfoStage2 
+  :: HoodleState -> CanvasInfo a -> IO (CanvasInfo a)
 reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo
     
 -- | event connecting for all windows                          
@@ -203,13 +200,6 @@ eventConnect xstate (VSplit wconf1 wconf2) = do
     (xstate'',wconf2') <- eventConnect xstate' wconf2 
     return (xstate'',VSplit wconf1' wconf2')
     
-{-    case cinfobox of       
-      CanvasInfoBox cinfo -> do 
-        ncinfo <- reinitCanvasInfoStage2 xstate cinfo 
-        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate -}
-
-
-
 -- | default construct frame     
 
 constructFrame :: HoodleState -> WindowConfig 
@@ -267,9 +257,3 @@ constructFrame' template xstate (VSplit wconf1 wconf2) = do
     widgetShowAll vpane' 
     return (xstate'',castToWidget vpane', VSplit wconf1' wconf2')
   
-
-
-{-    case cinfobox of       
-      CanvasInfoBox cinfo -> do 
-        ncinfo <- reinitCanvasInfoStage1 xstate cinfo 
-        let xstate' = updateFromCanvasInfoAsCurrentCanvas (CanvasInfoBox ncinfo) xstate -}

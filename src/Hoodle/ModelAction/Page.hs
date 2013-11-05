@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE DataKinds #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -129,7 +130,6 @@ updatePage (ViewAppendState hdl) c = updateCvsInfoFrmHoodle hdl c
 updatePage (SelectState thdl) c = do 
     let hdl = gSelect2GHoodle thdl 
     updateCvsInfoFrmHoodle hdl c
- -- GHoodle (view gselTitle thdl) (view gselAll thdl)
 
 -- | 
 setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox

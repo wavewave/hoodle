@@ -1,5 +1,8 @@
-{-# LANGUAGE GADTs, Rank2Types, TypeFamilies, ScopedTypeVariables #-}
-
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE Rank2Types #-} 
+{-# LANGUAGE TypeFamilies #-} 
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Draw 
@@ -54,7 +57,7 @@ import Prelude hiding (mapM_,concatMap,foldr)
 
                        
 -- | 
-type family DrawingFunction v :: * -> * 
+type family DrawingFunction (v :: ViewMode) :: * -> * 
 
 -- |
 
@@ -123,7 +126,7 @@ virtualDoubleBufferDraw srcsfc tgtsfc pre post =
       post  
           
 -- | 
-doubleBufferFlush :: ViewMode a => Surface -> CanvasInfo a -> IO () 
+doubleBufferFlush :: Surface -> CanvasInfo a -> IO () 
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
       win <- widgetGetDrawWindow canvas
@@ -591,8 +594,8 @@ canvasImageSurface mmulti geometry hdl = do
 ---------------------------------------------------
 
 -- | 
-drawWidgets :: ViewMode a => 
-               [WidgetItem] -> Hoodle EditMode -> CanvasInfo a -> Maybe BBox -> Render () 
+drawWidgets :: [WidgetItem] -> Hoodle EditMode 
+            -> CanvasInfo a -> Maybe BBox -> Render () 
 drawWidgets witms hdl cinfo mbbox = do  
   when (PanZoomWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUsePanZoomWidget) cinfo) $
     renderPanZoomWidget (view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) cinfo)
@@ -643,8 +646,7 @@ renderPanZoomWidget b mbbox (CvsCoord (x,y)) = do
 -- Layer Widget -- 
 ------------------
 
-drawLayerWidget :: ViewMode a => 
-                   Hoodle EditMode 
+drawLayerWidget :: Hoodle EditMode 
                    -> CanvasInfo a 
                    -> Maybe BBox 
                    -> CanvasCoordinate 

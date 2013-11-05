@@ -48,8 +48,7 @@ data CWAction = Move (CanvasCoordinate,CanvasCoordinate)
                 deriving (Show)
                          
 
-checkPointerInClock :: ViewMode a => 
-                       (CanvasId,CanvasInfo a,CanvasGeometry) 
+checkPointerInClock :: (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
                     -> Maybe CWAction 
 checkPointerInClock (cid,cinfo,geometry) pcoord 
@@ -64,8 +63,7 @@ checkPointerInClock (cid,cinfo,geometry) pcoord
   where b = view (canvasWidgets.widgetConfig.doesUseClockWidget) cinfo 
 
 -- |
-startClockWidget :: ViewMode a =>
-                    (CanvasId,CanvasInfo a,CanvasGeometry)
+startClockWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> CWAction 
                  -> MainCoroutine () 
 startClockWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
@@ -125,7 +123,7 @@ moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
               | yw+y-y0 > ch-50 = ch-50 
               | otherwise = yw+y-y0                             
         nwpos = CvsCoord (nposx,nposy) 
-        changeact :: (ViewMode a) => CanvasInfo a -> CanvasInfo a 
+        changeact :: CanvasInfo a -> CanvasInfo a 
         changeact cinfo =  
           set (canvasWidgets.clockWidgetConfig.clockWidgetPosition) nwpos $ cinfo
         ncinfobox = selectBox changeact changeact  cinfobox

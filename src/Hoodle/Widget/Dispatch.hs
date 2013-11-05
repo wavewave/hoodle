@@ -50,7 +50,7 @@ widgetCheckPen :: CanvasId
                -> MainCoroutine ()
 widgetCheckPen cid pcoord defact = get >>= \xst -> boxAction (chk xst) (getCanvasInfo cid xst) 
   where 
-    chk :: (ViewMode a) => HoodleState -> CanvasInfo a -> MainCoroutine () 
+    chk :: HoodleState -> CanvasInfo a -> MainCoroutine () 
     chk xstate cinfo = do 
       let cvs = view drawArea cinfo
           pnum = (PageNum . view currentPageNum) cinfo 

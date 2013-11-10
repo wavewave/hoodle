@@ -146,7 +146,7 @@ newSelectRectangle cid pnum geometry itms orig
                    (prev,otime) tempselection = do  
     r <- nextevent
     xst <- get 
-    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst
+    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
                                (moveact xstate cinfo) (upact xstate cinfo)
@@ -239,7 +239,7 @@ moveSelect cid pnum geometry orig@(x0,y0)
            (prev,otime) tempselection = do
     xst <- get
     r <- nextevent 
-    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst 
   where 
     fsingle r xstate cinfo = 
       penMoveAndUpInterPage r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
@@ -296,7 +296,8 @@ moveSelect cid pnum geometry orig@(x0,y0)
                 coroutineaction = do 
                   nthdl2 <- liftIO $ updateTempHoodleSelectIO nthdl1 ntpage (unPageNum newpgn)  
                   let cibox = view currentCanvasInfo xstate1 
-                      ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum newpgn)) cibox 
+                      ncibox = (runIdentity . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
+                                 cibox 
                       cmap = getCanvasInfoMap xstate1 
                       cmap' = M.adjust (const ncibox) cid cmap 
                       xst = maybe xstate1 id $ setCanvasInfoMap cmap' xstate1
@@ -359,7 +360,7 @@ resizeSelect handle cid pnum geometry origbbox
              (prev,otime) tempselection = do
     xst <- get
     r <- nextevent 
-    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst
+    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
   where
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
     defact = resizeSelect handle cid pnum geometry 

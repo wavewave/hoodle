@@ -57,7 +57,7 @@ invalidateGeneral :: CanvasId -> Maybe BBox -> DrawFlag
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do 
     xst <- get 
-    selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
+    unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
   where fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
         fsingle xstate cvsInfo = do 
           let cpn = PageNum . view currentPageNum $ cvsInfo 
@@ -128,7 +128,7 @@ invalidateCurrent = invalidate . getCurrentCanvasId =<< get
 invalidateTemp :: CanvasId -> Surface ->  Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
     xst <- get 
-    selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
           let canvas = view drawArea cvsInfo
               pnum = PageNum . view currentPageNum $ cvsInfo 
@@ -148,7 +148,7 @@ invalidateTempBasePage :: CanvasId -> Surface -> PageNum -> Render ()
                           -> MainCoroutine ()
 invalidateTempBasePage cid tempsurface pnum rndr = do 
     xst <- get 
-    selectBoxAction (fsingle xst) (fsingle xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
   where fsingle xstate cvsInfo = do 
           let canvas = view drawArea cvsInfo
           geometry <- liftIO $ getCanvasGeometryCvsId cid xstate

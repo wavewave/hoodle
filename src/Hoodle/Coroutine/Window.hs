@@ -43,7 +43,7 @@ canvasConfigureGenUpdate :: MainCoroutine ()
                             -> CanvasDimension 
                             -> MainCoroutine () 
 canvasConfigureGenUpdate updatefunc cid cdim 
-  = updateXState (selectBoxAction fsingle fcont . getCanvasInfo cid ) >> updatefunc 
+  = updateXState (unboxBiAct fsingle fcont . getCanvasInfo cid ) >> updatefunc 
   where fsingle cinfo = do 
           xstate <- get 
           cinfo' <- liftIO $ updateCanvasDimForSingle cdim cinfo 

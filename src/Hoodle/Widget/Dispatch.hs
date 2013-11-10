@@ -46,7 +46,7 @@ widgetCheckPen :: CanvasId
                -> PointerCoord 
                -> MainCoroutine ()    -- ^ default action 
                -> MainCoroutine ()
-widgetCheckPen cid pcoord defact = get >>= \xst -> unboxAct (chk xst) (getCanvasInfo cid xst) 
+widgetCheckPen cid pcoord defact = get >>= \xst -> forBoth' unboxBiAct (chk xst) (getCanvasInfo cid xst) 
   where 
     chk :: HoodleState -> CanvasInfo a -> MainCoroutine () 
     chk xstate cinfo = do 

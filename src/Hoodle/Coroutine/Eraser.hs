@@ -62,7 +62,7 @@ eraserProcess :: CanvasId
 eraserProcess cid pnum geometry itms (x0,y0) = do 
     r <- nextevent 
     xst <- get
-    unboxAct (f r xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (f r xst) . getCanvasInfo cid $ xst 
   where 
     f :: UserEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 

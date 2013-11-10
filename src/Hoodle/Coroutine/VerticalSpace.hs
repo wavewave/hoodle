@@ -104,7 +104,7 @@ addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) =
     >> commit_ 
     >> canvasZoomUpdateAll >> invalidateAll
   where
-    npgBfrAct xst = unboxAct (fsimple xst) . view currentCanvasInfo $ xst
+    npgBfrAct xst = forBoth' unboxBiAct (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
     fsimple xstate _cinfo = do 
       case view hoodleModeState xstate of 
@@ -159,7 +159,7 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                      (x0,y0) sfcs@(sfcbkg,sfcitm,sfctot) otime = do 
     r <- nextevent 
     xst <- get
-    unboxAct (f r xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (f r xst) . getCanvasInfo cid $ xst 
   where 
     Dim w h = view gdimension pg    
     CvsCoord (_,y0_cvs) = (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (x0,y0))

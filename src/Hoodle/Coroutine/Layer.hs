@@ -43,7 +43,7 @@ layerAction :: (HoodleModeState -> Int -> Page EditMode -> MainCoroutine HoodleM
             -> MainCoroutine HoodleState
 layerAction action = do 
     xst <- get 
-    selectBoxAction (fsingle xst) (fsingle xst)  . view currentCanvasInfo $ xst
+    forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo $ xst
   where 
     fsingle xstate cvsInfo = do
       let epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
@@ -100,7 +100,7 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit >> invalidateAll
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
-    selectBoxAction fsingle fsingle . view currentCanvasInfo =<< get
+    forBoth' unboxBiAct fsingle . view currentCanvasInfo =<< get
   where 
     fsingle cvsInfo = do 
       xstate <- get 

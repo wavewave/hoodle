@@ -19,6 +19,7 @@ import           Control.Applicative
 import           Control.Lens (view,set)
 import           Control.Monad (liftM)
 -- import           Control.Monad.Trans.Either
+import           Data.Functor.Identity (Identity(..))
 import qualified Data.IntMap as M
 import           Data.Traversable (mapM)
 import           Graphics.UI.Gtk (adjustmentGetValue)
@@ -63,7 +64,7 @@ updatePageAll hdlmodst xstate = do
 
 -- | 
 adjustPage :: HoodleModeState -> CanvasInfoBox -> CanvasInfoBox  
-adjustPage hdlmodst = selectBox fsingle fsingle  
+adjustPage hdlmodst = runIdentity . forBoth unboxBiXform (return . fsingle)   
   where fsingle :: CanvasInfo a -> CanvasInfo a 
         fsingle cinfo = let cpn = view currentPageNum cinfo 
                             pagemap = getPageMap hdlmodst
@@ -135,9 +136,9 @@ updatePage (SelectState thdl) c = do
 setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox
 setPage xstate pnum cid = do  
   let cinfobox =  getCanvasInfo cid xstate
-  selectBoxAction (liftM CanvasSinglePage . setPageSingle xstate pnum) 
-                  (liftM CanvasContPage . setPageCont xstate pnum)
-                  cinfobox
+  unboxBiAct (liftM CanvasSinglePage . setPageSingle xstate pnum) 
+             (liftM CanvasContPage . setPageCont xstate pnum)
+             cinfobox
 
 -- | setPageSingle : in Single Page mode   
 setPageSingle :: HoodleState -> PageNum  

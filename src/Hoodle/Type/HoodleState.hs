@@ -87,8 +87,9 @@ module Hoodle.Type.HoodleState
 ) where
 
 import           Control.Category
-import           Control.Lens
+import           Control.Lens (Simple,Lens,view,set,lens)
 import           Control.Monad.State hiding (get,modify)
+import           Data.Functor.Identity (Identity(..))
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Time.Clock
@@ -494,7 +495,7 @@ updateFromCanvasInfoAsCurrentCanvas cinfobox xstate =
 
 -- | 
 setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
-setCanvasId cid = insideAction4CvsInfoBox (set canvasId cid) 
+setCanvasId cid = runIdentity . forBoth unboxBiXform (return . set canvasId cid)   
 
 -- | 
 modifyCanvasInfo :: CanvasId -> (CanvasInfoBox -> CanvasInfoBox) -> HoodleState

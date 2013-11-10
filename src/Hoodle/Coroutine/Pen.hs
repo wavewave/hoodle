@@ -21,6 +21,7 @@ import           Control.Lens (view,set,at)
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.State hiding (mapM_,forM_)
 -- import Control.Monad.Trans
+import           Data.Functor.Identity (Identity(..))
 import           Data.Foldable (mapM_,forM_)
 import           Data.Sequence hiding (filter)
 import           Data.Maybe 
@@ -92,7 +93,7 @@ penPageSwitch :: PageNum -> MainCoroutine CanvasInfoBox
 penPageSwitch pgn = do 
     xstate <- get
     let cibox = view currentCanvasInfo xstate     
-        ncibox = insideAction4CvsInfoBox (set currentPageNum (unPageNum pgn)) cibox 
+        ncibox = (runIdentity . forBoth unboxBiXform (return . set currentPageNum (unPageNum pgn))) cibox 
     put (set currentCanvasInfo ncibox xstate) 
     invalidateAllInBBox Nothing Efficient
     return ncibox 
@@ -108,7 +109,7 @@ commonPenStart action cid pcoord = do
     let currcid = getCurrentCanvasId oxstate
     when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
     nxstate <- get
-    unboxAct f . getCanvasInfo cid $ nxstate
+    forBoth' unboxBiAct f . getCanvasInfo cid $ nxstate
   where f :: forall b. CanvasInfo b -> MainCoroutine ()
         f cvsInfo = do 
           let cpn = PageNum . view currentPageNum $ cvsInfo
@@ -171,7 +172,7 @@ penProcess :: CanvasId -> PageNum
 penProcess cid pnum geometry trdr ((x0,y0),z0) = do 
     r <- nextevent
     xst <- get 
-    unboxAct (fsingle r xst) . getCanvasInfo cid $ xst
+    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     pdraw = tempInfo trdr 
     fsingle :: forall b.  

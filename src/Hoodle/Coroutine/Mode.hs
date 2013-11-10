@@ -84,9 +84,9 @@ viewModeChange command = do
       _ -> return ()
     adjustScrollbarWithGeometryCurrent     
   where cont2single xst =  
-          selectBoxAction (noaction xst) (whencont xst) . view currentCanvasInfo $ xst
+          unboxBiAct (noaction xst) (whencont xst) . view currentCanvasInfo $ xst
         single2cont xst = 
-          selectBoxAction (whensing xst) (noaction xst) . view currentCanvasInfo $ xst
+          unboxBiAct (whensing xst) (noaction xst) . view currentCanvasInfo $ xst
         noaction :: HoodleState -> a -> MainCoroutine HoodleState  
         noaction xstate = const (return xstate)
         -------------------------------------

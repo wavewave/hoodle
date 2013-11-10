@@ -78,13 +78,16 @@ module Hoodle.Type.Canvas
 -- , unboxGet
 -- , unboxSet
 , unboxLens
-, unboxAct
+, unboxBiAct
+, unboxBiXform
+, forBoth
+, forBoth'
+-- , unboxSelect
 -- , fmap4CvsInfoBox
-, insideAction4CvsInfoBox
-, insideAction4CvsInfoBoxF
+-- , insideAction4CvsInfoBox
+-- , insideAction4CvsInfoBoxF
 -- , boxAction
-, selectBoxAction
-, selectBox
+-- , selectBox
 -- * others
 , updateCanvasDimForSingle
 , updateCanvasDimForContSingle
@@ -273,36 +276,72 @@ data CanvasInfoBox where
 -- test1 (_ :: SinglePage) = True 
 -- test1 (_ :: ContinuousPage) = False
 
--- | apply a funtion to Generic CanvasInfo 
-unboxAct :: (forall a. CanvasInfo a -> r) -> CanvasInfoBox -> r 
-unboxAct f (CanvasSinglePage x) = f x 
-unboxAct f (CanvasContPage x) = f x 
-
+{- 
 -- | fmap-like operation for box
 insideAction4CvsInfoBox :: (forall a. CanvasInfo a -> CanvasInfo a)
                     -> CanvasInfoBox -> CanvasInfoBox
 insideAction4CvsInfoBox f (CanvasSinglePage x) = CanvasSinglePage (f x)
 insideAction4CvsInfoBox f (CanvasContPage x) = CanvasContPage (f x)
+-}
 
 
--- | fmap-like operation for box
-insideAction4CvsInfoBoxF :: (Functor f) => 
-                            (forall a. CanvasInfo a -> f (CanvasInfo a))
-                         -> CanvasInfoBox -> f CanvasInfoBox
-insideAction4CvsInfoBoxF f (CanvasSinglePage x) = fmap CanvasSinglePage (f x)
-insideAction4CvsInfoBoxF f (CanvasContPage x) = fmap CanvasContPage (f x)
 
 
-  
--- |
-getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
-getDrawAreaFromBox = view (unboxLens drawArea)
+forBoth ::  
+          ((CanvasInfo SinglePage -> f (CanvasInfo SinglePage))
+              -> (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) 
+              -> (CanvasInfoBox -> f CanvasInfoBox))   
+          -> (forall a. CanvasInfo a -> f (CanvasInfo a))
+          -> CanvasInfoBox -> f CanvasInfoBox
+forBoth m f = m f f 
+
+
+forBoth' ::  ((CanvasInfo SinglePage -> r)
+              -> (CanvasInfo ContinuousPage -> r) 
+              -> (CanvasInfoBox -> r) )
+          -> (forall a. CanvasInfo a -> r)
+          -> CanvasInfoBox -> r
+forBoth' m f = m f f 
+
+
+
+{-
+bothXform :: (forall a. CanvasInfo a -> CanvasInfo a) 
+          -> ((CanvasInfo SinglePage -> f (CanvasInfo SinglePage))
+              -> (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) 
+              -> (CanvasInfoBox -> CanvasInfoBox))   
+          -> CanvasInfoBox -> CanvasInfoBox
+bothXform f m = m f f 
+
+-}
+
+
+-- | single page action and continuous page act
+unboxBiXform :: (Functor f) => 
+                (CanvasInfo SinglePage -> f (CanvasInfo SinglePage)) 
+             -> (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) 
+             -> CanvasInfoBox -> f CanvasInfoBox 
+unboxBiXform fsingle _fcont (CanvasSinglePage cinfo) = fmap CanvasSinglePage (fsingle cinfo)
+unboxBiXform _fsingle fcont (CanvasContPage cinfo) = fmap CanvasContPage (fcont cinfo) 
+    
+-- | single page action and continuous page act
+unboxBiAct :: (CanvasInfo SinglePage -> r) 
+           -> (CanvasInfo ContinuousPage -> r) 
+           -> CanvasInfoBox -> r
+unboxBiAct fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
+unboxBiAct _fsingle fcont (CanvasContPage cinfo) = fcont cinfo
+
+
+{-
+-- | apply a funtion to Generic CanvasInfo 
+unboxAct :: (forall a. CanvasInfo a -> r) -> CanvasInfoBox -> r 
+unboxAct f (CanvasSinglePage x) = f x 
+unboxAct f (CanvasContPage x) = f x 
+-}
 
 -- | 
 unboxGet :: (forall a. Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
-unboxGet f x = unboxAct (view f) x
-
-
+unboxGet f = forBoth' unboxBiAct (view f) 
 -- | 
 unboxSet :: (forall a. Simple Lens (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
 unboxSet l b (CanvasSinglePage a) = CanvasSinglePage (set l b a)
@@ -320,20 +359,21 @@ boxAction f c = unboxAct f c
 -}
 
 
--- | either-like operation
-selectBoxAction :: (Monad m) => 
-                   (CanvasInfo SinglePage -> m a) 
-                -> (CanvasInfo ContinuousPage -> m a) -> CanvasInfoBox -> m a 
-selectBoxAction fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
-selectBoxAction _fsingle fcont (CanvasContPage cinfo) = fcont cinfo 
-  
-  
+
+
+
+{-  
 -- |     
 selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
           -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
           -> CanvasInfoBox -> CanvasInfoBox 
 selectBox fs _fc (CanvasSinglePage cinfo) = CanvasSinglePage (fs cinfo)
 selectBox _fs fc (CanvasContPage cinfo)= CanvasContPage (fc cinfo)
+-}
+
+-- |
+getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
+getDrawAreaFromBox = view (unboxLens drawArea)
 
 -- |
 type CanvasInfoMap = M.IntMap CanvasInfoBox

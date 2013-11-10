@@ -17,6 +17,7 @@ module Hoodle.Widget.Clock where
 import           Control.Lens (view,set,over)
 import Control.Monad.State 
 import Control.Monad.Trans
+import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
 import           Data.Sequence
 import           Data.Time
@@ -126,15 +127,15 @@ moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
         changeact :: CanvasInfo a -> CanvasInfo a 
         changeact cinfo =  
           set (canvasWidgets.clockWidgetConfig.clockWidgetPosition) nwpos $ cinfo
-        ncinfobox = selectBox changeact changeact  cinfobox
+        ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
     put (setCanvasInfo (cid,ncinfobox) xst)
     -- 
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
         cfg = view (unboxLens (canvasWidgets.clockWidgetConfig)) cinfobox
-    liftIO $ unboxAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
-                                  (renderClockWidget Nothing cfg) 
-                                >> doubleBufferFlush tgtsfc cinfo) cinfobox
+    liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
+                                    (renderClockWidget Nothing cfg) 
+                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox
 
 
 

@@ -227,13 +227,13 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             changeact :: CanvasInfo a -> CanvasInfo a 
             changeact cinfo =  
               set (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) nwpos $ cinfo
-            ncinfobox = selectBox changeact changeact  cinfobox
+            ncinfobox = (runIdentity . forBoth unboxBiXform (return.changeact)) cinfobox
             isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox                         
         put (setCanvasInfo (cid,ncinfobox) xst)
         virtualDoubleBufferDraw srcsfc tgtsfc (return ()) (renderPanZoomWidget isTouchZoom Nothing nwpos)
       Zooming -> do 
         let cinfobox = getCanvasInfo cid xst               
-        let pos = runIdentity (unboxAct (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
+        let pos = runIdentity (forBoth' unboxBiAct (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
         let (xo,yo) = (xw+50,yw+50)
             CanvasDimension cdim = canvasDim geometry 
             (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
@@ -255,7 +255,7 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             nwpos = if b 
                     then CvsCoord (nposx,nposy) 
                     else 
-                      runIdentity (unboxAct (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
+                      runIdentity (forBoth' unboxBiAct (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
             ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) nwpos cinfobox
             isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox 
         put (setCanvasInfo (cid,ncinfobox) xst)
@@ -265,7 +265,7 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
     --   
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
-    liftIO $ unboxAct (doubleBufferFlush tgtsfc) cinfobox
+    liftIO $ forBoth' unboxBiAct (doubleBufferFlush tgtsfc) cinfobox
 
   
 -- | 
@@ -280,7 +280,7 @@ togglePanZoom cid = do
 
 -- | 
 touchStart :: CanvasId -> PointerCoord -> MainCoroutine () 
-touchStart cid pcoord = unboxAct chk =<< liftM (getCanvasInfo cid) get
+touchStart cid pcoord = forBoth' unboxBiAct chk =<< liftM (getCanvasInfo cid) get
   where
     chk :: CanvasInfo a -> MainCoroutine () 
     chk cinfo = do 
@@ -298,7 +298,7 @@ touchStart cid pcoord = unboxAct chk =<< liftM (getCanvasInfo cid) get
         then do 
           let changeact :: CanvasInfo a -> CanvasInfo a 
               changeact = over (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) not 
-              ncinfobox = selectBox changeact changeact . getCanvasInfo cid $ xst
+              ncinfobox = runIdentity . forBoth unboxBiXform (return . changeact) . getCanvasInfo cid $ xst
           put (setCanvasInfo (cid,ncinfobox) xst)
           invalidateInBBox Nothing Efficient cid 
         else do 

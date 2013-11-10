@@ -52,8 +52,7 @@ reflectViewModeUI = do
     ra1 <- maybe (error "reflectUI") return =<< 
              liftIO (actionGroupGetAction (head agr) "ONEPAGEA")
     let wra1 = castToRadioAction ra1 
-    selectBoxAction (pgmodupdate_s mconnid wra1) 
-      (pgmodupdate_c mconnid wra1) cinfobox 
+    unboxBiAct (pgmodupdate_s mconnid wra1) (pgmodupdate_c mconnid wra1) cinfobox 
     return ()
   where pgmodupdate_s mconnid wra1 _cinfo = do
           liftIO $ blockWhile mconnid $

@@ -188,7 +188,7 @@ eventConnect :: HoodleState -> WindowConfig
 eventConnect xstate (Node cid) = do 
     let cmap = getCanvasInfoMap xstate 
         cinfobox = maybeError' "eventConnect" $ M.lookup cid cmap
-    ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage2 xstate) cinfobox
+    ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage2 xstate) cinfobox
     let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
     return (xstate', Node cid)        
 eventConnect xstate (HSplit wconf1 wconf2) = do  
@@ -222,9 +222,9 @@ constructFrame' template oxstate (Node cid) = do
             cmap' = M.insert cid cinfobox' ocmap
             xstate' = maybe oxstate id (setCanvasInfoMap cmap' oxstate)
         return (cinfobox',cmap',xstate')
-    ncinfobox <- insideAction4CvsInfoBoxF (reinitCanvasInfoStage1 xstate) cinfobox
+    ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 xstate) cinfobox
     let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
-    let scrwin = unboxAct (castToWidget.view scrolledWindow) ncinfobox
+    let scrwin = forBoth' unboxBiAct (castToWidget.view scrolledWindow) ncinfobox
     return (xstate', scrwin, Node cid)
 constructFrame' template xstate (HSplit wconf1 wconf2) = do  
     (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     

@@ -44,7 +44,7 @@ changePage :: (Int -> Int) -> MainCoroutine ()
 changePage modifyfn = updateXState changePageAction 
                       >> adjustScrollbarWithGeometryCurrent
                       >> invalidateAllInBBox Nothing Efficient  
-  where changePageAction xst = selectBoxAction (fsingle xst) (fcont xst) 
+  where changePageAction xst = unboxBiAct (fsingle xst) (fcont xst) 
                                . view currentCanvasInfo $ xst
         fsingle xstate cvsInfo = do 
           let xojst = view hoodleModeState $ xstate  
@@ -109,7 +109,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord
     >> adjustScrollbarWithGeometryCvsId cid
     >> renderfunc
   where zoomUpdateAction xst =  
-          selectBoxAction (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
+          unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
         fsingle xstate cinfo = do   
           geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo 
           page <- getCurrentPageCvsId cid
@@ -176,7 +176,7 @@ pageZoomChange = canvasZoomUpdate . Just
 -- | 
 pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
 pageZoomChangeRel rzmode = do 
-    unboxAct fsingle . view currentCanvasInfo =<< get 
+    forBoth' unboxBiAct fsingle . view currentCanvasInfo =<< get 
   where 
     fsingle :: CanvasInfo a -> MainCoroutine ()
     fsingle cinfo = do 
@@ -194,7 +194,7 @@ newPage dir = updateXState npgBfrAct
               >> canvasZoomUpdateAll 
               >> invalidateAll
   where 
-    npgBfrAct xst = unboxAct (fsimple xst) . view currentCanvasInfo $ xst
+    npgBfrAct xst = forBoth' unboxBiAct (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
       case view hoodleModeState xstate of 
@@ -212,7 +212,7 @@ deleteCurrentPage :: MainCoroutine ()
 deleteCurrentPage = do 
     updateXState delpgact >> commit_ >> canvasZoomUpdateAll >> invalidateAll
   where 
-    delpgact xst = unboxAct (fsimple xst) . view currentCanvasInfo $ xst
+    delpgact xst = forBoth' unboxBiAct (fsimple xst) . view currentCanvasInfo $ xst
     fsimple :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
     fsimple xstate cinfo = do 
       case view hoodleModeState xstate of 

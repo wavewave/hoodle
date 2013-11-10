@@ -20,6 +20,7 @@ import           Control.Monad.State
 import           Control.Monad.Trans.Either
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
+import           Data.Functor.Identity (Identity(..))
 import           Data.Hoodle.BBox
 -- from this package
 import           Hoodle.Type.Enum
@@ -42,7 +43,7 @@ moveViewPortBy rndr cid f =
     updateXState (return . act) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
   where     
     act xst = let cinfobox = getCanvasInfo cid xst 
-                  ncinfobox = selectBox moveact moveact cinfobox       
+                  ncinfobox = (runIdentity . forBoth unboxBiXform (return . moveact)) cinfobox       
               in setCanvasInfo (cid,ncinfobox) xst
     moveact :: CanvasInfo a -> CanvasInfo a 
     moveact cinfo = 
@@ -134,8 +135,10 @@ smoothScroll cid geometry v0 v = do
         lst | b  = lst'                     
             | otherwise = [v] 
     forM_ lst $ \v' -> do 
-      updateXState $ return . over currentCanvasInfo 
-                     (selectBox (scrollmovecanvas v) (scrollmovecanvasCont geometry v'))
+      updateXState $ return . over currentCanvasInfo  
+                     (runIdentity 
+                    . unboxBiXform (Identity . scrollmovecanvas v) 
+                                   (Identity . scrollmovecanvasCont geometry v') )
       invalidateInBBox Nothing Efficient cid 
   where scrollmovecanvas vv cvsInfo = 
           let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo

@@ -14,9 +14,10 @@
 
 module Hoodle.Widget.Layer where
 
-import Control.Lens (view,set,over)
-import Control.Monad.State 
-import Control.Monad.Trans
+import           Control.Lens (view,set,over)
+import           Control.Monad.State 
+import           Control.Monad.Trans
+import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
 import           Data.Sequence
 import           Data.Time
@@ -133,16 +134,16 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
         changeact :: CanvasInfo a -> CanvasInfo a 
         changeact cinfo =  
           set (canvasWidgets.layerWidgetConfig.layerWidgetPosition) nwpos $ cinfo
-        ncinfobox = selectBox changeact changeact  cinfobox
+        ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
     put (setCanvasInfo (cid,ncinfobox) xst)
     let hdl = getHoodle xst 
 
     -- 
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 
-    liftIO $ unboxAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
-                                  (drawLayerWidget hdl cinfo Nothing nwpos) 
-                                >> doubleBufferFlush tgtsfc cinfo) cinfobox
+    liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
+                                    (drawLayerWidget hdl cinfo Nothing nwpos) 
+                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox
   
 -- | 
 toggleLayer :: CanvasId -> MainCoroutine () 

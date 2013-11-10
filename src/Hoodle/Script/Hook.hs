@@ -30,6 +30,8 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , embedPredefinedImage2Hook :: Maybe (IO FilePath)
                  , embedPredefinedImage3Hook :: Maybe (IO FilePath)
                  , lookupPathFromId :: Maybe (String -> IO (Maybe FilePath))
+                 , warningEmbedImageSize :: Maybe Integer
+                 , shrinkCmd4EmbedImage :: Maybe (Double -> FilePath -> FilePath -> IO ())  
                  } 
 
 
@@ -47,4 +49,6 @@ defaultHook = Hook { saveAsHook = Nothing
                    , embedPredefinedImage2Hook = Nothing
                    , embedPredefinedImage3Hook = Nothing 
                    , lookupPathFromId = Nothing 
+                   , warningEmbedImageSize = Nothing
+                   , shrinkCmd4EmbedImage = Nothing
                    }

@@ -23,6 +23,7 @@ import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM)
 import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.ByteString (readFile)
 import           Data.ByteString.Base64 
 import           Data.ByteString.Char8 as B (pack,unpack)
@@ -40,6 +41,7 @@ import           System.Directory
 import           System.Exit 
 import           System.FilePath
 import qualified System.FSNotify as FS
+import           System.IO (hClose, hFileSize, openFile, IOMode(..))
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
@@ -80,6 +82,12 @@ import           Hoodle.View.Draw
 import Prelude hiding (readFile,concat,mapM)
 
 
+-- | 
+mkTmpFile :: String -> IO FilePath
+mkTmpFile ext = do 
+  tdir <- getTemporaryDirectory
+  tuuid <- nextRandom
+  return $ tdir </> show tuuid <.> ext
 
 -- |
 okMessageBox :: String -> MainCoroutine () 
@@ -399,6 +407,29 @@ fileAnnotatePDF =
         invalidateAll  
       
 
+-- |
+checkEmbedImageSize :: FilePath -> MainCoroutine (Maybe FilePath) 
+checkEmbedImageSize filename = do 
+  xst <- get 
+  runMaybeT $ do 
+    sizelimit <- (MaybeT . return) (warningEmbedImageSize =<< view hookSet xst)
+    siz <- liftIO $ do  
+      h <- openFile filename ReadMode 
+      s <- hFileSize h 
+      hClose h
+      return s 
+    guard (siz > sizelimit) 
+    let suggestscale :: Double = sqrt (fromIntegral sizelimit / fromIntegral siz) 
+    b <- lift . okCancelMessageBox $ "The size of " ++ filename ++ "=" ++ show siz ++ "\nis bigger than limit=" ++ show sizelimit ++ ".\nWill you reduce size?"
+    guard b 
+    let ext = let x' = takeExtension filename 
+              in if (not.null) x' then tail x' else "" 
+    tmpfile <- liftIO $ mkTmpFile ext 
+    cmd <- (MaybeT . return) (shrinkCmd4EmbedImage =<< view hookSet xst)    
+    liftIO $ cmd suggestscale filename tmpfile
+    return tmpfile 
+
+
 -- | 
 fileLoadPNGorJPG :: MainCoroutine ()
 fileLoadPNGorJPG = do 
@@ -407,7 +438,15 @@ fileLoadPNGorJPG = do
     action filename = do  
       xst <- get 
       let isembedded = view (settings.doesEmbedImage) xst 
-      nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded filename) 
+      nitm <- 
+        if isembedded 
+          then do  
+            mf <- checkEmbedImageSize filename 
+            case mf of 
+              Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
+              Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
+          else
+            liftIO (cnstrctRItem =<< makeNewItemImage True filename)
       insertItemAt Nothing nitm 
 
 
@@ -438,8 +477,7 @@ insertItemAt mpcoord ritm = do
       SelectState thdl' -> return thdl'
       _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
     nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    let nxst2 = set hoodleModeState (SelectState nthdl) nxst
-    put nxst2
+    put (set hoodleModeState (SelectState nthdl) nxst)
     invalidateAll  
         
 -- | 
@@ -626,10 +664,11 @@ fileVersionSave = do
           putStrLn "version save"
           tdir <- getTemporaryDirectory 
           hdir <- getHomeDirectory
-          uuid <- nextRandom
-          let uuidstr = show uuid 
-              tempfile = tdir </> uuidstr <.> "hdl"
-              hdlbstr = builder hdl 
+          tempfile <- mkTmpFile "hdl"
+          -- uuid <- nextRandom
+          -- let uuidstr = show uuid 
+          --     tempfile = tdir </> uuidstr <.> "hdl"
+          let hdlbstr = builder hdl 
           L.writeFile tempfile hdlbstr
           ctime <- getCurrentTime 
           let idstr = B.unpack (view hoodleID hdl)

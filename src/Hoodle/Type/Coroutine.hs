@@ -74,7 +74,7 @@ sysevent ClockUpdateEvent = do
       (h,m,s) :: (Int,Int,Int) = 
         (,,) <$> (\x->todHour x `mod` 12) <*> todMin <*> (floor . todSec) 
         $ ltimeofday
-  liftIO $ print (h,m,s)
+  -- liftIO $ print (h,m,s)
   xst <- get 
   let cinfo = view currentCanvasInfo xst
       cwgts = view (unboxLens canvasWidgets) cinfo   

@@ -437,16 +437,15 @@ fileLoadPNGorJPG = do
   where 
     action filename = do  
       xst <- get 
-      let isembedded = view (settings.doesEmbedImage) xst 
       nitm <- 
-        if isembedded 
+        if view (settings.doesEmbedImage) xst
           then do  
             mf <- checkEmbedImageSize filename 
             case mf of 
               Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
               Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
           else
-            liftIO (cnstrctRItem =<< makeNewItemImage True filename)
+            liftIO (cnstrctRItem =<< makeNewItemImage False filename)
       insertItemAt Nothing nitm 
 
 
@@ -619,10 +618,19 @@ embedPredefinedImage = do
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
-        nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
+        xst <- get 
+        nitm <- 
+          if view (settings.doesEmbedImage) xst
+            then do  
+              mf <- checkEmbedImageSize filename 
+              case mf of 
+                Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
+                Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
+            else
+              liftIO (cnstrctRItem =<< makeNewItemImage False filename)
         insertItemAt Nothing nitm 
-
-        
+    
+      
 -- | this is temporary. I will remove it
 embedPredefinedImage2 :: MainCoroutine () 
 embedPredefinedImage2 = do 
@@ -630,7 +638,16 @@ embedPredefinedImage2 = do
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
-        nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
+        xst <- get 
+        nitm <- 
+          if view (settings.doesEmbedImage) xst
+            then do  
+              mf <- checkEmbedImageSize filename 
+              case mf of 
+                Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
+                Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
+            else
+              liftIO (cnstrctRItem =<< makeNewItemImage False filename)
         insertItemAt Nothing nitm 
         
         
@@ -641,7 +658,16 @@ embedPredefinedImage3 = do
     case mpredefined of 
       Nothing -> return () 
       Just filename -> do 
-        nitm <- liftIO (cnstrctRItem =<< makeNewItemImage True filename) 
+        xst <- get 
+        nitm <- 
+          if view (settings.doesEmbedImage) xst
+            then do  
+              mf <- checkEmbedImageSize filename 
+              case mf of 
+                Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
+                Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
+            else
+              liftIO (cnstrctRItem =<< makeNewItemImage False filename)
         insertItemAt Nothing nitm 
         
         

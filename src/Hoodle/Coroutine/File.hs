@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -612,12 +613,55 @@ embedAllPDFBackground = do
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
+minibufDialog :: String -> MainCoroutine (Either Bool ())
+minibufDialog msg = modify (tempQueue %~ enqueue action) 
+                    >> waitSomeEvent (\case OkCancel b -> True 
+                                            ChangeDialog -> True
+                                            _ -> False) 
+                    >>= (\case OkCancel b -> return (Left b)
+                               ChangeDialog -> return (Right ())
+                               _ -> return (Left False))
+  where 
+    action = mkIOaction $ 
+               \_evhandler -> do 
+                 dialog <- dialogNew 
+                 cvs <- drawingAreaNew                           
+                 cvs `on` sizeRequest $ return (Requisition 500 50)
+                 cvs `on` exposeEvent $ tryEvent $ do
+                   drawwdw <- liftIO $ widgetGetDrawWindow cvs                 
+                   liftIO . renderWithDrawable drawwdw $ do
+                     setSourceRGBA 0.95 0.85 0.5 1
+                     rectangle 5 2 490 46
+                     fill 
+                     setSourceRGBA 0 0 0 1
+                     setLineWidth 1.0
+                     rectangle 5 2 490 46 
+                     stroke
+                 vbox <- dialogGetUpper dialog
+                 boxPackStart vbox cvs PackNatural 0
+                 btnOk <- dialogAddButton dialog "Ok" ResponseOk
+                 btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+                 btnText <- dialogAddButton dialog "TextInput" (ResponseUser 1) 
+                 widgetShowAll dialog
+                 res <- dialogRun dialog 
+                 widgetDestroy dialog 
+                 case res of 
+                   ResponseOk -> return (UsrEv (OkCancel True))
+                   ResponseCancel -> return (UsrEv (OkCancel False))
+                   ResponseUser 1 -> return (UsrEv ChangeDialog)
+                   _ -> return (UsrEv (OkCancel False))
+
+
 -- | 
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
     hdl <- liftM (rHoodle2Hoodle . getHoodle ) get
-    minput <- textInputDialog
-    doIOaction $ \_evhandler -> do 
+    rmini <- minibufDialog "version save"
+    case rmini of 
+      Left _ -> return ()
+      Right () -> do 
+        minput <- textInputDialog
+        doIOaction $ \_evhandler -> do 
           putStrLn "version save"
           tdir <- getTemporaryDirectory 
           hdir <- getHomeDirectory
@@ -636,18 +680,19 @@ fileVersionSave = do
           let txtstr = maybe "" id minput       
           -- 
           return (UsrEv (GotRevision md5str txtstr))
-    r <- waitSomeEvent (\x -> case x of GotRevision _ _ -> True ; _ -> False )
-    let GotRevision md5str txtstr = r          
-        nrev = Revision (B.pack md5str) (B.pack txtstr)
-    modify (\xst -> let hdlmodst = view hoodleModeState xst 
-                    in case hdlmodst of 
-                         ViewAppendState rhdl -> 
-                           let nrhdl = over grevisions (<> [nrev]) rhdl 
-                           in set hoodleModeState (ViewAppendState nrhdl) xst 
-                         SelectState thdl -> 
-                           let nthdl = over gselRevisions (<> [nrev]) thdl
-                           in set hoodleModeState (SelectState nthdl) xst)
-    commit_ 
+        r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
+        let GotRevision md5str txtstr = r          
+            nrev = Revision (B.pack md5str) (B.pack txtstr)
+        modify (\xst -> let hdlmodst = view hoodleModeState xst 
+                        in case hdlmodst of 
+                             ViewAppendState rhdl -> 
+                               let nrhdl = over grevisions (<> [nrev]) rhdl 
+                               in set hoodleModeState (ViewAppendState nrhdl) xst 
+                             SelectState thdl -> 
+                               let nthdl = over gselRevisions (<> [nrev]) thdl
+                               in set hoodleModeState (SelectState nthdl) xst)
+        commit_ 
+
 
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 

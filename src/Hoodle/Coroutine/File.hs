@@ -77,17 +77,12 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.Event hiding (TypSVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
+import           Hoodle.Util
 import           Hoodle.View.Draw
 --
 import Prelude hiding (readFile,concat,mapM)
 
 
--- | 
-mkTmpFile :: String -> IO FilePath
-mkTmpFile ext = do 
-  tdir <- getTemporaryDirectory
-  tuuid <- nextRandom
-  return $ tdir </> show tuuid <.> ext
 
 -- |
 okMessageBox :: String -> MainCoroutine () 
@@ -535,72 +530,8 @@ fileLoadSVG = do
                 SelectState thdl' -> return thdl'
                 _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
       nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-      put nxstate2
+      put (set hoodleModeState (SelectState nthdl) nxstate)
       invalidateAll 
-
-
-fileLaTeX :: MainCoroutine () 
-fileLaTeX = do modify (tempQueue %~ enqueue action) 
-               minput <- go
-               case minput of 
-                 Nothing -> return () 
-                 Just (latex,svg) -> afteraction (latex,svg) 
-  where 
-    go = do r <- nextevent
-            case r of 
-              LaTeXInput input -> return input 
-              _ -> go 
-    action = mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel "latex input"
-                 vbox <- dialogGetUpper dialog
-                 txtvw <- textViewNew
-                 boxPackStart vbox txtvw PackGrow 0 
-                 widgetShowAll dialog
-                 res <- dialogRun dialog 
-                 case res of 
-                   ResponseOk -> do 
-                     buf <- textViewGetBuffer txtvw 
-                     istart <- textBufferGetStartIter buf
-                     iend <- textBufferGetEndIter buf
-                     l <- textBufferGetText buf istart iend True
-                     widgetDestroy dialog
-                     tdir <- getTemporaryDirectory
-                     writeFile (tdir </> "latextest.tex") l 
-                     let cmd = "lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
-                     print cmd 
-                     excode <- system cmd 
-                     case excode of 
-                       ExitSuccess -> do 
-                         svg <- readFile (tdir </> "latextest.svg")
-                         return (UsrEv (LaTeXInput (Just (B.pack l,svg))))
-                       _ -> return (UsrEv (LaTeXInput Nothing))
-
-                   _ -> do 
-                     widgetDestroy dialog
-                     return (UsrEv (LaTeXInput Nothing))
-    afteraction (latex,svg) = do 
-      xstate <- get 
-      let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
-          hdl = getHoodle xstate 
-          currpage = getPageFromGHoodleMap pgnum hdl
-          currlayer = getCurrentLayer currpage
-      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-          (SVG (Just latex) Nothing svg (100,100) (Dim 300 50))
-      let otheritems = view gitems currlayer  
-      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
-      modeChange ToSelectMode 
-      nxstate <- get 
-      thdl <- case view hoodleModeState nxstate of
-                SelectState thdl' -> return thdl'
-                _ -> (lift . EitherT . return . Left . Other) "fileLaTeX"
-      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-      put nxstate2
-      invalidateAll 
-
 
 
 -- |
@@ -691,9 +622,6 @@ fileVersionSave = do
           tdir <- getTemporaryDirectory 
           hdir <- getHomeDirectory
           tempfile <- mkTmpFile "hdl"
-          -- uuid <- nextRandom
-          -- let uuidstr = show uuid 
-          --     tempfile = tdir </> uuidstr <.> "hdl"
           let hdlbstr = builder hdl 
           L.writeFile tempfile hdlbstr
           ctime <- getCurrentTime 
@@ -708,7 +636,6 @@ fileVersionSave = do
           let txtstr = maybe "" id minput       
           -- 
           return (UsrEv (GotRevision md5str txtstr))
-    -- modify (tempQueue %~ enqueue action) 
     r <- waitSomeEvent (\x -> case x of GotRevision _ _ -> True ; _ -> False )
     let GotRevision md5str txtstr = r          
         nrev = Revision (B.pack md5str) (B.pack txtstr)

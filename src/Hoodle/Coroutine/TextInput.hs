@@ -34,7 +34,10 @@ import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type.HitTest
 import           System.Directory 
+import           System.Exit (ExitCode(..))
 import           System.FilePath 
+import           System.IO (readFile)
+import           System.Process (system)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.ModelAction.Layer 
@@ -85,21 +88,24 @@ textInputDialog = do
 textInput :: MainCoroutine ()
 textInput = textInputDialog >>= mapM_ (\str->liftIO (makePangoTextSVG str) >>= svgInsert str)
     
-{-
- modify (tempQueue %~ enqueue action) 
-    minput <- go
-    case minput of 
-      Nothing -> return () 
-      Just str -> liftIO (makePangoTextSVG str) >>= svgInsert str 
+
+
+-- |
+fileLaTeX :: MainCoroutine () 
+fileLaTeX = do modify (tempQueue %~ enqueue action) 
+               minput <- go
+               case minput of 
+                 Nothing -> return () 
+                 Just (latex,svg) -> afteraction (latex,svg) 
   where 
     go = do r <- nextevent
             case r of 
-              TextInput input -> return input 
+              LaTeXInput input -> return input 
               _ -> go 
     action = mkIOaction $ 
                \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel "text input"
+                   MessageQuestion ButtonsOkCancel "latex input"
                  vbox <- dialogGetUpper dialog
                  txtvw <- textViewNew
                  boxPackStart vbox txtvw PackGrow 0 
@@ -108,15 +114,46 @@ textInput = textInputDialog >>= mapM_ (\str->liftIO (makePangoTextSVG str) >>= s
                  case res of 
                    ResponseOk -> do 
                      buf <- textViewGetBuffer txtvw 
-                     (istart,iend) <- (,) <$> textBufferGetStartIter buf
-                                          <*> textBufferGetEndIter buf
+                     istart <- textBufferGetStartIter buf
+                     iend <- textBufferGetEndIter buf
                      l <- textBufferGetText buf istart iend True
                      widgetDestroy dialog
-                     return (UsrEv (TextInput (Just l)))
+                     tdir <- getTemporaryDirectory
+                     writeFile (tdir </> "latextest.tex") l 
+                     let cmd = "lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
+                     print cmd 
+                     excode <- system cmd 
+                     case excode of 
+                       ExitSuccess -> do 
+                         svg <- B.readFile (tdir </> "latextest.svg")
+                         return (UsrEv (LaTeXInput (Just (B.pack l,svg))))
+                       _ -> return (UsrEv (LaTeXInput Nothing))
+
                    _ -> do 
                      widgetDestroy dialog
-                     return (UsrEv (TextInput Nothing))
--}
+                     return (UsrEv (LaTeXInput Nothing))
+    afteraction (latex,svg) = do 
+      xstate <- get 
+      let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
+          hdl = getHoodle xstate 
+          currpage = getPageFromGHoodleMap pgnum hdl
+          currlayer = getCurrentLayer currpage
+      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
+          (SVG (Just latex) Nothing svg (100,100) (Dim 300 50))
+      let otheritems = view gitems currlayer  
+      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
+      modeChange ToSelectMode 
+      nxstate <- get 
+      thdl <- case view hoodleModeState nxstate of
+                SelectState thdl' -> return thdl'
+                _ -> (lift . EitherT . return . Left . Other) "fileLaTeX"
+      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
+      put nxstate2
+      invalidateAll 
+
+
+
 
 
 -- |

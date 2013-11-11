@@ -18,14 +18,14 @@ import Control.Applicative
 import Data.Attoparsec.Char8 
 import qualified Data.ByteString.Char8 as B
 import Data.Maybe
+import Data.Time.Clock 
+import Data.Time.Format
+import Data.UUID.V4 (nextRandom)
 import Network.URI
-
 import System.Directory 
 import System.Environment 
 import System.FilePath
 import System.IO
-import Data.Time.Clock 
-import Data.Time.Format
 import System.Locale
 -- 
 import Data.Hoodle.Simple
@@ -109,3 +109,9 @@ urlParse str =
                             HS -> Just (HttpUrl ("https://" ++ f))
     
 
+-- | 
+mkTmpFile :: String -> IO FilePath
+mkTmpFile ext = do 
+  tdir <- getTemporaryDirectory
+  tuuid <- nextRandom
+  return $ tdir </> show tuuid <.> ext

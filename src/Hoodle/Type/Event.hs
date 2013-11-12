@@ -36,7 +36,7 @@ data AllEvent = UsrEv UserEvent | SysEv SystemEvent
 -- | 
 data SystemEvent = TestSystemEvent | ClockUpdateEvent
                  deriving Show 
-
+                          
 -- | 
 data UserEvent = Initialized
                | CanvasConfigure Int Double Double 
@@ -82,6 +82,7 @@ data UserEvent = Initialized
                | GotRevision String String
                | ChangeDialog
                | ActionOrdered                 
+               | MiniBuffer MiniBufferEvent 
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -214,6 +215,17 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuAssocWithNewFile
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
+
+
+-- | event for minibuffer operation (currently pen only) 
+data MiniBufferEvent = MiniBufferInitialized DrawWindow
+                     | MiniBufferPenDown PenButton PointerCoord
+                     | MiniBufferPenUp PointerCoord
+                     | MiniBufferPenMove PointerCoord
+                     deriving (Show, Ord, Eq)
+
+instance Show DrawWindow where
+  show _ = "DrawWindow"
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

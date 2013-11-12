@@ -61,6 +61,7 @@ import           Text.Hoodle.Builder
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.TextInput
@@ -613,43 +614,6 @@ embedAllPDFBackground = do
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
-minibufDialog :: String -> MainCoroutine (Either Bool ())
-minibufDialog msg = modify (tempQueue %~ enqueue action) 
-                    >> waitSomeEvent (\case OkCancel b -> True 
-                                            ChangeDialog -> True
-                                            _ -> False) 
-                    >>= (\case OkCancel b -> return (Left b)
-                               ChangeDialog -> return (Right ())
-                               _ -> return (Left False))
-  where 
-    action = mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- dialogNew 
-                 cvs <- drawingAreaNew                           
-                 cvs `on` sizeRequest $ return (Requisition 500 50)
-                 cvs `on` exposeEvent $ tryEvent $ do
-                   drawwdw <- liftIO $ widgetGetDrawWindow cvs                 
-                   liftIO . renderWithDrawable drawwdw $ do
-                     setSourceRGBA 0.95 0.85 0.5 1
-                     rectangle 5 2 490 46
-                     fill 
-                     setSourceRGBA 0 0 0 1
-                     setLineWidth 1.0
-                     rectangle 5 2 490 46 
-                     stroke
-                 vbox <- dialogGetUpper dialog
-                 boxPackStart vbox cvs PackNatural 0
-                 btnOk <- dialogAddButton dialog "Ok" ResponseOk
-                 btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-                 btnText <- dialogAddButton dialog "TextInput" (ResponseUser 1) 
-                 widgetShowAll dialog
-                 res <- dialogRun dialog 
-                 widgetDestroy dialog 
-                 case res of 
-                   ResponseOk -> return (UsrEv (OkCancel True))
-                   ResponseCancel -> return (UsrEv (OkCancel False))
-                   ResponseUser 1 -> return (UsrEv ChangeDialog)
-                   _ -> return (UsrEv (OkCancel False))
 
 
 -- | 
@@ -658,8 +622,8 @@ fileVersionSave = do
     hdl <- liftM (rHoodle2Hoodle . getHoodle ) get
     rmini <- minibufDialog "version save"
     case rmini of 
-      Left _ -> return ()
-      Right () -> do 
+      Right _ -> return ()
+      Left () -> do 
         minput <- textInputDialog
         doIOaction $ \_evhandler -> do 
           putStrLn "version save"

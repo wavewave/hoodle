@@ -131,12 +131,12 @@ invalidateMinibuf drawwdw strks = liftIO $ renderWithDrawable drawwdw (drawMiniB
 
 minibufStart :: DrawWindow -> Seq Stroke -> MainCoroutine (Either () [Stroke])
 minibufStart drawwdw strks = do 
-    -- liftIO $ print (length strks)
     invalidateMinibuf drawwdw strks
     r <- nextevent 
     case r of 
       UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> minibufStart drawwdw strks
-      OkCancel b -> (return . Right) (toList strks)
+      OkCancel True -> (return . Right) (toList strks)
+      OkCancel False -> (return . Right) []
       ChangeDialog -> return (Left ())
       MiniBuffer (MiniBufferPenDown PenButton1 pcoord) -> do 
         ps <- onestroke drawwdw (singleton pcoord) 
@@ -145,12 +145,12 @@ minibufStart drawwdw strks = do
       
 onestroke :: DrawWindow -> Seq PointerCoord -> MainCoroutine (Seq PointerCoord)
 onestroke drawwdw pcoords = do 
-    -- liftIO $ print pcoords  
     r <- nextevent 
     case r of 
-      MiniBuffer (MiniBufferPenMove pcoord) -> do let newpcoords = pcoords |> pcoord 
-                                                  drawstrokebit drawwdw newpcoords
-                                                  onestroke drawwdw newpcoords
+      MiniBuffer (MiniBufferPenMove pcoord) -> do 
+        let newpcoords = pcoords |> pcoord 
+        drawstrokebit drawwdw newpcoords
+        onestroke drawwdw newpcoords
       MiniBuffer (MiniBufferPenUp pcoord) -> return (pcoords |> pcoord)
       _ -> onestroke drawwdw pcoords
 

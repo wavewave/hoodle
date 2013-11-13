@@ -1,9 +1,10 @@
 {-# LANGUAGE CPP, OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Text.Hoodle.Builder 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,33 +18,26 @@ module Text.Hoodle.Builder where
 -- from other packages 
 import           Control.Lens 
 import qualified Data.ByteString as S
--- import qualified Data.ByteString.Char8 as SC
 import qualified Data.ByteString.Lazy as L
-import Blaze.ByteString.Builder
-import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
-import Data.Double.Conversion.ByteString 
+import           Data.Foldable (foldMap)
+import           Blaze.ByteString.Builder
+import           Blaze.ByteString.Builder.Char8 (fromChar, fromString)
+import           Data.Double.Conversion.ByteString (toFixed)
 #if MIN_VERSION_base(4,5,0) 
-import Data.Monoid hiding ((<>)) 
+import           Data.Monoid hiding ((<>)) 
 #else
-import Data.Monoid 
+import           Data.Monoid 
 #endif 
-import Data.Strict.Tuple
+import           Data.Strict.Tuple
 -- from this package 
-import Data.Hoodle.Simple
+import           Data.Hoodle.Simple
 
-infixl 4 <>
 
 -- | 
 (<>) :: Monoid a => a -> a -> a 
 (<>) = mappend 
 
--- | 
-{- toFixed :: Int -> Double -> S.ByteString
-toFixed 2 x = printf "%.2f" x
-              -- SC.pack . show . (*0.01) . fromIntegral . floor 
-              --  $ x*100
-toFixed _ _ = error "undefined toFixed"
--}
+infixl 4 <>
 
 -- | 
 builder :: Hoodle -> L.ByteString
@@ -51,7 +45,7 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2.1\" id=\""
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2.1.999\" id=\""
                  <> fromByteString (view hoodleID hdl) 
                  <> fromByteString "\">\n" 
                  <> (buildTitle . view title) hdl 
@@ -68,11 +62,16 @@ buildTitle ttl = fromByteString "<title>"
                 
 -- |                 
 buildRevision :: Revision -> Builder 
-buildRevision rev = fromByteString "<revision revmd5=\""
-                    <> fromByteString (view revmd5 rev)
-                    <> fromByteString "\" revtxt=\""
-                    <> fromByteString (view revtxt rev)
-                    <> fromByteString "\"/>\n"
+buildRevision Revision {..}     = fromByteString "<revision revmd5=\""
+                                  <> fromByteString _revmd5
+                                  <> fromByteString "\" revtxt=\""
+                                  <> fromByteString _revtxt
+                                  <> fromByteString "\"/>\n"
+buildRevision RevisionInk {..}  = fromByteString "<revision revmd5=\""
+                                  <> fromByteString _revmd5
+                                  <> fromByteString "\" type=\"ink\">\n"
+                                  <> foldMap buildStroke _revink
+                                  <> fromByteString "</revision>\n"
 
 -- | 
 buildEmbeddedPdf :: S.ByteString -> Builder 

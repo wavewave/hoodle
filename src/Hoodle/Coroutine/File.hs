@@ -30,6 +30,7 @@ import           Data.ByteString.Base64
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
+import qualified Data.List as List 
 import           Data.Maybe
 import qualified Data.IntMap as IM
 import           Data.Time.Clock
@@ -715,7 +716,7 @@ mkPangoText str = do
           layout <- layoutEmpty ctxt   
           fdesc <- fontDescriptionNew 
           fontDescriptionSetFamily fdesc "Sans Mono"
-          fontDescriptionSetSize fdesc 12.0 
+          fontDescriptionSetSize fdesc 8.0 
           layoutSetFontDescription layout (Just fdesc)
           layoutSetWidth layout (Just 250)
           layoutSetWrap layout WrapAnywhere 
@@ -743,12 +744,18 @@ addOneRevisionBox vbox hdl rev = do
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"
     btn <- buttonNewWithLabel "view"
     btn `on` buttonPressEvent $ tryEvent $ do 
-      let fstr = "UUID_" ++ B.unpack (view hoodleID hdl)  
-                 ++ "_MD5Digest_" ++ B.unpack (view revmd5 rev)
-                 ++ "*.pdf"
-      liftIO $ system ("evince " ++ vcsdir </> fstr )  
-      return ()
-    
+      files <- liftIO $ getDirectoryContents vcsdir 
+      let fstrinit = "UUID_" ++ B.unpack (view hoodleID hdl)  
+                      ++ "_MD5Digest_" ++ B.unpack (view revmd5 rev)
+                 
+          matched = filter ((== "fdp") . take 3 . reverse) 
+                    . filter (\f -> fstrinit  `List.isPrefixOf` f) $ files
+      case matched of 
+        x : _ -> 
+          liftIO (createProcess (proc "evince" [vcsdir </> x])) 
+          >> return ()
+        _ -> return ()
+      
     
     hbox <- hBoxNew False 0
     boxPackStart hbox cvs PackNatural 0

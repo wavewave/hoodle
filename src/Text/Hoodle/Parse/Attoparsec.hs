@@ -127,7 +127,7 @@ xmlstroke = do
 
 
 -- | 
-onestroke :: Parser H.Item 
+onestroke :: Parser H.Stroke --- H.Item 
 onestroke =  do 
     xstrk <- xmlstroke 
     let r = case xstrk_width xstrk of 
@@ -138,7 +138,8 @@ onestroke =  do
               VarWidth ws -> let xyz = mkXYZ (xstrk_xydata xstrk) ws
                              in (H.VWStroke <$> xstrk_tool <*> xstrk_color   
                                   <*> pure xyz) xstrk
-    (return . H.ItemStroke) r 
+    -- (return . H.ItemStroke) r 
+    return r 
 
 -- | 
 mkXYZ :: [Pair Double Double] -> [Double] -> [(Double,Double,Double)]
@@ -338,7 +339,7 @@ layer :: Parser H.Layer
 layer = do trim
            layerheader <?> "layer"
            trim
-           itms <- many (try onestroke <|> try img <|> try svg_obj <|> link)
+           itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> link)
            trim
            layerclose 
            return $ H.Layer itms
@@ -364,11 +365,21 @@ revision = do skipSpace
               string "revmd5=\""
               md5str <- manyTill anyChar (try (char '"'))
               skipSpace 
-              string "revtxt=\""
-              txtstr <- manyTill anyChar (try (char '"')) 
-              skipSpace
-              string "/>"
-              return (H.Revision (B.pack md5str) (B.pack txtstr))
+              (try (do string "revtxt=\""
+                       txtstr <- manyTill anyChar (try (char '"')) 
+                       skipSpace
+                       string "/>"
+                       return (H.Revision (B.pack md5str) (B.pack txtstr)))
+               <|> (do string "type=\"ink\""
+                       skipSpace
+                       char '>'
+                       skipSpace
+                       strks <- many1 onestroke
+                       skipSpace
+                       string "</revision>"
+                       return (H.RevisionInk (B.pack md5str) strks)))
+              
+                      
 
 
 embeddedpdf :: Parser (B.ByteString) 

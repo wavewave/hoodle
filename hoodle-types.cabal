@@ -1,5 +1,5 @@
 Name:		hoodle-types
-Version:	0.2.1.0
+Version:	0.2.1.999
 Synopsis:	Data types for programs for hoodle file format
 Description: 	Hoodle file format data type including generic interface
 License: 	BSD3

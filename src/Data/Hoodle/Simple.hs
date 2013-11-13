@@ -202,8 +202,9 @@ data Background = Background { bkg_type :: !ByteString
 data Revision = Revision { _revmd5 :: !ByteString 
                          , _revtxt :: !ByteString 
                          }  
+              | RevisionInk { _revmd5 :: !ByteString
+                            , _revink :: [Stroke] } 
               deriving Show 
-
 
 -- | 
 data Hoodle = Hoodle { hoodle_id :: ByteString
@@ -257,9 +258,11 @@ revisions = lens hoodle_revisions (\f a -> f { hoodle_revisions = a } )
 revmd5 :: Simple Lens Revision ByteString
 revmd5 = lens _revmd5 (\f a -> f { _revmd5 = a } )
 
+{-
 -- | 
 revtxt :: Simple Lens Revision ByteString
 revtxt = lens _revtxt (\f a -> f { _revtxt = a } )
+-}
 
 -- | 
 embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)

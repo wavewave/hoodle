@@ -67,16 +67,6 @@ data SVG = SVG { svg_text :: Maybe S.ByteString
                , svg_dim :: !Dimension }  
            deriving (Show,Eq,Ord)
                     
-{-
-data Link = Link { link_id :: String 
-                 , link_text :: Maybe S.ByteString
-                 , link_command :: Maybe S.ByteString 
-                 , link_render :: S.ByteString
-                 , link_pos :: (Double,Double)
-                 , link_dim :: !Dimension }  
-           deriving (Show,Eq,Ord)                    
--}                    
-
 -- | 
 instance SE.Serialize Stroke where
     put Stroke{..} = SE.putWord8 0 
@@ -112,18 +102,6 @@ instance SE.Serialize SVG where
     get = SVG <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get
     
     
-{-
--- | 
-instance SE.Serialize Link where
-    put Link {..} = SE.put link_id
-                    >> SE.put link_text
-                    >> SE.put link_command 
-                    >> SE.put link_render
-                    >> SE.put link_pos
-                    >> SE.put link_dim
-    get = SVG <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get    
--}
-
 
 -- | 
 instance SE.Serialize Item where
@@ -133,14 +111,11 @@ instance SE.Serialize Item where
                           >> SE.put img
     put (ItemSVG svg) = SE.putWord8 2
                         >> SE.put svg 
-    -- put (ItemLink lnk) = SE.putWord8 3
-    --                      >> SE.put lnk                         
     get = do tag <- SE.getWord8 
              case tag of 
                0 -> ItemStroke <$> SE.get
                1 -> ItemImage <$> SE.get
                2 -> ItemSVG <$> SE.get
-               -- 3 -> ItemLink <$> SE.get
                _ -> fail "err in Item parsing"
 
 -- |    
@@ -184,7 +159,6 @@ data Page = Page { page_dim :: !Dimension
 
 -- | 
 data Layer = Layer { layer_items :: ![Item] } 
-             -- Layer { layer_strokes :: ![Stroke] }
            deriving Show 
 
 -- | 
@@ -229,12 +203,6 @@ layers = lens page_layers (\f a -> f { page_layers = a } )
 items :: Simple Lens Layer [Item]
 items = lens layer_items (\f a -> f { layer_items = a } )
 
-{-
--- | 
-strokes :: Simple Lens Layer [Stroke]
-strokes = lens layer_strokes (\f a -> f { layer_strokes = a } )
--}
-
 --------------------------
 -- empty objects
 --------------------------
@@ -245,7 +213,7 @@ emptyHoodle = Hoodle "" []
 
 -- | 
 emptyLayer :: Layer 
-emptyLayer = Layer { layer_items = [] } --  { layer_strokes = [] }
+emptyLayer = Layer { layer_items = [] } 
 
 -- | 
 emptyStroke :: Stroke 

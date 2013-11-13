@@ -18,13 +18,12 @@
 module Data.Hoodle.Generic where
 
 -- from other packages
--- import Control.Applicative
 import Control.Category
 import Control.Lens 
 import Data.ByteString.Char8 hiding (map,zip)
 import Data.Foldable
 import Data.Functor
-import qualified Data.IntMap as IM --  hiding (map)
+import qualified Data.IntMap as IM 
 import qualified Data.Sequence as Seq 
 import Data.UUID.V4 
 -- from this package
@@ -47,22 +46,12 @@ data GPage bkg cntnr lyr = GPage
                            , gpage_bkg :: bkg 
                            , gpage_lyrs :: cntnr lyr }  
 
--- -- | Generic layer data having generic items 
--- data GLayer cntnr itm = GLayer { glayer_itms :: cntnr itm } 
-            
 -- | Generic buffered layer having generic items
 data GLayer buf cntnr itm = GLayer 
                              { glayer_buf :: buf 
-                             -- , glayer_strks :: cntnr strk 
                              , glayer_itms :: cntnr itm 
                              } 
                        
-{-                          
--- |
-instance (Functor s) => Functor (GLayer s) where
-  fmap f (GLayer bstrs) = GLayer (fmap f strs)
--}
-
 -- | 
 instance (Functor cntnr) => Functor (GLayer buf cntnr) where
   fmap f (GLayer buf itms) = GLayer buf (fmap f itms) 
@@ -121,22 +110,17 @@ gitems = lens glayer_itms (\f a -> f { glayer_itms = a } )
 gbuffer :: Simple Lens (GLayer buf cntnr itm) buf 
 gbuffer = lens glayer_buf (\f a -> f { glayer_buf = a } )
 
-
-
 -- |
 class (Foldable s) => Listable s where  
   fromList :: [a] -> s a 
---   toList :: s a -> [a]
   
 -- |
 instance Listable [] where
   fromList = id 
---   toList = id 
   
 -- | 
 instance Listable IM.IntMap where 
   fromList = IM.fromList . zip [0..] 
---   toList = Data.IntMap.elems 
   
 -- | 
 instance Listable Seq.Seq where
@@ -151,5 +135,3 @@ emptyGHoodle = do
 -- | 
 emptyGPage :: (Listable cntnr) => Dimension -> bkg -> GPage bkg cntnr a 
 emptyGPage dim bkg = GPage dim bkg (fromList [])
-  
-

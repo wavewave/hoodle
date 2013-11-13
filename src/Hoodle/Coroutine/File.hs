@@ -614,35 +614,74 @@ embedAllPDFBackground = do
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
+mkRevisionHdlFile :: Hoodle -> IO (String,String)
+mkRevisionHdlFile hdl = do 
+    tdir <- getTemporaryDirectory 
+    hdir <- getHomeDirectory
+    tempfile <- mkTmpFile "hdl"
+    let hdlbstr = builder hdl 
+    L.writeFile tempfile hdlbstr
+    ctime <- getCurrentTime 
+    let idstr = B.unpack (view hoodleID hdl)
+        md5str = show (md5 hdlbstr)
+        name = "UUID_"++idstr++"_MD5Digest_"++md5str++"_ModTime_"++ show ctime
+        nfilename = name <.> "hdl"
+        vcsdir = hdir </> ".hoodle.d" </> "vcs"
+    b <- doesDirectoryExist vcsdir 
+    unless b $ createDirectory vcsdir
+    renameFile tempfile (vcsdir </> nfilename)  
+    return (md5str,name) 
 
+
+mkRevisionPdfFile :: RHoodle -> String -> IO ()
+mkRevisionPdfFile hdl fname = do 
+    tdir <- getTemporaryDirectory 
+    hdir <- getHomeDirectory
+    tempfile <- mkTmpFile "pdf"
+    -- let hdlbstr = builder hdl 
+    renderjob hdl tempfile 
+    let nfilename = fname <.> "pdf"
+        vcsdir = hdir </> ".hoodle.d" </> "vcs"
+    b <- doesDirectoryExist vcsdir 
+    unless b $ createDirectory vcsdir
+    renameFile tempfile (vcsdir </> nfilename)  
 
 -- | 
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
-    hdl <- liftM (rHoodle2Hoodle . getHoodle ) get
+    rhdl <- getHoodle <$> get 
+    let hdl = rHoodle2Hoodle rhdl 
     rmini <- minibufDialog "version save"
     case rmini of 
-      Right _ -> return ()
-      Left () -> do 
-        minput <- textInputDialog
+      Right [] -> return ()
+      Right strks' -> do
         doIOaction $ \_evhandler -> do 
-          putStrLn "version save"
-          tdir <- getTemporaryDirectory 
-          hdir <- getHomeDirectory
-          tempfile <- mkTmpFile "hdl"
-          let hdlbstr = builder hdl 
-          L.writeFile tempfile hdlbstr
-          ctime <- getCurrentTime 
-          let idstr = B.unpack (view hoodleID hdl)
-              md5str = show (md5 hdlbstr)
-              nfilename = "UUID_"++idstr++"_MD5Digest_"++md5str++"_ModTime_"++ show ctime <.> "hdl"
-              vcsdir = hdir </> ".hoodle.d" </> "vcs"
-          b <- doesDirectoryExist vcsdir 
-          unless b $ createDirectory vcsdir
-          renameFile tempfile (vcsdir </> nfilename)  
-          --
-          let txtstr = maybe "" id minput       
-          -- 
+          (md5str,fname) <- mkRevisionHdlFile hdl
+          mkRevisionPdfFile rhdl fname
+          return (UsrEv (GotRevisionInk md5str strks'))
+        r <- waitSomeEvent (\case GotRevisionInk _ _ -> True ; _ -> False )
+        let GotRevisionInk md5str strks = r          
+            nrev = RevisionInk (B.pack md5str) strks
+        modify (\xst -> let hdlmodst = view hoodleModeState xst 
+                        in case hdlmodst of 
+                             ViewAppendState rhdl -> 
+                               let nrhdl = over grevisions (<> [nrev]) rhdl 
+                               in set hoodleModeState (ViewAppendState nrhdl) xst 
+                             SelectState thdl -> 
+                               let nthdl = over gselRevisions (<> [nrev]) thdl
+                               in set hoodleModeState (SelectState nthdl) xst)
+        commit_ 
+          
+          
+                      
+        liftIO $ print (length strks)
+      Left () -> do 
+        txtstr <- maybe "" id <$> textInputDialog
+        doIOaction $ \_evhandler -> do 
+          -- putStrLn "version save"
+          (md5str,fname) <- mkRevisionHdlFile hdl
+          mkRevisionPdfFile rhdl fname
+          -- let txtstr = maybe "" id minput       
           return (UsrEv (GotRevision md5str txtstr))
         r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
         let GotRevision md5str txtstr = r          
@@ -662,7 +701,9 @@ fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 
   hdl <- liftM getHoodle get  
   let revs = view grevisions hdl
-      revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev) ++ ":" ++ B.unpack (view revtxt rev)) revs
+      revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev)) revs 
+                
+                -- ++ ":" ++ B.unpack (view revtxt rev)) revs
   okMessageBox revstrs
   
 fileShowUUID :: MainCoroutine ()

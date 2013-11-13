@@ -80,6 +80,7 @@ data UserEvent = Initialized
                | FileReloadOrdered
                | CustomKeyEvent String 
                | GotRevision String String
+               | GotRevisionInk String [Stroke]
                | ChangeDialog
                | ActionOrdered                 
                | MiniBuffer MiniBufferEvent 

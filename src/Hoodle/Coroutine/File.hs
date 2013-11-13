@@ -89,7 +89,7 @@ import Prelude hiding (readFile,concat,mapM)
 -- |
 okMessageBox :: String -> MainCoroutine () 
 okMessageBox msg = modify (tempQueue %~ enqueue action) 
-                   >> waitSomeEvent (\x->case x of GotOk -> True ; _ -> False) 
+                   >> waitSomeEvent (\case GotOk -> True ; _ -> False) 
                    >> return () 
   where 
     action = mkIOaction $ 
@@ -638,7 +638,6 @@ mkRevisionPdfFile hdl fname = do
     tdir <- getTemporaryDirectory 
     hdir <- getHomeDirectory
     tempfile <- mkTmpFile "pdf"
-    -- let hdlbstr = builder hdl 
     renderjob hdl tempfile 
     let nfilename = fname <.> "pdf"
         vcsdir = hdir </> ".hoodle.d" </> "vcs"
@@ -651,7 +650,7 @@ fileVersionSave :: MainCoroutine ()
 fileVersionSave = do 
     rhdl <- getHoodle <$> get 
     let hdl = rHoodle2Hoodle rhdl 
-    rmini <- minibufDialog "version save"
+    rmini <- minibufDialog "Commit Message:"
     case rmini of 
       Right [] -> return ()
       Right strks' -> do
@@ -671,17 +670,11 @@ fileVersionSave = do
                                let nthdl = over gselRevisions (<> [nrev]) thdl
                                in set hoodleModeState (SelectState nthdl) xst)
         commit_ 
-          
-          
-                      
-        liftIO $ print (length strks)
       Left () -> do 
         txtstr <- maybe "" id <$> textInputDialog
         doIOaction $ \_evhandler -> do 
-          -- putStrLn "version save"
           (md5str,fname) <- mkRevisionHdlFile hdl
           mkRevisionPdfFile rhdl fname
-          -- let txtstr = maybe "" id minput       
           return (UsrEv (GotRevision md5str txtstr))
         r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
         let GotRevision md5str txtstr = r          
@@ -697,20 +690,88 @@ fileVersionSave = do
         commit_ 
 
 
+
+showRevisionDialog :: Hoodle -> [Revision] -> MainCoroutine ()
+showRevisionDialog hdl revs = 
+    modify (tempQueue %~ enqueue action) 
+    >> waitSomeEvent (\case GotOk -> True ; _ -> False)
+    >> return ()
+  where 
+    action = mkIOaction $ \_evhandler -> do 
+               dialog <- dialogNew
+               vbox <- dialogGetUpper dialog
+               mapM_ (addOneRevisionBox vbox hdl) revs 
+               btnOk <- dialogAddButton dialog "Ok" ResponseOk
+               widgetShowAll dialog
+               res <- dialogRun dialog
+               widgetDestroy dialog
+               return (UsrEv GotOk)
+
+
+mkPangoText :: String -> Render ()
+mkPangoText str = do 
+    let pangordr = do 
+          ctxt <- cairoCreateContext Nothing 
+          layout <- layoutEmpty ctxt   
+          fdesc <- fontDescriptionNew 
+          fontDescriptionSetFamily fdesc "Sans Mono"
+          fontDescriptionSetSize fdesc 12.0 
+          layoutSetFontDescription layout (Just fdesc)
+          layoutSetWidth layout (Just 250)
+          layoutSetWrap layout WrapAnywhere 
+          layoutSetText layout str 
+          (_,reclog) <- layoutGetExtents layout 
+          let PangoRectangle x y w h = reclog 
+          return layout
+        rdr layout = do setSourceRGBA 0 0 0 1
+                        updateLayout layout 
+                        showLayout layout 
+    layout <- liftIO $  pangordr 
+    rdr layout
+
+addOneRevisionBox :: VBox -> Hoodle -> Revision -> IO ()
+addOneRevisionBox vbox hdl rev = do 
+    cvs <- drawingAreaNew 
+    cvs `on` sizeRequest $ return (Requisition 250 25)
+    cvs `on` exposeEvent $ tryEvent $ do 
+      drawwdw <- liftIO $ widgetGetDrawWindow cvs 
+      liftIO . renderWithDrawable drawwdw $ do 
+        case rev of 
+          RevisionInk _ strks -> scale 0.5 0.5 >> mapM_ cairoRender strks
+          Revision _ txt -> mkPangoText (B.unpack txt)            
+    hdir <- getHomeDirectory
+    let vcsdir = hdir </> ".hoodle.d" </> "vcs"
+    btn <- buttonNewWithLabel "view"
+    btn `on` buttonPressEvent $ tryEvent $ do 
+      let fstr = "UUID_" ++ B.unpack (view hoodleID hdl)  
+                 ++ "_MD5Digest_" ++ B.unpack (view revmd5 rev)
+                 ++ "*.pdf"
+      liftIO $ system ("evince " ++ vcsdir </> fstr )  
+      return ()
+    
+    
+    hbox <- hBoxNew False 0
+    boxPackStart hbox cvs PackNatural 0
+    boxPackStart hbox btn PackGrow  0
+    boxPackStart vbox hbox PackNatural 0
+
+
+
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 
-  hdl <- liftM getHoodle get  
-  let revs = view grevisions hdl
-      revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev)) revs 
-                
-                -- ++ ":" ++ B.unpack (view revtxt rev)) revs
-  okMessageBox revstrs
+    rhdl <- liftM getHoodle get  
+    let hdl = rHoodle2Hoodle rhdl
+    let revs = view grevisions rhdl
+        -- revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev)) revs 
+        -- ++ ":" ++ B.unpack (view revtxt rev)) revs
+    showRevisionDialog hdl revs 
+    -- okMessageBox revstrs
   
 fileShowUUID :: MainCoroutine ()
 fileShowUUID = do 
-  hdl <- liftM getHoodle get  
-  let uuidstr = view ghoodleID hdl
-  okMessageBox (B.unpack uuidstr)
+    hdl <- liftM getHoodle get  
+    let uuidstr = view ghoodleID hdl
+    okMessageBox (B.unpack uuidstr)
   
 
   

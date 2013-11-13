@@ -72,6 +72,7 @@ minibufDialog msg = do
   where 
     action dev doesUseX11Ext = mkIOaction $ \evhandler -> do 
       dialog <- dialogNew 
+      msgLabel <- labelNew (Just msg) 
       cvs <- drawingAreaNew                           
       cvs `on` sizeRequest $ return (Requisition 500 50)
       cvs `on` exposeEvent $ tryEvent $ do
@@ -106,6 +107,9 @@ minibufDialog msg = do
       widgetAddEvents cvs [PointerMotionMask,Button1MotionMask]      
       --
       vbox <- dialogGetUpper dialog
+      hbox <- hBoxNew False 0 
+      boxPackStart hbox msgLabel PackNatural 0 
+      boxPackStart vbox hbox PackNatural 0
       boxPackStart vbox cvs PackNatural 0
       btnOk <- dialogAddButton dialog "Ok" ResponseOk
       btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel

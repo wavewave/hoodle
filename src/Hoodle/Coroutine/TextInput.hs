@@ -45,6 +45,7 @@ import qualified Text.Hoodle.Parse.Attoparsec as PA
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
+import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Type.Canvas 
@@ -90,6 +91,17 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
       ResponseCancel -> return (UsrEv (OkCancel False))
       _ -> return (UsrEv (OkCancel False))
 
+multiLineLoop :: String -> MainCoroutine (Maybe String)
+multiLineLoop str = do 
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
+                          >> multiLineLoop str
+      OkCancel True -> (return . Just) str
+      OkCancel False -> return Nothing
+      MultiLine (MultiLineChanged str') -> multiLineLoop str'
+      _ -> multiLineLoop str
+
 -- | 
 textInputDialog :: MainCoroutine (Maybe String) 
 textInputDialog = do 
@@ -120,18 +132,20 @@ textInputDialog = do
   go 
 
 -- | 
-textInput :: MainCoroutine ()
-textInput = textInputDialog >>= mapM_ (\str->liftIO (makePangoTextSVG str) >>= svgInsert str)
-    
-
-fileLaTeX :: MainCoroutine ()
-fileLaTeX = do 
-    let str = "hello there"
+textInput :: String -> MainCoroutine ()
+textInput str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
-    mresult <- latexStart str
-    forM_ mresult $ \result -> 
-      liftIO (makePangoTextSVG result) >>= svgInsert str
+    multiLineLoop str >>= 
+      mapM_ (\result -> liftIO (makePangoTextSVG result) >>= svgInsert result)
+  
     
+laTeXInput :: String -> MainCoroutine ()
+laTeXInput str = do 
+    modify (tempQueue %~ enqueue (multiLineDialog str))  
+    multiLineLoop str >>= 
+      mapM_ (\result -> liftIO (makePangoTextSVG result) >>= svgInsert result)
+    
+{-    
 latexStart :: String -> MainCoroutine (Maybe String)    
 latexStart str = do
     r <- nextevent
@@ -141,7 +155,8 @@ latexStart str = do
       OkCancel False -> return Nothing
       MultiLine (MultiLineChanged str') -> latexStart str'
       _ -> latexStart str
-  
+-}
+
 {-
 -- |
 fileLaTeX :: MainCoroutine () 
@@ -227,8 +242,8 @@ svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do
               SelectState thdl' -> return thdl'
               _ -> (lift . EitherT . return . Left . Other) "svgInsert"
     nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-    put nxstate2
+    put (set hoodleModeState (SelectState nthdl) nxstate)
+    commit_
     invalidateAll 
   
 -- |     

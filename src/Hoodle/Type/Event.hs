@@ -71,7 +71,7 @@ data UserEvent = Initialized
                | ContextMenuCreated
                | GotContextMenuSignal ContextMenuEvent
                | LaTeXInput (Maybe (ByteString,ByteString))
-               | TextInput (Maybe String) 
+               | TextInput (Maybe String)
                | AddLink (Maybe (String,FilePath))
                | EventDisconnected
                | GetHoodleFileInfo (IORef (Maybe String))
@@ -83,7 +83,8 @@ data UserEvent = Initialized
                | GotRevisionInk String [Stroke]
                | ChangeDialog
                | ActionOrdered                 
-               | MiniBuffer MiniBufferEvent 
+               | MiniBuffer MiniBufferEvent
+               | MultiLine MultiLineEvent
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -224,6 +225,10 @@ data MiniBufferEvent = MiniBufferInitialized DrawWindow
                      | MiniBufferPenUp PointerCoord
                      | MiniBufferPenMove PointerCoord
                      deriving (Show, Ord, Eq)
+-- | event for multiline text view/buffer
+data MultiLineEvent = MultiLineChanged String
+                    deriving (Show, Ord, Eq)
+
 
 instance Show DrawWindow where
   show _ = "DrawWindow"

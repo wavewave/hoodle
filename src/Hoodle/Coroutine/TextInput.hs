@@ -1,4 +1,6 @@
-{-# LANGUAGE OverloadedStrings, TupleSections #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE LambdaCase #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -16,10 +18,10 @@ module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
 import           Control.Lens (view,set,(%~))
-import           Control.Monad.State hiding (mapM_)
+import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec
-import           Data.Foldable (mapM_)
+import           Data.Foldable (mapM_, forM_)
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -52,7 +54,41 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Util
 -- 
-import Prelude hiding (readFile,mapM_)
+import Prelude hiding (readFile,mapM_,forM_)
+
+multiLineDialog :: String -> Either (ActionOrder AllEvent) AllEvent
+multiLineDialog str = mkIOaction $ \evhandler -> do
+    dialog <- dialogNew
+    vbox <- dialogGetUpper dialog
+    textbuf <- textBufferNew Nothing
+    textBufferSetText textbuf str
+    textbuf `on` bufferChanged $ do 
+        (s,e) <- (,) <$> textBufferGetStartIter textbuf <*> textBufferGetEndIter textbuf  
+        contents <- textBufferGetText textbuf s e False
+        (evhandler . UsrEv . MultiLine . MultiLineChanged) contents
+    textarea <- textViewNewWithBuffer textbuf
+    vscrbar <- vScrollbarNew =<< textViewGetVadjustment textarea
+    hscrbar <- hScrollbarNew =<< textViewGetHadjustment textarea 
+    textarea `on` sizeRequest $ return (Requisition 500 600)
+    fdesc <- fontDescriptionNew
+    fontDescriptionSetFamily fdesc "Mono"
+    widgetModifyFont textarea (Just fdesc)
+    -- 
+    table <- tableNew 2 2 False
+    tableAttachDefaults table textarea 0 1 0 1
+    tableAttachDefaults table vscrbar 1 2 0 1
+    tableAttachDefaults table hscrbar 0 1 1 2 
+    boxPackStart vbox table PackNatural 0
+    -- 
+    btnOk <- dialogAddButton dialog "Ok" ResponseOk
+    btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+    widgetShowAll dialog
+    res <- dialogRun dialog
+    widgetDestroy dialog
+    case res of 
+      ResponseOk -> return (UsrEv (OkCancel True))
+      ResponseCancel -> return (UsrEv (OkCancel False))
+      _ -> return (UsrEv (OkCancel False))
 
 -- | 
 textInputDialog :: MainCoroutine (Maybe String) 
@@ -83,13 +119,30 @@ textInputDialog = do
                 _ -> go 
   go 
 
-
 -- | 
 textInput :: MainCoroutine ()
 textInput = textInputDialog >>= mapM_ (\str->liftIO (makePangoTextSVG str) >>= svgInsert str)
     
 
-
+fileLaTeX :: MainCoroutine ()
+fileLaTeX = do 
+    let str = "hello there"
+    modify (tempQueue %~ enqueue (multiLineDialog str))  
+    mresult <- latexStart str
+    forM_ mresult $ \result -> 
+      liftIO (makePangoTextSVG result) >>= svgInsert str
+    
+latexStart :: String -> MainCoroutine (Maybe String)    
+latexStart str = do
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> latexStart str
+      OkCancel True -> (return . Just) str
+      OkCancel False -> return Nothing
+      MultiLine (MultiLineChanged str') -> latexStart str'
+      _ -> latexStart str
+  
+{-
 -- |
 fileLaTeX :: MainCoroutine () 
 fileLaTeX = do modify (tempQueue %~ enqueue action) 
@@ -151,10 +204,7 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
       let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
       put nxstate2
       invalidateAll 
-
-
-
-
+-}
 
 -- |
 svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 

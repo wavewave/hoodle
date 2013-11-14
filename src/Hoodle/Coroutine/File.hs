@@ -22,7 +22,7 @@ import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.Loops
-import           Control.Monad.State hiding (mapM)
+import           Control.Monad.State hiding (mapM,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.ByteString (readFile)
@@ -30,6 +30,7 @@ import           Data.ByteString.Base64
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
+import           Data.Foldable (forM_)
 import qualified Data.List as List 
 import           Data.Maybe
 import qualified Data.IntMap as IM
@@ -83,7 +84,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 import           Hoodle.View.Draw
 --
-import Prelude hiding (readFile,concat,mapM)
+import Prelude hiding (readFile,concat,mapM,forM_)
 
 
 
@@ -313,10 +314,8 @@ resetHoodleBuffers = do
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
-  mfilename <- fileChooser FileChooserActionOpen Nothing
-  case mfilename of 
-    Nothing -> return ()
-    Just filename -> fileLoad filename 
+    mfilename <- fileChooser FileChooserActionOpen Nothing
+    forM_ mfilename fileLoad 
 
 -- | main coroutine for save as 
 fileSaveAs :: MainCoroutine () 
@@ -754,25 +753,18 @@ addOneRevisionBox vbox hdl rev = do
         x : _ -> 
           liftIO (createProcess (proc "evince" [vcsdir </> x])) 
           >> return ()
-        _ -> return ()
-      
-    
+        _ -> return ()    
     hbox <- hBoxNew False 0
     boxPackStart hbox cvs PackNatural 0
     boxPackStart hbox btn PackGrow  0
     boxPackStart vbox hbox PackNatural 0
-
-
 
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 
     rhdl <- liftM getHoodle get  
     let hdl = rHoodle2Hoodle rhdl
     let revs = view grevisions rhdl
-        -- revstrs = unlines $ map (\rev -> B.unpack (view revmd5 rev)) revs 
-        -- ++ ":" ++ B.unpack (view revtxt rev)) revs
     showRevisionDialog hdl revs 
-    -- okMessageBox revstrs
   
 fileShowUUID :: MainCoroutine ()
 fileShowUUID = do 

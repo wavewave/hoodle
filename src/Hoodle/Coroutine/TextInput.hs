@@ -22,6 +22,7 @@ import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec
 import           Data.Foldable (mapM_, forM_)
+import           Data.UUID.V4 (nextRandom)
 import           Graphics.Rendering.Cairo
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -48,6 +49,7 @@ import           Hoodle.ModelAction.Select
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -131,36 +133,57 @@ textInputDialog = do
                 _ -> go 
   go 
 
--- | 
+-- | insert text 
 textInput :: String -> MainCoroutine ()
 textInput str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
-      mapM_ (\result -> liftIO (makePangoTextSVG result) >>= svgInsert result)
+      mapM_ (\result -> deleteSelection
+                        >> liftIO (makePangoTextSVG result) 
+                        >>= svgInsert (result,"pango"))
   
-    
+-- | insert latex
 laTeXInput :: String -> MainCoroutine ()
 laTeXInput str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
-      mapM_ (\result -> liftIO (makePangoTextSVG result) >>= svgInsert result)
+      mapM_ (\result -> deleteSelection
+                        >> liftIO (makeLaTeXSVG result) 
+                        >>= svgInsert (result,"latex")
+            )
+laTeXHeader :: String
+laTeXHeader = "\\documentclass{article}\n\
+              \\\pagestyle{empty}\n\
+              \\\begin{document}\n"
+                                
+laTeXFooter :: String
+laTeXFooter = "\\end{document}\n"
+
+makeLaTeXSVG :: String -> IO (B.ByteString,BBox)
+makeLaTeXSVG body = do
+    let txt = laTeXHeader ++ body ++ laTeXFooter
+    cdir <- getCurrentDirectory
+    tdir <- getTemporaryDirectory
+    tfilename <- show <$> nextRandom
     
-{-    
-latexStart :: String -> MainCoroutine (Maybe String)    
-latexStart str = do
-    r <- nextevent
-    case r of 
-      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> latexStart str
-      OkCancel True -> (return . Just) str
-      OkCancel False -> return Nothing
-      MultiLine (MultiLineChanged str') -> latexStart str'
-      _ -> latexStart str
--}
+    setCurrentDirectory tdir
+    
+    writeFile (tfilename <.> "tex") txt
+    system ("pdflatex " ++ tfilename <.> "tex")
+    system ("pdfcrop " ++ tfilename <.> "pdf" ++ " " ++ tfilename ++ "_crop" <.> "pdf")
+    system ("pdf2svg " ++ tfilename ++ "_crop" <.> "pdf" ++ " " ++ tfilename <.> "svg")
+    
+    bstr <- B.readFile (tfilename <.> "svg")    
+    setCurrentDirectory cdir
+    return (bstr,BBox (100,100) (400,400)) 
+    
+
 
 {-
 -- |
-fileLaTeX :: MainCoroutine () 
-fileLaTeX = do modify (tempQueue %~ enqueue action) 
+laTeXInput :: String -> MainCoroutine () 
+laTeXInput sss = 
+            do modify (tempQueue %~ enqueue action) 
                minput <- go
                case minput of 
                  Nothing -> return () 
@@ -221,17 +244,17 @@ fileLaTeX = do modify (tempQueue %~ enqueue action)
       invalidateAll 
 -}
 
+
 -- |
-svgInsert :: String -> (B.ByteString,BBox) -> MainCoroutine () 
-svgInsert str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
+svgInsert :: (String,String) -> (B.ByteString,BBox) -> MainCoroutine () 
+svgInsert (str,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
     let pgnum = view (unboxLens currentPageNum) . view currentCanvasInfo $ xstate
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-  
     newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-                 (SVG (Just (B.pack str)) Nothing svgbstr 
+                 (SVG (Just (B.pack str)) (Just (B.pack cmd)) svgbstr 
                       (100,100) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 

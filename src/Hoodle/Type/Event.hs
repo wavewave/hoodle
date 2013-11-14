@@ -215,6 +215,8 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuLinkConvert Link
                       | CMenuCreateALink 
                       | CMenuAssocWithNewFile
+                      | CMenuPangoConvert String
+                      | CMenuLaTeXConvert String
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

@@ -152,6 +152,8 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
+processContextMenu (CMenuPangoConvert txt) = textInput txt
+processContextMenu (CMenuLaTeXConvert txt) = laTeXInput txt
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -288,7 +290,24 @@ showContextMenu (pnum,(x,y)) = do
                                             menuitemcvt `on` menuItemActivate $ 
                                               evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
                                             menuAttach menu menuitemcvt 0 1 4 5 
-                          _ -> return () 
+                          RItemSVG svgbbx _msfc -> do
+                            let svg = bbxed_content svgbbx
+                            forM_ ((,) <$> svg_text svg <*> svg_command svg) $ \(btxt,cmd) -> do
+                              let txt = B.unpack btxt
+                              case cmd of 
+                                "pango" -> do menuitemedt <- menuItemNewWithLabel ("Edit Text") 
+                                              menuitemedt `on` menuItemActivate $ do 
+                                                evhandler (UsrEv (GotContextMenuSignal (CMenuPangoConvert txt)))
+                                              menuAttach menu menuitemedt 0 1 4 5
+                                              return ()
+                                "latex" -> do menuitemedt <- menuItemNewWithLabel ("Edit LaTeX")
+                                              menuitemedt `on` menuItemActivate $ do
+                                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert txt)))
+                                              menuAttach menu menuitemedt 0 1 4 5 
+                                              return ()
+                                _ -> return ()
+                              
+                          _ -> return ()
                       
                       _ -> return () 
                 case (customContextMenuTitle =<< view hookSet xstate) of 

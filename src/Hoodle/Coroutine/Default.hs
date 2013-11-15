@@ -223,8 +223,6 @@ disableTouch = do
       waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
       put nxst
 
-
-
 -- |
 selectMode :: MainCoroutine () 
 selectMode = do 
@@ -245,7 +243,6 @@ selectMode = do
       modify (penInfo.currentTool.penWidth .~ w) 
       selectPenWidthChanged w 
     _ -> defaultEventProcess r1
-
 
 -- |
 defaultEventProcess :: UserEvent -> MainCoroutine ()
@@ -364,6 +361,7 @@ menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
 menuEventProcess MenuLaTeX = laTeXInput (laTeXHeader ++ "\n\n" ++ laTeXFooter)
+menuEventProcess MenuCombineLaTeX = combineLaTeXText 
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen

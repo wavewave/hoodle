@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiWayIf #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -17,11 +18,15 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
-import           Control.Lens (view,set,(%~))
+import           Control.Lens (_1,_2,_3,view,set,(%~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec
+import qualified Data.ByteString.Char8 as C (intercalate,putStrLn)
 import           Data.Foldable (mapM_, forM_)
+import qualified Data.Function as F (on)
+import           Data.List (sortBy)
+import           Data.Maybe (catMaybes)
 import           Data.UUID.V4 (nextRandom)
 import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -42,6 +47,7 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type.HitTest
+import           Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.ModelAction.Layer 
@@ -152,7 +158,6 @@ laTeXInput str = do
       mapM_ (\result -> liftIO (makeLaTeXSVG result) 
                         >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
                                   Left err -> okMessageBox err
-                                              -- do liftIO (putStrLn err)
             )
       
 laTeXHeader :: String
@@ -289,4 +294,37 @@ makePangoTextSVG str = do
     bstr <- B.readFile tfile 
     return (bstr,BBox (x0,y0) (x1,y1)) 
 
+-- | combine all LaTeX texts into a text file 
+combineLaTeXText :: MainCoroutine ()
+combineLaTeXText = do
+    liftIO $ putStrLn "start combine latex file" 
+    hdl <- rHoodle2Hoodle . getHoodle <$> get  
+    let mlatex_components = do 
+          (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
+          l <- view layers pg
+          i <- view items l
+          case i of 
+            ItemSVG svg ->  
+              case svg_command svg of
+                Just "latex" -> do 
+                  let (_,y) = svg_pos svg  
+                  return ((pgnum,y,) <$> svg_text svg) 
+                _ -> []
+              -- return i 
+            _ -> []
+          -- (map (view layers) . view pages) hdl
+    let cfunc :: (Ord a,Ord b,Ord c) => (a,b,c) -> (a,b,c) -> Ordering 
+        cfunc x y | view _1 x > view _1 y = GT
+                  | view _1 x < view _1 y = LT
+                  | otherwise = if | view _2 x > view _2 y -> GT
+                                   | view _2 x < view _2 y -> LT
+                                   | otherwise -> EQ
+    let latex_components = catMaybes  mlatex_components
+        sorted = sortBy cfunc latex_components 
+
+    (liftIO . C.putStrLn . C.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
+
+
+    -- liftIO . print $ map (\pg -> let ls = view layers pg in length ls) pgs       
+    -- liftIO $ print (length pgs)
 

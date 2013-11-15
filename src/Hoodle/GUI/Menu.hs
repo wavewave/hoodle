@@ -188,6 +188,7 @@ getMenuUI evar = do
   ldpnga <- actionNewAndRegister "LDIMGA" "Load PNG or JPG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNGorJPG)
   ldsvga <- actionNewAndRegister "LDSVGA" "Load SVG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadSVG)
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") Nothing (justMenu MenuLaTeX)
+  combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
   ldpreimga <- actionNewAndRegister "LDPREIMGA" "Embed Predefined Image File" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage)
   ldpreimg2a <- actionNewAndRegister "LDPREIMG2A" "Embed Predefined Image File 2" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage2)
   ldpreimg3a <- actionNewAndRegister "LDPREIMG3A" "Embed Predefined Image File 3" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage3)
@@ -331,7 +332,7 @@ getMenuUI evar = do
   mapM_ (actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
-        [ newa, annpdfa, ldpnga, ldsvga, latexa, ldpreimga, ldpreimg2a, ldpreimg3a, opena, savea, saveasa
+        [ newa, annpdfa, ldpnga, ldsvga, latexa, combinelatexa, ldpreimga, ldpreimg2a, ldpreimg3a, opena, savea, saveasa
         , reloada, recenta, printa, exporta, synca, versiona, showreva, showida, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera

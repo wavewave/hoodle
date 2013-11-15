@@ -22,7 +22,7 @@ import           Control.Lens (_1,_2,_3,view,set,(%~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec
-import qualified Data.ByteString.Char8 as C (intercalate,putStrLn)
+import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
 import qualified Data.Function as F (on)
 import           Data.List (sortBy)
@@ -41,7 +41,6 @@ import           System.Process (system,readProcessWithExitCode)
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
-import qualified Data.ByteString.Char8 as B 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
@@ -310,9 +309,7 @@ combineLaTeXText = do
                   let (_,y) = svg_pos svg  
                   return ((pgnum,y,) <$> svg_text svg) 
                 _ -> []
-              -- return i 
             _ -> []
-          -- (map (view layers) . view pages) hdl
     let cfunc :: (Ord a,Ord b,Ord c) => (a,b,c) -> (a,b,c) -> Ordering 
         cfunc x y | view _1 x > view _1 y = GT
                   | view _1 x < view _1 y = LT
@@ -321,10 +318,6 @@ combineLaTeXText = do
                                    | otherwise -> EQ
     let latex_components = catMaybes  mlatex_components
         sorted = sortBy cfunc latex_components 
-
-    (liftIO . C.putStrLn . C.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
-
-
-    -- liftIO . print $ map (\pg -> let ls = view layers pg in length ls) pgs       
-    -- liftIO $ print (length pgs)
-
+        resulttxt = (B.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
+    mfilename <- fileChooser FileChooserActionSave Nothing
+    forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())

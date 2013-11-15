@@ -24,6 +24,7 @@ import           Data.Attoparsec
 import           Data.Foldable (mapM_, forM_)
 import           Data.UUID.V4 (nextRandom)
 import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- 
@@ -169,15 +170,16 @@ makeLaTeXSVG txt = do
     
     setCurrentDirectory tdir
     let check msg act = liftIO act >>= \case ExitSuccess -> right () ; _ -> left msg
-    
-    
+        
     writeFile (tfilename <.> "tex") txt
     r <- runEitherT $ do 
       check "latex" (system ("pdflatex " ++ tfilename <.> "tex"))
       check "crop" (system ("pdfcrop " ++ tfilename <.> "pdf" ++ " " ++ tfilename ++ "_crop" <.> "pdf"))
       check "svg" (system ("pdf2svg " ++ tfilename ++ "_crop" <.> "pdf" ++ " " ++ tfilename <.> "svg"))
-      bstr <- liftIO $ B.readFile (tfilename <.> "svg")    
-      return (bstr,BBox (100,100) (400,400)) 
+      bstr <- liftIO $ B.readFile (tfilename <.> "svg")
+      rsvg <- liftIO $ RSVG.svgNewFromString (B.unpack bstr) 
+      let (w,h) = RSVG.svgGetSize rsvg
+      return (bstr,BBox (100,100) (100+fromIntegral w,100+fromIntegral h)) 
     setCurrentDirectory cdir
     return r
     

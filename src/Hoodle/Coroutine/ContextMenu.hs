@@ -51,6 +51,7 @@ import           Text.Hoodle.Builder (builder)
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit 
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Scroll

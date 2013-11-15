@@ -40,12 +40,14 @@ import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Util.HitTest 
 -- from this package
 import           Hoodle.Accessor
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.File 
+import           Hoodle.Coroutine.File (insertItemAt)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Device 
 import           Hoodle.ModelAction.ContextMenu
+import           Hoodle.ModelAction.File (makeNewItemImage)
 import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine

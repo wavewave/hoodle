@@ -77,6 +77,7 @@ Library
                    Hoodle.Coroutine.Commit
                    Hoodle.Coroutine.ContextMenu
                    Hoodle.Coroutine.Default
+                   Hoodle.Coroutine.Dialog
                    Hoodle.Coroutine.Draw
                    Hoodle.Coroutine.Eraser
                    Hoodle.Coroutine.File

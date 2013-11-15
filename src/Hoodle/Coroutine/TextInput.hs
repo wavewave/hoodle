@@ -27,6 +27,11 @@ import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
+import           System.Directory 
+import           System.Exit (ExitCode(..))
+import           System.FilePath 
+import           System.IO (readFile)
+import           System.Process (system,readProcessWithExitCode)
 -- 
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event 
@@ -37,17 +42,13 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type.HitTest
-import           System.Directory 
-import           System.Exit (ExitCode(..))
-import           System.FilePath 
-import           System.IO (readFile)
-import           System.Process (system)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Select.Clipboard
@@ -151,7 +152,8 @@ laTeXInput str = do
       mapM_ (\result -> deleteSelection
                         >> liftIO (makeLaTeXSVG result) 
                         >>= \case Right r -> svgInsert (result,"latex") r
-                                  Left err -> liftIO (putStrLn err)
+                                  Left err -> okMessageBox err
+                                              -- do liftIO (putStrLn err)
             )
       
 laTeXHeader :: String
@@ -173,7 +175,8 @@ makeLaTeXSVG txt = do
         
     writeFile (tfilename <.> "tex") txt
     r <- runEitherT $ do 
-      check "latex" (system ("pdflatex " ++ tfilename <.> "tex"))
+      check "latex" $ do (ecode,ostr,estr) <- readProcessWithExitCode "pdflatex" [tfilename <.> "tex"] ""
+                         return ecode
       check "crop" (system ("pdfcrop " ++ tfilename <.> "pdf" ++ " " ++ tfilename ++ "_crop" <.> "pdf"))
       check "svg" (system ("pdf2svg " ++ tfilename ++ "_crop" <.> "pdf" ++ " " ++ tfilename <.> "svg"))
       bstr <- liftIO $ B.readFile (tfilename <.> "svg")

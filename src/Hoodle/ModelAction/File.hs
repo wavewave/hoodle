@@ -27,6 +27,7 @@ import qualified Data.IntMap as IM
 import           Data.Maybe 
 import           Data.Monoid ((<>))
 import           Data.Time.Clock
+import           Graphics.GD.ByteString 
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -218,10 +219,6 @@ saveHoodle xstate = do
         toggleSave ui False
         return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ xstate )
              
-
-
-
-
 -- | this function must be moved to GUI.Reflect
 toggleSave :: UIManager -> Bool -> IO ()
 toggleSave ui b = do 
@@ -232,4 +229,36 @@ toggleSave ui b = do
     Just savea <- actionGroupGetAction agr "SAVEA"
     actionSetSensitive savea b
 
+-- | 
+makeNewItemImage :: Bool  -- ^ isEmbedded?
+                    -> FilePath 
+                    -> IO Item
+makeNewItemImage isembedded filename = 
+    if isembedded 
+      then let fileext = takeExtension filename 
+               imgaction 
+                 | fileext == ".PNG" || fileext == ".png" = loadpng 
+                 | fileext == ".JPG" || fileext == ".jpg" = loadjpg 
+                 | otherwise = loadsrc 
+           in imgaction 
+      else loadsrc 
+  where loadsrc = (return . ItemImage) (Image (C.pack filename) (100,100) (Dim 300 300))
+        loadpng = do 
+          img <- loadPngFile filename
+          (w,h) <- imageSize img 
+          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
+                  | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
+          bstr <- savePngByteString img 
+          let b64str = encode bstr 
+              ebdsrc = "data:image/png;base64," <> b64str
+          return . ItemImage $ Image ebdsrc (100,100) dim 
+        loadjpg = do 
+          img <- loadJpegFile filename
+          (w,h) <- imageSize img 
+          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
+                  | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
+          bstr <- savePngByteString img 
+          let b64str = encode bstr 
+              ebdsrc = "data:image/png;base64," <> b64str
+          return . ItemImage $ Image ebdsrc (100,100) dim 
 

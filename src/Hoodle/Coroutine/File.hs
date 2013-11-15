@@ -21,7 +21,7 @@ module Hoodle.Coroutine.File where
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
-import           Control.Monad.Loops
+-- import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -37,7 +37,6 @@ import qualified Data.IntMap as IM
 import           Data.Time.Clock
 import           Data.UUID.V4 
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
-import           Graphics.GD.ByteString 
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
@@ -61,6 +60,7 @@ import           Graphics.Hoodle.Render.Type.HitTest
 import           Text.Hoodle.Builder 
 -- from this package 
 import           Hoodle.Accessor
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Minibuffer
@@ -88,75 +88,7 @@ import Prelude hiding (readFile,concat,mapM,forM_)
 
 
 
--- |
-okMessageBox :: String -> MainCoroutine () 
-okMessageBox msg = modify (tempQueue %~ enqueue action) 
-                   >> waitSomeEvent (\case GotOk -> True ; _ -> False) 
-                   >> return () 
-  where 
-    action = mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOk msg 
-                 _res <- dialogRun dialog 
-                 widgetDestroy dialog 
-                 return (UsrEv GotOk)
 
--- | 
-okCancelMessageBox :: String -> MainCoroutine Bool 
-okCancelMessageBox msg = modify (tempQueue %~ enqueue action) 
-                         >> waitSomeEvent p >>= return . q
-  where 
-    p (OkCancel _) = True 
-    p _ = False 
-    q (OkCancel b) = b 
-    q _ = False 
-    action = mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel msg 
-                 res <- dialogRun dialog 
-                 let b = case res of 
-                           ResponseOk -> True
-                           _ -> False
-                 widgetDestroy dialog 
-                 return (UsrEv (OkCancel b))
-
--- | 
-fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
-fileChooser choosertyp mfname = do 
-    mrecentfolder <- S.recentFolderHook 
-    xst <- get 
-    let rtrwin = view rootOfRootWindow xst 
-    liftIO $ widgetQueueDraw rtrwin 
-        
-    modify (tempQueue %~ enqueue (action rtrwin mrecentfolder)) >> go 
-  where 
-    go = do r <- nextevent                   
-            case r of 
-              FileChosen b -> return b  
-              UpdateCanvas cid -> -- this is temporary
-                                  invalidateInBBox Nothing Efficient cid >> go  
-              _ -> go 
-    action win mrf = mkIOaction $ \_evhandler -> do 
-      dialog <- fileChooserDialogNew Nothing (Just win) choosertyp 
-                  [ ("OK", ResponseOk) 
-                  , ("Cancel", ResponseCancel) ]
-      case mrf of 
-        Just rf -> fileChooserSetCurrentFolder dialog rf 
-        Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
-      maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
-      --   !!!!!! really hackish solution !!!!!!
-      whileM_ (liftM (>0) eventsPending) (mainIterationDo False)
-      
-      res <- dialogRun dialog
-      mr <- case res of 
-              ResponseDeleteEvent -> return Nothing
-              ResponseOk ->  fileChooserGetFilename dialog 
-              ResponseCancel -> return Nothing 
-              _ -> putStrLn "??? in fileOpen" >> return Nothing 
-      widgetDestroy dialog
-      return (UsrEv (FileChosen mr))
 
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
@@ -475,40 +407,7 @@ insertItemAt mpcoord ritm = do
     nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
     put (set hoodleModeState (SelectState nthdl) nxst)
     invalidateAll  
-        
--- | 
-makeNewItemImage :: Bool  -- ^ isEmbedded?
-                    -> FilePath 
-                    -> IO Item
-makeNewItemImage isembedded filename = 
-    if isembedded 
-      then let fileext = takeExtension filename 
-               imgaction 
-                 | fileext == ".PNG" || fileext == ".png" = loadpng 
-                 | fileext == ".JPG" || fileext == ".jpg" = loadjpg 
-                 | otherwise = loadsrc 
-           in imgaction 
-      else loadsrc 
-  where loadsrc = (return . ItemImage) (Image (B.pack filename) (100,100) (Dim 300 300))
-        loadpng = do 
-          img <- loadPngFile filename
-          (w,h) <- imageSize img 
-          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
-                  | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
-          bstr <- savePngByteString img 
-          let b64str = encode bstr 
-              ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) dim 
-        loadjpg = do 
-          img <- loadJpegFile filename
-          (w,h) <- imageSize img 
-          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
-                  | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
-          bstr <- savePngByteString img 
-          let b64str = encode bstr 
-              ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) dim 
-            
+                    
 -- | 
 fileLoadSVG :: MainCoroutine ()
 fileLoadSVG = do 

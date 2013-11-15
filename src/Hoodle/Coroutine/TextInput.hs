@@ -149,8 +149,10 @@ laTeXInput str = do
     multiLineLoop str >>= 
       mapM_ (\result -> deleteSelection
                         >> liftIO (makeLaTeXSVG result) 
-                        >>= svgInsert (result,"latex")
+                        >>= \case Right r -> svgInsert (result,"latex") r
+                                  Left err -> liftIO (putStrLn err)
             )
+      
 laTeXHeader :: String
 laTeXHeader = "\\documentclass{article}\n\
               \\\pagestyle{empty}\n\
@@ -159,91 +161,26 @@ laTeXHeader = "\\documentclass{article}\n\
 laTeXFooter :: String
 laTeXFooter = "\\end{document}\n"
 
-makeLaTeXSVG :: String -> IO (B.ByteString,BBox)
-makeLaTeXSVG body = do
-    let txt = laTeXHeader ++ body ++ laTeXFooter
+makeLaTeXSVG :: String -> IO (Either String (B.ByteString,BBox))
+makeLaTeXSVG txt = do
     cdir <- getCurrentDirectory
     tdir <- getTemporaryDirectory
     tfilename <- show <$> nextRandom
     
     setCurrentDirectory tdir
+    let check msg act = liftIO act >>= \case ExitSuccess -> right () ; _ -> left msg
+    
     
     writeFile (tfilename <.> "tex") txt
-    system ("pdflatex " ++ tfilename <.> "tex")
-    system ("pdfcrop " ++ tfilename <.> "pdf" ++ " " ++ tfilename ++ "_crop" <.> "pdf")
-    system ("pdf2svg " ++ tfilename ++ "_crop" <.> "pdf" ++ " " ++ tfilename <.> "svg")
-    
-    bstr <- B.readFile (tfilename <.> "svg")    
+    r <- runEitherT $ do 
+      check "latex" (system ("pdflatex " ++ tfilename <.> "tex"))
+      check "crop" (system ("pdfcrop " ++ tfilename <.> "pdf" ++ " " ++ tfilename ++ "_crop" <.> "pdf"))
+      check "svg" (system ("pdf2svg " ++ tfilename ++ "_crop" <.> "pdf" ++ " " ++ tfilename <.> "svg"))
+      bstr <- liftIO $ B.readFile (tfilename <.> "svg")    
+      return (bstr,BBox (100,100) (400,400)) 
     setCurrentDirectory cdir
-    return (bstr,BBox (100,100) (400,400)) 
+    return r
     
-
-
-{-
--- |
-laTeXInput :: String -> MainCoroutine () 
-laTeXInput sss = 
-            do modify (tempQueue %~ enqueue action) 
-               minput <- go
-               case minput of 
-                 Nothing -> return () 
-                 Just (latex,svg) -> afteraction (latex,svg) 
-  where 
-    go = do r <- nextevent
-            case r of 
-              LaTeXInput input -> return input 
-              _ -> go 
-    action = mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel "latex input"
-                 vbox <- dialogGetUpper dialog
-                 txtvw <- textViewNew
-                 boxPackStart vbox txtvw PackGrow 0 
-                 widgetShowAll dialog
-                 res <- dialogRun dialog 
-                 case res of 
-                   ResponseOk -> do 
-                     buf <- textViewGetBuffer txtvw 
-                     istart <- textBufferGetStartIter buf
-                     iend <- textBufferGetEndIter buf
-                     l <- textBufferGetText buf istart iend True
-                     widgetDestroy dialog
-                     tdir <- getTemporaryDirectory
-                     writeFile (tdir </> "latextest.tex") l 
-                     let cmd = "lasem-render-0.6 " ++ (tdir </> "latextest.tex") ++ " -f svg -o " ++ (tdir </> "latextest.svg" )
-                     print cmd 
-                     excode <- system cmd 
-                     case excode of 
-                       ExitSuccess -> do 
-                         svg <- B.readFile (tdir </> "latextest.svg")
-                         return (UsrEv (LaTeXInput (Just (B.pack l,svg))))
-                       _ -> return (UsrEv (LaTeXInput Nothing))
-
-                   _ -> do 
-                     widgetDestroy dialog
-                     return (UsrEv (LaTeXInput Nothing))
-    afteraction (latex,svg) = do 
-      xstate <- get 
-      let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
-          hdl = getHoodle xstate 
-          currpage = getPageFromGHoodleMap pgnum hdl
-          currlayer = getCurrentLayer currpage
-      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-          (SVG (Just latex) Nothing svg (100,100) (Dim 300 50))
-      let otheritems = view gitems currlayer  
-      let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
-      modeChange ToSelectMode 
-      nxstate <- get 
-      thdl <- case view hoodleModeState nxstate of
-                SelectState thdl' -> return thdl'
-                _ -> (lift . EitherT . return . Left . Other) "fileLaTeX"
-      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-      put nxstate2
-      invalidateAll 
--}
-
 
 -- |
 svgInsert :: (String,String) -> (B.ByteString,BBox) -> MainCoroutine () 

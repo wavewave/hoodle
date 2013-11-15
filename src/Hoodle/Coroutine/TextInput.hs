@@ -149,9 +149,8 @@ laTeXInput :: String -> MainCoroutine ()
 laTeXInput str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
-      mapM_ (\result -> deleteSelection
-                        >> liftIO (makeLaTeXSVG result) 
-                        >>= \case Right r -> svgInsert (result,"latex") r
+      mapM_ (\result -> liftIO (makeLaTeXSVG result) 
+                        >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
                                   Left err -> okMessageBox err
                                               -- do liftIO (putStrLn err)
             )
@@ -171,14 +170,19 @@ makeLaTeXSVG txt = do
     tfilename <- show <$> nextRandom
     
     setCurrentDirectory tdir
-    let check msg act = liftIO act >>= \case ExitSuccess -> right () ; _ -> left msg
+    let check msg act = liftIO act >>= \(ecode,str) -> case ecode of ExitSuccess -> right () ; _ -> left (msg ++ ":" ++ str)
         
     writeFile (tfilename <.> "tex") txt
     r <- runEitherT $ do 
-      check "latex" $ do (ecode,ostr,estr) <- readProcessWithExitCode "pdflatex" [tfilename <.> "tex"] ""
-                         return ecode
-      check "crop" (system ("pdfcrop " ++ tfilename <.> "pdf" ++ " " ++ tfilename ++ "_crop" <.> "pdf"))
-      check "svg" (system ("pdf2svg " ++ tfilename ++ "_crop" <.> "pdf" ++ " " ++ tfilename <.> "svg"))
+      check "error during pdflatex" $ do 
+        (ecode,ostr,estr) <- readProcessWithExitCode "pdflatex" [tfilename <.> "tex"] ""
+        return (ecode,ostr++estr)
+      check "error during pdfcrop" $ do 
+        (ecode,ostr,estr) <- readProcessWithExitCode "pdfcrop" [tfilename <.> "pdf",tfilename ++ "_crop" <.> "pdf"] ""       
+        return (ecode,ostr++estr)
+      check "error during pdf2svg" $ do
+        (ecode,ostr,estr) <- readProcessWithExitCode "pdf2svg" [tfilename ++ "_crop" <.> "pdf",tfilename <.> "svg"] ""
+        return (ecode,ostr++estr)
       bstr <- liftIO $ B.readFile (tfilename <.> "svg")
       rsvg <- liftIO $ RSVG.svgNewFromString (B.unpack bstr) 
       let (w,h) = RSVG.svgGetSize rsvg

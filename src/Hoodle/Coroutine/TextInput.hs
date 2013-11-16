@@ -160,7 +160,7 @@ laTeXInput str = do
     multiLineLoop str >>= 
       mapM_ (\result -> liftIO (makeLaTeXSVG result) 
                         >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
-                                  Left err -> okMessageBox err
+                                  Left err -> okMessageBox err >> laTeXInput result
             )
       
 laTeXHeader :: String

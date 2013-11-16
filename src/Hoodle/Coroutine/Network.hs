@@ -17,89 +17,119 @@
 
 module Hoodle.Coroutine.Network where
 
-import           Control.Concurrent
-import qualified Control.Distributed.Process as P
-import qualified Control.Distributed.Process.Node as N
+import           Control.Applicative
+import           Control.Concurrent hiding (yield)
+-- import           Control.Distributed.Process 
+-- import           Control.Distributed.Process.Global
+-- import           Control.Distributed.Process.Node 
 import           Control.Exception
 import           Control.Lens 
+import           Control.Monad (forever,unless)
+import           Control.Monad.State (modify)
 import           Control.Monad.Trans
+import qualified Data.ByteString.Char8 as B
+import qualified Data.Foldable as F (mapM_)
 import           Data.Map
-import           Network.Transport
-import           Network.Transport.TCP (createTransport, defaultTCPParameters)
+import           Graphics.UI.Gtk
+-- import           Network.Transport (Transport(..),closeTransport)
+-- import           Network.Transport.TCP (createTransport,defaultTCPParameters)
+import           Network.Simple.TCP
+import           Pipes
+import           Pipes.Network.TCP
+import           System.IO (isEOF)
+-- 
+import           Control.Monad.Trans.Crtn.Event 
+import           Control.Monad.Trans.Crtn.Queue (enqueue)
 -- 
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
+import           Hoodle.Type.HoodleState (tempQueue)
+-- 
+
+stdinLn :: Producer String IO ()
+stdinLn = do
+    eof <- lift isEOF 
+    unless eof $ do
+      str <- lift getLine
+      yield str
+      stdinLn
 
 
-echoServer :: EndPoint -> MVar () -> IO ()
-echoServer endpoint serverDone = go empty
-  where
-    go :: Map ConnectionId (MVar Connection) -> IO ()
-    go cs = do
-      event <- receive endpoint
-      case event of
-        ConnectionOpened cid rel addr -> do
-          putStrLn $ "New connection: ID " ++ show cid ++ ", reliability: " ++ show rel ++ ", address: " ++ show addr
-          connMVar <- newEmptyMVar
-          forkIO $ do 
-            Right conn <- connect endpoint addr rel defaultConnectHints
-            putMVar connMVar conn
-          go (insert cid connMVar cs)
-        Received cid payload -> do
-          forkIO $ do
-            conn <- readMVar (cs ! cid)
-            send conn payload
-            return ()
-          go cs
-        ConnectionClosed cid -> do
-          putStrLn $ "Closed connection: ID " ++ show cid
-          forkIO $ do 
-            conn <- readMVar (cs ! cid)
-            close conn
-          go (delete cid cs)
-        EndPointClosed -> do
-          putStrLn "Echo server exiting"
-          putMVar serverDone ()
-          
-          
+server :: (AllEvent -> IO ()) -> String -> IO ()
+server evhandler str = do
+  listen (Host "192.168.1.15") "4040" $ \(lsock, _) -> 
+    accept lsock $ \(sock,addr) -> do 
+      putStrLn $ "TCP connection established from " ++ show addr
+      send sock (B.pack str)
+      mbstr <- recv sock 100000
+      F.mapM_ (evhandler . UsrEv . MultiLine . MultiLineChanged . B.unpack) mbstr
+
 {-
-onCtrlC :: IO a -> IO () -> IO a
-p `onCtrlC` q = catchJust isUserInterrupt p (const $ q >> p `onCtrlC` q)
-  where isUserInterrupt :: AsyncException -> Maybe ()
-        isUserInterrupt UserInterrupt = Just ()
-        isUserInterrupt _             = Nothing
+textViewDialog :: String -> Either (ActionOrder AllEvent) AllEvent
+textViewDialog str = mkIOaction $ \evhandler -> do
+    dialog <- dialogNew
+    vbox <- dialogGetUpper dialog
+    -- 
+    table <- tableNew 2 2 False
+    tableAttachDefaults table textarea 0 1 0 1
+    tableAttachDefaults table vscrbar 1 2 0 1
+    tableAttachDefaults table hscrbar 0 1 1 2 
+    boxPackStart vbox table PackNatural 0
+    -- 
+    btnOk <- dialogAddButton dialog "Ok" ResponseOk
+    btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+    widgetShowAll dialog
+    res <- dialogRun dialog
+    widgetDestroy dialog
+    case res of 
+      ResponseOk -> return (UsrEv (OkCancel True))
+      ResponseCancel -> return (UsrEv (OkCancel False))
+      _ -> return (UsrEv (OkCancel False))
 -}
 
 networkTextInput :: String -> MainCoroutine (Maybe String)
 networkTextInput str = do 
-    doIOaction $ \_evhandler -> do  
-      serverDone <- newEmptyMVar      
-      forkIO $ do 
-        let (host,port) = ("192.168.1.15","10501")
-        Right transport <- createTransport host port defaultTCPParameters 
-        Right endpoint <- newEndPoint transport
-        forkIO $ echoServer endpoint serverDone
-        putStrLn $ "Echo server started at " ++ show (address endpoint)
-        readMVar serverDone 
-        closeTransport transport
-        putStrLn $ "Echo server end"
-        return ()
-      (return . UsrEv . NetworkProcess . NetworkInitialized) serverDone
+    doIOaction $ \evhandler -> do  
+      print str 
+      tid <- forkIO (server evhandler str) 
+      (return . UsrEv . NetworkProcess . NetworkInitialized) tid
     let go = do r <- nextevent
                 case r of
-                  UpdateCanvas cid -> -- this is temporary
-                    invalidateInBBox Nothing Efficient cid >> go
-                  NetworkProcess (NetworkInitialized var) -> return var
+                  UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go
+                  NetworkProcess (NetworkInitialized tid) -> return tid
                   _ -> go 
-    serverDone <- go 
-    b <- okCancelMessageBox "server started" 
+    tid <- go 
+    let ipdialog msg = mkIOaction $ 
+               \_evhandler -> do 
+                 dialog <- messageDialogNew Nothing [DialogModal]
+                   MessageQuestion ButtonsOkCancel msg 
+                 res <- dialogRun dialog 
+                 let b = case res of 
+                           ResponseOk -> True
+                           _ -> False
+                 widgetDestroy dialog 
+                 return (UsrEv (OkCancel b))
+
     
+    modify (tempQueue %~ enqueue (ipdialog "192.168.1.15:4040"))
+    --
+    let act str = do 
+          r <- nextevent
+          case r of 
+            UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
+                                >> act str
+            OkCancel True -> (return . Just) str
+            OkCancel False -> return Nothing
+            MultiLine (MultiLineChanged str') -> act str' 
+            _ -> act str
+    nstr <- act str
+    --   
     doIOaction $ \_evhandler -> do  
-      putMVar serverDone ()
+      killThread tid
       (return . UsrEv . NetworkProcess) NetworkClosed
-    
-    return Nothing
+    --
+    return nstr
 

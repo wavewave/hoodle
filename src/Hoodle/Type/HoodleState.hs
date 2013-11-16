@@ -128,7 +128,7 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          deriving (Show,Eq,Ord)
 
 data HoodleState = 
-  HoodleState { _hoodleModeState :: HoodleModeState
+    HoodleState { _hoodleModeState :: HoodleModeState
                 , _hoodleFileControl :: HoodleFileControl
                 , _cvsInfoMap :: CanvasInfoMap 
                 , _currentCanvas :: (CanvasId,CanvasInfoBox)

@@ -243,12 +243,14 @@ data MultiLineEvent = MultiLineChanged String
 
 -- | event for network
 data NetworkEvent = NetworkDialog 
-                  | NetworkInitialized (MVar ())
+                  | NetworkInitialized ThreadId
                   | NetworkClosed
                   deriving Show -- (Show,Ord,Eq)
 
+{-
 instance Show (MVar ()) where
   show _ = "MVar"
+-}
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

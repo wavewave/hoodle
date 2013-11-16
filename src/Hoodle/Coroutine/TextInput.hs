@@ -56,6 +56,7 @@ import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Network
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
@@ -92,12 +93,14 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
     -- 
     btnOk <- dialogAddButton dialog "Ok" ResponseOk
     btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+    btnNetwork <- dialogAddButton dialog "Network" (ResponseUser 1)
     widgetShowAll dialog
     res <- dialogRun dialog
     widgetDestroy dialog
     case res of 
       ResponseOk -> return (UsrEv (OkCancel True))
       ResponseCancel -> return (UsrEv (OkCancel False))
+      ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
       _ -> return (UsrEv (OkCancel False))
 
 multiLineLoop :: String -> MainCoroutine (Maybe String)
@@ -108,6 +111,7 @@ multiLineLoop str = do
                           >> multiLineLoop str
       OkCancel True -> (return . Just) str
       OkCancel False -> return Nothing
+      NetworkProcess NetworkDialog -> networkTextInput str
       MultiLine (MultiLineChanged str') -> multiLineLoop str'
       _ -> multiLineLoop str
 

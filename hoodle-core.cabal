@@ -67,6 +67,9 @@ Library
                    fsnotify >= 0.0.7, 
                    system-filepath >= 0.4, 
                    svgcairo >= 0.12,
+                   distributed-process >= 0.4,
+                   network-transport >= 0.3,
+                   network-transport-tcp >= 0.3,
                    pureMD5 
 
   Exposed-Modules: 
@@ -86,6 +89,7 @@ Library
                    Hoodle.Coroutine.Link
                    Hoodle.Coroutine.Minibuffer
                    Hoodle.Coroutine.Mode
+                   Hoodle.Coroutine.Network
                    Hoodle.Coroutine.Page
                    Hoodle.Coroutine.Pen
                    Hoodle.Coroutine.Scroll

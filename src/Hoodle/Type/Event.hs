@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Event 
@@ -15,6 +17,7 @@
 module Hoodle.Type.Event where
 
 -- from other package
+import Control.Concurrent 
 import Control.Monad
 import Data.ByteString 
 import Data.IORef
@@ -85,6 +88,7 @@ data UserEvent = Initialized
                | ActionOrdered                 
                | MiniBuffer MiniBufferEvent
                | MultiLine MultiLineEvent
+               | NetworkProcess NetworkEvent
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -198,7 +202,7 @@ data MenuEvent = MenuNew
                | MenuSavePreferences
                | MenuAbout
                | MenuDefault
-               deriving (Show, Ord, Eq)
+               deriving Show -- (Show, Ord, Eq)
 
 -- |
 data ImgType = TypSVG | TypPDF 
@@ -227,14 +231,24 @@ data MiniBufferEvent = MiniBufferInitialized DrawWindow
                      | MiniBufferPenDown PenButton PointerCoord
                      | MiniBufferPenUp PointerCoord
                      | MiniBufferPenMove PointerCoord
-                     deriving (Show, Ord, Eq)
--- | event for multiline text view/buffer
-data MultiLineEvent = MultiLineChanged String
-                    deriving (Show, Ord, Eq)
-
+                     deriving Show -- (Show, Ord, Eq)
 
 instance Show DrawWindow where
   show _ = "DrawWindow"
+
+-- | event for multiline text view/buffer
+data MultiLineEvent = MultiLineChanged String
+                    deriving Show -- (Show, Ord, Eq)
+
+
+-- | event for network
+data NetworkEvent = NetworkDialog 
+                  | NetworkInitialized (MVar ())
+                  | NetworkClosed
+                  deriving Show -- (Show,Ord,Eq)
+
+instance Show (MVar ()) where
+  show _ = "MVar"
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

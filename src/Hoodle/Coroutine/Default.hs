@@ -405,6 +405,7 @@ menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()
 menuEventProcess MenuEmbedPDF = updateFlagFromToggleUI "EBDPDFA" (settings.doesEmbedPDF) >> return ()
 menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings.doesFollowLinks) >> return ()
+menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings.doesKeepAspectRatio) >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 

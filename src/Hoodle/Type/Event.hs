@@ -182,6 +182,7 @@ data MenuEvent = MenuNew
                | MenuEmbedImage
                | MenuEmbedPDF
                | MenuFollowLinks
+               | MenuKeepAspectRatio
                | MenuTogglePanZoomWidget
                | MenuToggleLayerWidget
                | MenuToggleClockWidget

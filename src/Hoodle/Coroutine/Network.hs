@@ -25,12 +25,13 @@ import           Control.Concurrent hiding (yield)
 import           Control.Exception
 import           Control.Lens 
 import           Control.Monad (forever,unless)
-import           Control.Monad.State (modify)
+import           Control.Monad.State (modify,get)
 import           Control.Monad.Trans
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as F (mapM_)
 import           Data.Map
-import           Graphics.UI.Gtk
+import           Graphics.UI.Gtk hiding (get,set)
 -- import           Network.Transport (Transport(..),closeTransport)
 -- import           Network.Transport.TCP (createTransport,defaultTCPParameters)
 import           Network.Simple.TCP
@@ -43,10 +44,11 @@ import           Control.Monad.Trans.Crtn.Queue (enqueue)
 -- 
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
-import           Hoodle.Type.HoodleState (tempQueue)
+import           Hoodle.Type.HoodleState (tempQueue,hookSet)
 -- 
 
 stdinLn :: Producer String IO ()
@@ -58,9 +60,9 @@ stdinLn = do
       stdinLn
 
 
-server :: (AllEvent -> IO ()) -> String -> IO ()
-server evhandler str = do
-  listen (Host "192.168.1.15") "4040" $ \(lsock, _) -> 
+server :: (AllEvent -> IO ()) -> HostPreference -> String -> IO ()
+server evhandler ip str = do
+  listen ip  "4040" $ \(lsock, _) -> 
     accept lsock $ \(sock,addr) -> do 
       putStrLn $ "TCP connection established from " ++ show addr
       send sock (B.pack str)
@@ -92,9 +94,15 @@ textViewDialog str = mkIOaction $ \evhandler -> do
 
 networkTextInput :: String -> MainCoroutine (Maybe String)
 networkTextInput str = do 
+    mipscr <- runMaybeT $ do hkset <- MaybeT (view hookSet <$> lift get)
+                             (MaybeT . return)  (getIPaddress hkset)
+                             -- MaybeT (Just <$> liftIO ipact)
+                             -- ip<- ioact 
+    ip <- maybe (return "127.0.0.1") liftIO mipscr 
+
     doIOaction $ \evhandler -> do  
       print str 
-      tid <- forkIO (server evhandler str) 
+      tid <- forkIO (server evhandler (Host ip) str) 
       (return . UsrEv . NetworkProcess . NetworkInitialized) tid
     let go = do r <- nextevent
                 case r of
@@ -114,7 +122,7 @@ networkTextInput str = do
                  return (UsrEv (OkCancel b))
 
     
-    modify (tempQueue %~ enqueue (ipdialog "192.168.1.15:4040"))
+    modify (tempQueue %~ enqueue (ipdialog (ip ++ ":4040")))
     --
     let act str = do 
           r <- nextevent

@@ -65,13 +65,13 @@ echoServer endpoint serverDone = go empty
           putMVar serverDone ()
           
           
-
+{-
 onCtrlC :: IO a -> IO () -> IO a
 p `onCtrlC` q = catchJust isUserInterrupt p (const $ q >> p `onCtrlC` q)
   where isUserInterrupt :: AsyncException -> Maybe ()
         isUserInterrupt UserInterrupt = Just ()
         isUserInterrupt _             = Nothing
-
+-}
 
 networkTextInput :: String -> MainCoroutine (Maybe String)
 networkTextInput str = do 
@@ -83,7 +83,8 @@ networkTextInput str = do
         Right endpoint <- newEndPoint transport
         forkIO $ echoServer endpoint serverDone
         putStrLn $ "Echo server started at " ++ show (address endpoint)
-        readMVar serverDone `onCtrlC` closeTransport transport
+        readMVar serverDone 
+        closeTransport transport
         putStrLn $ "Echo server end"
         return ()
       (return . UsrEv . NetworkProcess . NetworkInitialized) serverDone

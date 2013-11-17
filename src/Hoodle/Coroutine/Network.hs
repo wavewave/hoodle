@@ -31,6 +31,8 @@ import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as F (mapM_)
 import           Data.Map
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import           Graphics.UI.Gtk hiding (get,set)
 -- import           Network.Transport (Transport(..),closeTransport)
 -- import           Network.Transport.TCP (createTransport,defaultTCPParameters)
@@ -60,49 +62,24 @@ stdinLn = do
       stdinLn
 
 
-server :: (AllEvent -> IO ()) -> HostPreference -> String -> IO ()
-server evhandler ip str = do
+server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
+server evhandler ip txt = do
   listen ip  "4040" $ \(lsock, _) -> 
     accept lsock $ \(sock,addr) -> do 
       putStrLn $ "TCP connection established from " ++ show addr
-      send sock (B.pack str)
+      send sock (TE.encodeUtf8 txt)
       mbstr <- recv sock 100000
-      F.mapM_ (evhandler . UsrEv . MultiLine . MultiLineChanged . B.unpack) mbstr
+      F.mapM_ (evhandler . UsrEv . MultiLine . MultiLineChanged . TE.decodeUtf8) mbstr
 
-{-
-textViewDialog :: String -> Either (ActionOrder AllEvent) AllEvent
-textViewDialog str = mkIOaction $ \evhandler -> do
-    dialog <- dialogNew
-    vbox <- dialogGetUpper dialog
-    -- 
-    table <- tableNew 2 2 False
-    tableAttachDefaults table textarea 0 1 0 1
-    tableAttachDefaults table vscrbar 1 2 0 1
-    tableAttachDefaults table hscrbar 0 1 1 2 
-    boxPackStart vbox table PackNatural 0
-    -- 
-    btnOk <- dialogAddButton dialog "Ok" ResponseOk
-    btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-    widgetShowAll dialog
-    res <- dialogRun dialog
-    widgetDestroy dialog
-    case res of 
-      ResponseOk -> return (UsrEv (OkCancel True))
-      ResponseCancel -> return (UsrEv (OkCancel False))
-      _ -> return (UsrEv (OkCancel False))
--}
-
-networkTextInput :: String -> MainCoroutine (Maybe String)
-networkTextInput str = do 
+networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
+networkTextInput txt = do 
     mipscr <- runMaybeT $ do hkset <- MaybeT (view hookSet <$> lift get)
                              (MaybeT . return)  (getIPaddress hkset)
-                             -- MaybeT (Just <$> liftIO ipact)
-                             -- ip<- ioact 
     ip <- maybe (return "127.0.0.1") liftIO mipscr 
 
     doIOaction $ \evhandler -> do  
-      print str 
-      tid <- forkIO (server evhandler (Host ip) str) 
+      -- T.putStrLn txt
+      tid <- forkIO (server evhandler (Host ip) txt) 
       (return . UsrEv . NetworkProcess . NetworkInitialized) tid
     let go = do r <- nextevent
                 case r of
@@ -124,20 +101,20 @@ networkTextInput str = do
     
     modify (tempQueue %~ enqueue (ipdialog (ip ++ ":4040")))
     --
-    let act str = do 
+    let act txt = do 
           r <- nextevent
           case r of 
             UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
-                                >> act str
-            OkCancel True -> (return . Just) str
+                                >> act txt
+            OkCancel True -> (return . Just) txt
             OkCancel False -> return Nothing
-            MultiLine (MultiLineChanged str') -> act str' 
-            _ -> act str
-    nstr <- act str
+            MultiLine (MultiLineChanged txt') -> act txt' 
+            _ -> act txt
+    ntxt <- act txt
     --   
     doIOaction $ \_evhandler -> do  
       killThread tid
       (return . UsrEv . NetworkProcess) NetworkClosed
     --
-    return nstr
+    return ntxt
 

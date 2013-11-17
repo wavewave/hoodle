@@ -70,6 +70,7 @@ Library
                    pipes > 4, 
                    pipes-network >= 0.6,
                    network-simple >= 0.3,
+                   text >= 0.10,
                    -- distributed-process >= 0.4,
                    -- network-transport >= 0.3,
                    -- network-transport-tcp >= 0.3,

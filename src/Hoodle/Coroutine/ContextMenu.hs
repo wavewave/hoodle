@@ -30,6 +30,8 @@ import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Data.UUID.V4 
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory 
@@ -295,7 +297,7 @@ showContextMenu (pnum,(x,y)) = do
                             let svg = bbxed_content svgbbx
                                 BBox (x0,y0) _ = getBBox svgbbx
                             forM_ ((,) <$> svg_text svg <*> svg_command svg) $ \(btxt,cmd) -> do
-                              let txt = B.unpack btxt
+                              let txt = TE.decodeUtf8 btxt
                               case cmd of 
                                 "pango" -> do menuitemedt <- menuItemNewWithLabel ("Edit Text") 
                                               menuitemedt `on` menuItemActivate $ do 

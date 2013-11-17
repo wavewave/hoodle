@@ -26,6 +26,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
+import           Data.Monoid ((<>))
 import           Data.Time.Clock
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Process 
@@ -360,7 +361,7 @@ menuEventProcess MenuNew  = askIfSave fileNew
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
-menuEventProcess MenuLaTeX = laTeXInput (100,100) (laTeXHeader ++ "\n\n" ++ laTeXFooter)
+menuEventProcess MenuLaTeX = laTeXInput (100,100) (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuCombineLaTeX = combineLaTeXText 
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo

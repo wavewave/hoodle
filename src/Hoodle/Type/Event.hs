@@ -21,6 +21,7 @@ import Control.Concurrent
 import Control.Monad
 import Data.ByteString 
 import Data.IORef
+import qualified Data.Text as T
 import Data.Time.Clock
 import Graphics.UI.Gtk
 -- from hoodle-platform
@@ -221,8 +222,8 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuLinkConvert Link
                       | CMenuCreateALink 
                       | CMenuAssocWithNewFile
-                      | CMenuPangoConvert (Double,Double) String
-                      | CMenuLaTeXConvert (Double,Double) String
+                      | CMenuPangoConvert (Double,Double) T.Text
+                      | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 
@@ -238,7 +239,7 @@ instance Show DrawWindow where
   show _ = "DrawWindow"
 
 -- | event for multiline text view/buffer
-data MultiLineEvent = MultiLineChanged String
+data MultiLineEvent = MultiLineChanged T.Text -- String
                     deriving Show -- (Show, Ord, Eq)
 
 

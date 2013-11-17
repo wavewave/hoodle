@@ -27,6 +27,8 @@ import           Data.Foldable (mapM_, forM_)
 import qualified Data.Function as F (on)
 import           Data.List (sortBy)
 import           Data.Maybe (catMaybes)
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import           Data.UUID.V4 (nextRandom)
 import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -67,55 +69,8 @@ import           Hoodle.Util
 -- 
 import Prelude hiding (readFile,mapM_,forM_)
 
-multiLineDialog :: String -> Either (ActionOrder AllEvent) AllEvent
-multiLineDialog str = mkIOaction $ \evhandler -> do
-    dialog <- dialogNew
-    vbox <- dialogGetUpper dialog
-    textbuf <- textBufferNew Nothing
-    textBufferSetText textbuf str
-    textbuf `on` bufferChanged $ do 
-        (s,e) <- (,) <$> textBufferGetStartIter textbuf <*> textBufferGetEndIter textbuf  
-        contents <- textBufferGetText textbuf s e False
-        (evhandler . UsrEv . MultiLine . MultiLineChanged) contents
-    textarea <- textViewNewWithBuffer textbuf
-    vscrbar <- vScrollbarNew =<< textViewGetVadjustment textarea
-    hscrbar <- hScrollbarNew =<< textViewGetHadjustment textarea 
-    textarea `on` sizeRequest $ return (Requisition 500 600)
-    fdesc <- fontDescriptionNew
-    fontDescriptionSetFamily fdesc "Mono"
-    widgetModifyFont textarea (Just fdesc)
-    -- 
-    table <- tableNew 2 2 False
-    tableAttachDefaults table textarea 0 1 0 1
-    tableAttachDefaults table vscrbar 1 2 0 1
-    tableAttachDefaults table hscrbar 0 1 1 2 
-    boxPackStart vbox table PackNatural 0
-    -- 
-    btnOk <- dialogAddButton dialog "Ok" ResponseOk
-    btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-    btnNetwork <- dialogAddButton dialog "Network" (ResponseUser 1)
-    widgetShowAll dialog
-    res <- dialogRun dialog
-    widgetDestroy dialog
-    case res of 
-      ResponseOk -> return (UsrEv (OkCancel True))
-      ResponseCancel -> return (UsrEv (OkCancel False))
-      ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
-      _ -> return (UsrEv (OkCancel False))
 
-multiLineLoop :: String -> MainCoroutine (Maybe String)
-multiLineLoop str = do 
-    r <- nextevent
-    case r of 
-      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
-                          >> multiLineLoop str
-      OkCancel True -> (return . Just) str
-      OkCancel False -> return Nothing
-      NetworkProcess NetworkDialog -> networkTextInput str
-      MultiLine (MultiLineChanged str') -> multiLineLoop str'
-      _ -> multiLineLoop str
-
--- | 
+-- | single line text input : almost abandoned now
 textInputDialog :: MainCoroutine (Maybe String) 
 textInputDialog = do 
   doIOaction $ \_evhandler -> do 
@@ -144,8 +99,56 @@ textInputDialog = do
                 _ -> go 
   go 
 
+multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
+multiLineDialog str = mkIOaction $ \evhandler -> do
+    dialog <- dialogNew
+    vbox <- dialogGetUpper dialog
+    textbuf <- textBufferNew Nothing
+    textBufferSetByteString textbuf (TE.encodeUtf8 str)
+    textbuf `on` bufferChanged $ do 
+        (s,e) <- (,) <$> textBufferGetStartIter textbuf <*> textBufferGetEndIter textbuf  
+        contents <- textBufferGetByteString textbuf s e False
+        (evhandler . UsrEv . MultiLine . MultiLineChanged) (TE.decodeUtf8 contents)
+    textarea <- textViewNewWithBuffer textbuf
+    vscrbar <- vScrollbarNew =<< textViewGetVadjustment textarea
+    hscrbar <- hScrollbarNew =<< textViewGetHadjustment textarea 
+    textarea `on` sizeRequest $ return (Requisition 500 600)
+    fdesc <- fontDescriptionNew
+    fontDescriptionSetFamily fdesc "Mono"
+    widgetModifyFont textarea (Just fdesc)
+    -- 
+    table <- tableNew 2 2 False
+    tableAttachDefaults table textarea 0 1 0 1
+    tableAttachDefaults table vscrbar 1 2 0 1
+    tableAttachDefaults table hscrbar 0 1 1 2 
+    boxPackStart vbox table PackNatural 0
+    -- 
+    btnOk <- dialogAddButton dialog "Ok" ResponseOk
+    btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+    btnNetwork <- dialogAddButton dialog "Network" (ResponseUser 1)
+    widgetShowAll dialog
+    res <- dialogRun dialog
+    widgetDestroy dialog
+    case res of 
+      ResponseOk -> return (UsrEv (OkCancel True))
+      ResponseCancel -> return (UsrEv (OkCancel False))
+      ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
+      _ -> return (UsrEv (OkCancel False))
+
+multiLineLoop :: T.Text -> MainCoroutine (Maybe T.Text)
+multiLineLoop txt = do 
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
+                          >> multiLineLoop txt
+      OkCancel True -> (return . Just) txt
+      OkCancel False -> return Nothing
+      NetworkProcess NetworkDialog -> networkTextInput txt
+      MultiLine (MultiLineChanged txt') -> multiLineLoop txt'
+      _ -> multiLineLoop txt
+
 -- | insert text 
-textInput :: (Double,Double) -> String -> MainCoroutine ()
+textInput :: (Double,Double) -> T.Text -> MainCoroutine ()
 textInput (x0,y0) str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
@@ -154,7 +157,7 @@ textInput (x0,y0) str = do
                         >>= svgInsert (result,"pango"))
   
 -- | insert latex
-laTeXInput :: (Double,Double) -> String -> MainCoroutine ()
+laTeXInput :: (Double,Double) -> T.Text -> MainCoroutine ()
 laTeXInput (x0,y0) str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
@@ -163,15 +166,16 @@ laTeXInput (x0,y0) str = do
                                   Left err -> okMessageBox err >> laTeXInput (x0,y0) result
             )
       
-laTeXHeader :: String
+laTeXHeader :: T.Text
 laTeXHeader = "\\documentclass{article}\n\
               \\\pagestyle{empty}\n\
               \\\begin{document}\n"
                                 
-laTeXFooter :: String
+laTeXFooter :: T.Text
 laTeXFooter = "\\end{document}\n"
 
-makeLaTeXSVG :: (Double,Double) -> String -> IO (Either String (B.ByteString,BBox))
+makeLaTeXSVG :: (Double,Double) -> T.Text 
+             -> IO (Either String (B.ByteString,BBox))
 makeLaTeXSVG (x0,y0) txt = do
     cdir <- getCurrentDirectory
     tdir <- getTemporaryDirectory
@@ -180,7 +184,7 @@ makeLaTeXSVG (x0,y0) txt = do
     setCurrentDirectory tdir
     let check msg act = liftIO act >>= \(ecode,str) -> case ecode of ExitSuccess -> right () ; _ -> left (msg ++ ":" ++ str)
         
-    writeFile (tfilename <.> "tex") txt
+    B.writeFile (tfilename <.> "tex") (TE.encodeUtf8 txt)
     r <- runEitherT $ do 
       check "error during pdflatex" $ do 
         (ecode,ostr,estr) <- readProcessWithExitCode "xelatex" [tfilename <.> "tex"] ""
@@ -200,15 +204,15 @@ makeLaTeXSVG (x0,y0) txt = do
     
 
 -- |
-svgInsert :: (String,String) -> (B.ByteString,BBox) -> MainCoroutine () 
-svgInsert (str,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do 
+svgInsert :: (T.Text,String) -> (B.ByteString,BBox) -> MainCoroutine () 
+svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
     let pgnum = view (unboxLens currentPageNum) . view currentCanvasInfo $ xstate
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
     newitem <- (liftIO . cnstrctRItem . ItemSVG) 
-                 (SVG (Just (B.pack str)) (Just (B.pack cmd)) svgbstr 
+                 (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr 
                       (x0,y0) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
@@ -242,8 +246,7 @@ convertLinkFromSimpleToDocID (Link i _typ lstr txt cmd rdr pos dim) = do
                 return (Just link)
           else return Nothing 
 convertLinkFromSimpleToDocID _ = return Nothing 
-    
-    
+
 -- |   
 linkInsert :: B.ByteString 
               -> (B.ByteString,FilePath)
@@ -275,14 +278,14 @@ linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
     invalidateAll 
 
 -- |
-makePangoTextSVG :: (Double,Double) -> String -> IO (B.ByteString,BBox) 
+makePangoTextSVG :: (Double,Double) -> T.Text -> IO (B.ByteString,BBox) 
 makePangoTextSVG (xo,yo) str = do 
     let pangordr = do 
           ctxt <- cairoCreateContext Nothing 
           layout <- layoutEmpty ctxt   
           layoutSetWidth layout (Just 400)
           layoutSetWrap layout WrapAnywhere 
-          layoutSetText layout str 
+          layoutSetText layout (T.unpack str) -- this is gtk2hs pango limitation 
           (_,reclog) <- layoutGetExtents layout 
           let PangoRectangle x y w h = reclog 
           -- 10 is just dirty-fix

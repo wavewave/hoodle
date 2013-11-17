@@ -25,6 +25,7 @@ import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (forM_)
 import           Data.Monoid (mconcat)
 import           Data.UUID.V4 (nextRandom)
+import qualified Data.Text as T
 import           Graphics.UI.Gtk hiding (get,set) 
 import           System.FilePath 
 -- from hoodle-platform
@@ -67,7 +68,7 @@ makeTextSVGFromStringAt :: String
                            -> CanvasCoordinate
                            -> IO (B.ByteString, BBox)
 makeTextSVGFromStringAt str cid xst ccoord = do 
-    rdr <- makePangoTextSVG (0,0) str 
+    rdr <- makePangoTextSVG (0,0) (T.pack str) -- for the time being, I use string  
     geometry <- getCanvasGeometryCvsId cid xst 
     let mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
     return $ case mpgcoord of 
@@ -181,7 +182,7 @@ gotLink mstr (x,y) = do
       let fn = takeFileName fp 
       case getSelectedItmsFromHoodleState xst of     
         Nothing -> do 
-          rdr <- liftIO (makePangoTextSVG (0,0) fn) 
+          rdr <- liftIO (makePangoTextSVG (0,0) (T.pack fn)) 
           geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
           let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
               mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
@@ -218,7 +219,7 @@ addLink = do
       Just (str,fname) -> do 
         uuid <- liftIO $ nextRandom
         let uuidbstr = B.pack (show uuid)
-        rdr <- liftIO (makePangoTextSVG (0,0) str) 
+        rdr <- liftIO (makePangoTextSVG (0,0) (T.pack str)) 
         linkInsert "simple" (uuidbstr,fname) str rdr 
   where 
     go = do r <- nextevent

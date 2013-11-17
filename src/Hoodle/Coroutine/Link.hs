@@ -67,7 +67,7 @@ makeTextSVGFromStringAt :: String
                            -> CanvasCoordinate
                            -> IO (B.ByteString, BBox)
 makeTextSVGFromStringAt str cid xst ccoord = do 
-    rdr <- makePangoTextSVG str 
+    rdr <- makePangoTextSVG (0,0) str 
     geometry <- getCanvasGeometryCvsId cid xst 
     let mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
     return $ case mpgcoord of 
@@ -181,7 +181,7 @@ gotLink mstr (x,y) = do
       let fn = takeFileName fp 
       case getSelectedItmsFromHoodleState xst of     
         Nothing -> do 
-          rdr <- liftIO (makePangoTextSVG fn) 
+          rdr <- liftIO (makePangoTextSVG (0,0) fn) 
           geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
           let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
               mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
@@ -218,7 +218,7 @@ addLink = do
       Just (str,fname) -> do 
         uuid <- liftIO $ nextRandom
         let uuidbstr = B.pack (show uuid)
-        rdr <- liftIO (makePangoTextSVG str) 
+        rdr <- liftIO (makePangoTextSVG (0,0) str) 
         linkInsert "simple" (uuidbstr,fname) str rdr 
   where 
     go = do r <- nextevent

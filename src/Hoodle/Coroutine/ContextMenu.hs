@@ -153,8 +153,8 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
-processContextMenu (CMenuPangoConvert txt) = textInput txt
-processContextMenu (CMenuLaTeXConvert txt) = laTeXInput txt
+processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (x0,y0) txt
+processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (x0,y0) txt
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -293,17 +293,18 @@ showContextMenu (pnum,(x,y)) = do
                                             menuAttach menu menuitemcvt 0 1 4 5 
                           RItemSVG svgbbx _msfc -> do
                             let svg = bbxed_content svgbbx
+                                BBox (x0,y0) _ = getBBox svgbbx
                             forM_ ((,) <$> svg_text svg <*> svg_command svg) $ \(btxt,cmd) -> do
                               let txt = B.unpack btxt
                               case cmd of 
                                 "pango" -> do menuitemedt <- menuItemNewWithLabel ("Edit Text") 
                                               menuitemedt `on` menuItemActivate $ do 
-                                                evhandler (UsrEv (GotContextMenuSignal (CMenuPangoConvert txt)))
+                                                evhandler (UsrEv (GotContextMenuSignal (CMenuPangoConvert (x0,y0) txt)))
                                               menuAttach menu menuitemedt 0 1 4 5
                                               return ()
                                 "latex" -> do menuitemedt <- menuItemNewWithLabel ("Edit LaTeX")
                                               menuitemedt `on` menuItemActivate $ do
-                                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert txt)))
+                                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert (x0,y0) txt)))
                                               menuAttach menu menuitemedt 0 1 4 5 
                                               return ()
                                 _ -> return ()

@@ -145,22 +145,22 @@ textInputDialog = do
   go 
 
 -- | insert text 
-textInput :: String -> MainCoroutine ()
-textInput str = do 
+textInput :: (Double,Double) -> String -> MainCoroutine ()
+textInput (x0,y0) str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
       mapM_ (\result -> deleteSelection
-                        >> liftIO (makePangoTextSVG result) 
+                        >> liftIO (makePangoTextSVG (x0,y0) result) 
                         >>= svgInsert (result,"pango"))
   
 -- | insert latex
-laTeXInput :: String -> MainCoroutine ()
-laTeXInput str = do 
+laTeXInput :: (Double,Double) -> String -> MainCoroutine ()
+laTeXInput (x0,y0) str = do 
     modify (tempQueue %~ enqueue (multiLineDialog str))  
     multiLineLoop str >>= 
-      mapM_ (\result -> liftIO (makeLaTeXSVG result) 
+      mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
                         >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
-                                  Left err -> okMessageBox err >> laTeXInput result
+                                  Left err -> okMessageBox err >> laTeXInput (x0,y0) result
             )
       
 laTeXHeader :: String
@@ -171,8 +171,8 @@ laTeXHeader = "\\documentclass{article}\n\
 laTeXFooter :: String
 laTeXFooter = "\\end{document}\n"
 
-makeLaTeXSVG :: String -> IO (Either String (B.ByteString,BBox))
-makeLaTeXSVG txt = do
+makeLaTeXSVG :: (Double,Double) -> String -> IO (Either String (B.ByteString,BBox))
+makeLaTeXSVG (x0,y0) txt = do
     cdir <- getCurrentDirectory
     tdir <- getTemporaryDirectory
     tfilename <- show <$> nextRandom
@@ -183,7 +183,7 @@ makeLaTeXSVG txt = do
     writeFile (tfilename <.> "tex") txt
     r <- runEitherT $ do 
       check "error during pdflatex" $ do 
-        (ecode,ostr,estr) <- readProcessWithExitCode "pdflatex" [tfilename <.> "tex"] ""
+        (ecode,ostr,estr) <- readProcessWithExitCode "xelatex" [tfilename <.> "tex"] ""
         return (ecode,ostr++estr)
       check "error during pdfcrop" $ do 
         (ecode,ostr,estr) <- readProcessWithExitCode "pdfcrop" [tfilename <.> "pdf",tfilename ++ "_crop" <.> "pdf"] ""       
@@ -194,7 +194,7 @@ makeLaTeXSVG txt = do
       bstr <- liftIO $ B.readFile (tfilename <.> "svg")
       rsvg <- liftIO $ RSVG.svgNewFromString (B.unpack bstr) 
       let (w,h) = RSVG.svgGetSize rsvg
-      return (bstr,BBox (100,100) (100+fromIntegral w,100+fromIntegral h)) 
+      return (bstr,BBox (x0,y0) (x0+fromIntegral w,y0+fromIntegral h)) 
     setCurrentDirectory cdir
     return r
     
@@ -209,7 +209,7 @@ svgInsert (str,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
         currlayer = getCurrentLayer currpage
     newitem <- (liftIO . cnstrctRItem . ItemSVG) 
                  (SVG (Just (B.pack str)) (Just (B.pack cmd)) svgbstr 
-                      (100,100) (Dim (x1-x0) (y1-y0)))  
+                      (x0,y0) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  
@@ -275,8 +275,8 @@ linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
     invalidateAll 
 
 -- |
-makePangoTextSVG :: String -> IO (B.ByteString,BBox) 
-makePangoTextSVG str = do 
+makePangoTextSVG :: (Double,Double) -> String -> IO (B.ByteString,BBox) 
+makePangoTextSVG (xo,yo) str = do 
     let pangordr = do 
           ctxt <- cairoCreateContext Nothing 
           layout <- layoutEmpty ctxt   
@@ -295,7 +295,7 @@ makePangoTextSVG str = do
     let tfile = tdir </> "embedded.svg"
     withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> renderWith s (rdr layout)
     bstr <- B.readFile tfile 
-    return (bstr,BBox (x0,y0) (x1,y1)) 
+    return (bstr,BBox (xo,yo) (xo+x1-x0,yo+y1-y0)) 
 
 -- | combine all LaTeX texts into a text file 
 combineLaTeXText :: MainCoroutine ()

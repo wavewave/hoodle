@@ -210,7 +210,8 @@
     <toolitem action="ERASERA"     />                     
     <toolitem action="HIGHLTA"     />                     
     <separator />     
-    <toolitem action="TEXTA"       />  
+    <toolitem action="TEXTA"       />
+    <toolitem action="LATEXA"      />
     <!-- <toolitem action="DEFAULTA"    />    --> 
     <!-- <toolitem action="DEFPENA"     />    -->                  
     <!-- <toolitem action="SHPRECA"     />    -->  

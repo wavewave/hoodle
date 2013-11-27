@@ -234,26 +234,25 @@ data MiniBufferEvent = MiniBufferInitialized DrawWindow
                      | MiniBufferPenDown PenButton PointerCoord
                      | MiniBufferPenUp PointerCoord
                      | MiniBufferPenMove PointerCoord
-                     deriving Show -- (Show, Ord, Eq)
+                     deriving Show
 
 instance Show DrawWindow where
   show _ = "DrawWindow"
 
 -- | event for multiline text view/buffer
-data MultiLineEvent = MultiLineChanged T.Text -- String
-                    deriving Show -- (Show, Ord, Eq)
-
+data MultiLineEvent = MultiLineChanged T.Text
+                    deriving Show
 
 -- | event for network
 data NetworkEvent = NetworkDialog 
-                  | NetworkInitialized ThreadId
+                  | NetworkInitialized ThreadId (MVar ())
+                  | NetworkReceived T.Text
+                  | NetworkCloseDialog
                   | NetworkClosed
-                  deriving Show -- (Show,Ord,Eq)
+                  deriving Show
 
-{-
 instance Show (MVar ()) where
   show _ = "MVar"
--}
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

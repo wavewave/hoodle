@@ -69,7 +69,7 @@ server evhandler ip txt = do
       putStrLn $ "TCP connection established from " ++ show addr
       send sock (TE.encodeUtf8 txt)
       mbstr <- recv sock 100000
-      F.mapM_ (evhandler . UsrEv . MultiLine . MultiLineChanged . TE.decodeUtf8) mbstr
+      F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
 
 networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
 networkTextInput txt = do 
@@ -79,18 +79,24 @@ networkTextInput txt = do
 
     doIOaction $ \evhandler -> do  
       -- T.putStrLn txt
+      done <- newEmptyMVar
       tid <- forkIO (server evhandler (Host ip) txt) 
-      (return . UsrEv . NetworkProcess . NetworkInitialized) tid
-    let go = do r <- nextevent
-                case r of
-                  UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go
-                  NetworkProcess (NetworkInitialized tid) -> return tid
-                  _ -> go 
-    tid <- go 
+      (return . UsrEv . NetworkProcess) (NetworkInitialized tid done)
+    let go = do 
+          r <- nextevent
+          case r of
+            UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go
+            NetworkProcess (NetworkInitialized tid done) -> return (tid,done)
+            _ -> go 
+    (tid,done) <- go 
     let ipdialog msg = mkIOaction $ 
-               \_evhandler -> do 
+               \_evhandler -> do                  
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel msg 
+                 forkIO $ do          
+                   readMVar done 
+                   dialogResponse dialog ResponseOk
+                  
                  res <- dialogRun dialog 
                  let b = case res of 
                            ResponseOk -> True
@@ -99,7 +105,7 @@ networkTextInput txt = do
                  return (UsrEv (OkCancel b))
 
     
-    modify (tempQueue %~ enqueue (ipdialog (ip ++ ":4040")))
+    modify (tempQueue %~ enqueue (ipdialog ("networkedit " ++ ip ++ " 4040")))
     --
     let act txt = do 
           r <- nextevent
@@ -108,7 +114,11 @@ networkTextInput txt = do
                                 >> act txt
             OkCancel True -> (return . Just) txt
             OkCancel False -> return Nothing
-            MultiLine (MultiLineChanged txt') -> act txt' 
+            NetworkProcess (NetworkReceived txt') ->  do 
+              doIOaction $ \_ -> postGUISync (putMVar done ())
+                                 >> (return . UsrEv . NetworkProcess) NetworkCloseDialog
+              act txt' 
+              
             _ -> act txt
     ntxt <- act txt
     --   

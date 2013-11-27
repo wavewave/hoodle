@@ -224,6 +224,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuAssocWithNewFile
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
+                      | CMenuLaTeXConvertNetwork (Double,Double) T.Text
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

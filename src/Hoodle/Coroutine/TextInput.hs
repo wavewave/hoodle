@@ -165,7 +165,17 @@ laTeXInput (x0,y0) str = do
                         >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
                                   Left err -> okMessageBox err >> laTeXInput (x0,y0) result
             )
-      
+
+-- | 
+laTeXInputNetwork :: (Double,Double) -> T.Text -> MainCoroutine ()
+laTeXInputNetwork (x0,y0) str =  
+    networkTextInput str >>=
+      mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
+                        >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
+                                  Left err -> okMessageBox err >> laTeXInput (x0,y0) result
+            )
+
+
 laTeXHeader :: T.Text
 laTeXHeader = "\\documentclass{article}\n\
               \\\pagestyle{empty}\n\

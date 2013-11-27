@@ -157,6 +157,7 @@ processContextMenu CMenuAssocWithNewFile = do
           ) 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (x0,y0) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (x0,y0) txt
+processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (x0,y0) txt 
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -308,6 +309,11 @@ showContextMenu (pnum,(x,y)) = do
                                               menuitemedt `on` menuItemActivate $ do
                                                 evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert (x0,y0) txt)))
                                               menuAttach menu menuitemedt 0 1 4 5 
+                                              --
+                                              menuitemnet <- menuItemNewWithLabel ("Edit LaTeX Network")
+                                              menuitemnet `on` menuItemActivate $ do
+                                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvertNetwork (x0,y0) txt)))
+                                              menuAttach menu menuitemnet 0 1 5 6                                             
                                               return ()
                                 _ -> return ()
                               

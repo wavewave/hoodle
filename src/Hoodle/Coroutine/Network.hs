@@ -2,6 +2,7 @@
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -28,17 +29,21 @@ import           Control.Monad (forever,unless)
 import           Control.Monad.State (modify,get)
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe (MaybeT(..))
+import qualified Data.Binary as Bi 
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.Foldable as F (mapM_)
 import           Data.Map
+import           Data.Monoid ((<>),mconcat)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 -- import           Network.Transport (Transport(..),closeTransport)
 -- import           Network.Transport.TCP (createTransport,defaultTCPParameters)
 import           Network.Simple.TCP
-import           Pipes
-import           Pipes.Network.TCP
+-- import           Pipes
+-- import           Pipes.Network.TCP
 import           System.IO (isEOF)
 -- 
 import           Control.Monad.Trans.Crtn.Event 
@@ -53,6 +58,7 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState (tempQueue,hookSet)
 -- 
 
+{-
 stdinLn :: Producer String IO ()
 stdinLn = do
     eof <- lift isEOF 
@@ -60,15 +66,36 @@ stdinLn = do
       str <- lift getLine
       yield str
       stdinLn
-
+-}
 
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
 server evhandler ip txt = do
   listen ip  "4040" $ \(lsock, _) -> 
     accept lsock $ \(sock,addr) -> do 
+      let bstr = TE.encodeUtf8 txt
+          bstr_size :: Word32 = (fromIntegral . B.length) bstr 
+          bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
+      -- B.putStrLn () 
       putStrLn $ "TCP connection established from " ++ show addr
-      send sock (TE.encodeUtf8 txt)
-      mbstr <- recv sock 100000
+      send sock (bstr_size_binary <> TE.encodeUtf8 txt)
+      
+      mbstr <- runMaybeT $ do 
+        bstr <- MaybeT (recv sock 4)
+        let getsize :: B.ByteString -> Word32 
+            getsize = Bi.decode . LB.fromChunks . return
+            size = (fromIntegral . getsize) bstr 
+
+            go s bstr = do 
+              liftIO $ putStrLn ("requested size = " ++ show s)
+              bstr1 <- MaybeT (recv sock s)
+              let s' = B.length bstr1 
+              liftIO $ putStrLn ("obtained size = " ++ show s')
+              if s <= s' 
+                then return (bstr <> bstr1)
+                else go (s-s') (bstr <> bstr1) 
+        go size B.empty 
+        
+      -- print mbstr 
       F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
 
 networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)

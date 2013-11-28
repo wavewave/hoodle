@@ -75,7 +75,8 @@ Library
                    -- distributed-process >= 0.4,
                    -- network-transport >= 0.3,
                    -- network-transport-tcp >= 0.3,
-                   pureMD5 
+                   pureMD5, 
+                   network-info
 
   Exposed-Modules: 
                    Hoodle.Accessor

@@ -20,9 +20,6 @@ module Hoodle.Coroutine.Network where
 
 import           Control.Applicative
 import           Control.Concurrent hiding (yield)
--- import           Control.Distributed.Process 
--- import           Control.Distributed.Process.Global
--- import           Control.Distributed.Process.Node 
 import           Control.Exception
 import           Control.Lens 
 import           Control.Monad (forever,unless)
@@ -39,11 +36,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
--- import           Network.Transport (Transport(..),closeTransport)
--- import           Network.Transport.TCP (createTransport,defaultTCPParameters)
+import           Network.Info
 import           Network.Simple.TCP
--- import           Pipes
--- import           Pipes.Network.TCP
 import           System.IO (isEOF)
 -- 
 import           Control.Monad.Trans.Crtn.Event 
@@ -57,16 +51,6 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState (tempQueue,hookSet)
 -- 
-
-{-
-stdinLn :: Producer String IO ()
-stdinLn = do
-    eof <- lift isEOF 
-    unless eof $ do
-      str <- lift getLine
-      yield str
-      stdinLn
--}
 
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
 server evhandler ip txt = do
@@ -101,8 +85,18 @@ server evhandler ip txt = do
 networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
 networkTextInput txt = do 
     mipscr <- runMaybeT $ do hkset <- MaybeT (view hookSet <$> lift get)
-                             (MaybeT . return)  (getIPaddress hkset)
-    ip <- maybe (return "127.0.0.1") liftIO mipscr 
+                             (MaybeT . return)  (getIPaddress hkset) 
+    
+    let ipfind = do 
+          let ipv4num (IPv4 x) = x 
+              ismacnull (MAC a b c d e f) = a == 0 && b == 0 && c == 0 
+                                            && d == 0 && e == 0 && f == 0 
+          
+          ifcs <- liftIO $ getNetworkInterfaces
+          let ifcs2 = Prelude.filter (not . ismacnull . mac) 
+                      . Prelude.filter (((/=) 0) . ipv4num . ipv4 ) $ ifcs
+          return (if Prelude.null ifcs2 then "127.0.0.1" else (show . ipv4 . head) ifcs2) 
+    ip <- maybe ipfind liftIO mipscr 
 
     doIOaction $ \evhandler -> do  
       -- T.putStrLn txt

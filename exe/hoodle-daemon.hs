@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+import Control.Concurrent (forkIO)
 import Control.Monad (forever)
 import Data.List (sort)
 import DBus
@@ -21,9 +22,25 @@ checkOtherInst client act = do
                    act client 
     Right _ -> putStrLn "existing instance"
     
+onResume :: Signal -> IO ()
+onResume signal = do print signal
+                     putStrLn "I got back from sleep mode"
+
+  
+  
+  
 main :: IO ()
 main = do 
   clientUsr <- connectSession 
+  clientSys <- connectSystem
+  
+  forkIO $ do 
+    listen clientSys matchAny { matchPath = Just "/org/freedesktop/UPower" 
+                              , matchMember = Just "NotifyResume" 
+                              }
+           onResume 
+    forever $ getLine
+  
   
   checkOtherInst clientUsr $ \client -> do 
     requestName client "org.ianwookim" [] 

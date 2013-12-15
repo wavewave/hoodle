@@ -1,10 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Control.Concurrent (forkIO)
+import Control.Concurrent (forkIO, threadDelay)
 import Control.Monad (forever)
+import Data.IORef
 import Data.List (sort)
 import DBus
 import DBus.Client
+import System.Directory
+import System.Process
+
 
 isInitialized :: IO ()
 isInitialized = do putStrLn "attempt to initialize another instance" 
@@ -22,11 +26,21 @@ checkOtherInst client act = do
                    act client 
     Right _ -> putStrLn "existing instance"
     
-onResume :: Signal -> IO ()
-onResume signal = do print signal
-                     putStrLn "I got back from sleep mode"
-
+onResume :: IORef ProcessHandle -> Signal -> IO ()
+onResume ref signal = do -- print signal
+                         threadDelay 5000000
+                         ph <- readIORef ref
+                         terminateProcess ph
+                         putStrLn "I got back from sleep mode"
+                         ph' <- runsocket
+                         writeIORef ref ph'
   
+runsocket = do 
+  hdir <- getHomeDirectory
+  (_,_,_,ph) <- createProcess
+    ((proc "/home/wavewave/repo/workspace/hoodle-publish/socket/pipesocketcli" []) 
+     {env = Just [("DISPLAY",":0"), ("LIBOVERLAY_SCROLLBAR","0"), ("HOME",hdir)] })
+  return ph
   
   
 main :: IO ()
@@ -34,12 +48,6 @@ main = do
   clientUsr <- connectSession 
   clientSys <- connectSystem
   
-  forkIO $ do 
-    listen clientSys matchAny { matchPath = Just "/org/freedesktop/UPower" 
-                              , matchMember = Just "NotifyResume" 
-                              }
-           onResume 
-    forever $ getLine
   
   
   checkOtherInst clientUsr $ \client -> do 
@@ -47,6 +55,16 @@ main = do
     export client "/hoodleDaemon"
       [ autoMethod "org.ianwookim" "isInitialized" isInitialized  
       ] 
+    ph <- runsocket
+    ref <- newIORef ph
+    forkIO $ do 
+      listen clientSys matchAny { matchPath = Just "/org/freedesktop/UPower" 
+                                , matchMember = Just "NotifyResume" 
+                                }
+             (onResume ref) 
+    forever $ getLine
+    
+
     forever $ getLine
 
 -- square :: Double -> IO Double

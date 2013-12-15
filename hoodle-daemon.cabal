@@ -36,5 +36,7 @@ Executable hoodle-daemon
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   base,
+                   process,
+                   directory,
                    dbus
 

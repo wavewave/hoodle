@@ -21,7 +21,6 @@ module Hoodle.Coroutine.File where
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
--- import           Control.Monad.Loops
 import           Control.Monad.State hiding (mapM,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -86,10 +85,6 @@ import           Hoodle.View.Draw
 --
 import Prelude hiding (readFile,concat,mapM,forM_)
 
-
-
-
-
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
@@ -137,7 +132,6 @@ fileSave = do
              (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) xstate
           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 
-
 -- | interleaving a monadic action between each pair of subsequent actions
 sequence1_ :: (Monad m) => m () -> [m ()] -> m () 
 sequence1_ _ []  = return () 
@@ -165,7 +159,6 @@ fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) act
         xstate <- get 
         let hdl = getHoodle xstate 
         liftIO (renderjob hdl filename) 
-
 
 -- | 
 fileStartSync :: MainCoroutine ()

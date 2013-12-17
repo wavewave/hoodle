@@ -33,6 +33,7 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory (canonicalizePath)
 import           System.FilePath (takeExtension)
+import           System.IO (hClose, hFileSize, openFile, IOMode(..)) 
 import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
@@ -48,9 +49,7 @@ import qualified Text.Xournal.Parse.Conduit as XP
 import           Text.Hoodle.Migrate.FromXournal
 -- from this package
 import           Hoodle.Type.HoodleState
--- 
--- import Prelude hiding ((.),id)
-
+import           Hoodle.Util
 
 -- | check hoodle version and migrate if necessary 
 checkVersionAndMigrate :: C.ByteString -> IO (Either String Hoodle) 
@@ -163,13 +162,34 @@ makeEmbeddedPdfSrcString = ("data:application/x-pdf;base64," <>) . encode
 makeNewHoodleWithPDF :: Bool              -- ^ doesEmbedPDF
                      -> FilePath          -- ^ pdf file
                      -> IO (Maybe Hoodle) 
-makeNewHoodleWithPDF doesembed fp = do 
-  canonicalfp <- canonicalizePath fp 
-  let fname = C.pack canonicalfp 
-  mdoc <- popplerGetDocFromFile fname
+makeNewHoodleWithPDF doesembed ofp = do 
+  ocanonicalfp <- canonicalizePath ofp 
+  let ofname = C.pack ocanonicalfp 
+  let sizelimit = 10000000  
+  siz <- do     
+    h <- openFile ofp ReadMode
+    s <- hFileSize h
+    hClose h
+    return s
+  (nfp,nfname) <- if (siz > sizelimit) 
+                    then do putStrLn $ "size is " ++ show siz ++ ", which is larger than " ++ show sizelimit
+                            nfp' <- mkTmpFile "pdf"
+                            let nfname' = C.pack nfp' 
+                            readProcess "gs" [ "-q", "-dNOPAUSE", "-dBATCH", "-dSAFER"
+                                             , "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.3"
+                                             , "-dPDFSETTINGS=/screen", "-dEmbedAllFonts=true" 
+                                             , "-dSubsetFonts=true", "-dColorImageDownsampleType=/Bicubic"
+                                             , "-dColorImageResolution=72", "-dGrayImageDownsampleType=/Bicubic"
+                                             , "-dGrayImageResolution=72", "-dMonoImageDownsampleType=/Bicubic"
+                                             , "-dMonoImageResolution=72", "-sOutputFile="++nfp'
+                                             , ofp ] "" 
+                            return (nfp',nfname')
+                    else return (ocanonicalfp,ofname) 
+       
+  mdoc <- popplerGetDocFromFile nfname
   case mdoc of 
     Nothing -> do 
-      putStrLn $ "no such file " ++ fp 
+      putStrLn $ "no such file " ++ nfp 
       return Nothing 
     Just doc -> do 
       n <- Poppler.documentGetNPages doc 
@@ -178,12 +198,12 @@ makeNewHoodleWithPDF doesembed fp = do
             pg <- Poppler.documentGetPage doc (i-1) 
             (w,h) <- PopplerPage.pageGetSize pg
             let dim = Dim w h 
-            return (createPage doesembed dim fname i) 
+            return (createPage doesembed dim nfname i) 
       pgs <- mapM createPageAct [1..n]
-      hdl <- set title fname . set pages pgs <$> emptyHoodle
+      hdl <- set title nfname . set pages pgs <$> emptyHoodle
       nhdl <- if doesembed 
                 then do 
-                  bstr <- C.readFile canonicalfp 
+                  bstr <- C.readFile nfp 
                   let ebdsrc = makeEmbeddedPdfSrcString bstr 
                   return (set embeddedPdf (Just ebdsrc) hdl)
                 else return hdl 

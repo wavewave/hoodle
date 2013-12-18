@@ -7,6 +7,7 @@ import Control.Monad (forever)
 import DBus
 import DBus.Client 
 import Filesystem.Path
+import Filesystem.Path.CurrentOS
 import System.FSNotify 
 import System.IO (getLine)
 -- 
@@ -21,8 +22,9 @@ workChan cli chan =
     ev <- readChan chan 
     case ev of 
       Added fp _ -> do 
-        emit cli (signal "/image" "org.ianwookim.hoodle" "signal")
-          { signalBody = [toVariant (show fp)] }
+        case (toText fp) of
+          Right txt -> emit cli (signal "/image" "org.ianwookim.hoodle" "filepath") { signalBody = [toVariant txt] }
+          _ -> return ()
       _ -> return ()
 
 -- act = print

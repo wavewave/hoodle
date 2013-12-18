@@ -2,17 +2,22 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.Chan (newChan, readChan, Chan(..))
 import Control.Monad (forever, when)
 import Data.Foldable (forM_)
 import Data.Word (Word32(..))
 import Data.IORef
 import Data.List (sort)
 import Data.Maybe (mapMaybe)
+import Data.String (fromString)
 import qualified Data.Text as T
 import DBus
 import DBus.Client
+import Filesystem.Path ((</>))
 import System.Directory
 import System.Process
+--
+import ImageFileNotify
 
 
 isInitialized :: IO ()
@@ -63,7 +68,7 @@ main :: IO ()
 main = do 
   clientUsr <- connectSession 
   clientSys <- connectSystem
-  
+  homedir <- getHomeDirectory
   
   
   checkOtherInst clientUsr $ \client -> do 
@@ -74,60 +79,15 @@ main = do
     ph <- runsocket
     ref <- newIORef ph
     forkIO $ do 
-      listen clientSys matchAny { -- matchPath = Just "/org/freedesktop/NetworkManager/Devices/0" 
-                                  matchInterface = Just "org.freedesktop.NetworkManager.Device.Wireless"
+      listen clientSys matchAny { matchInterface = Just "org.freedesktop.NetworkManager.Device.Wireless"
                                 , matchMember = Just "PropertiesChanged" 
                                 }
              (onResume ref) 
+    chan <- newChan
+    forkIO $ 
+      startImageFileNotify chan (fromString homedir </> "Dropbox" </> "Apps" </> "Cambox") 
+      
+    forkIO $
+      workChan chan 
     forever $ getLine
-    
-
-    forever $ getLine
-
--- square :: Double -> IO Double
--- square x = return $ x**2 
-
-{- 
-main :: IO ()
-main = do 
-  client <- connectSession
-  requestName client "org.jonte.math" [] 
-  
-  export client "/math_object"
-    [ autoMethod "org.jonte.math" "square" square
-    ] 
-    
-  forever $ getLine
--}
-  
-  
-{-
-signalCallback :: Signal -> IO ()
-signalCallback signal_ = putStrLn $ "Received signal: " ++ show sig
-  where 
-    sig :: String 
-    Just sig = fromVariant $ head $ signalBody signal_ 
-    
-
-main :: IO ()
-main = do
-  putStrLn "hoodle daemon version 0.0.999"
-  
-  client <- connectSession 
-  listen client (matchAny { matchSender = Just "org.ianwookim.test"}) signalCallback 
-  
-  forever $ getLine 
--}
-
-
-  {-
-  
-  reply <- call_ client (methodCall "/org/freedesktop/DBus" "org.freedesktop.DBus" "ListNames")
-    { methodCallDestination = Just "org.freedesktop.DBus"
-    }
-           
-  let Just names = fromVariant (methodReturnBody reply !! 0)
-  mapM_ putStrLn (sort names)
-  
--}
 

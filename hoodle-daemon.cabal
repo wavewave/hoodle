@@ -39,5 +39,8 @@ Executable hoodle-daemon
                    process,
                    directory,
                    text,
+                   fsnotify,
+                   system-filepath,
                    dbus
 
+  Other-Modules:   ImageFileNotify

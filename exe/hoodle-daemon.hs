@@ -88,6 +88,6 @@ main = do
       startImageFileNotify chan (fromString homedir </> "Dropbox" </> "Apps" </> "Cambox") 
       
     forkIO $
-      workChan chan 
+      workChan clientUsr chan 
     forever $ getLine
 

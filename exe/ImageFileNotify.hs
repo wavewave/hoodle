@@ -1,7 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ImageFileNotify where
 
 import Control.Concurrent
 import Control.Monad (forever)
+import DBus
+import DBus.Client 
 import Filesystem.Path
 import System.FSNotify 
 import System.IO (getLine)
@@ -11,11 +15,15 @@ import Prelude hiding (FilePath)
 actpred (Added _ _) = True
 actpred _ = False
 
-workChan :: Chan Event -> IO () 
-workChan chan =  
+workChan :: Client -> Chan Event -> IO () 
+workChan cli chan =  
   forever $ do 
     ev <- readChan chan 
-    print ev 
+    case ev of 
+      Added fp _ -> do 
+        emit cli (signal "/image" "org.ianwookim.hoodle" "signal")
+          { signalBody = [toVariant (show fp)] }
+      _ -> return ()
 
 -- act = print
 

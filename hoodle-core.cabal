@@ -68,13 +68,10 @@ Library
                    system-filepath >= 0.4, 
                    svgcairo >= 0.12,
                    binary,
-                   -- pipes > 4, 
-                   -- pipes-network >= 0.6,
+                   dbus >= 0.10, 
                    network-simple >= 0.3,
                    text >= 0.10,
-                   -- distributed-process >= 0.4,
-                   -- network-transport >= 0.3,
-                   -- network-transport-tcp >= 0.3,
+                   stm >= 2, 
                    pureMD5, 
                    network-info
 

@@ -351,6 +351,7 @@ defaultEventProcess (CustomKeyEvent str) = do
   where 
     colorfunc c = doIOaction $ \_evhandler -> return (UsrEv (PenColorChanged c))
     toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
+defaultEventProcess (ImageFileDropped fname) = embedImage fname
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

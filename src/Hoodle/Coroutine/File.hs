@@ -355,8 +355,8 @@ checkEmbedImageSize filename = do
 -- | 
 fileLoadPNGorJPG :: MainCoroutine ()
 fileLoadPNGorJPG = do 
-    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
-  where 
+    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) embedImage -- action 
+{-  where 
     action filename = do  
       xst <- get 
       nitm <- 
@@ -369,7 +369,21 @@ fileLoadPNGorJPG = do
           else
             liftIO (cnstrctRItem =<< makeNewItemImage False filename)
       insertItemAt Nothing nitm 
+-}
 
+embedImage :: FilePath -> MainCoroutine ()
+embedImage filename = do  
+    xst <- get 
+    nitm <- 
+      if view (settings.doesEmbedImage) xst
+        then do  
+          mf <- checkEmbedImageSize filename 
+          case mf of 
+            Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
+            Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
+        else
+          liftIO (cnstrctRItem =<< makeNewItemImage False filename)
+    insertItemAt Nothing nitm 
 
 insertItemAt :: Maybe (PageNum,PageCoordinate) 
                 -> RItem 
@@ -442,8 +456,8 @@ embedPredefinedImage = do
     mpredefined <- S.embedPredefinedImageHook 
     case mpredefined of 
       Nothing -> return () 
-      Just filename -> do 
-        xst <- get 
+      Just filename -> embedImage filename
+{-        xst <- get 
         nitm <- 
           if view (settings.doesEmbedImage) xst
             then do  
@@ -453,7 +467,7 @@ embedPredefinedImage = do
                 Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
             else
               liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-        insertItemAt Nothing nitm 
+        insertItemAt Nothing nitm  -}
     
       
 -- | this is temporary. I will remove it
@@ -462,7 +476,8 @@ embedPredefinedImage2 = do
     mpredefined <- S.embedPredefinedImage2Hook 
     case mpredefined of 
       Nothing -> return () 
-      Just filename -> do 
+      Just filename -> embedImage filename 
+{-        
         xst <- get 
         nitm <- 
           if view (settings.doesEmbedImage) xst
@@ -474,7 +489,7 @@ embedPredefinedImage2 = do
             else
               liftIO (cnstrctRItem =<< makeNewItemImage False filename)
         insertItemAt Nothing nitm 
-        
+-}        
         
 -- | this is temporary. I will remove it
 embedPredefinedImage3 :: MainCoroutine () 
@@ -482,8 +497,8 @@ embedPredefinedImage3 = do
     mpredefined <- S.embedPredefinedImage3Hook 
     case mpredefined of 
       Nothing -> return () 
-      Just filename -> do 
-        xst <- get 
+      Just filename -> embedImage filename 
+{-        xst <- get 
         nitm <- 
           if view (settings.doesEmbedImage) xst
             then do  
@@ -494,7 +509,7 @@ embedPredefinedImage3 = do
             else
               liftIO (cnstrctRItem =<< makeNewItemImage False filename)
         insertItemAt Nothing nitm 
-        
+-}      
         
 -- | 
 embedAllPDFBackground :: MainCoroutine () 

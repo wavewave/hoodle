@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -15,14 +16,22 @@
 module Hoodle.ModelAction.Window where
 
 -- from other packages
+import           Control.Concurrent
+import           Control.Concurrent.STM
 import           Control.Lens (view)
+import           Control.Monad
+import           Control.Monad.STM (atomically)
 import           Control.Monad.Trans 
+import qualified Data.ByteString as B
 import qualified Data.IntMap as M
+import           Data.Maybe (mapMaybe)
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import           DBus
+import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
-
-
 -- from this package
 import           Hoodle.Device
 import           Hoodle.Type.Canvas
@@ -32,6 +41,31 @@ import           Hoodle.Type.Window
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 -- 
+
+getDBUSEvent :: (AllEvent -> IO ()) -> TVar Bool -> IO ()
+getDBUSEvent callback tvar = do
+    client <- connectSession
+    requestName client "org.ianwookim" []
+    forkIO $ listen client matchAny { matchInterface = Just "org.ianwookim.hoodle" 
+                                    , matchMember = Just "filepath"
+                                    } 
+               test
+    forever getLine
+  where test sig = do 
+          putStrLn "getDBUSEvent"
+          let fps = mapMaybe fromVariant (signalBody sig) :: [T.Text]
+          b <- atomically (readTVar tvar)  
+          when ((not.null) fps && b) $ do  
+            postGUISync (callback (UsrEv (ImageFileDropped (T.unpack (head fps)))))
+            return ()
+            -- B.putStrLn (TE.encodeUtf8 (head fps))
+         
+  {-
+  readMVar mvar 
+  threadDelay 1000000
+  putStrLn "testCount"
+  testCount mvar 
+  -}
 
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO () 
@@ -113,7 +147,17 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                      case pbtn of 
                        TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
                        _ -> (liftIO . callback . UsrEv) (PenUp cid p)
-    _focus <- canvas `on` focusInEvent $ tryEvent $ liftIO $ widgetGrabFocus canvas 
+                       
+    tvar <- newTVarIO False 
+    forkIO $ getDBUSEvent callback tvar
+    _focus <- canvas `on` focusInEvent $ tryEvent $ liftIO $ do
+                putStrLn "Focus In"
+                atomically (writeTVar tvar True)
+                widgetGrabFocus canvas 
+    _focusout <- canvas `on` focusOutEvent $ tryEvent $ liftIO $ do
+                   putStrLn "Focus Out"
+                   atomically (writeTVar tvar False)
+                   
     _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
       liftIO $ widgetGrabFocus canvas       
       (liftIO . callback . UsrEv) (UpdateCanvas cid) 

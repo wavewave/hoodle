@@ -90,6 +90,7 @@ data UserEvent = Initialized
                | MiniBuffer MiniBufferEvent
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
+               | ImageFileDropped FilePath
                deriving Show
                       
 instance Show (IORef a) where                      

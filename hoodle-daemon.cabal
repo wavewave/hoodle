@@ -38,5 +38,6 @@ Executable hoodle-daemon
   Build-Depends:   base,
                    process,
                    directory,
+                   text,
                    dbus
 

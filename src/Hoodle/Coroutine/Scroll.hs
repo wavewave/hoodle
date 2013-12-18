@@ -33,7 +33,6 @@ import qualified Hoodle.ModelAction.Adjustment as A
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
-import           Hoodle.View.Draw
 --
 
 -- | 

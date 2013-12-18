@@ -19,7 +19,6 @@ import           Control.Lens (view,set,(%~))
 import           Control.Monad.State 
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
-import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Select

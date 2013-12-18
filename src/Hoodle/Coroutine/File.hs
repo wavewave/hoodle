@@ -25,7 +25,6 @@ import           Control.Monad.State hiding (mapM,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.ByteString (readFile)
-import           Data.ByteString.Base64 
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
@@ -34,19 +33,16 @@ import qualified Data.List as List
 import           Data.Maybe
 import qualified Data.IntMap as IM
 import           Data.Time.Clock
-import           Data.UUID.V4 
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
-import           System.Exit 
 import           System.FilePath
 import qualified System.FSNotify as FS
 import           System.IO (hClose, hFileSize, openFile, IOMode(..))
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
-import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -76,14 +72,12 @@ import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
-import           Hoodle.Type.Enum
 import           Hoodle.Type.Event hiding (TypSVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
-import           Hoodle.View.Draw
 --
-import Prelude hiding (readFile,concat,mapM,forM_)
+import Prelude hiding (readFile,concat,mapM)
 
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
@@ -167,7 +161,7 @@ fileStartSync = do
   let mf = (,) <$> view (hoodleFileControl.hoodleFileName) xst <*> view (hoodleFileControl.lastSavedTime) xst 
   maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
   where  
-    action filename lasttime  = do 
+    action filename _lasttime  = do 
       let ioact = mkIOaction $ \evhandler ->do 
             forkIO $ do 
               FS.withManager $ \wm -> do 
@@ -178,7 +172,7 @@ fileStartSync = do
                   let mchangedfile = case ev of 
                         FS.Added fp _ -> Just (encodeString fp)
                         FS.Modified fp _ -> Just (encodeString fp)
-                        FS.Removed fp _ -> Nothing 
+                        FS.Removed _fp _ -> Nothing 
                   print mchangedfile 
                   case mchangedfile of 
                     Nothing -> return ()
@@ -351,25 +345,10 @@ checkEmbedImageSize filename = do
     liftIO $ cmd suggestscale filename tmpfile
     return tmpfile 
 
-
 -- | 
 fileLoadPNGorJPG :: MainCoroutine ()
 fileLoadPNGorJPG = do 
-    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) embedImage -- action 
-{-  where 
-    action filename = do  
-      xst <- get 
-      nitm <- 
-        if view (settings.doesEmbedImage) xst
-          then do  
-            mf <- checkEmbedImageSize filename 
-            case mf of 
-              Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
-              Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
-          else
-            liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-      insertItemAt Nothing nitm 
--}
+    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) embedImage
 
 embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
@@ -441,7 +420,6 @@ fileLoadSVG = do
       put (set hoodleModeState (SelectState nthdl) nxstate)
       invalidateAll 
 
-
 -- |
 askQuitProgram :: MainCoroutine () 
 askQuitProgram = do 
@@ -457,19 +435,7 @@ embedPredefinedImage = do
     case mpredefined of 
       Nothing -> return () 
       Just filename -> embedImage filename
-{-        xst <- get 
-        nitm <- 
-          if view (settings.doesEmbedImage) xst
-            then do  
-              mf <- checkEmbedImageSize filename 
-              case mf of 
-                Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
-                Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
-            else
-              liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-        insertItemAt Nothing nitm  -}
-    
-      
+          
 -- | this is temporary. I will remove it
 embedPredefinedImage2 :: MainCoroutine () 
 embedPredefinedImage2 = do 
@@ -477,19 +443,6 @@ embedPredefinedImage2 = do
     case mpredefined of 
       Nothing -> return () 
       Just filename -> embedImage filename 
-{-        
-        xst <- get 
-        nitm <- 
-          if view (settings.doesEmbedImage) xst
-            then do  
-              mf <- checkEmbedImageSize filename 
-              case mf of 
-                Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
-                Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
-            else
-              liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-        insertItemAt Nothing nitm 
--}        
         
 -- | this is temporary. I will remove it
 embedPredefinedImage3 :: MainCoroutine () 
@@ -498,18 +451,6 @@ embedPredefinedImage3 = do
     case mpredefined of 
       Nothing -> return () 
       Just filename -> embedImage filename 
-{-        xst <- get 
-        nitm <- 
-          if view (settings.doesEmbedImage) xst
-            then do  
-              mf <- checkEmbedImageSize filename 
-              case mf of 
-                Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
-                Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
-            else
-              liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-        insertItemAt Nothing nitm 
--}      
         
 -- | 
 embedAllPDFBackground :: MainCoroutine () 
@@ -523,7 +464,6 @@ embedAllPDFBackground = do
   
 mkRevisionHdlFile :: Hoodle -> IO (String,String)
 mkRevisionHdlFile hdl = do 
-    tdir <- getTemporaryDirectory 
     hdir <- getHomeDirectory
     tempfile <- mkTmpFile "hdl"
     let hdlbstr = builder hdl 
@@ -542,7 +482,6 @@ mkRevisionHdlFile hdl = do
 
 mkRevisionPdfFile :: RHoodle -> String -> IO ()
 mkRevisionPdfFile hdl fname = do 
-    tdir <- getTemporaryDirectory 
     hdir <- getHomeDirectory
     tempfile <- mkTmpFile "pdf"
     renderjob hdl tempfile 
@@ -570,8 +509,8 @@ fileVersionSave = do
             nrev = RevisionInk (B.pack md5str) strks
         modify (\xst -> let hdlmodst = view hoodleModeState xst 
                         in case hdlmodst of 
-                             ViewAppendState rhdl -> 
-                               let nrhdl = over grevisions (<> [nrev]) rhdl 
+                             ViewAppendState rhdl' -> 
+                               let nrhdl = over grevisions (<> [nrev]) rhdl' 
                                in set hoodleModeState (ViewAppendState nrhdl) xst 
                              SelectState thdl -> 
                                let nthdl = over gselRevisions (<> [nrev]) thdl
@@ -584,12 +523,12 @@ fileVersionSave = do
           mkRevisionPdfFile rhdl fname
           return (UsrEv (GotRevision md5str txtstr))
         r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
-        let GotRevision md5str txtstr = r          
-            nrev = Revision (B.pack md5str) (B.pack txtstr)
+        let GotRevision md5str txtstr' = r          
+            nrev = Revision (B.pack md5str) (B.pack txtstr')
         modify (\xst -> let hdlmodst = view hoodleModeState xst 
                         in case hdlmodst of 
-                             ViewAppendState rhdl -> 
-                               let nrhdl = over grevisions (<> [nrev]) rhdl 
+                             ViewAppendState rhdl' -> 
+                               let nrhdl = over grevisions (<> [nrev]) rhdl' 
                                in set hoodleModeState (ViewAppendState nrhdl) xst 
                              SelectState thdl -> 
                                let nthdl = over gselRevisions (<> [nrev]) thdl
@@ -608,9 +547,9 @@ showRevisionDialog hdl revs =
                dialog <- dialogNew
                vbox <- dialogGetUpper dialog
                mapM_ (addOneRevisionBox vbox hdl) revs 
-               btnOk <- dialogAddButton dialog "Ok" ResponseOk
+               _btnOk <- dialogAddButton dialog "Ok" ResponseOk
                widgetShowAll dialog
-               res <- dialogRun dialog
+               _res <- dialogRun dialog
                widgetDestroy dialog
                return (UsrEv GotOk)
 
@@ -627,8 +566,8 @@ mkPangoText str = do
           layoutSetWidth layout (Just 250)
           layoutSetWrap layout WrapAnywhere 
           layoutSetText layout str 
-          (_,reclog) <- layoutGetExtents layout 
-          let PangoRectangle x y w h = reclog 
+          -- (_,reclog) <- layoutGetExtents layout 
+          -- let PangoRectangle x y w h = reclog 
           return layout
         rdr layout = do setSourceRGBA 0 0 0 1
                         updateLayout layout 

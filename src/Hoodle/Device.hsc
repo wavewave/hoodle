@@ -207,7 +207,7 @@ getPointer devlst = do
             (touchx :: Double) <- peekByteOff ptrax 0
             (touchy :: Double) <- peekByteOff ptrax 8
             (touchz :: Double) <- peekByteOff ptrax 16 
-            (touchw :: Double) <- peekByteOff ptrax 24
+            -- (touchw :: Double) <- peekByteOff ptrax 24
             return $ Just (PointerCoord Touch touchx touchy touchz)            
           | otherwise = return Nothing -- return $ PointerCoord Core x y 1.0
 

@@ -24,7 +24,6 @@ import           Control.Monad.Trans.Either
 import           Data.Attoparsec
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
-import qualified Data.Function as F (on)
 import           Data.List (sortBy)
 import           Data.Maybe (catMaybes)
 import qualified Data.Text as T
@@ -37,8 +36,7 @@ import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory 
 import           System.Exit (ExitCode(..))
 import           System.FilePath 
-import           System.IO (readFile)
-import           System.Process (system,readProcessWithExitCode)
+import           System.Process (readProcessWithExitCode)
 -- 
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event 
@@ -67,7 +65,7 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Util
 -- 
-import Prelude hiding (readFile,mapM_,forM_)
+import Prelude hiding (readFile,mapM_)
 
 
 -- | single line text input : almost abandoned now
@@ -123,9 +121,9 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
     tableAttachDefaults table hscrbar 0 1 1 2 
     boxPackStart vbox table PackNatural 0
     -- 
-    btnOk <- dialogAddButton dialog "Ok" ResponseOk
-    btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-    btnNetwork <- dialogAddButton dialog "Network" (ResponseUser 1)
+    _btnOk <- dialogAddButton dialog "Ok" ResponseOk
+    _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+    _btnNetwork <- dialogAddButton dialog "Network" (ResponseUser 1)
     widgetShowAll dialog
     res <- dialogRun dialog
     widgetDestroy dialog
@@ -242,14 +240,14 @@ convertLinkFromSimpleToDocID :: Link -> IO (Maybe Link)
 convertLinkFromSimpleToDocID (Link i _typ lstr txt cmd rdr pos dim) = do 
     case urlParse (B.unpack lstr) of 
       Nothing -> return Nothing
-      Just (HttpUrl url) -> return Nothing
+      Just (HttpUrl _url) -> return Nothing
       Just (FileUrl file) -> do 
         b <- doesFileExist file
         if b 
           then do 
             bstr <- B.readFile file
             case parseOnly PA.hoodle bstr of 
-              Left str -> return Nothing
+              Left _str -> return Nothing
               Right hdl -> do 
                 let uuid = view hoodleID hdl
                     link = LinkDocID i uuid (B.pack file) txt cmd rdr pos dim
@@ -263,7 +261,7 @@ linkInsert :: B.ByteString
               -> String 
               -> (B.ByteString,BBox) 
               -> MainCoroutine ()
-linkInsert typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
+linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
     let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
         hdl = getHoodle xstate 

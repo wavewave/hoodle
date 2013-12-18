@@ -29,7 +29,6 @@ import qualified Data.Text as T
 import           Graphics.UI.Gtk hiding (get,set) 
 import           System.FilePath 
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -58,7 +57,6 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util 
 import           Hoodle.View.Coordinate
-import           Hoodle.View.Draw
 --
 import Prelude hiding (mapM_)
 
@@ -121,7 +119,7 @@ notifyLink cid pcoord = do
     ----                                                                                      
     newNotify :: CanvasInfo a -> CanvasGeometry -> PageNum -> RItem -> Maybe BBox 
                  -> MainCoroutine (Maybe (PageNum,BBox,RItem),BBox) 
-    newNotify cvsInfo geometry pnum lnk mobbx_desk = do        
+    newNotify _cvsInfo geometry pnum lnk mobbx_desk = do        
       let bbx = getBBox lnk
           bbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord) bbx
           nbbx_desk = maybe bbx_desk (\obbx_desk->unionBBox bbx_desk obbx_desk) mobbx_desk
@@ -162,7 +160,6 @@ gotLink mstr (x,y) = do
         Just (HttpUrl url) -> do 
           case getSelectedItmsFromHoodleState xst of     
             Nothing -> do 
-              liftIO $ print "here"
               uuidbstr <- liftIO $ B.pack . show <$> nextRandom              
               rdrbbx <- liftIO $ makeTextSVGFromStringAt url cid xst 
                                    (CvsCoord (fromIntegral x,fromIntegral y))
@@ -172,7 +169,7 @@ gotLink mstr (x,y) = do
               when b $ do 
                 let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
                 case ulbbox of 
-                  Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+                  Middle bbox -> do 
                     svg <- liftIO $ makeSVGFromSelection hititms bbox
                     uuidbstr <- liftIO $ B.pack . show <$> nextRandom
                     deleteSelection 
@@ -197,12 +194,12 @@ gotLink mstr (x,y) = do
           when b $ do 
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             case ulbbox of 
-              Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+              Middle bbox -> do 
                 svg <- liftIO $ makeSVGFromSelection hititms bbox
                 uuid <- liftIO $ nextRandom
-                let uuidbstr = B.pack (show uuid) 
+                let uuidbstr' = B.pack (show uuid) 
                 deleteSelection 
-                linkInsert "simple" (uuidbstr,fp) fn (svg_render svg,bbox)  
+                linkInsert "simple" (uuidbstr',fp) fn (svg_render svg,bbox)  
               _ -> return ()          
   liftIO $ putStrLn "gotLink"
   liftIO $ print mstr 

@@ -15,11 +15,9 @@
 module Hoodle.Widget.Clock where
 
 import           Control.Lens (view,set,over)
-import Control.Monad.State 
-import Control.Monad.Trans
+import           Control.Monad.State 
 import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
-import           Data.Sequence
 import           Data.Time
 import           Graphics.Rendering.Cairo
 --
@@ -28,10 +26,8 @@ import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Util.HitTest
 --
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.Layer
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Device
-import           Hoodle.ModelAction.Select
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -42,7 +38,6 @@ import           Hoodle.Type.Widget
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import Debug.Trace
 
 -- | 
 data CWAction = Move (CanvasCoordinate,CanvasCoordinate)
@@ -52,7 +47,7 @@ data CWAction = Move (CanvasCoordinate,CanvasCoordinate)
 checkPointerInClock :: (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
                     -> Maybe CWAction 
-checkPointerInClock (cid,cinfo,geometry) pcoord 
+checkPointerInClock (_cid,cinfo,geometry) pcoord 
   | b =  
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
         owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.clockWidgetConfig.clockWidgetPosition) cinfo
@@ -77,12 +72,9 @@ startClockWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do
     -- end : need to draw other widgets here ^^^
     tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
     ctime <- liftIO getCurrentTime 
-    let CvsCoord (x0,y0) = owxy 
-        CvsCoord (x,y) = oxy 
     manipulateCW cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
     liftIO $ surfaceFinish srcsfc 
     liftIO $ surfaceFinish tgtsfc
-
 
 -- | main event loop for clock widget
 manipulateCW :: CanvasId 
@@ -92,8 +84,7 @@ manipulateCW :: CanvasId
              -> CanvasCoordinate 
              -> UTCTime 
              -> MainCoroutine () 
-manipulateCW cid geometry (srcsfc,tgtsfc) 
-             owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do 
+manipulateCW cid geometry (srcsfc,tgtsfc) owxy oxy otime = do 
     r <- nextevent
     case r of 
       PenMove _ pcoord -> do 
@@ -102,7 +93,7 @@ manipulateCW cid geometry (srcsfc,tgtsfc)
           (\ctime -> moveClockWidget cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
                      >> manipulateCW cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
           otime 
-      PenUp _ pcoord -> invalidate cid 
+      PenUp _ _ -> invalidate cid 
       _ -> return ()
 
 moveClockWidget :: CanvasId 
@@ -131,13 +122,11 @@ moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
     put (setCanvasInfo (cid,ncinfobox) xst)
     -- 
     xst2 <- get 
-    let cinfobox = getCanvasInfo cid xst2 
-        cfg = view (unboxLens (canvasWidgets.clockWidgetConfig)) cinfobox
+    let cinfobox2 = getCanvasInfo cid xst2 
+        cfg = view (unboxLens (canvasWidgets.clockWidgetConfig)) cinfobox2
     liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
                                     (renderClockWidget Nothing cfg) 
-                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox
-
-
+                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox2
 
 -- | 
 toggleClock :: CanvasId -> MainCoroutine () 

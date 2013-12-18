@@ -30,7 +30,6 @@ import           Data.Monoid
 import           Data.Sequence
 import           Graphics.UI.Gtk hiding (get,set)
 import           Graphics.Rendering.Cairo
-import           Graphics.Rendering.Pango.Cairo
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -734,8 +733,8 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
   identityMatrix
   l <- createLayout str 
   updateLayout l 
-  (_,reclog) <- liftIO $ layoutGetExtents l
-  let PangoRectangle _ _ w h = reclog 
+  (_,reclog2) <- liftIO $ layoutGetExtents l
+  let PangoRectangle _ _ w h = reclog2 
   moveTo (x+30) (y+20)
   let sx = 40 / w 
       sy = 60 / h 
@@ -752,7 +751,8 @@ renderClockWidget :: Maybe BBox -> ClockWidgetConfig -> Render ()
 renderClockWidget mbbox cfg = do 
   let CvsCoord (x,y) = view clockWidgetPosition cfg 
       (h,m,s) = view clockWidgetTime cfg
-      div2rad n x = fromIntegral x/fromIntegral n * 2.0*pi  
+      div2rad :: Int -> Int -> Double
+      div2rad n theta = fromIntegral theta/fromIntegral n * 2.0*pi  
   identityMatrix 
   clipBBox mbbox 
   setSourceRGBA 0.5 0.5 0.2 0.3 

@@ -20,7 +20,6 @@ import System.Directory
 import System.FilePath 
 import System.Process
 -- 
--- import Control.Monad.Trans.Crtn.Driver 
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple
 import Graphics.Hoodle.Render 
@@ -30,23 +29,13 @@ import Hoodle.Type.Event
 import Hoodle.Util
 
 -- |
-menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO MenuItem
-menuOpenALink evhandler urlpath = do 
+menuOpenALink :: {- (AllEvent -> IO ()) -> -} UrlPath -> IO MenuItem
+menuOpenALink {- evhandler -} urlpath = do 
     let urlname = case urlpath of 
                     FileUrl fp -> fp 
                     HttpUrl url -> url 
     menuitemlnk <- menuItemNewWithLabel ("Open "++urlname) 
     menuitemlnk `on` menuItemActivate $ openLinkAction urlpath 
-    {- do
-      case urlpath of 
-        FileUrl fp -> do 
-          let cmdargs = [fp]
-          createProcess (proc "hoodle" cmdargs)  
-          return () 
-        HttpUrl url -> do 
-          let cmdargs = [url]
-          createProcess (proc "xdg-open" cmdargs)  
-          return () -}
     return menuitemlnk
 
 

@@ -16,21 +16,15 @@
 module Hoodle.Coroutine.ContextMenu where
 
 -- from other packages
-
-import Control.Concurrent
-
 import           Control.Applicative
--- import           Control.Category
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State hiding (mapM_,forM_)
-import           Data.Attoparsec 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Data.UUID.V4 
-import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -43,12 +37,11 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (SVG(..),Item(..),Link(..),hoodleID,defaultHoodle)
+import           Data.Hoodle.Simple (SVG(..), Item(..), Link(..), defaultHoodle)
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
-import qualified Text.Hoodle.Parse.Attoparsec as PA
 import           Text.Hoodle.Builder (builder)
 -- from this package 
 import           Hoodle.Accessor
@@ -176,7 +169,7 @@ linkSelectionWithFile fname = do
     mapM_ (\hititms -> 
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             in case ulbbox of 
-              Middle bbox@(BBox (ulx,uly) (lrx,lry)) -> do 
+              Middle bbox -> do 
                 svg <- liftIO $ makeSVGFromSelection hititms bbox
                 uuid <- liftIO $ nextRandom
                 let uuidbstr = B.pack (show uuid) 
@@ -266,10 +259,10 @@ showContextMenu (pnum,(x,y)) = do
                           RItemLink lnkbbx _msfc -> do 
                             let lnk = bbxed_content lnkbbx
                             forM_ ((urlParse . B.unpack . link_location) lnk)
-                                  (\urlpath -> do milnk <- menuOpenALink evhandler urlpath
+                                  (\urlpath -> do milnk <- menuOpenALink urlpath
                                                   menuAttach menu milnk 0 1 3 4 )
                             case lnk of 
-                              Link i _typ lstr txt cmd rdr pos dim ->  
+                              Link _i _typ _lstr _txt _cmd _rdr _pos _dim ->  
                                 convertLinkFromSimpleToDocID lnk >>=  
                                   mapM_ (\link -> do 
                                     let LinkDocID _ uuid _ _ _ _ _ _ = link 

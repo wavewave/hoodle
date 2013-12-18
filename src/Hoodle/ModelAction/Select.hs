@@ -16,7 +16,6 @@ module Hoodle.ModelAction.Select where
 
 -- from other package
 import           Control.Lens (view,set)
-import           Control.Monad
 import           Data.Algorithm.Diff
 import           Data.Foldable (foldl')
 import qualified Data.IntMap as M

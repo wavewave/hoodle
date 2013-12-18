@@ -16,19 +16,17 @@ module Hoodle.Coroutine.Pen where
 
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
--- import           Control.Category
 import           Control.Lens (view,set,at)
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.State hiding (mapM_,forM_)
 -- import Control.Monad.Trans
 import           Data.Functor.Identity (Identity(..))
-import           Data.Foldable (mapM_,forM_)
+import           Data.Foldable (forM_)
 import           Data.Sequence hiding (filter)
 import           Data.Maybe 
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo
 -- from hoodle-platform
-import           Data.Hoodle.Predefined
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic (gpages)
 import           Data.Hoodle.Simple (Dimension(..))
@@ -74,19 +72,11 @@ createTempRender _pnum geometry _page x = do
                                   paint
                                 return sfc) 
                               mcvssfc
-
-    -- (srcsfc,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
-                                  
-    
     liftIO $ renderWith srcsfc $ do 
       emphasisCanvasRender ColorRed geometry 
-    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch)  -- (floor wsfc) (floor hsfc)
+    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch) 
     let trdr = TempRender srcsfc tgtsfc (cw,ch) x
     return trdr 
-
-
-
-
 
 -- | page switch if pen click a page different than the current page
 penPageSwitch :: PageNum -> MainCoroutine CanvasInfoBox 
@@ -125,7 +115,6 @@ commonPenStart action cid pcoord = do
                                        return (set currentPageNum (unPageNum pgn) cvsInfo )
                                else return cvsInfo                   
                  action nCvsInfo pgn geometry (x,y) 
-
       
 -- | enter pen drawing mode
 penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
@@ -142,7 +131,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
             pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
             surfaceFinish (tempSurfaceSrc trdr)
             surfaceFinish (tempSurfaceTgt trdr)            
-
+            --
             case viewl pdraw of 
               EmptyL -> return ()
               (x1,_y1,_z1) :< _rest -> do 
@@ -158,10 +147,6 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                         nbbox = xformBBox f bbox 
                     invalidateAllInBBox (Just nbbox) BkgEfficient 
           
-    
-          
-
-
 -- | main pen coordinate adding process
 -- | now being changed
 penProcess :: CanvasId -> PageNum 
@@ -183,7 +168,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) = do
         (penProcess cid pnum geometry trdr ((x0,y0),z0))
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
-           let canvas = view drawArea cvsInfo
+           let -- canvas = view drawArea cvsInfo
                pinfo  = view penInfo xstate
            let xformfunc = cairoXform4PageCoordinate geometry pnum 
                tmpstrk = createNewStroke pinfo pdraw
@@ -252,8 +237,6 @@ penMoveAndUpInterPage r pgn geometry defact moveaction upaction =
     PenUp _ pcoord -> upaction pcoord  
     _ -> defact 
   
-
-
 -- | process action when last time was before time diff limit, otherwise
 --   just do default action.
 processWithTimeInterval :: (Monad m, MonadIO m) =>         

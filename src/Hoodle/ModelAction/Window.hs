@@ -20,13 +20,10 @@ import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Lens (view)
 import           Control.Monad
-import           Control.Monad.STM (atomically)
 import           Control.Monad.Trans 
-import qualified Data.ByteString as B
 import qualified Data.IntMap as M
 import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import           DBus
 import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set)
@@ -36,7 +33,6 @@ import           System.FilePath
 import           Hoodle.Device
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
-import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Window
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util

@@ -506,6 +506,7 @@ penType2Int (Left HighlighterWork)      = 2
 penType2Int (Left VerticalSpaceWork)    = 6
 penType2Int (Right SelectRegionWork)    = 4 
 penType2Int (Right SelectRectangleWork) = 5 
+penType2Int _ = 100
 -- penType2Int (Right SelectHandToolWork)  = 7 
 
 

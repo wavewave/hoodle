@@ -97,8 +97,8 @@ urlParse str =
                        <|> try (string "http://" *> return H) 
                        <|> try (string "https://" *> return HS)
                        <|> (return N) )
-                 rem <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
-                 return (b,rem) 
+                 remaining <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
+                 return (b,remaining) 
           r = parseOnly p (B.pack str)
       in case r of 
            Left _ -> Nothing  

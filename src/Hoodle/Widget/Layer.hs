@@ -16,7 +16,6 @@ module Hoodle.Widget.Layer where
 
 import           Control.Lens (view,set,over)
 import           Control.Monad.State 
-import           Control.Monad.Trans
 import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
 import           Data.Sequence
@@ -48,7 +47,7 @@ data LWAction = Close | ToggleShowContent | Move (CanvasCoordinate,CanvasCoordin
 checkPointerInLayer :: (CanvasId,CanvasInfo a,CanvasGeometry) 
                     -> PointerCoord 
                     -> Maybe LWAction 
-checkPointerInLayer (cid,cinfo,geometry) pcoord 
+checkPointerInLayer (_cid,cinfo,geometry) pcoord 
   | b =  
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
         owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.layerWidgetConfig.layerWidgetPosition) cinfo
@@ -66,8 +65,8 @@ checkPointerInLayer (cid,cinfo,geometry) pcoord
 startLayerWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> LWAction 
                  -> MainCoroutine () 
-startLayerWidget (cid,cinfo,geometry) Close = toggleLayer cid 
-startLayerWidget (cid,cinfo,geometry) ToggleShowContent = do 
+startLayerWidget (cid,_cinfo,_geometry) Close = toggleLayer cid 
+startLayerWidget (cid,_cinfo,_geometry) ToggleShowContent = do 
     liftIO $ putStrLn "ToggleShowContent hitted"
     modify (over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not)
     invalidate cid 
@@ -99,8 +98,7 @@ manipulateLW :: CanvasId
              -> CanvasCoordinate 
              -> UTCTime 
              -> MainCoroutine () 
-manipulateLW cid geometry (srcsfc,tgtsfc) 
-             owxy@(CvsCoord (xw,yw)) oxy@(CvsCoord (x0,y0)) otime = do 
+manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy otime = do 
     r <- nextevent
     case r of 
       PenMove _ pcoord -> do 
@@ -109,7 +107,7 @@ manipulateLW cid geometry (srcsfc,tgtsfc)
           (\ctime -> moveLayerWidget cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
                      >> manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
           otime 
-      PenUp _ pcoord -> invalidate cid 
+      PenUp _ _pcoord -> invalidate cid 
       _ -> return ()
 
 moveLayerWidget :: CanvasId 
@@ -137,13 +135,12 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
         ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
     put (setCanvasInfo (cid,ncinfobox) xst)
     let hdl = getHoodle xst 
-
     -- 
     xst2 <- get 
-    let cinfobox = getCanvasInfo cid xst2 
+    let cinfobox2 = getCanvasInfo cid xst2 
     liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
                                     (drawLayerWidget hdl cinfo Nothing nwpos) 
-                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox
+                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox2
   
 -- | 
 toggleLayer :: CanvasId -> MainCoroutine () 

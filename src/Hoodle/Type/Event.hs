@@ -18,7 +18,6 @@ module Hoodle.Type.Event where
 
 -- from other package
 import Control.Concurrent 
-import Control.Monad
 import Data.ByteString 
 import Data.IORef
 import qualified Data.Text as T

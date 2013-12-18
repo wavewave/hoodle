@@ -15,7 +15,7 @@ module Hoodle.Type.Predefined where
 import Data.Time.Clock 
 
 -- | 
-
+millisec :: Integer
 millisec = 1000000000
 
 dtime_bound :: NominalDiffTime 

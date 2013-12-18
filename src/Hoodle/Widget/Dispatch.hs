@@ -15,13 +15,13 @@
 module Hoodle.Widget.Dispatch where
 
 import Control.Applicative ((<|>))
-import Control.Lens (view,set,over)
+import Control.Lens (view)
 import Control.Monad.State hiding (forM_)
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (forM_)
-import Data.Time 
-import Graphics.Rendering.Cairo 
+
+
 -- 
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple 
@@ -33,11 +33,11 @@ import Hoodle.ModelAction.ContextMenu
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.HoodleState
-import Hoodle.Type.Widget
+
 import Hoodle.Type.PageArrangement
 import Hoodle.Util
 import Hoodle.View.Coordinate 
-import Hoodle.View.Draw 
+
 import Hoodle.Widget.Clock
 import Hoodle.Widget.Layer
 import Hoodle.Widget.PanZoom
@@ -63,9 +63,9 @@ widgetCheckPen cid pcoord defact = get >>= \xst -> forBoth' unboxBiAct (chk xst)
              (lift . startClockWidget triplet <=< MaybeT . return . checkPointerInClock triplet) pcoord
              <|> 
              (do guard (view (settings.doesFollowLinks) xstate)   
-                 (pnum,bbox,ritem) <- (MaybeT . return . view notifiedItem) cinfo
-                 (pnum',PageCoord (x,y)) <- (MaybeT . return . desktop2Page geometry . device2Desktop geometry) pcoord 
-                 guard (pnum == pnum') 
+                 (pnum',bbox,ritem) <- (MaybeT . return . view notifiedItem) cinfo
+                 (pnum'',PageCoord (x,y)) <- (MaybeT . return . desktop2Page geometry . device2Desktop geometry) pcoord 
+                 guard (pnum' == pnum'') 
                  guard (isPointInBBox bbox (x,y))
                  case ritem of
                    RItemLink lnkbbx _ -> do 

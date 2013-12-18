@@ -36,7 +36,6 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Enum
 import           Hoodle.Util
 import           Hoodle.View.Coordinate
-import           Hoodle.View.Draw
 -- 
 
 -- | change page of current canvas using a modify function

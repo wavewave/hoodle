@@ -20,9 +20,9 @@ module Hoodle.Coroutine.Network where
 
 import           Control.Applicative
 import           Control.Concurrent hiding (yield)
-import           Control.Exception
+
 import           Control.Lens 
-import           Control.Monad (forever,unless)
+
 import           Control.Monad.State (modify,get)
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -30,7 +30,7 @@ import qualified Data.Binary as Bi
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.Foldable as F (mapM_)
-import           Data.Map
+
 import           Data.Monoid ((<>),mconcat)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -38,12 +38,12 @@ import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 import           Network.Info
 import           Network.Simple.TCP
-import           System.IO (isEOF)
+
 -- 
-import           Control.Monad.Trans.Crtn.Event 
+
 import           Control.Monad.Trans.Crtn.Queue (enqueue)
 -- 
-import           Hoodle.Coroutine.Dialog
+
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
@@ -64,19 +64,19 @@ server evhandler ip txt = do
       send sock (bstr_size_binary <> TE.encodeUtf8 txt)
       
       mbstr <- runMaybeT $ do 
-        bstr <- MaybeT (recv sock 4)
+        bstr' <- MaybeT (recv sock 4)
         let getsize :: B.ByteString -> Word32 
             getsize = Bi.decode . LB.fromChunks . return
-            size = (fromIntegral . getsize) bstr 
+            size = (fromIntegral . getsize) bstr'
 
-            go s bstr = do 
+            go s bs = do 
               liftIO $ putStrLn ("requested size = " ++ show s)
               bstr1 <- MaybeT (recv sock s)
               let s' = B.length bstr1 
               liftIO $ putStrLn ("obtained size = " ++ show s')
               if s <= s' 
-                then return (bstr <> bstr1)
-                else go (s-s') (bstr <> bstr1) 
+                then return (bs <> bstr1)
+                else go (s-s') (bs <> bstr1) 
         go size B.empty 
         
       -- print mbstr 
@@ -128,20 +128,20 @@ networkTextInput txt = do
     
     modify (tempQueue %~ enqueue (ipdialog ("networkedit " ++ ip ++ " 4040")))
     --
-    let act txt = do 
+    let actf t = do 
           r <- nextevent
           case r of 
             UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid 
-                                >> act txt
-            OkCancel True -> (return . Just) txt
+                                >> actf t
+            OkCancel True -> (return . Just) t
             OkCancel False -> return Nothing
             NetworkProcess (NetworkReceived txt') ->  do 
               doIOaction $ \_ -> postGUISync (putMVar done ())
                                  >> (return . UsrEv . NetworkProcess) NetworkCloseDialog
-              act txt' 
+              actf txt' 
               
-            _ -> act txt
-    ntxt <- act txt
+            _ -> actf t
+    ntxt <- actf txt
     --   
     doIOaction $ \_evhandler -> do  
       killThread tid

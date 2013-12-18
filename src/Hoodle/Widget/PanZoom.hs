@@ -21,7 +21,6 @@ import           Control.Monad.State
 import           Data.List (delete)
 import           Data.Time.Clock 
 import           Graphics.Rendering.Cairo 
-import           Graphics.UI.Gtk hiding (get,set) 
 import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
@@ -30,7 +29,6 @@ import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen 
 import           Hoodle.Coroutine.Scroll
@@ -56,7 +54,7 @@ data PanZoomTouch = TouchMode | PenMode
 checkPointerInPanZoom :: (CanvasId,CanvasInfo a,CanvasGeometry) 
                       -> PointerCoord 
                       -> Maybe (Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate)))
-checkPointerInPanZoom (cid,cinfo,geometry) pcoord 
+checkPointerInPanZoom (_cid,cinfo,geometry) pcoord 
   | b = 
     let oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
         owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo
@@ -110,20 +108,17 @@ startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do
 findZoomXform :: Dimension 
                -> ((Double,Double),(Double,Double),(Double,Double)) 
                -> (Double,(Double,Double))
-findZoomXform (Dim w h) ((xo,yo),(x0,y0),(x,y)) = 
+findZoomXform (Dim w h) ((xo,yo),(x0,_y0),(x,_y)) = 
     let tx = x - x0 
-        ty = y - y0 
+        -- ty = y - y0 
         ztx = 1 + tx / 200
-        zty = 1 + ty / 200
+        -- zty = 1 + ty / 200
         zx | ztx > 2 = 2  
            | ztx < 0.5 = 0.5
            | otherwise = ztx
-        zy | zty > 2 = 2  
-           | zty < 0.5 = 0.5
-           | otherwise = zty                                          
-        {- z | zx >= 1 && zy >= 1 = max zx zy
-          | zx < 1 && zy < 1 = min zx zy 
-          | otherwise = zx -}
+        -- zy | zty > 2 = 2  
+        --    | zty < 0.5 = 0.5
+        --    | otherwise = zty                                          
         -- simplified
         z = zx 
         xtrans = (1 -z)*xo/z-w
@@ -290,7 +285,7 @@ touchStart cid pcoord = forBoth' unboxBiAct chk =<< liftM (getCanvasInfo cid) ge
       geometry <- liftIO $ makeCanvasGeometry pnum arr cvs 
       let triplet = (cid,cinfo,geometry)
           oxy@(CvsCoord (x,y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
-          owxy@(CvsCoord (x0,y0)) = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo  
+          CvsCoord (x0,y0) = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo  
           obbox = BBox (x0,y0) (x0+100,y0+100) 
       xst <- get
           
@@ -334,7 +329,7 @@ toggleTouch = do
         liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
         return ()
       --
-      let (cid,cinfobox) = view currentCanvas xst 
+      let (cid,_cinfobox) = view currentCanvas xst 
       put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
       invalidateInBBox Nothing Efficient cid   
       return ()

@@ -19,7 +19,6 @@ import qualified Control.Monad.State as St
 -- import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- 
 import Data.Hoodle.Generic
-import Data.Hoodle.BBox
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type.Item 
 import Graphics.Hoodle.Render.Util.HitTest
@@ -39,7 +38,6 @@ import Hoodle.Type.Canvas
 import Hoodle.Type.HoodleState
 import Hoodle.Type.PageArrangement
 import Hoodle.View.Coordinate
-import Hoodle.View.Draw
 --
 
 -- |

@@ -20,8 +20,6 @@ import           Control.Monad.State
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory (getCurrentDirectory)
 -- 
-import           Control.Monad.Trans.Crtn
-import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue
 --
 import           Hoodle.Coroutine.Draw

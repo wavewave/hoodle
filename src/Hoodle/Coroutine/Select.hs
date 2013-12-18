@@ -29,7 +29,6 @@ import           Graphics.Rendering.Cairo
 import qualified Graphics.Rendering.Cairo.Matrix as Mat
 -- from hoodle-platform
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
 import           Graphics.Hoodle.Render.Generic

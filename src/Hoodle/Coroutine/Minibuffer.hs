@@ -18,11 +18,10 @@ import           Control.Applicative ((<$>),(<*>))
 import           Control.Lens ((%~),view)
 import           Control.Monad.State (modify,get)
 import           Data.Foldable (Foldable(..),mapM_,forM_,toList)
-import           Data.Sequence (Seq(..),(|>),(<|),empty,singleton,length,viewr,ViewR(..))
+import           Data.Sequence (Seq,(|>),empty,singleton,viewr,ViewR(..))
 import           Graphics.UI.Gtk hiding (get,set)
 import           Graphics.Rendering.Cairo
 -- 
-import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue (enqueue)
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render (renderStrk)
@@ -70,7 +69,7 @@ minibufDialog msg = do
     modify (tempQueue %~ enqueue (action dev doesUseX11Ext)) 
     minibufInit
   where 
-    action dev doesUseX11Ext = mkIOaction $ \evhandler -> do 
+    action dev _doesUseX11Ext = mkIOaction $ \evhandler -> do 
       dialog <- dialogNew 
       msgLabel <- labelNew (Just msg) 
       cvs <- drawingAreaNew                           
@@ -111,9 +110,9 @@ minibufDialog msg = do
       boxPackStart hbox msgLabel PackNatural 0 
       boxPackStart vbox hbox PackNatural 0
       boxPackStart vbox cvs PackNatural 0
-      btnOk <- dialogAddButton dialog "Ok" ResponseOk
-      btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-      btnText <- dialogAddButton dialog "TextInput" (ResponseUser 1) 
+      _btnOk <- dialogAddButton dialog "Ok" ResponseOk
+      _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+      _btnText <- dialogAddButton dialog "TextInput" (ResponseUser 1) 
       widgetShowAll dialog
       res <- dialogRun dialog 
       widgetDestroy dialog 
@@ -162,11 +161,11 @@ drawstrokebit :: DrawWindow -> Seq PointerCoord -> MainCoroutine ()
 drawstrokebit drawwdw ps = 
     case viewr ps of
       ps' :> c0 -> case viewr ps' of 
-        ps'' :> c1 -> liftIO . renderWithDrawable drawwdw $ do 
-                        setLineWidth 1.0
-                        moveTo (pointerX c1) (pointerY c1)
-                        lineTo (pointerX c0) (pointerY c0)
-                        stroke
+        _ps'' :> c1 -> liftIO . renderWithDrawable drawwdw $ do 
+                         setLineWidth 1.0
+                         moveTo (pointerX c1) (pointerY c1)
+                         lineTo (pointerX c0) (pointerY c0)
+                         stroke
         _ -> return ()
       _ -> return ()
  

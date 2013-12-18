@@ -74,8 +74,8 @@ main = do
     ph <- runsocket
     ref <- newIORef ph
     forkIO $ do 
-      listen clientSys matchAny { matchPath = Just "/org/freedesktop/NetworkManager/Devices/0" 
-                                , matchInterface = Just "org.freedesktop.NetworkManager.Device.Wireless"
+      listen clientSys matchAny { -- matchPath = Just "/org/freedesktop/NetworkManager/Devices/0" 
+                                  matchInterface = Just "org.freedesktop.NetworkManager.Device.Wireless"
                                 , matchMember = Just "PropertiesChanged" 
                                 }
              (onResume ref) 

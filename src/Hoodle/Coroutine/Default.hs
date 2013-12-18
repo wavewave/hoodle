@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiWayIf #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -32,7 +33,6 @@ import           Graphics.UI.Gtk hiding (get,set)
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
-import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Control.Monad.Trans.Crtn.Queue 
@@ -268,14 +268,15 @@ defaultEventProcess (AssignPenMode t) =
       Right sm -> do 
         modify (selectInfo.selectType .~ sm)
         modeChange ToSelectMode 
-defaultEventProcess (PenColorChanged c) = 
+defaultEventProcess (PenColorChanged c) = do 
     modify (penInfo.currentTool.penColor .~ c)
+    reflectPenColorUI
 defaultEventProcess (PenWidthChanged v) = do 
-      st <- get 
-      let ptype = view (penInfo.penType) st
-      let w = int2Point ptype v
-      let stNew = set (penInfo.currentTool.penWidth) w st 
-      put stNew 
+    st <- get 
+    let ptype = view (penInfo.penType) st
+    let w = int2Point ptype v
+    let stNew = set (penInfo.currentTool.penWidth) w st 
+    put stNew 
 defaultEventProcess (BackgroundStyleChanged bsty) = do
     modify (backgroundStyle .~ bsty)
     xstate <- get 
@@ -320,18 +321,36 @@ defaultEventProcess (Sync ctime) = do
                 return (UsrEv ActionOrdered)
           modify (tempQueue %~ enqueue ioact)
 defaultEventProcess FileReloadOrdered = fileReload 
-defaultEventProcess (CustomKeyEvent str) = 
-  if str == "[]:\"Super_L\"" 
-  then do
-    xst <- liftM (over (settings.doesUseTouch) not) get 
-    put xst 
-    let action = mkIOaction $ \_evhandler -> do 
-          setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
-          return (UsrEv ActionOrdered)
-    modify (tempQueue %~ enqueue action)
-    waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    
-    toggleTouch
-  else return ()
+defaultEventProcess (CustomKeyEvent str) = do
+    liftIO $ print str
+    if | str == "[]:\"Super_L\"" -> do  
+           xst <- liftM (over (settings.doesUseTouch) not) get 
+           put xst 
+           let action = mkIOaction $ \_evhandler -> do 
+                 setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
+                 return (UsrEv ActionOrdered)
+           modify (tempQueue %~ enqueue action)
+           waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    
+           toggleTouch
+       | str == "[]:\"1\"" -> colorfunc ColorBlack
+       | str == "[]:\"2\"" -> colorfunc ColorBlue 
+       | str == "[]:\"3\"" -> colorfunc ColorRed
+       | str == "[]:\"4\"" -> colorfunc ColorGreen
+       | str == "[]:\"5\"" -> colorfunc ColorGray
+       | str == "[]:\"6\"" -> colorfunc ColorLightBlue
+       | str == "[]:\"7\"" -> colorfunc ColorLightGreen
+       | str == "[]:\"8\"" -> colorfunc ColorMagenta
+       | str == "[]:\"9\"" -> colorfunc ColorOrange
+       | str == "[]:\"0\"" -> colorfunc ColorYellow
+       | str == "[]:\"minus\"" -> colorfunc ColorWhite
+       | str == "[]:\"a\"" -> toolfunc PenWork 
+       | str == "[]:\"b\"" -> toolfunc HighlighterWork
+       | str == "[]:\"c\"" -> toolfunc EraserWork
+       | str == "[]:\"d\"" -> toolfunc VerticalSpaceWork
+       | otherwise -> return ()
+  where 
+    colorfunc c = doIOaction $ \_evhandler -> return (UsrEv (PenColorChanged c))
+    toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

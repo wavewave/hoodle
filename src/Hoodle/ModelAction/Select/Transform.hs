@@ -91,10 +91,6 @@ changeLinkBy func (BBoxed (LinkDocID i lid loc t c bstr (x,y) (Dim w h)) _bbox) 
       nlnk = LinkDocID i lid loc t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in runIdentity (makeBBoxed nlnk)          
 
-
-
-
-
 -- | modify the whole selection using a function
 changeSelectionBy :: ((Double,Double) -> (Double,Double))
                      -> Page SelectMode -> Page SelectMode
@@ -110,8 +106,6 @@ changeSelectionBy func tpage =
              layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
          in set (glayers.selectedLayer) layer' tpage 
 
-   
-
 -- | special case of offset modification
 changeSelectionByOffset :: (Double,Double) -> Page SelectMode -> Page SelectMode
 changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
@@ -120,4 +114,17 @@ changeSelectionByOffset (offx,offy) = changeSelectionBy (offsetFunc (offx,offy))
 offsetFunc :: (Double,Double) -> (Double,Double) -> (Double,Double) 
 offsetFunc (offx,offy) = \(x,y)->(x+offx,y+offy)
 
+-- | replace selection with one item
+replaceSelection :: RItem -> Page SelectMode -> Page SelectMode 
+replaceSelection ritm tpage = 
+  let activelayer = rItmsInActiveLyr tpage
+      buf = view (glayers.selectedLayer.gbuffer) tpage
+  in case activelayer of 
+       Right (x :- Hitted ys :- xs) -> 
+         let xs' :: [RItem]
+             xs' = concat (getA xs)  
+             alist' = x :- Hitted [ritm] :- xs' :- Empty 
+             layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
+         in set (glayers.selectedLayer) layer' tpage 
+       _ -> tpage
 

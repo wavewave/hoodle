@@ -26,13 +26,19 @@ import           Graphics.Rendering.Cairo
 --
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
+import           Graphics.Hoodle.Render.Item
+import           Graphics.Hoodle.Render.Util.HitTest (isBBox2InBBox1)
 --
 import           Hoodle.Accessor
+import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Device
+import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
 import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Select.Transform
+import qualified Hoodle.Type.Alias as A
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -47,29 +53,48 @@ cropImage :: BBoxed Image -> MainCoroutine ()
 cropImage imgbbx = do 
     liftIO $ putStrLn "cropImage called"
     xst <- get
-    initCropImage (view currentCanvas xst)
+    let (cid,cinfobox) = view currentCanvas xst 
+        hdlmodst = view hoodleModeState xst
+        epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
+    case hdlmodst of 
+      ViewAppendState _ -> return ()
+      SelectState thdl -> do 
+        case epage of 
+          Left _ -> return ()
+          Right tpage -> initCropImage cid (thdl,tpage)
   where
-    initCropImage (cid,cinfobox) = do 
+    initCropImage cid (thdl,tpage) = do 
       r <- waitSomeEvent (\case PenDown _ _ _ -> True; _ -> False)
       case r of
         PenDown cid' pbtn pcoord -> do 
-          if (cid == cid') then startCropRect cid imgbbx pcoord else return ()
+          if (cid == cid') then startCropRect cid imgbbx (thdl,tpage) pcoord else return ()
         _ -> return ()
 
-startCropRect :: CanvasId -> BBoxed Image -> PointerCoord -> MainCoroutine ()
-startCropRect cid imgbbx pcoord0 = do
+startCropRect :: CanvasId -> BBoxed Image -> (A.Hoodle A.SelectMode,A.Page A.SelectMode) -> PointerCoord -> MainCoroutine ()
+startCropRect cid imgbbx (thdl,tpage) pcoord0 = do 
     xst <- get
     geometry <- liftIO $ getGeometry4CurrCvs xst
     forM_ ((desktop2Page geometry . device2Desktop geometry) pcoord0) $ \(p0,c0) -> do
       tsel <- createTempRender geometry (p0, BBox (unPageCoord c0) (unPageCoord c0))
       ctime <- liftIO $ getCurrentTime
-      newCropRect cid geometry tsel (unPageCoord c0) (unPageCoord c0,ctime)
+      nbbox <- newCropRect cid geometry tsel (unPageCoord c0) (unPageCoord c0,ctime)
       surfaceFinish (tempSurfaceSrc tsel)
       surfaceFinish (tempSurfaceTgt tsel)
+      let pnum = (fst . tempInfo) tsel
+      let BBox (x0,y0) (x1,y1) = nbbox
+          img = bbxed_content imgbbx
+          obbox = getBBox imgbbx
+      when (isBBox2InBBox1 obbox nbbox) $ do 
+        let (xo,yo) = img_pos img
+            img' = img { img_pos = (x0,y0), img_dim = Dim (x1-x0) (y1-y0) } 
+        rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
+        let ntpage = replaceSelection rimg' tpage
+        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpage (unPageNum pnum)
+        commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
       invalidateAllInBBox Nothing Efficient      
       return ()
     
-      
+-- | start making a new crop rectangle
 newCropRect :: CanvasId 
             -> CanvasGeometry 
             -> TempRender (PageNum,BBox) 
@@ -94,8 +119,7 @@ newCropRect cid geometry tsel orig (prev,otime) = do
           newCropRect cid geometry tsel {tempInfo = ninfo} orig (ncoord,ntime)
         else defact
     -- 
-    upact pcoord = do
-      (return . snd . tempInfo) tsel
+    upact pcoord = (return . snd . tempInfo) tsel
 
 {-       
       

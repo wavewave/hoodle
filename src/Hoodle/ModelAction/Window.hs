@@ -147,13 +147,9 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     tvar <- newTVarIO False 
     forkIO $ getDBUSEvent callback tvar
     _focus <- canvas `on` focusInEvent $ tryEvent $ liftIO $ do
-                putStrLn "Focus In"
                 atomically (writeTVar tvar True)
                 widgetGrabFocus canvas 
-    _focusout <- canvas `on` focusOutEvent $ tryEvent $ liftIO $ do
-                   putStrLn "Focus Out"
-                   atomically (writeTVar tvar False)
-                   
+    _focusout <- canvas `on` focusOutEvent $ tryEvent $ liftIO $ atomically (writeTVar tvar False)
     _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
       liftIO $ widgetGrabFocus canvas       
       (liftIO . callback . UsrEv) (UpdateCanvas cid) 

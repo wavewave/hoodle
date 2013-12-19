@@ -59,6 +59,7 @@ import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement 
@@ -94,8 +95,7 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
         put $ set cvsInfoMap (IM.adjust (const cinfobox') cid cmap) xstate 
         adjustScrollbarWithGeometryCvsId cid 
         invalidateAll 
-processContextMenu CMenuRotateCW = return () -- rotateSelection CW
-processContextMenu CMenuRotateCCW = return () --  rotateSelection CCW
+processContextMenu (CMenuRotate dir imgbbx) = rotateImage dir imgbbx
 processContextMenu CMenuAutosavePage = do 
     xst <- get 
     pg <- getCurrentPageCurr 
@@ -319,9 +319,18 @@ showContextMenu (pnum,(x,y)) = do
                       menuitemcrop <- menuItemNewWithLabel ("Crop Image") 
                       menuitemcrop `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal . CMenuCropImage) imgbbx
+                      menuitemrotcw <- menuItemNewWithLabel ("Rotate Image CW") 
+                      menuitemrotcw `on` menuItemActivate $ do 
+                        (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CW imgbbx)
+                      menuitemrotccw <- menuItemNewWithLabel ("Rotate Image CCW") 
+                      menuitemrotccw `on` menuItemActivate $ do 
+                        (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CCW imgbbx)
+                      -- 
                       menuAttach menu menuitemcrop 0 1 4 5
+                      menuAttach menu menuitemrotcw 0 1 5 6
+                      menuAttach menu menuitemrotccw 0 1 6 7
+                      -- 
                       return ()
-
                     _ -> return ()
 
                 _ -> return () 

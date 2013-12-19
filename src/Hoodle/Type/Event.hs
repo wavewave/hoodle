@@ -217,8 +217,6 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuCopy
                       | CMenuDelete
                       | CMenuCanvasView CanvasId PageNum Double Double  
-                      | CMenuRotateCW
-                      | CMenuRotateCCW 
                       | CMenuAutosavePage
                       | CMenuLinkConvert Link
                       | CMenuCreateALink 
@@ -227,6 +225,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
                       | CMenuCropImage (BBoxed Image)
+                      | CMenuRotate    RotateDir (BBoxed Image)
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

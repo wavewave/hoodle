@@ -150,3 +150,43 @@ createCroppedImage img obbox@(BBox (xo0,yo0) (xo1,yo1)) nbbox@(BBox (xn0,yn0) (x
         let nb64str = encode nbstr 
             nebdsrc = "data:image/png;base64," <> nb64str
         return . Just $ Image nebdsrc (xn0,yn0) (Dim (xn1-xn0) (yn1-yn0))
+
+rotateImage :: RotateDir -> BBoxed Image -> MainCoroutine ()
+rotateImage dir imgbbx = do 
+    xst <- get
+    let (cid,cinfobox) = view currentCanvas xst 
+        hdlmodst = view hoodleModeState xst
+        pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox        
+        epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
+    case hdlmodst of 
+      ViewAppendState _ -> return ()
+      SelectState thdl -> do 
+        case epage of 
+          Left _ -> return ()
+          Right tpage -> do    
+            let img = bbxed_content imgbbx 
+            mimg' <- liftIO (createRotatedImage dir img (getBBox imgbbx))
+            forM_ mimg' $ \img' -> do 
+              rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
+              let ntpage = replaceSelection rimg' tpage
+              nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpage (unPageNum pnum)
+              commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
+            invalidateAllInBBox Nothing Efficient      
+            return ()
+
+
+createRotatedImage :: RotateDir -> Image -> BBox -> IO (Maybe Image)    
+createRotatedImage dir img (BBox (x0,y0) (x1,y1)) = do
+    let src = img_src img
+        embed = getByteStringIfEmbeddedPNG src
+    case embed of
+      Nothing -> return Nothing
+      Just bstr -> do 
+        gdimg <- G.loadPngByteString bstr
+        (w,h) <- G.imageSize gdimg
+        ngdimg <- G.rotateImage (case dir of CW -> 3 ; CCW -> 1) gdimg
+        nbstr <- G.savePngByteString ngdimg 
+        let nb64str = encode nbstr 
+            nebdsrc = "data:image/png;base64," <> nb64str
+        return . Just $ Image nebdsrc (x0,y0) (Dim (y1-y0) (x1-x0))
+  

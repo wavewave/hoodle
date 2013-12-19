@@ -79,7 +79,14 @@ data SelectInfo = SelectInfo { _selectType :: SelectType
                              }
              deriving (Show) 
 
+data RotateDir = CW | CCW deriving (Show, Ord, Eq)
 
+
+--
+-- lenses
+--
+
+-- | 
 selectType :: Simple Lens SelectInfo SelectType 
 selectType = lens _selectType (\f a -> f { _selectType = a })
 

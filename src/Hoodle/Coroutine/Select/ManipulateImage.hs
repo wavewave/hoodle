@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -20,8 +21,11 @@ import           Control.Lens (set, view, _2)
 import           Control.Monad (guard, when)
 import           Control.Monad.Trans (liftIO)
 import           Control.Monad.State (get)
+import           Data.ByteString.Base64 (encode)
 import           Data.Foldable (forM_)
+import           Data.Monoid ((<>))
 import           Data.Time
+import qualified Graphics.GD.ByteString as G
 import           Graphics.Rendering.Cairo
 --
 import           Data.Hoodle.BBox
@@ -70,7 +74,11 @@ cropImage imgbbx = do
           if (cid == cid') then startCropRect cid imgbbx (thdl,tpage) pcoord else return ()
         _ -> return ()
 
-startCropRect :: CanvasId -> BBoxed Image -> (A.Hoodle A.SelectMode,A.Page A.SelectMode) -> PointerCoord -> MainCoroutine ()
+startCropRect :: CanvasId 
+              -> BBoxed Image 
+              -> (A.Hoodle A.SelectMode,A.Page A.SelectMode) 
+              -> PointerCoord 
+              -> MainCoroutine ()
 startCropRect cid imgbbx (thdl,tpage) pcoord0 = do 
     xst <- get
     geometry <- liftIO $ getGeometry4CurrCvs xst
@@ -84,13 +92,15 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       let BBox (x0,y0) (x1,y1) = nbbox
           img = bbxed_content imgbbx
           obbox = getBBox imgbbx
-      when (isBBox2InBBox1 obbox nbbox) $ do 
-        let (xo,yo) = img_pos img
-            img' = img { img_pos = (x0,y0), img_dim = Dim (x1-x0) (y1-y0) } 
-        rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
-        let ntpage = replaceSelection rimg' tpage
-        nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpage (unPageNum pnum)
-        commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
+      when (isBBox2InBBox1 obbox nbbox) $ do
+        mimg' <- liftIO $ createCroppedImage img obbox nbbox 
+        -- let (xo,yo) = img_pos img
+        --     img' = img { img_pos = (x0,y0), img_dim = Dim (x1-x0) (y1-y0) } 
+        forM_ mimg' $ \img' -> do
+          rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
+          let ntpage = replaceSelection rimg' tpage
+          nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpage (unPageNum pnum)
+          commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
       invalidateAllInBBox Nothing Efficient      
       return ()
     
@@ -121,25 +131,22 @@ newCropRect cid geometry tsel orig (prev,otime) = do
     -- 
     upact pcoord = (return . snd . tempInfo) tsel
 
-{-       
-      
-        let oinfo@(p0,BBox xy0 oxy1) = tempInfo tsel
-            ninfo = maybe oinfo id $ do 
-                      (p1,c1) <- cf pcoord1
-                      guard (p0 == p1)
-                      return (p0,BBox xy0 (unPageCoord c1)) 
-        liftIO (print ninfo)
-        newCropRect geometry tsel {tempInfo = ninfo} pcoord0 
-      PenUp _ pcoord1 -> do 
-        --    mnbbox = do (p0,c0) <- cf pcoord0
-        --                (p1,c1) <- cf pcoord1
-        --                guard (p0 == p1)
-        --                return (BBox (unPageCoord c0) (unPageCoord c1))
-        --    obbox = getBBox imgbbx
-        -- forM_ mnbbox $ \nbbox -> do 
-        --   liftIO $ print (obbox,nbbox)
-        (return . snd . tempInfo) tsel
-      _ -> newCropRect geometry tsel pcoord0
-  where 
-    cf = (desktop2Page geometry . device2Desktop geometry) 
--}
+createCroppedImage :: Image -> BBox -> BBox -> IO (Maybe Image)
+createCroppedImage img obbox@(BBox (xo0,yo0) (xo1,yo1)) nbbox@(BBox (xn0,yn0) (xn1,yn1)) = do
+    let src = img_src img
+        embed = getByteStringIfEmbeddedPNG src
+    case embed of
+      Nothing -> return Nothing
+      Just bstr -> do 
+        gdimg <- G.loadPngByteString bstr
+        (w,h) <- G.imageSize gdimg
+        let w' = floor $ (fromIntegral w) * (xn1-xn0) / (xo1-xo0)   
+            h' = floor $ (fromIntegral h) * (yn1-yn0) / (yo1-yo0)
+            x1 = floor $ (fromIntegral w) * (xn0-xo0) / (xo1-xo0)  
+            y1 = floor $ (fromIntegral h) * (yn0-yo0) / (yo1-yo0)
+        ngdimg <- G.newImage (w',h')
+        G.copyRegion (x1,y1) (w',h') gdimg (0,0) ngdimg
+        nbstr <- G.savePngByteString ngdimg 
+        let nb64str = encode nbstr 
+            nebdsrc = "data:image/png;base64," <> nb64str
+        return . Just $ Image nebdsrc (xn0,yn0) (Dim (xn1-xn0) (yn1-yn0))

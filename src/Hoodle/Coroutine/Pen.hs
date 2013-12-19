@@ -55,8 +55,8 @@ import Prelude hiding (mapM_)
 
 
 -- |
-createTempRender :: PageNum -> CanvasGeometry -> Page EditMode -> a -> MainCoroutine (TempRender a) 
-createTempRender _pnum geometry _page x = do 
+createTempRender :: CanvasGeometry -> a -> MainCoroutine (TempRender a) 
+createTempRender geometry x = do 
     xst <- get
     let cinfobox = view currentCanvasInfo xst 
         mcvssfc = view (unboxLens mDrawSurface) cinfobox 
@@ -127,7 +127,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
           forM_ mpage $ \page -> do 
-            trdr <- createTempRender pnum geometry page (empty |> (x,y,z)) 
+            trdr <- createTempRender geometry (empty |> (x,y,z)) 
             pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
             surfaceFinish (tempSurfaceSrc trdr)
             surfaceFinish (tempSurfaceTgt trdr)            

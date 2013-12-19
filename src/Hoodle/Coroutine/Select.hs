@@ -87,7 +87,7 @@ selectRectStart pbtn cid = commonPenStart rectaction cid
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page = 
                 dealWithOneTimeSelectMode 
-                  (do tsel <- createTempRender pnum geometry page [] 
+                  (do tsel <- createTempRender geometry [] 
                       newSelectRectangle cid pnum geometry itms 
                                          (x,y) ((x,y),ctime) tsel
                       surfaceFinish (tempSurfaceSrc tsel) 
@@ -201,9 +201,7 @@ startMoveSelect :: CanvasId
                    -> MainCoroutine () 
 startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do  
     itmimage <- liftIO $ mkItmsNImg geometry tpage
-    tsel <- createTempRender pnum geometry
-              (hPage2RPage tpage) 
-              itmimage 
+    tsel <- createTempRender geometry itmimage 
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
     surfaceFinish (tempSurfaceSrc tsel)
     surfaceFinish (tempSurfaceTgt tsel)
@@ -321,9 +319,7 @@ startResizeSelect :: Handle
 startResizeSelect handle cid pnum geometry bbox 
                   ((x,y),ctime) tpage = do  
     itmimage <- liftIO $ mkItmsNImg geometry tpage  
-    tsel <- createTempRender pnum geometry 
-              (hPage2RPage tpage) 
-              itmimage 
+    tsel <- createTempRender geometry itmimage 
     resizeSelect handle cid pnum geometry bbox ((x,y),ctime) tsel 
     surfaceFinish (tempSurfaceSrc tsel)  
     surfaceFinish (tempSurfaceTgt tsel)      
@@ -346,10 +342,10 @@ resizeSelect handle cid pnum geometry origbbox
     r <- nextevent 
     forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
   where
-    fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo)
+    fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact moveact (upact xstate cinfo)
     defact = resizeSelect handle cid pnum geometry 
                origbbox (prev,otime) tempselection
-    moveact _xstate _cinfo (_pcoord,(x,y)) = do 
+    moveact (_pcoord,(x,y)) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
         let newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)      
@@ -438,7 +434,7 @@ selectLassoStart pbtn cid = commonPenStart lassoAction cid
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page =    
                 dealWithOneTimeSelectMode 
-                  (do tsel <- createTempRender pnum geometry page [] 
+                  (do tsel <- createTempRender geometry [] 
                       newSelectLasso cinfo pnum geometry itms 
                                      (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                       surfaceFinish (tempSurfaceSrc tsel)

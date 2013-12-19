@@ -98,6 +98,7 @@ Library
                    Hoodle.Coroutine.Scroll
                    Hoodle.Coroutine.Select
                    Hoodle.Coroutine.Select.Clipboard
+                   Hoodle.Coroutine.Select.ManipulateImage
                    Hoodle.Coroutine.TextInput
                    Hoodle.Coroutine.VerticalSpace 
                    Hoodle.Coroutine.Window

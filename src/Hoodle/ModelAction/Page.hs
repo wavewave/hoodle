@@ -18,13 +18,11 @@ module Hoodle.ModelAction.Page where
 import           Control.Applicative
 import           Control.Lens (view,set)
 import           Control.Monad (liftM)
--- import           Control.Monad.Trans.Either
 import           Data.Functor.Identity (Identity(..))
 import qualified Data.IntMap as M
 import           Data.Traversable (mapM)
 import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
--- import           Control.Monad.Trans.Crtn 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Data.Hoodle.Zipper 

@@ -17,20 +17,21 @@
 module Hoodle.Type.Event where
 
 -- from other package
-import Control.Concurrent 
-import Data.ByteString 
-import Data.IORef
+import           Control.Concurrent 
+import           Data.ByteString 
+import           Data.IORef
 import qualified Data.Text as T
-import Data.Time.Clock
-import Graphics.UI.Gtk
+import           Data.Time.Clock
+import           Graphics.UI.Gtk hiding (Image(..))
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
-import Data.Hoodle.Simple
+import           Data.Hoodle.BBox
+import           Data.Hoodle.Simple
 -- from this package
-import Hoodle.Device 
-import Hoodle.Type.Enum
-import Hoodle.Type.Canvas
-import Hoodle.Type.PageArrangement
+import           Hoodle.Device 
+import           Hoodle.Type.Enum
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.PageArrangement
 
 -- | 
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent
@@ -225,6 +226,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
+                      | CMenuCropImage (BBoxed Image)
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

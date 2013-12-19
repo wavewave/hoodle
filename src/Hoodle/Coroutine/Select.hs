@@ -61,21 +61,6 @@ import           Hoodle.View.Draw
 -- 
 import           Prelude hiding ((.), id)
 
-
-{-
--- |
-createTempSelectRender :: PageNum -> CanvasGeometry -> Page EditMode
-                          -> a 
-                          -> MainCoroutine (TempSelectRender a) 
-createTempSelectRender _pnum geometry _page x = do 
-    xst <- get
-    let hdl = getHoodle xst
-    let Dim cw ch = unCanvasDimension . canvasDim $ geometry
-    (tempsurface,_) <- liftIO $ canvasImageSurface Nothing geometry hdl 
-    let tempselection = TempSelectRender tempsurface (cw,ch) x
-    return tempselection 
--}
-
 -- | For Selection mode from pen mode with 2nd pen button
 dealWithOneTimeSelectMode :: MainCoroutine ()     -- ^ main action 
                              -> MainCoroutine ()  -- ^ terminating action

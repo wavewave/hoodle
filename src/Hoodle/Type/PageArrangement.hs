@@ -34,25 +34,12 @@ import Hoodle.Type.Alias
 import Hoodle.Util
 -- 
 
--- | 
-
+-- | supported zoom modes
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
               deriving (Show,Eq)
 
-
+-- | supported view modes
 data ViewMode = SinglePage | ContinuousPage 
-
--- class ViewMode a 
-
---   | only one page show at a time
--- data SinglePage = SinglePage
-
--- instance ViewMode SinglePage 
-
---   | continuously show pages in general
--- data ContinuousPage = ContinuousPage
-
---   instance ViewMode ContinuousPage
 
 -- | 
 newtype PageNum = PageNum { unPageNum :: Int } 

@@ -22,7 +22,7 @@ import           Data.ByteString
 import           Data.IORef
 import qualified Data.Text as T
 import           Data.Time.Clock
-import           Graphics.UI.Gtk hiding (Image(..))
+import           Graphics.UI.Gtk hiding (Image)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Data.Hoodle.BBox

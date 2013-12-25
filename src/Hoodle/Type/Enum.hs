@@ -69,7 +69,7 @@ data BackgroundStyle = BkgStylePlain
 data VerticalSpaceMode = GoingUp | GoingDown | OverPage 
 
 -- | select tool type
-data SelectType = SelectRegionWork 
+data SelectType = SelectLassoWork 
                 | SelectRectangleWork 
                 | SelectHandToolWork 
                 deriving (Show,Eq,Ord) 

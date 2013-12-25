@@ -233,7 +233,7 @@ selectMode = do
       ptype <- liftM (view (selectInfo.selectType)) get
       case ptype of 
         SelectRectangleWork -> selectRectStart pbtn cid pcoord 
-        SelectRegionWork -> selectLassoStart pbtn cid pcoord 
+        SelectLassoWork -> selectLassoStart pbtn cid pcoord 
         _ -> return ()
     PenMove cid pcoord -> disableTouch >> notifyLink cid pcoord 
     TouchDown cid pcoord -> touchStart cid pcoord     

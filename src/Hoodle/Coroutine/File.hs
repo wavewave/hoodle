@@ -391,7 +391,8 @@ insertItemAt mpcoord ritm = do
       SelectState thdl' -> return thdl'
       _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
     nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    put (set hoodleModeState (SelectState nthdl) nxst)
+    put ( ( set hoodleModeState (SelectState nthdl) 
+          . set isOneTimeSelectMode YesAfterSelect) nxst)
     invalidateAll  
                     
 -- | 
@@ -417,7 +418,8 @@ fileLoadSVG = do
                 SelectState thdl' -> return thdl'
                 _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
       nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-      put (set hoodleModeState (SelectState nthdl) nxstate)
+      put ( ( set hoodleModeState (SelectState nthdl) 
+            . set isOneTimeSelectMode YesAfterSelect) nxstate)
       invalidateAll 
 
 -- |

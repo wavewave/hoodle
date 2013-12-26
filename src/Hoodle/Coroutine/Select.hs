@@ -76,20 +76,30 @@ dealWithOneTimeSelectMode action terminator = do
       updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 
       modeChange ToViewAppendMode
 
--- | main mouse pointer click entrance in rectangular selection mode. 
---   choose either starting new rectangular selection or move previously 
---   selected selection. 
---   (dev note: need to be refactored with selectLassoStart)
-selectRectStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
-selectRectStart pbtn cid = commonPenStart rectaction cid
-  where rectaction cinfo pnum geometry (x,y) = do
+  
+  
+commonSelectStart :: SelectType 
+                     -> PenButton 
+                     -> CanvasId 
+                     -> PointerCoord 
+                     -> MainCoroutine ()
+commonSelectStart typ pbtn cid = case typ of 
+                                   SelectHandToolWork -> (\_ -> return ())
+                                   _ -> commonPenStart selectaction cid
+  where selectaction cinfo pnum geometry (x,y) = do
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
           let newSelectAction page = 
                 dealWithOneTimeSelectMode 
                   (do tsel <- createTempRender geometry [] 
-                      newSelectRectangle cid pnum geometry itms 
-                                         (x,y) ((x,y),ctime) tsel
+                      case typ of 
+                        SelectRectangleWork -> 
+                          newSelectRectangle cid pnum geometry itms 
+                            (x,y) ((x,y),ctime) tsel
+                        SelectLassoWork -> 
+                          newSelectLasso cinfo pnum geometry itms 
+                             (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
+                        _ -> return ()
                       surfaceFinish (tempSurfaceSrc tsel) 
                       showContextMenu (pnum,(x,y))
                   )
@@ -116,6 +126,13 @@ selectRectStart pbtn cid = commonPenStart rectaction cid
           let hdlmodst = view hoodleModeState xstate 
           let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
           action epage
+
+-- | main mouse pointer click entrance in rectangular selection mode. 
+--   choose either starting new rectangular selection or move previously 
+--   selected selection. 
+--   (dev note: need to be refactored with selectLassoStart)
+selectRectStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
+selectRectStart = commonSelectStart SelectRectangleWork 
 
 -- | 
 newSelectRectangle :: CanvasId
@@ -428,7 +445,9 @@ selectPenWidthChanged pwidth = do
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
 selectLassoStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
-selectLassoStart pbtn cid = commonPenStart lassoAction cid 
+selectLassoStart = commonSelectStart SelectLassoWork
+-- commonPenStart lassoAction cid 
+{-  
   where lassoAction cinfo pnum geometry (x,y) = do 
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
@@ -464,6 +483,7 @@ selectLassoStart pbtn cid = commonPenStart lassoAction cid
           let hdlmodst = view hoodleModeState xstate 
           let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
           action epage
+-}
           
 -- | 
 newSelectLasso :: CanvasInfo a

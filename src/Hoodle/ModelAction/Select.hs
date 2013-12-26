@@ -59,7 +59,7 @@ data Handle = HandleTL
             | HandleBM
             | HandleML
             | HandleMR
-            deriving (Show)
+            deriving (Show, Eq)
                      
 -- |                     
 scaleFromToBBox :: BBox -> BBox -> (Double,Double) -> (Double,Double)

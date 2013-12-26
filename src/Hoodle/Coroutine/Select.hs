@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Select 
@@ -77,7 +79,9 @@ dealWithOneTimeSelectMode action terminator = do
       modeChange ToViewAppendMode
 
   
-  
+-- | common main mouse pointer click entrance in selection mode. 
+--   choose either starting new selection or move previously 
+--   selected selection. 
 commonSelectStart :: SelectType 
                      -> PenButton 
                      -> CanvasId 
@@ -104,11 +108,15 @@ commonSelectStart typ pbtn cid = case typ of
                       showContextMenu (pnum,(x,y))
                   )
                   (return ())  
-              action (Right tpage) | hitInHandle tpage (x,y) = 
+              action (Right tpage) | hitInHandle tpage (x,y) = do  
+                let doesKeepRatio = case pbtn of 
+                                          PenButton1 -> True
+                                          PenButton3 -> False
+                                          _ -> False
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
                     maybe (return ()) 
-                          (\handle -> startResizeSelect 
+                          (\handle -> startResizeSelect doesKeepRatio 
                                         handle cid pnum geometry 
                                         bbox ((x,y),ctime) tpage)
                           (checkIfHandleGrasped bbox (x,y))
@@ -130,7 +138,6 @@ commonSelectStart typ pbtn cid = case typ of
 -- | main mouse pointer click entrance in rectangular selection mode. 
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
---   (dev note: need to be refactored with selectLassoStart)
 selectRectStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
 selectRectStart = commonSelectStart SelectRectangleWork 
 
@@ -325,7 +332,8 @@ moveSelect cid pnum geometry orig@(x0,y0)
       
 
 -- | prepare for resizing selection 
-startResizeSelect :: Handle 
+startResizeSelect :: Bool -- ^ doesKeepRatio
+                     -> Handle 
                      -> CanvasId 
                      -> PageNum 
                      -> CanvasGeometry 
@@ -333,11 +341,12 @@ startResizeSelect :: Handle
                      -> ((Double,Double),UTCTime) 
                      -> Page SelectMode
                      -> MainCoroutine () 
-startResizeSelect handle cid pnum geometry bbox 
+startResizeSelect doesKeepRatio handle cid pnum geometry bbox 
                   ((x,y),ctime) tpage = do  
     itmimage <- liftIO $ mkItmsNImg geometry tpage  
     tsel <- createTempRender geometry itmimage 
-    resizeSelect handle cid pnum geometry bbox ((x,y),ctime) tsel 
+    resizeSelect doesKeepRatio 
+      handle cid pnum geometry bbox ((x,y),ctime) tsel 
     surfaceFinish (tempSurfaceSrc tsel)  
     surfaceFinish (tempSurfaceTgt tsel)      
     surfaceFinish (imageSurface itmimage)
@@ -345,7 +354,8 @@ startResizeSelect handle cid pnum geometry bbox
     invalidateAllInBBox Nothing Efficient
 
 -- | 
-resizeSelect :: Handle 
+resizeSelect :: Bool -- ^ doesKeepRatio
+                -> Handle 
                 -> CanvasId
                 -> PageNum 
                 -> CanvasGeometry
@@ -353,19 +363,31 @@ resizeSelect :: Handle
                 -> ((Double,Double),UTCTime)
                 -> TempRender ItmsNImg
                 -> MainCoroutine ()
-resizeSelect handle cid pnum geometry origbbox 
+resizeSelect doesKeepRatio handle cid pnum geometry origbbox 
              (prev,otime) tempselection = do
     xst <- get
     r <- nextevent 
     forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
   where
     fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact moveact (upact xstate cinfo)
-    defact = resizeSelect handle cid pnum geometry 
+    defact = resizeSelect doesKeepRatio handle cid pnum geometry 
                origbbox (prev,otime) tempselection
     moveact (_pcoord,(x,y)) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
-        let newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)      
+        let newbbox' = getNewBBoxFromHandlePos handle origbbox (x,y)      
+            newbbox = 
+              if doesKeepRatio 
+              then let BBox (xo0,yo0) (xo1,yo1) = origbbox 
+                       BBox (x0,y0) (x1,y1) = newbbox' 
+                       r = (yo1 - yo0) / (xo1 - xo0)
+                   in if | xo1 == xo0 -> newbbox' 
+                         | handle == HandleTL -> BBox (x0,y1+(x0-x1)*r) (x1,y1) 
+                         | handle == HandleTR -> BBox (x0,y1+(x0-x1)*r) (x1,y1)
+                         | handle == HandleBL -> BBox (x0,y0) (x1,y0+(x1-x0)*r)
+                         | handle == HandleBR -> BBox (x0,y0) (x1,y0+(x1-x0)*r)
+                         | otherwise -> newbbox'
+              else newbbox' 
             sfunc = scaleFromToBBox origbbox newbbox
             xform = unCvsCoord . desktop2Canvas geometry
                     . page2Desktop geometry . (,) pnum . PageCoord
@@ -378,13 +400,25 @@ resizeSelect handle cid pnum geometry origbbox
         invalidateTemp cid (tempSurfaceSrc tempselection) 
                            (drawTempSelectImage geometry tempselection 
                               xformmat)
-      resizeSelect handle cid pnum geometry 
+      resizeSelect doesKeepRatio handle cid pnum geometry 
                    origbbox (ncoord,ntime) tempselection
     upact xstate cinfo pcoord = do 
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
-          newbbox = getNewBBoxFromHandlePos handle origbbox (x,y)
+          newbbox' = getNewBBoxFromHandlePos handle origbbox (x,y)
+          newbbox = 
+            if doesKeepRatio 
+            then let BBox (xo0,yo0) (xo1,yo1) = origbbox 
+                     BBox (x0,y0) (x1,y1) = newbbox' 
+                     r = (yo1 - yo0) / (xo1 - xo0)
+                 in if | xo1 == xo0 || yo1 == yo0 -> newbbox' 
+                       | handle == HandleTL -> BBox (x0,y1+(x0-x1)*r) (x1,y1) 
+                       | handle == HandleTR -> BBox (x0,y1+(x0-x1)*r) (x1,y1)
+                       | handle == HandleBL -> BBox (x0,y0) (x1,y0+(x1-x0)*r)
+                       | handle == HandleBR -> BBox (x0,y0) (x1,y0+(x1-x0)*r)
+                       | otherwise -> newbbox'
+            else newbbox' 
           hdlmodst@(SelectState thdl) = view hoodleModeState xstate
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
@@ -446,45 +480,8 @@ selectPenWidthChanged pwidth = do
 --   selected selection. 
 selectLassoStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
 selectLassoStart = commonSelectStart SelectLassoWork
--- commonPenStart lassoAction cid 
-{-  
-  where lassoAction cinfo pnum geometry (x,y) = do 
-          itms <- rItmsInCurrLyr
-          ctime <- liftIO $ getCurrentTime
-          let newSelectAction page =    
-                dealWithOneTimeSelectMode 
-                  (do tsel <- createTempRender geometry [] 
-                      newSelectLasso cinfo pnum geometry itms 
-                                     (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
-                      surfaceFinish (tempSurfaceSrc tsel)
-                      surfaceFinish (tempSurfaceTgt tsel)
-                      showContextMenu (pnum,(x,y))
-                  )
-                  (return ()) 
-          let action (Right tpage) | hitInSelection tpage (x,y) = 
-                case pbtn of
-                  PenButton1 -> startMoveSelect cid pnum geometry ((x,y),ctime) tpage
-                  PenButton3 -> do 
-                    waitSomeEvent (\e -> case e of PenUp _ _ -> True ; _ -> False) 
-                    showContextMenu (pnum,(x,y))                    
-                  _ -> return () 
-              action (Right tpage) | hitInHandle tpage (x,y) = 
-                case getULBBoxFromSelected tpage of 
-                  Middle bbox ->  
-                    maybe (return ()) 
-                          (\handle -> startResizeSelect 
-                                        handle cid pnum geometry 
-                                        bbox ((x,y),ctime) tpage)
-                          (checkIfHandleGrasped bbox (x,y))
-                  _ -> return () 
-              action (Right tpage) | otherwise = (newSelectAction . hPage2RPage) tpage 
-              action (Left page) = newSelectAction page
-          xstate <- get 
-          let hdlmodst = view hoodleModeState xstate 
-          let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
-          action epage
--}
           
+
 -- | 
 newSelectLasso :: CanvasInfo a
                   -> PageNum 

@@ -19,7 +19,7 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                   base > 4,
+                   base == 4.*,
                    hoodle-types >= 0.2.2,
                    lens >= 2.5,
                    blaze-builder >= 0.3, 

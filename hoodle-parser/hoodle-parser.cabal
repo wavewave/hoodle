@@ -19,7 +19,7 @@ Library
   hs-source-dirs: src
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
-  Build-Depends: base > 4, 
+  Build-Depends: base == 4.*, 
                  mtl > 2, 
                  transformers >= 0.3, 
                  attoparsec >= 0.10, 

@@ -22,7 +22,7 @@ Executable hoodle
   ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
-                 base>4, 
+                 base == 4.*, 
                  cmdargs >= 0.7, 
                  hoodle-core >= 0.13, 
                  hoodle 

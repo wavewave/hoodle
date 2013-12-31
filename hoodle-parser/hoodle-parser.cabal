@@ -1,0 +1,44 @@
+Name:		hoodle-parser
+Version:	0.2.1.999
+Synopsis:       Hoodle file parser
+Description: 	Text parser for hoodle xml file
+Homepage:       http://ianwookim.org/hoodle
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Text
+Build-Type: 	Simple
+Cabal-Version:  >= 1.8
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle-parser
+
+
+Library
+  hs-source-dirs: src
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: base > 4, 
+                 mtl > 2, 
+                 transformers >= 0.3, 
+                 attoparsec >= 0.10, 
+                 bytestring >= 0.9, 
+                 containers >= 0.4, 
+                 strict >= 0.3, 
+                 hoodle-types >= 0.2.1.999, 
+                 xournal-types >= 0.5.0.1.999,
+                 text >= 0.11,
+                 lens >= 2.5, 
+                 either >= 3.1
+  Exposed-Modules: 
+                   Text.Hoodle.Migrate.FromXournal
+                   Text.Hoodle.Migrate.V0_1_1_to_V0_2
+                   Text.Hoodle.Parse.Attoparsec
+                   Text.Hoodle.Parse.Attoparsec.V0_1_1
+                   Text.Hoodle.Parse.Zlib
+
+
+
+ 
+		 

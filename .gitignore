@@ -1,4 +1,12 @@
 /hoodle/dist
+/hoodle-core/dist
+/hoodle-render/dist
+/hoodle-types/dist
+/hoodle-parser/dist
+/hoodle-builder/dist
+/xournal-types/dist
+/xournal-parser/dist
+/coroutine-object/dist
 /hoodle/deps
 /trash
 

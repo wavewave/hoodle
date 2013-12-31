@@ -1,0 +1,42 @@
+Name:		xournal-types
+Version:	0.5.0.1.999
+Synopsis:	Data types for programs for xournal file format
+Description: 	Xournal file format data type including generic interface
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Data
+Build-Type: 	Simple
+Cabal-Version:  >= 1.8
+data-files:     CHANGES
+Source-repository head
+  type: git
+  location: https://www.github.com/wavewave/hxournal
+
+
+Library
+  hs-source-dirs: src
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
+  Build-Depends: 
+                   base > 4, 
+                   bytestring >= 0.9, 
+                   strict > 0.3, 
+                   containers >= 0.4, 
+                   lens >= 2.5,
+                   TypeCompose > 0.9, 
+                   cereal > 0.3
+  Exposed-Modules: 
+                   Data.Xournal.Generic
+                   Data.Xournal.Simple
+                   Data.Xournal.BBox
+                   Data.Xournal.Map
+                   Data.Xournal.Buffer
+                   Data.Xournal.Predefined 
+                   Data.Xournal.Select
+                   Data.Xournal.Util
+  Other-Modules: 
+
+ 
+		 

@@ -1,0 +1,58 @@
+Name:		hoodle-render
+Version:	0.3.2
+Synopsis:       Hoodle file renderer
+Description: 	Rendering library using cairo for hoodle file format
+License: 	BSD3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Graphics
+Build-Type: 	Simple
+Cabal-Version:  >= 1.8
+data-files:     CHANGES
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle-render
+
+Library
+  hs-source-dirs: src
+  ghc-options: 	-Wall -fno-warn-orphans -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends: base == 4.*, 
+                 mtl == 2.*, 
+                 filepath, 
+                 directory, 
+                 containers >= 0.4, 
+                 cairo == 0.12.*, 
+                 svgcairo == 0.12.*,
+                 strict >= 0.3, 
+                 bytestring >= 0.9,
+                 base64-bytestring >= 0.1, 
+                 lens >= 2.5, 
+                 hoodle-types >= 0.2.1,
+                 gd >= 3000.7, 
+                 unix >= 2.5,
+                 uuid >= 1.2, 
+                 monad-loops >= 0.3,  
+                 poppler >= 0.12.2.2
+
+
+  Exposed-Modules: 
+                   Graphics.Hoodle.Render 
+                   Graphics.Hoodle.Render.Background
+                   Graphics.Hoodle.Render.Debug
+                   Graphics.Hoodle.Render.Generic
+                   Graphics.Hoodle.Render.Highlight
+                   Graphics.Hoodle.Render.Item  
+                   Graphics.Hoodle.Render.Primitive
+                   Graphics.Hoodle.Render.Type 
+                   Graphics.Hoodle.Render.Type.Background
+                   Graphics.Hoodle.Render.Type.HitTest
+                   Graphics.Hoodle.Render.Type.Hoodle
+                   Graphics.Hoodle.Render.Type.Item
+                   Graphics.Hoodle.Render.Type.Select
+                   Graphics.Hoodle.Render.Util
+                   Graphics.Hoodle.Render.Util.HitTest
+                   Hoodle.Util.Process
+

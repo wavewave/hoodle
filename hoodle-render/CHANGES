@@ -1,0 +1,10 @@
+0.2: 12 Dec 2011
+   * First public release
+0.3: 18 Dec 2011 
+   * Rename modules and make compatible with new xournal-types package
+0.4: 25 Dec 2011
+   * Double buffer support
+0.5: 15 Jan 2012
+   * ZipperSelect support
+0.6: 12 Feb 2012
+   * Variable width support

@@ -136,9 +136,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
               EmptyL -> return ()
               (x1,_y1,_z1) :< _rest -> do 
                 if x1 <= 1e-3      -- this is ad hoc but.. 
-                  then do 
-                    liftIO $ putStrLn " horizontal line cured !" 
-                    invalidateAll
+                  then invalidateAll
                   else do  
                     (newhdl,bbox) <- liftIO $ addPDraw pinfo currhdl pnum pdraw
                     commit . set hoodleModeState (ViewAppendState newhdl) 
@@ -168,8 +166,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) = do
         (penProcess cid pnum geometry trdr ((x0,y0),z0))
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
-           let -- canvas = view drawArea cvsInfo
-               pinfo  = view penInfo xstate
+           let pinfo  = view penInfo xstate
            let xformfunc = cairoXform4PageCoordinate geometry pnum 
                tmpstrk = createNewStroke pinfo pdraw
                renderfunc = do 
@@ -207,7 +204,6 @@ switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction 
                        then ordaction pgn (cpn,pxy) 
                        else chgaction pgn (cpn,pxy)
                                                                  
-        
 -- | in page action  
 penMoveAndUpOnly :: Monad m => UserEvent 
                     -> PageNum 

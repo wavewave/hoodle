@@ -18,7 +18,7 @@ import           Control.Applicative ((<$>),(<*>))
 import           Control.Lens ((%~),view)
 import           Control.Monad.State (modify,get)
 import           Data.Foldable (Foldable(..),mapM_,forM_,toList)
-import           Data.Sequence (Seq,(|>),empty,singleton,viewr,ViewR(..))
+import           Data.Sequence (Seq,(|>),empty,singleton,viewl,ViewL(..))
 import           Graphics.UI.Gtk hiding (get,set)
 import           Graphics.Rendering.Cairo
 -- 
@@ -29,7 +29,7 @@ import           Graphics.Hoodle.Render (renderStrk)
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Device
 import           Hoodle.ModelAction.Pen (createNewStroke)
-import           Hoodle.Type.Canvas (defaultPenInfo)
+import           Hoodle.Type.Canvas (defaultPenInfo, defaultPenWCS, penWidth)
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
@@ -122,47 +122,73 @@ minibufDialog msg = do
         _ -> return (UsrEv (OkCancel False))
 
 minibufInit :: MainCoroutine (Either () [Stroke])
-minibufInit = do 
---  r <- nextevent
-                   
+minibufInit = 
   waitSomeEvent (\case MiniBuffer (MiniBufferInitialized _ )-> True ; _ -> False) 
-  >>= (\case MiniBuffer (MiniBufferInitialized drawwdw) -> 
-               minibufStart drawwdw empty 
+  >>= (\case MiniBuffer (MiniBufferInitialized drawwdw) -> do
+               srcsfc <- liftIO (createImageSurface FormatARGB32 500 50)
+               tgtsfc <- liftIO (createImageSurface FormatARGB32 500 50)
+               liftIO $ renderWith srcsfc (drawMiniBuf empty) 
+               liftIO $ invalidateMinibuf drawwdw srcsfc -- empty
+               minibufStart drawwdw (srcsfc,tgtsfc) empty 
              _ -> minibufInit)
-{-  case r of  
-    MiniBuffer (MiniBufferInitialized drawwdw) -> minibufStart drawwdw empty 
-    _ -> minibufInit -}
 
-invalidateMinibuf :: DrawWindow -> Seq Stroke -> MainCoroutine ()
-invalidateMinibuf drawwdw strks = liftIO $ renderWithDrawable drawwdw (drawMiniBuf strks)
+invalidateMinibuf :: DrawWindow -> Surface -> IO ()
+invalidateMinibuf drawwdw tgtsfc = 
+  renderWithDrawable drawwdw $ do 
+    setSourceSurface tgtsfc 0 0 
+    setOperator OperatorSource 
+    paint   
+    -- (drawMiniBuf strks)
 
-minibufStart :: DrawWindow -> Seq Stroke -> MainCoroutine (Either () [Stroke])
-minibufStart drawwdw strks = do 
-    invalidateMinibuf drawwdw strks
+minibufStart :: DrawWindow 
+             -> (Surface,Surface)  -- ^ (source surface, target surface)
+             -> Seq Stroke -> MainCoroutine (Either () [Stroke])
+minibufStart drawwdw (srcsfc,tgtsfc) strks = do 
+   
+    -- invalidateMinibuf drawwdw strks
     r <- nextevent 
     case r of 
-      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> minibufStart drawwdw strks
+      UpdateCanvas cid -> do invalidateInBBox Nothing Efficient cid
+                             minibufStart drawwdw (srcsfc,tgtsfc) strks
       OkCancel True -> (return . Right) (toList strks)
       OkCancel False -> (return . Right) []
       ChangeDialog -> return (Left ())
       MiniBuffer (MiniBufferPenDown PenButton1 pcoord) -> do 
-        ps <- onestroke drawwdw (singleton pcoord) 
-        minibufStart drawwdw (strks |> mkstroke ps) 
-      _ -> minibufStart drawwdw strks
+        ps <- onestroke drawwdw (srcsfc,tgtsfc) (singleton pcoord) 
+        let nstrks = strks |> mkstroke ps
+        liftIO $ renderWith srcsfc (drawMiniBuf nstrks)
+        minibufStart drawwdw (srcsfc,tgtsfc) nstrks
+      _ -> minibufStart drawwdw (srcsfc,tgtsfc) strks
       
-onestroke :: DrawWindow -> Seq PointerCoord -> MainCoroutine (Seq PointerCoord)
-onestroke drawwdw pcoords = do 
+onestroke :: DrawWindow -> (Surface,Surface) -> Seq PointerCoord 
+          -> MainCoroutine (Seq PointerCoord)
+onestroke drawwdw (srcsfc,tgtsfc) pcoords = do 
     r <- nextevent 
     case r of 
       MiniBuffer (MiniBufferPenMove pcoord) -> do 
         let newpcoords = pcoords |> pcoord 
-        drawstrokebit drawwdw newpcoords
-        onestroke drawwdw newpcoords
+        liftIO $ do drawstrokebit (srcsfc,tgtsfc) newpcoords
+                    invalidateMinibuf drawwdw tgtsfc
+        onestroke drawwdw (srcsfc,tgtsfc) newpcoords
       MiniBuffer (MiniBufferPenUp pcoord) -> return (pcoords |> pcoord)
-      _ -> onestroke drawwdw pcoords
+      _ -> onestroke drawwdw (srcsfc,tgtsfc) pcoords
 
-drawstrokebit :: DrawWindow -> Seq PointerCoord -> MainCoroutine ()
-drawstrokebit drawwdw ps = 
+drawstrokebit :: (Surface,Surface) -> Seq PointerCoord -> IO()
+drawstrokebit (srcsfc,tgtsfc) ps = 
+    renderWith tgtsfc $ do 
+      setSourceSurface srcsfc 0 0
+      setOperator OperatorSource 
+      paint 
+      case viewl ps of
+        p :< ps' -> do 
+          setOperator OperatorOver 
+          setSourceRGBA 0.0 0.0 0.0 1.0
+          setLineWidth (view penWidth defaultPenWCS) 
+          moveTo (pointerX p) (pointerY p)
+          mapM_ (uncurry lineTo . ((,)<$>pointerX<*>pointerY)) ps'
+          stroke 
+        _ -> return ()
+{-  
     case viewr ps of
       ps' :> c0 -> case viewr ps' of 
         _ps'' :> c1 -> liftIO . renderWithDrawable drawwdw $ do 
@@ -172,6 +198,7 @@ drawstrokebit drawwdw ps =
                          stroke
         _ -> return ()
       _ -> return ()
+-}
  
 mkstroke :: Seq PointerCoord -> Stroke
 mkstroke ps = let xyzs = fmap ((,,) <$> pointerX <*> pointerY <*> const 1.0) ps

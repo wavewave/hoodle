@@ -69,7 +69,7 @@ minibufDialog msg = do
     modify (tempQueue %~ enqueue (action dev doesUseX11Ext)) 
     minibufInit
   where 
-    action dev _doesUseX11Ext = mkIOaction $ \evhandler -> do 
+    action dev doesUseX11Ext = mkIOaction $ \evhandler -> do 
       dialog <- dialogNew 
       msgLabel <- labelNew (Just msg) 
       cvs <- drawingAreaNew                           
@@ -99,10 +99,9 @@ minibufDialog msg = do
             case pbtn of 
               TouchButton -> return () 
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenMove p)
-      -- for the time being, I do not use x11 extension 
-      -- if doesUseX11Ext 
-      --   then widgetSetExtensionEvents cvs [ExtensionEventsAll]
-      --   else widgetSetExtensionEvents cvs [ExtensionEventsNone]
+      {- if doesUseX11Ext 
+        then widgetSetExtensionEvents cvs [ExtensionEventsAll]
+        else widgetSetExtensionEvents cvs [ExtensionEventsNone] -}
       widgetAddEvents cvs [PointerMotionMask,Button1MotionMask]      
       --
       vbox <- dialogGetUpper dialog
@@ -124,10 +123,15 @@ minibufDialog msg = do
 
 minibufInit :: MainCoroutine (Either () [Stroke])
 minibufInit = do 
-  r <- nextevent
-  case r of  
+--  r <- nextevent
+                   
+  waitSomeEvent (\case MiniBuffer (MiniBufferInitialized _ )-> True ; _ -> False) 
+  >>= (\case MiniBuffer (MiniBufferInitialized drawwdw) -> 
+               minibufStart drawwdw empty 
+             _ -> minibufInit)
+{-  case r of  
     MiniBuffer (MiniBufferInitialized drawwdw) -> minibufStart drawwdw empty 
-    _ -> minibufInit
+    _ -> minibufInit -}
 
 invalidateMinibuf :: DrawWindow -> Seq Stroke -> MainCoroutine ()
 invalidateMinibuf drawwdw strks = liftIO $ renderWithDrawable drawwdw (drawMiniBuf strks)

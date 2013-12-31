@@ -54,14 +54,6 @@ getDBUSEvent callback tvar = do
           when ((not.null) fps && b) $ do  
             postGUISync (callback (UsrEv (ImageFileDropped (T.unpack (head fps)))))
             return ()
-            -- B.putStrLn (TE.encodeUtf8 (head fps))
-         
-  {-
-  readMVar mvar 
-  threadDelay 1000000
-  putStrLn "testCount"
-  testCount mvar 
-  -}
 
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO () 

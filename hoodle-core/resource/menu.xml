@@ -1,0 +1,245 @@
+<ui> 
+  <menubar>
+    <menu action="FMA">
+       <menuitem action="NEWA" />
+       <menuitem action="OPENA" />                        
+       <menuitem action="SAVEA" />                        
+       <menuitem action="SAVEASA" />                        
+       <menuitem action="RELOADA" />
+       <separator /> 
+       <menuitem action="RECENTA" />                        
+       <separator /> 
+       <menuitem action="ANNPDFA" />
+       <menuitem action="LDIMGA" />
+       <menuitem action="LDSVGA" />
+       <menuitem action="LDPREIMGA" />   
+       <menuitem action="LDPREIMG2A" />
+       <menuitem action="LDPREIMG3A" />
+       <menuitem action="LATEXA" />
+       <menuitem action="COMBINELATEXA" />
+       <separator /> 
+       <menuitem action="PRINTA" />                        
+       <menuitem action="EXPORTA" />
+       <separator /> 
+       <menuitem action="SYNCA" /> 
+       <menuitem action="VERSIONA" />
+       <menuitem action="SHOWREVA" />
+       <menuitem action="SHOWIDA" />
+       <separator />
+       <menuitem action="QUITA" />
+    </menu>
+    <menu action="EMA">
+       <menuitem action="UNDOA" />
+       <menuitem action="REDOA" />                       
+       <separator />
+       <menuitem action="CUTA" />                        
+       <menuitem action="COPYA" />                        
+       <menuitem action="PASTEA" />                        
+       <menuitem action="DELETEA" />
+       <!-- <separator />
+       <menuitem action="NETCOPYA" />
+       <menuitem action="NETPASTEA" /> --> 
+    </menu>
+    <menu action="VMA">
+       <menuitem action="CONTA" />
+       <menuitem action="ONEPAGEA" />
+       <separator />
+       <menuitem action="FSCRA" />
+       <separator />
+       <menu action="ZOOMA" >
+         <menuitem action="ZMINA" />
+         <menuitem action="ZMOUTA" />                          
+         <menuitem action="NRMSIZEA" />                          
+         <menuitem action="PGWDTHA" />                          
+         <menuitem action="PGHEIGHTA" />
+         <menuitem action="SETZMA" />                          
+       </menu>
+       <separator />
+       <menuitem action="FSTPAGEA" />
+       <menuitem action="PRVPAGEA" />
+       <menuitem action="NXTPAGEA" />
+       <menuitem action="LSTPAGEA" />
+       <separator />
+       <menuitem action="SHWLAYERA" />
+       <menuitem action="HIDLAYERA" />
+       <separator />
+       <menuitem action="HSPLITA" />
+       <menuitem action="VSPLITA" />
+       <menuitem action="DELCVSA" />
+    </menu>
+    <menu action="JMA">
+       <menuitem action="NEWPGBA" />
+       <menuitem action="NEWPGAA" />
+       <menuitem action="NEWPGEA" />
+       <menuitem action="DELPGA" />       
+       <separator />
+       <menuitem action="EXPSVGA" /> 
+       <separator /> 
+       <menuitem action="NEWLYRA" />
+       <menuitem action="NEXTLAYERA" />
+       <menuitem action="PREVLAYERA" />
+       <menuitem action="GOTOLAYERA" />
+       <menuitem action="DELLYRA" />       
+       <separator />
+       <menuitem action="PPSIZEA" />
+       <menuitem action="PPCLRA" />
+       <menu action="PPSTYA">
+         <menuitem action="BKGPLAINA" />
+         <menuitem action="BKGLINEDA" />
+         <menuitem action="BKGRULEDA" />
+         <menuitem action="BKGGRAPHA" />
+       </menu>
+       <menuitem action="APALLPGA" />
+       <separator />
+       <menuitem action="EMBEDBKGPDFA" />
+       <!-- <menuitem action="LDBKGA" /> -->
+       <!-- <menuitem action="BKGSCRSHTA" /> -->
+       <separator />
+       <menuitem action="DEFPPA" />                        
+       <menuitem action="SETDEFPPA" />    
+    </menu>
+    <menu action="TMA">
+       <menuitem action="PENA" />
+       <menuitem action="ERASERA" />
+       <menuitem action="HIGHLTA" />
+       <separator />
+       <menuitem action="TEXTA" /> 
+       <menuitem action="LINKA" />
+       <menuitem action="SHPRECA" />
+       <menuitem action="RULERA" />       
+       <separator />
+       <menuitem action="SELREGNA" />
+       <menuitem action="SELRECTA" />
+       <menuitem action="VERTSPA" />
+       <separator />
+       <menu action="CLRA"> 
+         <menuitem action="BLACKA" />     
+         <menuitem action="BLUEA" />                          
+         <menuitem action="REDA" />                          
+         <menuitem action="GREENA" />                          
+         <menuitem action="GRAYA" />                          
+         <menuitem action="LIGHTBLUEA" />                          
+         <menuitem action="LIGHTGREENA" />                          
+         <menuitem action="MAGENTAA" />
+         <menuitem action="ORANGEA" />
+         <menuitem action="YELLOWA" />
+         <menuitem action="WHITEA" />
+       </menu>
+       <menuitem action="CLRPCKA" /> 
+       <menu action="PENOPTA"> 
+         <menuitem action="PENVERYFINEA" />     
+         <menuitem action="PENFINEA" />                          
+         <menuitem action="PENMEDIUMA" />                          
+         <menuitem action="PENTHICKA" />                          
+         <menuitem action="PENVERYTHICKA" />                      
+         <menuitem action="PENULTRATHICKA" />     
+       </menu>
+       <menuitem action="ERASROPTA" />                        
+       <menuitem action="HILTROPTA" />                        
+       <menuitem action="TXTFNTA" />                        
+       <separator />
+       <menuitem action="DEFPENA" />                        
+       <menuitem action="DEFERSRA" />    
+       <menuitem action="DEFHILTRA" />                        
+       <menuitem action="DEFTXTA" />
+       <menuitem action="SETDEFOPTA" />                        
+    </menu>
+    <menu action="OMA">
+       <menuitem action="UXINPUTA" />
+       <menuitem action="HANDA" />
+       <menuitem action="SMTHSCRA" />
+       <menuitem action="POPMENUA" /> 
+       <menuitem action="EBDIMGA" />
+       <menuitem action="EBDPDFA" />
+       <menuitem action="FLWLNKA" />
+       <menuitem action="KEEPRATIOA" />
+       <menuitem action="TOGPANZOOMA" />
+       <menuitem action="TOGLAYERA" />
+       <menuitem action="TOGCLOCKA" />
+       <menuitem action="DCRDCOREA" />                        
+       <menuitem action="ERSRTIPA" />                        
+       <menuitem action="PRESSRSENSA" />                        
+       <menuitem action="PGHILTA" />                        
+       <menuitem action="MLTPGVWA" />                        
+       <menuitem action="MLTPGA" />                        
+       <menuitem action="BTN2MAPA" />                        
+       <menuitem action="BTN3MAPA" />                        
+       <separator />
+       <menuitem action="ANTIALIASBMPA" />                        
+       <menuitem action="PRGRSBKGA" />                        
+       <menuitem action="PRNTPPRULEA" />                        
+       <menuitem action="LFTHNDSCRBRA" />                        
+       <menuitem action="SHRTNMENUA" />   
+       <separator />
+       <menuitem action="AUTOSAVEPREFA" />                        
+       <menuitem action="SAVEPREFA" />
+       <menuitem action="RELAUNCHA" />
+    </menu>
+    <menu action="HMA">
+       <menuitem action="ABOUTA" />
+    </menu>
+  </menubar>
+  <toolbar name="toolbar1" > 
+    <toolitem action="SAVEA" />
+    <toolitem action="NEWA" />
+    <toolitem action="OPENA" />
+    <separator />
+    <toolitem action="CUTA" />
+    <toolitem action="COPYA" />
+    <toolitem action="PASTEA" />
+    <separator /> 
+    <toolitem action="UNDOA" /> 
+    <toolitem action="REDOA" /> 
+    <separator /> 
+    <toolitem action="FSTPAGEA" />
+    <toolitem action="PRVPAGEA" />
+    <toolitem action="NXTPAGEA" />
+    <toolitem action="LSTPAGEA" />
+    <separator />
+    <toolitem action="ZMOUTA" />      
+    <toolitem action="NRMSIZEA" />                                        
+    <toolitem action="ZMINA" />
+    <toolitem action="PGWDTHA" />                          
+    <toolitem action="SETZMA" />
+    <toolitem action="FSCRA" />
+    <separator /> 
+    <toolitem action="LINKA" />
+  </toolbar>
+  <toolbar name="toolbar2" > 
+    <toolitem action="PENA"        />
+    <toolitem action="ERASERA"     />                     
+    <toolitem action="HIGHLTA"     />                     
+    <separator />     
+    <toolitem action="TEXTA"       />
+    <toolitem action="LATEXA"      />
+    <!-- <toolitem action="DEFAULTA"    />    --> 
+    <!-- <toolitem action="DEFPENA"     />    -->                  
+    <!-- <toolitem action="SHPRECA"     />    -->  
+    <!-- <toolitem action="RULERA"      />    -->                 
+    <!-- <separator />                        -->
+    <toolitem action="SELREGNA"    />    
+    <toolitem action="SELRECTA"    />                     
+    <toolitem action="VERTSPA"     />                     
+    <toolitem action="HANDA"       />                    
+    <separator />                     
+    <toolitem action="PENFINEA"       />    
+    <toolitem action="PENMEDIUMA"       />                     
+    <toolitem action="PENTHICKA"       />   
+ <!--   <placeholder name="PENDROPDOWN"   /> --> 
+ <!--     <toolitem action="NOWIDTH"        /> --> 
+    <separator />
+    <toolitem action="CLRPCKA"     />
+    <toolitem action="BLACKA"      />                     
+    <toolitem action="BLUEA"       />                     
+    <toolitem action="REDA"        />                     
+    <toolitem action="GREENA"      />                     
+    <toolitem action="GRAYA"       />                     
+    <toolitem action="LIGHTBLUEA"  />                      
+    <toolitem action="LIGHTGREENA" />                     
+    <toolitem action="MAGENTAA"    />                     
+    <toolitem action="ORANGEA"     />                     
+    <toolitem action="YELLOWA"     />                     
+    <toolitem action="WHITEA"      />   
+ <!--    <toolitem action="NOCOLOR" />    --> 
+  </toolbar>
+</ui>

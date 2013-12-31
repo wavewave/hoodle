@@ -1,0 +1,153 @@
+Name:		hoodle-core
+Version:	0.12.999 
+Synopsis:	Core library for hoodle
+Description: 	Hoodle is a pen notetaking program written in haskell. 
+                hoodle-core is the core library written in haskell and 
+                using gtk2hs
+Homepage:       http://ianwookim.org/hoodle
+License: 	GPL-3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 7.4, GHC == 7.6
+Build-Type: 	Custom
+Cabal-Version:  >= 1.8
+data-files:     template/*.html.st
+                resource/*.png
+                resource/*.xml
+                CHANGES
+                Config.hs
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle-core
+
+Library
+  hs-source-dirs: src
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends:   base > 4, 
+                   mtl > 2,
+                   directory > 1,
+                   filepath > 1, 
+                   strict > 0.3,
+                   gtk > 0.12, 
+                   cairo > 0.12,
+                   pango > 0.12,
+                   gd >= 3000.7,               
+                   attoparsec >= 0.10,
+                   coroutine-object >= 0.2, 
+                   transformers >= 0.3,
+                   transformers-free >= 1.0,
+                   hoodle-types >= 0.2.1.999,
+                   hoodle-parser >= 0.2.1.999,
+                   hoodle-builder >= 0.2.1.999,
+                   xournal-parser >= 0.5.0.1.999,
+                   hoodle-render >= 0.3.2,
+                   containers >= 0.4,
+                   template-haskell > 2,
+                   bytestring >= 0.9, 
+                   base64-bytestring >= 0.1,
+                   either >= 3.1, 
+                   errors >= 1.3, 
+                   lens >= 2.5,
+                   process >= 1.1, 
+                   configurator >= 0.2,
+                   time >= 1.2, 
+                   Diff >= 0.1,
+                   dyre >= 0.8.11, 
+                   cereal >= 0.3.5,
+                   base64-bytestring >= 0.1, 
+                   old-locale >= 1.0, 
+                   uuid >= 1.2.7, 
+                   monad-loops >= 0.3, 
+                   network, 
+                   poppler >= 0.12.2.2, 
+                   fsnotify >= 0.0.7, 
+                   system-filepath >= 0.4, 
+                   svgcairo >= 0.12,
+                   binary,
+                   dbus >= 0.10, 
+                   network-simple >= 0.3,
+                   text >= 0.10,
+                   stm >= 2, 
+                   pureMD5, 
+                   network-info
+
+  Exposed-Modules: 
+                   Hoodle.Accessor
+                   Hoodle.Config
+                   Hoodle.Coroutine
+                   Hoodle.Coroutine.Callback
+                   Hoodle.Coroutine.Commit
+                   Hoodle.Coroutine.ContextMenu
+                   Hoodle.Coroutine.Default
+                   Hoodle.Coroutine.Dialog
+                   Hoodle.Coroutine.Draw
+                   Hoodle.Coroutine.Eraser
+                   Hoodle.Coroutine.File
+                   Hoodle.Coroutine.Highlighter
+                   Hoodle.Coroutine.Layer
+                   Hoodle.Coroutine.Link
+                   Hoodle.Coroutine.Minibuffer
+                   Hoodle.Coroutine.Mode
+                   Hoodle.Coroutine.Network
+                   Hoodle.Coroutine.Page
+                   Hoodle.Coroutine.Pen
+                   Hoodle.Coroutine.Scroll
+                   Hoodle.Coroutine.Select
+                   Hoodle.Coroutine.Select.Clipboard
+                   Hoodle.Coroutine.Select.ManipulateImage
+                   Hoodle.Coroutine.TextInput
+                   Hoodle.Coroutine.VerticalSpace 
+                   Hoodle.Coroutine.Window
+                   Hoodle.Device
+                   Hoodle.GUI
+                   Hoodle.GUI.Menu
+                   Hoodle.GUI.Reflect 
+                   Hoodle.ModelAction.Adjustment
+                   Hoodle.ModelAction.Clipboard
+                   Hoodle.ModelAction.ContextMenu
+                   Hoodle.ModelAction.Eraser
+                   Hoodle.ModelAction.File
+                   Hoodle.ModelAction.Layer
+                   Hoodle.ModelAction.Page
+                   Hoodle.ModelAction.Pen 
+                   Hoodle.ModelAction.Select
+                   Hoodle.ModelAction.Select.Transform
+                   Hoodle.ModelAction.Window
+                   Hoodle.Script
+                   Hoodle.Script.Coroutine
+                   Hoodle.Script.Hook
+                   Hoodle.Type
+                   Hoodle.Type.Alias 
+                   Hoodle.Type.Canvas
+                   Hoodle.Type.Clipboard
+                   Hoodle.Type.Coroutine
+                   Hoodle.Type.Enum
+                   Hoodle.Type.Event 
+                   Hoodle.Type.HoodleState
+                   Hoodle.Type.PageArrangement 
+                   Hoodle.Type.Predefined
+                   Hoodle.Type.Undo 
+                   Hoodle.Type.Window
+                   Hoodle.Type.Widget 
+                   Hoodle.Util
+                   Hoodle.View.Coordinate
+                   Hoodle.View.Draw
+                   Hoodle.Widget.Clock
+                   Hoodle.Widget.Dispatch
+                   Hoodle.Widget.Layer 
+                   Hoodle.Widget.PanZoom
+  Other-Modules: 
+                   Paths_hoodle_core
+  c-sources: 
+                   csrc/c_initdevice.c
+  include-dirs:    csrc
+  install-includes: 
+                   csrc/c_initdevice.h
+                   csrc/template-hsc-gtk2hs.h
+                   csrc/XInput.h
+  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
+  extra-libraries: X11 Xi dl pthread

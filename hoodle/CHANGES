@@ -85,3 +85,14 @@ hoodle
    * page arranged at the center not left-upper corner
    * rendering improvement especially when a pen stroke is being drawn 
    * context menu whenever right-clicking on selected item 
+
+0.2.2: 31 Dec 2013
+   * ink message for revision commit
+   * full latex support (using external tools: xelatex, pdfcrop, pdf2svg)
+   * network editing for latex and text
+   * add context menus for image cropping/rotating on the fly
+   * when resizing selection, keep aspect ratio by default. but if using handle in the middle of side, or with right pen click, arbtrary resizing is still possible
+   * resizing image and pdf background if it's too big. (100k/10MB)  
+   * clock widget (test for asynchronous event processing)
+   
+

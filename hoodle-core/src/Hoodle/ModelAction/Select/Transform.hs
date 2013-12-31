@@ -120,7 +120,7 @@ replaceSelection ritm tpage =
   let activelayer = rItmsInActiveLyr tpage
       buf = view (glayers.selectedLayer.gbuffer) tpage
   in case activelayer of 
-       Right (x :- Hitted ys :- xs) -> 
+       Right (x :- Hitted _ys :- xs) -> 
          let xs' :: [RItem]
              xs' = concat (getA xs)  
              alist' = x :- Hitted [ritm] :- xs' :- Empty 

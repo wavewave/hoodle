@@ -314,8 +314,8 @@ showContextMenu (pnum,(x,y)) = do
                             return ()
                           _ -> return ()
                     RItemImage imgbbx _msfc -> do
-                      let img = bbxed_content imgbbx
-                          BBox (x0,y0) _ = getBBox imgbbx
+                      let -- img = bbxed_content imgbbx
+                          -- BBox (x0,y0) _ = getBBox imgbbx
                       menuitemcrop <- menuItemNewWithLabel ("Crop Image") 
                       menuitemcrop `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal . CMenuCropImage) imgbbx

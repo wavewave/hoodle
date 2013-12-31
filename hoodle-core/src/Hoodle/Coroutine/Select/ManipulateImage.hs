@@ -18,8 +18,7 @@
 module Hoodle.Coroutine.Select.ManipulateImage where
 
 import           Control.Lens (set, view, _2)
-import           Control.Monad (guard, when)
-import           Control.Monad.Trans (liftIO)
+import           Control.Monad (when)
 import           Control.Monad.State (get)
 import           Data.ByteString.Base64 (encode)
 import           Data.Foldable (forM_)
@@ -70,7 +69,7 @@ cropImage imgbbx = do
     initCropImage cid (thdl,tpage) = do 
       r <- waitSomeEvent (\case PenDown _ _ _ -> True; _ -> False)
       case r of
-        PenDown cid' pbtn pcoord -> do 
+        PenDown cid' _pbtn pcoord -> do 
           if (cid == cid') then startCropRect cid imgbbx (thdl,tpage) pcoord else return ()
         _ -> return ()
 
@@ -89,13 +88,10 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       surfaceFinish (tempSurfaceSrc tsel)
       surfaceFinish (tempSurfaceTgt tsel)
       let pnum = (fst . tempInfo) tsel
-      let BBox (x0,y0) (x1,y1) = nbbox
-          img = bbxed_content imgbbx
+      let img = bbxed_content imgbbx
           obbox = getBBox imgbbx
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
-        -- let (xo,yo) = img_pos img
-        --     img' = img { img_pos = (x0,y0), img_dim = Dim (x1-x0) (y1-y0) } 
         forM_ mimg' $ \img' -> do
           rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
           let ntpage = replaceSelection rimg' tpage
@@ -118,7 +114,7 @@ newCropRect cid geometry tsel orig (prev,otime) = do
   where 
     defact = newCropRect cid geometry tsel orig (prev,otime)
     -- 
-    moveact (pcoord,(x,y)) = do 
+    moveact (_pcoord,(x,y)) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       if willUpdate 
         then do 
@@ -129,10 +125,10 @@ newCropRect cid geometry tsel orig (prev,otime) = do
           newCropRect cid geometry tsel {tempInfo = ninfo} orig (ncoord,ntime)
         else defact
     -- 
-    upact pcoord = (return . snd . tempInfo) tsel
+    upact _pcoord = (return . snd . tempInfo) tsel
 
 createCroppedImage :: Image -> BBox -> BBox -> IO (Maybe Image)
-createCroppedImage img obbox@(BBox (xo0,yo0) (xo1,yo1)) nbbox@(BBox (xn0,yn0) (xn1,yn1)) = do
+createCroppedImage img (BBox (xo0,yo0) (xo1,yo1)) (BBox (xn0,yn0) (xn1,yn1)) = do
     let src = img_src img
         embed = getByteStringIfEmbeddedPNG src
     case embed of
@@ -154,7 +150,7 @@ createCroppedImage img obbox@(BBox (xo0,yo0) (xo1,yo1)) nbbox@(BBox (xn0,yn0) (x
 rotateImage :: RotateDir -> BBoxed Image -> MainCoroutine ()
 rotateImage dir imgbbx = do 
     xst <- get
-    let (cid,cinfobox) = view currentCanvas xst 
+    let (_cid,cinfobox) = view currentCanvas xst 
         hdlmodst = view hoodleModeState xst
         pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox        
         epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
@@ -183,7 +179,6 @@ createRotatedImage dir img (BBox (x0,y0) (x1,y1)) = do
       Nothing -> return Nothing
       Just bstr -> do 
         gdimg <- G.loadPngByteString bstr
-        (w,h) <- G.imageSize gdimg
         ngdimg <- G.rotateImage (case dir of CW -> 3 ; CCW -> 1) gdimg
         nbstr <- G.savePngByteString ngdimg 
         let nb64str = encode nbstr 

@@ -38,7 +38,6 @@ import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
-import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -126,7 +125,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           let currhdl = getHoodle  xstate 
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
-          forM_ mpage $ \page -> do 
+          forM_ mpage $ \_page -> do 
             trdr <- createTempRender geometry (empty |> (x,y,z)) 
             pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
             surfaceFinish (tempSurfaceSrc trdr)

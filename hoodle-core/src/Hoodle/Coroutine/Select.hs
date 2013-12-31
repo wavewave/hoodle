@@ -93,7 +93,7 @@ commonSelectStart typ pbtn cid = case typ of
   where selectaction cinfo pnum geometry (x,y) = do
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
-          let newSelectAction page = 
+          let newSelectAction _page = 
                 dealWithOneTimeSelectMode 
                   (do tsel <- createTempRender geometry [] 
                       case typ of 

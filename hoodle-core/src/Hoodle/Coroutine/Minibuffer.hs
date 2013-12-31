@@ -69,7 +69,7 @@ minibufDialog msg = do
     modify (tempQueue %~ enqueue (action dev doesUseX11Ext)) 
     minibufInit
   where 
-    action dev doesUseX11Ext = mkIOaction $ \evhandler -> do 
+    action dev _doesUseX11Ext = mkIOaction $ \evhandler -> do 
       dialog <- dialogNew 
       msgLabel <- labelNew (Just msg) 
       cvs <- drawingAreaNew                           
@@ -128,7 +128,7 @@ minibufInit =
                srcsfc <- liftIO (createImageSurface FormatARGB32 500 50)
                tgtsfc <- liftIO (createImageSurface FormatARGB32 500 50)
                liftIO $ renderWith srcsfc (drawMiniBuf empty) 
-               liftIO $ invalidateMinibuf drawwdw srcsfc -- empty
+               liftIO $ invalidateMinibuf drawwdw srcsfc 
                minibufStart drawwdw (srcsfc,tgtsfc) empty 
              _ -> minibufInit)
 
@@ -138,14 +138,11 @@ invalidateMinibuf drawwdw tgtsfc =
     setSourceSurface tgtsfc 0 0 
     setOperator OperatorSource 
     paint   
-    -- (drawMiniBuf strks)
 
 minibufStart :: DrawWindow 
              -> (Surface,Surface)  -- ^ (source surface, target surface)
              -> Seq Stroke -> MainCoroutine (Either () [Stroke])
 minibufStart drawwdw (srcsfc,tgtsfc) strks = do 
-   
-    -- invalidateMinibuf drawwdw strks
     r <- nextevent 
     case r of 
       UpdateCanvas cid -> do invalidateInBBox Nothing Efficient cid
@@ -188,17 +185,6 @@ drawstrokebit (srcsfc,tgtsfc) ps =
           mapM_ (uncurry lineTo . ((,)<$>pointerX<*>pointerY)) ps'
           stroke 
         _ -> return ()
-{-  
-    case viewr ps of
-      ps' :> c0 -> case viewr ps' of 
-        _ps'' :> c1 -> liftIO . renderWithDrawable drawwdw $ do 
-                         setLineWidth 1.0
-                         moveTo (pointerX c1) (pointerY c1)
-                         lineTo (pointerX c0) (pointerY c0)
-                         stroke
-        _ -> return ()
-      _ -> return ()
--}
  
 mkstroke :: Seq PointerCoord -> Stroke
 mkstroke ps = let xyzs = fmap ((,,) <$> pointerX <*> pointerY <*> const 1.0) ps
@@ -206,11 +192,3 @@ mkstroke ps = let xyzs = fmap ((,,) <$> pointerX <*> pointerY <*> const 1.0) ps
               in createNewStroke pinfo xyzs
                   
 
-{-  
-    waitSomeEvent (\case OkCancel b -> True 
-                         ChangeDialog -> True
-                         _ -> False)
-    >>= \case OkCancel b -> (return . Right) []  
-              ChangeDialog -> return (Left ())
-              _ -> return (Right [])  
--}

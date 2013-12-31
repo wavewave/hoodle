@@ -1,0 +1,8 @@
+0.2: 12 Dec 2011
+   * First public release
+0.3: 18 Dec 2011
+   * Refactor out type definition to xournal-types package
+0.4: 12 Feb 2012
+   * faster parser using xml-enumerator. Parsing variable width strokes is possible 
+0.4.1: 17 Feb 2012 
+   * support for gunzip in enumerator parser

@@ -33,9 +33,7 @@ Executable hoodle-daemon
                    network-info, 
                    bytestring, 
                    binary, 
-                   transformers >= 0.3, 
-                   mtl > 2, 
-                   lens
+                   transformers >= 0.3
 
   Other-Modules:   ImageFileNotify
                    Network

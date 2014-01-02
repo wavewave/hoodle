@@ -9,10 +9,10 @@ import DBus.Client
 import Filesystem.Path
 import Filesystem.Path.CurrentOS
 import System.FSNotify 
-import System.IO (getLine)
 -- 
 import Prelude hiding (FilePath)
 
+actpred :: Event -> Bool 
 actpred (Added _ _) = True
 actpred _ = False
 
@@ -31,7 +31,6 @@ workChan cli chan =
 
 startImageFileNotify :: Chan Event -> FilePath -> IO ()
 startImageFileNotify chan fp = do 
-  print fp
   withManager $ \wm -> do 
     putStrLn "watching start"
     watchTreeChan wm fp actpred chan

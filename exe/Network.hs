@@ -1,7 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
@@ -18,19 +15,12 @@
 
 module Network where
 
-import           Control.Applicative
 import           Control.Concurrent hiding (yield)
-
-import           Control.Lens 
-
-import           Control.Monad.State (modify,get)
-import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Binary as Bi 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
-import qualified Data.Foldable as F (mapM_, forM_)
-
+import qualified Data.Foldable as F (forM_)
 import           Data.Monoid ((<>),mconcat)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -62,19 +52,16 @@ server ip txt chan = do
             size = (fromIntegral . getsize) bstr'
 
             go s bs = do 
-              -- liftIO $ putStrLn ("requested size = " ++ show s)
               bstr1 <- MaybeT (recv sock s)
               let s' = B.length bstr1 
-              -- liftIO $ putStrLn ("obtained size = " ++ show s')
               if s <= s' 
                 then return (bs <> bstr1)
                 else go (s-s') (bs <> bstr1) 
         go size B.empty 
       F.forM_ mbstr $ \rbstr -> writeChan chan (TE.decodeUtf8 rbstr)
       print mbstr 
-      -- F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
 
-
+ipfind :: IO String
 ipfind = do 
     let ipv4num (IPv4 x) = x 
         ismacnull (MAC a b c d e f) = a == 0 && b == 0 && c == 0 

@@ -2,12 +2,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.Chan (newChan, readChan, Chan(..))
+import Control.Concurrent.Chan (newChan, readChan, Chan)
 import Control.Monad (forever, when)
 import Data.Foldable (forM_)
-import Data.Word (Word32(..))
+import Data.Word (Word32)
 import Data.IORef
-import Data.List (sort)
 import Data.Maybe (mapMaybe)
 import Data.String (fromString)
 import qualified Data.Text as T
@@ -32,14 +31,14 @@ checkOtherInst client act = do
               { methodCallDestination = Just "org.ianwookim"
               , methodCallBody = [] }
   case ereply of 
-    Left err -> do putStrLn "no pre-existing instances" 
-                   putStrLn "starting new instance" 
-                   act client 
+    Left _  -> do putStrLn "no pre-existing instances" 
+                  putStrLn "starting new instance" 
+                  act client 
     Right _ -> putStrLn "existing instance"
     
 onResume :: IORef ProcessHandle -> Signal -> IO ()
-onResume ref signal = do -- print signal
-                         let xs :: [Dictionary] = (mapMaybe fromVariant . signalBody) signal
+onResume ref sig = do -- print signal
+                         let xs :: [Dictionary] = (mapMaybe fromVariant . signalBody) sig
                          when ((not.null) xs) $ do 
                            let x = dictionaryItems (head xs)                               
                            case (lookup (toVariant ("State" :: T.Text) ) x) of 

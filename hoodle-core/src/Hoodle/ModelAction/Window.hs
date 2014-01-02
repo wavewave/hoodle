@@ -63,7 +63,8 @@ getDBUSEvent callback tvar = do
           let latex = mapMaybe fromVariant (signalBody sig) :: [T.Text]
           b <- atomically (readTVar tvar)  
           when ((not.null) latex && b) $ do  
-            (postGUISync . callback . UsrEv . DBusEv . DBusTest . head) latex
+            (postGUISync . callback . UsrEv . DBusEv . DBusNetworkInput . head) 
+              latex
             return ()
 
 -- | set frame title according to file name

@@ -174,29 +174,6 @@ laTeXInput mpos str = do
         autoPosText >>=
           maybe (laTeXInput (Just (100,100)) str) 
                 (\y'->laTeXInput (Just (100,y')) str) 
-{-      else  
-
-        cpg <- rPage2Page <$> getCurrentPageCurr
-        let Dim pgw pgh = view dimension cpg
-            mlatex_components = do 
-              l <- view layers cpg
-              i <- view items l
-              case i of 
-                ItemSVG svg ->  
-                  case svg_command svg of
-                    Just "latex" -> do 
-                      let (_,y) = svg_pos svg  
-                          Dim _ h = svg_dim svg
-                      return (y,y+h) 
-                    _ -> []
-                _ -> []
-        if (not.null) mlatex_components 
-          then do let y0 = (head . sortBy (flip compare) . map snd) 
-                             mlatex_components
-                      y' = if y0 + 10 > pgh then 100 else y0 + 10
-                  -- (liftIO . print) ys
-                  laTeXInput (Just (100,y')) str
-          else laTeXInput (Just (100,100)) str -} 
 
 autoPosText :: MainCoroutine (Maybe Double)
 autoPosText = do 
@@ -234,6 +211,16 @@ laTeXInputNetwork mpos str =
         autoPosText >>=
           maybe (laTeXInputNetwork (Just (100,100)) str) 
                 (\y'->laTeXInputNetwork (Just (100,y')) str) 
+
+
+dbusNetworkInput :: T.Text -> MainCoroutine ()
+dbusNetworkInput txt = do 
+    mpos <- autoPosText 
+    let pos = maybe (100,100) (100,) mpos 
+    rsvg <- liftIO (makeLaTeXSVG pos txt) 
+    case rsvg of 
+      Right r -> deleteSelection >> svgInsert (txt,"latex") r
+      Left err -> okMessageBox err >> laTeXInput (Just pos) txt
 
 
 laTeXHeader :: T.Text

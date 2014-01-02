@@ -352,6 +352,7 @@ defaultEventProcess (CustomKeyEvent str) = do
     colorfunc c = doIOaction $ \_evhandler -> return (UsrEv (PenColorChanged c))
     toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
+defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

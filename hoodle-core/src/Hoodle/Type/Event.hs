@@ -256,7 +256,7 @@ data NetworkEvent = NetworkDialog
 instance Show (MVar ()) where
   show _ = "MVar"
 
-data DBusEvent = DBusTest T.Text
+data DBusEvent = DBusNetworkInput T.Text
                | ImageFileDropped FilePath
                deriving Show
 

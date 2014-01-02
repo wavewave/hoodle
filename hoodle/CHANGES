@@ -94,5 +94,5 @@ hoodle
    * when resizing selection, keep aspect ratio by default. but if using handle in the middle of side, or with right pen click, arbtrary resizing is still possible
    * resizing image and pdf background if it's too big. (100k/10MB)  
    * clock widget (test for asynchronous event processing)
-   
+   * assign shortcut keys for color/pen tools   
 

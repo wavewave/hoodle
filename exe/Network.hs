@@ -30,8 +30,16 @@ import           Network.Simple.TCP
 
 -- 
 -- 
+laTeXHeader :: T.Text
+laTeXHeader = "\\documentclass{article}\n\
+              \\\pagestyle{empty}\n\
+              \\\begin{document}\n"
+                                
+laTeXFooter :: T.Text
+laTeXFooter = "\\end{document}\n"
+
 defaultText :: T.Text 
-defaultText = "Hello, there"
+defaultText = laTeXHeader <> "\n\n" <> laTeXFooter
 
 
 server :: HostPreference -> T.Text -> Chan T.Text -> IO ()

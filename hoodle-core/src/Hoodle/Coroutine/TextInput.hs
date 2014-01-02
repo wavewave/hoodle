@@ -170,7 +170,12 @@ laTeXInput mpos str = do
                             >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
                                       Left err -> okMessageBox err >> laTeXInput mpos result
                 )
-      Nothing -> do 
+      Nothing -> 
+        autoPosText >>=
+          maybe (laTeXInput (Just (100,100)) str) 
+                (\y'->laTeXInput (Just (100,y')) str) 
+{-      else  
+
         cpg <- rPage2Page <$> getCurrentPageCurr
         let Dim pgw pgh = view dimension cpg
             mlatex_components = do 
@@ -191,7 +196,29 @@ laTeXInput mpos str = do
                       y' = if y0 + 10 > pgh then 100 else y0 + 10
                   -- (liftIO . print) ys
                   laTeXInput (Just (100,y')) str
-          else laTeXInput (Just (100,100)) str 
+          else laTeXInput (Just (100,100)) str -} 
+
+autoPosText :: MainCoroutine (Maybe Double)
+autoPosText = do 
+    cpg <- rPage2Page <$> getCurrentPageCurr
+    let Dim pgw pgh = view dimension cpg
+        mcomponents = do 
+          l <- view layers cpg
+          i <- view items l
+          case i of 
+            ItemSVG svg ->  
+              case svg_command svg of
+                Just "latex" -> do 
+                  let (_,y) = svg_pos svg  
+                      Dim _ h = svg_dim svg
+                  return (y,y+h) 
+                _ -> []
+            _ -> []
+    if null mcomponents 
+      then return Nothing 
+      else do let y0 = (head . sortBy (flip compare) . map snd) mcomponents
+              if y0 + 10 > pgh then return Nothing else return (Just (y0 + 10))
+
 
 -- | 
 laTeXInputNetwork :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
@@ -204,7 +231,9 @@ laTeXInputNetwork mpos str =
                                       Left err -> okMessageBox err >> laTeXInput mpos result
                 )
       Nothing -> do 
-        liftIO $ putStrLn "laTeXInputNetwork: not implemented"
+        autoPosText >>=
+          maybe (laTeXInputNetwork (Just (100,100)) str) 
+                (\y'->laTeXInputNetwork (Just (100,y')) str) 
 
 
 laTeXHeader :: T.Text

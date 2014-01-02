@@ -107,6 +107,7 @@ data MenuEvent = MenuNew
                | MenuLoadPNGorJPG
                | MenuLoadSVG
                | MenuLaTeX
+               | MenuLaTeXNetwork
                | MenuCombineLaTeX
                | MenuEmbedPredefinedImage
                | MenuEmbedPredefinedImage2

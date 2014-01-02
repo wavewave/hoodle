@@ -383,6 +383,8 @@ menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
+menuEventProcess MenuLaTeXNetwork = 
+    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)    
 menuEventProcess MenuCombineLaTeX = combineLaTeXText 
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo

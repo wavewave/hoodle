@@ -14,11 +14,12 @@ import qualified Data.Text as T
 import DBus
 import DBus.Client
 import Filesystem.Path ((</>))
+import           Network.Simple.TCP (HostPreference(..))
 import System.Directory
 import System.Process
 --
 import ImageFileNotify
-
+import Network
 
 isInitialized :: IO ()
 isInitialized = do putStrLn "attempt to initialize another instance" 
@@ -56,6 +57,7 @@ onResume ref signal = do -- print signal
                                              writeIORef ref ph'
                             _ -> return ()
                          
+runsocket :: IO ProcessHandle
 runsocket = do 
   hdir <- getHomeDirectory
   (_,_,_,ph) <- createProcess
@@ -86,8 +88,25 @@ main = do
     chan <- newChan
     forkIO $ 
       startImageFileNotify chan (fromString homedir </> "Dropbox" </> "Apps" </> "Cambox") 
-      
+    
     forkIO $
       workChan clientUsr chan 
+
+    ip <- ipfind   
+      
+    chan_net <- newChan
+     
+    forkIO $ forever $ server (Host ip) defaultText chan_net
+    forkIO $ forever $ sendNetworkEditHoodle clientUsr chan_net
+
     forever $ getLine
+
+sendNetworkEditHoodle :: Client -> Chan T.Text -> IO ()
+sendNetworkEditHoodle cli chan = do 
+  forever $ do 
+    txt <- readChan chan
+    emit cli 
+      (signal "/networkedit" "org.ianwookim.hoodle" "latex") 
+         { signalBody = [toVariant txt] }
+  
 

@@ -16,8 +16,9 @@ module Hoodle.ModelAction.Select where
 
 -- from other package
 import           Control.Lens (view,set)
-import           Data.Algorithm.Diff
+import           Data.Algorithm.Diff as A
 import           Data.Foldable (foldl')
+import qualified Data.Function as F (on)
 import qualified Data.IntMap as M
 import qualified Data.Map as Map 
 import           Data.Monoid
@@ -234,24 +235,24 @@ instance (GetBBoxable a) => Eq (CmpBBox a) where
   CmpBBox s1 == CmpBBox s2 = getBBox s1 == getBBox s2  
   
 -- |
-isSame :: DI -> Bool   
-isSame B = True 
+isSame :: Diff a -> Bool   
+isSame (A.Both _ _) = True 
 isSame _ = False 
 
 -- |
-separateFS :: [(DI,a)] -> ([a],[a])
+separateFS :: [Diff a] -> ([a],[a])
 separateFS = foldr f ([],[]) 
-  where f (F,x) (fs,ss) = (x:fs,ss)
-        f (S,x) (fs,ss) = (fs,x:ss)
-        f (B,_x) (fs,ss) = (fs,ss)
+  where f (A.First x) (fs,ss) = (x:fs,ss)
+        f (A.Second x) (fs,ss) = (fs,x:ss)
+        f (A.Both _ _) (fs,ss) = (fs,ss)
         
 -- |
-getDiffBBox :: (GetBBoxable a) => [a] -> [a] -> [(DI,a)]
+getDiffBBox :: (GetBBoxable a) => [a] -> [a] -> [Diff a]
 getDiffBBox lst1 lst2 = 
-  let nlst1 = fmap CmpBBox lst1 
-      nlst2 = fmap CmpBBox lst2 
-      diffresult = getDiff nlst1 nlst2 
-  in map (\(x,y)->(x,unCmpBBox y)) diffresult
+  let -- nlst1 = fmap CmpBBox lst1 
+      -- nlst2 = fmap CmpBBox lst2 
+      diffresult = getDiffBy ((==) `F.on` CmpBBox) lst1 lst2 
+  in diffresult -- map (\(x,y)->(x,unCmpBBox y)) diffresult
 
 -- |
 checkIfHandleGrasped :: BBox -> (Double,Double) -> Maybe Handle

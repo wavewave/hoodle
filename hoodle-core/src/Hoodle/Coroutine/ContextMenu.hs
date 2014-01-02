@@ -149,9 +149,9 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
-processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (x0,y0) txt
-processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (x0,y0) txt
-processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (x0,y0) txt 
+processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
+processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
+processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 

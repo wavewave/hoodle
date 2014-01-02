@@ -90,7 +90,6 @@ data UserEvent = Initialized
                | MiniBuffer MiniBufferEvent
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
-               | ImageFileDropped FilePath
                | DBusEv DBusEvent
                deriving Show
                       
@@ -258,8 +257,8 @@ instance Show (MVar ()) where
   show _ = "MVar"
 
 data DBusEvent = DBusTest T.Text
+               | ImageFileDropped FilePath
                deriving Show
-
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

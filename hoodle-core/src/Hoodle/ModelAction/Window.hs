@@ -56,7 +56,8 @@ getDBUSEvent callback tvar = do
           let fps = mapMaybe fromVariant (signalBody sig) :: [T.Text]
           b <- atomically (readTVar tvar)  
           when ((not.null) fps && b) $ do  
-            postGUISync (callback (UsrEv (ImageFileDropped (T.unpack (head fps)))))
+            (postGUISync . callback . UsrEv . DBusEv . ImageFileDropped . T.unpack . head) 
+              fps
             return ()
         getLaTeX sig = do 
           let latex = mapMaybe fromVariant (signalBody sig) :: [T.Text]

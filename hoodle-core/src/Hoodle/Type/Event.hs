@@ -91,6 +91,7 @@ data UserEvent = Initialized
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
                | ImageFileDropped FilePath
+               | DBusEv DBusEvent
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -255,6 +256,10 @@ data NetworkEvent = NetworkDialog
 
 instance Show (MVar ()) where
   show _ = "MVar"
+
+data DBusEvent = DBusTest T.Text
+               deriving Show
+
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

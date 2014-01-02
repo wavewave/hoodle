@@ -45,14 +45,24 @@ getDBUSEvent callback tvar = do
     forkIO $ listen client matchAny { matchInterface = Just "org.ianwookim.hoodle" 
                                     , matchMember = Just "filepath"
                                     } 
-               test
+               getImage
+      
+    forkIO $ listen client matchAny { matchInterface = Just "org.ianwookim.hoodle"
+                                    , matchMember = Just "latex"
+                                    }
+               getLaTeX
     forever getLine
-  where test sig = do 
-          putStrLn "getDBUSEvent"
+  where getImage sig = do 
           let fps = mapMaybe fromVariant (signalBody sig) :: [T.Text]
           b <- atomically (readTVar tvar)  
           when ((not.null) fps && b) $ do  
             postGUISync (callback (UsrEv (ImageFileDropped (T.unpack (head fps)))))
+            return ()
+        getLaTeX sig = do 
+          let latex = mapMaybe fromVariant (signalBody sig) :: [T.Text]
+          b <- atomically (readTVar tvar)  
+          when ((not.null) latex && b) $ do  
+            (postGUISync . callback . UsrEv . DBusEv . DBusTest . head) latex
             return ()
 
 -- | set frame title according to file name

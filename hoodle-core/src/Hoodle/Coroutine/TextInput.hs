@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.TextInput 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -99,6 +99,7 @@ textInputDialog = do
                 _ -> go 
   go 
 
+-- | common dialog with multiline edit input box 
 multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
 multiLineDialog str = mkIOaction $ \evhandler -> do
     dialog <- dialogNew
@@ -135,6 +136,7 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
       ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
       _ -> return (UsrEv (OkCancel False))
 
+-- | main event loop for multiline edit box
 multiLineLoop :: T.Text -> MainCoroutine (Maybe T.Text)
 multiLineLoop txt = do 
     r <- nextevent
@@ -170,7 +172,8 @@ laTeXInput mpos str = do
                             >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
                                       Left err -> okMessageBox err >> laTeXInput mpos result
                 )
-      Nothing -> 
+      Nothing -> do 
+        modeChange ToViewAppendMode 
         autoPosText >>=
           maybe (laTeXInput (Just (100,100)) str) 
                 (\y'->laTeXInput (Just (100,y')) str) 
@@ -208,6 +211,7 @@ laTeXInputNetwork mpos str =
                                       Left err -> okMessageBox err >> laTeXInput mpos result
                 )
       Nothing -> do 
+        modeChange ToViewAppendMode 
         autoPosText >>=
           maybe (laTeXInputNetwork (Just (100,100)) str) 
                 (\y'->laTeXInputNetwork (Just (100,y')) str) 
@@ -215,6 +219,7 @@ laTeXInputNetwork mpos str =
 
 dbusNetworkInput :: T.Text -> MainCoroutine ()
 dbusNetworkInput txt = do 
+    modeChange ToViewAppendMode     
     mpos <- autoPosText 
     let pos = maybe (100,100) (100,) mpos 
     rsvg <- liftIO (makeLaTeXSVG pos txt) 

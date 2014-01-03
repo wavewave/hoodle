@@ -268,7 +268,8 @@ makeNewItemImage isembedded filename =
           (w,h) <- imageSize img 
           let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
                   | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
-          bstr <- savePngByteString img 
+          -- bstr <- savePngByteString img 
+          bstr <- C.readFile filename 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
           return . ItemImage $ Image ebdsrc (100,100) dim 

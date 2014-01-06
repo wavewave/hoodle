@@ -90,7 +90,7 @@ data UserEvent = Initialized
                | MiniBuffer MiniBufferEvent
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
-               | ImageFileDropped FilePath
+               | DBusEv DBusEvent
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -107,6 +107,7 @@ data MenuEvent = MenuNew
                | MenuLoadPNGorJPG
                | MenuLoadSVG
                | MenuLaTeX
+               | MenuLaTeXNetwork
                | MenuCombineLaTeX
                | MenuEmbedPredefinedImage
                | MenuEmbedPredefinedImage2
@@ -254,6 +255,10 @@ data NetworkEvent = NetworkDialog
 
 instance Show (MVar ()) where
   show _ = "MVar"
+
+data DBusEvent = DBusNetworkInput T.Text
+               | ImageFileDropped FilePath
+               deriving Show
 
 -- | 
 viewModeToUserEvent :: RadioAction -> IO UserEvent

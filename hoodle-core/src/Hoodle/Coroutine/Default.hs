@@ -351,7 +351,8 @@ defaultEventProcess (CustomKeyEvent str) = do
   where 
     colorfunc c = doIOaction $ \_evhandler -> return (UsrEv (PenColorChanged c))
     toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
-defaultEventProcess (ImageFileDropped fname) = embedImage fname
+defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
+defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
@@ -381,7 +382,10 @@ menuEventProcess MenuNew  = askIfSave fileNew
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
-menuEventProcess MenuLaTeX = laTeXInput (100,100) (laTeXHeader <> "\n\n" <> laTeXFooter)
+menuEventProcess MenuLaTeX = 
+    laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
+menuEventProcess MenuLaTeXNetwork = 
+    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)    
 menuEventProcess MenuCombineLaTeX = combineLaTeXText 
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo
@@ -431,7 +435,7 @@ menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" 
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
-menuEventProcess MenuText = textInput (100,100) "" 
+menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuAddLink = addLink
 menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
 menuEventProcess MenuEmbedPredefinedImage2 = embedPredefinedImage2 

@@ -16,6 +16,7 @@
        <menuitem action="LDPREIMG2A" />
        <menuitem action="LDPREIMG3A" />
        <menuitem action="LATEXA" />
+       <menuitem action="LATEXNETA" />
        <menuitem action="COMBINELATEXA" />
        <separator /> 
        <menuitem action="PRINTA" />                        
@@ -212,6 +213,7 @@
     <separator />     
     <toolitem action="TEXTA"       />
     <toolitem action="LATEXA"      />
+    <toolitem action="LATEXNETA"      />
     <!-- <toolitem action="DEFAULTA"    />    --> 
     <!-- <toolitem action="DEFPENA"     />    -->                  
     <!-- <toolitem action="SHPRECA"     />    -->  

@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.TextInput 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -24,8 +24,9 @@ import           Control.Monad.Trans.Either
 import           Data.Attoparsec
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
-import           Data.List (sortBy)
+import           Data.List (sort, sortBy)
 import           Data.Maybe (catMaybes)
+-- import           Data.Ord (comparing)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Data.UUID.V4 (nextRandom)
@@ -46,9 +47,10 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type.HitTest
-import           Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle)
+import           Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle, rPage2Page)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
+import           Hoodle.Accessor
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
@@ -97,6 +99,7 @@ textInputDialog = do
                 _ -> go 
   go 
 
+-- | common dialog with multiline edit input box 
 multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
 multiLineDialog str = mkIOaction $ \evhandler -> do
     dialog <- dialogNew
@@ -133,6 +136,7 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
       ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
       _ -> return (UsrEv (OkCancel False))
 
+-- | main event loop for multiline edit box
 multiLineLoop :: T.Text -> MainCoroutine (Maybe T.Text)
 multiLineLoop txt = do 
     r <- nextevent
@@ -146,32 +150,82 @@ multiLineLoop txt = do
       _ -> multiLineLoop txt
 
 -- | insert text 
-textInput :: (Double,Double) -> T.Text -> MainCoroutine ()
-textInput (x0,y0) str = do 
-    modify (tempQueue %~ enqueue (multiLineDialog str))  
-    multiLineLoop str >>= 
-      mapM_ (\result -> deleteSelection
-                        >> liftIO (makePangoTextSVG (x0,y0) result) 
-                        >>= svgInsert (result,"pango"))
+textInput :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
+textInput mpos str = do 
+    case mpos of 
+      Just (x0,y0) -> do 
+        modify (tempQueue %~ enqueue (multiLineDialog str))  
+        multiLineLoop str >>= 
+          mapM_ (\result -> deleteSelection
+                            >> liftIO (makePangoTextSVG (x0,y0) result) 
+                            >>= svgInsert (result,"pango"))
+      Nothing -> liftIO $ putStrLn "textInput: not implemented"
   
 -- | insert latex
-laTeXInput :: (Double,Double) -> T.Text -> MainCoroutine ()
-laTeXInput (x0,y0) str = do 
-    modify (tempQueue %~ enqueue (multiLineDialog str))  
-    multiLineLoop str >>= 
-      mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
-                        >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
-                                  Left err -> okMessageBox err >> laTeXInput (x0,y0) result
-            )
+laTeXInput :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
+laTeXInput mpos str = do 
+    case mpos of 
+      Just (x0,y0) -> do 
+        modify (tempQueue %~ enqueue (multiLineDialog str))  
+        multiLineLoop str >>= 
+          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
+                            >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
+                                      Left err -> okMessageBox err >> laTeXInput mpos result
+                )
+      Nothing -> do 
+        modeChange ToViewAppendMode 
+        autoPosText >>=
+          maybe (laTeXInput (Just (100,100)) str) 
+                (\y'->laTeXInput (Just (100,y')) str) 
+
+autoPosText :: MainCoroutine (Maybe Double)
+autoPosText = do 
+    cpg <- rPage2Page <$> getCurrentPageCurr
+    let Dim pgw pgh = view dimension cpg
+        mcomponents = do 
+          l <- view layers cpg
+          i <- view items l
+          case i of 
+            ItemSVG svg ->  
+              case svg_command svg of
+                Just "latex" -> do 
+                  let (_,y) = svg_pos svg  
+                      Dim _ h = svg_dim svg
+                  return (y,y+h) 
+                _ -> []
+            _ -> []
+    if null mcomponents 
+      then return Nothing 
+      else do let y0 = (head . sortBy (flip compare) . map snd) mcomponents
+              if y0 + 10 > pgh then return Nothing else return (Just (y0 + 10))
+
 
 -- | 
-laTeXInputNetwork :: (Double,Double) -> T.Text -> MainCoroutine ()
-laTeXInputNetwork (x0,y0) str =  
-    networkTextInput str >>=
-      mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
-                        >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
-                                  Left err -> okMessageBox err >> laTeXInput (x0,y0) result
-            )
+laTeXInputNetwork :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
+laTeXInputNetwork mpos str =  
+    case mpos of 
+      Just (x0,y0) -> do 
+        networkTextInput str >>=
+          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
+                            >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
+                                      Left err -> okMessageBox err >> laTeXInput mpos result
+                )
+      Nothing -> do 
+        modeChange ToViewAppendMode 
+        autoPosText >>=
+          maybe (laTeXInputNetwork (Just (100,100)) str) 
+                (\y'->laTeXInputNetwork (Just (100,y')) str) 
+
+
+dbusNetworkInput :: T.Text -> MainCoroutine ()
+dbusNetworkInput txt = do 
+    modeChange ToViewAppendMode     
+    mpos <- autoPosText 
+    let pos = maybe (100,100) (100,) mpos 
+    rsvg <- liftIO (makeLaTeXSVG pos txt) 
+    case rsvg of 
+      Right r -> deleteSelection >> svgInsert (txt,"latex") r
+      Left err -> okMessageBox err >> laTeXInput (Just pos) txt
 
 
 laTeXHeader :: T.Text
@@ -311,7 +365,7 @@ makePangoTextSVG (xo,yo) str = do
 -- | combine all LaTeX texts into a text file 
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
-    liftIO $ putStrLn "start combine latex file" 
+    -- liftIO $ putStrLn "start combine latex file" 
     hdl <- rHoodle2Hoodle . getHoodle <$> get  
     let mlatex_components = do 
           (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
@@ -336,3 +390,4 @@ combineLaTeXText = do
         resulttxt = (B.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
     mfilename <- fileChooser FileChooserActionSave Nothing
     forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
+

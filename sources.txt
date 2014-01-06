@@ -1,0 +1,9 @@
+./coroutine-object
+./xournal-types 
+./xournal-parser
+./hoodle-types 
+./hoodle-parser 
+./hoodle-builder 
+./hoodle-render 
+./hoodle-core 
+./hoodle 

@@ -1,0 +1,37 @@
+Name:		hoodle-extra
+Version:	0.0.999
+Synopsis:	extra hoodle tools 
+Description: 	extra hoodle tools 
+Homepage:       http://ianwookim.org/hoodle
+License: 	GPL-3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 7.4, GHC == 7.6
+Build-Type: 	Custom
+Cabal-Version:  >= 1.8
+data-files:     
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle
+
+
+Executable networkedit
+  Main-is: networkedit.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends:   base,
+                   network-simple, 
+                   bytestring,
+                   directory, 
+                   time,
+                   process,
+                   filepath,
+                   monad-loops, 
+                   binary,  
+                   transformers,
+                   mtl
+

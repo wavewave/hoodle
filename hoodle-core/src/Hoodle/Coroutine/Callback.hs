@@ -22,7 +22,7 @@ import qualified Control.Monad.Trans.Crtn.EventHandler as E
 -- 
 import Hoodle.Util
 -- 
-import Prelude (show,Maybe(..),) -- hiding (catch)
+import Prelude (show,Maybe(..)) -- hiding (catch)
 
 eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()
 eventHandler evar ev = E.eventHandler evar ev `catch` allexceptionproc 

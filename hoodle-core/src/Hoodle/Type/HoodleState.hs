@@ -46,6 +46,7 @@ module Hoodle.Type.HoodleState
 , tempLog 
 , tempQueue 
 , statusBar
+-- , cursorInfo
 -- 
 , hoodleFileName 
 , lastSavedTime
@@ -156,6 +157,7 @@ data HoodleState =
                 , _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent)
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Statusbar
+                -- , _cursorInfo :: Maybe Cursor
                 } 
 
 
@@ -268,6 +270,12 @@ tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 -- | 
 statusBar :: Simple Lens HoodleState (Maybe Statusbar)
 statusBar = lens _statusBar (\f a -> f { _statusBar = a })
+
+{-
+-- | 
+cursorInfo :: Simple Lens HoodleState (Maybe Cursor)
+cursorInfo = lens _cursorInfo (\f a -> f { _cursorInfo = a })
+-}
 
 -- | 
 data HoodleFileControl = 
@@ -397,6 +405,7 @@ emptyHoodleState = do
     , _tempQueue = emptyQueue
     , _tempLog = id 
     , _statusBar = Nothing 
+    -- , _cursorInfo = Nothing
     }
 
 emptyHoodleFileControl :: HoodleFileControl 

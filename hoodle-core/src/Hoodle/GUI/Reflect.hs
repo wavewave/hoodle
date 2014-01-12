@@ -138,66 +138,62 @@ reflectUIComponent lnz name f = do
          where go = do r <- nextevent
                        case r of
                          ActionOrdered -> return ()
-                         _ -> (liftIO $ print r) >>  go 
+                         _ -> go 
 
 -- | 
 reflectCursor :: MainCoroutine () 
 reflectCursor = do 
     xst <- St.get 
-    let useVCursor = view (settings.doesUseVariableCursor) xst 
-        cinfobox   = view currentCanvasInfo xst 
-        canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
-        cpn        = PageNum $ forBoth' unboxBiAct (view currentPageNum) cinfobox
-        pinfo = view penInfo xst 
-        pcolor = view (penSet . currPen . penColor) pinfo
-        pwidth = view (penSet . currPen . penWidth) pinfo 
-    win <- liftIO $ widgetGetDrawWindow canvas
-    dpy <- liftIO $ widgetGetDisplay canvas  
-    liftIO $ putStrLn ("useVCursor=" ++ show useVCursor); 
-    liftIO $ (if useVCursor 
-              then do 
-                geometry <- 
-                  forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
-                                             in makeCanvasGeometry cpn arr canvas
-                                      ) cinfobox
-                --  makeCanvasGeometry cpn arr canvas                
-                let p2c = desktop2Canvas geometry . page2Desktop geometry
-                    CvsCoord (x0,y0) = p2c (cpn, PageCoord (0,0))  
-                    CvsCoord (x1,y1) = p2c (cpn, PageCoord (pwidth,pwidth))
-                    
-                let cursize = (x1-x0) 
-                let (r,g,b,a) = case pcolor of  
-                                  ColorRGBA r' g' b' a' -> (r',g',b',a')
-                                  x -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
-                -- cur <- liftIO $ cursorNew Umbrella
-                pb <- pixbufNew ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
-                let numPixels = maxCursorWidth*maxCursorHeight
-                pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))
-                forM_ [0..numPixels-1] $ \i -> do 
-                  let cvt :: Double -> Word8
-                      cvt x | x < 0.0039 = 0
-                            | x > 0.996  = 255
-                            | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
-                  if (fromIntegral (i `mod` maxCursorWidth)) < cursize 
-                     && (fromIntegral (i `div` maxCursorWidth)) < cursize 
-                    then do 
-                      writeArray pbData (4*i)   (cvt r)
-                      writeArray pbData (4*i+1) (cvt g)                  
-                      writeArray pbData (4*i+2) (cvt b)
-                      writeArray pbData (4*i+3) (cvt a)
-                    else do
-                      writeArray pbData (4*i)   0
-                      writeArray pbData (4*i+1) 0
-                      writeArray pbData (4*i+2) 0
-                      writeArray pbData (4*i+3) 0
-                    
-                  
-                  
-                -- putStrLn "width"
-                print . length =<<  getElems pbData
-                -- pixbuf
-                cur <- cursorNewFromPixbuf dpy pb 0 0  
-                drawWindowSetCursor win (Just cur)
-              else liftIO $ drawWindowSetCursor win Nothing 
-             )   
-                
+    act xst 
+    let go = do r <- nextevent 
+                case r of
+                  ActionOrdered -> return ()
+                  _ -> go 
+    go
+ where act xst = doIOaction $ \_ -> do 
+         let useVCursor = view (settings.doesUseVariableCursor) xst 
+             cinfobox   = view currentCanvasInfo xst 
+             canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
+             cpn        = PageNum $ forBoth' unboxBiAct (view currentPageNum) cinfobox
+             pinfo = view penInfo xst 
+             pcolor = view (penSet . currPen . penColor) pinfo
+             pwidth = view (penSet . currPen . penWidth) pinfo 
+         win <- widgetGetDrawWindow canvas
+         dpy <- widgetGetDisplay canvas  
+         if useVCursor 
+           then do 
+             geometry <- 
+               forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
+                                          in makeCanvasGeometry cpn arr canvas
+                                   ) cinfobox
+             let p2c = desktop2Canvas geometry . page2Desktop geometry
+                 CvsCoord (x0,y0) = p2c (cpn, PageCoord (0,0))  
+                 CvsCoord (x1,y1) = p2c (cpn, PageCoord (pwidth,pwidth))
+                 cursize = (x1-x0) 
+                 (r,g,b,a) = case pcolor of  
+                               ColorRGBA r' g' b' a' -> (r',g',b',a')
+                               x -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
+             pb <- pixbufNew ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
+             let numPixels = maxCursorWidth*maxCursorHeight
+             pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))
+             forM_ [0..numPixels-1] $ \i -> do 
+               let cvt :: Double -> Word8
+                   cvt x | x < 0.0039 = 0
+                         | x > 0.996  = 255
+                         | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
+               if (fromIntegral (i `mod` maxCursorWidth)) < cursize 
+                  && (fromIntegral (i `div` maxCursorWidth)) < cursize 
+                 then do 
+                   writeArray pbData (4*i)   (cvt r)
+                   writeArray pbData (4*i+1) (cvt g)                  
+                   writeArray pbData (4*i+2) (cvt b)
+                   writeArray pbData (4*i+3) (cvt a)
+                 else do
+                   writeArray pbData (4*i)   0
+                   writeArray pbData (4*i+1) 0
+                   writeArray pbData (4*i+2) 0
+                   writeArray pbData (4*i+3) 0
+             cur <- cursorNewFromPixbuf dpy pb 0 0  
+             drawWindowSetCursor win (Just cur)
+           else drawWindowSetCursor win Nothing 
+         return (UsrEv ActionOrdered)

@@ -277,6 +277,7 @@ defaultEventProcess (PenWidthChanged v) = do
     let w = int2Point ptype v
     let stNew = set (penInfo.currentTool.penWidth) w st 
     put stNew 
+    reflectPenWidthUI
 defaultEventProcess (BackgroundStyleChanged bsty) = do
     modify (backgroundStyle .~ bsty)
     xstate <- get 

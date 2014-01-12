@@ -14,9 +14,13 @@
 
 module Hoodle.GUI.Reflect where
 
-import Control.Lens (view,Simple,Lens)
+import           Control.Lens (view,Simple,Lens)
 import qualified Control.Monad.State as St
-import Control.Monad.Trans 
+import           Control.Monad.Trans 
+import           Data.Array.MArray
+import           Data.Foldable (forM_)
+import qualified Data.Map as M (lookup)
+import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 --
@@ -65,6 +69,7 @@ reflectViewModeUI = do
 reflectPenModeUI :: MainCoroutine ()
 reflectPenModeUI = do 
     reflectUIComponent penModeSignal "PENA" f
+    reflectCursor
   where 
     f xst = Just $
       hoodleModeStateEither (view hoodleModeState xst) #  
@@ -76,6 +81,7 @@ reflectPenModeUI = do
 reflectPenColorUI :: MainCoroutine () 
 reflectPenColorUI = do 
     reflectUIComponent penColorSignal "BLUEA" f
+    reflectCursor
   where 
     f xst = 
       let mcolor = 
@@ -130,3 +136,44 @@ reflectUIComponent lnz name f = do
                          ActionOrdered -> return ()
                          _ -> (liftIO $ print r) >>  go 
 
+-- | 
+reflectCursor :: MainCoroutine () 
+reflectCursor = do 
+    xst <- St.get 
+    let useVCursor = view (settings.doesUseVariableCursor) xst 
+        cinfobox = view currentCanvasInfo xst 
+        canvas = forBoth' unboxBiAct (view drawArea) cinfobox 
+        pinfo = view penInfo xst 
+        pcolor = view (penSet . currPen . penColor) pinfo
+        pwidth = view (penSet . currPen . penWidth) pinfo 
+        
+    win <- liftIO $ widgetGetDrawWindow canvas
+    dpy <- liftIO $ widgetGetDisplay canvas  
+    liftIO $ putStrLn ("useVCursor=" ++ show useVCursor); 
+    liftIO $ (if useVCursor 
+              then do 
+                let (r,g,b,a) = case pcolor of  
+                                  ColorRGBA r' g' b' a' -> (r',g',b',a')
+                                  x -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
+                -- cur <- liftIO $ cursorNew Umbrella
+                pb <- pixbufNew ColorspaceRgb True 8 10 10 
+                pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))
+                forM_ [0..99] $ \i -> do 
+                  let cvt :: Double -> Word8
+                      cvt x | x < 0.0039 = 0
+                            | x > 0.996  = 255
+                            | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
+                  writeArray pbData (4*i)   (cvt r)
+                  writeArray pbData (4*i+1) (cvt g)                  
+                  writeArray pbData (4*i+2) (cvt b)
+                  writeArray pbData (4*i+3) (cvt a)                
+                  
+                  
+                -- putStrLn "width"
+                print . length =<<  getElems pbData
+                -- pixbuf
+                cur <- cursorNewFromPixbuf dpy pb 0 0  
+                drawWindowSetCursor win (Just cur)
+              else liftIO $ drawWindowSetCursor win Nothing 
+             )   
+                

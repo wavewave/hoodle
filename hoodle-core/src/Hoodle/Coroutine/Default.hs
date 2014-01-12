@@ -431,6 +431,7 @@ menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doe
 menuEventProcess MenuEmbedPDF = updateFlagFromToggleUI "EBDPDFA" (settings.doesEmbedPDF) >> return ()
 menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings.doesFollowLinks) >> return ()
 menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings.doesKeepAspectRatio) >> return ()
+menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings.doesUseVariableCursor) >> reflectCursor >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 

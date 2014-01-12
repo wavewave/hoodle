@@ -297,6 +297,9 @@ getMenuUI evar = do
   keepratioa <- toggleActionNew "KEEPRATIOA" "Keep Aspect Ratio" (Just "Just a stub") Nothing
   keepratioa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuKeepAspectRatio))
+  vcursora <- toggleActionNew "VCURSORA" "Use Variable Cursor" (Just "Just a stub") Nothing
+  vcursora `on` actionToggled $ do 
+    eventHandler evar (UsrEv (Menu MenuUseVariableCursor))
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Toggle Pan/Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
   toglayera <- actionNewAndRegister "TOGLAYERA" "Toggle Layer Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleLayerWidget)
@@ -357,7 +360,8 @@ getMenuUI evar = do
         ] 
     
   mapM_ (actionGroupAddAction agr) 
-    [uxinputa, handa, smthscra, popmenua, ebdimga, ebdpdfa, flwlnka, keepratioa, pressrsensa]
+    [ uxinputa, handa, smthscra, popmenua, ebdimga, ebdpdfa, flwlnka, keepratioa, pressrsensa
+    , vcursora ]
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   mpgmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) -- const (return ()))

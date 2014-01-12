@@ -73,7 +73,8 @@ Library
                    text >= 0.10,
                    stm >= 2, 
                    pureMD5, 
-                   network-info
+                   network-info, 
+                   array
 
   Exposed-Modules: 
                    Hoodle.Accessor

@@ -154,6 +154,7 @@
        <menuitem action="EBDPDFA" />
        <menuitem action="FLWLNKA" />
        <menuitem action="KEEPRATIOA" />
+       <menuitem action="VCURSORA" />
        <menuitem action="TOGPANZOOMA" />
        <menuitem action="TOGLAYERA" />
        <menuitem action="TOGCLOCKA" />

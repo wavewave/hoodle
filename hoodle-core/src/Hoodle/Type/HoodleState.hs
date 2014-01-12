@@ -58,6 +58,7 @@ module Hoodle.Type.HoodleState
 , doesEmbedPDF
 , doesFollowLinks
 , doesKeepAspectRatio
+, doesUseVariableCursor
 -- 
 , penModeSignal
 , pageModeSignal
@@ -319,6 +320,7 @@ data Settings =
            , _doesEmbedPDF :: Bool 
            , _doesFollowLinks :: Bool 
            , _doesKeepAspectRatio :: Bool
+           , _doesUseVariableCursor :: Bool 
            } 
   
 
@@ -353,6 +355,10 @@ doesFollowLinks = lens _doesFollowLinks (\f a -> f { _doesFollowLinks = a } )
 -- | flag for keeping aspect ratio
 doesKeepAspectRatio :: Simple Lens Settings Bool
 doesKeepAspectRatio = lens _doesKeepAspectRatio (\f a -> f { _doesKeepAspectRatio = a } )
+
+-- | flag for variable cursor
+doesUseVariableCursor :: Simple Lens Settings Bool
+doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariableCursor=a})
 
 -- | default hoodle state 
 emptyHoodleState :: IO HoodleState 
@@ -421,6 +427,7 @@ defaultSettings =
   , _doesEmbedPDF = True 
   , _doesFollowLinks = True
   , _doesKeepAspectRatio = False
+  , _doesUseVariableCursor = False
   } 
   
 

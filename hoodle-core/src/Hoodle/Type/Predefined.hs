@@ -47,12 +47,18 @@ predefinedLassoDash :: ([Double],Double)
 predefinedLassoDash = ([2,2],4) 
 
 -- | 
-
 predefinedPageSpacing :: Double
 predefinedPageSpacing = 10 
 
 -- | 
-
 predefinedZoomStepFactor :: Double
 predefinedZoomStepFactor = 1.10
 
+
+-- | 
+maxCursorWidth :: Int
+maxCursorWidth = 30
+
+-- | 
+maxCursorHeight :: Int
+maxCursorHeight = 30

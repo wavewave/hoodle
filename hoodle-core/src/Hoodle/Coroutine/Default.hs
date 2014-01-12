@@ -277,6 +277,7 @@ defaultEventProcess (PenWidthChanged v) = do
     let w = int2Point ptype v
     let stNew = set (penInfo.currentTool.penWidth) w st 
     put stNew 
+    reflectPenWidthUI
 defaultEventProcess (BackgroundStyleChanged bsty) = do
     modify (backgroundStyle .~ bsty)
     xstate <- get 
@@ -431,6 +432,7 @@ menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doe
 menuEventProcess MenuEmbedPDF = updateFlagFromToggleUI "EBDPDFA" (settings.doesEmbedPDF) >> return ()
 menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings.doesFollowLinks) >> return ()
 menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings.doesKeepAspectRatio) >> return ()
+menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings.doesUseVariableCursor) >> reflectCursor >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 

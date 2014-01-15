@@ -266,7 +266,8 @@ makeNewItemImage isembedded filename =
         loadpng = do 
           img <- loadPngFile filename
           (w,h) <- imageSize img 
-          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
+          let dim | w < 612 && h < 792 = Dim (fromIntegral w) (fromIntegral h)
+                  | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
                   | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
           -- bstr <- savePngByteString img 
           bstr <- C.readFile filename 

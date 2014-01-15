@@ -203,6 +203,8 @@ reflectCursor = do
                writeArray pbData (4*i+1) 0
                writeArray pbData (4*i+2) 0
                writeArray pbData (4*i+3) 0
-         cur <- cursorNewFromPixbuf dpy pb (floor cursize `div` 2) (floor cursize `div` 2)  
-         postGUIAsync (drawWindowSetCursor win (Just cur))
+            
+         postGUIAsync . drawWindowSetCursor win . Just =<< 
+           cursorNewFromPixbuf dpy pb 
+             (floor cursize `div` 2) (floor cursize `div` 2)
          return (UsrEv ActionOrdered)

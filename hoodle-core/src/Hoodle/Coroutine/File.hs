@@ -362,7 +362,10 @@ embedImage filename = do
             Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
         else
           liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-    insertItemAt Nothing nitm 
+    let cpn = view (currentCanvasInfo . unboxLens currentPageNum) xst
+    my <- autoPosText 
+    let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
+    insertItemAt mpos nitm 
 
 insertItemAt :: Maybe (PageNum,PageCoordinate) 
                 -> RItem 

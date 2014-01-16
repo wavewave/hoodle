@@ -275,14 +275,17 @@ makeNewItemImage isembedded filename =
           bstr <- C.readFile filename 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) dim 
+          return . ItemImage $ Image ebdsrc (50,100) dim 
         loadjpg = do 
           img <- loadJpegFile filename
           (w,h) <- imageSize img 
-          let dim | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
+          let dim | w < 612 && h < 792 = Dim (fromIntegral w) (fromIntegral h)
+                  | w < 765 && h < 990 = Dim (fromIntegral w * 72 / 90) 
+                                             (fromIntegral h * 72 / 90)
+                  | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
                   | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
           bstr <- savePngByteString img 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str
-          return . ItemImage $ Image ebdsrc (100,100) dim 
+          return . ItemImage $ Image ebdsrc (50,100) dim 
 

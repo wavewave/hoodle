@@ -193,6 +193,11 @@ autoPosText = do
                       Dim _ h = svg_dim svg
                   return (y,y+h) 
                 _ -> []
+            ItemImage img -> do 
+              let (_,y) = img_pos img
+                  Dim _ h = img_dim img
+              return (y,y+h)
+                
             _ -> []
     if null mcomponents 
       then return Nothing 

@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Event 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -207,7 +207,7 @@ data MenuEvent = MenuNew
                | MenuSavePreferences
                | MenuAbout
                | MenuDefault
-               deriving Show -- (Show, Ord, Eq)
+               deriving Show 
 
 -- |
 data ImgType = TypSVG | TypPDF 
@@ -228,6 +228,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
                       | CMenuCropImage (BBoxed Image)
                       | CMenuRotate    RotateDir (BBoxed Image)
+                      | CMenuExport (BBoxed Image)
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

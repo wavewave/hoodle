@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.ContextMenu
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -19,6 +19,7 @@ module Hoodle.Coroutine.ContextMenu where
 import           Control.Applicative
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State hiding (mapM_,forM_)
+import           Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Foldable (mapM_,forM_)
@@ -38,6 +39,7 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (SVG(..), Item(..), Link(..), defaultHoodle)
+import qualified Data.Hoodle.Simple as S (Image(..)) 
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
@@ -96,6 +98,7 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
         adjustScrollbarWithGeometryCvsId cid 
         invalidateAll 
 processContextMenu (CMenuRotate dir imgbbx) = rotateImage dir imgbbx
+processContextMenu (CMenuExport imgbbx) = exportImage (bbxed_content imgbbx)
 processContextMenu CMenuAutosavePage = do 
     xst <- get 
     pg <- getCurrentPageCurr 
@@ -210,6 +213,16 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
           translate (-ulx) (-uly)
           mapM_ renderRItem  hititms
 
+-- |
+exportImage :: S.Image -> MainCoroutine ()
+exportImage img = do
+  
+  runMaybeT $ do 
+    pngbstr <- (MaybeT . return . getByteStringIfEmbeddedPNG . S.img_src) img
+    fp <- MaybeT (fileChooser FileChooserActionSave Nothing)  
+    liftIO $ B.writeFile fp pngbstr
+  return ()
+
 
 showContextMenu :: (PageNum,(Double,Double)) -> MainCoroutine () 
 showContextMenu (pnum,(x,y)) = do 
@@ -314,8 +327,6 @@ showContextMenu (pnum,(x,y)) = do
                             return ()
                           _ -> return ()
                     RItemImage imgbbx _msfc -> do
-                      let -- img = bbxed_content imgbbx
-                          -- BBox (x0,y0) _ = getBBox imgbbx
                       menuitemcrop <- menuItemNewWithLabel ("Crop Image") 
                       menuitemcrop `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal . CMenuCropImage) imgbbx
@@ -325,10 +336,14 @@ showContextMenu (pnum,(x,y)) = do
                       menuitemrotccw <- menuItemNewWithLabel ("Rotate Image CCW") 
                       menuitemrotccw `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CCW imgbbx)
+                      menuitemexport <- menuItemNewWithLabel ("Export Image")
+                      menuitemexport `on` menuItemActivate $ do
+                        (evhandler . UsrEv . GotContextMenuSignal) (CMenuExport imgbbx)
                       -- 
                       menuAttach menu menuitemcrop 0 1 4 5
                       menuAttach menu menuitemrotcw 0 1 5 6
                       menuAttach menu menuitemrotccw 0 1 6 7
+                      menuAttach menu menuitemexport 0 1 7 8
                       -- 
                       return ()
                     _ -> return ()

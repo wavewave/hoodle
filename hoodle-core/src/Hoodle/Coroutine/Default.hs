@@ -463,7 +463,8 @@ menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
-menuEventProcess MenuHandwritingRecognitionTest = handwritingRecognitionTest
+menuEventProcess MenuHandwritingRecognitionTest = 
+    handwritingRecognitionTest >>= \res -> liftIO (print res)
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

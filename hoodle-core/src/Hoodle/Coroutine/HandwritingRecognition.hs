@@ -30,11 +30,13 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import           Data.Foldable (mapM_)
 import qualified Data.HashMap.Strict as HM
+import qualified Data.List as L (lookup)
 import           Data.Maybe
 import           Data.Strict.Tuple
 import qualified Data.Text as T
+import           Data.Traversable (forM)
 import           Data.UUID.V4
-import           Data.Vector hiding (map,head,null,(++),take,modify,mapM_)
+import           Data.Vector hiding (map,head,null,(++),take,modify,mapM_,zip,forM)
 import           Graphics.UI.Gtk 
 import           System.Directory
 import           System.FilePath
@@ -60,21 +62,21 @@ getArrayVal :: (Monad m) => Int -> Value -> EitherT String m Value
 getArrayVal n v = getArray v >>= \vs -> 
                     maybe (left (show n ++ " is out of array")) right (vs !? n) 
 
-handwritingRecognitionTest :: MainCoroutine ()
+handwritingRecognitionTest :: MainCoroutine (Maybe (Bool,T.Text))
 handwritingRecognitionTest = do
   liftIO $ putStrLn "handwriting recognition test here"
   r <- minibufDialog "test handwriting recognition"
   case r of 
-    Left err -> liftIO $ putStrLn (show err) 
+    Left err -> liftIO $ putStrLn (show err) >> return Nothing 
     Right strks -> do 
       uuid <- liftIO $ nextRandom
       tdir <- liftIO getTemporaryDirectory 
       let bstr = (encode . mkAesonInk) strks
       let fp = tdir </> show uuid <.> "json"
       liftIO $ LB.writeFile fp bstr
-      r <- liftIO $ readProcess "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "https://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
+      r <- liftIO $ readProcess "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
       let ev0 = AP.parseOnly json (B.pack r)  
-      liftIO $ print ev0
+      -- liftIO $ print ev0
       r <- runEitherT $ do  
              v0 <- hoistEither (AP.parseOnly json (B.pack r))
              getArrayVal 0 v0 >>= \succstr -> 
@@ -85,50 +87,56 @@ handwritingRecognitionTest = do
                  f _ = Nothing
              (return . mapMaybe f . toList) v4
       case r of 
-        Left err -> liftIO $ putStrLn err
-        Right lst -> showRecogTextDialog lst
+        Left err -> liftIO $ putStrLn err >> return Nothing 
+        Right lst -> showRecogTextDialog lst 
 
 
 
-showRecogTextDialog :: [T.Text] -> MainCoroutine ()
+showRecogTextDialog :: [T.Text] -> MainCoroutine (Maybe (Bool,T.Text))
 showRecogTextDialog txts = do 
     modify (tempQueue %~ enqueue action) 
-    >> waitSomeEvent (\case OkCancel _ -> True ; _ -> False)
-    >> return ()
+    >> waitSomeEvent (\case OkCancel _ -> True 
+                            GotRecogResult _ _ -> True
+                            _ -> False)
+    >>= \case OkCancel _ -> return Nothing
+              GotRecogResult b txt -> return (Just (b,txt))
   where 
-    action = mkIOaction $ \_evhandler -> do 
+    action = mkIOaction $ \evhandler -> do 
                dialog <- dialogNew
                vbox <- dialogGetUpper dialog
-               mapM_ (addOneTextBox vbox) txts 
+               let txtlst' = zip [1..] txts
+               txtlst <- forM txtlst' $ \(n,txt) -> do
+                 let str = T.unpack txt 
+                 homedir <- getHomeDirectory
+                 let hoodled = homedir </> ".hoodle.d"
+                     hoodletdir = hoodled </> "hoodlet"
+                 b <- doesDirectoryExist hoodletdir 
+                 b2 <- if not b 
+                         then return False   
+                         else doesFileExist (hoodletdir </> str <.> "hdlt")      
+                 return (n,(b2,txt))
+               mapM_ (addOneTextBox evhandler dialog vbox) txtlst  
                _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
                widgetShowAll dialog
-               _res <- dialogRun dialog
+               res <- dialogRun dialog
                widgetDestroy dialog
-               return (UsrEv (OkCancel False))
- 
-addOneTextBox :: VBox -> T.Text -> IO ()
-addOneTextBox vbox txt = do
-  let str = T.unpack txt 
-  homedir <- getHomeDirectory
-  let hoodled = homedir </> ".hoodle.d"
-      hoodletdir = hoodled </> "hoodlet"
-  b <- doesDirectoryExist hoodletdir 
-  b2 <- if not b 
-          then return False   
-          else doesFileExist (hoodletdir </> str <.> "hdlt")
-    
-    
-      
+               case res of 
+                 ResponseUser n -> case L.lookup n txtlst of
+                                     Nothing -> return (UsrEv (OkCancel False))
+                                     Just (b,txt) -> return (UsrEv (GotRecogResult b txt)) 
+                 _ -> return (UsrEv (OkCancel False))
+                 
+addOneTextBox :: (AllEvent -> IO ()) -> Dialog -> VBox -> (Int,(Bool,T.Text)) -> IO ()
+addOneTextBox evhandler dialog vbox (n,(b,txt)) = do
   btn <- buttonNewWithLabel (T.unpack txt)
-  when b2 $ do 
+         -- dialogAddButton dialog (T.unpack txt) (ResponseUser n)
+  when b $ do 
     widgetModifyBg btn StateNormal (Color 60000 60000 30000)
     widgetModifyBg btn StatePrelight (Color 63000 63000 40000)
     widgetModifyBg btn StateActive (Color 45000 45000 18000)
-   
+  btn `on` buttonPressEvent $ tryEvent $ do
+    liftIO $ dialogResponse dialog (ResponseUser n)
   boxPackStart vbox btn PackNatural 0 
-
-
-  
 
 mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks = 

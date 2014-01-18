@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Text.Hoodle.Builder 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -16,22 +16,22 @@
 module Text.Hoodle.Builder where
 
 -- from other packages 
+import           Blaze.ByteString.Builder
+import           Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import           Control.Lens 
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
-import           Data.Foldable (foldMap)
-import           Blaze.ByteString.Builder
-import           Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import           Data.Double.Conversion.ByteString (toFixed)
+import           Data.Foldable (foldMap)
 #if MIN_VERSION_base(4,5,0) 
 import           Data.Monoid hiding ((<>)) 
 #else
 import           Data.Monoid 
 #endif 
 import           Data.Strict.Tuple
--- from this package 
+-- from hoodle platform 
 import           Data.Hoodle.Simple
-
+-- 
 
 -- | 
 (<>) :: Monoid a => a -> a -> a 

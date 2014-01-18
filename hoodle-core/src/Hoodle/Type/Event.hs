@@ -87,6 +87,7 @@ data UserEvent = Initialized
                | GotRevisionInk String [Stroke]
                | ChangeDialog
                | ActionOrdered                 
+               | GotRecogResult Bool T.Text
                | MiniBuffer MiniBufferEvent
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
@@ -230,6 +231,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuCropImage (BBoxed Image)
                       | CMenuRotate    RotateDir (BBoxed Image)
                       | CMenuExport (BBoxed Image)
+                      | CMenuExportHoodlet Item
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

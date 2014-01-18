@@ -26,6 +26,7 @@ import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Data.UUID.V4 
+import qualified Data.Text as T (unpack)
 import qualified Data.Text.Encoding as TE
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -45,12 +46,14 @@ import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Text.Hoodle.Builder (builder)
+import qualified Text.Hoodlet.Builder as Hoodlet (builder)
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit 
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.HandwritingRecognition
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.Select.ManipulateImage
@@ -156,6 +159,21 @@ processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) tx
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
+processContextMenu (CMenuExportHoodlet itm) = do
+    res <- handwritingRecognitionTest 
+    forM_ res $ \(b,txt) -> do 
+      when (not b) $ liftIO $ do
+        let str = T.unpack txt 
+        homedir <- getHomeDirectory
+        let hoodled = homedir </> ".hoodle.d"
+            hoodletdir = hoodled </> "hoodlet"
+        b' <- doesDirectoryExist hoodletdir 
+        when (not b') $           
+          createDirectory hoodletdir 
+        let fp = hoodletdir </> str <.> "hdlt"
+        L.writeFile fp (Hoodlet.builder itm) 
+
+
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -270,6 +288,12 @@ showContextMenu (pnum,(x,y)) = do
               mapM_ (\mi -> menuAttach menu mi 1 2 5 6) =<< menuCreateALink evhandler sitms 
               case sitms of 
                 sitm : [] -> do 
+                  menuhdlt <- menuItemNewWithLabel "Make Hoodlet"
+                  menuhdlt `on` menuItemActivate $ 
+                    ( evhandler . UsrEv . GotContextMenuSignal 
+                    . CMenuExportHoodlet . rItem2Item ) sitm
+                  menuAttach menu menuhdlt 0 1 7 8
+                  
                   case sitm of 
                     RItemLink lnkbbx _msfc -> do 
                       let lnk = bbxed_content lnkbbx
@@ -361,14 +385,6 @@ showContextMenu (pnum,(x,y)) = do
           menuitem8 `on` menuItemActivate $ 
             evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
           menuAttach menu menuitem8 1 2 4 5 
-
-          menuitem9 <- menuItemNewWithLabel "Autosave This Page Image"
-          menuitem9 `on` menuItemActivate $ 
-            evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
-          menuAttach menu menuitem8 1 2 4 5 
-
-
-
 
           runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
           widgetShowAll menu 

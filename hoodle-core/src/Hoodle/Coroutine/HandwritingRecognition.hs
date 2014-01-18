@@ -1,5 +1,6 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -15,7 +16,10 @@
 
 module Hoodle.Coroutine.HandwritingRecognition where
 
-import           Control.Monad ((<=<),guard)
+import           Control.Lens ((%~))
+import           Control.Monad ((<=<),guard,when)
+import           Control.Monad.State (modify)
+import           Control.Monad.Trans (liftIO)
 import           Control.Monad.Trans.Either
 import           Data.Aeson as A
 import           Data.Aeson.Encode
@@ -24,24 +28,29 @@ import qualified Data.Attoparsec as AP
 import           Data.Attoparsec.Number
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
+import           Data.Foldable (mapM_)
 import qualified Data.HashMap.Strict as HM
 import           Data.Maybe
 import           Data.Strict.Tuple
 import qualified Data.Text as T
 import           Data.UUID.V4
-import           Data.Vector hiding (map,head,null,(++),take)
-import           Control.Monad.Trans (liftIO)
+import           Data.Vector hiding (map,head,null,(++),take,modify,mapM_)
+import           Graphics.UI.Gtk 
 import           System.Directory
 import           System.FilePath
 import           System.Process
 -- 
+import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Simple
 --
 import           Hoodle.Coroutine.Dialog
+import           Hoodle.Coroutine.Draw (waitSomeEvent)
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Event
+import           Hoodle.Type.HoodleState
 -- 
-import           Prelude hiding (fst,snd)
+import           Prelude hiding (fst,snd,mapM_)
 
 getArray :: (Monad m) => Value -> EitherT String m (Vector Value)
 getArray (Array v) = right v
@@ -70,38 +79,56 @@ handwritingRecognitionTest = do
              v0 <- hoistEither (AP.parseOnly json (B.pack r))
              getArrayVal 0 v0 >>= \succstr -> 
                guard (succstr == (String "SUCCESS"))
-             v4 <-  (getArray <=< getArrayVal 1 <=< getArrayVal 0 <=< getArrayVal 1) v0 
+             v4 <-(getArray <=< getArrayVal 1 
+                   <=< getArrayVal 0 <=< getArrayVal 1) v0 
              let f (String v) = Just v
                  f _ = Nothing
-             (return . map T.unpack . mapMaybe f . toList) v4
+             (return . mapMaybe f . toList) v4
       case r of 
         Left err -> liftIO $ putStrLn err
-        Right lst -> okMessageBox (unlines lst)
-{-
-      case ev0 of 
-        Left _ -> return ()
-        Right v0 -> case v0 of 
-          Array v1 -> case v1 ! 0 of
-            String "SUCCESS" -> do 
-              liftIO (print (v1 ! 1))
-              case v1 ! 1 of
-                Array v2 -> case (v2 ! 0) of
-                  Array v3 -> case v3 ! 1 of
-                    Array v4 -> let f (String v) = Just v
-                                    f _ = Nothing
-                                    results = (map T.unpack . mapMaybe f . toList) v4
-                                in okMessageBox (unlines results)
-                      
-                      
-                    _ -> return ()
-                  _ -> return ()
- --                  case v2 ! 1 of
-   --             Array v3 -> 
-                _ -> return ()
-            _ -> return ()
+        Right lst -> showRecogTextDialog lst
 
-          _ -> return ()
--}
+
+
+showRecogTextDialog :: [T.Text] -> MainCoroutine ()
+showRecogTextDialog txts = do 
+    modify (tempQueue %~ enqueue action) 
+    >> waitSomeEvent (\case OkCancel _ -> True ; _ -> False)
+    >> return ()
+  where 
+    action = mkIOaction $ \_evhandler -> do 
+               dialog <- dialogNew
+               vbox <- dialogGetUpper dialog
+               mapM_ (addOneTextBox vbox) txts 
+               _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+               widgetShowAll dialog
+               _res <- dialogRun dialog
+               widgetDestroy dialog
+               return (UsrEv (OkCancel False))
+ 
+addOneTextBox :: VBox -> T.Text -> IO ()
+addOneTextBox vbox txt = do
+  let str = T.unpack txt 
+  homedir <- getHomeDirectory
+  let hoodled = homedir </> ".hoodle.d"
+      hoodletdir = hoodled </> "hoodlet"
+  b <- doesDirectoryExist hoodletdir 
+  b2 <- if not b 
+          then return False   
+          else doesFileExist (hoodletdir </> str <.> "hdlt")
+    
+    
+      
+  btn <- buttonNewWithLabel (T.unpack txt)
+  when b2 $ do 
+    widgetModifyBg btn StateNormal (Color 60000 60000 30000)
+    widgetModifyBg btn StatePrelight (Color 63000 63000 40000)
+    widgetModifyBg btn StateActive (Color 45000 45000 18000)
+   
+  boxPackStart vbox btn PackNatural 0 
+
+
+  
 
 mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks = 

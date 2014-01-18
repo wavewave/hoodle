@@ -362,6 +362,14 @@ showContextMenu (pnum,(x,y)) = do
             evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
           menuAttach menu menuitem8 1 2 4 5 
 
+          menuitem9 <- menuItemNewWithLabel "Autosave This Page Image"
+          menuitem9 `on` menuItemActivate $ 
+            evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
+          menuAttach menu menuitem8 1 2 4 5 
+
+
+
+
           runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0 
           widgetShowAll menu 
           menuPopup menu Nothing 

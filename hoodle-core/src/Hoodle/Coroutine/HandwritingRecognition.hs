@@ -18,10 +18,14 @@ module Hoodle.Coroutine.HandwritingRecognition where
 import           Data.Aeson as A
 import           Data.Aeson.Encode
 import           Data.Aeson.Encode.Pretty
+import qualified Data.Attoparsec as AP
 import           Data.Attoparsec.Number
+import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.HashMap.Strict as HM
+import           Data.Maybe
 import           Data.Strict.Tuple
+import qualified Data.Text as T
 import           Data.UUID.V4
 import           Data.Vector hiding (map,head,null,(++),take)
 import           Control.Monad.Trans (liftIO)
@@ -31,6 +35,7 @@ import           System.Process
 -- 
 import           Data.Hoodle.Simple
 --
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Type.Coroutine
 -- 
@@ -52,7 +57,31 @@ handwritingRecognitionTest = do
       let fp = tdir </> show uuid <.> "json"
       liftIO $ LB.writeFile fp bstr
       r <- liftIO $ readProcess "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "https://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
-      liftIO $ putStrLn r
+      let ev0 = AP.parseOnly json (B.pack r)  
+      liftIO $ print ev0
+      case ev0 of 
+        Left _ -> return ()
+        Right v0 -> case v0 of 
+          Array v1 -> case v1 ! 0 of
+            String "SUCCESS" -> do 
+              liftIO (print (v1 ! 1))
+              case v1 ! 1 of
+                Array v2 -> case (v2 ! 0) of
+                  Array v3 -> case v3 ! 1 of
+                    Array v4 -> let f (String v) = Just v
+                                    f _ = Nothing
+                                    results = (map T.unpack . mapMaybe f . toList) v4
+                                in okMessageBox (unlines results)
+                      
+                      
+                    _ -> return ()
+                  _ -> return ()
+ --                  case v2 ! 1 of
+   --             Array v3 -> 
+                _ -> return ()
+            _ -> return ()
+
+          _ -> return ()
 
 mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks = 

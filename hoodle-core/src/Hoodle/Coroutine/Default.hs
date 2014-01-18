@@ -48,6 +48,7 @@ import           Hoodle.Coroutine.ContextMenu
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.HandwritingRecognition
 import           Hoodle.Coroutine.Highlighter
 import           Hoodle.Coroutine.Layer 
 import           Hoodle.Coroutine.Link
@@ -462,6 +463,7 @@ menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
+menuEventProcess MenuHandwritingRecognitionTest = handwritingRecognitionTest
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

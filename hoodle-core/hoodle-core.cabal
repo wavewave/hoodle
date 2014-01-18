@@ -27,7 +27,9 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   array,
+  Build-Depends:   aeson<0.7,
+                   aeson-pretty > 0.7,
+                   array,
                    attoparsec >= 0.10,
                    base == 4.*, 
                    base64-bytestring >= 0.1,
@@ -72,8 +74,10 @@ Library
                    time >= 1.2, 
                    transformers >= 0.3,
                    transformers-free >= 1.0,
+                   unordered-containers >= 0.2,
                    uuid >= 1.2.7, 
-                   xournal-parser >= 0.5.0.2,
+                   vector >= 0.10,
+                   xournal-parser >= 0.5.0.2
 
   Exposed-Modules: 
                    Hoodle.Accessor

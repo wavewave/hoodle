@@ -24,6 +24,7 @@ import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State hiding (mapM,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Data.Attoparsec (parseOnly)
 import           Data.ByteString (readFile)
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
@@ -53,6 +54,7 @@ import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
 import           Text.Hoodle.Builder 
+import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
@@ -467,6 +469,24 @@ embedAllPDFBackground = do
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
+hoodletLoad :: String -> MainCoroutine ()
+hoodletLoad str = do 
+     homedir <- liftIO getHomeDirectory
+     let hoodled = homedir </> ".hoodle.d"
+         hoodletdir = hoodled </> "hoodlet"
+     b' <- liftIO $ doesDirectoryExist hoodletdir 
+     when b' $ do            
+       let fp = hoodletdir </> str <.> "hdlt"
+       bstr <- liftIO $ readFile fp 
+       case parseOnly Hoodlet.hoodlet bstr of 
+         Left err -> liftIO $ putStrLn err >> return ()
+         Right itm -> do
+           ritm <- liftIO $ cnstrctRItem itm 
+           insertItemAt Nothing ritm 
+
+
+
+
 mkRevisionHdlFile :: Hoodle -> IO (String,String)
 mkRevisionHdlFile hdl = do 
     hdir <- getHomeDirectory

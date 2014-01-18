@@ -1,5 +1,5 @@
 Name:		hoodle-parser
-Version:	0.2.2
+Version:	0.2.2.999
 Synopsis:       Hoodle file parser
 Description: 	Text parser for hoodle xml file
 Homepage:       http://ianwookim.org/hoodle
@@ -37,7 +37,7 @@ Library
                    Text.Hoodle.Parse.Attoparsec
                    Text.Hoodle.Parse.Attoparsec.V0_1_1
                    Text.Hoodle.Parse.Zlib
-
+                   Text.Hoodlet.Parse.Attoparsec
 
 
  

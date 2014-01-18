@@ -18,16 +18,18 @@
 module Hoodle.Coroutine.Default where
 
 import           Control.Applicative ((<$>))
-import           Control.Category
+-- import           Control.Category
 import           Control.Concurrent 
 import           Control.Lens (_1,over,view,set,at,(.~),(%~))
-import           Control.Monad.Reader
-import           Control.Monad.State 
+import           Control.Monad.Reader hiding (mapM_)
+import           Control.Monad.State hiding (mapM_)
 import qualified Data.ByteString.Char8 as B
+import           Data.Foldable (mapM_)
 import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
 import           Data.Monoid ((<>))
+import qualified Data.Text as T (unpack)
 import           Data.Time.Clock
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Process 
@@ -85,7 +87,7 @@ import           Hoodle.Widget.Dispatch
 import           Hoodle.Widget.Layer
 import           Hoodle.Widget.PanZoom
 --
-import Prelude hiding ((.), id)
+import Prelude hiding (mapM_)
 
 -- |
 initCoroutine :: DeviceList 
@@ -464,7 +466,7 @@ menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas.
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
 menuEventProcess MenuHandwritingRecognitionTest = 
-    handwritingRecognitionTest >>= \res -> liftIO (print res)
+    handwritingRecognitionTest >>= mapM_ (\(b,txt) -> when b $ hoodletLoad (T.unpack txt)) 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

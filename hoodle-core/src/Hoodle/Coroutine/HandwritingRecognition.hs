@@ -15,6 +15,8 @@
 
 module Hoodle.Coroutine.HandwritingRecognition where
 
+import           Control.Monad ((<=<),guard)
+import           Control.Monad.Trans.Either
 import           Data.Aeson as A
 import           Data.Aeson.Encode
 import           Data.Aeson.Encode.Pretty
@@ -41,8 +43,13 @@ import           Hoodle.Type.Coroutine
 -- 
 import           Prelude hiding (fst,snd)
 
+getArray :: (Monad m) => Value -> EitherT String m (Vector Value)
+getArray (Array v) = right v
+getArray _ = left "Not an array"
 
-
+getArrayVal :: (Monad m) => Int -> Value -> EitherT String m Value
+getArrayVal n v = getArray v >>= \vs -> 
+                    maybe (left (show n ++ " is out of array")) right (vs !? n) 
 
 handwritingRecognitionTest :: MainCoroutine ()
 handwritingRecognitionTest = do
@@ -59,6 +66,18 @@ handwritingRecognitionTest = do
       r <- liftIO $ readProcess "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "https://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
       let ev0 = AP.parseOnly json (B.pack r)  
       liftIO $ print ev0
+      r <- runEitherT $ do  
+             v0 <- hoistEither (AP.parseOnly json (B.pack r))
+             getArrayVal 0 v0 >>= \succstr -> 
+               guard (succstr == (String "SUCCESS"))
+             v4 <-  (getArray <=< getArrayVal 1 <=< getArrayVal 0 <=< getArrayVal 1) v0 
+             let f (String v) = Just v
+                 f _ = Nothing
+             (return . map T.unpack . mapMaybe f . toList) v4
+      case r of 
+        Left err -> liftIO $ putStrLn err
+        Right lst -> okMessageBox (unlines lst)
+{-
       case ev0 of 
         Left _ -> return ()
         Right v0 -> case v0 of 
@@ -82,6 +101,7 @@ handwritingRecognitionTest = do
             _ -> return ()
 
           _ -> return ()
+-}
 
 mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks = 

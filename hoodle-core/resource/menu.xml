@@ -37,9 +37,6 @@
        <menuitem action="COPYA" />                        
        <menuitem action="PASTEA" />                        
        <menuitem action="DELETEA" />
-       <!-- <separator />
-       <menuitem action="NETCOPYA" />
-       <menuitem action="NETPASTEA" /> --> 
     </menu>
     <menu action="VMA">
        <menuitem action="CONTA" />
@@ -106,8 +103,9 @@
        <separator />
        <menuitem action="TEXTA" /> 
        <menuitem action="LINKA" />
-       <menuitem action="SHPRECA" />
-       <menuitem action="RULERA" />       
+       <!-- <menuitem action="SHPRECA" /> -->
+       <!-- <menuitem action="RULERA" /> -->   
+       <menuitem action="HANDRECA" />
        <separator />
        <menuitem action="SELREGNA" />
        <menuitem action="SELRECTA" />
@@ -217,8 +215,6 @@
     <toolitem action="LATEXNETA"      />
     <!-- <toolitem action="DEFAULTA"    />    --> 
     <!-- <toolitem action="DEFPENA"     />    -->                  
-    <!-- <toolitem action="SHPRECA"     />    -->  
-    <!-- <toolitem action="RULERA"      />    -->                 
     <!-- <separator />                        -->
     <toolitem action="SELREGNA"    />    
     <toolitem action="SELRECTA"    />                     
@@ -228,8 +224,6 @@
     <toolitem action="PENFINEA"       />    
     <toolitem action="PENMEDIUMA"       />                     
     <toolitem action="PENTHICKA"       />   
- <!--   <placeholder name="PENDROPDOWN"   /> --> 
- <!--     <toolitem action="NOWIDTH"        /> --> 
     <separator />
     <toolitem action="CLRPCKA"     />
     <toolitem action="BLACKA"      />                     
@@ -243,6 +237,5 @@
     <toolitem action="ORANGEA"     />                     
     <toolitem action="YELLOWA"     />                     
     <toolitem action="WHITEA"      />   
- <!--    <toolitem action="NOCOLOR" />    --> 
   </toolbar>
 </ui>

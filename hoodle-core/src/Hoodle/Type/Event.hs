@@ -161,8 +161,9 @@ data MenuEvent = MenuNew
                | MenuSetAsDefaultPaper
                | MenuText 
                | MenuAddLink
-               | MenuShapeRecognizer
-               | MenuRuler
+               --  | MenuShapeRecognizer
+               --  | MenuRuler
+               | MenuHandwritingRecognitionTest
                | MenuSelectRegion
                | MenuSelectRectangle
                | MenuVerticalSpace

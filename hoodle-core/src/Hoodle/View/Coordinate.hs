@@ -1,10 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-} 
 {-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Coordinate
--- Copyright   : (c) 2012, 2013 Ian-Woo Kim
+-- Copyright   : (c) 2012-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -56,7 +57,11 @@ makeCanvasGeometry :: PageNum
                       -> DrawingArea 
                       -> IO CanvasGeometry 
 makeCanvasGeometry cpn arr canvas = do 
+#ifdef GTK3  
+  Just win <- widgetGetWindow canvas
+#else // GTK3
   win <- widgetGetDrawWindow canvas
+#endif // GTK3
   let cdim@(CanvasDimension (Dim w' h')) = view canvasDimension arr
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)

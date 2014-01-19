@@ -1,7 +1,9 @@
+{-# LANGUAGE CPP #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Layer 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -48,8 +50,13 @@ layerChooseDialog layernumref cidx len = do
     entrySetText layerentry (show (succ cidx))
     label <- labelNew (Just (" / " ++ show len))
     hbox <- hBoxNew False 0 
+#ifdef GTK3    
+    upper <- fmap castToContainer (dialogGetContentArea dialog)
+    containerAdd upper hbox
+#else // GTK3
     upper <- dialogGetUpper dialog
     boxPackStart upper hbox PackNatural 0 
+#endif // GTK3
     boxPackStart hbox layerentry PackNatural 0 
     boxPackStart hbox label PackGrow 0 
     widgetShowAll upper

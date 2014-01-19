@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.VerticalSpace
@@ -239,8 +241,16 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
              paint
              drawguide 
            let canvas = view drawArea cvsInfo 
+#ifdef GTK3
+           Just win <- liftIO $ widgetGetWindow canvas
+#else // GTK3               
            win <- liftIO $ widgetGetDrawWindow canvas
+#endif // GTK3
+#ifdef GTK3
+           liftIO $ renderWithDrawWindow win $ do 
+#else // GTK3
            liftIO $ renderWithDrawable win $ do 
+#endif // GTK3
              setSourceSurface sfctot 0 0 
              setOperator OperatorSource 
              paint 

@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE CPP #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -245,22 +245,15 @@ getMenuUI evar = do
   ppstya <- actionNewAndRegister "PPSTYA"   "Paper Style" Nothing Nothing Nothing
   apallpga<- actionNewAndRegister "APALLPGA" "Apply To All Pages" (Just "Just a Stub") Nothing (justMenu MenuApplyToAllPages)
   embedbkgpdfa <- actionNewAndRegister "EMBEDBKGPDFA" "Embed All PDF backgroound" (Just "Just a Stub") Nothing (justMenu MenuEmbedAllPDFBkg)
-  -- ldbkga  <- actionNewAndRegister "LDBKGA"  "Load Background" (Just "Just a Stub") Nothing (justMenu MenuLoadBackground)
-  -- bkgscrshta <- actionNewAndRegister "BKGSCRSHTA" "Background Screenshot" (Just "Just a Stub") Nothing (justMenu MenuBackgroundScreenshot)
   defppa  <- actionNewAndRegister "DEFPPA"  "Default Paper" (Just "Just a Stub") Nothing (justMenu MenuDefaultPaper)
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultPaper)
   
   -- tools menu
   texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just stockIndex) (justMenu MenuAddLink)
-  -- shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
-  -- rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
   handreca <- actionNewAndRegister "HANDRECA" "Hoodlet load via Handwriting Recognition" (Just "Just a Stub") (Just "myshapes") (justMenu MenuHandwritingRecognitionDialog)
   
   
-  -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
-  -- selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (justMenu MenuSelectRectangle)
-  -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just stockSelectColor) (justMenu MenuColorPicker ) 
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
@@ -278,7 +271,6 @@ getMenuUI evar = do
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseXInput))
-  -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
   handa     <- toggleActionNew "HANDA" "Use Touch" (Just "Toggle touch") (Just "myhand") 
   handa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseTouch))
@@ -313,10 +305,6 @@ getMenuUI evar = do
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
-
-
-  
-  
   
   pghilta <- actionNewAndRegister "PGHILTA" "Page Highlight" (Just "Just a Stub") Nothing (justMenu MenuPageHighlight)
   mltpgvwa <- actionNewAndRegister "MLTPGVWA" "Multiple Page View" (Just "Just a Stub") Nothing (justMenu MenuMultiplePageView) 
@@ -351,7 +339,7 @@ getMenuUI evar = do
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
         , apallpga, embedbkgpdfa, defppa, setdefppa
-        , texta, linka, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
+        , texta, linka, handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , togpanzooma, toglayera, togclocka
@@ -367,7 +355,7 @@ getMenuUI evar = do
     , vcursora ]
   -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
   mpgmodconnid <- 
-    actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) -- const (return ()))
+    actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) 
   _mpointconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
@@ -384,7 +372,6 @@ getMenuUI evar = do
         , shwlayera, hidlayera
         , newpgea, ppsizea, ppclra
         , defppa, setdefppa
-        -- , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa
@@ -416,22 +403,23 @@ getMenuUI evar = do
   actionSetSensitive ra3 True 
   Just ra4 <- actionGroupGetAction agr "VERTSPA"
   actionSetSensitive ra4 True
-  -- Just ra5 <- actionGroupGetAction agr "HANDA"
-  -- actionSetSensitive ra5 False
   Just ra6 <- actionGroupGetAction agr "CONTA"
   actionSetSensitive ra6 True
   Just _ra7 <- actionGroupGetAction agr "PENA"
   actionSetSensitive ra6 True  
   Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
+#ifdef GTK3
+#else // GTK3
   toolbarSetIconSize (castToToolbar toolbar1) IconSizeSmallToolbar
+#endif // GTK3
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
+#ifdef GTK3
+#else // GTK3
   toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
-  
-  -- Just pendropdown <- uiManagerGetWidget ui "/ui/toolbar2/PENDROPDOWN"
-  
-  
+#endif // GTK3
+    
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 
                                  $ defaultUIComponentSignalHandler 

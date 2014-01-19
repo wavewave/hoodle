@@ -1,12 +1,13 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TupleSections #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Link
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -66,7 +67,7 @@ makeTextSVGFromStringAt :: String
                            -> CanvasCoordinate
                            -> IO (B.ByteString, BBox)
 makeTextSVGFromStringAt str cid xst ccoord = do 
-    rdr <- makePangoTextSVG (0,0) (T.pack str) -- for the time being, I use string  
+    rdr <- makePangoTextSVG (0,0) (T.pack str) -- for the time being, use string  
     geometry <- getCanvasGeometryCvsId cid xst 
     let mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
     return $ case mpgcoord of 
@@ -229,7 +230,13 @@ addLink = do
                    \_evhandler -> do 
                      dialog <- messageDialogNew Nothing [DialogModal]
                                  MessageQuestion ButtonsOkCancel "add link" 
+#ifdef GTK3                               
+                     upper <- fmap castToContainer (dialogGetContentArea dialog)
+                     vbox <- vBoxNew False 0
+                     containerAdd upper vbox
+#else // GTK3
                      vbox <- dialogGetUpper dialog
+#endif // GTK3
                      txtvw <- textViewNew
                      boxPackStart vbox txtvw PackGrow 0 
                      widgetShowAll dialog

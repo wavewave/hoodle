@@ -163,3 +163,5 @@ Library
                    csrc/XInput.h
   cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
   extra-libraries: X11 Xi dl pthread
+  if flag(gtk3)
+    cpp-options: -DGTK3

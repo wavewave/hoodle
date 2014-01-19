@@ -1,10 +1,11 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE Rank2Types #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Draw 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -133,9 +134,17 @@ invalidateTemp cid tempsurface rndr = do
           let canvas = view drawArea cvsInfo
               pnum = PageNum . view currentPageNum $ cvsInfo 
           geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+#ifdef GTK3          
+          Just win <- liftIO $ widgetGetWindow canvas
+#else // GTK3
           win <- liftIO $ widgetGetDrawWindow canvas
+#endif // GTK3
           let xformfunc = cairoXform4PageCoordinate geometry pnum
+#ifdef GTK3              
+          liftIO $ renderWithDrawWindow win $ do 
+#else // GTK3              
           liftIO $ renderWithDrawable win $ do   
+#endif // GTK3
                      setSourceSurface tempsurface 0 0 
                      setOperator OperatorSource 
                      paint 
@@ -152,9 +161,17 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
   where fsingle xstate cvsInfo = do 
           let canvas = view drawArea cvsInfo
           geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+#ifdef GTK3          
+          Just win <- liftIO $ widgetGetWindow canvas
+#else // GTK3
           win <- liftIO $ widgetGetDrawWindow canvas
+#endif // GTK3                 
           let xformfunc = cairoXform4PageCoordinate geometry pnum
+#ifdef GTK3              
+          liftIO $ renderWithDrawWindow win $ do   
+#else // GTK3
           liftIO $ renderWithDrawable win $ do   
+#endif // GTK3
                      setSourceSurface tempsurface 0 0 
                      setOperator OperatorSource 
                      paint 

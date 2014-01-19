@@ -1,10 +1,11 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Window 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -183,8 +184,11 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
                           return (castToToggleAction x) )
     b <- liftIO $ toggleActionGetActive uxinputa
+#ifdef GTK3    
+#else // GTK3
     if b then widgetSetExtensionEvents canvas [ExtensionEventsAll]
          else widgetSetExtensionEvents canvas [ExtensionEventsNone]
+#endif // GTK3
     hadjconnid <- afterValueChanged hadj $ do 
                     v <- adjustmentGetValue hadj 
                     (callback . UsrEv) (HScrollBarMoved cid v)

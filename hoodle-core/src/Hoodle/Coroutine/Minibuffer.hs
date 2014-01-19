@@ -1,9 +1,10 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Minibuffer 
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -75,8 +76,16 @@ minibufDialog msg = do
       cvs <- drawingAreaNew                           
       cvs `on` sizeRequest $ return (Requisition 500 50)
       cvs `on` exposeEvent $ tryEvent $ do
-        drawwdw <- liftIO $ widgetGetDrawWindow cvs                 
+#ifdef GTK3        
+        Just drawwdw <- liftIO $ widgetGetWindow cvs
+#else // GTK3
+        drawwdw <- liftIO $ widgetGetDrawWindow cvs
+#endif // GTK3
+#ifdef GTK3
+        liftIO (renderWithDrawWindow drawwdw drawMiniBufBkg)
+#else // GTK3
         liftIO (renderWithDrawable drawwdw drawMiniBufBkg)
+#endif // GTK3
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
       cvs `on` buttonPressEvent $ tryEvent $ do 
         (mbtn,mp) <- getPointer dev
@@ -104,7 +113,13 @@ minibufDialog msg = do
         else widgetSetExtensionEvents cvs [ExtensionEventsNone] -}
       widgetAddEvents cvs [PointerMotionMask,Button1MotionMask]      
       --
+#ifdef GTK3
+      upper <- fmap castToContainer (dialogGetContentArea dialog)
+      vbox <- vBoxNew False 0 
+      containerAdd upper vbox
+#else // GTK3
       vbox <- dialogGetUpper dialog
+#endif // GTK3
       hbox <- hBoxNew False 0 
       boxPackStart hbox msgLabel PackNatural 0 
       boxPackStart vbox hbox PackNatural 0
@@ -134,7 +149,11 @@ minibufInit =
 
 invalidateMinibuf :: DrawWindow -> Surface -> IO ()
 invalidateMinibuf drawwdw tgtsfc = 
+#ifdef GTK3
+  renderWithDrawWindow drawwdw $ do 
+#else // GTK3
   renderWithDrawable drawwdw $ do 
+#endif // GTK3
     setSourceSurface tgtsfc 0 0 
     setOperator OperatorSource 
     paint   

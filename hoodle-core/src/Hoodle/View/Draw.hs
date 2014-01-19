@@ -1,12 +1,13 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE Rank2Types #-} 
-{-# LANGUAGE TypeFamilies #-} 
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-} 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Draw 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -128,8 +129,16 @@ virtualDoubleBufferDraw srcsfc tgtsfc pre post =
 doubleBufferFlush :: Surface -> CanvasInfo a -> IO () 
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
+#ifdef GTK3
+      Just win <- widgetGetWindow canvas
+#else // GTK3
       win <- widgetGetDrawWindow canvas
+#endif // GTK3
+#ifdef GTK3
+      renderWithDrawWindow win $ do 
+#else // GTK3
       renderWithDrawable win $ do 
+#endif // GTK3
         setSourceSurface sfc 0 0 
         setOperator OperatorSource 
         paint
@@ -150,7 +159,11 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
   let action = do 
         case msfc of 
 	  Nothing -> do 
+#ifdef GTK3            
+            renderWithDrawWindow win $ do
+#else // GTK3            
 	    renderWithDrawable win $ do 
+#endif // GTK3
 	      clipBBox mbbox'
               setSourceRGBA 0.5 0.5 0.5 1
               rectangle 0 0 cw ch 
@@ -165,7 +178,11 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
               fill
               clipBBox mbbox' 
 	      rndr 
+#ifdef GTK3
+            renderWithDrawWindow win $ do
+#else // GTK3
 	    renderWithDrawable win $ do 
+#endif // GTK3
 	      setSourceSurface sfc 0 0   
 	      setOperator OperatorSource 
 	      paint 
@@ -200,8 +217,16 @@ drawCurvebitGen  :: PressureMode
                     -> ((Double,Double),Double) 
                     -> IO () 
 drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x,y),z) = do 
+#ifdef GTK3  
+  Just win <- widgetGetWindow canvas
+#else // GTK3
   win <- widgetGetDrawWindow canvas
+#endif // GTK3
+#ifdef GTK3
+  renderWithDrawWindow win $ do 
+#else // GTK3
   renderWithDrawable win $ do
+#endif // GTK3
     cairoXform4PageCoordinate geometry pnum 
     setSourceRGBA r g b a
     case pmode of 
@@ -235,7 +260,11 @@ drawFuncGen _typ render = SinglePageDraw func
   where func isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
+#ifdef GTK3          
+          Just win <- widgetGetWindow canvas
+#else // GTK3          
           win <- widgetGetDrawWindow canvas
+#endif // GTK3                 
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -311,7 +340,11 @@ drawContPageGen render = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
+#ifdef GTK3          
+          Just win <- widgetGetWindow canvas
+#else // GTK3
           win <- widgetGetDrawWindow canvas
+#endif // GTK3
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate geometry pnum
@@ -357,7 +390,11 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
+#ifdef GTK3                            
+          Just win <- widgetGetWindow canvas
+#else // GTK3
           win <- widgetGetDrawWindow canvas
+#endif // GTK3
           let ibboxnew = getViewableBBox geometry mbbox
               mbboxnew = toMaybe ibboxnew
               xformfunc = cairoXform4PageCoordinate geometry pnum

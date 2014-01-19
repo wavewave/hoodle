@@ -1,9 +1,10 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -66,9 +67,12 @@ startGUI mfname mhook = do
   setToggleUIForFlag "EBDPDFA" (settings.doesEmbedPDF) st0
   -- 
   let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0
+#ifdef GTK3      
+#else // GTK3
   if xinputbool
       then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
+#endif // GTK3
   -- 
   menubar <- uiManagerGetWidget ui "/ui/menubar" 
              >>= maybe (error "GUI.hs:no menubar") return 

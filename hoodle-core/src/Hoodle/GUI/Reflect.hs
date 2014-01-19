@@ -1,9 +1,12 @@
-{-# LANGUAGE ScopedTypeVariables, GADTs, RankNTypes #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI.Reflect
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -24,8 +27,6 @@ import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 --
--- import Control.Monad.Trans.Crtn.Event
--- import Control.Monad.Trans.Crtn.Queue
 --
 import Hoodle.GUI.Menu 
 import Hoodle.Type.Canvas
@@ -155,8 +156,12 @@ reflectCursor = do
       else do 
         doIOaction $ \_ -> do
           let cinfobox   = view currentCanvasInfo xst           
-              canvas     = forBoth' unboxBiAct (view drawArea) cinfobox           
+              canvas     = forBoth' unboxBiAct (view drawArea) cinfobox
+#ifdef GTK3
+          Just win <- widgetGetWindow canvas
+#else // GTK3 
           win <- widgetGetDrawWindow canvas
+#endif // GTK3
           postGUIAsync (drawWindowSetCursor win Nothing) 
           return (UsrEv ActionOrdered)
         go 
@@ -169,7 +174,11 @@ reflectCursor = do
              pinfo = view penInfo xst 
              pcolor = view (penSet . currPen . penColor) pinfo
              pwidth = view (penSet . currPen . penWidth) pinfo 
+#ifdef GTK3
+         Just win <- widgetGetWindow canvas
+#else // GTK3
          win <- widgetGetDrawWindow canvas
+#endif // GTK3
          dpy <- widgetGetDisplay canvas  
          
          geometry <- 

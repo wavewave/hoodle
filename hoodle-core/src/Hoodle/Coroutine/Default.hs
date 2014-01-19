@@ -1,14 +1,15 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -170,7 +171,11 @@ guiProcess ev = do
   let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
+#ifdef GTK3                                
+                            (w',h') <- liftIO $ widgetGetSizeRequest canvas
+#else // GTK3
                             (w',h') <- liftIO $ widgetGetSize canvas
+#endif // GTK3
                             defaultEventProcess (CanvasConfigure cid
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
@@ -425,9 +430,13 @@ menuEventProcess MenuUseXInput = do
   b <- updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput)
   let cmap = getCanvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
+#ifdef GTK3      
+  return ()
+#else // GTK3
   if b
     then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
     else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
+#endif // GTK3
 menuEventProcess MenuUseTouch = toggleTouch
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
@@ -484,6 +493,10 @@ colorConvert (Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/6553
 -- | 
 colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
 colorPickerBox msg = do 
+#ifdef GTK3 
+   -- color selection dialog is incomplete in gtk3
+   return Nothing
+#else // GTK3
    xst <- get 
    let pcolor = view ( penInfo.currentTool.penColor) xst   
    modify (tempQueue %~ enqueue (action pcolor)) >> go 
@@ -491,7 +504,7 @@ colorPickerBox msg = do
     action pcolor = 
       mkIOaction $ 
                \_evhandler -> do 
-                 dialog <- colorSelectionDialogNew msg
+                 dialog <- colorSelectionDialogNew msg                 
                  csel <- colorSelectionDialogGetColor dialog
                  let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
                      color = Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
@@ -512,3 +525,4 @@ colorPickerBox msg = do
               UpdateCanvas cid -> -- this is temporary
                 invalidateInBBox Nothing Efficient cid >> go
               _ -> go 
+#endif // GTK3

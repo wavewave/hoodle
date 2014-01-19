@@ -1,7 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -26,6 +27,7 @@ import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (mapM_, forM_)
 import           Data.List (sort, sortBy)
 import           Data.Maybe (catMaybes)
+import           Data.Monoid ((<>))
 -- import           Data.Ord (comparing)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -76,9 +78,15 @@ textInputDialog = do
   doIOaction $ \_evhandler -> do 
                  dialog <- messageDialogNew Nothing [DialogModal]
                    MessageQuestion ButtonsOkCancel "text input"
+#ifdef GTK3                           
+                 vbox <- fmap castToContainer (dialogGetContentArea dialog)
+                 txtvw <- textViewNew
+                 containerAdd vbox txtvw  
+#else // GTK3
                  vbox <- dialogGetUpper dialog
                  txtvw <- textViewNew
                  boxPackStart vbox txtvw PackGrow 0 
+#endif // GTK3
                  widgetShowAll dialog
                  res <- dialogRun dialog 
                  case res of 
@@ -103,7 +111,13 @@ textInputDialog = do
 multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
 multiLineDialog str = mkIOaction $ \evhandler -> do
     dialog <- dialogNew
+#ifdef GTK3    
+    upper <- fmap castToContainer (dialogGetContentArea dialog)
+    vbox <- vBoxNew False 0
+    containerAdd upper vbox
+#else // GTK3
     vbox <- dialogGetUpper dialog
+#endif // GTK3
     textbuf <- textBufferNew Nothing
     textBufferSetByteString textbuf (TE.encodeUtf8 str)
     textbuf `on` bufferChanged $ do 
@@ -234,9 +248,9 @@ dbusNetworkInput txt = do
 
 
 laTeXHeader :: T.Text
-laTeXHeader = "\\documentclass{article}\n\
-              \\\pagestyle{empty}\n\
-              \\\begin{document}\n"
+laTeXHeader =    "\\documentclass{article}\n"
+              <> "\\pagestyle{empty}\n"
+              <> "\\begin{document}\n"
                                 
 laTeXFooter :: T.Text
 laTeXFooter = "\\end{document}\n"
@@ -370,7 +384,6 @@ makePangoTextSVG (xo,yo) str = do
 -- | combine all LaTeX texts into a text file 
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
-    -- liftIO $ putStrLn "start combine latex file" 
     hdl <- rHoodle2Hoodle . getHoodle <$> get  
     let mlatex_components = do 
           (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  

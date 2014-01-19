@@ -557,7 +557,13 @@ showRevisionDialog hdl revs =
   where 
     action = mkIOaction $ \_evhandler -> do 
                dialog <- dialogNew
+#ifdef GTK3
+               upper <- fmap castToContainer (dialogGetContentArea dialog)
+               vbox <- vBoxNew False 0
+               containerAdd upper vbox 
+#else // GTK3
                vbox <- dialogGetUpper dialog
+#endif // GTK3
                mapM_ (addOneRevisionBox vbox hdl) revs 
                _btnOk <- dialogAddButton dialog "Ok" ResponseOk
                widgetShowAll dialog
@@ -578,8 +584,6 @@ mkPangoText str = do
           layoutSetWidth layout (Just 250)
           layoutSetWrap layout WrapAnywhere 
           layoutSetText layout str 
-          -- (_,reclog) <- layoutGetExtents layout 
-          -- let PangoRectangle x y w h = reclog 
           return layout
         rdr layout = do setSourceRGBA 0 0 0 1
                         updateLayout layout 
@@ -592,8 +596,16 @@ addOneRevisionBox vbox hdl rev = do
     cvs <- drawingAreaNew 
     cvs `on` sizeRequest $ return (Requisition 250 25)
     cvs `on` exposeEvent $ tryEvent $ do 
+#ifdef GTK3      
+      Just drawwdw <- liftIO $ widgetGetWindow cvs 
+#else // GTK3
       drawwdw <- liftIO $ widgetGetDrawWindow cvs 
+#endif // GTK3
+#ifdef GTK3
+      liftIO . renderWithDrawWindow drawwdw $ do
+#else // GTK3
       liftIO . renderWithDrawable drawwdw $ do 
+#endif // GTK3
         case rev of 
           RevisionInk _ strks -> scale 0.5 0.5 >> mapM_ cairoRender strks
           Revision _ txt -> mkPangoText (B.unpack txt)            

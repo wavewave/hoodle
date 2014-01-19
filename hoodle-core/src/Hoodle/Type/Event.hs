@@ -164,7 +164,7 @@ data MenuEvent = MenuNew
                | MenuAddLink
                --  | MenuShapeRecognizer
                --  | MenuRuler
-               | MenuHandwritingRecognitionTest
+               | MenuHandwritingRecognitionDialog
                | MenuSelectRegion
                | MenuSelectRectangle
                | MenuVerticalSpace

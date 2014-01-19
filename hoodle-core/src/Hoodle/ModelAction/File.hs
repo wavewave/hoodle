@@ -19,6 +19,7 @@ module Hoodle.ModelAction.File where
 -- from other package
 import           Control.Applicative
 import           Control.Lens (view,set)
+import           Control.Monad (when)
 import           Data.Attoparsec 
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
@@ -31,8 +32,8 @@ import           Graphics.GD.ByteString
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-import           System.Directory (canonicalizePath)
-import           System.FilePath (takeExtension)
+import           System.Directory (canonicalizePath, getHomeDirectory, doesDirectoryExist)
+import           System.FilePath (takeExtension, (</>), (<.>))
 import           System.IO (hClose, hFileSize, openFile, IOMode(..)) 
 import           System.Process
 -- from hoodle-platform 
@@ -40,10 +41,13 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Background
+import           Graphics.Hoodle.Render.Item (cnstrctRItem)
 import           Graphics.Hoodle.Render.Type.Background 
 import           Graphics.Hoodle.Render.Type.Hoodle
+import           Graphics.Hoodle.Render.Type.Item
 import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
+import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2 as MV
 import qualified Text.Xournal.Parse.Conduit as XP
 import           Text.Hoodle.Migrate.FromXournal
@@ -289,3 +293,19 @@ makeNewItemImage isembedded filename =
               ebdsrc = "data:image/png;base64," <> b64str
           return . ItemImage $ Image ebdsrc (50,100) dim 
 
+loadHoodlet :: String -> IO (Maybe RItem)
+loadHoodlet str = do
+     homedir <- getHomeDirectory
+     let hoodled = homedir </> ".hoodle.d"
+         hoodletdir = hoodled </> "hoodlet"
+     b' <- doesDirectoryExist hoodletdir 
+     if b' 
+       then do            
+         let fp = hoodletdir </> str <.> "hdlt"
+         bstr <- C.readFile fp 
+         case parseOnly Hoodlet.hoodlet bstr of 
+           Left err -> putStrLn err >> return Nothing
+           Right itm -> do
+             ritm <- cnstrctRItem itm 
+             return (Just ritm) 
+       else return Nothing

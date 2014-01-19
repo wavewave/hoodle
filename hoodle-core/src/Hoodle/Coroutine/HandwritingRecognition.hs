@@ -62,8 +62,8 @@ getArrayVal :: (Monad m) => Int -> Value -> EitherT String m Value
 getArrayVal n v = getArray v >>= \vs -> 
                     maybe (left (show n ++ " is out of array")) right (vs !? n) 
 
-handwritingRecognitionTest :: MainCoroutine (Maybe (Bool,T.Text))
-handwritingRecognitionTest = do
+handwritingRecognitionDialog :: MainCoroutine (Maybe (Bool,T.Text))
+handwritingRecognitionDialog = do
   liftIO $ putStrLn "handwriting recognition test here"
   r <- minibufDialog "test handwriting recognition"
   case r of 

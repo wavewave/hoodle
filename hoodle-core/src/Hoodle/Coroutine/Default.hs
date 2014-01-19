@@ -465,8 +465,8 @@ menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
-menuEventProcess MenuHandwritingRecognitionTest = 
-    handwritingRecognitionTest >>= mapM_ (\(b,txt) -> when b $ hoodletLoad (T.unpack txt)) 
+menuEventProcess MenuHandwritingRecognitionDialog = 
+    handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

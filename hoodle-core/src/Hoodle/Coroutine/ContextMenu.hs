@@ -160,7 +160,7 @@ processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) t
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
-    res <- handwritingRecognitionTest 
+    res <- handwritingRecognitionDialog
     forM_ res $ \(b,txt) -> do 
       when (not b) $ liftIO $ do
         let str = T.unpack txt 

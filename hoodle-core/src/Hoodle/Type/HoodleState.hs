@@ -96,7 +96,7 @@ import           Data.Functor.Identity (Identity(..))
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Time.Clock
-import           Graphics.UI.Gtk hiding (Clipboard, get,set)
+import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
@@ -136,15 +136,15 @@ data HoodleState =
                 , _cvsInfoMap :: CanvasInfoMap 
                 , _currentCanvas :: (CanvasId,CanvasInfoBox)
                 , _frameState :: WindowConfig 
-                , _rootWindow :: Widget
-                , _rootContainer :: Box
-                , _rootOfRootWindow :: Window
+                , _rootWindow :: Gtk.Widget
+                , _rootContainer :: Gtk.Box
+                , _rootOfRootWindow :: Gtk.Window
                 , _currentPenDraw :: PenDraw
                 , _callBack ::  AllEvent -> IO ()
                 , _deviceList :: DeviceList
                 , _penInfo :: PenInfo
                 , _selectInfo :: SelectInfo 
-                , _gtkUIManager :: UIManager 
+                , _gtkUIManager :: Gtk.UIManager 
                 , _isSaved :: Bool 
                 , _undoTable :: UndoTable HoodleModeState
                 , _backgroundStyle :: BackgroundStyle 
@@ -156,7 +156,7 @@ data HoodleState =
                 , _hookSet :: Maybe Hook
                 , _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent)
                 , _tempLog :: String -> String 
-                , _statusBar :: Maybe Statusbar
+                , _statusBar :: Maybe Gtk.Statusbar
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -186,15 +186,15 @@ frameState :: Simple Lens HoodleState WindowConfig
 frameState = lens _frameState (\f a -> f { _frameState = a } )
 
 -- | lens for rootWindow
-rootWindow :: Simple Lens HoodleState Widget
+rootWindow :: Simple Lens HoodleState Gtk.Widget
 rootWindow = lens _rootWindow (\f a -> f { _rootWindow = a } )
 
 -- | lens for rootContainer
-rootContainer :: Simple Lens HoodleState Box
+rootContainer :: Simple Lens HoodleState Gtk.Box
 rootContainer = lens _rootContainer (\f a -> f { _rootContainer = a } )
 
 -- | lens for rootOfRootWindow
-rootOfRootWindow :: Simple Lens HoodleState Window
+rootOfRootWindow :: Simple Lens HoodleState Gtk.Window
 rootOfRootWindow = lens _rootOfRootWindow (\f a -> f { _rootOfRootWindow = a } )
 
 -- | lens for currentPenDraw
@@ -218,7 +218,7 @@ selectInfo :: Simple Lens HoodleState SelectInfo
 selectInfo = lens _selectInfo (\f a -> f { _selectInfo = a } )
 
 -- | lens for gtkUIManager
-gtkUIManager :: Simple Lens HoodleState UIManager
+gtkUIManager :: Simple Lens HoodleState Gtk.UIManager
 gtkUIManager = lens _gtkUIManager (\f a -> f { _gtkUIManager = a } )
 
 -- | lens for isSaved
@@ -268,7 +268,7 @@ tempLog :: Simple Lens HoodleState (String -> String)
 tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 
 -- | 
-statusBar :: Simple Lens HoodleState (Maybe Statusbar)
+statusBar :: Simple Lens HoodleState (Maybe Gtk.Statusbar)
 statusBar = lens _statusBar (\f a -> f { _statusBar = a })
 
 {-
@@ -294,27 +294,27 @@ lastSavedTime = lens _lastSavedTime (\f a -> f { _lastSavedTime = a } )
 
 
 -- | 
-data UIComponentSignalHandler = 
-  UIComponentSignalHandler{ _penModeSignal :: Maybe (ConnectId RadioAction)
-                          , _pageModeSignal :: Maybe (ConnectId RadioAction)
-                          , _penPointSignal :: Maybe (ConnectId RadioAction)
-                          , _penColorSignal :: Maybe (ConnectId RadioAction)
-                          } 
+data UIComponentSignalHandler = UIComponentSignalHandler
+       { _penModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
+       , _pageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
+       , _penPointSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
+       , _penColorSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
+       } 
 
 -- | lens for penModeSignal
-penModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+penModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penModeSignal = lens _penModeSignal (\f a -> f { _penModeSignal = a } )
 
 -- | lens for pageModeSignal
-pageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+pageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 pageModeSignal = lens _pageModeSignal (\f a -> f { _pageModeSignal = a } )
 
 -- | lens for penPointSignal
-penPointSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+penPointSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penPointSignal = lens _penPointSignal (\f a -> f { _penPointSignal = a } )
 
 -- | lens for penColorSignal
-penColorSignal :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+penColorSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penColorSignal = lens _penColorSignal (\f a -> f { _penColorSignal = a } )
 
 

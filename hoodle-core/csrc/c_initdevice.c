@@ -3,8 +3,9 @@
 #include <string.h>
 
 
-#include "XInput.h"
+// #include "XInput.h"
 
+/*
 //
 // Globals.
 //
@@ -113,8 +114,9 @@ static bool xinput_findDevices(Display *display, XDeviceInfo *stylus_info, XDevi
 
   return (found == 2);
 }
+*/
 
-
+/*
 void find_wacom( char* stylus_name, char* eraser_name) 
 {
   Display *display = XOpenDisplay(NULL); 
@@ -136,8 +138,7 @@ void find_wacom( char* stylus_name, char* eraser_name)
   }
   return ; 
 }
-
-
+*/
 
 void initdevice ( int* core
                 , int* stylus
@@ -149,44 +150,36 @@ void initdevice ( int* core
 		, char* touchname
                 )
 {
-  // xinput_start(); 
-
   printf("initdevice : stylusname = %s\n", stylusname );
   printf("initdevice : erasername = %s\n", erasername ); 
   printf("initdevice : touchname = %s\n", touchname );                      
 
   GList* dev_list;
   GdkDevice* device;
+  GdkDisplay* disp = gdk_display_get_default();
+  GdkDeviceManager *devman = gdk_display_get_device_manager(disp);
+
   dev_list = gdk_devices_list();
   (*stylus) = 0;
   while (dev_list != NULL) {
-    // printf ("one device\n"); 
     device = (GdkDevice *)dev_list->data;
-    // printf(" %d : %s \n", device, device->name );
     if (device != gdk_device_get_core_pointer()) {
-      // #ifdef ENABLE_XINPUT_BUGFIX
       gdk_device_set_axis_use(device, 0, GDK_AXIS_IGNORE);
       gdk_device_set_axis_use(device, 1, GDK_AXIS_IGNORE);
-      // #endif
       gdk_device_set_mode(device, GDK_MODE_SCREEN);
 
-      // printf("This is xinput device %s \n", device -> name);
       if( !strcmp (device->name, stylusname) ) {
-        // printf("got stylus\n");   
         (*stylus) = (int) device; 
       } 
       if( !strcmp (device->name, erasername) ) { 
-        // printf("got eraser\n");
         (*eraser) = (int) device;
       } 
       if( !strcmp (device->name, touchname) ) { 
-        // printf("got eraser\n");
         (*touch) = (int) device;
       } 
     } 
     else { 
       if( !strcmp (device->name, corepointername) ) { 
-        // printf("got Core Pointer\n"); 
         (*core) = (int) device; 
       } 
     } 
@@ -195,27 +188,17 @@ void initdevice ( int* core
 
 }
 
-
+/*
 void enable_touch( char* touch_name ) 
 {
   printf("enable touch: %s\n", touch_name ) ; 
 }
+*/
 
+ /*
 void disable_touch( GdkDrawable *gdkwin, char* touch_name ) 
 {
   printf("disable touch: %s\n", touch_name ); 
-  /* Display *dpy = XOpenDisplay(NULL); 
-  XIEventMask eventmask ; 
-  Window win = GDK_DRAWABLE_XID(gdkwin) ; 
-  unsigned char mask[1] = { 0 } ; 
-
-  eventmask.deviceid = 12 ; 
-  eventmask.make_len = sizeof(mask); 
-  eventmask.mask = mask ; 
- 
-  XISelectEvents (dpy,win,&eventmask,1); 
-
-  XCloseDisplay(dpy); */ 
   
 }
-
+*/

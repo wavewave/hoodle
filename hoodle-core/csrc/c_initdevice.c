@@ -159,31 +159,32 @@ void initdevice ( int* core
   GdkDisplay* disp = gdk_display_get_default();
   GdkDeviceManager *devman = gdk_display_get_device_manager(disp);
 
-  dev_list = gdk_devices_list();
+  dev_list = gdk_device_manager_list_devices(devman, GDK_DEVICE_TYPE_SLAVE );
   (*stylus) = 0;
   while (dev_list != NULL) {
     device = (GdkDevice *)dev_list->data;
-    if (device != gdk_device_get_core_pointer()) {
+    // device = GPOINTER_TO_INT(dev_list->data);
+    if ( gdk_device_get_source(device) != GDK_SOURCE_MOUSE ) {
       gdk_device_set_axis_use(device, 0, GDK_AXIS_IGNORE);
       gdk_device_set_axis_use(device, 1, GDK_AXIS_IGNORE);
       gdk_device_set_mode(device, GDK_MODE_SCREEN);
 
-      if( !strcmp (device->name, stylusname) ) {
+      if( !strcmp (gdk_device_get_name(device), stylusname) ) {
         (*stylus) = (int) device; 
       } 
-      if( !strcmp (device->name, erasername) ) { 
+      if( !strcmp (gdk_device_get_name(device), erasername) ) { 
         (*eraser) = (int) device;
       } 
-      if( !strcmp (device->name, touchname) ) { 
+      if( !strcmp (gdk_device_get_name(device), touchname) ) { 
         (*touch) = (int) device;
       } 
     } 
     else { 
-      if( !strcmp (device->name, corepointername) ) { 
+      if( !strcmp (gdk_device_get_name(device), corepointername) ) { 
         (*core) = (int) device; 
       } 
     } 
-    dev_list = dev_list->next; 
+    dev_list = g_list_next(dev_list); 
   }
 
 }

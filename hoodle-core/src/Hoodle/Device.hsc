@@ -74,12 +74,11 @@ foreign import ccall "c_initdevice.h initdevice" c_initdevice
   -> CString  -- ^ touch 
   -> IO ()
 
-
+{-
 -- | 
 foreign import ccall "c_initdevice.h find_wacom" c_find_wacom
   :: CString -> CString -> IO ()
-
-{- 
+ 
 -- | 
 foreign import ccall "c_initdevice.h enable_touch" c_enable_touch
   :: CString -> IO ()

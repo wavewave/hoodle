@@ -41,7 +41,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 --
-import           Prelude ((.),($),String,Bool(..),const,error,flip,id,map) -- hiding (catch)
+import           Prelude ((.),($),(++),show,String,Bool(..),const,error,flip,id,map) -- hiding (catch)
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
@@ -74,6 +74,7 @@ startGUI mfname mhook = do
       else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
 #endif // GTK3
   -- 
+
   menubar <- uiManagerGetWidget ui "/ui/menubar" 
              >>= maybe (error "GUI.hs:no menubar") return 
   toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1" 
@@ -111,6 +112,8 @@ startGUI mfname mhook = do
     liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
     return True
   widgetShowAll window
+
+
   -- 
   -- this is a test for asynchronous events
   -- 
@@ -124,13 +127,18 @@ startGUI mfname mhook = do
   -- 
   let mainaction = do eventHandler tref (UsrEv Initialized)
                       mainGUI 
-  mainaction `catch` \(_e :: SomeException) -> do 
+  mainaction `catch` \(excep :: SomeException) -> do 
+
     homepath <- getEnv "HOME"
     let dir = homepath </> ".hoodle.d"
     createDirectoryIfMissing False dir
     outh <- openFile (dir </> "error.log") WriteMode 
     hPutStrLn outh "error occured"
+
+    putStrLn ("error occured: " ++ show excep) -- "check gtk3 test"
+
     hClose outh 
+
   return ()
 
 

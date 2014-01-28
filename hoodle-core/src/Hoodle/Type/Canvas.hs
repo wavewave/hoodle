@@ -526,7 +526,11 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousArrangement cdim ddim func (ViewPortBBox nbbox)
+  liftIO $ print "gtk3 debug test1"
+
   maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
+  liftIO $ print "gtk3 debug test2"
+  putStrLn ("gtk3 debug :" ++ show (w',h'))
   msfc <- fmap Just $ do 
             sfc <- createImageSurface FormatARGB32 (floor w') (floor h')
             renderWith sfc $ do 
@@ -534,5 +538,8 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
               rectangle 0 0 w' h' 
               fill 
             return sfc 
+  liftIO $ print "gtk3 debug test3"
+
+
   return $ (set (viewInfo.pageArrangement) arr'.set mDrawSurface msfc) cinfo
      

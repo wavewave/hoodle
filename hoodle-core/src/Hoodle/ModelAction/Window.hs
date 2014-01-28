@@ -118,7 +118,9 @@ connectDefaultEventCanvasInfo xstate cinfo = do
     widgetSetCanFocus canvas True 
     widgetGrabFocus canvas     
     
-    _sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
+    {-
+    -- _sizereq <- canvas `on` sizeRequest $ return (Requisition 800 400)    
+    
     
     _keyevent <- canvas `on` keyPressEvent $ tryEvent $ do 
       m <- eventModifier
@@ -155,7 +157,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                 atomically (writeTVar tvar True)
                 widgetGrabFocus canvas 
     _focusout <- canvas `on` focusOutEvent $ tryEvent $ liftIO $ atomically (writeTVar tvar False)
-    _exposeev <- canvas `on` exposeEvent $ tryEvent $ do 
+    _exposeev <- canvas `on` draw $ do  {- exposeEvent -}
       liftIO $ widgetGrabFocus canvas       
       (liftIO . callback . UsrEv) (UpdateCanvas cid) 
     canvas `on` motionNotifyEvent $ tryEvent $ do 
@@ -206,7 +208,10 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
-    
+    -}
+    -- temp
+    return $ cinfo     
+
 -- | recreate windows from old canvas info but no event connect
 
 reinitCanvasInfoStage1 

@@ -168,6 +168,7 @@ guiProcess ev = do
   reflectPenModeUI
   reflectPenColorUI  
   reflectPenWidthUI
+
   let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
@@ -180,6 +181,8 @@ guiProcess ev = do
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
   mapM_ f assocs
+
+
   sequence_ (repeat dispatchMode)
 
 -- | 
@@ -263,7 +266,8 @@ defaultEventProcess (HScrollBarMoved cid v) = hscrollBarMoved cid v
 defaultEventProcess (VScrollBarMoved cid v) = vscrollBarMoved cid v
 defaultEventProcess (VScrollBarStart cid v) = vscrollStart cid v 
 defaultEventProcess PaneMoveStart = paneMoveStart 
-defaultEventProcess (CanvasConfigure cid w' h') = doCanvasConfigure cid (CanvasDimension (Dim w' h'))
+defaultEventProcess (CanvasConfigure cid w' h') =  
+    doCanvasConfigure cid (CanvasDimension (Dim w' h'))
 defaultEventProcess ToViewAppendMode = modeChange ToViewAppendMode
 defaultEventProcess ToSelectMode = modeChange ToSelectMode 
 defaultEventProcess ToSinglePage = viewModeChange ToSinglePage

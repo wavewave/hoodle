@@ -94,20 +94,6 @@ isFile _ = False
 takeFile x | isFile x = (Just . file) x 
 takeFile x | otherwise = Nothing 
 
-{-
--- | Get the relative url to the site root, for a given (absolute) url
-toSiteRoot :: String -> String
-toSiteRoot = emptyException . joinPath . map parent
-           . filter relevant . splitPath . takeDirectory
-  where
-    parent            = const ".."
-    emptyException [] = "."
-    emptyException x  = x
-    relevant "."      = False
-    relevant "/"      = False
-    relevant _        = True
--}
-
 data Annot = Annot { annot_rect :: (Int, Int, Int, Int) 
                    , annot_border :: (Int ,Int, Int) 
                    , annot_act :: AnnotActions
@@ -302,7 +288,7 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
   handle <- liftIO $ openBinaryFile path ReadMode
   res <- runPdfWithHandle handle knownFilters $ do
     encrypted <- isEncrypted
-    when encrypted $ setUserPassword defaultUserPassord
+    when encrypted $ setUserPassword defaultUserPassword
     root <- document >>= documentCatalog >>= catalogPageNode
     count <- pageNodeNKids root
     forM_ [0..count-1] $ \i -> do
@@ -375,8 +361,6 @@ isUpdated (ofp,nfp) = do
       return (otime > ntime)
   
 
-
-
 createPdf :: (String,String) -> FilePath -> (FilePath,FilePath) -> IO ()
 createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: SomeException) -> print e)
   where 
@@ -418,7 +402,6 @@ data HoodlePublish = Publish { urlbase :: String
                              , specialurlbase :: String 
                              }
                      deriving (Show,Data,Typeable)
-
 
 publish :: HoodlePublish 
 publish = Publish { urlbase = def &= typ "URLBASE" &= argPos 0 

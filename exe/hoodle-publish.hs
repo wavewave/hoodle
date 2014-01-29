@@ -288,7 +288,7 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
   handle <- liftIO $ openBinaryFile path ReadMode
   res <- runPdfWithHandle handle knownFilters $ do
     encrypted <- isEncrypted
-    when encrypted $ setUserPassword defaultUserPassword
+    when encrypted $ setUserPassword defaultUserPassord
     root <- document >>= documentCatalog >>= catalogPageNode
     count <- pageNodeNKids root
     forM_ [0..count-1] $ \i -> do

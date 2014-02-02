@@ -39,6 +39,7 @@ import           Data.UUID.V4
 import           Data.Vector hiding (map,head,null,(++),take,modify,mapM_,zip,forM)
 import           Graphics.UI.Gtk 
 import           System.Directory
+import           System.Exit
 import           System.FilePath
 import           System.Process
 -- 
@@ -74,21 +75,24 @@ handwritingRecognitionDialog = do
       let bstr = (encode . mkAesonInk) strks
       let fp = tdir </> show uuid <.> "json"
       liftIO $ LB.writeFile fp bstr
-      r <- liftIO $ readProcess "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
-      let ev0 = AP.parseOnly json (B.pack r)  
-      -- liftIO $ print ev0
-      r <- runEitherT $ do  
-             v0 <- hoistEither (AP.parseOnly json (B.pack r))
-             getArrayVal 0 v0 >>= \succstr -> 
-               guard (succstr == (String "SUCCESS"))
-             v4 <-(getArray <=< getArrayVal 1 
-                   <=< getArrayVal 0 <=< getArrayVal 1) v0 
-             let f (String v) = Just v
-                 f _ = Nothing
-             (return . mapMaybe f . toList) v4
-      case r of 
-        Left err -> liftIO $ putStrLn err >> return Nothing 
-        Right lst -> showRecogTextDialog lst 
+      (excode,gresult,gerror) <- liftIO $ readProcessWithExitCode "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
+      let ev0 = AP.parseOnly json (B.pack gresult)  
+      case excode of 
+        ExitSuccess -> do 
+          r <- runEitherT $ do  
+            v0 <- hoistEither (AP.parseOnly json (B.pack gresult))
+            getArrayVal 0 v0 >>= \succstr -> 
+              guard (succstr == (String "SUCCESS"))
+            v4 <-(getArray <=< getArrayVal 1 
+                  <=< getArrayVal 0 <=< getArrayVal 1) v0 
+            let f (String v) = Just v
+                f _ = Nothing
+            (return . mapMaybe f . toList) v4
+      
+          case r of 
+            Left err -> liftIO $ putStrLn err >> return Nothing 
+            Right lst -> showRecogTextDialog lst 
+        _ -> liftIO $ print gerror >> return Nothing 
 
 
 

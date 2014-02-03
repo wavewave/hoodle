@@ -292,7 +292,7 @@ showContextMenu (pnum,(x,y)) = do
                   menuhdlt `on` menuItemActivate $ 
                     ( evhandler . UsrEv . GotContextMenuSignal 
                     . CMenuExportHoodlet . rItem2Item ) sitm
-                  menuAttach menu menuhdlt 0 1 7 8
+                  menuAttach menu menuhdlt 0 1 8 9
                   
                   case sitm of 
                     RItemLink lnkbbx _msfc -> do 

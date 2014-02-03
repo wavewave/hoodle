@@ -200,7 +200,7 @@
     <toolitem action="NRMSIZEA" />                                        
     <toolitem action="ZMINA" />
     <toolitem action="PGWDTHA" />                          
-    <toolitem action="SETZMA" />
+    <toolitem action="HANDRECA" />
     <toolitem action="FSCRA" />
     <separator /> 
     <toolitem action="LINKA" />

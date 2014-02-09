@@ -35,8 +35,8 @@ isInitialized = do putStrLn "attempt to initialize another instance"
 checkOtherInst :: Client -> (Client -> IO ()) -> IO ()
 checkOtherInst client act = do 
   ereply <- call client
-              (methodCall "/hoodleDaemon" "org.ianwookim" "isInitialized")
-              { methodCallDestination = Just "org.ianwookim"
+              (methodCall "/hoodleDaemon" "org.ianwookim.hoodle" "isInitialized")
+              { methodCallDestination = Just "org.ianwookim.hoodle-daemon"
               , methodCallBody = [] }
   case ereply of 
     Left _  -> do putStrLn "no pre-existing instances" 
@@ -82,9 +82,9 @@ main = do
   
   
   checkOtherInst clientUsr $ \client -> do 
-    requestName client "org.ianwookim" [] 
+    requestName client "org.ianwookim.hoodle-daemon" [] 
     export client "/hoodleDaemon"
-      [ autoMethod "org.ianwookim" "isInitialized" isInitialized  
+      [ autoMethod "org.ianwookim.hoodle" "isInitialized" isInitialized  
       ] 
     ph <- runsocket
     ref <- newIORef ph
@@ -93,6 +93,15 @@ main = do
                                 , matchMember = Just "PropertiesChanged" 
                                 }
              (onResume ref) 
+
+    {- forkIO $ do 
+      print "okay?"
+      listen clientUsr matchAny { matchInterface = Just "org.ianwookim" 
+                                --  , matchPath = Just "/hoodleDaemon" 
+                                -- , matchMember = Just "isInitialized"
+                                } 
+             (\sig -> print sig) 
+    -}
     chan <- newChan
     forkIO $ 
       startImageFileNotify chan (fromString homedir </> "Dropbox" </> "Apps" </> "Cambox") 

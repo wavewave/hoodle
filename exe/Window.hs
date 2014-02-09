@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Window
@@ -13,7 +15,10 @@
 module Window where 
 
 import           Control.Concurrent
+import           Control.Monad (when)
 import qualified Data.Map as M 
+import           Data.Maybe (mapMaybe)
+import qualified Data.Text as T
 import           DBus
 import           DBus.Client
 import           System.Exit
@@ -30,11 +35,22 @@ data WindowInfo = WInfo { windowId :: String
   requestName client "org.ianwookim" []
 -}
 
-server = getWindow 
+server :: Client -> IO ()
+server client = do 
+  listen client matchAny { matchInterface = Just "org.ianwookim.hoodle" 
+                                  , matchMember = Just "findWindow" 
+                                  } 
+         findWindow 
 
-getWindow :: Chan String -> IO () 
-getWindow chan = do 
-  title <- readChan chan  
+findWindow :: Signal -> IO ()
+findWindow sig = do
+    let txts = mapMaybe fromVariant (signalBody sig) :: [String] -- :: [T.Text]  
+    when ((not.null) txts) $ do
+      print (head txts)
+  
+
+getWindow :: String -> IO (Maybe String) 
+getWindow title = do 
   putStrLn "Window server process"
   (excode,sout,serr) <- readProcessWithExitCode "wmctrl" [ "-l", "-p" ] ""
   case excode of 
@@ -51,10 +67,10 @@ getWindow chan = do
           insertToMap x = M.insert (windowTitle x) x 
           wmap = foldr insertToMap M.empty (map mkWInfo xs)
       case M.lookup title wmap of 
-        Nothing -> return ()
-        Just w  -> print (windowId w)
+        Nothing -> return Nothing
+        Just w  -> return (Just (windowId w))
 
-    ExitFailure _ -> return ()
+    ExitFailure _ -> return Nothing
 
 
 

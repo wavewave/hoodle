@@ -94,14 +94,6 @@ main = do
                                 }
              (onResume ref) 
 
-    {- forkIO $ do 
-      print "okay?"
-      listen clientUsr matchAny { matchInterface = Just "org.ianwookim" 
-                                --  , matchPath = Just "/hoodleDaemon" 
-                                -- , matchMember = Just "isInitialized"
-                                } 
-             (\sig -> print sig) 
-    -}
     chan <- newChan
     forkIO $ 
       startImageFileNotify chan (fromString homedir </> "Dropbox" </> "Apps" </> "Cambox") 
@@ -123,7 +115,7 @@ main = do
 
     chan_title <- newChan 
 
-    forkIO $ forever $ Window.server chan_title
+    forkIO $ Window.server client 
 
 
     forever $ getLine

@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.ContextMenu
@@ -14,6 +16,8 @@ module Hoodle.ModelAction.ContextMenu where
 
 import qualified Data.ByteString.Char8 as B
 import Data.UUID.V4
+import DBus 
+import DBus.Client 
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk
 import System.Directory 
@@ -29,8 +33,8 @@ import Hoodle.Type.Event
 import Hoodle.Util
 
 -- |
-menuOpenALink :: {- (AllEvent -> IO ()) -> -} UrlPath -> IO MenuItem
-menuOpenALink {- evhandler -} urlpath = do 
+menuOpenALink :: UrlPath -> IO MenuItem
+menuOpenALink urlpath = do 
     let urlname = case urlpath of 
                     FileUrl fp -> fp 
                     HttpUrl url -> url 
@@ -45,7 +49,11 @@ openLinkAction urlpath =
     case urlpath of 
       FileUrl fp -> do 
         let cmdargs = [fp]
-        createProcess (proc "hoodle" cmdargs)  
+        putStrLn "test dbus"
+        cli <- connectSession
+        -- requestName cli "org.ianwookim.hoodle-daemon" [] 
+        emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }
+        -- createProcess (proc "hoodle" cmdargs)  
         return () 
       HttpUrl url -> do 
         let cmdargs = [url]

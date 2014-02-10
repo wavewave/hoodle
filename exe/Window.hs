@@ -16,12 +16,14 @@ module Window where
 
 import           Control.Concurrent
 import           Control.Monad (when)
+import qualified Data.Foldable as F (mapM_,forM_)
 import qualified Data.Map as M 
 import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 import           DBus
 import           DBus.Client
 import           System.Exit
+import           System.FilePath 
 import           System.Process
 
 data WindowInfo = WInfo { windowId :: String
@@ -31,23 +33,30 @@ data WindowInfo = WInfo { windowId :: String
                         , windowTitle :: String } 
 		deriving (Show,Eq,Ord)
 
-{-server client = do 
-  requestName client "org.ianwookim" []
--}
-
 server :: Client -> IO ()
 server client = do 
-  listen client matchAny { matchInterface = Just "org.ianwookim.hoodle" 
-                                  , matchMember = Just "findWindow" 
-                                  } 
-         findWindow 
+    listen client matchAny { matchInterface = Just "org.ianwookim.hoodle" 
+                           , matchMember = Just "findWindow" 
+                           } 
+           findWindow 
 
 findWindow :: Signal -> IO ()
 findWindow sig = do
     let txts = mapMaybe fromVariant (signalBody sig) :: [String] -- :: [T.Text]  
     when ((not.null) txts) $ do
-      print (head txts)
-  
+      let fpath = head txts
+          (fdir,fname) = splitFileName fpath 
+      print fname 
+      mwid <- getWindow fname
+      print mwid
+      case mwid of 
+        Nothing -> createProcess (proc "hoodle" [fpath]) >> return ()
+                  
+
+        Just wid -> do 
+          (excode,sout,serr) <- readProcessWithExitCode "wmctrl" [ "-i", "-a", wid ] ""
+          print excode 
+          return ()
 
 getWindow :: String -> IO (Maybe String) 
 getWindow title = do 
@@ -66,6 +75,7 @@ getWindow title = do
              in WInfo wid did pid hname title
           insertToMap x = M.insert (windowTitle x) x 
           wmap = foldr insertToMap M.empty (map mkWInfo xs)
+      F.mapM_ print wmap
       case M.lookup title wmap of 
         Nothing -> return Nothing
         Just w  -> return (Just (windowId w))

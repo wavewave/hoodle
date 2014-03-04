@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -24,8 +24,6 @@ module Graphics.Hoodle.Render
 , renderBkg
 , renderItem 
 , renderPage
--- * render in bbox using non R-structure 
--- , renderBkg_InBBox
 -- * simple rendering using R-structure 
 , renderRBkg
 , renderRItem 
@@ -52,19 +50,16 @@ import           Control.Monad.State hiding (mapM,mapM_)
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import           Data.Traversable (mapM)
--- import qualified Data.Map as M
--- import           Data.Monoid
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
+import qualified Graphics.Rendering.Cairo.SVG as RSVG
+import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
-import           Data.Hoodle.Zipper hiding (moveTo) 
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
-import qualified Graphics.Rendering.Cairo.SVG as RSVG
+import           Data.Hoodle.Zipper 
 -- from this package
--- import Graphics.Hoodle.Render.Simple 
 import Graphics.Hoodle.Render.Background 
 import Graphics.Hoodle.Render.Item 
 import Graphics.Hoodle.Render.Primitive
@@ -75,47 +70,45 @@ import Graphics.Hoodle.Render.Util.HitTest
 -- 
 import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
-
-
 -----
 -- simple 
 --- 
 
 -- | render stroke 
-renderStrk :: Stroke -> Render ()
+renderStrk :: Stroke -> Cairo.Render ()
 renderStrk s@(Stroke _ _ w d) = do 
     let opacity = if stroke_tool s == "highlighter" 
                   then predefined_highlighter_opacity
                   else 1.0
     case getPenColor (stroke_color s) of 
-      Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-      Nothing -> setSourceRGBA 0.5 0.5 0.5 1
-    setLineWidth w
-    setLineCap LineCapRound
-    setLineJoin LineJoinRound
+      Just (r,g,b,a) -> Cairo.setSourceRGBA r g b (a*opacity) 
+      Nothing -> Cairo.setSourceRGBA 0.5 0.5 0.5 1
+    Cairo.setLineWidth w
+    Cairo.setLineCap Cairo.LineCapRound
+    Cairo.setLineJoin Cairo.LineJoinRound
     drawStrokeCurve d
-    stroke 
+    Cairo.stroke 
 renderStrk s@(VWStroke _ _ d) = do 
     let opacity = if stroke_tool s == "highlighter" 
                   then predefined_highlighter_opacity
                   else 1.0
     case getPenColor (stroke_color s) of
-      Just (r,g,b,a) -> setSourceRGBA r g b (a*opacity) 
-      Nothing -> setSourceRGBA 0.5 0.5 0.5 1
-    setFillRule FillRuleWinding
+      Just (r,g,b,a) -> Cairo.setSourceRGBA r g b (a*opacity) 
+      Nothing -> Cairo.setSourceRGBA 0.5 0.5 0.5 1
+    Cairo.setFillRule Cairo.FillRuleWinding
     drawVWStrokeCurve d
-    fill 
+    Cairo.fill 
 
 -- | render image : not fully implemented 
-renderImg :: Image -> Render () 
+renderImg :: Image -> Cairo.Render () 
 renderImg (Image _ (x,y) (Dim w h)) = do  
-      setSourceRGBA 0 0 0 1
-      setLineWidth 10
-      rectangle x y w h
-      stroke
+      Cairo.setSourceRGBA 0 0 0 1
+      Cairo.setLineWidth 10
+      Cairo.rectangle x y w h
+      Cairo.stroke
 
 -- | render svg  
-renderSVG :: SVG -> Render () 
+renderSVG :: SVG -> Cairo.Render () 
 renderSVG svg@(SVG _ _ bstr _ _) = do  
     let str = C.unpack bstr 
     RSVG.withSvgFromString str $ \rsvg -> do 
@@ -125,17 +118,15 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
-      -- clipBBox (Just (getBBox svgbbx))
-      save 
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      Cairo.save 
+      Cairo.translate x y 
+      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
-      restore
-      -- resetClip 
+      Cairo.restore
       return () 
 
 -- | render svg  
-renderLink :: Link -> Render () 
+renderLink :: Link -> Cairo.Render () 
 renderLink lnk = do  
     let bstr = link_render lnk 
     let str = C.unpack bstr 
@@ -147,58 +138,57 @@ renderLink lnk = do
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
       clipBBox (Just (getBBox lnkbbx))
-      save 
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      Cairo.save 
+      Cairo.translate x y 
+      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
-      restore
-      resetClip 
+      Cairo.restore
+      Cairo.resetClip 
       return () 
 
 
 -- | render item 
-renderItem :: Item -> Render () 
+renderItem :: Item -> Cairo.Render () 
 renderItem (ItemStroke strk) = renderStrk strk
 renderItem (ItemImage img) = renderImg img
 renderItem (ItemSVG svg) = renderSVG svg
 renderItem (ItemLink lnk) = renderLink lnk
 
 -- |
-renderPage :: Page -> Render ()
+renderPage :: Page -> Cairo.Render ()
 renderPage page = do 
   renderBkg (view background page,view dimension page)
-  setLineCap LineCapRound
-  setLineJoin LineJoinRound
+  Cairo.setLineCap Cairo.LineCapRound
+  Cairo.setLineJoin Cairo.LineJoinRound
   mapM_ (mapM renderItem . view items) . view layers $ page
-  stroke
+  Cairo.stroke
 
 
 -----
 -- R-structure 
 ----
 
-drawFallBackBkg :: Dimension -> Render () 
+drawFallBackBkg :: Dimension -> Cairo.Render () 
 drawFallBackBkg (Dim w h) = do 
-  setSourceRGBA 1 1 1 1 
-  rectangle 0 0 w h 
-  fill 
-  setSourceRGBA 0 0 0 1 
-  setLineWidth 5
-  moveTo 0 0
-  lineTo w h 
-  stroke 
-  moveTo w 0 
-  lineTo 0 h
-  stroke
+  Cairo.setSourceRGBA 1 1 1 1 
+  Cairo.rectangle 0 0 w h 
+  Cairo.fill 
+  Cairo.setSourceRGBA 0 0 0 1 
+  Cairo.setLineWidth 5
+  Cairo.moveTo 0 0
+  Cairo.lineTo w h 
+  Cairo.stroke 
+  Cairo.moveTo w 0 
+  Cairo.lineTo 0 h
+  Cairo.stroke
   
 
 -- | 
-renderRBkg :: (RBackground,Dimension) -> Render (RBackground,Dimension)
+renderRBkg :: (RBackground,Dimension) -> Cairo.Render (RBackground,Dimension)
 renderRBkg (r,dim) = 
     case r of 
       (RBkgSmpl _ _ _) -> 
         drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
-        -- renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
       (RBkgPDF _ _ _ p _) -> 
         maybe (drawFallBackBkg dim >> return (r,dim)) 
               (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p
@@ -210,19 +200,19 @@ renderRBkg (r,dim) =
       rdr 
       case rbkg_cairosurface r of
         Nothing -> return ()
-        Just sfc -> liftIO $ renderWith sfc rdr
+        Just sfc -> liftIO $ Cairo.renderWith sfc rdr
       return (r,dim)
     bkgPdfRender pg = do 
       let Dim w h = dim 
-      setSourceRGBA 1 1 1 1
-      rectangle 0 0 w h 
-      fill
+      Cairo.setSourceRGBA 1 1 1 1
+      Cairo.rectangle 0 0 w h 
+      Cairo.fill
       PopplerPage.pageRender pg
 
 
 
 -- |
-renderRItem :: RItem -> Render RItem  
+renderRItem :: RItem -> Cairo.Render RItem  
 renderRItem itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
 renderRItem itm@(RItemImage img msfc) = do  
   case msfc of
@@ -230,15 +220,14 @@ renderRItem itm@(RItemImage img msfc) = do
     Just sfc -> do 
       let (x,y) = (img_pos . bbxed_content) img
           BBox (x1,y1) (x2,y2) = getBBox img
-      ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
-      iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
-      save 
-      -- setAntialias AntialiasNone      
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
-      setSourceSurface sfc 0 0 
-      paint 
-      restore
+      ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
+      iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
+      Cairo.save 
+      Cairo.translate x y 
+      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+      Cairo.setSourceSurface sfc 0 0 
+      Cairo.paint 
+      Cairo.restore
   return itm 
 renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
   case mrsvg of
@@ -249,14 +238,11 @@ renderRItem itm@(RItemSVG svgbbx mrsvg) = do
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
-      --  clipBBox (Just (getBBox svgbbx))
-      save 
-      -- setAntialias AntialiasNone
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      Cairo.save 
+      Cairo.translate x y 
+      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
-      restore
-      -- resetClip 
+      Cairo.restore
       return () 
   return itm 
 renderRItem itm@(RItemLink lnkbbx mrsvg) = do 
@@ -268,14 +254,11 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
           (ix',iy') = RSVG.svgGetSize rsvg
           ix = fromIntegral ix' 
           iy = fromIntegral iy'
-      -- clipBBox (Just (getBBox lnkbbx))
-      save 
-      -- setAntialias AntialiasNone
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
+      Cairo.save 
+      Cairo.translate x y 
+      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
       RSVG.svgRender rsvg 
-      restore
-      -- resetClip 
+      Cairo.restore
       return () 
   return itm 
 
@@ -285,108 +268,41 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
 -- InBBox --
 ------------
 
-{-
-renderRItem_InBBox :: Maybe BBox -> RItem -> Render RItem  
-renderRItem_InBBox _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem_InBBox mbbox itm@(RItemImage img msfc) = do  
-  case msfc of
-    Nothing -> renderImg (bbxed_content img)
-    Just sfc -> do 
-      let (x,y) = (img_pos . bbxed_content) img
-          BBox (x1,y1) (x2,y2) = getBBox img
-      ix <- liftM fromIntegral (imageSurfaceGetWidth sfc)
-      iy <- liftM fromIntegral (imageSurfaceGetHeight sfc)
-      save 
-      clipBBox (fmap (flip inflate 1) mbbox) 
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
-      setSourceSurface sfc 0 0 
-      paint 
-      resetClip 
-      restore
-  return itm 
-renderRItem_InBBox mbbox itm@(RItemSVG svgbbx mrsvg) = do 
-  case mrsvg of
-    Nothing -> renderSVG (bbxed_content svgbbx)
-    Just rsvg -> do 
-      let (x,y) = (svg_pos . bbxed_content) svgbbx
-          BBox (x1,y1) (x2,y2) = getBBox svgbbx
-          (ix',iy') = RSVG.svgGetSize rsvg
-          ix = fromIntegral ix' 
-          iy = fromIntegral iy'
-      clipBBox (fmap (flip inflate 0.5) mbbox)
-      save 
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
-      RSVG.svgRender rsvg 
-      resetClip 
-      restore
-      return () 
-  return itm 
-renderRItem_InBBox mbbox itm@(RItemLink lnkbbx mrsvg) = do 
-  case mrsvg of
-    Nothing -> renderLink (bbxed_content lnkbbx)
-    Just rsvg -> do 
-      let (x,y) = (link_pos . bbxed_content) lnkbbx
-          BBox (x1,y1) (x2,y2) = getBBox lnkbbx
-          (ix',iy') = RSVG.svgGetSize rsvg
-          ix = fromIntegral ix' 
-          iy = fromIntegral iy'
-      save 
-      clipBBox (fmap (flip inflate 0.5) mbbox)
-      translate x y 
-      scale ((x2-x1)/ix) ((y2-y1)/iy)
-      RSVG.svgRender rsvg 
-      resetClip 
-      restore
-      return () 
-  return itm 
--}
-
-
 -- | background drawing in bbox 
 renderRBkg_InBBox :: Maybe BBox 
                   -> (RBackground,Dimension) 
-                  -> Render (RBackground,Dimension)
+                  -> Cairo.Render (RBackground,Dimension)
 renderRBkg_InBBox mbbox (b,dim) = do 
     clipBBox (fmap (flip inflate 1) mbbox)
-    -- clipBBox mbbox
     renderRBkg_Buf (b,dim)
-    resetClip
+    Cairo.resetClip
     return (b,dim)
 
 
 -- | render RLayer within BBox after hittest items
-renderRLayer_InBBox :: Maybe BBox -> RLayer -> Render RLayer
+renderRLayer_InBBox :: Maybe BBox -> RLayer -> Cairo.Render RLayer
 renderRLayer_InBBox mbbox layer = do  
   clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
-  -- clipBBox mbbox 
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
                    :- Empty 
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
   (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
-  resetClip  
+  Cairo.resetClip  
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
     LyBuf (Just sfc) -> do 
-      liftIO $ renderWith sfc $ do 
+      liftIO $ Cairo.renderWith sfc $ do 
         clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
-        -- clipBBox mbbox 
-        -- setAntialias AntialiasNone
-        setSourceRGBA 0 0 0 0 
-        setOperator OperatorSource
-        paint
-        setOperator OperatorOver
+        Cairo.setSourceRGBA 0 0 0 0 
+        Cairo.setOperator Cairo.OperatorSource
+        Cairo.paint
+        Cairo.setOperator Cairo.OperatorOver
         (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
-        resetClip 
+        Cairo.resetClip 
         return layer 
     _ -> return layer 
-
-  
-
-
 
 -----------------------
 -- draw using buffer -- 
@@ -394,51 +310,47 @@ renderRLayer_InBBox mbbox layer = do
 
 -- | Background rendering using buffer
 renderRBkg_Buf :: (RBackground,Dimension) 
-               -> Render (RBackground,Dimension)
+               -> Cairo.Render (RBackground,Dimension)
 renderRBkg_Buf (b,dim) = do 
     case b of 
       RBkgSmpl _ _ msfc  -> do  
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
-            save
-            -- setAntialias AntialiasNone
-            setSourceSurface sfc 0 0 
-            paint 
-            restore
+            Cairo.save
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.restore
       RBkgPDF _ _ _n _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
-            save
-            -- setAntialias AntialiasNone            
-            setSourceSurface sfc 0 0 
-            paint 
-            restore
+            Cairo.save
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.restore
       RBkgEmbedPDF _ _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg (b,dim) >> return ()
           Just sfc -> do 
-            save
-            -- setAntialias AntialiasNone            
-            setSourceSurface sfc 0 0 
-            paint 
-            restore
+            Cairo.save
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.restore
     return (b,dim)
 
 -- | 
-renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Render RLayer 
+renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Cairo.Render RLayer 
 renderRLayer_InBBoxBuf mbbox lyr = do
     case view gbuffer lyr of 
       LyBuf (Just sfc) -> do 
         clipBBox mbbox
-        setSourceSurface sfc 0 0 
-        paint 
-        resetClip 
+        Cairo.setSourceSurface sfc 0 0 
+        Cairo.paint 
+        Cairo.resetClip 
         return lyr 
       _ -> do 
         renderRLayer_InBBox mbbox lyr         
-        -- return lyr 
 
 -------------------
 -- update buffer
@@ -449,13 +361,12 @@ updateLayerBuf :: Dimension -> Maybe BBox -> RLayer -> IO RLayer
 updateLayerBuf (Dim w h) mbbox lyr = do 
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
-      renderWith sfc $ do 
+      Cairo.renderWith sfc $ do 
         renderRLayer_InBBox mbbox lyr 
       return lyr
     LyBuf Nothing -> do 
-      -- return lyr 
-      sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
-      renderWith sfc $ do 
+      sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+      Cairo.renderWith sfc $ do 
         renderRLayer_InBBox Nothing lyr
       return (set gbuffer (LyBuf (Just sfc)) lyr) 
       
@@ -477,7 +388,6 @@ updateHoodleBuf hdl = do
 -------
 -- smart constructor for R hoodle structures
 -------
-
 
 -- |
 cnstrctRHoodle :: Hoodle -> IO RHoodle
@@ -510,5 +420,3 @@ cnstrctRLayer :: Layer -> IO RLayer
 cnstrctRLayer lyr = do 
   nitms <- (mapM cnstrctRItem . view items) lyr 
   return (set gitems nitms emptyRLayer)
-
-                 

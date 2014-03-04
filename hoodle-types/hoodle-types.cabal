@@ -37,6 +37,7 @@ Library
                    Data.Hoodle.Select
                    Data.Hoodle.Simple
                    Data.Hoodle.Simple.V0_1_1
+                   Data.Hoodle.Simple.V0_2_2
                    Data.Hoodle.Util
                    Data.Hoodle.Zipper 
 

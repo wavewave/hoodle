@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Hoodle.Simple 
+-- Module      : Data.Hoodle.Simple.V0_2_2 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,15 +13,13 @@
 --
 ----------------------------------------------------------------------------- 
 
-module Data.Hoodle.Simple where
+module Data.Hoodle.Simple.V0_2_2 where
 
 -- from other packages
 import           Control.Applicative 
 import           Control.Lens 
--- import qualified Data.ByteString as S
 import           Data.ByteString.Char8 hiding (map)
 import           Data.UUID.V4 
--- import           Data.Label
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
 -- from this package
@@ -258,12 +256,6 @@ revisions = lens hoodle_revisions (\f a -> f { hoodle_revisions = a } )
 revmd5 :: Simple Lens Revision ByteString
 revmd5 = lens _revmd5 (\f a -> f { _revmd5 = a } )
 
-{-
--- | 
-revtxt :: Simple Lens Revision ByteString
-revtxt = lens _revtxt (\f a -> f { _revtxt = a } )
--}
-
 -- | 
 embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)
 embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
@@ -271,7 +263,6 @@ embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
 -- | 
 pages :: Simple Lens Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
-
 
 -- | 
 dimension :: Simple Lens Page Dimension 

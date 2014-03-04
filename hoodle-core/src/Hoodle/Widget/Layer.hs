@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Widget.Layer
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -20,7 +20,7 @@ import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
 import           Data.Sequence
 import           Data.Time
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 --
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple 
@@ -76,9 +76,10 @@ startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)
     -- need to draw other widgets here                             
     let otherwidgets = delete LayerWidget allWidgets 
-    liftIO $ renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 
+    liftIO $ Cairo.renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 
     -- end : need to draw other widgets here ^^^
-    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+    tgtsfc <- liftIO $ Cairo.createImageSurface 
+                         Cairo.FormatARGB32 (floor wsfc) (floor hsfc)
     ctime <- liftIO getCurrentTime 
     let CvsCoord (x0,y0) = owxy 
         CvsCoord (x,y) = oxy 
@@ -87,13 +88,13 @@ startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do
           | hitLassoPoint (fromList [(x0,y0+80),(x0,y0+100),(x0+20,y0+100)]) (x,y) = gotoPrevLayer 
           | otherwise = manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
     act
-    liftIO $ surfaceFinish srcsfc 
-    liftIO $ surfaceFinish tgtsfc
+    liftIO $ Cairo.surfaceFinish srcsfc 
+    liftIO $ Cairo.surfaceFinish tgtsfc
   
 -- | main event loop for layer widget
 manipulateLW :: CanvasId 
              -> CanvasGeometry 
-             -> (Surface,Surface) 
+             -> (Cairo.Surface,Cairo.Surface) 
              -> CanvasCoordinate 
              -> CanvasCoordinate 
              -> UTCTime 
@@ -112,7 +113,7 @@ manipulateLW cid geometry (srcsfc,tgtsfc) owxy oxy otime = do
 
 moveLayerWidget :: CanvasId 
                    -> CanvasGeometry 
-                   -> (Surface,Surface) 
+                   -> (Cairo.Surface,Cairo.Surface) 
                    -> CanvasCoordinate 
                    -> CanvasCoordinate 
                    -> PointerCoord

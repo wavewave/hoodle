@@ -10,7 +10,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Canvas 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -97,7 +97,7 @@ import           Control.Applicative ((<*>),(<$>))
 import           Control.Lens (Simple,Lens,view,set,lens)
 import qualified Data.IntMap as M
 import           Data.Sequence
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- 
 import           Data.Hoodle.Simple (Dimension(..))
@@ -163,13 +163,13 @@ pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 data CanvasInfo (a :: ViewMode) = 
        CanvasInfo { _canvasId :: CanvasId
                   , _drawArea :: DrawingArea
-                  , _mDrawSurface :: Maybe Surface 
+                  , _mDrawSurface :: Maybe Cairo.Surface 
                   , _scrolledWindow :: ScrolledWindow
                   , _viewInfo :: ViewInfo a
                   , _currentPageNum :: Int
                   , _horizAdjustment :: Adjustment
                   , _vertAdjustment :: Adjustment 
-                  , _horizAdjConnId :: Maybe (ConnectId Adjustment)                               
+                  , _horizAdjConnId :: Maybe (ConnectId Adjustment)
                   , _vertAdjConnId :: Maybe (ConnectId Adjustment)
                   , _canvasWidgets :: CanvasWidgets
                   , _notifiedItem :: Maybe (PageNum,BBox,RItem) 
@@ -219,7 +219,7 @@ drawArea :: Simple Lens (CanvasInfo a) DrawingArea
 drawArea = lens _drawArea (\f a -> f { _drawArea = a })
 
 -- | 
-mDrawSurface :: Simple Lens (CanvasInfo a) (Maybe Surface) 
+mDrawSurface :: Simple Lens (CanvasInfo a) (Maybe Cairo.Surface) 
 mDrawSurface = lens _mDrawSurface (\f a -> f { _mDrawSurface = a })
 
 
@@ -502,22 +502,23 @@ updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = do
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = SingleArrangement cdim pdim (ViewPortBBox nbbox)
-  maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
+  maybe (return ()) Cairo.surfaceFinish $ view mDrawSurface cinfo 
   msfc <- fmap Just $ do 
-            sfc <- createImageSurface FormatARGB32 (floor w') (floor h')
-            renderWith sfc $ do 
-              setSourceRGBA 0.5 0.5 0.5 1 
-              rectangle 0 0 w' h' 
-              fill 
+            sfc <- Cairo.createImageSurface 
+                     Cairo.FormatARGB32 (floor w') (floor h')
+            Cairo.renderWith sfc $ do 
+              Cairo.setSourceRGBA 0.5 0.5 0.5 1 
+              Cairo.rectangle 0 0 w' h' 
+              Cairo.fill 
             return sfc 
   return $ (set (viewInfo.pageArrangement) arr' . set mDrawSurface msfc) cinfo
      
 -- | 
 
 updateCanvasDimForContSingle :: PageDimension 
-                                -> CanvasDimension 
-                                -> CanvasInfo ContinuousPage 
-                                -> IO (CanvasInfo ContinuousPage) 
+                             -> CanvasDimension 
+                             -> CanvasInfo ContinuousPage 
+                             -> IO (CanvasInfo ContinuousPage) 
 updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do 
   let zmode = view (viewInfo.zoomMode) cinfo
       ContinuousArrangement _ ddim  func (ViewPortBBox bbox) 
@@ -526,13 +527,14 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
       (sinvx,sinvy) = getRatioPageCanvas zmode pdim cdim 
       nbbox = BBox (x,y) (x+w'/sinvx,y+h'/sinvy)
       arr' = ContinuousArrangement cdim ddim func (ViewPortBBox nbbox)
-  maybe (return ()) surfaceFinish $ view mDrawSurface cinfo 
+  maybe (return ()) Cairo.surfaceFinish $ view mDrawSurface cinfo 
   msfc <- fmap Just $ do 
-            sfc <- createImageSurface FormatARGB32 (floor w') (floor h')
-            renderWith sfc $ do 
-              setSourceRGBA 0.5 0.5 0.5 1 
-              rectangle 0 0 w' h' 
-              fill 
+            sfc <- Cairo.createImageSurface 
+                     Cairo.FormatARGB32 (floor w') (floor h')
+            Cairo.renderWith sfc $ do 
+              Cairo.setSourceRGBA 0.5 0.5 0.5 1 
+              Cairo.rectangle 0 0 w' h' 
+              Cairo.fill 
             return sfc 
   return $ (set (viewInfo.pageArrangement) arr'.set mDrawSurface msfc) cinfo
      

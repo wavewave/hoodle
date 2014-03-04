@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Select.ManipulateImage
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -20,12 +20,13 @@ module Hoodle.Coroutine.Select.ManipulateImage where
 import           Control.Lens (set, view, _2)
 import           Control.Monad (when)
 import           Control.Monad.State (get)
+import           Control.Monad.Trans (liftIO)
 import           Data.ByteString.Base64 (encode)
 import           Data.Foldable (forM_)
 import           Data.Monoid ((<>))
 import           Data.Time
 import qualified Graphics.GD.ByteString as G
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 --
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -85,8 +86,8 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       tsel <- createTempRender geometry (p0, BBox (unPageCoord c0) (unPageCoord c0))
       ctime <- liftIO $ getCurrentTime
       nbbox <- newCropRect cid geometry tsel (unPageCoord c0) (unPageCoord c0,ctime)
-      surfaceFinish (tempSurfaceSrc tsel)
-      surfaceFinish (tempSurfaceTgt tsel)
+      Cairo.surfaceFinish (tempSurfaceSrc tsel)
+      Cairo.surfaceFinish (tempSurfaceTgt tsel)
       let pnum = (fst . tempInfo) tsel
       let img = bbxed_content imgbbx
           obbox = getBBox imgbbx

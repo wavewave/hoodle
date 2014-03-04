@@ -28,7 +28,7 @@ import           Data.Monoid
 import           Data.UUID.V4 
 import qualified Data.Text as T (unpack)
 import qualified Data.Text.Encoding as TE
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory 
 import           System.FilePath
@@ -212,9 +212,10 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsSVG hititms bbox
       else do      
-        liftIO $ withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
-          translate (-ulx) (-uly)
-          mapM_ renderRItem  hititms
+        liftIO $ Cairo.withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> 
+          Cairo.renderWith s $ do 
+            Cairo.translate (-ulx) (-uly)
+            mapM_ renderRItem hititms
 
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine () 
@@ -227,9 +228,10 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsPDF hititms bbox
       else do      
-        liftIO $ withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
-          translate (-ulx) (-uly)
-          mapM_ renderRItem  hititms
+        liftIO $ Cairo.withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> 
+          Cairo.renderWith s $ do 
+            Cairo.translate (-ulx) (-uly)
+            mapM_ renderRItem  hititms
 
 -- |
 exportImage :: S.Image -> MainCoroutine ()

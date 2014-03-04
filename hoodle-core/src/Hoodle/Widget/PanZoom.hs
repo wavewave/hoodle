@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Widget.PanZoom
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -20,7 +20,7 @@ import           Control.Monad.Identity
 import           Control.Monad.State 
 import           Data.List (delete)
 import           Data.Time.Clock 
-import           Graphics.Rendering.Cairo 
+import qualified Graphics.Rendering.Cairo as Cairo
 import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
@@ -93,13 +93,15 @@ startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do
                                     Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
         -- need to draw other widgets here                             
         let otherwidgets = delete PanZoomWidget allWidgets 
-        liftIO $ renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 
+        liftIO $ Cairo.renderWith 
+                   srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 
         -- end : need to draw other widgets here ^^^
-        tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor wsfc) (floor hsfc)
+        tgtsfc <- liftIO $ Cairo.createImageSurface 
+                             Cairo.FormatARGB32 (floor wsfc) (floor hsfc)
         ctime <- liftIO getCurrentTime 
         manipulatePZW (tchmode,mode) cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
-        liftIO $ surfaceFinish srcsfc 
-        liftIO $ surfaceFinish tgtsfc
+        liftIO $ Cairo.surfaceFinish srcsfc 
+        liftIO $ Cairo.surfaceFinish tgtsfc
 
 
 
@@ -144,7 +146,7 @@ findPanXform (Dim w h) ((x0,y0),(x,y)) =
 manipulatePZW :: (PanZoomTouch,PanZoomMode) 
               -> CanvasId 
               -> CanvasGeometry 
-              -> (Surface,Surface) -- ^ (Source Surface, Target Surface)
+              -> (Cairo.Surface,Cairo.Surface) -- ^ (Source, Target)
               -> CanvasCoordinate -- ^ original widget position
               -> CanvasCoordinate -- ^ where pen pressed 
               -> UTCTime
@@ -161,12 +163,12 @@ manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
     TouchUp _ pcoord   -> if (tchmode /= TouchMode) then again otime else do 
       b <- liftM (view (settings.doesUseTouch)) get 
       when b $ upact pcoord 
-    _ -> again otime -- manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy otime
+    _ -> again otime
   where 
     again t = manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy t
     moveact pcoord = 
       processWithDefTimeInterval
-        again -- (manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy) 
+        again
         (\ctime -> movingRender mode cid geometry (srcsfc,tgtsfc) owxy oxy pcoord 
                    >> manipulatePZW fullmode cid geometry (srcsfc,tgtsfc) owxy oxy ctime)
         otime 
@@ -202,9 +204,10 @@ manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
 
 
 -- | 
-movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry -> (Surface,Surface) 
-                -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
-                -> MainCoroutine () 
+movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry 
+             -> (Cairo.Surface,Cairo.Surface) 
+             -> CanvasCoordinate -> CanvasCoordinate -> PointerCoord 
+             -> MainCoroutine () 
 movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
     xst <- get 
@@ -234,8 +237,8 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
             isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox             
         virtualDoubleBufferDraw srcsfc tgtsfc 
-          (save >> scale z z >> translate xtrans ytrans)
-          (restore >> renderPanZoomWidget isTouchZoom Nothing pos)
+          (Cairo.save >> Cairo.scale z z >> Cairo.translate xtrans ytrans)
+          (Cairo.restore >> renderPanZoomWidget isTouchZoom Nothing pos)
       Panning b -> do 
         let cinfobox = getCanvasInfo cid xst               
             CanvasDimension cdim = canvasDim geometry 
@@ -255,8 +258,8 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox 
         put (setCanvasInfo (cid,ncinfobox) xst)
         virtualDoubleBufferDraw srcsfc tgtsfc 
-          (save >> translate xtrans ytrans) 
-          (restore >> renderPanZoomWidget isTouchZoom Nothing nwpos)
+          (Cairo.save >> Cairo.translate xtrans ytrans) 
+          (Cairo.restore >> renderPanZoomWidget isTouchZoom Nothing nwpos)
     --   
     xst2 <- get 
     let cinfobox = getCanvasInfo cid xst2 

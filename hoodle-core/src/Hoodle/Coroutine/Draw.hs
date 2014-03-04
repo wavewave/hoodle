@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Draw 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -22,8 +22,7 @@ import           Control.Lens (view,set)
 import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.State
--- import Data.Label
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
 import           Data.Hoodle.BBox
@@ -125,7 +124,7 @@ invalidateCurrent :: MainCoroutine ()
 invalidateCurrent = invalidate . getCurrentCanvasId =<< get
        
 -- | Drawing temporary gadgets
-invalidateTemp :: CanvasId -> Surface ->  Render () -> MainCoroutine ()
+invalidateTemp :: CanvasId -> Cairo.Surface -> Cairo.Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
     xst <- get 
     forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
@@ -136,16 +135,18 @@ invalidateTemp cid tempsurface rndr = do
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum
           liftIO $ renderWithDrawable win $ do   
-                     setSourceSurface tempsurface 0 0 
-                     setOperator OperatorSource 
-                     paint 
+                     Cairo.setSourceSurface tempsurface 0 0 
+                     Cairo.setOperator Cairo.OperatorSource 
+                     Cairo.paint 
                      xformfunc 
                      rndr 
 
 -- | Drawing temporary gadgets with coordinate based on base page
-
-invalidateTempBasePage :: CanvasId -> Surface -> PageNum -> Render () 
-                          -> MainCoroutine ()
+invalidateTempBasePage :: CanvasId        -- ^ current canvas id
+                       -> Cairo.Surface   -- ^ temporary cairo surface
+                       -> PageNum         -- ^ current page number
+                       -> Cairo.Render () -- ^ temporary rendering function
+                       -> MainCoroutine ()
 invalidateTempBasePage cid tempsurface pnum rndr = do 
     xst <- get 
     forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
@@ -155,13 +156,14 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
           win <- liftIO $ widgetGetDrawWindow canvas
           let xformfunc = cairoXform4PageCoordinate geometry pnum
           liftIO $ renderWithDrawable win $ do   
-                     setSourceSurface tempsurface 0 0 
-                     setOperator OperatorSource 
-                     paint 
+                     Cairo.setSourceSurface tempsurface 0 0 
+                     Cairo.setOperator Cairo.OperatorSource 
+                     Cairo.paint 
                      xformfunc 
                      rndr 
 
--- | check current canvas id and new active canvas id and invalidate if it's changed. 
+-- | check current canvas id and new active canvas id and invalidate if it's 
+--   changed. 
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
 chkCvsIdNInvalidate cid = do 
   currcid <- liftM (getCurrentCanvasId) get 
@@ -173,5 +175,5 @@ waitSomeEvent p = do
     r <- nextevent
     case r of 
       UpdateCanvas cid -> -- this is temporary
-                          invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
+        invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
       _ -> if  p r then return r else waitSomeEvent p  

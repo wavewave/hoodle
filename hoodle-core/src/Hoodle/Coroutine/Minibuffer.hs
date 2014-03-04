@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Minibuffer 
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,10 +17,11 @@ module Hoodle.Coroutine.Minibuffer where
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Lens ((%~),view)
 import           Control.Monad.State (modify,get)
+import           Control.Monad.Trans (liftIO)
 import           Data.Foldable (Foldable(..),mapM_,forM_,toList)
 import           Data.Sequence (Seq,(|>),empty,singleton,viewl,ViewL(..))
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
-import           Graphics.Rendering.Cairo
 -- 
 import           Control.Monad.Trans.Crtn.Queue (enqueue)
 import           Data.Hoodle.Simple
@@ -37,20 +38,20 @@ import           Hoodle.Type.HoodleState
 --
 import           Prelude hiding (length,mapM_)
 
-drawMiniBufBkg :: Render ()
+drawMiniBufBkg :: Cairo.Render ()
 drawMiniBufBkg = do           
-    setSourceRGBA 0.8 0.8 0.8 1 
-    rectangle 0 0 500 50
-    fill
-    setSourceRGBA 0.95 0.85 0.5 1
-    rectangle 5 2 490 46
-    fill 
-    setSourceRGBA 0 0 0 1
-    setLineWidth 1.0
-    rectangle 5 2 490 46 
-    stroke
+    Cairo.setSourceRGBA 0.8 0.8 0.8 1 
+    Cairo.rectangle 0 0 500 50
+    Cairo.fill
+    Cairo.setSourceRGBA 0.95 0.85 0.5 1
+    Cairo.rectangle 5 2 490 46
+    Cairo.fill 
+    Cairo.setSourceRGBA 0 0 0 1
+    Cairo.setLineWidth 1.0
+    Cairo.rectangle 5 2 490 46 
+    Cairo.stroke
 
-drawMiniBuf :: (Foldable t) => t Stroke -> Render ()
+drawMiniBuf :: (Foldable t) => t Stroke -> Cairo.Render ()
 drawMiniBuf strks = drawMiniBufBkg >> mapM_ renderStrk strks
     
 
@@ -125,23 +126,26 @@ minibufInit :: MainCoroutine (Either () [Stroke])
 minibufInit = 
   waitSomeEvent (\case MiniBuffer (MiniBufferInitialized _ )-> True ; _ -> False) 
   >>= (\case MiniBuffer (MiniBufferInitialized drawwdw) -> do
-               srcsfc <- liftIO (createImageSurface FormatARGB32 500 50)
-               tgtsfc <- liftIO (createImageSurface FormatARGB32 500 50)
-               liftIO $ renderWith srcsfc (drawMiniBuf empty) 
+               srcsfc <- liftIO (Cairo.createImageSurface 
+                                   Cairo.FormatARGB32 500 50)
+               tgtsfc <- liftIO (Cairo.createImageSurface 
+                                   Cairo.FormatARGB32 500 50)
+               liftIO $ Cairo.renderWith srcsfc (drawMiniBuf empty) 
                liftIO $ invalidateMinibuf drawwdw srcsfc 
                minibufStart drawwdw (srcsfc,tgtsfc) empty 
              _ -> minibufInit)
 
-invalidateMinibuf :: DrawWindow -> Surface -> IO ()
+invalidateMinibuf :: DrawWindow -> Cairo.Surface -> IO ()
 invalidateMinibuf drawwdw tgtsfc = 
   renderWithDrawable drawwdw $ do 
-    setSourceSurface tgtsfc 0 0 
-    setOperator OperatorSource 
-    paint   
+    Cairo.setSourceSurface tgtsfc 0 0 
+    Cairo.setOperator Cairo.OperatorSource 
+    Cairo.paint
 
 minibufStart :: DrawWindow 
-             -> (Surface,Surface)  -- ^ (source surface, target surface)
-             -> Seq Stroke -> MainCoroutine (Either () [Stroke])
+             -> (Cairo.Surface,Cairo.Surface)  -- ^ (source, target)
+             -> Seq Stroke 
+             -> MainCoroutine (Either () [Stroke])
 minibufStart drawwdw (srcsfc,tgtsfc) strks = do 
     r <- nextevent 
     case r of 
@@ -153,11 +157,13 @@ minibufStart drawwdw (srcsfc,tgtsfc) strks = do
       MiniBuffer (MiniBufferPenDown PenButton1 pcoord) -> do 
         ps <- onestroke drawwdw (srcsfc,tgtsfc) (singleton pcoord) 
         let nstrks = strks |> mkstroke ps
-        liftIO $ renderWith srcsfc (drawMiniBuf nstrks)
+        liftIO $ Cairo.renderWith srcsfc (drawMiniBuf nstrks)
         minibufStart drawwdw (srcsfc,tgtsfc) nstrks
       _ -> minibufStart drawwdw (srcsfc,tgtsfc) strks
       
-onestroke :: DrawWindow -> (Surface,Surface) -> Seq PointerCoord 
+onestroke :: DrawWindow
+          -> (Cairo.Surface,Cairo.Surface) -- ^ (source, target)
+          -> Seq PointerCoord 
           -> MainCoroutine (Seq PointerCoord)
 onestroke drawwdw (srcsfc,tgtsfc) pcoords = do 
     r <- nextevent 
@@ -170,20 +176,22 @@ onestroke drawwdw (srcsfc,tgtsfc) pcoords = do
       MiniBuffer (MiniBufferPenUp pcoord) -> return (pcoords |> pcoord)
       _ -> onestroke drawwdw (srcsfc,tgtsfc) pcoords
 
-drawstrokebit :: (Surface,Surface) -> Seq PointerCoord -> IO()
+drawstrokebit :: (Cairo.Surface,Cairo.Surface) 
+              -> Seq PointerCoord 
+              -> IO()
 drawstrokebit (srcsfc,tgtsfc) ps = 
-    renderWith tgtsfc $ do 
-      setSourceSurface srcsfc 0 0
-      setOperator OperatorSource 
-      paint 
+    Cairo.renderWith tgtsfc $ do 
+      Cairo.setSourceSurface srcsfc 0 0
+      Cairo.setOperator Cairo.OperatorSource 
+      Cairo.paint 
       case viewl ps of
         p :< ps' -> do 
-          setOperator OperatorOver 
-          setSourceRGBA 0.0 0.0 0.0 1.0
-          setLineWidth (view penWidth defaultPenWCS) 
-          moveTo (pointerX p) (pointerY p)
-          mapM_ (uncurry lineTo . ((,)<$>pointerX<*>pointerY)) ps'
-          stroke 
+          Cairo.setOperator Cairo.OperatorOver 
+          Cairo.setSourceRGBA 0.0 0.0 0.0 1.0
+          Cairo.setLineWidth (view penWidth defaultPenWCS) 
+          Cairo.moveTo (pointerX p) (pointerY p)
+          mapM_ (uncurry Cairo.lineTo . ((,)<$>pointerX<*>pointerY)) ps'
+          Cairo.stroke 
         _ -> return ()
  
 mkstroke :: Seq PointerCoord -> Stroke

@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.ContextMenu
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -18,7 +18,7 @@ import qualified Data.ByteString.Char8 as B
 import Data.UUID.V4
 import DBus 
 import DBus.Client 
-import Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import Graphics.UI.Gtk
 import System.Directory 
 import System.FilePath 
@@ -48,20 +48,16 @@ openLinkAction :: UrlPath -> IO ()
 openLinkAction urlpath = 
     case urlpath of 
       FileUrl fp -> do 
-        let cmdargs = [fp]
+        -- let cmdargs = [fp]
         putStrLn "test dbus"
         cli <- connectSession
-        -- requestName cli "org.ianwookim.hoodle-daemon" [] 
         emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }
-        -- createProcess (proc "hoodle" cmdargs)  
         return () 
       HttpUrl url -> do 
         let cmdargs = [url]
         createProcess (proc "xdg-open" cmdargs)  
         return () 
 
-  
-  
 -- | 
 menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
 menuCreateALink evhandler sitems = 
@@ -81,8 +77,8 @@ makeSVGFromSelection hititms (BBox (ulx,uly) (lrx,lry)) = do
   let filename = tdir </> show uuid <.> "svg"
       (x,y) = (ulx,uly)
       (w,h) = (lrx-ulx,lry-uly)
-  withSVGSurface filename w h $ \s -> renderWith s $ do 
-    translate (-ulx) (-uly) 
+  Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ do 
+    Cairo.translate (-ulx) (-uly) 
     mapM_ renderRItem hititms 
   bstr <- B.readFile filename
   let svg = SVG Nothing Nothing bstr (x,y) (Dim w h)

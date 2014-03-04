@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Pen 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -25,7 +25,7 @@ import           Data.Foldable (forM_)
 import           Data.Sequence hiding (filter)
 import           Data.Maybe 
 import           Data.Time.Clock 
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic (gpages)
@@ -51,8 +51,6 @@ import           Hoodle.View.Draw
 --
 import Prelude hiding (mapM_)
 
-
-
 -- |
 createTempRender :: CanvasGeometry -> a -> MainCoroutine (TempRender a) 
 createTempRender geometry x = do 
@@ -61,19 +59,21 @@ createTempRender geometry x = do
         mcvssfc = view (unboxLens mDrawSurface) cinfobox 
     let hdl = getHoodle xst
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
-        
-    srcsfc <- liftIO  $ maybe (fst <$> canvasImageSurface Nothing geometry hdl)
-                              (\cvssfc -> do 
-                                sfc <- createImageSurface FormatARGB32 (floor cw) (floor ch) 
-                                renderWith sfc $ do 
-                                  setSourceSurface cvssfc 0 0 
-                                  setOperator OperatorSource 
-                                  paint
-                                return sfc) 
-                              mcvssfc
-    liftIO $ renderWith srcsfc $ do 
+    srcsfc <- liftIO $  
+      maybe (fst <$> canvasImageSurface Nothing geometry hdl)
+            (\cvssfc -> do 
+              sfc <- Cairo.createImageSurface 
+                       Cairo.FormatARGB32 (floor cw) (floor ch) 
+              Cairo.renderWith sfc $ do 
+                Cairo.setSourceSurface cvssfc 0 0 
+                Cairo.setOperator Cairo.OperatorSource 
+                Cairo.paint
+              return sfc) 
+            mcvssfc
+    liftIO $ Cairo.renderWith srcsfc $ do 
       emphasisCanvasRender ColorRed geometry 
-    tgtsfc <- liftIO $ createImageSurface FormatARGB32 (floor cw) (floor ch) 
+    tgtsfc <- liftIO $ Cairo.createImageSurface 
+                         Cairo.FormatARGB32 (floor cw) (floor ch) 
     let trdr = TempRender srcsfc tgtsfc (cw,ch) x
     return trdr 
 
@@ -91,7 +91,8 @@ penPageSwitch pgn = do
 -- | Common Pen Work starting point 
 commonPenStart :: (forall a. CanvasInfo a -> PageNum -> CanvasGeometry  
                     -> (Double,Double) -> MainCoroutine () )
-               -> CanvasId -> PointerCoord 
+               -> CanvasId 
+               -> PointerCoord 
                -> MainCoroutine ()
 commonPenStart action cid pcoord = do
     oxstate <- get 
@@ -116,7 +117,9 @@ commonPenStart action cid pcoord = do
                  action nCvsInfo pgn geometry (x,y) 
       
 -- | enter pen drawing mode
-penStart :: CanvasId -> PointerCoord -> MainCoroutine () 
+penStart :: CanvasId 
+         -> PointerCoord 
+         -> MainCoroutine () 
 penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. CanvasInfo b -> PageNum -> CanvasGeometry -> (Double,Double) -> MainCoroutine ()
         penAction _cinfo pnum geometry (x,y) = do 
@@ -128,8 +131,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           forM_ mpage $ \_page -> do 
             trdr <- createTempRender geometry (empty |> (x,y,z)) 
             pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
-            surfaceFinish (tempSurfaceSrc trdr)
-            surfaceFinish (tempSurfaceTgt trdr)            
+            Cairo.surfaceFinish (tempSurfaceSrc trdr)
+            Cairo.surfaceFinish (tempSurfaceTgt trdr)            
             --
             case viewl pdraw of 
               EmptyL -> return ()
@@ -146,7 +149,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           
 -- | main pen coordinate adding process
 -- | now being changed
-penProcess :: CanvasId -> PageNum 
+penProcess :: CanvasId 
+           -> PageNum 
            -> CanvasGeometry
            -> TempRender (Seq (Double,Double,Double))
            -> ((Double,Double),Double) 
@@ -181,21 +185,25 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) = do
 
 -- | 
 skipIfNotInSamePage :: Monad m => 
-                       PageNum -> CanvasGeometry -> PointerCoord 
-                       -> m a 
-                       -> ((PointerCoord,(Double,Double)) -> m a)
-                       -> m a
+                       PageNum 
+                    -> CanvasGeometry 
+                    -> PointerCoord 
+                    -> m a 
+                    -> ((PointerCoord,(Double,Double)) -> m a)
+                    -> m a
 skipIfNotInSamePage  pgn geometry pcoord skipaction ordaction =  
   switchActionEnteringDiffPage pgn geometry pcoord 
     skipaction (\_ _ -> skipaction ) (\_ (_,PageCoord xy)->ordaction (pcoord,xy)) 
   
 -- |       
 switchActionEnteringDiffPage :: Monad m => 
-                                PageNum -> CanvasGeometry -> PointerCoord 
-                                -> m a 
-                                -> (PageNum -> (PageNum,PageCoordinate) -> m a)
-                                -> (PageNum -> (PageNum,PageCoordinate) -> m a)
-                                -> m a
+                                PageNum 
+                             -> CanvasGeometry 
+                             -> PointerCoord 
+                             -> m a 
+                             -> (PageNum -> (PageNum,PageCoordinate) -> m a)
+                             -> (PageNum -> (PageNum,PageCoordinate) -> m a)
+                             -> m a
 switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction = do 
     let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
     maybeFlip pagecoord skipaction 
@@ -204,13 +212,14 @@ switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction 
                        else chgaction pgn (cpn,pxy)
                                                                  
 -- | in page action  
-penMoveAndUpOnly :: Monad m => UserEvent 
-                    -> PageNum 
-                    -> CanvasGeometry 
-                    -> m a 
-                    -> ((PointerCoord,(Double,Double)) -> m a) 
-                    -> (PointerCoord -> m a) 
-                    -> m a
+penMoveAndUpOnly :: Monad m => 
+                    UserEvent 
+                 -> PageNum 
+                 -> CanvasGeometry 
+                 -> m a 
+                 -> ((PointerCoord,(Double,Double)) -> m a) 
+                 -> (PointerCoord -> m a) 
+                 -> m a
 penMoveAndUpOnly r pgn geometry defact moveaction upaction = 
   case r of 
     PenMove _ pcoord -> skipIfNotInSamePage pgn geometry pcoord defact moveaction
@@ -218,7 +227,8 @@ penMoveAndUpOnly r pgn geometry defact moveaction upaction =
     _ -> defact 
   
 -- | 
-penMoveAndUpInterPage :: Monad m => UserEvent 
+penMoveAndUpInterPage :: Monad m => 
+                         UserEvent 
                       -> PageNum 
                       -> CanvasGeometry 
                       -> m a 

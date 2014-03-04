@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Pen 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -21,7 +21,7 @@ import           Data.Foldable
 import qualified Data.IntMap as IM
 import           Data.Sequence hiding (take, drop)
 import           Data.Strict.Tuple hiding (uncurry)
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -36,25 +36,25 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 --
 
-data TempRender a = TempRender { tempSurfaceSrc :: Surface  
-                               , tempSurfaceTgt :: Surface 
+data TempRender a = TempRender { tempSurfaceSrc :: Cairo.Surface  
+                               , tempSurfaceTgt :: Cairo.Surface 
                                , widthHeight :: (Double,Double)
                                , tempInfo :: a 
                                } 
 
 
 -- | update the content of temp selection. should not be often updated
-updateTempRender :: TempRender a -> Render () -> Bool -> IO ()
+updateTempRender :: TempRender a -> Cairo.Render () -> Bool -> IO ()
 updateTempRender temprender renderfunc isFullErase = 
-  renderWith (tempSurfaceSrc temprender) $ do 
+  Cairo.renderWith (tempSurfaceSrc temprender) $ do 
     when isFullErase $ do 
       let (cw,ch) = widthHeight temprender
-      setSourceRGBA 0.5 0.5 0.5 1
-      rectangle 0 0 cw ch 
-      fill 
+      Cairo.setSourceRGBA 0.5 0.5 0.5 1
+      Cairo.rectangle 0 0 cw ch 
+      Cairo.fill 
     renderfunc    
 
-
+-- |
 createNewStroke :: PenInfo -> Seq (Double,Double,Double) -> Stroke 
 createNewStroke pinfo pdraw = 
   let ptype = view penType pinfo
@@ -81,11 +81,10 @@ createNewStroke pinfo pdraw =
 
 -- | 
 addPDraw :: PenInfo 
-            -> RHoodle
-            -> PageNum 
-            -> Seq (Double,Double,Double) 
-            -> IO (RHoodle,BBox) 
-                       -- ^ new hoodle and bbox in page coordinate
+         -> RHoodle
+         -> PageNum 
+         -> Seq (Double,Double,Double) 
+         -> IO (RHoodle,BBox) -- ^ new hoodle and bbox in page coordinate
 addPDraw pinfo hdl (PageNum pgnum) pdraw = do 
     let currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage

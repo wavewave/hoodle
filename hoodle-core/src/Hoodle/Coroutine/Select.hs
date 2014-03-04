@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Select 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -27,7 +27,7 @@ import qualified Data.IntMap as M
 import           Data.Sequence (Seq,(|>))
 import qualified Data.Sequence as Sq (empty)
 import           Data.Time.Clock
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.Matrix as Mat
 -- from hoodle-platform
 import           Data.Hoodle.Select
@@ -64,9 +64,9 @@ import           Hoodle.View.Draw
 import           Prelude hiding ((.), id)
 
 -- | For Selection mode from pen mode with 2nd pen button
-dealWithOneTimeSelectMode :: MainCoroutine ()     -- ^ main action 
-                             -> MainCoroutine ()  -- ^ terminating action
-                             -> MainCoroutine ()
+dealWithOneTimeSelectMode :: MainCoroutine ()  -- ^ main action 
+                          -> MainCoroutine ()  -- ^ terminating action
+                          -> MainCoroutine ()
 dealWithOneTimeSelectMode action terminator = do 
   xstate <- get 
   case view isOneTimeSelectMode xstate of 
@@ -104,7 +104,7 @@ commonSelectStart typ pbtn cid = case typ of
                           newSelectLasso cinfo pnum geometry itms 
                              (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
                         _ -> return ()
-                      surfaceFinish (tempSurfaceSrc tsel) 
+                      Cairo.surfaceFinish (tempSurfaceSrc tsel) 
                       showContextMenu (pnum,(x,y))
                   )
                   (return ())  
@@ -212,7 +212,6 @@ newSelectRectangle cid pnum geometry itms orig
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
       put . set hoodleModeState (SelectState newthdl) 
             =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
-      -- invalidateAll 
       invalidateAllInBBox Nothing Efficient
 
 
@@ -227,10 +226,9 @@ startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do
     itmimage <- liftIO $ mkItmsNImg geometry tpage
     tsel <- createTempRender geometry itmimage 
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
-    surfaceFinish (tempSurfaceSrc tsel)
-    surfaceFinish (tempSurfaceTgt tsel)
-    surfaceFinish (imageSurface itmimage)
-    -- invalidateAll 
+    Cairo.surfaceFinish (tempSurfaceSrc tsel)
+    Cairo.surfaceFinish (tempSurfaceTgt tsel)
+    Cairo.surfaceFinish (imageSurface itmimage)
     invalidateAllInBBox Nothing Efficient 
 
 -- | 
@@ -332,37 +330,36 @@ moveSelect cid pnum geometry orig@(x0,y0)
       
 
 -- | prepare for resizing selection 
-startResizeSelect :: Bool -- ^ doesKeepRatio
-                     -> Handle 
-                     -> CanvasId 
-                     -> PageNum 
-                     -> CanvasGeometry 
-                     -> BBox
-                     -> ((Double,Double),UTCTime) 
-                     -> Page SelectMode
-                     -> MainCoroutine () 
+startResizeSelect :: Bool   -- ^ doesKeepRatio
+                  -> Handle -- ^ current selection handle
+                  -> CanvasId 
+                  -> PageNum 
+                  -> CanvasGeometry 
+                  -> BBox
+                  -> ((Double,Double),UTCTime) 
+                  -> Page SelectMode
+                  -> MainCoroutine () 
 startResizeSelect doesKeepRatio handle cid pnum geometry bbox 
                   ((x,y),ctime) tpage = do  
     itmimage <- liftIO $ mkItmsNImg geometry tpage  
     tsel <- createTempRender geometry itmimage 
     resizeSelect doesKeepRatio 
       handle cid pnum geometry bbox ((x,y),ctime) tsel 
-    surfaceFinish (tempSurfaceSrc tsel)  
-    surfaceFinish (tempSurfaceTgt tsel)      
-    surfaceFinish (imageSurface itmimage)
-    -- invalidateAll 
+    Cairo.surfaceFinish (tempSurfaceSrc tsel)  
+    Cairo.surfaceFinish (tempSurfaceTgt tsel)      
+    Cairo.surfaceFinish (imageSurface itmimage)
     invalidateAllInBBox Nothing Efficient
 
 -- | 
-resizeSelect :: Bool -- ^ doesKeepRatio
-                -> Handle 
-                -> CanvasId
-                -> PageNum 
-                -> CanvasGeometry
-                -> BBox
-                -> ((Double,Double),UTCTime)
-                -> TempRender ItmsNImg
-                -> MainCoroutine ()
+resizeSelect :: Bool    -- ^ doesKeepRatio
+             -> Handle  -- ^ current selection handle
+             -> CanvasId
+             -> PageNum 
+             -> CanvasGeometry
+             -> BBox
+             -> ((Double,Double),UTCTime)
+             -> TempRender ItmsNImg
+             -> MainCoroutine ()
 resizeSelect doesKeepRatio handle cid pnum geometry origbbox 
              (prev,otime) tempselection = do
     xst <- get

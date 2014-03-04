@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Select 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -25,7 +25,7 @@ import           Data.Monoid
 import           Data.Sequence (ViewL(..),viewl,Seq)
 import           Data.Strict.Tuple
 import           Data.Time.Clock
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.Rendering.Cairo.Matrix ( invert, transformPoint )
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
@@ -339,32 +339,32 @@ type TempSelection = TempRender [RItem]
 
 data ItmsNImg = ItmsNImg { itmNimg_itms :: [RItem]
                          , itmNimg_mbbx :: Maybe BBox 
-                         , imageSurface :: Surface } 
+                         , imageSurface :: Cairo.Surface } 
 
 
 -- | 
 mkItmsNImg :: CanvasGeometry -> Page SelectMode -> IO ItmsNImg
 mkItmsNImg _geometry tpage = do 
-  let itms = getSelectedItms tpage
-      drawselection = mapM_ renderRItem itms -- (renderItem.rItem2Item) itms 
-      Dim cw ch = view gdimension tpage 
-      mbbox = case getULBBoxFromSelected tpage of 
-                Middle bbox -> Just bbox 
-                _ -> Nothing 
-  sfc <- createImageSurface FormatARGB32 (floor cw) (floor ch) 
-  renderWith sfc $ do 
-    setSourceRGBA 1 1 1 0    
-    rectangle 0 0 cw ch 
-    fill 
-    setSourceRGBA 0 0 0 1
-    drawselection
-  return $ ItmsNImg itms mbbox sfc
+    let itms = getSelectedItms tpage
+        drawselection = mapM_ renderRItem itms 
+        Dim cw ch = view gdimension tpage 
+        mbbox = case getULBBoxFromSelected tpage of 
+                  Middle bbox -> Just bbox 
+                  _ -> Nothing 
+    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor cw) (floor ch) 
+    Cairo.renderWith sfc $ do 
+      Cairo.setSourceRGBA 1 1 1 0    
+      Cairo.rectangle 0 0 cw ch 
+      Cairo.fill 
+      Cairo.setSourceRGBA 0 0 0 1
+      drawselection
+    return $ ItmsNImg itms mbbox sfc
 
 -- | 
 drawTempSelectImage :: CanvasGeometry 
                     -> TempRender ItmsNImg 
-                    -> Matrix -- ^ transformation matrix
-                    -> Render ()
+                    -> Cairo.Matrix -- ^ transformation matrix
+                    -> Cairo.Render ()
 drawTempSelectImage geometry tempselection xformmat = do 
     let sfc = imageSurface (tempInfo tempselection)
         CanvasDimension (Dim cw ch) = canvasDim geometry 
@@ -375,31 +375,16 @@ drawTempSelectImage geometry tempselection xformmat = do
         newmbbox = case unIntersect (Intersect (Middle newvbbox) `mappend` fromMaybe mbbox) of 
                      Middle bbox -> Just bbox 
                      _ -> Just newvbbox
-    setMatrix xformmat
+    Cairo.setMatrix xformmat
     clipBBox newmbbox
-    setSourceSurface sfc 0 0 
-    setOperator OperatorOver
-    paint 
-
-
-
-{-
--- | 
-tempSelected :: TempSelection -> [RItem]
-tempSelected = tempInfo 
--}
-
-{- 
-mkTempSelection :: Surface -> (Double,Double) -> [RItem] -> TempSelection
-mkTempSelection sfc (w,h) = TempRender sfc (w,h)  
--}
-
-
+    Cairo.setSourceSurface sfc 0 0 
+    Cairo.setOperator Cairo.OperatorOver
+    Cairo.paint 
 
 -- | 
 getNewCoordTime :: ((Double,Double),UTCTime) 
-                   -> (Double,Double)
-                   -> IO (Bool,((Double,Double),UTCTime))
+                -> (Double,Double)
+                -> IO (Bool,((Double,Double),UTCTime))
 getNewCoordTime (prev,otime) (x,y) = do 
     ntime <- getCurrentTime 
     let dtime = diffUTCTime ntime otime 

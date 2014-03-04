@@ -24,13 +24,12 @@ import           Control.Monad.Trans.Either
 import           Data.Attoparsec
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
-import           Data.List (sort, sortBy)
+import           Data.List (sortBy)
 import           Data.Maybe (catMaybes)
--- import           Data.Ord (comparing)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Data.UUID.V4 (nextRandom)
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -168,9 +167,9 @@ laTeXInput mpos str = do
       Just (x0,y0) -> do 
         modify (tempQueue %~ enqueue (multiLineDialog str))  
         multiLineLoop str >>= 
-          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
-                            >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
-                                      Left err -> okMessageBox err >> laTeXInput mpos result
+          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) >>= \case 
+                  Right r -> deleteSelection >> svgInsert (result,"latex") r
+                  Left err -> okMessageBox err >> laTeXInput mpos result
                 )
       Nothing -> do 
         modeChange ToViewAppendMode 
@@ -181,7 +180,7 @@ laTeXInput mpos str = do
 autoPosText :: MainCoroutine (Maybe Double)
 autoPosText = do 
     cpg <- rPage2Page <$> getCurrentPageCurr
-    let Dim pgw pgh = view dimension cpg
+    let Dim _pgw pgh = view dimension cpg
         mcomponents = do 
           l <- view layers cpg
           i <- view items l
@@ -357,13 +356,14 @@ makePangoTextSVG (xo,yo) str = do
           let PangoRectangle x y w h = reclog 
           -- 10 is just dirty-fix
           return (layout,BBox (x,y) (x+w+10,y+h)) 
-        rdr layout = do setSourceRGBA 0 0 0 1
+        rdr layout = do Cairo.setSourceRGBA 0 0 0 1
                         updateLayout layout 
                         showLayout layout 
     (layout,(BBox (x0,y0) (x1,y1))) <- pangordr 
     tdir <- getTemporaryDirectory 
     let tfile = tdir </> "embedded.svg"
-    withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> renderWith s (rdr layout)
+    Cairo.withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> 
+      Cairo.renderWith s (rdr layout)
     bstr <- B.readFile tfile 
     return (bstr,BBox (xo,yo) (xo+x1-x0,yo+y1-y0)) 
 

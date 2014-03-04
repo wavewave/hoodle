@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.File 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -24,7 +24,6 @@ import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
--- import           Data.Attoparsec (parseOnly)
 import           Data.ByteString (readFile)
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
@@ -35,7 +34,7 @@ import           Data.Maybe
 import qualified Data.IntMap as IM
 import           Data.Time.Clock
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.FilePath
@@ -140,8 +139,8 @@ renderjob h ofp = do
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let Dim width height = view gdimension p  
   let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
-  withPDFSurface ofp width height $ \s -> renderWith s $  
-    (sequence1_ showPage . map rf . IM.elems . view gpages ) h 
+  Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
+    (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
 
 -- | 
 fileExport :: MainCoroutine ()
@@ -203,7 +202,7 @@ exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (re
       else do      
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
-        liftIO $ withSVGSurface filename w h $ \s -> renderWith s $ 
+        liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
          cairoRenderOption (InBBoxOption Nothing) (InBBox cpg) >> return ()
 
 -- | 
@@ -566,7 +565,7 @@ showRevisionDialog hdl revs =
                return (UsrEv GotOk)
 
 
-mkPangoText :: String -> Render ()
+mkPangoText :: String -> Cairo.Render ()
 mkPangoText str = do 
     let pangordr = do 
           ctxt <- cairoCreateContext Nothing 
@@ -578,13 +577,11 @@ mkPangoText str = do
           layoutSetWidth layout (Just 250)
           layoutSetWrap layout WrapAnywhere 
           layoutSetText layout str 
-          -- (_,reclog) <- layoutGetExtents layout 
-          -- let PangoRectangle x y w h = reclog 
           return layout
-        rdr layout = do setSourceRGBA 0 0 0 1
+        rdr layout = do Cairo.setSourceRGBA 0 0 0 1
                         updateLayout layout 
                         showLayout layout 
-    layout <- liftIO $  pangordr 
+    layout <- liftIO $ pangordr 
     rdr layout
 
 addOneRevisionBox :: VBox -> Hoodle -> Revision -> IO ()
@@ -595,7 +592,7 @@ addOneRevisionBox vbox hdl rev = do
       drawwdw <- liftIO $ widgetGetDrawWindow cvs 
       liftIO . renderWithDrawable drawwdw $ do 
         case rev of 
-          RevisionInk _ strks -> scale 0.5 0.5 >> mapM_ cairoRender strks
+          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ cairoRender strks
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"

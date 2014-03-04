@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.VerticalSpace
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,10 +17,11 @@ import           Control.Category
 import           Control.Lens (view,set,at)
 import           Control.Monad hiding (mapM_)
 import           Control.Monad.State (get)
+import           Control.Monad.Trans (liftIO)
 import           Data.Foldable 
 import           Data.Monoid
 import           Data.Time.Clock
-import           Graphics.Rendering.Cairo 
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set) 
 -- from hoodle-platform
 import           Data.Hoodle.BBox
@@ -55,7 +56,8 @@ import           Hoodle.View.Draw
 import Prelude hiding ((.), id, concat,concatMap,mapM_)
 
 -- | 
-splitPageByHLine :: Double -> Page EditMode 
+splitPageByHLine :: Double 
+                 -> Page EditMode 
                  -> ([RItem],Page EditMode,SeqZipper RItemHitted) 
 splitPageByHLine y pg = (hitted,set glayers unhitted pg,hltedLayers)
   where 
@@ -84,17 +86,18 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
         Nothing -> return ()   
         Just bbx -> do 
           (sfcbkg,Dim w h) <- liftIO $ canvasImageSurface Nothing geometry nhdl 
-          sfcitm <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
-          sfctot <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
-          liftIO $ renderWith sfcitm $ do 
-            identityMatrix 
+          sfcitm <- liftIO $ Cairo.createImageSurface 
+                               Cairo.FormatARGB32 (floor w) (floor h)
+          sfctot <- liftIO $ Cairo.createImageSurface 
+                               Cairo.FormatARGB32 (floor w) (floor h)
+          liftIO $ Cairo.renderWith sfcitm $ do 
+            Cairo.identityMatrix 
             cairoXform4PageCoordinate geometry pnum
             mapM_ renderRItem itms
           ctime <- liftIO getCurrentTime 
           verticalSpaceProcess cid geometry (bbx,hltedLayers,pnum,cpg) (x,y) 
             (sfcbkg,sfcitm,sfctot) ctime 
-
-          liftIO $ mapM_ surfaceFinish [sfcbkg,sfcitm,sfctot]
+          liftIO $ mapM_ Cairo.surfaceFinish [sfcbkg,sfcitm,sfctot]
 
 -- |
 addNewPageAndMoveBelow :: (PageNum,SeqZipper RItemHitted,BBox) 
@@ -152,7 +155,8 @@ verticalSpaceProcess :: CanvasId
                      -> CanvasGeometry
                      -> (BBox,SeqZipper RItemHitted,PageNum,Page EditMode)
                      -> (Double,Double)
-                     -> (Surface,Surface,Surface)
+                     -> (Cairo.Surface,Cairo.Surface,Cairo.Surface) 
+                          -- ^ (background, item, total) 
                      -> UTCTime
                      -> MainCoroutine () 
 verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg) 
@@ -212,38 +216,41 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                     | otherwise = GoingUp 
                z = canvas2DesktopRatio geometry 
                drawguide = do 
-                 identityMatrix 
+                 Cairo.identityMatrix 
                  cairoXform4PageCoordinate geometry pnum 
-                 setLineWidth (predefinedLassoWidth*z)
+                 Cairo.setLineWidth (predefinedLassoWidth*z)
                  case mode of
-                   GoingUp -> setSourceRGBA 0.1 0.8 0.1 0.4
-                   GoingDown -> setSourceRGBA 0.1 0.1 0.8 0.4 
-                   OverPage -> setSourceRGBA 0.8 0.1 0.1 0.4
-                 moveTo 0 y0
-                 lineTo w y0 
-                 stroke 
-                 moveTo 0 y
-                 lineTo w y
-                 stroke  
+                   GoingUp   -> Cairo.setSourceRGBA 0.1 0.8 0.1 0.4
+                   GoingDown -> Cairo.setSourceRGBA 0.1 0.1 0.8 0.4 
+                   OverPage  -> Cairo.setSourceRGBA 0.8 0.1 0.1 0.4
+                 Cairo.moveTo 0 y0
+                 Cairo.lineTo w y0 
+                 Cairo.stroke 
+                 Cairo.moveTo 0 y
+                 Cairo.lineTo w y
+                 Cairo.stroke  
                  case mode of
-                   GoingUp -> setSourceRGBA 0.1 0.8 0.1 0.2 >> rectangle 0 y w (y0-y)                    
-                   GoingDown -> setSourceRGBA 0.1 0.1 0.8 0.2 >> rectangle 0 y0 w (y-y0)
-                   OverPage -> setSourceRGBA 0.8 0.1 0.1 0.2 >> rectangle 0 y0 w (y-y0)
-                 fill
-           liftIO $ renderWith sfctot $ do 
-             setSourceSurface sfcbkg 0 0
-             setOperator OperatorSource
-             paint 
-             setSourceSurface sfcitm 0 (y_cvs-y0_cvs)
-             setOperator OperatorOver
-             paint
+                   GoingUp   -> Cairo.setSourceRGBA 0.1 0.8 0.1 0.2 >>
+                                Cairo.rectangle 0 y w (y0-y)                    
+                   GoingDown -> Cairo.setSourceRGBA 0.1 0.1 0.8 0.2 >>
+                                Cairo.rectangle 0 y0 w (y-y0)
+                   OverPage  -> Cairo.setSourceRGBA 0.8 0.1 0.1 0.2 >> 
+                                Cairo.rectangle 0 y0 w (y-y0)
+                 Cairo.fill
+           liftIO $ Cairo.renderWith sfctot $ do 
+             Cairo.setSourceSurface sfcbkg 0 0
+             Cairo.setOperator Cairo.OperatorSource
+             Cairo.paint 
+             Cairo.setSourceSurface sfcitm 0 (y_cvs-y0_cvs)
+             Cairo.setOperator Cairo.OperatorOver
+             Cairo.paint
              drawguide 
            let canvas = view drawArea cvsInfo 
            win <- liftIO $ widgetGetDrawWindow canvas
            liftIO $ renderWithDrawable win $ do 
-             setSourceSurface sfctot 0 0 
-             setOperator OperatorSource 
-             paint 
+             Cairo.setSourceSurface sfctot 0 0 
+             Cairo.setOperator Cairo.OperatorSource 
+             Cairo.paint 
            verticalSpaceProcess cid geometry pinfo (x0,y0) sfcs ctime)
         otime 
 

@@ -59,16 +59,26 @@ renderStrkHltd sbbox = do
 -- | render items highlighted 
 renderRItemHltd :: RItem -> Cairo.Render ()
 renderRItemHltd (RItemStroke strk) = renderStrkHltd strk
-renderRItemHltd (RItemImage img _) = renderBBoxHltd img
-renderRItemHltd (RItemSVG svg _) = renderBBoxHltd svg 
-renderRItemHltd (RItemLink lnk _) = renderBBoxHltd lnk
+renderRItemHltd (RItemImage img _) = (renderHltBBox . getBBox) img
+renderRItemHltd (RItemSVG svg _) = (renderHltBBox . getBBox) svg 
+renderRItemHltd (RItemLink lnk _) = (renderHltBBox . getBBox) lnk
+renderRItemHltd r@(RItemAnchor _anc) = (renderHltBBox . getBBox) r
 
 -- |
-renderBBoxHltd :: (GetBBoxable a) => a -> Cairo.Render () 
-renderBBoxHltd x = do 
+renderHltBBox :: BBox -> Cairo.Render ()
+renderHltBBox (BBox (x1,y1) (x2,y2)) = do 
+    Cairo.setSourceRGBA 0 0 0 1
+    Cairo.setLineWidth 10 
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
+    Cairo.stroke
+
+{-
+-- |
+renderHighlightedBBoxedItem :: (GetBBoxable a) => a -> Cairo.Render () 
+renderHighlinetedBBoxedItem x = renderHltBBox . getBBox 
   Cairo.setSourceRGBA 0 0 0 1
   Cairo.setLineWidth 10 
   let BBox (x1,y1) (x2,y2) = getBBox x
   Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
   Cairo.stroke
-
+-}

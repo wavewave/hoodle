@@ -60,7 +60,8 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 import           Data.Hoodle.Zipper 
 -- from this package
-import Graphics.Hoodle.Render.Background 
+import Graphics.Hoodle.Render.Background
+import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Item 
 import Graphics.Hoodle.Render.Primitive
 import Graphics.Hoodle.Render.Type 
@@ -70,9 +71,9 @@ import Graphics.Hoodle.Render.Util.HitTest
 -- 
 import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
------
--- simple 
---- 
+------------
+-- simple --
+------------
 
 -- | render stroke 
 renderStrk :: Stroke -> Cairo.Render ()
@@ -153,6 +154,7 @@ renderItem (ItemStroke strk) = renderStrk strk
 renderItem (ItemImage img) = renderImg img
 renderItem (ItemSVG svg) = renderSVG svg
 renderItem (ItemLink lnk) = renderLink lnk
+renderItem (ItemAnchor _anc) = return ()
 
 -- |
 renderPage :: Page -> Cairo.Render ()
@@ -162,7 +164,6 @@ renderPage page = do
   Cairo.setLineJoin Cairo.LineJoinRound
   mapM_ (mapM renderItem . view items) . view layers $ page
   Cairo.stroke
-
 
 -----
 -- R-structure 
@@ -261,7 +262,7 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
       Cairo.restore
       return () 
   return itm 
-
+renderRItem itm@(RItemAnchor _anc) = renderHltBBox (getBBox itm) >> return itm
 
 
 ------------

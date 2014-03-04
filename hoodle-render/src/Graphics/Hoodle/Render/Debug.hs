@@ -39,13 +39,14 @@ import           Data.Foldable
 import qualified Data.Map as M
 import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform 
-import Data.Hoodle.Generic
-import Data.Hoodle.Simple
-import Data.Hoodle.BBox
-import Data.Hoodle.Predefined 
+import           Data.Hoodle.Generic
+import           Data.Hoodle.Simple
+import           Data.Hoodle.BBox
+import           Data.Hoodle.Predefined 
 -- from this package
-import Graphics.Hoodle.Render
-import Graphics.Hoodle.Render.Type 
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Highlight
+import           Graphics.Hoodle.Render.Type 
 -- 
 import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
@@ -117,7 +118,7 @@ renderRItem_BBoxOnly (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
 renderRItem_BBoxOnly (RItemSVG svg _) = renderSVGBBx_BBoxOnly svg
 renderRItem_BBoxOnly (RItemLink lnk _) = renderLnkBBx_BBoxOnly lnk
-
+renderRItem_BBoxOnly itm@(RItemAnchor _) = (renderHltBBox . getBBox) itm
 
 -- | 
 renderRLayer_BBoxOnly :: RLayer -> Cairo.Render ()

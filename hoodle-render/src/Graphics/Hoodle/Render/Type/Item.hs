@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Type.Item 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -16,14 +16,14 @@
 
 module Graphics.Hoodle.Render.Type.Item where
 
-import Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 -- from hoodle-platform 
-import Data.Hoodle.BBox 
-import Data.Hoodle.Simple
+import           Data.Hoodle.BBox 
+import           Data.Hoodle.Simple
 
 data RItem = RItemStroke (BBoxed Stroke)
-           | RItemImage (BBoxed Image) (Maybe Surface)
+           | RItemImage (BBoxed Image) (Maybe Cairo.Surface)
            | RItemSVG (BBoxed SVG) (Maybe RSVG.SVG)
            | RItemLink (BBoxed Link) (Maybe RSVG.SVG)
 
@@ -85,10 +85,3 @@ rItem2Item (RItemSVG svg _) = (ItemSVG . bbxed_content) svg
 rItem2Item (RItemLink lnk _) = (ItemLink . bbxed_content) lnk
 
 
-{-
--- | 
-rItemBBox :: RItem -> BBox 
-rItemBBox (RItemStroke strk) = strkbbx_bbx strk
-rItemBBox (RItemImage img _) = imgbbx_bbx img
-
--}

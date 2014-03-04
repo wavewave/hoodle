@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Generic 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -19,7 +19,7 @@ import Control.Lens
 import Control.Monad hiding (mapM_,mapM)
 import Data.Foldable
 import Data.Traversable 
-import Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -37,7 +37,7 @@ passarg f a = f a >> return a
 
 -- | 
 class Renderable a where 
-  cairoRender :: a -> Render a
+  cairoRender :: a -> Cairo.Render a
                  
 -- | 
 instance Renderable (Background,Dimension) where
@@ -58,7 +58,7 @@ instance Renderable RLayer where
 -- | 
 class RenderOptionable a where   
   type RenderOption a :: *
-  cairoRenderOption :: RenderOption a -> a -> Render a
+  cairoRenderOption :: RenderOption a -> a -> Cairo.Render a
 
 -- | 
 instance RenderOptionable (Background,Dimension) where
@@ -82,7 +82,6 @@ instance RenderOptionable (BBoxed Stroke) where
 -- | 
 instance RenderOptionable (RBackground,Dimension) where 
   type RenderOption (RBackground,Dimension) = RBkgOpt 
-  -- cairoRenderOption :: RBkgOpt -> (RBackground,Dimension) -> Render ()
   cairoRenderOption RBkgDrawPDF = renderRBkg
   cairoRenderOption RBkgDrawWhite = passarg renderRBkg_Dummy
   cairoRenderOption RBkgDrawBuffer = renderRBkg_Buf 
@@ -106,7 +105,7 @@ cairoOptionPage :: ( RenderOptionable (b,Dimension)
                    , Foldable s) => 
                    (RenderOption (b,Dimension), RenderOption a) 
                    -> GPage b s a 
-                   -> Render (GPage b s a)
+                   -> Cairo.Render (GPage b s a)
 cairoOptionPage (optb,opta) p = do 
     cairoRenderOption optb (view gbackground p, view gdimension p)
     mapM_ (cairoRenderOption opta) (view glayers p)
@@ -125,7 +124,6 @@ instance RenderOptionable (InBBox RPage) where
   type RenderOption (InBBox RPage) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) (InBBox page) = do 
     cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
-    --  mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
     let lyrs = view glayers page
     nlyrs <- mapM (liftM unInBBox . cairoRenderOption (InBBoxOption mbbox) . InBBox ) lyrs
     let npage = set glayers nlyrs page
@@ -136,7 +134,6 @@ instance RenderOptionable (InBBoxBkgBuf RPage) where
   type RenderOption (InBBoxBkgBuf RPage) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page) = do 
     cairoRenderOption (RBkgDrawPDFInBBox mbbox) (view gbackground page, view gdimension page) 
-    --  mapM_ (renderRLayer_InBBox mbbox) . view glayers $ page 
     let lyrs = view glayers page
     nlyrs <- mapM (renderRLayer_InBBox mbbox) lyrs
     let npage = set glayers nlyrs page

@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Debug
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -20,8 +20,6 @@ module Graphics.Hoodle.Render.Debug
 (      
 -- * dummy rendering 
   renderRBkg_Dummy  
--- * render in bbox using non R-structure 
--- , renderBkg_InBBox
 -- * nopdf
 , renderRBkg_NoPDF
 -- * render only bbox (for debug purpose)
@@ -39,7 +37,7 @@ import           Control.Lens
 import           Control.Monad.State hiding (mapM,mapM_)
 import           Data.Foldable
 import qualified Data.Map as M
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform 
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple
@@ -55,18 +53,18 @@ import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 -- Dummy (for testing) 
 -----
 
-renderRBkg_Dummy :: (RBackground,Dimension) -> Render () 
+renderRBkg_Dummy :: (RBackground,Dimension) -> Cairo.Render ()
 renderRBkg_Dummy (_,Dim w h) = do 
-    setSourceRGBA 1 1 1 1
-    rectangle 0 0 w h 
-    fill 
+    Cairo.setSourceRGBA 1 1 1 1
+    Cairo.rectangle 0 0 w h 
+    Cairo.fill 
 
 -----------
 -- NoPDF -- 
 -----------
 
 -- | render background without pdf 
-renderRBkg_NoPDF :: (RBackground,Dimension) -> Render ()
+renderRBkg_NoPDF :: (RBackground,Dimension) -> Cairo.Render ()
 renderRBkg_NoPDF r@(RBkgSmpl _ _ _,_) = renderRBkg r >> return ()
 renderRBkg_NoPDF (RBkgPDF _ _ _ _ _,_) = return ()
 renderRBkg_NoPDF (RBkgEmbedPDF _ _ _,_) = return ()
@@ -76,47 +74,45 @@ renderRBkg_NoPDF (RBkgEmbedPDF _ _ _,_) = return ()
 --------------
 
 -- | render only bounding box of a StrokeBBox      
-renderStrkBBx_BBoxOnly :: BBoxed Stroke -> Render () 
+renderStrkBBx_BBoxOnly :: BBoxed Stroke -> Cairo.Render () 
 renderStrkBBx_BBoxOnly sbbox = do  
     let s = bbxed_content sbbox
     case M.lookup (stroke_color s) predefined_pencolor of 
-      Just (r,g,b,a) -> setSourceRGBA r g b a
-      Nothing -> setSourceRGBA 0 0 0 1 
-    setSourceRGBA 0 0 0 1
-    setLineWidth (stroke_width s) 
+      Just (r,g,b,a) -> Cairo.setSourceRGBA r g b a
+      Nothing -> Cairo.setSourceRGBA 0 0 0 1 
+    Cairo.setSourceRGBA 0 0 0 1
+    Cairo.setLineWidth (stroke_width s) 
     let BBox (x1,y1) (x2,y2) = getBBox sbbox
-    rectangle x1 y1 (x2-x1) (y2-y1)
-    stroke
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
+    Cairo.stroke
   
 -- |     
-renderImgBBx_BBoxOnly :: BBoxed Image -> Render () 
+renderImgBBx_BBoxOnly :: BBoxed Image -> Cairo.Render ()
 renderImgBBx_BBoxOnly ibbox = do 
-    setSourceRGBA 0 0 0 1
-    setLineWidth 10
+    Cairo.setSourceRGBA 0 0 0 1
+    Cairo.setLineWidth 10
     let BBox (x1,y1) (x2,y2) = getBBox ibbox
-    rectangle x1 y1 (x2-x1) (y2-y1)
-    stroke
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
+    Cairo.stroke
 
-renderSVGBBx_BBoxOnly :: BBoxed SVG -> Render () 
+renderSVGBBx_BBoxOnly :: BBoxed SVG -> Cairo.Render ()
 renderSVGBBx_BBoxOnly svg = do 
-    setSourceRGBA 0 0 0 1
-    setLineWidth 10
+    Cairo.setSourceRGBA 0 0 0 1
+    Cairo.setLineWidth 10
     let BBox (x1,y1) (x2,y2) = getBBox svg
-    rectangle x1 y1 (x2-x1) (y2-y1)
-    stroke
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
+    Cairo.stroke
 
-renderLnkBBx_BBoxOnly :: BBoxed Link -> Render () 
+renderLnkBBx_BBoxOnly :: BBoxed Link -> Cairo.Render ()
 renderLnkBBx_BBoxOnly lnk = do 
-    setSourceRGBA 0 0 0 1
-    setLineWidth 10
+    Cairo.setSourceRGBA 0 0 0 1
+    Cairo.setLineWidth 10
     let BBox (x1,y1) (x2,y2) = getBBox lnk
-    rectangle x1 y1 (x2-x1) (y2-y1)
-    stroke
-
-    
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
+    Cairo.stroke
 
 -- | 
-renderRItem_BBoxOnly :: RItem -> Render () 
+renderRItem_BBoxOnly :: RItem -> Cairo.Render () 
 renderRItem_BBoxOnly (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
 renderRItem_BBoxOnly (RItemSVG svg _) = renderSVGBBx_BBoxOnly svg
@@ -124,13 +120,13 @@ renderRItem_BBoxOnly (RItemLink lnk _) = renderLnkBBx_BBoxOnly lnk
 
 
 -- | 
-renderRLayer_BBoxOnly :: RLayer -> Render ()
+renderRLayer_BBoxOnly :: RLayer -> Cairo.Render ()
 renderRLayer_BBoxOnly = mapM_  renderRItem_BBoxOnly . view gitems
 
 
   
 -- | render only bounding box of a StrokeBBox      
-renderRPage_BBoxOnly :: RPage -> Render ()  
+renderRPage_BBoxOnly :: RPage -> Cairo.Render ()  
 renderRPage_BBoxOnly page = do
     let dim = view gdimension page
         bkg = view gbackground page 

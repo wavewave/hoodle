@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Type.Item 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -25,7 +25,7 @@ import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64 
 import           Graphics.GD.ByteString
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           System.Directory
 import           System.FilePath 
@@ -54,7 +54,7 @@ cnstrctRItem (ItemImage img) = do
             imgaction 
               | filesrcext == ".PNG" || filesrcext == ".png" = do 
                   b <- doesFileExist filesrc 
-                  if b then Just <$> imageSurfaceCreateFromPNG filesrc
+                  if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
                        else return Nothing 
               | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
                   b <- doesFileExist filesrc 
@@ -91,19 +91,14 @@ getByteStringIfEmbeddedPNG bstr = do
 
 -- | read JPG file using GD library and create cairo image surface
 --   currently, this uses temporary png file (which is potentially dangerous)
-getJPGandCreateSurface :: FilePath -> IO Surface 
+getJPGandCreateSurface :: FilePath -> IO Cairo.Surface 
 getJPGandCreateSurface fp = do 
     img <- loadJpegFile fp  
     bstr <- savePngByteString img
     saveTempPNGToCreateSurface bstr 
 
 -- | 
-saveTempPNGToCreateSurface :: C8.ByteString -> IO Surface
+saveTempPNGToCreateSurface :: C8.ByteString -> IO Cairo.Surface
 saveTempPNGToCreateSurface bstr = do 
-    pipeActionWith (B.writeFile "/dev/stdout" bstr) imageSurfaceCreateFromPNG 
+    pipeActionWith (B.writeFile "/dev/stdout" bstr) Cairo.imageSurfaceCreateFromPNG 
 
-{-
-    tdir <- getTemporaryDirectory 
-    let tfile = tdir </> "temp.png"
-    imageSurfaceCreateFromPNG tfile 
--}

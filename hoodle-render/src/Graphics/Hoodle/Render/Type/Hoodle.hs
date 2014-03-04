@@ -20,7 +20,7 @@ import Control.Applicative
 import Control.Lens 
 import Data.Foldable (toList)
 import qualified Data.IntMap as IM
-import Graphics.Rendering.Cairo 
+import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -34,7 +34,7 @@ import Graphics.Hoodle.Render.Type.Item
 -- normal state rendering --
 ----------------------------
 
-newtype LyBuf = LyBuf (Maybe Surface)
+newtype LyBuf = LyBuf (Maybe Cairo.Surface)
 
 -- | normal rendering data structure for layer, R for rendering
 --   buffer is Surface, container for item = list 

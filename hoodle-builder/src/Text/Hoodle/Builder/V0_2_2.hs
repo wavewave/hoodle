@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Builder 
+-- Module      : Text.Hoodle.Builder.V0_2_2 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Builder where
+module Text.Hoodle.Builder.V0_2_2 where
 
 -- from other packages 
 import           Blaze.ByteString.Builder
@@ -30,7 +30,7 @@ import           Data.Monoid
 #endif 
 import           Data.Strict.Tuple
 -- from hoodle platform 
-import           Data.Hoodle.Simple
+import           Data.Hoodle.Simple.V0_2_2
 -- 
 
 -- | 
@@ -136,7 +136,7 @@ buildItem (ItemStroke strk) = buildStroke strk
 buildItem (ItemImage img) = buildImage img
 buildItem (ItemSVG svg) = buildSVG svg 
 buildItem (ItemLink lnk) = buildLink lnk
-buildItem (ItemAnchor anc) = buildAnchor anc
+
 
 -- | 
 buildStroke :: Stroke -> Builder
@@ -239,16 +239,7 @@ buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString "]]></render>"
     <> fromByteString "</link>\n"    
 
-buildAnchor :: Anchor -> Builder
-buildAnchor (Anchor i (x,y)) = 
-    fromByteString "<anchor id=\""
-    <> fromByteString i 
-    <> fromByteString "\" x=\""
-    <> fromByteString (toFixed 2 x)
-    <> fromByteString "\" y=\""
-    <> fromByteString (toFixed 2 y)
-    <> fromByteString "\" />\n"
-             
+
 -- | 
 build2D :: Pair Double Double -> Builder 
 build2D (x :!: y) = fromByteString (toFixed 2 x) 

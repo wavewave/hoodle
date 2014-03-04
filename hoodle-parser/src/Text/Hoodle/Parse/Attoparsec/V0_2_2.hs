@@ -2,7 +2,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Parse.Attoparsec
+-- Module      : Text.Hoodle.Parse.Attoparsec.V0_2_2
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -10,21 +10,21 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- attoparsec implementation of hoodle parser
+-- attoparsec implementation of hoodle parser v0.2.2
 -- 
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Parse.Attoparsec where
+module Text.Hoodle.Parse.Attoparsec.V0_2_2 where
 
 import           Control.Applicative 
 import           Data.Attoparsec
 import           Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
-                                       , isHorizontalSpace, anyChar)
+                                      , isHorizontalSpace, anyChar)
 import qualified Data.ByteString.Char8 as B hiding (map) 
 import           Data.Char 
 import           Data.Strict.Tuple
 -- from hoodle-platform 
-import qualified Data.Hoodle.Simple as H
+import qualified Data.Hoodle.Simple.V0_2_2 as H
 -- 
 import Prelude hiding (takeWhile)
 
@@ -87,6 +87,7 @@ xmlstroketagopen = do
   char '"'
   trim 
   string "width="
+  -- width <- double 
   width <- strokewidth 
   char '>' 
   return $ XmlStroke tool color width []   
@@ -287,20 +288,6 @@ link = do
                             (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim) 
 
 
-anchor :: Parser H.Item
-anchor = do
-    trim 
-    string "<anchor"
-    trim
-    i <- B.pack <$> (string "id=\"" *> manyTill anyChar (try (char '"')))
-    trim
-    posx <- string "x=\"" *> double <* char '"'
-    trim
-    posy <- string "y=\"" *> double <* char '"'
-    trim
-    string "/>"
-    return . H.ItemAnchor $ (H.Anchor i (posx,posy))
-    
 
 
 -- | 
@@ -360,7 +347,7 @@ layer = do trim
 title :: Parser B.ByteString 
 title = do trim 
            titleheader
-           str <- takeTill (inClass "<")
+           str <- takeTill (inClass "<") 
            titleclose
            return str 
 
@@ -390,6 +377,9 @@ revision = do skipSpace
                        skipSpace
                        string "</revision>"
                        return (H.RevisionInk (B.pack md5str) strks)))
+              
+                      
+
 
 embeddedpdf :: Parser (B.ByteString) 
 embeddedpdf = do string "<embeddedpdf" 
@@ -517,7 +507,7 @@ background = do
         char '"'
         trim 
         backgroundclose
-        return $ H.BackgroundEmbedPdf  typ pnum
+        return $ H.BackgroundEmbedPdf  typ pnum 
       _ -> fail "in parsing background"  
         
         

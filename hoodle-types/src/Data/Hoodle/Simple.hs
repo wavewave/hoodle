@@ -18,10 +18,8 @@ module Data.Hoodle.Simple where
 -- from other packages
 import           Control.Applicative 
 import           Control.Lens 
--- import qualified Data.ByteString as S
 import           Data.ByteString.Char8 hiding (map)
 import           Data.UUID.V4 
--- import           Data.Label
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
 -- from this package
@@ -37,6 +35,7 @@ data Item = ItemStroke Stroke
           | ItemImage Image
           | ItemSVG SVG
           | ItemLink Link
+          | ItemAnchor Anchor
           deriving (Show,Eq,Ord)
 
 
@@ -84,6 +83,11 @@ data Link = Link { link_id :: ByteString
                       , link_pos :: (Double,Double)
                       , link_dim :: !Dimension }  
            deriving (Show,Eq,Ord)                    
+
+data Anchor = Anchor { anchor_id :: ByteString 
+                     , anchor_pos :: (Double, Double)
+                     } 
+            deriving (Show,Eq,Ord)
                     
 -- | 
 instance SE.Serialize Stroke where
@@ -151,6 +155,13 @@ instance SE.Serialize Link where
                _ -> fail "err in Link parsing"
 
 
+
+instance SE.Serialize Anchor where
+    put Anchor {..} = SE.put anchor_id
+                      >> SE.put anchor_pos
+    get = Anchor <$> SE.get <*> SE.get
+
+
 -- | 
 instance SE.Serialize Item where
     put (ItemStroke str) = SE.putWord8 0 
@@ -161,12 +172,15 @@ instance SE.Serialize Item where
                         >> SE.put svg 
     put (ItemLink lnk) = SE.putWord8 3
                          >> SE.put lnk                         
+    put (ItemAnchor anc) = SE.putWord8 4
+                           >> SE.put anc                         
     get = do tag <- SE.getWord8 
              case tag of 
                0 -> ItemStroke <$> SE.get
                1 -> ItemImage <$> SE.get
                2 -> ItemSVG <$> SE.get
                3 -> ItemLink <$> SE.get
+               4 -> ItemAnchor <$> SE.get
                _ -> fail "err in Item parsing"
 
 -- |    
@@ -257,12 +271,6 @@ revisions = lens hoodle_revisions (\f a -> f { hoodle_revisions = a } )
 -- | 
 revmd5 :: Simple Lens Revision ByteString
 revmd5 = lens _revmd5 (\f a -> f { _revmd5 = a } )
-
-{-
--- | 
-revtxt :: Simple Lens Revision ByteString
-revtxt = lens _revtxt (\f a -> f { _revtxt = a } )
--}
 
 -- | 
 embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)

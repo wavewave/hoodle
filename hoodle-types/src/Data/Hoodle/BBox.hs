@@ -17,16 +17,6 @@ module Data.Hoodle.BBox
 , GetBBoxable (..) 
 , MakeBBoxedable (..) 
 , BBoxed (..)
--- , StrokeBBox (..)
--- , strkbbx_strk
--- , strkbbx_bbx
--- , mkStrokeBBox
--- , ImageBBox (..)
--- , imgbbx_img
--- , imgbbx_bbx
--- , mkImageBBox
--- , SVGBBox (..)
--- , mkSVGBBox
 , mkbbox
 , mkbboxF
 , bboxFromStroke

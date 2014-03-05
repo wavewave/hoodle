@@ -351,7 +351,7 @@ layer :: Parser H.Layer
 layer = do trim
            layerheader <?> "layer"
            trim
-           itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> link)
+           itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> try link <|> anchor)
            trim
            layerclose 
            return $ H.Layer itms

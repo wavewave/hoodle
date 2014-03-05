@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiWayIf #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -237,7 +238,12 @@ svg_obj = do (xy,dim) <- svg_header
 
                                   
 
-link_header :: Parser (B.ByteString,B.ByteString,Maybe B.ByteString,B.ByteString,(Double,Double),H.Dimension)
+link_header :: Parser ( B.ByteString
+                      , B.ByteString
+                      , Maybe B.ByteString
+                      , B.ByteString
+                      , Maybe B.ByteString
+                      , (Double,Double),H.Dimension)
 link_header = do 
     trim 
     string "<link"
@@ -246,13 +252,26 @@ link_header = do
     trim 
     typ <- B.pack <$> (string "type=\"" *> manyTill anyChar (try (char '"')))
     trim 
-    mlid <- case typ of 
-      "simple" -> return Nothing 
-      "linkdocid" -> Just<$>(string "linkedid=\"" *> takeTill (inClass "\"")<* char '"')
-      _ -> fail "unknown link type"
-    trim    
-    loc <- B.pack <$> (string "location=\"" *> manyTill anyChar (try (char '"')))
-    trim 
+    mlid <- if | typ == "simple" -> return Nothing 
+               | typ == "linkdocid" || typ == "anchor" ->
+                   Just <$> (string "linkedid=\"" 
+                             *> takeTill (inClass "\"") 
+                             <* char '"')
+               | otherwise -> fail "unknown link type"
+    trim
+    loc <- if | typ == "simple" || typ == "linkdocid" || typ == "anchor" ->
+                  (string "location=\"" 
+                   *> takeTill (inClass "\"")
+                   <* char '"')
+              | otherwise -> fail "unknown link type"
+    trim
+    maid <- if | typ == "anchor" -> 
+                   Just <$> (string "anchorid=\""
+                             *> takeTill (inClass "\"")
+                             <* char '"')
+               | typ == "simple" || typ == "linkdocid" -> return Nothing
+               | otherwise -> fail "unknown link type"
+    trim
     posx <- string "x=\"" *> double <* char '"'
     trim
     posy <- string "y=\"" *> double <* char '"'
@@ -262,15 +281,14 @@ link_header = do
     height <- string "height=\"" *> double <* char '"'
     trim 
     string ">"
-    return (i,typ,mlid,loc,(posx,posy),H.Dim width height) 
+    return (i,typ,mlid,loc,maid,(posx,posy),H.Dim width height) 
 
 link_footer :: Parser () 
 link_footer = string "</link>" >> return ()
 
-
 link :: Parser H.Item 
 link = do 
-    (i,typ,mlid,loc,xy,dim) <- link_header
+    (i,typ,mlid,loc,maid,xy,dim) <- link_header
     trim 
     (mt,mc) <- (try (do t <- textCDATA 
                         trim 
@@ -282,10 +300,17 @@ link = do
     bstr <- renderCDATA 
     trim 
     link_footer
-    return . H.ItemLink $ 
-      flip ($) mlid $ maybe (H.Link i typ loc mt mc bstr xy dim)
-                            (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim) 
-
+    let lnk | typ == "simple" = H.Link i typ loc mt mc bstr xy dim
+            | typ == "linkdocid" = 
+                maybe (error "no linkedid or location for linkdocid") 
+                      (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim)
+                      mlid 
+            | typ == "anchor" = 
+                maybe (error "no linkedid for anchor")
+                      (\(lid,aid) -> H.LinkAnchor i lid loc aid xy dim)
+                      ( mlid >>= \lid -> maid >>= \aid -> return (lid,aid))
+            | otherwise = error "link type is not recognized"
+    (return . H.ItemLink) lnk  
 
 anchor :: Parser H.Item
 anchor = do

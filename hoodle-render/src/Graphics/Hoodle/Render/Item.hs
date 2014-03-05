@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.Type.Item 
+-- Module      : Graphics.Hoodle.Render.Item 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -78,9 +78,13 @@ cnstrctRItem (ItemLink lnk@(LinkDocID _ _ _ _ _ bstr _ _)) = do
         lnkbbx = runIdentity (makeBBoxed lnk)
     rsvg <- RSVG.svgNewFromString str
     return (RItemLink lnkbbx (Just rsvg))    
+cnstrctRItem (ItemLink lnk@(LinkAnchor _ _ _ _ _ _)) = do 
+    let lnkbbx = runIdentity (makeBBoxed lnk)
+    return (RItemLink lnkbbx Nothing)    
 cnstrctRItem (ItemAnchor anc@(Anchor _ _ _)) = do 
     let ancbbx = runIdentity (makeBBoxed anc)
     return (RItemAnchor ancbbx)
+
 
 -- | get embedded png image. If not, just give me nothing. 
 getByteStringIfEmbeddedPNG :: C8.ByteString -> Maybe C8.ByteString 

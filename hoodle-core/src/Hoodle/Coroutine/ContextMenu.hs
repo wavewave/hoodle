@@ -6,7 +6,7 @@
 -- Module      : Hoodle.Coroutine.ContextMenu
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -328,6 +328,19 @@ showContextMenu (pnum,(x,y)) = do
                                       menuitemcvt `on` menuItemActivate $ 
                                         evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
                                       menuAttach menu menuitemcvt 0 1 4 5 
+                        LinkAnchor i lid file aid pos dim -> do 
+                          runMaybeT $ do  
+                            hset <- (MaybeT . return . view hookSet) xstate
+                            f <- (MaybeT . return . lookupPathFromId) hset
+                            file' <- MaybeT (f (B.unpack lid))
+                            guard ((B.unpack file) == file')
+                            let link = LinkAnchor i lid (B.pack file') aid pos dim
+                            menuitemcvt <- liftIO $ menuItemNewWithLabel ("Correct Path to " ++ show file') 
+                            liftIO (menuitemcvt `on` menuItemActivate $ 
+                                        evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link))))
+                            liftIO $ menuAttach menu menuitemcvt 0 1 4 5 
+                          return ()
+
                     RItemSVG svgbbx _msfc -> do
                       let svg = bbxed_content svgbbx
                           BBox (x0,y0) _ = getBBox svgbbx

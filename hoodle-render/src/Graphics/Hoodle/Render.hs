@@ -15,7 +15,6 @@
 --
 -----------------------------------------------------------------------------
 
-
 module Graphics.Hoodle.Render 
 (      
 -- * simple rendering using non-R-structure   
@@ -61,7 +60,7 @@ import           Data.Hoodle.Predefined
 import           Data.Hoodle.Zipper 
 -- from this package
 import Graphics.Hoodle.Render.Background
-import Graphics.Hoodle.Render.Highlight
+-- import Graphics.Hoodle.Render.Highlight
 import Graphics.Hoodle.Render.Item 
 import Graphics.Hoodle.Render.Primitive
 import Graphics.Hoodle.Render.Type 

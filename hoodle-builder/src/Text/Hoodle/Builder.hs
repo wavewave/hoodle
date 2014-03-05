@@ -238,6 +238,27 @@ buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString rdr 
     <> fromByteString "]]></render>"
     <> fromByteString "</link>\n"    
+buildLink (LinkAnchor i docid loc anchorid (x,y) (Dim w h)) =
+    fromByteString "<link id=\""  
+    <> fromByteString i 
+    <> fromByteString "\" type=\"linkdocid\" linkedid=\"" 
+    <> fromByteString docid 
+    <> fromByteString "\" location=\""
+    <> fromByteString loc
+    <> fromByteString "\" anchorid=\""
+    <> fromByteString anchorid
+    <> fromByteString "\" x=\"" 
+    <> fromByteString (toFixed 2 x)
+    <> fromByteString "\" y=\""
+    <> fromByteString (toFixed 2 y)
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 w)
+    <> fromByteString "\" height=\""
+    <> fromByteString (toFixed 2 h)
+    <> fromByteString "\" >\n"
+    <> fromByteString "<render><![CDATA[" 
+    <> fromByteString "]]></render>"
+    <> fromByteString "</link>\n"    
 
 buildAnchor :: Anchor -> Builder
 buildAnchor (Anchor i (x,y) (Dim w h)) = 

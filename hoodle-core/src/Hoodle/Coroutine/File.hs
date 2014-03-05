@@ -44,7 +44,7 @@ import           System.Process
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Queue 
-import           Data.Hoodle.BBox
+-- import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
@@ -67,7 +67,7 @@ import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
-import           Hoodle.ModelAction.Select.Transform
+-- import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
@@ -368,36 +368,6 @@ embedImage filename = do
     let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
     insertItemAt mpos nitm 
 
-insertItemAt :: Maybe (PageNum,PageCoordinate) 
-                -> RItem 
-                -> MainCoroutine () 
-insertItemAt mpcoord ritm = do 
-    xst <- get   
-    geometry <- liftIO (getGeometry4CurrCvs xst) 
-    let hdl = getHoodle xst 
-        (pgnum,mpos) = case mpcoord of 
-          Just (PageNum n,pos) -> (n,Just pos)
-          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) xst,Nothing)
-        (ulx,uly) = (bbox_upperleft.getBBox) ritm
-        nitms = 
-          case mpos of 
-            Nothing -> adjustItemPosition4Paste geometry (PageNum pgnum) [ritm] 
-            Just (PageCoord (nx,ny)) -> 
-                   map (changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly))) [ritm]
-          
-    let pg = getPageFromGHoodleMap pgnum hdl
-        lyr = getCurrentLayer pg 
-        oitms = view gitems lyr  
-        ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
-    modeChange ToSelectMode 
-    nxst <- get 
-    thdl <- case view hoodleModeState nxst of
-      SelectState thdl' -> return thdl'
-      _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    put ( ( set hoodleModeState (SelectState nthdl) 
-          . set isOneTimeSelectMode YesAfterSelect) nxst)
-    invalidateAll  
                     
 -- | 
 fileLoadSVG :: MainCoroutine ()

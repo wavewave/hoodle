@@ -44,15 +44,17 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
-import           Graphics.Hoodle.Render.Item 
+import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle, rPage2Page)
+import           Graphics.Hoodle.Render.Type.Item
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.Accessor
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
@@ -321,56 +323,21 @@ linkInsert :: B.ByteString
               -> (B.ByteString,BBox) 
               -> MainCoroutine ()
 linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
-    xstate <- get 
-    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
-        hdl = getHoodle xstate 
-        currpage = getPageFromGHoodleMap pgnum hdl
-        currlayer = getCurrentLayer currpage
-        lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
+    let lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
-    -- liftIO $ print nlnk
     newitem <- (liftIO . cnstrctRItem . ItemLink) nlnk
-    let otheritems = view gitems currlayer  
-    let ntpg = makePageSelectMode currpage 
-                 (otheritems :- (Hitted [newitem]) :- Empty)  
-    modeChange ToSelectMode 
-    nxstate <- get 
-    thdl <- case view hoodleModeState nxstate of
-              SelectState thdl' -> return thdl'
-              _ -> (lift . EitherT . return . Left . Other) "linkInsert"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    put (set hoodleModeState (SelectState nthdl) nxstate)
-    commit_ 
-    invalidateAll 
+    insertItemAt Nothing newitem
+
 
 -- | anchor 
 addAnchor :: MainCoroutine ()
 addAnchor = do
-    xstate <- get 
-    geometry <- liftIO (getGeometry4CurrCvs xstate)
     uuid <- liftIO $ nextRandom
     let uuidbstr = B.pack (show uuid)
-    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
-        hdl = getHoodle xstate 
-        currpage = getPageFromGHoodleMap pgnum hdl
-        currlayer = getCurrentLayer currpage
-        anc = Anchor uuidbstr (100,100) (Dim 50 50)
-    nitm' <- (liftIO . cnstrctRItem . ItemAnchor) anc
-    let nitm:[] = adjustItemPosition4Paste geometry (PageNum pgnum) [nitm']
-
-    let otheritems = view gitems currlayer  
-    let ntpg = makePageSelectMode currpage 
-                 (otheritems :- (Hitted [nitm]) :- Empty)  
-    modeChange ToSelectMode 
-    nxstate <- get 
-    thdl <- case view hoodleModeState nxstate of
-              SelectState thdl' -> return thdl'
-              _ -> (lift . EitherT . return . Left . Other) "addAnchor"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    put (set hoodleModeState (SelectState nthdl) nxstate)
-    commit_
-    invalidateAll 
+    let anc = Anchor uuidbstr (100,100) (Dim 50 50)
+    nitm <- (liftIO . cnstrctRItem . ItemAnchor) anc
+    insertItemAt Nothing nitm
 
 -- |
 makePangoTextSVG :: (Double,Double) -> T.Text -> IO (B.ByteString,BBox) 
@@ -425,3 +392,35 @@ combineLaTeXText = do
     mfilename <- fileChooser FileChooserActionSave Nothing
     forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
 
+
+
+insertItemAt :: Maybe (PageNum,PageCoordinate) 
+                -> RItem 
+                -> MainCoroutine () 
+insertItemAt mpcoord ritm = do 
+    xst <- get   
+    geometry <- liftIO (getGeometry4CurrCvs xst) 
+    let hdl = getHoodle xst 
+        (pgnum,mpos) = case mpcoord of 
+          Just (PageNum n,pos) -> (n,Just pos)
+          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) xst,Nothing)
+        (ulx,uly) = (bbox_upperleft.getBBox) ritm
+        nitms = 
+          case mpos of 
+            Nothing -> adjustItemPosition4Paste geometry (PageNum pgnum) [ritm] 
+            Just (PageCoord (nx,ny)) -> 
+                   map (changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly))) [ritm]
+          
+    let pg = getPageFromGHoodleMap pgnum hdl
+        lyr = getCurrentLayer pg 
+        oitms = view gitems lyr  
+        ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
+    modeChange ToSelectMode 
+    nxst <- get 
+    thdl <- case view hoodleModeState nxst of
+      SelectState thdl' -> return thdl'
+      _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
+    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+    put ( ( set hoodleModeState (SelectState nthdl) 
+          . set isOneTimeSelectMode YesAfterSelect) nxst)
+    invalidateAll  

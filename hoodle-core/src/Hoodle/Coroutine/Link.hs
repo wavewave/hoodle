@@ -45,7 +45,7 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.File (insertItemAt)
+-- import           Hoodle.Coroutine.File (insertItemAt)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Device 

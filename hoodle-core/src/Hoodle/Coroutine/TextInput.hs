@@ -64,6 +64,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event 
 import           Hoodle.Type.HoodleState 
+import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 -- 
 import Prelude hiding (readFile,mapM_)
@@ -328,7 +329,7 @@ linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
         lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
-    liftIO $ print nlnk
+    -- liftIO $ print nlnk
     newitem <- (liftIO . cnstrctRItem . ItemLink) nlnk
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
@@ -339,8 +340,36 @@ linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
               SelectState thdl' -> return thdl'
               _ -> (lift . EitherT . return . Left . Other) "linkInsert"
     nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-    put nxstate2
+    put (set hoodleModeState (SelectState nthdl) nxstate)
+    commit_ 
+    invalidateAll 
+
+-- | anchor 
+addAnchor :: MainCoroutine ()
+addAnchor = do
+    xstate <- get 
+    geometry <- liftIO (getGeometry4CurrCvs xstate)
+    uuid <- liftIO $ nextRandom
+    let uuidbstr = B.pack (show uuid)
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
+        hdl = getHoodle xstate 
+        currpage = getPageFromGHoodleMap pgnum hdl
+        currlayer = getCurrentLayer currpage
+        anc = Anchor uuidbstr (100,100)
+    nitm' <- (liftIO . cnstrctRItem . ItemAnchor) anc
+    let nitm:[] = adjustItemPosition4Paste geometry (PageNum pgnum) [nitm']
+
+    let otheritems = view gitems currlayer  
+    let ntpg = makePageSelectMode currpage 
+                 (otheritems :- (Hitted [nitm]) :- Empty)  
+    modeChange ToSelectMode 
+    nxstate <- get 
+    thdl <- case view hoodleModeState nxstate of
+              SelectState thdl' -> return thdl'
+              _ -> (lift . EitherT . return . Left . Other) "addAnchor"
+    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+    put (set hoodleModeState (SelectState nthdl) nxstate)
+    commit_
     invalidateAll 
 
 -- |

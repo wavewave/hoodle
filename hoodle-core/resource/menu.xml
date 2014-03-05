@@ -103,6 +103,7 @@
        <separator />
        <menuitem action="TEXTA" /> 
        <menuitem action="LINKA" />
+       <menuitem action="ANCHORA" />
        <!-- <menuitem action="SHPRECA" /> -->
        <!-- <menuitem action="RULERA" /> -->   
        <menuitem action="HANDRECA" />

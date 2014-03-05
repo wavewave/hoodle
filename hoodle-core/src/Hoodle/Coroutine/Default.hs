@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -442,6 +442,7 @@ menuEventProcess MenuColorPicker = colorPick
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuAddLink = addLink
+menuEventProcess MenuAddAnchor = addAnchor
 menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
 menuEventProcess MenuEmbedPredefinedImage2 = embedPredefinedImage2 
 menuEventProcess MenuEmbedPredefinedImage3 = embedPredefinedImage3 

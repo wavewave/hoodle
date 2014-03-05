@@ -34,7 +34,7 @@ instance GetBBoxable RItem where
   getBBox (RItemSVG svg _) = getBBox svg 
   getBBox (RItemLink lnk _) = getBBox lnk
   getBBox (RItemAnchor anc) = let (x,y) = anchor_pos anc 
-                              in BBox (x,y) (x+10,y+10)
+                              in BBox (x,y) (x+50,y+50)
 
 instance Show RItem where
   show (RItemStroke strk) = "RItemStroke " ++ show strk

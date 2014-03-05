@@ -162,6 +162,7 @@ data MenuEvent = MenuNew
                | MenuSetAsDefaultPaper
                | MenuText 
                | MenuAddLink
+               | MenuAddAnchor
                --  | MenuShapeRecognizer
                --  | MenuRuler
                | MenuHandwritingRecognitionDialog

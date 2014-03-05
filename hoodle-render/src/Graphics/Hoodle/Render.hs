@@ -148,13 +148,25 @@ renderLink lnk = do
       return () 
 
 
+-- | 
+renderAnchor :: Anchor -> Cairo.Render ()
+renderAnchor anc = do
+    let ancbbx = runIdentity (makeBBoxed anc)
+        bbox@(BBox (x0,y0) (x1,y1)) = getBBox ancbbx
+    clipBBox (Just bbox)
+    Cairo.setSourceRGBA 1 0 0 1 
+    Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
+    Cairo.fill
+    Cairo.resetClip
+    return ()
+
 -- | render item 
 renderItem :: Item -> Cairo.Render () 
 renderItem (ItemStroke strk) = renderStrk strk
 renderItem (ItemImage img) = renderImg img
 renderItem (ItemSVG svg) = renderSVG svg
 renderItem (ItemLink lnk) = renderLink lnk
-renderItem (ItemAnchor _anc) = return ()
+renderItem (ItemAnchor anc) = renderAnchor anc 
 
 -- |
 renderPage :: Page -> Cairo.Render ()
@@ -210,60 +222,58 @@ renderRBkg (r,dim) =
       Cairo.fill
       PopplerPage.pageRender pg
 
-
-
 -- |
 renderRItem :: RItem -> Cairo.Render RItem  
 renderRItem itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
 renderRItem itm@(RItemImage img msfc) = do  
-  case msfc of
-    Nothing -> renderImg (bbxed_content img)
-    Just sfc -> do 
-      let (x,y) = (img_pos . bbxed_content) img
-          BBox (x1,y1) (x2,y2) = getBBox img
-      ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
-      iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
-      Cairo.save 
-      Cairo.translate x y 
-      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
-      Cairo.setSourceSurface sfc 0 0 
-      Cairo.paint 
-      Cairo.restore
-  return itm 
+    case msfc of
+      Nothing -> renderImg (bbxed_content img)
+      Just sfc -> do 
+	let (x,y) = (img_pos . bbxed_content) img
+	    BBox (x1,y1) (x2,y2) = getBBox img
+	ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
+	iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
+	Cairo.save 
+	Cairo.translate x y 
+	Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+	Cairo.setSourceSurface sfc 0 0 
+	Cairo.paint 
+	Cairo.restore
+    return itm 
 renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
-  case mrsvg of
-    Nothing -> renderSVG (bbxed_content svgbbx)
-    Just rsvg -> do 
-      let (x,y) = (svg_pos . bbxed_content) svgbbx
-          BBox (x1,y1) (x2,y2) = getBBox svgbbx
-          (ix',iy') = RSVG.svgGetSize rsvg
-          ix = fromIntegral ix' 
-          iy = fromIntegral iy'
-      Cairo.save 
-      Cairo.translate x y 
-      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
-      RSVG.svgRender rsvg 
-      Cairo.restore
-      return () 
-  return itm 
+    case mrsvg of
+      Nothing -> renderSVG (bbxed_content svgbbx)
+      Just rsvg -> do 
+	let (x,y) = (svg_pos . bbxed_content) svgbbx
+	    BBox (x1,y1) (x2,y2) = getBBox svgbbx
+	    (ix',iy') = RSVG.svgGetSize rsvg
+	    ix = fromIntegral ix' 
+	    iy = fromIntegral iy'
+	Cairo.save 
+	Cairo.translate x y 
+	Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+	RSVG.svgRender rsvg 
+	Cairo.restore
+	return () 
+    return itm 
 renderRItem itm@(RItemLink lnkbbx mrsvg) = do 
-  case mrsvg of
-    Nothing -> renderLink (bbxed_content lnkbbx)
-    Just rsvg -> do 
-      let (x,y) = (link_pos . bbxed_content) lnkbbx
-          BBox (x1,y1) (x2,y2) = getBBox lnkbbx
-          (ix',iy') = RSVG.svgGetSize rsvg
-          ix = fromIntegral ix' 
-          iy = fromIntegral iy'
-      Cairo.save 
-      Cairo.translate x y 
-      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
-      RSVG.svgRender rsvg 
-      Cairo.restore
-      return () 
-  return itm 
-renderRItem itm@(RItemAnchor _anc) = renderHltBBox (getBBox itm) >> return itm
-
+    case mrsvg of
+      Nothing -> renderLink (bbxed_content lnkbbx)
+      Just rsvg -> do 
+	let (x,y) = (link_pos . bbxed_content) lnkbbx
+	    BBox (x1,y1) (x2,y2) = getBBox lnkbbx
+	    (ix',iy') = RSVG.svgGetSize rsvg
+	    ix = fromIntegral ix' 
+	    iy = fromIntegral iy'
+	Cairo.save 
+	Cairo.translate x y 
+	Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+	RSVG.svgRender rsvg 
+	Cairo.restore
+	return () 
+    return itm 
+renderRItem itm@(RItemAnchor ancbbx) = 
+    renderAnchor (bbxed_content ancbbx) >> return itm 
 
 ------------
 -- InBBox --

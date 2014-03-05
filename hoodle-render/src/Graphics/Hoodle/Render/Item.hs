@@ -78,8 +78,9 @@ cnstrctRItem (ItemLink lnk@(LinkDocID _ _ _ _ _ bstr _ _)) = do
         lnkbbx = runIdentity (makeBBoxed lnk)
     rsvg <- RSVG.svgNewFromString str
     return (RItemLink lnkbbx (Just rsvg))    
-cnstrctRItem (ItemAnchor anc@(Anchor _ _)) = do 
-    return (RItemAnchor anc)
+cnstrctRItem (ItemAnchor anc@(Anchor _ _ _)) = do 
+    let ancbbx = runIdentity (makeBBoxed anc)
+    return (RItemAnchor ancbbx)
 
 -- | get embedded png image. If not, just give me nothing. 
 getByteStringIfEmbeddedPNG :: C8.ByteString -> Maybe C8.ByteString 

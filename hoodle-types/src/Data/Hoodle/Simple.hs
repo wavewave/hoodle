@@ -86,6 +86,7 @@ data Link = Link { link_id :: ByteString
 
 data Anchor = Anchor { anchor_id :: ByteString 
                      , anchor_pos :: (Double, Double)
+                     , anchor_dim :: !Dimension
                      } 
             deriving (Show,Eq,Ord)
                     
@@ -135,6 +136,7 @@ instance SE.Serialize Link where
                          >> SE.put link_command 
                          >> SE.put link_render
                          >> SE.put link_pos
+
                          >> SE.put link_dim
     put LinkDocID {..} = SE.putWord8 1 
                          >> SE.put link_id
@@ -159,7 +161,8 @@ instance SE.Serialize Link where
 instance SE.Serialize Anchor where
     put Anchor {..} = SE.put anchor_id
                       >> SE.put anchor_pos
-    get = Anchor <$> SE.get <*> SE.get
+                      >> SE.put anchor_dim
+    get = Anchor <$> SE.get <*> SE.get <*> SE.get
 
 
 -- | 

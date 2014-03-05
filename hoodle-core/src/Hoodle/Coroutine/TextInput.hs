@@ -355,7 +355,7 @@ addAnchor = do
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-        anc = Anchor uuidbstr (100,100)
+        anc = Anchor uuidbstr (100,100) (Dim 50 50)
     nitm' <- (liftIO . cnstrctRItem . ItemAnchor) anc
     let nitm:[] = adjustItemPosition4Paste geometry (PageNum pgnum) [nitm']
 

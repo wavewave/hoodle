@@ -298,11 +298,13 @@ anchor = do
     trim
     posy <- string "y=\"" *> double <* char '"'
     trim
+    width <- string "width=\"" *> double <* char '"'
+    trim 
+    height <- string "height=\"" *> double <* char '"'
+    trim 
     string "/>"
-    return . H.ItemAnchor $ (H.Anchor i (posx,posy))
+    return . H.ItemAnchor $ (H.Anchor i (posx,posy) (H.Dim width height))
     
-
-
 -- | 
 trim :: Parser ()
 trim = trim_starting_space

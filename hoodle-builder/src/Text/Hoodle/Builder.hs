@@ -240,13 +240,17 @@ buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString "</link>\n"    
 
 buildAnchor :: Anchor -> Builder
-buildAnchor (Anchor i (x,y)) = 
+buildAnchor (Anchor i (x,y) (Dim w h)) = 
     fromByteString "<anchor id=\""
     <> fromByteString i 
     <> fromByteString "\" x=\""
     <> fromByteString (toFixed 2 x)
     <> fromByteString "\" y=\""
     <> fromByteString (toFixed 2 y)
+    <> fromByteString "\" width=\""
+    <> fromByteString (toFixed 2 w)
+    <> fromByteString "\" height=\""
+    <> fromByteString (toFixed 2 h)    
     <> fromByteString "\" />\n"
              
 -- | 

@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Select.Transform 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -89,8 +89,12 @@ changeLinkBy func (BBoxed (LinkDocID i lid loc t c bstr (x,y) (Dim w h)) _bbox) 
 
 -- | 
 changeAnchorBy :: ((Double,Double) -> (Double,Double))
-               -> Anchor -> Anchor
-changeAnchorBy func (Anchor i pos) = Anchor i (func pos)
+               -> BBoxed Anchor -> BBoxed Anchor
+changeAnchorBy func (BBoxed (Anchor i (x,y) (Dim w h)) _) = 
+    let (x1,y1) = func (x,y)
+        (x2,y2) = func (x+w,y+h)
+        nanc = Anchor i (x1,y1) (Dim (x2-x1) (y2-y1))
+    in runIdentity (makeBBoxed nanc)
 
 
 -- | modify the whole selection using a function

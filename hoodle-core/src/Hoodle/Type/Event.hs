@@ -227,6 +227,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuLinkConvert Link
                       | CMenuCreateALink 
                       | CMenuAssocWithNewFile
+                      | CMenuMakeLinkToAnchor Anchor
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text

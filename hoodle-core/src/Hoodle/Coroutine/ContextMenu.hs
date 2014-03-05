@@ -155,6 +155,9 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
+processContextMenu (CMenuMakeLinkToAnchor _anc) = liftIO $ putStrLn "test"
+
+
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 
@@ -308,26 +311,30 @@ showContextMenu (pnum,(x,y)) = do
                             mapM_ (\link -> do 
                               let LinkDocID _ uuid _ _ _ _ _ _ = link 
                               menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
-                              menuitemcvt `on` menuItemActivate $ do
-                                evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
+                              menuitemcvt `on` menuItemActivate $
+                                ( evhandler 
+                                  . UsrEv 
+                                  . GotContextMenuSignal 
+                                  . CMenuLinkConvert ) link
                               menuAttach menu menuitemcvt 0 1 4 5 
                             ) 
                         LinkDocID i lid file txt cmd rdr pos dim -> do 
-                          case (lookupPathFromId =<< view hookSet xstate) of
-                            Nothing -> return () 
-                            Just f -> do 
-                              rp <- f (B.unpack lid)
-                              case rp of 
-                                Nothing -> return ()
-                                Just file' -> 
-                                  if (B.unpack file) == file' 
-                                  then return ()
-                                    else do 
-                                      let link = LinkDocID i lid (B.pack file') txt cmd rdr pos dim
-                                      menuitemcvt <- menuItemNewWithLabel ("Correct Path to " ++ show file') 
-                                      menuitemcvt `on` menuItemActivate $ 
-                                        evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
-                                      menuAttach menu menuitemcvt 0 1 4 5 
+                          runMaybeT $ do  
+                            hset <- (MaybeT . return . view hookSet) xstate
+                            f <- (MaybeT . return . lookupPathFromId) hset
+                            file' <- MaybeT (f (B.unpack lid))
+                            guard ((B.unpack file) == file')
+                            let link = LinkDocID 
+                                         i lid (B.pack file') txt cmd rdr pos dim
+                            menuitemcvt <- liftIO $ menuItemNewWithLabel 
+                              ("Correct Path to " ++ show file') 
+                            liftIO (menuitemcvt `on` menuItemActivate $ 
+                              ( evhandler 
+                                . UsrEv 
+                                . GotContextMenuSignal 
+                                . CMenuLinkConvert ) link)
+                            liftIO $ menuAttach menu menuitemcvt 0 1 4 5 
+                          return ()
                         LinkAnchor i lid file aid pos dim -> do 
                           runMaybeT $ do  
                             hset <- (MaybeT . return . view hookSet) xstate
@@ -335,9 +342,13 @@ showContextMenu (pnum,(x,y)) = do
                             file' <- MaybeT (f (B.unpack lid))
                             guard ((B.unpack file) == file')
                             let link = LinkAnchor i lid (B.pack file') aid pos dim
-                            menuitemcvt <- liftIO $ menuItemNewWithLabel ("Correct Path to " ++ show file') 
+                            menuitemcvt <- liftIO $ menuItemNewWithLabel 
+                              ("Correct Path to " ++ show file') 
                             liftIO (menuitemcvt `on` menuItemActivate $ 
-                                        evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link))))
+                              ( evhandler 
+                                . UsrEv 
+                                . GotContextMenuSignal 
+                                . CMenuLinkConvert) link)
                             liftIO $ menuAttach menu menuitemcvt 0 1 4 5 
                           return ()
 
@@ -385,6 +396,15 @@ showContextMenu (pnum,(x,y)) = do
                       menuAttach menu menuitemexport 0 1 7 8
                       -- 
                       return ()
+                    RItemAnchor ancbbx -> do
+                      menuitemmklnk <- menuItemNewWithLabel ("Link to this anchor")
+                      menuitemmklnk `on` menuItemActivate $
+                        ( evhandler 
+                        . UsrEv 
+                        . GotContextMenuSignal 
+                        . CMenuMakeLinkToAnchor 
+                        . bbxed_content) ancbbx
+                      menuAttach menu menuitemmklnk 0 1 4 5 
                     _ -> return ()
 
                 _ -> return () 

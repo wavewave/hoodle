@@ -30,15 +30,9 @@ import           Hoodle.Type
 --
 import Paths_hoodle_core
 
--- | 
-
 justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
 
--- | 
--- uiDecl :: String 
--- uiDecl = [verbatim|
--- |]
 
 iconList :: [ (String,String) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
@@ -254,6 +248,7 @@ getMenuUI evar = do
   texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just stockIndex) (justMenu MenuAddLink)
   anchora <- actionNewAndRegister "ANCHORA" "Add Anchor" (Just "Add Anchor") Nothing (justMenu MenuAddAnchor)
+  listanchora <- actionNewAndRegister "LISTANCHORA" "List Anchors" (Just "List Anchors") Nothing (justMenu MenuListAnchors)
 
   -- shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
   -- rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
@@ -353,7 +348,7 @@ getMenuUI evar = do
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
         , apallpga, embedbkgpdfa, defppa, setdefppa
-        , texta, linka, anchora, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
+        , texta, linka, anchora, listanchora, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , togpanzooma, toglayera, togclocka

@@ -104,6 +104,7 @@
        <menuitem action="TEXTA" /> 
        <menuitem action="LINKA" />
        <menuitem action="ANCHORA" />
+       <menuitem action="LISTANCHORA" />
        <!-- <menuitem action="SHPRECA" /> -->
        <!-- <menuitem action="RULERA" /> -->   
        <menuitem action="HANDRECA" />

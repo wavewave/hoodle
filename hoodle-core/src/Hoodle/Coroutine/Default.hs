@@ -443,6 +443,7 @@ menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuAddLink = addLink
 menuEventProcess MenuAddAnchor = addAnchor
+menuEventProcess MenuListAnchors = listAnchors
 menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
 menuEventProcess MenuEmbedPredefinedImage2 = embedPredefinedImage2 
 menuEventProcess MenuEmbedPredefinedImage3 = embedPredefinedImage3 

@@ -163,6 +163,7 @@ data MenuEvent = MenuNew
                | MenuText 
                | MenuAddLink
                | MenuAddAnchor
+               | MenuListAnchors
                --  | MenuShapeRecognizer
                --  | MenuRuler
                | MenuHandwritingRecognitionDialog

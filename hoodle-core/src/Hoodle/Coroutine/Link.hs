@@ -1,7 +1,8 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -23,6 +24,8 @@ import           Control.Monad.State (get,put,modify,liftIO,guard,when)
 import           Control.Monad.Trans.Maybe 
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (forM_)
+import qualified Data.Map as M
+import           Data.Maybe (mapMaybe)
 import           Data.Monoid (mconcat)
 import           Data.UUID.V4 (nextRandom)
 import qualified Data.Text as T
@@ -32,7 +35,7 @@ import           System.FilePath
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple (SVG(..))
+import           Data.Hoodle.Simple (Anchor(..),Item(..),SVG(..),pages,layers,items)
 import           Data.Hoodle.Zipper
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type 
@@ -247,8 +250,27 @@ addLink = do
                          return (UsrEv (AddLink Nothing))
 
                 
+-- | 
+listAnchors :: MainCoroutine ()
+listAnchors = do 
+    xst <- get
+    let hdl = (rHoodle2Hoodle . getHoodle) xst
+        pgs = view pages hdl
+        itemsInPage pg = do l <- view layers pg 
+                            i <- view items l 
+                            return i
+        anchorsWithPageNum :: [(Int,[Anchor])] 
+        anchorsWithPageNum = zip [1..] 
+                               (map (mapMaybe lookupAnchor . itemsInPage) pgs)
+        anchormap = foldr (\(p,ys) m -> foldr (insertAnchor p) m ys) 
+                      M.empty anchorsWithPageNum
+    liftIO $ print anchormap
+        
+  where lookupAnchor (ItemAnchor a) = Just a
+        lookupAnchor _ = Nothing
 
-
+        insertAnchor pgnum (Anchor {..}) = M.insert anchor_id (pgnum,anchor_pos)  
+         
 
 
 

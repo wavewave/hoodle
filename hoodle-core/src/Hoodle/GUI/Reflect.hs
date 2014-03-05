@@ -1,4 +1,6 @@
-{-# LANGUAGE ScopedTypeVariables, GADTs, RankNTypes #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -177,12 +179,12 @@ reflectCursor = do
                                       in makeCanvasGeometry cpn arr canvas
                                ) cinfobox
          let p2c = desktop2Canvas geometry . page2Desktop geometry
-             CvsCoord (x0,y0) = p2c (cpn, PageCoord (0,0))  
-             CvsCoord (x1,y1) = p2c (cpn, PageCoord (pwidth,pwidth))
+             CvsCoord (x0,_y0) = p2c (cpn, PageCoord (0,0))  
+             CvsCoord (x1,_y1) = p2c (cpn, PageCoord (pwidth,pwidth))
              cursize = (x1-x0) 
              (r,g,b,a) = case pcolor of  
                            ColorRGBA r' g' b' a' -> (r',g',b',a')
-                           x -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
+                           _ -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
          pb <- pixbufNew ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
          let numPixels = maxCursorWidth*maxCursorHeight
          pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))

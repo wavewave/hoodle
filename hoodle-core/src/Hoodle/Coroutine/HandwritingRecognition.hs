@@ -16,14 +16,14 @@
 
 module Hoodle.Coroutine.HandwritingRecognition where
 
-import           Control.Lens ((%~))
+import           Control.Lens (view,_1,_2,(%~))
 import           Control.Monad ((<=<),guard,when)
 import           Control.Monad.State (modify)
 import           Control.Monad.Trans (liftIO)
 import           Control.Monad.Trans.Either
 import           Data.Aeson as A
-import           Data.Aeson.Encode
-import           Data.Aeson.Encode.Pretty
+-- import           Data.Aeson.Encode
+-- import           Data.Aeson.Encode.Pretty
 import qualified Data.Attoparsec as AP
 import           Data.Attoparsec.Number
 import qualified Data.ByteString.Char8 as B
@@ -45,8 +45,8 @@ import           System.Process
 -- 
 import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Simple
---
-import           Hoodle.Coroutine.Dialog
+-- from this package
+-- import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw (waitSomeEvent)
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Type.Coroutine
@@ -76,10 +76,10 @@ handwritingRecognitionDialog = do
       let fp = tdir </> show uuid <.> "json"
       liftIO $ LB.writeFile fp bstr
       (excode,gresult,gerror) <- liftIO $ readProcessWithExitCode "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
-      let ev0 = AP.parseOnly json (B.pack gresult)  
+      -- let ev0 = AP.parseOnly json (B.pack gresult)  
       case excode of 
         ExitSuccess -> do 
-          r <- runEitherT $ do  
+          r_parse <- runEitherT $ do  
             v0 <- hoistEither (AP.parseOnly json (B.pack gresult))
             getArrayVal 0 v0 >>= \succstr -> 
               guard (succstr == (String "SUCCESS"))
@@ -89,7 +89,7 @@ handwritingRecognitionDialog = do
                 f _ = Nothing
             (return . mapMaybe f . toList) v4
       
-          case r of 
+          case r_parse of 
             Left err -> liftIO $ putStrLn err >> return Nothing 
             Right lst -> showRecogTextDialog lst 
         _ -> liftIO $ print gerror >> return Nothing 
@@ -104,6 +104,7 @@ showRecogTextDialog txts = do
                             _ -> False)
     >>= \case OkCancel _ -> return Nothing
               GotRecogResult b txt -> return (Just (b,txt))
+              _ -> return Nothing
   where 
     action = mkIOaction $ \evhandler -> do 
                dialog <- dialogNew
@@ -131,9 +132,8 @@ showRecogTextDialog txts = do
                  _ -> return (UsrEv (OkCancel False))
                  
 addOneTextBox :: (AllEvent -> IO ()) -> Dialog -> VBox -> (Int,(Bool,T.Text)) -> IO ()
-addOneTextBox evhandler dialog vbox (n,(b,txt)) = do
+addOneTextBox _evhandler dialog vbox (n,(b,txt)) = do
   btn <- buttonNewWithLabel (T.unpack txt)
-         -- dialogAddButton dialog (T.unpack txt) (ResponseUser n)
   when b $ do 
     widgetModifyBg btn StateNormal (Color 60000 60000 30000)
     widgetModifyBg btn StatePrelight (Color 63000 63000 40000)
@@ -172,4 +172,8 @@ mkAesonStroke :: Stroke -> Value
 mkAesonStroke Stroke {..} = 
     let xs = map (Number . I . (floor :: Double -> Integer) . fst) stroke_data
         ys = map (Number . I . (floor :: Double -> Integer) . snd) stroke_data
+    in Array (fromList [Array (fromList xs), Array (fromList ys)])
+mkAesonStroke VWStroke {..} = 
+    let xs = map (Number . I . (floor :: Double -> Integer) . view _1) stroke_vwdata
+        ys = map (Number . I . (floor :: Double -> Integer) . view _2) stroke_vwdata
     in Array (fromList [Array (fromList xs), Array (fromList ys)])

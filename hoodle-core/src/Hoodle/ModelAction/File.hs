@@ -19,7 +19,6 @@ module Hoodle.ModelAction.File where
 -- from other package
 import           Control.Applicative
 import           Control.Lens (view,set)
-import           Control.Monad (when)
 import           Data.Attoparsec 
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C

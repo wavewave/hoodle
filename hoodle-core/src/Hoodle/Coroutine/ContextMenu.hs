@@ -39,7 +39,7 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (SVG(..), Item(..), Link(..), defaultHoodle)
+import           Data.Hoodle.Simple (SVG(..), Item(..), Link(..), Anchor(..), Dimension(..), defaultHoodle)
 import qualified Data.Hoodle.Simple as S (Image(..)) 
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
@@ -155,9 +155,15 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
-processContextMenu (CMenuMakeLinkToAnchor _anc) = liftIO $ putStrLn "test"
-
-
+processContextMenu (CMenuMakeLinkToAnchor anc) = do 
+    xst <- get
+    uuidbstr <- liftIO $ B.pack . show <$> nextRandom
+    docidbstr <- view ghoodleID . getHoodle <$> get
+    let mloc = view (hoodleFileControl.hoodleFileName) xst
+        loc = maybe "" B.pack mloc
+    let lnk = LinkAnchor uuidbstr docidbstr loc (anchor_id anc) (0,0) (Dim 50 50)
+    newitem <- (liftIO . cnstrctRItem . ItemLink) lnk    
+    insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 

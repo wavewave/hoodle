@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -127,6 +128,15 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
 
 -- | render svg  
 renderLink :: Link -> Cairo.Render () 
+renderLink lnk@LinkAnchor {..} = do
+    let lnkbbx = runIdentity (makeBBoxed lnk)
+        bbox@(BBox (x0,y0) (x1,y1)) = getBBox lnkbbx
+    clipBBox (Just bbox)
+    Cairo.setSourceRGBA 0 1 0 1 
+    Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
+    Cairo.fill
+    Cairo.resetClip
+    return ()
 renderLink lnk = do  
     let bstr = link_render lnk 
     let str = C.unpack bstr 

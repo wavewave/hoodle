@@ -41,9 +41,8 @@ laTeXFooter = "\\end{document}\n"
 defaultText :: T.Text 
 defaultText = laTeXHeader <> "\n\n" <> laTeXFooter
 
-
-server :: HostPreference -> T.Text -> Chan T.Text -> IO ()
-server ip txt chan = do
+serverLaTeX :: HostPreference -> T.Text -> Chan T.Text -> IO ()
+serverLaTeX ip txt chan = do
   listen ip  "4041" $ \(lsock, _) -> 
     accept lsock $ \(sock,addr) -> do 
       let bstr = TE.encodeUtf8 txt
@@ -68,6 +67,7 @@ server ip txt chan = do
         go size B.empty 
       F.forM_ mbstr $ \rbstr -> writeChan chan (TE.decodeUtf8 rbstr)
       print mbstr 
+
 
 ipfind :: IO String
 ipfind = do 

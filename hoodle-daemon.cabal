@@ -23,19 +23,20 @@ Executable hoodle-daemon
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   base,
-                   process,
-                   directory,
-                   text,
-                   fsnotify,
-                   system-filepath,
-                   dbus, 
-                   network-simple, 
-                   network-info, 
-                   bytestring, 
                    binary, 
-                   transformers >= 0.3,
+                   bytestring, 
+                   containers,
+                   dbus, 
+                   directory,
                    filepath, 
-                   containers
+                   fsnotify,
+                   network-info, 
+                   network-simple, 
+                   process,
+                   split,
+                   system-filepath,
+                   text,
+                   transformers >= 0.3
 
   Other-Modules:   ImageFileNotify
                    Network

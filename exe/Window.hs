@@ -17,6 +17,7 @@ module Window where
 import           Control.Concurrent
 import           Control.Monad (when)
 import qualified Data.Foldable as F (mapM_,forM_)
+import           Data.List.Split (splitOn)
 import qualified Data.Map as M 
 import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
@@ -42,7 +43,7 @@ server client = do
 
 findWindow :: Signal -> IO ()
 findWindow sig = do
-    let txts = mapMaybe fromVariant (signalBody sig) :: [String] -- :: [T.Text]  
+    let txts = mapMaybe fromVariant (signalBody sig) :: [String] 
     when ((not.null) txts) $ do
       let fpath = head txts
           (fdir,fname) = splitFileName fpath 
@@ -50,9 +51,8 @@ findWindow sig = do
       mwid <- getWindow fname
       print mwid
       case mwid of 
-        Nothing -> createProcess (proc "hoodle" [fpath]) >> return ()
-                  
-
+        Nothing -> createProcess (proc "hoodle" [fpath]) 
+                   >> return ()    
         Just wid -> do 
           (excode,sout,serr) <- readProcessWithExitCode "wmctrl" [ "-i", "-a", wid ] ""
           print excode 
@@ -83,6 +83,26 @@ getWindow title = do
     ExitFailure _ -> return Nothing
 
 
+serverLink :: Client -> IO ()
+serverLink client = do
+    putStrLn "start serverLink"
+    listen 
+      client 
+      matchAny { matchInterface = Just "org.ianwookim.hoodle"
+               , matchMember = Just "callLink" }
+      (callLink client)
+      
 
-
-
+callLink :: Client -> Signal -> IO ()
+callLink cli sig = do
+    let txts = mapMaybe fromVariant (signalBody sig) :: [String]
+    case txts of 
+      txt : _ -> do 
+        let  r = splitOn "," txt
+        case r of 
+          docid:anchorid:_ -> do 
+            emit cli (signal "/" "org.ianwookim.hoodle" "link")
+                       { signalBody = [ toVariant txt ] }  
+            putStrLn ( docid ++ ":" ++ anchorid)
+          _ -> return ()
+      _ -> return ()

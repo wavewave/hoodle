@@ -110,13 +110,14 @@ main = do
       
     chan_net <- newChan
      
-    forkIO $ forever $ server (Host ip) ntxt chan_net
+    forkIO $ forever $ serverLaTeX (Host ip) ntxt chan_net
     forkIO $ forever $ sendNetworkEditHoodle clientUsr chan_net
 
     chan_title <- newChan 
 
     forkIO $ Window.server client 
 
+    forkIO $ Window.serverLink client
 
     forever $ getLine
 

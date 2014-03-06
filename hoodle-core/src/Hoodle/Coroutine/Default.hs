@@ -175,6 +175,8 @@ guiProcess ev = do
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
   mapM_ f assocs
+  startLinkReceiver
+  -- main loop 
   sequence_ (repeat dispatchMode)
 
 -- | 
@@ -357,6 +359,7 @@ defaultEventProcess (CustomKeyEvent str) = do
     toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
+defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

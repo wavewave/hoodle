@@ -266,6 +266,7 @@ instance Show (MVar ()) where
 
 data DBusEvent = DBusNetworkInput T.Text
                | ImageFileDropped FilePath
+               | GoToLink (T.Text,T.Text)
                deriving Show
 
 -- | 

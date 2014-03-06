@@ -1,9 +1,11 @@
-{-# LANGUAGE ScopedTypeVariables, GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Module      : Hoodle.Widget.Dispatch 
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -69,8 +71,15 @@ widgetCheckPen cid pcoord defact = get >>= \xst -> forBoth' unboxBiAct (chk xst)
                  guard (isPointInBBox bbox (x,y))
                  case ritem of
                    RItemLink lnkbbx _ -> do 
-                     forM_ ((urlParse . B.unpack .  link_location . bbxed_content) lnkbbx)
-                           (liftIO . openLinkAction)
+                     let lnk = bbxed_content lnkbbx
+                         loc = link_location lnk
+                         mid = case lnk of 
+                           LinkAnchor {..} -> Just (link_linkeddocid,link_anchorid)
+                           _ -> Nothing
+
+                     forM_ 
+                       ((urlParse . B.unpack) loc)
+                       (\url -> liftIO (openLinkAction url mid))
                      MaybeT (return (Just ()))
                    _ -> MaybeT (return Nothing))
       case m of        

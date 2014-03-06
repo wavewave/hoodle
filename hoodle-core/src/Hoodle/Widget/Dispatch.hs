@@ -71,7 +71,6 @@ widgetCheckPen cid pcoord defact = get >>= \xst -> forBoth' unboxBiAct (chk xst)
                    RItemLink lnkbbx _ -> do 
                      forM_ ((urlParse . B.unpack .  link_location . bbxed_content) lnkbbx)
                            (liftIO . openLinkAction)
-                     liftIO $ putStrLn "I am in" 
                      MaybeT (return (Just ()))
                    _ -> MaybeT (return Nothing))
       case m of        

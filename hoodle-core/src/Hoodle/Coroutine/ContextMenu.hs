@@ -329,7 +329,7 @@ showContextMenu (pnum,(x,y)) = do
                             hset <- (MaybeT . return . view hookSet) xstate
                             f <- (MaybeT . return . lookupPathFromId) hset
                             file' <- MaybeT (f (B.unpack lid))
-                            guard ((B.unpack file) == file')
+                            guard ((B.unpack file) /= file')
                             let link = LinkDocID 
                                          i lid (B.pack file') txt cmd rdr pos dim
                             menuitemcvt <- liftIO $ menuItemNewWithLabel 
@@ -346,7 +346,7 @@ showContextMenu (pnum,(x,y)) = do
                             hset <- (MaybeT . return . view hookSet) xstate
                             f <- (MaybeT . return . lookupPathFromId) hset
                             file' <- MaybeT (f (B.unpack lid))
-                            guard ((B.unpack file) == file')
+                            guard ((B.unpack file) /= file')
                             let link = LinkAnchor i lid (B.pack file') aid pos dim
                             menuitemcvt <- liftIO $ menuItemNewWithLabel 
                               ("Correct Path to " ++ show file') 

@@ -323,11 +323,13 @@ linkInsert :: B.ByteString
               -> (B.ByteString,BBox) 
               -> MainCoroutine ()
 linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
-    let lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
+    xstate <- get 
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate 
+        lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
     newitem <- (liftIO . cnstrctRItem . ItemLink) nlnk
-    insertItemAt Nothing newitem
+    insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
 
 
 -- | anchor 

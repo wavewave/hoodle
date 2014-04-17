@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.File 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -21,20 +21,20 @@ module Hoodle.Coroutine.File where
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
 import           Control.Lens (view,set,over,(%~))
-import           Control.Monad.State hiding (mapM,forM_)
+import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.ByteString (readFile)
 import           Data.ByteString.Char8 as B (pack,unpack)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
-import           Data.Foldable (forM_)
+import           Data.Foldable (mapM_,forM_)
 import qualified Data.List as List 
 import           Data.Maybe
 import qualified Data.IntMap as IM
 import           Data.Time.Clock
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory
 import           System.FilePath
@@ -44,7 +44,7 @@ import           System.Process
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Queue 
-import           Data.Hoodle.BBox
+-- import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
@@ -53,6 +53,7 @@ import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
 import           Text.Hoodle.Builder 
+-- import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
@@ -66,7 +67,7 @@ import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
-import           Hoodle.ModelAction.Select.Transform
+-- import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
@@ -77,7 +78,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 --
-import Prelude hiding (readFile,concat,mapM)
+import Prelude hiding (readFile,concat,mapM,mapM_)
 
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
@@ -138,8 +139,8 @@ renderjob h ofp = do
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let Dim width height = view gdimension p  
   let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
-  withPDFSurface ofp width height $ \s -> renderWith s $  
-    (sequence1_ showPage . map rf . IM.elems . view gpages ) h 
+  Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
+    (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
 
 -- | 
 fileExport :: MainCoroutine ()
@@ -201,7 +202,7 @@ exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (re
       else do      
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
-        liftIO $ withSVGSurface filename w h $ \s -> renderWith s $ 
+        liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
          cairoRenderOption (InBBoxOption Nothing) (InBBox cpg) >> return ()
 
 -- | 
@@ -362,38 +363,11 @@ embedImage filename = do
             Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
         else
           liftIO (cnstrctRItem =<< makeNewItemImage False filename)
-    insertItemAt Nothing nitm 
+    let cpn = view (currentCanvasInfo . unboxLens currentPageNum) xst
+    my <- autoPosText 
+    let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
+    insertItemAt mpos nitm 
 
-insertItemAt :: Maybe (PageNum,PageCoordinate) 
-                -> RItem 
-                -> MainCoroutine () 
-insertItemAt mpcoord ritm = do 
-    xst <- get   
-    geometry <- liftIO (getGeometry4CurrCvs xst) 
-    let hdl = getHoodle xst 
-        (pgnum,mpos) = case mpcoord of 
-          Just (PageNum n,pos) -> (n,Just pos)
-          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) xst,Nothing)
-        (ulx,uly) = (bbox_upperleft.getBBox) ritm
-        nitms = 
-          case mpos of 
-            Nothing -> adjustItemPosition4Paste geometry (PageNum pgnum) [ritm] 
-            Just (PageCoord (nx,ny)) -> 
-                   map (changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly))) [ritm]
-          
-    let pg = getPageFromGHoodleMap pgnum hdl
-        lyr = getCurrentLayer pg 
-        oitms = view gitems lyr  
-        ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
-    modeChange ToSelectMode 
-    nxst <- get 
-    thdl <- case view hoodleModeState nxst of
-      SelectState thdl' -> return thdl'
-      _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    put ( ( set hoodleModeState (SelectState nthdl) 
-          . set isOneTimeSelectMode YesAfterSelect) nxst)
-    invalidateAll  
                     
 -- | 
 fileLoadSVG :: MainCoroutine ()
@@ -464,6 +438,11 @@ embedAllPDFBackground = do
   commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
+-- | embed an item from hoodlet using hoodlet identifier
+embedHoodlet :: String -> MainCoroutine ()
+embedHoodlet str = liftIO (loadHoodlet str) >>= mapM_ (insertItemAt Nothing) 
+
+-- |
 mkRevisionHdlFile :: Hoodle -> IO (String,String)
 mkRevisionHdlFile hdl = do 
     hdir <- getHomeDirectory
@@ -556,7 +535,7 @@ showRevisionDialog hdl revs =
                return (UsrEv GotOk)
 
 
-mkPangoText :: String -> Render ()
+mkPangoText :: String -> Cairo.Render ()
 mkPangoText str = do 
     let pangordr = do 
           ctxt <- cairoCreateContext Nothing 
@@ -568,13 +547,11 @@ mkPangoText str = do
           layoutSetWidth layout (Just 250)
           layoutSetWrap layout WrapAnywhere 
           layoutSetText layout str 
-          -- (_,reclog) <- layoutGetExtents layout 
-          -- let PangoRectangle x y w h = reclog 
           return layout
-        rdr layout = do setSourceRGBA 0 0 0 1
+        rdr layout = do Cairo.setSourceRGBA 0 0 0 1
                         updateLayout layout 
                         showLayout layout 
-    layout <- liftIO $  pangordr 
+    layout <- liftIO $ pangordr 
     rdr layout
 
 addOneRevisionBox :: VBox -> Hoodle -> Revision -> IO ()
@@ -585,7 +562,7 @@ addOneRevisionBox vbox hdl rev = do
       drawwdw <- liftIO $ widgetGetDrawWindow cvs 
       liftIO . renderWithDrawable drawwdw $ do 
         case rev of 
-          RevisionInk _ strks -> scale 0.5 0.5 >> mapM_ cairoRender strks
+          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ cairoRender strks
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"

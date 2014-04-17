@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -18,16 +18,18 @@
 module Hoodle.Coroutine.Default where
 
 import           Control.Applicative ((<$>))
-import           Control.Category
+-- import           Control.Category
 import           Control.Concurrent 
 import           Control.Lens (_1,over,view,set,at,(.~),(%~))
-import           Control.Monad.Reader
-import           Control.Monad.State 
+import           Control.Monad.Reader hiding (mapM_)
+import           Control.Monad.State hiding (mapM_)
 import qualified Data.ByteString.Char8 as B
+import           Data.Foldable (mapM_)
 import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
 import           Data.Monoid ((<>))
+import qualified Data.Text as T (unpack)
 import           Data.Time.Clock
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Process 
@@ -48,6 +50,7 @@ import           Hoodle.Coroutine.ContextMenu
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.HandwritingRecognition
 import           Hoodle.Coroutine.Highlighter
 import           Hoodle.Coroutine.Layer 
 import           Hoodle.Coroutine.Link
@@ -84,7 +87,7 @@ import           Hoodle.Widget.Dispatch
 import           Hoodle.Widget.Layer
 import           Hoodle.Widget.PanZoom
 --
-import Prelude hiding ((.), id)
+import Prelude hiding (mapM_)
 
 -- |
 initCoroutine :: DeviceList 
@@ -172,6 +175,8 @@ guiProcess ev = do
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
   mapM_ f assocs
+  startLinkReceiver
+  -- main loop 
   sequence_ (repeat dispatchMode)
 
 -- | 
@@ -354,6 +359,7 @@ defaultEventProcess (CustomKeyEvent str) = do
     toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
+defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
@@ -439,6 +445,8 @@ menuEventProcess MenuColorPicker = colorPick
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuAddLink = addLink
+menuEventProcess MenuAddAnchor = addAnchor
+menuEventProcess MenuListAnchors = listAnchors
 menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
 menuEventProcess MenuEmbedPredefinedImage2 = embedPredefinedImage2 
 menuEventProcess MenuEmbedPredefinedImage3 = embedPredefinedImage3 
@@ -462,6 +470,8 @@ menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
+menuEventProcess MenuHandwritingRecognitionDialog = 
+    handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 

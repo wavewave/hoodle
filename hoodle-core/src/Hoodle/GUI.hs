@@ -40,7 +40,7 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 --
-import           Prelude ((.),($),String,Bool(..),const,error,flip,id,map) -- hiding (catch)
+import           Prelude ((.),($),String,Bool(..),const,error,flip,id,map) 
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 

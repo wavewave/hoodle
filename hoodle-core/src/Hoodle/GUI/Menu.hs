@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI.Menu 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -30,15 +30,9 @@ import           Hoodle.Type
 --
 import Paths_hoodle_core
 
--- | 
-
 justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
 
--- | 
--- uiDecl :: String 
--- uiDecl = [verbatim|
--- |]
 
 iconList :: [ (String,String) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
@@ -173,36 +167,36 @@ getMenuUI evar = do
   fma     <- actionNewAndRegister "FMA"   "File" Nothing Nothing Nothing
   ema     <- actionNewAndRegister "EMA"   "Edit" Nothing Nothing Nothing
   vma     <- actionNewAndRegister "VMA"   "View" Nothing Nothing Nothing
-  jma     <- actionNewAndRegister "JMA"   "Page" Nothing Nothing Nothing
-  tma     <- actionNewAndRegister "TMA"   "Tools" Nothing Nothing Nothing
-  oma     <- actionNewAndRegister "OMA"   "Options" Nothing Nothing Nothing
+  lma     <- actionNewAndRegister "LMA"   "Layer" Nothing Nothing Nothing
+  ima     <- actionNewAndRegister "IMA"   "Image" Nothing Nothing Nothing
+  pma     <- actionNewAndRegister "PMA"   "Page" Nothing Nothing Nothing
+  tma     <- actionNewAndRegister "TMA"   "Tool" Nothing Nothing Nothing
+  verma   <- actionNewAndRegister "VERMA" "Version" Nothing Nothing Nothing
+  oma     <- actionNewAndRegister "OMA"   "Option" Nothing Nothing Nothing
   hma     <- actionNewAndRegister "HMA"   "Help" Nothing Nothing Nothing
 
-  -- file menu
+  ---------------
+  -- file menu --
+  ---------------
   newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (justMenu MenuNew)
   opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)
   savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (justMenu MenuSave)
   saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (justMenu MenuSaveAs)
+  printa  <- actionNewAndRegister "PRINTA" "Print" (Just "Just a Stub") Nothing (justMenu MenuPrint)
+  --
+  exporta <- actionNewAndRegister "EXPORTA" "Export to PDF" (Just "Just a Stub") Nothing (justMenu MenuExport)
+  expsvga <- actionNewAndRegister "EXPSVGA" "Export Current Page to SVG" (Just "Just a Stub") Nothing (justMenu MenuExportPageSVG) 
+  --   
+  annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDF" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
+  --
   reloada <- actionNewAndRegister "RELOADA" "Reload File" (Just "Just a Stub") Nothing (justMenu MenuReload)
   recenta <- actionNewAndRegister "RECENTA" "Recent Document" (Just "Just a Stub") Nothing (justMenu MenuRecentDocument)
-  annpdfa <- actionNewAndRegister "ANNPDFA" "Annotate PDF" (Just "Just a Stub") Nothing (justMenu MenuAnnotatePDF)
-  ldpnga <- actionNewAndRegister "LDIMGA" "Load PNG or JPG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNGorJPG)
-  ldsvga <- actionNewAndRegister "LDSVGA" "Load SVG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadSVG)
-  latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
-  latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
-  combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
-  ldpreimga <- actionNewAndRegister "LDPREIMGA" "Embed Predefined Image File" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage)
-  ldpreimg2a <- actionNewAndRegister "LDPREIMG2A" "Embed Predefined Image File 2" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage2)
-  ldpreimg3a <- actionNewAndRegister "LDPREIMG3A" "Embed Predefined Image File 3" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage3)
-  printa  <- actionNewAndRegister "PRINTA" "Print" (Just "Just a Stub") Nothing (justMenu MenuPrint)
-  exporta <- actionNewAndRegister "EXPORTA" "Export" (Just "Just a Stub") Nothing (justMenu MenuExport)
-  synca <- actionNewAndRegister "SYNCA" "Start Sync" (Just "Just a Stub") Nothing (justMenu MenuStartSync)  
-  versiona <- actionNewAndRegister "VERSIONA" "Save Version" (Just "Just a Stub") Nothing (justMenu MenuVersionSave)
-  showreva <- actionNewAndRegister "SHOWREVA" "Show Revisions" (Just "Just a Stub") Nothing (justMenu MenuShowRevisions)  
-  showida <- actionNewAndRegister "SHOWIDA" "Show UUID" (Just "Just a Stub") Nothing (justMenu MenuShowUUID)    
+  --
   quita   <- actionNewAndRegister "QUITA" "Quit" (Just "Just a Stub") (Just stockQuit) (justMenu MenuQuit)
-  
-  -- edit menu
+
+  ---------------
+  -- edit menu --
+  ---------------
   undoa   <- actionNewAndRegister "UNDOA"   "Undo" (Just "Just a Stub") (Just stockUndo) (justMenu MenuUndo)
   redoa   <- actionNewAndRegister "REDOA"   "Redo" (Just "Just a Stub") (Just stockRedo) (justMenu MenuRedo)
   cuta    <- actionNewAndRegister "CUTA"    "Cut" (Just "Just a Stub")  (Just stockCut) (justMenu MenuCut)
@@ -210,8 +204,11 @@ getMenuUI evar = do
   pastea  <- actionNewAndRegister "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste) (justMenu MenuPaste)
   deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete) (justMenu MenuDelete)
 
-  -- view menu
-  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (justMenu MenuFullScreen)
+  ---------------
+  -- view menu --
+  ---------------
+  togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Show/Hide Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
+  -- 
   zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing Nothing -- (justMenu MenuZoom)
   zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (justMenu MenuZoomIn)
   zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (justMenu MenuZoomOut)
@@ -219,27 +216,58 @@ getMenuUI evar = do
   pgwdtha   <- actionNewAndRegister "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit) (justMenu MenuPageWidth)
   pgheighta <- actionNewAndRegister "PGHEIGHTA" "Page Height" (Just "Page Height") Nothing (justMenu MenuPageHeight)
   setzma    <- actionNewAndRegister "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind) (justMenu MenuSetZoom)
+  -- 
+  fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (justMenu MenuFullScreen)
+  --
   fstpagea  <- actionNewAndRegister "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst) (justMenu MenuFirstPage)
   prvpagea  <- actionNewAndRegister "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack) (justMenu MenuPreviousPage)
   nxtpagea  <- actionNewAndRegister "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward) (justMenu MenuNextPage)
   lstpagea  <- actionNewAndRegister "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast) (justMenu MenuLastPage)
-  shwlayera <- actionNewAndRegister "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing (justMenu MenuShowLayer)
-  hidlayera <- actionNewAndRegister "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing (justMenu MenuHideLayer)
-  hsplita <- actionNewAndRegister "HSPLITA" "Horizontal Split" (Just "horizontal split") Nothing (justMenu MenuHSplit)
-  vsplita <- actionNewAndRegister "VSPLITA" "Vertical Split" (Just "vertical split") Nothing (justMenu MenuVSplit)
-  delcvsa <- actionNewAndRegister "DELCVSA" "Delete Current Canvas" (Just "delete current canvas") Nothing (justMenu MenuDelCanvas)
+  -- 
+  hsplita <- actionNewAndRegister "HSPLITA" "Clone View Horizontally" (Just "horizontal split") Nothing (justMenu MenuHSplit)
+  vsplita <- actionNewAndRegister "VSPLITA" "Clone View Vertically" (Just "vertical split") Nothing (justMenu MenuVSplit)
+  delcvsa <- actionNewAndRegister "DELCVSA" "Remove Clone View" (Just "delete current canvas") Nothing (justMenu MenuDelCanvas)
+
+
+  ----------------
+  -- layer menu --
+  ----------------
+  toglayera <- actionNewAndRegister "TOGLAYERA" "Show/Hide Layer Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleLayerWidget)
+  -- 
+  newlyra <- actionNewAndRegister "NEWLYRA" "New Layer"       (Just "Just a Stub") Nothing (justMenu MenuNewLayer)
+  nextlayera <- actionNewAndRegister "NEXTLAYERA" "Next Layer" (Just "Just a Stub") Nothing (justMenu MenuNextLayer)
+  prevlayera <- actionNewAndRegister "PREVLAYERA" "Prev Layer" (Just "Just a Stub") Nothing (justMenu MenuPrevLayer)
+  gotolayera <- actionNewAndRegister "GOTOLAYERA" "Goto Layer" (Just "Just a Stub") Nothing (justMenu MenuGotoLayer)
+  dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (justMenu MenuDeleteLayer)
+
+  -- shwlayera <- actionNewAndRegister "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing (justMenu MenuShowLayer)
+  -- hidlayera <- actionNewAndRegister "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing (justMenu MenuHideLayer)
+
+
+  ----------------
+  -- image menu --
+  ----------------
+
+  ldpnga <- actionNewAndRegister "LDIMGA" "Load PNG or JPG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNGorJPG)
+  ldsvga <- actionNewAndRegister "LDSVGA" "Load SVG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadSVG)
+  ldpreimga <- actionNewAndRegister "LDPREIMGA" "Embed Predefined Image File" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage)
+  ldpreimg2a <- actionNewAndRegister "LDPREIMG2A" "Embed Predefined Image File 2" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage2)
+  ldpreimg3a <- actionNewAndRegister "LDPREIMG3A" "Embed Predefined Image File 3" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage3)
+
+
+
+  latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
+  latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
+  combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
+  
+
 
   -- page menu 
   newpgba <- actionNewAndRegister "NEWPGBA" "New Page Before" (Just "Just a Stub") Nothing (justMenu MenuNewPageBefore)
   newpgaa <- actionNewAndRegister "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing (justMenu MenuNewPageAfter)
   newpgea <- actionNewAndRegister "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing (justMenu MenuNewPageAtEnd)
   delpga  <- actionNewAndRegister "DELPGA"  "Delete Page"     (Just "Just a Stub") Nothing (justMenu MenuDeletePage)
-  expsvga <- actionNewAndRegister "EXPSVGA" "Export Current Page to SVG" (Just "Just a Stub") Nothing (justMenu MenuExportPageSVG) 
-  newlyra <- actionNewAndRegister "NEWLYRA" "New Layer"       (Just "Just a Stub") Nothing (justMenu MenuNewLayer)
-  nextlayera <- actionNewAndRegister "NEXTLAYERA" "Next Layer" (Just "Just a Stub") Nothing (justMenu MenuNextLayer)
-  prevlayera <- actionNewAndRegister "PREVLAYERA" "Prev Layer" (Just "Just a Stub") Nothing (justMenu MenuPrevLayer)
-  gotolayera <- actionNewAndRegister "GOTOLAYERA" "Goto Layer" (Just "Just a Stub") Nothing (justMenu MenuGotoLayer)
-  dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (justMenu MenuDeleteLayer)
+
   ppsizea <- actionNewAndRegister "PPSIZEA" "Paper Size"      (Just "Just a Stub") Nothing (justMenu MenuPaperSize)
   ppclra  <- actionNewAndRegister "PPCLRA"  "Paper Color"     (Just "Just a Stub") Nothing (justMenu MenuPaperColor)
   ppstya <- actionNewAndRegister "PPSTYA"   "Paper Style" Nothing Nothing Nothing
@@ -253,8 +281,14 @@ getMenuUI evar = do
   -- tools menu
   texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just stockIndex) (justMenu MenuAddLink)
-  shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
-  rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
+  anchora <- actionNewAndRegister "ANCHORA" "Add Anchor" (Just "Add Anchor") Nothing (justMenu MenuAddAnchor)
+  listanchora <- actionNewAndRegister "LISTANCHORA" "List Anchors" (Just "List Anchors") Nothing (justMenu MenuListAnchors)
+
+  -- shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
+  -- rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
+  handreca <- actionNewAndRegister "HANDRECA" "Hoodlet load via Handwriting Recognition" (Just "Just a Stub") (Just "myshapes") (justMenu MenuHandwritingRecognitionDialog)
+  
+  
   -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
   -- selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (justMenu MenuSelectRectangle)
   -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
@@ -270,8 +304,21 @@ getMenuUI evar = do
   deftxta   <- actionNewAndRegister "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing (justMenu MenuDefaultText)
   setdefopta <- actionNewAndRegister "SETDEFOPTA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultOption)
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
-    
-  -- options menu 
+
+
+  ------------------
+  -- version menu --
+  ------------------
+
+  synca <- actionNewAndRegister "SYNCA" "Start Sync" (Just "Just a Stub") Nothing (justMenu MenuStartSync)  
+  versiona <- actionNewAndRegister "VERSIONA" "Save Version" (Just "Just a Stub") Nothing (justMenu MenuVersionSave)
+  showreva <- actionNewAndRegister "SHOWREVA" "Show Revisions" (Just "Just a Stub") Nothing (justMenu MenuShowRevisions)  
+  showida <- actionNewAndRegister "SHOWIDA" "Show UUID" (Just "Just a Stub") Nothing (justMenu MenuShowUUID)    
+
+
+  -----------------  
+  -- option menu --
+  -----------------
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseXInput))
@@ -301,8 +348,6 @@ getMenuUI evar = do
   vcursora `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseVariableCursor))
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
-  togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Toggle Pan/Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
-  toglayera <- actionNewAndRegister "TOGLAYERA" "Toggle Layer Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleLayerWidget)
   togclocka <- actionNewAndRegister "TOGCLOCKA" "Toggle Clock Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleClockWidget)
     
   dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
@@ -336,19 +381,19 @@ getMenuUI evar = do
   
   agr <- actionGroupNew "AGR"
   mapM_ (actionGroupAddAction agr) 
-        [fma,ema,vma,jma,tma,oma,hma]
+        [fma,ema,vma,lma,ima,pma,tma,verma,oma,hma]
   mapM_ (actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
         [ newa, annpdfa, ldpnga, ldsvga, latexa, latexneta, combinelatexa, ldpreimga, ldpreimg2a, ldpreimg3a, opena, savea, saveasa
         , reloada, recenta, printa, exporta, synca, versiona, showreva, showida, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
-        , fstpagea, prvpagea, nxtpagea, lstpagea, shwlayera, hidlayera
+        , fstpagea, prvpagea, nxtpagea, lstpagea {- , shwlayera, hidlayera -}
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
         , apallpga, embedbkgpdfa, defppa, setdefppa
-        , texta, linka, shpreca, rulera, clra, clrpcka, penopta 
+        , texta, linka, anchora, listanchora, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , togpanzooma, toglayera, togclocka
@@ -378,10 +423,10 @@ getMenuUI evar = do
         [ recenta, printa
         , cuta, copya, deletea
         ,  setzma
-        , shwlayera, hidlayera
+        {- , shwlayera, hidlayera -}
         , newpgea, ppsizea, ppclra
         , defppa, setdefppa
-        , shpreca, rulera 
+        -- , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , dcrdcorea, ersrtipa, pghilta, mltpgvwa

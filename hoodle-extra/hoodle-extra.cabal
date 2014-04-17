@@ -35,3 +35,32 @@ Executable networkedit
                    transformers,
                    mtl
 
+Executable idfilepathdb
+  Main-is: idfilepathdb.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends:   base,
+                   mtl,
+                   directory,
+                   filepath,
+                   attoparsec,
+                   transformers,
+                   hoodle-types,
+                   hoodle-parser,
+                   xournal-parser,
+                   containers,
+                   bytestring,
+                   lens,
+                   process,
+                   base64-bytestring,
+                   pureMD5,
+                   cmdargs,
+                   aeson,
+                   aeson-pretty,
+                   either,
+                   conduit, 
+                   http-conduit,
+                   text,
+                   unordered-containers

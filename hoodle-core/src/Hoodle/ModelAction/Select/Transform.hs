@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Select.Transform 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -40,7 +40,7 @@ changeItemBy func (RItemStroke strk) = RItemStroke (changeStrokeBy func strk)
 changeItemBy func (RItemImage img sfc) = RItemImage (changeImageBy func img) sfc
 changeItemBy func (RItemSVG svg rsvg) = RItemSVG (changeSVGBy func svg) rsvg
 changeItemBy func (RItemLink lnk rsvg) = RItemLink (changeLinkBy func lnk) rsvg
-    
+changeItemBy func (RItemAnchor anc) = RItemAnchor (changeAnchorBy func anc)    
 
 
 -- | modify stroke using a function
@@ -51,16 +51,12 @@ changeStrokeBy func (BBoxed (Stroke t c w ds) _bbox) =
       newds = map change ds 
       nstrk = Stroke t c w newds 
   in runIdentity (makeBBoxed nstrk) 
---       nbbox = bboxFromStroke nstrk 
---   in  BBoxed nstrk nbbox
 changeStrokeBy func (BBoxed (VWStroke t c ds) _bbox) = 
   let change (x,y,z) = let (nx,ny) = func (x,y) 
                        in (nx,ny,z)
       newds = map change ds 
       nstrk = VWStroke t c newds 
   in runIdentity (makeBBoxed nstrk)
---       nbbox = bboxFromStroke nstrk 
---   in  BBoxed nstrk nbbox
 
 -- | 
 changeImageBy :: ((Double,Double)->(Double,Double)) -> BBoxed Image -> BBoxed Image
@@ -90,6 +86,21 @@ changeLinkBy func (BBoxed (LinkDocID i lid loc t c bstr (x,y) (Dim w h)) _bbox) 
       (x2,y2) = func (x+w,y+h)
       nlnk = LinkDocID i lid loc t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in runIdentity (makeBBoxed nlnk)          
+changeLinkBy func (BBoxed (LinkAnchor i lid loc aid (x,y) (Dim w h)) _bbox) = 
+  let (x1,y1) = func (x,y) 
+      (x2,y2) = func (x+w,y+h)
+      nlnk = LinkAnchor i lid loc aid (x1,y1) (Dim (x2-x1) (y2-y1))
+  in runIdentity (makeBBoxed nlnk)      
+
+-- | 
+changeAnchorBy :: ((Double,Double) -> (Double,Double))
+               -> BBoxed Anchor -> BBoxed Anchor
+changeAnchorBy func (BBoxed (Anchor i (x,y) (Dim w h)) _) = 
+    let (x1,y1) = func (x,y)
+        (x2,y2) = func (x+w,y+h)
+        nanc = Anchor i (x1,y1) (Dim (x2-x1) (y2-y1))
+    in runIdentity (makeBBoxed nanc)
+
 
 -- | modify the whole selection using a function
 changeSelectionBy :: ((Double,Double) -> (Double,Double))

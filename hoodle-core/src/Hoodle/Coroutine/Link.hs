@@ -1,12 +1,13 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Link
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -18,21 +19,28 @@
 module Hoodle.Coroutine.Link where
 
 import           Control.Applicative
+import           Control.Concurrent (forkIO)
 import           Control.Lens (at,view,set,(%~))
+import           Control.Monad (forever)
 import           Control.Monad.State (get,put,modify,liftIO,guard,when)
 import           Control.Monad.Trans.Maybe 
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (forM_)
+import qualified Data.Map as M
+import           Data.Maybe (mapMaybe)
 import           Data.Monoid (mconcat)
 import           Data.UUID.V4 (nextRandom)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import           DBus
+import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set) 
 import           System.FilePath 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple (SVG(..))
+import           Data.Hoodle.Simple -- (Anchor(..),Item(..),SVG(..),pages,layers,items)
 import           Data.Hoodle.Zipper
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type 
@@ -42,7 +50,8 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.File (insertItemAt)
+-- import           Hoodle.Coroutine.File (insertItemAt)
+import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Device 
@@ -247,8 +256,63 @@ addLink = do
                          return (UsrEv (AddLink Nothing))
 
                 
+-- | 
+listAnchors :: MainCoroutine ()
+listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle =<< get
 
+getAnchorMap :: Hoodle -> M.Map T.Text (Int, (Double,Double))
+getAnchorMap hdl = 
+    let pgs = view pages hdl
+        itemsInPage pg = do l <- view layers pg 
+                            i <- view items l 
+                            return i
+        anchorsWithPageNum :: [(Int,[Anchor])] 
+        anchorsWithPageNum = zip [0..] 
+                               (map (mapMaybe lookupAnchor . itemsInPage) pgs)
+        anchormap = foldr (\(p,ys) m -> foldr (insertAnchor p) m ys) 
+                      M.empty anchorsWithPageNum
+    in anchormap
+  where lookupAnchor (ItemAnchor a) = Just a
+        lookupAnchor _ = Nothing
+        insertAnchor pgnum (Anchor {..}) = 
+          M.insert (TE.decodeUtf8 anchor_id) (pgnum,anchor_pos)  
+         
+-- | 
+startLinkReceiver :: MainCoroutine ()
+startLinkReceiver = do 
+    xst <- get
+    let callback = view callBack xst 
+    liftIO . forkIO $ do
+      client <- connectSession
+      requestName client "org.ianwookim" []
+      forkIO $ listen 
+		 client 
+		 matchAny { matchInterface = Just "org.ianwookim.hoodle" 
+			  , matchMember = Just "link" } 
+	       (goToLink callback)
 
+      forever getLine
+    return ()
+  where goToLink callback sig = do 
+          let txts = mapMaybe fromVariant (signalBody sig) :: [T.Text]
+          case txts of 
+            txt : _ -> do 
+              let  r = T.splitOn "," txt
+              case r of 
+                docid:anchorid:_ -> 
+                  (postGUISync . callback . UsrEv . DBusEv . GoToLink) 
+                    (docid,anchorid) 
+                _ -> return ()
+            _ -> return ()           
 
-
+goToAnchorPos :: T.Text -> T.Text -> MainCoroutine ()
+goToAnchorPos docid anchorid = do 
+    xst <- get
+    let rhdl = getHoodle xst 
+        hdl = rHoodle2Hoodle rhdl
+    when (docid == (TE.decodeUtf8 . view ghoodleID) rhdl) $ do
+      let anchormap = getAnchorMap hdl
+      forM_ (M.lookup anchorid anchormap) $ \(pgnum,(x,y))-> do
+        liftIO $ print (pgnum,(x,y))
+        changePage (const pgnum)
 

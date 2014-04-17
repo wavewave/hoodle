@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Event 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -87,6 +87,7 @@ data UserEvent = Initialized
                | GotRevisionInk String [Stroke]
                | ChangeDialog
                | ActionOrdered                 
+               | GotRecogResult Bool T.Text
                | MiniBuffer MiniBufferEvent
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
@@ -161,8 +162,11 @@ data MenuEvent = MenuNew
                | MenuSetAsDefaultPaper
                | MenuText 
                | MenuAddLink
-               | MenuShapeRecognizer
-               | MenuRuler
+               | MenuAddAnchor
+               | MenuListAnchors
+               --  | MenuShapeRecognizer
+               --  | MenuRuler
+               | MenuHandwritingRecognitionDialog
                | MenuSelectRegion
                | MenuSelectRectangle
                | MenuVerticalSpace
@@ -207,7 +211,7 @@ data MenuEvent = MenuNew
                | MenuSavePreferences
                | MenuAbout
                | MenuDefault
-               deriving Show -- (Show, Ord, Eq)
+               deriving Show 
 
 -- |
 data ImgType = TypSVG | TypPDF 
@@ -223,11 +227,14 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuLinkConvert Link
                       | CMenuCreateALink 
                       | CMenuAssocWithNewFile
+                      | CMenuMakeLinkToAnchor Anchor
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
                       | CMenuCropImage (BBoxed Image)
                       | CMenuRotate    RotateDir (BBoxed Image)
+                      | CMenuExport (BBoxed Image)
+                      | CMenuExportHoodlet Item
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 
@@ -259,6 +266,7 @@ instance Show (MVar ()) where
 
 data DBusEvent = DBusNetworkInput T.Text
                | ImageFileDropped FilePath
+               | GoToLink (T.Text,T.Text)
                deriving Show
 
 -- | 

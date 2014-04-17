@@ -1,9 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MultiWayIf #-}
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Parse.Attoparsec
+-- Module      : Text.Hoodle.Parse.Attoparsec.V0_2_2
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -11,21 +10,21 @@
 -- Stability   : experimental
 -- Portability : GHC
 --
--- attoparsec implementation of hoodle parser
+-- attoparsec implementation of hoodle parser v0.2.2
 -- 
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Parse.Attoparsec where
+module Text.Hoodle.Parse.Attoparsec.V0_2_2 where
 
 import           Control.Applicative 
 import           Data.Attoparsec
 import           Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
-                                       , isHorizontalSpace, anyChar)
+                                      , isHorizontalSpace, anyChar)
 import qualified Data.ByteString.Char8 as B hiding (map) 
 import           Data.Char 
 import           Data.Strict.Tuple
 -- from hoodle-platform 
-import qualified Data.Hoodle.Simple as H
+import qualified Data.Hoodle.Simple.V0_2_2 as H
 -- 
 import Prelude hiding (takeWhile)
 
@@ -88,6 +87,7 @@ xmlstroketagopen = do
   char '"'
   trim 
   string "width="
+  -- width <- double 
   width <- strokewidth 
   char '>' 
   return $ XmlStroke tool color width []   
@@ -238,12 +238,7 @@ svg_obj = do (xy,dim) <- svg_header
 
                                   
 
-link_header :: Parser ( B.ByteString
-                      , B.ByteString
-                      , Maybe B.ByteString
-                      , B.ByteString
-                      , Maybe B.ByteString
-                      , (Double,Double),H.Dimension)
+link_header :: Parser (B.ByteString,B.ByteString,Maybe B.ByteString,B.ByteString,(Double,Double),H.Dimension)
 link_header = do 
     trim 
     string "<link"
@@ -252,26 +247,13 @@ link_header = do
     trim 
     typ <- B.pack <$> (string "type=\"" *> manyTill anyChar (try (char '"')))
     trim 
-    mlid <- if | typ == "simple" -> return Nothing 
-               | typ == "linkdocid" || typ == "anchor" ->
-                   Just <$> (string "linkedid=\"" 
-                             *> takeTill (inClass "\"") 
-                             <* char '"')
-               | otherwise -> fail "unknown link type"
-    trim
-    loc <- if | typ == "simple" || typ == "linkdocid" || typ == "anchor" ->
-                  (string "location=\"" 
-                   *> takeTill (inClass "\"")
-                   <* char '"')
-              | otherwise -> fail "unknown link type"
-    trim
-    maid <- if | typ == "anchor" -> 
-                   Just <$> (string "anchorid=\""
-                             *> takeTill (inClass "\"")
-                             <* char '"')
-               | typ == "simple" || typ == "linkdocid" -> return Nothing
-               | otherwise -> fail "unknown link type"
-    trim
+    mlid <- case typ of 
+      "simple" -> return Nothing 
+      "linkdocid" -> Just<$>(string "linkedid=\"" *> takeTill (inClass "\"")<* char '"')
+      _ -> fail "unknown link type"
+    trim    
+    loc <- B.pack <$> (string "location=\"" *> manyTill anyChar (try (char '"')))
+    trim 
     posx <- string "x=\"" *> double <* char '"'
     trim
     posy <- string "y=\"" *> double <* char '"'
@@ -281,14 +263,15 @@ link_header = do
     height <- string "height=\"" *> double <* char '"'
     trim 
     string ">"
-    return (i,typ,mlid,loc,maid,(posx,posy),H.Dim width height) 
+    return (i,typ,mlid,loc,(posx,posy),H.Dim width height) 
 
 link_footer :: Parser () 
 link_footer = string "</link>" >> return ()
 
+
 link :: Parser H.Item 
 link = do 
-    (i,typ,mlid,loc,maid,xy,dim) <- link_header
+    (i,typ,mlid,loc,xy,dim) <- link_header
     trim 
     (mt,mc) <- (try (do t <- textCDATA 
                         trim 
@@ -300,36 +283,13 @@ link = do
     bstr <- renderCDATA 
     trim 
     link_footer
-    let lnk | typ == "simple" = H.Link i typ loc mt mc bstr xy dim
-            | typ == "linkdocid" = 
-                maybe (error "no linkedid or location for linkdocid") 
-                      (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim)
-                      mlid 
-            | typ == "anchor" = 
-                maybe (error "no linkedid for anchor")
-                      (\(lid,aid) -> H.LinkAnchor i lid loc aid xy dim)
-                      ( mlid >>= \lid -> maid >>= \aid -> return (lid,aid))
-            | otherwise = error "link type is not recognized"
-    (return . H.ItemLink) lnk  
+    return . H.ItemLink $ 
+      flip ($) mlid $ maybe (H.Link i typ loc mt mc bstr xy dim)
+                            (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim) 
 
-anchor :: Parser H.Item
-anchor = do
-    trim 
-    string "<anchor"
-    trim
-    i <- B.pack <$> (string "id=\"" *> manyTill anyChar (try (char '"')))
-    trim
-    posx <- string "x=\"" *> double <* char '"'
-    trim
-    posy <- string "y=\"" *> double <* char '"'
-    trim
-    width <- string "width=\"" *> double <* char '"'
-    trim 
-    height <- string "height=\"" *> double <* char '"'
-    trim 
-    string "/>"
-    return . H.ItemAnchor $ (H.Anchor i (posx,posy) (H.Dim width height))
-    
+
+
+
 -- | 
 trim :: Parser ()
 trim = trim_starting_space
@@ -378,7 +338,7 @@ layer :: Parser H.Layer
 layer = do trim
            layerheader <?> "layer"
            trim
-           itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> try link <|> anchor)
+           itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> link)
            trim
            layerclose 
            return $ H.Layer itms
@@ -387,7 +347,7 @@ layer = do trim
 title :: Parser B.ByteString 
 title = do trim 
            titleheader
-           str <- takeTill (inClass "<")
+           str <- takeTill (inClass "<") 
            titleclose
            return str 
 
@@ -417,6 +377,9 @@ revision = do skipSpace
                        skipSpace
                        string "</revision>"
                        return (H.RevisionInk (B.pack md5str) strks)))
+              
+                      
+
 
 embeddedpdf :: Parser (B.ByteString) 
 embeddedpdf = do string "<embeddedpdf" 
@@ -544,7 +507,7 @@ background = do
         char '"'
         trim 
         backgroundclose
-        return $ H.BackgroundEmbedPdf  typ pnum
+        return $ H.BackgroundEmbedPdf  typ pnum 
       _ -> fail "in parsing background"  
         
         

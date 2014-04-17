@@ -4,9 +4,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.ContextMenu
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -19,14 +19,16 @@ module Hoodle.Coroutine.ContextMenu where
 import           Control.Applicative
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State hiding (mapM_,forM_)
+import           Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as IM
 import           Data.Monoid
 import           Data.UUID.V4 
+import qualified Data.Text as T (unpack)
 import qualified Data.Text.Encoding as TE
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory 
 import           System.FilePath
@@ -37,18 +39,21 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (SVG(..), Item(..), Link(..), defaultHoodle)
+import           Data.Hoodle.Simple (SVG(..), Item(..), Link(..), Anchor(..), Dimension(..), defaultHoodle)
+import qualified Data.Hoodle.Simple as S (Image(..)) 
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Text.Hoodle.Builder (builder)
+import qualified Text.Hoodlet.Builder as Hoodlet (builder)
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit 
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.HandwritingRecognition
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.Select.ManipulateImage
@@ -96,6 +101,7 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
         adjustScrollbarWithGeometryCvsId cid 
         invalidateAll 
 processContextMenu (CMenuRotate dir imgbbx) = rotateImage dir imgbbx
+processContextMenu (CMenuExport imgbbx) = exportImage (bbxed_content imgbbx)
 processContextMenu CMenuAutosavePage = do 
     xst <- get 
     pg <- getCurrentPageCurr 
@@ -149,10 +155,34 @@ processContextMenu CMenuAssocWithNewFile = do
                   linkSelectionWithFile fp 
                   return ()
           ) 
+processContextMenu (CMenuMakeLinkToAnchor anc) = do 
+    xst <- get
+    uuidbstr <- liftIO $ B.pack . show <$> nextRandom
+    docidbstr <- view ghoodleID . getHoodle <$> get
+    let mloc = view (hoodleFileControl.hoodleFileName) xst
+        loc = maybe "" B.pack mloc
+    let lnk = LinkAnchor uuidbstr docidbstr loc (anchor_id anc) (0,0) (Dim 50 50)
+    newitem <- (liftIO . cnstrctRItem . ItemLink) lnk    
+    insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
+processContextMenu (CMenuExportHoodlet itm) = do
+    res <- handwritingRecognitionDialog
+    forM_ res $ \(b,txt) -> do 
+      when (not b) $ liftIO $ do
+        let str = T.unpack txt 
+        homedir <- getHomeDirectory
+        let hoodled = homedir </> ".hoodle.d"
+            hoodletdir = hoodled </> "hoodlet"
+        b' <- doesDirectoryExist hoodletdir 
+        when (not b') $           
+          createDirectory hoodletdir 
+        let fp = hoodletdir </> str <.> "hdlt"
+        L.writeFile fp (Hoodlet.builder itm) 
+
+
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -191,9 +221,10 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsSVG hititms bbox
       else do      
-        liftIO $ withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
-          translate (-ulx) (-uly)
-          mapM_ renderRItem  hititms
+        liftIO $ Cairo.withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> 
+          Cairo.renderWith s $ do 
+            Cairo.translate (-ulx) (-uly)
+            mapM_ renderRItem hititms
 
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine () 
@@ -206,9 +237,20 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
       then fileExtensionInvalid (".svg","export") 
            >> exportCurrentSelectionAsPDF hititms bbox
       else do      
-        liftIO $ withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> renderWith s $ do 
-          translate (-ulx) (-uly)
-          mapM_ renderRItem  hititms
+        liftIO $ Cairo.withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> 
+          Cairo.renderWith s $ do 
+            Cairo.translate (-ulx) (-uly)
+            mapM_ renderRItem  hititms
+
+-- |
+exportImage :: S.Image -> MainCoroutine ()
+exportImage img = do
+  
+  runMaybeT $ do 
+    pngbstr <- (MaybeT . return . getByteStringIfEmbeddedPNG . S.img_src) img
+    fp <- MaybeT (fileChooser FileChooserActionSave Nothing)  
+    liftIO $ B.writeFile fp pngbstr
+  return ()
 
 
 showContextMenu :: (PageNum,(Double,Double)) -> MainCoroutine () 
@@ -257,6 +299,12 @@ showContextMenu (pnum,(x,y)) = do
               mapM_ (\mi -> menuAttach menu mi 1 2 5 6) =<< menuCreateALink evhandler sitms 
               case sitms of 
                 sitm : [] -> do 
+                  menuhdlt <- menuItemNewWithLabel "Make Hoodlet"
+                  menuhdlt `on` menuItemActivate $ 
+                    ( evhandler . UsrEv . GotContextMenuSignal 
+                    . CMenuExportHoodlet . rItem2Item ) sitm
+                  menuAttach menu menuhdlt 0 1 8 9
+                  
                   case sitm of 
                     RItemLink lnkbbx _msfc -> do 
                       let lnk = bbxed_content lnkbbx
@@ -269,26 +317,47 @@ showContextMenu (pnum,(x,y)) = do
                             mapM_ (\link -> do 
                               let LinkDocID _ uuid _ _ _ _ _ _ = link 
                               menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
-                              menuitemcvt `on` menuItemActivate $ do
-                                evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
+                              menuitemcvt `on` menuItemActivate $
+                                ( evhandler 
+                                  . UsrEv 
+                                  . GotContextMenuSignal 
+                                  . CMenuLinkConvert ) link
                               menuAttach menu menuitemcvt 0 1 4 5 
                             ) 
                         LinkDocID i lid file txt cmd rdr pos dim -> do 
-                          case (lookupPathFromId =<< view hookSet xstate) of
-                            Nothing -> return () 
-                            Just f -> do 
-                              rp <- f (B.unpack lid)
-                              case rp of 
-                                Nothing -> return ()
-                                Just file' -> 
-                                  if (B.unpack file) == file' 
-                                  then return ()
-                                    else do 
-                                      let link = LinkDocID i lid (B.pack file') txt cmd rdr pos dim
-                                      menuitemcvt <- menuItemNewWithLabel ("Correct Path to " ++ show file') 
-                                      menuitemcvt `on` menuItemActivate $ 
-                                        evhandler (UsrEv (GotContextMenuSignal (CMenuLinkConvert link)))
-                                      menuAttach menu menuitemcvt 0 1 4 5 
+                          runMaybeT $ do  
+                            hset <- (MaybeT . return . view hookSet) xstate
+                            f <- (MaybeT . return . lookupPathFromId) hset
+                            file' <- MaybeT (f (B.unpack lid))
+                            guard ((B.unpack file) /= file')
+                            let link = LinkDocID 
+                                         i lid (B.pack file') txt cmd rdr pos dim
+                            menuitemcvt <- liftIO $ menuItemNewWithLabel 
+                              ("Correct Path to " ++ show file') 
+                            liftIO (menuitemcvt `on` menuItemActivate $ 
+                              ( evhandler 
+                                . UsrEv 
+                                . GotContextMenuSignal 
+                                . CMenuLinkConvert ) link)
+                            liftIO $ menuAttach menu menuitemcvt 0 1 4 5 
+                          return ()
+                        LinkAnchor i lid file aid pos dim -> do 
+                          runMaybeT $ do  
+                            hset <- (MaybeT . return . view hookSet) xstate
+                            f <- (MaybeT . return . lookupPathFromId) hset
+                            file' <- MaybeT (f (B.unpack lid))
+                            guard ((B.unpack file) /= file')
+                            let link = LinkAnchor i lid (B.pack file') aid pos dim
+                            menuitemcvt <- liftIO $ menuItemNewWithLabel 
+                              ("Correct Path to " ++ show file') 
+                            liftIO (menuitemcvt `on` menuItemActivate $ 
+                              ( evhandler 
+                                . UsrEv 
+                                . GotContextMenuSignal 
+                                . CMenuLinkConvert) link)
+                            liftIO $ menuAttach menu menuitemcvt 0 1 4 5 
+                          return ()
+
                     RItemSVG svgbbx _msfc -> do
                       let svg = bbxed_content svgbbx
                           BBox (x0,y0) _ = getBBox svgbbx
@@ -314,8 +383,6 @@ showContextMenu (pnum,(x,y)) = do
                             return ()
                           _ -> return ()
                     RItemImage imgbbx _msfc -> do
-                      let -- img = bbxed_content imgbbx
-                          -- BBox (x0,y0) _ = getBBox imgbbx
                       menuitemcrop <- menuItemNewWithLabel ("Crop Image") 
                       menuitemcrop `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal . CMenuCropImage) imgbbx
@@ -325,12 +392,25 @@ showContextMenu (pnum,(x,y)) = do
                       menuitemrotccw <- menuItemNewWithLabel ("Rotate Image CCW") 
                       menuitemrotccw `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CCW imgbbx)
+                      menuitemexport <- menuItemNewWithLabel ("Export Image")
+                      menuitemexport `on` menuItemActivate $ do
+                        (evhandler . UsrEv . GotContextMenuSignal) (CMenuExport imgbbx)
                       -- 
                       menuAttach menu menuitemcrop 0 1 4 5
                       menuAttach menu menuitemrotcw 0 1 5 6
                       menuAttach menu menuitemrotccw 0 1 6 7
+                      menuAttach menu menuitemexport 0 1 7 8
                       -- 
                       return ()
+                    RItemAnchor ancbbx -> do
+                      menuitemmklnk <- menuItemNewWithLabel ("Link to this anchor")
+                      menuitemmklnk `on` menuItemActivate $
+                        ( evhandler 
+                        . UsrEv 
+                        . GotContextMenuSignal 
+                        . CMenuMakeLinkToAnchor 
+                        . bbxed_content) ancbbx
+                      menuAttach menu menuitemmklnk 0 1 4 5 
                     _ -> return ()
 
                 _ -> return () 

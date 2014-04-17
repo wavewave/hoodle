@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Util 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -16,25 +16,25 @@
 
 module Graphics.Hoodle.Render.Util where
 
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 -- 
 import           Data.Hoodle.BBox
 
 -- | 
-clipBBox :: Maybe BBox -> Render ()
+clipBBox :: Maybe BBox -> Cairo.Render ()
 clipBBox (Just (BBox (x1,y1) (x2,y2))) = do 
-    resetClip 
-    rectangle x1 y1 (x2-x1) (y2-y1)
-    clip
-clipBBox Nothing = resetClip 
+    Cairo.resetClip 
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
+    Cairo.clip
+clipBBox Nothing = Cairo.resetClip 
 
 -- | 
-clearBBox :: Maybe BBox -> Render ()        
+clearBBox :: Maybe BBox -> Cairo.Render ()        
 clearBBox Nothing = return ()
 clearBBox (Just (BBox (x1,y1) (x2,y2))) = do 
-    save
-    setSourceRGBA 0 0 0 0
-    setOperator OperatorSource
-    rectangle x1 y1 (x2-x1) (y2-y1) 
-    fill
-    restore
+    Cairo.save
+    Cairo.setSourceRGBA 0 0 0 0
+    Cairo.setOperator Cairo.OperatorSource
+    Cairo.rectangle x1 y1 (x2-x1) (y2-y1) 
+    Cairo.fill
+    Cairo.restore

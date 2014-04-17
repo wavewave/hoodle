@@ -1,5 +1,5 @@
 Name:		hoodle-render
-Version:	0.3.2
+Version:	0.3.999
 Synopsis:       Hoodle file renderer
 Description: 	Rendering library using cairo for hoodle file format
 License: 	BSD3
@@ -16,7 +16,7 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -fno-warn-orphans -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options: 	-Wall -Werror -fno-warn-orphans -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends: base == 4.*, 
@@ -30,7 +30,7 @@ Library
                  bytestring >= 0.9,
                  base64-bytestring >= 0.1, 
                  lens >= 2.5, 
-                 hoodle-types >= 0.2.1,
+                 hoodle-types >= 0.2.999,
                  gd >= 3000.7, 
                  unix >= 2.5,
                  uuid >= 1.2, 

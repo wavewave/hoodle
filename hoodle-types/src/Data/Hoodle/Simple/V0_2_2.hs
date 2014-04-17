@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Data.Hoodle.Simple 
+-- Module      : Data.Hoodle.Simple.V0_2_2 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,7 +13,7 @@
 --
 ----------------------------------------------------------------------------- 
 
-module Data.Hoodle.Simple where
+module Data.Hoodle.Simple.V0_2_2 where
 
 -- from other packages
 import           Control.Applicative 
@@ -35,7 +35,6 @@ data Item = ItemStroke Stroke
           | ItemImage Image
           | ItemSVG SVG
           | ItemLink Link
-          | ItemAnchor Anchor
           deriving (Show,Eq,Ord)
 
 
@@ -82,21 +81,7 @@ data Link = Link { link_id :: ByteString
                       , link_render :: ByteString
                       , link_pos :: (Double,Double)
                       , link_dim :: !Dimension }  
-          | LinkAnchor { link_id :: ByteString 
-                       , link_linkeddocid :: ByteString
-                       , link_location :: ByteString
-                       , link_anchorid :: ByteString
-                       , link_pos :: (Double,Double)
-                       , link_dim :: !Dimension
-                       }
-
            deriving (Show,Eq,Ord)                    
-
-data Anchor = Anchor { anchor_id :: ByteString 
-                     , anchor_pos :: (Double, Double)
-                     , anchor_dim :: !Dimension
-                     } 
-            deriving (Show,Eq,Ord)
                     
 -- | 
 instance SE.Serialize Stroke where
@@ -136,48 +121,32 @@ instance SE.Serialize SVG where
 
 -- | 
 instance SE.Serialize Link where
-    put Link {..}       = SE.putWord8 0 
-                          >> SE.put link_id
-                          >> SE.put link_type
-                          >> SE.put link_location
-                          >> SE.put link_text
-                          >> SE.put link_command 
-                          >> SE.put link_render
-                          >> SE.put link_pos
-                          >> SE.put link_dim
-    put LinkDocID {..}  = SE.putWord8 1 
-                          >> SE.put link_id
-                          >> SE.put link_linkeddocid 
-                          >> SE.put link_location
-                          >> SE.put link_text
-                          >> SE.put link_command 
-                          >> SE.put link_render
-                          >> SE.put link_pos
-                          >> SE.put link_dim
-    put LinkAnchor {..} = SE.putWord8 2
-                          >> SE.put link_id
-                          >> SE.put link_linkeddocid
-                          >> SE.put link_location
-                          >> SE.put link_anchorid
-                          >> SE.put link_pos
-                          >> SE.put link_dim
+    put Link {..}      = SE.putWord8 0 
+                         >> SE.put link_id
+                         >> SE.put link_type
+                         >> SE.put link_location
+                         >> SE.put link_text
+                         >> SE.put link_command 
+                         >> SE.put link_render
+                         >> SE.put link_pos
+                         >> SE.put link_dim
+    put LinkDocID {..} = SE.putWord8 1 
+                         >> SE.put link_id
+                         >> SE.put link_linkeddocid 
+                         >> SE.put link_location
+                         >> SE.put link_text
+                         >> SE.put link_command 
+                         >> SE.put link_render
+                         >> SE.put link_pos
+                         >> SE.put link_dim
+                    
     get = do tag <- SE.getWord8 
              case tag of 
-               0 -> Link       <$> SE.get <*> SE.get <*> SE.get <*> SE.get 
-                               <*> SE.get <*> SE.get <*> SE.get <*> SE.get
-               1 -> LinkDocID  <$> SE.get <*> SE.get <*> SE.get <*> SE.get 
-                               <*> SE.get <*> SE.get <*> SE.get <*> SE.get
-               2 -> LinkAnchor <$> SE.get <*> SE.get <*> SE.get <*> SE.get
-                               <*> SE.get <*> SE.get
+               0 -> Link      <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get 
+                              <*> SE.get <*> SE.get <*> SE.get
+               1 -> LinkDocID <$> SE.get <*> SE.get <*> SE.get <*> SE.get <*> SE.get 
+                              <*> SE.get <*> SE.get <*> SE.get
                _ -> fail "err in Link parsing"
-
-
-
-instance SE.Serialize Anchor where
-    put Anchor {..} = SE.put anchor_id
-                      >> SE.put anchor_pos
-                      >> SE.put anchor_dim
-    get = Anchor <$> SE.get <*> SE.get <*> SE.get
 
 
 -- | 
@@ -190,15 +159,12 @@ instance SE.Serialize Item where
                         >> SE.put svg 
     put (ItemLink lnk) = SE.putWord8 3
                          >> SE.put lnk                         
-    put (ItemAnchor anc) = SE.putWord8 4
-                           >> SE.put anc                         
     get = do tag <- SE.getWord8 
              case tag of 
                0 -> ItemStroke <$> SE.get
                1 -> ItemImage <$> SE.get
                2 -> ItemSVG <$> SE.get
                3 -> ItemLink <$> SE.get
-               4 -> ItemAnchor <$> SE.get
                _ -> fail "err in Item parsing"
 
 -- |    
@@ -297,7 +263,6 @@ embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
 -- | 
 pages :: Simple Lens Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
-
 
 -- | 
 dimension :: Simple Lens Page Dimension 

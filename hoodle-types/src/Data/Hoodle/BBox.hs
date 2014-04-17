@@ -17,16 +17,6 @@ module Data.Hoodle.BBox
 , GetBBoxable (..) 
 , MakeBBoxedable (..) 
 , BBoxed (..)
--- , StrokeBBox (..)
--- , strkbbx_strk
--- , strkbbx_bbx
--- , mkStrokeBBox
--- , ImageBBox (..)
--- , imgbbx_img
--- , imgbbx_bbx
--- , mkImageBBox
--- , SVGBBox (..)
--- , mkSVGBBox
 , mkbbox
 , mkbboxF
 , bboxFromStroke
@@ -108,6 +98,9 @@ instance MakeBBoxedable Identity SVG where
 instance MakeBBoxedable Identity Link where
   makeBBoxed lnk = return (BBoxed lnk (bboxFromLink lnk))
 
+instance MakeBBoxedable Identity Anchor where
+  makeBBoxed anc = return (BBoxed anc (bboxFromAnchor anc))
+
 
 -- |
 mkbbox :: [Pair Double Double] -> BBox 
@@ -155,6 +148,11 @@ bboxFromSVG (SVG _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
 bboxFromLink :: Link -> BBox 
 bboxFromLink (Link _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
 bboxFromLink (LinkDocID _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
+bboxFromLink (LinkAnchor _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
+
+-- |
+bboxFromAnchor :: Anchor -> BBox 
+bboxFromAnchor (Anchor _ (x,y) d) =  moveBBoxULCornerTo (x,y) (dimToBBox d)
 
 
 -- | general transform BBox         

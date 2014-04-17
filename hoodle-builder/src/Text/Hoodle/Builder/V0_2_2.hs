@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Text.Hoodle.Builder 
+-- Module      : Text.Hoodle.Builder.V0_2_2 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -13,7 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Text.Hoodle.Builder where
+module Text.Hoodle.Builder.V0_2_2 where
 
 -- from other packages 
 import           Blaze.ByteString.Builder
@@ -30,7 +30,7 @@ import           Data.Monoid
 #endif 
 import           Data.Strict.Tuple
 -- from hoodle platform 
-import           Data.Hoodle.Simple
+import           Data.Hoodle.Simple.V0_2_2
 -- 
 
 -- | 
@@ -45,7 +45,7 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2.999\" id=\""
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2.2\" id=\""
                  <> fromByteString (view hoodleID hdl) 
                  <> fromByteString "\">\n" 
                  <> (buildTitle . view title) hdl 
@@ -136,7 +136,7 @@ buildItem (ItemStroke strk) = buildStroke strk
 buildItem (ItemImage img) = buildImage img
 buildItem (ItemSVG svg) = buildSVG svg 
 buildItem (ItemLink lnk) = buildLink lnk
-buildItem (ItemAnchor anc) = buildAnchor anc
+
 
 -- | 
 buildStroke :: Stroke -> Builder
@@ -238,42 +238,8 @@ buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString rdr 
     <> fromByteString "]]></render>"
     <> fromByteString "</link>\n"    
-buildLink (LinkAnchor i docid loc anchorid (x,y) (Dim w h)) =
-    fromByteString "<link id=\""  
-    <> fromByteString i 
-    <> fromByteString "\" type=\"anchor\" linkedid=\"" 
-    <> fromByteString docid 
-    <> fromByteString "\" location=\""
-    <> fromByteString loc
-    <> fromByteString "\" anchorid=\""
-    <> fromByteString anchorid
-    <> fromByteString "\" x=\"" 
-    <> fromByteString (toFixed 2 x)
-    <> fromByteString "\" y=\""
-    <> fromByteString (toFixed 2 y)
-    <> fromByteString "\" width=\""
-    <> fromByteString (toFixed 2 w)
-    <> fromByteString "\" height=\""
-    <> fromByteString (toFixed 2 h)
-    <> fromByteString "\" >\n"
-    <> fromByteString "<render><![CDATA[" 
-    <> fromByteString "]]></render>"
-    <> fromByteString "</link>\n"    
 
-buildAnchor :: Anchor -> Builder
-buildAnchor (Anchor i (x,y) (Dim w h)) = 
-    fromByteString "<anchor id=\""
-    <> fromByteString i 
-    <> fromByteString "\" x=\""
-    <> fromByteString (toFixed 2 x)
-    <> fromByteString "\" y=\""
-    <> fromByteString (toFixed 2 y)
-    <> fromByteString "\" width=\""
-    <> fromByteString (toFixed 2 w)
-    <> fromByteString "\" height=\""
-    <> fromByteString (toFixed 2 h)    
-    <> fromByteString "\" />\n"
-             
+
 -- | 
 build2D :: Pair Double Double -> Builder 
 build2D (x :!: y) = fromByteString (toFixed 2 x) 

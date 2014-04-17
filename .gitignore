@@ -9,7 +9,7 @@
 /xournal-parser/dist
 /coroutine-object/dist
 /.cabal-sandbox/
-/cabal.sandbox.config
+cabal.sandbox.config
 dist/
 /hoodle/deps
 /trash

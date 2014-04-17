@@ -5,27 +5,15 @@
        <menuitem action="OPENA" />                        
        <menuitem action="SAVEA" />                        
        <menuitem action="SAVEASA" />                        
-       <menuitem action="RELOADA" />
-       <separator /> 
-       <menuitem action="RECENTA" />                        
+       <menuitem action="PRINTA" />                        
+       <separator />
+       <menuitem action="EXPORTA" />
+       <menuitem action="EXPSVGA" /> 
        <separator /> 
        <menuitem action="ANNPDFA" />
-       <menuitem action="LDIMGA" />
-       <menuitem action="LDSVGA" />
-       <menuitem action="LDPREIMGA" />   
-       <menuitem action="LDPREIMG2A" />
-       <menuitem action="LDPREIMG3A" />
-       <menuitem action="LATEXA" />
-       <menuitem action="LATEXNETA" />
-       <menuitem action="COMBINELATEXA" />
        <separator /> 
-       <menuitem action="PRINTA" />                        
-       <menuitem action="EXPORTA" />
-       <separator /> 
-       <menuitem action="SYNCA" /> 
-       <menuitem action="VERSIONA" />
-       <menuitem action="SHOWREVA" />
-       <menuitem action="SHOWIDA" />
+       <menuitem action="RELOADA" />
+       <menuitem action="RECENTA" />
        <separator />
        <menuitem action="QUITA" />
     </menu>
@@ -37,16 +25,9 @@
        <menuitem action="COPYA" />                        
        <menuitem action="PASTEA" />                        
        <menuitem action="DELETEA" />
-       <!-- <separator />
-       <menuitem action="NETCOPYA" />
-       <menuitem action="NETPASTEA" /> --> 
     </menu>
     <menu action="VMA">
-       <menuitem action="CONTA" />
-       <menuitem action="ONEPAGEA" />
-       <separator />
-       <menuitem action="FSCRA" />
-       <separator />
+       <menuitem action="TOGPANZOOMA" />
        <menu action="ZOOMA" >
          <menuitem action="ZMINA" />
          <menuitem action="ZMOUTA" />                          
@@ -55,32 +36,43 @@
          <menuitem action="PGHEIGHTA" />
          <menuitem action="SETZMA" />                          
        </menu>
+       <menuitem action="CONTA" />
+       <menuitem action="ONEPAGEA" />
+       <separator />
+       <menuitem action="FSCRA" />
        <separator />
        <menuitem action="FSTPAGEA" />
        <menuitem action="PRVPAGEA" />
        <menuitem action="NXTPAGEA" />
        <menuitem action="LSTPAGEA" />
        <separator />
-       <menuitem action="SHWLAYERA" />
-       <menuitem action="HIDLAYERA" />
-       <separator />
        <menuitem action="HSPLITA" />
        <menuitem action="VSPLITA" />
        <menuitem action="DELCVSA" />
     </menu>
-    <menu action="JMA">
-       <menuitem action="NEWPGBA" />
-       <menuitem action="NEWPGAA" />
-       <menuitem action="NEWPGEA" />
-       <menuitem action="DELPGA" />       
+    <menu action="LMA"> 
+       <menuitem action="TOGLAYERA" />
+       <!-- <menuitem action="SHWLAYERA" />
+       <menuitem action="HIDLAYERA" /> -->
        <separator />
-       <menuitem action="EXPSVGA" /> 
-       <separator /> 
        <menuitem action="NEWLYRA" />
        <menuitem action="NEXTLAYERA" />
        <menuitem action="PREVLAYERA" />
        <menuitem action="GOTOLAYERA" />
        <menuitem action="DELLYRA" />       
+    </menu>
+    <menu action="IMA">
+       <menuitem action="LDIMGA" />
+       <menuitem action="LDSVGA" />
+       <menuitem action="LDPREIMGA" />   
+       <menuitem action="LDPREIMG2A" />
+       <menuitem action="LDPREIMG3A" />
+    </menu>
+    <menu action="PMA">
+       <menuitem action="NEWPGBA" />
+       <menuitem action="NEWPGAA" />
+       <menuitem action="NEWPGEA" />
+       <menuitem action="DELPGA" />       
        <separator />
        <menuitem action="PPSIZEA" />
        <menuitem action="PPCLRA" />
@@ -93,8 +85,6 @@
        <menuitem action="APALLPGA" />
        <separator />
        <menuitem action="EMBEDBKGPDFA" />
-       <!-- <menuitem action="LDBKGA" /> -->
-       <!-- <menuitem action="BKGSCRSHTA" /> -->
        <separator />
        <menuitem action="DEFPPA" />                        
        <menuitem action="SETDEFPPA" />    
@@ -106,8 +96,13 @@
        <separator />
        <menuitem action="TEXTA" /> 
        <menuitem action="LINKA" />
-       <menuitem action="SHPRECA" />
-       <menuitem action="RULERA" />       
+       <menuitem action="ANCHORA" />
+       <menuitem action="LISTANCHORA" />
+       <menuitem action="HANDRECA" />
+       <separator />               
+       <menuitem action="LATEXA" />
+       <menuitem action="LATEXNETA" />
+       <menuitem action="COMBINELATEXA" />
        <separator />
        <menuitem action="SELREGNA" />
        <menuitem action="SELRECTA" />
@@ -119,8 +114,8 @@
          <menuitem action="REDA" />                          
          <menuitem action="GREENA" />                          
          <menuitem action="GRAYA" />                          
-         <menuitem action="LIGHTBLUEA" />                          
-         <menuitem action="LIGHTGREENA" />                          
+         <menuitem action="LIGHTBLUEA" />
+         <menuitem action="LIGHTGREENA" />
          <menuitem action="MAGENTAA" />
          <menuitem action="ORANGEA" />
          <menuitem action="YELLOWA" />
@@ -130,9 +125,9 @@
        <menu action="PENOPTA"> 
          <menuitem action="PENVERYFINEA" />     
          <menuitem action="PENFINEA" />                          
-         <menuitem action="PENMEDIUMA" />                          
-         <menuitem action="PENTHICKA" />                          
-         <menuitem action="PENVERYTHICKA" />                      
+         <menuitem action="PENMEDIUMA" />
+         <menuitem action="PENTHICKA" />
+         <menuitem action="PENVERYTHICKA" />
          <menuitem action="PENULTRATHICKA" />     
        </menu>
        <menuitem action="ERASROPTA" />                        
@@ -145,6 +140,13 @@
        <menuitem action="DEFTXTA" />
        <menuitem action="SETDEFOPTA" />                        
     </menu>
+    <menu action="VERMA">
+       <separator /> 
+       <menuitem action="SYNCA" /> 
+       <menuitem action="VERSIONA" />
+       <menuitem action="SHOWREVA" />
+       <menuitem action="SHOWIDA" />
+    </menu>
     <menu action="OMA">
        <menuitem action="UXINPUTA" />
        <menuitem action="HANDA" />
@@ -155,8 +157,6 @@
        <menuitem action="FLWLNKA" />
        <menuitem action="KEEPRATIOA" />
        <menuitem action="VCURSORA" />
-       <menuitem action="TOGPANZOOMA" />
-       <menuitem action="TOGLAYERA" />
        <menuitem action="TOGCLOCKA" />
        <menuitem action="DCRDCOREA" />                        
        <menuitem action="ERSRTIPA" />                        
@@ -167,13 +167,13 @@
        <menuitem action="BTN2MAPA" />                        
        <menuitem action="BTN3MAPA" />                        
        <separator />
-       <menuitem action="ANTIALIASBMPA" />                        
+       <menuitem action="ANTIALIASBMPA" />
        <menuitem action="PRGRSBKGA" />                        
        <menuitem action="PRNTPPRULEA" />                        
        <menuitem action="LFTHNDSCRBRA" />                        
        <menuitem action="SHRTNMENUA" />   
        <separator />
-       <menuitem action="AUTOSAVEPREFA" />                        
+       <menuitem action="AUTOSAVEPREFA" />
        <menuitem action="SAVEPREFA" />
        <menuitem action="RELAUNCHA" />
     </menu>
@@ -199,10 +199,10 @@
     <toolitem action="LSTPAGEA" />
     <separator />
     <toolitem action="ZMOUTA" />      
-    <toolitem action="NRMSIZEA" />                                        
+    <toolitem action="NRMSIZEA" />
     <toolitem action="ZMINA" />
     <toolitem action="PGWDTHA" />                          
-    <toolitem action="SETZMA" />
+    <toolitem action="HANDRECA" />
     <toolitem action="FSCRA" />
     <separator /> 
     <toolitem action="LINKA" />
@@ -215,11 +215,6 @@
     <toolitem action="TEXTA"       />
     <toolitem action="LATEXA"      />
     <toolitem action="LATEXNETA"      />
-    <!-- <toolitem action="DEFAULTA"    />    --> 
-    <!-- <toolitem action="DEFPENA"     />    -->                  
-    <!-- <toolitem action="SHPRECA"     />    -->  
-    <!-- <toolitem action="RULERA"      />    -->                 
-    <!-- <separator />                        -->
     <toolitem action="SELREGNA"    />    
     <toolitem action="SELRECTA"    />                     
     <toolitem action="VERTSPA"     />                     
@@ -228,8 +223,6 @@
     <toolitem action="PENFINEA"       />    
     <toolitem action="PENMEDIUMA"       />                     
     <toolitem action="PENTHICKA"       />   
- <!--   <placeholder name="PENDROPDOWN"   /> --> 
- <!--     <toolitem action="NOWIDTH"        /> --> 
     <separator />
     <toolitem action="CLRPCKA"     />
     <toolitem action="BLACKA"      />                     
@@ -243,6 +236,5 @@
     <toolitem action="ORANGEA"     />                     
     <toolitem action="YELLOWA"     />                     
     <toolitem action="WHITEA"      />   
- <!--    <toolitem action="NOCOLOR" />    --> 
   </toolbar>
 </ui>

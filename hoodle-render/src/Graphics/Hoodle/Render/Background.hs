@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.PDFBackground 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -18,13 +18,12 @@ module Graphics.Hoodle.Render.Background where
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
-import           Graphics.Rendering.Cairo
---
 import qualified Data.Map as M
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
 import           Data.UUID.V4 (nextRandom)
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory
@@ -70,7 +69,7 @@ popplerGetDocFromDataURI dat = do
 -- |
 popplerGetPageFromDoc :: Poppler.Document 
                       -> Int -- ^ page number 
-                      -> IO (Maybe Poppler.Page, Maybe Surface)
+                      -> IO (Maybe Poppler.Page, Maybe Cairo.Surface)
 popplerGetPageFromDoc doc pn = do   
   n <- Poppler.documentGetNPages doc 
   if pn > n 
@@ -78,25 +77,25 @@ popplerGetPageFromDoc doc pn = do
     else do 
       pg <- Poppler.documentGetPage doc (pn-1) 
       (w,h) <- PopplerPage.pageGetSize pg
-      sfc <- createImageSurface FormatARGB32 (floor w) (floor h)
-      renderWith sfc $ do   
-        setSourceRGBA 1 1 1 1
-        rectangle 0 0 w h 
-        fill
+      sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+      Cairo.renderWith sfc $ do   
+        Cairo.setSourceRGBA 1 1 1 1
+        Cairo.rectangle 0 0 w h 
+        Cairo.fill
         PopplerPage.pageRender pg
       return (Just pg, Just sfc)
 
 -- | draw ruling all 
-drawRuling :: Double -> Double -> ByteString -> Render () 
+drawRuling :: Double -> Double -> ByteString -> Cairo.Render () 
 drawRuling w h style = do
   let drawHorizRules = do 
       let (r,g,b,a) = predefined_RULING_COLOR         
-      setSourceRGBA r g b a 
-      setLineWidth predefined_RULING_THICKNESS
+      Cairo.setSourceRGBA r g b a 
+      Cairo.setLineWidth predefined_RULING_THICKNESS
       let drawonerule y = do 
-            moveTo 0 y 
-            lineTo w y
-            stroke  
+            Cairo.moveTo 0 y 
+            Cairo.lineTo w y
+            Cairo.stroke  
       mapM_ drawonerule [ predefined_RULING_TOPMARGIN 
                         , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
                         .. 
@@ -106,24 +105,24 @@ drawRuling w h style = do
     "lined" -> do 
       drawHorizRules
       let (r2,g2,b2,a2) = predefined_RULING_MARGIN_COLOR
-      setSourceRGBA r2 g2 b2 a2 
-      setLineWidth predefined_RULING_THICKNESS
-      moveTo predefined_RULING_LEFTMARGIN 0 
-      lineTo predefined_RULING_LEFTMARGIN h
-      stroke
+      Cairo.setSourceRGBA r2 g2 b2 a2 
+      Cairo.setLineWidth predefined_RULING_THICKNESS
+      Cairo.moveTo predefined_RULING_LEFTMARGIN 0 
+      Cairo.lineTo predefined_RULING_LEFTMARGIN h
+      Cairo.stroke
     "ruled" -> drawHorizRules 
     "graph" -> do 
       let (r3,g3,b3,a3) = predefined_RULING_COLOR 
-      setSourceRGBA r3 g3 b3 a3 
-      setLineWidth predefined_RULING_THICKNESS
+      Cairo.setSourceRGBA r3 g3 b3 a3 
+      Cairo.setLineWidth predefined_RULING_THICKNESS
       let drawonegraphvert x = do 
-            moveTo x 0 
-            lineTo x h
-            stroke  
+            Cairo.moveTo x 0 
+            Cairo.lineTo x h
+            Cairo.stroke  
       let drawonegraphhoriz y = do 
-            moveTo 0 y
-            lineTo w y
-            stroke
+            Cairo.moveTo 0 y
+            Cairo.lineTo w y
+            Cairo.stroke
       mapM_ drawonegraphvert  [0,predefined_RULING_GRAPHSPACING..w-1] 
       mapM_ drawonegraphhoriz [0,predefined_RULING_GRAPHSPACING..h-1]
     _ -> return ()     
@@ -131,20 +130,20 @@ drawRuling w h style = do
 
 
 -- | draw ruling  in bbox 
-drawRuling_InBBox :: BBox -> Double -> Double -> ByteString -> Render () 
+drawRuling_InBBox :: BBox -> Double -> Double -> ByteString -> Cairo.Render () 
 drawRuling_InBBox (BBox (x1,y1) (x2,y2)) w h style = do
   let drawonerule y = do 
-        moveTo x1 y 
-        lineTo x2 y
-        stroke  
+        Cairo.moveTo x1 y 
+        Cairo.lineTo x2 y
+        Cairo.stroke  
   let drawonegraphvert x = do 
-        moveTo x y1 
-        lineTo x y2
-        stroke  
+        Cairo.moveTo x y1 
+        Cairo.lineTo x y2
+        Cairo.stroke  
   let drawonegraphhoriz y = do 
-        moveTo x1 y
-        lineTo x2 y
-        stroke
+        Cairo.moveTo x1 y
+        Cairo.lineTo x2 y
+        Cairo.stroke
       fullRuleYs = [ predefined_RULING_TOPMARGIN 
                    , predefined_RULING_TOPMARGIN+predefined_RULING_SPACING
                    .. 
@@ -156,47 +155,47 @@ drawRuling_InBBox (BBox (x1,y1) (x2,y2)) w h style = do
       graphYs = filter (\y->(y<=y2)&&(y>=y1)) fullGraphYs 
   let drawHorizRules = do 
       let (r,g,b,a) = predefined_RULING_COLOR         
-      setSourceRGBA r g b a 
-      setLineWidth predefined_RULING_THICKNESS
+      Cairo.setSourceRGBA r g b a 
+      Cairo.setLineWidth predefined_RULING_THICKNESS
       mapM_ drawonerule ruleYs
   case style of 
     "plain" -> return () 
     "lined" -> do 
       drawHorizRules
       let (r2,g2,b2,a2) = predefined_RULING_MARGIN_COLOR
-      setSourceRGBA r2 g2 b2 a2 
-      setLineWidth predefined_RULING_THICKNESS
-      moveTo predefined_RULING_LEFTMARGIN 0 
-      lineTo predefined_RULING_LEFTMARGIN h
-      stroke
+      Cairo.setSourceRGBA r2 g2 b2 a2 
+      Cairo.setLineWidth predefined_RULING_THICKNESS
+      Cairo.moveTo predefined_RULING_LEFTMARGIN 0 
+      Cairo.lineTo predefined_RULING_LEFTMARGIN h
+      Cairo.stroke
     "ruled" -> drawHorizRules 
     "graph" -> do 
       let (r3,g3,b3,a3) = predefined_RULING_COLOR 
-      setSourceRGBA r3 g3 b3 a3 
-      setLineWidth predefined_RULING_THICKNESS
+      Cairo.setSourceRGBA r3 g3 b3 a3 
+      Cairo.setLineWidth predefined_RULING_THICKNESS
       mapM_ drawonegraphvert  graphXs 
       mapM_ drawonegraphhoriz graphYs
     _ -> return ()     
 
 
 -- | render background without any constraint 
-renderBkg :: (Background,Dimension) -> Render () 
+renderBkg :: (Background,Dimension) -> Cairo.Render () 
 renderBkg (Background _typ col sty,Dim w h) = do 
     let c = M.lookup col predefined_bkgcolor  
     case c of 
-      Just (r,g,b,_a) -> setSourceRGB r g b 
-      Nothing        -> setSourceRGB 1 1 1 
-    rectangle 0 0 w h 
-    fill
+      Just (r,g,b,_a) -> Cairo.setSourceRGB r g b 
+      Nothing        -> Cairo.setSourceRGB 1 1 1 
+    Cairo.rectangle 0 0 w h 
+    Cairo.fill
     drawRuling w h sty
 renderBkg (BackgroundPdf _ _ _ _,Dim w h) = do 
-    setSourceRGBA 1 1 1 1
-    rectangle 0 0 w h 
-    fill
+    Cairo.setSourceRGBA 1 1 1 1
+    Cairo.rectangle 0 0 w h 
+    Cairo.fill
 renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do 
-    setSourceRGBA 1 1 1 1
-    rectangle 0 0 w h 
-    fill
+    Cairo.setSourceRGBA 1 1 1 1
+    Cairo.rectangle 0 0 w h 
+    Cairo.fill
 
 
 
@@ -206,8 +205,9 @@ cnstrctRBkg_StateT :: Dimension -> Background
 cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
   case bkg of 
     Background _t c s -> do 
-      sfc <- liftIO $ createImageSurface FormatARGB32 (floor w) (floor h)
-      renderWith sfc $ renderBkg (bkg,dim) 
+      sfc <- liftIO $ Cairo.createImageSurface 
+                        Cairo.FormatARGB32 (floor w) (floor h)
+      Cairo.renderWith sfc $ renderBkg (bkg,dim) 
       return (RBkgSmpl c s (Just sfc))
     BackgroundPdf _t md mf pn -> do 
       case (md,mf) of 

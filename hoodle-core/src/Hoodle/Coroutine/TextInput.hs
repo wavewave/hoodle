@@ -24,13 +24,12 @@ import           Control.Monad.Trans.Either
 import           Data.Attoparsec
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
-import           Data.List (sort, sortBy)
+import           Data.List (sortBy)
 import           Data.Maybe (catMaybes)
--- import           Data.Ord (comparing)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Data.UUID.V4 (nextRandom)
-import           Graphics.Rendering.Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           Graphics.Rendering.Pango.Cairo
 import           Graphics.UI.Gtk hiding (get,set)
@@ -45,15 +44,17 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple 
-import           Graphics.Hoodle.Render.Item 
+import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle, rPage2Page)
+import           Graphics.Hoodle.Render.Type.Item
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.Accessor
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
@@ -65,6 +66,7 @@ import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event 
 import           Hoodle.Type.HoodleState 
+import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 -- 
 import Prelude hiding (readFile,mapM_)
@@ -168,9 +170,9 @@ laTeXInput mpos str = do
       Just (x0,y0) -> do 
         modify (tempQueue %~ enqueue (multiLineDialog str))  
         multiLineLoop str >>= 
-          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
-                            >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
-                                      Left err -> okMessageBox err >> laTeXInput mpos result
+          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) >>= \case 
+                  Right r -> deleteSelection >> svgInsert (result,"latex") r
+                  Left err -> okMessageBox err >> laTeXInput mpos result
                 )
       Nothing -> do 
         modeChange ToViewAppendMode 
@@ -181,7 +183,7 @@ laTeXInput mpos str = do
 autoPosText :: MainCoroutine (Maybe Double)
 autoPosText = do 
     cpg <- rPage2Page <$> getCurrentPageCurr
-    let Dim pgw pgh = view dimension cpg
+    let Dim _pgw pgh = view dimension cpg
         mcomponents = do 
           l <- view layers cpg
           i <- view items l
@@ -193,6 +195,11 @@ autoPosText = do
                       Dim _ h = svg_dim svg
                   return (y,y+h) 
                 _ -> []
+            ItemImage img -> do 
+              let (_,y) = img_pos img
+                  Dim _ h = img_dim img
+              return (y,y+h)
+                
             _ -> []
     if null mcomponents 
       then return Nothing 
@@ -317,27 +324,22 @@ linkInsert :: B.ByteString
               -> MainCoroutine ()
 linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xstate <- get 
-    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
-        hdl = getHoodle xstate 
-        currpage = getPageFromGHoodleMap pgnum hdl
-        currlayer = getCurrentLayer currpage
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate 
         lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
-    liftIO $ print nlnk
     newitem <- (liftIO . cnstrctRItem . ItemLink) nlnk
-    let otheritems = view gitems currlayer  
-    let ntpg = makePageSelectMode currpage 
-                 (otheritems :- (Hitted [newitem]) :- Empty)  
-    modeChange ToSelectMode 
-    nxstate <- get 
-    thdl <- case view hoodleModeState nxstate of
-              SelectState thdl' -> return thdl'
-              _ -> (lift . EitherT . return . Left . Other) "linkInsert"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
-    let nxstate2 = set hoodleModeState (SelectState nthdl) nxstate
-    put nxstate2
-    invalidateAll 
+    insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
+
+
+-- | anchor 
+addAnchor :: MainCoroutine ()
+addAnchor = do
+    uuid <- liftIO $ nextRandom
+    let uuidbstr = B.pack (show uuid)
+    let anc = Anchor uuidbstr (100,100) (Dim 50 50)
+    nitm <- (liftIO . cnstrctRItem . ItemAnchor) anc
+    insertItemAt Nothing nitm
 
 -- |
 makePangoTextSVG :: (Double,Double) -> T.Text -> IO (B.ByteString,BBox) 
@@ -352,13 +354,14 @@ makePangoTextSVG (xo,yo) str = do
           let PangoRectangle x y w h = reclog 
           -- 10 is just dirty-fix
           return (layout,BBox (x,y) (x+w+10,y+h)) 
-        rdr layout = do setSourceRGBA 0 0 0 1
+        rdr layout = do Cairo.setSourceRGBA 0 0 0 1
                         updateLayout layout 
                         showLayout layout 
     (layout,(BBox (x0,y0) (x1,y1))) <- pangordr 
     tdir <- getTemporaryDirectory 
     let tfile = tdir </> "embedded.svg"
-    withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> renderWith s (rdr layout)
+    Cairo.withSVGSurface tfile (x1-x0) (y1-y0) $ \s -> 
+      Cairo.renderWith s (rdr layout)
     bstr <- B.readFile tfile 
     return (bstr,BBox (xo,yo) (xo+x1-x0,yo+y1-y0)) 
 
@@ -391,3 +394,35 @@ combineLaTeXText = do
     mfilename <- fileChooser FileChooserActionSave Nothing
     forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
 
+
+
+insertItemAt :: Maybe (PageNum,PageCoordinate) 
+                -> RItem 
+                -> MainCoroutine () 
+insertItemAt mpcoord ritm = do 
+    xst <- get   
+    geometry <- liftIO (getGeometry4CurrCvs xst) 
+    let hdl = getHoodle xst 
+        (pgnum,mpos) = case mpcoord of 
+          Just (PageNum n,pos) -> (n,Just pos)
+          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) xst,Nothing)
+        (ulx,uly) = (bbox_upperleft.getBBox) ritm
+        nitms = 
+          case mpos of 
+            Nothing -> adjustItemPosition4Paste geometry (PageNum pgnum) [ritm] 
+            Just (PageCoord (nx,ny)) -> 
+                   map (changeItemBy (\(x,y)->(x+nx-ulx,y+ny-uly))) [ritm]
+          
+    let pg = getPageFromGHoodleMap pgnum hdl
+        lyr = getCurrentLayer pg 
+        oitms = view gitems lyr  
+        ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
+    modeChange ToSelectMode 
+    nxst <- get 
+    thdl <- case view hoodleModeState nxst of
+      SelectState thdl' -> return thdl'
+      _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
+    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+    put ( ( set hoodleModeState (SelectState nthdl) 
+          . set isOneTimeSelectMode YesAfterSelect) nxst)
+    invalidateAll  

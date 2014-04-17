@@ -33,7 +33,8 @@ Library
                  xml-types > 0.3, 
                  text > 0.11,
                  lens >= 2.5, 
-                 zlib-conduit > 0.5
+                 zlib-conduit > 0.5,
+                 conduit-extra >= 1.1
 
   Exposed-Modules: 
                    Text.Xournal.Parse

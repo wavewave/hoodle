@@ -19,8 +19,9 @@ module Text.Xournal.Parse.Conduit where
 import           Control.Applicative 
 import           Control.Category
 import           Control.Lens
-import           Control.Monad.Trans
 import           Control.Monad
+import           Control.Monad.Catch
+import           Control.Monad.Trans
 import qualified Data.ByteString as S
 import           Data.Conduit 
 import           Data.Conduit.Binary hiding (dropWhile) 

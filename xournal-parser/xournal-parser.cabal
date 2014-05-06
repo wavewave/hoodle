@@ -1,5 +1,5 @@
 Name:		xournal-parser
-Version:	0.5.0.2
+Version:	0.5.0.2.999
 Synopsis:       Xournal file parser
 Description: 	Text parser for xournal xml file
 Homepage:       http://ianwookim.org/hoodle
@@ -34,7 +34,8 @@ Library
                  text > 0.11,
                  lens >= 2.5, 
                  zlib-conduit > 0.5,
-                 conduit-extra >= 1.1
+                 conduit-extra >= 1.1, 
+                 exceptions >= 0.5
 
   Exposed-Modules: 
                    Text.Xournal.Parse

@@ -42,14 +42,14 @@ getDBUSEvent :: (AllEvent -> IO ()) -> TVar Bool -> IO ()
 getDBUSEvent callback tvar = do
     client <- connectSession
     requestName client "org.ianwookim" []
-    forkIO $ listen client matchAny { matchInterface = Just "org.ianwookim.hoodle" 
-                                    , matchMember = Just "filepath"
-                                    } 
+    forkIO $ void $ addMatch client matchAny { matchInterface = Just "org.ianwookim.hoodle"
+                                             , matchMember = Just "filepath"
+                                             }
                getImage
       
-    forkIO $ listen client matchAny { matchInterface = Just "org.ianwookim.hoodle"
-                                    , matchMember = Just "latex"
-                                    }
+    forkIO $ void $ addMatch client matchAny { matchInterface = Just "org.ianwookim.hoodle"
+                                             , matchMember = Just "latex"
+                                             }
                getLaTeX
     forever getLine
   where getImage sig = do 

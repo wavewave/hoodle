@@ -169,7 +169,7 @@ fileStartSync = do
                 origfile <- canonicalizePath filename 
                 let (filedir,_) = splitFileName origfile
                 print filedir 
-                FS.watchDir wm (decodeString filedir) (const True) $ \ev -> do 
+                _ <- FS.watchDir wm (decodeString filedir) (const True) $ \ev -> do
                   let mchangedfile = case ev of 
                         FS.Added fp _ -> Just (encodeString fp)
                         FS.Modified fp _ -> Just (encodeString fp)

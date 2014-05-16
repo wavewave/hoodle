@@ -45,7 +45,6 @@ module Graphics.Hoodle.Render
 ) where
 
 import           Control.Lens (view,set)
-import           Control.Monad (void)
 import           Control.Monad.Identity (runIdentity)
 import           Control.Monad.State hiding (mapM,mapM_)
 import qualified Data.ByteString.Char8 as C
@@ -208,21 +207,23 @@ drawFallBackBkg (Dim w h) = do
 
 -- | 
 renderRBkg :: (RBackground,Dimension) -> Cairo.Render (RBackground,Dimension)
-renderRBkg (RBkgSmpl {}, dim) =  drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
-renderRBkg (r,           dim) =  
-  maybe (drawFallBackBkg dim) 
-        (drawBkgAndRecord . bkgPdfRender)
-        (rbkg_popplerpage r)
-
- return (r,dim)
- 
+renderRBkg (r,dim) = 
+    case r of 
+      (RBkgSmpl _ _ _) -> 
+        drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
+      (RBkgPDF _ _ _ p _) -> 
+        maybe (drawFallBackBkg dim >> return (r,dim)) 
+              (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p
+      (RBkgEmbedPDF _ p _) -> 
+        maybe (drawFallBackBkg dim >> return (r,dim)) 
+              (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p 
   where 
     drawBkgAndRecord rdr = do 
       rdr 
       case rbkg_cairosurface r of
-        Nothing  -> return ()
+        Nothing -> return ()
         Just sfc -> liftIO $ Cairo.renderWith sfc rdr
-
+      return (r,dim)
     bkgPdfRender pg = do 
       let Dim w h = dim 
       Cairo.setSourceRGBA 1 1 1 1
@@ -330,10 +331,28 @@ renderRLayer_InBBox mbbox layer = do
 -- | Background rendering using buffer
 renderRBkg_Buf :: (RBackground,Dimension) 
                -> Cairo.Render (RBackground,Dimension)
-renderRBkg_Buf (b,dim) = do
-    case rbkg_cairosurface b of
-      Nothing  -> void (renderRBkg (b,dim))
-      Just sfc -> do
+renderRBkg_Buf (b,dim) = do 
+    case b of 
+      RBkgSmpl _ _ msfc  -> do  
+        case msfc of 
+          Nothing -> renderRBkg (b,dim) >> return ()
+          Just sfc -> do 
+            Cairo.save
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.restore
+      RBkgPDF _ _ _n _ msfc -> do 
+        case msfc of 
+          Nothing -> renderRBkg (b,dim) >> return ()
+          Just sfc -> do 
+            Cairo.save
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.restore
+      RBkgEmbedPDF _ _ msfc -> do 
+        case msfc of 
+          Nothing -> renderRBkg (b,dim) >> return ()
+          Just sfc -> do 
             Cairo.save
             Cairo.setSourceSurface sfc 0 0 
             Cairo.paint 

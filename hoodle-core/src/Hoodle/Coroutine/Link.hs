@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Link where
 import           Control.Applicative
 import           Control.Concurrent (forkIO)
 import           Control.Lens (at,view,set,(%~))
-import           Control.Monad (forever)
+import           Control.Monad (forever,void)
 import           Control.Monad.State (get,put,modify,liftIO,guard,when)
 import           Control.Monad.Trans.Maybe 
 import qualified Data.ByteString.Char8 as B 
@@ -285,7 +285,7 @@ startLinkReceiver = do
     liftIO . forkIO $ do
       client <- connectSession
       requestName client "org.ianwookim" []
-      forkIO $ listen 
+      forkIO $ void $ addMatch
 		 client 
 		 matchAny { matchInterface = Just "org.ianwookim.hoodle" 
 			  , matchMember = Just "link" } 

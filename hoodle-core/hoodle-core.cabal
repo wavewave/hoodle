@@ -27,7 +27,7 @@ Library
   ghc-options: 	-Wall -Werror -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   aeson<0.7,
+  Build-Depends:   aeson>=0.7,
                    aeson-pretty > 0.7,
                    array,
                    attoparsec >= 0.10,
@@ -65,6 +65,7 @@ Library
                    poppler >= 0.12.2.2, 
                    process >= 1.1, 
                    pureMD5, 
+                   -- scientific,
                    stm >= 2, 
                    strict > 0.3,
                    svgcairo >= 0.12,

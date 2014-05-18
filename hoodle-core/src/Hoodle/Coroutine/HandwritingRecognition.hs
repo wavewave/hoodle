@@ -25,13 +25,14 @@ import           Data.Aeson as A
 -- import           Data.Aeson.Encode
 -- import           Data.Aeson.Encode.Pretty
 import qualified Data.Attoparsec as AP
-import           Data.Attoparsec.Number
+-- import           Data.Attoparsec.Number
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import           Data.Foldable (mapM_)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L (lookup)
 import           Data.Maybe
+-- import           Data.Scientific
 import           Data.Strict.Tuple
 import qualified Data.Text as T
 import           Data.Traversable (forM)
@@ -145,23 +146,23 @@ addOneTextBox _evhandler dialog vbox (n,(b,txt)) = do
 mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks = 
     let strks_value = (Array . fromList . map mkAesonStroke) strks 
-        hm0 = HM.insert "writing_area_width" (Number (I 500))
-            . HM.insert "writing_area_height" (Number (I 50))
+        hm0 = HM.insert "writing_area_width" (Number (fromInteger 500))
+            . HM.insert "writing_area_height" (Number (fromInteger 50))
             $ HM.empty
         
         hm1 = HM.insert "writing_guide" (Object hm0) 
             . HM.insert "pre_context" (A.String "")
-            . HM.insert "max_num_results" (Number (I 10))
-            . HM.insert "max_completions" (Number (I 0))
+            . HM.insert "max_num_results" (Number (fromInteger 10))
+            . HM.insert "max_completions" (Number (fromInteger 0))
             . HM.insert "ink" strks_value 
             $ HM.empty             
         hm2 = HM.insert "feedback" (A.String "∅[deleted]")
             . HM.insert "select_type" (A.String "deleted")
             $ HM.empty
-        hm3 = HM.insert "app_version" (Number (D 0.4))
+        hm3 = HM.insert "app_version" (Number 0.4)
             . HM.insert "api_level" (A.String "537.36")
             . HM.insert "device" "hoodle"
-            . HM.insert "input_type" (Number (I 0))
+            . HM.insert "input_type" (Number (fromInteger 0))
             . HM.insert "options" (A.String "enable_pre_space")
             . HM.insert "requests" (Array (fromList [Object hm1, Object hm2]))
             $ HM.empty
@@ -170,10 +171,10 @@ mkAesonInk strks =
               
 mkAesonStroke :: Stroke -> Value 
 mkAesonStroke Stroke {..} = 
-    let xs = map (Number . I . (floor :: Double -> Integer) . fst) stroke_data
-        ys = map (Number . I . (floor :: Double -> Integer) . snd) stroke_data
+    let xs = map (Number . fromInteger . (floor :: Double -> Integer) . fst) stroke_data
+        ys = map (Number . fromInteger . (floor :: Double -> Integer) . snd) stroke_data
     in Array (fromList [Array (fromList xs), Array (fromList ys)])
 mkAesonStroke VWStroke {..} = 
-    let xs = map (Number . I . (floor :: Double -> Integer) . view _1) stroke_vwdata
-        ys = map (Number . I . (floor :: Double -> Integer) . view _2) stroke_vwdata
+    let xs = map (Number . fromInteger . (floor :: Double -> Integer) . view _1) stroke_vwdata
+        ys = map (Number . fromInteger . (floor :: Double -> Integer) . view _2) stroke_vwdata
     in Array (fromList [Array (fromList xs), Array (fromList ys)])

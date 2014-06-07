@@ -57,19 +57,19 @@ import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Predefined 
-import           Data.Hoodle.Zipper 
+import           Data.Hoodle.Predefined
+import           Data.Hoodle.Zipper
 -- from this package
-import Graphics.Hoodle.Render.Background
+import           Graphics.Hoodle.Render.Background
 -- import Graphics.Hoodle.Render.Highlight
-import Graphics.Hoodle.Render.Item 
-import Graphics.Hoodle.Render.Primitive
-import Graphics.Hoodle.Render.Type 
-import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Util 
-import Graphics.Hoodle.Render.Util.HitTest 
+import           Graphics.Hoodle.Render.Item
+import           Graphics.Hoodle.Render.Primitive
+import           Graphics.Hoodle.Render.Type
+import           Graphics.Hoodle.Render.Type.HitTest
+import           Graphics.Hoodle.Render.Util
+import           Graphics.Hoodle.Render.Util.HitTest
 -- 
-import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
+import           Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
 ------------
 -- simple --
@@ -234,7 +234,12 @@ renderRBkg (r,dim) =
 -- |
 renderRItem :: RItem -> Cairo.Render RItem  
 renderRItem itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem itm@(RItemImage img msfc) = do  
+renderRItem itm@(RItemImage img _uuid) = 
+    -- temporarily
+    renderImg (bbxed_content img) >> return itm
+
+
+{-
     case msfc of
       Nothing -> renderImg (bbxed_content img)
       Just sfc -> do 
@@ -249,6 +254,7 @@ renderRItem itm@(RItemImage img msfc) = do
 	Cairo.paint 
 	Cairo.restore
     return itm 
+-}
 renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
     case mrsvg of
       Nothing -> renderSVG (bbxed_content svgbbx)

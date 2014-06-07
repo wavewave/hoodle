@@ -30,13 +30,6 @@ data Arg s = forall i o. Arg (s i o) i
 data Res s = forall i o.  Res (s i o) o 
            | Ign
 
-{-
--- |
-type SObjT s = CrtnT (Arg s) (ResMethodInput s)  
-
--- | 
-type ClientT s = CoroutineT (MethodInput s) (MethodOutput s)
--}
 
 -- | Server object
 type SObjT s m = SrvT (Arg s) (Res s) m  

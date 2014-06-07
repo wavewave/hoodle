@@ -210,12 +210,16 @@ deskDimCont cnstrnt hdl =
 ------------
 
 -- | 
-pageDimension :: Simple Lens (PageArrangement SinglePage) PageDimension
+pageDimension :: Simple Lens (PageArrangement a) PageDimension
 pageDimension = lens getter setter 
-  where getter (SingleArrangement _ pdim _) = pdim
-        getter (ContinuousArrangement _ _ _ _) = error $ "in pageDimension " -- partial 
-        setter (SingleArrangement cdim _ vbbox) pdim = SingleArrangement cdim pdim vbbox
-        setter (ContinuousArrangement _ _ _ _) _pdim = error $ "in pageDimension "  -- partial 
+  where 
+    getter :: PageArrangement a -> PageDimension
+    getter (SingleArrangement _ pdim _) = pdim
+    getter (ContinuousArrangement _ _ _ _) = error $ "in pageDimension " -- partial 
+ 
+    setter :: PageArrangement a -> PageDimension -> PageArrangement a
+    setter (SingleArrangement cdim _ vbbox) pdim = SingleArrangement cdim pdim vbbox
+    setter (ContinuousArrangement _ _ _ _) _pdim = error $ "in pageDimension "  -- partial 
         
 -- | 
 canvasDimension :: Simple Lens (PageArrangement a) CanvasDimension 

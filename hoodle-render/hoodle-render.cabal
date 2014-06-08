@@ -33,6 +33,7 @@ Library
                  hoodle-types >= 0.2.999,
                  gd >= 3000.7, 
                  unix >= 2.5,
+                 unordered-containers, 
                  uuid >= 1.2, 
                  monad-loops >= 0.3,  
                  poppler >= 0.12.2.2
@@ -51,6 +52,7 @@ Library
                    Graphics.Hoodle.Render.Type.HitTest
                    Graphics.Hoodle.Render.Type.Hoodle
                    Graphics.Hoodle.Render.Type.Item
+                   Graphics.Hoodle.Render.Type.RenderCache
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
                    Graphics.Hoodle.Render.Util.HitTest

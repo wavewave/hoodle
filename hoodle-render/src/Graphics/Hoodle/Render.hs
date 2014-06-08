@@ -206,8 +206,10 @@ drawFallBackBkg (Dim w h) = do
   
 
 -- | 
-renderRBkg :: (RBackground,Dimension) -> Cairo.Render (RBackground,Dimension)
-renderRBkg (r,dim) = 
+renderRBkg :: RenderCache 
+           -> (RBackground,Dimension) 
+           -> Cairo.Render (RBackground,Dimension)
+renderRBkg _cache (r,dim) = 
     case r of 
       (RBkgSmpl _ _ _) -> 
         drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
@@ -232,9 +234,9 @@ renderRBkg (r,dim) =
       PopplerPage.pageRender pg
 
 -- |
-renderRItem :: RItem -> Cairo.Render RItem  
-renderRItem itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem itm@(RItemImage img _uuid) = 
+renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
+renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
+renderRItem _ itm@(RItemImage img _uuid) = 
     -- temporarily
     renderImg (bbxed_content img) >> return itm
 
@@ -255,7 +257,7 @@ renderRItem itm@(RItemImage img _uuid) =
 	Cairo.restore
     return itm 
 -}
-renderRItem itm@(RItemSVG svgbbx mrsvg) = do 
+renderRItem _ itm@(RItemSVG svgbbx mrsvg) = do 
     case mrsvg of
       Nothing -> renderSVG (bbxed_content svgbbx)
       Just rsvg -> do 
@@ -271,7 +273,7 @@ renderRItem itm@(RItemSVG svgbbx mrsvg) = do
 	Cairo.restore
 	return () 
     return itm 
-renderRItem itm@(RItemLink lnkbbx mrsvg) = do 
+renderRItem _ itm@(RItemLink lnkbbx mrsvg) = do 
     case mrsvg of
       Nothing -> renderLink (bbxed_content lnkbbx)
       Just rsvg -> do 
@@ -287,7 +289,7 @@ renderRItem itm@(RItemLink lnkbbx mrsvg) = do
 	Cairo.restore
 	return () 
     return itm 
-renderRItem itm@(RItemAnchor ancbbx) = 
+renderRItem _ itm@(RItemAnchor ancbbx) = 
     renderAnchor (bbxed_content ancbbx) >> return itm 
 
 ------------
@@ -295,26 +297,27 @@ renderRItem itm@(RItemAnchor ancbbx) =
 ------------
 
 -- | background drawing in bbox 
-renderRBkg_InBBox :: Maybe BBox 
+renderRBkg_InBBox :: RenderCache 
+                  -> Maybe BBox 
                   -> (RBackground,Dimension) 
                   -> Cairo.Render (RBackground,Dimension)
-renderRBkg_InBBox mbbox (b,dim) = do 
+renderRBkg_InBBox cache mbbox (b,dim) = do 
     clipBBox (fmap (flip inflate 1) mbbox)
-    renderRBkg_Buf (b,dim)
+    renderRBkg_Buf cache (b,dim)
     Cairo.resetClip
     return (b,dim)
 
 
 -- | render RLayer within BBox after hittest items
-renderRLayer_InBBox :: Maybe BBox -> RLayer -> Cairo.Render RLayer
-renderRLayer_InBBox mbbox layer = do  
+renderRLayer_InBBox :: RenderCache -> Maybe BBox -> RLayer -> Cairo.Render RLayer
+renderRLayer_InBBox cache mbbox layer = do  
   clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
                    :- Empty 
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
-  (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
+  (mapM_ (renderRItem cache) . concatMap unHitted  . getB) hittestbbox
   Cairo.resetClip  
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
@@ -325,7 +328,7 @@ renderRLayer_InBBox mbbox layer = do
         Cairo.setOperator Cairo.OperatorSource
         Cairo.paint
         Cairo.setOperator Cairo.OperatorOver
-        (mapM_ renderRItem . concatMap unHitted  . getB) hittestbbox
+        (mapM_ (renderRItem cache) . concatMap unHitted  . getB) hittestbbox
         Cairo.resetClip 
         return layer 
     _ -> return layer 
@@ -335,13 +338,14 @@ renderRLayer_InBBox mbbox layer = do
 -----------------------
 
 -- | Background rendering using buffer
-renderRBkg_Buf :: (RBackground,Dimension) 
+renderRBkg_Buf :: RenderCache
+               -> (RBackground,Dimension) 
                -> Cairo.Render (RBackground,Dimension)
-renderRBkg_Buf (b,dim) = do 
+renderRBkg_Buf cache (b,dim) = do 
     case b of 
       RBkgSmpl _ _ msfc  -> do  
         case msfc of 
-          Nothing -> renderRBkg (b,dim) >> return ()
+          Nothing -> renderRBkg cache (b,dim) >> return ()
           Just sfc -> do 
             Cairo.save
             Cairo.setSourceSurface sfc 0 0 
@@ -349,7 +353,7 @@ renderRBkg_Buf (b,dim) = do
             Cairo.restore
       RBkgPDF _ _ _n _ msfc -> do 
         case msfc of 
-          Nothing -> renderRBkg (b,dim) >> return ()
+          Nothing -> renderRBkg cache (b,dim) >> return ()
           Just sfc -> do 
             Cairo.save
             Cairo.setSourceSurface sfc 0 0 
@@ -357,7 +361,7 @@ renderRBkg_Buf (b,dim) = do
             Cairo.restore
       RBkgEmbedPDF _ _ msfc -> do 
         case msfc of 
-          Nothing -> renderRBkg (b,dim) >> return ()
+          Nothing -> renderRBkg cache (b,dim) >> return ()
           Just sfc -> do 
             Cairo.save
             Cairo.setSourceSurface sfc 0 0 
@@ -366,8 +370,9 @@ renderRBkg_Buf (b,dim) = do
     return (b,dim)
 
 -- | 
-renderRLayer_InBBoxBuf :: Maybe BBox -> RLayer -> Cairo.Render RLayer 
-renderRLayer_InBBoxBuf mbbox lyr = do
+renderRLayer_InBBoxBuf :: RenderCache 
+                       -> Maybe BBox -> RLayer -> Cairo.Render RLayer 
+renderRLayer_InBBoxBuf cache mbbox lyr = do
     case view gbuffer lyr of 
       LyBuf (Just sfc) -> do 
         clipBBox mbbox
@@ -376,39 +381,39 @@ renderRLayer_InBBoxBuf mbbox lyr = do
         Cairo.resetClip 
         return lyr 
       _ -> do 
-        renderRLayer_InBBox mbbox lyr         
+        renderRLayer_InBBox cache mbbox lyr         
 
 -------------------
 -- update buffer
 -------------------
 
 -- | 
-updateLayerBuf :: Dimension -> Maybe BBox -> RLayer -> IO RLayer
-updateLayerBuf (Dim w h) mbbox lyr = do 
+updateLayerBuf :: RenderCache -> Dimension -> Maybe BBox -> RLayer -> IO RLayer
+updateLayerBuf cache (Dim w h) mbbox lyr = do 
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
       Cairo.renderWith sfc $ do 
-        renderRLayer_InBBox mbbox lyr 
+        renderRLayer_InBBox cache mbbox lyr 
       return lyr
     LyBuf Nothing -> do 
       sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
       Cairo.renderWith sfc $ do 
-        renderRLayer_InBBox Nothing lyr
+        renderRLayer_InBBox cache Nothing lyr
       return (set gbuffer (LyBuf (Just sfc)) lyr) 
       
 -- | 
-updatePageBuf :: RPage -> IO RPage 
-updatePageBuf pg = do 
+updatePageBuf :: RenderCache -> RPage -> IO RPage 
+updatePageBuf cache pg = do 
   let dim = view gdimension pg
       mbbox = Just . dimToBBox $ dim 
-  nlyrs <- mapM (updateLayerBuf dim mbbox) . view glayers $ pg 
+  nlyrs <- mapM (updateLayerBuf cache dim mbbox) . view glayers $ pg 
   return (set glayers nlyrs pg)
 
 -- | 
-updateHoodleBuf :: RHoodle -> IO RHoodle 
-updateHoodleBuf hdl = do 
+updateHoodleBuf :: RenderCache -> RHoodle -> IO RHoodle 
+updateHoodleBuf cache hdl = do 
   let pgs = view gpages hdl 
-  npgs <- mapM updatePageBuf pgs
+  npgs <- mapM (updatePageBuf cache) pgs
   return . set gpages npgs $ hdl
 
 -------

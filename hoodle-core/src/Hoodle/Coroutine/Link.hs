@@ -9,7 +9,7 @@
 -- Module      : Hoodle.Coroutine.Link
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -140,8 +140,9 @@ notifyLink cid pcoord = do
 gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 
 gotLink mstr (x,y) = do 
   xst <- get 
-  liftIO $ print mstr 
+  -- liftIO $ print mstr 
   let cid = getCurrentCanvasId xst
+      cache = view renderCache xst
   mr <- runMaybeT $ do 
     str <- (MaybeT . return) mstr 
     let (str1,rem1) = break (== ',') str 
@@ -179,7 +180,7 @@ gotLink mstr (x,y) = do
                 let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
                 case ulbbox of 
                   Middle bbox -> do 
-                    svg <- liftIO $ makeSVGFromSelection hititms bbox
+                    svg <- liftIO $ makeSVGFromSelection cache hititms bbox
                     uuidbstr <- liftIO $ B.pack . show <$> nextRandom
                     deleteSelection 
                     linkInsert "simple" (uuidbstr,url) url (svg_render svg,bbox)  
@@ -204,7 +205,7 @@ gotLink mstr (x,y) = do
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             case ulbbox of 
               Middle bbox -> do 
-                svg <- liftIO $ makeSVGFromSelection hititms bbox
+                svg <- liftIO $ makeSVGFromSelection cache hititms bbox
                 uuid <- liftIO $ nextRandom
                 let uuidbstr' = B.pack (show uuid) 
                 deleteSelection 

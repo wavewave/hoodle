@@ -6,7 +6,7 @@
 -- Module      : Hoodle.Coroutine.Select.ManipulateImage
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -89,14 +89,15 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       Cairo.surfaceFinish (tempSurfaceSrc tsel)
       Cairo.surfaceFinish (tempSurfaceTgt tsel)
       let pnum = (fst . tempInfo) tsel
-      let img = bbxed_content imgbbx
+          img = bbxed_content imgbbx
           obbox = getBBox imgbbx
+          cache = view renderCache xst
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
         forM_ mimg' $ \img' -> do
           rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
           let ntpage = replaceSelection rimg' tpage
-          nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpage (unPageNum pnum)
+          nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
           commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
       invalidateAllInBBox Nothing Efficient      
       return ()
@@ -155,6 +156,7 @@ rotateImage dir imgbbx = do
         hdlmodst = view hoodleModeState xst
         pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox        
         epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
+        cache = view renderCache xst
     case hdlmodst of 
       ViewAppendState _ -> return ()
       SelectState thdl -> do 
@@ -166,7 +168,7 @@ rotateImage dir imgbbx = do
             forM_ mimg' $ \img' -> do 
               rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
               let ntpage = replaceSelection rimg' tpage
-              nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpage (unPageNum pnum)
+              nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
               commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
             invalidateAllInBBox Nothing Efficient      
             return ()

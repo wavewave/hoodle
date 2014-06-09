@@ -60,19 +60,22 @@ type family DrawingFunction (v :: ViewMode) :: * -> *
 -- |
 
 newtype SinglePageDraw a = 
-  SinglePageDraw { unSinglePageDraw :: Bool 
-                                    -> (DrawingArea, Maybe Cairo.Surface) 
-                                    -> (PageNum, Page a) 
-                                    -> ViewInfo SinglePage 
-                                    -> Maybe BBox 
-                                    -> DrawFlag
-                                    -> IO (Page a) }
+  SinglePageDraw 
+  { unSinglePageDraw :: RenderCache 
+                     -> Bool                               -- ^ isCurrentCanvas
+                     -> (DrawingArea, Maybe Cairo.Surface) 
+                     -> (PageNum, Page a) 
+                     -> ViewInfo SinglePage 
+                     -> Maybe BBox 
+                     -> DrawFlag
+                     -> IO (Page a) }
 
 -- | 
 
 newtype ContPageDraw a = 
   ContPageDraw 
-  { unContPageDraw :: Bool
+  { unContPageDraw :: RenderCache
+                   -> Bool                                 -- ^ isCurrentCanvas 
                    -> CanvasInfo ContinuousPage 
                    -> Maybe BBox 
                    -> Hoodle a 
@@ -225,11 +228,11 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x
 
 -- | 
 drawFuncGen :: em 
-               -> ((PageNum,Page em) -> Maybe BBox 
+               -> (RenderCache -> (PageNum,Page em) -> Maybe BBox 
                    -> DrawFlag -> Cairo.Render (Page em)) 
                -> DrawingFunction SinglePage em
 drawFuncGen _typ render = SinglePageDraw func 
-  where func isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
+  where func cache isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
           win <- widgetGetDrawWindow canvas
@@ -238,7 +241,7 @@ drawFuncGen _typ render = SinglePageDraw func
               xformfunc = cairoXform4PageCoordinate geometry pnum
               renderfunc = do
                 xformfunc 
-                pg <- render (pnum,page) mbboxnew flag
+                pg <- render cache (pnum,page) mbboxnew flag
                 -- Start Widget
                 when isCurrentCvs (emphasisCanvasRender ColorBlue geometry)  
                 -- End Widget
@@ -249,12 +252,12 @@ drawFuncGen _typ render = SinglePageDraw func
 
 
 -- | 
-drawFuncSelGen :: ((PageNum,Page SelectMode) -> Maybe BBox 
+drawFuncSelGen :: (RenderCache -> (PageNum,Page SelectMode) -> Maybe BBox 
                    -> DrawFlag -> Cairo.Render ()) 
-                  -> ((PageNum,Page SelectMode) -> Maybe BBox 
+                  -> (RenderCache -> (PageNum,Page SelectMode) -> Maybe BBox 
                       -> DrawFlag -> Cairo.Render ())
                   -> DrawingFunction SinglePage SelectMode  
-drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\x y f -> rencont x y f >> rensel x y f >> return (snd x)) 
+drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\c x y f -> rencont c x y f >> rensel c x y f >> return (snd x)) 
 
 -- |
 emphasisCanvasRender :: PenColor -> CanvasGeometry -> Cairo.Render ()
@@ -294,12 +297,13 @@ emphasisNotifiedRender geometry (pn,BBox (x1,y1) (x2,y2),_) = do
 
 
 -- |
-drawContPageGen :: ((PageNum,Page EditMode) -> Maybe BBox 
+drawContPageGen :: (RenderCache -> (PageNum,Page EditMode) -> Maybe BBox 
                     -> DrawFlag -> Cairo.Render (Int,Page EditMode)) 
                    -> DrawingFunction ContinuousPage EditMode
 drawContPageGen render = ContPageDraw func 
-  where func :: Bool -> CanvasInfo ContinuousPage ->Maybe BBox -> Hoodle EditMode -> DrawFlag -> IO (Hoodle EditMode)
-        func isCurrentCvs cinfo mbbox hdl flag = do 
+  where func :: RenderCache -> Bool -> CanvasInfo ContinuousPage 
+             -> Maybe BBox -> Hoodle EditMode -> DrawFlag -> IO (Hoodle EditMode)
+        func cache isCurrentCvs cinfo mbbox hdl flag = do 
           let arr = view (viewInfo.pageArrangement) cinfo
               pnum = PageNum . view currentPageNum $ cinfo 
               canvas = view drawArea cinfo 
@@ -319,7 +323,7 @@ drawContPageGen render = ContPageDraw func
                 Cairo.identityMatrix 
                 cairoXform4PageCoordinate geometry pn
                 let pgmbbox = fmap (getBBoxInPageCoord geometry pn) mbboxnew
-                render (pn,pg) pgmbbox flag
+                render cache (pn,pg) pgmbbox flag
               renderfunc = do
                 xformfunc 
                 ndrawpgs <- mapM onepagerender drawpgs 
@@ -338,14 +342,15 @@ drawContPageGen render = ContPageDraw func
 
 
 -- |
-drawContPageSelGen :: ((PageNum,Page EditMode) -> Maybe BBox 
+drawContPageSelGen :: (RenderCache -> (PageNum,Page EditMode) -> Maybe BBox 
                        -> DrawFlag -> Cairo.Render (Int,Page EditMode)) 
-                   -> ((PageNum, Page SelectMode) -> Maybe BBox 
+                   -> (RenderCache -> (PageNum, Page SelectMode) -> Maybe BBox 
                        -> DrawFlag -> Cairo.Render (Int,Page SelectMode))
                    -> DrawingFunction ContinuousPage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
-  where func :: Bool -> CanvasInfo ContinuousPage ->Maybe BBox -> Hoodle SelectMode ->DrawFlag -> IO (Hoodle SelectMode) 
-        func isCurrentCvs cinfo mbbox thdl flag = do 
+  where func :: RenderCache -> Bool -> CanvasInfo ContinuousPage 
+             -> Maybe BBox -> Hoodle SelectMode ->DrawFlag -> IO (Hoodle SelectMode) 
+        func cache isCurrentCvs cinfo mbbox thdl flag = do 
           let arr = view (viewInfo.pageArrangement) cinfo
               pnum = PageNum . view currentPageNum $ cinfo 
               mtpage = view gselSelected thdl 
@@ -366,13 +371,13 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               onepagerender (pn,pg) = do  
                 Cairo.identityMatrix 
                 cairoXform4PageCoordinate geometry pn
-                rendergen (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag
+                rendergen cache (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag
               selpagerender :: (PageNum, Page SelectMode) 
                             -> Cairo.Render (Int, Page SelectMode) 
               selpagerender (pn,pg) = do 
                 Cairo.identityMatrix 
                 cairoXform4PageCoordinate geometry pn
-                rendersel (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag
+                rendersel cache (pn,pg) (fmap (getBBoxInPageCoord geometry pn) mbboxnew) flag
               renderfunc :: Cairo.Render (Hoodle SelectMode)
               renderfunc = do
                 xformfunc 
@@ -398,48 +403,48 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
 -- |
 drawSinglePage :: DrawingFunction SinglePage EditMode
 drawSinglePage = drawFuncGen EditMode f 
-  where f (_,page) _ Clear = do 
-          pg' <- cairoRenderOption (RBkgDrawPDF,DrawFull) page 
+  where f cache (_,page) _ Clear = do 
+          pg' <- cairoRenderOption (RBkgDrawPDF,DrawFull) cache page 
           return pg' 
-        f(_,page) mbbox BkgEfficient = do 
-          InBBoxBkgBuf pg' <- cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page) 
+        f cache (_,page) mbbox BkgEfficient = do 
+          InBBoxBkgBuf pg' <- cairoRenderOption (InBBoxOption mbbox) cache (InBBoxBkgBuf page) 
           return pg' 
-        f (_,page) mbbox Efficient = do 
-          InBBox pg' <- cairoRenderOption (InBBoxOption mbbox) (InBBox page) 
+        f cache (_,page) mbbox Efficient = do 
+          InBBox pg' <- cairoRenderOption (InBBoxOption mbbox) cache (InBBox page) 
           return pg' 
 
 -- |
 drawSinglePageSel :: CanvasGeometry -> DrawingFunction SinglePage SelectMode    
 drawSinglePageSel geometry = drawFuncSelGen rendercontent renderselect
-  where rendercontent (_pnum,tpg) mbbox flag = do
+  where rendercontent cache (_pnum,tpg) mbbox flag = do
           let pg' = hPage2RPage tpg 
           case flag of 
-            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) pg' >> return ()
-            BkgEfficient -> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf pg') >> return ()            
-            Efficient -> cairoRenderOption (InBBoxOption mbbox) (InBBox pg') >> return ()
+            Clear -> cairoRenderOption (RBkgDrawPDF,DrawFull) cache pg' >> return ()
+            BkgEfficient -> cairoRenderOption (InBBoxOption mbbox) cache (InBBoxBkgBuf pg') >> return ()            
+            Efficient -> cairoRenderOption (InBBoxOption mbbox) cache (InBBox pg') >> return ()
           return ()
-        renderselect (_pnum,tpg) mbbox _flag = do 
+        renderselect _cache (_pnum,tpg) mbbox _flag = do 
           cairoHittedBoxDraw geometry tpg mbbox
           return ()
 
 -- | 
 drawContHoodle :: DrawingFunction ContinuousPage EditMode
 drawContHoodle = drawContPageGen f  
-  where f (PageNum n,page) _ Clear = (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-        f (PageNum n,page) mbbox BkgEfficient = (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page)                  
-        f (PageNum n,page) mbbox Efficient = (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
+  where f cache (PageNum n,page) _ Clear = (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) cache page 
+        f cache (PageNum n,page) mbbox BkgEfficient = (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) cache (InBBoxBkgBuf page)                  
+        f cache (PageNum n,page) mbbox Efficient = (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) cache (InBBox page)
 
 
 -- |
 drawContHoodleSel :: CanvasGeometry 
                   -> DrawingFunction ContinuousPage SelectMode
 drawContHoodleSel geometry = drawContPageSelGen renderother renderselect 
-  where renderother (PageNum n,page) mbbox flag = do
+  where renderother cache (PageNum n,page) mbbox flag = do
           case flag of 
-            Clear -> (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) page 
-            BkgEfficient -> (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) (InBBoxBkgBuf page)            
-            Efficient -> (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) (InBBox page)
-        renderselect (PageNum n,tpg) mbbox _flag = do
+            Clear -> (,) n <$> cairoRenderOption (RBkgDrawPDF,DrawFull) cache page 
+            BkgEfficient -> (,) n . unInBBoxBkgBuf <$> cairoRenderOption (InBBoxOption mbbox) cache (InBBoxBkgBuf page)            
+            Efficient -> (,) n . unInBBox <$> cairoRenderOption (InBBoxOption mbbox) cache (InBBox page)
+        renderselect _cache (PageNum n,tpg) mbbox _flag = do
           cairoHittedBoxDraw geometry tpg mbbox 
           return (n,tpg)
 
@@ -553,11 +558,12 @@ renderSelectHandle geometry bbox = do
   Cairo.fill
 
 -- | 
-canvasImageSurface :: Maybe Double  -- ^ multiply 
+canvasImageSurface :: RenderCache
+                   -> Maybe Double  -- ^ multiply 
                    -> CanvasGeometry
                    -> Hoodle EditMode 
                    -> IO (Cairo.Surface,Dimension)
-canvasImageSurface mmulti geometry hdl = do 
+canvasImageSurface cache mmulti geometry hdl = do 
   let ViewPortBBox bbx_desk = getCanvasViewPort geometry 
       nbbx_desk = case mmulti of
                     Nothing -> bbx_desk 
@@ -580,7 +586,7 @@ canvasImageSurface mmulti geometry hdl = do
             let (ws_cvs,hs_cvs) = (w_cvs/(2*z+1),h_cvs/(2*z+1)) 
             Cairo.translate (z*ws_cvs) (z*hs_cvs)
         cairoXform4PageCoordinate geometry pn
-        cairoRenderOption (InBBoxOption Nothing) (InBBox pg)
+        cairoRenderOption (InBBoxOption Nothing) cache (InBBox pg)
       renderfunc = do 
         Cairo.setSourceRGBA 0.5 0.5 0.5 1
         Cairo.rectangle 0 0 w_cvs h_cvs        

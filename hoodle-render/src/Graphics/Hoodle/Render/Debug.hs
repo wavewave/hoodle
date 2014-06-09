@@ -54,8 +54,8 @@ import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 -- Dummy (for testing) 
 -----
 
-renderRBkg_Dummy :: (RBackground,Dimension) -> Cairo.Render ()
-renderRBkg_Dummy (_,Dim w h) = do 
+renderRBkg_Dummy :: RenderCache -> (RBackground,Dimension) -> Cairo.Render ()
+renderRBkg_Dummy _ (_,Dim w h) = do 
     Cairo.setSourceRGBA 1 1 1 1
     Cairo.rectangle 0 0 w h 
     Cairo.fill 
@@ -75,8 +75,8 @@ renderRBkg_NoPDF _ (RBkgEmbedPDF _ _ _,_) = return ()
 --------------
 
 -- | render only bounding box of a StrokeBBox      
-renderStrkBBx_BBoxOnly :: RenderCache -> BBoxed Stroke -> Cairo.Render () 
-renderStrkBBx_BBoxOnly _ sbbox = do  
+renderStrkBBx_BBoxOnly :: BBoxed Stroke -> Cairo.Render () 
+renderStrkBBx_BBoxOnly sbbox = do  
     let s = bbxed_content sbbox
     case M.lookup (stroke_color s) predefined_pencolor of 
       Just (r,g,b,a) -> Cairo.setSourceRGBA r g b a
@@ -88,24 +88,24 @@ renderStrkBBx_BBoxOnly _ sbbox = do
     Cairo.stroke
   
 -- |     
-renderImgBBx_BBoxOnly :: RenderCache -> BBoxed Image -> Cairo.Render ()
-renderImgBBx_BBoxOnly _ ibbox = do 
+renderImgBBx_BBoxOnly :: BBoxed Image -> Cairo.Render ()
+renderImgBBx_BBoxOnly ibbox = do 
     Cairo.setSourceRGBA 0 0 0 1
     Cairo.setLineWidth 10
     let BBox (x1,y1) (x2,y2) = getBBox ibbox
     Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
     Cairo.stroke
 
-renderSVGBBx_BBoxOnly :: RenderCache -> BBoxed SVG -> Cairo.Render ()
-renderSVGBBx_BBoxOnly _ svg = do 
+renderSVGBBx_BBoxOnly :: BBoxed SVG -> Cairo.Render ()
+renderSVGBBx_BBoxOnly svg = do 
     Cairo.setSourceRGBA 0 0 0 1
     Cairo.setLineWidth 10
     let BBox (x1,y1) (x2,y2) = getBBox svg
     Cairo.rectangle x1 y1 (x2-x1) (y2-y1)
     Cairo.stroke
 
-renderLnkBBx_BBoxOnly :: RenderCache -> BBoxed Link -> Cairo.Render ()
-renderLnkBBx_BBoxOnly _ lnk = do 
+renderLnkBBx_BBoxOnly :: BBoxed Link -> Cairo.Render ()
+renderLnkBBx_BBoxOnly lnk = do 
     Cairo.setSourceRGBA 0 0 0 1
     Cairo.setLineWidth 10
     let BBox (x1,y1) (x2,y2) = getBBox lnk

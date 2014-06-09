@@ -3,7 +3,7 @@
 -- Module      : Hoodle.Widget.Layer
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -73,7 +73,8 @@ startLayerWidget (cid,_cinfo,_geometry) ToggleShowContent = do
 startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
     let hdl = getHoodle xst
-    (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface Nothing geometry hdl)
+        cache = view renderCache xst
+    (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache Nothing geometry hdl)
     -- need to draw other widgets here                             
     let otherwidgets = delete LayerWidget allWidgets 
     liftIO $ Cairo.renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 

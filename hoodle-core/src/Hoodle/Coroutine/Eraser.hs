@@ -1,9 +1,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Eraser 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -78,9 +78,10 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
           let currhdl     = unView . view hoodleModeState $ xstate 
               dim         = view gdimension page
               pgnum       = view currentPageNum cvsInfo
-              currlayer = getCurrentLayer page
+              currlayer   = getCurrentLayer page
+              cache       = view renderCache xstate
           let (newitms,maybebbox) = St.runState (eraseHitted hittestitem) Nothing
-          newlayerbbox <- liftIO . updateLayerBuf dim maybebbox 
+          newlayerbbox <- liftIO . updateLayerBuf cache dim maybebbox 
                           . set gitems newitms $ currlayer 
           let newpagebbox = adjustCurrentLayer newlayerbbox page 
               newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl

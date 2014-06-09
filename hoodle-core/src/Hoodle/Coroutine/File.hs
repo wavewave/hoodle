@@ -8,7 +8,7 @@
 -- Module      : Hoodle.Coroutine.File 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -134,11 +134,11 @@ sequence1_ _ [a] = a
 sequence1_ i (a:as) = a >> i >> sequence1_ i as 
 
 -- | 
-renderjob :: RHoodle -> FilePath -> IO () 
-renderjob h ofp = do 
+renderjob :: RenderCache -> RHoodle -> FilePath -> IO () 
+renderjob cache h ofp = do 
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let Dim width height = view gdimension p  
-  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
+  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) cache x >> return () 
   Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
     (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
 
@@ -153,7 +153,8 @@ fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) act
       else do      
         xstate <- get 
         let hdl = getHoodle xstate 
-        liftIO (renderjob hdl filename) 
+            cache = view renderCache xstate
+        liftIO (renderjob cache hdl filename) 
 
 -- | 
 fileStartSync :: MainCoroutine ()
@@ -199,11 +200,12 @@ exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (re
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".svg" 
       then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
-      else do      
+      else do
+        cache <- view renderCache <$> get
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
         liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
-         cairoRenderOption (InBBoxOption Nothing) (InBBox cpg) >> return ()
+         cairoRenderOption (InBBoxOption Nothing) cache (InBBox cpg) >> return ()
 
 -- | 
 fileLoad :: FilePath -> MainCoroutine () 
@@ -227,7 +229,9 @@ resetHoodleBuffers :: MainCoroutine ()
 resetHoodleBuffers = do 
     liftIO $ putStrLn "resetHoodleBuffers called"
     xst <- get 
-    nhdlst <- liftIO $ resetHoodleModeStateBuffers (view hoodleModeState xst)
+    nhdlst <- liftIO $ resetHoodleModeStateBuffers  
+                         (view renderCache xst)
+                         (view hoodleModeState xst)
     let nxst = set hoodleModeState nhdlst xst
     put nxst     
 
@@ -388,10 +392,11 @@ fileLoadSVG = do
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
       nxstate <- get 
+      let cache = view renderCache nxstate
       thdl <- case view hoodleModeState nxstate of
                 SelectState thdl' -> return thdl'
                 _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
-      nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+      nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
       put ( ( set hoodleModeState (SelectState nthdl) 
             . set isOneTimeSelectMode YesAfterSelect) nxstate)
       invalidateAll 
@@ -461,11 +466,11 @@ mkRevisionHdlFile hdl = do
     return (md5str,name) 
 
 
-mkRevisionPdfFile :: RHoodle -> String -> IO ()
-mkRevisionPdfFile hdl fname = do 
+mkRevisionPdfFile :: RenderCache -> RHoodle -> String -> IO ()
+mkRevisionPdfFile cache hdl fname = do 
     hdir <- getHomeDirectory
     tempfile <- mkTmpFile "pdf"
-    renderjob hdl tempfile 
+    renderjob cache hdl tempfile 
     let nfilename = fname <.> "pdf"
         vcsdir = hdir </> ".hoodle.d" </> "vcs"
     b <- doesDirectoryExist vcsdir 
@@ -476,14 +481,15 @@ mkRevisionPdfFile hdl fname = do
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
     rhdl <- getHoodle <$> get 
-    let hdl = rHoodle2Hoodle rhdl 
+    cache <- view renderCache <$> get
+    let hdl = rHoodle2Hoodle rhdl
     rmini <- minibufDialog "Commit Message:"
     case rmini of 
       Right [] -> return ()
       Right strks' -> do
         doIOaction $ \_evhandler -> do 
           (md5str,fname) <- mkRevisionHdlFile hdl
-          mkRevisionPdfFile rhdl fname
+          mkRevisionPdfFile cache rhdl fname
           return (UsrEv (GotRevisionInk md5str strks'))
         r <- waitSomeEvent (\case GotRevisionInk _ _ -> True ; _ -> False )
         let GotRevisionInk md5str strks = r          
@@ -501,7 +507,7 @@ fileVersionSave = do
         txtstr <- maybe "" id <$> textInputDialog
         doIOaction $ \_evhandler -> do 
           (md5str,fname) <- mkRevisionHdlFile hdl
-          mkRevisionPdfFile rhdl fname
+          mkRevisionPdfFile cache rhdl fname
           return (UsrEv (GotRevision md5str txtstr))
         r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
         let GotRevision md5str txtstr' = r          
@@ -520,14 +526,16 @@ fileVersionSave = do
 
 showRevisionDialog :: Hoodle -> [Revision] -> MainCoroutine ()
 showRevisionDialog hdl revs = 
-    modify (tempQueue %~ enqueue action) 
+    liftM (view renderCache) get >>= \cache -> 
+    modify (tempQueue %~ enqueue (action cache)) 
     >> waitSomeEvent (\case GotOk -> True ; _ -> False)
     >> return ()
   where 
-    action = mkIOaction $ \_evhandler -> do 
+    action cache 
+       = mkIOaction $ \_evhandler -> do 
                dialog <- dialogNew
                vbox <- dialogGetUpper dialog
-               mapM_ (addOneRevisionBox vbox hdl) revs 
+               mapM_ (addOneRevisionBox cache vbox hdl) revs 
                _btnOk <- dialogAddButton dialog "Ok" ResponseOk
                widgetShowAll dialog
                _res <- dialogRun dialog
@@ -554,15 +562,15 @@ mkPangoText str = do
     layout <- liftIO $ pangordr 
     rdr layout
 
-addOneRevisionBox :: VBox -> Hoodle -> Revision -> IO ()
-addOneRevisionBox vbox hdl rev = do 
+addOneRevisionBox :: RenderCache -> VBox -> Hoodle -> Revision -> IO ()
+addOneRevisionBox cache vbox hdl rev = do 
     cvs <- drawingAreaNew 
     cvs `on` sizeRequest $ return (Requisition 250 25)
     cvs `on` exposeEvent $ tryEvent $ do 
       drawwdw <- liftIO $ widgetGetDrawWindow cvs 
       liftIO . renderWithDrawable drawwdw $ do 
         case rev of 
-          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ cairoRender strks
+          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache) strks
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"

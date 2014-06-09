@@ -3,7 +3,7 @@
 -- Module      : Hoodle.Widget.PanZoom
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -84,13 +84,14 @@ startPanZoomWidget :: PanZoomTouch
 startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do 
     xst <- get 
     let hdl = getHoodle xst
+        cache = view renderCache xst
     case mmode of 
       Nothing -> togglePanZoom cid
       Just (mode,(oxy,owxy)) -> do 
         (srcsfc,Dim wsfc hsfc) <- case mode of 
-                                    Moving -> liftIO (canvasImageSurface Nothing geometry hdl)
-                                    Zooming -> liftIO (canvasImageSurface (Just 1) geometry hdl)
-                                    Panning _ -> liftIO (canvasImageSurface (Just 1) geometry hdl) 
+          Moving -> liftIO (canvasImageSurface cache Nothing geometry hdl)
+          Zooming -> liftIO (canvasImageSurface cache (Just 1) geometry hdl)
+          Panning _ -> liftIO (canvasImageSurface cache (Just 1) geometry hdl) 
         -- need to draw other widgets here                             
         let otherwidgets = delete PanZoomWidget allWidgets 
         liftIO $ Cairo.renderWith 

@@ -114,6 +114,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
       . view hoodleModeState =<< get 
   where action thdl = do 
           xst <- get 
+          let cache = view renderCache xst
           case view gselSelected thdl of 
             Nothing -> return () 
             Just (n,tpg) -> do 
@@ -128,7 +129,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
                 Right _ -> error "processContextMenu: activelayer"
-              nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg n
+              nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg n
               commit . set hoodleModeState (SelectState nthdl)
                 =<< (liftIO (updatePageAll (SelectState nthdl) xst))
               invalidateAll 
@@ -202,7 +203,8 @@ linkSelectionWithFile fname = do
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             in case ulbbox of 
               Middle bbox -> do 
-                svg <- liftIO $ makeSVGFromSelection hititms bbox
+                cache <- view renderCache <$> get 
+                svg <- liftIO $ makeSVGFromSelection cache hititms bbox
                 uuid <- liftIO $ nextRandom
                 let uuidbstr = B.pack (show uuid) 
                 deleteSelection 
@@ -215,32 +217,34 @@ exportCurrentSelectionAsSVG :: [RItem] -> BBox -> MainCoroutine ()
 exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
     fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
-    action filename =
+    action filename = do
+      cache <- view renderCache <$> get
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".svg" 
-      then fileExtensionInvalid (".svg","export") 
-           >> exportCurrentSelectionAsSVG hititms bbox
-      else do      
-        liftIO $ Cairo.withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> 
-          Cairo.renderWith s $ do 
-            Cairo.translate (-ulx) (-uly)
-            mapM_ renderRItem hititms
+        then fileExtensionInvalid (".svg","export") 
+             >> exportCurrentSelectionAsSVG hititms bbox
+        else do      
+          liftIO $ Cairo.withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> 
+            Cairo.renderWith s $ do 
+              Cairo.translate (-ulx) (-uly)
+              mapM_ (renderRItem cache) hititms
 
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine () 
 exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) = 
     fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
-    action filename =
+    action filename = do
+      cache <- view renderCache <$> get
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".pdf" 
-      then fileExtensionInvalid (".svg","export") 
-           >> exportCurrentSelectionAsPDF hititms bbox
-      else do      
-        liftIO $ Cairo.withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> 
-          Cairo.renderWith s $ do 
-            Cairo.translate (-ulx) (-uly)
-            mapM_ renderRItem  hititms
+        then fileExtensionInvalid (".svg","export") 
+             >> exportCurrentSelectionAsPDF hititms bbox
+        else do      
+          liftIO $ Cairo.withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> 
+            Cairo.renderWith s $ do 
+              Cairo.translate (-ulx) (-uly)
+              mapM_ (renderRItem cache) hititms
 
 -- |
 exportImage :: S.Image -> MainCoroutine ()

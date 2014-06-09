@@ -3,7 +3,7 @@
 -- Module      : Hoodle.Coroutine.VerticalSpace
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -78,6 +78,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
   where 
     verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) = do 
       hdl <- liftM getHoodle get 
+      cache <- view renderCache <$> get
       cpg <- getCurrentPageCurr 
       let (itms,npg,hltedLayers) = splitPageByHLine y cpg 
           nhdl = set (gpages.at n) (Just npg) hdl 
@@ -85,7 +86,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
       case mbbx of
         Nothing -> return ()   
         Just bbx -> do 
-          (sfcbkg,Dim w h) <- liftIO $ canvasImageSurface Nothing geometry nhdl 
+          (sfcbkg,Dim w h) <- liftIO $ canvasImageSurface cache Nothing geometry nhdl 
           sfcitm <- liftIO $ Cairo.createImageSurface 
                                Cairo.FormatARGB32 (floor w) (floor h)
           sfctot <- liftIO $ Cairo.createImageSurface 
@@ -93,7 +94,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
           liftIO $ Cairo.renderWith sfcitm $ do 
             Cairo.identityMatrix 
             cairoXform4PageCoordinate geometry pnum
-            mapM_ renderRItem itms
+            mapM_ (renderRItem cache) itms
           ctime <- liftIO getCurrentTime 
           verticalSpaceProcess cid geometry (bbx,hltedLayers,pnum,cpg) (x,y) 
             (sfcbkg,sfcitm,sfctot) ctime 

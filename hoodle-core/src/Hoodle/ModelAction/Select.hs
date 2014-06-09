@@ -135,11 +135,14 @@ updateTempHoodleSelect thdl tpage pagenum =
      $ thdl 
      
 -- |
-updateTempHoodleSelectIO :: Hoodle SelectMode -> Page SelectMode -> Int
-                             -> IO (Hoodle SelectMode)
-updateTempHoodleSelectIO thdl tpage pagenum = do   
+updateTempHoodleSelectIO :: RenderCache 
+                         -> Hoodle SelectMode 
+                         -> Page SelectMode 
+                         -> Int
+                         -> IO (Hoodle SelectMode)
+updateTempHoodleSelectIO cache thdl tpage pagenum = do   
   let pgs = view gselAll thdl 
-  newpage <- (updatePageBuf.hPage2RPage) tpage
+  newpage <- (updatePageBuf cache . hPage2RPage) tpage
   let pgs' = M.adjust (const newpage) pagenum pgs
   return $  set gselAll pgs' 
             . set gselSelected (Just (pagenum,tpage))
@@ -346,10 +349,10 @@ data ItmsNImg = ItmsNImg { itmNimg_itms :: [RItem]
 
 
 -- | 
-mkItmsNImg :: CanvasGeometry -> Page SelectMode -> IO ItmsNImg
-mkItmsNImg _geometry tpage = do 
+mkItmsNImg :: RenderCache -> Page SelectMode -> IO ItmsNImg
+mkItmsNImg cache tpage = do 
     let itms = getSelectedItms tpage
-        drawselection = mapM_ renderRItem itms 
+        drawselection = mapM_ (renderRItem cache) itms 
         Dim cw ch = view gdimension tpage 
         mbbox = case getULBBoxFromSelected tpage of 
                   Middle bbox -> Just bbox 

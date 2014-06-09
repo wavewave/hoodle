@@ -57,10 +57,11 @@ createTempRender geometry x = do
     xst <- get
     let cinfobox = view currentCanvasInfo xst 
         mcvssfc = view (unboxLens mDrawSurface) cinfobox 
+        cache = view renderCache xst
     let hdl = getHoodle xst
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
     srcsfc <- liftIO $  
-      maybe (fst <$> canvasImageSurface Nothing geometry hdl)
+      maybe (fst <$> canvasImageSurface cache Nothing geometry hdl)
             (\cvssfc -> do 
               sfc <- Cairo.createImageSurface 
                        Cairo.FormatARGB32 (floor cw) (floor ch) 
@@ -128,6 +129,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           let currhdl = getHoodle  xstate 
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
+              cache = view renderCache xstate
           forM_ mpage $ \_page -> do 
             trdr <- createTempRender geometry (empty |> (x,y,z)) 
             pdraw <-penProcess cid pnum geometry trdr ((x,y),z) 
@@ -140,7 +142,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                 if x1 <= 1e-3      -- this is ad hoc but.. 
                   then invalidateAll
                   else do  
-                    (newhdl,bbox) <- liftIO $ addPDraw pinfo currhdl pnum pdraw
+                    (newhdl,bbox) <- liftIO $ addPDraw cache pinfo currhdl pnum pdraw
                     commit . set hoodleModeState (ViewAppendState newhdl) 
                       =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
                     let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord

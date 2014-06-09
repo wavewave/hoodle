@@ -18,7 +18,6 @@
 module Hoodle.Coroutine.Default where
 
 import           Control.Applicative ((<$>))
--- import           Control.Category
 import           Control.Concurrent 
 import           Control.Lens (_1,over,view,set,at,(.~),(%~))
 import           Control.Monad.Reader hiding (mapM_)
@@ -128,7 +127,8 @@ initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar
   st6 <- getFileContent mfname st5
   -- very dirty, need to be cleaned 
   let hdlst6 = view hoodleModeState st6
-  hdlst7 <- resetHoodleModeStateBuffers hdlst6
+      cache = view renderCache st6
+  hdlst7 <- resetHoodleModeStateBuffers cache hdlst6
   let st7 = set hoodleModeState hdlst7 st6
   -- 
   vbox <- vBoxNew False 0 

@@ -8,7 +8,7 @@
 -- Module      : Hoodle.Coroutine.TextInput 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -286,12 +286,13 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  
+        cache = view renderCache xstate
     modeChange ToSelectMode 
     nxstate <- get 
     thdl <- case view hoodleModeState nxstate of
               SelectState thdl' -> return thdl'
               _ -> (lift . EitherT . return . Left . Other) "svgInsert"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+    nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
     put (set hoodleModeState (SelectState nthdl) nxstate)
     commit_
     invalidateAll 
@@ -419,10 +420,11 @@ insertItemAt mpcoord ritm = do
         ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
     modeChange ToSelectMode 
     nxst <- get 
+    let cache = view renderCache nxst
     thdl <- case view hoodleModeState nxst of
       SelectState thdl' -> return thdl'
       _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-    nthdl <- liftIO $ updateTempHoodleSelectIO thdl ntpg pgnum 
+    nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
     put ( ( set hoodleModeState (SelectState nthdl) 
           . set isOneTimeSelectMode YesAfterSelect) nxst)
     invalidateAll  

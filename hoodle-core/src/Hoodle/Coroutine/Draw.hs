@@ -57,33 +57,36 @@ invalidateGeneral :: CanvasId -> Maybe BBox -> DrawFlag
 invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do 
     xst <- get 
     unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
-  where fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
-        fsingle xstate cvsInfo = do 
-          let cpn = PageNum . view currentPageNum $ cvsInfo 
-              isCurrentCvs = cid == getCurrentCanvasId xstate
-              epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState xstate)
-              cvs = view drawArea cvsInfo
-              msfc = view mDrawSurface cvsInfo 
-          case epage of 
-            Left page -> do  
-              liftIO (unSinglePageDraw drawf isCurrentCvs (cvs,msfc) (cpn,page)
-                      <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
-              return ()
-            Right tpage -> do 
-              liftIO (unSinglePageDraw drawfsel isCurrentCvs (cvs,msfc) (cpn,tpage)
-                      <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
-              return ()
-        fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
-        fcont xstate cvsInfo = do 
-          let hdlmodst = view hoodleModeState xstate 
-              isCurrentCvs = cid == getCurrentCanvasId xstate
-          case hdlmodst of 
-            ViewAppendState hdl -> do  
-              hdl' <- liftIO (unContPageDraw drawcont isCurrentCvs cvsInfo mbbox hdl flag)
-              put (set hoodleModeState (ViewAppendState hdl') xstate)
-            SelectState thdl -> do 
-              thdl' <- liftIO (unContPageDraw drawcontsel isCurrentCvs cvsInfo mbbox thdl flag)
-              put (set hoodleModeState (SelectState thdl') xstate) 
+  where 
+    fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
+    fsingle xstate cvsInfo = do 
+      let cpn = PageNum . view currentPageNum $ cvsInfo 
+	  isCurrentCvs = cid == getCurrentCanvasId xstate
+	  epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState xstate)
+	  cvs = view drawArea cvsInfo
+	  msfc = view mDrawSurface cvsInfo 
+	  cache = view renderCache xstate
+      case epage of 
+	Left page -> do  
+	  liftIO (unSinglePageDraw drawf cache isCurrentCvs (cvs,msfc) (cpn,page)
+		  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+	  return ()
+	Right tpage -> do 
+	  liftIO (unSinglePageDraw drawfsel cache isCurrentCvs (cvs,msfc) (cpn,tpage)
+		  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+	  return ()
+    fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
+    fcont xstate cvsInfo = do 
+      let hdlmodst = view hoodleModeState xstate 
+	  isCurrentCvs = cid == getCurrentCanvasId xstate
+	  cache = view renderCache xstate
+      case hdlmodst of 
+	ViewAppendState hdl -> do  
+	  hdl' <- liftIO (unContPageDraw drawcont cache isCurrentCvs cvsInfo mbbox hdl flag)
+	  put (set hoodleModeState (ViewAppendState hdl') xstate)
+	SelectState thdl -> do 
+	  thdl' <- liftIO (unContPageDraw drawcontsel cache isCurrentCvs cvsInfo mbbox thdl flag)
+	  put (set hoodleModeState (SelectState thdl') xstate) 
           
 -- |         
 

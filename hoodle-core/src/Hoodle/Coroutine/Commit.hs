@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Commit 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -48,10 +48,11 @@ undo :: MainCoroutine ()
 undo = do 
     xstate <- get
     let utable = view undoTable xstate
+        cache = view renderCache xstate
     case getPrevUndo utable of 
       Nothing -> liftIO $ putStrLn "no undo item yet"
       Just (hdlmodst1,newtable) -> do 
-        hdlmodst <- liftIO $ resetHoodleModeStateBuffers hdlmodst1 
+        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1 
         put . set hoodleModeState hdlmodst
             . set undoTable newtable 
             =<< (liftIO (updatePageAll hdlmodst xstate))
@@ -63,10 +64,11 @@ redo :: MainCoroutine ()
 redo = do 
     xstate <- get
     let utable = view undoTable xstate
+        cache = view renderCache xstate
     case getNextUndo utable of 
       Nothing -> liftIO $ putStrLn "no redo item"
       Just (hdlmodst1,newtable) -> do 
-        hdlmodst <- liftIO $ resetHoodleModeStateBuffers hdlmodst1         
+        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
         put . set hoodleModeState hdlmodst
             . set undoTable newtable 
             =<< (liftIO (updatePageAll hdlmodst xstate))

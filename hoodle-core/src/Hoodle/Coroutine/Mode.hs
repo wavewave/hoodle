@@ -3,9 +3,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Mode 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -61,9 +61,10 @@ modeChange command = do
         whenselect xstate thdl = do 
           let pages = view gselAll thdl
               mselect = view gselSelected thdl
+              cache = view renderCache xstate
           npages <- maybe (return pages) 
                           (\(spgn,spage) -> do 
-                             npage <- (liftIO.updatePageBuf.hPage2RPage) spage  
+                             npage <- (liftIO.updatePageBuf cache.hPage2RPage) spage  
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  

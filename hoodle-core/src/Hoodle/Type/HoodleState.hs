@@ -46,6 +46,7 @@ module Hoodle.Type.HoodleState
 , tempLog 
 , tempQueue 
 , statusBar
+, renderCache
 -- , cursorInfo
 -- 
 , hoodleFileName 
@@ -93,6 +94,7 @@ import           Control.Category
 import           Control.Lens (Simple,Lens,view,set,lens)
 import           Control.Monad.State hiding (get,modify)
 import           Data.Functor.Identity (Identity(..))
+import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Time.Clock
@@ -157,6 +159,7 @@ data HoodleState =
                 , _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent)
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Gtk.Statusbar
+                , _renderCache :: RenderCache
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -270,6 +273,11 @@ tempLog = lens _tempLog (\f a -> f { _tempLog = a } )
 -- | 
 statusBar :: Simple Lens HoodleState (Maybe Gtk.Statusbar)
 statusBar = lens _statusBar (\f a -> f { _statusBar = a })
+
+-- | 
+renderCache :: Simple Lens HoodleState RenderCache
+renderCache = lens _renderCache (\f a -> f { _renderCache = a })
+
 
 {-
 -- | 
@@ -405,6 +413,7 @@ emptyHoodleState = do
     , _tempQueue = emptyQueue
     , _tempLog = id 
     , _statusBar = Nothing 
+    , _renderCache = HM.empty
     -- , _cursorInfo = Nothing
     }
 
@@ -484,10 +493,10 @@ currentCanvasInfo = lens getter setter
       in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
 
 -- | 
-resetHoodleModeStateBuffers :: HoodleModeState -> IO HoodleModeState 
-resetHoodleModeStateBuffers hdlmodestate1 = 
+resetHoodleModeStateBuffers :: RenderCache -> HoodleModeState -> IO HoodleModeState 
+resetHoodleModeStateBuffers cache hdlmodestate1 = 
   case hdlmodestate1 of 
-    ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf $ hdl
+    ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf cache $ hdl
     _ -> return hdlmodestate1
 
 -- |

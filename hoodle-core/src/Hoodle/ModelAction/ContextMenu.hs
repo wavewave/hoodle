@@ -29,7 +29,7 @@ import           System.Process
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render 
-import           Graphics.Hoodle.Render.Type.Item
+import           Graphics.Hoodle.Render.Type
 --
 import Hoodle.Type.Event 
 import Hoodle.Util
@@ -83,8 +83,8 @@ menuCreateALink evhandler sitems =
          
 
 -- |
-makeSVGFromSelection :: [RItem] -> BBox -> IO SVG 
-makeSVGFromSelection hititms (BBox (ulx,uly) (lrx,lry)) = do 
+makeSVGFromSelection :: RenderCache -> [RItem] -> BBox -> IO SVG 
+makeSVGFromSelection cache hititms (BBox (ulx,uly) (lrx,lry)) = do 
   uuid <- nextRandom
   tdir <- getTemporaryDirectory
   let filename = tdir </> show uuid <.> "svg"
@@ -92,7 +92,7 @@ makeSVGFromSelection hititms (BBox (ulx,uly) (lrx,lry)) = do
       (w,h) = (lrx-ulx,lry-uly)
   Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ do 
     Cairo.translate (-ulx) (-uly) 
-    mapM_ renderRItem hititms 
+    mapM_ (renderRItem cache) hititms 
   bstr <- B.readFile filename
   let svg = SVG Nothing Nothing bstr (x,y) (Dim w h)
   svg `seq` removeFile filename 

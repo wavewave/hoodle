@@ -3,7 +3,7 @@
 -- Module      : Hoodle.Coroutine.Select.Clipboard 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -54,7 +54,8 @@ deleteSelection = do
         Right alist -> do 
           let newlayer = Left . concat . getA $ alist
               newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
-          newthdl <- liftIO $ updateTempHoodleSelectIO thdl newpage n          
+              cache = view renderCache xstate
+          newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n          
           newxstate <- liftIO $ updatePageAll (SelectState newthdl) 
                               . set hoodleModeState (SelectState newthdl)
                               $ xstate 
@@ -131,7 +132,8 @@ pasteToSelection = do
                             :- Hitted nclipitms 
                             :- Empty )
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
-      thdl' <- liftIO $ updateTempHoodleSelectIO thdl tpage' pagenum 
+          cache = view renderCache xstate
+      thdl' <- liftIO $ updateTempHoodleSelectIO cache thdl tpage' pagenum 
       xstate' <- liftIO $ updatePageAll (SelectState thdl') 
                  . set hoodleModeState (SelectState thdl') 
                  $ xstate 

@@ -28,7 +28,7 @@ import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render.Type
 -- from this package
 -- import           Hoodle.GUI.Menu
-import           Hoodle.GUI.Reflect
+-- import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.Type
 import           Hoodle.Type.Alias
@@ -85,16 +85,6 @@ rItmsInCurrLyr = return . view gitems . getCurrentLayer =<< getCurrentPageCurr
 otherCanvas :: HoodleState -> [Int] 
 otherCanvas = M.keys . getCanvasInfoMap 
 
--- | 
-changeCurrentCanvasId :: CanvasId -> MainCoroutine HoodleState 
-changeCurrentCanvasId cid = do 
-    xstate1 <- St.get
-    maybe (return xstate1) 
-          (\xst -> do St.put xst 
-                      return xst)
-          (setCurrentCanvasId cid xstate1)
-    reflectViewModeUI
-    St.get     
 
 -- | apply an action to all canvases 
 applyActionToAllCVS :: (CanvasId -> MainCoroutine ()) -> MainCoroutine () 
@@ -125,6 +115,7 @@ getGeometry4CurrCvs xstate = do
       fsingle = flip (makeCanvasGeometry cpn) canvas 
                 . view (viewInfo.pageArrangement) 
   forBoth' unboxBiAct fsingle cinfobox
+
   
 -- | update flag in HoodleState when corresponding toggle UI changed 
 updateFlagFromToggleUI :: String  -- ^ UI toggle button id

@@ -17,6 +17,7 @@
 module Hoodle.GUI.Reflect where
 
 import           Control.Lens (view,Simple,Lens)
+import           Control.Monad (liftM, when)
 import qualified Control.Monad.State as St
 import           Control.Monad.Trans 
 import           Data.Array.MArray
@@ -27,6 +28,7 @@ import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
 --
 import Hoodle.GUI.Menu 
+import Hoodle.Coroutine.Draw
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Enum 
@@ -38,6 +40,24 @@ import Hoodle.Util
 import Hoodle.View.Coordinate
 -- 
 import Debug.Trace
+
+-- | 
+changeCurrentCanvasId :: CanvasId -> MainCoroutine HoodleState 
+changeCurrentCanvasId cid = do 
+    xstate1 <- St.get
+    maybe (return xstate1) 
+          (\xst -> do St.put xst 
+                      return xst)
+          (setCurrentCanvasId cid xstate1)
+    reflectViewModeUI
+    St.get     
+
+-- | check current canvas id and new active canvas id and invalidate if it's 
+--   changed. 
+chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
+chkCvsIdNInvalidate cid = do 
+  currcid <- liftM (getCurrentCanvasId) St.get 
+  when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
 
 
 blockWhile :: (GObjectClass w) => Maybe (ConnectId w) -> IO () -> IO ()

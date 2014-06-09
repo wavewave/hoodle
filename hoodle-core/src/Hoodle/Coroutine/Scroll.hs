@@ -3,9 +3,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Scroll 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -23,6 +23,8 @@ import           Control.Monad.Trans.Crtn
 import           Data.Functor.Identity (Identity(..))
 import           Data.Hoodle.BBox
 -- from this package
+import           Hoodle.Coroutine.Draw
+import           Hoodle.GUI.Reflect
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event 
 import           Hoodle.Type.Coroutine
@@ -30,7 +32,6 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import qualified Hoodle.ModelAction.Adjustment as A
-import           Hoodle.Coroutine.Draw
 import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
 --

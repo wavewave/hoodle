@@ -1,5 +1,7 @@
-{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -17,14 +19,20 @@ module Hoodle.Coroutine.Draw where
 
 -- from other packages
 import           Control.Applicative 
-import qualified Data.IntMap as M
-import           Control.Lens (view,set)
+import           Control.Lens (view,set,(%~))
 import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.State
+import qualified Data.HashMap.Strict as HM
+import qualified Data.IntMap as M
+import           Data.Time.Clock
+import           Data.Time.LocalTime
 import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
+import           Control.Monad.Trans.Crtn
+import           Control.Monad.Trans.Crtn.Object
+import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 -- from this package
 import           Hoodle.Accessor
@@ -35,8 +43,45 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState
+import           Hoodle.Type.Widget
 import           Hoodle.View.Draw
+-- import           Hoodle.Widget.Clock
 -- 
+
+
+-- | 
+nextevent :: MainCoroutine UserEvent 
+nextevent = do Arg DoEvent ev <- request (Res DoEvent ())
+               case ev of
+                 SysEv sev -> sysevent sev >> nextevent 
+                 UsrEv uev -> return uev 
+
+sysevent :: SystemEvent -> MainCoroutine () 
+sysevent ClockUpdateEvent = do 
+  utctime <- liftIO $ getCurrentTime 
+  zone <- liftIO $ getCurrentTimeZone  
+  let ltime = utcToLocalTime zone utctime 
+      ltimeofday = localTimeOfDay ltime 
+      (h,m,s) :: (Int,Int,Int) = 
+        (,,) <$> (\x->todHour x `mod` 12) <*> todMin <*> (floor . todSec) 
+        $ ltimeofday
+  -- liftIO $ print (h,m,s)
+  xst <- get 
+  let cinfo = view currentCanvasInfo xst
+      cwgts = view (unboxLens canvasWidgets) cinfo   
+      nwgts = set (clockWidgetConfig.clockWidgetTime) (h,m,s) cwgts
+      ncinfo = set (unboxLens canvasWidgets) nwgts cinfo
+  put . set currentCanvasInfo ncinfo $ xst 
+              
+  when (view (widgetConfig.doesUseClockWidget) cwgts) $ do 
+    let cid = getCurrentCanvasId xst
+    modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
+    -- invalidateInBBox Nothing Efficient cid   
+sysevent (RenderCacheUpdate (uuid, msfc)) = do
+  modify (renderCache %~ HM.insert uuid msfc)
+  liftIO . print =<< (view renderCache <$> get)
+  -- invalidateInBBox Nothing Efficient cid   
+sysevent ev = liftIO $ print ev 
 
 
 -- |
@@ -131,18 +176,20 @@ invalidateTemp :: CanvasId -> Cairo.Surface -> Cairo.Render () -> MainCoroutine 
 invalidateTemp cid tempsurface rndr = do 
     xst <- get 
     forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
-  where fsingle xstate cvsInfo = do 
-          let canvas = view drawArea cvsInfo
-              pnum = PageNum . view currentPageNum $ cvsInfo 
-          geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
-          win <- liftIO $ widgetGetDrawWindow canvas
-          let xformfunc = cairoXform4PageCoordinate geometry pnum
-          liftIO $ renderWithDrawable win $ do   
-                     Cairo.setSourceSurface tempsurface 0 0 
-                     Cairo.setOperator Cairo.OperatorSource 
-                     Cairo.paint 
-                     xformfunc 
-                     rndr 
+  where 
+    fsingle :: HoodleState -> CanvasInfo a -> MainCoroutine ()   
+    fsingle xstate cvsInfo = do 
+      let canvas = view drawArea cvsInfo
+          pnum = PageNum . view currentPageNum $ cvsInfo 
+      geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+      win <- liftIO $ widgetGetDrawWindow canvas
+      let xformfunc = cairoXform4PageCoordinate geometry pnum
+      liftIO $ renderWithDrawable win $ do   
+                 Cairo.setSourceSurface tempsurface 0 0 
+                 Cairo.setOperator Cairo.OperatorSource 
+                 Cairo.paint 
+                 xformfunc 
+                 rndr 
 
 -- | Drawing temporary gadgets with coordinate based on base page
 invalidateTempBasePage :: CanvasId        -- ^ current canvas id
@@ -153,24 +200,20 @@ invalidateTempBasePage :: CanvasId        -- ^ current canvas id
 invalidateTempBasePage cid tempsurface pnum rndr = do 
     xst <- get 
     forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
-  where fsingle xstate cvsInfo = do 
-          let canvas = view drawArea cvsInfo
-          geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
-          win <- liftIO $ widgetGetDrawWindow canvas
-          let xformfunc = cairoXform4PageCoordinate geometry pnum
-          liftIO $ renderWithDrawable win $ do   
-                     Cairo.setSourceSurface tempsurface 0 0 
-                     Cairo.setOperator Cairo.OperatorSource 
-                     Cairo.paint 
-                     xformfunc 
-                     rndr 
+  where 
+    fsingle :: HoodleState -> CanvasInfo a -> MainCoroutine ()
+    fsingle xstate cvsInfo = do 
+      let canvas = view drawArea cvsInfo
+      geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+      win <- liftIO $ widgetGetDrawWindow canvas
+      let xformfunc = cairoXform4PageCoordinate geometry pnum
+      liftIO $ renderWithDrawable win $ do   
+                 Cairo.setSourceSurface tempsurface 0 0 
+                 Cairo.setOperator Cairo.OperatorSource 
+                 Cairo.paint 
+                 xformfunc 
+                 rndr 
 
--- | check current canvas id and new active canvas id and invalidate if it's 
---   changed. 
-chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
-chkCvsIdNInvalidate cid = do 
-  currcid <- liftM (getCurrentCanvasId) get 
-  when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
   
 -- | 
 waitSomeEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 

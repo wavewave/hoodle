@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Coroutine.Pen 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -32,10 +32,11 @@ import           Data.Hoodle.Generic (gpages)
 import           Data.Hoodle.Simple (Dimension(..))
 import           Graphics.Hoodle.Render (renderStrk)
 -- from this package
-import           Hoodle.Accessor
-import           Hoodle.Device 
+-- import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Device 
+import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
 import           Hoodle.Type.Canvas

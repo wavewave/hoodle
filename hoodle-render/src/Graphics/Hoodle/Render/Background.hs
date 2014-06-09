@@ -17,6 +17,7 @@ module Graphics.Hoodle.Render.Background where
 
 import           Control.Concurrent (forkIO)
 import           Control.Monad.State hiding (mapM_)
+import           Control.Monad.Trans.Maybe
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
 import qualified Data.Map as M
@@ -26,7 +27,7 @@ import           Data.Monoid
 import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
--- import           Graphics.UI.Gtk (postGUIAsync)
+import           Graphics.UI.Gtk (postGUIAsync)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory
@@ -72,21 +73,14 @@ popplerGetDocFromDataURI dat = do
 -- |
 popplerGetPageFromDoc :: Poppler.Document 
                       -> Int -- ^ page number 
-                      -> IO (Maybe Poppler.Page, Maybe Cairo.Surface)
+                      -> IO (Maybe Poppler.Page)
 popplerGetPageFromDoc doc pn = do   
   n <- Poppler.documentGetNPages doc 
   if pn > n 
-    then return (Nothing, Nothing)
+    then return Nothing
     else do 
       pg <- Poppler.documentGetPage doc (pn-1) 
-      (w,h) <- PopplerPage.pageGetSize pg
-      sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-      Cairo.renderWith sfc $ do   
-        Cairo.setSourceRGBA 1 1 1 1
-        Cairo.rectangle 0 0 w h 
-        Cairo.fill
-        PopplerPage.pageRender pg
-      return (Just pg, Just sfc)
+      return (Just pg)
 
 -- | draw ruling all 
 drawRuling :: Double -> Double -> ByteString -> Cairo.Render () 
@@ -208,43 +202,55 @@ cnstrctRBkg_StateT :: ((UUID, (Double,Cairo.Surface)) -> IO ())
                    -> Background 
                    -> StateT (Maybe Context) IO RBackground
 cnstrctRBkg_StateT handler dim@(Dim w h) bkg = do  
+  uuid <- liftIO nextRandom
   case bkg of 
     Background _t c s -> do 
-      uuid <- liftIO nextRandom
       liftIO $ forkIO $ do 
         sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
         Cairo.renderWith sfc $ renderBkg (bkg,dim) 
         handler (uuid,(1.0,sfc))
       return (RBkgSmpl c s uuid) 
     BackgroundPdf _t md mf pn -> do 
-      case (md,mf) of 
-        (Just d, Just f) -> do 
-           mdoc <- liftIO $ popplerGetDocFromFile f
-           put $ Just (Context d f mdoc Nothing)
-           case mdoc of 
-             Just doc -> do  
-               (mpg,msfc) <- liftIO $ popplerGetPageFromDoc doc pn 
-               return (RBkgPDF md f pn mpg msfc)
-             Nothing -> error "error1 in cnstrctRBkg_StateT"
-        _ -> do 
-          mctxt <- get
-          case mctxt of  
-            Just (Context oldd oldf olddoc _) -> do 
-              (mpage,msfc) <- case olddoc of 
-                Just doc -> do 
-                  liftIO $ popplerGetPageFromDoc doc pn
-                Nothing -> error "error2 in cnstrctRBkg_StateT" 
-              maybe (liftIO $ putStrLn ( "pn = " ++ show pn )) (const (return ())) mpage 
-              return (RBkgPDF (Just oldd) oldf pn mpage msfc)
-            Nothing -> error "error3 in cnstrctRBkg_StateT" 
+      r <- runMaybeT $ do
+        (pg,rbkg) <- case (md,mf) of 
+          (Just d, Just f) -> do 
+            doc <- MaybeT . liftIO $ popplerGetDocFromFile f
+            lift . put $ Just (Context d f (Just doc) Nothing)
+            pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn 
+            return (pg, RBkgPDF md f pn (Just pg) uuid)
+          _ -> do 
+            Context oldd oldf olddoc _ <- MaybeT get
+            doc <- MaybeT . return $ olddoc  
+            pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
+            return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) uuid)
+        liftIO $ 
+          forkIO $ postGUIAsync $ do
+            sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+            Cairo.renderWith sfc $ do   
+              Cairo.setSourceRGBA 1 1 1 1
+              Cairo.rectangle 0 0 w h 
+              Cairo.fill
+              PopplerPage.pageRender pg
+            handler (uuid,(1.0,sfc))
+        return rbkg
+      case r of
+        Nothing -> error "error in cnstrctRBkg_StateT"
+        Just x -> return x
     BackgroundEmbedPdf _ pn -> do 
-      mctxt <- get
-      case mctxt of  
-        Just (Context _ _ _ mdoc) -> do 
-          (mpage,msfc) <- case mdoc of 
-            Just doc -> do 
-              liftIO $ popplerGetPageFromDoc doc pn
-            Nothing -> error "error4 in cnstrctRBkg_StateT" 
-          return (RBkgEmbedPDF pn mpage msfc)
-        Nothing -> error "error5 in cnstrctRBkg_StateT" 
-
+      r <- runMaybeT $ do 
+        Context _ _ _ mdoc <- MaybeT get
+        doc <- (MaybeT . return) mdoc 
+        pg <- (MaybeT . liftIO) $ popplerGetPageFromDoc doc pn
+        liftIO $ 
+          forkIO $ postGUIAsync $ do
+            sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+            Cairo.renderWith sfc $ do   
+              Cairo.setSourceRGBA 1 1 1 1
+              Cairo.rectangle 0 0 w h 
+              Cairo.fill
+              PopplerPage.pageRender pg
+            handler (uuid,(1.0,sfc))
+        return (RBkgEmbedPDF pn (Just pg) uuid)
+      case r of 
+        Nothing -> error "error in cnstrctRBkg_StateT"
+        Just x -> return x

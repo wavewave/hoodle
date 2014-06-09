@@ -17,7 +17,7 @@ module Graphics.Hoodle.Render.Type.Background where
 
 import           Data.ByteString 
 import           Data.UUID
-import qualified Graphics.Rendering.Cairo as Cairo
+-- import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 -- from hoodle-platform
 import           Data.Hoodle.BBox
@@ -40,7 +40,6 @@ data Context = Context { ctxt_domain :: ByteString
 data RBackground = RBkgSmpl 
                    { rbkg_color :: ByteString
                    , rbkg_style :: ByteString
-                   -- , rbkg_cairosurface :: Maybe Cairo.Surface 
                    , rbkg_uuid :: UUID
                    }
                  | RBkgPDF 
@@ -48,14 +47,14 @@ data RBackground = RBkgSmpl
                    , rbkg_filename :: ByteString
                    , rbkg_pageno :: Int 
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-                   , rbkg_cairosurface :: Maybe Cairo.Surface 
-                   -- , rbkg_uuid :: UUID
+                   -- , rbkg_cairosurface :: Maybe Cairo.Surface 
+                   , rbkg_uuid :: UUID
                    } 
                  | RBkgEmbedPDF
                    { rbkg_pageno :: Int
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-                   , rbkg_cairosurface :: Maybe Cairo.Surface 
-                   -- , rbkg_uuid :: UUID
+                   -- , rbkg_cairosurface :: Maybe Cairo.Surface 
+                   , rbkg_uuid :: UUID
                    } 
 instance Show (RBackground) where
   show _ = "RBackground"
@@ -74,7 +73,3 @@ rbkg2Bkg :: RBackground -> Background
 rbkg2Bkg (RBkgSmpl c s _) = Background "solid" c s 
 rbkg2Bkg (RBkgPDF d f n _ _ ) = BackgroundPdf "pdf" d (Just f) n 
 rbkg2Bkg (RBkgEmbedPDF n _ _) = BackgroundEmbedPdf "embedpdf" n
-
-
-
-

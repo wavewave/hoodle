@@ -19,24 +19,27 @@ Library
   ghc-options: 	-Wall -Werror -fno-warn-orphans -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends: base == 4.*, 
-                 mtl == 2.*, 
-                 filepath, 
-                 directory, 
-                 containers >= 0.4, 
-                 cairo == 0.12.*, 
-                 svgcairo == 0.12.*,
-                 strict >= 0.3, 
-                 bytestring >= 0.9,
+  Build-Depends: 
+                 base == 4.*, 
                  base64-bytestring >= 0.1, 
-                 lens >= 2.5, 
+                 bytestring >= 0.9,
+                 cairo == 0.12.*, 
+                 containers >= 0.4, 
+                 directory, 
+                 filepath, 
+                 gd >= 3000.7,  
+                 gtk >= 0.12,
                  hoodle-types >= 0.2.999,
-                 gd >= 3000.7, 
+                 lens >= 2.5, 
+                 monad-loops >= 0.3,  
+                 mtl == 2.*, 
+                 poppler >= 0.12.2.2,
+                 strict >= 0.3, 
+                 svgcairo == 0.12.*,
+                 transformers >= 0.3,
                  unix >= 2.5,
                  unordered-containers, 
-                 uuid >= 1.2, 
-                 monad-loops >= 0.3,  
-                 poppler >= 0.12.2.2
+                 uuid >= 1.2 
 
 
   Exposed-Modules: 

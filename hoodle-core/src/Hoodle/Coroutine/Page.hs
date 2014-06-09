@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
@@ -28,6 +29,8 @@ import qualified Data.IntMap as M
 import           Data.UUID
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
+import qualified Graphics.UI.Gtk as Gtk
+import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -306,16 +309,20 @@ updateBkgCache handler geometry (pnum,page) = do
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (w,h))
       s = (x1-x0) / w 
       rbkg = page ^. gbackground
-  putStrLn $ "pnum = " ++ show pnum
-  putStrLn $ "updateBkgCache : s = " ++ show s
-  case rbkg of 
-    RBkgSmpl _ _ uuid -> do 
-      let bkg = rbkg2Bkg rbkg
-      putStrLn $ "updating " ++ show uuid
-      forkIO $ do
-        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
-        Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
-        handler (uuid, (s,sfc))
-      return ()
-        
-    _ -> return () 
+      bkg = rbkg2Bkg rbkg
+      uuid = rbkg_uuid rbkg 
+  putStrLn $ "updating " ++ show uuid
+  forkIO $ Gtk.postGUIAsync $ do
+    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
+    case rbkg of 
+      RBkgSmpl {..} -> Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
+      _ -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
+             Cairo.renderWith sfc $ do
+               Cairo.setSourceRGBA 1 1 1 1 
+               Cairo.rectangle 0 0 (x1-x0) (y1-y0)
+               Cairo.fill
+               Cairo.scale s s 
+               PopplerPage.pageRender pg
+    handler (uuid, (s,sfc))
+  return ()
+

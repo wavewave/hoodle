@@ -214,22 +214,14 @@ renderRBkg :: RenderCache
 renderRBkg _cache (r,dim) = 
     case r of 
       (RBkgSmpl _ _ _) -> 
-        drawBkgAndRecord (renderBkg (rbkg2Bkg r,dim))
+        renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
       (RBkgPDF _ _ _ p _) -> 
         maybe (drawFallBackBkg dim >> return (r,dim)) 
-              (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p
+              (\pg -> bkgPdfRender pg >> return (r,dim)) p
       (RBkgEmbedPDF _ p _) -> 
         maybe (drawFallBackBkg dim >> return (r,dim)) 
-              (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p 
+              (\pg -> bkgPdfRender pg >> return (r,dim)) p 
   where 
-    drawBkgAndRecord rdr = do 
-      rdr
-      case r of 
-        RBkgSmpl _ _ _ -> return ()
-        _ -> case rbkg_cairosurface r of
-               Nothing -> return ()
-               Just sfc -> liftIO $ Cairo.renderWith sfc rdr 
-      return (r,dim)
     bkgPdfRender pg = do 
       let Dim w h = dim 
       Cairo.setSourceRGBA 1 1 1 1
@@ -341,33 +333,14 @@ renderRBkg_Buf :: RenderCache
                -> (RBackground,Dimension) 
                -> Cairo.Render (RBackground,Dimension)
 renderRBkg_Buf cache (b,dim) = do 
-    case b of 
-      RBkgSmpl _ _ uuid  -> do
-        case HM.lookup uuid cache of
-          Nothing -> return () -- renderRBkg cache (b,dim) >> return ()
-          Just (s,sfc) -> do 
-            liftIO $ putStrLn $ " renderRBkg_Buf : s = " ++ show s
-            Cairo.save
-            Cairo.scale (1/s) (1/s) 
-            Cairo.setSourceSurface sfc 0 0 
-            Cairo.paint 
-            Cairo.restore
-      RBkgPDF _ _ _n _ msfc -> do 
-        case msfc of 
-          Nothing -> renderRBkg cache (b,dim) >> return ()
-          Just sfc -> do 
-            Cairo.save
-            Cairo.setSourceSurface sfc 0 0 
-            Cairo.paint 
-            Cairo.restore
-      RBkgEmbedPDF _ _ msfc -> do 
-        case msfc of 
-          Nothing -> renderRBkg cache (b,dim) >> return ()
-          Just sfc -> do 
-            Cairo.save
-            Cairo.setSourceSurface sfc 0 0 
-            Cairo.paint 
-            Cairo.restore
+    case HM.lookup (rbkg_uuid b) cache of
+      Nothing -> renderRBkg cache (b,dim) >> return ()
+      Just (s,sfc) -> do 
+        Cairo.save
+        Cairo.scale (1/s) (1/s) 
+        Cairo.setSourceSurface sfc 0 0 
+        Cairo.paint 
+        Cairo.restore
     return (b,dim)
 
 -- | 

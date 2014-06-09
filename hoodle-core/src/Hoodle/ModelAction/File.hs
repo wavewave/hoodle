@@ -83,8 +83,8 @@ findAllPDFPages = catMaybes . map f
 replacePDFPages :: [(Int,RPage)] -> [(Int,RPage)] 
 replacePDFPages xs = map f xs 
   where f (n,p) = case view gbackground p of 
-                    RBkgPDF _ _ pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
-                    _ -> (n,p) 
+          RBkgPDF _ _ pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
+          _ -> (n,p) 
         
 -- | 
 embedPDFInHoodle :: RHoodle -> IO RHoodle

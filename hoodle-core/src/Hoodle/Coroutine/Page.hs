@@ -102,11 +102,12 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
           let cbkg = view gbackground lpage
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
-          callRenderer $ \hdlr -> updateBkgCache hdlr npage >> return GotNone
+          geometry <- liftIO . getGeometry4CurrCvs =<< get
+          callRenderer $ \hdlr -> updateBkgCache hdlr geometry (PageNum (totnumpages-1),npage) >> return GotNone
           waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
-          let npages = M.insert totnumpages npage pgs 
+          let npages = M.insert totnumpages npage pgs  
           return  (True,totnumpages,npage,
-                    either (Left . set gpages npages) (Right. set gselAll npages) ehdl )
+                     either (Left . set gpages npages) (Right. set gselAll npages) ehdl ) 
         else do
           let npg = if npgnum < 0 then 0 else npgnum
               pg = maybeError' "changePage" (M.lookup npg pgs)
@@ -124,9 +125,10 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     updateXState zoomUpdateAction 
     adjustScrollbarWithGeometryCvsId cid
     hdl <- getHoodle <$> get
-    F.forM_ (hdl ^. gpages) $ \pg -> callRenderer_ (\hdlr -> updateBkgCache hdlr pg)
---       callRenderer $ \hdlr -> updateBkgCache hdlr pg >> return GotNone
---      waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
+    geometry <- liftIO . getGeometry4CurrCvs =<< get
+    let plst = zip [0..] (F.toList (hdl ^. gpages))
+    forM_ plst $ \(pn,pg) -> 
+      callRenderer_ (\hdlr -> updateBkgCache hdlr geometry (PageNum pn,pg))
     renderfunc
   where zoomUpdateAction xst =  
           unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
@@ -267,7 +269,12 @@ addNewPageInHoodle bsty dir hdl cpn = do
         cbkg = view gbackground cpage
     nbkg <- newBkg bsty cbkg
     npage <- set gbackground nbkg <$> newPageFromOld cpage
-    callRenderer_ (flip updateBkgCache npage)
+    geometry <- liftIO . getGeometry4CurrCvs =<< get
+    -- let pn' = case dir of 
+    --            PageBefore -> cpn
+    --            PageAfter -> cpn+1
+    liftIO $ putStrLn (" addNewPageInHoodle  : " ++ show cpn)
+    callRenderer_ (\hdlr -> updateBkgCache hdlr geometry (PageNum cpn,npage))
     let npagelst = case dir of 
                      PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                      PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
@@ -289,19 +296,26 @@ newPageFromOld =
     return . ( glayers .~ (fromNonEmptyList (emptyRLayer,[])))
 
 
-updateBkgCache :: ((UUID, Maybe Cairo.Surface) -> IO ()) 
-                        -> Page EditMode -> IO ()
-updateBkgCache handler page = do
-  let rbkg = page ^. gbackground
-      dim@(Dim w h) = page ^. gdimension 
+updateBkgCache :: ((UUID, (Double,Cairo.Surface)) -> IO ()) 
+               -> CanvasGeometry -> (PageNum, Page EditMode) -> IO ()
+updateBkgCache handler geometry (pnum,page) = do
+  let dim@(Dim w h) = page ^. gdimension 
+      CvsCoord (x0,y0) = 
+        (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))
+      CvsCoord (x1,y1) = 
+        (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (w,h))
+      s = (x1-x0) / w 
+      rbkg = page ^. gbackground
+  putStrLn $ "pnum = " ++ show pnum
+  putStrLn $ "updateBkgCache : s = " ++ show s
   case rbkg of 
     RBkgSmpl _ _ uuid -> do 
       let bkg = rbkg2Bkg rbkg
       putStrLn $ "updating " ++ show uuid
       forkIO $ do
-        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-        Cairo.renderWith sfc $ renderBkg (bkg,dim)
-        handler (uuid, Just sfc)
+        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
+        Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
+        handler (uuid, (s,sfc))
       return ()
         
     _ -> return () 

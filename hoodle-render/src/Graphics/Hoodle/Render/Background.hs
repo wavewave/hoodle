@@ -203,7 +203,7 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
 
 
 -- | this has some bugs. need to fix 
-cnstrctRBkg_StateT :: ((UUID, Maybe Cairo.Surface) -> IO ())
+cnstrctRBkg_StateT :: ((UUID, (Double,Cairo.Surface)) -> IO ())
                    -> Dimension 
                    -> Background 
                    -> StateT (Maybe Context) IO RBackground
@@ -214,8 +214,8 @@ cnstrctRBkg_StateT handler dim@(Dim w h) bkg = do
       liftIO $ forkIO $ do 
         sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
         Cairo.renderWith sfc $ renderBkg (bkg,dim) 
-        handler (uuid,Just sfc)
-      return (RBkgSmpl c s uuid) -- (Just sfc))
+        handler (uuid,(1.0,sfc))
+      return (RBkgSmpl c s uuid) 
     BackgroundPdf _t md mf pn -> do 
       case (md,mf) of 
         (Just d, Just f) -> do 

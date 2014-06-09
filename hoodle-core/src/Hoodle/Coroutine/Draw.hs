@@ -79,8 +79,8 @@ sysevent ClockUpdateEvent = do
     let cid = getCurrentCanvasId xst
     modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
     -- invalidateInBBox Nothing Efficient cid   
-sysevent (RenderCacheUpdate (uuid, msfc)) = do
-  modify (renderCache %~ HM.insert uuid msfc)
+sysevent (RenderCacheUpdate (uuid, ssfc)) = do
+  modify (renderCache %~ HM.insert uuid ssfc)
   liftIO . print =<< (view renderCache <$> get)
   invalidateAll
   -- invalidateInBBox Nothing Efficient cid   
@@ -228,14 +228,14 @@ waitSomeEvent p = do
       _ -> if  p r then return r else waitSomeEvent p  
 
 
-callRenderer :: (((UUID, Maybe Cairo.Surface) -> IO ()) -> IO RenderEvent) -> MainCoroutine ()
+callRenderer :: (((UUID, (Double,Cairo.Surface)) -> IO ()) -> IO RenderEvent) -> MainCoroutine ()
 callRenderer action = do
     doIOaction $ \evhandler -> 
       let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
       in UsrEv . RenderEv <$> action handler
 
 
-callRenderer_ :: (((UUID, Maybe Cairo.Surface) -> IO ()) -> IO a) 
+callRenderer_ :: (((UUID, (Double,Cairo.Surface)) -> IO ()) -> IO a) 
               -> MainCoroutine ()
 callRenderer_ action = do
     callRenderer $ \hdlr -> action hdlr >> return GotNone

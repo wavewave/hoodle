@@ -228,11 +228,7 @@ renderRBkg _cache (r,dim) =
         RBkgSmpl _ _ _ -> return ()
         _ -> case rbkg_cairosurface r of
                Nothing -> return ()
-               Just sfc -> liftIO $ Cairo.renderWith sfc rdr
- 
-      -- case rbkg_cairosurface r of
-      --   Nothing -> return ()
-      --   Just sfc -> liftIO $ Cairo.renderWith sfc rdr
+               Just sfc -> liftIO $ Cairo.renderWith sfc rdr 
       return (r,dim)
     bkgPdfRender pg = do 
       let Dim w h = dim 
@@ -245,17 +241,17 @@ renderRBkg _cache (r,dim) =
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
 renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
 renderRItem cache itm@(RItemImage img uuid) = do
-    let msfc = join (HM.lookup uuid cache)
-    case msfc of
+    let mssfc = HM.lookup uuid cache
+    case mssfc of
       Nothing -> renderImg (bbxed_content img)
-      Just sfc -> do 
+      Just (s,sfc) -> do 
 	let (x,y) = (img_pos . bbxed_content) img
 	    BBox (x1,y1) (x2,y2) = getBBox img
 	ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
 	iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
 	Cairo.save 
 	Cairo.translate x y 
-	Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+	Cairo.scale ((x2-x1)/ix/s) ((y2-y1)/iy/s)
 	Cairo.setSourceSurface sfc 0 0 
 	Cairo.paint 
 	Cairo.restore
@@ -347,10 +343,12 @@ renderRBkg_Buf :: RenderCache
 renderRBkg_Buf cache (b,dim) = do 
     case b of 
       RBkgSmpl _ _ uuid  -> do
-        case join (HM.lookup uuid cache) of
-          Nothing -> renderRBkg cache (b,dim) >> return ()
-          Just sfc -> do 
+        case HM.lookup uuid cache of
+          Nothing -> return () -- renderRBkg cache (b,dim) >> return ()
+          Just (s,sfc) -> do 
+            liftIO $ putStrLn $ " renderRBkg_Buf : s = " ++ show s
             Cairo.save
+            Cairo.scale (1/s) (1/s) 
             Cairo.setSourceSurface sfc 0 0 
             Cairo.paint 
             Cairo.restore
@@ -424,7 +422,7 @@ updateHoodleBuf cache hdl = do
 -------
 
 -- |
-cnstrctRHoodle :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Hoodle -> IO RHoodle
+cnstrctRHoodle :: ((UUID, (Double,Cairo.Surface)) -> IO ()) -> Hoodle -> IO RHoodle
 cnstrctRHoodle handler hdl = do 
   let hid = view hoodleID hdl 
       ttl = view title hdl 
@@ -439,7 +437,7 @@ cnstrctRHoodle handler hdl = do
    
 
 -- |
-cnstrctRPage_StateT :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Page -> StateT (Maybe Context) IO RPage
+cnstrctRPage_StateT :: ((UUID, (Double, Cairo.Surface)) -> IO ()) -> Page -> StateT (Maybe Context) IO RPage
 cnstrctRPage_StateT handler pg = do  
   let bkg = view background pg
       dim = view dimension pg 
@@ -451,7 +449,7 @@ cnstrctRPage_StateT handler pg = do
   return $ GPage dim nbkg nlyrs 
     
 -- |
-cnstrctRLayer :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Layer -> IO RLayer 
+cnstrctRLayer :: ((UUID, (Double,Cairo.Surface)) -> IO ()) -> Layer -> IO RLayer 
 cnstrctRLayer handler lyr = do 
   nitms <- (mapM (cnstrctRItem handler) . view items) lyr 
   return (set gitems nitms emptyRLayer)

@@ -16,4 +16,6 @@ import qualified Data.HashMap.Strict as HM
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
 
-type RenderCache = HM.HashMap UUID (Maybe Cairo.Surface)
+-- | hashmap: key = UUID, value = (scale factor, surface)
+type RenderCache = HM.HashMap UUID (Double, Cairo.Surface)
+

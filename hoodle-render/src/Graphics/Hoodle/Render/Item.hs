@@ -42,7 +42,7 @@ import           Graphics.Hoodle.Render.Type.Item
 
 
 -- | construct renderable item 
-cnstrctRItem :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Item -> IO RItem 
+cnstrctRItem :: ((UUID, (Double, Cairo.Surface)) -> IO ()) -> Item -> IO RItem 
 cnstrctRItem _ (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem handler (ItemImage img) = do 
     let imgbbx = runIdentity (makeBBoxed img)
@@ -50,8 +50,6 @@ cnstrctRItem handler (ItemImage img) = do
     uuid <- nextRandom
 
     forkIO $ do
-      -- testing
-      -- threadDelay 10000000
       let embed = getByteStringIfEmbeddedPNG src 
       msfc <- case embed of         
         Just bstr -> do 
@@ -71,7 +69,7 @@ cnstrctRItem handler (ItemImage img) = do
                          else return Nothing 
                 | otherwise = return Nothing 
           imgaction
-      handler (uuid, msfc)
+      maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
     return (RItemImage imgbbx uuid)
 cnstrctRItem _ (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 

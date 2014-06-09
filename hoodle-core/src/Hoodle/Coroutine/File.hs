@@ -24,8 +24,7 @@ import           Control.Lens (view,set,over,(%~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Data.ByteString (readFile)
-import           Data.ByteString.Char8 as B (pack,unpack)
+import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
 import           Data.Foldable (mapM_,forM_)
@@ -48,11 +47,14 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
+import           Graphics.Hoodle.Render (cnstrctRHoodle)
 import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
 import           Text.Hoodle.Builder 
+import           Text.Hoodle.Migrate.FromXournal
+import qualified Text.Xournal.Parse.Conduit as XP
 -- import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 -- from this package 
 import           Hoodle.Accessor
@@ -102,11 +104,61 @@ askIfOverwrite fp action = do
         if r then action else return () 
       else action 
 
+
+-- | get file content from xournal file and update xournal state 
+getFileContent :: Maybe FilePath -> MainCoroutine ()
+getFileContent (Just fname) = do 
+    xstate <- get
+    let ext = takeExtension fname
+    case ext of 
+      ".hdl" -> do 
+        bstr <- liftIO $ B.readFile fname
+        r <- liftIO $ checkVersionAndMigrate bstr 
+        case r of 
+          Left err -> liftIO $ putStrLn err
+          Right h -> do 
+            nxstate <- liftIO $ constructNewHoodleStateFromHoodle h xstate 
+            ctime <- liftIO $ getCurrentTime
+            put . set (hoodleFileControl.hoodleFileName) (Just fname)
+                . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate
+            commit_
+      ".xoj" -> do 
+          liftIO (XP.parseXojFile fname) >>= \x -> case x of  
+            Left str -> liftIO $ putStrLn $ "file reading error : " ++ str 
+            Right xojcontent -> do 
+              hdlcontent <- liftIO $ mkHoodleFromXournal xojcontent 
+              nxstate <- liftIO $ constructNewHoodleStateFromHoodle hdlcontent xstate 
+              ctime <- liftIO $ getCurrentTime 
+              put . set (hoodleFileControl.hoodleFileName) (Just fname) 
+                  . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate 
+              commit_
+      ".pdf" -> do 
+        let doesembed = view (settings.doesEmbedPDF) xstate
+        mhdl <- liftIO $ makeNewHoodleWithPDF doesembed fname 
+        case mhdl of 
+          Nothing -> getFileContent Nothing
+          Just hdl -> do 
+            nxstate <- liftIO $ constructNewHoodleStateFromHoodle hdl xstate 
+            put . set (hoodleFileControl.hoodleFileName) Nothing $ nxstate
+            commit_
+      _ -> getFileContent Nothing    
+getFileContent Nothing = do
+    xstate <- get
+    -- testing
+    let handler = const (putStrLn "In getFileContent, got call back")
+    -- 
+    newhdl <- liftIO (cnstrctRHoodle handler =<< defaultHoodle)
+    let nhmodstate = ViewAppendState newhdl 
+    put . set (hoodleFileControl.hoodleFileName) Nothing 
+        . set hoodleModeState nhmodstate
+        $ xstate 
+    commit_ 
+
 -- | 
 fileNew :: MainCoroutine () 
 fileNew = do  
-    xstate <- get
-    xstate' <- liftIO $ getFileContent Nothing xstate 
+    getFileContent Nothing
+    xstate' <- get 
     ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
     xstate'' <- return $ over currentCanvasInfo (const ncvsinfo) xstate'
     liftIO $ setTitleFromFileName xstate''
@@ -210,12 +262,12 @@ exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (re
 -- | 
 fileLoad :: FilePath -> MainCoroutine () 
 fileLoad filename = do
+    getFileContent (Just filename)
     xstate <- get 
-    xstate' <- liftIO $ getFileContent (Just filename) xstate
-    ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
-    xstateNew <- return $ over currentCanvasInfo (const ncvsinfo) xstate'
+    ncvsinfo <- liftIO $ setPage xstate 0 (getCurrentCanvasId xstate)
+    xstateNew <- return $ over currentCanvasInfo (const ncvsinfo) xstate
     put . set isSaved True $ xstateNew 
-    let ui = view gtkUIManager xstate
+    let ui = view gtkUIManager xstateNew
     liftIO $ toggleSave ui False
     liftIO $ setTitleFromFileName xstateNew  
     clearUndoHistory 
@@ -358,9 +410,6 @@ fileLoadPNGorJPG = do
 embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
     xst <- get 
-    -- testing
-    -- let handler = const (putStrLn "embedImage, got call back")
-    -- 
     nitm <- 
       if view (settings.doesEmbedImage) xst
         then do  
@@ -390,7 +439,7 @@ fileLoadSVG = do
     action filename = do 
       xstate <- get 
       liftIO $ putStrLn filename 
-      bstr <- liftIO $ readFile filename 
+      bstr <- liftIO $ B.readFile filename 
       let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
           hdl = getHoodle xstate 
           currpage = getPageFromGHoodleMap pgnum hdl

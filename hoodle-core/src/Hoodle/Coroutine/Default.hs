@@ -38,9 +38,10 @@ import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..), Background(..))
+import           Data.Hoodle.Simple (Dimension(..), Background(..), defaultHoodle)
 import           Data.Hoodle.Generic
-import           Graphics.Hoodle.Render.Background (cnstrctRBkg_StateT)
+import           Graphics.Hoodle.Render
+-- import           Graphics.Hoodle.Render.Background (cnstrctRBkg_StateT)
 import           Graphics.Hoodle.Render.Type.Background
 -- from this package
 import           Hoodle.Accessor
@@ -92,13 +93,12 @@ import Prelude hiding (mapM_)
 -- |
 initCoroutine :: DeviceList 
               -> Window 
-              -> Maybe FilePath 
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
               -> Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,UIManager,VBox)
-initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -116,6 +116,10 @@ initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
+  -- testing
+  let handler = const (putStrLn "In getFileContent, got call back")
+  newhdl <- liftIO (cnstrctRHoodle handler =<< defaultHoodle)
+  let nhmodstate = ViewAppendState newhdl 
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
@@ -123,18 +127,20 @@ initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
           . set statusBar (Just stbar)
+          . set (hoodleFileControl.hoodleFileName) Nothing 
+          . set hoodleModeState nhmodstate
           $ st4
-          
-  st6 <- getFileContent mfname st5
+     
+  -- st6 <- getFileContent mfname st5
   -- very dirty, need to be cleaned 
-  let hdlst6 = view hoodleModeState st6
-      cache = view renderCache st6
-  hdlst7 <- resetHoodleModeStateBuffers cache hdlst6
-  let st7 = set hoodleModeState hdlst7 st6
+  let hdlst5 = view hoodleModeState st5
+      cache = view renderCache st5
+  hdlst6 <- resetHoodleModeStateBuffers cache hdlst5
+  let st6 = set hoodleModeState hdlst6 st5
   -- 
   vbox <- vBoxNew False 0 
   -- 
-  let startingXstate = set rootContainer (castToBox vbox) st7
+  let startingXstate = set rootContainer (castToBox vbox) st6
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -145,7 +151,8 @@ initCoroutine devlst window mfname mhook maxundo (xinputbool,usepz,uselyr) stbar
 initialize :: AllEvent -> MainCoroutine ()
 initialize ev = do  
     case ev of 
-      UsrEv Initialized -> do -- additional initialization goes here
+      UsrEv (Initialized mfname) -> do -- additional initialization goes here
+        getFileContent mfname        
         viewModeChange ToContSinglePage
         pageZoomChange FitWidth
         xst <- get 

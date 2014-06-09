@@ -48,8 +48,8 @@ import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2 as MV
-import qualified Text.Xournal.Parse.Conduit as XP
-import           Text.Hoodle.Migrate.FromXournal
+-- import qualified Text.Xournal.Parse.Conduit as XP
+-- import           Text.Hoodle.Migrate.FromXournal
 -- from this package
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
@@ -64,53 +64,6 @@ checkVersionAndMigrate bstr = do
         then MV.migrate bstr
         else return (parseOnly PA.hoodle bstr)
 
--- | get file content from xournal file and update xournal state 
-getFileContent :: Maybe FilePath 
-               -> HoodleState 
-               -> IO HoodleState 
-getFileContent (Just fname) xstate = do 
-    let ext = takeExtension fname
-    case ext of 
-      ".hdl" -> do 
-        bstr <- C.readFile fname
-        r <- checkVersionAndMigrate bstr 
-        case r of 
-          Left err -> putStrLn err >> return xstate 
-          Right h -> do 
-            nxstate <- constructNewHoodleStateFromHoodle h xstate 
-            ctime <- getCurrentTime
-            return . set (hoodleFileControl.hoodleFileName) (Just fname)
-                   . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate
-      ".xoj" -> do 
-          XP.parseXojFile fname >>= \x -> case x of  
-            Left str -> do
-              putStrLn $ "file reading error : " ++ str 
-              return xstate 
-            Right xojcontent -> do 
-              hdlcontent <- mkHoodleFromXournal xojcontent 
-              nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
-              ctime <- getCurrentTime 
-              return . set (hoodleFileControl.hoodleFileName) (Just fname) 
-                     . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate    
-      ".pdf" -> do 
-        let doesembed = view (settings.doesEmbedPDF) xstate
-        mhdl <- makeNewHoodleWithPDF doesembed fname 
-        case mhdl of 
-          Nothing -> getFileContent Nothing xstate 
-          Just hdl -> do 
-            newhdlstate <- constructNewHoodleStateFromHoodle hdl xstate 
-            return . set (hoodleFileControl.hoodleFileName) Nothing $ newhdlstate 
-      _ -> getFileContent Nothing xstate      
-getFileContent Nothing xstate = do
-    -- testing
-    let handler = const (putStrLn "In getFileContent, got call back")
-    -- 
-    newhdl <- cnstrctRHoodle handler =<< defaultHoodle 
-    let newhdlstate = ViewAppendState newhdl 
-        xstate' = set (hoodleFileControl.hoodleFileName) Nothing 
-                  . set hoodleModeState newhdlstate
-                  $ xstate 
-    return xstate' 
 
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 

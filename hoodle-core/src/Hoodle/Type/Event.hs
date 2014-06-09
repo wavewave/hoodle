@@ -48,7 +48,7 @@ data SystemEvent = TestSystemEvent | ClockUpdateEvent | RenderCacheUpdate (UUID,
                  deriving Show 
                           
 -- | 
-data UserEvent = Initialized
+data UserEvent = Initialized (Maybe FilePath)
                | CanvasConfigure Int Double Double 
                | UpdateCanvas Int
                | UpdateCanvasEfficient Int

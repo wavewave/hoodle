@@ -5,9 +5,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.File 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -91,7 +91,7 @@ getFileContent (Just fname) xstate = do
               nxstate <- constructNewHoodleStateFromHoodle hdlcontent xstate 
               ctime <- getCurrentTime 
               return . set (hoodleFileControl.hoodleFileName) (Just fname) 
-                     . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate               
+                     . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate    
       ".pdf" -> do 
         let doesembed = view (settings.doesEmbedPDF) xstate
         mhdl <- makeNewHoodleWithPDF doesembed fname 
@@ -101,8 +101,11 @@ getFileContent (Just fname) xstate = do
             newhdlstate <- constructNewHoodleStateFromHoodle hdl xstate 
             return . set (hoodleFileControl.hoodleFileName) Nothing $ newhdlstate 
       _ -> getFileContent Nothing xstate      
-getFileContent Nothing xstate = do   
-    newhdl <- cnstrctRHoodle =<< defaultHoodle 
+getFileContent Nothing xstate = do
+    -- testing
+    let handler = const (putStrLn "In getFileContent, got call back")
+    -- 
+    newhdl <- cnstrctRHoodle handler =<< defaultHoodle 
     let newhdlstate = ViewAppendState newhdl 
         xstate' = set (hoodleFileControl.hoodleFileName) Nothing 
                   . set hoodleModeState newhdlstate
@@ -112,7 +115,10 @@ getFileContent Nothing xstate = do
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 
 constructNewHoodleStateFromHoodle hdl' xstate = do 
-    hdl <- cnstrctRHoodle hdl'
+    -- testing
+    let handler = const (putStrLn "In constructNewHoodleStateFromHoodle, got call back")
+    --
+    hdl <- cnstrctRHoodle handler hdl'
     let startinghoodleModeState = ViewAppendState hdl
     return $ set hoodleModeState startinghoodleModeState xstate
 
@@ -305,6 +311,9 @@ loadHoodlet str = do
          case parseOnly Hoodlet.hoodlet bstr of 
            Left err -> putStrLn err >> return Nothing
            Right itm -> do
-             ritm <- cnstrctRItem itm 
+             -- testing
+             let handler = const (putStrLn "In loadHoodlet, got call back")
+             --
+             ritm <- cnstrctRItem handler itm 
              return (Just ritm) 
        else return Nothing

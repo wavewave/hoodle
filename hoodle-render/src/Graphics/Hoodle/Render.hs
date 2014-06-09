@@ -421,8 +421,8 @@ updateHoodleBuf cache hdl = do
 -------
 
 -- |
-cnstrctRHoodle :: Hoodle -> IO RHoodle
-cnstrctRHoodle hdl = do 
+cnstrctRHoodle :: (FinishRendering -> IO ()) -> Hoodle -> IO RHoodle
+cnstrctRHoodle handler hdl = do 
   let hid = view hoodleID hdl 
       ttl = view title hdl 
       revs = view revisions hdl 
@@ -430,24 +430,25 @@ cnstrctRHoodle hdl = do
       embeddedsrc = view embeddedPdf hdl 
   mdoc <- maybe (return Nothing) (\src -> liftIO $ popplerGetDocFromDataURI src)
             embeddedsrc
-  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) (Just (Context "" "" Nothing mdoc)) 
+  npgs <- evalStateT (mapM (cnstrctRPage_StateT handler) pgs) 
+                     (Just (Context "" "" Nothing mdoc)) 
   return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
    
 
 -- |
-cnstrctRPage_StateT :: Page -> StateT (Maybe Context) IO RPage
-cnstrctRPage_StateT pg = do  
+cnstrctRPage_StateT :: (FinishRendering -> IO ()) -> Page -> StateT (Maybe Context) IO RPage
+cnstrctRPage_StateT handler pg = do  
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg
-  nlyrs_lst <- liftIO $ mapM cnstrctRLayer lyrs
+  nlyrs_lst <- liftIO $ mapM (cnstrctRLayer handler) lyrs
   let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
       nlyrs = fromNonEmptyList nlyrs_nonemptylst 
   nbkg <- cnstrctRBkg_StateT dim bkg
   return $ GPage dim nbkg nlyrs 
     
 -- |
-cnstrctRLayer :: Layer -> IO RLayer 
-cnstrctRLayer lyr = do 
-  nitms <- (mapM cnstrctRItem . view items) lyr 
+cnstrctRLayer :: (FinishRendering -> IO ()) -> Layer -> IO RLayer 
+cnstrctRLayer handler lyr = do 
+  nitms <- (mapM (cnstrctRItem handler) . view items) lyr 
   return (set gitems nitms emptyRLayer)

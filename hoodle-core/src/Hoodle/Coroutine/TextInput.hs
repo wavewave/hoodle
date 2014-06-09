@@ -280,7 +280,10 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-    newitem <- (liftIO . cnstrctRItem . ItemSVG) 
+    -- testing
+    let handler = const (putStrLn "svgInsert, got call back") 
+    -- 
+    newitem <- (liftIO . cnstrctRItem handler . ItemSVG) 
                  (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr 
                       (x0,y0) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
@@ -329,7 +332,10 @@ linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
         lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
-    newitem <- (liftIO . cnstrctRItem . ItemLink) nlnk
+    -- testing
+    let handler = const (putStrLn "linkInsert, got call back")
+    -- 
+    newitem <- (liftIO . cnstrctRItem handler . ItemLink) nlnk
     insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
 
 
@@ -339,7 +345,10 @@ addAnchor = do
     uuid <- liftIO $ nextRandom
     let uuidbstr = B.pack (show uuid)
     let anc = Anchor uuidbstr (100,100) (Dim 50 50)
-    nitm <- (liftIO . cnstrctRItem . ItemAnchor) anc
+    -- testing
+    let handler = const (putStrLn "addAnchor, got call back")
+    --
+    nitm <- (liftIO . cnstrctRItem handler . ItemAnchor) anc
     insertItemAt Nothing nitm
 
 -- |

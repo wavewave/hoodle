@@ -161,7 +161,10 @@ gotLink mstr (x,y) = do
           if ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG" 
             then do 
               let isembedded = view (settings.doesEmbedImage) xst 
-              nitm <- liftIO (cnstrctRItem =<< makeNewItemImage isembedded file) 
+              -- testing 
+              let handler = const (putStrLn "gotLink, got call back")
+              --
+              nitm <- liftIO (cnstrctRItem handler =<< makeNewItemImage isembedded file) 
               geometry <- liftIO $ getCanvasGeometryCvsId cid xst               
               let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 

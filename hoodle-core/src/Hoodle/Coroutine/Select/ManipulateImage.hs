@@ -95,7 +95,10 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
         forM_ mimg' $ \img' -> do
-          rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
+          -- testing 
+          let handler = const (putStrLn "in startCropRect, got call back")
+          --
+          rimg' <- liftIO $ cnstrctRItem handler (ItemImage img') 
           let ntpage = replaceSelection rimg' tpage
           nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
           commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
@@ -160,13 +163,16 @@ rotateImage dir imgbbx = do
     case hdlmodst of 
       ViewAppendState _ -> return ()
       SelectState thdl -> do 
-        case epage of 
+        case epage of  
           Left _ -> return ()
           Right tpage -> do    
             let img = bbxed_content imgbbx 
             mimg' <- liftIO (createRotatedImage dir img (getBBox imgbbx))
             forM_ mimg' $ \img' -> do 
-              rimg' <- liftIO $ cnstrctRItem (ItemImage img') 
+              -- testing
+              let handler = const (putStrLn "In rotateImage, got call back") 
+              -- 
+              rimg' <- liftIO $ cnstrctRItem handler (ItemImage img') 
               let ntpage = replaceSelection rimg' tpage
               nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
               commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))

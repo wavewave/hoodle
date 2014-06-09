@@ -124,7 +124,10 @@ processContextMenu (CMenuLinkConvert nlnk) =
                 Left _ -> return tpg 
                 Right (a :- _b :- as ) -> liftIO $ do
                   let nitm = ItemLink nlnk
-                  nritm <- cnstrctRItem nitm
+                  -- testing
+                  let handler = const (putStrLn "processContextMenu")
+                  --
+                  nritm <- cnstrctRItem handler nitm
                   let alist' = (a :- Hitted [nritm] :- as )
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
@@ -163,7 +166,10 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
     let mloc = view (hoodleFileControl.hoodleFileName) xst
         loc = maybe "" B.pack mloc
     let lnk = LinkAnchor uuidbstr docidbstr loc (anchor_id anc) (0,0) (Dim 50 50)
-    newitem <- (liftIO . cnstrctRItem . ItemLink) lnk    
+    -- testing 
+    let handler = const (putStrLn "processContextMenu")
+    -- 
+    newitem <- (liftIO . cnstrctRItem handler . ItemLink) lnk    
     insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt

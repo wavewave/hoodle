@@ -358,15 +358,19 @@ fileLoadPNGorJPG = do
 embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
     xst <- get 
+    -- testing
+    let handler = const (putStrLn "embedImage, got call back")
+    -- 
     nitm <- 
       if view (settings.doesEmbedImage) xst
         then do  
           mf <- checkEmbedImageSize filename 
+          --
           case mf of 
-            Nothing -> liftIO (cnstrctRItem =<< makeNewItemImage True filename)
-            Just f -> liftIO (cnstrctRItem =<< makeNewItemImage True f) 
+            Nothing -> liftIO (cnstrctRItem handler =<< makeNewItemImage True filename)
+            Just f -> liftIO (cnstrctRItem handler =<< makeNewItemImage True f) 
         else
-          liftIO (cnstrctRItem =<< makeNewItemImage False filename)
+          liftIO (cnstrctRItem handler =<< makeNewItemImage False filename)
     let cpn = view (currentCanvasInfo . unboxLens currentPageNum) xst
     my <- autoPosText 
     let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
@@ -386,7 +390,10 @@ fileLoadSVG = do
           hdl = getHoodle xstate 
           currpage = getPageFromGHoodleMap pgnum hdl
           currlayer = getCurrentLayer currpage
-      newitem <- (liftIO . cnstrctRItem . ItemSVG) 
+      -- testing
+      let handler = const (putStrLn "fileLoadSVG")
+      --
+      newitem <- (liftIO . cnstrctRItem handler . ItemSVG) 
                    (SVG Nothing Nothing bstr (100,100) (Dim 300 300))
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  

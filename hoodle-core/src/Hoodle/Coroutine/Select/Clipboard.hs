@@ -112,7 +112,10 @@ pasteToSelection = do
     case mitms of 
       Nothing -> return () 
       Just itms -> do 
-        ritms <- liftIO (mapM cnstrctRItem itms)
+        -- testing 
+        let handler = const (putStrLn "In pasteToSelection, got call back")
+        -- 
+        ritms <- liftIO (mapM (cnstrctRItem handler) itms)
         modeChange ToSelectMode >>updateXState (pasteAction ritms) >> invalidateAll  
   where 
     pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) . view currentCanvasInfo $ xst

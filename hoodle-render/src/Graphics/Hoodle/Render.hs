@@ -49,6 +49,7 @@ import           Control.Monad.Identity (runIdentity)
 import           Control.Monad.State hiding (mapM,mapM_)
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
+import qualified Data.HashMap.Strict as HM
 import           Data.Traversable (mapM)
 import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -237,12 +238,8 @@ renderRBkg _cache (r,dim) =
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
 renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem _ itm@(RItemImage img _uuid) = 
-    -- temporarily
-    renderImg (bbxed_content img) >> return itm
-
-
-{-
+renderRItem cache itm@(RItemImage img uuid) = do
+    let msfc = join (HM.lookup uuid cache)
     case msfc of
       Nothing -> renderImg (bbxed_content img)
       Just sfc -> do 
@@ -257,7 +254,6 @@ renderRItem _ itm@(RItemImage img _uuid) =
 	Cairo.paint 
 	Cairo.restore
     return itm 
--}
 renderRItem _ itm@(RItemSVG svgbbx mrsvg) = do 
     case mrsvg of
       Nothing -> renderSVG (bbxed_content svgbbx)

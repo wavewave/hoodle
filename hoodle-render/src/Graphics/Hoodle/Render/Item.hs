@@ -17,7 +17,7 @@
 
 module Graphics.Hoodle.Render.Item where
 
--- import           Control.Applicative
+import           Control.Applicative
 import           Control.Concurrent (forkIO,threadDelay) 
 import           Control.Monad
 import           Control.Monad.Identity
@@ -30,8 +30,8 @@ import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
--- import           System.Directory
--- import           System.FilePath
+import           System.Directory
+import           System.FilePath
 -- from hoodle-platform 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -45,34 +45,33 @@ cnstrctRItem :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Item -> IO RItem
 cnstrctRItem _ (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem handler (ItemImage img) = do 
     let imgbbx = runIdentity (makeBBoxed img)
-        -- src = img_src img
+        src = img_src img
     uuid <- nextRandom
-    -- testing
+
     forkIO $ do
+      -- testing
       threadDelay 10000000
-      handler (uuid, Nothing)
+      let embed = getByteStringIfEmbeddedPNG src 
+      msfc <- case embed of         
+        Just bstr -> do 
+          sfc <- saveTempPNGToCreateSurface bstr 
+          return (Just sfc)
+        Nothing -> do
+          let filesrc = C8.unpack (img_src img)
+              filesrcext = takeExtension filesrc 
+              imgaction 
+                | filesrcext == ".PNG" || filesrcext == ".png" = do 
+                    b <- doesFileExist filesrc 
+                    if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
+                         else return Nothing 
+                | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
+                    b <- doesFileExist filesrc 
+                    if b then Just <$> getJPGandCreateSurface filesrc 
+                         else return Nothing 
+                | otherwise = return Nothing 
+          imgaction
+      handler (uuid, msfc)
     return (RItemImage imgbbx uuid)
-    --     embed = getByteStringIfEmbeddedPNG src 
-    -- case embed of         
-    --   Just bstr -> do 
-        
-    --     -- sfc <- saveTempPNGToCreateSurface bstr 
-    --     return (RItemImage imgbbx (Just sfc))
-    --   Nothing -> do
-    --     let filesrc = C8.unpack (img_src img)
-    --         filesrcext = takeExtension filesrc 
-    --         imgaction 
-    --           | filesrcext == ".PNG" || filesrcext == ".png" = do 
-    --               b <- doesFileExist filesrc 
-    --               if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
-    --                    else return Nothing 
-    --           | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
-    --               b <- doesFileExist filesrc 
-    --               if b then Just <$> getJPGandCreateSurface filesrc 
-    --                    else return Nothing 
-    --           | otherwise = return Nothing 
-    --     msfc <- imgaction
-    --     return (RItemImage imgbbx msfc)
 cnstrctRItem _ (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         svgbbx = runIdentity (makeBBoxed svg)

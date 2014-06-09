@@ -80,6 +80,7 @@ sysevent ClockUpdateEvent = do
 sysevent (RenderCacheUpdate (uuid, msfc)) = do
   modify (renderCache %~ HM.insert uuid msfc)
   liftIO . print =<< (view renderCache <$> get)
+  invalidateAll
   -- invalidateInBBox Nothing Efficient cid   
 sysevent ev = liftIO $ print ev 
 

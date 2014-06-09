@@ -1,5 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -232,3 +233,11 @@ callRenderer action = do
     doIOaction $ \evhandler -> 
       let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
       in UsrEv . RenderEv <$> action handler
+
+
+callRenderer_ :: (((UUID, Maybe Cairo.Surface) -> IO ()) -> IO a) 
+              -> MainCoroutine ()
+callRenderer_ action = do
+    callRenderer $ \hdlr -> action hdlr >> return GotNone
+    waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
+    return ()

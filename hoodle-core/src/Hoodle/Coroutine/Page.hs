@@ -101,8 +101,8 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
         then do 
           let cbkg = view gbackground lpage
           nbkg <- newBkg bsty cbkg  
-          npage <- set gbackground nbkg <$> (newSinglePageFromOld lpage)
-          callRenderer $ \hdlr -> updateRBackgroundCache hdlr npage >> return GotNone
+          npage <- set gbackground nbkg <$> (newPageFromOld lpage)
+          callRenderer $ \hdlr -> updateBkgCache hdlr npage >> return GotNone
           waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
           let npages = M.insert totnumpages npage pgs 
           return  (True,totnumpages,npage,
@@ -124,9 +124,9 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     updateXState zoomUpdateAction 
     adjustScrollbarWithGeometryCvsId cid
     hdl <- getHoodle <$> get
-    F.forM_ (hdl ^. gpages) $ \pg -> do
-      callRenderer $ \hdlr -> updateRBackgroundCache hdlr pg >> return GotNone
-      waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
+    F.forM_ (hdl ^. gpages) $ \pg -> callRenderer_ (\hdlr -> updateBkgCache hdlr pg)
+--       callRenderer $ \hdlr -> updateBkgCache hdlr pg >> return GotNone
+--      waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
     renderfunc
   where zoomUpdateAction xst =  
           unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
@@ -266,9 +266,8 @@ addNewPageInHoodle bsty dir hdl cpn = do
         (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
         cbkg = view gbackground cpage
     nbkg <- newBkg bsty cbkg
-    npage <- set gbackground nbkg <$> newSinglePageFromOld cpage
-    callRenderer $ \hdlr -> updateRBackgroundCache hdlr npage >> return GotNone
-    waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
+    npage <- set gbackground nbkg <$> newPageFromOld cpage
+    callRenderer_ (flip updateBkgCache npage)
     let npagelst = case dir of 
                      PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                      PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
@@ -285,22 +284,23 @@ newBkg bsty bkg = do
 
 
 -- | 
-newSinglePageFromOld :: Page EditMode -> MainCoroutine (Page EditMode)
-newSinglePageFromOld =
-    return . ( set glayers (fromNonEmptyList (emptyRLayer,[])))
+newPageFromOld :: Page EditMode -> MainCoroutine (Page EditMode)
+newPageFromOld =
+    return . ( glayers .~ (fromNonEmptyList (emptyRLayer,[])))
 
 
-updateRBackgroundCache :: ((UUID, Maybe Cairo.Surface) -> IO ()) 
+updateBkgCache :: ((UUID, Maybe Cairo.Surface) -> IO ()) 
                         -> Page EditMode -> IO ()
-updateRBackgroundCache handler page = do
+updateBkgCache handler page = do
   let rbkg = page ^. gbackground
+      dim@(Dim w h) = page ^. gdimension 
   case rbkg of 
     RBkgSmpl _ _ uuid -> do 
       let bkg = rbkg2Bkg rbkg
       putStrLn $ "updating " ++ show uuid
       forkIO $ do
-        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 100 100 
-        Cairo.renderWith sfc $ renderBkg (bkg,Dim 100 100)
+        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+        Cairo.renderWith sfc $ renderBkg (bkg,dim)
         handler (uuid, Just sfc)
       return ()
         

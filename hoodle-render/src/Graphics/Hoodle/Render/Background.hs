@@ -6,7 +6,7 @@
 -- Module      : Graphics.Hoodle.Render.PDFBackground 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -15,6 +15,7 @@
 
 module Graphics.Hoodle.Render.Background where
 
+import           Control.Concurrent (forkIO, threadDelay)
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
@@ -22,6 +23,7 @@ import qualified Data.Map as M
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
+import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
@@ -200,15 +202,21 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
 
 
 -- | this has some bugs. need to fix 
-cnstrctRBkg_StateT :: Dimension -> Background 
+cnstrctRBkg_StateT :: ((UUID, Maybe Cairo.Surface) -> IO ())
+                   -> Dimension 
+                   -> Background 
                    -> StateT (Maybe Context) IO RBackground
-cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
+cnstrctRBkg_StateT handler dim@(Dim w h) bkg = do  
   case bkg of 
     Background _t c s -> do 
-      sfc <- liftIO $ Cairo.createImageSurface 
-                        Cairo.FormatARGB32 (floor w) (floor h)
-      Cairo.renderWith sfc $ renderBkg (bkg,dim) 
-      return (RBkgSmpl c s (Just sfc))
+      uuid <- liftIO nextRandom
+      liftIO $ forkIO $ do 
+        threadDelay 10000000
+        sfc <- Cairo.createImageSurface 
+                 Cairo.FormatARGB32 (floor w) (floor h)
+        Cairo.renderWith sfc $ renderBkg (bkg,dim) 
+        handler (uuid,Just sfc)
+      return (RBkgSmpl c s uuid) -- (Just sfc))
     BackgroundPdf _t md mf pn -> do 
       case (md,mf) of 
         (Just d, Just f) -> do 

@@ -98,11 +98,15 @@ data UserEvent = Initialized
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
                | DBusEv DBusEvent
-               | GotRItem RItem
+               | RenderEv RenderEvent
                deriving Show
                       
 instance Show (IORef a) where                      
   show _ = "IORef"
+
+data RenderEvent = GotRItem RItem
+                 | GotRBackground RBackground
+                 deriving Show
 
 -- | 
 data MenuEvent = MenuNew 

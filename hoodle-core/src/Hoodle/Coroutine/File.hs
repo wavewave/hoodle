@@ -369,15 +369,15 @@ embedImage filename = do
           doIOaction $ \evhandler -> 
             let handler = evhandler . SysEv . RenderCacheUpdate 
             in case mf of 
-              Nothing -> makeNewItemImage True filename >>= cnstrctRItem handler >>= return . UsrEv . GotRItem
-              Just f -> makeNewItemImage True f >>= cnstrctRItem handler >>= return . UsrEv . GotRItem
-          GotRItem r <- waitSomeEvent (\case GotRItem _ -> True ; _ -> False )
+              Nothing -> makeNewItemImage True filename >>= cnstrctRItem handler >>= return . UsrEv . RenderEv . GotRItem
+              Just f -> makeNewItemImage True f >>= cnstrctRItem handler >>= return . UsrEv . RenderEv . GotRItem
+          RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
         else do 
           doIOaction $ \evhandler -> 
             let handler = evhandler . SysEv . RenderCacheUpdate 
-            in makeNewItemImage False filename >>= cnstrctRItem handler >>= return . UsrEv . GotRItem
-          GotRItem r <- waitSomeEvent (\case GotRItem _ -> True ; _ -> False )
+            in makeNewItemImage False filename >>= cnstrctRItem handler >>= return . UsrEv . RenderEv . GotRItem
+          RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
 
     let cpn = view (currentCanvasInfo . unboxLens currentPageNum) xst

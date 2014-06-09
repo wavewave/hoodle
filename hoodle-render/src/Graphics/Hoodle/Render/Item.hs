@@ -18,7 +18,7 @@
 module Graphics.Hoodle.Render.Item where
 
 import           Control.Applicative
-import           Control.Concurrent (forkIO,threadDelay) 
+import           Control.Concurrent (forkIO) 
 import           Control.Monad
 import           Control.Monad.Identity
 import qualified Data.ByteString as B
@@ -50,7 +50,7 @@ cnstrctRItem handler (ItemImage img) = do
 
     forkIO $ do
       -- testing
-      threadDelay 10000000
+      -- threadDelay 10000000
       let embed = getByteStringIfEmbeddedPNG src 
       msfc <- case embed of         
         Just bstr -> do 

@@ -38,8 +38,9 @@ import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..))
+import           Data.Hoodle.Simple (Dimension(..), Background(..))
 import           Data.Hoodle.Generic
+import           Graphics.Hoodle.Render.Background (cnstrctRBkg_StateT)
 import           Graphics.Hoodle.Render.Type.Background
 -- from this package
 import           Hoodle.Accessor
@@ -293,12 +294,17 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
         cbkg = view gbackground cpage
         bstystr = convertBackgroundStyleToByteString bsty 
         -- for the time being, I replace any background to solid background
-        getnbkg :: RBackground -> RBackground 
-        getnbkg (RBkgSmpl c _ _) = RBkgSmpl c bstystr Nothing 
-        getnbkg (RBkgPDF _ _ _ _ _) = RBkgSmpl "white" bstystr Nothing 
-        getnbkg (RBkgEmbedPDF _ _ _) = RBkgSmpl "white" bstystr Nothing 
+        dim = view gdimension cpage
+        getnbkg' :: RBackground -> Background 
+        getnbkg' (RBkgSmpl c _ _)     = Background "solid"  c bstystr
+        getnbkg' (RBkgPDF _ _ _ _ _)  = Background "solid" "white" bstystr  
+        getnbkg' (RBkgEmbedPDF _ _ _) = Background "solid" "white" bstystr  
         -- 
-        npage = set gbackground (getnbkg cbkg) cpage 
+    liftIO $ putStrLn " defaultEventProcess: BackgroundStyleChanged HERE/ "
+    -- testing 
+    let handler = const (putStrLn "defaultEventProcess : get call back")
+    nbkg <- liftIO $ evalStateT (cnstrctRBkg_StateT handler dim (getnbkg' cbkg)) Nothing
+    let npage = set gbackground nbkg cpage 
         npgs = set (at pgnum) (Just npage) pgs 
         nhdl = set gpages npgs hdl 
     modeChange ToViewAppendMode     

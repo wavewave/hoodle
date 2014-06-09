@@ -223,10 +223,16 @@ renderRBkg _cache (r,dim) =
               (\pg -> drawBkgAndRecord (bkgPdfRender pg)) p 
   where 
     drawBkgAndRecord rdr = do 
-      rdr 
-      case rbkg_cairosurface r of
-        Nothing -> return ()
-        Just sfc -> liftIO $ Cairo.renderWith sfc rdr
+      rdr
+      case r of 
+        RBkgSmpl _ _ _ -> return ()
+        _ -> case rbkg_cairosurface r of
+               Nothing -> return ()
+               Just sfc -> liftIO $ Cairo.renderWith sfc rdr
+ 
+      -- case rbkg_cairosurface r of
+      --   Nothing -> return ()
+      --   Just sfc -> liftIO $ Cairo.renderWith sfc rdr
       return (r,dim)
     bkgPdfRender pg = do 
       let Dim w h = dim 
@@ -340,14 +346,15 @@ renderRBkg_Buf :: RenderCache
                -> Cairo.Render (RBackground,Dimension)
 renderRBkg_Buf cache (b,dim) = do 
     case b of 
-      RBkgSmpl _ _ msfc  -> do  
-        case msfc of 
-          Nothing -> renderRBkg cache (b,dim) >> return ()
-          Just sfc -> do 
-            Cairo.save
-            Cairo.setSourceSurface sfc 0 0 
-            Cairo.paint 
-            Cairo.restore
+      RBkgSmpl _ _ _msfc  -> renderRBkg cache (b,dim) >> return ()
+
+        -- case msfc of 
+        --   Nothing -> renderRBkg cache (b,dim) >> return ()
+        --  Just sfc -> do 
+        --     Cairo.save
+        --    Cairo.setSourceSurface sfc 0 0 
+        --     Cairo.paint 
+        --    Cairo.restore
       RBkgPDF _ _ _n _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg cache (b,dim) >> return ()
@@ -441,7 +448,7 @@ cnstrctRPage_StateT handler pg = do
   nlyrs_lst <- liftIO $ mapM (cnstrctRLayer handler) lyrs
   let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
       nlyrs = fromNonEmptyList nlyrs_nonemptylst 
-  nbkg <- cnstrctRBkg_StateT dim bkg
+  nbkg <- cnstrctRBkg_StateT handler dim bkg
   return $ GPage dim nbkg nlyrs 
     
 -- |

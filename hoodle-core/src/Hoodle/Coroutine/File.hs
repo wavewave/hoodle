@@ -366,17 +366,13 @@ embedImage filename = do
         then do  
           mf <- checkEmbedImageSize filename 
           --
-          doIOaction $ \evhandler -> 
-            let handler = evhandler . SysEv . RenderCacheUpdate 
-            in case mf of 
-              Nothing -> makeNewItemImage True filename >>= cnstrctRItem handler >>= return . UsrEv . RenderEv . GotRItem
-              Just f -> makeNewItemImage True f >>= cnstrctRItem handler >>= return . UsrEv . RenderEv . GotRItem
+          callRenderer $ \hdlr -> case mf of  
+              Nothing -> makeNewItemImage True filename >>= cnstrctRItem hdlr >>= return . GotRItem 
+              Just f -> makeNewItemImage True f >>= cnstrctRItem hdlr >>= return . GotRItem
           RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
         else do 
-          doIOaction $ \evhandler -> 
-            let handler = evhandler . SysEv . RenderCacheUpdate 
-            in makeNewItemImage False filename >>= cnstrctRItem handler >>= return . UsrEv . RenderEv . GotRItem
+          callRenderer $ \hdlr -> makeNewItemImage False filename >>= cnstrctRItem hdlr >>= return . GotRItem
           RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
 

@@ -27,6 +27,7 @@ import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
 import           Data.Time.Clock
 import           Data.Time.LocalTime
+import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
@@ -224,3 +225,10 @@ waitSomeEvent p = do
       UpdateCanvas cid -> -- this is temporary
         invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
       _ -> if  p r then return r else waitSomeEvent p  
+
+
+callRenderer :: (((UUID, Maybe Cairo.Surface) -> IO ()) -> IO RenderEvent) -> MainCoroutine ()
+callRenderer action = do
+    doIOaction $ \evhandler -> 
+      let handler = evhandler . SysEv . RenderCacheUpdate
+      in UsrEv . RenderEv <$> action handler

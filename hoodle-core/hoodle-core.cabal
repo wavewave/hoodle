@@ -65,7 +65,6 @@ Library
                    poppler >= 0.12.2.2, 
                    process >= 1.1, 
                    pureMD5, 
-                   -- scientific,
                    stm >= 2, 
                    strict > 0.3,
                    svgcairo >= 0.12,
@@ -83,7 +82,7 @@ Library
   Exposed-Modules: 
                    Hoodle.Accessor
                    Hoodle.Config
-                   Hoodle.Coroutine
+                   -- Hoodle.Coroutine
                    Hoodle.Coroutine.Callback
                    Hoodle.Coroutine.Commit
                    Hoodle.Coroutine.ContextMenu

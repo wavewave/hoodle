@@ -3,9 +3,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Accessor 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -103,68 +103,6 @@ applyActionToAllCVS action = do
   let cinfoMap  = getCanvasInfoMap xstate
       keys = M.keys cinfoMap 
   forM_ keys action
-
-
-
--- | 
-{-
-printViewPortBBox :: CanvasId -> MainCoroutine ()
-printViewPortBBox cid = do 
-  cvsInfo <- return . getCanvasInfo cid =<< St.get 
-  liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
--}
-
--- | 
-{-
-printViewPortBBoxAll :: MainCoroutine () 
-printViewPortBBoxAll = do 
-  xstate <- St.get 
-  let cmap = getCanvasInfoMap xstate
-      cids = M.keys cmap
-  mapM_ printViewPortBBox cids 
--}
-
--- | 
-{-
-printViewPortBBoxCurr :: MainCoroutine ()
-printViewPortBBoxCurr = do 
-  cvsInfo <- return . view currentCanvasInfo =<< St.get 
-  liftIO $ putStrLn $ show (unboxGet (viewInfo.pageArrangement.viewPortBBox) cvsInfo)
--}
-
--- | 
-{-
-printModes :: CanvasId -> MainCoroutine ()
-printModes cid = do 
-  cvsInfo <- return . getCanvasInfo cid =<< St.get 
-  liftIO $ printCanvasMode cid cvsInfo
--}
-
--- |
-{-
-printCanvasMode :: CanvasId -> CanvasInfoBox -> IO ()
-printCanvasMode cid cvsInfo = do 
-  let zmode = unboxGet (viewInfo.zoomMode) cvsInfo
-      f :: PageArrangement a -> String 
-      f (SingleArrangement _ _ _) = "SingleArrangement"
-      f (ContinuousArrangement _ _ _ _) = "ContinuousArrangement"
-      g :: CanvasInfo a -> String 
-      g cinfo = f . view (viewInfo.pageArrangement) $ cinfo
-      arrmode :: String 
-      arrmode = boxAction g cvsInfo  
-      incid = unboxGet canvasId cvsInfo 
-  putStrLn $ show (cid,incid,zmode,arrmode)
--}
-
--- |
-{-
-printModesAll :: MainCoroutine () 
-printModesAll = do 
-  xstate <- St.get 
-  let cmap = getCanvasInfoMap xstate
-      cids = M.keys cmap
-  mapM_ printModes cids 
--}
 
 -- | 
 getCanvasGeometryCvsId :: CanvasId -> HoodleState -> IO CanvasGeometry 

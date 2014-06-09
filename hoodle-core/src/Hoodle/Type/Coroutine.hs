@@ -7,9 +7,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Coroutine 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -26,6 +26,7 @@ import           Control.Lens ((^.),(.~),(%~),view,set)
 import           Control.Monad.Reader 
 import           Control.Monad.State
 import           Control.Monad.Trans.Either 
+import qualified Data.HashMap.Strict as HM
 import           Data.Time.Clock
 import           Data.Time.LocalTime
 -- from hoodle-platform
@@ -58,6 +59,7 @@ type MainObjB = SObjBT MainOp (EStT HoodleState WorldObjB)
 -- | 
 type MainObj = SObjT MainOp (EStT HoodleState WorldObjB)
 
+
 -- | 
 nextevent :: MainCoroutine UserEvent 
 nextevent = do Arg DoEvent ev <- request (Res DoEvent ())
@@ -85,9 +87,13 @@ sysevent ClockUpdateEvent = do
   when (view (widgetConfig.doesUseClockWidget) cwgts) $ do 
     let cid = getCurrentCanvasId xst
     modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
-
     -- invalidateInBBox Nothing Efficient cid   
+sysevent (RenderCacheUpdate (uuid, msfc)) = do
+  modify (renderCache %~ HM.insert uuid msfc)
+  liftIO . print =<< (view renderCache <$> get)
+  -- invalidateInBBox Nothing Efficient cid   
 sysevent ev = liftIO $ print ev 
+
 
 -- | 
 type WorldObj = SObjT (WorldOp AllEvent DriverB) DriverB  
@@ -142,17 +148,17 @@ type DriverB = SObjBT (D.DrvOp AllEvent) IO
 -- | 
 type EventVar = MVar (Maybe (Driver ()))
 
-
-
-
 -- | 
 maybeError :: String -> Maybe a -> MainCoroutine a
 maybeError str = maybe (lift . hoistEither . Left . Other $ str) return 
 
-
 -- | 
 doIOaction :: ((AllEvent -> IO ()) -> IO AllEvent) -> MainCoroutine ()
 doIOaction action = modify (tempQueue %~ enqueue (mkIOaction action))
+
+
+
+
 
 
 

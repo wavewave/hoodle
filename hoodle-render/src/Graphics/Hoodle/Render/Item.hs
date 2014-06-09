@@ -25,6 +25,7 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64
+import           Data.UUID
 import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -38,12 +39,9 @@ import           Hoodle.Util.Process
 -- from this package
 import           Graphics.Hoodle.Render.Type.Item
 
--- | for test
-data FinishRendering = FinishRendering 
-
 
 -- | construct renderable item 
-cnstrctRItem :: (FinishRendering -> IO ()) -> Item -> IO RItem 
+cnstrctRItem :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Item -> IO RItem 
 cnstrctRItem _ (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem handler (ItemImage img) = do 
     let imgbbx = runIdentity (makeBBoxed img)
@@ -52,7 +50,7 @@ cnstrctRItem handler (ItemImage img) = do
     -- testing
     forkIO $ do
       threadDelay 10000000
-      handler FinishRendering
+      handler (uuid, Nothing)
     return (RItemImage imgbbx uuid)
     --     embed = getByteStringIfEmbeddedPNG src 
     -- case embed of         

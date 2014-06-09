@@ -5,9 +5,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI.Reflect
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -25,9 +25,6 @@ import qualified Data.Map as M (lookup)
 import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk (set)
---
--- import Control.Monad.Trans.Crtn.Event
--- import Control.Monad.Trans.Crtn.Queue
 --
 import Hoodle.GUI.Menu 
 import Hoodle.Type.Canvas

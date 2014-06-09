@@ -31,8 +31,8 @@ import           System.IO
 -- from this package
 import           Hoodle.Accessor 
 import           Hoodle.Config 
-import           Hoodle.Coroutine
 import           Hoodle.Coroutine.Callback
+import           Hoodle.Coroutine.Default
 import           Hoodle.Device
 import           Hoodle.ModelAction.Window
 import           Hoodle.Script.Hook

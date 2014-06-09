@@ -7,7 +7,7 @@
 -- Module      : Graphics.Hoodle.Render 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -50,6 +50,7 @@ import           Control.Monad.State hiding (mapM,mapM_)
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import           Data.Traversable (mapM)
+import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -421,7 +422,7 @@ updateHoodleBuf cache hdl = do
 -------
 
 -- |
-cnstrctRHoodle :: (FinishRendering -> IO ()) -> Hoodle -> IO RHoodle
+cnstrctRHoodle :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Hoodle -> IO RHoodle
 cnstrctRHoodle handler hdl = do 
   let hid = view hoodleID hdl 
       ttl = view title hdl 
@@ -436,7 +437,7 @@ cnstrctRHoodle handler hdl = do
    
 
 -- |
-cnstrctRPage_StateT :: (FinishRendering -> IO ()) -> Page -> StateT (Maybe Context) IO RPage
+cnstrctRPage_StateT :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Page -> StateT (Maybe Context) IO RPage
 cnstrctRPage_StateT handler pg = do  
   let bkg = view background pg
       dim = view dimension pg 
@@ -448,7 +449,7 @@ cnstrctRPage_StateT handler pg = do
   return $ GPage dim nbkg nlyrs 
     
 -- |
-cnstrctRLayer :: (FinishRendering -> IO ()) -> Layer -> IO RLayer 
+cnstrctRLayer :: ((UUID, Maybe Cairo.Surface) -> IO ()) -> Layer -> IO RLayer 
 cnstrctRLayer handler lyr = do 
   nitms <- (mapM (cnstrctRItem handler) . view items) lyr 
   return (set gitems nitms emptyRLayer)

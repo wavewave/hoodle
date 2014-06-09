@@ -359,18 +359,27 @@ embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
     xst <- get 
     -- testing
-    let handler = const (putStrLn "embedImage, got call back")
+    -- let handler = const (putStrLn "embedImage, got call back")
     -- 
     nitm <- 
       if view (settings.doesEmbedImage) xst
         then do  
           mf <- checkEmbedImageSize filename 
           --
-          case mf of 
-            Nothing -> liftIO (cnstrctRItem handler =<< makeNewItemImage True filename)
-            Just f -> liftIO (cnstrctRItem handler =<< makeNewItemImage True f) 
-        else
-          liftIO (cnstrctRItem handler =<< makeNewItemImage False filename)
+          doIOaction $ \evhandler -> 
+            let handler = evhandler . SysEv . RenderCacheUpdate 
+            in case mf of 
+              Nothing -> makeNewItemImage True filename >>= cnstrctRItem handler >>= return . UsrEv . GotRItem
+              Just f -> makeNewItemImage True f >>= cnstrctRItem handler >>= return . UsrEv . GotRItem
+          GotRItem r <- waitSomeEvent (\case GotRItem _ -> True ; _ -> False )
+          return r
+        else do 
+          doIOaction $ \evhandler -> 
+            let handler = evhandler . SysEv . RenderCacheUpdate 
+            in makeNewItemImage False filename >>= cnstrctRItem handler >>= return . UsrEv . GotRItem
+          GotRItem r <- waitSomeEvent (\case GotRItem _ -> True ; _ -> False )
+          return r
+
     let cpn = view (currentCanvasInfo . unboxLens currentPageNum) xst
     my <- autoPosText 
     let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  

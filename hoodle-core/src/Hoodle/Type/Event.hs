@@ -22,11 +22,14 @@ import           Data.ByteString
 import           Data.IORef
 import qualified Data.Text as T
 import           Data.Time.Clock
+import           Data.UUID (UUID)
+import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (Image)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
+import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Device 
 import           Hoodle.Type.Enum
@@ -37,8 +40,11 @@ import           Hoodle.Type.PageArrangement
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent
               deriving Show 
 
+instance Show (Cairo.Surface) where
+  show _ = "surface"
+
 -- | 
-data SystemEvent = TestSystemEvent | ClockUpdateEvent
+data SystemEvent = TestSystemEvent | ClockUpdateEvent | RenderCacheUpdate (UUID, Maybe Cairo.Surface)
                  deriving Show 
                           
 -- | 
@@ -92,6 +98,7 @@ data UserEvent = Initialized
                | MultiLine MultiLineEvent
                | NetworkProcess NetworkEvent
                | DBusEv DBusEvent
+               | GotRItem RItem
                deriving Show
                       
 instance Show (IORef a) where                      

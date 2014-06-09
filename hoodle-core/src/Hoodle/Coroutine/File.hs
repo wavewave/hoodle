@@ -20,7 +20,7 @@ module Hoodle.Coroutine.File where
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
-import           Control.Lens (view,set,over,(%~))
+import           Control.Lens (view,set,over,(%~), (.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -117,20 +117,20 @@ getFileContent (Just fname) = do
         case r of 
           Left err -> liftIO $ putStrLn err
           Right h -> do 
-            nxstate <- liftIO $ constructNewHoodleStateFromHoodle h xstate 
+            constructNewHoodleStateFromHoodle h
             ctime <- liftIO $ getCurrentTime
-            put . set (hoodleFileControl.hoodleFileName) (Just fname)
-                . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate
+            modify ( hoodleFileControl.hoodleFileName .~ Just fname )
+            modify ( hoodleFileControl.lastSavedTime  .~ Just ctime )
             commit_
       ".xoj" -> do 
           liftIO (XP.parseXojFile fname) >>= \x -> case x of  
             Left str -> liftIO $ putStrLn $ "file reading error : " ++ str 
             Right xojcontent -> do 
               hdlcontent <- liftIO $ mkHoodleFromXournal xojcontent 
-              nxstate <- liftIO $ constructNewHoodleStateFromHoodle hdlcontent xstate 
+              constructNewHoodleStateFromHoodle hdlcontent
               ctime <- liftIO $ getCurrentTime 
-              put . set (hoodleFileControl.hoodleFileName) (Just fname) 
-                  . set (hoodleFileControl.lastSavedTime) (Just ctime) $ nxstate 
+              modify ( hoodleFileControl.hoodleFileName .~ Just fname )
+              modify ( hoodleFileControl.lastSavedTime  .~ Just ctime ) 
               commit_
       ".pdf" -> do 
         let doesembed = view (settings.doesEmbedPDF) xstate
@@ -138,21 +138,26 @@ getFileContent (Just fname) = do
         case mhdl of 
           Nothing -> getFileContent Nothing
           Just hdl -> do 
-            nxstate <- liftIO $ constructNewHoodleStateFromHoodle hdl xstate 
-            put . set (hoodleFileControl.hoodleFileName) Nothing $ nxstate
+            constructNewHoodleStateFromHoodle hdl
+            modify ( hoodleFileControl.hoodleFileName .~ Nothing)
             commit_
       _ -> getFileContent Nothing    
 getFileContent Nothing = do
-    xstate <- get
-    -- testing
-    let handler = const (putStrLn "In getFileContent, got call back")
-    -- 
-    newhdl <- liftIO (cnstrctRHoodle handler =<< defaultHoodle)
-    let nhmodstate = ViewAppendState newhdl 
-    put . set (hoodleFileControl.hoodleFileName) Nothing 
-        . set hoodleModeState nhmodstate
-        $ xstate 
+    constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
+    modify ( hoodleFileControl.hoodleFileName .~ Nothing ) 
     commit_ 
+
+
+-- |
+constructNewHoodleStateFromHoodle :: Hoodle -> MainCoroutine ()  
+constructNewHoodleStateFromHoodle hdl' = do 
+    -- testing
+    -- let handler = const (putStrLn "In constructNewHoodleStateFromHoodle, got call back")
+    --
+    callRenderer $ \hdlr -> cnstrctRHoodle hdlr hdl' >>= return . GotRHoodle
+    RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
+    modify (hoodleModeState .~ ViewAppendState rhdl)
+
 
 -- | 
 fileNew :: MainCoroutine () 
@@ -373,12 +378,18 @@ fileAnnotatePDF =
       let doesembed = view (settings.doesEmbedPDF) xstate
       mhdl <- liftIO $ makeNewHoodleWithPDF doesembed filename 
       flip (maybe warning) mhdl $ \hdl -> do 
-        xstateNew <- return . set (hoodleFileControl.hoodleFileName) Nothing 
-                     =<< (liftIO $ constructNewHoodleStateFromHoodle hdl xstate)
-        commit xstateNew 
-        liftIO $ setTitleFromFileName xstateNew             
+        constructNewHoodleStateFromHoodle hdl
+        modify ( hoodleFileControl.hoodleFileName .~ Nothing)
+        commit_        
+        setTitleFromFileName_ 
         invalidateAll  
       
+
+-- | set frame title according to file name
+setTitleFromFileName_ :: MainCoroutine () 
+setTitleFromFileName_ = get >>= liftIO . setTitleFromFileName
+
+
 
 -- |
 checkEmbedImageSize :: FilePath -> MainCoroutine (Maybe FilePath) 

@@ -30,6 +30,7 @@ import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
+-- import           Graphics.UI.Gtk (postGUIAsync)
 import           System.Directory
 import           System.FilePath
 -- from hoodle-platform 

@@ -230,5 +230,5 @@ waitSomeEvent p = do
 callRenderer :: (((UUID, Maybe Cairo.Surface) -> IO ()) -> IO RenderEvent) -> MainCoroutine ()
 callRenderer action = do
     doIOaction $ \evhandler -> 
-      let handler = evhandler . SysEv . RenderCacheUpdate
+      let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
       in UsrEv . RenderEv <$> action handler

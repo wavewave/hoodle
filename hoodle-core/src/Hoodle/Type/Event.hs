@@ -106,6 +106,7 @@ instance Show (IORef a) where
 
 data RenderEvent = GotRItem RItem
                  | GotRBackground RBackground
+                 | GotRHoodle RHoodle
                  deriving Show
 
 -- | 

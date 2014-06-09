@@ -38,7 +38,7 @@ import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
-import           Graphics.Hoodle.Render
+-- import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Item (cnstrctRItem)
 import           Graphics.Hoodle.Render.Type.Background 
@@ -65,15 +65,6 @@ checkVersionAndMigrate bstr = do
         else return (parseOnly PA.hoodle bstr)
 
 
--- |
-constructNewHoodleStateFromHoodle :: Hoodle -> HoodleState -> IO HoodleState 
-constructNewHoodleStateFromHoodle hdl' xstate = do 
-    -- testing
-    let handler = const (putStrLn "In constructNewHoodleStateFromHoodle, got call back")
-    --
-    hdl <- cnstrctRHoodle handler hdl'
-    let startinghoodleModeState = ViewAppendState hdl
-    return $ set hoodleModeState startinghoodleModeState xstate
 
 -- | this is very temporary, need to be changed.     
 findFirstPDFFile :: [(Int,RPage)] -> Maybe C.ByteString

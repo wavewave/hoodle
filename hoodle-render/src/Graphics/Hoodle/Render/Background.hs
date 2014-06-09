@@ -26,6 +26,7 @@ import           Data.Monoid
 import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
+-- import           Graphics.UI.Gtk (postGUIAsync)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory

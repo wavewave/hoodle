@@ -1,11 +1,12 @@
-{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Type.Hoodle
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -50,6 +51,9 @@ type RPage = GPage RBackground ZipperSelect RLayer -- change from IntMap
 --   container for page is IntMap 
 --   page is RPage
 type RHoodle = GHoodle IM.IntMap RPage 
+
+instance Show RHoodle where
+  show _ = "RHoodle"
 
 emptyRLayer :: RLayer 
 emptyRLayer = GLayer (LyBuf Nothing) []

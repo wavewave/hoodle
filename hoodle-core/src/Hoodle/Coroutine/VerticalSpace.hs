@@ -114,8 +114,8 @@ addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) =
       case view hoodleModeState xstate of 
         ViewAppendState hdl -> do 
           let bsty = view backgroundStyle xstate 
-              hdl' = addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
-              hdl'' = moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl' 
+          hdl' <- addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
+          let hdl'' = moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl' 
               nhdlmodst = ViewAppendState hdl''
           return =<< liftIO . updatePageAll nhdlmodst
                      . set hoodleModeState nhdlmodst $ xstate 

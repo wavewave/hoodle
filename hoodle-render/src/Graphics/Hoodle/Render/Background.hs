@@ -15,7 +15,7 @@
 
 module Graphics.Hoodle.Render.Background where
 
-import           Control.Concurrent (forkIO, threadDelay)
+import           Control.Concurrent (forkIO)
 import           Control.Monad.State hiding (mapM_)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
@@ -212,9 +212,7 @@ cnstrctRBkg_StateT handler dim@(Dim w h) bkg = do
     Background _t c s -> do 
       uuid <- liftIO nextRandom
       liftIO $ forkIO $ do 
-        threadDelay 10000000
-        sfc <- Cairo.createImageSurface 
-                 Cairo.FormatARGB32 (floor w) (floor h)
+        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
         Cairo.renderWith sfc $ renderBkg (bkg,dim) 
         handler (uuid,Just sfc)
       return (RBkgSmpl c s uuid) -- (Just sfc))

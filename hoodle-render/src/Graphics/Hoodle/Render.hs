@@ -346,15 +346,14 @@ renderRBkg_Buf :: RenderCache
                -> Cairo.Render (RBackground,Dimension)
 renderRBkg_Buf cache (b,dim) = do 
     case b of 
-      RBkgSmpl _ _ _msfc  -> renderRBkg cache (b,dim) >> return ()
-
-        -- case msfc of 
-        --   Nothing -> renderRBkg cache (b,dim) >> return ()
-        --  Just sfc -> do 
-        --     Cairo.save
-        --    Cairo.setSourceSurface sfc 0 0 
-        --     Cairo.paint 
-        --    Cairo.restore
+      RBkgSmpl _ _ uuid  -> do
+        case join (HM.lookup uuid cache) of
+          Nothing -> renderRBkg cache (b,dim) >> return ()
+          Just sfc -> do 
+            Cairo.save
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.restore
       RBkgPDF _ _ _n _ msfc -> do 
         case msfc of 
           Nothing -> renderRBkg cache (b,dim) >> return ()

@@ -4,9 +4,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Page 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -25,8 +25,8 @@ import           Graphics.UI.Gtk (adjustmentGetValue)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
-import           Data.Hoodle.Zipper 
-import           Graphics.Hoodle.Render.Type
+-- import           Data.Hoodle.Zipper 
+-- import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Util
 import           Hoodle.Type.Alias
@@ -166,34 +166,7 @@ setPageCont xstate pnum cinfo = do
   return $ set currentPageNum (unPageNum pnum)
            . set (viewInfo.pageArrangement) arr $ cinfo 
 
--- | 
-newSinglePageFromOld :: Page EditMode -> Page EditMode 
-newSinglePageFromOld = set glayers (fromNonEmptyList (emptyRLayer,[]))
   
-  -- (NoSelect [emptyRLayer]) 
-
-
--- | 
-addNewPageInHoodle :: BackgroundStyle
-                   -> AddDirection  
-                   -> Hoodle EditMode
-                   -> Int 
-                   -> Hoodle EditMode 
-addNewPageInHoodle bsty dir hdl cpn = 
-  let pagelst = M.elems . view gpages $ hdl
-      (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
-      cbkg = view gbackground cpage
-      nbkg 
-        | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
-        | otherwise = cbkg 
-      npage = set gbackground nbkg 
-              . newSinglePageFromOld 
-              $ cpage
-      npagelst = case dir of 
-                   PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
-                   PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
-      nhdl = set gpages (M.fromList . zip [0..] $ npagelst) hdl
-  in nhdl 
 
 
 -- | need to be refactored into zoomRatioFrmRelToCurr (rename zoomRatioRelPredefined)

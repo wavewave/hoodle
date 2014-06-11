@@ -398,11 +398,6 @@ updateHoodleBuf cache hdl = do
 -------
 -- smart constructor for R hoodle structures
 -------
-
--- (#) :: a -> (a -> b) -> b
--- (#) = flip ($)
-
--- infixr 1 # 
  
 -- |
 cnstrctRHoodle :: Hoodle -> Renderer RHoodle
@@ -422,21 +417,6 @@ cnstrctRHoodle hdl = do
                      (Just (Context "" "" Nothing mdoc)) 
   return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
    
-
-{-            uuid <- liftIO nextRandom
-            (hdlr,queuevar,mvar) <- ask
-            (docvar,isnull) <- liftIO . atomically $ do 
-              tvarx <- newEmptyTMVar
-              queue <- readTVar queuevar
-              let nqueue = queue |> (uuid,GetDocFromDataURI src tvarx)
-              writeTVar queuevar nqueue
-              return (tvarx, Seq.null queue)
-            when isnull (liftIO (putMVar mvar ()))
-            liftIO $ atomically $ takeTMVar docvar 
-          )  
--}
-
-
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage
 cnstrctRPage_StateT pg = do  

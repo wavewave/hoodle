@@ -27,7 +27,6 @@ import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
--- import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 --
 import           Data.Hoodle.Simple (Dimension(..))
 
@@ -37,11 +36,6 @@ data PDFCommand where
   GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
   GetPageFromDoc    :: Poppler.Document -> Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
   RenderPageScaled  :: Poppler.Page -> Dimension -> Dimension -> TMVar Cairo.Surface -> PDFCommand 
-
-{-  { pdfpage   :: Poppler.Page 
-                                    , origsize  :: Dimension 
-                                    , viewsize  :: Dimension 
-                                    , resultbox :: TMVar Cairo.Surface } -}
 
 instance Show PDFCommand where
   show _ = "PDFCommand"

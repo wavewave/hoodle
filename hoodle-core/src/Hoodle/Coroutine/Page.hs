@@ -19,7 +19,8 @@
 module Hoodle.Coroutine.Page where
 
 import           Control.Applicative
-import           Control.Concurrent (forkIO)
+import           Control.Concurrent
+import           Control.Concurrent.STM
 import           Control.Lens (view,set,over, (.~), (^.) )
 import           Control.Monad
 import           Control.Monad.State
@@ -306,6 +307,29 @@ updateBkgCache geometry (pnum,page) = do
       rbkg = page ^. gbackground
       bkg = rbkg2Bkg rbkg
       uuid = rbkg_uuid rbkg 
+  case rbkg of 
+    RBkgSmpl {..} -> liftIO $ do
+                       sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
+                       Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
+                       handler (uuid, (s,sfc))
+    _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
+                       sfcvar <- liftIO (atomically newEmptyTMVar)
+                       runPDFCommand (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0)) sfcvar)
+                       sfc <-liftIO $ atomically $ takeTMVar sfcvar
+                       liftIO $ handler (uuid, (s,sfc))
+
+
+
+{-
+
+             Cairo.renderWith sfc $ do
+               Cairo.setSourceRGBA 1 1 1 1 
+               Cairo.rectangle 0 0 (x1-x0) (y1-y0)
+               Cairo.fill
+               Cairo.scale s s 
+               PopplerPage.pageRender pg
+
+
   liftIO $ forkIO $ Gtk.postGUIAsync $ do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
     case rbkg of 
@@ -320,3 +344,4 @@ updateBkgCache geometry (pnum,page) = do
     handler (uuid, (s,sfc))
   return ()
 
+-}

@@ -232,9 +232,10 @@ waitSomeEvent p = do
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
     tvar <- (^. pdfRenderQueue) <$> get  
+    mvar <- (^. pdfRenderLock) <$> get
     doIOaction $ \evhandler -> do
       let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-      UsrEv . RenderEv <$> runReaderT action (handler,tvar)
+      UsrEv . RenderEv <$> runReaderT action (handler,tvar,mvar)
 
 
 callRenderer_ :: Renderer a -> MainCoroutine ()

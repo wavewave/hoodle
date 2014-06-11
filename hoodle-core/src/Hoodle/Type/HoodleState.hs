@@ -48,6 +48,7 @@ module Hoodle.Type.HoodleState
 , statusBar
 , renderCache
 , pdfRenderQueue
+, pdfRenderLock
 -- , cursorInfo
 -- 
 , hoodleFileName 
@@ -92,6 +93,7 @@ module Hoodle.Type.HoodleState
 ) where
 
 import           Control.Category
+import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Lens (Simple,Lens,view,set,lens)
 import           Control.Monad.State hiding (get,modify)
@@ -102,7 +104,7 @@ import           Data.Maybe
 import           Data.Sequence 
 import           Data.Time.Clock
 import           Data.UUID (UUID)
-import qualified Graphics.Rendering.Cairo as Cairo
+-- import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
@@ -165,7 +167,8 @@ data HoodleState =
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
-                , _pdfRenderQueue :: TVar (Seq (UUID,Cairo.Surface)) 
+                , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
+                , _pdfRenderLock :: MVar ()
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -285,8 +288,13 @@ renderCache :: Simple Lens HoodleState RenderCache
 renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 
 -- | 
-pdfRenderQueue :: Simple Lens HoodleState (TVar (Seq (UUID, Cairo.Surface)))
+pdfRenderQueue :: Simple Lens HoodleState (TVar (Seq (UUID, PDFCommand)))
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
+
+
+-- | 
+pdfRenderLock :: Simple Lens HoodleState (MVar ())
+pdfRenderLock = lens _pdfRenderLock (\f a -> f { _pdfRenderLock = a })
 
 
 {-
@@ -391,6 +399,7 @@ emptyHoodleState :: IO HoodleState
 emptyHoodleState = do
   hdl <- emptyGHoodle
   tvar <- atomically $ newTVar empty  
+  mvar <- newEmptyMVar
   return $
     HoodleState  
     { _hoodleModeState = ViewAppendState hdl 
@@ -426,6 +435,7 @@ emptyHoodleState = do
     , _statusBar = Nothing 
     , _renderCache = HM.empty
     , _pdfRenderQueue = tvar
+    , _pdfRenderLock = mvar
     -- , _cursorInfo = Nothing
     }
 

@@ -296,7 +296,7 @@ newPageFromOld =
 
 updateBkgCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
 updateBkgCache geometry (pnum,page) = do
-  (handler,_) <- ask
+  (handler,_,_) <- ask
   let dim@(Dim w h) = page ^. gdimension 
       CvsCoord (x0,y0) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))

@@ -18,7 +18,7 @@
 
 module Hoodle.Coroutine.Default where
 
-import           Control.Applicative ((<$>))
+import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
 import           Control.Lens (_1,over,view,set,at,(.~),(%~),(^.))
@@ -31,9 +31,15 @@ import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
 import           Data.Monoid ((<>))
+import           Data.Sequence (Seq, (<|),(|>), empty, singleton, viewl, ViewL(..))
+import qualified Data.Sequence as Seq (null)
 import qualified Data.Text as T (unpack)
 import           Data.Time.Clock
-import           Graphics.UI.Gtk hiding (get,set)
+import           Data.UUID
+import qualified Graphics.Rendering.Cairo as Cairo
+import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
@@ -44,8 +50,8 @@ import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..), Background(..), defaultHoodle)
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
--- import           Graphics.Hoodle.Render.Background (cnstrctRBkg_StateT)
-import           Graphics.Hoodle.Render.Type.Background
+import           Graphics.Hoodle.Render.Background
+import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
@@ -95,12 +101,12 @@ import Prelude hiding (mapM_)
 
 -- |
 initCoroutine :: DeviceList 
-              -> Window 
+              -> Gtk.Window 
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
-              -> Statusbar -- ^ status bar 
-              -> IO (EventVar,HoodleState,UIManager,VBox)
+              -> Gtk.Statusbar -- ^ status bar 
+              -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
 initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
@@ -109,20 +115,13 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
             . set callBack (eventHandler evar) 
             <$> emptyHoodleState 
 
-  let tvar = st0new ^. pdfRenderQueue
-
   -- pdf rendering testing code
-  -- mvar <- newEmptryMVar
-  -- let go = do 
-  --   lst <- atomically $ readTVar tvar
-  --   case viewl lst of
-  --     EmptyL -> putMVar mvar ()
-  --     p :< ps -> do 
-  --       print p 
-  --       atomically $ writeTVar tvar ps
-  --       go
-  -- forkIO go
-  -- end of testing
+  let tvar = st0new ^. pdfRenderQueue
+      mvar = st0new ^. pdfRenderLock
+
+  forkIO $ pdfRendererMain tvar mvar
+
+  --
 
   (ui,uicompsighdlr) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
@@ -138,7 +137,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   -- testing
   let handler = const (putStrLn "In getFileContent, got call back")
   -- tvar <- atomically $ newTVar 0
-  newhdl <- flip runReaderT (handler,tvar) . cnstrctRHoodle =<< defaultHoodle
+  newhdl <- flip runReaderT (handler,tvar,mvar) . cnstrctRHoodle =<< defaultHoodle
   
 
   let nhmodstate = ViewAppendState newhdl 
@@ -160,9 +159,9 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   hdlst6 <- resetHoodleModeStateBuffers cache hdlst5
   let st6 = set hoodleModeState hdlst6 st5
   -- 
-  vbox <- vBoxNew False 0 
+  vbox <- Gtk.vBoxNew False 0 
   -- 
-  let startingXstate = set rootContainer (castToBox vbox) st6
+  let startingXstate = set rootContainer (Gtk.castToBox vbox) st6
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -179,8 +178,8 @@ initialize ev = do
         pageZoomChange FitWidth
         xst <- get 
         let Just sbar = view statusBar xst 
-        cxtid <- liftIO $ statusbarGetContextId sbar "test"
-        liftIO $ statusbarPush sbar cxtid "Hello there" 
+        cxtid <- liftIO $ Gtk.statusbarGetContextId sbar "test"
+        liftIO $ Gtk.statusbarPush sbar cxtid "Hello there" 
         let ui = view gtkUIManager xst
         liftIO $ toggleSave ui False
         put (set isSaved True xst) 
@@ -200,7 +199,7 @@ guiProcess ev = do
   let cinfoMap  = getCanvasInfoMap xstate
       assocs = M.toList cinfoMap 
       f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
-                            (w',h') <- liftIO $ widgetGetSize canvas
+                            (w',h') <- liftIO $ Gtk.widgetGetSize canvas
                             defaultEventProcess (CanvasConfigure cid
                                                 (fromIntegral w') 
                                                 (fromIntegral h')) 
@@ -360,7 +359,7 @@ defaultEventProcess (Sync ctime) = do
         then return () 
         else do 
           let ioact = mkIOaction $ \evhandler -> do 
-                postGUISync (evhandler (UsrEv FileReloadOrdered))
+                Gtk.postGUISync (evhandler (UsrEv FileReloadOrdered))
                 return (UsrEv ActionOrdered)
           modify (tempQueue %~ enqueue ioact)
 defaultEventProcess FileReloadOrdered = fileReload 
@@ -409,7 +408,7 @@ menuEventProcess MenuQuit = do
   xstate <- get
   liftIO $ putStrLn "MenuQuit called"
   if view isSaved xstate 
-    then liftIO $ mainQuit
+    then liftIO $ Gtk.mainQuit
     else askQuitProgram
 menuEventProcess MenuPreviousPage = changePage (\x->x-1)
 menuEventProcess MenuNextPage =  changePage (+1)
@@ -466,8 +465,8 @@ menuEventProcess MenuUseXInput = do
   let cmap = getCanvasInfoMap xstate
       canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
   if b
-    then mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsAll]) canvases
-    else mapM_ (\x->liftIO $ widgetSetExtensionEvents x [ExtensionEventsNone] ) canvases
+    then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
+    else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
 menuEventProcess MenuUseTouch = toggleTouch
 menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
@@ -520,8 +519,8 @@ colorPick = do mc <- colorPickerBox "Pen Color"
                      mc 
 
 -- | 
-colorConvert :: Color -> PenColor 
-colorConvert (Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/65536.0) (realToFrac b/65536.0) 1.0 
+colorConvert :: Gtk.Color -> PenColor 
+colorConvert (Gtk.Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/65536.0) (realToFrac b/65536.0) 1.0 
 
 -- | 
 colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
@@ -533,20 +532,20 @@ colorPickerBox msg = do
     action pcolor = 
       mkIOaction $ 
                \_evhandler -> do 
-                 dialog <- colorSelectionDialogNew msg
-                 csel <- colorSelectionDialogGetColor dialog
+                 dialog <- Gtk.colorSelectionDialogNew msg
+                 csel <- Gtk.colorSelectionDialogGetColor dialog
                  let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
-                     color = Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
+                     color = Gtk.Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
                 
-                 colorSelectionSetCurrentColor csel color
-                 res <- dialogRun dialog 
+                 Gtk.colorSelectionSetCurrentColor csel color
+                 res <- Gtk.dialogRun dialog 
                  mc <- case res of 
-                         ResponseOk -> do 
-                              clrsel <- colorSelectionDialogGetColor dialog 
-                              clr <- colorSelectionGetCurrentColor clrsel     
+                         Gtk.ResponseOk -> do 
+                              clrsel <- Gtk.colorSelectionDialogGetColor dialog 
+                              clr <- Gtk.colorSelectionGetCurrentColor clrsel     
                               return (Just (colorConvert clr))
                          _ -> return Nothing 
-                 widgetDestroy dialog 
+                 Gtk.widgetDestroy dialog 
                  return (UsrEv (ColorChosen mc))
     go = do r <- nextevent                   
             case r of 
@@ -554,3 +553,63 @@ colorPickerBox msg = do
               UpdateCanvas cid -> -- this is temporary
                 invalidateInBBox Nothing Efficient cid >> go
               _ -> go 
+
+
+pdfRendererMain :: TVar (Seq (UUID,PDFCommand)) -> MVar () -> IO () 
+pdfRendererMain tvar mvar = forever $ do 
+    lst <- atomically $ readTVar tvar
+    case viewl lst of
+      EmptyL -> do 
+        putStrLn "QUEUE EMPTY"
+        takeMVar mvar
+      p :< ps -> do 
+        pdfWorker (snd p)
+        atomically $ writeTVar tvar ps
+
+
+pdfWorker :: PDFCommand -> IO ()
+pdfWorker (GetDocFromFile fp tmvar) = do
+    mdoc <- popplerGetDocFromFile fp
+    atomically $ putTMVar tmvar mdoc 
+pdfWorker (GetDocFromDataURI str tmvar) = do
+    mdoc <- popplerGetDocFromDataURI str
+    atomically $ putTMVar tmvar mdoc
+pdfWorker (GetPageFromDoc doc pn tmvar) = do
+    mpg <- popplerGetPageFromDoc doc pn
+    atomically $ putTMVar tmvar mpg
+pdfWorker (RenderPageScaled page (Dim ow oh) (Dim w h) tmvar) = do
+    let s = w / ow
+    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+    Cairo.renderWith sfc $ do   
+      Cairo.setSourceRGBA 1 1 1 1
+      Cairo.rectangle 0 0 w h 
+      Cairo.fill
+      Cairo.scale s s
+      Poppler.pageRender page
+    atomically $ putTMVar tmvar sfc
+
+
+
+{-
+  -- mvar <- newEmptyMVar :: IO (MVar ())
+  let go s = do 
+     
+  forkIO (go 0)
+  -- end of testing
+
+
+  let ppp = \x -> (undefined, PDFData undefined undefined undefined undefined x)
+
+
+  forkIO $ forever $ do 
+    threadDelay 1000000
+    (queue,x) <- atomically $ (,) <$> readTVar tvar <*> newEmptyTMVar  
+
+    if (Seq.null queue) 
+      then do atomically $ writeTVar tvar (singleton (ppp x))
+              putMVar mvar ()
+      else atomically $ writeTVar tvar (queue |> (ppp x))
+
+    y <- atomically $ takeTMVar x
+    print y 
+-}

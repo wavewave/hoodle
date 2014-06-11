@@ -182,7 +182,7 @@ renderBkg (Background _typ col sty,Dim w h) = do
     let c = M.lookup col predefined_bkgcolor  
     case c of 
       Just (r,g,b,_a) -> Cairo.setSourceRGB r g b 
-      Nothing        -> Cairo.setSourceRGB 1 1 1 
+      Nothing         -> Cairo.setSourceRGB 1 1 1 
     Cairo.rectangle 0 0 w h 
     Cairo.fill
     drawRuling w h sty
@@ -202,7 +202,7 @@ cnstrctRBkg_StateT :: Dimension
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
 cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
-  (handler,_) <- lift ask
+  (handler,_,_) <- lift ask
   uuid <- liftIO nextRandom
   case bkg of 
     Background _t c s -> do 
@@ -232,7 +232,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
               Cairo.rectangle 0 0 w h 
               Cairo.fill
               PopplerPage.pageRender pg
-            handler (uuid,(1.0,sfc))
+            handler (uuid,(1.0,sfc)) 
         return rbkg
       case r of
         Nothing -> error "error in cnstrctRBkg_StateT"

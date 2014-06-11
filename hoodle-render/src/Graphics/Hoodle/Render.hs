@@ -44,13 +44,19 @@ module Graphics.Hoodle.Render
 , cnstrctRHoodle  
 ) where
 
+import           Control.Concurrent (putMVar)
+import           Control.Concurrent.STM
 import           Control.Lens (view,set)
 import           Control.Monad.Identity (runIdentity)
 import           Control.Monad.State hiding (mapM,mapM_)
+import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
+import           Data.Sequence ( (|>))
+import qualified Data.Sequence as Seq (null)
 import           Data.Traversable (mapM)
+import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -393,6 +399,11 @@ updateHoodleBuf cache hdl = do
 -- smart constructor for R hoodle structures
 -------
 
+-- (#) :: a -> (a -> b) -> b
+-- (#) = flip ($)
+
+-- infixr 1 # 
+ 
 -- |
 cnstrctRHoodle :: Hoodle -> Renderer RHoodle
 cnstrctRHoodle hdl = do 
@@ -401,8 +412,21 @@ cnstrctRHoodle hdl = do
       revs = view revisions hdl 
       pgs = view pages hdl
       embeddedsrc = view embeddedPdf hdl 
-  mdoc <- maybe (return Nothing) (\src -> liftIO $ popplerGetDocFromDataURI src)
-            embeddedsrc
+  mdoc <- maybe (return Nothing) (\src -> do
+            uuid <- liftIO nextRandom
+            (hdlr,queuevar,mvar) <- ask
+            (docvar,isnull) <- liftIO . atomically $ do 
+              tvarx <- newEmptyTMVar
+              queue <- readTVar queuevar
+              let nqueue = queue |> (uuid,GetDocFromDataURI src tvarx)
+              writeTVar queuevar nqueue
+              return (tvarx, Seq.null queue)
+            when isnull (liftIO (putMVar mvar ()))
+            liftIO $ atomically $ takeTMVar docvar 
+          ) embeddedsrc 
+    
+  --  liftIO $ popplerGetDocFromDataURI src )
+            
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
                      (Just (Context "" "" Nothing mdoc)) 
   return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          

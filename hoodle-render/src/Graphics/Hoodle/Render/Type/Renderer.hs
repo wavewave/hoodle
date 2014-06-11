@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
@@ -16,10 +17,14 @@ module Graphics.Hoodle.Render.Type.Renderer where
 
 import           Control.Concurrent.MVar
 import           Control.Concurrent.STM
+import           Control.Monad
+import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as B
-import           Data.Sequence
+import           Data.Sequence hiding (null)
+import qualified Data.Sequence as Seq (null)
 import           Data.UUID
+import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 -- import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
@@ -27,13 +32,16 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import           Data.Hoodle.Simple (Dimension(..))
 
 
-data PDFCommand = GetDocFromFile    B.ByteString         (TMVar (Maybe Poppler.Document))
-                | GetDocFromDataURI B.ByteString         (TMVar (Maybe Poppler.Document))
-                | GetPageFromDoc    Poppler.Document Int (TMVar (Maybe Poppler.Page))
-                | RenderPageScaled  { pdfpage   :: Poppler.Page 
+data PDFCommand where
+  GetDocFromFile    :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
+  GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
+  GetPageFromDoc    :: Poppler.Document -> Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
+  RenderPageScaled  :: Poppler.Page -> Dimension -> Dimension -> TMVar Cairo.Surface -> PDFCommand 
+
+{-  { pdfpage   :: Poppler.Page 
                                     , origsize  :: Dimension 
                                     , viewsize  :: Dimension 
-                                    , resultbox :: TMVar Cairo.Surface }
+                                    , resultbox :: TMVar Cairo.Surface } -}
 
 instance Show PDFCommand where
   show _ = "PDFCommand"
@@ -41,3 +49,14 @@ instance Show PDFCommand where
 
 type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), TVar (Seq (UUID, PDFCommand)), MVar ()) IO
 
+
+runPDFCommand :: PDFCommand -> Renderer ()
+runPDFCommand cmd = do
+    uuid <- liftIO nextRandom
+    (_hdlr,queuevar,mvar) <- ask
+    isnull <- liftIO . atomically $ do 
+      queue <- readTVar queuevar
+      let nqueue = queue |> (uuid,cmd)
+      writeTVar queuevar nqueue
+      return (Seq.null queue)
+    when isnull (liftIO (putMVar mvar ()))

@@ -15,7 +15,8 @@
 
 module Graphics.Hoodle.Render.Background where
 
-import           Control.Concurrent (forkIO)
+import           Control.Concurrent
+import           Control.Concurrent.STM
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Reader (ask)
@@ -215,24 +216,39 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do
         (pg,rbkg) <- case (md,mf) of 
           (Just d, Just f) -> do 
-            doc <- MaybeT . liftIO $ popplerGetDocFromFile f
+            docvar <- liftIO (atomically newEmptyTMVar)
+            (lift . lift) (runPDFCommand (GetDocFromFile f docvar))
+            doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
+            -- doc <- MaybeT . liftIO $ popplerGetDocFromFile f
             lift . put $ Just (Context d f (Just doc) Nothing)
-            pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn 
+            --
+            pgvar <- liftIO (atomically newEmptyTMVar)
+            (lift . lift) (runPDFCommand (GetPageFromDoc doc pn pgvar))
+            pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
+            -- pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn 
             return (pg, RBkgPDF md f pn (Just pg) uuid)
           _ -> do 
             Context oldd oldf olddoc _ <- MaybeT get
             doc <- MaybeT . return $ olddoc  
-            pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
+            pgvar <- liftIO (atomically newEmptyTMVar)
+            (lift . lift) (runPDFCommand (GetPageFromDoc doc pn pgvar))
+            pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
+            -- pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) uuid)
-        liftIO $ 
-          forkIO $ postGUIAsync $ do
+        sfcvar <- liftIO (atomically newEmptyTMVar)
+        (lift . lift) (runPDFCommand (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar))
+        sfc <-liftIO $ atomically $ takeTMVar sfcvar
+        liftIO $ handler (uuid,(1.0,sfc))
+
+        {- liftIO $ 
+          forkIO $ do
             sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
             Cairo.renderWith sfc $ do   
               Cairo.setSourceRGBA 1 1 1 1
               Cairo.rectangle 0 0 w h 
               Cairo.fill
               PopplerPage.pageRender pg
-            handler (uuid,(1.0,sfc)) 
+            handler (uuid,(1.0,sfc)) -}
         return rbkg
       case r of
         Nothing -> error "error in cnstrctRBkg_StateT"
@@ -241,16 +257,25 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do 
         Context _ _ _ mdoc <- MaybeT get
         doc <- (MaybeT . return) mdoc 
-        pg <- (MaybeT . liftIO) $ popplerGetPageFromDoc doc pn
-        liftIO $ 
+        pgvar <- liftIO (atomically newEmptyTMVar)
+        (lift . lift) (runPDFCommand (GetPageFromDoc doc pn pgvar))
+        pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
+        -- pg <- (MaybeT . liftIO) $ popplerGetPageFromDoc doc pn
+        sfcvar <- liftIO (atomically newEmptyTMVar)
+        (lift . lift) (runPDFCommand (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar))
+        sfc <-liftIO $ atomically $ takeTMVar sfcvar
+        liftIO $ handler (uuid,(1.0,sfc))
+
+{-        liftIO $ 
           forkIO $ postGUIAsync $ do
+
             sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
             Cairo.renderWith sfc $ do   
               Cairo.setSourceRGBA 1 1 1 1
               Cairo.rectangle 0 0 w h 
               Cairo.fill
               PopplerPage.pageRender pg
-            handler (uuid,(1.0,sfc))
+            handler (uuid,(1.0,sfc)) -}
         return (RBkgEmbedPDF pn (Just pg) uuid)
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"

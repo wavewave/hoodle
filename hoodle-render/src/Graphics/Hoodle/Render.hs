@@ -413,7 +413,17 @@ cnstrctRHoodle hdl = do
       pgs = view pages hdl
       embeddedsrc = view embeddedPdf hdl 
   mdoc <- maybe (return Nothing) (\src -> do
-            uuid <- liftIO nextRandom
+            docvar <- liftIO (atomically newEmptyTMVar)
+            runPDFCommand (GetDocFromDataURI src docvar)
+            liftIO $ atomically $ takeTMVar docvar 
+          ) embeddedsrc
+
+  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
+                     (Just (Context "" "" Nothing mdoc)) 
+  return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
+   
+
+{-            uuid <- liftIO nextRandom
             (hdlr,queuevar,mvar) <- ask
             (docvar,isnull) <- liftIO . atomically $ do 
               tvarx <- newEmptyTMVar
@@ -423,14 +433,9 @@ cnstrctRHoodle hdl = do
               return (tvarx, Seq.null queue)
             when isnull (liftIO (putMVar mvar ()))
             liftIO $ atomically $ takeTMVar docvar 
-          ) embeddedsrc 
-    
-  --  liftIO $ popplerGetDocFromDataURI src )
-            
-  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
-                     (Just (Context "" "" Nothing mdoc)) 
-  return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
-   
+          )  
+-}
+
 
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage

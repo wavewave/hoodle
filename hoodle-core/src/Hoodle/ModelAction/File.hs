@@ -18,6 +18,7 @@ module Hoodle.ModelAction.File where
 
 -- from other package
 import           Control.Applicative
+import           Control.Concurrent.STM
 import           Control.Lens (view,set)
 import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.Attoparsec 
@@ -39,7 +40,6 @@ import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
--- import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Item (cnstrctRItem)
 import           Graphics.Hoodle.Render.Type.Background 
@@ -49,8 +49,6 @@ import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2 as MV
--- import qualified Text.Xournal.Parse.Conduit as XP
--- import           Text.Hoodle.Migrate.FromXournal
 -- from this package
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
@@ -64,8 +62,6 @@ checkVersionAndMigrate bstr = do
       if ( v <= "0.1.1" ) 
         then MV.migrate bstr
         else return (parseOnly PA.hoodle bstr)
-
-
 
 -- | this is very temporary, need to be changed.     
 findFirstPDFFile :: [(Int,RPage)] -> Maybe C.ByteString
@@ -258,7 +254,8 @@ loadHoodlet str = do
            Right itm -> do
              -- testing
              let handler = const (putStrLn "In loadHoodlet, got call back")
+             tvar <- atomically $ newTVar 0  
              --
-             ritm <- runReaderT (cnstrctRItem itm) handler
+             ritm <- runReaderT (cnstrctRItem itm) (handler,tvar)
              return (Just ritm) 
        else return Nothing

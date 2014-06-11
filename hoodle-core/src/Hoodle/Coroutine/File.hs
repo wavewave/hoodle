@@ -24,7 +24,7 @@ import           Control.Lens (view,set,over,(%~), (.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Control.Monad.Trans.Reader (runReaderT)
+-- import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
@@ -453,11 +453,11 @@ fileLoadSVG = do
           hdl = getHoodle xstate 
           currpage = getPageFromGHoodleMap pgnum hdl
           currlayer = getCurrentLayer currpage
-      -- testing
-      let handler = const (putStrLn "fileLoadSVG")
       --
-      newitem <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemSVG) 
-                   (SVG Nothing Nothing bstr (100,100) (Dim 300 300))
+      callRenderer $ return . GotRItem =<< (cnstrctRItem . ItemSVG) 
+                       (SVG Nothing Nothing bstr (100,100) (Dim 300 300))
+      RenderEv (GotRItem newitem) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
+      -- 
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 

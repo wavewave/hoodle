@@ -17,6 +17,7 @@
 
 module Hoodle.Coroutine.Select.ManipulateImage where
 
+import           Control.Concurrent.STM
 import           Control.Lens (set, view, _2)
 import           Control.Monad (when)
 import           Control.Monad.State (get)
@@ -98,8 +99,9 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
         forM_ mimg' $ \img' -> do
           -- testing 
           let handler = const (putStrLn "in startCropRect, got call back")
+          tvar <- liftIO (atomically $ newTVar 0 )
           --
-          rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) handler
+          rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) (handler,tvar)
           let ntpage = replaceSelection rimg' tpage
           nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
           commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
@@ -172,8 +174,9 @@ rotateImage dir imgbbx = do
             forM_ mimg' $ \img' -> do 
               -- testing
               let handler = const (putStrLn "In rotateImage, got call back") 
+              tvar <- liftIO $ atomically $ newTVar 0
               -- 
-              rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) handler
+              rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) (handler,tvar)
               let ntpage = replaceSelection rimg' tpage
               nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
               commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))

@@ -20,7 +20,7 @@ module Hoodle.Coroutine.Draw where
 
 -- from other packages
 import           Control.Applicative 
-import           Control.Lens (view,set,(%~))
+import           Control.Lens (view,set,(^.),(%~))
 import           Control.Monad
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader (runReaderT)
@@ -230,9 +230,10 @@ waitSomeEvent p = do
 
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
+    tvar <- (^. pdfRenderQueue) <$> get  
     doIOaction $ \evhandler -> 
       let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-      in UsrEv . RenderEv <$> runReaderT action handler
+      in UsrEv . RenderEv <$> runReaderT action (handler,tvar)
 
 
 callRenderer_ :: Renderer a -> MainCoroutine ()

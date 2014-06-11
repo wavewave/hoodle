@@ -202,7 +202,7 @@ cnstrctRBkg_StateT :: Dimension
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
 cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
-  handler <- lift ask
+  (handler,_) <- lift ask
   uuid <- liftIO nextRandom
   case bkg of 
     Background _t c s -> do 

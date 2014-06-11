@@ -18,6 +18,7 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
+import           Control.Concurrent.STM (atomically, newTVar)
 import           Control.Lens (_1,_2,_3,view,set,(%~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
@@ -283,8 +284,10 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
         currlayer = getCurrentLayer currpage
     -- testing
     let handler = const (putStrLn "svgInsert, got call back") 
+    tvar <- liftIO $ atomically $ newTVar 0
+   
     -- 
-    newitem <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemSVG) 
+    newitem <- (liftIO . flip runReaderT (handler,tvar) . cnstrctRItem . ItemSVG) 
                  (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr 
                       (x0,y0) (Dim (x1-x0) (y1-y0)))  
     let otheritems = view gitems currlayer  
@@ -335,8 +338,10 @@ linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
     -- testing
     let handler = const (putStrLn "linkInsert, got call back")
+    tvar <- liftIO $ atomically $ newTVar 0
+
     -- 
-    newitem <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemLink) nlnk
+    newitem <- (liftIO . flip runReaderT (handler,tvar) . cnstrctRItem . ItemLink) nlnk
     insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
 
 
@@ -348,8 +353,10 @@ addAnchor = do
     let anc = Anchor uuidbstr (100,100) (Dim 50 50)
     -- testing
     let handler = const (putStrLn "addAnchor, got call back")
+    tvar <- liftIO $ atomically $ newTVar 0
+
     --
-    nitm <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemAnchor) anc
+    nitm <- (liftIO . flip runReaderT (handler,tvar) . cnstrctRItem . ItemAnchor) anc
     insertItemAt Nothing nitm
 
 -- |

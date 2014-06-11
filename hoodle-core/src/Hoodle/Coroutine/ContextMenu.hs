@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -20,7 +21,6 @@ import           Control.Applicative
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State hiding (mapM_,forM_)
 import           Control.Monad.Trans.Maybe
-import           Control.Monad.Trans.Reader (runReaderT)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Foldable (mapM_,forM_)
@@ -123,12 +123,11 @@ processContextMenu (CMenuLinkConvert nlnk) =
                   buf = view (glayers.selectedLayer.gbuffer) tpg
               ntpg <- case activelayer of 
                 Left _ -> return tpg 
-                Right (a :- _b :- as ) -> liftIO $ do
+                Right (a :- _b :- as ) -> do
                   let nitm = ItemLink nlnk
-                  -- testing
-                  let handler = const (putStrLn "processContextMenu")
-                  --
-                  nritm <- runReaderT (cnstrctRItem nitm) handler
+                  callRenderer $ cnstrctRItem nitm >>= return . GotRItem
+                  RenderEv (GotRItem nritm) <-
+                    waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
                   let alist' = (a :- Hitted [nritm] :- as )
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
@@ -167,10 +166,9 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
     let mloc = view (hoodleFileControl.hoodleFileName) xst
         loc = maybe "" B.pack mloc
     let lnk = LinkAnchor uuidbstr docidbstr loc (anchor_id anc) (0,0) (Dim 50 50)
-    -- testing 
-    let handler = const (putStrLn "processContextMenu")
-    -- 
-    newitem <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemLink) lnk    
+    callRenderer $ cnstrctRItem (ItemLink lnk) >>= return . GotRItem
+    RenderEv (GotRItem newitem) <-
+      waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
     insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt

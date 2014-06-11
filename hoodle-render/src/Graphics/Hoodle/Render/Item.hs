@@ -45,10 +45,10 @@ import           Graphics.Hoodle.Render.Type.Renderer
 
 
 -- | construct renderable item 
-cnstrctRItem :: {- ((UUID, (Double, Cairo.Surface)) -> IO ()) -> -} Item -> Renderer RItem 
+cnstrctRItem :: Item -> Renderer RItem 
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem (ItemImage img) = do 
-    handler <- ask 
+    (handler,_) <- ask 
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
     uuid <- liftIO $  nextRandom

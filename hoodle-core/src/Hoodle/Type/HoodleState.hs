@@ -47,6 +47,7 @@ module Hoodle.Type.HoodleState
 , tempQueue 
 , statusBar
 , renderCache
+, pdfRenderQueue
 -- , cursorInfo
 -- 
 , hoodleFileName 
@@ -91,6 +92,7 @@ module Hoodle.Type.HoodleState
 ) where
 
 import           Control.Category
+import           Control.Concurrent.STM
 import           Control.Lens (Simple,Lens,view,set,lens)
 import           Control.Monad.State hiding (get,modify)
 import           Data.Functor.Identity (Identity(..))
@@ -160,6 +162,7 @@ data HoodleState =
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
+                , _pdfRenderQueue :: TVar Int
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -278,6 +281,10 @@ statusBar = lens _statusBar (\f a -> f { _statusBar = a })
 renderCache :: Simple Lens HoodleState RenderCache
 renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 
+-- | 
+pdfRenderQueue :: Simple Lens HoodleState (TVar Int)
+pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
+
 
 {-
 -- | 
@@ -380,6 +387,7 @@ doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariable
 emptyHoodleState :: IO HoodleState 
 emptyHoodleState = do
   hdl <- emptyGHoodle
+  tvar <- atomically $ newTVar 0 
   return $
     HoodleState  
     { _hoodleModeState = ViewAppendState hdl 
@@ -414,6 +422,7 @@ emptyHoodleState = do
     , _tempLog = id 
     , _statusBar = Nothing 
     , _renderCache = HM.empty
+    , _pdfRenderQueue = tvar
     -- , _cursorInfo = Nothing
     }
 

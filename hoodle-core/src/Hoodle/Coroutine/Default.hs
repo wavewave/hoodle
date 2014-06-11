@@ -1,7 +1,8 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -19,6 +20,7 @@ module Hoodle.Coroutine.Default where
 
 import           Control.Applicative ((<$>))
 import           Control.Concurrent 
+import           Control.Concurrent.STM
 import           Control.Lens (_1,over,view,set,at,(.~),(%~))
 -- import           Control.Monad.Reader hiding (mapM_)
 import           Control.Monad.State hiding (mapM_)
@@ -119,7 +121,10 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   -- testing
   let handler = const (putStrLn "In getFileContent, got call back")
-  newhdl <- liftIO (flip runReaderT handler . cnstrctRHoodle =<< defaultHoodle)
+  tvar <- atomically $ newTVar 0
+  newhdl <- flip runReaderT (handler,tvar) . cnstrctRHoodle =<< defaultHoodle
+  
+
   let nhmodstate = ViewAppendState newhdl 
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
@@ -309,9 +314,11 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
         getnbkg' (RBkgEmbedPDF _ _ _) = Background "solid" "white" bstystr  
         -- 
     liftIO $ putStrLn " defaultEventProcess: BackgroundStyleChanged HERE/ "
-    -- testing 
-    let handler = const (putStrLn "defaultEventProcess : get call back")
-    nbkg <- liftIO $ runReaderT (evalStateT (cnstrctRBkg_StateT dim (getnbkg' cbkg)) Nothing) handler
+
+    callRenderer $ GotRBackground <$> evalStateT (cnstrctRBkg_StateT dim (getnbkg' cbkg)) Nothing
+    RenderEv (GotRBackground nbkg) <- 
+      waitSomeEvent (\case RenderEv (GotRBackground _) -> True ; _ -> False )
+                   
     let npage = set gbackground nbkg cpage 
         npgs = set (at pgnum) (Just npage) pgs 
         nhdl = set gpages npgs hdl 

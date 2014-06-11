@@ -34,6 +34,7 @@ Library
                  monad-loops >= 0.3,  
                  mtl == 2.*, 
                  poppler >= 0.12.2.2,
+                 stm,
                  strict >= 0.3, 
                  svgcairo == 0.12.*,
                  transformers >= 0.3,

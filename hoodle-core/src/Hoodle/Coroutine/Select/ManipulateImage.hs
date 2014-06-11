@@ -17,12 +17,10 @@
 
 module Hoodle.Coroutine.Select.ManipulateImage where
 
-import           Control.Concurrent.STM
 import           Control.Lens (set, view, _2)
 import           Control.Monad (when)
 import           Control.Monad.State (get)
 import           Control.Monad.Trans (liftIO)
-import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.ByteString.Base64 (encode)
 import           Data.Foldable (forM_)
 import           Data.Monoid ((<>))
@@ -97,11 +95,11 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
         forM_ mimg' $ \img' -> do
-          -- testing 
-          let handler = const (putStrLn "in startCropRect, got call back")
-          tvar <- liftIO (atomically $ newTVar 0 )
           --
-          rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) (handler,tvar)
+          callRenderer $ return . GotRItem =<< cnstrctRItem (ItemImage img')
+          RenderEv (GotRItem rimg') <- 
+            waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
+          --
           let ntpage = replaceSelection rimg' tpage
           nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
           commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
@@ -172,11 +170,11 @@ rotateImage dir imgbbx = do
             let img = bbxed_content imgbbx 
             mimg' <- liftIO (createRotatedImage dir img (getBBox imgbbx))
             forM_ mimg' $ \img' -> do 
-              -- testing
-              let handler = const (putStrLn "In rotateImage, got call back") 
-              tvar <- liftIO $ atomically $ newTVar 0
-              -- 
-              rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) (handler,tvar)
+              --
+              callRenderer $ return . GotRItem =<< cnstrctRItem (ItemImage img')
+              RenderEv (GotRItem rimg') <- 
+                waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
+              --
               let ntpage = replaceSelection rimg' tpage
               nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
               commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))

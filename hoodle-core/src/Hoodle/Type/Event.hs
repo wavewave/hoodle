@@ -105,6 +105,7 @@ instance Show (IORef a) where
   show _ = "IORef"
 
 data RenderEvent = GotRItem RItem
+                 | GotRItems [RItem]
                  | GotRBackground RBackground
                  | GotRHoodle RHoodle
                  | GotNone

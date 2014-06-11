@@ -25,6 +25,7 @@ import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 -- import           Control.Monad.Trans.Reader (runReaderT)
+import           Data.Attoparsec (parseOnly)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
@@ -55,6 +56,7 @@ import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
 import           Text.Hoodle.Builder 
 import           Text.Hoodle.Migrate.FromXournal
+import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Xournal.Parse.Conduit as XP
 -- import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 -- from this package 
@@ -515,7 +517,7 @@ embedAllPDFBackground = do
   
 -- | embed an item from hoodlet using hoodlet identifier
 embedHoodlet :: String -> MainCoroutine ()
-embedHoodlet str = liftIO (loadHoodlet str) >>= mapM_ (insertItemAt Nothing) 
+embedHoodlet str = loadHoodlet str >>= mapM_ (insertItemAt Nothing) 
 
 -- |
 mkRevisionHdlFile :: Hoodle -> IO (String,String)
@@ -675,6 +677,27 @@ fileShowUUID = do
     let uuidstr = view ghoodleID hdl
     okMessageBox (B.unpack uuidstr)
   
+
+loadHoodlet :: String -> MainCoroutine (Maybe RItem)
+loadHoodlet str = do
+     homedir <- liftIO getHomeDirectory
+     let hoodled = homedir </> ".hoodle.d"
+         hoodletdir = hoodled </> "hoodlet"
+     b' <- liftIO $ doesDirectoryExist hoodletdir 
+     if b' 
+       then do            
+         let fp = hoodletdir </> str <.> "hdlt"
+         bstr <- liftIO $ B.readFile fp 
+         case parseOnly Hoodlet.hoodlet bstr of 
+           Left err -> liftIO $ putStrLn err >> return Nothing
+           Right itm -> do
+             --
+             callRenderer $ cnstrctRItem itm >>= return . GotRItem 
+             RenderEv (GotRItem ritm) <- 
+               waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False )
+             --
+             return (Just ritm) 
+       else return Nothing
 
   
   

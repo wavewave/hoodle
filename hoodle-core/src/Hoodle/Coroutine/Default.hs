@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative ((<$>))
 import           Control.Concurrent 
 import           Control.Concurrent.STM
-import           Control.Lens (_1,over,view,set,at,(.~),(%~))
+import           Control.Lens (_1,over,view,set,at,(.~),(%~),(^.))
 -- import           Control.Monad.Reader hiding (mapM_)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
@@ -108,6 +108,22 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
             . set rootOfRootWindow window 
             . set callBack (eventHandler evar) 
             <$> emptyHoodleState 
+
+  let tvar = st0new ^. pdfRenderQueue
+
+  -- pdf rendering testing code
+  -- mvar <- newEmptryMVar
+  -- let go = do 
+  --   lst <- atomically $ readTVar tvar
+  --   case viewl lst of
+  --     EmptyL -> putMVar mvar ()
+  --     p :< ps -> do 
+  --       print p 
+  --       atomically $ writeTVar tvar ps
+  --       go
+  -- forkIO go
+  -- end of testing
+
   (ui,uicompsighdlr) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
       initcvs = set (canvasWidgets.widgetConfig.doesUsePanZoomWidget) usepz
@@ -121,7 +137,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   -- testing
   let handler = const (putStrLn "In getFileContent, got call back")
-  tvar <- atomically $ newTVar 0
+  -- tvar <- atomically $ newTVar 0
   newhdl <- flip runReaderT (handler,tvar) . cnstrctRHoodle =<< defaultHoodle
   
 

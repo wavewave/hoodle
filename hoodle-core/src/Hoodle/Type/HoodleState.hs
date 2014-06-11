@@ -99,7 +99,10 @@ import           Data.Functor.Identity (Identity(..))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
 import           Data.Maybe
+import           Data.Sequence 
 import           Data.Time.Clock
+import           Data.UUID (UUID)
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
@@ -162,7 +165,7 @@ data HoodleState =
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
-                , _pdfRenderQueue :: TVar Int
+                , _pdfRenderQueue :: TVar (Seq (UUID,Cairo.Surface)) 
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -282,7 +285,7 @@ renderCache :: Simple Lens HoodleState RenderCache
 renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 
 -- | 
-pdfRenderQueue :: Simple Lens HoodleState (TVar Int)
+pdfRenderQueue :: Simple Lens HoodleState (TVar (Seq (UUID, Cairo.Surface)))
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 
 
@@ -387,7 +390,7 @@ doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariable
 emptyHoodleState :: IO HoodleState 
 emptyHoodleState = do
   hdl <- emptyGHoodle
-  tvar <- atomically $ newTVar 0 
+  tvar <- atomically $ newTVar empty  
   return $
     HoodleState  
     { _hoodleModeState = ViewAppendState hdl 

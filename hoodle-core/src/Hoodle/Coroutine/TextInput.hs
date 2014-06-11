@@ -18,11 +18,10 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
-import           Control.Concurrent.STM (atomically, newTVar)
+-- import           Control.Concurrent.STM (atomically, newTVar)
 import           Control.Lens (_1,_2,_3,view,set,(%~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
-import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.Attoparsec
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
@@ -282,14 +281,13 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
         hdl = getHoodle xstate 
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-    -- testing
-    let handler = const (putStrLn "svgInsert, got call back") 
-    tvar <- liftIO $ atomically $ newTVar 0
-   
-    -- 
-    newitem <- (liftIO . flip runReaderT (handler,tvar) . cnstrctRItem . ItemSVG) 
-                 (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr 
-                      (x0,y0) (Dim (x1-x0) (y1-y0)))  
+    --
+    callRenderer ( (return . GotRItem) =<< 
+      (cnstrctRItem (ItemSVG (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr (x0,y0) (Dim (x1-x0) (y1-y0))))))
+    
+    RenderEv (GotRItem newitem) <- 
+      waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
+    --             
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  
@@ -336,12 +334,11 @@ linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do
         lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
-    -- testing
-    let handler = const (putStrLn "linkInsert, got call back")
-    tvar <- liftIO $ atomically $ newTVar 0
-
-    -- 
-    newitem <- (liftIO . flip runReaderT (handler,tvar) . cnstrctRItem . ItemLink) nlnk
+    --
+    callRenderer $ return . GotRItem =<< cnstrctRItem (ItemLink nlnk) 
+    RenderEv (GotRItem newitem) <- 
+      waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False) 
+    --
     insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
 
 
@@ -351,12 +348,11 @@ addAnchor = do
     uuid <- liftIO $ nextRandom
     let uuidbstr = B.pack (show uuid)
     let anc = Anchor uuidbstr (100,100) (Dim 50 50)
-    -- testing
-    let handler = const (putStrLn "addAnchor, got call back")
-    tvar <- liftIO $ atomically $ newTVar 0
-
     --
-    nitm <- (liftIO . flip runReaderT (handler,tvar) . cnstrctRItem . ItemAnchor) anc
+    callRenderer $ return . GotRItem =<< cnstrctRItem (ItemAnchor anc)
+    RenderEv (GotRItem nitm) <- 
+      waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
+    --
     insertItemAt Nothing nitm
 
 -- |

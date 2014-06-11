@@ -21,6 +21,7 @@ import           Control.Lens (set, view, _2)
 import           Control.Monad (when)
 import           Control.Monad.State (get)
 import           Control.Monad.Trans (liftIO)
+import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.ByteString.Base64 (encode)
 import           Data.Foldable (forM_)
 import           Data.Monoid ((<>))
@@ -98,7 +99,7 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
           -- testing 
           let handler = const (putStrLn "in startCropRect, got call back")
           --
-          rimg' <- liftIO $ cnstrctRItem handler (ItemImage img') 
+          rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) handler
           let ntpage = replaceSelection rimg' tpage
           nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
           commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
@@ -172,7 +173,7 @@ rotateImage dir imgbbx = do
               -- testing
               let handler = const (putStrLn "In rotateImage, got call back") 
               -- 
-              rimg' <- liftIO $ cnstrctRItem handler (ItemImage img') 
+              rimg' <- liftIO $ runReaderT (cnstrctRItem (ItemImage img')) handler
               let ntpage = replaceSelection rimg' tpage
               nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
               commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))

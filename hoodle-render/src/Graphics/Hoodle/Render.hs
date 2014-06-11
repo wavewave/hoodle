@@ -51,7 +51,6 @@ import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import           Data.Traversable (mapM)
-import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -395,8 +394,8 @@ updateHoodleBuf cache hdl = do
 -------
 
 -- |
-cnstrctRHoodle :: ((UUID, (Double,Cairo.Surface)) -> IO ()) -> Hoodle -> IO RHoodle
-cnstrctRHoodle handler hdl = do 
+cnstrctRHoodle :: Hoodle -> Renderer RHoodle
+cnstrctRHoodle hdl = do 
   let hid = view hoodleID hdl 
       ttl = view title hdl 
       revs = view revisions hdl 
@@ -404,25 +403,25 @@ cnstrctRHoodle handler hdl = do
       embeddedsrc = view embeddedPdf hdl 
   mdoc <- maybe (return Nothing) (\src -> liftIO $ popplerGetDocFromDataURI src)
             embeddedsrc
-  npgs <- evalStateT (mapM (cnstrctRPage_StateT handler) pgs) 
+  npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
                      (Just (Context "" "" Nothing mdoc)) 
   return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
    
 
 -- |
-cnstrctRPage_StateT :: ((UUID, (Double, Cairo.Surface)) -> IO ()) -> Page -> StateT (Maybe Context) IO RPage
-cnstrctRPage_StateT handler pg = do  
+cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage
+cnstrctRPage_StateT pg = do  
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg
-  nlyrs_lst <- liftIO $ mapM (cnstrctRLayer handler) lyrs
+  nlyrs_lst <- lift (mapM cnstrctRLayer lyrs)
   let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
       nlyrs = fromNonEmptyList nlyrs_nonemptylst 
-  nbkg <- cnstrctRBkg_StateT handler dim bkg
+  nbkg <- cnstrctRBkg_StateT dim bkg
   return $ GPage dim nbkg nlyrs 
     
 -- |
-cnstrctRLayer :: ((UUID, (Double,Cairo.Surface)) -> IO ()) -> Layer -> IO RLayer 
-cnstrctRLayer handler lyr = do 
-  nitms <- (mapM (cnstrctRItem handler) . view items) lyr 
+cnstrctRLayer :: Layer -> Renderer RLayer 
+cnstrctRLayer lyr = do 
+  nitms <- (mapM cnstrctRItem . view items) lyr 
   return (set gitems nitms emptyRLayer)

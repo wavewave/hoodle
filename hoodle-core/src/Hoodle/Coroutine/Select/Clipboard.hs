@@ -17,6 +17,7 @@ module Hoodle.Coroutine.Select.Clipboard where
 -- from other packages
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State 
+import           Control.Monad.Trans.Reader (runReaderT)
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
 import           Control.Monad.Trans.Crtn.Queue 
@@ -115,7 +116,7 @@ pasteToSelection = do
         -- testing 
         let handler = const (putStrLn "In pasteToSelection, got call back")
         -- 
-        ritms <- liftIO (mapM (cnstrctRItem handler) itms)
+        ritms <- liftIO (runReaderT (mapM cnstrctRItem itms) handler)
         modeChange ToSelectMode >>updateXState (pasteAction ritms) >> invalidateAll  
   where 
     pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) . view currentCanvasInfo $ xst

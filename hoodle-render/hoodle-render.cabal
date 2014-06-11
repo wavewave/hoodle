@@ -56,6 +56,7 @@ Library
                    Graphics.Hoodle.Render.Type.Hoodle
                    Graphics.Hoodle.Render.Type.Item
                    Graphics.Hoodle.Render.Type.RenderCache
+                   Graphics.Hoodle.Render.Type.Renderer
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util
                    Graphics.Hoodle.Render.Util.HitTest

@@ -22,13 +22,12 @@ module Hoodle.Coroutine.Draw where
 import           Control.Applicative 
 import           Control.Lens (view,set,(%~))
 import           Control.Monad
-import           Control.Monad.Trans
 import           Control.Monad.State
+import           Control.Monad.Trans.Reader (runReaderT)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
 import           Data.Time.Clock
 import           Data.Time.LocalTime
-import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform
@@ -36,6 +35,7 @@ import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
+import           Graphics.Hoodle.Render.Type.Renderer
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Type.Alias
@@ -228,16 +228,15 @@ waitSomeEvent p = do
       _ -> if  p r then return r else waitSomeEvent p  
 
 
-callRenderer :: (((UUID, (Double,Cairo.Surface)) -> IO ()) -> IO RenderEvent) -> MainCoroutine ()
+callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
     doIOaction $ \evhandler -> 
       let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-      in UsrEv . RenderEv <$> action handler
+      in UsrEv . RenderEv <$> runReaderT action handler
 
 
-callRenderer_ :: (((UUID, (Double,Cairo.Surface)) -> IO ()) -> IO a) 
-              -> MainCoroutine ()
+callRenderer_ :: Renderer a -> MainCoroutine ()
 callRenderer_ action = do
-    callRenderer $ \hdlr -> action hdlr >> return GotNone
+    callRenderer $ action >> return GotNone
     waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
     return ()

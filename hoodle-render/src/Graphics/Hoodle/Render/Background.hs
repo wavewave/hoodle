@@ -18,13 +18,13 @@ module Graphics.Hoodle.Render.Background where
 import           Control.Concurrent (forkIO)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Maybe
+import           Control.Monad.Trans.Reader (ask)
 import           Data.ByteString hiding (putStrLn,filter)
 import           Data.Foldable (mapM_)
 import qualified Data.Map as M
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
-import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.UI.Gtk (postGUIAsync)
@@ -38,6 +38,7 @@ import           Data.Hoodle.Predefined
 import           Data.Hoodle.Simple
 --
 import           Graphics.Hoodle.Render.Type.Background
+import           Graphics.Hoodle.Render.Type.Renderer
 -- 
 import Prelude hiding (mapM_)
 
@@ -197,11 +198,11 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
 
 
 -- | this has some bugs. need to fix 
-cnstrctRBkg_StateT :: ((UUID, (Double,Cairo.Surface)) -> IO ())
-                   -> Dimension 
+cnstrctRBkg_StateT :: Dimension 
                    -> Background 
-                   -> StateT (Maybe Context) IO RBackground
-cnstrctRBkg_StateT handler dim@(Dim w h) bkg = do  
+                   -> StateT (Maybe Context) Renderer RBackground
+cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
+  handler <- lift ask
   uuid <- liftIO nextRandom
   case bkg of 
     Background _t c s -> do 

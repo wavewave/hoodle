@@ -23,10 +23,9 @@ import           Control.Concurrent (forkIO)
 import           Control.Lens (view,set,over, (.~), (^.) )
 import           Control.Monad
 import           Control.Monad.State
--- import qualified Data.ByteString.Char8 as B
+import           Control.Monad.Trans.Reader (ask)
 import qualified Data.Foldable as F
 import qualified Data.IntMap as M
-import           Data.UUID
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
@@ -106,7 +105,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
           geometry <- liftIO . getGeometry4CurrCvs =<< get
-          callRenderer $ \hdlr -> updateBkgCache hdlr geometry (PageNum (totnumpages-1),npage) >> return GotNone
+          callRenderer $ updateBkgCache geometry (PageNum (totnumpages-1),npage) >> return GotNone
           waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
           let npages = M.insert totnumpages npage pgs  
           return  (True,totnumpages,npage,
@@ -131,7 +130,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     geometry <- liftIO . getGeometry4CurrCvs =<< get
     let plst = zip [0..] (F.toList (hdl ^. gpages))
     forM_ plst $ \(pn,pg) -> 
-      callRenderer_ (\hdlr -> updateBkgCache hdlr geometry (PageNum pn,pg))
+      callRenderer_ (updateBkgCache geometry (PageNum pn,pg))
     renderfunc
   where zoomUpdateAction xst =  
           unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 
@@ -273,11 +272,7 @@ addNewPageInHoodle bsty dir hdl cpn = do
     nbkg <- newBkg bsty cbkg
     npage <- set gbackground nbkg <$> newPageFromOld cpage
     geometry <- liftIO . getGeometry4CurrCvs =<< get
-    -- let pn' = case dir of 
-    --            PageBefore -> cpn
-    --            PageAfter -> cpn+1
-    liftIO $ putStrLn (" addNewPageInHoodle  : " ++ show cpn)
-    callRenderer_ (\hdlr -> updateBkgCache hdlr geometry (PageNum cpn,npage))
+    callRenderer_ (updateBkgCache geometry (PageNum cpn,npage))
     let npagelst = case dir of 
                      PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                      PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
@@ -299,9 +294,9 @@ newPageFromOld =
     return . ( glayers .~ (fromNonEmptyList (emptyRLayer,[])))
 
 
-updateBkgCache :: ((UUID, (Double,Cairo.Surface)) -> IO ()) 
-               -> CanvasGeometry -> (PageNum, Page EditMode) -> IO ()
-updateBkgCache handler geometry (pnum,page) = do
+updateBkgCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
+updateBkgCache geometry (pnum,page) = do
+  handler <- ask
   let dim@(Dim w h) = page ^. gdimension 
       CvsCoord (x0,y0) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))
@@ -311,8 +306,7 @@ updateBkgCache handler geometry (pnum,page) = do
       rbkg = page ^. gbackground
       bkg = rbkg2Bkg rbkg
       uuid = rbkg_uuid rbkg 
-  putStrLn $ "updating " ++ show uuid
-  forkIO $ Gtk.postGUIAsync $ do
+  liftIO $ forkIO $ Gtk.postGUIAsync $ do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
     case rbkg of 
       RBkgSmpl {..} -> Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)

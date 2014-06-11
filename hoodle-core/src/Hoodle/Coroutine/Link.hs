@@ -23,7 +23,8 @@ import           Control.Concurrent (forkIO)
 import           Control.Lens (at,view,set,(%~))
 import           Control.Monad (forever,void)
 import           Control.Monad.State (get,put,modify,liftIO,guard,when)
-import           Control.Monad.Trans.Maybe 
+import           Control.Monad.Trans.Maybe
+import           Control.Monad.Trans.Reader (runReaderT)
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (forM_)
 import qualified Data.Map as M
@@ -164,7 +165,7 @@ gotLink mstr (x,y) = do
               -- testing 
               let handler = const (putStrLn "gotLink, got call back")
               --
-              nitm <- liftIO (cnstrctRItem handler =<< makeNewItemImage isembedded file) 
+              nitm <- liftIO (flip runReaderT handler . cnstrctRItem =<< makeNewItemImage isembedded file) 
               geometry <- liftIO $ getCanvasGeometryCvsId cid xst               
               let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 

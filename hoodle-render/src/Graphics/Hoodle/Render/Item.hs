@@ -21,11 +21,13 @@ import           Control.Applicative
 import           Control.Concurrent (forkIO) 
 import           Control.Monad
 import           Control.Monad.Identity
+import           Control.Monad.IO.Class
+import           Control.Monad.Trans.Reader
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64
-import           Data.UUID
+-- import           Data.UUID
 import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -39,17 +41,19 @@ import           Data.Hoodle.Simple
 import           Hoodle.Util.Process
 -- from this package
 import           Graphics.Hoodle.Render.Type.Item
+import           Graphics.Hoodle.Render.Type.Renderer
 
 
 -- | construct renderable item 
-cnstrctRItem :: ((UUID, (Double, Cairo.Surface)) -> IO ()) -> Item -> IO RItem 
-cnstrctRItem _ (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
-cnstrctRItem handler (ItemImage img) = do 
+cnstrctRItem :: {- ((UUID, (Double, Cairo.Surface)) -> IO ()) -> -} Item -> Renderer RItem 
+cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
+cnstrctRItem (ItemImage img) = do 
+    handler <- ask 
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
-    uuid <- nextRandom
+    uuid <- liftIO $  nextRandom
 
-    forkIO $ do
+    liftIO . forkIO $ do
       let embed = getByteStringIfEmbeddedPNG src 
       msfc <- case embed of         
         Just bstr -> do 
@@ -71,25 +75,25 @@ cnstrctRItem handler (ItemImage img) = do
           imgaction
       maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
     return (RItemImage imgbbx uuid)
-cnstrctRItem _ (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
+cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         svgbbx = runIdentity (makeBBoxed svg)
-    rsvg <- RSVG.svgNewFromString str
+    rsvg <- liftIO (RSVG.svgNewFromString str)
     return (RItemSVG svgbbx (Just rsvg))
-cnstrctRItem _ (ItemLink lnk@(Link _ _ _ _ _ bstr _ _)) = do 
+cnstrctRItem (ItemLink lnk@(Link _ _ _ _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         lnkbbx = runIdentity (makeBBoxed lnk)
-    rsvg <- RSVG.svgNewFromString str
+    rsvg <- liftIO $ RSVG.svgNewFromString str
     return (RItemLink lnkbbx (Just rsvg))
-cnstrctRItem _ (ItemLink lnk@(LinkDocID _ _ _ _ _ bstr _ _)) = do 
+cnstrctRItem (ItemLink lnk@(LinkDocID _ _ _ _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         lnkbbx = runIdentity (makeBBoxed lnk)
-    rsvg <- RSVG.svgNewFromString str
+    rsvg <- liftIO $ RSVG.svgNewFromString str
     return (RItemLink lnkbbx (Just rsvg))    
-cnstrctRItem _ (ItemLink lnk@(LinkAnchor _ _ _ _ _ _)) = do 
+cnstrctRItem (ItemLink lnk@(LinkAnchor _ _ _ _ _ _)) = do 
     let lnkbbx = runIdentity (makeBBoxed lnk)
     return (RItemLink lnkbbx Nothing)    
-cnstrctRItem _ (ItemAnchor anc@(Anchor _ _ _)) = do 
+cnstrctRItem (ItemAnchor anc@(Anchor _ _ _)) = do 
     let ancbbx = runIdentity (makeBBoxed anc)
     return (RItemAnchor ancbbx)
 

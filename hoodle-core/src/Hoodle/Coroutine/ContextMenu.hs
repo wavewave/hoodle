@@ -20,6 +20,7 @@ import           Control.Applicative
 import           Control.Lens (view,set,(%~))
 import           Control.Monad.State hiding (mapM_,forM_)
 import           Control.Monad.Trans.Maybe
+import           Control.Monad.Trans.Reader (runReaderT)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Foldable (mapM_,forM_)
@@ -127,7 +128,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
                   -- testing
                   let handler = const (putStrLn "processContextMenu")
                   --
-                  nritm <- cnstrctRItem handler nitm
+                  nritm <- runReaderT (cnstrctRItem nitm) handler
                   let alist' = (a :- Hitted [nritm] :- as )
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
@@ -169,7 +170,7 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
     -- testing 
     let handler = const (putStrLn "processContextMenu")
     -- 
-    newitem <- (liftIO . cnstrctRItem handler . ItemLink) lnk    
+    newitem <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemLink) lnk    
     insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt

@@ -24,6 +24,7 @@ import           Control.Lens (view,set,over,(%~), (.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Control.Monad.Trans.Reader (runReaderT)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
@@ -151,10 +152,7 @@ getFileContent Nothing = do
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> MainCoroutine ()  
 constructNewHoodleStateFromHoodle hdl' = do 
-    -- testing
-    -- let handler = const (putStrLn "In constructNewHoodleStateFromHoodle, got call back")
-    --
-    callRenderer $ \hdlr -> cnstrctRHoodle hdlr hdl' >>= return . GotRHoodle
+    callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
     RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
     modify (hoodleModeState .~ ViewAppendState rhdl)
 
@@ -426,13 +424,13 @@ embedImage filename = do
         then do  
           mf <- checkEmbedImageSize filename 
           --
-          callRenderer $ \hdlr -> case mf of  
-              Nothing -> makeNewItemImage True filename >>= cnstrctRItem hdlr >>= return . GotRItem 
-              Just f -> makeNewItemImage True f >>= cnstrctRItem hdlr >>= return . GotRItem
+          callRenderer $ case mf of  
+              Nothing -> liftIO (makeNewItemImage True filename) >>= cnstrctRItem >>= return . GotRItem 
+              Just f -> liftIO (makeNewItemImage True f) >>= cnstrctRItem >>= return . GotRItem
           RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
         else do 
-          callRenderer $ \hdlr -> makeNewItemImage False filename >>= cnstrctRItem hdlr >>= return . GotRItem
+          callRenderer $ liftIO (makeNewItemImage False filename) >>= cnstrctRItem >>= return . GotRItem
           RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
 
@@ -458,7 +456,7 @@ fileLoadSVG = do
       -- testing
       let handler = const (putStrLn "fileLoadSVG")
       --
-      newitem <- (liftIO . cnstrctRItem handler . ItemSVG) 
+      newitem <- (liftIO . flip runReaderT handler . cnstrctRItem . ItemSVG) 
                    (SVG Nothing Nothing bstr (100,100) (Dim 300 300))
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  

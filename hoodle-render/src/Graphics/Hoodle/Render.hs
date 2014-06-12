@@ -345,6 +345,7 @@ renderRBkg_Buf cache (b,dim,mx) = do
           Just xform -> if (scalex xform /s > 1.0 - 1e5 && scalex xform /s < 1.0 + 1e5) 
                           then do Cairo.identityMatrix
                                   Cairo.translate (transx xform) (transy xform)
+                                  Cairo.setAntialias Cairo.AntialiasNone
                           else Cairo.scale (1/s) (1/s)
         Cairo.setSourceSurface sfc 0 0 
         Cairo.paint 

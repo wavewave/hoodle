@@ -222,23 +222,6 @@ renderRBkg cache (r,dim) =
       (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim)
       (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim)
 
-{-        maybe (drawFallBackBkg dim >> return (r,dim)) 
-              (\pg -> bkgPdfRender pg >> return (r,dim)) uuid
-      (RBkgEmbedPDF _ p uuid) -> 
-        maybe (drawFallBackBkg dim >> return (r,dim)) 
-              (\pg -> bkgPdfRender pg >> return (r,dim)) p 
--}
-{-
-  where 
-    bkgPdfRender pg = do 
-      let Dim w h = dim 
-      Cairo.setSourceRGBA 1 1 1 1
-      Cairo.rectangle 0 0 w h 
-      Cairo.fill
-      PopplerPage.pageRender pg
--}
-
-
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
 renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
@@ -344,10 +327,11 @@ renderRBkg_Buf :: RenderCache
                -> Cairo.Render (RBackground,Dimension)
 renderRBkg_Buf cache (b,dim) = do 
     case HM.lookup (rbkg_uuid b) cache of
-      Nothing -> drawFallBackBkg dim >> return () -- renderRBkg cache (b,dim) >> return ()
+      Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
         Cairo.save
         Cairo.scale (1/s) (1/s) 
+        -- Cairo.identityMatrix
         Cairo.setSourceSurface sfc 0 0 
         Cairo.paint 
         Cairo.restore

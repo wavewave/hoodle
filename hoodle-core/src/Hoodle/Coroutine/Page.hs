@@ -317,12 +317,7 @@ updateBkgCache geometry (pnum,page) = do
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
                        (liftIO . atomically) (sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
                        return ()
-      -- sfcvar <- liftIO $ atomically $ newEmptyTMVar
 
-      {- liftIO $ do
-        sfc <- atomically $ takeTMVar sfcvar
-        print sfc
-        putStrLn "forkIO test"
-        handler (uuid, (s,sfc)) -}
+
 
 

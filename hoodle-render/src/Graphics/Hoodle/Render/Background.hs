@@ -203,7 +203,7 @@ cnstrctRBkg_StateT :: Dimension
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
 cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
-  (handler,_,_) <- lift ask
+  (handler,qvar) <- lift ask
   uuid <- liftIO nextRandom
   case bkg of 
     Background _t c s -> do 
@@ -216,24 +216,27 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do
         (pg,rbkg) <- case (md,mf) of 
           (Just d, Just f) -> do 
+            uuiddoc <- liftIO nextRandom
             docvar <- liftIO (atomically newEmptyTMVar)
-            (lift . lift) (runPDFCommand (GetDocFromFile f docvar))
+            liftIO . atomically $ sendPDFCommand uuiddoc qvar (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
             lift . put $ Just (Context d f (Just doc) Nothing)
             --
+            uuidpg <- liftIO nextRandom
             pgvar <- liftIO (atomically newEmptyTMVar)
-            (lift . lift) (runPDFCommand (GetPageFromDoc doc pn pgvar))
+            liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
             return (pg, RBkgPDF md f pn (Just pg) uuid)
           _ -> do 
             Context oldd oldf olddoc _ <- MaybeT get
             doc <- MaybeT . return $ olddoc  
+            uuidpg <- liftIO nextRandom
             pgvar <- liftIO (atomically newEmptyTMVar)
-            (lift . lift) (runPDFCommand (GetPageFromDoc doc pn pgvar))
+            liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) uuid)
         sfcvar <- liftIO (atomically newEmptyTMVar)
-        (lift . lift) (runPDFCommand (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar))
+        liftIO . atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar)
         sfc <-liftIO $ atomically $ takeTMVar sfcvar
         liftIO $ handler (uuid,(1.0,sfc))
         return rbkg
@@ -244,11 +247,12 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do 
         Context _ _ _ mdoc <- MaybeT get
         doc <- (MaybeT . return) mdoc 
+        uuidpg <- liftIO nextRandom
         pgvar <- liftIO (atomically newEmptyTMVar)
-        (lift . lift) (runPDFCommand (GetPageFromDoc doc pn pgvar))
+        liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
         pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
         sfcvar <- liftIO (atomically newEmptyTMVar)
-        (lift . lift) (runPDFCommand (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar))
+        liftIO . atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar)
         sfc <-liftIO $ atomically $ takeTMVar sfcvar
         liftIO $ handler (uuid,(1.0,sfc))
         return (RBkgEmbedPDF pn (Just pg) uuid)

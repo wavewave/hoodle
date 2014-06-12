@@ -15,14 +15,14 @@
 
 module Graphics.Hoodle.Render.Type.Renderer where
 
-import           Control.Concurrent.MVar
+-- import           Control.Concurrent.MVar
 import           Control.Concurrent.STM
 import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as B
-import           Data.Sequence hiding (null)
-import qualified Data.Sequence as Seq (null)
+import           Data.Sequence hiding (null,filter)
+import qualified Data.Sequence as Seq (null,filter)
 import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -41,16 +41,13 @@ instance Show PDFCommand where
   show _ = "PDFCommand"
 
 
-type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), TVar (Seq (UUID, PDFCommand)), MVar ()) IO
+type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), TVar (Seq (UUID, PDFCommand))) IO
 
 
-runPDFCommand :: PDFCommand -> Renderer ()
-runPDFCommand cmd = do
-    uuid <- liftIO nextRandom
-    (_hdlr,queuevar,mvar) <- ask
-    isnull <- liftIO . atomically $ do 
-      queue <- readTVar queuevar
-      let nqueue = queue |> (uuid,cmd)
-      writeTVar queuevar nqueue
-      return (Seq.null queue)
-    when isnull (liftIO (putMVar mvar ()))
+sendPDFCommand :: UUID -> TVar (Seq (UUID,PDFCommand)) -> PDFCommand -> STM ()
+sendPDFCommand uuid queuevar cmd = do
+    queue <- readTVar queuevar
+    let queue' = Seq.filter ((/=uuid) .fst) queue 
+        nqueue = queue' |> (uuid,cmd)
+    writeTVar queuevar nqueue
+    --- when (Seq.null queue) (tryPutTMVar mvar () >> return ())

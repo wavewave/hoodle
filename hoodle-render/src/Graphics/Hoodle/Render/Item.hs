@@ -48,7 +48,7 @@ import           Graphics.Hoodle.Render.Type.Renderer
 cnstrctRItem :: Item -> Renderer RItem 
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem (ItemImage img) = do 
-    (handler,_,_) <- ask 
+    (handler,_) <- ask 
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
     uuid <- liftIO $  nextRandom

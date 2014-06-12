@@ -117,9 +117,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
 
   -- pdf rendering testing code
   let tvar = st0new ^. pdfRenderQueue
-      mvar = st0new ^. pdfRenderLock
 
-  forkIO $ pdfRendererMain tvar mvar
+  forkIO $ pdfRendererMain tvar
 
   --
 
@@ -137,7 +136,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   -- testing
   let handler = const (putStrLn "In getFileContent, got call back")
   -- tvar <- atomically $ newTVar 0
-  newhdl <- flip runReaderT (handler,tvar,mvar) . cnstrctRHoodle =<< defaultHoodle
+  newhdl <- flip runReaderT (handler,tvar) . cnstrctRHoodle =<< defaultHoodle
   
 
   let nhmodstate = ViewAppendState newhdl 
@@ -555,13 +554,16 @@ colorPickerBox msg = do
               _ -> go 
 
 
-pdfRendererMain :: TVar (Seq (UUID,PDFCommand)) -> MVar () -> IO () 
-pdfRendererMain tvar mvar = forever $ do 
-    lst <- atomically $ readTVar tvar
+pdfRendererMain :: TVar (Seq (UUID,PDFCommand)) -> IO () 
+pdfRendererMain tvar = forever $ do     
+    lst <- atomically $ do 
+      lst' <- readTVar tvar
+      if Seq.null lst' then retry else return lst' 
+    putStrLn (show lst)
     case viewl lst of
       EmptyL -> do 
-        putStrLn "QUEUE EMPTY"
-        takeMVar mvar
+        putStrLn "QUEUE EMPTY: CANNOT HAPPEN "
+        -- atomically $ takeTMVar mvar
       p :< ps -> do 
         pdfWorker (snd p)
         atomically $ writeTVar tvar ps
@@ -569,15 +571,19 @@ pdfRendererMain tvar mvar = forever $ do
 
 pdfWorker :: PDFCommand -> IO ()
 pdfWorker (GetDocFromFile fp tmvar) = do
+    putStrLn "pdfWorker : GetDocFromFile"
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
 pdfWorker (GetDocFromDataURI str tmvar) = do
+    putStrLn "pdfWorker : GetDocFromDataURI"
     mdoc <- popplerGetDocFromDataURI str
     atomically $ putTMVar tmvar mdoc
 pdfWorker (GetPageFromDoc doc pn tmvar) = do
+    putStrLn "pdfWorker : GetPageFromDoc"
     mpg <- popplerGetPageFromDoc doc pn
     atomically $ putTMVar tmvar mpg
 pdfWorker (RenderPageScaled page (Dim ow oh) (Dim w h) tmvar) = do
+    putStrLn "pdfWorker : RenderPageScaled"
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
@@ -590,26 +596,3 @@ pdfWorker (RenderPageScaled page (Dim ow oh) (Dim w h) tmvar) = do
 
 
 
-{-
-  -- mvar <- newEmptyMVar :: IO (MVar ())
-  let go s = do 
-     
-  forkIO (go 0)
-  -- end of testing
-
-
-  let ppp = \x -> (undefined, PDFData undefined undefined undefined undefined x)
-
-
-  forkIO $ forever $ do 
-    threadDelay 1000000
-    (queue,x) <- atomically $ (,) <$> readTVar tvar <*> newEmptyTMVar  
-
-    if (Seq.null queue) 
-      then do atomically $ writeTVar tvar (singleton (ppp x))
-              putMVar mvar ()
-      else atomically $ writeTVar tvar (queue |> (ppp x))
-
-    y <- atomically $ takeTMVar x
-    print y 
--}

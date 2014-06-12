@@ -297,7 +297,7 @@ newPageFromOld =
 
 updateBkgCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
 updateBkgCache geometry (pnum,page) = do
-  (handler,_,_) <- ask
+  (handler,qvar) <- ask
   let dim@(Dim w h) = page ^. gdimension 
       CvsCoord (x0,y0) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))
@@ -309,39 +309,16 @@ updateBkgCache geometry (pnum,page) = do
       uuid = rbkg_uuid rbkg 
   case rbkg of 
     RBkgSmpl {..} -> liftIO $ do
-                       sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
-                       Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
-                       handler (uuid, (s,sfc))
+      sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
+      Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
+      handler (uuid, (s,sfc))
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-                       sfcvar <- liftIO (atomically newEmptyTMVar)
-                       runPDFCommand (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0)) sfcvar)
-                       sfc <-liftIO $ atomically $ takeTMVar sfcvar
-                       liftIO $ handler (uuid, (s,sfc))
+      liftIO $ do 
+        putStrLn "updateBkgCache" 
+        sfcvar <- atomically $ newEmptyTMVar
+        atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0)) sfcvar)
+        sfc <- atomically $ takeTMVar sfcvar
+        handler (uuid, (s,sfc))
+      return ()
 
 
-
-{-
-
-             Cairo.renderWith sfc $ do
-               Cairo.setSourceRGBA 1 1 1 1 
-               Cairo.rectangle 0 0 (x1-x0) (y1-y0)
-               Cairo.fill
-               Cairo.scale s s 
-               PopplerPage.pageRender pg
-
-
-  liftIO $ forkIO $ Gtk.postGUIAsync $ do
-    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
-    case rbkg of 
-      RBkgSmpl {..} -> Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
-      _ -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-             Cairo.renderWith sfc $ do
-               Cairo.setSourceRGBA 1 1 1 1 
-               Cairo.rectangle 0 0 (x1-x0) (y1-y0)
-               Cairo.fill
-               Cairo.scale s s 
-               PopplerPage.pageRender pg
-    handler (uuid, (s,sfc))
-  return ()
-
--}

@@ -407,10 +407,12 @@ cnstrctRHoodle hdl = do
       revs = view revisions hdl 
       pgs = view pages hdl
       embeddedsrc = view embeddedPdf hdl 
-  mdoc <- maybe (return Nothing) (\src -> do
-            docvar <- liftIO (atomically newEmptyTMVar)
-            runPDFCommand (GetDocFromDataURI src docvar)
-            liftIO $ atomically $ takeTMVar docvar 
+  (_,qvar) <- ask
+  mdoc <- maybe (return Nothing) (\src -> liftIO $ do
+            uuid <- nextRandom
+            docvar <- atomically newEmptyTMVar
+            atomically $ sendPDFCommand uuid qvar (GetDocFromDataURI src docvar)
+            atomically $ takeTMVar docvar 
           ) embeddedsrc
 
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 

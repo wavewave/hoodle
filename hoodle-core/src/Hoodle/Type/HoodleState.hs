@@ -48,7 +48,7 @@ module Hoodle.Type.HoodleState
 , statusBar
 , renderCache
 , pdfRenderQueue
-, pdfRenderLock
+-- , pdfRenderLock
 -- , cursorInfo
 -- 
 , hoodleFileName 
@@ -92,7 +92,7 @@ module Hoodle.Type.HoodleState
 , showCanvasInfoMapViewPortBBox
 ) where
 
-import           Control.Category
+import           Control.Applicative hiding (empty)
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Lens (Simple,Lens,view,set,lens)
@@ -125,7 +125,7 @@ import           Hoodle.Type.Alias
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 -- 
-import Prelude hiding ((.), id)
+-- import Prelude hiding ((.), id)
 
 -- | 
 
@@ -168,7 +168,7 @@ data HoodleState =
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
                 , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
-                , _pdfRenderLock :: MVar ()
+                -- , _pdfRenderLock :: TMVar ()
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -291,11 +291,11 @@ renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 pdfRenderQueue :: Simple Lens HoodleState (TVar (Seq (UUID, PDFCommand)))
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 
-
+{-
 -- | 
-pdfRenderLock :: Simple Lens HoodleState (MVar ())
+pdfRenderLock :: Simple Lens HoodleState (TMVar ())
 pdfRenderLock = lens _pdfRenderLock (\f a -> f { _pdfRenderLock = a })
-
+-}
 
 {-
 -- | 
@@ -398,8 +398,7 @@ doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariable
 emptyHoodleState :: IO HoodleState 
 emptyHoodleState = do
   hdl <- emptyGHoodle
-  tvar <- atomically $ newTVar empty  
-  mvar <- newEmptyMVar
+  tvar <- atomically $ newTVar empty 
   return $
     HoodleState  
     { _hoodleModeState = ViewAppendState hdl 
@@ -435,7 +434,7 @@ emptyHoodleState = do
     , _statusBar = Nothing 
     , _renderCache = HM.empty
     , _pdfRenderQueue = tvar
-    , _pdfRenderLock = mvar
+    -- , _pdfRenderLock = mvar
     -- , _cursorInfo = Nothing
     }
 

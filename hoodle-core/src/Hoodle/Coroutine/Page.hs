@@ -308,17 +308,21 @@ updateBkgCache geometry (pnum,page) = do
       bkg = rbkg2Bkg rbkg
       uuid = rbkg_uuid rbkg 
   case rbkg of 
-    RBkgSmpl {..} -> liftIO $ do
-      sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
-      Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
-      handler (uuid, (s,sfc))
+    RBkgSmpl {..} -> do liftIO . forkIO $ do
+                          sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
+                          Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
+                          handler (uuid, (s,sfc))
+                        return ()
+  
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-      liftIO $ do 
-        putStrLn "updateBkgCache" 
-        sfcvar <- atomically $ newEmptyTMVar
-        atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0)) sfcvar)
+                       (liftIO . atomically) (sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
+                       return ()
+      -- sfcvar <- liftIO $ atomically $ newEmptyTMVar
+
+      {- liftIO $ do
         sfc <- atomically $ takeTMVar sfcvar
-        handler (uuid, (s,sfc))
-      return ()
+        print sfc
+        putStrLn "forkIO test"
+        handler (uuid, (s,sfc)) -}
 
 

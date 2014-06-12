@@ -216,16 +216,19 @@ drawFallBackBkg (Dim w h) = do
 renderRBkg :: RenderCache 
            -> (RBackground,Dimension) 
            -> Cairo.Render (RBackground,Dimension)
-renderRBkg _cache (r,dim) = 
+renderRBkg cache (r,dim) = 
     case r of 
-      (RBkgSmpl _ _ _) -> 
-        renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
-      (RBkgPDF _ _ _ p _) -> 
-        maybe (drawFallBackBkg dim >> return (r,dim)) 
-              (\pg -> bkgPdfRender pg >> return (r,dim)) p
-      (RBkgEmbedPDF _ p _) -> 
+      (RBkgSmpl _ _ _)     ->  renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
+      (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim)
+      (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim)
+
+{-        maybe (drawFallBackBkg dim >> return (r,dim)) 
+              (\pg -> bkgPdfRender pg >> return (r,dim)) uuid
+      (RBkgEmbedPDF _ p uuid) -> 
         maybe (drawFallBackBkg dim >> return (r,dim)) 
               (\pg -> bkgPdfRender pg >> return (r,dim)) p 
+-}
+{-
   where 
     bkgPdfRender pg = do 
       let Dim w h = dim 
@@ -233,6 +236,8 @@ renderRBkg _cache (r,dim) =
       Cairo.rectangle 0 0 w h 
       Cairo.fill
       PopplerPage.pageRender pg
+-}
+
 
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
@@ -339,7 +344,7 @@ renderRBkg_Buf :: RenderCache
                -> Cairo.Render (RBackground,Dimension)
 renderRBkg_Buf cache (b,dim) = do 
     case HM.lookup (rbkg_uuid b) cache of
-      Nothing -> renderRBkg cache (b,dim) >> return ()
+      Nothing -> drawFallBackBkg dim >> return () -- renderRBkg cache (b,dim) >> return ()
       Just (s,sfc) -> do 
         Cairo.save
         Cairo.scale (1/s) (1/s) 

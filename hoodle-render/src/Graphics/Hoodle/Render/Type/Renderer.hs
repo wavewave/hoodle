@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RecordWildCards #-}
 
@@ -32,10 +33,10 @@ import           Data.Hoodle.Simple (Dimension(..))
 
 
 data PDFCommand where
-  GetDocFromFile    :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
-  GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
-  GetPageFromDoc    :: Poppler.Document -> Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
-  RenderPageScaled  :: Poppler.Page -> Dimension -> Dimension -> TMVar Cairo.Surface -> PDFCommand 
+  GetDocFromFile    :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
+  GetDocFromDataURI :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
+  GetPageFromDoc    :: !Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
+  RenderPageScaled  :: !Poppler.Page -> !Dimension -> !Dimension -> PDFCommand 
 
 instance Show PDFCommand where
   show _ = "PDFCommand"
@@ -45,7 +46,7 @@ type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), TVar (Seq (UUI
 
 
 sendPDFCommand :: UUID -> TVar (Seq (UUID,PDFCommand)) -> PDFCommand -> STM ()
-sendPDFCommand uuid queuevar cmd = do
+sendPDFCommand !uuid !queuevar !cmd = do
     queue <- readTVar queuevar
     let queue' = Seq.filter ((/=uuid) .fst) queue 
         nqueue = queue' |> (uuid,cmd)

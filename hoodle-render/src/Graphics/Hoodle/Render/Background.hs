@@ -235,10 +235,10 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
             liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) uuid)
-        sfcvar <- liftIO (atomically newEmptyTMVar)
-        liftIO . atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar)
-        sfc <-liftIO $ atomically $ takeTMVar sfcvar
-        liftIO $ handler (uuid,(1.0,sfc))
+        -- sfcvar <- liftIO (atomically newEmptyTMVar)
+        -- liftIO . atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar)
+        -- sfc <-liftIO $ atomically $ takeTMVar sfcvar
+        -- liftIO $ handler (uuid,(1.0,sfc))
         return rbkg
       case r of
         Nothing -> error "error in cnstrctRBkg_StateT"
@@ -251,10 +251,10 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
         pgvar <- liftIO (atomically newEmptyTMVar)
         liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
         pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
-        sfcvar <- liftIO (atomically newEmptyTMVar)
-        liftIO . atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar)
-        sfc <-liftIO $ atomically $ takeTMVar sfcvar
-        liftIO $ handler (uuid,(1.0,sfc))
+        -- sfcvar <- liftIO (atomically newEmptyTMVar)
+        -- liftIO . atomically $ sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim w h) sfcvar)
+        -- sfc <-liftIO $ atomically $ takeTMVar sfcvar
+        -- liftIO $ handler (uuid,(1.0,sfc))
         return (RBkgEmbedPDF pn (Just pg) uuid)
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"

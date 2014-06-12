@@ -114,14 +114,9 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
             . set rootOfRootWindow window 
             . set callBack (eventHandler evar) 
             <$> emptyHoodleState 
-
   -- pdf rendering testing code
   let tvar = st0new ^. pdfRenderQueue
-
-  forkIO $ pdfRendererMain tvar
-
   --
-
   (ui,uicompsighdlr) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
       initcvs = set (canvasWidgets.widgetConfig.doesUsePanZoomWidget) usepz
@@ -134,10 +129,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   -- testing
-  let handler = const (putStrLn "In getFileContent, got call back")
-  -- tvar <- atomically $ newTVar 0
-  newhdl <- flip runReaderT (handler,tvar) . cnstrctRHoodle =<< defaultHoodle
-  
+  -- let handler = const (putStrLn "In getFileContent, got call back")
+  newhdl <- flip runReaderT (undefined,undefined) . cnstrctRHoodle =<< defaultHoodle
 
   let nhmodstate = ViewAppendState newhdl 
   let st5 = set (settings.doesUseXInput) xinputbool 
@@ -149,9 +142,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
           . set statusBar (Just stbar)
           . set (hoodleFileControl.hoodleFileName) Nothing 
           . set hoodleModeState nhmodstate
-          $ st4
-     
-  -- st6 <- getFileContent mfname st5
+          $ st4     
   -- very dirty, need to be cleaned 
   let hdlst5 = view hoodleModeState st5
       cache = view renderCache st5
@@ -172,6 +163,15 @@ initialize :: AllEvent -> MainCoroutine ()
 initialize ev = do  
     case ev of 
       UsrEv (Initialized mfname) -> do -- additional initialization goes here
+        xst1 <- get
+        let tvar = xst1 ^. pdfRenderQueue
+        doIOaction $ \evhandler -> do 
+          let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
+          forkOn 2 $ pdfRendererMain handler tvar
+          return (UsrEv ActionOrdered)
+        waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+ 
+       
         getFileContent mfname        
         viewModeChange ToContSinglePage
         pageZoomChange FitWidth
@@ -182,6 +182,8 @@ initialize ev = do
         let ui = view gtkUIManager xst
         liftIO $ toggleSave ui False
         put (set isSaved True xst) 
+ 
+
       _ -> do ev' <- nextevent
               initialize (UsrEv ev')
 
@@ -554,45 +556,46 @@ colorPickerBox msg = do
               _ -> go 
 
 
-pdfRendererMain :: TVar (Seq (UUID,PDFCommand)) -> IO () 
-pdfRendererMain tvar = forever $ do     
+pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 
+pdfRendererMain handler tvar = forever $ do     
     lst <- atomically $ do 
       lst' <- readTVar tvar
       if Seq.null lst' then retry else return lst' 
     putStrLn (show lst)
     case viewl lst of
-      EmptyL -> do 
-        putStrLn "QUEUE EMPTY: CANNOT HAPPEN "
-        -- atomically $ takeTMVar mvar
+      EmptyL -> error "QUEUE EMPTY: CANNOT HAPPEN "
       p :< ps -> do 
-        pdfWorker (snd p)
+        pdfWorker handler p
         atomically $ writeTVar tvar ps
 
 
-pdfWorker :: PDFCommand -> IO ()
-pdfWorker (GetDocFromFile fp tmvar) = do
+pdfWorker :: ((UUID,(Double,Cairo.Surface))->IO ()) -> (UUID,PDFCommand) -> IO ()
+pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
     putStrLn "pdfWorker : GetDocFromFile"
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
-pdfWorker (GetDocFromDataURI str tmvar) = do
+pdfWorker _handler (_,GetDocFromDataURI str tmvar) = do
     putStrLn "pdfWorker : GetDocFromDataURI"
     mdoc <- popplerGetDocFromDataURI str
     atomically $ putTMVar tmvar mdoc
-pdfWorker (GetPageFromDoc doc pn tmvar) = do
+pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
     putStrLn "pdfWorker : GetPageFromDoc"
     mpg <- popplerGetPageFromDoc doc pn
     atomically $ putTMVar tmvar mpg
-pdfWorker (RenderPageScaled page (Dim ow oh) (Dim w h) tmvar) = do
+pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
     putStrLn "pdfWorker : RenderPageScaled"
     let s = w / ow
+    
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
       Cairo.setSourceRGBA 1 1 1 1
       Cairo.rectangle 0 0 w h 
       Cairo.fill
       Cairo.scale s s
-      Poppler.pageRender page
-    atomically $ putTMVar tmvar sfc
+      Poppler.pageRender page 
+    -- return ()
+    handler (uuid,(s,sfc))
+    -- atomically $ putTMVar tmvar sfc
 
 
 

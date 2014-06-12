@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Coroutine.Select 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -169,18 +169,19 @@ newSelectRectangle cid pnum geometry itms orig
       let (fitms,sitms) = separateFS $ getDiffBBox (tempInfo tempselection) hitteditms 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
       when ((not.null) fitms || (not.null) sitms) $ do 
-        let xformfunc = cairoXform4PageCoordinate geometry pnum 
+        let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
             ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . getBBox) $ fitms
             cache = view renderCache xstate
+            xform = mkXform4Page geometry pnum
             renderfunc = do   
               xformfunc 
               case ulbbox of 
-                Top -> do 
-                  cairoRenderOption (InBBoxOption Nothing) cache (InBBox page) 
+                Top -> do                
+                  cairoRenderOption (InBBoxOption Nothing) cache (InBBox page, Just xform) 
                   mapM_ renderSelectedItem hitteditms
                 Middle sbbox -> do 
                   let redrawee = filter (do2BBoxIntersect sbbox.getBBox) hitteditms  
-                  cairoRenderOption (InBBoxOption (Just sbbox)) cache (InBBox page)
+                  cairoRenderOption (InBBoxOption (Just sbbox)) cache (InBBox page, Just xform)
                   clipBBox (Just sbbox)
                   mapM_ renderSelectedItem redrawee 
                 Bottom -> return ()

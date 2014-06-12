@@ -93,7 +93,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid
                                Cairo.FormatARGB32 (floor w) (floor h)
           liftIO $ Cairo.renderWith sfcitm $ do 
             Cairo.identityMatrix 
-            cairoXform4PageCoordinate geometry pnum
+            cairoXform4PageCoordinate (mkXform4Page geometry pnum)
             mapM_ (renderRItem cache) itms
           ctime <- liftIO getCurrentTime 
           verticalSpaceProcess cid geometry (bbx,hltedLayers,pnum,cpg) (x,y) 
@@ -218,7 +218,7 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                z = canvas2DesktopRatio geometry 
                drawguide = do 
                  Cairo.identityMatrix 
-                 cairoXform4PageCoordinate geometry pnum 
+                 cairoXform4PageCoordinate (mkXform4Page geometry pnum )
                  Cairo.setLineWidth (predefinedLassoWidth*z)
                  case mode of
                    GoingUp   -> Cairo.setSourceRGBA 0.1 0.8 0.1 0.4

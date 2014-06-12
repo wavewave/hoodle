@@ -5,7 +5,7 @@
 -- Module      : Graphics.Hoodle.Render.Generic 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -81,8 +81,8 @@ instance RenderOptionable (BBoxed Stroke) where
   cairoRenderOption DrawBoxOnly = const (passarg renderStrkBBx_BBoxOnly)
   
 -- | 
-instance RenderOptionable (RBackground,Dimension) where 
-  type RenderOption (RBackground,Dimension) = RBkgOpt 
+instance RenderOptionable (RBackground,Dimension,Maybe Xform4Page) where 
+  type RenderOption (RBackground,Dimension,Maybe Xform4Page) = RBkgOpt 
   cairoRenderOption RBkgDrawPDF cache = renderRBkg cache
   cairoRenderOption RBkgDrawWhite cache = passarg (renderRBkg_Dummy cache)
   cairoRenderOption RBkgDrawBuffer cache = renderRBkg_Buf cache 
@@ -101,45 +101,45 @@ instance RenderOptionable (InBBox RLayer) where
     InBBox <$> renderRLayer_InBBoxBuf cache mbbox lyr
     
 -- |
-cairoOptionPage :: ( RenderOptionable (b,Dimension)
+cairoOptionPage :: ( RenderOptionable (b,Dimension,Maybe Xform4Page)
                    , RenderOptionable a
                    , Foldable s) => 
-                   (RenderOption (b,Dimension), RenderOption a) 
+                   (RenderOption (b,Dimension,Maybe Xform4Page), RenderOption a) 
                    -> RenderCache
-                   -> GPage b s a 
-                   -> Cairo.Render (GPage b s a)
-cairoOptionPage (optb,opta) cache p = do 
-    cairoRenderOption optb cache (view gbackground p, view gdimension p)
+                   -> (GPage b s a, Maybe Xform4Page)
+                   -> Cairo.Render (GPage b s a, Maybe Xform4Page)
+cairoOptionPage (optb,opta) cache (p,mx) = do 
+    cairoRenderOption optb cache (view gbackground p, view gdimension p,mx)
     mapM_ (cairoRenderOption opta cache) (view glayers p)
-    return p 
+    return (p,mx) 
   
 -- | 
-instance ( RenderOptionable (b,Dimension)
+instance ( RenderOptionable (b,Dimension,Maybe Xform4Page)
          , RenderOptionable a
          , Foldable s) =>
-         RenderOptionable (GPage b s a) where
-  type RenderOption (GPage b s a) = (RenderOption (b,Dimension), RenderOption a)
+         RenderOptionable (GPage b s a,Maybe Xform4Page) where
+  type RenderOption (GPage b s a,Maybe Xform4Page) = (RenderOption (b,Dimension,Maybe Xform4Page), RenderOption a)
   cairoRenderOption = cairoOptionPage
             
 -- | 
-instance RenderOptionable (InBBox RPage) where
-  type RenderOption (InBBox RPage) = InBBoxOption 
-  cairoRenderOption (InBBoxOption mbbox) cache (InBBox page) = do 
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache (view gbackground page, view gdimension page) 
+instance RenderOptionable (InBBox RPage,Maybe Xform4Page) where
+  type RenderOption (InBBox RPage,Maybe Xform4Page) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) cache (InBBox page,mx) = do 
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache (view gbackground page, view gdimension page, mx)
     let lyrs = view glayers page
     nlyrs <- mapM (liftM unInBBox . cairoRenderOption (InBBoxOption mbbox) cache . InBBox ) lyrs
     let npage = set glayers nlyrs page
-    return (InBBox npage) 
+    return (InBBox npage,mx) 
 
 -- | 
-instance RenderOptionable (InBBoxBkgBuf RPage) where
-  type RenderOption (InBBoxBkgBuf RPage) = InBBoxOption 
-  cairoRenderOption (InBBoxOption mbbox) cache (InBBoxBkgBuf page) = do 
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache (view gbackground page, view gdimension page) 
+instance RenderOptionable (InBBoxBkgBuf RPage,Maybe Xform4Page) where
+  type RenderOption (InBBoxBkgBuf RPage,Maybe Xform4Page) = InBBoxOption 
+  cairoRenderOption (InBBoxOption mbbox) cache (InBBoxBkgBuf page,mx) = do 
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache (view gbackground page, view gdimension page, mx)
     let lyrs = view glayers page
     nlyrs <- mapM (renderRLayer_InBBox cache mbbox) lyrs
     let npage = set glayers nlyrs page
-    return (InBBoxBkgBuf npage) 
+    return (InBBoxBkgBuf npage,mx) 
 
 
 

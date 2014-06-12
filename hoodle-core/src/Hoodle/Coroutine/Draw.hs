@@ -160,7 +160,7 @@ invalidateInBBox mbbox flag cid = do
   xst <- get 
   geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
   invalidateGeneral cid mbbox flag 
-    drawSinglePage (drawSinglePageSel geometry) drawContHoodle (drawContHoodleSel geometry)
+    (drawSinglePage geometry) (drawSinglePageSel geometry) (drawContHoodle geometry) (drawContHoodleSel geometry)
 
 -- | 
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
@@ -188,7 +188,7 @@ invalidateTemp cid tempsurface rndr = do
           pnum = PageNum . view currentPageNum $ cvsInfo 
       geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
       win <- liftIO $ widgetGetDrawWindow canvas
-      let xformfunc = cairoXform4PageCoordinate geometry pnum
+      let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
       liftIO $ renderWithDrawable win $ do   
                  Cairo.setSourceSurface tempsurface 0 0 
                  Cairo.setOperator Cairo.OperatorSource 
@@ -211,7 +211,7 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
       let canvas = view drawArea cvsInfo
       geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
       win <- liftIO $ widgetGetDrawWindow canvas
-      let xformfunc = cairoXform4PageCoordinate geometry pnum
+      let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
       liftIO $ renderWithDrawable win $ do   
                  Cairo.setSourceSurface tempsurface 0 0 
                  Cairo.setOperator Cairo.OperatorSource 

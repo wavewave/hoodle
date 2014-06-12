@@ -18,8 +18,10 @@
 
 module Graphics.Hoodle.Render 
 (      
+-- * xform 
+  Xform4Page(..) 
 -- * simple rendering using non-R-structure   
-  renderStrk
+, renderStrk
 , renderImg
 , renderBkg
 , renderItem 
@@ -77,6 +79,12 @@ import           Graphics.Hoodle.Render.Util
 import           Graphics.Hoodle.Render.Util.HitTest
 -- 
 import           Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
+
+data Xform4Page = Xform4Page { transx :: Double
+                                                 , transy :: Double 
+                                                 , scalex :: Double
+                                                 , scaley :: Double } 
+                          deriving (Show)
 
 ------------
 -- simple --
@@ -214,13 +222,13 @@ drawFallBackBkg (Dim w h) = do
 
 -- | 
 renderRBkg :: RenderCache 
-           -> (RBackground,Dimension) 
-           -> Cairo.Render (RBackground,Dimension)
-renderRBkg cache (r,dim) = 
+           -> (RBackground,Dimension, Maybe Xform4Page) 
+           -> Cairo.Render (RBackground,Dimension, Maybe Xform4Page)
+renderRBkg cache (r,dim,mx) = 
     case r of 
-      (RBkgSmpl _ _ _)     ->  renderBkg (rbkg2Bkg r,dim) >> return (r,dim)
-      (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim)
-      (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim)
+      (RBkgSmpl _ _ _)     ->  renderBkg (rbkg2Bkg r,dim) >> return (r,dim,mx)
+      (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim,mx)
+      (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim,mx)
 
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
@@ -283,13 +291,13 @@ renderRItem _ itm@(RItemAnchor ancbbx) =
 -- | background drawing in bbox 
 renderRBkg_InBBox :: RenderCache 
                   -> Maybe BBox 
-                  -> (RBackground,Dimension) 
-                  -> Cairo.Render (RBackground,Dimension)
-renderRBkg_InBBox cache mbbox (b,dim) = do 
+                  -> (RBackground,Dimension,Maybe Xform4Page) 
+                  -> Cairo.Render (RBackground,Dimension, Maybe Xform4Page)
+renderRBkg_InBBox cache mbbox (b,dim,mx) = do 
     clipBBox (fmap (flip inflate 1) mbbox)
-    renderRBkg_Buf cache (b,dim)
+    renderRBkg_Buf cache (b,dim,mx)
     Cairo.resetClip
-    return (b,dim)
+    return (b,dim,mx)
 
 
 -- | render RLayer within BBox after hittest items
@@ -323,19 +331,25 @@ renderRLayer_InBBox cache mbbox layer = do
 
 -- | Background rendering using buffer
 renderRBkg_Buf :: RenderCache
-               -> (RBackground,Dimension) 
-               -> Cairo.Render (RBackground,Dimension)
-renderRBkg_Buf cache (b,dim) = do 
+               -> (RBackground,Dimension,Maybe Xform4Page) 
+               -> Cairo.Render (RBackground,Dimension,Maybe Xform4Page)
+renderRBkg_Buf cache (b,dim,mx) = do 
     case HM.lookup (rbkg_uuid b) cache of
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
+        -- liftIO $ print mx
+        -- liftIO $ print (1/s)
         Cairo.save
-        Cairo.scale (1/s) (1/s) 
-        -- Cairo.identityMatrix
+        case mx of 
+          Nothing -> Cairo.scale (1/s) (1/s) 
+          Just xform -> if (scalex xform /s > 1.0 - 1e5 && scalex xform /s < 1.0 + 1e5) 
+                          then do Cairo.identityMatrix
+                                  Cairo.translate (transx xform) (transy xform)
+                          else Cairo.scale (1/s) (1/s)
         Cairo.setSourceSurface sfc 0 0 
         Cairo.paint 
         Cairo.restore
-    return (b,dim)
+    return (b,dim,mx)
 
 -- | 
 renderRLayer_InBBoxBuf :: RenderCache 

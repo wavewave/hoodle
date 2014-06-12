@@ -173,7 +173,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) = do
         (\(pcoord,(x,y)) -> do 
            let PointerCoord _ _ _ z = pcoord 
            let pinfo  = view penInfo xstate
-           let xformfunc = cairoXform4PageCoordinate geometry pnum 
+           let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum )
                tmpstrk = createNewStroke pinfo pdraw
                renderfunc = do 
                  xformfunc 

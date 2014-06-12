@@ -54,8 +54,8 @@ import Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 -- Dummy (for testing) 
 -----
 
-renderRBkg_Dummy :: RenderCache -> (RBackground,Dimension) -> Cairo.Render ()
-renderRBkg_Dummy _ (_,Dim w h) = do 
+renderRBkg_Dummy :: RenderCache -> (RBackground,Dimension,Maybe Xform4Page) -> Cairo.Render ()
+renderRBkg_Dummy _ (_,Dim w h,_) = do 
     Cairo.setSourceRGBA 1 1 1 1
     Cairo.rectangle 0 0 w h 
     Cairo.fill 
@@ -65,10 +65,10 @@ renderRBkg_Dummy _ (_,Dim w h) = do
 -----------
 
 -- | render background without pdf 
-renderRBkg_NoPDF :: RenderCache -> (RBackground,Dimension) -> Cairo.Render ()
-renderRBkg_NoPDF cache r@(RBkgSmpl _ _ _,_) = renderRBkg cache r >> return ()
-renderRBkg_NoPDF _ (RBkgPDF _ _ _ _ _,_) = return ()
-renderRBkg_NoPDF _ (RBkgEmbedPDF _ _ _,_) = return ()
+renderRBkg_NoPDF :: RenderCache -> (RBackground,Dimension,Maybe Xform4Page) -> Cairo.Render ()
+renderRBkg_NoPDF cache r@(RBkgSmpl _ _ _,_,_) = renderRBkg cache r >> return ()
+renderRBkg_NoPDF _ (RBkgPDF _ _ _ _ _,_,_) = return ()
+renderRBkg_NoPDF _ (RBkgEmbedPDF _ _ _,_,_) = return ()
 
 --------------
 -- BBoxOnly --
@@ -132,7 +132,7 @@ renderRPage_BBoxOnly cache page = do
     let dim = view gdimension page
         bkg = view gbackground page 
         lyrs =  view glayers page
-    renderRBkg_NoPDF cache (bkg,dim)
+    renderRBkg_NoPDF cache (bkg,dim,Nothing)
     mapM_ (renderRLayer_BBoxOnly cache) lyrs
 
 

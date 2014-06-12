@@ -49,7 +49,7 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render (cnstrctRHoodle)
+import           Graphics.Hoodle.Render (Xform4Page(..),cnstrctRHoodle)
 import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
@@ -195,7 +195,7 @@ renderjob :: RenderCache -> RHoodle -> FilePath -> IO ()
 renderjob cache h ofp = do 
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let Dim width height = view gdimension p  
-  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) cache x >> return () 
+  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) cache (x,Nothing :: Maybe Xform4Page) >> return () 
   Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
     (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
 
@@ -262,7 +262,7 @@ exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (re
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
         liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
-         cairoRenderOption (InBBoxOption Nothing) cache (InBBox cpg) >> return ()
+         cairoRenderOption (InBBoxOption Nothing) cache (InBBox cpg,Nothing :: Maybe Xform4Page) >> return ()
 
 -- | 
 fileLoad :: FilePath -> MainCoroutine () 

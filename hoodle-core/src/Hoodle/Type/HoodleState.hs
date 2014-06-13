@@ -48,7 +48,7 @@ module Hoodle.Type.HoodleState
 , statusBar
 , renderCache
 , pdfRenderQueue
--- , pdfRenderLock
+, doesNotInvalidate
 -- , cursorInfo
 -- 
 , hoodleFileName 
@@ -168,7 +168,7 @@ data HoodleState =
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
                 , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
-                -- , _pdfRenderLock :: TMVar ()
+                , _doesNotInvalidate :: Bool
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -291,11 +291,12 @@ renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 pdfRenderQueue :: Simple Lens HoodleState (TVar (Seq (UUID, PDFCommand)))
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 
-{-
+
 -- | 
-pdfRenderLock :: Simple Lens HoodleState (TMVar ())
-pdfRenderLock = lens _pdfRenderLock (\f a -> f { _pdfRenderLock = a })
--}
+doesNotInvalidate :: Simple Lens HoodleState Bool
+doesNotInvalidate = lens _doesNotInvalidate (\f a -> f { _doesNotInvalidate = a })
+
+
 
 {-
 -- | 
@@ -434,7 +435,7 @@ emptyHoodleState = do
     , _statusBar = Nothing 
     , _renderCache = HM.empty
     , _pdfRenderQueue = tvar
-    -- , _pdfRenderLock = mvar
+    , _doesNotInvalidate = False
     -- , _cursorInfo = Nothing
     }
 

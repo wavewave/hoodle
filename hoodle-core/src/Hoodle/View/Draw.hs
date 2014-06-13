@@ -615,7 +615,7 @@ canvasImageSurface cache mmulti geometry hdl = do
             Cairo.translate (z*ws_cvs) (z*hs_cvs)
         let xform = mkXform4Page geometry pn
         cairoXform4PageCoordinate xform
-        cairoRenderOption (InBBoxOption Nothing) cache (InBBox pg,Just xform)
+        cairoRenderOption (InBBoxOption Nothing) cache (InBBox pg,Nothing :: Maybe Xform4Page)  -- Just xform
       renderfunc = do 
         Cairo.setSourceRGBA 0.5 0.5 0.5 1
         Cairo.rectangle 0 0 w_cvs h_cvs        

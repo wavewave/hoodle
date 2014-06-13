@@ -15,7 +15,7 @@
 module Hoodle.Widget.PanZoom where
 
 -- from other packages
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.Identity 
 import           Control.Monad.State 
 import           Data.List (delete)
@@ -82,6 +82,7 @@ startPanZoomWidget :: PanZoomTouch
                    -> Maybe (PanZoomMode,(CanvasCoordinate,CanvasCoordinate))
                    -> MainCoroutine ()
 startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do 
+    modify (doesNotInvalidate .~ True)
     xst <- get 
     let hdl = getHoodle xst
         cache = view renderCache xst
@@ -103,8 +104,8 @@ startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do
         manipulatePZW (tchmode,mode) cid geometry (srcsfc,tgtsfc) owxy oxy ctime 
         liftIO $ Cairo.surfaceFinish srcsfc 
         liftIO $ Cairo.surfaceFinish tgtsfc
-
-
+    modify (doesNotInvalidate .~ False) 
+    invalidateAll
 
 
 -- | 

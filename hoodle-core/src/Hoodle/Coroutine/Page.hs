@@ -26,7 +26,9 @@ import           Control.Monad
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader (ask)
 import qualified Data.Foldable as F
+import           Data.Function (on)
 import qualified Data.IntMap as M
+import           Data.List (sortBy)
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
@@ -127,9 +129,11 @@ canvasZoomUpdateGenRenderCvsId :: MainCoroutine ()
 canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do 
     updateXState zoomUpdateAction 
     adjustScrollbarWithGeometryCvsId cid
-    hdl <- getHoodle <$> get
-    geometry <- liftIO . getGeometry4CurrCvs =<< get
-    let plst = zip [0..] (F.toList (hdl ^. gpages))
+    xst <- get
+    let hdl = getHoodle xst
+    geometry <- liftIO (getGeometry4CurrCvs xst)
+    let cpn = view (unboxLens currentPageNum) .  getCanvasInfo cid $ xst
+    let plst = sortBy ( compare `on` (\(n,_) -> abs (n - cpn)) ) . zip [0..] . F.toList $ hdl ^. gpages
     forM_ plst $ \(pn,pg) -> 
       callRenderer_ (updateBkgCache geometry (PageNum pn,pg))
     renderfunc

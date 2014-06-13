@@ -271,21 +271,6 @@ data CanvasInfoBox where
   CanvasContPage :: CanvasInfo ContinuousPage -> CanvasInfoBox
                    
 
--- test1 :: forall (a :: ViewMode). a -> Bool 
--- test1 = undefined
--- test1 (_ :: SinglePage) = True 
--- test1 (_ :: ContinuousPage) = False
-
-{- 
--- | fmap-like operation for box
-insideAction4CvsInfoBox :: (forall a. CanvasInfo a -> CanvasInfo a)
-                    -> CanvasInfoBox -> CanvasInfoBox
-insideAction4CvsInfoBox f (CanvasSinglePage x) = CanvasSinglePage (f x)
-insideAction4CvsInfoBox f (CanvasContPage x) = CanvasContPage (f x)
--}
-
-
-
 
 forBoth ::  
           ((CanvasInfo SinglePage -> f (CanvasInfo SinglePage))
@@ -304,18 +289,6 @@ forBoth' ::  ((CanvasInfo SinglePage -> r)
 forBoth' m f = m f f 
 
 
-
-{-
-bothXform :: (forall a. CanvasInfo a -> CanvasInfo a) 
-          -> ((CanvasInfo SinglePage -> f (CanvasInfo SinglePage))
-              -> (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) 
-              -> (CanvasInfoBox -> CanvasInfoBox))   
-          -> CanvasInfoBox -> CanvasInfoBox
-bothXform f m = m f f 
-
--}
-
-
 -- | single page action and continuous page act
 unboxBiXform :: (Functor f) => 
                 (CanvasInfo SinglePage -> f (CanvasInfo SinglePage)) 
@@ -332,16 +305,10 @@ unboxBiAct fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
 unboxBiAct _fsingle fcont (CanvasContPage cinfo) = fcont cinfo
 
 
-{-
--- | apply a funtion to Generic CanvasInfo 
-unboxAct :: (forall a. CanvasInfo a -> r) -> CanvasInfoBox -> r 
-unboxAct f (CanvasSinglePage x) = f x 
-unboxAct f (CanvasContPage x) = f x 
--}
-
 -- | 
 unboxGet :: (forall a. Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b 
 unboxGet f = forBoth' unboxBiAct (view f) 
+
 -- | 
 unboxSet :: (forall a. Simple Lens (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
 unboxSet l b (CanvasSinglePage a) = CanvasSinglePage (set l b a)
@@ -349,27 +316,6 @@ unboxSet l b (CanvasContPage a) = CanvasContPage (set l b a)
 
 unboxLens :: (forall a. Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
 unboxLens l = lens (unboxGet l) (flip (unboxSet l)) 
-
-{-
--- | 
-boxAction :: Monad m => (forall a. CanvasInfo a -> m b) 
-             -> CanvasInfoBox -> m b 
-boxAction f c = unboxAct f c 
-  -- f (CanvasInfoBox cinfo) = f cinfo 
--}
-
-
-
-
-
-{-  
--- |     
-selectBox :: (CanvasInfo SinglePage -> CanvasInfo SinglePage)
-          -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
-          -> CanvasInfoBox -> CanvasInfoBox 
-selectBox fs _fc (CanvasSinglePage cinfo) = CanvasSinglePage (fs cinfo)
-selectBox _fs fc (CanvasContPage cinfo)= CanvasContPage (fc cinfo)
--}
 
 -- |
 getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 

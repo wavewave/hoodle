@@ -18,14 +18,14 @@ module Graphics.Hoodle.Render.Type.Item where
 
 import           Data.UUID
 -- import           Data.UUID.V4
--- import qualified Graphics.Rendering.Cairo as Cairo
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 -- from hoodle-platform 
 import           Data.Hoodle.BBox 
 import           Data.Hoodle.Simple
 
 data RItem = RItemStroke (BBoxed Stroke)
-           | RItemImage (BBoxed Image) UUID -- (Maybe Cairo.Surface)
+           | RItemImage (BBoxed Image) (Maybe Cairo.Surface) -- UUID
            | RItemSVG (BBoxed SVG) (Maybe RSVG.SVG)
            | RItemLink (BBoxed Link) (Maybe RSVG.SVG)
            | RItemAnchor (BBoxed Anchor)

@@ -51,30 +51,53 @@ cnstrctRItem (ItemImage img) = do
     (handler,_) <- ask 
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
-    uuid <- liftIO $  nextRandom
+    -- uuid <- liftIO $  nextRandom
 
-    liftIO . forkIO $ do
-      let embed = getByteStringIfEmbeddedPNG src 
-      msfc <- case embed of         
-        Just bstr -> do 
-          sfc <- saveTempPNGToCreateSurface bstr 
-          return (Just sfc)
-        Nothing -> do
-          let filesrc = C8.unpack (img_src img)
-              filesrcext = takeExtension filesrc 
-              imgaction 
-                | filesrcext == ".PNG" || filesrcext == ".png" = do 
-                    b <- doesFileExist filesrc 
-                    if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
-                         else return Nothing 
-                | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
-                    b <- doesFileExist filesrc 
-                    if b then Just <$> getJPGandCreateSurface filesrc 
-                         else return Nothing 
-                | otherwise = return Nothing 
-          imgaction
-      maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
-    return (RItemImage imgbbx uuid)
+    -- liftIO . forkIO $ do
+    --   let embed = getByteStringIfEmbeddedPNG src 
+    --   msfc <- case embed of         
+    --     Just bstr -> do 
+    --       sfc <- saveTempPNGToCreateSurface bstr 
+    --       return (Just sfc)
+    --     Nothing -> do
+    --       let filesrc = C8.unpack (img_src img)
+    --           filesrcext = takeExtension filesrc 
+    --           imgaction 
+    --             | filesrcext == ".PNG" || filesrcext == ".png" = do 
+    --                 b <- doesFileExist filesrc 
+    --                 if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
+    --                      else return Nothing 
+    --             | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
+    --                 b <- doesFileExist filesrc 
+    --                 if b then Just <$> getJPGandCreateSurface filesrc 
+    --                      else return Nothing 
+    --             | otherwise = return Nothing 
+    --       imgaction
+    --   maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
+
+
+    let embed = getByteStringIfEmbeddedPNG src 
+    msfc <- liftIO $ case embed of         
+      Just bstr -> do 
+        sfc <- saveTempPNGToCreateSurface bstr 
+        return (Just sfc)
+      Nothing -> do
+	let filesrc = C8.unpack (img_src img)
+	    filesrcext = takeExtension filesrc 
+	    imgaction 
+	      | filesrcext == ".PNG" || filesrcext == ".png" = do 
+		  b <- doesFileExist filesrc 
+		  if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
+		       else return Nothing 
+	      | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
+		  b <- doesFileExist filesrc 
+		  if b then Just <$> getJPGandCreateSurface filesrc 
+		       else return Nothing 
+	      | otherwise = return Nothing 
+	imgaction
+    -- maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
+
+    return (RItemImage imgbbx msfc)
 cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         svgbbx = runIdentity (makeBBoxed svg)

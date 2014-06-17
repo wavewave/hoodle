@@ -130,9 +130,9 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   -- testing
   -- let handler = const (putStrLn "In getFileContent, got call back")
-  newhdl <- flip runReaderT (undefined,undefined) . cnstrctRHoodle =<< defaultHoodle
+  -- newhdl <- flip runReaderT (undefined,undefined) . cnstrctRHoodle =<< defaultHoodle
+  -- let nhmodstate = ViewAppendState newhdl 
 
-  let nhmodstate = ViewAppendState newhdl 
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
@@ -141,17 +141,17 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
           . set uiComponentSignalHandler uicompsighdlr 
           . set statusBar (Just stbar)
           . set (hoodleFileControl.hoodleFileName) Nothing 
-          . set hoodleModeState nhmodstate
+          -- . set hoodleModeState nhmodstate
           $ st4     
   -- very dirty, need to be cleaned 
-  let hdlst5 = view hoodleModeState st5
-      cache = view renderCache st5
-  hdlst6 <- resetHoodleModeStateBuffers cache hdlst5
-  let st6 = set hoodleModeState hdlst6 st5
+  -- let hdlst5 = view hoodleModeState st5
+  --    cache = view renderCache st5
+  -- hdlst6 <- resetHoodleModeStateBuffers cache hdlst5
+  -- let st6 = set hoodleModeState hdlst6 st5
   -- 
   vbox <- Gtk.vBoxNew False 0 
   -- 
-  let startingXstate = set rootContainer (Gtk.castToBox vbox) st6
+  let startingXstate = set rootContainer (Gtk.castToBox vbox) st5
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -169,10 +169,21 @@ initialize ev = do
           let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
           forkOn 2 $ pdfRendererMain handler tvar
           return (UsrEv ActionOrdered)
-        waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
- 
+        waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
        
-        getFileContent mfname        
+        modify (doesNotInvalidate .~ False)
+        liftIO $ putStrLn "getFileContent started"
+        getFileContent mfname
+        liftIO $ putStrLn "getFileContent ended"
+        modify (doesNotInvalidate .~ True)
+
+        xst2 <- get
+        let hdlst = xst2 ^. hoodleModeState 
+            cache = xst2 ^. renderCache
+        hdlst' <- liftIO $ resetHoodleModeStateBuffers cache hdlst
+        put (set hoodleModeState hdlst' xst2)
+
+
         viewModeChange ToContSinglePage
         pageZoomChange FitWidth
         xst <- get 
@@ -558,6 +569,7 @@ colorPickerBox msg = do
 
 pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 
 pdfRendererMain handler tvar = forever $ do     
+    putStrLn "pdfRenderMain called"
     lst <- atomically $ do 
       lst' <- readTVar tvar
       if Seq.null lst' then retry else return lst' 

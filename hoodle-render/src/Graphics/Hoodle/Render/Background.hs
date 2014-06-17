@@ -206,12 +206,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
   (handler,qvar) <- lift ask
   uuid <- liftIO nextRandom
   case bkg of 
-    Background _t c s -> do 
-      liftIO $ forkIO $ do 
-        sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-        Cairo.renderWith sfc $ renderBkg (bkg,dim) 
-        handler (uuid,(1.0,sfc))
-      return (RBkgSmpl c s uuid) 
+    Background _t c s -> return (RBkgSmpl c s uuid) 
     BackgroundPdf _t md mf pn -> do 
       r <- runMaybeT $ do
         (pg,rbkg) <- case (md,mf) of 

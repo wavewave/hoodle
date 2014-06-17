@@ -233,18 +233,19 @@ renderRBkg cache (r,dim,mx) =
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
 renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem cache itm@(RItemImage img uuid) = do
-    let mssfc = HM.lookup uuid cache
-    case mssfc of
+renderRItem cache itm@(RItemImage img msfc {- uuid -} ) = do
+    -- let mssfc = HM.lookup uuid cache
+    case msfc of
       Nothing -> renderImg (bbxed_content img)
-      Just (s,sfc) -> do 
+      Just sfc -> do 
 	let (x,y) = (img_pos . bbxed_content) img
 	    BBox (x1,y1) (x2,y2) = getBBox img
 	ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
 	iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
 	Cairo.save 
 	Cairo.translate x y 
-	Cairo.scale ((x2-x1)/ix/s) ((y2-y1)/iy/s)
+        Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+	-- Cairo.scale ((x2-x1)/ix/s) ((y2-y1)/iy/s)
 	Cairo.setSourceSurface sfc 0 0 
 	Cairo.paint 
 	Cairo.restore
@@ -426,6 +427,7 @@ cnstrctRHoodle hdl = do
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage
 cnstrctRPage_StateT pg = do  
+  liftIO $ putStrLn "cnstrctRPage_StateT"
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg

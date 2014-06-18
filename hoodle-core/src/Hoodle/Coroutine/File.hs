@@ -120,9 +120,7 @@ getFileContent (Just fname) = do
         case r of 
           Left err -> liftIO $ putStrLn err
           Right h -> do 
-            liftIO $ putStrLn "getFileContent point1"
             constructNewHoodleStateFromHoodle h
-            liftIO $ putStrLn "getFileContent point2"
             ctime <- liftIO $ getCurrentTime
             modify ( hoodleFileControl.hoodleFileName .~ Just fname )
             modify ( hoodleFileControl.lastSavedTime  .~ Just ctime )

@@ -134,8 +134,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     geometry <- liftIO (getGeometry4CurrCvs xst)
     let cpn = view (unboxLens currentPageNum) .  getCanvasInfo cid $ xst
     let plst = sortBy ( compare `on` (\(n,_) -> abs (n - cpn)) ) . zip [0..] . F.toList $ hdl ^. gpages
-    forM_ plst $ \(pn,pg) -> 
-      callRenderer_ (updateBkgCache geometry (PageNum pn,pg))
+    forM_ plst $ \(pn,pg) -> callRenderer_ (updateBkgCache geometry (PageNum pn,pg))
     renderfunc
   where zoomUpdateAction xst =  
           unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst 

@@ -427,7 +427,6 @@ cnstrctRHoodle hdl = do
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage
 cnstrctRPage_StateT pg = do  
-  liftIO $ putStrLn "cnstrctRPage_StateT"
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg

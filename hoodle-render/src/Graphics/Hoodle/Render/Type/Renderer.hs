@@ -51,4 +51,4 @@ sendPDFCommand !uuid !queuevar !cmd = do
     let queue' = Seq.filter ((/=uuid) .fst) queue 
         nqueue = queue' |> (uuid,cmd)
     writeTVar queuevar nqueue
-    --- when (Seq.null queue) (tryPutTMVar mvar () >> return ())
+

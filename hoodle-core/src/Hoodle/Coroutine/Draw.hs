@@ -82,10 +82,12 @@ sysevent ClockUpdateEvent = do
     modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
     -- invalidateInBBox Nothing Efficient cid   
 sysevent (RenderCacheUpdate (uuid, ssfc)) = do
-  liftIO $ putStrLn "sysevent: RenderCacheUpdate event"
+  -- liftIO $ putStrLn "RenderCacheUpdate"
   modify (renderCache %~ HM.insert uuid ssfc)
   b <- ( ^. doesNotInvalidate ) <$> get
   when (not b) $ invalidateAll
+  
+
   -- invalidateInBBox Nothing Efficient cid   
 sysevent ev = liftIO $ print ev 
 
@@ -171,7 +173,7 @@ invalidateAllInBBox mbbox flag = applyActionToAllCVS (invalidateInBBox mbbox fla
 
 -- | 
 invalidateAll :: MainCoroutine () 
-invalidateAll = invalidateAllInBBox Nothing Clear >> liftIO (putStrLn "The SLOW invalidateAll Called")
+invalidateAll = invalidateAllInBBox Nothing Clear -- >> liftIO (putStrLn "The SLOW invalidateAll Called")
  
 -- | Invalidate Current canvas
 invalidateCurrent :: MainCoroutine () 
@@ -225,7 +227,6 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
 waitSomeEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 
 waitSomeEvent p = do 
     r <- nextevent
-    liftIO $ putStrLn ("waitSomeEvent : " ++ show r)
     case r of 
       UpdateCanvas cid -> -- this is temporary
         invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  

@@ -135,7 +135,6 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                        TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
                        _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
     _confevent <- canvas `on` configureEvent $ tryEvent $ do 
-      
                    (w,h) <- eventSize 
                    liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
     _brevent <- canvas `on` buttonReleaseEvent $ tryEvent $ do 

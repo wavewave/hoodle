@@ -66,8 +66,10 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Coroutine.Mode 
+import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.TextInput
+-- import           Hoodle.Coroutine.Window
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
@@ -382,7 +384,8 @@ fileAnnotatePDF =
         modify ( hoodleFileControl.hoodleFileName .~ Nothing)
         commit_        
         setTitleFromFileName_ 
-        invalidateAll  
+        canvasZoomUpdateAll
+        -- invalidateAll  
       
 
 -- | set frame title according to file name

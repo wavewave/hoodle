@@ -24,16 +24,16 @@ Executable networkedit
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   base,
-                   network-simple, 
+                   binary,  
                    bytestring,
                    directory, 
-                   time,
-                   process,
                    filepath,
                    monad-loops, 
-                   binary,  
-                   transformers,
-                   mtl
+                   mtl,
+                   network-simple, 
+                   process,
+                   time,
+                   transformers
 
 Executable idfilepathdb
   Main-is: idfilepathdb.hs
@@ -41,26 +41,28 @@ Executable idfilepathdb
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   base,
-                   mtl,
-                   directory,
-                   filepath,
-                   attoparsec,
-                   transformers,
-                   hoodle-types,
-                   hoodle-parser,
-                   xournal-parser,
-                   containers,
-                   bytestring,
-                   lens,
-                   process,
-                   base64-bytestring,
-                   pureMD5,
-                   cmdargs,
+  Build-Depends:   
                    aeson,
                    aeson-pretty,
-                   either,
+                   attoparsec,
+                   base,
+                   base64-bytestring,
+                   bytestring,
+                   cmdargs,
                    conduit, 
+                   containers,
+                   directory,
+                   either,
+                   filepath,
                    http-conduit,
+                   lens,
+                   mtl,
+                   process,
+                   pureMD5,
+                   resourcet,
                    text,
-                   unordered-containers
+                   transformers,
+                   unordered-containers,
+                   hoodle-types,
+                   hoodle-parser,
+                   xournal-parser

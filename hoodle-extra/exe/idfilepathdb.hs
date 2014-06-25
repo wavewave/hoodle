@@ -8,13 +8,14 @@ import           Control.Applicative ((<$>))
 import           Control.Lens
 import           Control.Monad.Trans (liftIO)
 import           Control.Monad.Trans.Either 
+import           Control.Monad.Trans.Resource
 import           Data.Attoparsec 
 import           Data.Aeson.Parser (json)
 import           Data.Aeson.Types  (parseJSON, parseEither)
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as L
-import           Data.Conduit (($$+-),runResourceT)
+import           Data.Conduit (($$+-))
 import           Data.Conduit.List (consume)
 import           Data.Data
 import qualified Data.List as DL 

@@ -3,7 +3,7 @@
 
 module Hoodle.Manage.Type.MD5 where
 
-import Crypto.Hash.MD5
+-- import Crypto.Hash.MD5
 import qualified Data.ByteString as B
 import Data.ByteString.Base16 as B16
 import qualified Data.Text as T
@@ -11,8 +11,6 @@ import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 -- import Data.Digest.Pure.MD5
 import Database.Persist
 import Database.Persist.Sql
-
--- type MD5 = T.Text
 
 newtype MD5 = MD5 { unMD5 :: B.ByteString } deriving Show
 

@@ -22,14 +22,18 @@ Library
   ghc-options: 	-Wall  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   base == 4.*, 
+  Build-Depends:   base == 4.*,
+                   base16-bytestring,  
+                   bytestring,
                    conduit,
+                   cryptohash,
                    esqueleto,
                    monad-control,
                    monad-logger,
                    persistent,
                    persistent-sqlite,
                    persistent-template,
+                   pureMD5,
                    resourcet,
                    text,
                    transformers,
@@ -37,6 +41,7 @@ Library
 
   Exposed-Modules: 
                    Hoodle.Manage
+                   Hoodle.Manage.Type.MD5
                    Hoodle.Manage.Type.UUID
   Other-Modules: 
   c-sources: 

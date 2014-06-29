@@ -25,18 +25,19 @@ Library
   Build-Depends:   base == 4.*, 
                    conduit,
                    esqueleto,
+                   monad-control,
+                   monad-logger,
                    persistent,
                    persistent-sqlite,
                    persistent-template,
+                   resourcet,
                    text,
                    transformers,
                    uuid
-                 
-    
-
 
   Exposed-Modules: 
                    Hoodle.Manage
+                   Hoodle.Manage.Type.UUID
   Other-Modules: 
   c-sources: 
   include-dirs:    

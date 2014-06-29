@@ -1,29 +1,35 @@
-{-# LANGUAGE QuasiQuotes, TemplateHaskell, TypeFamilies #-}
-{-# LANGUAGE OverloadedStrings, GADTs, FlexibleContexts, EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Hoodle.Manage where
 
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.Logger (MonadLogger(..))
+import Control.Monad.Trans.Control (MonadBaseControl(..))
+import Control.Monad.Trans.Resource (MonadResource(..))
 import Data.Conduit (($$))
 import Data.Conduit.List as CL
 import Data.Text (Text)
+-- import Data.Text.Encoding (decodeUtf8, encodeUtf8)
+-- import Data.UUID
+-- import Data.UUID.V4 
 import Database.Esqueleto
--- import Database.Persist
 import Database.Persist.Sqlite (runSqlite, runMigrationSilent)
 import Database.Persist.TH (mkPersist, mkMigrate, persistLowerCase, share, sqlSettings)
 import Database.Persist.Sql (rawQuery)
+-- 
+import Hoodle.Manage.Type.UUID
 
 share [mkPersist sqlSettings, mkMigrate "migrateTables"] [persistLowerCase|
-  Author 
-    name   Text
-    email  Text
-    EmailKey email
-    deriving Show
-  Tutorial
-    title  Text
-    url    Text
-    school Bool
-    author AuthorId
+  HoodleFile 
+    uuid     UUID
+    md5hash  Text    
+    location Text
     deriving Show
 |]
 
@@ -33,24 +39,24 @@ maintest :: IO ()
 maintest = 
   runSqlite ":memory:" $ do 
          buildDB
-         liftIO (putStrLn "dump tutorial")
-         dumpTutorial
-         liftIO (putStrLn "dump author")
+         liftIO (putStrLn "dump hoodle")
+         dumphdl
+      {-   liftIO (putStrLn "dump author")
          dumpAuthor
          liftIO (putStrLn "test esqueleto")
          tuts <- select $ from $ \(a,t) -> do
                    where_ ( a ^. AuthorEmail ==. val "ann@example.com" &&. t ^. TutorialAuthor ==. a ^. AuthorId)
                    return t
-         liftIO $ print tuts
+         liftIO $ print tuts -}
                  
+buildDB :: (Monad m, MonadLogger m, MonadIO m, MonadResource m, MonadBaseControl IO m) => 
+           SqlPersistT m (Key (HoodleFileGeneric SqlBackend))
 buildDB = do
     runMigration migrateTables
-    school <- insert $ Author "School of Haskell" "school@example.com"
-    anne <- insert $ Author "Ann Author" "ann@example.com"
-    insert $ Tutorial "Basic Haskell" "https://fpcomplete.com/school/basic" True school
-    insert $ Tutorial "A monad tutorial" "https://test.com" False anne
+    uuid <- liftIO $ nextRandom
+    insert $ HoodleFile uuid "testtttt" "file://url.com/file.hdl"
 
-dumpTutorial = rawQuery "select * from Tutorial" [] $$ CL.mapM_ (liftIO . print)
+dumphdl :: (MonadResource m, MonadLogger m) => SqlPersistT m ()
+dumphdl = rawQuery "select * from Hoodle_File" [] $$ CL.mapM_ (liftIO . print)
 
-dumpAuthor = rawQuery "select * from Author" [] $$ CL.mapM_ (liftIO . print)
 

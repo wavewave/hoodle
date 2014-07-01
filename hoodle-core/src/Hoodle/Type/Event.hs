@@ -249,6 +249,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuRotate    RotateDir (BBoxed Image)
                       | CMenuExport (BBoxed Image)
                       | CMenuExportHoodlet Item
+                      | CMenuConvertSelection Item
                       | CMenuCustom
                       deriving (Show, Ord, Eq) 
 

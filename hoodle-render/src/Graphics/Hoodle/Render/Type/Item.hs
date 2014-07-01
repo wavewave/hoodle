@@ -66,6 +66,12 @@ isLinkInRItem _ = False
 
 
 -- | 
+isAnchorInRItem :: RItem -> Bool 
+isAnchorInRItem (RItemAnchor _ _) = True 
+isAnchorInRItem _ = False
+
+
+-- | 
 findStrkInRItem :: RItem -> Maybe (BBoxed Stroke)
 findStrkInRItem (RItemStroke strk) = Just strk
 findStrkInRItem _ = Nothing 

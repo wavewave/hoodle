@@ -18,18 +18,20 @@ module Hoodle.Coroutine.ContextMenu where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Lens (view,set,(%~))
+import           Control.Lens (view,set,(%~),(^.))
 import           Control.Monad.State hiding (mapM_,forM_)
 import           Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as IM
+import           Data.List (partition)
 import           Data.Monoid
 import           Data.UUID.V4 
 import qualified Data.Text as T (unpack)
 import qualified Data.Text.Encoding as TE
 import qualified Graphics.Rendering.Cairo as Cairo
+-- import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import           Graphics.UI.Gtk hiding (get,set)
 import           System.Directory 
 import           System.FilePath
@@ -64,6 +66,7 @@ import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Script.Hook
+import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
@@ -92,7 +95,7 @@ processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
 processContextMenu (CMenuCanvasView cid pnum _x _y) = do 
     xstate <- get 
-    let cmap = view cvsInfoMap xstate 
+    let cmap =  xstate ^. cvsInfoMap 
     let mcinfobox = IM.lookup cid cmap 
     case mcinfobox of 
       Nothing -> liftIO $ putStrLn "error in processContextMenu"
@@ -107,20 +110,20 @@ processContextMenu CMenuAutosavePage = do
     xst <- get 
     pg <- getCurrentPageCurr 
     mapM_ liftIO $ do 
-      hset <- view hookSet xst
+      hset <- xst ^. hookSet 
       customAutosavePage hset <*> pure pg 
 processContextMenu (CMenuLinkConvert nlnk) = 
     either (const (return ())) action 
       . hoodleModeStateEither 
-      . view hoodleModeState =<< get 
+      . (^. hoodleModeState) =<< get 
   where action thdl = do 
           xst <- get 
-          let cache = view renderCache xst
-          case view gselSelected thdl of 
+          let cache = xst ^. renderCache
+          case thdl ^. gselSelected of 
             Nothing -> return () 
             Just (n,tpg) -> do 
               let activelayer = rItmsInActiveLyr tpg
-                  buf = view (glayers.selectedLayer.gbuffer) tpg
+                  buf = tpg ^. (glayers.selectedLayer.gbuffer)
               ntpg <- case activelayer of 
                 Left _ -> return tpg 
                 Right (a :- _b :- as ) -> do
@@ -140,7 +143,7 @@ processContextMenu CMenuCreateALink =
   fileChooser FileChooserActionOpen Nothing >>= mapM_ linkSelectionWithFile
 processContextMenu CMenuAssocWithNewFile = do
   xst <- get 
-  let msuggestedact = view hookSet xst >>= fileNameSuggestionHook 
+  let msuggestedact = xst ^. hookSet >>= fileNameSuggestionHook 
   (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact 
   
   fileChooser FileChooserActionSave msuggested >>=   
@@ -187,8 +190,14 @@ processContextMenu (CMenuExportHoodlet itm) = do
           createDirectory hoodletdir 
         let fp = hoodletdir </> str <.> "hdlt"
         L.writeFile fp (Hoodlet.builder itm) 
-
-
+processContextMenu (CMenuConvertSelection itm) = do
+    xstate <- get 
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate 
+    deleteSelection
+    callRenderer $ return . GotRItem =<< cnstrctRItem itm
+    RenderEv (GotRItem newitem) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False) 
+    let BBox (x0,y0) _ = getBBox newitem
+    insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
 processContextMenu CMenuCustom =  do
     either (const (return ())) action . hoodleModeStateEither . view hoodleModeState =<< get 
   where action thdl = do    
@@ -422,7 +431,28 @@ showContextMenu (pnum,(x,y)) = do
                       menuAttach menu menuitemmklnk 0 1 4 5 
                     _ -> return ()
 
-                _ -> return () 
+                _ -> do
+                  let (links,others) = partition ((||) <$> isLinkInRItem <*> isAnchorInRItem) sitms 
+                  case links of 
+                    l : [] -> do
+                      menuitemreplace <- menuItemNewWithLabel ("replace link/anchor render")
+                      menuitemreplace `on` menuItemActivate $ do
+                        let cache = xstate ^. renderCache
+                            ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) others
+                        case ulbbox of 
+                          Middle bbox -> do
+                            let BBox (x0,y0) (x1,y1) = bbox
+                                dim = Dim (x1-x0) (y1-y0)
+                            svg <- svg_render <$> makeSVGFromSelection cache others bbox
+                            let mitm = case l of 
+                                  RItemLink lnkbbx _   -> (Just . ItemLink) ((bbxed_content lnkbbx) { link_render = svg, link_dim = dim })
+                                  RItemAnchor ancbbx _ -> (Just . ItemAnchor) ((bbxed_content ancbbx) { anchor_render = svg, anchor_dim = dim })
+                                  _ -> Nothing 
+                            maybe (return ()) (evhandler . UsrEv . GotContextMenuSignal . CMenuConvertSelection ) mitm
+                          _ -> return ()
+                      menuAttach menu menuitemreplace 0 1 8 9
+                    _ -> return ()
+
           case (customContextMenuTitle =<< view hookSet xstate) of 
             Nothing -> return () 
             Just ttl -> do 

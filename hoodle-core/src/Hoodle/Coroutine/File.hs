@@ -36,7 +36,7 @@ import qualified Data.IntMap as IM
 import           Data.Time.Clock
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk -- hiding (get,set)
 import           System.Directory
 import           System.FilePath
 import qualified System.FSNotify as FS
@@ -147,6 +147,12 @@ getFileContent (Just fname) = do
             modify ( hoodleFileControl.hoodleFileName .~ Nothing)
             commit_
       _ -> getFileContent Nothing    
+    xstate' <- get
+    doIOaction $ \evhandler -> do 
+      Gtk.postGUIAsync (setTitleFromFileName xstate')
+      return (UsrEv ActionOrdered)
+    ActionOrdered <- waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+    return ()
 getFileContent Nothing = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
     modify ( hoodleFileControl.hoodleFileName .~ Nothing ) 
@@ -203,7 +209,7 @@ renderjob cache h ofp = do
 
 -- | 
 fileExport :: MainCoroutine ()
-fileExport = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
+fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename = 
       -- this is rather temporary not to make mistake 
@@ -253,7 +259,7 @@ fileStartSync = do
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()
-exportCurrentPageAsSVG = fileChooser FileChooserActionSave Nothing >>= maybe (return ()) action 
+exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename = 
       -- this is rather temporary not to make mistake 
@@ -297,7 +303,7 @@ resetHoodleBuffers = do
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
 fileOpen = do 
-    mfilename <- fileChooser FileChooserActionOpen Nothing
+    mfilename <- fileChooser Gtk.FileChooserActionOpen Nothing
     forM_ mfilename fileLoad 
 
 -- | main coroutine for save as 
@@ -314,7 +320,7 @@ fileSaveAs = do
     defSaveAsAction xstate hdl = do 
         let msuggestedact = view hookSet xstate >>= fileNameSuggestionHook 
         (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact 
-        mr <- fileChooser FileChooserActionSave msuggested 
+        mr <- fileChooser Gtk.FileChooserActionSave msuggested 
         maybe (return ()) (action xstate hdl) mr 
       where action xst' hd filename = 
               if takeExtension filename /= ".hdl" 
@@ -370,7 +376,7 @@ fileExtensionInvalid (ext,a) =
 -- | 
 fileAnnotatePDF :: MainCoroutine ()
 fileAnnotatePDF = 
-    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
+    fileChooser Gtk.FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     warning = do 
       okMessageBox "cannot load the pdf file. Check your hoodle compiled with poppler library" 
@@ -419,7 +425,7 @@ checkEmbedImageSize filename = do
 -- | 
 fileLoadPNGorJPG :: MainCoroutine ()
 fileLoadPNGorJPG = do 
-    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) embedImage
+    fileChooser Gtk.FileChooserActionOpen Nothing >>= maybe (return ()) embedImage
 
 embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
@@ -448,7 +454,7 @@ embedImage filename = do
 -- | 
 fileLoadSVG :: MainCoroutine ()
 fileLoadSVG = do 
-    fileChooser FileChooserActionOpen Nothing >>= maybe (return ()) action 
+    fileChooser Gtk.FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do 
       xstate <- get 
@@ -481,7 +487,7 @@ askQuitProgram :: MainCoroutine ()
 askQuitProgram = do 
     b <- okCancelMessageBox "Current canvas is not saved yet. Will you close hoodle?" 
     case b of 
-      True -> liftIO mainQuit
+      True -> liftIO Gtk.mainQuit
       False -> return ()
   
 -- | 
@@ -608,49 +614,49 @@ showRevisionDialog hdl revs =
   where 
     action cache 
        = mkIOaction $ \_evhandler -> do 
-               dialog <- dialogNew
-               vbox <- dialogGetUpper dialog
+               dialog <- Gtk.dialogNew
+               vbox <- Gtk.dialogGetUpper dialog
                mapM_ (addOneRevisionBox cache vbox hdl) revs 
-               _btnOk <- dialogAddButton dialog "Ok" ResponseOk
-               widgetShowAll dialog
-               _res <- dialogRun dialog
-               widgetDestroy dialog
+               _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
+               Gtk.widgetShowAll dialog
+               _res <- Gtk.dialogRun dialog
+               Gtk.widgetDestroy dialog
                return (UsrEv GotOk)
 
 
 mkPangoText :: String -> Cairo.Render ()
 mkPangoText str = do 
     let pangordr = do 
-          ctxt <- cairoCreateContext Nothing 
-          layout <- layoutEmpty ctxt   
-          fdesc <- fontDescriptionNew 
-          fontDescriptionSetFamily fdesc "Sans Mono"
-          fontDescriptionSetSize fdesc 8.0 
-          layoutSetFontDescription layout (Just fdesc)
-          layoutSetWidth layout (Just 250)
-          layoutSetWrap layout WrapAnywhere 
-          layoutSetText layout str 
+          ctxt <- Gtk.cairoCreateContext Nothing 
+          layout <- Gtk.layoutEmpty ctxt   
+          fdesc <- Gtk.fontDescriptionNew 
+          Gtk.fontDescriptionSetFamily fdesc "Sans Mono"
+          Gtk.fontDescriptionSetSize fdesc 8.0 
+          Gtk.layoutSetFontDescription layout (Just fdesc)
+          Gtk.layoutSetWidth layout (Just 250)
+          Gtk.layoutSetWrap layout Gtk.WrapAnywhere 
+          Gtk.layoutSetText layout str 
           return layout
         rdr layout = do Cairo.setSourceRGBA 0 0 0 1
-                        updateLayout layout 
-                        showLayout layout 
+                        Gtk.updateLayout layout 
+                        Gtk.showLayout layout 
     layout <- liftIO $ pangordr 
     rdr layout
 
-addOneRevisionBox :: RenderCache -> VBox -> Hoodle -> Revision -> IO ()
+addOneRevisionBox :: RenderCache -> Gtk.VBox -> Hoodle -> Revision -> IO ()
 addOneRevisionBox cache vbox hdl rev = do 
-    cvs <- drawingAreaNew 
-    cvs `on` sizeRequest $ return (Requisition 250 25)
-    cvs `on` exposeEvent $ tryEvent $ do 
-      drawwdw <- liftIO $ widgetGetDrawWindow cvs 
-      liftIO . renderWithDrawable drawwdw $ do 
+    cvs <- Gtk.drawingAreaNew 
+    cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 250 25)
+    cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
+      drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs 
+      liftIO . Gtk.renderWithDrawable drawwdw $ do 
         case rev of 
           RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache) strks
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"
-    btn <- buttonNewWithLabel "view"
-    btn `on` buttonPressEvent $ tryEvent $ do 
+    btn <- Gtk.buttonNewWithLabel "view"
+    btn `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 
       files <- liftIO $ getDirectoryContents vcsdir 
       let fstrinit = "UUID_" ++ B.unpack (view hoodleID hdl)  
                       ++ "_MD5Digest_" ++ B.unpack (view revmd5 rev)
@@ -662,10 +668,10 @@ addOneRevisionBox cache vbox hdl rev = do
           liftIO (createProcess (proc "evince" [vcsdir </> x])) 
           >> return ()
         _ -> return ()    
-    hbox <- hBoxNew False 0
-    boxPackStart hbox cvs PackNatural 0
-    boxPackStart hbox btn PackGrow  0
-    boxPackStart vbox hbox PackNatural 0
+    hbox <- Gtk.hBoxNew False 0
+    Gtk.boxPackStart hbox cvs Gtk.PackNatural 0
+    Gtk.boxPackStart hbox btn Gtk.PackGrow  0
+    Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
 
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 

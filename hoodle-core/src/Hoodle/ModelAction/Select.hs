@@ -336,7 +336,7 @@ hitLassoItem lst (RItemLink lnk _) =
     hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
     && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
   where BBox (x1,y1) (x2,y2) = getBBox lnk
-hitLassoItem lst (RItemAnchor anc) = 
+hitLassoItem lst (RItemAnchor anc _) = 
     hitLassoPoint lst (x1,y1) && hitLassoPoint lst (x1,y2)
     && hitLassoPoint lst (x2,y1) && hitLassoPoint lst (x2,y2)
   where BBox (x1,y1) (x2,y2) = getBBox anc

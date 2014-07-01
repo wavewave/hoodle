@@ -347,7 +347,7 @@ addAnchor :: MainCoroutine ()
 addAnchor = do
     uuid <- liftIO $ nextRandom
     let uuidbstr = B.pack (show uuid)
-    let anc = Anchor uuidbstr (100,100) (Dim 50 50)
+    let anc = Anchor uuidbstr "" (100,100) (Dim 50 50)
     --
     callRenderer $ return . GotRItem =<< cnstrctRItem (ItemAnchor anc)
     RenderEv (GotRItem nitm) <- 

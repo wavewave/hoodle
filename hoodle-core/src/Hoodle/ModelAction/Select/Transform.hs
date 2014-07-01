@@ -40,7 +40,7 @@ changeItemBy func (RItemStroke strk) = RItemStroke (changeStrokeBy func strk)
 changeItemBy func (RItemImage img sfc) = RItemImage (changeImageBy func img) sfc
 changeItemBy func (RItemSVG svg rsvg) = RItemSVG (changeSVGBy func svg) rsvg
 changeItemBy func (RItemLink lnk rsvg) = RItemLink (changeLinkBy func lnk) rsvg
-changeItemBy func (RItemAnchor anc) = RItemAnchor (changeAnchorBy func anc)    
+changeItemBy func (RItemAnchor anc rsvg) = RItemAnchor (changeAnchorBy func anc) rsvg
 
 
 -- | modify stroke using a function
@@ -86,19 +86,19 @@ changeLinkBy func (BBoxed (LinkDocID i lid loc t c bstr (x,y) (Dim w h)) _bbox) 
       (x2,y2) = func (x+w,y+h)
       nlnk = LinkDocID i lid loc t c  bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in runIdentity (makeBBoxed nlnk)          
-changeLinkBy func (BBoxed (LinkAnchor i lid loc aid (x,y) (Dim w h)) _bbox) = 
+changeLinkBy func (BBoxed (LinkAnchor i lid loc aid bstr (x,y) (Dim w h)) _bbox) = 
   let (x1,y1) = func (x,y) 
       (x2,y2) = func (x+w,y+h)
-      nlnk = LinkAnchor i lid loc aid (x1,y1) (Dim (x2-x1) (y2-y1))
+      nlnk = LinkAnchor i lid loc aid bstr (x1,y1) (Dim (x2-x1) (y2-y1))
   in runIdentity (makeBBoxed nlnk)      
 
 -- | 
 changeAnchorBy :: ((Double,Double) -> (Double,Double))
                -> BBoxed Anchor -> BBoxed Anchor
-changeAnchorBy func (BBoxed (Anchor i (x,y) (Dim w h)) _) = 
+changeAnchorBy func (BBoxed (Anchor i bstr (x,y) (Dim w h)) _) = 
     let (x1,y1) = func (x,y)
         (x2,y2) = func (x+w,y+h)
-        nanc = Anchor i (x1,y1) (Dim (x2-x1) (y2-y1))
+        nanc = Anchor i bstr (x1,y1) (Dim (x2-x1) (y2-y1))
     in runIdentity (makeBBoxed nanc)
 
 

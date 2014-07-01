@@ -143,46 +143,78 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
 
 -- | render svg  
 renderLink :: Link -> Cairo.Render () 
-renderLink lnk@LinkAnchor {..} = do
-    let lnkbbx = runIdentity (makeBBoxed lnk)
-        bbox@(BBox (x0,y0) (x1,y1)) = getBBox lnkbbx
-    clipBBox (Just bbox)
-    Cairo.setSourceRGBA 0 1 0 1 
-    Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
-    Cairo.fill
-    Cairo.resetClip
-    return ()
-renderLink lnk = do  
+renderLink lnk = 
     let bstr = link_render lnk 
-    let str = C.unpack bstr 
-    RSVG.withSvgFromString str $ \rsvg -> do 
-      let lnkbbx = runIdentity (makeBBoxed lnk)
-      let (x,y) = (link_pos . bbxed_content) lnkbbx
-          BBox (x1,y1) (x2,y2) = getBBox lnkbbx
-          (ix',iy') = RSVG.svgGetSize rsvg
-          ix = fromIntegral ix' 
-          iy = fromIntegral iy'
-      clipBBox (Just (getBBox lnkbbx))
-      Cairo.save 
-      Cairo.translate x y 
-      Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
-      RSVG.svgRender rsvg 
-      Cairo.restore
-      Cairo.resetClip 
-      return () 
+    in if C.null bstr 
+       then do
+         let lnkbbx = runIdentity (makeBBoxed lnk)
+             bbox@(BBox (x0,y0) (x1,y1)) = getBBox lnkbbx
+         clipBBox (Just bbox)
+         Cairo.setSourceRGBA 0 1 0 1 
+         Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
+         Cairo.fill
+         Cairo.resetClip
+         return ()
+       else do
+         let str = C.unpack bstr 
+         RSVG.withSvgFromString str $ \rsvg -> do 
+           let lnkbbx = runIdentity (makeBBoxed lnk)
+           let (x,y) = (link_pos . bbxed_content) lnkbbx
+               BBox (x1,y1) (x2,y2) = getBBox lnkbbx
+               (ix',iy') = RSVG.svgGetSize rsvg
+               ix = fromIntegral ix' 
+               iy = fromIntegral iy'
+           clipBBox (Just (getBBox lnkbbx))
+           Cairo.save 
+           Cairo.translate x y 
+           Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+           RSVG.svgRender rsvg 
+           Cairo.restore
+           Cairo.resetClip 
+           return () 
+-- renderLink lnk@LinkAnchor {..} = do
+--    let lnkbbx = runIdentity (makeBBoxed lnk)
+--        bbox@(BBox (x0,y0) (x1,y1)) = getBBox lnkbbx
+--    clipBBox (Just bbox)
+--    Cairo.setSourceRGBA 0 1 0 1 
+--    Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
+--    Cairo.fill
+--    Cairo.resetClip
+--    return ()
 
 
 -- | 
 renderAnchor :: Anchor -> Cairo.Render ()
-renderAnchor anc = do
-    let ancbbx = runIdentity (makeBBoxed anc)
-        bbox@(BBox (x0,y0) (x1,y1)) = getBBox ancbbx
-    clipBBox (Just bbox)
-    Cairo.setSourceRGBA 1 0 0 1 
-    Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
-    Cairo.fill
-    Cairo.resetClip
-    return ()
+renderAnchor anc = 
+    let bstr = anchor_render anc
+    in if C.null bstr 
+       then do
+         let ancbbx = runIdentity (makeBBoxed anc)
+             bbox@(BBox (x0,y0) (x1,y1)) = getBBox ancbbx
+         clipBBox (Just bbox)
+         Cairo.setSourceRGBA 1 0 0 1 
+         Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
+         Cairo.fill
+         Cairo.resetClip
+         return ()
+       else do
+         let str = C.unpack bstr 
+         RSVG.withSvgFromString str $ \rsvg -> do 
+           let ancbbx = runIdentity (makeBBoxed anc)
+           let (x,y) = (anchor_pos . bbxed_content) ancbbx
+               BBox (x1,y1) (x2,y2) = getBBox ancbbx
+               (ix',iy') = RSVG.svgGetSize rsvg
+               ix = fromIntegral ix' 
+               iy = fromIntegral iy'
+           clipBBox (Just (getBBox ancbbx))
+           Cairo.save 
+           Cairo.translate x y 
+           Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+           RSVG.svgRender rsvg 
+           Cairo.restore
+           Cairo.resetClip 
+           return () 
+
 
 -- | render item 
 renderItem :: Item -> Cairo.Render () 
@@ -282,8 +314,23 @@ renderRItem _ itm@(RItemLink lnkbbx mrsvg) = do
 	Cairo.restore
 	return () 
     return itm 
-renderRItem _ itm@(RItemAnchor ancbbx) = 
-    renderAnchor (bbxed_content ancbbx) >> return itm 
+renderRItem _ itm@(RItemAnchor ancbbx mrsvg) = do
+    case mrsvg of
+      Nothing -> renderAnchor (bbxed_content ancbbx)
+      Just rsvg -> do 
+	let (x,y) = (anchor_pos . bbxed_content) ancbbx
+	    BBox (x1,y1) (x2,y2) = getBBox ancbbx
+	    (ix',iy') = RSVG.svgGetSize rsvg
+	    ix = fromIntegral ix' 
+	    iy = fromIntegral iy'
+	Cairo.save 
+	Cairo.translate x y 
+	Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
+	RSVG.svgRender rsvg 
+	Cairo.restore
+	return () 
+    return itm 
+
 
 ------------
 -- InBBox --

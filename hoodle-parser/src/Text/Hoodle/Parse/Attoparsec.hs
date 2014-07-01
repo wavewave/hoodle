@@ -307,7 +307,7 @@ link = do
                       mlid 
             | typ == "anchor" = 
                 maybe (error "no linkedid for anchor")
-                      (\(lid,aid) -> H.LinkAnchor i lid loc aid xy dim)
+                      (\(lid,aid) -> H.LinkAnchor i lid loc aid bstr xy dim)
                       ( mlid >>= \lid -> maid >>= \aid -> return (lid,aid))
             | otherwise = error "link type is not recognized"
     (return . H.ItemLink) lnk  
@@ -327,8 +327,14 @@ anchor = do
     trim 
     height <- string "height=\"" *> double <* char '"'
     trim 
-    string "/>"
-    return . H.ItemAnchor $ (H.Anchor i (posx,posy) (H.Dim width height))
+    (try (string "/>" >>
+          return (H.ItemAnchor (H.Anchor i "" (posx,posy) (H.Dim width height))))
+     <|> (do string ">" 
+             trim
+             bstr <- renderCDATA 
+             trim
+             string "</anchor>" >> return ()
+             return . H.ItemAnchor $ (H.Anchor i bstr (posx,posy) (H.Dim width height))))
     
 -- | 
 trim :: Parser ()

@@ -86,6 +86,7 @@ data Link = Link { link_id :: ByteString
                        , link_linkeddocid :: ByteString
                        , link_location :: ByteString
                        , link_anchorid :: ByteString
+                       , link_render :: ByteString
                        , link_pos :: (Double,Double)
                        , link_dim :: !Dimension
                        }
@@ -93,6 +94,7 @@ data Link = Link { link_id :: ByteString
            deriving (Show,Eq,Ord)                    
 
 data Anchor = Anchor { anchor_id :: ByteString 
+                     , anchor_render :: ByteString
                      , anchor_pos :: (Double, Double)
                      , anchor_dim :: !Dimension
                      } 
@@ -159,6 +161,7 @@ instance SE.Serialize Link where
                           >> SE.put link_linkeddocid
                           >> SE.put link_location
                           >> SE.put link_anchorid
+                          >> SE.put link_render
                           >> SE.put link_pos
                           >> SE.put link_dim
     get = do tag <- SE.getWord8 
@@ -168,16 +171,17 @@ instance SE.Serialize Link where
                1 -> LinkDocID  <$> SE.get <*> SE.get <*> SE.get <*> SE.get 
                                <*> SE.get <*> SE.get <*> SE.get <*> SE.get
                2 -> LinkAnchor <$> SE.get <*> SE.get <*> SE.get <*> SE.get
-                               <*> SE.get <*> SE.get
+                               <*> SE.get <*> SE.get <*> SE.get
                _ -> fail "err in Link parsing"
 
 
 
 instance SE.Serialize Anchor where
     put Anchor {..} = SE.put anchor_id
+                      >> SE.put anchor_render
                       >> SE.put anchor_pos
                       >> SE.put anchor_dim
-    get = Anchor <$> SE.get <*> SE.get <*> SE.get
+    get = Anchor <$> SE.get <*> SE.get <*> SE.get <*> SE.get
 
 
 -- | 

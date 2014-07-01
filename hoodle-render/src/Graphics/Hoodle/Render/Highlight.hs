@@ -62,7 +62,7 @@ renderRItemHltd (RItemStroke strk) = renderStrkHltd strk
 renderRItemHltd (RItemImage img _) = (renderHltBBox . getBBox) img
 renderRItemHltd (RItemSVG svg _) = (renderHltBBox . getBBox) svg 
 renderRItemHltd (RItemLink lnk _) = (renderHltBBox . getBBox) lnk
-renderRItemHltd r@(RItemAnchor _anc) = (renderHltBBox . getBBox) r
+renderRItemHltd (RItemAnchor anc _) = (renderHltBBox . getBBox) anc
 
 -- |
 renderHltBBox :: BBox -> Cairo.Render ()

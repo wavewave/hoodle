@@ -113,12 +113,24 @@ cnstrctRItem (ItemLink lnk@(LinkDocID _ _ _ _ _ bstr _ _)) = do
         lnkbbx = runIdentity (makeBBoxed lnk)
     rsvg <- liftIO $ RSVG.svgNewFromString str
     return (RItemLink lnkbbx (Just rsvg))    
-cnstrctRItem (ItemLink lnk@(LinkAnchor _ _ _ _ _ _)) = do 
-    let lnkbbx = runIdentity (makeBBoxed lnk)
-    return (RItemLink lnkbbx Nothing)    
-cnstrctRItem (ItemAnchor anc@(Anchor _ _ _)) = do 
-    let ancbbx = runIdentity (makeBBoxed anc)
-    return (RItemAnchor ancbbx)
+cnstrctRItem (ItemLink lnk@(LinkAnchor _ _ _ _ bstr _ _)) = 
+    if C8.null bstr 
+    then let lnkbbx = runIdentity (makeBBoxed lnk) 
+         in return (RItemLink lnkbbx Nothing) 
+    else do 
+      let str = C8.unpack bstr 
+          lnkbbx = runIdentity (makeBBoxed lnk)
+      rsvg <- liftIO $ RSVG.svgNewFromString str
+      return (RItemLink lnkbbx (Just rsvg))    
+cnstrctRItem (ItemAnchor anc@(Anchor _ bstr _ _)) = 
+    if C8.null bstr 
+    then let ancbbx = runIdentity (makeBBoxed anc) 
+         in return (RItemAnchor ancbbx Nothing)
+    else do 
+      let str = C8.unpack bstr 
+          ancbbx = runIdentity (makeBBoxed anc)
+      rsvg <- liftIO $ RSVG.svgNewFromString str
+      return (RItemAnchor ancbbx (Just rsvg))    
 
 
 -- | get embedded png image. If not, just give me nothing. 

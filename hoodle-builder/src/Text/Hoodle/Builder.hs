@@ -45,7 +45,7 @@ builder = toLazyByteString . buildHoodle
 
 -- |
 buildHoodle :: Hoodle -> Builder 
-buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.2.999\" id=\""
+buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<hoodle version=\"0.3\" id=\""
                  <> fromByteString (view hoodleID hdl) 
                  <> fromByteString "\">\n" 
                  <> (buildTitle . view title) hdl 
@@ -238,7 +238,7 @@ buildLink (LinkDocID i docid loc mtxt mcmd rdr (x,y) (Dim w h)) =
     <> fromByteString rdr 
     <> fromByteString "]]></render>"
     <> fromByteString "</link>\n"    
-buildLink (LinkAnchor i docid loc anchorid (x,y) (Dim w h)) =
+buildLink (LinkAnchor i docid loc anchorid rdr (x,y) (Dim w h)) =
     fromByteString "<link id=\""  
     <> fromByteString i 
     <> fromByteString "\" type=\"anchor\" linkedid=\"" 
@@ -257,11 +257,12 @@ buildLink (LinkAnchor i docid loc anchorid (x,y) (Dim w h)) =
     <> fromByteString (toFixed 2 h)
     <> fromByteString "\" >\n"
     <> fromByteString "<render><![CDATA[" 
+    <> fromByteString rdr 
     <> fromByteString "]]></render>"
     <> fromByteString "</link>\n"    
 
 buildAnchor :: Anchor -> Builder
-buildAnchor (Anchor i (x,y) (Dim w h)) = 
+buildAnchor (Anchor i rdr (x,y) (Dim w h)) = 
     fromByteString "<anchor id=\""
     <> fromByteString i 
     <> fromByteString "\" x=\""
@@ -272,7 +273,12 @@ buildAnchor (Anchor i (x,y) (Dim w h)) =
     <> fromByteString (toFixed 2 w)
     <> fromByteString "\" height=\""
     <> fromByteString (toFixed 2 h)    
-    <> fromByteString "\" />\n"
+    <> fromByteString "\" >\n"
+    <> fromByteString "<render><![CDATA[" 
+    <> fromByteString rdr 
+    <> fromByteString "]]></render>"
+    <> fromByteString "</anchor>\n"    
+
              
 -- | 
 build2D :: Pair Double Double -> Builder 

@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Data.Hoodle.Generic 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011,2012,2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -25,6 +25,7 @@ import Data.Foldable
 import Data.Functor
 import qualified Data.IntMap as IM 
 import qualified Data.Sequence as Seq 
+import qualified Data.Text as T
 import Data.UUID.V4 
 -- from this package
 import Data.Hoodle.Simple
@@ -37,6 +38,7 @@ data GHoodle cntnr pg = GHoodle
                         , ghoodle_ttl :: ByteString 
                         , ghoodle_revisions :: [Revision]
                         , ghoodle_embeddedpdf :: Maybe ByteString 
+                        , ghoodle_embeddedtext :: Maybe T.Text
                         , ghoodle_pgs :: cntnr pg }  
 
 -- | Generic page data having dimension, generic background
@@ -62,7 +64,7 @@ instance (Functor cntnr) => Functor (GPage bkg cntnr) where
   
 -- | 
 instance (Functor cntnr) => Functor (GHoodle cntnr) where
-  fmap f (GHoodle hid ttl revs pdf pgs) = GHoodle hid ttl revs pdf (fmap f pgs)
+  fmap f (GHoodle hid ttl revs pdf txt pgs) = GHoodle hid ttl revs pdf txt (fmap f pgs)
 
 ------------------------------
 -- lenses for Generic types --
@@ -83,6 +85,10 @@ grevisions = lens ghoodle_revisions (\f a -> f { ghoodle_revisions = a } )
 -- | 
 gembeddedpdf :: Simple Lens (GHoodle cntnr pg) (Maybe ByteString)
 gembeddedpdf = lens ghoodle_embeddedpdf (\f a -> f { ghoodle_embeddedpdf = a } )
+
+-- | 
+gembeddedtext :: Simple Lens (GHoodle cntnr pg) (Maybe T.Text)
+gembeddedtext = lens ghoodle_embeddedtext (\f a -> f { ghoodle_embeddedtext = a } )
 
 -- |
 gpages :: Simple Lens (GHoodle cntnr pg) (cntnr pg)
@@ -130,7 +136,7 @@ instance Listable Seq.Seq where
 emptyGHoodle :: (Listable m) => IO (GHoodle m a)
 emptyGHoodle = do 
   uuid <- nextRandom
-  return $ GHoodle ((pack.show) uuid) "" [] Nothing (fromList [])
+  return $ GHoodle ((pack.show) uuid) "" [] Nothing Nothing (fromList [])
 
 -- | 
 emptyGPage :: (Listable cntnr) => Dimension -> bkg -> GPage bkg cntnr a 

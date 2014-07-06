@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Data.Hoodle.Select 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011,2012,2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,18 +15,20 @@
 module Data.Hoodle.Select where
 
 -- from other packages
-import Control.Applicative
-import Control.Lens
-import Data.ByteString 
+import           Control.Applicative
+import           Control.Lens
+import           Data.ByteString
+import qualified Data.Text as T
 --
-import Data.Hoodle.Generic 
-import Data.Hoodle.Simple 
+import           Data.Hoodle.Generic 
+import           Data.Hoodle.Simple 
 
 -- | 
 data GSelect a b = GSelect { gselect_id :: ByteString 
                            , gselect_ttl :: ByteString 
                            , gselect_revisions :: [Revision]
-                           , gselect_embeddedpdf :: Maybe ByteString 
+                           , gselect_embeddedpdf :: Maybe ByteString
+                           , gselect_embeddedtext :: Maybe T.Text
                            , gselect_all :: a 
                            , gselect_selected :: b
                            }
@@ -47,6 +49,10 @@ gselEmbeddedPdf :: Simple Lens (GSelect a b) (Maybe ByteString)
 gselEmbeddedPdf = lens gselect_embeddedpdf (\f a -> f {gselect_embeddedpdf = a})
 
 -- |
+gselEmbeddedText :: Simple Lens (GSelect a b) (Maybe T.Text)
+gselEmbeddedText = lens gselect_embeddedtext (\f a -> f {gselect_embeddedtext = a})
+
+-- |
 gselAll :: Simple Lens (GSelect a b) a 
 gselAll = lens gselect_all (\f a -> f {gselect_all = a} )
 
@@ -60,6 +66,7 @@ gSelect2GHoodle = GHoodle <$> view gselHoodleID
                           <*> view gselTitle 
                           <*> view gselRevisions
                           <*> view gselEmbeddedPdf 
+                          <*> view gselEmbeddedText
                           <*> view gselAll 
 
 
@@ -68,5 +75,6 @@ gHoodle2GSelect = GSelect <$> view ghoodleID
                           <*> view gtitle 
                           <*> view grevisions
                           <*> view gembeddedpdf
+                          <*> view gembeddedtext
                           <*> view gpages
                           <*> pure Nothing 

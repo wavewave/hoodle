@@ -24,6 +24,8 @@ import           Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
 import qualified Data.ByteString.Char8 as B hiding (map) 
 import           Data.Char 
 import           Data.Strict.Tuple
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE 
 -- from hoodle-platform 
 import qualified Data.Hoodle.Simple as H
 -- 
@@ -202,24 +204,30 @@ svg_footer = string "</svgobject>" >> return ()
 textCDATA :: Parser B.ByteString 
 textCDATA = do 
     string "<text>"
-    str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
+    bstr <- getCDATA
+    -- str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
     string "</text>"
-    return (B.pack str) 
+    return bstr -- (B.pack str) 
 
 commandCDATA :: Parser B.ByteString 
 commandCDATA = do 
     string "<command>"
-    str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
+    bstr <- getCDATA
+    -- str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
     string "</command>"
-    return (B.pack str)
+    return bstr -- (B.pack str)
 
 renderCDATA :: Parser B.ByteString 
 renderCDATA = do 
-  string "<render>"
-  str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
-  string "</render>"
-  return (B.pack str)
+    string "<render>"
+    bstr <- getCDATA
+    -- str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
+    string "</render>"
+    return bstr -- (B.pack str)
 
+
+getCDATA :: Parser B.ByteString
+getCDATA = string "<![CDATA[" *> manyTill anyChar (try (string "]]>")) >>= return . B.pack 
 
 svg_obj :: Parser H.Item 
 svg_obj = do (xy,dim) <- svg_header
@@ -363,10 +371,12 @@ hoodle  = do trim
              skipSpace
              pdf <- (try (Just <$> embeddedpdf)
                      <|> return Nothing )
+             txt <- (try (Just <$> embeddedtext)
+                     <|> return Nothing )
              pgs <- many1 (page <?> "page")
              trim
              hoodleclose 
-             return $ H.Hoodle hid t revs pdf pgs 
+             return $ H.Hoodle hid t revs pdf txt pgs 
              
 page :: Parser H.Page 
 page = do trim 
@@ -433,6 +443,11 @@ embeddedpdf = do string "<embeddedpdf"
                  string "/>" 
                  return (B.pack str)
 
+embeddedtext :: Parser (T.Text) 
+embeddedtext = do string "<embeddedtext>"
+                  bstr <- getCDATA
+                  string "</embeddedtext>" 
+                  return (TE.decodeUtf8 bstr)
 
 hoodleheader :: Parser (B.ByteString,B.ByteString)
 hoodleheader = do hoodleheaderstart 

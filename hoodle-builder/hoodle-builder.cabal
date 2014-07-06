@@ -19,13 +19,14 @@ Library
   ghc-options: 	-Wall -Werror -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
+                   double-conversion >= 0.2.0.6,
                    base == 4.*,
                    blaze-builder >= 0.3, 
                    bytestring >= 0.9, 
-                   double-conversion >= 0.2.0.6,
                    hoodle-types >= 0.3,
                    lens >= 2.5,
-                   strict >= 0.3
+                   strict >= 0.3, 
+                   text > 1
                  
   Exposed-Modules: 
                    Text.Hoodle.Builder

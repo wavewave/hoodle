@@ -29,6 +29,8 @@ import           Data.Monoid hiding ((<>))
 import           Data.Monoid 
 #endif 
 import           Data.Strict.Tuple
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 -- from hoodle platform 
 import           Data.Hoodle.Simple
 -- 
@@ -51,6 +53,7 @@ buildHoodle hdl = fromByteString "<?xml version=\"1.0\" standalone=\"no\"?>\n<ho
                  <> (buildTitle . view title) hdl 
                  <> (mconcat . map buildRevision . view revisions) hdl
                  <> (maybe mempty buildEmbeddedPdf . view embeddedPdf) hdl 
+                 <> (maybe mempty buildEmbeddedText . view embeddedText) hdl
                  <> (mconcat . map buildPage . view pages) hdl
                  <> fromByteString "</hoodle>\n"
   
@@ -78,6 +81,13 @@ buildEmbeddedPdf :: S.ByteString -> Builder
 buildEmbeddedPdf pdf = fromByteString "<embeddedpdf src=\""
                        <> fromByteString pdf
                        <> fromByteString "\"/>\n"
+
+-- | 
+buildEmbeddedText :: T.Text -> Builder 
+buildEmbeddedText txt = fromByteString "<embeddedtext><![CDATA["
+                        <> fromByteString (TE.encodeUtf8 txt)
+                        <> fromByteString "]]></embeddedtext>\n"
+
 
 -- | 
 buildPage :: Page -> Builder 

@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Data.Hoodle.Generic.Simple 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
+-- Copyright   : (c) 2011, 2012, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -49,6 +49,7 @@ mkSHoodle = GHoodle
             <*> view title 
             <*> view revisions
             <*> view embeddedPdf 
+            <*> view embeddedText
             <*> map mkSPage . view pages
 
 -- | 
@@ -61,5 +62,5 @@ spage2Page (GPage dim bkg lyrs) = Page dim bkg (map slayer2Layer lyrs)
 
 -- | 
 shoodle2Hoodle :: SHoodle -> Hoodle
-shoodle2Hoodle (GHoodle hid ttl revs pdf pgs) = Hoodle hid ttl revs pdf (map spage2Page pgs)
+shoodle2Hoodle (GHoodle hid ttl revs pdf txt pgs) = Hoodle hid ttl revs pdf txt (map spage2Page pgs)
 

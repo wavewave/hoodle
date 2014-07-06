@@ -22,6 +22,7 @@ import           Data.ByteString.Char8 hiding (map)
 import           Data.UUID.V4 
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
+import qualified Data.Text as T
 -- from this package
 import           Data.Hoodle.Util
 -- 
@@ -247,6 +248,7 @@ data Hoodle = Hoodle { hoodle_id :: ByteString
                      , hoodle_title :: !Title
                      , hoodle_revisions :: [Revision]
                      , hoodle_embeddedpdf :: Maybe ByteString
+                     , hoodle_embeddedtext :: Maybe T.Text
                      , hoodle_pages :: ![Page] }
              deriving Show 
 
@@ -299,6 +301,10 @@ embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)
 embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
 
 -- | 
+embeddedText :: Simple Lens Hoodle (Maybe T.Text)
+embeddedText = lens hoodle_embeddedtext (\f a -> f { hoodle_embeddedtext = a} )
+
+-- | 
 pages :: Simple Lens Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
 
@@ -328,7 +334,7 @@ items = lens layer_items (\f a -> f { layer_items = a } )
 emptyHoodle :: IO Hoodle
 emptyHoodle = do
   uuid <- nextRandom
-  return $ Hoodle ((pack.show) uuid) "" [] Nothing [] 
+  return $ Hoodle ((pack.show) uuid) "" [] Nothing Nothing [] 
 
 -- | 
 emptyLayer :: Layer 

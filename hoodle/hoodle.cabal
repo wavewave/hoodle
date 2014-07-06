@@ -1,5 +1,5 @@
 Name:		hoodle
-Version:	0.2.999
+Version:	0.3
 Synopsis:	Executable for hoodle
 Description: 	Hoodle is a pen notetaking program written in haskell. 
 Homepage:       http://ianwookim.org/hoodle
@@ -24,7 +24,7 @@ Executable hoodle
   Build-Depends: 
                  base == 4.*, 
                  cmdargs >= 0.7, 
-                 hoodle-core >= 0.13.999, 
+                 hoodle-core >= 0.14, 
                  hoodle 
 
 Library
@@ -32,14 +32,14 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends:   base == 4.*, 
-                   mtl == 2.*,
-                   directory == 1.*,
-                   filepath == 1.*, 
+                   mtl >= 2,
+                   directory,
+                   filepath, 
                    containers >= 0.4,
                    cmdargs >= 0.7,
-                   configurator == 0.2.*,
+                   configurator >= 0.2,
                    dyre >= 0.8.11, 
-                   hoodle-core >= 0.13.999
+                   hoodle-core >= 0.14
   Exposed-Modules: 
                    Hoodle.ProgType
                    Hoodle.Job

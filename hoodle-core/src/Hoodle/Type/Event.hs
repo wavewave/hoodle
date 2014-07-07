@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Type.Event 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -121,6 +121,8 @@ data MenuEvent = MenuNew
                | MenuRecentDocument
                | MenuLoadPNGorJPG
                | MenuLoadSVG
+               | MenuText
+               | MenuEmbedTextSource 
                | MenuLaTeX
                | MenuLaTeXNetwork
                | MenuCombineLaTeX
@@ -174,7 +176,6 @@ data MenuEvent = MenuNew
                | MenuEmbedAllPDFBkg
                | MenuDefaultPaper
                | MenuSetAsDefaultPaper
-               | MenuText 
                | MenuAddLink
                | MenuAddAnchor
                | MenuListAnchors

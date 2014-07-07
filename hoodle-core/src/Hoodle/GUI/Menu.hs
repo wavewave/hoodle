@@ -5,7 +5,7 @@
 -- Module      : Hoodle.GUI.Menu 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -168,7 +168,7 @@ getMenuUI evar = do
   ema     <- actionNewAndRegister "EMA"   "Edit" Nothing Nothing Nothing
   vma     <- actionNewAndRegister "VMA"   "View" Nothing Nothing Nothing
   lma     <- actionNewAndRegister "LMA"   "Layer" Nothing Nothing Nothing
-  ima     <- actionNewAndRegister "IMA"   "Image" Nothing Nothing Nothing
+  ima     <- actionNewAndRegister "IMA"   "Embed" Nothing Nothing Nothing
   pma     <- actionNewAndRegister "PMA"   "Page" Nothing Nothing Nothing
   tma     <- actionNewAndRegister "TMA"   "Tool" Nothing Nothing Nothing
   verma   <- actionNewAndRegister "VERMA" "Version" Nothing Nothing Nothing
@@ -254,7 +254,8 @@ getMenuUI evar = do
   ldpreimg2a <- actionNewAndRegister "LDPREIMG2A" "Embed Predefined Image File 2" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage2)
   ldpreimg3a <- actionNewAndRegister "LDPREIMG3A" "Embed Predefined Image File 3" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage3)
 
-
+  texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
+  textsrca <- actionNewAndRegister "TEXTSRCA" "Embed Text Source" (Just "Just a Stub") Nothing (justMenu MenuEmbedTextSource)
 
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
   latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
@@ -279,7 +280,6 @@ getMenuUI evar = do
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultPaper)
   
   -- tools menu
-  texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just stockIndex) (justMenu MenuAddLink)
   anchora <- actionNewAndRegister "ANCHORA" "Add Anchor" (Just "Add Anchor") Nothing (justMenu MenuAddAnchor)
   listanchora <- actionNewAndRegister "LISTANCHORA" "List Anchors" (Just "List Anchors") Nothing (justMenu MenuListAnchors)
@@ -385,7 +385,7 @@ getMenuUI evar = do
   mapM_ (actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
-        [ newa, annpdfa, ldpnga, ldsvga, latexa, latexneta, combinelatexa, ldpreimga, ldpreimg2a, ldpreimg3a, opena, savea, saveasa
+        [ newa, annpdfa, opena, savea, saveasa
         , reloada, recenta, printa, exporta, synca, versiona, showreva, showida, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
         , fstpagea, prvpagea, nxtpagea, lstpagea {- , shwlayera, hidlayera -}
@@ -393,7 +393,9 @@ getMenuUI evar = do
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
         , apallpga, embedbkgpdfa, defppa, setdefppa
-        , texta, linka, anchora, listanchora, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
+        , ldpnga, ldsvga, texta, textsrca
+        , latexa, latexneta, combinelatexa, ldpreimga, ldpreimg2a, ldpreimg3a
+        , linka, anchora, listanchora, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , togpanzooma, toglayera, togclocka

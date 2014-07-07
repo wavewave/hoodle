@@ -434,6 +434,8 @@ menuEventProcess MenuNew  = askIfSave fileNew
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
+menuEventProcess MenuText = textInput (Just (100,100)) "" 
+menuEventProcess MenuEmbedTextSource = embedTextSource
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuLaTeXNetwork = 
@@ -488,7 +490,6 @@ menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" 
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
-menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuAddLink = addLink
 menuEventProcess MenuAddAnchor = addAnchor
 menuEventProcess MenuListAnchors = listAnchors

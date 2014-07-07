@@ -67,6 +67,14 @@
        <menuitem action="LDPREIMGA" />   
        <menuitem action="LDPREIMG2A" />
        <menuitem action="LDPREIMG3A" />
+       <separator />
+       <menuitem action="TEXTA" /> 
+       <menuitem action="TEXTSRCA" />
+       <separator /> 
+       <menuitem action="LATEXA" />
+       <menuitem action="LATEXNETA" />
+       <menuitem action="COMBINELATEXA" />
+       <separator />
     </menu>
     <menu action="PMA">
        <menuitem action="NEWPGBA" />
@@ -94,16 +102,11 @@
        <menuitem action="ERASERA" />
        <menuitem action="HIGHLTA" />
        <separator />
-       <menuitem action="TEXTA" /> 
        <menuitem action="LINKA" />
        <menuitem action="ANCHORA" />
        <menuitem action="LISTANCHORA" />
        <menuitem action="HANDRECA" />
        <separator />               
-       <menuitem action="LATEXA" />
-       <menuitem action="LATEXNETA" />
-       <menuitem action="COMBINELATEXA" />
-       <separator />
        <menuitem action="SELREGNA" />
        <menuitem action="SELRECTA" />
        <menuitem action="VERTSPA" />

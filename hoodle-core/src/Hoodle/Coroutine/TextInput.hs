@@ -32,8 +32,8 @@ import qualified Data.Text.Encoding as TE
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
-import           Graphics.Rendering.Pango.Cairo
-import           Graphics.UI.Gtk hiding (get,set)
+-- import qualified Graphics.Rendering.Pango.Cairo as Pango
+import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory 
 import           System.Exit (ExitCode(..))
 import           System.FilePath 
@@ -77,23 +77,23 @@ import Prelude hiding (readFile,mapM_)
 textInputDialog :: MainCoroutine (Maybe String) 
 textInputDialog = do 
   doIOaction $ \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel "text input"
-                 vbox <- dialogGetUpper dialog
-                 txtvw <- textViewNew
-                 boxPackStart vbox txtvw PackGrow 0 
-                 widgetShowAll dialog
-                 res <- dialogRun dialog 
+                 dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                   Gtk.MessageQuestion Gtk.ButtonsOkCancel "text input"
+                 vbox <- Gtk.dialogGetUpper dialog
+                 txtvw <- Gtk.textViewNew
+                 Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
+                 Gtk.widgetShowAll dialog
+                 res <- Gtk.dialogRun dialog 
                  case res of 
-                   ResponseOk -> do 
-                     buf <- textViewGetBuffer txtvw 
-                     (istart,iend) <- (,) <$> textBufferGetStartIter buf
-                                          <*> textBufferGetEndIter buf
-                     l <- textBufferGetText buf istart iend True
-                     widgetDestroy dialog
+                   Gtk.ResponseOk -> do 
+                     buf <- Gtk.textViewGetBuffer txtvw 
+                     (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
+                                          <*> Gtk.textBufferGetEndIter buf
+                     l <- Gtk.textBufferGetText buf istart iend True
+                     Gtk.widgetDestroy dialog
                      return (UsrEv (TextInput (Just l)))
                    _ -> do 
-                     widgetDestroy dialog
+                     Gtk.widgetDestroy dialog
                      return (UsrEv (TextInput Nothing))
   let go = do r <- nextevent
               case r of 
@@ -105,38 +105,38 @@ textInputDialog = do
 -- | common dialog with multiline edit input box 
 multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
 multiLineDialog str = mkIOaction $ \evhandler -> do
-    dialog <- dialogNew
-    vbox <- dialogGetUpper dialog
-    textbuf <- textBufferNew Nothing
-    textBufferSetByteString textbuf (TE.encodeUtf8 str)
-    textbuf `on` bufferChanged $ do 
-        (s,e) <- (,) <$> textBufferGetStartIter textbuf <*> textBufferGetEndIter textbuf  
-        contents <- textBufferGetByteString textbuf s e False
+    dialog <- Gtk.dialogNew
+    vbox <- Gtk.dialogGetUpper dialog
+    textbuf <- Gtk.textBufferNew Nothing
+    Gtk.textBufferSetByteString textbuf (TE.encodeUtf8 str)
+    textbuf `Gtk.on` Gtk.bufferChanged $ do 
+        (s,e) <- (,) <$> Gtk.textBufferGetStartIter textbuf <*> Gtk.textBufferGetEndIter textbuf
+        contents <- Gtk.textBufferGetByteString textbuf s e False
         (evhandler . UsrEv . MultiLine . MultiLineChanged) (TE.decodeUtf8 contents)
-    textarea <- textViewNewWithBuffer textbuf
-    vscrbar <- vScrollbarNew =<< textViewGetVadjustment textarea
-    hscrbar <- hScrollbarNew =<< textViewGetHadjustment textarea 
-    textarea `on` sizeRequest $ return (Requisition 500 600)
-    fdesc <- fontDescriptionNew
-    fontDescriptionSetFamily fdesc "Mono"
-    widgetModifyFont textarea (Just fdesc)
+    textarea <- Gtk.textViewNewWithBuffer textbuf
+    vscrbar <- Gtk.vScrollbarNew =<< Gtk.textViewGetVadjustment textarea
+    hscrbar <- Gtk.hScrollbarNew =<< Gtk.textViewGetHadjustment textarea 
+    textarea `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 500 600)
+    fdesc <- Gtk.fontDescriptionNew
+    Gtk.fontDescriptionSetFamily fdesc "Mono"
+    Gtk.widgetModifyFont textarea (Just fdesc)
     -- 
-    table <- tableNew 2 2 False
-    tableAttachDefaults table textarea 0 1 0 1
-    tableAttachDefaults table vscrbar 1 2 0 1
-    tableAttachDefaults table hscrbar 0 1 1 2 
-    boxPackStart vbox table PackNatural 0
+    table <- Gtk.tableNew 2 2 False
+    Gtk.tableAttachDefaults table textarea 0 1 0 1
+    Gtk.tableAttachDefaults table vscrbar 1 2 0 1
+    Gtk.tableAttachDefaults table hscrbar 0 1 1 2 
+    Gtk.boxPackStart vbox table Gtk.PackNatural 0
     -- 
-    _btnOk <- dialogAddButton dialog "Ok" ResponseOk
-    _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-    _btnNetwork <- dialogAddButton dialog "Network" (ResponseUser 1)
-    widgetShowAll dialog
-    res <- dialogRun dialog
-    widgetDestroy dialog
+    _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
+    _btnNetwork <- Gtk.dialogAddButton dialog "Network" (Gtk.ResponseUser 1)
+    Gtk.widgetShowAll dialog
+    res <- Gtk.dialogRun dialog
+    Gtk.widgetDestroy dialog
     case res of 
-      ResponseOk -> return (UsrEv (OkCancel True))
-      ResponseCancel -> return (UsrEv (OkCancel False))
-      ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
+      Gtk.ResponseOk -> return (UsrEv (OkCancel True))
+      Gtk.ResponseCancel -> return (UsrEv (OkCancel False))
+      Gtk.ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
       _ -> return (UsrEv (OkCancel False))
 
 -- | main event loop for multiline edit box
@@ -359,18 +359,18 @@ addAnchor = do
 makePangoTextSVG :: (Double,Double) -> T.Text -> IO (B.ByteString,BBox) 
 makePangoTextSVG (xo,yo) str = do 
     let pangordr = do 
-          ctxt <- cairoCreateContext Nothing 
-          layout <- layoutEmpty ctxt   
-          layoutSetWidth layout (Just 400)
-          layoutSetWrap layout WrapAnywhere 
-          layoutSetText layout (T.unpack str) -- this is gtk2hs pango limitation 
-          (_,reclog) <- layoutGetExtents layout 
-          let PangoRectangle x y w h = reclog 
+          ctxt <- Gtk.cairoCreateContext Nothing 
+          layout <- Gtk.layoutEmpty ctxt   
+          Gtk.layoutSetWidth layout (Just 400)
+          Gtk.layoutSetWrap layout Gtk.WrapAnywhere 
+          Gtk.layoutSetText layout (T.unpack str) -- this is gtk2hs pango limitation 
+          (_,reclog) <- Gtk.layoutGetExtents layout 
+          let Gtk.PangoRectangle x y w h = reclog 
           -- 10 is just dirty-fix
           return (layout,BBox (x,y) (x+w+10,y+h)) 
         rdr layout = do Cairo.setSourceRGBA 0 0 0 1
-                        updateLayout layout 
-                        showLayout layout 
+                        Gtk.updateLayout layout 
+                        Gtk.showLayout layout 
     (layout,(BBox (x0,y0) (x1,y1))) <- pangordr 
     tdir <- getTemporaryDirectory 
     let tfile = tdir </> "embedded.svg"
@@ -405,7 +405,7 @@ combineLaTeXText = do
     let latex_components = catMaybes  mlatex_components
         sorted = sortBy cfunc latex_components 
         resulttxt = (B.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
-    mfilename <- fileChooser FileChooserActionSave Nothing
+    mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
     forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
 
 
@@ -441,3 +441,9 @@ insertItemAt mpcoord ritm = do
     put ( ( set hoodleModeState (SelectState nthdl) 
           . set isOneTimeSelectMode YesAfterSelect) nxst)
     invalidateAll  
+
+embedTextSource :: MainCoroutine ()
+embedTextSource = do 
+    liftIO $ putStrLn "Now I am in embedTextSource"
+    mfilename <- fileChooser Gtk.FileChooserActionOpen Nothing
+    forM_ mfilename (liftIO . print)

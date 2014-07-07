@@ -22,11 +22,14 @@ import           Control.Applicative
 import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
-import           Data.Attoparsec
+import           Control.Monad.Trans.Maybe
+-- import           Data.Attoparsec
+import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
 import           Data.List (sortBy)
 import           Data.Maybe (catMaybes)
+import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as TIO
@@ -446,7 +449,6 @@ insertItemAt mpcoord ritm = do
 
 embedTextSource :: MainCoroutine ()
 embedTextSource = do 
-    liftIO $ putStrLn "Now I am in embedTextSource"
     mfilename <- fileChooser Gtk.FileChooserActionOpen Nothing
     forM_ mfilename $ \filename -> do 
       txt <- liftIO $ TIO.readFile filename
@@ -458,4 +460,62 @@ embedTextSource = do
       put nxst
       commit_ 
 
--- (liftIO . print)
+
+-- | 
+getLinesFromText :: (Int,Int) -> T.Text -> T.Text
+getLinesFromText (i,e) = T.unlines . Prelude.drop (i-1) . Prelude.take e . T.lines
+
+-- | insert text 
+textInputFromSource :: (Double,Double) -> MainCoroutine ()
+textInputFromSource (x0,y0) = do
+    runMaybeT $ do 
+      txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+      lift $ modify (tempQueue %~ enqueue linePosDialog)  
+      (l1,l2) <- MaybeT linePosLoop
+      let txt = getLinesFromText (l1,l2) txtsrc
+      lift $ deleteSelection
+      liftIO (makePangoTextSVG (x0,y0) txt)
+        >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2),"pango") 
+    return ()
+
+-- | common dialog with line position 
+linePosDialog :: Either (ActionOrder AllEvent) AllEvent
+linePosDialog = mkIOaction $ \evhandler -> do
+    dialog <- Gtk.dialogNew
+    vbox <- Gtk.dialogGetUpper dialog
+
+    hbox <- Gtk.hBoxNew False 0
+    Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
+
+    line1buf <- Gtk.entryBufferNew Nothing
+    line1 <- Gtk.entryNewWithBuffer line1buf
+    Gtk.boxPackStart hbox line1 Gtk.PackNatural 2
+
+    line2buf <- Gtk.entryBufferNew Nothing
+    line2 <- Gtk.entryNewWithBuffer line2buf
+    Gtk.boxPackStart hbox line2 Gtk.PackNatural 2
+    -- 
+    _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
+    Gtk.widgetShowAll dialog
+    res <- Gtk.dialogRun dialog
+    Gtk.widgetDestroy dialog
+    case res of 
+      Gtk.ResponseOk -> do
+        line1str <- B.pack <$> Gtk.get line1buf Gtk.entryBufferText
+        line2str <- B.pack <$> Gtk.get line2buf Gtk.entryBufferText
+        let el1l2 = (,) <$> parseOnly decimal line1str 
+                        <*> parseOnly decimal line2str
+        return . UsrEv . LinePosition 
+         . either (const Nothing) (\(l1,l2)->if l1 <= l2 then Just (l1,l2) else Nothing) $ el1l2
+      Gtk.ResponseCancel -> return (UsrEv (LinePosition Nothing))
+      _ -> return (UsrEv (LinePosition Nothing))
+
+-- | main event loop for line position dialog
+linePosLoop :: MainCoroutine (Maybe (Int,Int))
+linePosLoop = do 
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> linePosLoop
+      LinePosition x -> return x
+      _ -> linePosLoop

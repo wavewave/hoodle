@@ -99,6 +99,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | NetworkProcess NetworkEvent
                | DBusEv DBusEvent
                | RenderEv RenderEvent
+               | LinePosition (Maybe (Int,Int))
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -122,7 +123,8 @@ data MenuEvent = MenuNew
                | MenuLoadPNGorJPG
                | MenuLoadSVG
                | MenuText
-               | MenuEmbedTextSource 
+               | MenuEmbedTextSource
+               | MenuTextFromSource
                | MenuLaTeX
                | MenuLaTeXNetwork
                | MenuCombineLaTeX

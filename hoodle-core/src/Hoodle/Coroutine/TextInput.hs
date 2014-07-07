@@ -19,7 +19,7 @@ module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
 -- import           Control.Concurrent.STM (atomically, newTVar)
-import           Control.Lens (_1,_2,_3,view,set,(%~))
+import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec
@@ -29,6 +29,7 @@ import           Data.List (sortBy)
 import           Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import qualified Data.Text.IO as TIO
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -44,7 +45,8 @@ import           Control.Monad.Trans.Crtn.Event
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple 
+import           Data.Hoodle.Select
+import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle, rPage2Page)
@@ -446,4 +448,14 @@ embedTextSource :: MainCoroutine ()
 embedTextSource = do 
     liftIO $ putStrLn "Now I am in embedTextSource"
     mfilename <- fileChooser Gtk.FileChooserActionOpen Nothing
-    forM_ mfilename (liftIO . print)
+    forM_ mfilename $ \filename -> do 
+      txt <- liftIO $ TIO.readFile filename
+      xst <- get
+      let nhdlmodst = case xst ^. hoodleModeState of
+            ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
+            SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just txt) $ thdl)
+          nxst = (hoodleModeState .~ nhdlmodst) xst
+      put nxst
+      commit_ 
+
+-- (liftIO . print)

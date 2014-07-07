@@ -100,6 +100,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | DBusEv DBusEvent
                | RenderEv RenderEvent
                | LinePosition (Maybe (Int,Int))
+               | Keyword (Maybe T.Text)
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -128,6 +129,7 @@ data MenuEvent = MenuNew
                | MenuLaTeX
                | MenuLaTeXNetwork
                | MenuCombineLaTeX
+               | MenuLaTeXFromSource 
                | MenuEmbedPredefinedImage
                | MenuEmbedPredefinedImage2
                | MenuEmbedPredefinedImage3                 

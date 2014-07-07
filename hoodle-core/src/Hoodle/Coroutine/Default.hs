@@ -442,6 +442,7 @@ menuEventProcess MenuLaTeX =
 menuEventProcess MenuLaTeXNetwork = 
     laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)    
 menuEventProcess MenuCombineLaTeX = combineLaTeXText 
+menuEventProcess MenuLaTeXFromSource = laTeXInputFromSource (100,100)
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen

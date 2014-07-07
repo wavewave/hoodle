@@ -519,3 +519,51 @@ linePosLoop = do
       UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> linePosLoop
       LinePosition x -> return x
       _ -> linePosLoop
+
+
+-- | insert text 
+laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
+laTeXInputFromSource (x0,y0) = do
+    runMaybeT $ do 
+      txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+      lift $ modify (tempQueue %~ enqueue keywordDialog)  
+      keyword <- MaybeT keywordLoop
+      liftIO $ print keyword
+      {- 
+      let txt = getLinesFromText (l1,l2) txtsrc
+      lift $ deleteSelection
+      liftIO (makePangoTextSVG (x0,y0) txt)
+        >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2),"pango")  -}
+    return ()
+
+-- | common dialog with line position 
+keywordDialog :: Either (ActionOrder AllEvent) AllEvent
+keywordDialog = mkIOaction $ \evhandler -> do
+    dialog <- Gtk.dialogNew
+    vbox <- Gtk.dialogGetUpper dialog
+    hbox <- Gtk.hBoxNew False 0
+    Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
+    keybuf <- Gtk.entryBufferNew Nothing
+    key <- Gtk.entryNewWithBuffer keybuf
+    Gtk.boxPackStart hbox key Gtk.PackNatural 2
+    -- 
+    _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
+    Gtk.widgetShowAll dialog
+    res <- Gtk.dialogRun dialog
+    Gtk.widgetDestroy dialog
+    case res of 
+      Gtk.ResponseOk -> do
+        keystr <- T.pack <$> Gtk.get keybuf Gtk.entryBufferText
+        (return . UsrEv . Keyword . Just) keystr
+      Gtk.ResponseCancel -> return (UsrEv (Keyword Nothing))
+      _ -> return (UsrEv (Keyword Nothing))
+
+-- | main event loop for line position dialog
+keywordLoop :: MainCoroutine (Maybe T.Text)
+keywordLoop = do 
+    r <- nextevent
+    case r of 
+      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> keywordLoop
+      Keyword x -> return x
+      _ -> keywordLoop

@@ -81,6 +81,7 @@ rHoodle2Hoodle = Hoodle <$> view ghoodleID
                         <*> view gtitle 
                         <*> view grevisions
                         <*> view gembeddedpdf
+                        <*> view gembeddedtext
                         <*> IM.elems . fmap rPage2Page . view gpages
 
 

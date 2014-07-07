@@ -458,18 +458,19 @@ cnstrctRHoodle hdl = do
       ttl = view title hdl 
       revs = view revisions hdl 
       pgs = view pages hdl
-      embeddedsrc = view embeddedPdf hdl 
+      pdf = view embeddedPdf hdl 
+      txt = view embeddedText hdl
   (_,qvar) <- ask
   mdoc <- maybe (return Nothing) (\src -> liftIO $ do
             uuid <- nextRandom
             docvar <- atomically newEmptyTMVar
             atomically $ sendPDFCommand uuid qvar (GetDocFromDataURI src docvar)
             atomically $ takeTMVar docvar 
-          ) embeddedsrc
+          ) pdf
 
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
                      (Just (Context "" "" Nothing mdoc)) 
-  return $ GHoodle hid ttl revs embeddedsrc (fromList npgs)          
+  return $ GHoodle hid ttl revs pdf txt (fromList npgs)          
    
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage

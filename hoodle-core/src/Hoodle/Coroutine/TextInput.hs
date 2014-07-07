@@ -57,16 +57,17 @@ import           Graphics.Hoodle.Render.Type.Item
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 --
 import           Hoodle.Accessor
-import           Hoodle.ModelAction.Layer 
-import           Hoodle.ModelAction.Page
-import           Hoodle.ModelAction.Select
-import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Network
 import           Hoodle.Coroutine.Select.Clipboard
+import           Hoodle.ModelAction.Layer 
+import           Hoodle.ModelAction.Page
+import           Hoodle.ModelAction.Select
+import           Hoodle.ModelAction.Select.Transform
+import           Hoodle.ModelAction.Text
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
@@ -460,10 +461,6 @@ embedTextSource = do
       put nxst
       commit_ 
 
-
--- | 
-getLinesFromText :: (Int,Int) -> T.Text -> T.Text
-getLinesFromText (i,e) = T.unlines . Prelude.drop (i-1) . Prelude.take e . T.lines
 
 -- | insert text 
 textInputFromSource :: (Double,Double) -> MainCoroutine ()

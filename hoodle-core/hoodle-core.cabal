@@ -82,7 +82,6 @@ Library
   Exposed-Modules: 
                    Hoodle.Accessor
                    Hoodle.Config
-                   -- Hoodle.Coroutine
                    Hoodle.Coroutine.Callback
                    Hoodle.Coroutine.Commit
                    Hoodle.Coroutine.ContextMenu
@@ -121,6 +120,7 @@ Library
                    Hoodle.ModelAction.Pen 
                    Hoodle.ModelAction.Select
                    Hoodle.ModelAction.Select.Transform
+                   Hoodle.ModelAction.Text
                    Hoodle.ModelAction.Window
                    Hoodle.Script
                    Hoodle.Script.Coroutine

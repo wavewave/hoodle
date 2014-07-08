@@ -28,6 +28,7 @@ import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
 import           Data.List (sortBy)
+import qualified Data.Map as M
 import           Data.Maybe (catMaybes)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -262,7 +263,7 @@ makeLaTeXSVG (x0,y0) txt = do
         
     B.writeFile (tfilename <.> "tex") (TE.encodeUtf8 txt)
     r <- runEitherT $ do 
-      check "error during pdflatex" $ do 
+      check "error during xelatex" $ do 
         (ecode,ostr,estr) <- readProcessWithExitCode "xelatex" [tfilename <.> "tex"] ""
         return (ecode,ostr++estr)
       check "error during pdfcrop" $ do 
@@ -526,11 +527,18 @@ laTeXInputFromSource (x0,y0) = do
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
       lift $ modify (tempQueue %~ enqueue keywordDialog)  
       keyword <- MaybeT keywordLoop
-      subpart <- (MaybeT . return . getKeywordContent keyword) txtsrc
-      liftIO $ putStrLn " keyword = "
-      liftIO $ print keyword
-      liftIO $ putStrLn " subpart = " 
-      liftIO $ print subpart 
+      subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
+      liftIO (makeLaTeXSVG (x0,y0) subpart) >>= \case
+        Right r  -> lift $ do 
+                      deleteSelection 
+                      svgInsert ("embedlatex:keyword:"<>keyword,"latex") r
+        Left err -> lift $ do
+                      okMessageBox err
+                      return ()
+      -- liftIO $ putStrLn " keyword = "
+      -- liftIO $ print keyword
+      -- liftIO $ putStrLn " subpart = " 
+      -- liftIO $ print subpart 
       -- liftIO $ print keyword
       {- 
       let txt = getLinesFromText (l1,l2) txtsrc

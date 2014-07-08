@@ -29,13 +29,13 @@ getLinesFromText :: (Int,Int) -> T.Text -> T.Text
 getLinesFromText (i,e) = T.unlines . Prelude.drop (i-1) . Prelude.take e . T.lines
 
 
-
+{-
 -- |
 getKeywordContent :: T.Text -- ^ keyword 
                   -> T.Text -- ^ tex file 
-                  -> Maybe T.Text -- Maybe T.Text -- ^ subpart 
+                  -> Maybe T.Text -- ^ subpart 
 getKeywordContent k txt = M.lookup k (getKeywordMap txt)
-
+-}
 
 -- | 
 getKeywordMap :: T.Text -> M.Map T.Text T.Text

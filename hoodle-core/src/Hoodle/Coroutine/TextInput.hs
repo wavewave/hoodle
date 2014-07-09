@@ -517,34 +517,28 @@ linePosLoop = do
       LinePosition x -> return x
       _ -> linePosLoop
 
+-- | insert text 
+laTeXInputKeyword :: (Double,Double) -> T.Text -> MaybeT MainCoroutine ()
+laTeXInputKeyword (x0,y0) keyword = do
+    txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+    subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
+    let subpart' = laTeXHeader <> "\n"  <> subpart <> laTeXFooter
+    liftIO (makeLaTeXSVG (x0,y0) subpart') >>= \case
+      Right r  -> lift $ do 
+                    deleteSelection 
+                    svgInsert ("embedlatex:keyword:"<>keyword,"latex") r
+      Left err -> lift $ do
+                    okMessageBox err
+                    return ()
 
 -- | insert text 
 laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
 laTeXInputFromSource (x0,y0) = do
-    liftIO $ putStrLn "HELLO"
     runMaybeT $ do 
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
       lift $ modify (tempQueue %~ enqueue keywordDialog)  
       keyword <- MaybeT keywordLoop
-      subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
-      let subpart' = laTeXHeader <> "\n"  <> subpart <> laTeXFooter
-      liftIO (makeLaTeXSVG (x0,y0) subpart') >>= \case
-        Right r  -> lift $ do 
-                      deleteSelection 
-                      svgInsert ("embedlatex:keyword:"<>keyword,"latex") r
-        Left err -> lift $ do
-                      okMessageBox err
-                      return ()
-      -- liftIO $ putStrLn " keyword = "
-      -- liftIO $ print keyword
-      -- liftIO $ putStrLn " subpart = " 
-      -- liftIO $ print subpart 
-      -- liftIO $ print keyword
-      {- 
-      let txt = getLinesFromText (l1,l2) txtsrc
-      lift $ deleteSelection
-      liftIO (makePangoTextSVG (x0,y0) txt)
-        >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2),"pango")  -}
+      laTeXInputKeyword (x0,y0) keyword
     return ()
 
 -- | common dialog with line position 

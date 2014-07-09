@@ -125,6 +125,8 @@ data MenuEvent = MenuNew
                | MenuLoadSVG
                | MenuText
                | MenuEmbedTextSource
+               | MenuEditEmbedTextSource
+               | MenuEditNetEmbedTextSource
                | MenuTextFromSource
                | MenuLaTeX
                | MenuLaTeXNetwork

@@ -70,6 +70,8 @@
        <separator />
        <menuitem action="TEXTA" /> 
        <menuitem action="TEXTSRCA" />
+       <menuitem action="EDITSRCA" />
+       <menuitem action="EDITNETSRCA" />
        <menuitem action="TEXTFROMSRCA" />
        <separator /> 
        <menuitem action="LATEXA" />

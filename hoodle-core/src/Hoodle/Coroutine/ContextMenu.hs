@@ -403,10 +403,10 @@ showContextMenu (pnum,(x,y)) = do
                             -- 
                             let (txth,txtt) = T.splitAt 19 txt 
                             when ( txth == "embedlatex:keyword:" ) $ do
-                              menuitemnet <- menuItemNewWithLabel ("Update LaTeX")
-                              menuitemnet `on` menuItemActivate $ do
+                              menuitemup <- menuItemNewWithLabel ("Update LaTeX")
+                              menuitemup `on` menuItemActivate $ do
                                 evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXUpdate (x0,y0) txtt)))
-                              menuAttach menu menuitemnet 0 1 6 7
+                              menuAttach menu menuitemup 0 1 6 7
                               return ()
 
                           _ -> return ()

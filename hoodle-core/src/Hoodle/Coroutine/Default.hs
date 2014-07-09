@@ -436,6 +436,8 @@ menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuEmbedTextSource = embedTextSource
+menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource
+menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
 menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)

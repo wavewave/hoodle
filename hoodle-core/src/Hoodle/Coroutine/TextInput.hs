@@ -461,6 +461,39 @@ embedTextSource = do
       put nxst
       commit_ 
 
+-- |
+editEmbeddedTextSource :: MainCoroutine ()
+editEmbeddedTextSource = do 
+    hdl <- getHoodle <$> get
+    let mtxt = hdl ^. gembeddedtext 
+    forM_ mtxt $ \txt -> do 
+      modify (tempQueue %~ enqueue (multiLineDialog txt))  
+      multiLineLoop txt >>= \case 
+        Nothing -> return ()
+        Just ntxt -> do 
+          modify $ \xst ->
+            let nhdlmodst = case xst ^. hoodleModeState of
+                  ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
+                  SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
+            in (hoodleModeState .~ nhdlmodst) xst
+          commit_
+
+-- |
+editNetEmbeddedTextSource :: MainCoroutine ()
+editNetEmbeddedTextSource = do 
+    hdl <- getHoodle <$> get
+    let mtxt = hdl ^. gembeddedtext 
+    forM_ mtxt $ \txt -> do 
+      -- modify (tempQueue %~ enqueue (multiLineDialog txt))  
+      networkTextInput txt >>= \case 
+        Nothing -> return ()
+        Just ntxt -> do 
+          modify $ \xst ->
+            let nhdlmodst = case xst ^. hoodleModeState of
+                  ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
+                  SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
+            in (hoodleModeState .~ nhdlmodst) xst
+          commit_
 
 -- | insert text 
 textInputFromSource :: (Double,Double) -> MainCoroutine ()

@@ -389,7 +389,6 @@ makePangoTextSVG (xo,yo) str = do
 -- | combine all LaTeX texts into a text file 
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
-    -- liftIO $ putStrLn "start combine latex file" 
     hdl <- rHoodle2Hoodle . getHoodle <$> get  
     let mlatex_components = do 
           (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
@@ -528,7 +527,8 @@ laTeXInputFromSource (x0,y0) = do
       lift $ modify (tempQueue %~ enqueue keywordDialog)  
       keyword <- MaybeT keywordLoop
       subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
-      liftIO (makeLaTeXSVG (x0,y0) subpart) >>= \case
+      let subpart' = laTeXHeader <> "\n"  <> subpart <> laTeXFooter
+      liftIO (makeLaTeXSVG (x0,y0) subpart') >>= \case
         Right r  -> lift $ do 
                       deleteSelection 
                       svgInsert ("embedlatex:keyword:"<>keyword,"latex") r

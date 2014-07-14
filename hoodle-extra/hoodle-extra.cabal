@@ -1,5 +1,5 @@
 Name:		hoodle-extra
-Version:	0.0.999
+Version:	0.1
 Synopsis:	extra hoodle tools 
 Description: 	extra hoodle tools 
 Homepage:       http://ianwookim.org/hoodle
@@ -8,7 +8,7 @@ License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 7.4, GHC == 7.6
+Tested-with:    GHC == 7.6, GHC == 7.8
 Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     
@@ -23,7 +23,7 @@ Executable networkedit
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   base,
+  Build-Depends:   base == 4.*,
                    binary,  
                    bytestring,
                    directory, 
@@ -45,7 +45,7 @@ Executable idfilepathdb
                    aeson,
                    aeson-pretty,
                    attoparsec,
-                   base,
+                   base == 4.*,
                    base64-bytestring,
                    bytestring,
                    cmdargs,

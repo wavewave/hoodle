@@ -105,9 +105,9 @@ initCoroutine :: DeviceList
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
-              -> Gtk.Statusbar -- ^ status bar 
+              -- -> Gtk.Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) {- stbar -} = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -134,7 +134,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
           . set frameState wconf' 
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
-          . set statusBar (Just stbar)
+          -- . set statusBar (Just stbar)
           . set (hoodleFileControl.hoodleFileName) Nothing 
           $ st4     
   vbox <- Gtk.vBoxNew False 0 
@@ -158,23 +158,22 @@ initialize ev = do
           forkOn 2 $ pdfRendererMain handler tvar
           return (UsrEv ActionOrdered)
         waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
-       
         getFileContent mfname
-
+        -- 
         xst2 <- get
         let hdlst = xst2 ^. hoodleModeState 
             cache = xst2 ^. renderCache
         hdlst' <- liftIO $ resetHoodleModeStateBuffers cache hdlst
         put (set hoodleModeState hdlst' xst2)
-
-
-        xst <- get 
-        let Just sbar = view statusBar xst 
-        cxtid <- liftIO $ Gtk.statusbarGetContextId sbar "test"
-        liftIO $ Gtk.statusbarPush sbar cxtid "Hello there" 
-        let ui = view gtkUIManager xst
+        --
+        -- xst <- get 
+        -- let Just sbar = view statusBar xst 
+        -- cxtid <- liftIO $ Gtk.statusbarGetContextId sbar "test"
+        -- liftIO $ Gtk.statusbarPush sbar cxtid "Hello there" 
+        xst3 <- get
+        let ui = view gtkUIManager xst3
         liftIO $ toggleSave ui False
-        put (set isSaved True xst) 
+        put (set isSaved True xst3) 
  
       _ -> do ev' <- nextevent
               initialize (UsrEv ev')
@@ -191,22 +190,8 @@ guiProcess ev = do
   reflectPenWidthUI
   reflectNewPageModeUI
   let cinfoMap  = getCanvasInfoMap xstate
-
---      assocs = M.toList cinfoMap 
---      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
---                            (w',h') <- liftIO $ Gtk.widgetGetSize canvas
---                            liftIO $ print (w',h')
---                            defaultEventProcess (CanvasConfigure cid
---                                                (fromIntegral w') 
---                                                (fromIntegral h')) 
---  mapM_ f assocs
-        
   viewModeChange ToContSinglePage
   pageZoomChange FitWidth
-
-  -- waitSomeEvent (\x -> case x of CanvasConfigure cid w h -> True ; _ -> False)
-  
-
   startLinkReceiver
   -- main loop 
   sequence_ (repeat dispatchMode)

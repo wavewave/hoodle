@@ -47,13 +47,11 @@ data RBackground = RBkgSmpl
                    , rbkg_filename :: ByteString
                    , rbkg_pageno :: Int 
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-                   -- , rbkg_cairosurface :: Maybe Cairo.Surface 
                    , rbkg_uuid :: UUID
                    } 
                  | RBkgEmbedPDF
                    { rbkg_pageno :: Int
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-                   -- , rbkg_cairosurface :: Maybe Cairo.Surface 
                    , rbkg_uuid :: UUID
                    } 
 instance Show (RBackground) where

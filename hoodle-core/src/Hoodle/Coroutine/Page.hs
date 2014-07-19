@@ -97,13 +97,15 @@ changePageInHoodleModeState :: BackgroundStyle
                             -> HoodleModeState 
                             -> MainCoroutine (Bool,Int,Page EditMode,HoodleModeState)
 changePageInHoodleModeState bsty npgnum hdlmodst = do
-    let ehdl = hoodleModeStateEither hdlmodst 
+    let ehdl = hoodleModeStateEither hdlmodst
+        mpdfinfo = either (^. gembeddedpdf) (^. gselEmbeddedPdf) ehdl
         pgs = either (view gpages) (view gselAll) ehdl
         totnumpages = M.size pgs
         lpage = maybeError' "changePage" (M.lookup (totnumpages-1) pgs)
     (isChanged,npgnum',npage',ehdl') <- 
       if (npgnum >= totnumpages) 
         then do 
+          liftIO $ print (pdfNumPages <$> mpdfinfo) 
           let cbkg = view gbackground lpage
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
@@ -286,10 +288,19 @@ addNewPageInHoodle bsty dir hdl cpn = do
 
 newBkg :: BackgroundStyle -> RBackground -> MainCoroutine RBackground 
 newBkg bsty bkg = do
+    npmode <- (^. settings.newPageMode) <$> get 
     let bstystr = convertBackgroundStyleToByteString bsty 
-    case bkg of 
-      RBkgSmpl c _ _ -> RBkgSmpl c bstystr <$> liftIO nextRandom
-      _              -> RBkgSmpl "white" bstystr <$> liftIO nextRandom
+
+    case npmode of 
+      NPPlain -> RBkgSmpl "white" bstystr <$> liftIO nextRandom
+      NPLast -> case bkg of 
+        RBkgSmpl c _ _ -> RBkgSmpl c bstystr <$> liftIO nextRandom
+        RBkgPDF d f n pg _ -> RBkgPDF d f n pg <$> liftIO nextRandom
+        RBkgEmbedPDF n pg _ -> RBkgEmbedPDF n pg <$> liftIO nextRandom
+      NPCycle -> do 
+        liftIO $ putStrLn "newBkg: NPCycle not implemented"
+        RBkgSmpl "white" bstystr <$> liftIO nextRandom
+      -- _              -> RBkgSmpl "white" bstystr <$> liftIO nextRandom
 
 
 -- | 

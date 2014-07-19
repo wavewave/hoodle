@@ -32,12 +32,16 @@ import Data.Hoodle.Simple
 -- 
 import Prelude hiding ((.),id)
 
+data PDFData = PDFData { pdfBase64 :: ByteString 
+                       , pdfNumPages :: Int } 
+
+
 -- | Generic Hoodle data having generic pages
 data GHoodle cntnr pg = GHoodle 
                         { ghoodle_id :: ByteString 
                         , ghoodle_ttl :: ByteString 
                         , ghoodle_revisions :: [Revision]
-                        , ghoodle_embeddedpdf :: Maybe ByteString 
+                        , ghoodle_embeddedpdf :: Maybe PDFData -- Maybe ByteString 
                         , ghoodle_embeddedtext :: Maybe T.Text
                         , ghoodle_pgs :: cntnr pg }  
 
@@ -83,7 +87,7 @@ grevisions :: Simple Lens (GHoodle cntnr pg) [Revision]
 grevisions = lens ghoodle_revisions (\f a -> f { ghoodle_revisions = a } )
 
 -- | 
-gembeddedpdf :: Simple Lens (GHoodle cntnr pg) (Maybe ByteString)
+gembeddedpdf :: Simple Lens (GHoodle cntnr pg) (Maybe PDFData)
 gembeddedpdf = lens ghoodle_embeddedpdf (\f a -> f { ghoodle_embeddedpdf = a } )
 
 -- | 

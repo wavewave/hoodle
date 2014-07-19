@@ -27,7 +27,7 @@ import           Data.Hoodle.Simple
 data GSelect a b = GSelect { gselect_id :: ByteString 
                            , gselect_ttl :: ByteString 
                            , gselect_revisions :: [Revision]
-                           , gselect_embeddedpdf :: Maybe ByteString
+                           , gselect_embeddedpdf :: Maybe PDFData -- Maybe ByteString
                            , gselect_embeddedtext :: Maybe T.Text
                            , gselect_all :: a 
                            , gselect_selected :: b
@@ -45,7 +45,7 @@ gselRevisions :: Simple Lens (GSelect a b) [Revision]
 gselRevisions = lens gselect_revisions (\f a -> f {gselect_revisions = a } )
 
 -- |
-gselEmbeddedPdf :: Simple Lens (GSelect a b) (Maybe ByteString)
+gselEmbeddedPdf :: Simple Lens (GSelect a b) (Maybe PDFData)
 gselEmbeddedPdf = lens gselect_embeddedpdf (\f a -> f {gselect_embeddedpdf = a})
 
 -- |

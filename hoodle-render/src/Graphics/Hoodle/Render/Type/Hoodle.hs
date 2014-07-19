@@ -80,7 +80,7 @@ rHoodle2Hoodle :: RHoodle -> Hoodle
 rHoodle2Hoodle = Hoodle <$> view ghoodleID
                         <*> view gtitle 
                         <*> view grevisions
-                        <*> view gembeddedpdf
+                        <*> fmap pdfBase64 . view gembeddedpdf
                         <*> view gembeddedtext
                         <*> IM.elems . fmap rPage2Page . view gpages
 

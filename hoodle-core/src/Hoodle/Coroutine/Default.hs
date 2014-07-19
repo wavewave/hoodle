@@ -128,11 +128,6 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
-  -- testing
-  -- let handler = const (putStrLn "In getFileContent, got call back")
-  -- newhdl <- flip runReaderT (undefined,undefined) . cnstrctRHoodle =<< defaultHoodle
-  -- let nhmodstate = ViewAppendState newhdl 
-
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
@@ -141,7 +136,6 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
           . set uiComponentSignalHandler uicompsighdlr 
           . set statusBar (Just stbar)
           . set (hoodleFileControl.hoodleFileName) Nothing 
-          -- . set hoodleModeState nhmodstate
           $ st4     
   vbox <- Gtk.vBoxNew False 0 
   -- 
@@ -584,19 +578,18 @@ pdfRendererMain handler tvar = forever $ do
 
 pdfWorker :: ((UUID,(Double,Cairo.Surface))->IO ()) -> (UUID,PDFCommand) -> IO ()
 pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
-    -- putStrLn "pdfWorker : GetDocFromFile"
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
 pdfWorker _handler (_,GetDocFromDataURI str tmvar) = do
-    -- putStrLn "pdfWorker : GetDocFromDataURI"
     mdoc <- popplerGetDocFromDataURI str
     atomically $ putTMVar tmvar mdoc
 pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
-    -- putStrLn "pdfWorker : GetPageFromDoc"
     mpg <- popplerGetPageFromDoc doc pn
     atomically $ putTMVar tmvar mpg
+pdfWorker _handler (_,GetNPages doc tmvar) = do
+    n <- Poppler.documentGetNPages doc
+    atomically $ putTMVar tmvar n
 pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
-    -- putStrLn "pdfWorker : RenderPageScaled"
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
@@ -606,7 +599,3 @@ pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
       Cairo.scale s s
       Poppler.pageRender page 
     handler (uuid,(s,sfc))
-
-
-
-

@@ -195,17 +195,17 @@ guiProcess ev = do
   reflectPenModeUI
   reflectPenColorUI  
   reflectPenWidthUI
+  reflectNewPageModeUI
   let cinfoMap  = getCanvasInfoMap xstate
 
-      assocs = M.toList cinfoMap 
-      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
-                            (w',h') <- liftIO $ Gtk.widgetGetSize canvas
-                            liftIO $ print (w',h')
+--      assocs = M.toList cinfoMap 
+--      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
+--                            (w',h') <- liftIO $ Gtk.widgetGetSize canvas
+--                            liftIO $ print (w',h')
 --                            defaultEventProcess (CanvasConfigure cid
 --                                                (fromIntegral w') 
 --                                                (fromIntegral h')) 
-  
-  mapM_ f assocs
+--  mapM_ f assocs
         
   viewModeChange ToContSinglePage
   pageZoomChange FitWidth
@@ -349,6 +349,7 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
     modeChange ToViewAppendMode     
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
+defaultEventProcess (AssignNewPageMode nmod) = modify (settings.newPageMode .~ nmod)
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess (GetHoodleFileInfo ref) = do 
   xst <- get

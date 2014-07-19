@@ -165,8 +165,12 @@
        <menuitem action="KEEPRATIOA" />
        <menuitem action="VCURSORA" />
        <menuitem action="TOGCLOCKA" />
-       <menuitem action="PRESSRSENSA" />                        
-       <separator />
+       <menuitem action="PRESSRSENSA" />
+       <menu action="NEWPAGEMODEA">
+         <menuitem action="NEWPAGEPLAINA" />
+         <menuitem action="NEWPAGELASTA" />
+         <menuitem action="NEWPAGECYCLEA" />
+       </menu>
        <menuitem action="RELAUNCHA" />
     </menu>
     <menu action="HMA">

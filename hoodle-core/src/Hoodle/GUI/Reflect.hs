@@ -16,7 +16,7 @@
 
 module Hoodle.GUI.Reflect where
 
-import           Control.Lens (view,Simple,Lens)
+import           Control.Lens (view,Simple,Lens, (^.))
 import           Control.Monad (liftM, when)
 import qualified Control.Monad.State as St
 import           Control.Monad.Trans 
@@ -132,6 +132,11 @@ reflectPenWidthUI = do
         EraserWork -> (Just . point2Int EraserWork 
                        . view (penInfo.penSet.currEraser.penWidth)) xst
         _ -> Nothing 
+
+-- |
+reflectNewPageModeUI :: MainCoroutine ()
+reflectNewPageModeUI = 
+    reflectUIComponent newPageModeSignal "NEWPAGEPLAINA" (Just . newPageMode2Int . (^. settings.newPageMode))
 
 -- | 
 reflectUIComponent :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))

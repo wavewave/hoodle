@@ -31,8 +31,8 @@ import qualified Data.IntMap as M
 import           Data.List (sortBy)
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk as Gtk
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+-- import qualified Graphics.UI.Gtk as Gtk
+-- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select

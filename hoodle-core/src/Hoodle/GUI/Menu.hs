@@ -123,6 +123,13 @@ bkgstyles = [ RadioActionEntry "BKGGRAPHA" "Graph" Nothing Nothing Nothing 3
             , RadioActionEntry "BKGRULEDA" "Ruled" Nothing Nothing Nothing 2 
             ]
 
+newpagemods :: [RadioActionEntry] 
+newpagemods = [ RadioActionEntry "NEWPAGEPLAINA" "Plain page" Nothing Nothing Nothing 0 
+              , RadioActionEntry "NEWPAGELASTA"  "Last page"  Nothing Nothing Nothing 1
+              , RadioActionEntry "NEWPAGECYCLEA" "Cycle page" Nothing Nothing Nothing 2
+              ]
+
+
 -- | 
 iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
                    -> IO ()
@@ -296,7 +303,7 @@ getMenuUI evar = do
   defhiltra <- actionNewAndRegister "DEFHILTRA" "Default Highlighter" (Just "Just a Stub") Nothing (justMenu MenuDefaultHighlighter)
   deftxta   <- actionNewAndRegister "DEFTXTA" "Default Text" (Just "Just a Stub") Nothing (justMenu MenuDefaultText)
   setdefopta <- actionNewAndRegister "SETDEFOPTA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultOption)
-  relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
+
 
 
   ------------------
@@ -347,6 +354,10 @@ getMenuUI evar = do
   pressrsensa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
+  newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
+
+  relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
+
 
   -- help menu 
   abouta <- actionNewAndRegister "ABOUTA" "About" (Just "Just a Stub") Nothing (justMenu MenuAbout)
@@ -373,8 +384,8 @@ getMenuUI evar = do
         , ldpreimga, ldpreimg2a, ldpreimg3a
         , linka, anchora, listanchora, handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
-        , setdefopta, relauncha
-        , togpanzooma, toglayera, togclocka
+        , setdefopta
+        , togpanzooma, toglayera, togclocka, newpagemoda, relauncha
         , abouta 
         , defaulta         
         ] 
@@ -385,14 +396,17 @@ getMenuUI evar = do
 
   mpgmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar)
-  _mpointconnid <- 
+  mpointconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr penmods   0 (assignPenMode evar)
-  _mcolorconnid <-  
+  mcolorconnid <-  
     actionGroupAddRadioActionsAndGetConnID agr colormods 0 (assignColor evar) 
-  actionGroupAddRadioActions agr bkgstyles 2 (assignBkgStyle evar)
-  
+  _mbkgstyconnid <-
+    actionGroupAddRadioActionsAndGetConnID agr bkgstyles 2 (assignBkgStyle evar)
+  mnpgmodconnid <- 
+    actionGroupAddRadioActionsAndGetConnID agr newpagemods 0 (assignNewPageMode evar)
+
   
   let disabledActions = 
         [ recenta, printa
@@ -409,7 +423,7 @@ getMenuUI evar = do
         [ opena, savea, saveasa, reloada, versiona, showreva, showida, quita
         , pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
-        , relauncha
+        , newpagemoda, relauncha
         ]
   --
   mapM_ (\x->actionSetSensitive x True) enabledActions  
@@ -442,6 +456,8 @@ getMenuUI evar = do
     
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 
+                                 . set penColorSignal mcolorconnid
+                                 . set newPageModeSignal mnpgmodconnid
                                  $ defaultUIComponentSignalHandler 
   return (ui,uicomponentsignalhandler)   
 
@@ -501,6 +517,13 @@ assignBkgStyle evar a = do
     v <- radioActionGetCurrentValue a 
     let sty = int2BkgStyle v 
     eventHandler evar (UsrEv (BackgroundStyleChanged sty))
+
+-- | 
+assignNewPageMode :: EventVar -> RadioAction -> IO ()
+assignNewPageMode evar a = do 
+    v <- radioActionGetCurrentValue a
+    eventHandler evar (UsrEv (AssignNewPageMode (int2NewPageMode v)))
+
 
 -- | 
 int2PenType :: Int -> Either PenType SelectType 
@@ -615,3 +638,17 @@ int2BkgStyle 1 = BkgStyleLined
 int2BkgStyle 2 = BkgStyleRuled
 int2BkgStyle 3 = BkgStyleGraph
 int2BkgStyle _ = BkgStyleRuled 
+
+
+-- | 
+int2NewPageMode :: Int -> NewPageModeType
+int2NewPageMode 0 = NPPlain
+int2NewPageMode 1 = NPLast
+int2NewPageMode 2 = NPCycle
+int2newPageMode _ = error "No such new page mode"
+
+-- |
+newPageMode2Int :: NewPageModeType -> Int
+newPageMode2Int NPPlain = 0
+newPageMode2Int NPLast  = 1
+newPageMode2Int NPCycle = 2

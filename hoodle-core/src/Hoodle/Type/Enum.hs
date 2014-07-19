@@ -3,9 +3,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Enum 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : BSD3
+-- License     : GPL-3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -81,6 +81,8 @@ data SelectInfo = SelectInfo { _selectType :: SelectType
 
 data RotateDir = CW | CCW deriving (Show, Ord, Eq)
 
+-- | 
+data NewPageModeType = NPPlain | NPLast | NPCycle deriving (Show, Ord, Eq)
 
 --
 -- lenses

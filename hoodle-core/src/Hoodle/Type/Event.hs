@@ -62,6 +62,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | PenWidthChanged Int 
                | AssignPenMode (Either PenType SelectType) 
                | BackgroundStyleChanged BackgroundStyle 
+               | AssignNewPageMode NewPageModeType
                | HScrollBarMoved Int Double
                | VScrollBarMoved Int Double 
                | VScrollBarStart Int Double

@@ -185,13 +185,10 @@ data MenuEvent = MenuNew
                | MenuAddLink
                | MenuAddAnchor
                | MenuListAnchors
-               --  | MenuShapeRecognizer
-               --  | MenuRuler
                | MenuHandwritingRecognitionDialog
                | MenuSelectRegion
                | MenuSelectRectangle
                | MenuVerticalSpace
-               --   | MenuHandTool
                | MenuPenOptions
                | MenuEraserOptions 
                | MenuHighlighterOptions
@@ -215,21 +212,7 @@ data MenuEvent = MenuNew
                | MenuTogglePanZoomWidget
                | MenuToggleLayerWidget
                | MenuToggleClockWidget
-               | MenuDiscardCoreEvents 
-               | MenuEraserTip 
                | MenuPressureSensitivity
-               | MenuPageHighlight
-               | MenuMultiplePageView
-               | MenuMultiplePages
-               | MenuButton2Mapping
-               | MenuButton3Mapping 
-               | MenuAntialiasedBitmaps
-               | MenuProgressiveBackgrounds
-               | MenuPrintPaperRuling 
-               | MenuLeftHandedScrollbar
-               | MenuShortenMenus
-               | MenuAutoSavePreferences
-               | MenuSavePreferences
                | MenuAbout
                | MenuDefault
                deriving Show 

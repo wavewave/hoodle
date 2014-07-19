@@ -240,12 +240,8 @@ getMenuUI evar = do
   gotolayera <- actionNewAndRegister "GOTOLAYERA" "Goto Layer" (Just "Just a Stub") Nothing (justMenu MenuGotoLayer)
   dellyra <- actionNewAndRegister "DELLYRA" "Delete Layer"    (Just "Just a Stub") Nothing (justMenu MenuDeleteLayer)
 
-  -- shwlayera <- actionNewAndRegister "SHWLAYERA" "Show Layer" (Just "Just a Stub") Nothing (justMenu MenuShowLayer)
-  -- hidlayera <- actionNewAndRegister "HIDLAYERA" "Hide Layer" (Just "Just a Stub") Nothing (justMenu MenuHideLayer)
-
-
   ----------------
-  -- image menu --
+  -- embed menu --
   ----------------
 
   ldpnga <- actionNewAndRegister "LDIMGA" "Load PNG or JPG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNGorJPG)
@@ -266,8 +262,10 @@ getMenuUI evar = do
   combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
   latexfromsrca <- actionNewAndRegister "LATEXFROMSRCA" "LaTeX From Source" (Just "Just a Stub") Nothing (justMenu MenuLaTeXFromSource)   
 
+  ---------------
+  -- page menu --
+  ---------------
 
-  -- page menu 
   newpgba <- actionNewAndRegister "NEWPGBA" "New Page Before" (Just "Just a Stub") Nothing (justMenu MenuNewPageBefore)
   newpgaa <- actionNewAndRegister "NEWPGAA" "New Page After"  (Just "Just a Stub") Nothing (justMenu MenuNewPageAfter)
   newpgea <- actionNewAndRegister "NEWPGEA" "New Page At End" (Just "Just a Stub") Nothing (justMenu MenuNewPageAtEnd)
@@ -278,8 +276,6 @@ getMenuUI evar = do
   ppstya <- actionNewAndRegister "PPSTYA"   "Paper Style" Nothing Nothing Nothing
   apallpga<- actionNewAndRegister "APALLPGA" "Apply To All Pages" (Just "Just a Stub") Nothing (justMenu MenuApplyToAllPages)
   embedbkgpdfa <- actionNewAndRegister "EMBEDBKGPDFA" "Embed All PDF backgroound" (Just "Just a Stub") Nothing (justMenu MenuEmbedAllPDFBkg)
-  -- ldbkga  <- actionNewAndRegister "LDBKGA"  "Load Background" (Just "Just a Stub") Nothing (justMenu MenuLoadBackground)
-  -- bkgscrshta <- actionNewAndRegister "BKGSCRSHTA" "Background Screenshot" (Just "Just a Stub") Nothing (justMenu MenuBackgroundScreenshot)
   defppa  <- actionNewAndRegister "DEFPPA"  "Default Paper" (Just "Just a Stub") Nothing (justMenu MenuDefaultPaper)
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultPaper)
   
@@ -287,15 +283,8 @@ getMenuUI evar = do
   linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just stockIndex) (justMenu MenuAddLink)
   anchora <- actionNewAndRegister "ANCHORA" "Add Anchor" (Just "Add Anchor") Nothing (justMenu MenuAddAnchor)
   listanchora <- actionNewAndRegister "LISTANCHORA" "List Anchors" (Just "List Anchors") Nothing (justMenu MenuListAnchors)
-
-  -- shpreca   <- actionNewAndRegister "SHPRECA" "Shape Recognizer" (Just "Just a Stub") (Just "myshapes") (justMenu MenuShapeRecognizer)
-  -- rulera    <- actionNewAndRegister "RULERA" "Ruler" (Just "Just a Stub") (Just "myruler") (justMenu MenuRuler)
   handreca <- actionNewAndRegister "HANDRECA" "Hoodlet load via Handwriting Recognition" (Just "Just a Stub") (Just "myshapes") (justMenu MenuHandwritingRecognitionDialog)
   
-  
-  -- selregna  <- actionNewAndRegister "SELREGNA" "Select Region" (Just "Just a Stub") (Just "mylasso") (justMenu MenuSelectRegion)
-  -- selrecta  <- actionNewAndRegister "SELRECTA" "Select Rectangle" (Just "Just a Stub") (Just "myrectselect") (justMenu MenuSelectRectangle)
-  -- vertspa   <- actionNewAndRegister "VERTSPA" "Vertical Space" (Just "Just a Stub") (Just "mystretch") (justMenu MenuVerticalSpace)
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just stockSelectColor) (justMenu MenuColorPicker ) 
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
@@ -354,29 +343,11 @@ getMenuUI evar = do
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togclocka <- actionNewAndRegister "TOGCLOCKA" "Toggle Clock Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleClockWidget)
     
-  dcrdcorea <- actionNewAndRegister "DCRDCOREA" "Discard Core Events" (Just "Just a Stub") Nothing (justMenu MenuDiscardCoreEvents)
-  ersrtipa <- actionNewAndRegister "ERSRTIPA" "Eraser Tip" (Just "Just a Stub") Nothing (justMenu MenuEraserTip)
   pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
 
-  
-  
-  
-  pghilta <- actionNewAndRegister "PGHILTA" "Page Highlight" (Just "Just a Stub") Nothing (justMenu MenuPageHighlight)
-  mltpgvwa <- actionNewAndRegister "MLTPGVWA" "Multiple Page View" (Just "Just a Stub") Nothing (justMenu MenuMultiplePageView) 
-  mltpga <- actionNewAndRegister "MLTPGA" "Multiple Pages" (Just "Just a Stub") Nothing (justMenu MenuMultiplePages)
-  btn2mapa <- actionNewAndRegister "BTN2MAPA" "Button 2 Mapping" (Just "Just a Stub") Nothing (justMenu MenuButton2Mapping)
-  btn3mapa <- actionNewAndRegister "BTN3MAPA" "Button 3 Mapping" (Just "Just a Stub") Nothing (justMenu MenuButton3Mapping)
-  antialiasbmpa <- actionNewAndRegister "ANTIALIASBMPA" "Antialiased Bitmaps" (Just "Just a Stub") Nothing (justMenu MenuAntialiasedBitmaps)
-  prgrsbkga <- actionNewAndRegister "PRGRSBKGA" "Progressive Backgrounds" (Just "Just a Stub") Nothing (justMenu MenuProgressiveBackgrounds)
-  prntpprulea <- actionNewAndRegister "PRNTPPRULEA" "Print Paper Ruling" (Just "Just a Stub") Nothing (justMenu MenuPrintPaperRuling)
-  lfthndscrbra <- actionNewAndRegister "LFTHNDSCRBRA" "Left-Handed Scrollbar" (Just "Just a Stub") Nothing (justMenu MenuLeftHandedScrollbar)
-  shrtnmenua <- actionNewAndRegister "SHRTNMENUA" "Shorten Menus" (Just "Just a Stub") Nothing (justMenu MenuShortenMenus)
-  autosaveprefa <- actionNewAndRegister "AUTOSAVEPREFA" "Auto-Save Preferences" (Just "Just a Stub") Nothing (justMenu MenuAutoSavePreferences)
-  saveprefa <- actionNewAndRegister "SAVEPREFA" "Save Preferences" (Just "Just a Stub") Nothing (justMenu MenuSavePreferences)
-  
   -- help menu 
   abouta <- actionNewAndRegister "ABOUTA" "About" (Just "Just a Stub") Nothing (justMenu MenuAbout)
 
@@ -392,7 +363,7 @@ getMenuUI evar = do
         [ newa, annpdfa, opena, savea, saveasa
         , reloada, recenta, printa, exporta, synca, versiona, showreva, showida, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
-        , fstpagea, prvpagea, nxtpagea, lstpagea {- , shwlayera, hidlayera -}
+        , fstpagea, prvpagea, nxtpagea, lstpagea 
         , hsplita, vsplita, delcvsa
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
@@ -400,13 +371,10 @@ getMenuUI evar = do
         , ldpnga, ldsvga, texta, textsrca, editsrca, editnetsrca, textfromsrca
         , latexa, latexneta, combinelatexa, latexfromsrca
         , ldpreimga, ldpreimg2a, ldpreimg3a
-        , linka, anchora, listanchora, {- shpreca, rulera, -} handreca, clra, clrpcka, penopta 
+        , linka, anchora, listanchora, handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta, relauncha
         , togpanzooma, toglayera, togclocka
-        , dcrdcorea, ersrtipa, pghilta, mltpgvwa
-        , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
-        , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
         , abouta 
         , defaulta         
         ] 
@@ -414,9 +382,9 @@ getMenuUI evar = do
   mapM_ (actionGroupAddAction agr) 
     [ uxinputa, handa, smthscra, popmenua, ebdimga, ebdpdfa, flwlnka, keepratioa, pressrsensa
     , vcursora ]
-  -- actionGroupAddRadioActions agr viewmods 0 (assignViewMode evar)
+
   mpgmodconnid <- 
-    actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar) -- const (return ()))
+    actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar)
   _mpointconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
@@ -430,22 +398,18 @@ getMenuUI evar = do
         [ recenta, printa
         , cuta, copya, deletea
         ,  setzma
-        {- , shwlayera, hidlayera -}
         , newpgea, ppsizea, ppclra
         , defppa, setdefppa
-        -- , shpreca, rulera 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , dcrdcorea, ersrtipa, pghilta, mltpgvwa
-        , mltpga, btn2mapa, btn3mapa, antialiasbmpa, prgrsbkga, prntpprulea 
-        , lfthndscrbra, shrtnmenua, autosaveprefa, saveprefa 
-        , abouta 
+        , abouta
         , defaulta         
         ] 
       enabledActions = 
         [ opena, savea, saveasa, reloada, versiona, showreva, showida, quita
         , pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
+        , relauncha
         ]
   --
   mapM_ (\x->actionSetSensitive x True) enabledActions  
@@ -465,8 +429,6 @@ getMenuUI evar = do
   actionSetSensitive ra3 True 
   Just ra4 <- actionGroupGetAction agr "VERTSPA"
   actionSetSensitive ra4 True
-  -- Just ra5 <- actionGroupGetAction agr "HANDA"
-  -- actionSetSensitive ra5 False
   Just ra6 <- actionGroupGetAction agr "CONTA"
   actionSetSensitive ra6 True
   Just _ra7 <- actionGroupGetAction agr "PENA"
@@ -477,10 +439,7 @@ getMenuUI evar = do
   Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
-  
-  -- Just pendropdown <- uiManagerGetWidget ui "/ui/toolbar2/PENDROPDOWN"
-  
-  
+    
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 
                                  $ defaultUIComponentSignalHandler 

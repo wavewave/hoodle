@@ -243,14 +243,14 @@ drawFallBackBkg (Dim w h) = do
   Cairo.setSourceRGBA 1 1 1 1 
   Cairo.rectangle 0 0 w h 
   Cairo.fill 
-  Cairo.setSourceRGBA 0 0 0 1 
+  {- Cairo.setSourceRGBA 0 0 0 1 
   Cairo.setLineWidth 5
   Cairo.moveTo 0 0
   Cairo.lineTo w h 
   Cairo.stroke 
   Cairo.moveTo w 0 
   Cairo.lineTo 0 h
-  Cairo.stroke
+  Cairo.stroke -}
   
 
 -- | 

@@ -50,6 +50,7 @@ module Hoodle.Type.HoodleState
 , pdfRenderQueue
 , doesNotInvalidate
 -- , cursorInfo
+, nextPdfBkgPageNum
 -- 
 , hoodleFileName 
 , lastSavedTime
@@ -171,6 +172,7 @@ data HoodleState =
                 , _renderCache :: RenderCache
                 , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
                 , _doesNotInvalidate :: Bool
+                , _nextPdfBkgPageNum :: Maybe Int
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -297,6 +299,10 @@ pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 -- | 
 doesNotInvalidate :: Simple Lens HoodleState Bool
 doesNotInvalidate = lens _doesNotInvalidate (\f a -> f { _doesNotInvalidate = a })
+
+-- | 
+nextPdfBkgPageNum :: Simple Lens HoodleState (Maybe Int)
+nextPdfBkgPageNum = lens _nextPdfBkgPageNum (\f a -> f { _nextPdfBkgPageNum = a })
 
 
 
@@ -447,6 +453,7 @@ emptyHoodleState = do
     , _renderCache = HM.empty
     , _pdfRenderQueue = tvar
     , _doesNotInvalidate = False
+    , _nextPdfBkgPageNum = Nothing
     -- , _cursorInfo = Nothing
     }
 

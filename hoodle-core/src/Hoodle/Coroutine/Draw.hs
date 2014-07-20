@@ -20,8 +20,6 @@ module Hoodle.Coroutine.Draw where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Concurrent
--- import           Control.Concurrent.STM
 import           Control.Lens (view,set,(^.),(%~))
 import           Control.Monad
 import           Control.Monad.State

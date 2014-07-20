@@ -107,7 +107,7 @@ initCoroutine :: DeviceList
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
               -- -> Gtk.Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) {- stbar -} = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -134,7 +134,6 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) {- stbar -} 
           . set frameState wconf' 
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
-          -- . set statusBar (Just stbar)
           . set (hoodleFileControl.hoodleFileName) Nothing 
           $ st4     
   vbox <- Gtk.vBoxNew False 0 
@@ -166,10 +165,6 @@ initialize ev = do
         hdlst' <- liftIO $ resetHoodleModeStateBuffers cache hdlst
         put (set hoodleModeState hdlst' xst2)
         --
-        -- xst <- get 
-        -- let Just sbar = view statusBar xst 
-        -- cxtid <- liftIO $ Gtk.statusbarGetContextId sbar "test"
-        -- liftIO $ Gtk.statusbarPush sbar cxtid "Hello there" 
         xst3 <- get
         let ui = view gtkUIManager xst3
         liftIO $ toggleSave ui False
@@ -551,7 +546,6 @@ colorPickerBox msg = do
 
 pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 
 pdfRendererMain handler tvar = forever $ do     
-    -- putStrLn "pdfRenderMain called"
     p <- atomically $ do 
       lst' <- readTVar tvar
       case viewl lst' of

@@ -132,7 +132,6 @@ notifyLink cid pcoord = do
       let bbx = getBBox lnk
           bbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord) bbx
           nbbx_desk = maybe bbx_desk (\obbx_desk->unionBBox bbx_desk obbx_desk) mobbx_desk
-      -- liftIO $ print (pnum,bbx)
       return (Just (pnum,bbx,lnk),nbbx_desk)
           
 

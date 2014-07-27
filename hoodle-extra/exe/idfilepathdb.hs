@@ -15,13 +15,14 @@ import           Data.Aeson.Types  (parseJSON, parseEither)
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as L
-import           Data.Conduit (($$+-))
-import           Data.Conduit.List (consume)
+import           Data.Conduit (($$), ($$+-))
+import qualified Data.Conduit.List as CL 
 import           Data.Data
+import           Data.Digest.Pure.MD5
 import qualified Data.List as DL 
 import qualified Data.Map as M
 import           Data.Monoid ((<>))
-import           Data.Digest.Pure.MD5
+import qualified Data.Text as T
 import qualified Network.HTTP.Conduit as N
 import           System.Console.CmdArgs
 import           System.Directory
@@ -33,6 +34,12 @@ import           Data.Hoodle.Simple
 import           Text.Hoodle.Parse.Attoparsec 
 -- 
 import           DiffDB
+import           Hoodle.Manage.DocDatabase
+-- 
+
+import Database.Persist.Sqlite
+import Database.Persist.Sql (rawQuery)
+
 
 data IdFilePathDB = AllFiles { hoodlehome :: FilePath }
                   | SingleFile { hoodlehome :: FilePath 
@@ -41,6 +48,7 @@ data IdFilePathDB = AllFiles { hoodlehome :: FilePath }
                   | DBSync { remoteURL :: String 
                            , remoteID :: String 
                            , remotePassword :: String } 
+                  | DBMigrateToSqlite
                   deriving (Show,Data,Typeable)
 
 allfiles :: IdFilePathDB 
@@ -61,9 +69,12 @@ dbsync = DBSync { remoteURL = def &= typ "URL" &= argPos 0
                 , remoteID = def &= typ "ID" &= argPos 1
                 , remotePassword = def &= typ "PASSWORD" &= argPos 2
                 }
+
+dbmigrate :: IdFilePathDB
+dbmigrate = DBMigrateToSqlite
   
 mode :: IdFilePathDB
-mode = modes [allfiles, singlefile, dbdiff, dbsync ] 
+mode = modes [allfiles, singlefile, dbdiff, dbsync, dbmigrate ] 
 
 main :: IO () 
 main = do 
@@ -73,6 +84,7 @@ main = do
     SingleFile hdir fp -> singlefilework hdir fp 
     DBDiff             -> dbdiffwork
     DBSync url idee pw -> dbsyncwork url idee pw
+    DBMigrateToSqlite  -> dbmigrate2sqlite 
   
 allfilework :: FilePath -> IO ()
 allfilework hdir = do 
@@ -173,6 +185,41 @@ dbsyncwork url idee pwd = do
               }
         runResourceT $ N.withManager $ \manager -> do  
           response <- N.http requesttask manager
-          content <- N.responseBody response $$+- consume 
+          content <- N.responseBody response $$+- CL.consume 
           liftIO $ print content  
    
+dbmigrate2sqlite :: IO ()
+dbmigrate2sqlite = do
+  putStrLn "migration test"
+  homedir <- getHomeDirectory 
+  let origdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
+  str <- readFile origdbfile
+  let assoclst = (map splitfunc . lines) str 
+      assoclst' = map (\(x,(y,z)) -> (T.pack x, (T.pack y, T.pack z))) assoclst 
+  
+  -- print assoclst'    
+  --     assocmap = M.fromList assoclst 
+  -- print assocmap   
+
+  runSqlite ":memory:" $ do 
+    runMigration migrateTables
+    mapM_ insertOne assoclst'
+    dumpTable
+
+dumpTable = rawQuery "select * from hoodle_doc_location" [] $$ CL.mapM_ (liftIO . print)
+
+insertOne (x,(y,z)) = insert (HoodleDocLocation x y z)
+
+  -- putStrLn str
+{-
+  let assoclst = (map splitfunc . lines) str 
+      assocmap = M.fromList assoclst 
+      replacefunc n _ = Just n 
+  muuid <- checkHoodleIdMd5 oldfp 
+  let nmap = case muuid of 
+               Nothing -> assocmap 
+               Just (uuid,md5str) -> M.alter (replacefunc (md5str,fp)) uuid assocmap
+      nstr = (unlines . map (\(x,(y,z))->x ++ " " ++ y ++ " " ++ show z) . M.toList) nmap 
+  writeFile origdbfile nstr 
+  removeFile tmpfile 
+-}

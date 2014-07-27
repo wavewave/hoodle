@@ -98,7 +98,7 @@ Executable idfilepathdb
                    http-conduit,
                    lens,
                    monad-logger,
-                   mtl,
+                   -- mtl,
                    persistent,
                    persistent-sqlite,
                    process,
@@ -110,3 +110,7 @@ Executable idfilepathdb
                    xournal-parser, 
                    --
                    hoodle-extra
+
+  Other-modules:   DiffDB
+                   Migrate
+                   TextFileDB

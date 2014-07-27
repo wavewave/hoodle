@@ -7,8 +7,8 @@
 -- 
 import           Control.Applicative ((<$>))
 import           Control.Lens
+import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Logger
-import           Control.Monad.Trans (MonadIO(..))
 import           Control.Monad.Trans.Either 
 import           Control.Monad.Trans.Resource
 import           Data.Attoparsec 
@@ -24,7 +24,6 @@ import           Data.Digest.Pure.MD5
 import qualified Data.List as DL 
 import qualified Data.Map as M
 import           Data.Monoid ((<>))
-import qualified Data.Text as T
 import qualified Network.HTTP.Conduit as N
 import           System.Console.CmdArgs
 import           System.Directory
@@ -36,11 +35,14 @@ import           Data.Hoodle.Simple
 import           Text.Hoodle.Parse.Attoparsec 
 -- 
 import           DiffDB
+import           Migrate
+import           TextFileDB
 import           Hoodle.Manage.DocDatabase
 -- 
 
-import Database.Persist.Sqlite
-import Database.Persist.Sql (rawQuery)
+
+-- import Database.Persist.Sqlite
+-- import Database.Persist.Sql (rawQuery)
 
 
 data IdFilePathDB = AllFiles { hoodlehome :: FilePath }
@@ -94,14 +96,6 @@ allfilework hdir = do
   r <- readProcess "find" [homedir </> "Dropbox" </> "hoodle","-name","*.hdl","-print"] "" 
   mapM_ (singlefilework hdir) (lines r)
 
-splitfunc :: String -> (String,(String,String))
-splitfunc str = 
-  let (str1,rest1) = break (==' ') str 
-      (str2,rest2) = break (==' ') (tail rest1)
-      str3 = read (tail rest2)
-  in (str1,(str2,str3))
-
-    
 
 singlefilework :: FilePath -> FilePath -> IO ()
 singlefilework hdir oldfp = do 
@@ -190,39 +184,4 @@ dbsyncwork url idee pwd = do
           content <- N.responseBody response $$+- CL.consume 
           liftIO $ print content  
    
-dbmigrate2sqlite :: IO ()
-dbmigrate2sqlite = do
-  putStrLn "migration test"
-  homedir <- getHomeDirectory 
-  let origdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
-      newdbfile = homedir </> ".hoodle.d" </> "hoodleiddb.dat"
-  str <- readFile origdbfile
-  let assoclst = (map splitfunc . lines) str 
-      assoclst' = map (\(x,(y,z)) -> (T.pack x, (T.pack y, T.pack z))) assoclst 
-  runSqlite (T.pack newdbfile) $ do 
-    runMigration migrateTables
-    mapM_ insertOne assoclst'
-    dumpTable
 
-dumpTable :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => SqlPersistT (NoLoggingT (ResourceT m)) ()
-dumpTable = rawQuery "select * from hoodle_doc_location" [] $$ CL.mapM_ (liftIO . print)
-
-
-insertOne :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => 
-             (T.Text, (T.Text, T.Text)) 
-          -> SqlPersistT (NoLoggingT (ResourceT m)) (Key (HoodleDocLocationGeneric SqlBackend))
-insertOne (x,(y,z)) = insert (HoodleDocLocation x y z)
-
-  -- putStrLn str
-{-
-  let assoclst = (map splitfunc . lines) str 
-      assocmap = M.fromList assoclst 
-      replacefunc n _ = Just n 
-  muuid <- checkHoodleIdMd5 oldfp 
-  let nmap = case muuid of 
-               Nothing -> assocmap 
-               Just (uuid,md5str) -> M.alter (replacefunc (md5str,fp)) uuid assocmap
-      nstr = (unlines . map (\(x,(y,z))->x ++ " " ++ y ++ " " ++ show z) . M.toList) nmap 
-  writeFile origdbfile nstr 
-  removeFile tmpfile 
--}

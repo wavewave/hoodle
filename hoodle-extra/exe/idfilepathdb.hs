@@ -51,7 +51,8 @@ import           Hoodle.Manage.DocDatabase
 -- import Database.Persist.Sql (rawQuery)
 
 
-data IdFilePathDB = SingleFile { hoodlehome :: FilePath 
+data IdFilePathDB = Info { fileid :: String }
+                  | SingleFile { hoodlehome :: FilePath 
                                , singlefilename :: FilePath } 
 
                   --  | AllFiles { hoodlehome :: FilePath }
@@ -61,6 +62,9 @@ data IdFilePathDB = SingleFile { hoodlehome :: FilePath
                   --           , remotePassword :: String } 
                   --  | DBMigrateToSqlite
                   deriving (Show,Data,Typeable)
+
+info :: IdFilePathDB
+info = Info { fileid = def &= typ "FILEID" &= argPos 0 }
 
 singlefile :: IdFilePathDB 
 singlefile = 
@@ -87,12 +91,13 @@ dbmigrate = DBMigrateToSqlite
 -}
   
 mode :: IdFilePathDB
-mode = modes [singlefile] -- [allfiles, singlefile, dbdiff, dbsync, dbmigrate ] 
+mode = modes [info, singlefile] -- [allfiles, singlefile, dbdiff, dbsync, dbmigrate ] 
 
 main :: IO () 
 main = do 
   params <- cmdArgs mode
   case params of 
+    Info uuid -> infowork uuid
     SingleFile hdir fp -> singlefilework hdir fp 
     {- 
     AllFiles hdir      -> allfilework hdir 
@@ -101,6 +106,15 @@ main = do
     DBMigrateToSqlite  -> dbmigrate2sqlite 
     -}
 
+infowork :: String -> IO ()
+infowork uuid = do
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateTables
+    runMaybeT $ do 
+      file <- (MaybeT . getBy . FileIDKey . T.pack) uuid
+      liftIO (print file)
+    return ()
 
 singlefilework :: FilePath -> FilePath -> IO ()
 singlefilework hdir oldfp = do 

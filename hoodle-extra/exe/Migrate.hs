@@ -26,14 +26,14 @@ dbmigrate2sqlite :: IO ()
 dbmigrate2sqlite = do
   putStrLn "migration test"
   origdbfile <- TextFileDB.defaultDBFile
-  newdbfile <- T.unpack <$> SqliteDB.defaultDBFile -- homedir </> ".hoodle.d" </> "hoodleiddb.dat"
+  newdbfile <- T.unpack <$> SqliteDB.defaultDBFile
   str <- readFile origdbfile
   let assoclst = (map TextFileDB.splitfunc . lines) str 
       assoclst' = map (\(x,(y,z)) -> (T.pack x, (T.pack y, T.pack z))) assoclst 
   runSqlite (T.pack newdbfile) $ do 
     runMigration migrateTables
     mapM_ insertOne assoclst'
-    dumpTable
+    dumpTable "hoodle_doc_location"
 
 insertOne :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => 
              (T.Text, (T.Text, T.Text)) 

@@ -25,3 +25,13 @@ HoodleDocLocation
     deriving Show 
 |]
 
+share [mkPersist sqlSettings, mkMigrate "migrateDocRoot"] [persistLowerCase|
+HoodleDocRoot 
+    onoff Bool
+    loc   Text
+    UniqueDocRoot onoff
+    deriving Show
+|]
+
+
+

@@ -57,6 +57,7 @@ data IdFilePathDB = List
                                , singlefilename :: FilePath } 
 
                   | AllFiles { hoodlehome :: FilePath }
+                  | ChangeRoot { hoodlehome :: FilePath }
                   --  | DBDiff
                   --  | DBSync { remoteURL :: String 
                   --           , remoteID :: String 
@@ -79,6 +80,11 @@ singlefile =
 allfiles :: IdFilePathDB 
 allfiles = 
   AllFiles { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
+
+changeroot :: IdFilePathDB 
+changeroot = 
+  ChangeRoot { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
+
   
 {-
 dbdiff :: IdFilePathDB 
@@ -95,28 +101,17 @@ dbmigrate = DBMigrateToSqlite
 -}
   
 mode :: IdFilePathDB
-mode = modes [list, info, singlefile, allfiles] -- , singlefile, dbdiff, dbsync, dbmigrate ] 
+mode = modes [list, info, singlefile, allfiles, changeroot] -- , singlefile, dbdiff, dbsync, dbmigrate ] 
 
-main :: IO () 
-main = do 
-  params <- cmdArgs mode
-  case params of
-    List -> listwork
-    Info uuid -> infowork uuid
-    SingleFile hdir fp -> singlefilework hdir fp 
-    AllFiles hdir      -> allfilework hdir 
-    {- 
-    DBDiff             -> dbdiffwork
-    DBSync url idee pw -> dbsyncwork url idee pw
-    DBMigrateToSqlite  -> dbmigrate2sqlite 
-    -}
 
 listwork :: IO ()
 listwork = do
   dbfile <- SqliteDB.defaultDBFile
   runSqlite dbfile $ do 
     runMigration migrateTables
-    dumpTable
+    runMigration migrateDocRoot
+    dumpTable "hoodle_doc_location"
+    dumpTable "hoodle_doc_root"
 
 infowork :: String -> IO ()
 infowork uuid = do
@@ -145,6 +140,17 @@ allfilework hdir = do
   homedir <- getHomeDirectory 
   r <- readProcess "find" [homedir </> "Dropbox" </> "hoodle","-name","*.hdl","-print"] "" 
   mapM_ (singlefilework hdir) (lines r)
+ 
+changerootwork :: FilePath -> IO ()
+changerootwork hdir = do
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateDocRoot
+    mroot <- getBy (UniqueDocRoot True)
+    case mroot of
+      Nothing -> insert (HoodleDocRoot True (T.pack hdir)) >> return ()
+      Just root -> update (entityKey root) [ HoodleDocRootLoc =. (T.pack hdir) ] >> return ()
+    dumpTable "hoodle_doc_root"
 
 checkHoodleIdMd5 :: FilePath -> IO (Maybe (String,String))
 checkHoodleIdMd5 fp = do 
@@ -212,4 +218,18 @@ dbsyncwork url idee pwd = do
           content <- N.responseBody response $$+- CL.consume 
           liftIO $ print content  
    
+main :: IO () 
+main = do 
+  params <- cmdArgs mode
+  case params of
+    List               -> listwork
+    Info uuid          -> infowork uuid
+    SingleFile hdir fp -> singlefilework hdir fp 
+    AllFiles hdir      -> allfilework hdir
+    ChangeRoot hdir    -> changerootwork hdir
+    {- 
+    DBDiff             -> dbdiffwork
+    DBSync url idee pw -> dbsyncwork url idee pw
+    DBMigrateToSqlite  -> dbmigrate2sqlite 
+    -}
 

@@ -53,11 +53,11 @@ import           Hoodle.Manage.DocDatabase
 
 data IdFilePathDB = List
                   | Info { fileid :: String }
-                  | SingleFile { hoodlehome :: FilePath 
+                  | SingleFile { hoodlehome :: Maybe FilePath 
                                , singlefilename :: FilePath } 
 
-                  | AllFiles { hoodlehome :: FilePath }
-                  | ChangeRoot { hoodlehome :: FilePath }
+                  | AllFiles { hoodlehome :: Maybe FilePath }
+                  | ChangeRoot { newhome :: FilePath }
                   --  | DBDiff
                   --  | DBSync { remoteURL :: String 
                   --           , remoteID :: String 
@@ -73,17 +73,17 @@ info = Info { fileid = def &= typ "FILEID" &= argPos 0 }
 
 singlefile :: IdFilePathDB 
 singlefile = 
-  SingleFile { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 
-             , singlefilename = def &= typ "FILEPATH" &= argPos 1
+  SingleFile { hoodlehome = def
+             , singlefilename = def &= typ "FILEPATH" &= argPos 0
              }
  
 allfiles :: IdFilePathDB 
 allfiles = 
-  AllFiles { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
+  AllFiles { hoodlehome = def } 
 
 changeroot :: IdFilePathDB 
 changeroot = 
-  ChangeRoot { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
+  ChangeRoot { newhome = def &= typ "HOODLEHOME" &= argPos 0 } 
 
   
 {-
@@ -123,23 +123,28 @@ infowork uuid = do
       liftIO (print file)
     return ()
 
-singlefilework :: FilePath -> FilePath -> IO ()
-singlefilework hdir oldfp = do 
+singlefilework :: Maybe FilePath -> FilePath -> IO ()
+singlefilework mhdir oldfp = do 
   dbfile <- SqliteDB.defaultDBFile
   runSqlite dbfile $ do 
     runMigration migrateTables
+    runMigration migrateDocRoot
+    mhdir2 <- case mhdir of
+                Just hdir' -> return (Just hdir')
+                Nothing -> fmap (T.unpack . hoodleDocRootLoc . entityVal ) <$>  getBy (UniqueDocRoot True)
     runMaybeT $ do 
+      hdir <- (MaybeT . return) mhdir2
       (uuid,md5str) <- MaybeT . liftIO $ checkHoodleIdMd5 oldfp 
       file <- (MaybeT . getBy . FileIDKey . T.pack) uuid
       liftIO (print file)
       update (entityKey file) [ HoodleDocLocationFilemd5 =. (T.pack md5str) ]
     return ()
 
-allfilework :: FilePath -> IO ()
-allfilework hdir = do 
+allfilework :: Maybe FilePath -> IO ()
+allfilework mhdir = do 
   homedir <- getHomeDirectory 
   r <- readProcess "find" [homedir </> "Dropbox" </> "hoodle","-name","*.hdl","-print"] "" 
-  mapM_ (singlefilework hdir) (lines r)
+  mapM_ (singlefilework mhdir) (lines r)
  
 changerootwork :: FilePath -> IO ()
 changerootwork hdir = do
@@ -224,8 +229,8 @@ main = do
   case params of
     List               -> listwork
     Info uuid          -> infowork uuid
-    SingleFile hdir fp -> singlefilework hdir fp 
-    AllFiles hdir      -> allfilework hdir
+    SingleFile mhdir fp -> singlefilework mhdir fp 
+    AllFiles mhdir      -> allfilework mhdir
     ChangeRoot hdir    -> changerootwork hdir
     {- 
     DBDiff             -> dbdiffwork

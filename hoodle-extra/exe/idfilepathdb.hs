@@ -40,7 +40,7 @@ import           Text.Hoodle.Parse.Attoparsec
 -- 
 import           DiffDB
 import           Migrate
-import qualified SqliteDB
+import qualified Hoodle.Manage.SqliteDB as SqliteDB
 import qualified TextFileDB
 import           Util
 import           Hoodle.Manage.DocDatabase

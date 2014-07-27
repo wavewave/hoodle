@@ -15,9 +15,10 @@ import           Database.Persist.Sql (rawQuery)
 import           System.Directory
 import           System.FilePath
 --
+import qualified Hoodle.Manage.SqliteDB as SqliteDB
 import           Hoodle.Manage.DocDatabase
 -- 
-import qualified SqliteDB
+-- import qualified SqliteDB
 import qualified TextFileDB
 import           Util
 

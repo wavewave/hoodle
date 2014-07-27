@@ -1,4 +1,4 @@
-module SqliteDB where 
+module Hoodle.Manage.SqliteDB where 
 
 import           Control.Applicative
 import qualified Data.Text as T

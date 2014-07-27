@@ -48,7 +48,6 @@ serverLaTeX ip txt chan = do
       let bstr = TE.encodeUtf8 txt
           bstr_size :: Word32 = (fromIntegral . B.length) bstr 
           bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
-      -- B.putStrLn () 
       putStrLn $ "TCP connection established from " ++ show addr
       send sock (bstr_size_binary <> TE.encodeUtf8 txt)
       

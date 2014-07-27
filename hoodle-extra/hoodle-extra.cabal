@@ -52,6 +52,7 @@ Library
                    xournal-parser
   Exposed-Modules: 
                    Hoodle.Manage.DocDatabase
+                   Hoodle.Manage.SqliteDB
 
 
 
@@ -113,6 +114,5 @@ Executable idfilepathdb
 
   Other-modules:   DiffDB
                    Migrate
-                   SqliteDB
                    TextFileDB
                    Util

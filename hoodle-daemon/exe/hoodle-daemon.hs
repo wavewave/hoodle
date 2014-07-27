@@ -44,33 +44,33 @@ checkOtherInst client act = do
                   act client 
     Right _ -> putStrLn "existing instance"
     
-onResume :: IORef ProcessHandle -> Signal -> IO ()
-onResume ref sig = do 
-  let xs :: [Dictionary] = (mapMaybe fromVariant . signalBody) sig
-  when ((not.null) xs) $ do 
-    let x = dictionaryItems (head xs)                               
-    F.forM_ (lookup (toVariant ("State" :: T.Text) ) x) $ \v -> do 
-      let n = do v' <- fromVariant v :: Maybe Variant 
-                 v'' <- fromVariant v' :: Maybe Word32
-                 return v''
-      print n
-      F.forM_ n $ \n' -> 
-        when (n' == 100) $ do 
-          threadDelay 1000000
-          ph <- readIORef ref
-          terminateProcess ph
-          putStrLn "network restart"
-          ph' <- runsocket
-          writeIORef ref ph'
+-- onResume :: IORef ProcessHandle -> Signal -> IO ()
+-- onResume ref sig = do 
+--   let xs :: [Dictionary] = (mapMaybe fromVariant . signalBody) sig
+--   when ((not.null) xs) $ do 
+--     let x = dictionaryItems (head xs)                               
+--     F.forM_ (lookup (toVariant ("State" :: T.Text) ) x) $ \v -> do 
+--       let n = do v' <- fromVariant v :: Maybe Variant 
+--                  v'' <- fromVariant v' :: Maybe Word32
+--                  return v''
+--       print n
+--       F.forM_ n $ \n' -> 
+--         when (n' == 100) $ do 
+--           threadDelay 1000000
+--           ph <- readIORef ref
+--           terminateProcess ph
+--           putStrLn "network restart"
+--           ph' <- runsocket
+--           writeIORef ref ph'
 
                          
-runsocket :: IO ProcessHandle
-runsocket = do 
-  hdir <- getHomeDirectory
-  (_,_,_,ph) <- createProcess
-    ((proc "/home/wavewave/repo/workspace/hoodle-publish/socket/pipesocketcli" []) 
-     {env = Just [("DISPLAY",":0"), ("LIBOVERLAY_SCROLLBAR","0"), ("HOME",hdir)] })
-  return ph
+-- runsocket :: IO ProcessHandle
+-- runsocket = do 
+--   hdir <- getHomeDirectory
+--   (_,_,_,ph) <- createProcess
+--     ((proc "/home/wavewave/repo/workspace/hoodle-publish/socket/pipesocketcli" []) 
+--     {env = Just [("DISPLAY",":0"), ("LIBOVERLAY_SCROLLBAR","0"), ("HOME",hdir)] })
+--   return ph
   
   
 main :: IO ()
@@ -86,13 +86,13 @@ main = do
     export client "/hoodleDaemon"
       [ autoMethod "org.ianwookim.hoodle" "isInitialized" isInitialized  
       ] 
-    ph <- runsocket
-    ref <- newIORef ph
-    forkIO $ do 
-      listen clientSys matchAny { matchInterface = Just "org.freedesktop.NetworkManager.Device.Wireless"
-                                , matchMember = Just "PropertiesChanged" 
-                                }
-             (onResume ref) 
+    -- ph <- runsocket
+    -- ref <- newIORef ph
+    -- forkIO $ do 
+    --   listen clientSys matchAny { matchInterface = Just "org.freedesktop.NetworkManager.Device.Wireless"
+    --                             , matchMember = Just "PropertiesChanged" 
+    --                             }
+    --          (onResume ref) 
 
     chan <- newChan
     forkIO $ 

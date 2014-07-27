@@ -41,7 +41,7 @@ import           System.FilePath
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple -- (Anchor(..),Item(..),SVG(..),pages,layers,items)
+import           Data.Hoodle.Simple
 import           Data.Hoodle.Zipper
 import           Graphics.Hoodle.Render.Item 
 import           Graphics.Hoodle.Render.Type 
@@ -51,7 +51,6 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
--- import           Hoodle.Coroutine.File (insertItemAt)
 import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 

@@ -1,5 +1,12 @@
 module TextFileDB where
 
+import Control.Applicative
+import System.FilePath
+import System.Directory
+
+defaultDBFile :: IO FilePath 
+defaultDBFile = (</> "Dropbox" </> "hoodleiddb.dat") <$> getHomeDirectory 
+
 splitfunc :: String -> (String,(String,String))
 splitfunc str = 
   let (str1,rest1) = break (==' ') str 

@@ -10,6 +10,7 @@ import           Control.Lens
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Either 
+import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Resource
 import           Data.Attoparsec 
 import           Data.Aeson.Parser (json)
@@ -24,6 +25,9 @@ import           Data.Digest.Pure.MD5
 import qualified Data.List as DL 
 import qualified Data.Map as M
 import           Data.Monoid ((<>))
+import qualified Data.Text as T
+import           Database.Persist.Sqlite
+import           Database.Persist.Sql (rawQuery)
 import qualified Network.HTTP.Conduit as N
 import           System.Console.CmdArgs
 import           System.Directory
@@ -36,7 +40,9 @@ import           Text.Hoodle.Parse.Attoparsec
 -- 
 import           DiffDB
 import           Migrate
-import           TextFileDB
+import qualified SqliteDB
+import qualified TextFileDB
+import           Util
 import           Hoodle.Manage.DocDatabase
 -- 
 
@@ -45,25 +51,27 @@ import           Hoodle.Manage.DocDatabase
 -- import Database.Persist.Sql (rawQuery)
 
 
-data IdFilePathDB = AllFiles { hoodlehome :: FilePath }
-                  | SingleFile { hoodlehome :: FilePath 
+data IdFilePathDB = SingleFile { hoodlehome :: FilePath 
                                , singlefilename :: FilePath } 
-                  | DBDiff
-                  | DBSync { remoteURL :: String 
-                           , remoteID :: String 
-                           , remotePassword :: String } 
-                  | DBMigrateToSqlite
-                  deriving (Show,Data,Typeable)
 
-allfiles :: IdFilePathDB 
-allfiles = 
-  AllFiles { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
+                  --  | AllFiles { hoodlehome :: FilePath }
+                  --  | DBDiff
+                  --  | DBSync { remoteURL :: String 
+                  --           , remoteID :: String 
+                  --           , remotePassword :: String } 
+                  --  | DBMigrateToSqlite
+                  deriving (Show,Data,Typeable)
 
 singlefile :: IdFilePathDB 
 singlefile = 
   SingleFile { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 
              , singlefilename = def &= typ "FILEPATH" &= argPos 1
              }
+
+{- 
+allfiles :: IdFilePathDB 
+allfiles = 
+  AllFiles { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
   
 dbdiff :: IdFilePathDB 
 dbdiff = DBDiff
@@ -76,38 +84,50 @@ dbsync = DBSync { remoteURL = def &= typ "URL" &= argPos 0
 
 dbmigrate :: IdFilePathDB
 dbmigrate = DBMigrateToSqlite
+-}
   
 mode :: IdFilePathDB
-mode = modes [allfiles, singlefile, dbdiff, dbsync, dbmigrate ] 
+mode = modes [singlefile] -- [allfiles, singlefile, dbdiff, dbsync, dbmigrate ] 
 
 main :: IO () 
 main = do 
   params <- cmdArgs mode
   case params of 
-    AllFiles hdir      -> allfilework hdir 
     SingleFile hdir fp -> singlefilework hdir fp 
+    {- 
+    AllFiles hdir      -> allfilework hdir 
     DBDiff             -> dbdiffwork
     DBSync url idee pw -> dbsyncwork url idee pw
     DBMigrateToSqlite  -> dbmigrate2sqlite 
-  
-allfilework :: FilePath -> IO ()
-allfilework hdir = do 
-  homedir <- getHomeDirectory 
-  r <- readProcess "find" [homedir </> "Dropbox" </> "hoodle","-name","*.hdl","-print"] "" 
-  mapM_ (singlefilework hdir) (lines r)
+    -}
 
 
 singlefilework :: FilePath -> FilePath -> IO ()
 singlefilework hdir oldfp = do 
-  putStrLn ("working for " ++ oldfp)
-  homedir <- getHomeDirectory 
+  -- putStrLn ("working for " ++ oldfp)
+  dbfile <- SqliteDB.defaultDBFile
+  -- print dbfile
+  runSqlite dbfile $ do 
+    runMigration migrateTables
+    runMaybeT $ do 
+      (uuid,md5str) <- MaybeT . liftIO $ checkHoodleIdMd5 oldfp 
+      file <- (MaybeT . getBy . FileIDKey . T.pack) uuid
+      liftIO (print file)
+      update (entityKey file) [ HoodleDocLocationFilemd5 =. (T.pack md5str) ]
+    return ()
+
+
+    -- dumpTable
+{- 
   tmpdir <- getTemporaryDirectory 
-  let origdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
-      tmpfile = tmpdir </> "hoodleiddb.dat"
+
+
+
+  let tmpfile = tmpdir </> "hoodleiddb.dat"
   copyFile origdbfile tmpfile 
   fp <- makeRelative hdir <$> canonicalizePath oldfp 
   str <- readFile tmpfile 
-  let assoclst = (map splitfunc . lines) str 
+  let assoclst = (map TextFileDB.splitfunc . lines) str 
       assocmap = M.fromList assoclst 
       replacefunc n _ = Just n 
   muuid <- checkHoodleIdMd5 oldfp 
@@ -117,6 +137,14 @@ singlefilework hdir oldfp = do
       nstr = (unlines . map (\(x,(y,z))->x ++ " " ++ y ++ " " ++ show z) . M.toList) nmap 
   writeFile origdbfile nstr 
   removeFile tmpfile 
+
+-}
+
+allfilework :: FilePath -> IO ()
+allfilework hdir = do 
+  homedir <- getHomeDirectory 
+  r <- readProcess "find" [homedir </> "Dropbox" </> "hoodle","-name","*.hdl","-print"] "" 
+  mapM_ (singlefilework hdir) (lines r)
 
 checkHoodleIdMd5 :: FilePath -> IO (Maybe (String,String))
 checkHoodleIdMd5 fp = do 
@@ -149,7 +177,7 @@ dbdiffwork = do
    
   newdbstr <- readFile newdbfile 
   olddbstr <- readFile olddbfile
-  let makedb = M.fromList . map splitfunc . lines 
+  let makedb = M.fromList . map TextFileDB.splitfunc . lines 
       (newdb,olddb) = (makedb newdbstr, makedb olddbstr) 
   (L.putStrLn . encodePretty) (checkdiff olddb newdb)
 

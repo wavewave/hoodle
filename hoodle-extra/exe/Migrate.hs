@@ -3,6 +3,7 @@
 
 module Migrate where
 
+import           Control.Applicative
 import           Control.Monad.IO.Class (MonadIO(..))
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Resource
@@ -16,25 +17,22 @@ import           System.FilePath
 --
 import           Hoodle.Manage.DocDatabase
 -- 
-import           TextFileDB
+import qualified SqliteDB
+import qualified TextFileDB
+import           Util
 
 dbmigrate2sqlite :: IO ()
 dbmigrate2sqlite = do
   putStrLn "migration test"
-  homedir <- getHomeDirectory 
-  let origdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
-      newdbfile = homedir </> ".hoodle.d" </> "hoodleiddb.dat"
+  origdbfile <- TextFileDB.defaultDBFile
+  newdbfile <- T.unpack <$> SqliteDB.defaultDBFile -- homedir </> ".hoodle.d" </> "hoodleiddb.dat"
   str <- readFile origdbfile
-  let assoclst = (map splitfunc . lines) str 
+  let assoclst = (map TextFileDB.splitfunc . lines) str 
       assoclst' = map (\(x,(y,z)) -> (T.pack x, (T.pack y, T.pack z))) assoclst 
   runSqlite (T.pack newdbfile) $ do 
     runMigration migrateTables
     mapM_ insertOne assoclst'
     dumpTable
-
-dumpTable :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => SqlPersistT (NoLoggingT (ResourceT m)) ()
-dumpTable = rawQuery "select * from hoodle_doc_location" [] $$ CL.mapM_ (liftIO . print)
-
 
 insertOne :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => 
              (T.Text, (T.Text, T.Text)) 

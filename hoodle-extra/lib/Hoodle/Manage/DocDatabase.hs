@@ -21,5 +21,7 @@ HoodleDocLocation
     fileid  Text
     filemd5 Text
     fileloc Text 
+    FileIDKey fileid
     deriving Show 
 |]
+

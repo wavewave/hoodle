@@ -51,17 +51,21 @@ import           Hoodle.Manage.DocDatabase
 -- import Database.Persist.Sql (rawQuery)
 
 
-data IdFilePathDB = Info { fileid :: String }
+data IdFilePathDB = List
+                  | Info { fileid :: String }
                   | SingleFile { hoodlehome :: FilePath 
                                , singlefilename :: FilePath } 
 
-                  --  | AllFiles { hoodlehome :: FilePath }
+                  | AllFiles { hoodlehome :: FilePath }
                   --  | DBDiff
                   --  | DBSync { remoteURL :: String 
                   --           , remoteID :: String 
                   --           , remotePassword :: String } 
                   --  | DBMigrateToSqlite
                   deriving (Show,Data,Typeable)
+
+list :: IdFilePathDB 
+list = List
 
 info :: IdFilePathDB
 info = Info { fileid = def &= typ "FILEID" &= argPos 0 }
@@ -71,12 +75,12 @@ singlefile =
   SingleFile { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 
              , singlefilename = def &= typ "FILEPATH" &= argPos 1
              }
-
-{- 
+ 
 allfiles :: IdFilePathDB 
 allfiles = 
   AllFiles { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
   
+{-
 dbdiff :: IdFilePathDB 
 dbdiff = DBDiff
 
@@ -91,20 +95,28 @@ dbmigrate = DBMigrateToSqlite
 -}
   
 mode :: IdFilePathDB
-mode = modes [info, singlefile] -- [allfiles, singlefile, dbdiff, dbsync, dbmigrate ] 
+mode = modes [list, info, singlefile, allfiles] -- , singlefile, dbdiff, dbsync, dbmigrate ] 
 
 main :: IO () 
 main = do 
   params <- cmdArgs mode
-  case params of 
+  case params of
+    List -> listwork
     Info uuid -> infowork uuid
     SingleFile hdir fp -> singlefilework hdir fp 
-    {- 
     AllFiles hdir      -> allfilework hdir 
+    {- 
     DBDiff             -> dbdiffwork
     DBSync url idee pw -> dbsyncwork url idee pw
     DBMigrateToSqlite  -> dbmigrate2sqlite 
     -}
+
+listwork :: IO ()
+listwork = do
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateTables
+    dumpTable
 
 infowork :: String -> IO ()
 infowork uuid = do
@@ -118,9 +130,7 @@ infowork uuid = do
 
 singlefilework :: FilePath -> FilePath -> IO ()
 singlefilework hdir oldfp = do 
-  -- putStrLn ("working for " ++ oldfp)
   dbfile <- SqliteDB.defaultDBFile
-  -- print dbfile
   runSqlite dbfile $ do 
     runMigration migrateTables
     runMaybeT $ do 
@@ -129,30 +139,6 @@ singlefilework hdir oldfp = do
       liftIO (print file)
       update (entityKey file) [ HoodleDocLocationFilemd5 =. (T.pack md5str) ]
     return ()
-
-
-    -- dumpTable
-{- 
-  tmpdir <- getTemporaryDirectory 
-
-
-
-  let tmpfile = tmpdir </> "hoodleiddb.dat"
-  copyFile origdbfile tmpfile 
-  fp <- makeRelative hdir <$> canonicalizePath oldfp 
-  str <- readFile tmpfile 
-  let assoclst = (map TextFileDB.splitfunc . lines) str 
-      assocmap = M.fromList assoclst 
-      replacefunc n _ = Just n 
-  muuid <- checkHoodleIdMd5 oldfp 
-  let nmap = case muuid of 
-               Nothing -> assocmap 
-               Just (uuid,md5str) -> M.alter (replacefunc (md5str,fp)) uuid assocmap
-      nstr = (unlines . map (\(x,(y,z))->x ++ " " ++ y ++ " " ++ show z) . M.toList) nmap 
-  writeFile origdbfile nstr 
-  removeFile tmpfile 
-
--}
 
 allfilework :: FilePath -> IO ()
 allfilework hdir = do 

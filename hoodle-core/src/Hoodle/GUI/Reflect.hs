@@ -184,51 +184,52 @@ reflectCursor = do
           postGUIAsync (drawWindowSetCursor win Nothing) 
           return (UsrEv ActionOrdered)
         go 
- where act xst = doIOaction $ \_ -> do 
-         let -- mcur       = view cursorInfo xst 
-             cinfobox   = view currentCanvasInfo xst 
-             canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
-             cpn        = PageNum $ 
-                            forBoth' unboxBiAct (view currentPageNum) cinfobox
-             pinfo = view penInfo xst 
-             pcolor = view (penSet . currPen . penColor) pinfo
-             pwidth = view (penSet . currPen . penWidth) pinfo 
-         win <- widgetGetDrawWindow canvas
-         dpy <- widgetGetDisplay canvas  
-         
-         geometry <- 
-           forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
-                                      in makeCanvasGeometry cpn arr canvas
-                               ) cinfobox
-         let p2c = desktop2Canvas geometry . page2Desktop geometry
-             CvsCoord (x0,_y0) = p2c (cpn, PageCoord (0,0))  
-             CvsCoord (x1,_y1) = p2c (cpn, PageCoord (pwidth,pwidth))
-             cursize = (x1-x0) 
-             (r,g,b,a) = case pcolor of  
-                           ColorRGBA r' g' b' a' -> (r',g',b',a')
-                           _ -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
-         pb <- pixbufNew ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
-         let numPixels = maxCursorWidth*maxCursorHeight
-         pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))
-         forM_ [0..numPixels-1] $ \i -> do 
-           let cvt :: Double -> Word8
-               cvt x | x < 0.0039 = 0
-                     | x > 0.996  = 255
-                     | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
-           if (fromIntegral (i `mod` maxCursorWidth)) < cursize 
-              && (fromIntegral (i `div` maxCursorWidth)) < cursize 
-             then do 
-               writeArray pbData (4*i)   (cvt r)
-               writeArray pbData (4*i+1) (cvt g)                  
-               writeArray pbData (4*i+2) (cvt b)
-               writeArray pbData (4*i+3) (cvt a)
-             else do
-               writeArray pbData (4*i)   0
-               writeArray pbData (4*i+1) 0
-               writeArray pbData (4*i+2) 0
-               writeArray pbData (4*i+3) 0
-            
-         postGUIAsync . drawWindowSetCursor win . Just =<< 
-           cursorNewFromPixbuf dpy pb 
-             (floor cursize `div` 2) (floor cursize `div` 2)
-         return (UsrEv ActionOrdered)
+ where 
+   act xst = doIOaction $ \_ -> do 
+     postGUIAsync $ do 
+       let -- mcur       = view cursorInfo xst 
+           cinfobox   = view currentCanvasInfo xst 
+           canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
+           cpn        = PageNum $ 
+                          forBoth' unboxBiAct (view currentPageNum) cinfobox
+           pinfo = view penInfo xst 
+           pcolor = view (penSet . currPen . penColor) pinfo
+           pwidth = view (penSet . currPen . penWidth) pinfo 
+       win <- widgetGetDrawWindow canvas
+       dpy <- widgetGetDisplay canvas  
+
+       geometry <- 
+         forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
+                                    in makeCanvasGeometry cpn arr canvas
+                             ) cinfobox
+       let p2c = desktop2Canvas geometry . page2Desktop geometry
+           CvsCoord (x0,_y0) = p2c (cpn, PageCoord (0,0))  
+           CvsCoord (x1,_y1) = p2c (cpn, PageCoord (pwidth,pwidth))
+           cursize = (x1-x0) 
+           (r,g,b,a) = case pcolor of  
+                         ColorRGBA r' g' b' a' -> (r',g',b',a')
+                         _ -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
+       pb <- pixbufNew ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
+       let numPixels = maxCursorWidth*maxCursorHeight
+       pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))
+       forM_ [0..numPixels-1] $ \i -> do 
+         let cvt :: Double -> Word8
+             cvt x | x < 0.0039 = 0
+                   | x > 0.996  = 255
+                   | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
+         if (fromIntegral (i `mod` maxCursorWidth)) < cursize 
+            && (fromIntegral (i `div` maxCursorWidth)) < cursize 
+           then do 
+             writeArray pbData (4*i)   (cvt r)
+             writeArray pbData (4*i+1) (cvt g)                  
+             writeArray pbData (4*i+2) (cvt b)
+             writeArray pbData (4*i+3) (cvt a)
+           else do
+             writeArray pbData (4*i)   0
+             writeArray pbData (4*i+1) 0
+             writeArray pbData (4*i+2) 0
+             writeArray pbData (4*i+3) 0
+
+       drawWindowSetCursor win . Just =<< 
+         cursorNewFromPixbuf dpy pb (floor cursize `div` 2) (floor cursize `div` 2)
+     return (UsrEv ActionOrdered)

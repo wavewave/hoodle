@@ -22,7 +22,6 @@ import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
 import           Control.Lens (_1,over,view,set,at,(.~),(%~),(^.))
--- import           Control.Monad.Reader hiding (mapM_)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
 import qualified Data.ByteString.Char8 as B

@@ -52,10 +52,8 @@ openLinkAction :: UrlPath
                -> Maybe (B.ByteString,B.ByteString) -- ^ (docid,anchorid)
                -> IO () 
 openLinkAction urlpath mid = do
-    putStrLn "openLinkAction 1"
-    flip catch (\(ex :: SomeException) -> print ex ) $ do -- (ex :: SomeException) ) $ do 
+    flip catch (\(ex :: SomeException) -> print ex ) $ do
       cli <- connectSession
-      putStrLn "openLinkAction 2"
       case urlpath of 
         FileUrl fp -> do 
           emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }         

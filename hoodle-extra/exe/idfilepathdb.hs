@@ -1,12 +1,14 @@
-{-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE ScopedTypeVariables #-}
 -- 
 -- uuid,md5hash,filepath map utility  
 -- 
 import           Control.Applicative ((<$>))
 import           Control.Lens
-import           Control.Monad.Trans (liftIO)
+import           Control.Monad.Logger
+import           Control.Monad.Trans (MonadIO(..))
 import           Control.Monad.Trans.Either 
 import           Control.Monad.Trans.Resource
 import           Data.Attoparsec 
@@ -193,21 +195,22 @@ dbmigrate2sqlite = do
   putStrLn "migration test"
   homedir <- getHomeDirectory 
   let origdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
+      newdbfile = homedir </> ".hoodle.d" </> "hoodleiddb.dat"
   str <- readFile origdbfile
   let assoclst = (map splitfunc . lines) str 
       assoclst' = map (\(x,(y,z)) -> (T.pack x, (T.pack y, T.pack z))) assoclst 
-  
-  -- print assoclst'    
-  --     assocmap = M.fromList assoclst 
-  -- print assocmap   
-
-  runSqlite ":memory:" $ do 
+  runSqlite (T.pack newdbfile) $ do 
     runMigration migrateTables
     mapM_ insertOne assoclst'
     dumpTable
 
+dumpTable :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => SqlPersistT (NoLoggingT (ResourceT m)) ()
 dumpTable = rawQuery "select * from hoodle_doc_location" [] $$ CL.mapM_ (liftIO . print)
 
+
+insertOne :: (MonadBaseControl IO m, MonadIO m, MonadThrow m) => 
+             (T.Text, (T.Text, T.Text)) 
+          -> SqlPersistT (NoLoggingT (ResourceT m)) (Key (HoodleDocLocationGeneric SqlBackend))
 insertOne (x,(y,z)) = insert (HoodleDocLocation x y z)
 
   -- putStrLn str

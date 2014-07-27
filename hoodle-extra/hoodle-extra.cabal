@@ -97,6 +97,7 @@ Executable idfilepathdb
                    hoodle-parser,
                    http-conduit,
                    lens,
+                   monad-logger,
                    mtl,
                    persistent,
                    persistent-sqlite,

@@ -646,6 +646,9 @@ drawWidgets witms hdl cinfo mbbox = do
   when (ClockWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseClockWidget) cinfo) $
     renderClockWidget mbbox (view (canvasWidgets.clockWidgetConfig) cinfo)    
 
+  when (ScrollWidget `elem` witms && view (canvasWidgets.widgetConfig.doesUseScrollWidget) cinfo) $
+    renderScrollWidget mbbox (view (canvasWidgets.scrollWidgetConfig) cinfo)    
+
 
 
 ---------------------
@@ -822,6 +825,24 @@ renderClockWidget mbbox cfg = do
   Cairo.lineTo (x+30*sin (div2rad 12 h + div2rad 720 m)) 
                (y-30*cos (div2rad 12 h + div2rad 720 m)) 
   Cairo.stroke
+  -- 
+  Cairo.resetClip 
+
+
+
+------------------
+-- Clock Widget --
+------------------
+
+renderScrollWidget :: Maybe BBox -> ScrollWidgetConfig -> Cairo.Render () 
+renderScrollWidget mbbox _cfg = do 
+  Cairo.identityMatrix 
+  clipBBox mbbox 
+  Cairo.setSourceRGBA 0.5 0.5 0.2 0.3 
+  Cairo.moveTo 100 0
+  Cairo.lineTo 0 50 
+  Cairo.lineTo 200 50 
+  Cairo.fill 
   -- 
   Cairo.resetClip 
 

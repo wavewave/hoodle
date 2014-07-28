@@ -20,6 +20,7 @@ module Hoodle.Type.Widget
 , WidgetConfig
 , LayerWidgetConfig 
 , ClockWidgetConfig
+, ScrollWidgetConfig
 -- * lenses 
 , panZoomWidgetPosition
 , panZoomWidgetTouchIsZoom
@@ -30,13 +31,15 @@ module Hoodle.Type.Widget
 , clockWidgetConfig
 , clockWidgetPosition
 , clockWidgetTime
+, scrollWidgetConfig
 , widgetConfig 
 , doesUsePanZoomWidget
 , doesUseLayerWidget
 , doesUseClockWidget
+, doesUseScrollWidget
 -- * defaults 
 , defaultCanvasWidgets
-, defaultLWConfig 
+, defaultLWConfig
 , defaultWidgetConfig
 -- * utility
 , allWidgets
@@ -48,12 +51,12 @@ import Hoodle.Type.PageArrangement
 
 
 -- | 
-data WidgetItem = PanZoomWidget | LayerWidget | ClockWidget 
+data WidgetItem = PanZoomWidget | LayerWidget | ClockWidget | ScrollWidget
                 deriving (Show,Eq,Ord)
 
 -- | 
 allWidgets :: [WidgetItem] 
-allWidgets = [PanZoomWidget, LayerWidget, ClockWidget] 
+allWidgets = [PanZoomWidget, LayerWidget, ClockWidget, ScrollWidget] 
 
 
 -- | 
@@ -87,19 +90,24 @@ data ClockWidgetConfig = ClkConfig { _clockWidgetPosition :: CanvasCoordinate
                                    , _clockWidgetTime :: (Int,Int,Int)
                                    }
      
-                         
+-- | lens for position of clock widget                         
 clockWidgetPosition :: Simple Lens ClockWidgetConfig CanvasCoordinate
 clockWidgetPosition = lens _clockWidgetPosition (\f a -> f { _clockWidgetPosition = a } )
 
+-- | lens for time for clock widget
 clockWidgetTime :: Simple Lens ClockWidgetConfig (Int,Int,Int)
 clockWidgetTime = lens _clockWidgetTime (\f a -> f { _clockWidgetTime = a })
+
+-- |
+data ScrollWidgetConfig = ScrWConfig
 
 
 -- | 
 data CanvasWidgets = 
   CanvasWidgets { _panZoomWidgetConfig :: PanZoomWidgetConfig
                 , _layerWidgetConfig :: LayerWidgetConfig 
-                , _clockWidgetConfig :: ClockWidgetConfig 
+                , _clockWidgetConfig :: ClockWidgetConfig
+                , _scrollWidgetConfig :: ScrollWidgetConfig 
                 , _widgetConfig :: WidgetConfig 
                 }   
 
@@ -115,6 +123,10 @@ layerWidgetConfig = lens _layerWidgetConfig (\f a -> f { _layerWidgetConfig = a 
 clockWidgetConfig :: Simple Lens CanvasWidgets ClockWidgetConfig 
 clockWidgetConfig = lens _clockWidgetConfig (\f a -> f { _clockWidgetConfig = a })
 
+-- | 
+scrollWidgetConfig :: Simple Lens CanvasWidgets ScrollWidgetConfig
+scrollWidgetConfig = lens _scrollWidgetConfig (\f a -> f { _scrollWidgetConfig = a })
+
 
 -- | default hoodle widgets
 defaultCanvasWidgets :: CanvasWidgets
@@ -123,6 +135,7 @@ defaultCanvasWidgets =
   { _panZoomWidgetConfig = defaultPZWConfig 
   , _layerWidgetConfig = defaultLWConfig 
   , _clockWidgetConfig = defaultClkConfig
+  , _scrollWidgetConfig = defaultScrWConfig
   , _widgetConfig = defaultWidgetConfig 
   }   
 
@@ -147,9 +160,15 @@ defaultClkConfig =
             }
 
 
+-- | 
+defaultScrWConfig :: ScrollWidgetConfig 
+defaultScrWConfig = ScrWConfig
+
+
 data WidgetConfig = WidgetConfig { _doesUsePanZoomWidget :: Bool 
                                  , _doesUseLayerWidget :: Bool 
-                                 , _doesUseClockWidget :: Bool 
+                                 , _doesUseClockWidget :: Bool
+                                 , _doesUseScrollWidget :: Bool
                                  } 
 
 -- | flag for pan zoom widget 
@@ -164,12 +183,17 @@ doesUseLayerWidget = lens _doesUseLayerWidget (\f a -> f {_doesUseLayerWidget = 
 doesUseClockWidget :: Simple Lens WidgetConfig Bool 
 doesUseClockWidget = lens _doesUseClockWidget (\f a -> f {_doesUseClockWidget = a}) 
 
+-- | flag for scroll widget
+doesUseScrollWidget :: Simple Lens WidgetConfig Bool
+doesUseScrollWidget = lens _doesUseScrollWidget (\f a -> f {_doesUseScrollWidget = a})
+
 
 -- | default widget configuration 
 defaultWidgetConfig :: WidgetConfig 
 defaultWidgetConfig = WidgetConfig { _doesUsePanZoomWidget = False
                                    , _doesUseLayerWidget = False
                                    , _doesUseClockWidget = False
+                                   , _doesUseScrollWidget = False
                                    } 
 
 

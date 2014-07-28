@@ -28,6 +28,7 @@
     </menu>
     <menu action="VMA">
        <menuitem action="TOGPANZOOMA" />
+       <menuitem action="TOGSCRA" />
        <menu action="ZOOMA" >
          <menuitem action="ZMINA" />
          <menuitem action="ZMOUTA" />                          

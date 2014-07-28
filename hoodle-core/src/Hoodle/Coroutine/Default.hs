@@ -76,7 +76,6 @@ import           Hoodle.Device
 import           Hoodle.GUI.Menu
 import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.File
-
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window 
 import           Hoodle.Script
@@ -95,6 +94,7 @@ import           Hoodle.Widget.Clock
 import           Hoodle.Widget.Dispatch 
 import           Hoodle.Widget.Layer
 import           Hoodle.Widget.PanZoom
+import           Hoodle.Widget.Scroll
 --
 import Prelude hiding (mapM_)
 
@@ -494,6 +494,7 @@ menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
 menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1)) =<< get 
 menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1)) =<< get
+menuEventProcess MenuToggleScrollWidget = (toggleScroll . view (currentCanvas._1)) =<< get
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 

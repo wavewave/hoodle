@@ -215,6 +215,7 @@ getMenuUI evar = do
   -- view menu --
   ---------------
   togpanzooma <- actionNewAndRegister "TOGPANZOOMA" "Show/Hide Zoom Widget"  (Just "Just a stub") Nothing (justMenu MenuTogglePanZoomWidget)
+  togscra <- actionNewAndRegister "TOGSCRA" "Show/Hide Scroll Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleScrollWidget)
   -- 
   zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing Nothing -- (justMenu MenuZoom)
   zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (justMenu MenuZoomIn)
@@ -384,7 +385,7 @@ getMenuUI evar = do
         , linka, anchora, listanchora, handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , togpanzooma, toglayera, togclocka, newpagemoda, relauncha
+        , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha
         , abouta 
         , defaulta         
         ] 

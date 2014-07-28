@@ -14,4 +14,23 @@
 
 module Hoodle.Widget.Scroll where
 
+import Control.Lens ((%~))
+import Control.Monad.State
+--
+import Hoodle.Coroutine.Draw
+import Hoodle.Type.Canvas
+import Hoodle.Type.Coroutine
+import Hoodle.Type.Enum
+import Hoodle.Type.HoodleState
+import Hoodle.Type.Widget
 
+
+-- | 
+toggleScroll :: CanvasId -> MainCoroutine () 
+toggleScroll cid = do 
+    modify $ \xst -> 
+      let ncinfobox = 
+            ( (unboxLens (canvasWidgets.widgetConfig.doesUseScrollWidget) %~ not)
+            . getCanvasInfo cid )  xst 
+      in setCanvasInfo (cid,ncinfobox) xst
+    invalidateInBBox Nothing Efficient cid

@@ -213,6 +213,7 @@ data MenuEvent = MenuNew
                | MenuTogglePanZoomWidget
                | MenuToggleLayerWidget
                | MenuToggleClockWidget
+               | MenuToggleScrollWidget
                | MenuPressureSensitivity
                | MenuAbout
                | MenuDefault

@@ -57,7 +57,7 @@ module Hoodle.Type.HoodleState
 --
 , doesUseXInput 
 , doesUseTouch
-, doesSmoothScroll 
+-- , doesSmoothScroll 
 , doesUsePopUpMenu
 , doesEmbedImage
 , doesEmbedPDF
@@ -361,7 +361,7 @@ newPageModeSignal = lens _newPageModeSignal (\f a -> f { _newPageModeSignal = a 
 data Settings = 
   Settings { _doesUseXInput :: Bool 
            , _doesUseTouch :: Bool 
-           , _doesSmoothScroll :: Bool 
+           -- , _doesSmoothScroll :: Bool 
            , _doesUsePopUpMenu :: Bool 
            , _doesEmbedImage :: Bool 
            , _doesEmbedPDF :: Bool 
@@ -380,9 +380,11 @@ doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
 doesUseTouch :: Simple Lens Settings Bool
 doesUseTouch = lens _doesUseTouch (\f a -> f { _doesUseTouch = a } )
 
+{- 
 -- | flag for smooth scrolling 
 doesSmoothScroll :: Simple Lens Settings Bool
 doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
+-}
 
 -- | flag for using popup menu
 doesUsePopUpMenu :: Simple Lens Settings Bool
@@ -480,7 +482,7 @@ defaultSettings =
   Settings 
   { _doesUseXInput = False
   , _doesUseTouch = True
-  , _doesSmoothScroll = False
+  -- , _doesSmoothScroll = False
   , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 
   , _doesEmbedPDF = True 

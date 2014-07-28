@@ -322,13 +322,12 @@ getMenuUI evar = do
   uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseXInput))
-  -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
   handa     <- toggleActionNew "HANDA" "Use Touch" (Just "Toggle touch") (Just "myhand") 
   handa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseTouch))
-  smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
-  smthscra `on` actionToggled $ do 
-    eventHandler evar (UsrEv (Menu MenuSmoothScroll))
+  -- smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
+  -- smthscra `on` actionToggled $ do 
+  --   eventHandler evar (UsrEv (Menu MenuSmoothScroll))
   popmenua <- toggleActionNew "POPMENUA" "Use Popup Menu" (Just "Just a stub") Nothing
   popmenua `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUsePopUpMenu))
@@ -391,8 +390,8 @@ getMenuUI evar = do
         ] 
     
   mapM_ (actionGroupAddAction agr) 
-    [ uxinputa, handa, smthscra, popmenua, ebdimga, ebdpdfa, flwlnka, keepratioa, pressrsensa
-    , vcursora ]
+    [ uxinputa, handa, {- smthscra, -} popmenua, ebdimga, ebdpdfa, flwlnka
+    , keepratioa, pressrsensa, vcursora ]
 
   mpgmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar)

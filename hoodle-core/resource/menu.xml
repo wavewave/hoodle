@@ -157,7 +157,7 @@
     <menu action="OMA">
        <menuitem action="UXINPUTA" />
        <menuitem action="HANDA" />
-       <menuitem action="SMTHSCRA" />
+       <!-- <menuitem action="SMTHSCRA" /> -->
        <menuitem action="POPMENUA" /> 
        <menuitem action="EBDIMGA" />
        <menuitem action="EBDPDFA" />

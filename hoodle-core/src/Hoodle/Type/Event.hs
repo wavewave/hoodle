@@ -203,7 +203,7 @@ data MenuEvent = MenuNew
                | MenuRelaunch
                | MenuUseXInput
                | MenuUseTouch 
-               | MenuSmoothScroll
+               --  | MenuSmoothScroll
                | MenuUsePopUpMenu
                | MenuEmbedImage
                | MenuEmbedPDF

@@ -145,6 +145,7 @@ Library
                    Hoodle.Widget.Dispatch
                    Hoodle.Widget.Layer 
                    Hoodle.Widget.PanZoom
+                   Hoodle.Widget.Scroll
   Other-Modules: 
                    Paths_hoodle_core
   c-sources: 

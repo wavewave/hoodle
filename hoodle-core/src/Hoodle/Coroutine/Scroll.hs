@@ -125,15 +125,16 @@ vscrollMove cid v0 = do
 smoothScroll :: CanvasId -> CanvasGeometry -> Double -> Double -> MainCoroutine () 
 smoothScroll cid geometry v0 v = do 
     xst <- get 
-    let b = view (settings.doesSmoothScroll) xst 
-    let diff = (v - v0) 
+    -- let b = view (settings.doesSmoothScroll) xst 
+    let {- diff = (v - v0) 
         lst'  | (diff < 20 && diff > -20) = [v]
               | (diff < 5 &&diff > -5) = []
               | otherwise = let m :: Int = floor (minimum [20, (abs diff) / 10.0])
                                 delta = diff / fromIntegral m            
                             in [v0 + fromIntegral n*delta | n <- [1..m] ]
         lst | b  = lst'                     
-            | otherwise = [v] 
+            | otherwise = [v]  -}
+        lst = [v]
     forM_ lst $ \v' -> do 
       updateXState $ return . over currentCanvasInfo  
                      (runIdentity 

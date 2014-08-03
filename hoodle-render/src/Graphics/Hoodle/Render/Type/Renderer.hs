@@ -36,6 +36,7 @@ data PDFCommand where
   GetDocFromFile    :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
   GetDocFromDataURI :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
   GetPageFromDoc    :: !Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
+  GetNPages :: !Poppler.Document -> (TMVar Int) -> PDFCommand
   RenderPageScaled  :: !Poppler.Page -> !Dimension -> !Dimension -> PDFCommand 
 
 instance Show PDFCommand where

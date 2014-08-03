@@ -46,6 +46,7 @@ module Graphics.Hoodle.Render
 , cnstrctRHoodle  
 ) where
 
+import           Control.Applicative
 import           Control.Concurrent (putMVar)
 import           Control.Concurrent.STM
 import           Control.Lens (view,set)
@@ -57,7 +58,7 @@ import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import           Data.Sequence ( (|>))
 import qualified Data.Sequence as Seq (null)
-import           Data.Traversable (mapM)
+import           Data.Traversable (mapM,sequenceA)
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -242,14 +243,14 @@ drawFallBackBkg (Dim w h) = do
   Cairo.setSourceRGBA 1 1 1 1 
   Cairo.rectangle 0 0 w h 
   Cairo.fill 
-  Cairo.setSourceRGBA 0 0 0 1 
+  {- Cairo.setSourceRGBA 0 0 0 1 
   Cairo.setLineWidth 5
   Cairo.moveTo 0 0
   Cairo.lineTo w h 
   Cairo.stroke 
   Cairo.moveTo w 0 
   Cairo.lineTo 0 h
-  Cairo.stroke
+  Cairo.stroke -}
   
 
 -- | 
@@ -467,10 +468,16 @@ cnstrctRHoodle hdl = do
             atomically $ sendPDFCommand uuid qvar (GetDocFromDataURI src docvar)
             atomically $ takeTMVar docvar 
           ) pdf
-
+  let getNumPgs doc = liftIO $ do
+        uuid <- nextRandom
+        nvar <- atomically newEmptyTMVar
+        atomically $ sendPDFCommand uuid qvar (GetNPages doc nvar)
+        atomically $ takeTMVar nvar
+  mnumpdfpgs <- sequenceA (getNumPgs <$> mdoc)
+  liftIO $print mnumpdfpgs
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
                      (Just (Context "" "" Nothing mdoc)) 
-  return $ GHoodle hid ttl revs pdf txt (fromList npgs)          
+  return $ GHoodle hid ttl revs (PDFData <$> pdf <*> mnumpdfpgs) txt (fromList npgs)          
    
 -- |
 cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage

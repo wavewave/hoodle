@@ -1,3 +1,5 @@
+{-# LANGUAGE MultiWayIf #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Widget.PanZoom
@@ -114,16 +116,10 @@ findZoomXform :: Dimension
                -> (Double,(Double,Double))
 findZoomXform (Dim w h) ((xo,yo),(x0,_y0),(x,_y)) = 
     let tx = x - x0 
-        -- ty = y - y0 
         ztx = 1 + tx / 200
-        -- zty = 1 + ty / 200
         zx | ztx > 2 = 2  
            | ztx < 0.5 = 0.5
            | otherwise = ztx
-        -- zy | zty > 2 = 2  
-        --    | zty < 0.5 = 0.5
-        --    | otherwise = zty                                          
-        -- simplified
         z = zx 
         xtrans = (1 -z)*xo/z-w
         ytrans = (1- z)*yo/z-h 
@@ -197,7 +193,10 @@ manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
           let (x_d,y_d) = (unDeskCoord . device2Desktop geometry) pcoord  
               (x0_d,y0_d) = (unDeskCoord . canvas2Desktop geometry) 
                               (CvsCoord (x0,y0))
-              (dx_d,dy_d) = (x_d-x0_d,y_d-y0_d)
+              (dx_d,dy_d) = let (dx_d1,dy_d1) = (x_d-x0_d,y_d-y0_d)
+                            in if | abs dx_d1 < 25 -> (0,dy_d1)
+                                  | abs dy_d1 < 25 -> (dx_d1,0)
+                                  | otherwise -> (dx_d1,dy_d1)
           moveViewPortBy (return ()) cid 
             (\(xorig,yorig)->(xorig-dx_d,yorig-dy_d))                 
         _ -> return ()

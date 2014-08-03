@@ -28,7 +28,7 @@ import qualified Data.IntMap as IM
 import           Data.List (partition)
 import           Data.Monoid
 import           Data.UUID.V4 
-import qualified Data.Text as T (unpack)
+import qualified Data.Text as T (unpack, splitAt)
 import qualified Data.Text.Encoding as TE
 import qualified Graphics.Rendering.Cairo as Cairo
 -- import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -175,7 +175,8 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
     insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
-processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt 
+processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt
+processContextMenu (CMenuLaTeXUpdate (x0,y0) key) = runMaybeT (laTeXInputKeyword (x0,y0) key) >> return ()
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
     res <- handwritingRecognitionDialog
@@ -399,6 +400,15 @@ showContextMenu (pnum,(x,y)) = do
                               evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvertNetwork (x0,y0) txt)))
                             menuAttach menu menuitemnet 0 1 5 6
                             return ()
+                            -- 
+                            let (txth,txtt) = T.splitAt 19 txt 
+                            when ( txth == "embedlatex:keyword:" ) $ do
+                              menuitemup <- menuItemNewWithLabel ("Update LaTeX")
+                              menuitemup `on` menuItemActivate $ do
+                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXUpdate (x0,y0) txtt)))
+                              menuAttach menu menuitemup 0 1 6 7
+                              return ()
+
                           _ -> return ()
                     RItemImage imgbbx _msfc -> do
                       menuitemcrop <- menuItemNewWithLabel ("Crop Image") 

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -15,6 +16,7 @@
 module Hoodle.ModelAction.ContextMenu where
 
 import           Control.Concurrent (forkIO, threadDelay)
+import           Control.Exception
 import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (forM_)
 import           Data.UUID.V4
@@ -50,27 +52,26 @@ openLinkAction :: UrlPath
                -> Maybe (B.ByteString,B.ByteString) -- ^ (docid,anchorid)
                -> IO () 
 openLinkAction urlpath mid = do
-    cli <- connectSession
-    case urlpath of 
-      FileUrl fp -> do 
-        putStrLn "test dbus"
-        emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") 
-                   { signalBody = [ toVariant fp] }         
-        return () 
-      HttpUrl url -> do 
-        let cmdargs = [url]
-        createProcess (proc "xdg-open" cmdargs)  
-        return () 
-    forkIO $ do 
-      threadDelay 2000000
-      forM_ mid $ \(docid,anchorid) -> do
-                  print (docid,anchorid)
-                  emit cli (signal "/" "org.ianwookim.hoodle" "callLink")
-                             { signalBody = 
-                                 [ toVariant (B.unpack docid 
-                                              ++ "," 
-                                              ++ B.unpack anchorid) ] }
-    return ()
+    flip catch (\(ex :: SomeException) -> print ex ) $ do
+      cli <- connectSession
+      case urlpath of 
+        FileUrl fp -> do 
+          emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }         
+          return () 
+        HttpUrl url -> do 
+          let cmdargs = [url]
+          createProcess (proc "xdg-open" cmdargs)  
+          return () 
+      forkIO $ do 
+        threadDelay 2000000
+        forM_ mid $ \(docid,anchorid) -> do
+                    print (docid,anchorid)
+                    emit cli (signal "/" "org.ianwookim.hoodle" "callLink")
+                               { signalBody = 
+                                   [ toVariant (B.unpack docid 
+                                                ++ "," 
+                                                ++ B.unpack anchorid) ] }
+      return ()
 -- | 
 menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
 menuCreateALink evhandler sitems = 

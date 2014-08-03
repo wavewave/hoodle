@@ -62,6 +62,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | PenWidthChanged Int 
                | AssignPenMode (Either PenType SelectType) 
                | BackgroundStyleChanged BackgroundStyle 
+               | AssignNewPageMode NewPageModeType
                | HScrollBarMoved Int Double
                | VScrollBarMoved Int Double 
                | VScrollBarStart Int Double
@@ -125,6 +126,8 @@ data MenuEvent = MenuNew
                | MenuLoadSVG
                | MenuText
                | MenuEmbedTextSource
+               | MenuEditEmbedTextSource
+               | MenuEditNetEmbedTextSource
                | MenuTextFromSource
                | MenuLaTeX
                | MenuLaTeXNetwork
@@ -183,13 +186,10 @@ data MenuEvent = MenuNew
                | MenuAddLink
                | MenuAddAnchor
                | MenuListAnchors
-               --  | MenuShapeRecognizer
-               --  | MenuRuler
                | MenuHandwritingRecognitionDialog
                | MenuSelectRegion
                | MenuSelectRectangle
                | MenuVerticalSpace
-               --   | MenuHandTool
                | MenuPenOptions
                | MenuEraserOptions 
                | MenuHighlighterOptions
@@ -213,21 +213,7 @@ data MenuEvent = MenuNew
                | MenuTogglePanZoomWidget
                | MenuToggleLayerWidget
                | MenuToggleClockWidget
-               | MenuDiscardCoreEvents 
-               | MenuEraserTip 
                | MenuPressureSensitivity
-               | MenuPageHighlight
-               | MenuMultiplePageView
-               | MenuMultiplePages
-               | MenuButton2Mapping
-               | MenuButton3Mapping 
-               | MenuAntialiasedBitmaps
-               | MenuProgressiveBackgrounds
-               | MenuPrintPaperRuling 
-               | MenuLeftHandedScrollbar
-               | MenuShortenMenus
-               | MenuAutoSavePreferences
-               | MenuSavePreferences
                | MenuAbout
                | MenuDefault
                deriving Show 
@@ -250,6 +236,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
+                      | CMenuLaTeXUpdate (Double,Double) T.Text
                       | CMenuCropImage (BBoxed Image)
                       | CMenuRotate    RotateDir (BBoxed Image)
                       | CMenuExport (BBoxed Image)

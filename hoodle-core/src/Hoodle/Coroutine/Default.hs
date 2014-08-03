@@ -22,7 +22,6 @@ import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
 import           Control.Lens (_1,over,view,set,at,(.~),(%~),(^.))
--- import           Control.Monad.Reader hiding (mapM_)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
 import qualified Data.ByteString.Char8 as B
@@ -105,9 +104,9 @@ initCoroutine :: DeviceList
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
-              -> Gtk.Statusbar -- ^ status bar 
+              -- -> Gtk.Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -128,20 +127,13 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) stbar = do
             $ st1 { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
-  -- testing
-  -- let handler = const (putStrLn "In getFileContent, got call back")
-  -- newhdl <- flip runReaderT (undefined,undefined) . cnstrctRHoodle =<< defaultHoodle
-  -- let nhmodstate = ViewAppendState newhdl 
-
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
-          . set statusBar (Just stbar)
           . set (hoodleFileControl.hoodleFileName) Nothing 
-          -- . set hoodleModeState nhmodstate
           $ st4     
   vbox <- Gtk.vBoxNew False 0 
   -- 
@@ -164,23 +156,18 @@ initialize ev = do
           forkOn 2 $ pdfRendererMain handler tvar
           return (UsrEv ActionOrdered)
         waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
-       
         getFileContent mfname
-
+        -- 
         xst2 <- get
         let hdlst = xst2 ^. hoodleModeState 
             cache = xst2 ^. renderCache
         hdlst' <- liftIO $ resetHoodleModeStateBuffers cache hdlst
         put (set hoodleModeState hdlst' xst2)
-
-
-        xst <- get 
-        let Just sbar = view statusBar xst 
-        cxtid <- liftIO $ Gtk.statusbarGetContextId sbar "test"
-        liftIO $ Gtk.statusbarPush sbar cxtid "Hello there" 
-        let ui = view gtkUIManager xst
+        --
+        xst3 <- get
+        let ui = view gtkUIManager xst3
         liftIO $ toggleSave ui False
-        put (set isSaved True xst) 
+        put (set isSaved True xst3) 
  
       _ -> do ev' <- nextevent
               initialize (UsrEv ev')
@@ -195,24 +182,10 @@ guiProcess ev = do
   reflectPenModeUI
   reflectPenColorUI  
   reflectPenWidthUI
+  reflectNewPageModeUI
   let cinfoMap  = getCanvasInfoMap xstate
-
-      assocs = M.toList cinfoMap 
-      f (cid,cinfobox) = do let canvas = getDrawAreaFromBox cinfobox
-                            (w',h') <- liftIO $ Gtk.widgetGetSize canvas
-                            liftIO $ print (w',h')
---                            defaultEventProcess (CanvasConfigure cid
---                                                (fromIntegral w') 
---                                                (fromIntegral h')) 
-  
-  mapM_ f assocs
-        
   viewModeChange ToContSinglePage
   pageZoomChange FitWidth
-
-  -- waitSomeEvent (\x -> case x of CanvasConfigure cid w h -> True ; _ -> False)
-  
-
   startLinkReceiver
   -- main loop 
   sequence_ (repeat dispatchMode)
@@ -349,6 +322,7 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
     modeChange ToViewAppendMode     
     modify (set hoodleModeState (ViewAppendState nhdl))
     invalidateAll 
+defaultEventProcess (AssignNewPageMode nmod) = modify (settings.newPageMode .~ nmod)
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess (GetHoodleFileInfo ref) = do 
   xst <- get
@@ -436,6 +410,8 @@ menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuEmbedTextSource = embedTextSource
+menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource
+menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
 menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
@@ -588,6 +564,9 @@ pdfWorker _handler (_,GetDocFromDataURI str tmvar) = do
 pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
     mpg <- popplerGetPageFromDoc doc pn
     atomically $ putTMVar tmvar mpg
+pdfWorker _handler (_,GetNPages doc tmvar) = do
+    n <- Poppler.documentGetNPages doc
+    atomically $ putTMVar tmvar n
 pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
@@ -598,7 +577,3 @@ pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
       Cairo.scale s s
       Poppler.pageRender page 
     handler (uuid,(s,sfc))
-
-
-
-

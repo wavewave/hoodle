@@ -50,6 +50,7 @@ module Hoodle.Type.HoodleState
 , pdfRenderQueue
 , doesNotInvalidate
 -- , cursorInfo
+, nextPdfBkgPageNum
 -- 
 , hoodleFileName 
 , lastSavedTime
@@ -63,11 +64,13 @@ module Hoodle.Type.HoodleState
 , doesFollowLinks
 , doesKeepAspectRatio
 , doesUseVariableCursor
+, newPageMode
 -- 
 , penModeSignal
 , pageModeSignal
 , penPointSignal
 , penColorSignal
+, newPageModeSignal
 -- | others 
 , emptyHoodleState
 , defaultSettings 
@@ -169,6 +172,7 @@ data HoodleState =
                 , _renderCache :: RenderCache
                 , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
                 , _doesNotInvalidate :: Bool
+                , _nextPdfBkgPageNum :: Maybe Int
                 -- , _cursorInfo :: Maybe Cursor
                 } 
 
@@ -296,6 +300,10 @@ pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 doesNotInvalidate :: Simple Lens HoodleState Bool
 doesNotInvalidate = lens _doesNotInvalidate (\f a -> f { _doesNotInvalidate = a })
 
+-- | 
+nextPdfBkgPageNum :: Simple Lens HoodleState (Maybe Int)
+nextPdfBkgPageNum = lens _nextPdfBkgPageNum (\f a -> f { _nextPdfBkgPageNum = a })
+
 
 
 {-
@@ -326,6 +334,7 @@ data UIComponentSignalHandler = UIComponentSignalHandler
        , _pageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
        , _penPointSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
        , _penColorSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
+       , _newPageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
        } 
 
 -- | lens for penModeSignal
@@ -344,6 +353,9 @@ penPointSignal = lens _penPointSignal (\f a -> f { _penPointSignal = a } )
 penColorSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penColorSignal = lens _penColorSignal (\f a -> f { _penColorSignal = a } )
 
+-- | lens for penColorSignal
+newPageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+newPageModeSignal = lens _newPageModeSignal (\f a -> f { _newPageModeSignal = a } )
 
 -- | A set of Hoodle settings 
 data Settings = 
@@ -356,6 +368,7 @@ data Settings =
            , _doesFollowLinks :: Bool 
            , _doesKeepAspectRatio :: Bool
            , _doesUseVariableCursor :: Bool 
+           , _newPageMode :: NewPageModeType
            } 
   
 
@@ -394,6 +407,10 @@ doesKeepAspectRatio = lens _doesKeepAspectRatio (\f a -> f { _doesKeepAspectRati
 -- | flag for variable cursor
 doesUseVariableCursor :: Simple Lens Settings Bool
 doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariableCursor=a})
+
+-- | new page mode: plain | last | cycle
+newPageMode :: Simple Lens Settings NewPageModeType
+newPageMode = lens _newPageMode (\f a -> f {_newPageMode=a})
 
 -- | default hoodle state 
 emptyHoodleState :: IO HoodleState 
@@ -436,6 +453,7 @@ emptyHoodleState = do
     , _renderCache = HM.empty
     , _pdfRenderQueue = tvar
     , _doesNotInvalidate = False
+    , _nextPdfBkgPageNum = Nothing
     -- , _cursorInfo = Nothing
     }
 
@@ -451,7 +469,8 @@ defaultUIComponentSignalHandler =
   UIComponentSignalHandler{ _penModeSignal = Nothing 
                           , _pageModeSignal = Nothing 
                           , _penPointSignal = Nothing 
-                          , _penColorSignal = Nothing 
+                          , _penColorSignal = Nothing
+                          , _newPageModeSignal = Nothing
                           } 
 
 
@@ -468,6 +487,7 @@ defaultSettings =
   , _doesFollowLinks = True
   , _doesKeepAspectRatio = False
   , _doesUseVariableCursor = False
+  , _newPageMode = NPPlain
   } 
   
 

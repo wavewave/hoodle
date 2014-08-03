@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Page where
 import           Control.Applicative
 import           Control.Concurrent
 import           Control.Concurrent.STM
-import           Control.Lens (view,set,over, (.~), (^.) )
+import           Control.Lens (view,set,over, (.~), (^.), (%~) )
 import           Control.Monad
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader (ask)
@@ -31,8 +31,8 @@ import qualified Data.IntMap as M
 import           Data.List (sortBy)
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk as Gtk
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+-- import qualified Graphics.UI.Gtk as Gtk
+-- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -71,7 +71,8 @@ changePage modifyfn = updateXState changePageAction
               cid = view canvasId cvsInfo
               bsty = view backgroundStyle xstate 
           (b,npgnum',_,xojst') <- changePageInHoodleModeState bsty npgnum xojst
-          xstate' <- liftIO $ updatePageAll xojst' xstate 
+          xstate1 <- get
+          xstate' <- liftIO $ updatePageAll xojst' xstate1
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           let xstatefinal = (currentCanvasInfo .~ ncvsInfo) xstate'
           when b (commit xstatefinal)
@@ -84,7 +85,8 @@ changePage modifyfn = updateXState changePageAction
               bsty = xstate  ^. backgroundStyle
           (b,npgnum',_selectedpage,xojst')
             <- changePageInHoodleModeState bsty npgnum xojst
-          xstate' <- liftIO $ updatePageAll xojst' xstate 
+          xstate1 <- get
+          xstate' <- liftIO $ updatePageAll xojst' xstate1
           ncvsInfo <- liftIO $ setPage xstate' (PageNum npgnum') cid
           xstatefinal <- return . over currentCanvasInfo (const ncvsInfo) $ xstate'
           when b (commit xstatefinal)
@@ -97,13 +99,15 @@ changePageInHoodleModeState :: BackgroundStyle
                             -> HoodleModeState 
                             -> MainCoroutine (Bool,Int,Page EditMode,HoodleModeState)
 changePageInHoodleModeState bsty npgnum hdlmodst = do
-    let ehdl = hoodleModeStateEither hdlmodst 
+    let ehdl = hoodleModeStateEither hdlmodst
+        mpdfinfo = either (^. gembeddedpdf) (^. gselEmbeddedPdf) ehdl
         pgs = either (view gpages) (view gselAll) ehdl
         totnumpages = M.size pgs
         lpage = maybeError' "changePage" (M.lookup (totnumpages-1) pgs)
     (isChanged,npgnum',npage',ehdl') <- 
       if (npgnum >= totnumpages) 
         then do 
+          liftIO $ print (pdfNumPages <$> mpdfinfo) 
           let cbkg = view gbackground lpage
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
@@ -286,10 +290,46 @@ addNewPageInHoodle bsty dir hdl cpn = do
 
 newBkg :: BackgroundStyle -> RBackground -> MainCoroutine RBackground 
 newBkg bsty bkg = do
+    xst <- get
+    let npmode = xst ^. settings.newPageMode
+        rhdl = getHoodle xst
+        mtotN = pdfNumPages <$> (rhdl ^. gembeddedpdf)  
     let bstystr = convertBackgroundStyleToByteString bsty 
-    case bkg of 
-      RBkgSmpl c _ _ -> RBkgSmpl c bstystr <$> liftIO nextRandom
-      _              -> RBkgSmpl "white" bstystr <$> liftIO nextRandom
+        defbkg = RBkgSmpl "white" bstystr <$> liftIO nextRandom
+    case npmode of 
+      NPPlain -> defbkg
+      NPLast -> case bkg of 
+        RBkgSmpl c _ _ -> RBkgSmpl c bstystr <$> liftIO nextRandom
+        RBkgPDF d f n pg _ -> RBkgPDF d f n pg <$> liftIO nextRandom
+        RBkgEmbedPDF n pg _ -> RBkgEmbedPDF n pg <$> liftIO nextRandom
+      NPCycle -> 
+        case mtotN of
+          Nothing -> defbkg
+          Just totN -> do
+            liftIO $ print (xst ^. nextPdfBkgPageNum)
+            let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
+            case findPDFBkg rhdl n1 of
+                 Nothing -> defbkg
+                 Just bkg -> liftIO nextRandom >>= \i -> do
+                               let n' = if n1 >= totN then 1 else (n1+1)
+                               liftIO $ print (n', totN)
+                               put ((nextPdfBkgPageNum .~ Just n') xst)
+                               return bkg { rbkg_uuid = i }
+
+      --   liftIO $ putStrLn "newBkg: NPCycle not implemented"
+      --   RBkgSmpl "white" bstystr <$> liftIO nextRandom
+      -- _              -> RBkgSmpl "white" bstystr <$> liftIO nextRandom
+
+findPDFBkg :: RHoodle -> Int -> Maybe RBackground
+findPDFBkg rhdl n1 = 
+    let bkgs = M.elems (rhdl ^. gpages)
+        pagematch n (RBkgPDF _ _ n' _ _) = n == n'
+        pagematch n (RBkgEmbedPDF n' _ _) = n == n'
+        pagematch n _ = False
+        matched = (filter (pagematch n1) . map (^. gbackground)) bkgs
+    in case matched of 
+         [] -> Nothing
+         b:_ -> Just b
 
 
 -- | 

@@ -28,6 +28,7 @@ import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
 import           Data.List (sortBy)
+import qualified Data.Map as M
 import           Data.Maybe (catMaybes)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -262,7 +263,7 @@ makeLaTeXSVG (x0,y0) txt = do
         
     B.writeFile (tfilename <.> "tex") (TE.encodeUtf8 txt)
     r <- runEitherT $ do 
-      check "error during pdflatex" $ do 
+      check "error during xelatex" $ do 
         (ecode,ostr,estr) <- readProcessWithExitCode "xelatex" [tfilename <.> "tex"] ""
         return (ecode,ostr++estr)
       check "error during pdfcrop" $ do 
@@ -388,7 +389,6 @@ makePangoTextSVG (xo,yo) str = do
 -- | combine all LaTeX texts into a text file 
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
-    -- liftIO $ putStrLn "start combine latex file" 
     hdl <- rHoodle2Hoodle . getHoodle <$> get  
     let mlatex_components = do 
           (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
@@ -461,6 +461,39 @@ embedTextSource = do
       put nxst
       commit_ 
 
+-- |
+editEmbeddedTextSource :: MainCoroutine ()
+editEmbeddedTextSource = do 
+    hdl <- getHoodle <$> get
+    let mtxt = hdl ^. gembeddedtext 
+    forM_ mtxt $ \txt -> do 
+      modify (tempQueue %~ enqueue (multiLineDialog txt))  
+      multiLineLoop txt >>= \case 
+        Nothing -> return ()
+        Just ntxt -> do 
+          modify $ \xst ->
+            let nhdlmodst = case xst ^. hoodleModeState of
+                  ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
+                  SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
+            in (hoodleModeState .~ nhdlmodst) xst
+          commit_
+
+-- |
+editNetEmbeddedTextSource :: MainCoroutine ()
+editNetEmbeddedTextSource = do 
+    hdl <- getHoodle <$> get
+    let mtxt = hdl ^. gembeddedtext 
+    forM_ mtxt $ \txt -> do 
+      -- modify (tempQueue %~ enqueue (multiLineDialog txt))  
+      networkTextInput txt >>= \case 
+        Nothing -> return ()
+        Just ntxt -> do 
+          modify $ \xst ->
+            let nhdlmodst = case xst ^. hoodleModeState of
+                  ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
+                  SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
+            in (hoodleModeState .~ nhdlmodst) xst
+          commit_
 
 -- | insert text 
 textInputFromSource :: (Double,Double) -> MainCoroutine ()
@@ -517,6 +550,19 @@ linePosLoop = do
       LinePosition x -> return x
       _ -> linePosLoop
 
+-- | insert text 
+laTeXInputKeyword :: (Double,Double) -> T.Text -> MaybeT MainCoroutine ()
+laTeXInputKeyword (x0,y0) keyword = do
+    txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+    subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
+    let subpart' = laTeXHeader <> "\n"  <> subpart <> laTeXFooter
+    liftIO (makeLaTeXSVG (x0,y0) subpart') >>= \case
+      Right r  -> lift $ do 
+                    deleteSelection 
+                    svgInsert ("embedlatex:keyword:"<>keyword,"latex") r
+      Left err -> lift $ do
+                    okMessageBox err
+                    return ()
 
 -- | insert text 
 laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
@@ -525,12 +571,7 @@ laTeXInputFromSource (x0,y0) = do
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
       lift $ modify (tempQueue %~ enqueue keywordDialog)  
       keyword <- MaybeT keywordLoop
-      liftIO $ print keyword
-      {- 
-      let txt = getLinesFromText (l1,l2) txtsrc
-      lift $ deleteSelection
-      liftIO (makePangoTextSVG (x0,y0) txt)
-        >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2),"pango")  -}
+      laTeXInputKeyword (x0,y0) keyword
     return ()
 
 -- | common dialog with line position 

@@ -70,6 +70,8 @@
        <separator />
        <menuitem action="TEXTA" /> 
        <menuitem action="TEXTSRCA" />
+       <menuitem action="EDITSRCA" />
+       <menuitem action="EDITNETSRCA" />
        <menuitem action="TEXTFROMSRCA" />
        <separator /> 
        <menuitem action="LATEXA" />
@@ -163,23 +165,12 @@
        <menuitem action="KEEPRATIOA" />
        <menuitem action="VCURSORA" />
        <menuitem action="TOGCLOCKA" />
-       <menuitem action="DCRDCOREA" />                        
-       <menuitem action="ERSRTIPA" />                        
-       <menuitem action="PRESSRSENSA" />                        
-       <menuitem action="PGHILTA" />                        
-       <menuitem action="MLTPGVWA" />                        
-       <menuitem action="MLTPGA" />                        
-       <menuitem action="BTN2MAPA" />                        
-       <menuitem action="BTN3MAPA" />                        
-       <separator />
-       <menuitem action="ANTIALIASBMPA" />
-       <menuitem action="PRGRSBKGA" />                        
-       <menuitem action="PRNTPPRULEA" />                        
-       <menuitem action="LFTHNDSCRBRA" />                        
-       <menuitem action="SHRTNMENUA" />   
-       <separator />
-       <menuitem action="AUTOSAVEPREFA" />
-       <menuitem action="SAVEPREFA" />
+       <menuitem action="PRESSRSENSA" />
+       <menu action="NEWPAGEMODEA">
+         <menuitem action="NEWPAGEPLAINA" />
+         <menuitem action="NEWPAGELASTA" />
+         <menuitem action="NEWPAGECYCLEA" />
+       </menu>
        <menuitem action="RELAUNCHA" />
     </menu>
     <menu action="HMA">

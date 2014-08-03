@@ -1,13 +1,16 @@
-{-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE ScopedTypeVariables #-}
 -- 
 -- uuid,md5hash,filepath map utility  
 -- 
 import           Control.Applicative ((<$>))
 import           Control.Lens
-import           Control.Monad.Trans (liftIO)
+import           Control.Monad.IO.Class (MonadIO (..))
+import           Control.Monad.Logger
 import           Control.Monad.Trans.Either 
+import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Resource
 import           Data.Attoparsec 
 import           Data.Aeson.Parser (json)
@@ -15,13 +18,16 @@ import           Data.Aeson.Types  (parseJSON, parseEither)
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as L
-import           Data.Conduit (($$+-))
-import           Data.Conduit.List (consume)
+import           Data.Conduit (($$), ($$+-))
+import qualified Data.Conduit.List as CL 
 import           Data.Data
+import           Data.Digest.Pure.MD5
 import qualified Data.List as DL 
 import qualified Data.Map as M
 import           Data.Monoid ((<>))
-import           Data.Digest.Pure.MD5
+import qualified Data.Text as T
+import           Database.Persist.Sqlite
+import           Database.Persist.Sql (rawQuery)
 import qualified Network.HTTP.Conduit as N
 import           System.Console.CmdArgs
 import           System.Directory
@@ -33,26 +39,54 @@ import           Data.Hoodle.Simple
 import           Text.Hoodle.Parse.Attoparsec 
 -- 
 import           DiffDB
+import           Migrate
+import qualified Hoodle.Manage.SqliteDB as SqliteDB
+import qualified TextFileDB
+import           Util
+import           Hoodle.Manage.DocDatabase
+-- 
 
-data IdFilePathDB = AllFiles { hoodlehome :: FilePath }
-                  | SingleFile { hoodlehome :: FilePath 
+
+-- import Database.Persist.Sqlite
+-- import Database.Persist.Sql (rawQuery)
+
+
+data IdFilePathDB = List
+                  | Info { fileid :: String }
+                  | SingleFile { hoodlehome :: Maybe FilePath 
                                , singlefilename :: FilePath } 
-                  | DBDiff
-                  | DBSync { remoteURL :: String 
-                           , remoteID :: String 
-                           , remotePassword :: String } 
+
+                  | AllFiles { hoodlehome :: Maybe FilePath }
+                  | ChangeRoot { newhome :: FilePath }
+                  --  | DBDiff
+                  --  | DBSync { remoteURL :: String 
+                  --           , remoteID :: String 
+                  --           , remotePassword :: String } 
+                  --  | DBMigrateToSqlite
                   deriving (Show,Data,Typeable)
 
-allfiles :: IdFilePathDB 
-allfiles = 
-  AllFiles { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 } 
+list :: IdFilePathDB 
+list = List
+
+info :: IdFilePathDB
+info = Info { fileid = def &= typ "FILEID" &= argPos 0 }
 
 singlefile :: IdFilePathDB 
 singlefile = 
-  SingleFile { hoodlehome = def &= typ "HOODLEHOME" &= argPos 0 
-             , singlefilename = def &= typ "FILEPATH" &= argPos 1
+  SingleFile { hoodlehome = def
+             , singlefilename = def &= typ "FILEPATH" &= argPos 0
              }
+ 
+allfiles :: IdFilePathDB 
+allfiles = 
+  AllFiles { hoodlehome = def } 
+
+changeroot :: IdFilePathDB 
+changeroot = 
+  ChangeRoot { newhome = def &= typ "HOODLEHOME" &= argPos 0 } 
+
   
+{-
 dbdiff :: IdFilePathDB 
 dbdiff = DBDiff
 
@@ -61,54 +95,67 @@ dbsync = DBSync { remoteURL = def &= typ "URL" &= argPos 0
                 , remoteID = def &= typ "ID" &= argPos 1
                 , remotePassword = def &= typ "PASSWORD" &= argPos 2
                 }
+
+dbmigrate :: IdFilePathDB
+dbmigrate = DBMigrateToSqlite
+-}
   
 mode :: IdFilePathDB
-mode = modes [allfiles, singlefile, dbdiff, dbsync ] 
+mode = modes [list, info, singlefile, allfiles, changeroot] -- , singlefile, dbdiff, dbsync, dbmigrate ] 
 
-main :: IO () 
-main = do 
-  params <- cmdArgs mode
-  case params of 
-    AllFiles hdir      -> allfilework hdir 
-    SingleFile hdir fp -> singlefilework hdir fp 
-    DBDiff             -> dbdiffwork
-    DBSync url idee pw -> dbsyncwork url idee pw
-  
-allfilework :: FilePath -> IO ()
-allfilework hdir = do 
+
+listwork :: IO ()
+listwork = do
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateTables
+    runMigration migrateDocRoot
+    dumpTable "hoodle_doc_location"
+    dumpTable "hoodle_doc_root"
+
+infowork :: String -> IO ()
+infowork uuid = do
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateTables
+    runMaybeT $ do 
+      file <- (MaybeT . getBy . FileIDKey . T.pack) uuid
+      liftIO (print file)
+    return ()
+
+singlefilework :: Maybe FilePath -> FilePath -> IO ()
+singlefilework mhdir oldfp = do 
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateTables
+    runMigration migrateDocRoot
+    mhdir2 <- case mhdir of
+                Just hdir' -> return (Just hdir')
+                Nothing -> fmap (T.unpack . hoodleDocRootLoc . entityVal ) <$>  getBy (UniqueDocRoot True)
+    runMaybeT $ do 
+      hdir <- (MaybeT . return) mhdir2
+      (uuid,md5str) <- MaybeT . liftIO $ checkHoodleIdMd5 oldfp 
+      file <- (MaybeT . getBy . FileIDKey . T.pack) uuid
+      liftIO (print file)
+      update (entityKey file) [ HoodleDocLocationFilemd5 =. (T.pack md5str) ]
+    return ()
+
+allfilework :: Maybe FilePath -> IO ()
+allfilework mhdir = do 
   homedir <- getHomeDirectory 
   r <- readProcess "find" [homedir </> "Dropbox" </> "hoodle","-name","*.hdl","-print"] "" 
-  mapM_ (singlefilework hdir) (lines r)
-
-splitfunc :: String -> (String,(String,String))
-splitfunc str = 
-  let (str1,rest1) = break (==' ') str 
-      (str2,rest2) = break (==' ') (tail rest1)
-      str3 = read (tail rest2)
-  in (str1,(str2,str3))
-
-    
-
-singlefilework :: FilePath -> FilePath -> IO ()
-singlefilework hdir oldfp = do 
-  putStrLn ("working for " ++ oldfp)
-  homedir <- getHomeDirectory 
-  tmpdir <- getTemporaryDirectory 
-  let origdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
-      tmpfile = tmpdir </> "hoodleiddb.dat"
-  copyFile origdbfile tmpfile 
-  fp <- makeRelative hdir <$> canonicalizePath oldfp 
-  str <- readFile tmpfile 
-  let assoclst = (map splitfunc . lines) str 
-      assocmap = M.fromList assoclst 
-      replacefunc n _ = Just n 
-  muuid <- checkHoodleIdMd5 oldfp 
-  let nmap = case muuid of 
-               Nothing -> assocmap 
-               Just (uuid,md5str) -> M.alter (replacefunc (md5str,fp)) uuid assocmap
-      nstr = (unlines . map (\(x,(y,z))->x ++ " " ++ y ++ " " ++ show z) . M.toList) nmap 
-  writeFile origdbfile nstr 
-  removeFile tmpfile 
+  mapM_ (singlefilework mhdir) (lines r)
+ 
+changerootwork :: FilePath -> IO ()
+changerootwork hdir = do
+  dbfile <- SqliteDB.defaultDBFile
+  runSqlite dbfile $ do 
+    runMigration migrateDocRoot
+    mroot <- getBy (UniqueDocRoot True)
+    case mroot of
+      Nothing -> insert (HoodleDocRoot True (T.pack hdir)) >> return ()
+      Just root -> update (entityKey root) [ HoodleDocRootLoc =. (T.pack hdir) ] >> return ()
+    dumpTable "hoodle_doc_root"
 
 checkHoodleIdMd5 :: FilePath -> IO (Maybe (String,String))
 checkHoodleIdMd5 fp = do 
@@ -141,7 +188,7 @@ dbdiffwork = do
    
   newdbstr <- readFile newdbfile 
   olddbstr <- readFile olddbfile
-  let makedb = M.fromList . map splitfunc . lines 
+  let makedb = M.fromList . map TextFileDB.splitfunc . lines 
       (newdb,olddb) = (makedb newdbstr, makedb olddbstr) 
   (L.putStrLn . encodePretty) (checkdiff olddb newdb)
 
@@ -173,6 +220,21 @@ dbsyncwork url idee pwd = do
               }
         runResourceT $ N.withManager $ \manager -> do  
           response <- N.http requesttask manager
-          content <- N.responseBody response $$+- consume 
+          content <- N.responseBody response $$+- CL.consume 
           liftIO $ print content  
    
+main :: IO () 
+main = do 
+  params <- cmdArgs mode
+  case params of
+    List               -> listwork
+    Info uuid          -> infowork uuid
+    SingleFile mhdir fp -> singlefilework mhdir fp 
+    AllFiles mhdir      -> allfilework mhdir
+    ChangeRoot hdir    -> changerootwork hdir
+    {- 
+    DBDiff             -> dbdiffwork
+    DBSync url idee pw -> dbsyncwork url idee pw
+    DBMigrateToSqlite  -> dbmigrate2sqlite 
+    -}
+

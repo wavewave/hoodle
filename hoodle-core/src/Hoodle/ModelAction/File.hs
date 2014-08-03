@@ -18,7 +18,7 @@ module Hoodle.ModelAction.File where
 
 -- from other package
 import           Control.Applicative
-import           Control.Lens (view,set)
+import           Control.Lens (view,set,(.~))
 import           Data.Attoparsec 
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
@@ -38,6 +38,7 @@ import           System.Process
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
+import           Graphics.Hoodle.Render (cnstrctRHoodle)
 import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Type.Background 
 import           Graphics.Hoodle.Render.Type.Hoodle
@@ -59,28 +60,64 @@ checkVersionAndMigrate bstr = do
         else return (parseOnly PA.hoodle bstr)
 
 -- | this is very temporary, need to be changed.     
-findFirstPDFFile :: [(Int,RPage)] -> Maybe C.ByteString
-findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
+findFirstPDFFile :: [Page] -> Maybe C.ByteString -- [(Int,RPage)] -> Maybe C.ByteString
+findFirstPDFFile xs = let ys = (mapMaybe f) xs 
+                      in safehead ys
+  where safehead [] = Nothing
+        safehead (a:as) = a
+        f p = case page_bkg p of
+                BackgroundPdf _ _ fi _ -> Just fi
+                _ -> Nothing
+
+{- findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
                       in if null ys then Nothing else head ys 
   where f (_,p) = case view gbackground p of 
                     RBkgPDF _ fi _ _ _ -> Just fi
                     _ -> Nothing 
+-}
       
-findAllPDFPages :: [(Int,RPage)] -> [Int]
+findAllPDFPages :: [Page] -> [Int]
 findAllPDFPages = catMaybes . map f
-  where f (n,p) = case view gbackground p of 
+  where f p = case page_bkg p of 
+                     BackgroundPdf _ _ _ n -> Just n
+                     _ -> Nothing
+
+{-  where f (n,p) = case view gbackground p of 
                     RBkgPDF _ _ _ _ _ -> Just n
                     _ -> Nothing 
+-}
 
-replacePDFPages :: [(Int,RPage)] -> [(Int,RPage)] 
+
+replacePDFPages :: [Page] -> [Page] 
 replacePDFPages xs = map f xs 
-  where f (n,p) = case view gbackground p of 
-          RBkgPDF _ _ pdfn mpdf msfc -> (n, set gbackground (RBkgEmbedPDF pdfn mpdf msfc) p)
-          _ -> (n,p) 
+  where f p = let bkg = page_bkg p
+              in case bkg of    
+                   BackgroundPdf typ _ _ pdfn -> p { page_bkg = BackgroundEmbedPdf typ pdfn }
+                   _ -> p
         
 -- | 
-embedPDFInHoodle :: RHoodle -> IO RHoodle
-embedPDFInHoodle hdl = do 
+embedPDFInHoodle :: Hoodle -> IO Hoodle -- RHoodle -> IO RHoodle
+embedPDFInHoodle hdl = putStrLn "embedPDFInHoodle is now bugful. I do not do anything here " >> return hdl
+{-    let pgsWnum = zip [0..] (hoodle_pages hdl)
+        mfn = findFirstPDFFile (hoodle_pages hdl)
+        allpdfpg = findAllPDFPages pgs 
+    case mfn of 
+      Nothing -> return hdl 
+      Just fn -> do 
+        let fnstr = C.unpack fn 
+            pglst = map show allpdfpg 
+            cmdargs =  [fnstr, "cat"] ++ pglst ++ ["output", "-"]
+        -- print cmdargs 
+        (_,Just hout,_,_) <- createProcess (proc "pdftk" cmdargs) { std_out = CreatePipe } 
+        bstr <- C.hGetContents hout
+        let ebdsrc = makeEmbeddedPdfSrcString bstr 
+            npgs = (IM.fromAscList . replacePDFPages pgs 
+    
+            nhdl0 = rHoodle2Hoodle . (gpages .~ npgs) $ hdl
+            nhdl1 = nhdl0 { hoodle_embeddedpdf = Just ebdsrc }
+        cnstrctRHoodle nhdl1
+-}
+{-
     let pgs = (IM.toAscList . view gpages) hdl  
         mfn = findFirstPDFFile pgs
         allpdfpg = findAllPDFPages pgs 
@@ -97,7 +134,7 @@ embedPDFInHoodle hdl = do
         let ebdsrc = makeEmbeddedPdfSrcString bstr 
             npgs = (IM.fromAscList . replacePDFPages) pgs 
         (return . set gembeddedpdf (Just ebdsrc) . set gpages npgs) hdl
-
+-}
 
 
 makeEmbeddedPdfSrcString :: C.ByteString -> C.ByteString 

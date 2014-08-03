@@ -62,5 +62,5 @@ spage2Page (GPage dim bkg lyrs) = Page dim bkg (map slayer2Layer lyrs)
 
 -- | 
 shoodle2Hoodle :: SHoodle -> Hoodle
-shoodle2Hoodle (GHoodle hid ttl revs pdf txt pgs) = Hoodle hid ttl revs pdf txt (map spage2Page pgs)
+shoodle2Hoodle (GHoodle hid ttl revs pdf txt pgs) = Hoodle hid ttl revs (pdfBase64 pdf) txt (map spage2Page pgs)
 

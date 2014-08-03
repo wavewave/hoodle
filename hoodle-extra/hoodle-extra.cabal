@@ -1,5 +1,5 @@
 Name:		hoodle-extra
-Version:	0.0.999
+Version:	0.1.999
 Synopsis:	extra hoodle tools 
 Description: 	extra hoodle tools 
 Homepage:       http://ianwookim.org/hoodle
@@ -8,13 +8,52 @@ License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 7.4, GHC == 7.6
+Tested-with:    GHC == 7.6, GHC == 7.8
 Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle
+
+Library
+  hs-source-dirs: lib
+  ghc-options: 	-Wall  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends:   
+                   aeson,
+                   aeson-pretty,
+                   attoparsec,
+                   base == 4.*,
+                   base64-bytestring,
+                   bytestring,
+                   cmdargs,
+                   conduit, 
+                   containers,
+                   directory,
+                   either,
+                   esqueleto,
+                   filepath,
+                   hoodle-types,
+                   hoodle-parser,
+                   http-conduit,
+                   lens,
+                   mtl,
+                   persistent,
+                   persistent-sqlite,
+                   persistent-template,
+                   process,
+                   pureMD5,
+                   resourcet,
+                   text,
+                   transformers,
+                   unordered-containers,
+                   xournal-parser
+  Exposed-Modules: 
+                   Hoodle.Manage.DocDatabase
+                   Hoodle.Manage.SqliteDB
+
 
 
 Executable networkedit
@@ -23,7 +62,7 @@ Executable networkedit
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   base,
+  Build-Depends:   base == 4.*,
                    binary,  
                    bytestring,
                    directory, 
@@ -45,7 +84,7 @@ Executable idfilepathdb
                    aeson,
                    aeson-pretty,
                    attoparsec,
-                   base,
+                   base == 4.*,
                    base64-bytestring,
                    bytestring,
                    cmdargs,
@@ -53,16 +92,27 @@ Executable idfilepathdb
                    containers,
                    directory,
                    either,
+                   esqueleto,
                    filepath,
+                   hoodle-types,
+                   hoodle-parser,
                    http-conduit,
                    lens,
-                   mtl,
+                   monad-logger,
+                   -- mtl,
+                   persistent,
+                   persistent-sqlite,
                    process,
                    pureMD5,
                    resourcet,
                    text,
                    transformers,
                    unordered-containers,
-                   hoodle-types,
-                   hoodle-parser,
-                   xournal-parser
+                   xournal-parser, 
+                   --
+                   hoodle-extra
+
+  Other-modules:   DiffDB
+                   Migrate
+                   TextFileDB
+                   Util

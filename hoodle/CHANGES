@@ -96,3 +96,11 @@ hoodle
    * clock widget (test for asynchronous event processing)
    * assign shortcut keys for color/pen tools   
 
+0.3: 14 Jul 2014
+   * asynchronous PDF rendering engine
+   * anchored link (link to specific location of a document)
+   * hoodlet (small hoodle snippet) 
+   * handwriting recognition for registering and searching for hoodlets
+   * reorganized menu 
+   * pen cursor reflects current pen choice
+   * include hoodle-extra package: idfilepathdb/networkedit

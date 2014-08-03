@@ -518,10 +518,13 @@ embedPredefinedImage3 = do
 embedAllPDFBackground :: MainCoroutine () 
 embedAllPDFBackground = do 
   xst <- get 
-  let hdl = getHoodle xst
+  let hdl = (rHoodle2Hoodle  . getHoodle) xst
   nhdl <- liftIO . embedPDFInHoodle $ hdl
-  modeChange ToViewAppendMode
-  commit (set hoodleModeState (ViewAppendState nhdl) xst)
+  constructNewHoodleStateFromHoodle nhdl
+  commit_
+  -- nrhdl <- 
+  -- modeChange ToViewAppendMode
+  -- commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
 -- | embed an item from hoodlet using hoodlet identifier

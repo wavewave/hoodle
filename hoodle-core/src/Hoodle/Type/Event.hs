@@ -41,7 +41,7 @@ data AllEvent = UsrEv UserEvent | SysEv SystemEvent
               deriving Show 
 
 instance Show (Cairo.Surface) where
-  show _ = "surface"
+  show _ = "cairo surface"
 
 -- | 
 data SystemEvent = TestSystemEvent | ClockUpdateEvent | RenderCacheUpdate (UUID, (Double,Cairo.Surface))

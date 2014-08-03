@@ -569,7 +569,6 @@ colorPickerBox msg = do
 
 pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 
 pdfRendererMain handler tvar = forever $ do     
-    -- putStrLn "pdfRenderMain called"
     p <- atomically $ do 
       lst' <- readTVar tvar
       case viewl lst' of
@@ -581,19 +580,15 @@ pdfRendererMain handler tvar = forever $ do
 
 pdfWorker :: ((UUID,(Double,Cairo.Surface))->IO ()) -> (UUID,PDFCommand) -> IO ()
 pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
-    -- putStrLn "pdfWorker : GetDocFromFile"
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
 pdfWorker _handler (_,GetDocFromDataURI str tmvar) = do
-    -- putStrLn "pdfWorker : GetDocFromDataURI"
     mdoc <- popplerGetDocFromDataURI str
     atomically $ putTMVar tmvar mdoc
 pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
-    -- putStrLn "pdfWorker : GetPageFromDoc"
     mpg <- popplerGetPageFromDoc doc pn
     atomically $ putTMVar tmvar mpg
 pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
-    -- putStrLn "pdfWorker : RenderPageScaled"
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   

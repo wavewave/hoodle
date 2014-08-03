@@ -487,7 +487,7 @@ askQuitProgram :: MainCoroutine ()
 askQuitProgram = do 
     b <- okCancelMessageBox "Current canvas is not saved yet. Will you close hoodle?" 
     case b of 
-      True -> liftIO Gtk.mainQuit
+      True -> doIOaction $ \evhander -> Gtk.postGUIAsync Gtk.mainQuit >> return (UsrEv ActionOrdered)
       False -> return ()
   
 -- | 

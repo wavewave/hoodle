@@ -54,8 +54,7 @@ startGUI mfname mhook = do
                \mmax -> maybe (return 50) (return . id) mmax
   xinputbool <- getXInputConfig cfg 
   (usepz,uselyr) <- getWidgetConfig cfg 
-  -- statusbar <- statusbarNew 
-  (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) -- statusbar 
+  (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr)
   setTitleFromFileName st0
   -- need for refactoring
   setToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 

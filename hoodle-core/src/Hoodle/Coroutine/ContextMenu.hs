@@ -287,16 +287,16 @@ showContextMenu (pnum,(x,y)) = do
     action xstate msitms cid cids  
       = Left . ActionOrder $ \evhandler -> do 
           menu <- menuNew 
-          menuSetTitle menu "MyMenu"
+          menuSetTitle menu ("MyMenu" :: String)
           case msitms of 
             Nothing -> return ()
             Just sitms -> do 
-              menuitem1 <- menuItemNewWithLabel "Make SVG"
-              menuitem2 <- menuItemNewWithLabel "Make PDF"
-              menuitem3 <- menuItemNewWithLabel "Cut"
-              menuitem4 <- menuItemNewWithLabel "Copy"
-              menuitem5 <- menuItemNewWithLabel "Delete"
-              menuitem6 <- menuItemNewWithLabel "New File Linked Here"
+              menuitem1 <- menuItemNewWithLabel ("Make SVG" :: String)
+              menuitem2 <- menuItemNewWithLabel ("Make PDF" :: String)
+              menuitem3 <- menuItemNewWithLabel ("Cut" :: String)
+              menuitem4 <- menuItemNewWithLabel ("Copy" :: String)
+              menuitem5 <- menuItemNewWithLabel ("Delete" :: String)
+              menuitem6 <- menuItemNewWithLabel ("New File Linked Here" :: String)
               menuitem1 `on` menuItemActivate $   
                 evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypSVG)))
               menuitem2 `on` menuItemActivate $ 
@@ -318,7 +318,7 @@ showContextMenu (pnum,(x,y)) = do
               mapM_ (\mi -> menuAttach menu mi 1 2 5 6) =<< menuCreateALink evhandler sitms 
               case sitms of 
                 sitm : [] -> do 
-                  menuhdlt <- menuItemNewWithLabel "Make Hoodlet"
+                  menuhdlt <- menuItemNewWithLabel ("Make Hoodlet" :: String)
                   menuhdlt `on` menuItemActivate $ 
                     ( evhandler . UsrEv . GotContextMenuSignal 
                     . CMenuExportHoodlet . rItem2Item ) sitm
@@ -335,7 +335,7 @@ showContextMenu (pnum,(x,y)) = do
                           convertLinkFromSimpleToDocID lnk >>=  
                             mapM_ (\link -> do 
                               let LinkDocID _ uuid _ _ _ _ _ _ = link 
-                              menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid) 
+                              menuitemcvt <- menuItemNewWithLabel ("Convert Link With ID" ++ show uuid :: String) 
                               menuitemcvt `on` menuItemActivate $
                                 ( evhandler 
                                   . UsrEv 
@@ -352,7 +352,7 @@ showContextMenu (pnum,(x,y)) = do
                             let link = LinkDocID 
                                          i lid (B.pack file') txt cmd rdr pos dim
                             menuitemcvt <- liftIO $ menuItemNewWithLabel 
-                              ("Correct Path to " ++ show file') 
+                              ("Correct Path to " ++ show file' :: String) 
                             liftIO (menuitemcvt `on` menuItemActivate $ 
                               ( evhandler 
                                 . UsrEv 
@@ -368,7 +368,7 @@ showContextMenu (pnum,(x,y)) = do
                             guard ((B.unpack file) /= file')
                             let link = LinkAnchor i lid (B.pack file') aid bstr pos dim
                             menuitemcvt <- liftIO $ menuItemNewWithLabel 
-                              ("Correct Path to " ++ show file') 
+                              ("Correct Path to " ++ show file' :: String) 
                             liftIO (menuitemcvt `on` menuItemActivate $ 
                               ( evhandler 
                                 . UsrEv 
@@ -384,18 +384,18 @@ showContextMenu (pnum,(x,y)) = do
                         let txt = TE.decodeUtf8 btxt
                         case cmd of 
                           "pango" -> do 
-                            menuitemedt <- menuItemNewWithLabel ("Edit Text") 
+                            menuitemedt <- menuItemNewWithLabel ("Edit Text" :: String) 
                             menuitemedt `on` menuItemActivate $ do 
                               evhandler (UsrEv (GotContextMenuSignal (CMenuPangoConvert (x0,y0) txt)))
                             menuAttach menu menuitemedt 0 1 4 5
                             return ()
                           "latex" -> do 
-                            menuitemedt <- menuItemNewWithLabel ("Edit LaTeX")
+                            menuitemedt <- menuItemNewWithLabel ("Edit LaTeX" :: String)
                             menuitemedt `on` menuItemActivate $ do
                               evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert (x0,y0) txt)))
                             menuAttach menu menuitemedt 0 1 4 5 
                             --
-                            menuitemnet <- menuItemNewWithLabel ("Edit LaTeX Network")
+                            menuitemnet <- menuItemNewWithLabel ("Edit LaTeX Network" :: String)
                             menuitemnet `on` menuItemActivate $ do
                               evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvertNetwork (x0,y0) txt)))
                             menuAttach menu menuitemnet 0 1 5 6
@@ -403,7 +403,7 @@ showContextMenu (pnum,(x,y)) = do
                             -- 
                             let (txth,txtt) = T.splitAt 19 txt 
                             when ( txth == "embedlatex:keyword:" ) $ do
-                              menuitemup <- menuItemNewWithLabel ("Update LaTeX")
+                              menuitemup <- menuItemNewWithLabel ("Update LaTeX" :: String)
                               menuitemup `on` menuItemActivate $ do
                                 evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXUpdate (x0,y0) txtt)))
                               menuAttach menu menuitemup 0 1 6 7
@@ -411,16 +411,16 @@ showContextMenu (pnum,(x,y)) = do
 
                           _ -> return ()
                     RItemImage imgbbx _msfc -> do
-                      menuitemcrop <- menuItemNewWithLabel ("Crop Image") 
+                      menuitemcrop <- menuItemNewWithLabel ("Crop Image" :: String) 
                       menuitemcrop `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal . CMenuCropImage) imgbbx
-                      menuitemrotcw <- menuItemNewWithLabel ("Rotate Image CW") 
+                      menuitemrotcw <- menuItemNewWithLabel ("Rotate Image CW" :: String) 
                       menuitemrotcw `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CW imgbbx)
-                      menuitemrotccw <- menuItemNewWithLabel ("Rotate Image CCW") 
+                      menuitemrotccw <- menuItemNewWithLabel ("Rotate Image CCW" :: String) 
                       menuitemrotccw `on` menuItemActivate $ do 
                         (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CCW imgbbx)
-                      menuitemexport <- menuItemNewWithLabel ("Export Image")
+                      menuitemexport <- menuItemNewWithLabel ("Export Image" :: String)
                       menuitemexport `on` menuItemActivate $ do
                         (evhandler . UsrEv . GotContextMenuSignal) (CMenuExport imgbbx)
                       -- 
@@ -431,7 +431,7 @@ showContextMenu (pnum,(x,y)) = do
                       -- 
                       return ()
                     RItemAnchor ancbbx _ -> do
-                      menuitemmklnk <- menuItemNewWithLabel ("Link to this anchor")
+                      menuitemmklnk <- menuItemNewWithLabel ("Link to this anchor" :: String)
                       menuitemmklnk `on` menuItemActivate $
                         ( evhandler 
                         . UsrEv 
@@ -445,7 +445,7 @@ showContextMenu (pnum,(x,y)) = do
                   let (links,others) = partition ((||) <$> isLinkInRItem <*> isAnchorInRItem) sitms 
                   case links of 
                     l : [] -> do
-                      menuitemreplace <- menuItemNewWithLabel ("replace link/anchor render")
+                      menuitemreplace <- menuItemNewWithLabel ("replace link/anchor render" :: String)
                       menuitemreplace `on` menuItemActivate $ do
                         let cache = xstate ^. renderCache
                             ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) others
@@ -471,7 +471,7 @@ showContextMenu (pnum,(x,y)) = do
                 evhandler (UsrEv (GotContextMenuSignal (CMenuCustom)))
               menuAttach menu custommenu 0 1 0 1 
 
-          menuitem8 <- menuItemNewWithLabel "Autosave This Page Image"
+          menuitem8 <- menuItemNewWithLabel ("Autosave This Page Image" :: String)
           menuitem8 `on` menuItemActivate $ 
             evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
           menuAttach menu menuitem8 1 2 4 5 

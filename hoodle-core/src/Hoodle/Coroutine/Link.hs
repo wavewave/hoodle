@@ -238,7 +238,7 @@ addLink = do
     action mfn = mkIOaction $ 
                    \_evhandler -> do 
                      dialog <- messageDialogNew Nothing [DialogModal]
-                                 MessageQuestion ButtonsOkCancel "add link" 
+                                 MessageQuestion ButtonsOkCancel ("add link" :: String)
                      vbox <- dialogGetUpper dialog
                      txtvw <- textViewNew
                      boxPackStart vbox txtvw PackGrow 0 

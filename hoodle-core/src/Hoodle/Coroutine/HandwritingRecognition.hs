@@ -22,17 +22,13 @@ import           Control.Monad.State (modify)
 import           Control.Monad.Trans (liftIO)
 import           Control.Monad.Trans.Either
 import           Data.Aeson as A
--- import           Data.Aeson.Encode
--- import           Data.Aeson.Encode.Pretty
 import qualified Data.Attoparsec as AP
--- import           Data.Attoparsec.Number
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import           Data.Foldable (mapM_)
 import qualified Data.HashMap.Strict as HM
 import qualified Data.List as L (lookup)
 import           Data.Maybe
--- import           Data.Scientific
 import           Data.Strict.Tuple
 import qualified Data.Text as T
 import           Data.Traversable (forM)
@@ -47,7 +43,6 @@ import           System.Process
 import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Simple
 -- from this package
--- import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw (waitSomeEvent)
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Type.Coroutine
@@ -77,7 +72,6 @@ handwritingRecognitionDialog = do
       let fp = tdir </> show uuid <.> "json"
       liftIO $ LB.writeFile fp bstr
       (excode,gresult,gerror) <- liftIO $ readProcessWithExitCode "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
-      -- let ev0 = AP.parseOnly json (B.pack gresult)  
       case excode of 
         ExitSuccess -> do 
           r_parse <- runEitherT $ do  
@@ -122,7 +116,7 @@ showRecogTextDialog txts = do
                          else doesFileExist (hoodletdir </> str <.> "hdlt")      
                  return (n,(b2,txt))
                mapM_ (addOneTextBox evhandler dialog vbox) txtlst  
-               _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
+               _btnCancel <- dialogAddButton dialog ("Cancel" :: String) ResponseCancel
                widgetShowAll dialog
                res <- dialogRun dialog
                widgetDestroy dialog

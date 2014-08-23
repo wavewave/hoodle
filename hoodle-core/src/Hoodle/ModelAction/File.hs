@@ -228,7 +228,7 @@ toggleSave ui b = do
       case x of
         [] -> error "No action group?"
         y:_ -> return y
-    Just savea <- actionGroupGetAction agr "SAVEA"
+    Just savea <- actionGroupGetAction agr ("SAVEA" :: String)
     actionSetSensitive savea b
 
 -- | 

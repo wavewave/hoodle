@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -----------------------------------------------------------------------------
@@ -19,6 +20,7 @@ module Hoodle.GUI.Menu where
 -- from other packages
 import           Control.Lens (set)
 import           Control.Monad
+-- import qualified Data.Text as T
 import           Graphics.UI.Gtk hiding (set,get)
 import qualified Graphics.UI.Gtk as Gtk (set)
 import           System.FilePath
@@ -34,7 +36,7 @@ justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
 
 
-iconList :: [ (String,String) ]
+iconList :: [ (String,StockId) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
            , ("pencil.png"     , "mypen")
            , ("eraser.png"     , "myeraser")
@@ -319,38 +321,38 @@ getMenuUI evar = do
   -----------------  
   -- option menu --
   -----------------
-  uxinputa <- toggleActionNew "UXINPUTA" "Use XInput" (Just "Just a Stub") Nothing 
+  uxinputa <- toggleActionNew ("UXINPUTA" :: String) "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseXInput))
   -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
-  handa     <- toggleActionNew "HANDA" "Use Touch" (Just "Toggle touch") (Just "myhand") 
+  handa     <- toggleActionNew ("HANDA" :: String) "Use Touch" (Just "Toggle touch") (Just "myhand") 
   handa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseTouch))
-  smthscra <- toggleActionNew "SMTHSCRA" "Smooth Scrolling" (Just "Just a stub") Nothing
+  smthscra <- toggleActionNew ("SMTHSCRA" :: String) "Smooth Scrolling" (Just "Just a stub") Nothing
   smthscra `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuSmoothScroll))
-  popmenua <- toggleActionNew "POPMENUA" "Use Popup Menu" (Just "Just a stub") Nothing
+  popmenua <- toggleActionNew ("POPMENUA" :: String) "Use Popup Menu" (Just "Just a stub") Nothing
   popmenua `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUsePopUpMenu))
-  ebdimga <- toggleActionNew "EBDIMGA" "Embed PNG/JPG Image" (Just "Just a stub") Nothing
+  ebdimga <- toggleActionNew ("EBDIMGA" :: String) "Embed PNG/JPG Image" (Just "Just a stub") Nothing
   ebdimga `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuEmbedImage))
-  ebdpdfa <- toggleActionNew "EBDPDFA" "Embed PDF" (Just "Just a stub") Nothing
+  ebdpdfa <- toggleActionNew ("EBDPDFA" :: String) "Embed PDF" (Just "Just a stub") Nothing
   ebdpdfa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuEmbedPDF))
-  flwlnka <- toggleActionNew "FLWLNKA" "Follow Links" (Just "Just a stub") Nothing
+  flwlnka <- toggleActionNew ("FLWLNKA" :: String) "Follow Links" (Just "Just a stub") Nothing
   flwlnka `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuFollowLinks))    
-  keepratioa <- toggleActionNew "KEEPRATIOA" "Keep Aspect Ratio" (Just "Just a stub") Nothing
+  keepratioa <- toggleActionNew ("KEEPRATIOA" :: String) "Keep Aspect Ratio" (Just "Just a stub") Nothing
   keepratioa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuKeepAspectRatio))
-  vcursora <- toggleActionNew "VCURSORA" "Use Variable Cursor" (Just "Just a stub") Nothing
+  vcursora <- toggleActionNew ("VCURSORA" :: String) "Use Variable Cursor" (Just "Just a stub") Nothing
   vcursora `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseVariableCursor))
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togclocka <- actionNewAndRegister "TOGCLOCKA" "Toggle Clock Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleClockWidget)
     
-  pressrsensa <- toggleActionNew "PRESSRSENSA" "Pressure Sensitivity" (Just "Just a Stub") Nothing 
+  pressrsensa <- toggleActionNew ("PRESSRSENSA" :: String) "Pressure Sensitivity" (Just "Just a Stub") Nothing 
   pressrsensa `on` actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
@@ -365,12 +367,12 @@ getMenuUI evar = do
   -- others
   defaulta <- actionNewAndRegister "DEFAULTA" "Default" (Just "Default") (Just "mydefault") (justMenu MenuDefault)
   
-  agr <- actionGroupNew "AGR"
+  agr <- actionGroupNew ("AGR" :: String)
   mapM_ (actionGroupAddAction agr) 
         [fma,ema,vma,lma,ima,pma,tma,verma,oma,hma]
   mapM_ (actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
-  mapM_ (\act -> actionGroupAddActionWithAccel agr act Nothing)   
+  mapM_ (\act -> actionGroupAddActionWithAccel agr act (Nothing :: Maybe String))   
         [ newa, annpdfa, opena, savea, saveasa
         , reloada, recenta, printa, exporta, synca, versiona, showreva, showida, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
@@ -437,20 +439,20 @@ getMenuUI evar = do
   uiDecl <- readFile (resDir </> "menu.xml")   
   uiManagerAddUiFromString ui uiDecl
   uiManagerInsertActionGroup ui agr 0 
-  Just ra2 <- actionGroupGetAction agr "PENFINEA"
+  Just ra2 <- actionGroupGetAction agr ("PENFINEA" :: String)
   Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
-  Just ra3 <- actionGroupGetAction agr "SELREGNA"
+  Just ra3 <- actionGroupGetAction agr ("SELREGNA" :: String)
   actionSetSensitive ra3 True 
-  Just ra4 <- actionGroupGetAction agr "VERTSPA"
+  Just ra4 <- actionGroupGetAction agr ("VERTSPA" :: String)
   actionSetSensitive ra4 True
-  Just ra6 <- actionGroupGetAction agr "CONTA"
+  Just ra6 <- actionGroupGetAction agr ("CONTA" :: String)
   actionSetSensitive ra6 True
-  Just _ra7 <- actionGroupGetAction agr "PENA"
+  Just _ra7 <- actionGroupGetAction agr ("PENA" :: String)
   actionSetSensitive ra6 True  
-  Just toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1"
+  Just toolbar1 <- uiManagerGetWidget ui ("/ui/toolbar1" :: String)
   toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar1) IconSizeSmallToolbar
-  Just toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
+  Just toolbar2 <- uiManagerGetWidget ui ("/ui/toolbar2" :: String)
   toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
   toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
     

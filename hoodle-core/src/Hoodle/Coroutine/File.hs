@@ -487,7 +487,7 @@ askQuitProgram :: MainCoroutine ()
 askQuitProgram = do 
     b <- okCancelMessageBox "Current canvas is not saved yet. Will you close hoodle?" 
     case b of 
-      True -> liftIO Gtk.mainQuit
+      True -> doIOaction $ \evhander -> Gtk.postGUIAsync Gtk.mainQuit >> return (UsrEv ActionOrdered)
       False -> return ()
   
 -- | 
@@ -620,7 +620,7 @@ showRevisionDialog hdl revs =
                dialog <- Gtk.dialogNew
                vbox <- Gtk.dialogGetUpper dialog
                mapM_ (addOneRevisionBox cache vbox hdl) revs 
-               _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
+               _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
                Gtk.widgetShowAll dialog
                _res <- Gtk.dialogRun dialog
                Gtk.widgetDestroy dialog
@@ -633,7 +633,7 @@ mkPangoText str = do
           ctxt <- Gtk.cairoCreateContext Nothing 
           layout <- Gtk.layoutEmpty ctxt   
           fdesc <- Gtk.fontDescriptionNew 
-          Gtk.fontDescriptionSetFamily fdesc "Sans Mono"
+          Gtk.fontDescriptionSetFamily fdesc ("Sans Mono" :: String)
           Gtk.fontDescriptionSetSize fdesc 8.0 
           Gtk.layoutSetFontDescription layout (Just fdesc)
           Gtk.layoutSetWidth layout (Just 250)
@@ -658,7 +658,7 @@ addOneRevisionBox cache vbox hdl rev = do
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"
-    btn <- Gtk.buttonNewWithLabel "view"
+    btn <- Gtk.buttonNewWithLabel ("view" :: String)
     btn `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 
       files <- liftIO $ getDirectoryContents vcsdir 
       let fstrinit = "UUID_" ++ B.unpack (view hoodleID hdl)  

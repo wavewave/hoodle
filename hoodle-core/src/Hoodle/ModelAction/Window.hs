@@ -72,7 +72,7 @@ setTitleFromFileName :: HoodleState -> IO ()
 setTitleFromFileName xstate = do 
   case view (hoodleFileControl.hoodleFileName) xstate of
     Nothing -> Gtk.set (view rootOfRootWindow xstate) 
-                       [ windowTitle := "untitled" ]
+                       [ windowTitle := ("untitled" :: String) ]
     Just filename -> Gtk.set (view rootOfRootWindow xstate) 
                              [ windowTitle := takeFileName filename] 
 
@@ -179,7 +179,7 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                       case x of 
                         [] -> error "No action group? "
                         y:_ -> return y )
-    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+    uxinputa <- liftIO (actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) -> 
                           return (castToToggleAction x) )
     b <- liftIO $ toggleActionGetActive uxinputa
     if b then widgetSetExtensionEvents canvas [ExtensionEventsAll]

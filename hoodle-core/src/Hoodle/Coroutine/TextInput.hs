@@ -85,7 +85,7 @@ textInputDialog :: MainCoroutine (Maybe String)
 textInputDialog = do 
   doIOaction $ \_evhandler -> do 
                  dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
-                   Gtk.MessageQuestion Gtk.ButtonsOkCancel "text input"
+                   Gtk.MessageQuestion Gtk.ButtonsOkCancel ("text input" :: String)
                  vbox <- Gtk.dialogGetUpper dialog
                  txtvw <- Gtk.textViewNew
                  Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
@@ -125,7 +125,7 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
     hscrbar <- Gtk.hScrollbarNew =<< Gtk.textViewGetHadjustment textarea 
     textarea `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 500 600)
     fdesc <- Gtk.fontDescriptionNew
-    Gtk.fontDescriptionSetFamily fdesc "Mono"
+    Gtk.fontDescriptionSetFamily fdesc ("Mono" :: String)
     Gtk.widgetModifyFont textarea (Just fdesc)
     -- 
     table <- Gtk.tableNew 2 2 False
@@ -134,9 +134,9 @@ multiLineDialog str = mkIOaction $ \evhandler -> do
     Gtk.tableAttachDefaults table hscrbar 0 1 1 2 
     Gtk.boxPackStart vbox table Gtk.PackNatural 0
     -- 
-    _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
-    _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
-    _btnNetwork <- Gtk.dialogAddButton dialog "Network" (Gtk.ResponseUser 1)
+    _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
+    _btnNetwork <- Gtk.dialogAddButton dialog ("Network" :: String) (Gtk.ResponseUser 1)
     Gtk.widgetShowAll dialog
     res <- Gtk.dialogRun dialog
     Gtk.widgetDestroy dialog
@@ -517,16 +517,16 @@ linePosDialog = mkIOaction $ \evhandler -> do
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
 
-    line1buf <- Gtk.entryBufferNew Nothing
+    line1buf <- Gtk.entryBufferNew (Nothing :: Maybe String)
     line1 <- Gtk.entryNewWithBuffer line1buf
     Gtk.boxPackStart hbox line1 Gtk.PackNatural 2
 
-    line2buf <- Gtk.entryBufferNew Nothing
+    line2buf <- Gtk.entryBufferNew (Nothing :: Maybe String)
     line2 <- Gtk.entryNewWithBuffer line2buf
     Gtk.boxPackStart hbox line2 Gtk.PackNatural 2
     -- 
-    _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
-    _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
+    _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
     Gtk.widgetShowAll dialog
     res <- Gtk.dialogRun dialog
     Gtk.widgetDestroy dialog
@@ -581,12 +581,12 @@ keywordDialog = mkIOaction $ \evhandler -> do
     vbox <- Gtk.dialogGetUpper dialog
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
-    keybuf <- Gtk.entryBufferNew Nothing
+    keybuf <- Gtk.entryBufferNew (Nothing :: Maybe String)
     key <- Gtk.entryNewWithBuffer keybuf
     Gtk.boxPackStart hbox key Gtk.PackNatural 2
     -- 
-    _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
-    _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
+    _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
     Gtk.widgetShowAll dialog
     res <- Gtk.dialogRun dialog
     Gtk.widgetDestroy dialog

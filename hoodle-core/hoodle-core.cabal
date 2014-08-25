@@ -155,5 +155,5 @@ Library
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
                    csrc/XInput.h
-  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
+  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG  -fPIC
   extra-libraries: X11 Xi dl pthread

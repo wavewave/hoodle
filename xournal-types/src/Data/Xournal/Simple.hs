@@ -20,7 +20,6 @@ import           Control.Applicative
 import           Control.Lens 
 import qualified Data.ByteString as S
 import           Data.ByteString.Char8 hiding (map)
--- import           Data.Label
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
 -- from this package
@@ -59,12 +58,12 @@ instance SE.Serialize Stroke where
                0 -> Stroke <$> SE.get <*> SE.get <*> SE.get <*> SE.get
                1 -> VWStroke <$> SE.get <*> SE.get <*> SE.get
                _ -> fail "err in Stroke parsing"
+ 
 -- |    
 instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
     put (x :!: y) = SE.put x
                     >> SE.put y
     get = (:!:) <$> SE.get <*> SE.get
-
     
 -- | 
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }

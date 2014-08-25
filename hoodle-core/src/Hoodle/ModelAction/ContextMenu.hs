@@ -42,7 +42,7 @@ menuOpenALink urlpath = do
     let urlname = case urlpath of 
                     FileUrl fp -> fp 
                     HttpUrl url -> url 
-    menuitemlnk <- menuItemNewWithLabel ("Open "++urlname) 
+    menuitemlnk <- menuItemNewWithLabel ("Open "++urlname :: String) 
     menuitemlnk `on` menuItemActivate $ openLinkAction urlpath Nothing
     return menuitemlnk
 
@@ -77,7 +77,7 @@ menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
 menuCreateALink evhandler sitems = 
   if (length . filter isLinkInRItem) sitems > 0
   then return Nothing 
-  else do mi <- menuItemNewWithLabel "Create a link to..." 
+  else do mi <- menuItemNewWithLabel ("Create a link to..." :: String)
           mi `on` menuItemActivate $ 
             evhandler (UsrEv (GotContextMenuSignal CMenuCreateALink))
           return (Just mi)

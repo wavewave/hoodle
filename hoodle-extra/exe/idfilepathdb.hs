@@ -9,6 +9,7 @@ import           Control.Applicative ((<$>))
 import           Control.Lens
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Logger
+import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.Either 
 import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Resource
@@ -33,7 +34,7 @@ import           System.Console.CmdArgs
 import           System.Directory
 import           System.FilePath
 import           System.Process
-import           System.IO (stdin)
+import           System.IO (stdin,hGetContents)
 -- 
 import           Data.Hoodle.Simple
 import           Text.Hoodle.Parse.Attoparsec 
@@ -58,10 +59,10 @@ data IdFilePathDB = List
 
                   | AllFiles { hoodlehome :: Maybe FilePath }
                   | ChangeRoot { newhome :: FilePath }
-                  --  | DBDiff
-                  --  | DBSync { remoteURL :: String 
-                  --           , remoteID :: String 
-                  --           , remotePassword :: String } 
+                  | DBDiff
+                  | DBSync { remoteURL :: String 
+                           , remoteID :: String 
+                           , remotePassword :: String } 
                   --  | DBMigrateToSqlite
                   deriving (Show,Data,Typeable)
 
@@ -85,23 +86,24 @@ changeroot :: IdFilePathDB
 changeroot = 
   ChangeRoot { newhome = def &= typ "HOODLEHOME" &= argPos 0 } 
 
-  
-{-
-dbdiff :: IdFilePathDB 
-dbdiff = DBDiff
 
 dbsync :: IdFilePathDB 
 dbsync = DBSync { remoteURL = def &= typ "URL" &= argPos 0
                 , remoteID = def &= typ "ID" &= argPos 1
                 , remotePassword = def &= typ "PASSWORD" &= argPos 2
                 }
+  
 
+dbdiff :: IdFilePathDB 
+dbdiff = DBDiff
+
+{-
 dbmigrate :: IdFilePathDB
 dbmigrate = DBMigrateToSqlite
 -}
   
 mode :: IdFilePathDB
-mode = modes [list, info, singlefile, allfiles, changeroot] -- , singlefile, dbdiff, dbsync, dbmigrate ] 
+mode = modes [list, info, singlefile, allfiles, changeroot, dbsync, dbdiff ] -- , singlefile, dbmigrate ] 
 
 
 listwork :: IO ()
@@ -124,20 +126,27 @@ infowork uuid = do
     return ()
 
 singlefilework :: Maybe FilePath -> FilePath -> IO ()
-singlefilework mhdir oldfp = do 
+singlefilework mhdir fp = do 
+  canfp <- canonicalizePath fp
   dbfile <- SqliteDB.defaultDBFile
+  print dbfile
   runSqlite dbfile $ do 
     runMigration migrateTables
     runMigration migrateDocRoot
     mhdir2 <- case mhdir of
                 Just hdir' -> return (Just hdir')
                 Nothing -> fmap (T.unpack . hoodleDocRootLoc . entityVal ) <$>  getBy (UniqueDocRoot True)
+    liftIO $ print mhdir2
     runMaybeT $ do 
       hdir <- (MaybeT . return) mhdir2
-      (uuid,md5str) <- MaybeT . liftIO $ checkHoodleIdMd5 oldfp 
-      file <- (MaybeT . getBy . FileIDKey . T.pack) uuid
-      liftIO (print file)
-      update (entityKey file) [ HoodleDocLocationFilemd5 =. (T.pack md5str) ]
+      let relfp = makeRelative hdir canfp
+      (uuid,md5str) <- MaybeT . liftIO $ checkHoodleIdMd5 canfp 
+      liftIO $ print uuid
+      mfile <- (lift . getBy . FileIDKey . T.pack) uuid
+      liftIO (print mfile)
+      case mfile of 
+        Nothing -> lift $ insert (HoodleDocLocation (T.pack uuid) (T.pack md5str) (T.pack relfp)) >> return ()
+        Just file -> lift $ update (entityKey file) [ HoodleDocLocationFilemd5 =. (T.pack md5str), HoodleDocLocationFileloc =. (T.pack relfp) ] >> return ()
     return ()
 
 allfilework :: Maybe FilePath -> IO ()
@@ -183,11 +192,15 @@ checkVersionAndGetIfHigherVersion bstr = do
 dbdiffwork :: IO ()
 dbdiffwork = do 
   homedir <- getHomeDirectory 
-  let newdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
-      olddbfile = homedir </> "Dropbox" </> "hoodleiddb.dat.old"
+  newdbstr <- hGetContents stdin
+  -- let newdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
+      -- for the time being
+      -- olddbfile = homedir </> "Dropbox" </> "hoodleiddb.dat.old"
    
-  newdbstr <- readFile newdbfile 
-  olddbstr <- readFile olddbfile
+  -- newdbstr <- readFile newdbfile 
+  -- for the time being
+  -- olddbstr <- readFile olddbfile
+  let olddbstr = ""
   let makedb = M.fromList . map TextFileDB.splitfunc . lines 
       (newdb,olddb) = (makedb newdbstr, makedb olddbstr) 
   (L.putStrLn . encodePretty) (checkdiff olddb newdb)
@@ -232,9 +245,10 @@ main = do
     SingleFile mhdir fp -> singlefilework mhdir fp 
     AllFiles mhdir      -> allfilework mhdir
     ChangeRoot hdir    -> changerootwork hdir
-    {- 
-    DBDiff             -> dbdiffwork
     DBSync url idee pw -> dbsyncwork url idee pw
+    DBDiff             -> dbdiffwork
+
+    {- 
     DBMigrateToSqlite  -> dbmigrate2sqlite 
     -}
 

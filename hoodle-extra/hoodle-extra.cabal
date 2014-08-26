@@ -117,16 +117,3 @@ Executable idfilepathdb
                    TextFileDB
                    Util
 
-Executable dumpiddb
-  Main-is: dumpiddb.hs
-  hs-source-dirs: exe
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
-  ghc-prof-options: -caf-all -auto-all
-
-  Build-Depends:   base,
-                   conduit,
-                   persistent,
-                   persistent-sqlite,
-                   text,
-                   transformers,
-                   hoodle-extra

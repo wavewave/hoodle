@@ -34,7 +34,7 @@ import           System.Console.CmdArgs
 import           System.Directory
 import           System.FilePath
 import           System.Process
-import           System.IO (stdin,hGetContents)
+import           System.IO (stdin,stdout,hGetContents,hPutStrLn)
 -- 
 import           Data.Hoodle.Simple
 import           Text.Hoodle.Parse.Attoparsec 
@@ -112,8 +112,19 @@ listwork = do
   runSqlite dbfile $ do 
     runMigration migrateTables
     runMigration migrateDocRoot
-    dumpTable "hoodle_doc_location"
-    dumpTable "hoodle_doc_root"
+    all <- selectList ([] :: [Filter HoodleDocLocation]) []
+    liftIO $ mapM_ (formatter stdout) all 
+    -- dumpTable "hoodle_doc_location"
+    -- dumpTable "hoodle_doc_root"
+
+  where formatter h x = do 
+          let v = entityVal x
+              i = hoodleDocLocationFileid v
+              m = hoodleDocLocationFilemd5 v
+              l = hoodleDocLocationFileloc v
+          hPutStrLn h (T.unpack i ++ " " ++ T.unpack m ++ " " ++ show l)
+
+
 
 infowork :: String -> IO ()
 infowork uuid = do

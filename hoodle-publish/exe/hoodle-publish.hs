@@ -25,12 +25,6 @@ import           System.FilePath (makeRelative,replaceExtension,(</>))
 -- 
 import           Hoodle.Publish.PDF
 -- 
--- import Debug.Trace
--- 
-
---------------------------------------------------------------------
---          main program                                          --
---------------------------------------------------------------------
 
 data HoodlePublish = Publish { urlbase :: String 
                              , rootpath :: FilePath
@@ -54,14 +48,14 @@ main :: IO ()
 main = do
   Gtk.initGUI 
   params <- cmdArgs mode 
-  (r :/ r') <- build (rootpath params)
+  (_r :/ r') <- build (rootpath params)
   let files = catMaybes . map takeFile . flattenDir $ r' 
       hdlfiles = filter isHdl files 
       pairs = map ((,) <$> id
                    <*> (buildpath params </>) . flip replaceExtension "pdf" . makeRelative (rootpath params)) 
                   hdlfiles 
       swappedpairs = map (\(x,y)->(y,x)) pairs 
-  (b :/ b') <- build (buildpath params)
+  (_b :/ b') <- build (buildpath params)
   let files2 = catMaybes . map takeFile . flattenDir $ b' 
       pdffiles = filter isPdf files2
       willbeerased = filter (\x -> isNothing (lookup x swappedpairs )) pdffiles 

@@ -16,46 +16,36 @@
 -----------------------------------------------------------------------------
 
 module Hoodle.Publish.PDF where
-
+ 
 import           Control.Applicative 
-import           Control.Concurrent 
-import           Control.Exception hiding (try)
-import           Control.Lens (_1,_2,_3,_4,view,at )
+import           Control.Exception (SomeException(..),catch)
+import           Control.Lens (_1,_2,_3,_4,view)
 import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe 
 import           Control.Monad.Trans.State 
-import           Data.Attoparsec.Char8
+import           Data.Attoparsec.ByteString.Char8 
+                   (parseOnly,anyChar,satisfy,inClass,endOfInput,try,string,manyTill)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
-import           Data.Data
-import qualified Data.HashMap.Strict as HM
 import           Data.Int
-import qualified Data.IntMap as IM
-import           Data.List 
-import           Data.Typeable
 import           Data.UUID.V4
 import           Graphics.Rendering.Cairo
 import           Network.HTTP.Base
-import           Network.URI
+import           Network.URI (unEscapeString)
 import           Pdf.Toolbox.Core
 import           Pdf.Toolbox.Document
 import           Pdf.Toolbox.Document.Internal.Types 
 import           System.Directory
-import           System.Directory.Tree (DirTree(..),AnchoredDirTree(..))
+import           System.Directory.Tree (DirTree(..))
 import           System.FilePath 
-import           System.Environment
 import           System.IO
 import qualified System.IO.Streams as Streams
 import           System.Process
 -- 
 import qualified Data.Hoodle.Simple as S
-import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render 
-import           Graphics.Hoodle.Render.Generic
-import           Graphics.Hoodle.Render.Type.Background
-import           Graphics.Hoodle.Render.Type.Hoodle
-import           Text.Hoodle.Parse.Attoparsec 
+import           Text.Hoodle.Parse.Attoparsec (hoodle)
 
 
 data UrlPath = FileUrl FilePath | HttpUrl String 
@@ -73,8 +63,8 @@ urlParse str =
                        <|> try (string "http://" *> return H) 
                        <|> try (string "https://" *> return HS)
                        <|> (return N) )
-                 rem <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
-                 return (b,rem) 
+                 remain <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
+                 return (b,remain) 
           r = parseOnly p (B.pack str)
       in case r of 
            Left _ -> Nothing 
@@ -83,12 +73,14 @@ urlParse str =
                             F -> Just (FileUrl (unEscapeString f))
                             H -> Just (HttpUrl ("http://" ++ f))
                             HS -> Just (HttpUrl ("https://" ++ f))
-    
+
+isFile :: DirTree a -> Bool    
 isFile (File _ _) = True
 isFile _ = False
 
+takeFile :: DirTree a -> Maybe a
 takeFile x | isFile x = (Just . file) x 
-takeFile x | otherwise = Nothing 
+takeFile _ | otherwise = Nothing 
 
 data Annot = Annot { annot_rect :: (Int, Int, Int, Int) 
                    , annot_border :: (Int ,Int, Int) 
@@ -136,8 +128,8 @@ writeTrailer = do
   let catalogRef = Ref catalogIndex 0
   lift $ writeObject catalogRef $ ODict $ Dict [("Type", OName "Catalog"), ("Pages", ORef rootRef)]
 
-  count <- gets stNextFree
-  lift $ writeXRefTable 0 (Dict [("Size", ONumber $ NumInt $ count - 1), ("Root", ORef catalogRef)])
+  n <- gets stNextFree
+  lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n-1)), ("Root", ORef catalogRef)])
 
 writeObjectChildren :: Object () -> Pdf (StateT AppState (PdfWriter IO)) (Object ())
 writeObjectChildren (ORef r) = do
@@ -208,12 +200,12 @@ writeAnnot Annot{..} = do
 
 -- | 
 writePdfPageWithAnnot :: S.Dimension -> Maybe [Annot] -> Page -> Pdf (StateT AppState (PdfWriter IO)) ()
-writePdfPageWithAnnot (S.Dim w h) mannots page@(Page _ pageDict) = do
+writePdfPageWithAnnot (S.Dim w h) mannots pg@(Page _ pageDict) = do
   parentRef <- lift.lift $ gets stRootNode
   pageIndex <- (lift.lift) nextFreeIndex
   let pageRef = Ref pageIndex 0
   lift.lift $ putPageRef pageRef
-  contentRefs <- pageContents page
+  contentRefs <- pageContents pg
   contentRefs' <- forM contentRefs $ \r -> do
     s <- lookupObject r >>= toStream
     writeStream s
@@ -240,10 +232,10 @@ writePdfPageWithAnnot (S.Dim w h) mannots page@(Page _ pageDict) = do
 
 -- | 
 makeAnnot :: S.Dimension -> String -> (FilePath,FilePath) -> S.Link -> IO (Maybe Annot)
-makeAnnot (S.Dim pw ph) urlbase (rootpath,currpath) lnk = do 
+makeAnnot (S.Dim _pw ph) urlbase (rootpath,_currpath) lnk = do 
   let (x,y) = S.link_pos lnk
       S.Dim w h = S.link_dim lnk
-      pwi = floor pw 
+      -- pwi = floor pw 
       phi = floor ph
       xi = floor x
       yi = floor y 
@@ -258,14 +250,14 @@ makeAnnot (S.Dim pw ph) urlbase (rootpath,currpath) lnk = do
                               , annot_border = (16,16,1) 
                               , annot_act = OpenURI url
                               })
-        FileUrl path -> do 
+        FileUrl _path -> do 
           b <- doesFileExist linkpath 
           if b 
             then do
               fp <- canonicalizePath linkpath 
               let (dir,fn) = splitFileName fp
                   rdir = makeRelative rootpath dir 
-                  (fb,ext) = splitExtension fn 
+                  (fb,_ext) = splitExtension fn 
               return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
                                  , annot_border = (16,16,1) 
                                  , annot_act = OpenURI (urlbase </> rdir </> urlEncode fb <.> "pdf")
@@ -294,9 +286,9 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
                    liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
       hdlfp' <- liftIO $ canonicalizePath hdlfp 
       let (hdldir,hdlfn) = splitFileName hdlfp' 
-          (hdlfb,ext) = splitExtension hdlfn
+          (hdlfb,_ext) = splitExtension hdlfn
       let special = if i == 0 
-                    then let S.Dim w h = dim 
+                    then let S.Dim _w h = dim 
                          in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
                                      , annot_border = (16,16,1) 
                                      , annot_act = specialURIFunction specialurlbase (hdldir,hdlfb) 
@@ -310,13 +302,9 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
   when (isLeft res) $ error $ show res
   liftIO $ hClose handle
 
-
------ 
+specialURIFunction :: FilePath -> (FilePath,FilePath) -> AnnotActions
 specialURIFunction baseurl (hdldir,hdlfb) = 
   OpenURI (baseurl  </>  urlEncode (hdldir </> hdlfb <.>  "hdl"))
-
-----
-
 
 getLinks :: S.Page -> [S.Link]
 getLinks pg = do 
@@ -324,8 +312,10 @@ getLinks pg = do
   S.ItemLink lnk <- view S.items l
   return lnk 
 
+isHdl :: FilePath -> Bool
 isHdl = ( == ".hdl") <$> takeExtension 
 
+isPdf :: FilePath -> Bool
 isPdf = ( == ".pdf") <$> takeExtension
 
 

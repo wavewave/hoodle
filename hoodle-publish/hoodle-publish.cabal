@@ -1,0 +1,50 @@
+Name:		hoodle-publish
+Version:	0.1.0.999
+Synopsis:	publish hoodle files as a static web site
+Description: 	This package provieds a simple tool hoodle-publish which make a static web site from a directory containing hoodle files
+Homepage:       http://ianwookim.org/hoodle
+License: 	GPL-3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 7.6
+Build-Type: 	Simple
+Cabal-Version:  >= 1.8
+data-files:     
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle-publish
+
+Executable hoodle-publish
+  Main-is: hoodle-publish.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends:   base == 4.*, 
+                   containers >= 0.4,
+                   mtl > 2,
+                   transformers >= 0.3,
+                   lens >= 2.5,
+                   cmdargs, 
+                   directory-tree, 
+                   directory > 1,
+                   filepath > 1, 
+                   process >= 1.1, 
+                   uuid >= 1.2.7, 
+                   gtk > 0.12, 
+                   cairo > 0.12,
+                   poppler >= 0.12.2.2, 
+                   pdf-toolbox-document < 0.0.2, 
+                   pdf-toolbox-core < 0.0.2, 
+                   io-streams, 
+                   network, 
+                   HTTP,
+                   attoparsec >= 0.10,
+                   bytestring >= 0.9, 
+                   coroutine-object >= 0.2, 
+                   hoodle-types >= 0.2,
+                   hoodle-parser >= 0.2,
+                   hoodle-render >= 0.3.1,
+                   unordered-containers

@@ -48,3 +48,4 @@ Executable hoodle-publish
                    hoodle-parser >= 0.2,
                    hoodle-render >= 0.3.1,
                    unordered-containers
+  other-modules:   Hoodle.Publish.PDF

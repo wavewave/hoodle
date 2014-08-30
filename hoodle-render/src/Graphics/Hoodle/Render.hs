@@ -173,15 +173,6 @@ renderLink lnk =
            Cairo.restore
            Cairo.resetClip 
            return () 
--- renderLink lnk@LinkAnchor {..} = do
---    let lnkbbx = runIdentity (makeBBoxed lnk)
---        bbox@(BBox (x0,y0) (x1,y1)) = getBBox lnkbbx
---    clipBBox (Just bbox)
---    Cairo.setSourceRGBA 0 1 0 1 
---    Cairo.rectangle x0 y0 (x1-x0) (y1-y0)
---    Cairo.fill
---    Cairo.resetClip
---    return ()
 
 
 -- | 
@@ -243,14 +234,6 @@ drawFallBackBkg (Dim w h) = do
   Cairo.setSourceRGBA 1 1 1 1 
   Cairo.rectangle 0 0 w h 
   Cairo.fill 
-  {- Cairo.setSourceRGBA 0 0 0 1 
-  Cairo.setLineWidth 5
-  Cairo.moveTo 0 0
-  Cairo.lineTo w h 
-  Cairo.stroke 
-  Cairo.moveTo w 0 
-  Cairo.lineTo 0 h
-  Cairo.stroke -}
   
 
 -- | 
@@ -266,8 +249,7 @@ renderRBkg cache (r,dim,mx) =
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
 renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem cache itm@(RItemImage img msfc {- uuid -} ) = do
-    -- let mssfc = HM.lookup uuid cache
+renderRItem cache itm@(RItemImage img msfc) = do
     case msfc of
       Nothing -> renderImg (bbxed_content img)
       Just sfc -> do 
@@ -278,7 +260,6 @@ renderRItem cache itm@(RItemImage img msfc {- uuid -} ) = do
 	Cairo.save 
 	Cairo.translate x y 
         Cairo.scale ((x2-x1)/ix) ((y2-y1)/iy)
-	-- Cairo.scale ((x2-x1)/ix/s) ((y2-y1)/iy/s)
 	Cairo.setSourceSurface sfc 0 0 
 	Cairo.paint 
 	Cairo.restore
@@ -386,8 +367,6 @@ renderRBkg_Buf cache (b,dim,mx) = do
     case HM.lookup (rbkg_uuid b) cache of
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
-        -- liftIO $ print mx
-        -- liftIO $ print (1/s)
         Cairo.save
         case mx of 
           Nothing -> Cairo.scale (1/s) (1/s) 
@@ -496,3 +475,4 @@ cnstrctRLayer :: Layer -> Renderer RLayer
 cnstrctRLayer lyr = do 
   nitms <- (mapM cnstrctRItem . view items) lyr 
   return (set gitems nitms emptyRLayer)
+

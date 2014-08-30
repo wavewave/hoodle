@@ -1,12 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Main
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013,2014 Ian-Woo Kim
 --
 -- License     : GPL-3 
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -29,10 +30,11 @@ import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
 import           Data.Data
-import           Data.Typeable
+import qualified Data.HashMap.Strict as HM
 import           Data.Int
 import qualified Data.IntMap as IM
 import           Data.List 
+import           Data.Typeable
 import           Data.UUID.V4
 import           Graphics.Rendering.Cairo
 import           Graphics.UI.Gtk (initGUI)
@@ -345,9 +347,9 @@ renderjob :: RHoodle -> FilePath -> IO ()
 renderjob h ofp = do 
   let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
   let S.Dim width height = view gdimension p  
-  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) x >> return () 
+  let rf x = cairoOptionPage (RBkgDrawPDF,DrawFull) HM.empty x >> return () 
   withPDFSurface ofp width height $ \s -> renderWith s $  
-    (sequence1_ showPage . map rf . IM.elems . view gpages ) h 
+    (sequence1_ showPage . map (rf . (,Nothing)) . IM.elems . view gpages ) h 
 
 
 isUpdated :: (FilePath,FilePath) -> IO Bool 

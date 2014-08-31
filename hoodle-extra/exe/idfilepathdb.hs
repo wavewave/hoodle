@@ -59,7 +59,7 @@ data IdFilePathDB = List
 
                   | AllFiles { hoodlehome :: Maybe FilePath }
                   | ChangeRoot { newhome :: FilePath }
-                  | DBDiff
+                  | DBDiff { newfile :: FilePath }
                   | DBSync { remoteURL :: String 
                            , remoteID :: String 
                            , remotePassword :: String } 
@@ -95,7 +95,7 @@ dbsync = DBSync { remoteURL = def &= typ "URL" &= argPos 0
   
 
 dbdiff :: IdFilePathDB 
-dbdiff = DBDiff
+dbdiff = DBDiff { newfile = def &= typ "FILE" &= argPos 0 } 
 
 {-
 dbmigrate :: IdFilePathDB
@@ -200,10 +200,11 @@ checkVersionAndGetIfHigherVersion bstr = do
         else return (parseOnly hoodle bstr)
 
 
-dbdiffwork :: IO ()
-dbdiffwork = do 
+dbdiffwork :: FilePath -> IO ()
+dbdiffwork newdbfile = do 
   homedir <- getHomeDirectory 
-  newdbstr <- hGetContents stdin
+  newdbstr <- readFile newdbfile
+  -- newdbstr <- hGetContents stdin
   -- let newdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
       -- for the time being
       -- olddbfile = homedir </> "Dropbox" </> "hoodleiddb.dat.old"
@@ -251,13 +252,13 @@ main :: IO ()
 main = do 
   params <- cmdArgs mode
   case params of
-    List               -> listwork
-    Info uuid          -> infowork uuid
+    List                -> listwork
+    Info uuid           -> infowork uuid
     SingleFile mhdir fp -> singlefilework mhdir fp 
     AllFiles mhdir      -> allfilework mhdir
-    ChangeRoot hdir    -> changerootwork hdir
-    DBSync url idee pw -> dbsyncwork url idee pw
-    DBDiff             -> dbdiffwork
+    ChangeRoot hdir     -> changerootwork hdir
+    DBSync url idee pw  -> dbsyncwork url idee pw
+    DBDiff fp           -> dbdiffwork fp
 
     {- 
     DBMigrateToSqlite  -> dbmigrate2sqlite 

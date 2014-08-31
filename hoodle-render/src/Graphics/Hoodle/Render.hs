@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -25,6 +26,7 @@ module Graphics.Hoodle.Render
 , renderImg
 , renderBkg
 , renderItem 
+, renderLayer
 , renderPage
 -- * simple rendering using R-structure 
 , renderRBkg
@@ -44,6 +46,9 @@ module Graphics.Hoodle.Render
 , cnstrctRBkg_StateT
 , cnstrctRPage_StateT
 , cnstrctRHoodle  
+-- * some simple render with state
+, renderPage_StateT
+, initRenderContext
 ) where
 
 import           Control.Applicative
@@ -216,14 +221,20 @@ renderItem (ItemSVG svg) = renderSVG svg
 renderItem (ItemLink lnk) = renderLink lnk
 renderItem (ItemAnchor anc) = renderAnchor anc 
 
+-- | renderLayer
+renderLayer :: Layer -> Cairo.Render ()
+renderLayer = mapM_ renderItem . view items
+
+
 -- |
 renderPage :: Page -> Cairo.Render ()
 renderPage page = do 
   renderBkg (view background page,view dimension page)
   Cairo.setLineCap Cairo.LineCapRound
   Cairo.setLineJoin Cairo.LineJoinRound
-  mapM_ (mapM renderItem . view items) . view layers $ page
+  mapM_ renderLayer . view layers $ page
   Cairo.stroke
+
 
 -----
 -- R-structure 
@@ -453,7 +464,7 @@ cnstrctRHoodle hdl = do
         atomically $ sendPDFCommand uuid qvar (GetNPages doc nvar)
         atomically $ takeTMVar nvar
   mnumpdfpgs <- sequenceA (getNumPgs <$> mdoc)
-  liftIO $print mnumpdfpgs
+  -- liftIO $print mnumpdfpgs
   npgs <- evalStateT (mapM cnstrctRPage_StateT pgs) 
                      (Just (Context "" "" Nothing mdoc)) 
   return $ GHoodle hid ttl revs (PDFData <$> pdf <*> mnumpdfpgs) txt (fromList npgs)          
@@ -476,3 +487,33 @@ cnstrctRLayer lyr = do
   nitms <- (mapM cnstrctRItem . view items) lyr 
   return (set gitems nitms emptyRLayer)
 
+
+
+-------------------------------------------------------
+-- simple rendering with pdf (or global information) --
+-------------------------------------------------------
+
+-- |
+renderPage_StateT :: Page -> StateT Context Cairo.Render ()
+renderPage_StateT pg = do  
+  let bkg = view background pg
+      dim = view dimension pg 
+      lyrs = view layers pg
+  -- nlyrs_lst <- lift (mapM cnstrctRLayer lyrs)
+  -- let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
+  --     nlyrs = fromNonEmptyList nlyrs_nonemptylst 
+  -- nbkg <- cnstrctRBkg_StateT dim bkg
+  -- return $ GPage dim nbkg nlyrs 
+  renderBackground_StateT dim bkg
+  lift (mapM_ renderLayer lyrs)
+  
+-- | 
+initRenderContext :: Hoodle -> IO Context
+initRenderContext hdl = do
+  let hid = view hoodleID hdl 
+      ttl = view title hdl 
+      revs = view revisions hdl 
+      pgs = view pages hdl
+      pdf = view embeddedPdf hdl 
+  mdoc <- join <$> mapM popplerGetDocFromDataURI pdf
+  return (Context "" "" Nothing mdoc)

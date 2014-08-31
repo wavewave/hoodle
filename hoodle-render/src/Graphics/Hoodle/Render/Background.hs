@@ -246,3 +246,35 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"
         Just x -> return x
+
+ 
+-- | For simple hoodle background
+renderBackground_StateT :: Dimension -> Background -> StateT Context Cairo.Render ()
+renderBackground_StateT dim@(Dim w h) bkg = do
+    case bkg of 
+      Background _t c s -> lift (renderBkg (bkg,dim))
+      BackgroundPdf _t md mf pn -> do 
+        r <- runMaybeT $ do
+          case (md,mf) of 
+            (Just d, Just f) -> do
+              doc <- (MaybeT . liftIO . popplerGetDocFromFile) f
+              lift . put $ (Context d f (Just doc) Nothing)
+              pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
+              lift . lift $ pdfRender pg
+            _ -> do 
+              Context oldd oldf olddoc _ <- lift get
+              doc <- MaybeT . return $ olddoc  
+              pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
+              lift . lift $ pdfRender pg
+        maybe (error "renderBackground_StateT") (const (return ())) r
+      BackgroundEmbedPdf _ pn -> do 
+        r <- runMaybeT $ do 
+          Context _ _ _ mdoc <- lift get
+          doc <- (MaybeT . return) mdoc 
+          pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
+          lift . lift $ pdfRender pg
+        maybe (error "renderBackground_StateT") (const (return ())) r
+  where pdfRender pg = do Cairo.setSourceRGBA 1 1 1 1
+                          Cairo.rectangle 0 0 w h
+                          Cairo.fill
+                          PopplerPage.pageRender pg

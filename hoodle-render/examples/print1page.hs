@@ -1,7 +1,9 @@
 {-# LANGUAGE PackageImports #-}
 
+module Main where
+
 import Control.Monad
-import "mtl" Control.Monad.State 
+import Control.Monad.State 
 import Data.Attoparsec
 import qualified Data.ByteString as B
 import Graphics.Rendering.Cairo
@@ -26,9 +28,13 @@ main = do
   case mh of 
     Nothing -> print "not parsed"
     Just hoo -> do 
+      ctxt <- initRenderContext hoo
       let fstpage = head (hoodle_pages hoo) 
           Dim w h = page_dim fstpage 
-          cairowork s = renderWith s (renderPage fstpage) 
+          cairowork s = renderWith s $ do
+                          flip runStateT ctxt (renderPage_StateT fstpage)
+                          return ()
+ 
       let action 
             | mod == "svg" = withSVGSurface outfile w h cairowork 
             | mod == "pdf" = withPDFSurface outfile w h cairowork

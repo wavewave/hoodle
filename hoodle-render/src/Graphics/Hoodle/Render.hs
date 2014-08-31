@@ -126,12 +126,8 @@ renderStrk s@(VWStroke _ _ d) = do
 -- | render image : not fully implemented 
 renderImg :: Image -> Cairo.Render () 
 renderImg img@(Image src (x,y) (Dim w h))  = do  
-    -- let (x,y) = (img_pos . bbxed_content) img
-       
-    -- let imgbbx = runIdentity (makeBBoxed img)
-   --      src = img_src img
     let (x2,y2) = (x+w,y+h)
-        imgbbx = BBox (x,y) (x2,y2) -- (x+w,y+h)
+        imgbbx = BBox (x,y) (x2,y2)
         embed = getByteStringIfEmbeddedPNG src 
     msfc <- liftIO $ case embed of         
       Just bstr -> do 

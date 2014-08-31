@@ -29,6 +29,7 @@ import           Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
 import           Data.Int
+import           Data.UUID (fromString, UUID(..))
 import           Data.UUID.V4
 import           Graphics.Rendering.Cairo
 import           Network.HTTP.Base
@@ -265,8 +266,9 @@ writePdfFile :: FilePath -- ^ hoodle file path
              -> (FilePath,FilePath)   -- ^ (root path, curr path)
              -> FilePath    -- ^ pdf file 
              -> [(Int,[S.Link])]
+             -> Maybe UUID
              -> StateT AppState (PdfWriter IO) ()
-writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks = do
+writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks muuid = do
     handle <- liftIO $ openBinaryFile path ReadMode
     res <- runPdfWithHandle handle knownFilters $ do
       encrypted <- isEncrypted
@@ -285,7 +287,7 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
                       then let S.Dim _w h = dim 
                            in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
                                        , annot_border = (16,16,1) 
-                                       , annot_act = specialURIFunction specialurlbase (hdldir,hdlfb) 
+                                       , annot_act = specialURIFunction specialurlbase muuid -- (hdldir,hdlfb) 
                                        }
                                ]
                       else []  
@@ -296,9 +298,11 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
     when (isLeft res) $ error $ show res
     liftIO $ hClose handle
 
-specialURIFunction :: FilePath -> (FilePath,FilePath) -> AnnotActions
-specialURIFunction baseurl (hdldir,hdlfb) = 
-    OpenURI (baseurl  </>  urlEncode (hdldir </> hdlfb <.>  "hdl"))
+specialURIFunction :: FilePath -> Maybe UUID {- (FilePath,FilePath) -} -> AnnotActions
+specialURIFunction baseurl muuid {- (hdldir,hdlfb) -} = 
+    case muuid of
+      Nothing -> error "muuid = Nothing?" -- OpenURI baseurl
+      Just uuid -> OpenURI (baseurl  </>  urlEncode (show uuid))
 
 getLinks :: S.Page -> [S.Link]
 getLinks pg = do 
@@ -359,6 +363,8 @@ createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: Some
             let npgs = zip [1..] (view S.pages hdl)
                 npglnks = map ((,) <$> fst <*> getLinks . snd) npgs  
                 dim = (view S.dimension . snd . head) npgs 
+                muuid = (fromString . B.unpack . view S.hoodleID) hdl
+            -- print muuid
             tempfile <- (</>) <$> getTemporaryDirectory <*> liftM show nextRandom
             renderHoodleToPDF hdl tempfile
             --
@@ -368,6 +374,6 @@ createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: Some
               flip evalStateT initialAppState $ do 
                 index <- nextFreeIndex
                 modify $ \st -> st { stRootNode = Ref index 0} 
-                writePdfFile fn dim (urlbase,specialurlbase) (rootpath,currpath) tempfile npglnks
+                writePdfFile fn dim (urlbase,specialurlbase) (rootpath,currpath) tempfile npglnks muuid
                 writeTrailer
             removeFile tempfile 

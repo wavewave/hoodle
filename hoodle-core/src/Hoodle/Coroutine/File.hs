@@ -49,7 +49,8 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render (Xform4Page(..),cnstrctRHoodle)
+import           Graphics.Hoodle.Render 
+                   (Xform4Page(..),cnstrctRHoodle, initRenderContext, renderPage, renderPage_StateT)
 import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
@@ -58,7 +59,6 @@ import           Text.Hoodle.Builder
 import           Text.Hoodle.Migrate.FromXournal
 import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Xournal.Parse.Conduit as XP
--- import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 -- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
@@ -69,12 +69,10 @@ import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.TextInput
--- import           Hoodle.Coroutine.Window
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
--- import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.ModelAction.Window
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
@@ -198,6 +196,7 @@ sequence1_ _ []  = return ()
 sequence1_ _ [a] = a 
 sequence1_ i (a:as) = a >> i >> sequence1_ i as 
 
+{- 
 -- | 
 renderjob :: RenderCache -> RHoodle -> FilePath -> IO () 
 renderjob cache h ofp = do 
@@ -206,6 +205,20 @@ renderjob cache h ofp = do
   let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) cache (x,Nothing :: Maybe Xform4Page) >> return () 
   Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
     (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
+-}
+
+-- | 
+renderjob :: Hoodle -> FilePath -> IO () 
+renderjob h ofp = do 
+    let p = head (view pages h)
+    let Dim width height = view dimension p  
+    let rf x = renderPage x >> return ()
+    ctxt <- initRenderContext h
+    Cairo.withPDFSurface ofp width height $ \s -> 
+      Cairo.renderWith s . flip runStateT ctxt $
+        sequence1_ (lift Cairo.showPage) . map renderPage_StateT . view pages $ h 
+    return ()
+    --    (sequence1_ showPage . map rf . view S.pages ) h 
 
 -- | 
 fileExport :: MainCoroutine ()
@@ -216,10 +229,8 @@ fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ())
       if takeExtension filename /= ".pdf" 
       then fileExtensionInvalid (".pdf","export") >> fileExport 
       else do      
-        xstate <- get 
-        let hdl = getHoodle xstate 
-            cache = view renderCache xstate
-        liftIO (renderjob cache hdl filename) 
+        hdl <- rHoodle2Hoodle . getHoodle <$> get
+        liftIO (renderjob hdl filename) 
 
 -- | 
 fileStartSync :: MainCoroutine ()
@@ -522,9 +533,6 @@ embedAllPDFBackground = do
   nhdl <- liftIO . embedPDFInHoodle $ hdl
   constructNewHoodleStateFromHoodle nhdl
   commit_
-  -- nrhdl <- 
-  -- modeChange ToViewAppendMode
-  -- commit (set hoodleModeState (ViewAppendState nhdl) xst)
   invalidateAll   
   
 -- | embed an item from hoodlet using hoodlet identifier
@@ -550,11 +558,11 @@ mkRevisionHdlFile hdl = do
     return (md5str,name) 
 
 
-mkRevisionPdfFile :: RenderCache -> RHoodle -> String -> IO ()
-mkRevisionPdfFile cache hdl fname = do 
+mkRevisionPdfFile :: {- RenderCache -> -} Hoodle -> String -> IO ()
+mkRevisionPdfFile {- cache -} hdl fname = do 
     hdir <- getHomeDirectory
     tempfile <- mkTmpFile "pdf"
-    renderjob cache hdl tempfile 
+    renderjob {- cache -} hdl tempfile 
     let nfilename = fname <.> "pdf"
         vcsdir = hdir </> ".hoodle.d" </> "vcs"
     b <- doesDirectoryExist vcsdir 
@@ -564,16 +572,16 @@ mkRevisionPdfFile cache hdl fname = do
 -- | 
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
-    rhdl <- getHoodle <$> get 
-    cache <- view renderCache <$> get
-    let hdl = rHoodle2Hoodle rhdl
+    -- rhdl <- getHoodle <$> get 
+    -- cache <- view renderCache <$> get
+    hdl <- rHoodle2Hoodle . getHoodle <$> get
     rmini <- minibufDialog "Commit Message:"
     case rmini of 
       Right [] -> return ()
       Right strks' -> do
         doIOaction $ \_evhandler -> do 
           (md5str,fname) <- mkRevisionHdlFile hdl
-          mkRevisionPdfFile cache rhdl fname
+          mkRevisionPdfFile hdl fname
           return (UsrEv (GotRevisionInk md5str strks'))
         r <- waitSomeEvent (\case GotRevisionInk _ _ -> True ; _ -> False )
         let GotRevisionInk md5str strks = r          
@@ -591,7 +599,7 @@ fileVersionSave = do
         txtstr <- maybe "" id <$> textInputDialog
         doIOaction $ \_evhandler -> do 
           (md5str,fname) <- mkRevisionHdlFile hdl
-          mkRevisionPdfFile cache rhdl fname
+          mkRevisionPdfFile hdl fname
           return (UsrEv (GotRevision md5str txtstr))
         r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
         let GotRevision md5str txtstr' = r          

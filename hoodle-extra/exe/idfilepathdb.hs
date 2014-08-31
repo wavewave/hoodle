@@ -2,11 +2,14 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-} 
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
+
 -- 
 -- uuid,md5hash,filepath map utility  
 -- 
-import           Control.Applicative ((<$>))
+import           Control.Applicative
 import           Control.Lens
+import           Control.Monad
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Class
@@ -14,8 +17,9 @@ import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Resource
 import           Data.Attoparsec 
+import           Data.Aeson (decode)
 import           Data.Aeson.Parser (json)
-import           Data.Aeson.Types  (parseJSON, parseEither)
+import           Data.Aeson.Types  (parseJSON, parseEither,ToJSON (..),FromJSON (..), Value(..),object, (.:) )
 import           Data.Aeson.Encode.Pretty (encodePretty)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as L
@@ -23,9 +27,10 @@ import           Data.Conduit (($$), ($$+-))
 import qualified Data.Conduit.List as CL 
 import           Data.Data
 import           Data.Digest.Pure.MD5
+import qualified Data.HashMap.Strict as H
 import qualified Data.List as DL 
 import qualified Data.Map as M
-import           Data.Monoid ((<>))
+import           Data.Monoid ((<>),mconcat)
 import qualified Data.Text as T
 import           Database.Persist.Sqlite
 import           Database.Persist.Sql (rawQuery)
@@ -63,6 +68,10 @@ data IdFilePathDB = List
                   | DBSync { remoteURL :: String 
                            , remoteID :: String 
                            , remotePassword :: String } 
+                  | DBGet  { remoteURL :: String 
+                           , remoteID :: String
+                           , remotePassword :: String
+                           }
                   --  | DBMigrateToSqlite
                   deriving (Show,Data,Typeable)
 
@@ -97,13 +106,19 @@ dbsync = DBSync { remoteURL = def &= typ "URL" &= argPos 0
 dbdiff :: IdFilePathDB 
 dbdiff = DBDiff { newfile = def &= typ "FILE" &= argPos 0 } 
 
+dbget :: IdFilePathDB
+dbget = DBGet { remoteURL = def &= argPos 0 
+              , remoteID = def &= argPos 1
+              , remotePassword = def &= argPos 2
+              }
+
 {-
 dbmigrate :: IdFilePathDB
 dbmigrate = DBMigrateToSqlite
 -}
   
 mode :: IdFilePathDB
-mode = modes [list, info, singlefile, allfiles, changeroot, dbsync, dbdiff ] -- , singlefile, dbmigrate ] 
+mode = modes [list, info, singlefile, allfiles, changeroot, dbsync, dbdiff, dbget ] -- , singlefile, dbmigrate ] 
 
 
 listwork :: IO ()
@@ -114,17 +129,12 @@ listwork = do
     runMigration migrateDocRoot
     all <- selectList ([] :: [Filter HoodleDocLocation]) []
     liftIO $ mapM_ (formatter stdout) all 
-    -- dumpTable "hoodle_doc_location"
-    -- dumpTable "hoodle_doc_root"
-
   where formatter h x = do 
           let v = entityVal x
               i = hoodleDocLocationFileid v
               m = hoodleDocLocationFilemd5 v
               l = hoodleDocLocationFileloc v
           hPutStrLn h (T.unpack i ++ " " ++ T.unpack m ++ " " ++ show l)
-
-
 
 infowork :: String -> IO ()
 infowork uuid = do
@@ -200,11 +210,41 @@ checkVersionAndGetIfHigherVersion bstr = do
         else return (parseOnly hoodle bstr)
 
 
+data HoodleFile = HoodleFile { hoodleFileUuid :: T.Text
+                             , hoodleFileOwner :: T.Text 
+                             , hoodleFilePath :: T.Text }
+                deriving (Show)
+
+{- 
+instance ToJSON HoodleFile where 
+    toJSON HoodleFile {..} = object [ "uuid"     .= toJSON hoodleFileUuid
+                                    , "owner"    .= toJSON hoodleFileOwner
+                                    , "filepath" .= toJSON hoodleFilePath 
+                                    ] 
+-}
+
+instance FromJSON HoodleFile where 
+    parseJSON (Object v) = HoodleFile <$> v .: "uuid" 
+                                      <*> v .: "owner"
+                                      <*> v .: "filepath"
+    parseJSON _ = mzero 
+
 dbdiffwork :: FilePath -> IO ()
 dbdiffwork newdbfile = do 
   homedir <- getHomeDirectory 
   newdbstr <- readFile newdbfile
-  -- newdbstr <- hGetContents stdin
+  olddbjson <- L.hGetContents stdin
+  let molddb :: Maybe [HoodleFile] = decode olddbjson  -- parseEither parseJSON olddbstr
+  case molddb of
+    Nothing -> return ()
+    Just olddb -> do 
+      let f HoodleFile {..} = (T.unpack hoodleFileUuid ++ " " ++ "fda122ccca11d29a8bd9acbcd714eeef" ++ " " ++ show hoodleFilePath)
+          olddbstr = DL.intercalate "\n" (map f olddb)
+          makedb = M.fromList . map TextFileDB.splitfunc . lines 
+          (newdbmap,olddbmap) = (makedb newdbstr, makedb olddbstr) 
+      (L.putStrLn . encodePretty) (checkdiff olddbmap newdbmap)
+  
+
   -- let newdbfile = homedir </> "Dropbox" </> "hoodleiddb.dat"
       -- for the time being
       -- olddbfile = homedir </> "Dropbox" </> "hoodleiddb.dat.old"
@@ -212,10 +252,7 @@ dbdiffwork newdbfile = do
   -- newdbstr <- readFile newdbfile 
   -- for the time being
   -- olddbstr <- readFile olddbfile
-  let olddbstr = ""
-  let makedb = M.fromList . map TextFileDB.splitfunc . lines 
-      (newdb,olddb) = (makedb newdbstr, makedb olddbstr) 
-  (L.putStrLn . encodePretty) (checkdiff olddb newdb)
+  -- let olddbstr = ""
 
 dbsyncwork :: String -> String -> String -> IO ()
 dbsyncwork url idee pwd = do           
@@ -247,6 +284,38 @@ dbsyncwork url idee pwd = do
           response <- N.http requesttask manager
           content <- N.responseBody response $$+- CL.consume 
           liftIO $ print content  
+
+dbgetwork :: String -> String -> String -> IO ()
+dbgetwork url idee pwd = do           
+    -- bstr <- B.hGetContents stdin
+    request' <- N.parseUrl (url <> "/auth/page/hashdb/login")
+    let crstr = B.pack ("username=" ++ idee ++ "&password=" ++ pwd)
+        requestauth = request' 
+          { N.method = "POST" 
+          , N.requestHeaders = 
+              ("Content-Type","application/x-www-form-urlencoded") 
+              : N.requestHeaders request'   
+          , N.requestBody = N.RequestBodyBS crstr
+          } 
+    mck <- runResourceT $ N.withManager $ \manager -> do  
+             response <- N.http requestauth manager
+             return (DL.lookup "Set-Cookie" (N.responseHeaders response))
+    case mck of 
+      Nothing -> return()
+      Just ck -> do 
+        request'' <- N.parseUrl (url <> "/dumpdb")
+        let requesttask = request'' 
+              { N.method = "GET"
+              , N.requestHeaders = ("Content-Type", "application/json") 
+                                   : ("Cookie",ck) 
+                                   : N.requestHeaders request''
+              -- , N.requestBody = N.RequestBodyBS bstr
+              }
+        runResourceT $ N.withManager $ \manager -> do  
+          response <- N.http requesttask manager
+          content <- N.responseBody response $$+- CL.consume 
+          liftIO $ B.putStrLn (mconcat content)
+
    
 main :: IO () 
 main = do 
@@ -259,6 +328,7 @@ main = do
     ChangeRoot hdir     -> changerootwork hdir
     DBSync url idee pw  -> dbsyncwork url idee pw
     DBDiff fp           -> dbdiffwork fp
+    DBGet url idee pw   -> dbgetwork url idee pw  
 
     {- 
     DBMigrateToSqlite  -> dbmigrate2sqlite 

@@ -52,6 +52,7 @@ Library
                    gtk > 0.12, 
                    hoodle-builder >= 0.3,
                    hoodle-parser >= 0.3,
+                   hoodle-publish >= 0.1.999,
                    hoodle-render >= 0.4.0,
                    hoodle-types >= 0.3,
                    lens >= 2.5,

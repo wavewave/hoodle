@@ -55,6 +55,7 @@ import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest 
+import           Hoodle.Publish.PDF (renderHoodleToPDF)
 import           Text.Hoodle.Builder 
 import           Text.Hoodle.Migrate.FromXournal
 import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
@@ -205,7 +206,7 @@ renderjob cache h ofp = do
   let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) cache (x,Nothing :: Maybe Xform4Page) >> return () 
   Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
     (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
--}
+
 
 -- | 
 renderjob :: Hoodle -> FilePath -> IO () 
@@ -220,6 +221,8 @@ renderjob h ofp = do
     return ()
     --    (sequence1_ showPage . map rf . view S.pages ) h 
 
+-}
+
 -- | 
 fileExport :: MainCoroutine ()
 fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ()) action 
@@ -231,7 +234,7 @@ fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ())
         then fileExtensionInvalid (".pdf","export") >> fileExport 
         else do      
           hdl <- rHoodle2Hoodle . getHoodle <$> get
-          liftIO (renderjob hdl filename) 
+          liftIO (renderHoodleToPDF hdl filename) 
 
 -- | 
 fileStartSync :: MainCoroutine ()
@@ -559,11 +562,11 @@ mkRevisionHdlFile hdl = do
     return (md5str,name) 
 
 
-mkRevisionPdfFile :: {- RenderCache -> -} Hoodle -> String -> IO ()
-mkRevisionPdfFile {- cache -} hdl fname = do 
+mkRevisionPdfFile :: Hoodle -> String -> IO ()
+mkRevisionPdfFile hdl fname = do 
     hdir <- getHomeDirectory
     tempfile <- mkTmpFile "pdf"
-    renderjob {- cache -} hdl tempfile 
+    renderHoodleToPDF hdl tempfile 
     let nfilename = fname <.> "pdf"
         vcsdir = hdir </> ".hoodle.d" </> "vcs"
     b <- doesDirectoryExist vcsdir 

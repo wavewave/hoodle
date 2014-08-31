@@ -327,11 +327,11 @@ sequence1_ i (a:as) = a >> i >> sequence1_ i as
 
 
 -- | 
-renderjob :: S.Hoodle -> FilePath -> IO () 
-renderjob h ofp = do 
+renderHoodleToPDF :: S.Hoodle -> FilePath -> IO () 
+renderHoodleToPDF h ofp = do 
   let p = head (view S.pages h)
   let S.Dim width height = view S.dimension p  
-  let rf x = renderPage x >> return ()
+  -- let rf x = renderPage x >> return ()
   ctxt <- initRenderContext h
   withPDFSurface ofp width height $ \s -> 
     renderWith s . flip runStateT ctxt $
@@ -371,16 +371,17 @@ createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: Some
             -- rhdl <- cnstrctRHoodle hdl 
             tempfile <- (</>) <$> getTemporaryDirectory <*> liftM show nextRandom
             -- renderjob rhdl tempfile
-            renderjob hdl tempfile
+            renderHoodleToPDF hdl tempfile
+            
             runPdfWriter ostr $ do 
               writePdfHeader
               deleteObject (Ref 0 65535) 0 
               flip evalStateT initialAppState $ do 
-                index <- nextFreeIndex 
+                index <- nextFreeIndex
                 modify $ \st -> st { stRootNode = Ref index 0} 
                 writePdfFile fn dim (urlbase,specialurlbase) (rootpath,currpath) tempfile npglnks
                 writeTrailer
             removeFile tempfile 
-
+            
 
 

@@ -5,5 +5,6 @@
 ./hoodle-parser 
 ./hoodle-builder 
 ./hoodle-render 
+./hoodle-publish
 ./hoodle-core 
 ./hoodle 

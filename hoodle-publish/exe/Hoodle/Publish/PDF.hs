@@ -276,7 +276,7 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks =
   handle <- liftIO $ openBinaryFile path ReadMode
   res <- runPdfWithHandle handle knownFilters $ do
     encrypted <- isEncrypted
-    when encrypted $ setUserPassword defaultUserPassord
+    when encrypted $ setUserPassword defaultUserPassword >> return ()
     root <- document >>= documentCatalog >>= catalogPageNode
     count <- pageNodeNKids root
     forM_ [0..count-1] $ \i -> do
@@ -327,14 +327,17 @@ sequence1_ i (a:as) = a >> i >> sequence1_ i as
 
 
 -- | 
-renderjob :: {- RHoodle -> -} S.Hoodle -> FilePath -> IO () 
+renderjob :: S.Hoodle -> FilePath -> IO () 
 renderjob h ofp = do 
-  let p = {- maybe (error "renderjob") id $ -} head (view S.pages h)
+  let p = head (view S.pages h)
   let S.Dim width height = view S.dimension p  
-  let rf x = -- cairoOptionPage (RBkgDrawPDF,DrawFull) HM.empty x >> return () 
-             renderPage x >> return ()
-  withPDFSurface ofp width height $ \s -> renderWith s $  
-    (sequence1_ showPage . map rf . view S.pages ) h 
+  let rf x = renderPage x >> return ()
+  ctxt <- initRenderContext h
+  withPDFSurface ofp width height $ \s -> 
+    renderWith s . flip runStateT ctxt $
+      sequence1_ (lift showPage) . map renderPage_StateT . view S.pages $ h 
+  return ()
+  --    (sequence1_ showPage . map rf . view S.pages ) h 
 
 
 isUpdated :: (FilePath,FilePath) -> IO Bool 

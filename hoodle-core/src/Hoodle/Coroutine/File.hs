@@ -197,32 +197,6 @@ sequence1_ _ []  = return ()
 sequence1_ _ [a] = a 
 sequence1_ i (a:as) = a >> i >> sequence1_ i as 
 
-{- 
--- | 
-renderjob :: RenderCache -> RHoodle -> FilePath -> IO () 
-renderjob cache h ofp = do 
-  let p = maybe (error "renderjob") id $ IM.lookup 0 (view gpages h)  
-  let Dim width height = view gdimension p  
-  let rf x = cairoRenderOption (RBkgDrawPDF,DrawFull) cache (x,Nothing :: Maybe Xform4Page) >> return () 
-  Cairo.withPDFSurface ofp width height $ \s -> Cairo.renderWith s $  
-    (sequence1_ Cairo.showPage . map rf . IM.elems . view gpages ) h 
-
-
--- | 
-renderjob :: Hoodle -> FilePath -> IO () 
-renderjob h ofp = do 
-    let p = head (view pages h)
-    let Dim width height = view dimension p  
-    let rf x = renderPage x >> return ()
-    ctxt <- initRenderContext h
-    Cairo.withPDFSurface ofp width height $ \s -> 
-      Cairo.renderWith s . flip runStateT ctxt $
-        sequence1_ (lift Cairo.showPage) . map renderPage_StateT . view pages $ h 
-    return ()
-    --    (sequence1_ showPage . map rf . view S.pages ) h 
-
--}
-
 -- | 
 fileExport :: MainCoroutine ()
 fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ()) action 

@@ -56,23 +56,23 @@ data T = N | F | H | HS  deriving (Show,Eq)
 -- | 
 urlParse :: String -> Maybe UrlPath 
 urlParse str = 
-  if length str < 7 
-    then Just (FileUrl str) 
-    else 
-      let p = do b <- (try (string "file://" *> return F)  
-                       <|> try (string "http://" *> return H) 
-                       <|> try (string "https://" *> return HS)
-                       <|> (return N) )
-                 remain <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
-                 return (b,remain) 
-          r = parseOnly p (B.pack str)
-      in case r of 
-           Left _ -> Nothing 
-           Right (b,f) -> case b of 
-                            N -> Just (FileUrl f)
-                            F -> Just (FileUrl (unEscapeString f))
-                            H -> Just (HttpUrl ("http://" ++ f))
-                            HS -> Just (HttpUrl ("https://" ++ f))
+    if length str < 7 
+      then Just (FileUrl str) 
+      else 
+        let p = do b <- (try (string "file://" *> return F)  
+                         <|> try (string "http://" *> return H) 
+                         <|> try (string "https://" *> return HS)
+                         <|> (return N) )
+                   remain <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
+                   return (b,remain) 
+            r = parseOnly p (B.pack str)
+        in case r of 
+             Left _ -> Nothing 
+             Right (b,f) -> case b of 
+                              N -> Just (FileUrl f)
+                              F -> Just (FileUrl (unEscapeString f))
+                              H -> Just (HttpUrl ("http://" ++ f))
+                              HS -> Just (HttpUrl ("https://" ++ f))
 
 isFile :: DirTree a -> Bool    
 isFile (File _ _) = True
@@ -89,70 +89,64 @@ data Annot = Annot { annot_rect :: (Int, Int, Int, Int)
 
 data AnnotActions = OpenURI String | OpenApp String 
 
-data AppState = AppState {
-  stNextFree :: Int,
-  stPageRefs :: [Ref],
-  stRootNode :: Ref
-  }
+data AppState = AppState { stNextFree :: Int
+                         , stPageRefs :: [Ref]
+                         , stRootNode :: Ref
+                         }
 
 initialAppState :: AppState
-initialAppState = AppState {
-  stNextFree = 1,
-  stPageRefs = [],
-  stRootNode = error "stRootNode"
-  }
+initialAppState = AppState { stNextFree = 1
+                           , stPageRefs = []
+                           , stRootNode = error "stRootNode"
+                           }
 
 nextFreeIndex :: Monad m => StateT AppState m Int
 nextFreeIndex = do
-  st <- get
-  let index = stNextFree st
-  put $ st {stNextFree = index + 1}
-  return index
+    st <- get
+    let index = stNextFree st
+    put $ st {stNextFree = index + 1}
+    return index
 
 putPageRef :: Monad m => Ref -> StateT AppState m ()
-putPageRef ref =
-  modify $ \st -> st {stPageRefs = ref : stPageRefs st}
+putPageRef ref = modify $ \st -> st {stPageRefs = ref : stPageRefs st}
 
 writeTrailer :: StateT AppState (PdfWriter IO) ()
 writeTrailer = do
-  pageRefs <- gets stPageRefs
-
-  rootRef <- gets stRootNode
-  lift $ writeObject rootRef $ ODict $ Dict [
-    ("Type", OName "Pages"),
-    ("Count", ONumber $ NumInt $ length pageRefs),
-    ("Kids", OArray $ Array $ map ORef $ reverse pageRefs)
-    ]
-
-  catalogIndex <- nextFreeIndex
-  let catalogRef = Ref catalogIndex 0
-  lift $ writeObject catalogRef $ ODict $ Dict [("Type", OName "Catalog"), ("Pages", ORef rootRef)]
-
-  n <- gets stNextFree
-  lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n-1)), ("Root", ORef catalogRef)])
+    pageRefs <- gets stPageRefs
+    rootRef <- gets stRootNode
+    lift $ writeObject rootRef $ ODict $ Dict [
+      ("Type", OName "Pages"),
+      ("Count", ONumber $ NumInt $ length pageRefs),
+      ("Kids", OArray $ Array $ map ORef $ reverse pageRefs)
+      ]
+    catalogIndex <- nextFreeIndex
+    let catalogRef = Ref catalogIndex 0
+    lift $ writeObject catalogRef $ ODict $ Dict [("Type", OName "Catalog"), ("Pages", ORef rootRef)]
+    n <- gets stNextFree
+    lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n-1)), ("Root", ORef catalogRef)])
 
 writeObjectChildren :: Object () -> Pdf (StateT AppState (PdfWriter IO)) (Object ())
 writeObjectChildren (ORef r) = do
-  o <- lookupObject r
-  case o of
-    OStream s -> do
-      ref <- writeStream s
-      return $ ORef ref
-    _ -> do
-      let o' = mapObject (error "impossible") o
-      o'' <- writeObjectChildren o'
-      index <- (lift.lift) nextFreeIndex
-      let ref = Ref index 0
-      (lift.lift.lift) $ writeObject ref $ mapObject (error "impossible") o''
-      return $ ORef ref
+    o <- lookupObject r
+    case o of
+      OStream s -> do
+        ref <- writeStream s
+        return $ ORef ref
+      _ -> do
+        let o' = mapObject (error "impossible") o
+        o'' <- writeObjectChildren o'
+        index <- (lift.lift) nextFreeIndex
+        let ref = Ref index 0
+        (lift.lift.lift) $ writeObject ref $ mapObject (error "impossible") o''
+        return $ ORef ref
 writeObjectChildren (ODict (Dict vals)) = do
-  vals' <- forM vals $ \(key, val) -> do
-    val' <- writeObjectChildren val
-    return (key, val')
-  return $ ODict $ Dict vals'
+    vals' <- forM vals $ \(key, val) -> do
+      val' <- writeObjectChildren val
+      return (key, val')
+    return $ ODict $ Dict vals'
 writeObjectChildren (OArray (Array vals)) = do
-  vals' <- forM vals writeObjectChildren
-  return $ OArray $ Array vals'
+    vals' <- forM vals writeObjectChildren
+    return $ OArray $ Array vals'
 writeObjectChildren o = return o
 
 -- | 
@@ -201,68 +195,68 @@ writeAnnot Annot{..} = do
 -- | 
 writePdfPageWithAnnot :: S.Dimension -> Maybe [Annot] -> Page -> Pdf (StateT AppState (PdfWriter IO)) ()
 writePdfPageWithAnnot (S.Dim w h) mannots pg@(Page _ pageDict) = do
-  parentRef <- lift.lift $ gets stRootNode
-  pageIndex <- (lift.lift) nextFreeIndex
-  let pageRef = Ref pageIndex 0
-  lift.lift $ putPageRef pageRef
-  contentRefs <- pageContents pg
-  contentRefs' <- forM contentRefs $ \r -> do
-    s <- lookupObject r >>= toStream
-    writeStream s
-  resources <- lookupDict "Resources" pageDict >>= deref >>= writeObjectChildren
-  
-  case mannots of 
-    Nothing -> lift.lift.lift $ writeObject pageRef $ ODict 
-                 $ Dict [ ("Type", OName "Page")
-                        , ("Contents", OArray $ Array $ map ORef contentRefs')
-                        , ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0,0,floor w,floor h]) 
-                        , ("Resources", resources)
-                        , ("Parent", ORef parentRef)
-                        ]
-    Just anns -> do
-      annrefs <- mapM writeAnnot anns
-      lift.lift.lift $ writeObject pageRef $ ODict 
-                 $ Dict [ ("Type", OName "Page")
-                        , ("Contents", OArray $ Array $ map ORef contentRefs')
-                        , ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0,0,floor w,floor h])
-                        , ("Resources", resources)
-                        , ("Parent", ORef parentRef)
-                        , ("Annots", (OArray . Array . map ORef) annrefs) 
-                        ]
+    parentRef <- lift.lift $ gets stRootNode
+    pageIndex <- (lift.lift) nextFreeIndex
+    let pageRef = Ref pageIndex 0
+    lift.lift $ putPageRef pageRef
+    contentRefs <- pageContents pg
+    contentRefs' <- forM contentRefs $ \r -> do
+      s <- lookupObject r >>= toStream
+      writeStream s
+    resources <- lookupDict "Resources" pageDict >>= deref >>= writeObjectChildren
+
+    case mannots of 
+      Nothing -> lift.lift.lift $ writeObject pageRef $ ODict 
+                   $ Dict [ ("Type", OName "Page")
+                          , ("Contents", OArray $ Array $ map ORef contentRefs')
+                          , ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0,0,floor w,floor h]) 
+                          , ("Resources", resources)
+                          , ("Parent", ORef parentRef)
+                          ]
+      Just anns -> do
+        annrefs <- mapM writeAnnot anns
+        lift.lift.lift $ writeObject pageRef $ ODict 
+                   $ Dict [ ("Type", OName "Page")
+                          , ("Contents", OArray $ Array $ map ORef contentRefs')
+                          , ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0,0,floor w,floor h])
+                          , ("Resources", resources)
+                          , ("Parent", ORef parentRef)
+                          , ("Annots", (OArray . Array . map ORef) annrefs) 
+                          ]
 
 -- | 
 makeAnnot :: S.Dimension -> String -> (FilePath,FilePath) -> S.Link -> IO (Maybe Annot)
 makeAnnot (S.Dim _pw ph) urlbase (rootpath,_currpath) lnk = do 
-  let (x,y) = S.link_pos lnk
-      S.Dim w h = S.link_dim lnk
-      -- pwi = floor pw 
-      phi = floor ph
-      xi = floor x
-      yi = floor y 
-      wi = floor w 
-      hi = floor h
-      linkpath = (B.unpack . S.link_location) lnk
-  case urlParse linkpath of 
-    Nothing -> return Nothing 
-    Just urlpath -> do 
-      case urlpath of 
-        HttpUrl url -> return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
-                              , annot_border = (16,16,1) 
-                              , annot_act = OpenURI url
-                              })
-        FileUrl _path -> do 
-          b <- doesFileExist linkpath 
-          if b 
-            then do
-              fp <- canonicalizePath linkpath 
-              let (dir,fn) = splitFileName fp
-                  rdir = makeRelative rootpath dir 
-                  (fb,_ext) = splitExtension fn 
-              return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
-                                 , annot_border = (16,16,1) 
-                                 , annot_act = OpenURI (urlbase </> rdir </> urlEncode fb <.> "pdf")
-                                 })
-            else return Nothing 
+    let (x,y) = S.link_pos lnk
+        S.Dim w h = S.link_dim lnk
+        -- pwi = floor pw 
+        phi = floor ph
+        xi = floor x
+        yi = floor y 
+        wi = floor w 
+        hi = floor h
+        linkpath = (B.unpack . S.link_location) lnk
+    case urlParse linkpath of 
+      Nothing -> return Nothing 
+      Just urlpath -> do 
+        case urlpath of 
+          HttpUrl url -> return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
+                                , annot_border = (16,16,1) 
+                                , annot_act = OpenURI url
+                                })
+          FileUrl _path -> do 
+            b <- doesFileExist linkpath 
+            if b 
+              then do
+                fp <- canonicalizePath linkpath 
+                let (dir,fn) = splitFileName fp
+                    rdir = makeRelative rootpath dir 
+                    (fb,_ext) = splitExtension fn 
+                return (Just Annot { annot_rect = (xi,phi-yi,xi+wi,phi-(yi+hi))
+                                   , annot_border = (16,16,1) 
+                                   , annot_act = OpenURI (urlbase </> rdir </> urlEncode fb <.> "pdf")
+                                   })
+              else return Nothing 
 
 -- | 
 writePdfFile :: FilePath -- ^ hoodle file path
@@ -273,44 +267,44 @@ writePdfFile :: FilePath -- ^ hoodle file path
              -> [(Int,[S.Link])]
              -> StateT AppState (PdfWriter IO) ()
 writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks = do
-  handle <- liftIO $ openBinaryFile path ReadMode
-  res <- runPdfWithHandle handle knownFilters $ do
-    encrypted <- isEncrypted
-    when encrypted $ setUserPassword defaultUserPassword >> return ()
-    root <- document >>= documentCatalog >>= catalogPageNode
-    count <- pageNodeNKids root
-    forM_ [0..count-1] $ \i -> do
-      page <- pageNodePageByNum root i
-      mannots <- runMaybeT $ do 
-                   lnks <- MaybeT . return $ lookup (i+1) nlnks
-                   liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
-      hdlfp' <- liftIO $ canonicalizePath hdlfp 
-      let (hdldir,hdlfn) = splitFileName hdlfp' 
-          (hdlfb,_ext) = splitExtension hdlfn
-      let special = if i == 0 
-                    then let S.Dim _w h = dim 
-                         in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
-                                     , annot_border = (16,16,1) 
-                                     , annot_act = specialURIFunction specialurlbase (hdldir,hdlfb) 
-                                     }
-                             ]
-                    else []  
-      let mannots' = case mannots of 
-                       Nothing -> Just special 
-                       Just anns -> Just (anns ++ special)
-      writePdfPageWithAnnot dim mannots' page
-  when (isLeft res) $ error $ show res
-  liftIO $ hClose handle
+    handle <- liftIO $ openBinaryFile path ReadMode
+    res <- runPdfWithHandle handle knownFilters $ do
+      encrypted <- isEncrypted
+      when encrypted $ setUserPassword defaultUserPassword >> return ()
+      root <- document >>= documentCatalog >>= catalogPageNode
+      count <- pageNodeNKids root
+      forM_ [0..count-1] $ \i -> do
+        page <- pageNodePageByNum root i
+        mannots <- runMaybeT $ do 
+                     lnks <- MaybeT . return $ lookup (i+1) nlnks
+                     liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
+        hdlfp' <- liftIO $ canonicalizePath hdlfp 
+        let (hdldir,hdlfn) = splitFileName hdlfp' 
+            (hdlfb,_ext) = splitExtension hdlfn
+        let special = if i == 0 
+                      then let S.Dim _w h = dim 
+                           in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
+                                       , annot_border = (16,16,1) 
+                                       , annot_act = specialURIFunction specialurlbase (hdldir,hdlfb) 
+                                       }
+                               ]
+                      else []  
+        let mannots' = case mannots of 
+                         Nothing -> Just special 
+                         Just anns -> Just (anns ++ special)
+        writePdfPageWithAnnot dim mannots' page
+    when (isLeft res) $ error $ show res
+    liftIO $ hClose handle
 
 specialURIFunction :: FilePath -> (FilePath,FilePath) -> AnnotActions
 specialURIFunction baseurl (hdldir,hdlfb) = 
-  OpenURI (baseurl  </>  urlEncode (hdldir </> hdlfb <.>  "hdl"))
+    OpenURI (baseurl  </>  urlEncode (hdldir </> hdlfb <.>  "hdl"))
 
 getLinks :: S.Page -> [S.Link]
 getLinks pg = do 
-  l <- view S.layers pg 
-  S.ItemLink lnk <- view S.items l
-  return lnk 
+    l <- view S.layers pg 
+    S.ItemLink lnk <- view S.items l
+    return lnk 
 
 isHdl :: FilePath -> Bool
 isHdl = ( == ".hdl") <$> takeExtension 
@@ -326,31 +320,28 @@ sequence1_ _ [a] = a
 sequence1_ i (a:as) = a >> i >> sequence1_ i as 
 
 
--- | 
+-- | render a hoodle file to PDF simply
 renderHoodleToPDF :: S.Hoodle -> FilePath -> IO () 
 renderHoodleToPDF h ofp = do 
-  let p = head (view S.pages h)
-  let S.Dim width height = view S.dimension p  
-  -- let rf x = renderPage x >> return ()
-  ctxt <- initRenderContext h
-  withPDFSurface ofp width height $ \s -> 
-    renderWith s . flip runStateT ctxt $
-      sequence1_ (lift showPage) . map renderPage_StateT . view S.pages $ h 
-  return ()
-  --    (sequence1_ showPage . map rf . view S.pages ) h 
-
+    let p = head (view S.pages h)
+    let S.Dim width height = view S.dimension p  
+    ctxt <- initRenderContext h
+    withPDFSurface ofp width height $ \s -> 
+      renderWith s . flip runStateT ctxt $
+        sequence1_ (lift showPage) . map renderPage_StateT . view S.pages $ h 
+    return ()
 
 isUpdated :: (FilePath,FilePath) -> IO Bool 
 isUpdated (ofp,nfp) = do 
-  b <- doesFileExist nfp
-  if not b 
-    then return True
-    else do 
-      otime <- getModificationTime ofp
-      ntime <- getModificationTime nfp 
-      return (otime > ntime)
+    b <- doesFileExist nfp
+    if not b 
+      then return True
+      else do 
+        otime <- getModificationTime ofp
+        ntime <- getModificationTime nfp 
+        return (otime > ntime)
   
-
+-- | create pdf file with appropriate links
 createPdf :: (String,String) -> FilePath -> (FilePath,FilePath) -> IO ()
 createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: SomeException) -> print e)
   where 
@@ -368,11 +359,9 @@ createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: Some
             let npgs = zip [1..] (view S.pages hdl)
                 npglnks = map ((,) <$> fst <*> getLinks . snd) npgs  
                 dim = (view S.dimension . snd . head) npgs 
-            -- rhdl <- cnstrctRHoodle hdl 
             tempfile <- (</>) <$> getTemporaryDirectory <*> liftM show nextRandom
-            -- renderjob rhdl tempfile
             renderHoodleToPDF hdl tempfile
-            
+            --
             runPdfWriter ostr $ do 
               writePdfHeader
               deleteObject (Ref 0 65535) 0 
@@ -382,6 +371,3 @@ createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: Some
                 writePdfFile fn dim (urlbase,specialurlbase) (rootpath,currpath) tempfile npglnks
                 writeTrailer
             removeFile tempfile 
-            
-
-

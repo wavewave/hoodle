@@ -44,13 +44,6 @@ import           Graphics.Hoodle.Render.Type.Item
 import           Graphics.Hoodle.Render.Type.Renderer
 
 
--- | construct renderable item 
-cnstrctRItem :: Item -> Renderer RItem 
-cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
-cnstrctRItem (ItemImage img) = do 
-    (handler,_) <- ask 
-    let imgbbx = runIdentity (makeBBoxed img)
-        src = img_src img
     -- uuid <- liftIO $  nextRandom
 
     -- liftIO . forkIO $ do
@@ -76,6 +69,13 @@ cnstrctRItem (ItemImage img) = do
     --   maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
 
 
+-- | construct renderable item 
+cnstrctRItem :: Item -> Renderer RItem 
+cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
+cnstrctRItem (ItemImage img) = do 
+    (handler,_) <- ask 
+    let imgbbx = runIdentity (makeBBoxed img)
+        src = img_src img
     let embed = getByteStringIfEmbeddedPNG src 
     msfc <- liftIO $ case embed of         
       Just bstr -> do 
@@ -95,8 +95,6 @@ cnstrctRItem (ItemImage img) = do
 		       else return Nothing 
 	      | otherwise = return Nothing 
 	imgaction
-    -- maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
-
     return (RItemImage imgbbx msfc)
 cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 

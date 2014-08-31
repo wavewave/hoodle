@@ -68,6 +68,8 @@ import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+import           System.Directory (doesFileExist)
+import           System.FilePath (takeExtension)
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
@@ -123,11 +125,50 @@ renderStrk s@(VWStroke _ _ d) = do
 
 -- | render image : not fully implemented 
 renderImg :: Image -> Cairo.Render () 
-renderImg (Image _ (x,y) (Dim w h)) = do  
-      Cairo.setSourceRGBA 0 0 0 1
-      Cairo.setLineWidth 10
-      Cairo.rectangle x y w h
-      Cairo.stroke
+renderImg img@(Image src (x,y) (Dim w h))  = do  
+    -- let (x,y) = (img_pos . bbxed_content) img
+       
+    -- let imgbbx = runIdentity (makeBBoxed img)
+   --      src = img_src img
+    let (x2,y2) = (x+w,y+h)
+        imgbbx = BBox (x,y) (x2,y2) -- (x+w,y+h)
+        embed = getByteStringIfEmbeddedPNG src 
+    msfc <- liftIO $ case embed of         
+      Just bstr -> do 
+        sfc <- saveTempPNGToCreateSurface bstr 
+        return (Just sfc)
+      Nothing -> do
+	let filesrc = C.unpack (img_src img)
+	    filesrcext = takeExtension filesrc 
+	    imgaction 
+	      | filesrcext == ".PNG" || filesrcext == ".png" = do 
+		  b <- doesFileExist filesrc 
+		  if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
+		       else return Nothing 
+	      | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
+		  b <- doesFileExist filesrc 
+		  if b then Just <$> getJPGandCreateSurface filesrc 
+		       else return Nothing 
+	      | otherwise = return Nothing 
+	imgaction
+    case msfc of 
+      Nothing -> do -- fall back
+        Cairo.setSourceRGBA 0 0 0 1
+        Cairo.setLineWidth 10
+        Cairo.rectangle x y w h
+        Cairo.stroke 
+      Just sfc -> do 
+        ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
+        iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
+        Cairo.save 
+        Cairo.translate x y 
+        Cairo.scale ((x2-x)/ix) ((y2-y)/iy)
+        Cairo.setSourceSurface sfc 0 0 
+        Cairo.paint 
+        Cairo.restore
+
+
+
 
 -- | render svg  
 renderSVG :: SVG -> Cairo.Render () 

@@ -224,13 +224,14 @@ renderjob h ofp = do
 fileExport :: MainCoroutine ()
 fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
-    action filename = 
+    action filename = do
+      liftIO $ putStrLn " IN FILE EXPORT "
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".pdf" 
-      then fileExtensionInvalid (".pdf","export") >> fileExport 
-      else do      
-        hdl <- rHoodle2Hoodle . getHoodle <$> get
-        liftIO (renderjob hdl filename) 
+        then fileExtensionInvalid (".pdf","export") >> fileExport 
+        else do      
+          hdl <- rHoodle2Hoodle . getHoodle <$> get
+          liftIO (renderjob hdl filename) 
 
 -- | 
 fileStartSync :: MainCoroutine ()

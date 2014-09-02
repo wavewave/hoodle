@@ -10,7 +10,6 @@ import           Control.Monad (forever, when)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Foldable as F (forM_)
 import           Data.Word (Word32)
--- import           Data.IORef
 import           Data.Maybe (mapMaybe)
 import           Data.String (fromString)
 import qualified Data.Text as T
@@ -23,6 +22,7 @@ import           System.Directory
 import qualified System.FilePath as F ((</>))
 import           System.Process
 --
+import           Hub
 import           ImageFileNotify
 import           Network
 import qualified Window as Window
@@ -82,4 +82,9 @@ main = do
     chan_title <- newChan 
     forkIO $ Window.server client 
     forkIO $ Window.serverLink client
-    forever $ getLine
+    -- 
+    forkIO $ Hub.receiveHub
+
+    putStrLn "hello"
+    getLine >> return ()
+     

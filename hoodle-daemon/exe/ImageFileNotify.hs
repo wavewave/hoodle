@@ -34,4 +34,4 @@ startImageFileNotify chan fp = do
   withManager $ \wm -> do 
     putStrLn "watching start"
     watchTreeChan wm fp actpred chan
-    forever getLine
+    getLine >> putStrLn "startImageFileNotify is over"

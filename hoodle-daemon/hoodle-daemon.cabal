@@ -30,6 +30,7 @@ Executable hoodle-daemon
                    directory,
                    filepath, 
                    fsnotify,
+                   monad-loops,
                    network-info, 
                    network-simple, 
                    process,
@@ -38,6 +39,9 @@ Executable hoodle-daemon
                    text,
                    transformers >= 0.3
 
-  Other-Modules:   ImageFileNotify
+  Other-Modules:   
+                   Hub
+                   ImageFileNotify
+                   Message
                    Network
                    Window

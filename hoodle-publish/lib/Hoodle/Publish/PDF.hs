@@ -329,10 +329,14 @@ renderHoodleToPDF :: S.Hoodle -> FilePath -> IO ()
 renderHoodleToPDF h ofp = do 
     let p = head (view S.pages h)
     let S.Dim width height = view S.dimension p  
+    tdir <- getTemporaryDirectory
+    uuid <- nextRandom
+    let tempfile = tdir </> show uuid <.> "pdf"
     ctxt <- initRenderContext h
-    withPDFSurface ofp width height $ \s -> 
+    withPDFSurface {- ofp -} tempfile width height $ \s -> 
       renderWith s . flip runStateT ctxt $
         sequence1_ (lift showPage) . map renderPage_StateT . view S.pages $ h 
+    readProcessWithExitCode "pdftk" [ tempfile, "cat", "output", ofp ] ""
     return ()
 
 isUpdated :: (FilePath,FilePath) -> IO Bool 

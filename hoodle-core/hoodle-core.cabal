@@ -105,6 +105,7 @@ Library
                    Hoodle.Coroutine.Select.Clipboard
                    Hoodle.Coroutine.Select.ManipulateImage
                    Hoodle.Coroutine.TextInput
+                   Hoodle.Coroutine.LaTeX
                    Hoodle.Coroutine.VerticalSpace 
                    Hoodle.Coroutine.Window
                    Hoodle.Device

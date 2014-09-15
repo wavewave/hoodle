@@ -18,13 +18,11 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
--- import           Control.Concurrent.STM (atomically, newTVar)
 import qualified Control.Exception
 import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe
--- import           Data.Attoparsec
 import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
@@ -38,7 +36,6 @@ import qualified Data.Text.IO as TIO
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
--- import qualified Graphics.Rendering.Pango.Cairo as Pango
 import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory 
 import           System.Exit (ExitCode(..))
@@ -62,6 +59,7 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
+import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Network
 import           Hoodle.Coroutine.Select.Clipboard
@@ -84,31 +82,31 @@ import Prelude hiding (readFile,mapM_)
 -- | single line text input : almost abandoned now
 textInputDialog :: MainCoroutine (Maybe String) 
 textInputDialog = do 
-  doIOaction $ \_evhandler -> do 
-                 dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
-                   Gtk.MessageQuestion Gtk.ButtonsOkCancel ("text input" :: String)
-                 vbox <- Gtk.dialogGetUpper dialog
-                 txtvw <- Gtk.textViewNew
-                 Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
-                 Gtk.widgetShowAll dialog
-                 res <- Gtk.dialogRun dialog 
-                 case res of 
-                   Gtk.ResponseOk -> do 
-                     buf <- Gtk.textViewGetBuffer txtvw 
-                     (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
-                                          <*> Gtk.textBufferGetEndIter buf
-                     l <- Gtk.textBufferGetText buf istart iend True
-                     Gtk.widgetDestroy dialog
-                     return (UsrEv (TextInput (Just l)))
-                   _ -> do 
-                     Gtk.widgetDestroy dialog
-                     return (UsrEv (TextInput Nothing))
-  let go = do r <- nextevent
-              case r of 
-                TextInput input -> return input 
-                UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go 
-                _ -> go 
-  go 
+    doIOaction $ \_evhandler -> do 
+                   dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                     Gtk.MessageQuestion Gtk.ButtonsOkCancel ("text input" :: String)
+                   vbox <- Gtk.dialogGetUpper dialog
+                   txtvw <- Gtk.textViewNew
+                   Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
+                   Gtk.widgetShowAll dialog
+                   res <- Gtk.dialogRun dialog 
+                   case res of 
+                     Gtk.ResponseOk -> do 
+                       buf <- Gtk.textViewGetBuffer txtvw 
+                       (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
+                                            <*> Gtk.textBufferGetEndIter buf
+                       l <- Gtk.textBufferGetText buf istart iend True
+                       Gtk.widgetDestroy dialog
+                       return (UsrEv (TextInput (Just l)))
+                     _ -> do 
+                       Gtk.widgetDestroy dialog
+                       return (UsrEv (TextInput Nothing))
+    let go = do r <- nextevent
+                case r of 
+                  TextInput input -> return input 
+                  UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go 
+                  _ -> go 
+    go 
 
 -- | common dialog with multiline edit input box 
 multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
@@ -398,6 +396,8 @@ makePangoTextSVG (xo,yo) str = do
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
     hdl <- rHoodle2Hoodle . getHoodle <$> get  
+    let sorted = getLaTeXComponentsFromHdl hdl
+{- 
     let mlatex_components = do 
           (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
           l <- view layers pg
@@ -417,7 +417,8 @@ combineLaTeXText = do
                                    | view _2 x < view _2 y -> LT
                                    | otherwise -> EQ
     let latex_components = catMaybes  mlatex_components
-        sorted = sortBy cfunc latex_components 
+        sorted = sortBy cfunc latex_components -}
+   
         resulttxt = (B.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
     mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
     forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
@@ -492,7 +493,6 @@ editNetEmbeddedTextSource = do
     hdl <- getHoodle <$> get
     let mtxt = hdl ^. gembeddedtext 
     forM_ mtxt $ \txt -> do 
-      -- modify (tempQueue %~ enqueue (multiLineDialog txt))  
       networkTextInput txt >>= \case 
         Nothing -> return ()
         Just ntxt -> do 

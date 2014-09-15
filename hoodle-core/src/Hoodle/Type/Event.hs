@@ -132,7 +132,8 @@ data MenuEvent = MenuNew
                | MenuLaTeX
                | MenuLaTeXNetwork
                | MenuCombineLaTeX
-               | MenuLaTeXFromSource 
+               | MenuLaTeXFromSource
+               | MenuUpdateLaTeX
                | MenuEmbedPredefinedImage
                | MenuEmbedPredefinedImage2
                | MenuEmbedPredefinedImage3                 

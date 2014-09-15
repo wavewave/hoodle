@@ -63,13 +63,14 @@ import           Hoodle.Coroutine.HandwritingRecognition
 import           Hoodle.Coroutine.Highlighter
 import           Hoodle.Coroutine.Layer 
 import           Hoodle.Coroutine.Link
+import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
-import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.VerticalSpace 
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
@@ -416,9 +417,10 @@ menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuLaTeXNetwork = 
-    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)    
+    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuCombineLaTeX = combineLaTeXText 
 menuEventProcess MenuLaTeXFromSource = laTeXInputFromSource (100,100)
+menuEventProcess MenuUpdateLaTeX = updateLaTeX
 menuEventProcess MenuUndo = undo 
 menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen

@@ -271,6 +271,8 @@ getMenuUI evar = do
   latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
   combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
   latexfromsrca <- actionNewAndRegister "LATEXFROMSRCA" "LaTeX From Source" (Just "Just a Stub") Nothing (justMenu MenuLaTeXFromSource)   
+  updatelatexa <- actionNewAndRegister "UPDATELATEXA" "Update LaTeX" (Just "Just a Stub") Nothing (justMenu MenuUpdateLaTeX)   
+
 
   ---------------
   -- page menu --
@@ -383,7 +385,7 @@ getMenuUI evar = do
         , ppstya 
         , apallpga, embedbkgpdfa, defppa, setdefppa
         , ldpnga, ldsvga, texta, textsrca, editsrca, editnetsrca, textfromsrca
-        , latexa, latexneta, combinelatexa, latexfromsrca
+        , latexa, latexneta, combinelatexa, latexfromsrca, updatelatexa
         , ldpreimga, ldpreimg2a, ldpreimg3a
         , linka, anchora, listanchora, handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta

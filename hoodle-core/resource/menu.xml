@@ -79,6 +79,7 @@
        <menuitem action="LATEXNETA" />
        <menuitem action="COMBINELATEXA" />
        <menuitem action="LATEXFROMSRCA" />
+       <menuitem action="UPDATELATEXA" />
        <separator />
     </menu>
     <menu action="PMA">

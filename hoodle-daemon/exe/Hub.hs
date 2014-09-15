@@ -17,17 +17,18 @@ import System.Process
 --
 import Message
 
+
+--     unfoldM_ $ do 
+
 receiveHub :: IO ()
 receiveHub = do
   hubaddr <- getEnv "HUBSOCKETADDRESS"
   hoodlehome <- getEnv "HOODLEHOME"
-  connect hubaddr "5051" $ \(sock, servaddr) -> do 
-    putStrLn $ "client: connection established to " ++ show servaddr
-    unfoldM_ $ do 
+  forever $ do 
+    connect hubaddr "5051" $ \(sock, servaddr) -> do 
+      putStrLn $ "client: connection established to " ++ show servaddr
       mmsg :: Maybe Message <- runMaybeT $ recvAndUnpack sock
       case mmsg of
         Nothing -> return ()
-        Just msg -> createProcess (proc "hoodle" [hoodlehome </> T.unpack (msgbody msg)]) >> return ()
-          
-      return mmsg
-    return ()
+        Just msg -> createProcess (proc "hoodle" [hoodlehome </> T.unpack (msgbody msg)]) >> return ()          
+      return ()

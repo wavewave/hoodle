@@ -19,7 +19,7 @@ module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
 import qualified Control.Exception
-import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~))
+import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~),over,mapped)
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe
@@ -178,7 +178,7 @@ laTeXInput mpos str = do
       Just (x0,y0) -> do 
         modify (tempQueue %~ enqueue (multiLineDialog str))  
         multiLineLoop str >>= 
-          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) >>= \case 
+          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) Nothing result) >>= \case 
                   Right r -> deleteSelection >> svgInsert (result,"latex") r
                   Left err -> okMessageBox err >> laTeXInput mpos result
                 )
@@ -221,7 +221,7 @@ laTeXInputNetwork mpos str =
     case mpos of 
       Just (x0,y0) -> do 
         networkTextInput str >>=
-          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) result) 
+          mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) Nothing result) 
                             >>= \case Right r -> deleteSelection >> svgInsert (result,"latex") r
                                       Left err -> okMessageBox err >> laTeXInput mpos result
                 )
@@ -237,7 +237,7 @@ dbusNetworkInput txt = do
     modeChange ToViewAppendMode     
     mpos <- autoPosText 
     let pos = maybe (100,100) (100,) mpos 
-    rsvg <- liftIO (makeLaTeXSVG pos txt) 
+    rsvg <- liftIO (makeLaTeXSVG pos Nothing txt) 
     case rsvg of 
       Right r -> deleteSelection >> svgInsert (txt,"latex") r
       Left err -> okMessageBox err >> laTeXInput (Just pos) txt
@@ -259,15 +259,13 @@ check msg act = do
       Right (ecode,str) -> case ecode of ExitSuccess -> right () ; _ -> left (msg ++ ":" ++ str)
 
 
-makeLaTeXSVG :: (Double,Double) -> T.Text 
+makeLaTeXSVG :: (Double,Double) -> Maybe Dimension -> T.Text 
              -> IO (Either String (B.ByteString,BBox))
-makeLaTeXSVG (x0,y0) txt = do
+makeLaTeXSVG (x0,y0) mdim txt = do
     cdir <- getCurrentDirectory
     tdir <- getTemporaryDirectory
     tfilename <- show <$> nextRandom
-    
     setCurrentDirectory tdir
-        
     B.writeFile (tfilename <.> "tex") (TE.encodeUtf8 txt)
     r <- runEitherT $ do 
       check "error during xelatex" $ do 
@@ -281,8 +279,13 @@ makeLaTeXSVG (x0,y0) txt = do
         return (ecode,ostr++estr)
       bstr <- liftIO $ B.readFile (tfilename <.> "svg")
       rsvg <- liftIO $ RSVG.svgNewFromString (B.unpack bstr) 
-      let (w,h) = RSVG.svgGetSize rsvg
-      return (bstr,BBox (x0,y0) (x0+fromIntegral w,y0+fromIntegral h)) 
+      let ow, oh :: Int
+          (ow,oh) = RSVG.svgGetSize rsvg
+          ow', oh' :: Double
+          (ow',oh') = (fromIntegral ow, fromIntegral oh)
+          w, h :: Double
+          (w,h) = maybe (ow',oh') (\(Dim w' _)->(w',oh'*w'/ow')) mdim 
+      return (bstr,BBox (x0,y0) (x0+w,y0+h)) 
     setCurrentDirectory cdir
     return r
     
@@ -561,12 +564,13 @@ linePosLoop = do
       _ -> linePosLoop
 
 -- | insert text 
-laTeXInputKeyword :: (Double,Double) -> T.Text -> MaybeT MainCoroutine ()
-laTeXInputKeyword (x0,y0) keyword = do
+laTeXInputKeyword :: (Double,Double) -> Maybe Dimension -> T.Text 
+                  -> MaybeT MainCoroutine ()
+laTeXInputKeyword (x0,y0) mdim keyword = do
     txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
     subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
     let subpart' = laTeXHeader <> "\n"  <> subpart <> laTeXFooter
-    liftIO (makeLaTeXSVG (x0,y0) subpart') >>= \case
+    liftIO (makeLaTeXSVG (x0,y0) mdim subpart') >>= \case
       Right r  -> lift $ do 
                     deleteSelection 
                     svgInsert ("embedlatex:keyword:"<>keyword,"latex") r
@@ -581,7 +585,7 @@ laTeXInputFromSource (x0,y0) = do
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
       lift $ modify (tempQueue %~ enqueue keywordDialog)  
       keyword <- MaybeT keywordLoop
-      laTeXInputKeyword (x0,y0) keyword
+      laTeXInputKeyword (x0,y0) Nothing keyword
     return ()
 
 -- | common dialog with line position 

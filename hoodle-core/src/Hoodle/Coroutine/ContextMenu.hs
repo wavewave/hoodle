@@ -176,7 +176,7 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt
-processContextMenu (CMenuLaTeXUpdate (x0,y0) key) = runMaybeT (laTeXInputKeyword (x0,y0) key) >> return ()
+processContextMenu (CMenuLaTeXUpdate (x0,y0) dim key) = runMaybeT (laTeXInputKeyword (x0,y0) (Just dim) key) >> return ()
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
     res <- handwritingRecognitionDialog
@@ -379,7 +379,7 @@ showContextMenu (pnum,(x,y)) = do
 
                     RItemSVG svgbbx _msfc -> do
                       let svg = bbxed_content svgbbx
-                          BBox (x0,y0) _ = getBBox svgbbx
+                          BBox (x0,y0) (x1,y1) = getBBox svgbbx
                       forM_ ((,) <$> svg_text svg <*> svg_command svg) $ \(btxt,cmd) -> do
                         let txt = TE.decodeUtf8 btxt
                         case cmd of 
@@ -405,7 +405,7 @@ showContextMenu (pnum,(x,y)) = do
                             when ( txth == "embedlatex:keyword:" ) $ do
                               menuitemup <- menuItemNewWithLabel ("Update LaTeX" :: String)
                               menuitemup `on` menuItemActivate $ do
-                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXUpdate (x0,y0) txtt)))
+                                evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXUpdate (x0,y0) (Dim (x1-x0) (y1-y0)) txtt)))
                               menuAttach menu menuitemup 0 1 6 7
                               return ()
 

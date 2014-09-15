@@ -238,7 +238,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
-                      | CMenuLaTeXUpdate (Double,Double) T.Text
+                      | CMenuLaTeXUpdate (Double,Double) Dimension T.Text
                       | CMenuCropImage (BBoxed Image)
                       | CMenuRotate    RotateDir (BBoxed Image)
                       | CMenuExport (BBoxed Image)

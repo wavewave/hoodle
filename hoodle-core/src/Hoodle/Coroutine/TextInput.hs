@@ -27,7 +27,8 @@ import           Data.Attoparsec.Char8
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
 import           Data.List (sortBy)
-import qualified Data.Map as M
+-- import qualified Data.Map as M
+import qualified Data.HashMap.Strict as M
 import           Data.Maybe (catMaybes)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -397,6 +398,11 @@ combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
     hdl <- rHoodle2Hoodle . getHoodle <$> get  
     let sorted = getLaTeXComponentsFromHdl hdl
+   
+        resulttxt = (T.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view (_2._3))) sorted
+    mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
+    forM_ mfilename (\filename -> liftIO (TIO.writeFile filename resulttxt) >> return ())
+
 {- 
     let mlatex_components = do 
           (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
@@ -418,10 +424,6 @@ combineLaTeXText = do
                                    | otherwise -> EQ
     let latex_components = catMaybes  mlatex_components
         sorted = sortBy cfunc latex_components -}
-   
-        resulttxt = (B.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
-    mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
-    forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
 
 
 

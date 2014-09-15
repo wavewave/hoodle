@@ -17,7 +17,7 @@ module Hoodle.ModelAction.Text where
 import           Control.Applicative
 import           Data.Attoparsec.Text as A
 import           Data.Char (isAlphaNum)
-import qualified Data.Map as M
+import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as TIO
@@ -38,7 +38,7 @@ getKeywordContent k txt = M.lookup k (getKeywordMap txt)
 -}
 
 -- | 
-getKeywordMap :: T.Text -> M.Map T.Text T.Text
+getKeywordMap :: T.Text -> M.HashMap T.Text T.Text
 getKeywordMap txt = case parseOnly (many keywordContents) txt of 
                       Left err -> trace (show err) $ M.empty
                       Right lst -> M.fromList lst
@@ -69,6 +69,11 @@ keywordContents = do
     txt <- T.unlines <$> manyTill oneline keywordEnd
     return (k,txt)
 
-
+-- |
+extractKeyword :: T.Text -> Maybe T.Text
+extractKeyword txt = 
+    case T.unpack txt of
+      'e':'m':'b':'e':'d':'l':'a':'t':'e':'x':':':'k':'e':'y':'w':'o':'r':'d':':':xs -> Just (T.pack xs)
+      _ -> Nothing
 
 

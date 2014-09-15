@@ -19,6 +19,7 @@ module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
 -- import           Control.Concurrent.STM (atomically, newTVar)
+import qualified Control.Exception
 import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
@@ -251,6 +252,14 @@ laTeXHeader = "\\documentclass{article}\n\
 laTeXFooter :: T.Text
 laTeXFooter = "\\end{document}\n"
 
+check :: String -> IO (ExitCode,String) -> EitherT String IO ()
+check msg act = do
+    er <- liftIO $ Control.Exception.try act
+    case er of 
+      Left (Control.Exception.SomeException excp) -> left (show excp)
+      Right (ecode,str) -> case ecode of ExitSuccess -> right () ; _ -> left (msg ++ ":" ++ str)
+
+
 makeLaTeXSVG :: (Double,Double) -> T.Text 
              -> IO (Either String (B.ByteString,BBox))
 makeLaTeXSVG (x0,y0) txt = do
@@ -259,7 +268,6 @@ makeLaTeXSVG (x0,y0) txt = do
     tfilename <- show <$> nextRandom
     
     setCurrentDirectory tdir
-    let check msg act = liftIO act >>= \(ecode,str) -> case ecode of ExitSuccess -> right () ; _ -> left (msg ++ ":" ++ str)
         
     B.writeFile (tfilename <.> "tex") (TE.encodeUtf8 txt)
     r <- runEitherT $ do 

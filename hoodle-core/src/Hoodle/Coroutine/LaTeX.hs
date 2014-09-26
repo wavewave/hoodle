@@ -119,3 +119,28 @@ combineLaTeXText = do
 
 
 -}
+
+
+laTeXHeader :: T.Text
+laTeXHeader = 
+  "\\documentclass[a4paper]{article}\n\
+  \\\usepackage[affil-it]{authblk}\n\
+  \\\usepackage{xeCJK}\n\
+  \\\xeCJKsetup{\n\
+  \  CJKspace=true,\n\
+  \  CJKecglue={}\n\
+  \}\n\
+  \\\usepackage{setspace}\n\
+  \\\onehalfspacing\n\
+  \\\usepackage{fontspec}\n\
+  \\\setCJKmainfont{NanumGothic}\n\
+  \\\pagestyle{empty}\n\
+  \\\begin{document}\n"
+
+
+-- \\\\documentclass{article}\n\
+--              \\\pagestyle{empty}\n\
+--              \\\begin{document}\n
+                                
+laTeXFooter :: T.Text
+laTeXFooter = "\\end{document}\n"

@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Network where
 import           Control.Applicative
 import           Control.Concurrent hiding (yield)
 import           Control.Lens 
-import           Control.Monad (forever)
+import           Control.Monad.Loops 
 import           Control.Monad.State (modify,get)
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -57,7 +57,7 @@ server evhandler ip txt = do
           bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
       putStrLn $ "TCP connection established from " ++ show addr
       send sock (bstr_size_binary <> TE.encodeUtf8 txt)
-      forever $ do      
+      unfoldM_ $ do
         mbstr <- runMaybeT $ do 
           bstr' <- MaybeT (recv sock 4)
           let getsize :: B.ByteString -> Word32 
@@ -75,6 +75,8 @@ server evhandler ip txt = do
           go size B.empty 
         -- print mbstr 
         F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
+        return mbstr
+      putStrLn "FINISHED"
 
 
 networkTextInputBody :: T.Text -> MainCoroutine (String,ThreadId,MVar ()) -- ^ (ip address,thread id,lock)

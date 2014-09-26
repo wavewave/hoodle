@@ -14,11 +14,11 @@
 -----------------------------------------------------------------------------
 
 module Hoodle.Type.HoodleState 
-( HoodleState(..)
+( HoodleState
 , HoodleModeState(..)
 , IsOneTimeSelectMode(..)
-, Settings(..)
-, UIComponentSignalHandler(..)
+, Settings
+, UIComponentSignalHandler
 -- | labels
 , hoodleModeState
 , hoodleFileControl
@@ -65,6 +65,7 @@ module Hoodle.Type.HoodleState
 , doesKeepAspectRatio
 , doesUseVariableCursor
 , newPageMode
+, isNetworkEditSourceOn
 -- 
 , penModeSignal
 , pageModeSignal
@@ -369,6 +370,7 @@ data Settings =
            , _doesKeepAspectRatio :: Bool
            , _doesUseVariableCursor :: Bool 
            , _newPageMode :: NewPageModeType
+           , _isNetworkEditSourceOn :: Bool
            } 
   
 
@@ -413,6 +415,11 @@ doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariable
 -- | new page mode: plain | last | cycle
 newPageMode :: Simple Lens Settings NewPageModeType
 newPageMode = lens _newPageMode (\f a -> f {_newPageMode=a})
+
+-- | network edit source mode
+isNetworkEditSourceOn :: Simple Lens Settings Bool
+isNetworkEditSourceOn = lens _isNetworkEditSourceOn (\f a -> f {_isNetworkEditSourceOn=a})
+
 
 -- | default hoodle state 
 emptyHoodleState :: IO HoodleState 
@@ -490,6 +497,7 @@ defaultSettings =
   , _doesKeepAspectRatio = False
   , _doesUseVariableCursor = False
   , _newPageMode = NPPlain
+  , _isNetworkEditSourceOn = False
   } 
   
 

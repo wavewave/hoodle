@@ -83,8 +83,7 @@ server evhandler ip txt = do
       F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
 
 
-
-networkTextInputBody :: T.Text -> MainCoroutine String -- ^ ip address
+networkTextInputBody :: T.Text -> MainCoroutine (String,ThreadId,MVar ()) -- ^ (ip address,thread id,lock)
 networkTextInputBody txt = do
     mipscr <- runMaybeT $ do hkset <- MaybeT (view hookSet <$> lift get)
                              (MaybeT . return)  (getIPaddress hkset) 
@@ -101,11 +100,6 @@ networkTextInputBody txt = do
       done <- newEmptyMVar
       tid <- forkIO (server evhandler (Host ip) txt) 
       (return . UsrEv . NetworkProcess) (NetworkInitialized tid done)
-    return ip
-
-networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
-networkTextInput txt = do 
-    ip <- networkTextInputBody txt
     let go = do 
           r <- nextevent
           case r of
@@ -113,23 +107,25 @@ networkTextInput txt = do
             NetworkProcess (NetworkInitialized tid done) -> return (tid,done)
             _ -> go 
     (tid,done) <- go 
-    let ipdialog msg = mkIOaction $ 
-               \_evhandler -> do                  
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel msg 
-                 forkIO $ do          
-                   readMVar done 
-                   dialogResponse dialog ResponseOk
-                  
-                 res <- dialogRun dialog 
-                 let b = case res of 
-                           ResponseOk -> True
-                           _ -> False
-                 widgetDestroy dialog 
-                 return (UsrEv (OkCancel b))
+    return (ip,tid,done)
 
-    
-    modify (tempQueue %~ enqueue (ipdialog ("networkedit " ++ ip ++ " 4040")))
+networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
+networkTextInput txt = do 
+    (ip,tid,done) <- networkTextInputBody txt
+    let ipdialog msg = \_evhandler -> do                  
+          dialog <- messageDialogNew Nothing [DialogModal]
+            MessageQuestion ButtonsOkCancel msg 
+          forkIO $ do          
+            readMVar done 
+            dialogResponse dialog ResponseOk
+
+          res <- dialogRun dialog 
+          let b = case res of 
+                    ResponseOk -> True
+                    _ -> False
+          widgetDestroy dialog 
+          return (UsrEv (OkCancel b))
+    doIOaction (ipdialog ("networkedit " ++ ip ++ " 4040"))
     --
     let actf t = do 
           r <- nextevent

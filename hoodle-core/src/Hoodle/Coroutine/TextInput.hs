@@ -623,4 +623,25 @@ keywordLoop = do
 
 -- | 
 toggleNetworkEditSource :: MainCoroutine ()
-toggleNetworkEditSource = do liftIO $ putStrLn "Hello"
+toggleNetworkEditSource = do 
+    xst <- get
+    let hdl = getHoodle xst 
+        mtxt = hdl ^. gembeddedtext
+    b <- updateFlagFromToggleUI "TOGGLENETSRCA" (settings.doesUseXInput)
+    flip mapM_ (xst ^. statusBar) $ \stbar -> 
+      if b 
+        then do
+          (ip,tid,done) <- networkTextInputBody (maybe " " id mtxt)
+          doIOaction $ \_ -> do
+            let msg = ("networkedit " ++ ip ++ " 4040")
+            ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
+            Gtk.statusbarPush stbar ctxt msg
+            return (UsrEv ActionOrdered)
+        else do
+          doIOaction $ \_ -> do
+            ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
+            Gtk.statusbarPop stbar ctxt
+            return (UsrEv ActionOrdered)
+
+      
+

@@ -125,7 +125,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar = 
       initcvsbox = CanvasSinglePage initcvs
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
-            $ st1 { _cvsInfoMap = M.empty } 
+            . set cvsInfoMap M.empty 
+            $ st1 --  { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   let st5 = set (settings.doesUseXInput) xinputbool 
@@ -453,13 +454,13 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
-  xstate <- get 
-  b <- updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput)
-  let cmap = getCanvasInfoMap xstate
-      canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
-  if b
-    then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
-    else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
+    xstate <- get 
+    b <- updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput)
+    let cmap = getCanvasInfoMap xstate
+        canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
+    if b
+      then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
+      else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
 menuEventProcess MenuUseTouch = toggleTouch
 -- menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()

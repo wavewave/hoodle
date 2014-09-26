@@ -244,13 +244,6 @@ dbusNetworkInput txt = do
       Left err -> okMessageBox err >> laTeXInput (Just pos) txt
 
 
-laTeXHeader :: T.Text
-laTeXHeader = "\\documentclass{article}\n\
-              \\\pagestyle{empty}\n\
-              \\\begin{document}\n"
-                                
-laTeXFooter :: T.Text
-laTeXFooter = "\\end{document}\n"
 
 check :: String -> IO (ExitCode,String) -> EitherT String IO ()
 check msg act = do

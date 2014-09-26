@@ -501,13 +501,24 @@ editNetEmbeddedTextSource = do
     forM_ mtxt $ \txt -> do 
       networkTextInput txt >>= \case 
         Nothing -> return ()
-        Just ntxt -> do 
-          modify $ \xst ->
+        Just ntxt -> networkReceived ntxt
+{-          modify $ \xst ->
             let nhdlmodst = case xst ^. hoodleModeState of
                   ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
                   SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
             in (hoodleModeState .~ nhdlmodst) xst
           commit_
+-}
+
+networkReceived :: T.Text -> MainCoroutine ()
+networkReceived txt = do
+    modify $ \xst ->
+      let nhdlmodst = case xst ^. hoodleModeState of
+            ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
+            SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just txt) $ thdl)
+      in (hoodleModeState .~ nhdlmodst) xst
+    commit_
+
 
 -- | insert text 
 textInputFromSource :: (Double,Double) -> MainCoroutine ()

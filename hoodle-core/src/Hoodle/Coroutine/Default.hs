@@ -382,6 +382,7 @@ defaultEventProcess (CustomKeyEvent str) = do
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
 defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
+defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

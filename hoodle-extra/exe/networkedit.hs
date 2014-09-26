@@ -37,7 +37,6 @@ main = do
       let getsize :: B.ByteString -> Word32 
           getsize = Bi.decode . LB.fromChunks . return
           size = (fromIntegral . getsize) bstr 
-          
           go s bstr = do 
             bstr1 <- MaybeT (recv sock s)
             let s' = B.length bstr1 
@@ -45,20 +44,15 @@ main = do
               then return (bstr <> bstr1)
               else go (s-s') (bstr <> bstr1) 
       go size B.empty 
-
     F.forM_ mr $ \bstr -> do 
       tdir <- getTemporaryDirectory
       ctime <- getCurrentTime
-      -- uuid <- nextRandom
       let fpath = tdir </> show ctime <.> "txt"
       let edws = words ed 
           ed1 = head edws
           eds = tail edws
-      
-      print (ed1, [eds ++ [fpath] ])
-      
+      print (ed1, [eds ++ [fpath] ])   -- just in case we have some error
       B.writeFile fpath bstr
-
       forkIO $ withManager $ \wm -> do
         putStrLn "watching start" 
         watchDir wm (fromString tdir) (\case Modified _ _ -> True; _ -> False) $ \event -> do
@@ -68,10 +62,8 @@ main = do
             _ -> return ()
         getLine
         return ()
-
       (_,_,_,h) <- createProcess (proc ed1 (eds ++ [fpath]))
       waitForProcess h
-      --  system (ed ++  " " ++ fpath)
       sendToHoodle sock fpath
       return ()
       

@@ -619,3 +619,8 @@ keywordLoop = do
       UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> keywordLoop
       Keyword x -> return x
       _ -> keywordLoop
+
+
+-- | 
+toggleNetworkEditSource :: MainCoroutine ()
+toggleNetworkEditSource = do liftIO $ putStrLn "Hello"

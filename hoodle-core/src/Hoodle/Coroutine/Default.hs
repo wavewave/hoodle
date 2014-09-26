@@ -105,9 +105,9 @@ initCoroutine :: DeviceList
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
-              -- -> Gtk.Statusbar -- ^ status bar 
+              -> Gtk.Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -135,6 +135,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
           . set (hoodleFileControl.hoodleFileName) Nothing 
+          . set statusBar (Just statusbar)
           $ st4     
   vbox <- Gtk.vBoxNew False 0 
   -- 
@@ -414,6 +415,7 @@ menuEventProcess MenuEmbedTextSource = embedTextSource
 menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource
 menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
 menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
+menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuLaTeXNetwork = 

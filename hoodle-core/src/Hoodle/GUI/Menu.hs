@@ -267,6 +267,11 @@ getMenuUI evar = do
 
   textfromsrca <- actionNewAndRegister "TEXTFROMSRCA" "Text From Source" (Just "Just a Stub") Nothing (justMenu MenuTextFromSource)
 
+
+  togglenetsrca <- toggleActionNew ("TOGGLENETSRCA" :: String) "Toggle network edit text source" (Just "Just a Stub") Nothing
+  togglenetsrca `on` actionToggled $ do
+    eventHandler evar (UsrEv (Menu MenuToggleNetworkEditSource))
+
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
   latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
   combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
@@ -396,7 +401,7 @@ getMenuUI evar = do
         ] 
     
   mapM_ (actionGroupAddAction agr) 
-    [ uxinputa, handa, {- smthscra, -} popmenua, ebdimga, ebdpdfa, flwlnka
+    [ togglenetsrca, uxinputa, handa, {- smthscra, -} popmenua, ebdimga, ebdpdfa, flwlnka
     , keepratioa, pressrsensa, vcursora ]
 
   mpgmodconnid <- 

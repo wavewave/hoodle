@@ -82,27 +82,30 @@ server evhandler ip txt = do
       -- print mbstr 
       F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
 
-networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
-networkTextInput txt = do 
+
+
+networkTextInputBody :: T.Text -> MainCoroutine String -- ^ ip address
+networkTextInputBody txt = do
     mipscr <- runMaybeT $ do hkset <- MaybeT (view hookSet <$> lift get)
                              (MaybeT . return)  (getIPaddress hkset) 
-    
     let ipfind = do 
           let ipv4num (IPv4 x) = x 
               ismacnull (MAC a b c d e f) = a == 0 && b == 0 && c == 0 
                                             && d == 0 && e == 0 && f == 0 
-          
           ifcs <- liftIO $ getNetworkInterfaces
           let ifcs2 = Prelude.filter (not . ismacnull . mac) 
                       . Prelude.filter (((/=) 0) . ipv4num . ipv4 ) $ ifcs
           return (if Prelude.null ifcs2 then "127.0.0.1" else (show . ipv4 . head) ifcs2) 
     ip <- maybe ipfind liftIO mipscr 
-
     doIOaction $ \evhandler -> do  
-      -- T.putStrLn txt
       done <- newEmptyMVar
       tid <- forkIO (server evhandler (Host ip) txt) 
       (return . UsrEv . NetworkProcess) (NetworkInitialized tid done)
+    return ip
+
+networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
+networkTextInput txt = do 
+    ip <- networkTextInputBody txt
     let go = do 
           r <- nextevent
           case r of

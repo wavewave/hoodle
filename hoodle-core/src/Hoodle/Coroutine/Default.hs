@@ -232,7 +232,7 @@ disableTouch = do
     when b $ do         
       let nxst = set (settings.doesUseTouch) False xst 
       doIOaction $ \_ -> do
-        setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
+        lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
         let touchstr = dev_touch_str devlst
         -- ad hoc
         when (touchstr /= "touch") $ do 
@@ -355,7 +355,7 @@ defaultEventProcess (CustomKeyEvent str) = do
            xst <- liftM (over (settings.doesUseTouch) not) get 
            put xst 
            let action = mkIOaction $ \_evhandler -> do 
-                 setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
+                 lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
                  return (UsrEv ActionOrdered)
            modify (tempQueue %~ enqueue action)
            waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    

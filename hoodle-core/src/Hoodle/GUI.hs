@@ -58,12 +58,12 @@ startGUI mfname mhook = do
     (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar
     setTitleFromFileName st0
     -- need for refactoring
-    setToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
-    setToggleUIForFlag "HANDA" (settings.doesUseTouch) st0   
-    setToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0 
-    setToggleUIForFlag "EBDIMGA" (settings.doesEmbedImage) st0 
-    setToggleUIForFlag "EBDPDFA" (settings.doesEmbedPDF) st0
-    setToggleUIForFlag "TOGGLENETSRCA" (settings.isNetworkEditSourceOn) st0
+    lensSetToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
+    lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) st0   
+    lensSetToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0 
+    lensSetToggleUIForFlag "EBDIMGA" (settings.doesEmbedImage) st0 
+    lensSetToggleUIForFlag "EBDPDFA" (settings.doesEmbedPDF) st0
+    setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0
     if xinputbool

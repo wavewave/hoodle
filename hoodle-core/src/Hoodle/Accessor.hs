@@ -136,13 +136,17 @@ updateFlagFromToggleUI toggleid lensforflag = do
   return b 
 
 -- | set toggle UI button to the corresponding HoodleState 
-setToggleUIForFlag :: String 
-                   -> Simple Lens HoodleState Bool -- ^ lens for flag
-                   -> HoodleState 
-                   -> IO Bool 
-setToggleUIForFlag toggleid lensforflag xstate = do 
+lensSetToggleUIForFlag :: String 
+                       -> Simple Lens HoodleState Bool -- ^ lens for flag
+                       -> HoodleState 
+                       -> IO Bool 
+lensSetToggleUIForFlag toggleid lensforflag xstate =
+  let b = view lensforflag xstate in setToggleUIForFlag toggleid b xstate
+
+-- | set toggle UI button to the corresponding HoodleState 
+setToggleUIForFlag :: String -> Bool -> HoodleState -> IO Bool 
+setToggleUIForFlag toggleid b xstate = do 
   let ui = view gtkUIManager xstate 
-      b = view lensforflag xstate 
   agr <- uiManagerGetActionGroups ui >>= \x ->
            case x of 
              [] -> error "No action group? "

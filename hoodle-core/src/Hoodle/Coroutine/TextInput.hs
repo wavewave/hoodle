@@ -18,6 +18,7 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
+import           Control.Concurrent
 import qualified Control.Exception
 import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~),over,mapped)
 import           Control.Monad.State hiding (mapM_, forM_)
@@ -493,13 +494,24 @@ editNetEmbeddedTextSource = do
     forM_ mtxt $ \txt -> do 
       networkTextInput txt >>= \case 
         Nothing -> return ()
-        Just ntxt -> do 
-          modify $ \xst ->
+        Just ntxt -> networkReceived ntxt
+{-          modify $ \xst ->
             let nhdlmodst = case xst ^. hoodleModeState of
                   ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
                   SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
             in (hoodleModeState .~ nhdlmodst) xst
           commit_
+-}
+
+networkReceived :: T.Text -> MainCoroutine ()
+networkReceived txt = do
+    modify $ \xst ->
+      let nhdlmodst = case xst ^. hoodleModeState of
+            ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
+            SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just txt) $ thdl)
+      in (hoodleModeState .~ nhdlmodst) xst
+    commit_
+
 
 -- | insert text 
 textInputFromSource :: (Double,Double) -> MainCoroutine ()
@@ -612,3 +624,38 @@ keywordLoop = do
       UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> keywordLoop
       Keyword x -> return x
       _ -> keywordLoop
+
+
+-- | 
+toggleNetworkEditSource :: MainCoroutine ()
+toggleNetworkEditSource = do 
+    xst <- get
+    let hdl = getHoodle xst 
+        mtxt = hdl ^. gembeddedtext
+    b <- updateFlagFromToggleUI "TOGGLENETSRCA" (settings.doesUseXInput)
+    flip mapM_ (xst ^. statusBar) $ \stbar -> 
+      if b 
+        then do
+          (ip,tid,done) <- networkTextInputBody (maybe " " id mtxt)
+          doIOaction $ \_ -> do
+            let msg = ("networkedit " ++ ip ++ " 4040")
+            ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
+            Gtk.statusbarPush stbar ctxt msg
+            return (UsrEv ActionOrdered)
+          waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+          (put . ((settings.networkEditSourceInfo) .~ (Just tid))) xst
+
+        else do
+          case xst ^. (settings.networkEditSourceInfo) of
+            Nothing -> return ()
+            Just tid -> do
+              doIOaction $ \_ -> do
+                killThread tid
+                ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
+                Gtk.statusbarPush stbar ctxt ("Now no networkedit" :: String)
+                return (UsrEv ActionOrdered)
+              waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+              (put . ((settings.networkEditSourceInfo) .~ Nothing)) xst
+
+      
+

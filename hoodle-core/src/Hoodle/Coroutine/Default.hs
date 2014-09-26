@@ -105,9 +105,9 @@ initCoroutine :: DeviceList
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
-              -- -> Gtk.Statusbar -- ^ status bar 
+              -> Gtk.Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -125,7 +125,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
       initcvsbox = CanvasSinglePage initcvs
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
-            $ st1 { _cvsInfoMap = M.empty } 
+            . set cvsInfoMap M.empty 
+            $ st1 --  { _cvsInfoMap = M.empty } 
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   let st5 = set (settings.doesUseXInput) xinputbool 
@@ -135,6 +136,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
           . set rootWindow cvs 
           . set uiComponentSignalHandler uicompsighdlr 
           . set (hoodleFileControl.hoodleFileName) Nothing 
+          . set statusBar (Just statusbar)
           $ st4     
   vbox <- Gtk.vBoxNew False 0 
   -- 
@@ -230,7 +232,7 @@ disableTouch = do
     when b $ do         
       let nxst = set (settings.doesUseTouch) False xst 
       doIOaction $ \_ -> do
-        setToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
+        lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
         let touchstr = dev_touch_str devlst
         -- ad hoc
         when (touchstr /= "touch") $ do 
@@ -353,7 +355,7 @@ defaultEventProcess (CustomKeyEvent str) = do
            xst <- liftM (over (settings.doesUseTouch) not) get 
            put xst 
            let action = mkIOaction $ \_evhandler -> do 
-                 setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
+                 lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
                  return (UsrEv ActionOrdered)
            modify (tempQueue %~ enqueue action)
            waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    
@@ -380,6 +382,7 @@ defaultEventProcess (CustomKeyEvent str) = do
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
 defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
+defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 
@@ -414,6 +417,7 @@ menuEventProcess MenuEmbedTextSource = embedTextSource
 menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource
 menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
 menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
+menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuLaTeXNetwork = 
@@ -451,13 +455,13 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
-  xstate <- get 
-  b <- updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput)
-  let cmap = getCanvasInfoMap xstate
-      canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
-  if b
-    then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
-    else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
+    xstate <- get 
+    b <- updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput)
+    let cmap = getCanvasInfoMap xstate
+        canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
+    if b
+      then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
+      else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
 menuEventProcess MenuUseTouch = toggleTouch
 -- menuEventProcess MenuSmoothScroll = updateFlagFromToggleUI "SMTHSCRA" (settings.doesSmoothScroll) >> return ()
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()

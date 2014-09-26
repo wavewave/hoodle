@@ -309,7 +309,7 @@ touchStart cid pcoord = forBoth' unboxBiAct chk =<< liftM (getCanvasInfo cid) ge
             else do 
               let devlst = view deviceList xst 
               doIOaction $ \_ -> do
-                setToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
+                lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
                 -- ad hoc 
                 let touchstr = dev_touch_str devlst
                 when (touchstr /= "touch") $ do 

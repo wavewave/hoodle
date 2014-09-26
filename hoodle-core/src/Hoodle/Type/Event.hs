@@ -129,6 +129,7 @@ data MenuEvent = MenuNew
                | MenuEditEmbedTextSource
                | MenuEditNetEmbedTextSource
                | MenuTextFromSource
+               | MenuToggleNetworkEditSource
                | MenuLaTeX
                | MenuLaTeXNetwork
                | MenuCombineLaTeX

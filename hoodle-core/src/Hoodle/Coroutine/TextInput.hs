@@ -18,6 +18,7 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
+import           Control.Concurrent
 import qualified Control.Exception
 import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~),over,mapped)
 import           Control.Monad.State hiding (mapM_, forM_)
@@ -637,11 +638,20 @@ toggleNetworkEditSource = do
             ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
             Gtk.statusbarPush stbar ctxt msg
             return (UsrEv ActionOrdered)
+          waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+          (put . ((settings.networkEditSourceInfo) .~ (Just tid))) xst
+
         else do
-          doIOaction $ \_ -> do
-            ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
-            Gtk.statusbarPop stbar ctxt
-            return (UsrEv ActionOrdered)
+          case xst ^. (settings.networkEditSourceInfo) of
+            Nothing -> return ()
+            Just tid -> do
+              doIOaction $ \_ -> do
+                killThread tid
+                ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
+                Gtk.statusbarPush stbar ctxt ("Now no networkedit" :: String)
+                return (UsrEv ActionOrdered)
+              waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+              (put . ((settings.networkEditSourceInfo) .~ Nothing)) xst
 
       
 

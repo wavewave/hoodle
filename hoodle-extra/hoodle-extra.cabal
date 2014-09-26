@@ -59,7 +59,7 @@ Library
 Executable networkedit
   Main-is: networkedit.hs
   hs-source-dirs: exe
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans -threaded
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   base == 4.*,
@@ -67,10 +67,12 @@ Executable networkedit
                    bytestring,
                    directory, 
                    filepath,
+                   fsnotify,
                    monad-loops, 
                    mtl,
                    network-simple, 
                    process,
+                   system-filepath,
                    time,
                    transformers
 

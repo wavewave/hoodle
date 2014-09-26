@@ -65,7 +65,7 @@ module Hoodle.Type.HoodleState
 , doesKeepAspectRatio
 , doesUseVariableCursor
 , newPageMode
-, isNetworkEditSourceOn
+, networkEditSourceInfo
 -- 
 , penModeSignal
 , pageModeSignal
@@ -370,7 +370,7 @@ data Settings =
            , _doesKeepAspectRatio :: Bool
            , _doesUseVariableCursor :: Bool 
            , _newPageMode :: NewPageModeType
-           , _isNetworkEditSourceOn :: Bool
+           , _networkEditSourceInfo :: Maybe ThreadId
            } 
   
 
@@ -417,8 +417,8 @@ newPageMode :: Simple Lens Settings NewPageModeType
 newPageMode = lens _newPageMode (\f a -> f {_newPageMode=a})
 
 -- | network edit source mode
-isNetworkEditSourceOn :: Simple Lens Settings Bool
-isNetworkEditSourceOn = lens _isNetworkEditSourceOn (\f a -> f {_isNetworkEditSourceOn=a})
+networkEditSourceInfo :: Simple Lens Settings (Maybe ThreadId)
+networkEditSourceInfo = lens _networkEditSourceInfo (\f a -> f {_networkEditSourceInfo=a})
 
 
 -- | default hoodle state 
@@ -497,7 +497,7 @@ defaultSettings =
   , _doesKeepAspectRatio = False
   , _doesUseVariableCursor = False
   , _newPageMode = NPPlain
-  , _isNetworkEditSourceOn = False
+  , _networkEditSourceInfo = Nothing
   } 
   
 

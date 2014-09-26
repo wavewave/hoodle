@@ -20,9 +20,8 @@ module Hoodle.Coroutine.Network where
 
 import           Control.Applicative
 import           Control.Concurrent hiding (yield)
-
 import           Control.Lens 
-
+import           Control.Monad (forever)
 import           Control.Monad.State (modify,get)
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -38,12 +37,9 @@ import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 import           Network.Info
 import           Network.Simple.TCP
-
 -- 
-
 import           Control.Monad.Trans.Crtn.Queue (enqueue)
 -- 
-
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
@@ -55,32 +51,30 @@ import           Hoodle.Type.HoodleState (tempQueue,hookSet)
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
 server evhandler ip txt = do
   listen ip  "4040" $ \(lsock, _) -> 
-    accept lsock $ \(sock,addr) -> do 
+    accept lsock $ \(sock,addr) -> do
       let bstr = TE.encodeUtf8 txt
           bstr_size :: Word32 = (fromIntegral . B.length) bstr 
           bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
-      -- B.putStrLn () 
       putStrLn $ "TCP connection established from " ++ show addr
       send sock (bstr_size_binary <> TE.encodeUtf8 txt)
-      
-      mbstr <- runMaybeT $ do 
-        bstr' <- MaybeT (recv sock 4)
-        let getsize :: B.ByteString -> Word32 
-            getsize = Bi.decode . LB.fromChunks . return
-            size = (fromIntegral . getsize) bstr'
+      forever $ do      
+        mbstr <- runMaybeT $ do 
+          bstr' <- MaybeT (recv sock 4)
+          let getsize :: B.ByteString -> Word32 
+              getsize = Bi.decode . LB.fromChunks . return
+              size = (fromIntegral . getsize) bstr'
 
-            go s bs = do 
-              liftIO $ putStrLn ("requested size = " ++ show s)
-              bstr1 <- MaybeT (recv sock s)
-              let s' = B.length bstr1 
-              liftIO $ putStrLn ("obtained size = " ++ show s')
-              if s <= s' 
-                then return (bs <> bstr1)
-                else go (s-s') (bs <> bstr1) 
-        go size B.empty 
-        
-      -- print mbstr 
-      F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
+              go s bs = do 
+                liftIO $ putStrLn ("requested size = " ++ show s)
+                bstr1 <- MaybeT (recv sock s)
+                let s' = B.length bstr1 
+                liftIO $ putStrLn ("obtained size = " ++ show s')
+                if s <= s' 
+                  then return (bs <> bstr1)
+                  else go (s-s') (bs <> bstr1) 
+          go size B.empty 
+        -- print mbstr 
+        F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
 
 
 networkTextInputBody :: T.Text -> MainCoroutine (String,ThreadId,MVar ()) -- ^ (ip address,thread id,lock)
@@ -118,7 +112,6 @@ networkTextInput txt = do
           forkIO $ do          
             readMVar done 
             dialogResponse dialog ResponseOk
-
           res <- dialogRun dialog 
           let b = case res of 
                     ResponseOk -> True

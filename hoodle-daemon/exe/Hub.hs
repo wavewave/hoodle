@@ -24,11 +24,13 @@ receiveHub :: IO ()
 receiveHub = do
   hubaddr <- getEnv "HUBSOCKETADDRESS"
   hoodlehome <- getEnv "HOODLEHOME"
-  forever $ do 
-    connect hubaddr "5051" $ \(sock, servaddr) -> do 
-      putStrLn $ "client: connection established to " ++ show servaddr
+  connect hubaddr "5051" $ \(sock, servaddr) -> do 
+    putStrLn $ "client: connection established to " ++ show servaddr
+    unfoldM_ $ do 
       mmsg :: Maybe Message <- runMaybeT $ recvAndUnpack sock
       case mmsg of
         Nothing -> return ()
-        Just msg -> createProcess (proc "hoodle" [hoodlehome </> T.unpack (msgbody msg)]) >> return ()          
-      return ()
+        Just msg -> do 
+          createProcess (proc "hoodle" [hoodlehome </> T.unpack (msgbody msg)]) >> return ()
+          packAndSend sock "hoodle started"
+      return mmsg 

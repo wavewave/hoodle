@@ -53,15 +53,19 @@ main = do
           eds = tail edws
       print (ed1, [eds ++ [fpath] ])   -- just in case we have some error
       B.writeFile fpath bstr
-      forkIO $ withManager $ \wm -> do
-        putStrLn "watching start" 
-        watchDir wm (fromString tdir) (\case Modified _ _ -> True; _ -> False) $ \event -> do
-          case event of
-            Modified fp _ -> do
-              when (fromString fpath == fp) $ sendToHoodle sock fpath
-            _ -> return ()
-        getLine
-        return ()
+      -- mvar <- newMVar ()
+      -- takeMVar mvar 
+      forkIO $ do 
+        withManager $ \wm -> do
+          -- putStrLn "watching start" 
+          watchDir wm (fromString tdir) (\case Modified _ _ -> True; _ -> False) $ \event -> do
+            -- print event
+            case event of
+              Modified fp _ -> do
+                when (fromString fpath == fp) $ sendToHoodle sock fpath
+              _ -> return ()
+          threadDelay (3600*1000000)
+
       (_,_,_,h) <- createProcess (proc ed1 (eds ++ [fpath]))
       waitForProcess h
       sendToHoodle sock fpath

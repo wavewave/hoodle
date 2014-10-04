@@ -71,7 +71,7 @@ handwritingRecognitionDialog = do
       let bstr = (encode . mkAesonInk) strks
       let fp = tdir </> show uuid <.> "json"
       liftIO $ LB.writeFile fp bstr
-      (excode,gresult,gerror) <- liftIO $ readProcessWithExitCode "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit&app=chext" ] ""
+      (excode,gresult,gerror) <- liftIO $ readProcessWithExitCode "curl" ["-X", "POST", "-H", "Content-Type: application/json ", "--data-ascii", "@"++fp, "http://inputtools.google.com/request?itc=en-t-i0-handwrit" ] ""
       case excode of 
         ExitSuccess -> do 
           r_parse <- runEitherT $ do  

@@ -21,6 +21,7 @@ module Hoodle.Coroutine.Network where
 import           Control.Applicative
 import           Control.Concurrent hiding (yield)
 import           Control.Lens 
+import           Control.Monad
 import           Control.Monad.Loops 
 import           Control.Monad.State (modify,get)
 import           Control.Monad.Trans
@@ -28,11 +29,12 @@ import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Binary as Bi 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
-import qualified Data.Foldable as F (mapM_)
-
+-- import qualified Data.Foldable as F (mapM_)
+import           Data.IORef
 import           Data.Monoid ((<>),mconcat)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import qualified Data.Traversable as Tr
 import           Data.Word
 import           Graphics.UI.Gtk hiding (get,set)
 import           Network.Info
@@ -49,33 +51,38 @@ import           Hoodle.Type.HoodleState (tempQueue,hookSet)
 -- 
 
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
-server evhandler ip txt = do
-  listen ip  "4040" $ \(lsock, _) -> 
-    accept lsock $ \(sock,addr) -> do
-      let bstr = TE.encodeUtf8 txt
-          bstr_size :: Word32 = (fromIntegral . B.length) bstr 
-          bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
-      putStrLn $ "TCP connection established from " ++ show addr
-      send sock (bstr_size_binary <> TE.encodeUtf8 txt)
-      unfoldM_ $ do
-        mbstr <- runMaybeT $ do 
-          bstr' <- MaybeT (recv sock 4)
-          let getsize :: B.ByteString -> Word32 
-              getsize = Bi.decode . LB.fromChunks . return
-              size = (fromIntegral . getsize) bstr'
+server evhandler ip txtorig = do
+    ref <- newIORef txtorig
+    forever $ listen ip  "4040" $ \(lsock, _) -> 
+      accept lsock $ \(sock,addr) -> do
+        txt <- readIORef ref
+        let bstr = TE.encodeUtf8 txt
+            bstr_size :: Word32 = (fromIntegral . B.length) bstr 
+            bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
+        putStrLn $ "TCP connection established from " ++ show addr
+        send sock (bstr_size_binary <> TE.encodeUtf8 txt)
+        unfoldM_ $ do
+          mbstr <- runMaybeT $ do 
+            bstr' <- MaybeT (recv sock 4)
+            let getsize :: B.ByteString -> Word32 
+                getsize = Bi.decode . LB.fromChunks . return
+                size = (fromIntegral . getsize) bstr'
 
-              go s bs = do 
-                liftIO $ putStrLn ("requested size = " ++ show s)
-                bstr1 <- MaybeT (recv sock s)
-                let s' = B.length bstr1 
-                liftIO $ putStrLn ("obtained size = " ++ show s')
-                if s <= s' 
-                  then return (bs <> bstr1)
-                  else go (s-s') (bs <> bstr1) 
-          go size B.empty 
-        F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
-        return mbstr
-      putStrLn "FINISHED"
+                go s bs = do 
+                  liftIO $ putStrLn ("requested size = " ++ show s)
+                  bstr1 <- MaybeT (recv sock s)
+                  let s' = B.length bstr1 
+                  liftIO $ putStrLn ("obtained size = " ++ show s')
+                  if s <= s' 
+                    then return (bs <> bstr1)
+                    else go (s-s') (bs <> bstr1) 
+            go size B.empty 
+          Tr.forM mbstr $ \bstr -> do 
+            let txt = TE.decodeUtf8 bstr
+            (evhandler . UsrEv . NetworkProcess . NetworkReceived) txt 
+            writeIORef ref txt
+          return mbstr
+        putStrLn "FINISHED"
 
 
 networkTextInputBody :: T.Text -> MainCoroutine (String,ThreadId,MVar ()) -- ^ (ip address,thread id,lock)

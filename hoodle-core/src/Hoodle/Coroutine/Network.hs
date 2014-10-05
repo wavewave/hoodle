@@ -73,7 +73,6 @@ server evhandler ip txt = do
                   then return (bs <> bstr1)
                   else go (s-s') (bs <> bstr1) 
           go size B.empty 
-        -- print mbstr 
         F.mapM_ (evhandler . UsrEv . NetworkProcess . NetworkReceived . TE.decodeUtf8) mbstr
         return mbstr
       putStrLn "FINISHED"

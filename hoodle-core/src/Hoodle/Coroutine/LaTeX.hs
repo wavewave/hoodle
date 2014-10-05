@@ -67,9 +67,6 @@ getLaTeXComponentsFromHdl hdl =
         sorted = sortBy (cfunc `on` snd) latex_components 
     in sorted
 
-
-
-
 updateLaTeX :: MainCoroutine ()
 updateLaTeX = do
     liftIO $ putStrLn "updateLaTeX called"
@@ -85,40 +82,6 @@ updateLaTeX = do
     
     liftIO $ print sorted 
     return ()
-
-
-
-{-     
--- | combine all LaTeX texts into a text file 
-combineLaTeXText :: MainCoroutine ()
-combineLaTeXText = do
-    hdl <- rHoodle2Hoodle . getHoodle <$> get  
-    let mlatex_components = do 
-          (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
-          l <- view layers pg
-          i <- view items l
-          case i of 
-            ItemSVG svg ->  
-              case svg_command svg of
-                Just "latex" -> do 
-                  let (_,y) = svg_pos svg  
-                  return ((pgnum,y,) <$> svg_text svg) 
-                _ -> []
-            _ -> []
-    let cfunc :: (Ord a,Ord b,Ord c) => (a,b,c) -> (a,b,c) -> Ordering 
-        cfunc x y | view _1 x > view _1 y = GT
-                  | view _1 x < view _1 y = LT
-                  | otherwise = if | view _2 x > view _2 y -> GT
-                                   | view _2 x < view _2 y -> LT
-                                   | otherwise -> EQ
-    let latex_components = catMaybes  mlatex_components
-        sorted = sortBy cfunc latex_components 
-        resulttxt = (B.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view _3)) sorted
-    mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
-    forM_ mfilename (\filename -> liftIO (B.writeFile filename resulttxt) >> return ())
-
-
--}
 
 
 laTeXHeader :: T.Text

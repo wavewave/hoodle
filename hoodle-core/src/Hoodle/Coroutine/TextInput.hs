@@ -495,13 +495,6 @@ editNetEmbeddedTextSource = do
       networkTextInput txt >>= \case 
         Nothing -> return ()
         Just ntxt -> networkReceived ntxt
-{-          modify $ \xst ->
-            let nhdlmodst = case xst ^. hoodleModeState of
-                  ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
-                  SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
-            in (hoodleModeState .~ nhdlmodst) xst
-          commit_
--}
 
 networkReceived :: T.Text -> MainCoroutine ()
 networkReceived txt = do
@@ -588,18 +581,42 @@ laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
 laTeXInputFromSource (x0,y0) = do
     runMaybeT $ do 
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
-      lift $ modify (tempQueue %~ enqueue keywordDialog)  
+      let keylst = (map fst . M.toList . getKeywordMap) txtsrc
+      liftIO $ print keylst 
+      -- lift $ modify (tempQueue %~ enqueue (keywordDialog keylst))
+      lift $ doIOaction (keywordDialog keylst)
       keyword <- MaybeT keywordLoop
       laTeXInputKeyword (x0,y0) Nothing keyword
     return ()
 
 -- | common dialog with line position 
-keywordDialog :: Either (ActionOrder AllEvent) AllEvent
-keywordDialog = mkIOaction $ \evhandler -> do
+keywordDialog :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
+keywordDialog keys = \evhandler -> do
     dialog <- Gtk.dialogNew
     vbox <- Gtk.dialogGetUpper dialog
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
+    _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+    _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
+
+    cbx <- Gtk.comboBoxNewText 
+    mapM_ (Gtk.comboBoxAppendText cbx) keys
+
+    Gtk.boxPackStart hbox cbx Gtk.PackGrow 2
+
+    Gtk.widgetShowAll dialog
+    res <- Gtk.dialogRun dialog
+    Gtk.widgetDestroy dialog
+
+    case res of 
+      Gtk.ResponseOk -> do
+        keystr <- Gtk.comboBoxGetActiveText cbx
+        (return . UsrEv . Keyword) keystr
+      Gtk.ResponseCancel -> return (UsrEv (Keyword Nothing))
+      _ -> return (UsrEv (Keyword Nothing))
+    
+
+    {- 
     keybuf <- Gtk.entryBufferNew (Nothing :: Maybe String)
     key <- Gtk.entryNewWithBuffer keybuf
     Gtk.boxPackStart hbox key Gtk.PackNatural 2
@@ -614,7 +631,8 @@ keywordDialog = mkIOaction $ \evhandler -> do
         keystr <- T.pack <$> Gtk.get keybuf Gtk.entryBufferText
         (return . UsrEv . Keyword . Just) keystr
       Gtk.ResponseCancel -> return (UsrEv (Keyword Nothing))
-      _ -> return (UsrEv (Keyword Nothing))
+      _ -> return (UsrEv (Keyword Nothing)) -}
+
 
 -- | main event loop for line position dialog
 keywordLoop :: MainCoroutine (Maybe T.Text)

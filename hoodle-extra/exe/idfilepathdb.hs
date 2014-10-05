@@ -44,17 +44,14 @@ import           System.IO (stdin,stdout,hGetContents,hPutStrLn)
 import           Data.Hoodle.Simple
 import           Text.Hoodle.Parse.Attoparsec 
 -- 
+import           Hoodle.Manage.Connect
+import           Hoodle.Manage.DocDatabase
 import           DiffDB
 import           Migrate
 import qualified Hoodle.Manage.SqliteDB as SqliteDB
 import qualified TextFileDB
 import           Util
-import           Hoodle.Manage.DocDatabase
 -- 
-
-
--- import Database.Persist.Sqlite
--- import Database.Persist.Sql (rawQuery)
 
 
 data IdFilePathDB = List
@@ -286,30 +283,30 @@ dbsyncwork url idee pwd = do
           liftIO $ print content  
 
 dbgetwork :: String -> String -> String -> IO ()
-dbgetwork url idee pwd = do           
-    -- bstr <- B.hGetContents stdin
-    request' <- N.parseUrl (url <> "/auth/page/hashdb/login")
-    let crstr = B.pack ("username=" ++ idee ++ "&password=" ++ pwd)
-        requestauth = request' 
-          { N.method = "POST" 
-          , N.requestHeaders = 
-              ("Content-Type","application/x-www-form-urlencoded") 
-              : N.requestHeaders request'   
-          , N.requestBody = N.RequestBodyBS crstr
-          } 
-    mck <- runResourceT $ N.withManager $ \manager -> do  
-             response <- N.http requestauth manager
-             return (DL.lookup "Set-Cookie" (N.responseHeaders response))
-    case mck of 
-      Nothing -> return()
-      Just ck -> do 
+dbgetwork url idee pwd = 
+    -- do           
+    -- request' <- N.parseUrl (url <> "/auth/page/hashdb/login")
+    -- let crstr = B.pack ("username=" ++ idee ++ "&password=" ++ pwd)
+    --     requestauth = request' 
+    --       { N.method = "POST" 
+    --       , N.requestHeaders = 
+    --           ("Content-Type","application/x-www-form-urlencoded") 
+    --           : N.requestHeaders request'   
+    --       , N.requestBody = N.RequestBodyBS crstr
+    --       } 
+    -- mck <- runResourceT $ N.withManager $ \manager -> do  
+    --          response <- N.http requestauth manager
+    --          return (DL.lookup "Set-Cookie" (N.responseHeaders response))
+    -- case mck of 
+    --   Nothing -> return()
+    --   Just ck -> do 
+    hubwork url idee pwd $ \ck -> do 
         request'' <- N.parseUrl (url <> "/dumpdb")
         let requesttask = request'' 
               { N.method = "GET"
               , N.requestHeaders = ("Content-Type", "application/json") 
                                    : ("Cookie",ck) 
                                    : N.requestHeaders request''
-              -- , N.requestBody = N.RequestBodyBS bstr
               }
         runResourceT $ N.withManager $ \manager -> do  
           response <- N.http requesttask manager

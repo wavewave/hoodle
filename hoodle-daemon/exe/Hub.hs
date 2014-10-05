@@ -17,9 +17,6 @@ import System.Process
 --
 import Message
 
-
---     unfoldM_ $ do 
-
 receiveHub :: IO ()
 receiveHub = do
   hubaddr <- getEnv "HUBSOCKETADDRESS"

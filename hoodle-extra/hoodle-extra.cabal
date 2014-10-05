@@ -51,6 +51,7 @@ Library
                    unordered-containers,
                    xournal-parser
   Exposed-Modules: 
+                   Hoodle.Manage.Connect
                    Hoodle.Manage.DocDatabase
                    Hoodle.Manage.SqliteDB
 
@@ -118,4 +119,44 @@ Executable idfilepathdb
                    Migrate
                    TextFileDB
                    Util
+
+
+Executable registerip
+  Main-is: registerip.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
+
+  Build-Depends:   
+                   aeson,
+                   aeson-pretty,
+                   attoparsec,
+                   base == 4.*,
+                   base64-bytestring,
+                   bytestring,
+                   cmdargs,
+                   conduit, 
+                   containers,
+                   directory,
+                   either,
+                   esqueleto,
+                   filepath,
+                   hoodle-types,
+                   hoodle-parser,
+                   http-conduit,
+                   lens,
+                   monad-logger,
+                   network-info,
+                   persistent,
+                   persistent-sqlite,
+                   process,
+                   pureMD5,
+                   resourcet,
+                   text,
+                   transformers,
+                   unordered-containers,
+                   xournal-parser, 
+                   --
+                   hoodle-extra
+
 

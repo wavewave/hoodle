@@ -32,8 +32,8 @@ registerip :: String -> String -> String -> String -> IO ()
 registerip url idee pwd ip = do 
     hubwork url idee pwd $ \ck -> do 
         let uuid = "c3d45ece-b57a-4c61-9781-0ed7ebddf020"
-            bstr = "test"
-
+            bstr = "\"" <> B.pack ip <> "\"" 
+        print bstr 
         request'' <- N.parseUrl (url <> "/device/" <> uuid )
 
         let requesttask = request'' 

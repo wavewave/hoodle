@@ -8,12 +8,13 @@ import qualified Data.ByteString.Char8 as B
 import           Data.Conduit
 import qualified Data.Conduit.List as CL
 import qualified Data.Foldable as F
+import qualified Data.Traversable as Tr
 import qualified Data.List as DL 
 import           Data.Monoid
 import qualified Network.HTTP.Conduit as N
 
 
-hubwork :: String -> String -> String -> (B.ByteString -> IO ()) -> IO ()
+hubwork :: String -> String -> String -> (B.ByteString -> IO a) -> IO (Maybe a)
 hubwork url idee pwd act = do           
     request' <- N.parseUrl (url <> "/auth/page/hashdb/login")
     let crstr = B.pack ("username=" ++ idee ++ "&password=" ++ pwd)
@@ -27,7 +28,7 @@ hubwork url idee pwd act = do
     mck <- runResourceT $ N.withManager $ \manager -> do  
              response <- N.http requestauth manager
              return (DL.lookup "Set-Cookie" (N.responseHeaders response))
-    F.mapM_ act mck
+    Tr.mapM act mck
 
 
 {-

@@ -553,20 +553,19 @@ laTeXInputKeyword (x0,y0) mdim keyword = do
                     okMessageBox err
                     return ()
 
--- | insert text 
+-- | 
 laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
 laTeXInputFromSource (x0,y0) = do
     runMaybeT $ do 
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
       let keylst = (map fst . M.toList . getKeywordMap) txtsrc
-      liftIO $ print keylst 
-      -- lift $ modify (tempQueue %~ enqueue (keywordDialog keylst))
-      lift $ doIOaction (keywordDialog keylst)
-      keyword <- MaybeT keywordLoop
-      laTeXInputKeyword (x0,y0) Nothing keyword
+      when ((not.null) keylst) $ do 
+        lift $ doIOaction (keywordDialog keylst)
+        keyword <- MaybeT keywordLoop
+        laTeXInputKeyword (x0,y0) Nothing keyword
     return ()
 
--- | common dialog with line position 
+-- | 
 keywordDialog :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
 keywordDialog keys = \evhandler -> do
     dialog <- Gtk.dialogNew
@@ -577,7 +576,9 @@ keywordDialog keys = \evhandler -> do
     _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
 
     cbx <- Gtk.comboBoxNewText 
-    mapM_ (Gtk.comboBoxAppendText cbx) keys
+    klst <- mapM (Gtk.comboBoxAppendText cbx) keys
+    when ((not.null) klst) $ 
+      Gtk.comboBoxSetActive cbx (head klst)
 
     Gtk.boxPackStart hbox cbx Gtk.PackGrow 2
 

@@ -400,29 +400,6 @@ combineLaTeXText = do
     mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
     forM_ mfilename (\filename -> liftIO (TIO.writeFile filename resulttxt) >> return ())
 
-{- 
-    let mlatex_components = do 
-          (pgnum,pg) <- (zip ([1..] :: [Int]) . view pages) hdl  
-          l <- view layers pg
-          i <- view items l
-          case i of 
-            ItemSVG svg ->  
-              case svg_command svg of
-                Just "latex" -> do 
-                  let (_,y) = svg_pos svg  
-                  return ((pgnum,y,) <$> svg_text svg) 
-                _ -> []
-            _ -> []
-    let cfunc :: (Ord a,Ord b,Ord c) => (a,b,c) -> (a,b,c) -> Ordering 
-        cfunc x y | view _1 x > view _1 y = GT
-                  | view _1 x < view _1 y = LT
-                  | otherwise = if | view _2 x > view _2 y -> GT
-                                   | view _2 x < view _2 y -> LT
-                                   | otherwise -> EQ
-    let latex_components = catMaybes  mlatex_components
-        sorted = sortBy cfunc latex_components -}
-
-
 
 insertItemAt :: Maybe (PageNum,PageCoordinate) 
                 -> RItem 
@@ -615,24 +592,6 @@ keywordDialog keys = \evhandler -> do
       Gtk.ResponseCancel -> return (UsrEv (Keyword Nothing))
       _ -> return (UsrEv (Keyword Nothing))
     
-
-    {- 
-    keybuf <- Gtk.entryBufferNew (Nothing :: Maybe String)
-    key <- Gtk.entryNewWithBuffer keybuf
-    Gtk.boxPackStart hbox key Gtk.PackNatural 2
-    -- 
-    _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
-    _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
-    Gtk.widgetShowAll dialog
-    res <- Gtk.dialogRun dialog
-    Gtk.widgetDestroy dialog
-    case res of 
-      Gtk.ResponseOk -> do
-        keystr <- T.pack <$> Gtk.get keybuf Gtk.entryBufferText
-        (return . UsrEv . Keyword . Just) keystr
-      Gtk.ResponseCancel -> return (UsrEv (Keyword Nothing))
-      _ -> return (UsrEv (Keyword Nothing)) -}
-
 
 -- | main event loop for line position dialog
 keywordLoop :: MainCoroutine (Maybe T.Text)

@@ -57,107 +57,107 @@ Library
 
 
 
--- Executable networkedit
---   Main-is: networkedit.hs
---   hs-source-dirs: exe
---   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans -threaded
---   ghc-prof-options: -caf-all -auto-all
+Executable networkedit
+  Main-is: networkedit.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans -threaded
+  ghc-prof-options: -caf-all -auto-all
 
---   Build-Depends:   base == 4.*,
---                    binary,  
---                    bytestring,
---                    directory, 
---                    filepath,
---                    fsnotify,
---                    monad-loops, 
---                    mtl,
---                    network-simple, 
---                    process,
---                    system-filepath,
---                    time,
---                    transformers
+  Build-Depends:   base == 4.*,
+                   binary,  
+                   bytestring,
+                   directory, 
+                   filepath,
+                   fsnotify,
+                   monad-loops, 
+                   mtl,
+                   network-simple, 
+                   process,
+                   system-filepath,
+                   time,
+                   transformers
 
--- Executable idfilepathdb
---   Main-is: idfilepathdb.hs
---   hs-source-dirs: exe
---   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
---   ghc-prof-options: -caf-all -auto-all
+Executable idfilepathdb
+  Main-is: idfilepathdb.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
 
---   Build-Depends:   
---                    aeson,
---                    aeson-pretty,
---                    attoparsec,
---                    base == 4.*,
---                    base64-bytestring,
---                    bytestring,
---                    cmdargs,
---                    conduit, 
---                    containers,
---                    directory,
---                    either,
---                    esqueleto,
---                    filepath,
---                    hoodle-types,
---                    hoodle-parser,
---                    http-conduit,
---                    lens,
---                    monad-logger,
---                    -- mtl,
---                    persistent,
---                    persistent-sqlite,
---                    process,
---                    pureMD5,
---                    resourcet,
---                    text,
---                    transformers,
---                    unordered-containers,
---                    xournal-parser, 
---                    --
---                    hoodle-extra
+  Build-Depends:   
+                   aeson,
+                   aeson-pretty,
+                   attoparsec,
+                   base == 4.*,
+                   base64-bytestring,
+                   bytestring,
+                   cmdargs,
+                   conduit, 
+                   containers,
+                   directory,
+                   either,
+                   esqueleto,
+                   filepath,
+                   hoodle-types,
+                   hoodle-parser,
+                   http-conduit,
+                   lens,
+                   monad-logger,
+                   -- mtl,
+                   persistent,
+                   persistent-sqlite,
+                   process,
+                   pureMD5,
+                   resourcet,
+                   text,
+                   transformers,
+                   unordered-containers,
+                   xournal-parser, 
+                   --
+                   hoodle-extra
 
---   Other-modules:   DiffDB
---                    Migrate
---                    TextFileDB
---                    Util
+  Other-modules:   DiffDB
+                   Migrate
+                   TextFileDB
+                   Util
 
 
--- Executable registerip
---   Main-is: registerip.hs
---   hs-source-dirs: exe
---   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
---   ghc-prof-options: -caf-all -auto-all
+Executable registerip
+  Main-is: registerip.hs
+  hs-source-dirs: exe
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-prof-options: -caf-all -auto-all
 
---   Build-Depends:   
---                    aeson,
---                    aeson-pretty,
---                    attoparsec,
---                    base == 4.*,
---                    base64-bytestring,
---                    bytestring,
---                    cmdargs,
---                    conduit, 
---                    containers,
---                    directory,
---                    either,
---                    esqueleto,
---                    filepath,
---                    hoodle-types,
---                    hoodle-parser,
---                    http-conduit,
---                    lens,
---                    monad-logger,
---                    network-info,
---                    persistent,
---                    persistent-sqlite,
---                    process,
---                    pureMD5,
---                    resourcet,
---                    text,
---                    transformers,
---                    unordered-containers,
---                    xournal-parser, 
---                    --
---                    hoodle-extra
+  Build-Depends:   
+                   aeson,
+                   aeson-pretty,
+                   attoparsec,
+                   base == 4.*,
+                   base64-bytestring,
+                   bytestring,
+                   cmdargs,
+                   conduit, 
+                   containers,
+                   directory,
+                   either,
+                   esqueleto,
+                   filepath,
+                   hoodle-types,
+                   hoodle-parser,
+                   http-conduit,
+                   lens,
+                   monad-logger,
+                   network-info,
+                   persistent,
+                   persistent-sqlite,
+                   process,
+                   pureMD5,
+                   resourcet,
+                   text,
+                   transformers,
+                   unordered-containers,
+                   xournal-parser, 
+                   --
+                   hoodle-extra
 
 Executable getip
   Main-is: getip.hs

@@ -47,3 +47,4 @@ registerip url idee pwd ip = do
           response <- N.http requesttask manager
           content <- N.responseBody response $$+- CL.consume 
           liftIO $ B.putStrLn (mconcat content)
+    return ()

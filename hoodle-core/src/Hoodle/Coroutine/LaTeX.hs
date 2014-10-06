@@ -76,10 +76,7 @@ updateLaTeX = do
       txtsrc <- MaybeT $ return (rhdl ^. gembeddedtext)  
       let km = getKeywordMap txtsrc
       liftIO $ print km
-
     let sorted = getLaTeXComponentsFromHdl hdl
-
-    
     liftIO $ print sorted 
     return ()
 
@@ -97,6 +94,7 @@ laTeXHeader =
   \\\onehalfspacing\n\
   \\\usepackage{fontspec}\n\
   \\\setCJKmainfont{NanumGothic}\n\
+  \\\usepackage{minted}\n\
   \\\pagestyle{empty}\n\
   \\\begin{document}\n"
 

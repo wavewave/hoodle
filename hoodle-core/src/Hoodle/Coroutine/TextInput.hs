@@ -263,7 +263,7 @@ makeLaTeXSVG (x0,y0) mdim txt = do
     B.writeFile (tfilename <.> "tex") (TE.encodeUtf8 txt)
     r <- runEitherT $ do 
       check "error during xelatex" $ do 
-        (ecode,ostr,estr) <- readProcessWithExitCode "xelatex" [tfilename <.> "tex"] ""
+        (ecode,ostr,estr) <- readProcessWithExitCode "xelatex" ["-shell-escape", tfilename <.> "tex"] ""
         return (ecode,ostr++estr)
       check "error during pdfcrop" $ do 
         (ecode,ostr,estr) <- readProcessWithExitCode "pdfcrop" [tfilename <.> "pdf",tfilename ++ "_crop" <.> "pdf"] ""       
@@ -550,7 +550,8 @@ laTeXInputKeyword (x0,y0) mdim keyword = do
                     deleteSelection 
                     svgInsert ("embedlatex:keyword:"<>keyword,"latex") r
       Left err -> lift $ do
-                    okMessageBox err
+                    longTextMessageBox err
+                    -- okMessageBox err
                     return ()
 
 -- | 
@@ -565,7 +566,7 @@ laTeXInputFromSource (x0,y0) = do
         laTeXInputKeyword (x0,y0) Nothing keyword
     return ()
 
--- | 
+-- | need to be moved to Hoodle.Coroutine.Dialog
 keywordDialog :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
 keywordDialog keys = \evhandler -> do
     dialog <- Gtk.dialogNew

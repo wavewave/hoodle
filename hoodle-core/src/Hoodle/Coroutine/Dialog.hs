@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Dialog
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013,2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,7 +17,8 @@ module Hoodle.Coroutine.Dialog where
 import           Control.Lens ((%~),view)
 import           Control.Monad.Loops
 import           Control.Monad.State
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Data.Foldable as F
+import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory (getCurrentDirectory)
 -- 
 import           Control.Monad.Trans.Crtn.Queue
@@ -38,11 +39,44 @@ okMessageBox msg = modify (tempQueue %~ enqueue action)
   where 
     action = mkIOaction $ 
                \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOk msg 
-                 _res <- dialogRun dialog 
-                 widgetDestroy dialog 
+                 dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                   Gtk.MessageQuestion Gtk.ButtonsOk msg 
+                 _res <- Gtk.dialogRun dialog 
+                 Gtk.widgetDestroy dialog 
                  return (UsrEv GotOk)
+
+
+-- |
+longTextMessageBox :: String -> MainCoroutine () 
+longTextMessageBox msg = modify (tempQueue %~ enqueue action) 
+                         >> waitSomeEvent (\case GotOk -> True ; _ -> False) 
+                         >> return () 
+  where 
+    action = mkIOaction $ 
+               \_evhandler -> do 
+                 dialog <- Gtk.dialogNew
+
+                 vbox <- Gtk.dialogGetUpper dialog
+                 hbox <- Gtk.hBoxNew False 0
+                 txtbuf <- Gtk.textBufferNew Nothing
+                 Gtk.textBufferSetText txtbuf msg
+                 txtview <- Gtk.textViewNewWithBuffer txtbuf
+                 vadj <- Gtk.textViewGetVadjustment txtview
+                 vscr <- Gtk.vScrollbarNew vadj
+                 Gtk.widgetSetSizeRequest txtview 400 700
+                 Gtk.boxPackEnd hbox vscr Gtk.PackNatural 0 
+                 Gtk.boxPackStart hbox txtview Gtk.PackGrow 0
+                 Gtk.boxPackStart vbox hbox Gtk.PackGrow 0
+                 
+
+                 _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+
+                 Gtk.widgetShowAll dialog
+                 _res <- Gtk.dialogRun dialog 
+                 Gtk.widgetDestroy dialog 
+                 return (UsrEv GotOk)
+
+
 
 -- | 
 okCancelMessageBox :: String -> MainCoroutine Bool 
@@ -55,23 +89,22 @@ okCancelMessageBox msg = modify (tempQueue %~ enqueue action)
     q _ = False 
     action = mkIOaction $ 
                \_evhandler -> do 
-                 dialog <- messageDialogNew Nothing [DialogModal]
-                   MessageQuestion ButtonsOkCancel msg 
-                 res <- dialogRun dialog 
+                 dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                   Gtk.MessageQuestion Gtk.ButtonsOkCancel msg 
+                 res <- Gtk.dialogRun dialog 
                  let b = case res of 
-                           ResponseOk -> True
+                           Gtk.ResponseOk -> True
                            _ -> False
-                 widgetDestroy dialog 
+                 Gtk.widgetDestroy dialog 
                  return (UsrEv (OkCancel b))
 
 -- | 
-fileChooser :: FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
+fileChooser :: Gtk.FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 
 fileChooser choosertyp mfname = do 
     mrecentfolder <- S.recentFolderHook 
     xst <- get 
     let rtrwin = view rootOfRootWindow xst 
-    liftIO $ widgetQueueDraw rtrwin 
-        
+    liftIO $ Gtk.widgetQueueDraw rtrwin 
     modify (tempQueue %~ enqueue (action rtrwin mrecentfolder)) >> go 
   where 
     go = do r <- nextevent                   
@@ -81,21 +114,21 @@ fileChooser choosertyp mfname = do
                                   invalidateInBBox Nothing Efficient cid >> go  
               _ -> go 
     action win mrf = mkIOaction $ \_evhandler -> do 
-      dialog <- fileChooserDialogNew Nothing (Just win) choosertyp 
-                  [ ("OK", ResponseOk) 
-                  , ("Cancel", ResponseCancel) ]
+      dialog <- Gtk.fileChooserDialogNew Nothing (Just win) choosertyp 
+                  [ ("OK", Gtk.ResponseOk) 
+                  , ("Cancel", Gtk.ResponseCancel) ]
       case mrf of 
-        Just rf -> fileChooserSetCurrentFolder dialog rf 
-        Nothing -> getCurrentDirectory >>= fileChooserSetCurrentFolder dialog 
-      maybe (return ()) (fileChooserSetCurrentName dialog) mfname 
+        Just rf -> Gtk.fileChooserSetCurrentFolder dialog rf 
+        Nothing -> getCurrentDirectory >>= Gtk.fileChooserSetCurrentFolder dialog 
+      F.mapM_ (Gtk.fileChooserSetCurrentName dialog) mfname 
       --   !!!!!! really hackish solution !!!!!!
-      whileM_ (liftM (>0) eventsPending) (mainIterationDo False)
+      whileM_ (liftM (>0) Gtk.eventsPending) (Gtk.mainIterationDo False)
       
-      res <- dialogRun dialog
+      res <- Gtk.dialogRun dialog
       mr <- case res of 
-              ResponseDeleteEvent -> return Nothing
-              ResponseOk ->  fileChooserGetFilename dialog 
-              ResponseCancel -> return Nothing 
+              Gtk.ResponseDeleteEvent -> return Nothing
+              Gtk.ResponseOk ->  Gtk.fileChooserGetFilename dialog 
+              Gtk.ResponseCancel -> return Nothing 
               _ -> putStrLn "??? in fileOpen" >> return Nothing 
-      widgetDestroy dialog
+      Gtk.widgetDestroy dialog
       return (UsrEv (FileChosen mr))

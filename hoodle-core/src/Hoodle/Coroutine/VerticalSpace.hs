@@ -73,8 +73,8 @@ splitPageByHLine y pg = (hitted,set glayers unhitted pg,hltedLayers)
     bboxabove (BBox (_,y0) _) = y0 > y 
 
 -- |
-verticalSpaceStart :: CanvasId -> PointerCoord -> MainCoroutine () 
-verticalSpaceStart cid = commonPenStart verticalSpaceAction cid  
+verticalSpaceStart :: CanvasId -> PointerCoord -> MainCoroutine ()
+verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (return ())
   where 
     verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) _ = do 
       hdl <- liftM getHoodle get 

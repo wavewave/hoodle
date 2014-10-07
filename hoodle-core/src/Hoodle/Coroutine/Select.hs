@@ -90,7 +90,8 @@ commonSelectStart :: SelectType
                      -> MainCoroutine ()
 commonSelectStart typ pbtn cid = case typ of 
                                    SelectHandToolWork -> (\_ -> return ())
-                                   _ -> commonPenStart selectaction cid
+                                   _ -> commonPenStart selectaction cid >=> const (return ())
+
   where selectaction cinfo pnum geometry (x,y) _ = do
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
@@ -98,12 +99,14 @@ commonSelectStart typ pbtn cid = case typ of
                 dealWithOneTimeSelectMode 
                   (do tsel <- createTempRender geometry [] 
                       case typ of 
-                        SelectRectangleWork -> 
+                        SelectRectangleWork -> do
                           newSelectRectangle cid pnum geometry itms 
                             (x,y) ((x,y),ctime) tsel
-                        SelectLassoWork -> 
+                          return ()
+                        SelectLassoWork -> do
                           newSelectLasso cinfo pnum geometry itms 
                              (x,y) ((x,y),ctime) (Sq.empty |> (x,y)) tsel
+                          return ()
                         _ -> return ()
                       Cairo.surfaceFinish (tempSurfaceSrc tsel) 
                       showContextMenu (pnum,(x,y))
@@ -486,7 +489,7 @@ selectPenWidthChanged pwidth = do
 --   choose either starting new rectangular selection or move previously 
 --   selected selection. 
 selectLassoStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
-selectLassoStart = commonSelectStart SelectLassoWork
+selectLassoStart p cid coord = commonSelectStart SelectLassoWork p cid coord >> return ()
           
 
 -- | 

@@ -92,43 +92,45 @@ penPageSwitch pgn = do
         
 
 -- | Common Pen Work starting point 
-commonPenStart :: (forall a. CanvasInfo a -> PageNum -> CanvasGeometry  
-                    -> (Double,Double) -> UTCTime -> MainCoroutine () )
+commonPenStart :: forall b. 
+                  (forall a . CanvasInfo a -> PageNum -> CanvasGeometry  
+                    -> (Double,Double) -> UTCTime -> MainCoroutine b)
                -> CanvasId 
                -> PointerCoord 
-               -> MainCoroutine ()
+               -> MainCoroutine (Maybe b)
 commonPenStart action cid pcoord = do
     oxstate <- get 
     let currcid = getCurrentCanvasId oxstate
     ctime <- liftIO $ getCurrentTime
-    liftIO $ putStrLn "--------------"
-    liftIO $ print ctime 
+    -- liftIO $ putStrLn "--------------"
+    -- liftIO $ print ctime 
     when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
     nxstate <- get
     forBoth' unboxBiAct (f ctime) . getCanvasInfo cid $ nxstate
-  where f :: forall b. UTCTime -> CanvasInfo b -> MainCoroutine ()
+  where f :: forall c. UTCTime -> CanvasInfo c -> MainCoroutine (Maybe b)
         f ctime cvsInfo = do 
           let cpn = PageNum . view currentPageNum $ cvsInfo
               arr = view (viewInfo.pageArrangement) cvsInfo 
               canvas = view drawArea cvsInfo
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let pagecoord = desktop2Page geometry . device2Desktop geometry $ pcoord 
-          maybeFlip pagecoord (return ()) 
+          maybeFlip pagecoord (return Nothing) 
             $ \(pgn,PageCoord (x,y)) -> do 
                  nCvsInfo <- if (cpn /= pgn) 
                                then do penPageSwitch pgn
                                     -- temporary dirty fix 
                                        return (set currentPageNum (unPageNum pgn) cvsInfo )
                                else return cvsInfo                   
-                 action nCvsInfo pgn geometry (x,y) ctime 
+                 Just <$> action nCvsInfo pgn geometry (x,y) ctime 
       
 -- | enter pen drawing mode
 penStart :: CanvasId 
          -> PointerCoord 
-         -> MainCoroutine () 
+         -> MainCoroutine (Maybe (Maybe (Maybe ())))
 penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. CanvasInfo b -> PageNum -> CanvasGeometry 
-                  -> (Double,Double) -> UTCTime -> MainCoroutine ()
+                  -> (Double,Double) -> UTCTime 
+                  -> MainCoroutine (Maybe (Maybe ()))
         penAction _cinfo pnum geometry (x,y) ctime = do 
           xstate <- get
           let PointerCoord _ _ _ z = pcoord 
@@ -136,24 +138,25 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
               cache = view renderCache xstate
-          forM_ mpage $ \_page -> do 
+          maybeFlip mpage (return Nothing)  $ \_page -> do 
             trdr <- createTempRender geometry (empty |> (x,y,z)) 
-            pdraw <-penProcess cid pnum geometry trdr ((x,y),z) ctime
+            mpdraw <-penProcess cid pnum geometry trdr ((x,y),z) ctime
             Cairo.surfaceFinish (tempSurfaceSrc trdr)
-            Cairo.surfaceFinish (tempSurfaceTgt trdr)            
-            --
-            case viewl pdraw of 
-              EmptyL -> return ()
-              (x1,_y1,_z1) :< _rest -> do 
-                if x1 <= 1e-3      -- this is ad hoc but.. 
-                  then invalidateAll
-                  else do  
-                    (newhdl,bbox) <- liftIO $ addPDraw cache pinfo currhdl pnum pdraw
-                    commit . set hoodleModeState (ViewAppendState newhdl) 
-                      =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
-                    let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
-                        nbbox = xformBBox f bbox 
-                    invalidateAllInBBox (Just nbbox) BkgEfficient 
+            Cairo.surfaceFinish (tempSurfaceTgt trdr)
+            maybeFlip mpdraw (return (Just Nothing)) $ \pdraw -> 
+              case viewl pdraw of 
+                EmptyL -> return (Just (Just ()))
+                (x1,_y1,_z1) :< _rest -> do 
+                  if x1 <= 1e-3      -- this is ad hoc but.. 
+                    then invalidateAll
+                    else do  
+                      (newhdl,bbox) <- liftIO $ addPDraw cache pinfo currhdl pnum pdraw
+                      commit . set hoodleModeState (ViewAppendState newhdl) 
+                        =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
+                      let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
+                          nbbox = xformBBox f bbox 
+                      invalidateAllInBBox (Just nbbox) BkgEfficient
+                  return (Just (Just ()))
           
 -- | main pen coordinate adding process
 -- | now being changed
@@ -163,7 +166,7 @@ penProcess :: CanvasId
            -> TempRender (Seq (Double,Double,Double))
            -> ((Double,Double),Double) 
            -> UTCTime
-           -> MainCoroutine (Seq (Double,Double,Double))
+           -> MainCoroutine (Maybe (Seq (Double,Double,Double)))
 penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do 
     r <- nextevent
     ntime <- liftIO getCurrentTime
@@ -174,16 +177,16 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
                  in abs (maximum xlst - minimum xlst)
         deltay = let ylst = map (\(_,y,_)->y) lst
                  in abs (maximum ylst - minimum ylst)
-
-    when (deltax < 10 && deltay < 10 && ispressandhold) $
-      liftIO $ putStrLn "PRESSANDHOLD!!!"
-    xst <- get 
-    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
+    -- temporarily fix the range
+    if (deltax < 20 && deltay < 20 && ispressandhold && Prelude.length lst < 20) 
+      then return Nothing 
+      else do xst <- get 
+              forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
   where 
     pdraw = tempInfo trdr 
     fsingle :: forall b.  
                UserEvent -> HoodleState -> CanvasInfo b 
-               -> MainCoroutine (Seq (Double,Double,Double))
+               -> MainCoroutine (Maybe (Seq (Double,Double,Double)))
     fsingle r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
         (penProcess cid pnum geometry trdr ((x0,y0),z0) ctime)
@@ -201,7 +204,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
            ---                                
            let ntrdr = trdr { tempInfo = pdraw |> (x,y,z) }
            penProcess cid pnum geometry ntrdr ((x,y),z) ctime)
-        (\_ -> return pdraw )
+        (\_ -> return (Just pdraw))
 
 -- | 
 skipIfNotInSamePage :: Monad m => 

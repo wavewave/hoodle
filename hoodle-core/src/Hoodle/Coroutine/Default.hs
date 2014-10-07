@@ -207,7 +207,14 @@ viewAppendMode = do
       widgetCheckPen cid pcoord $ do 
         ptype <- getPenType 
         case (ptype,pbtn) of 
-          (PenWork,PenButton1) -> penStart cid pcoord
+          (PenWork,PenButton1) -> do
+            r <- penStart cid pcoord
+            case r of 
+              Just (Just Nothing) -> do 
+                updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
+                modeChange ToSelectMode
+                selectLassoStart PenButton3 cid pcoord
+              _ -> return ()
           (PenWork,PenButton2) -> eraserStart cid pcoord 
           (PenWork,PenButton3) -> do 
             updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
@@ -216,7 +223,14 @@ viewAppendMode = do
           (PenWork,EraserButton) -> eraserStart cid pcoord
           (PenWork,_) -> return () 
           (EraserWork,_)      -> eraserStart cid pcoord 
-          (HighlighterWork,_) -> highlighterStart cid pcoord
+          (HighlighterWork,_) -> do 
+            r <- highlighterStart cid pcoord 
+            case r of 
+              Just (Just Nothing) -> do 
+                updateXState (return . set isOneTimeSelectMode YesBeforeSelect)
+                modeChange ToSelectMode
+                selectLassoStart PenButton3 cid pcoord
+              _ -> return ()
           (VerticalSpaceWork,PenButton1) -> verticalSpaceStart cid pcoord 
           (VerticalSpaceWork,_) -> return () 
     TouchDown cid pcoord -> touchStart cid pcoord 

@@ -43,8 +43,8 @@ import Hoodle.View.Coordinate
 -- |
 eraserStart :: CanvasId 
                -> PointerCoord 
-               -> MainCoroutine () 
-eraserStart cid = commonPenStart eraserAction cid  
+               -> MainCoroutine ()
+eraserStart cid = commonPenStart eraserAction cid  >=> const (return ())
   where eraserAction _cinfo pnum geometry (x,y) _ = do 
           itms <- rItmsInCurrLyr
           eraserProcess cid pnum geometry itms (x,y)

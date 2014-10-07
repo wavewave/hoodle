@@ -45,7 +45,7 @@ eraserStart :: CanvasId
                -> PointerCoord 
                -> MainCoroutine () 
 eraserStart cid = commonPenStart eraserAction cid  
-  where eraserAction _cinfo pnum geometry (x,y) = do 
+  where eraserAction _cinfo pnum geometry (x,y) _ = do 
           itms <- rItmsInCurrLyr
           eraserProcess cid pnum geometry itms (x,y)
 

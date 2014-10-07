@@ -522,26 +522,24 @@ colorPickerBox :: String -> MainCoroutine (Maybe PenColor)
 colorPickerBox msg = do 
    xst <- get 
    let pcolor = view ( penInfo.currentTool.penColor) xst   
-   modify (tempQueue %~ enqueue (action pcolor)) >> go 
+   doIOaction (action pcolor) >> go
   where 
-    action pcolor = 
-      mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- Gtk.colorSelectionDialogNew msg
-                 csel <- Gtk.colorSelectionDialogGetColor dialog
-                 let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
-                     color = Gtk.Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
-                
-                 Gtk.colorSelectionSetCurrentColor csel color
-                 res <- Gtk.dialogRun dialog 
-                 mc <- case res of 
-                         Gtk.ResponseOk -> do 
-                              clrsel <- Gtk.colorSelectionDialogGetColor dialog 
-                              clr <- Gtk.colorSelectionGetCurrentColor clrsel     
-                              return (Just (colorConvert clr))
-                         _ -> return Nothing 
-                 Gtk.widgetDestroy dialog 
-                 return (UsrEv (ColorChosen mc))
+    action pcolor _evhandler = do 
+      dialog <- Gtk.colorSelectionDialogNew msg
+      csel <- Gtk.colorSelectionDialogGetColor dialog
+      let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
+          color = Gtk.Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
+
+      Gtk.colorSelectionSetCurrentColor csel color
+      res <- Gtk.dialogRun dialog 
+      mc <- case res of 
+              Gtk.ResponseOk -> do 
+                   clrsel <- Gtk.colorSelectionDialogGetColor dialog 
+                   clr <- Gtk.colorSelectionGetCurrentColor clrsel     
+                   return (Just (colorConvert clr))
+              _ -> return Nothing 
+      Gtk.widgetDestroy dialog 
+      return (UsrEv (ColorChosen mc))
     go = do r <- nextevent                   
             case r of 
               ColorChosen mc -> return mc 

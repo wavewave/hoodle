@@ -76,7 +76,7 @@ splitPageByHLine y pg = (hitted,set glayers unhitted pg,hltedLayers)
 verticalSpaceStart :: CanvasId -> PointerCoord -> MainCoroutine () 
 verticalSpaceStart cid = commonPenStart verticalSpaceAction cid  
   where 
-    verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) = do 
+    verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) _ = do 
       hdl <- liftM getHoodle get 
       cache <- view renderCache <$> get
       cpg <- getCurrentPageCurr 

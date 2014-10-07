@@ -91,7 +91,7 @@ commonSelectStart :: SelectType
 commonSelectStart typ pbtn cid = case typ of 
                                    SelectHandToolWork -> (\_ -> return ())
                                    _ -> commonPenStart selectaction cid
-  where selectaction cinfo pnum geometry (x,y) = do
+  where selectaction cinfo pnum geometry (x,y) _ = do
           itms <- rItmsInCurrLyr
           ctime <- liftIO $ getCurrentTime
           let newSelectAction _page = 

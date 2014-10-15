@@ -69,7 +69,37 @@ startGUI mfname mhook = do
     if xinputbool
         then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
         else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
+    --
+    outerLayout ui vbox st0 window statusbar   
+    -- boxPackStart vbox (view rootWindow st0) PackGrow 0 
+    window `on` deleteEvent $ do
+      liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
+      return True
+    widgetShowAll window
+    let mainaction = do eventHandler tref (UsrEv (Initialized mfname))
+                        mainGUI 
+    mainaction `catch` \(_e :: SomeException) -> do 
+      homepath <- getEnv "HOME"
+      let dir = homepath </> ".hoodle.d"
+      createDirectoryIfMissing False dir
+      outh <- openFile (dir </> "error.log") WriteMode 
+      hPutStrLn outh "error occured"
+      hClose outh 
+    return ()
+
     -- 
+    -- this is a test for asynchronous events
+    -- 
+    -- forkIO $ forever $ do 
+    --   threadDelay 1000000
+    --   postGUIAsync (eventHandler tref (SysEv ClockUpdateEvent))
+
+    -- 
+    -- test end
+    -- 
+
+outerLayout :: UIManager -> VBox -> HoodleState -> Window -> Statusbar -> IO ()
+outerLayout ui vbox xst window statusbar  = do 
     menubar <- uiManagerGetWidget ui "/ui/menubar" 
                >>= maybe (error "GUI.hs:no menubar") return 
     toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1" 
@@ -89,10 +119,9 @@ startGUI mfname mhook = do
         -- very dirty solution but.. 
         minfo <- liftIO $ do 
           ref <- newIORef (Nothing :: Maybe String)
-          view callBack st0 (UsrEv (GetHoodleFileInfo ref))
+          view callBack xst (UsrEv (GetHoodleFileInfo ref))
           readIORef ref
         mapM_ (selectionDataSetText >=> const (return ())) minfo
-    --
     -- 
     hbox <- hBoxNew False 0 
     boxPackStart hbox toolbar1 PackGrow 0
@@ -102,31 +131,10 @@ startGUI mfname mhook = do
     boxPackStart vbox hbox PackNatural 0
     boxPackStart vbox toolbar2 PackNatural 0  
     boxPackEnd vbox statusbar PackNatural 0 
-    boxPackStart vbox (view rootWindow st0) PackGrow 0 
-    window `on` deleteEvent $ do
-      liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
-      return True
-    widgetShowAll window
-    -- 
-    -- this is a test for asynchronous events
-    -- 
-    forkIO $ forever $ do 
-      threadDelay 1000000
-      -- putStrLn "event!"
-      postGUIAsync (eventHandler tref (SysEv ClockUpdateEvent))
-
-    -- 
-    -- test end
-    -- 
-    let mainaction = do eventHandler tref (UsrEv (Initialized mfname))
-                        mainGUI 
-    mainaction `catch` \(_e :: SomeException) -> do 
-      homepath <- getEnv "HOME"
-      let dir = homepath </> ".hoodle.d"
-      createDirectoryIfMissing False dir
-      outh <- openFile (dir </> "error.log") WriteMode 
-      hPutStrLn outh "error occured"
-      hClose outh 
-    return ()
-
+    --
+    lbtn <- buttonNewWithLabel "test" 
+    notebook <- notebookNew
+    notebookAppendPage notebook (view rootWindow xst) "test"
+    notebookAppendPage notebook lbtn "test2"
+    boxPackStart vbox notebook PackGrow 0 
 

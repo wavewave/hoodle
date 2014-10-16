@@ -1,3 +1,4 @@
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
@@ -16,14 +17,14 @@ module Hoodle.GUI where
 
 import           Control.Concurrent (threadDelay, forkIO)
 import           Control.Exception (SomeException(..),catch)
-import           Control.Lens (view)
+import           Control.Lens
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.Trans 
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as M
 import           Data.IORef
 import           Data.Maybe
-import           Graphics.UI.Gtk hiding (get,set)
+import           Graphics.UI.Gtk hiding (get,set,Settings)
 import           System.Directory
 import           System.Environment
 import           System.FilePath
@@ -56,15 +57,16 @@ startGUI mfname mhook = do
     (usepz,uselyr) <- getWidgetConfig cfg 
     (tref,st0,ui,vbox) <- initCoroutine devlst window 
                             mhook maxundo (xinputbool,usepz,uselyr) 
-
-
     setTitleFromFileName st0
     -- need for refactoring
-    lensSetToggleUIForFlag "UXINPUTA" (settings.doesUseXInput) st0 
-    lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) st0   
-    lensSetToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0 
-    lensSetToggleUIForFlag "EBDIMGA" (settings.doesEmbedImage) st0 
-    lensSetToggleUIForFlag "EBDPDFA" (settings.doesEmbedPDF) st0
+
+    mapM_ (\(x,y :: Simple Lens Settings Bool) -> lensSetToggleUIForFlag x (settings.y) st0 )
+      [ ("UXINPUTA", doesUseXInput) 
+      , ("HANDA"   , doesUseTouch)
+      , ("POPMENUA", doesUsePopUpMenu)
+      , ("EBDIMGA" , doesEmbedImage)
+      , ("EBDPDFA" , doesEmbedPDF)
+      ] 
     setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0

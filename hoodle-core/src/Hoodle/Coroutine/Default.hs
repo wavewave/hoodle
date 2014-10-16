@@ -133,8 +133,6 @@ initCoroutine devlst window {- notebook -}
   (st4,wconf') <- eventConnect st3 (view frameState st3)
   notebook <- Gtk.notebookNew
   statusbar <- Gtk.statusbarNew
-
-
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
@@ -145,22 +143,16 @@ initCoroutine devlst window {- notebook -}
           . set (hoodleFileControl.hoodleFileName) Nothing 
           . set statusBar (Just statusbar)
           $ st4     
-
   vbox <- Gtk.vBoxNew False 0 
   Gtk.containerAdd window vbox
-  -- 
   vboxcvs <- Gtk.vBoxNew False 0 
   Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
-
   Gtk.containerAdd vboxcvs (view rootWindow st5)
-
-
   let startingXstate = set rootContainer (Gtk.castToBox vboxcvs) st5
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
   return (evar,startingXstate,ui,vbox)
-
 
 -- | initialization according to the setting 
 initialize :: AllEvent -> MainCoroutine ()

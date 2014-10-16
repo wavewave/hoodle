@@ -73,7 +73,7 @@ eitherSplit stype = do
       Right fstate' -> do 
         cinfobox <- maybeError "eitherSplit" . M.lookup currcid $ cmap 
         let rtwin = view rootWindow xstate
-            rtnbk = view rootNotebook xstate
+            -- rtnbk = view rootNotebook xstate
             rtcntr = view rootContainer xstate 
             rtrwin = view rootOfRootWindow xstate 
         liftIO $ containerRemove rtcntr  rtwin

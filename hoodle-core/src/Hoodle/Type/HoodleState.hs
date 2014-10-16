@@ -16,6 +16,7 @@
 module Hoodle.Type.HoodleState 
 ( HoodleState
 , HoodleModeState(..)
+, UnitHoodle
 , IsOneTimeSelectMode(..)
 , Settings
 , UIComponentSignalHandler
@@ -58,7 +59,6 @@ module Hoodle.Type.HoodleState
 --
 , doesUseXInput 
 , doesUseTouch
--- , doesSmoothScroll 
 , doesUsePopUpMenu
 , doesEmbedImage
 , doesEmbedPDF
@@ -79,7 +79,7 @@ module Hoodle.Type.HoodleState
 , defaultUIComponentSignalHandler
 , getHoodle
 -- | additional lenses 
-, getCanvasInfoMap 
+--  , getCanvasInfoMap 
 , setCanvasInfoMap 
 , getCurrentCanvasId
 , setCurrentCanvasId
@@ -94,7 +94,7 @@ module Hoodle.Type.HoodleState
 , getCurrentPageFromHoodleModeState
 , getCurrentPageDimFromHoodleModeState
 -- | for debug
-, showCanvasInfoMapViewPortBBox
+-- , showCanvasInfoMapViewPortBBox
 ) where
 
 import           Control.Applicative hiding (empty)
@@ -144,15 +144,22 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          | YesAfterSelect
                          deriving (Show,Eq,Ord)
 
+
+data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
+                             , _hoodleFileControl :: HoodleFileControl
+                             , _cvsInfoMap :: CanvasInfoMap 
+                             , _currentCanvas :: (CanvasId,CanvasInfoBox)
+                             , _frameState :: WindowConfig 
+                             , _rootWindow :: Gtk.Widget
+                             , _rootContainer :: Gtk.Box
+                             , _isSaved :: Bool 
+                             , _undoTable :: UndoTable HoodleModeState
+                             }
+
+
 data HoodleState = 
-    HoodleState { _hoodleModeState :: HoodleModeState
-                , _hoodleFileControl :: HoodleFileControl
-                , _cvsInfoMap :: CanvasInfoMap 
-                , _currentCanvas :: (CanvasId,CanvasInfoBox)
-                , _frameState :: WindowConfig 
-                , _rootWindow :: Gtk.Widget
+    HoodleState { _unitHoodles :: [ UnitHoodle ]
                 , _rootNotebook :: Gtk.Notebook
-                , _rootContainer :: Gtk.Box
                 , _rootOfRootWindow :: Gtk.Window
                 , _currentPenDraw :: PenDraw
                 , _callBack ::  AllEvent -> IO ()
@@ -160,11 +167,9 @@ data HoodleState =
                 , _penInfo :: PenInfo
                 , _selectInfo :: SelectInfo 
                 , _gtkUIManager :: Gtk.UIManager 
-                , _isSaved :: Bool 
-                , _undoTable :: UndoTable HoodleModeState
-                , _backgroundStyle :: BackgroundStyle 
                 , _isFullScreen :: Bool 
                 , _settings :: Settings 
+                , _backgroundStyle :: BackgroundStyle 
                 , _uiComponentSignalHandler :: UIComponentSignalHandler 
                 , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
@@ -181,40 +186,48 @@ data HoodleState =
 
 
 -- | lens for hoodleModeState
-hoodleModeState :: Simple Lens HoodleState HoodleModeState
+hoodleModeState :: Simple Lens UnitHoodle HoodleModeState
 hoodleModeState = lens _hoodleModeState (\f a -> f { _hoodleModeState = a } )
 
 
 
 -- | 
-hoodleFileControl :: Simple Lens HoodleState HoodleFileControl
+hoodleFileControl :: Simple Lens UnitHoodle HoodleFileControl
 hoodleFileControl = lens _hoodleFileControl (\f a -> f { _hoodleFileControl = a })
 
 
 
 -- | lens for cvsInfoMap
-cvsInfoMap :: Simple Lens HoodleState CanvasInfoMap
+cvsInfoMap :: Simple Lens UnitHoodle CanvasInfoMap
 cvsInfoMap = lens _cvsInfoMap (\f a -> f { _cvsInfoMap = a } )
 
 -- | lens for currentCanvas
-currentCanvas :: Simple Lens HoodleState (CanvasId,CanvasInfoBox)
+currentCanvas :: Simple Lens UnitHoodle (CanvasId,CanvasInfoBox)
 currentCanvas = lens _currentCanvas (\f a -> f { _currentCanvas = a } )
 
 -- | lens for frameState
-frameState :: Simple Lens HoodleState WindowConfig
+frameState :: Simple Lens UnitHoodle WindowConfig
 frameState = lens _frameState (\f a -> f { _frameState = a } )
 
 -- | lens for rootWindow
-rootWindow :: Simple Lens HoodleState Gtk.Widget
+rootWindow :: Simple Lens UnitHoodle Gtk.Widget
 rootWindow = lens _rootWindow (\f a -> f { _rootWindow = a } )
+
+-- | lens for rootContainer
+rootContainer :: Simple Lens UnitHoodle Gtk.Box
+rootContainer = lens _rootContainer (\f a -> f { _rootContainer = a } )
+
+-- | lens for isSaved
+isSaved :: Simple Lens UnitHoodle Bool
+isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
+
+-- | lens for undoTable
+undoTable :: Simple Lens UnitHoodle (UndoTable HoodleModeState)
+undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
 
 -- | lens for rootWindow
 rootNotebook :: Simple Lens HoodleState Gtk.Notebook
 rootNotebook = lens _rootNotebook (\f a -> f { _rootNotebook = a } )
-
--- | lens for rootContainer
-rootContainer :: Simple Lens HoodleState Gtk.Box
-rootContainer = lens _rootContainer (\f a -> f { _rootContainer = a } )
 
 -- | lens for rootOfRootWindow
 rootOfRootWindow :: Simple Lens HoodleState Gtk.Window
@@ -244,14 +257,6 @@ selectInfo = lens _selectInfo (\f a -> f { _selectInfo = a } )
 gtkUIManager :: Simple Lens HoodleState Gtk.UIManager
 gtkUIManager = lens _gtkUIManager (\f a -> f { _gtkUIManager = a } )
 
--- | lens for isSaved
-isSaved :: Simple Lens HoodleState Bool
-isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
-
--- | lens for undoTable
-undoTable :: Simple Lens HoodleState (UndoTable HoodleModeState)
-undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
-
 -- | background style = plain, lined, ruled, graph
 backgroundStyle :: Simple Lens HoodleState BackgroundStyle
 backgroundStyle = lens _backgroundStyle (\f a -> f { _backgroundStyle = a } )
@@ -271,8 +276,6 @@ uiComponentSignalHandler = lens _uiComponentSignalHandler (\f a -> f { _uiCompon
 -- | lens for isOneTimeSelectMode
 isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
-
-
 
 -- | lens for lastTimeCanvasConfigure
 lastTimeCanvasConfigure :: Simple Lens HoodleState (Maybe UTCTime)
@@ -368,7 +371,6 @@ newPageModeSignal = lens _newPageModeSignal (\f a -> f { _newPageModeSignal = a 
 data Settings = 
   Settings { _doesUseXInput :: Bool 
            , _doesUseTouch :: Bool 
-           -- , _doesSmoothScroll :: Bool 
            , _doesUsePopUpMenu :: Bool 
            , _doesEmbedImage :: Bool 
            , _doesEmbedPDF :: Bool 
@@ -387,12 +389,6 @@ doesUseXInput = lens _doesUseXInput (\f a -> f { _doesUseXInput = a } )
 -- | flag for touch
 doesUseTouch :: Simple Lens Settings Bool
 doesUseTouch = lens _doesUseTouch (\f a -> f { _doesUseTouch = a } )
-
-{- 
--- | flag for smooth scrolling 
-doesSmoothScroll :: Simple Lens Settings Bool
-doesSmoothScroll = lens _doesSmoothScroll (\f a -> f { _doesSmoothScroll = a } )
--}
 
 -- | flag for using popup menu
 doesUsePopUpMenu :: Simple Lens Settings Bool
@@ -426,50 +422,56 @@ newPageMode = lens _newPageMode (\f a -> f {_newPageMode=a})
 networkEditSourceInfo :: Simple Lens Settings (Maybe ThreadId)
 networkEditSourceInfo = lens _networkEditSourceInfo (\f a -> f {_networkEditSourceInfo=a})
 
+-- |
+emptyUnitHoodle :: IO UnitHoodle
+emptyUnitHoodle = do
+  hdl <- emptyGHoodle
+  return $ 
+    UnitHoodle { _hoodleModeState = ViewAppendState hdl 
+               , _hoodleFileControl = emptyHoodleFileControl 
+               , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
+               , _currentCanvas = error "emtpyHoodleState.currentCanvas"
+               , _frameState = error "emptyHoodleState.frameState" 
+               , _rootWindow = error "emtpyHoodleState.rootWindow"
+               , _rootContainer = error "emptyHoodleState.rootContainer"
+               , _isSaved = False 
+               , _undoTable = emptyUndo 1 
+               }
 
 -- | default hoodle state 
 emptyHoodleState :: IO HoodleState 
 emptyHoodleState = do
-  hdl <- emptyGHoodle
+  unit <- emptyUnitHoodle
   tvar <- atomically $ newTVar empty 
   return $
-    HoodleState  
-    { _hoodleModeState = ViewAppendState hdl 
-    , _hoodleFileControl = emptyHoodleFileControl 
-    , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
-    , _currentCanvas = error "emtpyHoodleState.currentCanvas"
-    , _frameState = error "emptyHoodleState.frameState" 
-    , _rootWindow = error "emtpyHoodleState.rootWindow"
-    , _rootNotebook = error "emtpyHoodleState.rootNotebook"
-    , _rootContainer = error "emptyHoodleState.rootContainer"
-    , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
-    , _currentPenDraw = emptyPenDraw 
-    , _callBack = error "emtpyHoodleState.callBack"
-    , _deviceList = error "emtpyHoodleState.deviceList"
-    , _penInfo = defaultPenInfo 
-    , _selectInfo = SelectInfo SelectLassoWork 
-    , _gtkUIManager = error "emptyHoodleState.gtkUIManager"
-    , _isSaved = False 
-    , _undoTable = emptyUndo 1 
-    -- , _isEventBlocked = False 
-    , _backgroundStyle = BkgStyleLined
-    , _isFullScreen = False
-    , _settings = defaultSettings
-    , _uiComponentSignalHandler = defaultUIComponentSignalHandler 
-    , _isOneTimeSelectMode = NoOneTimeSelectMode
-    -- , _pageModeSignal = Nothing
-    -- , _penModeSignal = Nothing                        
-    , _lastTimeCanvasConfigure = Nothing                      
-    , _hookSet = Nothing
-    , _tempQueue = emptyQueue
-    , _tempLog = id 
-    , _statusBar = Nothing 
-    , _renderCache = HM.empty
-    , _pdfRenderQueue = tvar
-    , _doesNotInvalidate = False
-    , _nextPdfBkgPageNum = Nothing
-    -- , _cursorInfo = Nothing
-    }
+    HoodleState { _unitHoodles = [unit]
+                , _rootNotebook = error "emtpyHoodleState.rootNotebook"
+                , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
+                , _currentPenDraw = emptyPenDraw 
+                , _callBack = error "emtpyHoodleState.callBack"
+                , _deviceList = error "emtpyHoodleState.deviceList"
+                , _penInfo = defaultPenInfo 
+                , _selectInfo = SelectInfo SelectLassoWork 
+                , _gtkUIManager = error "emptyHoodleState.gtkUIManager"
+                -- , _isEventBlocked = False 
+                , _backgroundStyle = BkgStyleLined
+                , _isFullScreen = False
+                , _settings = defaultSettings
+                , _uiComponentSignalHandler = defaultUIComponentSignalHandler 
+                , _isOneTimeSelectMode = NoOneTimeSelectMode
+                -- , _pageModeSignal = Nothing
+                -- , _penModeSignal = Nothing                        
+                , _lastTimeCanvasConfigure = Nothing                      
+                , _hookSet = Nothing
+                , _tempQueue = emptyQueue
+                , _tempLog = id 
+                , _statusBar = Nothing 
+                , _renderCache = HM.empty
+                , _pdfRenderQueue = tvar
+                , _doesNotInvalidate = False
+                , _nextPdfBkgPageNum = Nothing
+                -- , _cursorInfo = Nothing
+                }
 
 emptyHoodleFileControl :: HoodleFileControl 
 emptyHoodleFileControl = 
@@ -494,7 +496,6 @@ defaultSettings =
   Settings 
   { _doesUseXInput = False
   , _doesUseTouch = True
-  -- , _doesSmoothScroll = False
   , _doesUsePopUpMenu = True 
   , _doesEmbedImage = True 
   , _doesEmbedPDF = True 
@@ -507,40 +508,40 @@ defaultSettings =
   
 
 -- | 
-getHoodle :: HoodleState -> Hoodle EditMode 
+getHoodle :: UnitHoodle -> Hoodle EditMode 
 getHoodle = either id gSelect2GHoodle . hoodleModeStateEither . view hoodleModeState 
 
 -- | 
-getCurrentCanvasId :: HoodleState -> CanvasId
+getCurrentCanvasId :: UnitHoodle -> CanvasId
 getCurrentCanvasId = fst . _currentCanvas 
   
 -- | 
-
-setCurrentCanvasId :: CanvasId -> HoodleState -> Maybe HoodleState
+setCurrentCanvasId :: CanvasId -> UnitHoodle -> Maybe UnitHoodle
 setCurrentCanvasId a f = do 
     cinfobox <- M.lookup a (_cvsInfoMap f)
     return (f { _currentCanvas = (a,cinfobox) })
      
+{-
 -- | 
     
 getCanvasInfoMap :: HoodleState -> CanvasInfoMap 
 getCanvasInfoMap = _cvsInfoMap 
+-}
 
 -- | 
-
-setCanvasInfoMap :: CanvasInfoMap -> HoodleState -> Maybe HoodleState 
-setCanvasInfoMap cmap xstate 
+setCanvasInfoMap :: CanvasInfoMap -> UnitHoodle -> Maybe UnitHoodle
+setCanvasInfoMap cmap uhdl
   | M.null cmap = Nothing
   | otherwise = 
-      let (cid,_) = _currentCanvas xstate
+      let (cid,_) = _currentCanvas uhdl
           (cidmax,cinfomax) = M.findMax cmap
           mcinfobox = M.lookup cid cmap 
-      in Just . maybe (xstate {_currentCanvas=(cidmax,cinfomax), _cvsInfoMap = cmap}) 
-                       (\cinfobox -> xstate {_currentCanvas = (cid,cinfobox)
-                                            ,_cvsInfoMap = cmap }) 
+      in Just . maybe (uhdl {_currentCanvas=(cidmax,cinfomax), _cvsInfoMap = cmap}) 
+                       (\cinfobox -> uhdl { _currentCanvas = (cid,cinfobox)
+                                          , _cvsInfoMap = cmap }) 
                 $ mcinfobox
 
-currentCanvasInfo :: Simple Lens HoodleState CanvasInfoBox
+currentCanvasInfo :: Simple Lens UnitHoodle CanvasInfoBox
 currentCanvasInfo = lens getter setter 
   where 
     getter = snd . _currentCanvas 
@@ -557,41 +558,40 @@ resetHoodleModeStateBuffers cache hdlmodestate1 =
     _ -> return hdlmodestate1
 
 -- |
-getCanvasInfo :: CanvasId -> HoodleState -> CanvasInfoBox 
-getCanvasInfo cid xstate = 
-  let cinfoMap = getCanvasInfoMap xstate
+getCanvasInfo :: CanvasId -> UnitHoodle -> CanvasInfoBox 
+getCanvasInfo cid uhdl = 
+  let cinfoMap = view cvsInfoMap uhdl
       maybeCvs = M.lookup cid cinfoMap
   in maybeError' ("no canvas with id = " ++ show cid) maybeCvs
 
 -- | 
-setCanvasInfo :: (CanvasId,CanvasInfoBox) -> HoodleState -> HoodleState 
-setCanvasInfo (cid,cinfobox) xstate = 
-  let cmap = getCanvasInfoMap xstate
+setCanvasInfo :: (CanvasId,CanvasInfoBox) -> UnitHoodle -> UnitHoodle
+setCanvasInfo (cid,cinfobox) uhdl = 
+  let cmap = view cvsInfoMap uhdl
       cmap' = M.insert cid cinfobox cmap 
-  in maybe xstate id $ setCanvasInfoMap cmap' xstate
-
-
+  in maybe uhdl id $ setCanvasInfoMap cmap' uhdl
 
 -- | change current canvas. this is the master function  
-updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> HoodleState -> HoodleState
-updateFromCanvasInfoAsCurrentCanvas cinfobox xstate = 
+updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> UnitHoodle-> UnitHoodle
+updateFromCanvasInfoAsCurrentCanvas cinfobox uhdl = 
   let cid = view (unboxLens canvasId) cinfobox 
-      cmap = getCanvasInfoMap xstate
+      cmap = view cvsInfoMap uhdl
       cmap' = M.insert cid cinfobox cmap 
-  in xstate { _currentCanvas = (cid,cinfobox)
-            , _cvsInfoMap = cmap' }
+  in uhdl { _currentCanvas = (cid,cinfobox)
+          , _cvsInfoMap = cmap' }
 
 -- | 
 setCanvasId :: CanvasId -> CanvasInfoBox -> CanvasInfoBox 
 setCanvasId cid = runIdentity . forBoth unboxBiXform (return . set canvasId cid)   
 
 -- | 
-modifyCanvasInfo :: CanvasId -> (CanvasInfoBox -> CanvasInfoBox) -> HoodleState
-                    -> HoodleState
-modifyCanvasInfo cid f xstate =  
-    maybe xstate id . flip setCanvasInfoMap xstate 
-                    . M.adjust f cid . getCanvasInfoMap 
-    $ xstate 
+modifyCanvasInfo :: CanvasId -> (CanvasInfoBox -> CanvasInfoBox) 
+                 -> UnitHoodle
+                 -> UnitHoodle
+modifyCanvasInfo cid f uhdl =  
+    maybe uhdl id . flip setCanvasInfoMap uhdl
+                  . M.adjust f cid . view cvsInfoMap 
+    $ uhdl
 
 -- | 
 hoodleModeStateEither :: HoodleModeState -> Either (Hoodle EditMode) (Hoodle SelectMode) 
@@ -619,11 +619,12 @@ getPageMapFromHoodleModeState :: HoodleModeState -> M.IntMap (Page EditMode)
 getPageMapFromHoodleModeState = either (view gpages) (view gselAll) . hoodleModeStateEither 
   
       
+{-
 -- | 
-showCanvasInfoMapViewPortBBox :: HoodleState -> IO ()
+showCanvasInfoMapViewPortBBox :: UnitHoodle -> IO ()
 showCanvasInfoMapViewPortBBox xstate = do 
-  let cmap = getCanvasInfoMap xstate
+  let cmap = view canvasInfoMap xstate
   print . map (view (unboxLens (viewInfo.pageArrangement.viewPortBBox))) . M.elems $ cmap 
-
+-}
 
 

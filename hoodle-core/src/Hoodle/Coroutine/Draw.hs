@@ -35,7 +35,8 @@ import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
-import           Graphics.Hoodle.Render.Type.Renderer
+import           Graphics.Hoodle.Render.Type
+-- import           Graphics.Hoodle.Render.Type.Renderer
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Type.Alias
@@ -51,13 +52,14 @@ import           Hoodle.View.Draw
 -- 
 
 
--- | 
+-- | all event
 nextevent :: MainCoroutine UserEvent 
 nextevent = do Arg DoEvent ev <- request (Res DoEvent ())
                case ev of
                  SysEv sev -> sysevent sev >> nextevent 
                  UsrEv uev -> return uev 
 
+-- | system event 
 sysevent :: SystemEvent -> MainCoroutine () 
 sysevent ClockUpdateEvent = do 
   utctime <- liftIO $ getCurrentTime 
@@ -67,26 +69,20 @@ sysevent ClockUpdateEvent = do
       (h,m,s) :: (Int,Int,Int) = 
         (,,) <$> (\x->todHour x `mod` 12) <*> todMin <*> (floor . todSec) 
         $ ltimeofday
-  -- liftIO $ print (h,m,s)
   xst <- get 
-  let cinfo = view currentCanvasInfo xst
+  let uhdl = (getTheUnit . view unitHoodles) xst
+      cinfo = view currentCanvasInfo uhdl
       cwgts = view (unboxLens canvasWidgets) cinfo   
       nwgts = set (clockWidgetConfig.clockWidgetTime) (h,m,s) cwgts
       ncinfo = set (unboxLens canvasWidgets) nwgts cinfo
-  put . set currentCanvasInfo ncinfo $ xst 
-              
+  modify (set unitHoodles ((putTheUnit . set currentCanvasInfo ncinfo) uhdl))
   when (view (widgetConfig.doesUseClockWidget) cwgts) $ do 
-    let cid = getCurrentCanvasId xst
+    let cid = getCurrentCanvasId uhdl
     modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
-    -- invalidateInBBox Nothing Efficient cid   
 sysevent (RenderCacheUpdate (uuid, ssfc)) = do
-  -- liftIO $ putStrLn "RenderCacheUpdate"
   modify (renderCache %~ HM.insert uuid ssfc)
   b <- ( ^. doesNotInvalidate ) <$> get
   when (not b) $ invalidateAll
-  
-
-  -- invalidateInBBox Nothing Efficient cid   
 sysevent ev = liftIO $ print ev 
 
 
@@ -106,17 +102,18 @@ invalidateGeneral :: CanvasId -> Maybe BBox -> DrawFlag
                   -> DrawingFunction ContinuousPage SelectMode
                   -> MainCoroutine () 
 invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do 
-    xst <- get 
-    unboxBiAct (fsingle xst) (fcont xst) . getCanvasInfo cid $ xst
+    xst <- get
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        cache = view renderCache xst
+    unboxBiAct (fsingle cache uhdl) (fcont cache uhdl) . getCanvasInfo cid $ uhdl
   where 
-    fsingle :: HoodleState -> CanvasInfo SinglePage -> MainCoroutine () 
-    fsingle xstate cvsInfo = do 
+    fsingle :: RenderCache -> UnitHoodle -> CanvasInfo SinglePage -> MainCoroutine () 
+    fsingle cache uhdl cvsInfo = do 
       let cpn = PageNum . view currentPageNum $ cvsInfo 
-	  isCurrentCvs = cid == getCurrentCanvasId xstate
-	  epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState xstate)
+	  isCurrentCvs = cid == getCurrentCanvasId uhdl
+	  epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState uhdl)
 	  cvs = view drawArea cvsInfo
 	  msfc = view mDrawSurface cvsInfo 
-	  cache = view renderCache xstate
       case epage of 
 	Left page -> do  
 	  liftIO (unSinglePageDraw drawf cache isCurrentCvs (cvs,msfc) (cpn,page)
@@ -126,26 +123,26 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
 	  liftIO (unSinglePageDraw drawfsel cache isCurrentCvs (cvs,msfc) (cpn,tpage)
 		  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
 	  return ()
-    fcont :: HoodleState -> CanvasInfo ContinuousPage -> MainCoroutine () 
-    fcont xstate cvsInfo = do 
-      let hdlmodst = view hoodleModeState xstate 
-	  isCurrentCvs = cid == getCurrentCanvasId xstate
-	  cache = view renderCache xstate
+    fcont :: RenderCache -> UnitHoodle -> CanvasInfo ContinuousPage -> MainCoroutine () 
+    fcont cache uhdl cvsInfo = do 
+      let hdlmodst = view hoodleModeState uhdl 
+	  isCurrentCvs = cid == getCurrentCanvasId uhdl
       case hdlmodst of 
 	ViewAppendState hdl -> do  
 	  hdl' <- liftIO (unContPageDraw drawcont cache isCurrentCvs cvsInfo mbbox hdl flag)
-	  put (set hoodleModeState (ViewAppendState hdl') xstate)
+	  modify (set unitHoodles (putTheUnit (set hoodleModeState (ViewAppendState hdl') uhdl)))
 	SelectState thdl -> do 
 	  thdl' <- liftIO (unContPageDraw drawcontsel cache isCurrentCvs cvsInfo mbbox thdl flag)
-	  put (set hoodleModeState (SelectState thdl') xstate) 
+	  modify (set unitHoodles (putTheUnit (set hoodleModeState (SelectState thdl') uhdl)))
           
 -- |         
 
 invalidateOther :: MainCoroutine () 
 invalidateOther = do 
-  xstate <- get
-  let currCvsId = getCurrentCanvasId xstate
-      cinfoMap  = getCanvasInfoMap xstate
+  xst <- get
+  let uhdl = (getTheUnit . view unitHoodles) xst
+      currCvsId = getCurrentCanvasId uhdl
+      cinfoMap  = view cvsInfoMap uhdl
       keys = M.keys cinfoMap 
   mapM_ invalidate (filter (/=currCvsId) keys)
   
@@ -159,7 +156,8 @@ invalidateInBBox :: Maybe BBox -- ^ desktop coord
                     -> CanvasId -> MainCoroutine ()
 invalidateInBBox mbbox flag cid = do 
   xst <- get 
-  geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
+  let uhdl = (getTheUnit . view unitHoodles) xst
+  geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
   invalidateGeneral cid mbbox flag 
     (drawSinglePage geometry) (drawSinglePageSel geometry) (drawContHoodle geometry) (drawContHoodleSel geometry)
 
@@ -175,19 +173,20 @@ invalidateAll = invalidateAllInBBox Nothing Clear -- >> liftIO (putStrLn "The SL
  
 -- | Invalidate Current canvas
 invalidateCurrent :: MainCoroutine () 
-invalidateCurrent = invalidate . getCurrentCanvasId =<< get
+invalidateCurrent = invalidate . getCurrentCanvasId . getTheUnit . view unitHoodles =<< get
        
 -- | Drawing temporary gadgets
 invalidateTemp :: CanvasId -> Cairo.Surface -> Cairo.Render () -> MainCoroutine ()
 invalidateTemp cid tempsurface rndr = do 
     xst <- get 
-    forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    forBoth' unboxBiAct (fsingle uhdl) . getCanvasInfo cid $ uhdl
   where 
-    fsingle :: HoodleState -> CanvasInfo a -> MainCoroutine ()   
-    fsingle xstate cvsInfo = do 
+    fsingle :: UnitHoodle -> CanvasInfo a -> MainCoroutine ()   
+    fsingle uhdl cvsInfo = do 
       let canvas = view drawArea cvsInfo
           pnum = PageNum . view currentPageNum $ cvsInfo 
-      geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+      geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
       win <- liftIO $ widgetGetDrawWindow canvas
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
       liftIO $ renderWithDrawable win $ do   
@@ -205,12 +204,13 @@ invalidateTempBasePage :: CanvasId        -- ^ current canvas id
                        -> MainCoroutine ()
 invalidateTempBasePage cid tempsurface pnum rndr = do 
     xst <- get 
-    forBoth' unboxBiAct (fsingle xst) . getCanvasInfo cid $ xst 
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    forBoth' unboxBiAct (fsingle uhdl) . getCanvasInfo cid $ uhdl
   where 
-    fsingle :: HoodleState -> CanvasInfo a -> MainCoroutine ()
-    fsingle xstate cvsInfo = do 
+    fsingle :: UnitHoodle -> CanvasInfo a -> MainCoroutine ()
+    fsingle uhdl cvsInfo = do 
       let canvas = view drawArea cvsInfo
-      geometry <- liftIO $ getCanvasGeometryCvsId cid xstate
+      geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
       win <- liftIO $ widgetGetDrawWindow canvas
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
       liftIO $ renderWithDrawable win $ do   

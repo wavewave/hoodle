@@ -218,7 +218,6 @@ reinitCanvasInfoStage2
 reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo 
     
 -- | event connecting for all windows                          
-                         
 eventConnect :: HoodleState -> UnitHoodle -> WindowConfig -> IO (UnitHoodle,WindowConfig)
 eventConnect xst uhdl (Node cid) = do 
     let cmap = view cvsInfoMap uhdl 
@@ -236,16 +235,12 @@ eventConnect xst uhdl (VSplit wconf1 wconf2) = do
     return (uhdl'',VSplit wconf1' wconf2')
     
 -- | default construct frame     
-
 constructFrame :: HoodleState 
                -> UnitHoodle -> WindowConfig 
                -> IO (UnitHoodle,Widget,WindowConfig)
 constructFrame xst hst wcfg = constructFrame' xst (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
 
-
-
 -- | construct frames with template
-
 constructFrame' :: HoodleState -> CanvasInfoBox -> UnitHoodle -> WindowConfig 
                 -> IO (UnitHoodle,Widget,WindowConfig)
 constructFrame' xst template ouhdl (Node cid) = do 

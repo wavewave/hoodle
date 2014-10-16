@@ -97,6 +97,7 @@ module Hoodle.Type.HoodleState
 -- | for debug
 -- , showCanvasInfoMapViewPortBBox
 , getTheUnit
+, putTheUnit
 ) where
 
 import           Control.Applicative hiding (empty)
@@ -147,7 +148,7 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          deriving (Show,Eq,Ord)
 
 getTheUnit = head
-
+putTheUnit x = [x]
 
 data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
                              , _hoodleFileControl :: HoodleFileControl

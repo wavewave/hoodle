@@ -52,13 +52,13 @@ setPageMap nmap =
   . hoodleModeStateEither
   
 -- |
-updatePageAll :: HoodleModeState -> HoodleState -> IO HoodleState
-updatePageAll hdlmodst xstate = do 
-  let cmap = getCanvasInfoMap xstate
+updatePageAll :: HoodleModeState -> UnitHoodle -> IO UnitHoodle
+updatePageAll hdlmodst uhdl = do 
+  let cmap = view cvsInfoMap uhdl
   cmap' <- mapM (updatePage hdlmodst . adjustPage hdlmodst) cmap
-  return $ maybe xstate id 
+  return $ maybe uhdl id 
            . setCanvasInfoMap cmap' 
-           . set hoodleModeState hdlmodst $ xstate
+           . set hoodleModeState hdlmodst $ uhdl
 
 -- | 
 adjustPage :: HoodleModeState -> CanvasInfoBox -> CanvasInfoBox  
@@ -131,19 +131,19 @@ updatePage (SelectState thdl) c = do
     updateCvsInfoFrmHoodle hdl c
 
 -- | 
-setPage :: HoodleState -> PageNum -> CanvasId -> IO CanvasInfoBox
-setPage xstate pnum cid = do  
-  let cinfobox =  getCanvasInfo cid xstate
-  unboxBiAct (liftM CanvasSinglePage . setPageSingle xstate pnum) 
-             (liftM CanvasContPage . setPageCont xstate pnum)
+setPage :: UnitHoodle -> PageNum -> CanvasId -> IO CanvasInfoBox
+setPage uhdl pnum cid = do  
+  let cinfobox =  getCanvasInfo cid uhdl
+  unboxBiAct (liftM CanvasSinglePage . setPageSingle uhdl pnum) 
+             (liftM CanvasContPage . setPageCont uhdl pnum)
              cinfobox
 
 -- | setPageSingle : in Single Page mode   
-setPageSingle :: HoodleState -> PageNum  
+setPageSingle :: UnitHoodle -> PageNum  
               -> CanvasInfo SinglePage
               -> IO (CanvasInfo SinglePage)
-setPageSingle xstate pnum cinfo = do 
-  let hdl = getHoodle xstate
+setPageSingle uhdl pnum cinfo = do 
+  let hdl = getHoodle uhdl
   geometry <- getCvsGeomFrmCvsInfo cinfo
   let cdim = canvasDim geometry 
   let pg = getPageFromGHoodleMap (unPageNum pnum) hdl
@@ -154,20 +154,17 @@ setPageSingle xstate pnum cinfo = do
            . set (viewInfo.pageArrangement) arr $ cinfo 
 
 -- | setPageCont : in Continuous Page mode   
-setPageCont :: HoodleState -> PageNum  
+setPageCont :: UnitHoodle -> PageNum  
             -> CanvasInfo ContinuousPage
             -> IO (CanvasInfo ContinuousPage)
-setPageCont xstate pnum cinfo = do 
-  let hdl = getHoodle xstate
+setPageCont uhdl pnum cinfo = do 
+  let hdl = getHoodle uhdl
   geometry <- getCvsGeomFrmCvsInfo cinfo
   let cdim = canvasDim geometry 
       zmode = view (viewInfo.zoomMode) cinfo
       arr = makeContinuousArrangement zmode cdim hdl (pnum,PageCoord (0,0))  
   return $ set currentPageNum (unPageNum pnum)
            . set (viewInfo.pageArrangement) arr $ cinfo 
-
-  
-
 
 -- | need to be refactored into zoomRatioFrmRelToCurr (rename zoomRatioRelPredefined)
 relZoomRatio :: CanvasGeometry -> ZoomModeRel -> Double

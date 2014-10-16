@@ -27,6 +27,7 @@ module Hoodle.Type.HoodleState
 , currentCanvas
 , frameState
 , rootWindow
+, unitHoodles
 , rootNotebook
 , rootContainer
 , rootOfRootWindow
@@ -95,6 +96,7 @@ module Hoodle.Type.HoodleState
 , getCurrentPageDimFromHoodleModeState
 -- | for debug
 -- , showCanvasInfoMapViewPortBBox
+, getTheUnit
 ) where
 
 import           Control.Applicative hiding (empty)
@@ -143,6 +145,8 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          | YesBeforeSelect 
                          | YesAfterSelect
                          deriving (Show,Eq,Ord)
+
+getTheUnit = head
 
 
 data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
@@ -224,6 +228,12 @@ isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
 -- | lens for undoTable
 undoTable :: Simple Lens UnitHoodle (UndoTable HoodleModeState)
 undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
+
+
+
+-- | lens for unitHoodles 
+unitHoodles :: Simple Lens HoodleState [UnitHoodle]
+unitHoodles = lens _unitHoodles (\f a -> f { _unitHoodles = a } )
 
 -- | lens for rootWindow
 rootNotebook :: Simple Lens HoodleState Gtk.Notebook

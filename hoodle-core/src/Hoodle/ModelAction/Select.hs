@@ -86,17 +86,13 @@ isBBoxDeltaSmallerThan delta pnum geometry
   where coordtrans (x,y) = unCvsCoord . desktop2Canvas geometry . page2Desktop geometry 
                            $ (pnum,PageCoord (x,y))
 
---       nbbox = bboxFromImage nimg
---  in ImageBBox nimg nbbox
-
-
 -- |
 getSelectedItms :: Page SelectMode -> [RItem]
 getSelectedItms = either (const []) (concatMap unHitted . getB) . rItmsInActiveLyr   
 -- |
-getSelectedItmsFromHoodleState :: HoodleState -> Maybe [RItem] 
-getSelectedItmsFromHoodleState xstate = 
-  case view hoodleModeState xstate of 
+getSelectedItmsFromUnitHoodle :: UnitHoodle -> Maybe [RItem] 
+getSelectedItmsFromUnitHoodle uhdl = 
+  case view hoodleModeState uhdl of 
     ViewAppendState _ -> Nothing 
     SelectState thdl -> fmap (getSelectedItms.Prelude.snd) (view gselSelected thdl)
   

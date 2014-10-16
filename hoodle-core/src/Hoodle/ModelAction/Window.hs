@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import           DBus
 import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (set)
+import qualified Graphics.UI.Gtk as Gtk
 import           System.FilePath
 -- from this package
 import           Hoodle.Device
@@ -70,7 +70,7 @@ getDBUSEvent callback tvar = do
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO () 
 setTitleFromFileName xstate = do 
-  case view (hoodleFileControl.hoodleFileName) xstate of
+  case (view (hoodleFileControl.hoodleFileName) . getTheUnit . view unitHoodles ) xstate of
     Nothing -> Gtk.set (view rootOfRootWindow xstate) 
                        [ windowTitle := ("untitled" :: String) ]
     Just filename -> Gtk.set (view rootOfRootWindow xstate) 
@@ -83,14 +83,14 @@ newCanvasId cmap =
   in  (maximum cids) + 1  
 
 -- | initialize CanvasInfo with creating windows and connect events
-initCanvasInfo :: HoodleState -> CanvasId -> IO (CanvasInfo a)
-initCanvasInfo xstate cid = 
-  minimalCanvasInfo xstate cid >>= connectDefaultEventCanvasInfo xstate
+initCanvasInfo :: HoodleState -> UnitHoodle -> CanvasId -> IO (CanvasInfo a)
+initCanvasInfo xstate uhdl cid = 
+  minimalCanvasInfo cid >>= connectDefaultEventCanvasInfo xstate uhdl
   
 
 -- | only creating windows 
-minimalCanvasInfo :: HoodleState -> CanvasId -> IO (CanvasInfo a)
-minimalCanvasInfo _xstate cid = do 
+minimalCanvasInfo :: CanvasId -> IO (CanvasInfo a)
+minimalCanvasInfo cid = do 
     canvas <- drawingAreaNew
     scrwin <- scrolledWindowNew Nothing Nothing 
     containerAdd scrwin canvas
@@ -102,11 +102,11 @@ minimalCanvasInfo _xstate cid = do
 
 
 -- | only connect events 
-
 connectDefaultEventCanvasInfo 
-  :: HoodleState -> CanvasInfo a -> IO (CanvasInfo a )
-connectDefaultEventCanvasInfo xstate cinfo = do 
+  :: HoodleState -> UnitHoodle -> CanvasInfo a -> IO (CanvasInfo a )
+connectDefaultEventCanvasInfo xstate uhdl cinfo = do 
     let callback = view callBack xstate
+        ui = view gtkUIManager xstate 
         dev = view deviceList xstate 
         canvas = _drawArea cinfo 
         cid = _canvasId cinfo 
@@ -174,7 +174,6 @@ connectDefaultEventCanvasInfo xstate cinfo = do
       (liftIO . callback . UsrEv) (GotLink s pos)
       
     widgetAddEvents canvas [PointerMotionMask,Button1MotionMask,KeyPressMask]      
-    let ui = view gtkUIManager xstate 
     agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
                       case x of 
                         [] -> error "No action group? "
@@ -203,72 +202,69 @@ connectDefaultEventCanvasInfo xstate cinfo = do
                    , _vertAdjConnId = Just vadjconnid }
     
 -- | recreate windows from old canvas info but no event connect
-
 reinitCanvasInfoStage1 
-  :: HoodleState -> CanvasInfo a -> IO (CanvasInfo a)
-reinitCanvasInfoStage1 xstate oldcinfo = do 
+  :: UnitHoodle -> CanvasInfo a -> IO (CanvasInfo a)
+reinitCanvasInfoStage1 uhdl oldcinfo = do 
   let cid = view canvasId oldcinfo 
-  newcinfo <- minimalCanvasInfo xstate cid      
+  newcinfo <- minimalCanvasInfo cid      
   return $ newcinfo { _viewInfo = _viewInfo oldcinfo 
                     , _currentPageNum = _currentPageNum oldcinfo 
                     } 
 
     
 -- | event connect
-
 reinitCanvasInfoStage2 
-  :: HoodleState -> CanvasInfo a -> IO (CanvasInfo a)
-reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo
+  :: HoodleState -> UnitHoodle -> CanvasInfo a -> IO (CanvasInfo a)
+reinitCanvasInfoStage2 = connectDefaultEventCanvasInfo 
     
 -- | event connecting for all windows                          
                          
-eventConnect :: HoodleState -> WindowConfig 
-                -> IO (HoodleState,WindowConfig)
-eventConnect xstate (Node cid) = do 
-    let cmap = getCanvasInfoMap xstate 
+eventConnect :: HoodleState -> UnitHoodle -> WindowConfig -> IO (UnitHoodle,WindowConfig)
+eventConnect xst uhdl (Node cid) = do 
+    let cmap = view cvsInfoMap uhdl 
         cinfobox = maybeError' "eventConnect" $ M.lookup cid cmap
-    ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage2 xstate) cinfobox
-    let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
-    return (xstate', Node cid)        
-eventConnect xstate (HSplit wconf1 wconf2) = do  
-    (xstate',wconf1') <- eventConnect xstate wconf1 
-    (xstate'',wconf2') <- eventConnect xstate' wconf2 
-    return (xstate'',HSplit wconf1' wconf2')
-eventConnect xstate (VSplit wconf1 wconf2) = do  
-    (xstate',wconf1') <- eventConnect xstate wconf1 
-    (xstate'',wconf2') <- eventConnect xstate' wconf2 
-    return (xstate'',VSplit wconf1' wconf2')
+    ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage2 xst uhdl) cinfobox
+    let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
+    return (uhdl', Node cid)        
+eventConnect xst uhdl (HSplit wconf1 wconf2) = do  
+    (uhdl',wconf1') <- eventConnect xst uhdl wconf1 
+    (uhdl'',wconf2') <- eventConnect xst uhdl' wconf2 
+    return (uhdl'',HSplit wconf1' wconf2')
+eventConnect xst uhdl (VSplit wconf1 wconf2) = do  
+    (uhdl',wconf1') <- eventConnect xst uhdl wconf1 
+    (uhdl'',wconf2') <- eventConnect xst uhdl' wconf2 
+    return (uhdl'',VSplit wconf1' wconf2')
     
 -- | default construct frame     
 
-constructFrame :: HoodleState -> WindowConfig 
-                  -> IO (HoodleState,Widget,WindowConfig)
-constructFrame hst wcfg = constructFrame' (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
+constructFrame :: HoodleState 
+               -> UnitHoodle -> WindowConfig 
+               -> IO (UnitHoodle,Widget,WindowConfig)
+constructFrame xst hst wcfg = constructFrame' xst (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
 
 
 
 -- | construct frames with template
 
-constructFrame' :: CanvasInfoBox -> 
-                   HoodleState -> WindowConfig 
-                   -> IO (HoodleState,Widget,WindowConfig)
-constructFrame' template oxstate (Node cid) = do 
-    let ocmap = getCanvasInfoMap oxstate 
-    (cinfobox,_cmap,xstate) <- case M.lookup cid ocmap of 
-      Just cinfobox' -> return (cinfobox',ocmap,oxstate)
+constructFrame' :: HoodleState -> CanvasInfoBox -> UnitHoodle -> WindowConfig 
+                -> IO (UnitHoodle,Widget,WindowConfig)
+constructFrame' xst template ouhdl (Node cid) = do 
+    let ocmap = view cvsInfoMap ouhdl
+    (cinfobox,_cmap,uhdl) <- case M.lookup cid ocmap of 
+      Just cinfobox' -> return (cinfobox',ocmap,ouhdl)
       Nothing -> do 
         let cinfobox' = setCanvasId cid template 
             cmap' = M.insert cid cinfobox' ocmap
-            xstate' = maybe oxstate id (setCanvasInfoMap cmap' oxstate)
-        return (cinfobox',cmap',xstate')
-    ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 xstate) cinfobox
-    let xstate' = updateFromCanvasInfoAsCurrentCanvas ncinfobox xstate
+            uhdl' = maybe ouhdl id (setCanvasInfoMap cmap' ouhdl)
+        return (cinfobox',cmap',uhdl')
+    ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 uhdl) cinfobox
+    let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
     let scrwin = forBoth' unboxBiAct (castToWidget.view scrolledWindow) ncinfobox
-    return (xstate', scrwin, Node cid)
-constructFrame' template xstate (HSplit wconf1 wconf2) = do  
-    (xstate',win1,wconf1') <- constructFrame' template xstate wconf1     
-    (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
-    let callback = view callBack xstate'' 
+    return (uhdl', scrwin, Node cid)
+constructFrame' xst template uhdl (HSplit wconf1 wconf2) = do  
+    (uhdl',win1,wconf1') <- constructFrame' xst template uhdl wconf1
+    (uhdl'',win2,wconf2') <- constructFrame' xst template uhdl' wconf2 
+    let callback = view callBack xst
     hpane' <- hPanedNew
     hpane' `on` buttonPressEvent $ do 
       liftIO ((callback . UsrEv) PaneMoveStart)
@@ -279,11 +275,11 @@ constructFrame' template xstate (HSplit wconf1 wconf2) = do
     panedPack1 hpane' win1 True False
     panedPack2 hpane' win2 True False
     widgetShowAll hpane' 
-    return (xstate'',castToWidget hpane', HSplit wconf1' wconf2')
-constructFrame' template xstate (VSplit wconf1 wconf2) = do  
-    (xstate',win1,wconf1') <- constructFrame' template xstate wconf1 
-    (xstate'',win2,wconf2') <- constructFrame' template xstate' wconf2 
-    let callback = view callBack xstate''     
+    return (uhdl'',castToWidget hpane', HSplit wconf1' wconf2')
+constructFrame' xst template uhdl (VSplit wconf1 wconf2) = do  
+    (uhdl',win1,wconf1') <- constructFrame' xst template uhdl wconf1 
+    (uhdl'',win2,wconf2') <- constructFrame' xst template uhdl' wconf2 
+    let callback = view callBack xst
     vpane' <- vPanedNew 
     vpane' `on` buttonPressEvent $ do 
       liftIO ((callback . UsrEv) PaneMoveStart)
@@ -294,5 +290,5 @@ constructFrame' template xstate (VSplit wconf1 wconf2) = do
     panedPack1 vpane' win1 True False
     panedPack2 vpane' win2 True False
     widgetShowAll vpane' 
-    return (xstate'',castToWidget vpane', VSplit wconf1' wconf2')
+    return (uhdl'',castToWidget vpane', VSplit wconf1' wconf2')
   

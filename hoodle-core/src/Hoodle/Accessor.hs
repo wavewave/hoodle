@@ -82,15 +82,15 @@ rItmsInCurrLyr :: MainCoroutine [RItem]
 rItmsInCurrLyr = return . view gitems . getCurrentLayer =<< getCurrentPageCurr
       
 -- |
-otherCanvas :: HoodleState -> [Int] 
-otherCanvas = M.keys . getCanvasInfoMap 
+otherCanvas :: UnitHoodle -> [Int] 
+otherCanvas = M.keys . view cvsInfoMap 
 
 
 -- | apply an action to all canvases 
 applyActionToAllCVS :: (CanvasId -> MainCoroutine ()) -> MainCoroutine () 
 applyActionToAllCVS action = do 
   xstate <- St.get 
-  let cinfoMap  = getCanvasInfoMap xstate
+  let cinfoMap  = (view cvsInfoMap . getTheUnit) xstate
       keys = M.keys cinfoMap 
   forM_ keys action
 

@@ -60,7 +60,7 @@ checkVersionAndMigrate bstr = do
         else return (parseOnly PA.hoodle bstr)
 
 -- | this is very temporary, need to be changed.     
-findFirstPDFFile :: [Page] -> Maybe C.ByteString -- [(Int,RPage)] -> Maybe C.ByteString
+findFirstPDFFile :: [Page] -> Maybe C.ByteString
 findFirstPDFFile xs = let ys = (mapMaybe f) xs 
                       in safehead ys
   where safehead [] = Nothing
@@ -69,24 +69,12 @@ findFirstPDFFile xs = let ys = (mapMaybe f) xs
                 BackgroundPdf _ _ fi _ -> Just fi
                 _ -> Nothing
 
-{- findFirstPDFFile xs = let ys = (filter isJust . map f) xs 
-                      in if null ys then Nothing else head ys 
-  where f (_,p) = case view gbackground p of 
-                    RBkgPDF _ fi _ _ _ -> Just fi
-                    _ -> Nothing 
--}
       
 findAllPDFPages :: [Page] -> [Int]
 findAllPDFPages = catMaybes . map f
   where f p = case page_bkg p of 
                      BackgroundPdf _ _ _ n -> Just n
                      _ -> Nothing
-
-{-  where f (n,p) = case view gbackground p of 
-                    RBkgPDF _ _ _ _ _ -> Just n
-                    _ -> Nothing 
--}
-
 
 replacePDFPages :: [Page] -> [Page] 
 replacePDFPages xs = map f xs 
@@ -209,17 +197,18 @@ createPage doesembed dim fn n =
                    
 
 -- | 
-saveHoodle :: HoodleState -> IO HoodleState 
-saveHoodle xstate = do 
-    let hdl = (rHoodle2Hoodle . getHoodle) xstate 
-    case view (hoodleFileControl.hoodleFileName) xstate of 
-      Nothing -> return xstate 
+saveHoodle :: UnitHoodle -> IO UnitHoodle
+saveHoodle uhdl = do 
+    let hdl = (rHoodle2Hoodle . getHoodle) uhdl 
+    case view (hoodleFileControl.hoodleFileName) uhdl of 
+      Nothing -> return uhdl 
       Just filename -> do 
         L.writeFile filename . builder $ hdl
         ctime <- getCurrentTime 
-        let ui = view gtkUIManager xstate
-        toggleSave ui False
-        return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ xstate )
+        -- for the time being
+        -- let ui = view gtkUIManager uhdl
+        -- toggleSave ui False
+        return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ uhdl)
              
 -- | this function must be moved to GUI.Reflect
 toggleSave :: UIManager -> Bool -> IO ()
@@ -253,7 +242,6 @@ makeNewItemImage isembedded filename =
                                              (fromIntegral h * 72 / 90) 
                   | w >= h = Dim 300 (fromIntegral h*300/fromIntegral w)
                   | otherwise = Dim (fromIntegral w*300/fromIntegral h) 300 
-          -- bstr <- savePngByteString img 
           bstr <- C.readFile filename 
           let b64str = encode bstr 
               ebdsrc = "data:image/png;base64," <> b64str

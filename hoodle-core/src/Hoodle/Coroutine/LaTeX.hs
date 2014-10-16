@@ -67,19 +67,20 @@ getLaTeXComponentsFromHdl hdl =
         sorted = sortBy (cfunc `on` snd) latex_components 
     in sorted
 
+{- 
 updateLaTeX :: MainCoroutine ()
 updateLaTeX = do
     liftIO $ putStrLn "updateLaTeX called"
     rhdl <- getHoodle <$> get
     let hdl = rHoodle2Hoodle rhdl
     runMaybeT $ do 
-      txtsrc <- MaybeT $ return (rhdl ^. gembeddedtext)  
-      let km = getKeywordMap txtsrc
-      liftIO $ print km
-    let sorted = getLaTeXComponentsFromHdl hdl
-    liftIO $ print sorted 
+      {- txtsrc <- -} MaybeT $ return (rhdl ^. gembeddedtext)  
+      -- let km = getKeywordMap txtsrc
+      -- liftIO $ print km
+    -- let sorted = getLaTeXComponentsFromHdl hdl
+    -- liftIO $ print sorted 
     return ()
-
+-}
 
 laTeXHeader :: T.Text
 laTeXHeader = 

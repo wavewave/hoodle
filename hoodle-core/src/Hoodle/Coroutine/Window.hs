@@ -73,9 +73,10 @@ eitherSplit stype = do
       Right fstate' -> do 
         cinfobox <- maybeError "eitherSplit" . M.lookup currcid $ cmap 
         let rtwin = view rootWindow xstate
+            rtnbk = view rootNotebook xstate
             rtcntr = view rootContainer xstate 
             rtrwin = view rootOfRootWindow xstate 
-        liftIO $ containerRemove rtcntr rtwin
+        liftIO $ containerRemove rtcntr  rtwin
         (xstate'',win,fstate'') <- 
           liftIO $ constructFrame' cinfobox xstate fstate'
         let xstate3 = set frameState fstate'' 

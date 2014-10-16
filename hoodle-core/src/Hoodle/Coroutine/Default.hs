@@ -32,7 +32,7 @@ import           Data.Maybe
 import           Data.Monoid ((<>))
 import           Data.Sequence (Seq, (<|),(|>), empty, singleton, viewl, ViewL(..))
 import qualified Data.Sequence as Seq (null)
-import qualified Data.Text as T (unpack)
+import qualified Data.Text as T (unpack,Text(..))
 import           Data.Time.Clock
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -102,12 +102,14 @@ import Prelude hiding (mapM_)
 -- |
 initCoroutine :: DeviceList 
               -> Gtk.Window 
+              -- -> Gtk.Notebook
               -> Maybe Hook 
               -> Int -- ^ maxundo 
               -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
-              -> Gtk.Statusbar -- ^ status bar 
+              -- -> Gtk.Statusbar -- ^ status bar 
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar = do 
+initCoroutine devlst window {- notebook -} 
+              mhook maxundo (xinputbool,usepz,uselyr) {- statusbar -} = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   st0new <- set deviceList devlst  
@@ -126,21 +128,34 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar = 
       st2 = set frameState (Node 1) 
             . updateFromCanvasInfoAsCurrentCanvas initcvsbox 
             . set cvsInfoMap M.empty 
-            $ st1 --  { _cvsInfoMap = M.empty } 
+            $ st1
   (st3,cvs,_wconf) <- constructFrame st2 (view frameState st2)
   (st4,wconf') <- eventConnect st3 (view frameState st3)
+  notebook <- Gtk.notebookNew
+  statusbar <- Gtk.statusbarNew
+
+
   let st5 = set (settings.doesUseXInput) xinputbool 
           . set hookSet mhook 
           . set undoTable (emptyUndo maxundo)  
           . set frameState wconf' 
           . set rootWindow cvs 
+          . set rootNotebook notebook
           . set uiComponentSignalHandler uicompsighdlr 
           . set (hoodleFileControl.hoodleFileName) Nothing 
           . set statusBar (Just statusbar)
           $ st4     
+
   vbox <- Gtk.vBoxNew False 0 
+  Gtk.containerAdd window vbox
   -- 
-  let startingXstate = set rootContainer (Gtk.castToBox vbox) st5
+  vboxcvs <- Gtk.vBoxNew False 0 
+  Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
+
+  Gtk.containerAdd vboxcvs (view rootWindow st5)
+
+
+  let startingXstate = set rootContainer (Gtk.castToBox vboxcvs) st5
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -151,7 +166,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) statusbar = 
 initialize :: AllEvent -> MainCoroutine ()
 initialize ev = do  
     case ev of 
-      UsrEv (Initialized mfname) -> do -- additional initialization goes here
+      UsrEv (Initialized mfname) -> do 
+        -- additional initialization goes here
         xst1 <- get
         let tvar = xst1 ^. pdfRenderQueue
         doIOaction $ \evhandler -> do 

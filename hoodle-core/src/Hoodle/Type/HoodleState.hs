@@ -26,6 +26,7 @@ module Hoodle.Type.HoodleState
 , currentCanvas
 , frameState
 , rootWindow
+, rootNotebook
 , rootContainer
 , rootOfRootWindow
 , currentPenDraw
@@ -150,6 +151,7 @@ data HoodleState =
                 , _currentCanvas :: (CanvasId,CanvasInfoBox)
                 , _frameState :: WindowConfig 
                 , _rootWindow :: Gtk.Widget
+                , _rootNotebook :: Gtk.Notebook
                 , _rootContainer :: Gtk.Box
                 , _rootOfRootWindow :: Gtk.Window
                 , _currentPenDraw :: PenDraw
@@ -205,6 +207,10 @@ frameState = lens _frameState (\f a -> f { _frameState = a } )
 -- | lens for rootWindow
 rootWindow :: Simple Lens HoodleState Gtk.Widget
 rootWindow = lens _rootWindow (\f a -> f { _rootWindow = a } )
+
+-- | lens for rootWindow
+rootNotebook :: Simple Lens HoodleState Gtk.Notebook
+rootNotebook = lens _rootNotebook (\f a -> f { _rootNotebook = a } )
 
 -- | lens for rootContainer
 rootContainer :: Simple Lens HoodleState Gtk.Box
@@ -430,15 +436,14 @@ emptyHoodleState = do
     HoodleState  
     { _hoodleModeState = ViewAppendState hdl 
     , _hoodleFileControl = emptyHoodleFileControl 
-    -- , _currFileName = Nothing 
     , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
     , _currentCanvas = error "emtpyHoodleState.currentCanvas"
     , _frameState = error "emptyHoodleState.frameState" 
     , _rootWindow = error "emtpyHoodleState.rootWindow"
+    , _rootNotebook = error "emtpyHoodleState.rootNotebook"
     , _rootContainer = error "emptyHoodleState.rootContainer"
     , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
     , _currentPenDraw = emptyPenDraw 
-    -- , _clipboard = emptyClipboard
     , _callBack = error "emtpyHoodleState.callBack"
     , _deviceList = error "emtpyHoodleState.deviceList"
     , _penInfo = defaultPenInfo 

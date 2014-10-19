@@ -1,4 +1,7 @@
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+
 
 -----------------------------------------------------------------------------
 -- |
@@ -36,11 +39,32 @@ import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
 --
 
+updateCanvasInfo :: (forall a. CanvasInfo a -> CanvasInfo a) -> CanvasId -> MainCoroutine ()
+updateCanvasInfo f cid = updateXState (return . updater)
+  where updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
+                          cinfobox = getCanvasInfo cid uhdl
+                          ncinfobox = (runIdentity . forBoth unboxBiXform (return . f)) cinfobox
+                      in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst 
+
+
+updateCanvasInfo2 :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
+                  -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
+                  -> CanvasId
+                  -> MainCoroutine ()
+updateCanvasInfo2 fs fc cid = updateXState (return . updater)
+  where updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
+                          cinfobox = getCanvasInfo cid uhdl
+                          ncinfobox = (runIdentity . unboxBiXform (return . fs) (return . fc)) cinfobox
+                      in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst 
+
+
+
 -- | 
 moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))
                   -> MainCoroutine () 
 moveViewPortBy rndr cid f = 
-    updateXState (return . updater) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
+    -- updateXState (return . updater) 
+    updateCanvasInfo moveact cid >> adjustScrollbarWithGeometryCvsId cid >> rndr 
   where     
     updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
                       cinfobox = getCanvasInfo cid uhdl
@@ -61,8 +85,9 @@ moveViewPortBy rndr cid f =
 adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
 adjustScrollbarWithGeometryCvsId cid = do
   xstate <- get
-  let cinfobox = getCanvasInfo cid xstate
-  geometry <- liftIO (getCanvasGeometryCvsId cid xstate)
+  let uhdl = (getTheUnit . view unitHoodles) xstate
+      cinfobox = getCanvasInfo cid uhdl
+  geometry <- liftIO (getCanvasGeometryCvsId cid uhdl)
   let (hadj,vadj) = view (unboxLens adjustments) cinfobox 
       connidh = view (unboxLens horizAdjConnId) cinfobox 
       connidv = view (unboxLens vertAdjConnId) cinfobox
@@ -71,7 +96,8 @@ adjustScrollbarWithGeometryCvsId cid = do
 
 -- | 
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
-adjustScrollbarWithGeometryCurrent = adjustScrollbarWithGeometryCvsId . view (currentCanvas._1) =<<  get 
+adjustScrollbarWithGeometryCurrent = adjustScrollbarWithGeometryCvsId . view (currentCanvas._1) 
+                                     . getTheUnit . view unitHoodles =<< get 
 
 -- | 
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
@@ -95,7 +121,8 @@ vscrollMove :: CanvasId -> Double -> MainCoroutine ()
 vscrollMove cid v0 = do    
     ev <- nextevent 
     xst <- get 
-    geometry <- liftIO (getCanvasGeometryCvsId cid xst)
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    geometry <- liftIO (getCanvasGeometryCvsId cid uhdl)
     case ev of
       VScrollBarMoved cid' v -> do 
         when (cid /= cid') $ 
@@ -117,20 +144,19 @@ smoothScroll cid geometry v0 v = do
     xst <- get 
     let lst = [v]
     forM_ lst $ \v' -> do 
-      updateXState $ return . over currentCanvasInfo  
-                     (runIdentity 
-                    . unboxBiXform (Identity . scrollmovecanvas v) 
-                                   (Identity . scrollmovecanvasCont geometry v') )
+      -- updateXState $ return . updater 
+      updateCanvasInfo2 (scrollmovecanvas v) (scrollmovecanvasCont geometry v') cid
       invalidateInBBox Nothing Efficient cid 
-  where scrollmovecanvas vv cvsInfo = 
-          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
-          in over (viewInfo.pageArrangement.viewPortBBox) 
-                  (apply (moveBBoxULCornerTo (fst vm_orig,vv))) cvsInfo 
-        -- 
-        scrollmovecanvasCont geom vv cvsInfo = 
-          let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
-              cpn = PageNum . view currentPageNum $ cvsInfo 
-              ncpn = maybe cpn fst $ desktop2Page geom (DeskCoord (0,vv))
-          in  over currentPageNum (const (unPageNum ncpn)) 
-              . over (viewInfo.pageArrangement.viewPortBBox) 
-                       (apply (moveBBoxULCornerTo (fst vm_orig,vv))) $ cvsInfo 
+  where 
+    scrollmovecanvas vv cvsInfo = 
+      let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
+      in over (viewInfo.pageArrangement.viewPortBBox) 
+              (apply (moveBBoxULCornerTo (fst vm_orig,vv))) cvsInfo 
+    -- 
+    scrollmovecanvasCont geom vv cvsInfo = 
+      let BBox vm_orig _ = unViewPortBBox $ view (viewInfo.pageArrangement.viewPortBBox) cvsInfo
+          cpn = PageNum . view currentPageNum $ cvsInfo 
+          ncpn = maybe cpn fst $ desktop2Page geom (DeskCoord (0,vv))
+      in  over currentPageNum (const (unPageNum ncpn)) 
+          . over (viewInfo.pageArrangement.viewPortBBox) 
+                   (apply (moveBBoxULCornerTo (fst vm_orig,vv))) $ cvsInfo 

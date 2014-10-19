@@ -67,12 +67,15 @@ startLayerWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> MainCoroutine () 
 startLayerWidget (cid,_cinfo,_geometry) Close = toggleLayer cid 
 startLayerWidget (cid,_cinfo,_geometry) ToggleShowContent = do 
-    liftIO $ putStrLn "ToggleShowContent hitted"
-    modify (over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not)
+    modify $ over unitHoodles 
+             $ putTheUnit 
+                . over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not
+                . getTheUnit
     invalidate cid 
 startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
-    let hdl = getHoodle xst
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        hdl = getHoodle uhdl
         cache = view renderCache xst
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache Nothing geometry hdl)
     -- need to draw other widgets here                             
@@ -121,34 +124,37 @@ moveLayerWidget :: CanvasId
                    -> MainCoroutine ()
 moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
-    xst <- get 
-    let CanvasDimension (Dim cw ch) = canvasDim geometry 
-        cinfobox = getCanvasInfo cid xst 
-        nposx | xw+x-x0 < -50 = -50 
-              | xw+x-x0 > cw-50 = cw-50 
-              | otherwise = xw+x-x0
-        nposy | yw+y-y0 < -50 = -50 
-              | yw+y-y0 > ch-50 = ch-50 
-              | otherwise = yw+y-y0                             
-        nwpos = CvsCoord (nposx,nposy) 
-        changeact :: CanvasInfo a -> CanvasInfo a 
-        changeact cinfo =  
-          set (canvasWidgets.layerWidgetConfig.layerWidgetPosition) nwpos $ cinfo
-        ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
-    put (setCanvasInfo (cid,ncinfobox) xst)
-    let hdl = getHoodle xst 
-    -- 
-    xst2 <- get 
-    let cinfobox2 = getCanvasInfo cid xst2 
-    liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
-                                    (drawLayerWidget hdl cinfo Nothing nwpos) 
-                                  >> doubleBufferFlush tgtsfc cinfo) cinfobox2
+    get >>= \xst -> do
+      let uhdl = (getTheUnit . view unitHoodles) xst
+          CanvasDimension (Dim cw ch) = canvasDim geometry 
+          cinfobox = getCanvasInfo cid uhdl
+          nposx | xw+x-x0 < -50 = -50 
+                | xw+x-x0 > cw-50 = cw-50 
+                | otherwise = xw+x-x0
+          nposy | yw+y-y0 < -50 = -50 
+                | yw+y-y0 > ch-50 = ch-50 
+                | otherwise = yw+y-y0                             
+          nwpos = CvsCoord (nposx,nposy) 
+          changeact :: CanvasInfo a -> CanvasInfo a 
+          changeact cinfo =  
+            set (canvasWidgets.layerWidgetConfig.layerWidgetPosition) nwpos $ cinfo
+          ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
+      put (set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst)
+      -- 
+      xst2 <- get 
+      let uhdl2 = (getTheUnit . view unitHoodles) xst2
+          hdl2 = getHoodle uhdl2
+          cinfobox2 = getCanvasInfo cid uhdl2
+      liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
+                                      (drawLayerWidget hdl2 cinfo Nothing nwpos) 
+                                    >> doubleBufferFlush tgtsfc cinfo) cinfobox2
   
 -- | 
 toggleLayer :: CanvasId -> MainCoroutine () 
 toggleLayer cid = do 
-  modify (\xst -> 
-            let ncinfobox = (over (unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not 
-                             . getCanvasInfo cid ) xst 
-            in setCanvasInfo (cid,ncinfobox) xst)
+  modify $ \xst -> 
+             let uhdl = (getTheUnit . view unitHoodles) xst
+                 ncinfobox = (over (unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not 
+                              . getCanvasInfo cid ) uhdl
+             in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
   invalidateInBBox Nothing Efficient cid

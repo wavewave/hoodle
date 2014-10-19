@@ -60,7 +60,7 @@ eraserProcess :: CanvasId
 eraserProcess cid pnum geometry itms (x0,y0) = do 
     r <- nextevent 
     xst <- get
-    forBoth' unboxBiAct (f r xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (f r xst) . getCanvasInfo cid . getTheUnit . view unitHoodles $ xst 
   where 
     f :: UserEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
     f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
@@ -75,7 +75,8 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
       if hitState 
         then do 
           page <- getCurrentPageCvsId cid 
-          let currhdl     = unView . view hoodleModeState $ xstate 
+          let uhdl = (getTheUnit . view unitHoodles) xstate
+              currhdl     = unView . view hoodleModeState $ uhdl
               dim         = view gdimension page
               pgnum       = view currentPageNum cvsInfo
               currlayer   = getCurrentLayer page
@@ -86,8 +87,8 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
           let newpagebbox = adjustCurrentLayer newlayerbbox page 
               newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
               newhdlmodst = ViewAppendState newhdlbbox
-          commit . set hoodleModeState newhdlmodst 
-            =<< (liftIO (updatePageAll newhdlmodst xstate))
+          commit . flip (set unitHoodles) xstate . putTheUnit . set hoodleModeState newhdlmodst 
+            =<< (liftIO (updatePageAll newhdlmodst uhdl))
           invalidateInBBox Nothing Efficient cid 
           nitms <- rItmsInCurrLyr
           eraserProcess cid pnum geometry nitms (x,y)

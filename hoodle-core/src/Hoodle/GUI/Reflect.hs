@@ -16,16 +16,15 @@
 
 module Hoodle.GUI.Reflect where
 
-import           Control.Lens (view,Simple,Lens, (^.))
+import           Control.Lens (view, set, Simple,Lens, (^.))
 import           Control.Monad (liftM, when)
-import qualified Control.Monad.State as St
+import           Control.Monad.State as St
 import           Control.Monad.Trans 
 import           Data.Array.MArray
-import           Data.Foldable (forM_)
+import qualified Data.Foldable as F (forM_) 
 import qualified Data.Map as M (lookup)
 import           Data.Word
-import           Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (set)
+import qualified Graphics.UI.Gtk as Gtk
 --
 import Hoodle.GUI.Menu 
 import Hoodle.Coroutine.Draw
@@ -45,10 +44,8 @@ import Debug.Trace
 changeCurrentCanvasId :: CanvasId -> MainCoroutine HoodleState 
 changeCurrentCanvasId cid = do 
     xstate1 <- St.get
-    maybe (return xstate1) 
-          (\xst -> do St.put xst 
-                      return xst)
-          (setCurrentCanvasId cid xstate1)
+    let uhdl = (getTheUnit . view unitHoodles) xstate1
+    F.forM_ (setCurrentCanvasId cid uhdl) $ \uhdl' -> modify (set unitHoodles (putTheUnit uhdl'))
     reflectViewModeUI
     St.get     
 
@@ -56,36 +53,37 @@ changeCurrentCanvasId cid = do
 --   changed. 
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
 chkCvsIdNInvalidate cid = do 
-  currcid <- liftM (getCurrentCanvasId) St.get 
+  currcid <- liftM (getCurrentCanvasId . getTheUnit . view unitHoodles ) St.get 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
 
 
-blockWhile :: (GObjectClass w) => Maybe (ConnectId w) -> IO () -> IO ()
+blockWhile :: (Gtk.GObjectClass w) => Maybe (Gtk.ConnectId w) -> IO () -> IO ()
 blockWhile msig act = 
-  maybe (return ()) signalBlock msig
+  maybe (return ()) Gtk.signalBlock msig
   >> act 
-  >> maybe (return ()) signalUnblock msig
+  >> maybe (return ()) Gtk.signalUnblock msig
   
 
 -- | reflect view mode UI for current canvas info 
 reflectViewModeUI :: MainCoroutine ()
 reflectViewModeUI = do 
     xstate <- St.get
-    let cinfobox = view currentCanvasInfo xstate 
-        ui = view gtkUIManager xstate       
+    let uhdl = (getTheUnit . view unitHoodles) xstate
+        cinfobox = view currentCanvasInfo uhdl
+        ui = view gtkUIManager xstate
     let mconnid = view (uiComponentSignalHandler.pageModeSignal) xstate
-    agr <- liftIO $ uiManagerGetActionGroups ui
+    agr <- liftIO $ Gtk.uiManagerGetActionGroups ui
     ra1 <- maybe (error "reflectUI") return =<< 
-             liftIO (actionGroupGetAction (head agr) "ONEPAGEA")
-    let wra1 = castToRadioAction ra1 
+             liftIO (Gtk.actionGroupGetAction (head agr) "ONEPAGEA")
+    let wra1 = Gtk.castToRadioAction ra1 
     unboxBiAct (pgmodupdate_s mconnid wra1) (pgmodupdate_c mconnid wra1) cinfobox 
     return ()
   where pgmodupdate_s mconnid wra1 _cinfo = do
           liftIO $ blockWhile mconnid $
-                     Gtk.set wra1 [radioActionCurrentValue := 1 ] 
+                     Gtk.set wra1 [Gtk.radioActionCurrentValue Gtk.:= 1 ] 
         pgmodupdate_c mconnid wra1 _cinfo = do
           liftIO $ blockWhile mconnid $ 
-                     Gtk.set wra1 [radioActionCurrentValue := 0 ] 
+                     Gtk.set wra1 [Gtk.radioActionCurrentValue Gtk.:= 0 ] 
 
 -- | 
 reflectPenModeUI :: MainCoroutine ()
@@ -94,7 +92,7 @@ reflectPenModeUI = do
     reflectCursor
   where 
     f xst = Just $
-      hoodleModeStateEither (view hoodleModeState xst) #  
+      hoodleModeStateEither ((view hoodleModeState . getTheUnit . view unitHoodles) xst) #  
         either (\_ -> (penType2Int. Left .view (penInfo.penType)) xst)
                (\_ -> (penType2Int. Right .view (selectInfo.selectType)) xst)
 
@@ -139,7 +137,7 @@ reflectNewPageModeUI =
     reflectUIComponent newPageModeSignal "NEWPAGEPLAINA" (Just . newPageMode2Int . (^. settings.newPageMode))
 
 -- | 
-reflectUIComponent :: Simple Lens UIComponentSignalHandler (Maybe (ConnectId RadioAction))
+reflectUIComponent :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
                    -> String 
                    -> (HoodleState -> Maybe Int)   
                    -> MainCoroutine ()
@@ -147,16 +145,16 @@ reflectUIComponent lnz name f = do
     xst <- St.get 
     let ui = view gtkUIManager xst 
         mconnid = view (uiComponentSignalHandler.lnz) xst 
-    agr <- liftIO $ uiManagerGetActionGroups ui 
-    Just pma <- liftIO $ actionGroupGetAction (head agr) name 
-    let wpma = castToRadioAction pma 
+    agr <- liftIO $ Gtk.uiManagerGetActionGroups ui 
+    Just pma <- liftIO $ Gtk.actionGroupGetAction (head agr) name 
+    let wpma = Gtk.castToRadioAction pma 
     update xst wpma mconnid   
   where update xst wpma mconnid  = do 
           (f xst) # 
             (maybe (return ()) $ \v -> do
               doIOaction $ \_evhandler -> do 
                     blockWhile mconnid 
-                      (Gtk.set wpma [radioActionCurrentValue := v ] )
+                      (Gtk.set wpma [Gtk.radioActionCurrentValue Gtk.:= v ] )
                     return (UsrEv ActionOrdered)
               go)
          where go = do r <- nextevent
@@ -178,25 +176,27 @@ reflectCursor = do
         act xst >> go 
       else do 
         doIOaction $ \_ -> do
-          let cinfobox   = view currentCanvasInfo xst           
+          let uhdl       = (getTheUnit . view unitHoodles) xst
+              cinfobox   = view currentCanvasInfo uhdl           
               canvas     = forBoth' unboxBiAct (view drawArea) cinfobox           
-          win <- widgetGetDrawWindow canvas
-          postGUIAsync (drawWindowSetCursor win Nothing) 
+          win <- Gtk.widgetGetDrawWindow canvas
+          Gtk.postGUIAsync (Gtk.drawWindowSetCursor win Nothing) 
           return (UsrEv ActionOrdered)
         go 
  where 
    act xst = doIOaction $ \_ -> do 
-     postGUIAsync $ do 
-       let -- mcur       = view cursorInfo xst 
-           cinfobox   = view currentCanvasInfo xst 
+     Gtk.postGUIAsync $ do 
+       let uhdl = (getTheUnit . view unitHoodles) xst
+           -- mcur       = view cursorInfo xst 
+           cinfobox   = view currentCanvasInfo uhdl
            canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
            cpn        = PageNum $ 
                           forBoth' unboxBiAct (view currentPageNum) cinfobox
            pinfo = view penInfo xst 
            pcolor = view (penSet . currPen . penColor) pinfo
            pwidth = view (penSet . currPen . penWidth) pinfo 
-       win <- widgetGetDrawWindow canvas
-       dpy <- widgetGetDisplay canvas  
+       win <- Gtk.widgetGetDrawWindow canvas
+       dpy <- Gtk.widgetGetDisplay canvas  
 
        geometry <- 
          forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
@@ -209,10 +209,10 @@ reflectCursor = do
            (r,g,b,a) = case pcolor of  
                          ColorRGBA r' g' b' a' -> (r',g',b',a')
                          _ -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
-       pb <- pixbufNew ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
+       pb <- Gtk.pixbufNew Gtk.ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
        let numPixels = maxCursorWidth*maxCursorHeight
-       pbData <- (pixbufGetPixels pb :: IO (PixbufData Int Word8))
-       forM_ [0..numPixels-1] $ \i -> do 
+       pbData <- (Gtk.pixbufGetPixels pb :: IO (Gtk.PixbufData Int Word8))
+       F.forM_ [0..numPixels-1] $ \i -> do 
          let cvt :: Double -> Word8
              cvt x | x < 0.0039 = 0
                    | x > 0.996  = 255
@@ -230,6 +230,6 @@ reflectCursor = do
              writeArray pbData (4*i+2) 0
              writeArray pbData (4*i+3) 0
 
-       drawWindowSetCursor win . Just =<< 
-         cursorNewFromPixbuf dpy pb (floor cursize `div` 2) (floor cursize `div` 2)
+       Gtk.drawWindowSetCursor win . Just =<< 
+         Gtk.cursorNewFromPixbuf dpy pb (floor cursize `div` 2) (floor cursize `div` 2)
      return (UsrEv ActionOrdered)

@@ -57,10 +57,11 @@ import Prelude hiding (mapM_)
 createTempRender :: CanvasGeometry -> a -> MainCoroutine (TempRender a) 
 createTempRender geometry x = do 
     xst <- get
-    let cinfobox = view currentCanvasInfo xst 
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        cinfobox = view currentCanvasInfo uhdl
         mcvssfc = view (unboxLens mDrawSurface) cinfobox 
         cache = view renderCache xst
-    let hdl = getHoodle xst
+    let hdl = getHoodle uhdl
     let Dim cw ch = unCanvasDimension . canvasDim $ geometry
     srcsfc <- liftIO $  
       maybe (fst <$> canvasImageSurface cache Nothing geometry hdl)
@@ -84,9 +85,11 @@ createTempRender geometry x = do
 penPageSwitch :: PageNum -> MainCoroutine CanvasInfoBox 
 penPageSwitch pgn = do 
     xstate <- get
-    let cibox = view currentCanvasInfo xstate     
+    let uhdl = (getTheUnit . view unitHoodles) xstate
+        cibox = view currentCanvasInfo uhdl    
         ncibox = (runIdentity . forBoth unboxBiXform (return . set currentPageNum (unPageNum pgn))) cibox 
-    put (set currentCanvasInfo ncibox xstate) 
+        uhdl' = set currentCanvasInfo ncibox uhdl
+    modify (set unitHoodles (putTheUnit uhdl'))
     invalidateAllInBBox Nothing Efficient
     return ncibox 
         
@@ -100,13 +103,11 @@ commonPenStart :: forall b.
                -> MainCoroutine (Maybe b)
 commonPenStart action cid pcoord = do
     oxstate <- get 
-    let currcid = getCurrentCanvasId oxstate
+    let currcid = (getCurrentCanvasId . getTheUnit . view unitHoodles) oxstate
     ctime <- liftIO $ getCurrentTime
-    -- liftIO $ putStrLn "--------------"
-    -- liftIO $ print ctime 
     when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
     nxstate <- get
-    forBoth' unboxBiAct (f ctime) . getCanvasInfo cid $ nxstate
+    forBoth' unboxBiAct (f ctime) . getCanvasInfo cid . getTheUnit . view unitHoodles $ nxstate
   where f :: forall c. UTCTime -> CanvasInfo c -> MainCoroutine (Maybe b)
         f ctime cvsInfo = do 
           let cpn = PageNum . view currentPageNum $ cvsInfo
@@ -133,8 +134,9 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                   -> MainCoroutine (Maybe (Maybe ()))
         penAction _cinfo pnum geometry (x,y) ctime = do 
           xstate <- get
+          let uhdl = (getTheUnit . view unitHoodles) xstate
           let PointerCoord _ _ _ z = pcoord 
-          let currhdl = getHoodle  xstate 
+          let currhdl = getHoodle  uhdl
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
               cache = view renderCache xstate
@@ -151,8 +153,9 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                     then invalidateAll
                     else do  
                       (newhdl,bbox) <- liftIO $ addPDraw cache pinfo currhdl pnum pdraw
-                      commit . set hoodleModeState (ViewAppendState newhdl) 
-                        =<< (liftIO (updatePageAll (ViewAppendState newhdl) xstate))
+                      uhdl' <- liftIO (updatePageAll (ViewAppendState newhdl) uhdl)
+                      let uhdl'' = set hoodleModeState (ViewAppendState newhdl) uhdl'
+                      commit (set unitHoodles (putTheUnit uhdl'') xstate)
                       let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
                           nbbox = xformBBox f bbox 
                       invalidateAllInBBox (Just nbbox) BkgEfficient
@@ -181,7 +184,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
     if (deltax < 20 && deltay < 20 && ispressandhold && Prelude.length lst < 20) 
       then return Nothing 
       else do xst <- get 
-              forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
+              forBoth' unboxBiAct (fsingle r xst) . (getCanvasInfo cid . getTheUnit . view unitHoodles) $ xst
   where 
     pdraw = tempInfo trdr 
     fsingle :: forall b.  

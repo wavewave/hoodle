@@ -40,22 +40,26 @@ import Prelude hiding ((.),id)
 
 
 layerAction :: (HoodleModeState -> Int -> Page EditMode -> MainCoroutine HoodleModeState) 
-            -> MainCoroutine HoodleState
+            -> MainCoroutine UnitHoodle
 layerAction action = do 
     xst <- get 
-    forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo $ xst
+    forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
   where 
     fsingle xstate cvsInfo = do
-      let epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
+      let uhdl = (getTheUnit . view unitHoodles) xstate
+          epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
           cpn = view currentPageNum cvsInfo
-          hdlmodst = view hoodleModeState xstate
+          hdlmodst = view hoodleModeState uhdl
       newhdlmodst <- either (action hdlmodst cpn) (action hdlmodst cpn . hPage2RPage) epage 
-      return =<< (liftIO (updatePageAll newhdlmodst . set hoodleModeState newhdlmodst $ xstate))
+      return =<< (liftIO (updatePageAll newhdlmodst . set hoodleModeState newhdlmodst $ uhdl))
 
 -- | 
 
 makeNewLayer :: MainCoroutine () 
-makeNewLayer = layerAction newlayeraction >>= commit >> invalidateAll 
+makeNewLayer = do
+    xst <- get
+    commit . flip (set unitHoodles) xst . putTheUnit =<< layerAction newlayeraction
+    invalidateAll 
   where newlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               emptylyr = emptyRLayer 
@@ -65,7 +69,9 @@ makeNewLayer = layerAction newlayeraction >>= commit >> invalidateAll
                 
 
 gotoNextLayer :: MainCoroutine ()
-gotoNextLayer = layerAction nextlayeraction >>= put >> invalidateAll 
+gotoNextLayer = do
+    modify . set unitHoodles . putTheUnit =<< layerAction nextlayeraction 
+    invalidateAll 
   where nextlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = moveRight lyrzipper 
@@ -73,7 +79,9 @@ gotoNextLayer = layerAction nextlayeraction >>= put >> invalidateAll
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst  
 
 gotoPrevLayer :: MainCoroutine ()
-gotoPrevLayer = layerAction prevlayeraction >>= put >> invalidateAll 
+gotoPrevLayer = do
+    modify . set unitHoodles . putTheUnit =<< layerAction prevlayeraction
+    invalidateAll 
   where prevlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = moveLeft lyrzipper 
@@ -82,7 +90,9 @@ gotoPrevLayer = layerAction prevlayeraction >>= put >> invalidateAll
 
 
 gotoLayerAt :: Int -> MainCoroutine ()
-gotoLayerAt n = layerAction gotoaction >>= put >> invalidateAll 
+gotoLayerAt n = do
+    modify . set unitHoodles . putTheUnit =<< layerAction gotoaction 
+    invalidateAll 
   where gotoaction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = moveTo n lyrzipper 
@@ -91,7 +101,10 @@ gotoLayerAt n = layerAction gotoaction >>= put >> invalidateAll
 
 
 deleteCurrentLayer :: MainCoroutine ()
-deleteCurrentLayer = layerAction deletelayeraction >>= commit >> invalidateAll 
+deleteCurrentLayer = do
+    xst <- get
+    commit . flip (set unitHoodles) xst . putTheUnit =<< layerAction deletelayeraction
+    invalidateAll 
   where deletelayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
               mlyrzipper = deleteCurrent lyrzipper 
@@ -100,12 +113,13 @@ deleteCurrentLayer = layerAction deletelayeraction >>= commit >> invalidateAll
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
-    forBoth' unboxBiAct fsingle . view currentCanvasInfo =<< get
+    forBoth' unboxBiAct fsingle . view currentCanvasInfo . getTheUnit . view unitHoodles =<< get
   where 
     fsingle cvsInfo = do 
       xstate <- get 
-      let hdlmodst = view hoodleModeState xstate
-      let epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
+      let uhdl = (getTheUnit . view unitHoodles) xstate
+          hdlmodst = view hoodleModeState uhdl
+          epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
           page = either id (hPage2RPage) epage 
           lyrzipper = view glayers page
           cidx = currIndex lyrzipper

@@ -14,7 +14,7 @@
 
 module Hoodle.Coroutine.Scroll where
 
-import           Control.Lens (view,over,_1)
+import           Control.Lens (set,view,over,_1)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
@@ -40,11 +40,12 @@ import           Hoodle.View.Coordinate
 moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))
                   -> MainCoroutine () 
 moveViewPortBy rndr cid f = 
-    updateXState (return . act) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
+    updateXState (return . updater) >> adjustScrollbarWithGeometryCvsId cid >> rndr 
   where     
-    act xst = let cinfobox = getCanvasInfo cid xst 
-                  ncinfobox = (runIdentity . forBoth unboxBiXform (return . moveact)) cinfobox       
-              in setCanvasInfo (cid,ncinfobox) xst
+    updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
+                      cinfobox = getCanvasInfo cid uhdl
+                      ncinfobox = (runIdentity . forBoth unboxBiXform (return . moveact)) cinfobox       
+                  in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
     moveact :: CanvasInfo a -> CanvasInfo a 
     moveact cinfo = 
       let BBox (x0,y0) _ = 
@@ -71,14 +72,6 @@ adjustScrollbarWithGeometryCvsId cid = do
 -- | 
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = adjustScrollbarWithGeometryCvsId . view (currentCanvas._1) =<<  get 
-{-  xstate <- get
-  geometry <- liftIO . getGeometry4CurrCvs $ xstate
-  let cinfobox = view currentCanvasInfo xstate
-  let (hadj,vadj) = unboxGet adjustments cinfobox 
-      connidh = unboxGet horizAdjConnId cinfobox 
-      connidv = unboxGet vertAdjConnId cinfobox
-  liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
--}
 
 -- | 
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
@@ -97,7 +90,6 @@ vscrollStart cid v = do
   chkCvsIdNInvalidate cid 
   vscrollMove cid v
         
-
 -- |                   
 vscrollMove :: CanvasId -> Double -> MainCoroutine () 
 vscrollMove cid v0 = do    
@@ -119,22 +111,11 @@ vscrollMove cid v0 = do
       VScrollBarStart cid' v -> vscrollStart cid' v 
       _ -> return ()       
 
-
-
 -- | 
 smoothScroll :: CanvasId -> CanvasGeometry -> Double -> Double -> MainCoroutine () 
 smoothScroll cid geometry v0 v = do 
     xst <- get 
-    -- let b = view (settings.doesSmoothScroll) xst 
-    let {- diff = (v - v0) 
-        lst'  | (diff < 20 && diff > -20) = [v]
-              | (diff < 5 &&diff > -5) = []
-              | otherwise = let m :: Int = floor (minimum [20, (abs diff) / 10.0])
-                                delta = diff / fromIntegral m            
-                            in [v0 + fromIntegral n*delta | n <- [1..m] ]
-        lst | b  = lst'                     
-            | otherwise = [v]  -}
-        lst = [v]
+    let lst = [v]
     forM_ lst $ \v' -> do 
       updateXState $ return . over currentCanvasInfo  
                      (runIdentity 
@@ -153,4 +134,3 @@ smoothScroll cid geometry v0 v = do
           in  over currentPageNum (const (unPageNum ncpn)) 
               . over (viewInfo.pageArrangement.viewPortBBox) 
                        (apply (moveBBoxULCornerTo (fst vm_orig,vv))) $ cvsInfo 
-

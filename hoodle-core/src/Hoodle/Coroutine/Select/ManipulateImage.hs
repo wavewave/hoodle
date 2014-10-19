@@ -57,8 +57,9 @@ cropImage :: BBoxed Image -> MainCoroutine ()
 cropImage imgbbx = do 
     liftIO $ putStrLn "cropImage called"
     xst <- get
-    let (cid,cinfobox) = view currentCanvas xst 
-        hdlmodst = view hoodleModeState xst
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        (cid,cinfobox) = view currentCanvas uhdl
+        hdlmodst = view hoodleModeState uhdl
         epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
     case hdlmodst of 
       ViewAppendState _ -> return ()
@@ -81,7 +82,8 @@ startCropRect :: CanvasId
               -> MainCoroutine ()
 startCropRect cid imgbbx (thdl,tpage) pcoord0 = do 
     xst <- get
-    geometry <- liftIO $ getGeometry4CurrCvs xst
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    geometry <- liftIO $ getGeometry4CurrCvs uhdl
     forM_ ((desktop2Page geometry . device2Desktop geometry) pcoord0) $ \(p0,c0) -> do
       tsel <- createTempRender geometry (p0, BBox (unPageCoord c0) (unPageCoord c0))
       ctime <- liftIO $ getCurrentTime
@@ -102,7 +104,8 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
           --
           let ntpage = replaceSelection rimg' tpage
           nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
-          commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
+          uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
+          (commit . flip (set unitHoodles) xst . putTheUnit . set hoodleModeState (SelectState nthdl)) uhdl' 
       invalidateAllInBBox Nothing Efficient      
       return ()
     
@@ -156,8 +159,9 @@ createCroppedImage img (BBox (xo0,yo0) (xo1,yo1)) (BBox (xn0,yn0) (xn1,yn1)) = d
 rotateImage :: RotateDir -> BBoxed Image -> MainCoroutine ()
 rotateImage dir imgbbx = do 
     xst <- get
-    let (_cid,cinfobox) = view currentCanvas xst 
-        hdlmodst = view hoodleModeState xst
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    let (_cid,cinfobox) = view currentCanvas uhdl
+        hdlmodst = view hoodleModeState uhdl
         pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox        
         epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
         cache = view renderCache xst
@@ -177,7 +181,8 @@ rotateImage dir imgbbx = do
               --
               let ntpage = replaceSelection rimg' tpage
               nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
-              commit . set hoodleModeState (SelectState nthdl) =<< (liftIO (updatePageAll (SelectState nthdl) xst))
+              uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
+              (commit . flip (set unitHoodles) xst . putTheUnit . set hoodleModeState (SelectState nthdl)) uhdl'
             invalidateAllInBBox Nothing Efficient      
             return ()
 

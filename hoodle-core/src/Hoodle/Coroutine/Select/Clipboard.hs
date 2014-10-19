@@ -48,7 +48,8 @@ import           Hoodle.Type.HoodleState
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   xstate <- get
-  case view hoodleModeState xstate of
+  let uhdl = (getTheUnit . view unitHoodles) xstate
+  case view hoodleModeState uhdl of
     SelectState thdl -> do 
       let Just (n,tpage) = view gselSelected thdl
           slayer = view (glayers.selectedLayer) tpage
@@ -59,12 +60,12 @@ deleteSelection = do
               newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
               cache = view renderCache xstate
           newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n          
-          newxstate <- liftIO $ updatePageAll (SelectState newthdl) 
+          newuhdl <- liftIO $ updatePageAll (SelectState newthdl) 
                               . set hoodleModeState (SelectState newthdl)
-                              $ xstate 
-          commit newxstate 
-          let ui = view gtkUIManager newxstate
+                              $ uhdl
+          let ui = view gtkUIManager xstate
           liftIO $ toggleCutCopyDelete ui False 
+          (commit . flip (set unitHoodles) xstate . putTheUnit) newuhdl 
           modeChange ToViewAppendMode 
           invalidateAll 
     _ -> return ()
@@ -80,10 +81,11 @@ copySelection :: MainCoroutine ()
 copySelection = do 
     updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
-          forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo $ xst
+          forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
         fsingle xstate cinfo = maybe (return xstate) id $ do  
-          let hdlmodst = view hoodleModeState xstate
-          let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
+          let uhdl = (getTheUnit . view unitHoodles) xstate
+              hdlmodst = view hoodleModeState uhdl
+              epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           eitherMaybe epage `pipe` rItmsInActiveLyr 
                             `pipe` (Right . liftIO . updateClipboard xstate . map rItem2Item . takeHitted)
           where eitherMaybe (Left _) = Nothing
@@ -120,13 +122,14 @@ pasteToSelection = do
         RenderEv (GotRItems ritms) <- 
           waitSomeEvent (\case RenderEv (GotRItems _) -> True; _ -> False)
         --
-        modeChange ToSelectMode >>updateXState (pasteAction ritms) >> invalidateAll  
+        modeChange ToSelectMode >> updateXState (pasteAction ritms) >> invalidateAll  
   where 
-    pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) . view currentCanvasInfo $ xst
+    pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
     fsimple itms xstate cinfo = do 
-      geometry <- liftIO (getGeometry4CurrCvs xstate)
+      let uhdl = (getTheUnit . view unitHoodles) xstate
+      geometry <- liftIO (getGeometry4CurrCvs uhdl)
       let pagenum = view currentPageNum cinfo 
-          hdlmodst@(SelectState thdl) = view hoodleModeState xstate
+          hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           nclipitms = adjustItemPosition4Paste geometry (PageNum pagenum) itms
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
           tpage = either mkHPage id epage
@@ -141,10 +144,10 @@ pasteToSelection = do
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
           cache = view renderCache xstate
       thdl' <- liftIO $ updateTempHoodleSelectIO cache thdl tpage' pagenum 
-      xstate' <- liftIO $ updatePageAll (SelectState thdl') 
+      uhdl' <- liftIO $ updatePageAll (SelectState thdl') 
                  . set hoodleModeState (SelectState thdl') 
-                 $ xstate 
-      commit xstate' 
-      let ui = view gtkUIManager xstate' 
+                 $ uhdl
+      let ui = view gtkUIManager xstate
       liftIO $ toggleCutCopyDelete ui True
-      return xstate' 
+      (commit . flip (set unitHoodles) xstate . putTheUnit) uhdl'
+      return xstate

@@ -37,6 +37,7 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
+import           Hoodle.Util
 import           Hoodle.View.Coordinate
 --
 import Prelude hiding (mapM_, mapM)
@@ -45,16 +46,17 @@ modeChange :: UserEvent -> MainCoroutine ()
 modeChange command = do 
     case command of 
       ToViewAppendMode -> updateXState select2edit >> invalidateAll 
-                          -- invalidateAllInBBox Nothing Efficient -- invalidateAll 
-      ToSelectMode     -> updateXState edit2select >> invalidateAllInBBox Nothing Efficient -- invalidateAll 
+      ToSelectMode     -> updateXState edit2select >> invalidateAllInBBox Nothing Efficient
       _ -> return ()
     reflectPenModeUI
     reflectPenColorUI
     reflectPenWidthUI
   where select2edit xst =  
-          either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState $ xst
+          either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState 
+          . getTheUnit . view unitHoodles $ xst
         edit2select xst = 
-          either (whenedit xst) (noaction xst) . hoodleModeStateEither . view hoodleModeState $ xst
+          either (whenedit xst) (noaction xst) . hoodleModeStateEither . view hoodleModeState 
+          . getTheUnit . view unitHoodles $ xst
         noaction :: HoodleState -> a -> MainCoroutine HoodleState
         noaction xstate = const (return xstate)
         whenselect :: HoodleState -> Hoodle SelectMode -> MainCoroutine HoodleState
@@ -68,13 +70,16 @@ modeChange command = do
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  
-          return . flip (set hoodleModeState) xstate 
-            . ViewAppendState . gSelect2GHoodle $ nthdl  
+          return $
+            xstate # over unitHoodles ( putTheUnit
+                                      . set hoodleModeState (ViewAppendState (gSelect2GHoodle nthdl))
+                                      . getTheUnit )
         whenedit :: HoodleState -> Hoodle EditMode -> MainCoroutine HoodleState   
         whenedit xstate hdl = do 
-          return . flip (set hoodleModeState) xstate 
-                          . SelectState  
-                          . gHoodle2GSelect $ hdl 
+          return $
+            xstate # over unitHoodles ( putTheUnit 
+                                      . set hoodleModeState (SelectState  (gHoodle2GSelect hdl))
+                                      . getTheUnit )
 
 -- | 
 viewModeChange :: UserEvent -> MainCoroutine () 
@@ -84,15 +89,18 @@ viewModeChange command = do
       ToContSinglePage -> updateXState single2cont >> invalidateAll 
       _ -> return ()
     adjustScrollbarWithGeometryCurrent     
-  where cont2single xst =  
-          unboxBiAct (noaction xst) (whencont xst) . view currentCanvasInfo $ xst
+  where cont2single :: HoodleState -> MainCoroutine HoodleState
+        cont2single xst =  
+          unboxBiAct (noaction xst) (whencont xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
+        single2cont :: HoodleState -> MainCoroutine HoodleState
         single2cont xst = 
-          unboxBiAct (whensing xst) (noaction xst) . view currentCanvasInfo $ xst
+          unboxBiAct (whensing xst) (noaction xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
         noaction :: HoodleState -> a -> MainCoroutine HoodleState  
         noaction xstate = const (return xstate)
         -------------------------------------
         whencont xstate cinfo = do 
-          geometry <- liftIO $ getGeometry4CurrCvs xstate 
+          let uhdl = (getTheUnit . view unitHoodles) xstate
+          geometry <- liftIO $ getGeometry4CurrCvs uhdl
           cdim <- liftIO $  return . canvasDim $ geometry 
           page <- getCurrentPageCurr
           let zmode = view (viewInfo.zoomMode) cinfo
@@ -117,16 +125,20 @@ viewModeChange command = do
                                   (view vertAdjConnId cinfo)
                                   (view canvasWidgets cinfo)
                                   (view notifiedItem cinfo)
-          return $ set currentCanvasInfo (CanvasSinglePage ncinfo) xstate 
+          return $ 
+            xstate # over unitHoodles ( putTheUnit 
+                                      . set currentCanvasInfo (CanvasSinglePage ncinfo) 
+                                      . getTheUnit )
         -------------------------------------
         whensing xstate cinfo = do 
-          cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs xstate 
+          let uhdl = (getTheUnit . view unitHoodles) xstate
+          cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs uhdl
           let zmode = view (viewInfo.zoomMode) cinfo
               canvas = view drawArea cinfo 
               cpn = PageNum . view currentPageNum $ cinfo 
               (hadj,vadj) = view adjustments cinfo 
           (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
-          let arr = makeContinuousArrangement zmode cdim (getHoodle xstate) 
+          let arr = makeContinuousArrangement zmode cdim (getHoodle uhdl) 
                                                     (cpn, PageCoord (xpos,ypos))
           geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
           let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
@@ -146,6 +158,9 @@ viewModeChange command = do
                                       (view notifiedItem cinfo)
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
               ncinfo = over currentPageNum (const (unPageNum ncpn)) ncinfotemp
-          return . over currentCanvasInfo (const (CanvasContPage ncinfo)) $ xstate
+          return $
+            xstate # over unitHoodles ( putTheUnit 
+                                      . set currentCanvasInfo (CanvasContPage ncinfo) 
+                                      . getTheUnit )
 
 

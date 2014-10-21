@@ -287,9 +287,10 @@ makeLaTeXSVG (x0,y0) mdim txt = do
 -- |
 svgInsert :: (T.Text,String) -> (B.ByteString,BBox) -> MainCoroutine () 
 svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do 
-    xstate <- get 
-    let pgnum = view (unboxLens currentPageNum) . view currentCanvasInfo $ xstate
-        hdl = getHoodle xstate 
+    xst <- get 
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        pgnum = view (unboxLens currentPageNum) . view currentCanvasInfo $ uhdl
+        hdl = getHoodle uhdl
         currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
     --
@@ -302,14 +303,16 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  
-        cache = view renderCache xstate
+        cache = view renderCache xst
     modeChange ToSelectMode 
-    nxstate <- get 
-    thdl <- case view hoodleModeState nxstate of
+    nxst <- get 
+    let nuhdl = (getTheUnit . view unitHoodles) nxst
+    thdl <- case view hoodleModeState nuhdl of
               SelectState thdl' -> return thdl'
               _ -> (lift . EitherT . return . Left . Other) "svgInsert"
     nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
-    put (set hoodleModeState (SelectState nthdl) nxstate)
+    put $ 
+      set unitHoodles (putTheUnit (set hoodleModeState (SelectState nthdl) nuhdl )) nxst
     commit_
     invalidateAll 
   
@@ -340,8 +343,9 @@ linkInsert :: B.ByteString
               -> (B.ByteString,BBox) 
               -> MainCoroutine ()
 linkInsert _typ (uuidbstr,fname) str (svgbstr,BBox (x0,y0) (x1,y1)) = do 
-    xstate <- get 
-    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate 
+    xst <- get 
+    let uhdl = (getTheUnit . view unitHoodles) xst 
+    let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
         lnk = Link uuidbstr "simple" (B.pack fname) (Just (B.pack str)) Nothing svgbstr 
                   (x0,y0) (Dim (x1-x0) (y1-y0))
     nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
@@ -393,7 +397,7 @@ makePangoTextSVG (xo,yo) str = do
 -- | combine all LaTeX texts into a text file 
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
-    hdl <- rHoodle2Hoodle . getHoodle <$> get  
+    hdl <- rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles <$> get  
     let sorted = getLaTeXComponentsFromHdl hdl
    
         resulttxt = (T.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view (_2._3))) sorted
@@ -406,11 +410,12 @@ insertItemAt :: Maybe (PageNum,PageCoordinate)
                 -> MainCoroutine () 
 insertItemAt mpcoord ritm = do 
     xst <- get   
-    geometry <- liftIO (getGeometry4CurrCvs xst) 
-    let hdl = getHoodle xst 
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    geometry <- liftIO (getGeometry4CurrCvs uhdl) 
+    let hdl = getHoodle uhdl
         (pgnum,mpos) = case mpcoord of 
           Just (PageNum n,pos) -> (n,Just pos)
-          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) xst,Nothing)
+          Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) uhdl,Nothing)
         (ulx,uly) = (bbox_upperleft.getBBox) ritm
         nitms = 
           case mpos of 
@@ -424,13 +429,14 @@ insertItemAt mpcoord ritm = do
         ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
     modeChange ToSelectMode 
     nxst <- get 
-    let cache = view renderCache nxst
-    thdl <- case view hoodleModeState nxst of
+    let uhdl = (getTheUnit . view unitHoodles) nxst
+        cache = view renderCache nxst
+    thdl <- case view hoodleModeState uhdl of
       SelectState thdl' -> return thdl'
       _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
     nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
-    put ( ( set hoodleModeState (SelectState nthdl) 
-          . set isOneTimeSelectMode YesAfterSelect) nxst)
+    commit ( ( over unitHoodles (putTheUnit . set hoodleModeState (SelectState nthdl) . getTheUnit)
+             . set isOneTimeSelectMode YesAfterSelect) nxst )
     invalidateAll  
 
 embedTextSource :: MainCoroutine ()
@@ -439,17 +445,18 @@ embedTextSource = do
     forM_ mfilename $ \filename -> do 
       txt <- liftIO $ TIO.readFile filename
       xst <- get
-      let nhdlmodst = case xst ^. hoodleModeState of
+      let uhdl = (getTheUnit . view unitHoodles) xst
+          nhdlmodst = case uhdl ^. hoodleModeState of
             ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
             SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just txt) $ thdl)
-          nxst = (hoodleModeState .~ nhdlmodst) xst
-      put nxst
+          nuhdl = (hoodleModeState .~ nhdlmodst) uhdl
+      put (set unitHoodles (putTheUnit nuhdl) xst)
       commit_ 
 
 -- |
 editEmbeddedTextSource :: MainCoroutine ()
 editEmbeddedTextSource = do 
-    hdl <- getHoodle <$> get
+    hdl <- getHoodle . getTheUnit . view unitHoodles <$> get
     let mtxt = hdl ^. gembeddedtext 
     forM_ mtxt $ \txt -> do 
       modify (tempQueue %~ enqueue (multiLineDialog txt))  
@@ -457,16 +464,17 @@ editEmbeddedTextSource = do
         Nothing -> return ()
         Just ntxt -> do 
           modify $ \xst ->
-            let nhdlmodst = case xst ^. hoodleModeState of
+            let uhdl = (getTheUnit . view unitHoodles) xst
+                nhdlmodst = case uhdl ^. hoodleModeState of
                   ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
                   SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
-            in (hoodleModeState .~ nhdlmodst) xst
+            in set unitHoodles (putTheUnit ((hoodleModeState .~ nhdlmodst) uhdl)) xst
           commit_
 
 -- |
 editNetEmbeddedTextSource :: MainCoroutine ()
 editNetEmbeddedTextSource = do 
-    hdl <- getHoodle <$> get
+    hdl <- getHoodle . getTheUnit . view unitHoodles <$> get
     let mtxt = hdl ^. gembeddedtext 
     forM_ mtxt $ \txt -> do 
       networkTextInput txt >>= \case 
@@ -476,10 +484,11 @@ editNetEmbeddedTextSource = do
 networkReceived :: T.Text -> MainCoroutine ()
 networkReceived txt = do
     modify $ \xst ->
-      let nhdlmodst = case xst ^. hoodleModeState of
+      let uhdl = (getTheUnit . view unitHoodles) xst
+          nhdlmodst = case uhdl ^. hoodleModeState of
             ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
             SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just txt) $ thdl)
-      in (hoodleModeState .~ nhdlmodst) xst
+      in set unitHoodles (putTheUnit ((hoodleModeState .~ nhdlmodst) uhdl)) xst
     commit_
 
 
@@ -487,7 +496,7 @@ networkReceived txt = do
 textInputFromSource :: (Double,Double) -> MainCoroutine ()
 textInputFromSource (x0,y0) = do
     runMaybeT $ do 
-      txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+      txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . getTheUnit . view unitHoodles <$> get
       lift $ modify (tempQueue %~ enqueue linePosDialog)  
       (l1,l2) <- MaybeT linePosLoop
       let txt = getLinesFromText (l1,l2) txtsrc
@@ -542,7 +551,7 @@ linePosLoop = do
 laTeXInputKeyword :: (Double,Double) -> Maybe Dimension -> T.Text 
                   -> MaybeT MainCoroutine ()
 laTeXInputKeyword (x0,y0) mdim keyword = do
-    txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+    txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . getTheUnit . view unitHoodles <$> get
     subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
     let subpart' = laTeXHeader <> "\n"  <> subpart <> laTeXFooter
     liftIO (makeLaTeXSVG (x0,y0) mdim subpart') >>= \case
@@ -558,7 +567,7 @@ laTeXInputKeyword (x0,y0) mdim keyword = do
 laTeXInputFromSource :: (Double,Double) -> MainCoroutine ()
 laTeXInputFromSource (x0,y0) = do
     runMaybeT $ do 
-      txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle <$> get
+      txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . getTheUnit . view unitHoodles <$> get
       let keylst = (map fst . M.toList . getKeywordMap) txtsrc
       when ((not.null) keylst) $ do 
         lift $ doIOaction (keywordDialog keylst)
@@ -609,10 +618,11 @@ keywordLoop = do
 toggleNetworkEditSource :: MainCoroutine ()
 toggleNetworkEditSource = do 
     xst <- get
-    let hdl = getHoodle xst 
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        hdl = getHoodle uhdl
         mtxt = hdl ^. gembeddedtext
     b <- updateFlagFromToggleUI "TOGGLENETSRCA" (settings.doesUseXInput)
-    flip mapM_ (xst ^. statusBar) $ \stbar -> 
+    forM_ (xst ^. statusBar) $ \stbar -> 
       if b 
         then do
           (ip,tid,done) <- networkTextInputBody (maybe " " id mtxt)

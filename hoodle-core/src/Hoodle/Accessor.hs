@@ -41,6 +41,13 @@ import           Prelude hiding (mapM_)
 updateXState :: (HoodleState -> MainCoroutine HoodleState) -> MainCoroutine ()
 updateXState action = St.put =<< action =<< St.get 
 
+-- | update unitHoodle
+updateUhdl :: (UnitHoodle -> MainCoroutine UnitHoodle) -> MainCoroutine ()
+updateUhdl action = do xst <- St.get
+                       let uhdl = (getTheUnit . view unitHoodles) xst
+                       uhdl' <- action uhdl
+                       St.put ((set unitHoodles (putTheUnit uhdl')) xst)
+
 -- | 
 getPenType :: MainCoroutine PenType 
 getPenType = view (penInfo.penType) <$> St.get

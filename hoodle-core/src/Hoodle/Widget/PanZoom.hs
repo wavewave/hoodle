@@ -17,6 +17,7 @@
 module Hoodle.Widget.PanZoom where
 
 -- from other packages
+import           Control.Applicative
 import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.Identity 
 import           Control.Monad.State 
@@ -86,7 +87,7 @@ startPanZoomWidget :: PanZoomTouch
 startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do 
     modify (doesNotInvalidate .~ True)
     xst <- get 
-    let hdl = getHoodle xst
+    let hdl = (getHoodle . getTheUnit . view unitHoodles) xst
         cache = view renderCache xst
     case mmode of 
       Nothing -> togglePanZoom cid
@@ -183,12 +184,11 @@ manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
           case mpnpgxy of 
             Nothing -> return () 
             Just pnpgxy -> do 
-              xstate <- get
-              geom' <- liftIO $ getCanvasGeometryCvsId cid xstate
+              uhdl <- getTheUnit . view unitHoodles <$> get
+              geom' <- liftIO $ getCanvasGeometryCvsId cid uhdl
               let DeskCoord (xd,yd) = page2Desktop geom' pnpgxy
                   DeskCoord (xd0,yd0) = canvas2Desktop geom' ccoord 
-              moveViewPortBy (return ()) cid 
-                (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
+              moveViewPortBy (return ()) cid (\(xorig,yorig)->(xorig+xd-xd0,yorig+yd-yd0)) 
         Panning _ -> do 
           let (x_d,y_d) = (unDeskCoord . device2Desktop geometry) pcoord  
               (x0_d,y0_d) = (unDeskCoord . canvas2Desktop geometry) 
@@ -197,8 +197,7 @@ manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
                             in if | abs dx_d1 < 25 -> (0,dy_d1)
                                   | abs dy_d1 < 25 -> (dx_d1,0)
                                   | otherwise -> (dx_d1,dy_d1)
-          moveViewPortBy (return ()) cid 
-            (\(xorig,yorig)->(xorig-dx_d,yorig-dy_d))                 
+          moveViewPortBy (return ()) cid (\(xorig,yorig)->(xorig-dx_d,yorig-dy_d))                 
         _ -> return ()
       invalidate cid 
 
@@ -211,11 +210,11 @@ movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry
              -> MainCoroutine () 
 movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
-    xst <- get 
+    uhdl <- getTheUnit . view unitHoodles <$> get 
     case mode of
       Moving -> do 
         let CanvasDimension (Dim cw ch) = canvasDim geometry 
-            cinfobox = getCanvasInfo cid xst 
+            cinfobox = getCanvasInfo cid uhdl
             nposx | xw+x-x0 < -50 = -50 
                   | xw+x-x0 > cw-50 = cw-50 
                   | otherwise = xw+x-x0
@@ -227,21 +226,21 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
             changeact cinfo =  
               set (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) nwpos $ cinfo
             ncinfobox = (runIdentity . forBoth unboxBiXform (return.changeact)) cinfobox
-            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox                         
-        put (setCanvasInfo (cid,ncinfobox) xst)
+            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox
+        pureUpdateUhdl $ setCanvasInfo (cid,ncinfobox)
         virtualDoubleBufferDraw srcsfc tgtsfc (return ()) (renderPanZoomWidget isTouchZoom Nothing nwpos)
       Zooming -> do 
-        let cinfobox = getCanvasInfo cid xst               
+        let cinfobox = getCanvasInfo cid uhdl     
         let pos = runIdentity (forBoth' unboxBiAct (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
         let (xo,yo) = (xw+50,yw+50)
             CanvasDimension cdim = canvasDim geometry 
             (z,(xtrans,ytrans)) = findZoomXform cdim ((xo,yo),(x0,y0),(x,y))
-            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox             
+            isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox
         virtualDoubleBufferDraw srcsfc tgtsfc 
           (Cairo.save >> Cairo.scale z z >> Cairo.translate xtrans ytrans)
           (Cairo.restore >> renderPanZoomWidget isTouchZoom Nothing pos)
       Panning b -> do 
-        let cinfobox = getCanvasInfo cid xst               
+        let cinfobox = getCanvasInfo cid uhdl               
             CanvasDimension cdim = canvasDim geometry 
             (xtrans,ytrans) = findPanXform cdim ((x0,y0),(x,y))
         let CanvasDimension (Dim cw ch) = canvasDim geometry 
@@ -257,29 +256,29 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
                       runIdentity (forBoth' unboxBiAct (return.view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) cinfobox)
             ncinfobox = set (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition)) nwpos cinfobox
             isTouchZoom = view (unboxLens (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom)) cinfobox 
-        put (setCanvasInfo (cid,ncinfobox) xst)
+        pureUpdateUhdl $ setCanvasInfo (cid,ncinfobox)
         virtualDoubleBufferDraw srcsfc tgtsfc 
           (Cairo.save >> Cairo.translate xtrans ytrans) 
           (Cairo.restore >> renderPanZoomWidget isTouchZoom Nothing nwpos)
     --   
     xst2 <- get 
-    let cinfobox = getCanvasInfo cid xst2 
+    let cinfobox = getCanvasInfo cid . getTheUnit . view unitHoodles $ xst2 
     liftIO $ forBoth' unboxBiAct (doubleBufferFlush tgtsfc) cinfobox
 
   
 -- | 
 togglePanZoom :: CanvasId -> MainCoroutine () 
 togglePanZoom cid = do 
-    modify $ \xst -> 
-      let cinfobox = getCanvasInfo cid xst 
+    pureUpdateUhdl $ \uhdl -> 
+      let cinfobox = getCanvasInfo cid uhdl
           ncinfobox = over (unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) not cinfobox
-      in setCanvasInfo (cid,ncinfobox) xst 
+      in setCanvasInfo (cid,ncinfobox) uhdl
     invalidateInBBox Nothing Efficient cid 
 
 
 -- | 
 touchStart :: CanvasId -> PointerCoord -> MainCoroutine () 
-touchStart cid pcoord = forBoth' unboxBiAct chk =<< liftM (getCanvasInfo cid) get
+touchStart cid pcoord = forBoth' unboxBiAct chk =<< (getCanvasInfo cid . getTheUnit . view unitHoodles <$> get)
   where
     chk :: CanvasInfo a -> MainCoroutine () 
     chk cinfo = do 
@@ -292,13 +291,13 @@ touchStart cid pcoord = forBoth' unboxBiAct chk =<< liftM (getCanvasInfo cid) ge
           CvsCoord (x0,y0) = view (canvasWidgets.panZoomWidgetConfig.panZoomWidgetPosition) cinfo  
           obbox = BBox (x0,y0) (x0+100,y0+100) 
       xst <- get
-          
       if (isPointInBBox obbox (x,y))     
         then do 
-          let changeact :: CanvasInfo a -> CanvasInfo a 
-              changeact = over (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) not 
-              ncinfobox = runIdentity . forBoth unboxBiXform (return . changeact) . getCanvasInfo cid $ xst
-          put (setCanvasInfo (cid,ncinfobox) xst)
+          pureUpdateUhdl $ \uhdl -> 
+            let changeact :: CanvasInfo a -> CanvasInfo a 
+                changeact = over (canvasWidgets.panZoomWidgetConfig.panZoomWidgetTouchIsZoom) not 
+                ncinfobox = runIdentity . forBoth unboxBiXform (return . changeact) . getCanvasInfo cid $ uhdl
+            in setCanvasInfo (cid,ncinfobox) uhdl
           invalidateInBBox Nothing Efficient cid 
         else do 
           let b = view (settings.doesUseTouch) xst
@@ -325,16 +324,16 @@ toggleTouch = do
     updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
     xst <- get 
     let devlst = view deviceList xst 
-    let b = view (settings.doesUseTouch) xst
-    when b $ do 
+        uhdl = (getTheUnit . view unitHoodles) xst
+        (cid,_cinfobox) = view currentCanvas uhdl
+    when (view (settings.doesUseTouch) xst) $ do 
       -- ad hoc 
       let touchstr = dev_touch_str devlst      
       when (touchstr /= "touch") $ do 
         liftIO $ readProcess "xinput" [ "enable", dev_touch_str devlst ] ""   
         return ()
       --
-      let (cid,_cinfobox) = view currentCanvas xst 
-      put (set (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) True xst)
+      pureUpdateUhdl $ (currentCanvasInfo. unboxLens (canvasWidgets.widgetConfig.doesUsePanZoomWidget)) .~ True
       invalidateInBBox Nothing Efficient cid   
       return ()
 

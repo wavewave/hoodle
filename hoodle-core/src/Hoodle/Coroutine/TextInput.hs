@@ -428,15 +428,15 @@ insertItemAt mpcoord ritm = do
         oitms = view gitems lyr  
         ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
     modeChange ToSelectMode 
-    nxst <- get 
-    let uhdl = (getTheUnit . view unitHoodles) nxst
-        cache = view renderCache nxst
-    thdl <- case view hoodleModeState uhdl of
-      SelectState thdl' -> return thdl'
-      _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-    nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
-    commit ( ( over unitHoodles (putTheUnit . set hoodleModeState (SelectState nthdl) . getTheUnit)
-             . set isOneTimeSelectMode YesAfterSelect) nxst )
+    cache <- view renderCache <$> get
+    updateUhdl $ \uhdl -> do 
+      thdl <- case view hoodleModeState uhdl of
+        SelectState thdl' -> return thdl'
+        _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
+      nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
+      return . (hoodleModeState .~ SelectState nthdl)
+             . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl 
+    commit_
     invalidateAll  
 
 embedTextSource :: MainCoroutine ()

@@ -80,7 +80,7 @@ import Prelude hiding (mapM_)
 processContextMenu :: ContextMenuEvent -> MainCoroutine () 
 processContextMenu (CMenuSaveSelectionAs ityp) = do 
   xst <- get
-  forM_ (getSelectedItmsFromHoodleState xst) 
+  forM_ (getSelectedItmsFromUnitHoodle xst) 
         (\hititms->  
            let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
            in case ulbbox of 
@@ -213,7 +213,7 @@ processContextMenu CMenuCustom =  do
 --  | 
 linkSelectionWithFile :: FilePath -> MainCoroutine ()  
 linkSelectionWithFile fname = do
-  liftM getSelectedItmsFromHoodleState get >>=  
+  liftM getSelectedItmsFromUnitHoodle get >>=  
     mapM_ (\hititms -> 
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             in case ulbbox of 
@@ -278,7 +278,7 @@ showContextMenu (pnum,(x,y)) = do
     when (view (settings.doesUsePopUpMenu) xstate) $ do 
       let cids = IM.keys . view cvsInfoMap $ xstate
           cid = fst . view currentCanvas $ xstate 
-          mselitms = do lst <- getSelectedItmsFromHoodleState xstate
+          mselitms = do lst <- getSelectedItmsFromUnitHoodle xstate
                         if null lst then Nothing else Just lst 
       modify (tempQueue %~ enqueue (action xstate mselitms cid cids)) 
       >> waitSomeEvent (\e->case e of ContextMenuCreated -> True ; _ -> False) 

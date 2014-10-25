@@ -168,7 +168,7 @@ gotLink mstr (x,y) = do
               insertItemAt mpgcoord nitm 
             else return ()  
         Just (HttpUrl url) -> do 
-          case getSelectedItmsFromHoodleState xst of     
+          case getSelectedItmsFromUnitHoodle xst of     
             Nothing -> do 
               uuidbstr <- liftIO $ B.pack . show <$> nextRandom              
               rdrbbx <- liftIO $ makeTextSVGFromStringAt url cid xst 
@@ -187,7 +187,7 @@ gotLink mstr (x,y) = do
                   _ -> return ()          
     Just (uuidbstr,fp) -> do 
       let fn = takeFileName fp 
-      case getSelectedItmsFromHoodleState xst of     
+      case getSelectedItmsFromUnitHoodle xst of     
         Nothing -> do 
           rdr <- liftIO (makePangoTextSVG (0,0) (T.pack fn)) 
           geometry <- liftIO $ getCanvasGeometryCvsId cid xst 

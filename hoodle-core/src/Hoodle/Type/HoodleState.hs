@@ -25,6 +25,7 @@ module Hoodle.Type.HoodleState
 , hoodleFileControl
 , cvsInfoMap
 , currentCanvas
+, isOneTimeSelectMode
 , frameState
 , rootWindow
 , unitHoodles
@@ -43,7 +44,6 @@ module Hoodle.Type.HoodleState
 , isFullScreen 
 , settings
 , uiComponentSignalHandler
-, isOneTimeSelectMode
 , lastTimeCanvasConfigure
 , hookSet 
 , tempLog 
@@ -159,6 +159,7 @@ data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
                              , _rootContainer :: Gtk.Box
                              , _isSaved :: Bool 
                              , _undoTable :: UndoTable HoodleModeState
+                             , _isOneTimeSelectMode :: IsOneTimeSelectMode
                              }
 
 
@@ -176,7 +177,6 @@ data HoodleState =
                 , _settings :: Settings 
                 , _backgroundStyle :: BackgroundStyle 
                 , _uiComponentSignalHandler :: UIComponentSignalHandler 
-                , _isOneTimeSelectMode :: IsOneTimeSelectMode
                 , _lastTimeCanvasConfigure :: Maybe UTCTime 
                 , _hookSet :: Maybe Hook
                 , _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent)
@@ -230,7 +230,9 @@ isSaved = lens _isSaved (\f a -> f { _isSaved = a } )
 undoTable :: Simple Lens UnitHoodle (UndoTable HoodleModeState)
 undoTable = lens _undoTable (\f a -> f { _undoTable = a } )
 
-
+-- | lens for isOneTimeSelectMode
+isOneTimeSelectMode :: Simple Lens UnitHoodle IsOneTimeSelectMode
+isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
 
 -- | lens for unitHoodles 
 unitHoodles :: Simple Lens HoodleState [UnitHoodle]
@@ -284,9 +286,6 @@ settings = lens _settings (\f a -> f { _settings = a } )
 uiComponentSignalHandler :: Simple Lens HoodleState UIComponentSignalHandler
 uiComponentSignalHandler = lens _uiComponentSignalHandler (\f a -> f { _uiComponentSignalHandler = a })
 
--- | lens for isOneTimeSelectMode
-isOneTimeSelectMode :: Simple Lens HoodleState IsOneTimeSelectMode
-isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
 
 -- | lens for lastTimeCanvasConfigure
 lastTimeCanvasConfigure :: Simple Lens HoodleState (Maybe UTCTime)
@@ -447,6 +446,7 @@ emptyUnitHoodle = do
                , _rootContainer = error "emptyHoodleState.rootContainer"
                , _isSaved = False 
                , _undoTable = emptyUndo 1 
+               , _isOneTimeSelectMode = NoOneTimeSelectMode
                }
 
 -- | default hoodle state 
@@ -469,7 +469,6 @@ emptyHoodleState = do
                 , _isFullScreen = False
                 , _settings = defaultSettings
                 , _uiComponentSignalHandler = defaultUIComponentSignalHandler 
-                , _isOneTimeSelectMode = NoOneTimeSelectMode
                 -- , _pageModeSignal = Nothing
                 -- , _penModeSignal = Nothing                        
                 , _lastTimeCanvasConfigure = Nothing                      

@@ -89,13 +89,11 @@ import Prelude hiding (readFile,concat,mapM,mapM_)
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
-    xstate <- get 
-    if not (view isSaved xstate)
+    uhdl <- getTheUnit . view unitHoodles <$> get 
+    if not (view isSaved uhdl)
       then do  
-        b <- okCancelMessageBox "Current canvas is not saved yet. Will you proceed without save?" 
-        case b of 
-          True -> action 
-          False -> return () 
+        okCancelMessageBox "Current canvas is not saved yet. Will you proceed without save?" >>= \b -> 
+          when b action
       else action 
 
 -- | 
@@ -123,8 +121,8 @@ getFileContent (Just fname) = do
           Right h -> do 
             constructNewHoodleStateFromHoodle h
             ctime <- liftIO $ getCurrentTime
-            modify ( hoodleFileControl.hoodleFileName .~ Just fname )
-            modify ( hoodleFileControl.lastSavedTime  .~ Just ctime )
+            pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ Just fname)
+                           . (hoodleFileControl.lastSavedTime  .~ Just ctime) )
             commit_
       ".xoj" -> do 
           liftIO (XP.parseXojFile fname) >>= \x -> case x of  
@@ -133,8 +131,8 @@ getFileContent (Just fname) = do
               hdlcontent <- liftIO $ mkHoodleFromXournal xojcontent 
               constructNewHoodleStateFromHoodle hdlcontent
               ctime <- liftIO $ getCurrentTime 
-              modify ( hoodleFileControl.hoodleFileName .~ Just fname )
-              modify ( hoodleFileControl.lastSavedTime  .~ Just ctime ) 
+              pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ Just fname)
+                             . (hoodleFileControl.lastSavedTime  .~ Just ctime) )
               commit_
       ".pdf" -> do 
         let doesembed = view (settings.doesEmbedPDF) xstate
@@ -143,7 +141,7 @@ getFileContent (Just fname) = do
           Nothing -> getFileContent Nothing
           Just hdl -> do 
             constructNewHoodleStateFromHoodle hdl
-            modify ( hoodleFileControl.hoodleFileName .~ Nothing)
+            pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing)
             commit_
       _ -> getFileContent Nothing    
     xstate' <- get
@@ -154,7 +152,7 @@ getFileContent (Just fname) = do
     return ()
 getFileContent Nothing = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
-    modify ( hoodleFileControl.hoodleFileName .~ Nothing ) 
+    pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing) 
     commit_ 
 
 
@@ -163,32 +161,33 @@ constructNewHoodleStateFromHoodle :: Hoodle -> MainCoroutine ()
 constructNewHoodleStateFromHoodle hdl' = do 
     callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
     RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
-    modify (hoodleModeState .~ ViewAppendState rhdl)
+    pureUpdateUhdl (hoodleModeState .~ ViewAppendState rhdl)
 
 
 -- | 
 fileNew :: MainCoroutine () 
 fileNew = do  
     getFileContent Nothing
-    xstate' <- get 
-    ncvsinfo <- liftIO $ setPage xstate' 0 (getCurrentCanvasId xstate')
-    xstate'' <- return $ over currentCanvasInfo (const ncvsinfo) xstate'
-    liftIO $ setTitleFromFileName xstate''
-    commit xstate'' 
+    updateUhdl $ \uhdl -> do
+      ncvsinfo <- liftIO $ setPage uhdl 0 (getCurrentCanvasId uhdl)
+      return $ (currentCanvasInfo .~ ncvsinfo) uhdl
+    xst <- get
+    liftIO (setTitleFromFileName xst)
+    commit_
     invalidateAll 
 
 -- | 
 fileSave :: MainCoroutine ()
 fileSave = do 
-    xstate <- get 
-    case view (hoodleFileControl.hoodleFileName) xstate of
+    uhdl <- getTheUnit . view unitHoodles <$> get
+    case view (hoodleFileControl.hoodleFileName) uhdl of
       Nothing -> fileSaveAs 
       Just filename -> do     
         -- this is rather temporary not to make mistake 
         if takeExtension filename == ".hdl" 
           then do 
-             put =<< (liftIO (saveHoodle xstate))
-             (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) xstate
+             updateUhdl $ liftIO . saveHoodle . const uhdl 
+             (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) uhdl
           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 
 -- | interleaving a monadic action between each pair of subsequent actions
@@ -202,19 +201,18 @@ fileExport :: MainCoroutine ()
 fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ()) action 
   where 
     action filename = do
-      liftIO $ putStrLn " IN FILE EXPORT "
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".pdf" 
         then fileExtensionInvalid (".pdf","export") >> fileExport 
         else do      
-          hdl <- rHoodle2Hoodle . getHoodle <$> get
+          hdl <- rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles <$> get
           liftIO (renderHoodleToPDF hdl filename) 
 
 -- | 
 fileStartSync :: MainCoroutine ()
 fileStartSync = do 
-  xst <- get 
-  let mf = (,) <$> view (hoodleFileControl.hoodleFileName) xst <*> view (hoodleFileControl.lastSavedTime) xst 
+  uhdl <- getTheUnit . view unitHoodles <$> get 
+  let mf = (,) <$> view (hoodleFileControl.hoodleFileName) uhdl <*> view (hoodleFileControl.lastSavedTime) uhdl 
   maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
   where  
     action filename _lasttime  = do 
@@ -265,13 +263,13 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
 fileLoad :: FilePath -> MainCoroutine () 
 fileLoad filename = do
     getFileContent (Just filename)
-    xstate <- get 
-    ncvsinfo <- liftIO $ setPage xstate 0 (getCurrentCanvasId xstate)
-    xstateNew <- return $ over currentCanvasInfo (const ncvsinfo) xstate
-    put . set isSaved True $ xstateNew 
-    let ui = view gtkUIManager xstateNew
+    updateUhdl $ \uhdl -> do 
+      ncvsinfo <- liftIO $ setPage uhdl 0 (getCurrentCanvasId uhdl)
+      return . (currentCanvasInfo .~ ncvsinfo) . (isSaved .~ True) $ uhdl
+    xst <- get 
+    let ui = view gtkUIManager xst
     liftIO $ toggleSave ui False
-    liftIO $ setTitleFromFileName xstateNew  
+    liftIO $ setTitleFromFileName xst
     clearUndoHistory 
     modeChange ToViewAppendMode 
     resetHoodleBuffers 
@@ -281,13 +279,12 @@ fileLoad filename = do
 -- | 
 resetHoodleBuffers :: MainCoroutine () 
 resetHoodleBuffers = do 
-    liftIO $ putStrLn "resetHoodleBuffers called"
-    xst <- get 
-    nhdlst <- liftIO $ resetHoodleModeStateBuffers  
-                         (view renderCache xst)
-                         (view hoodleModeState xst)
-    let nxst = set hoodleModeState nhdlst xst
-    put nxst     
+    rcache <- view renderCache <$> get
+    updateUhdl $ \uhdl -> do 
+      let hdlst = view hoodleModeState uhdl
+      nhdlst <- liftIO $ resetHoodleModeStateBuffers rcache hdlst 
+      return . (hoodleModeState .~ nhdlst) $ uhdl
+
 
 -- | main coroutine for open a file 
 fileOpen :: MainCoroutine ()
@@ -298,55 +295,55 @@ fileOpen = do
 -- | main coroutine for save as 
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
-    xstate <- get 
-    let hdl = (rHoodle2Hoodle . getHoodle) xstate
-    maybe (defSaveAsAction xstate hdl) (\f -> liftIO (f hdl))
-          (hookSaveAsAction xstate) 
+    hdl <- (rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles) <$> get
+    maybe (defSaveAsAction hdl) (\f -> liftIO (f hdl)) =<< hookSaveAsAction
   where 
-    hookSaveAsAction xstate = do 
-      hset <- view hookSet xstate
-      saveAsHook hset
-    defSaveAsAction xstate hdl = do 
-        let msuggestedact = view hookSet xstate >>= fileNameSuggestionHook 
-        (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact 
+    hookSaveAsAction = (saveAsHook <=< view hookSet) <$> get
+    msuggestedact = (fileNameSuggestionHook <=< view hookSet) <$> get
+    defSaveAsAction hdl = do 
+        (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) =<< msuggestedact 
         mr <- fileChooser Gtk.FileChooserActionSave msuggested 
-        maybe (return ()) (action xstate hdl) mr 
-      where action xst' hd filename = 
+        maybe (return ()) (action hdl) mr 
+      where action hd filename = 
               if takeExtension filename /= ".hdl" 
               then fileExtensionInvalid (".hdl","save")
               else do 
-                askIfOverwrite filename $ do 
-                  let ntitle = B.pack . snd . splitFileName $ filename 
-                      (hdlmodst',hdl') = case view hoodleModeState xst' of
-                         ViewAppendState hdlmap -> 
-                           if view gtitle hdlmap == "untitled"
-                             then ( ViewAppendState . set gtitle ntitle
-                                    $ hdlmap
-                                  , (set title ntitle hd))
-                             else (ViewAppendState hdlmap,hd)
-                         SelectState thdl -> 
-                           if view gselTitle thdl == "untitled"
-                             then ( SelectState $ set gselTitle ntitle thdl 
-                                  , set title ntitle hd)  
-                             else (SelectState thdl,hd)
-                      xstateNew = set (hoodleFileControl.hoodleFileName) (Just filename) 
-                                . set hoodleModeState hdlmodst' $ xst'
-                  liftIO . L.writeFile filename . builder $ hdl'
-                  put . set isSaved True $ xstateNew    
-                  let ui = view gtkUIManager xstateNew
-                  liftIO $ toggleSave ui False
-                  liftIO $ setTitleFromFileName xstateNew 
-                  S.afterSaveHook filename hdl'
+                askIfOverwrite filename $ do
+                  updateUhdl $ \uhdl -> do
+                    let ntitle = B.pack . snd . splitFileName $ filename 
+                        (hdlmodst',hdl') = case view hoodleModeState uhdl of
+                           ViewAppendState hdlmap -> 
+                             if view gtitle hdlmap == "untitled"
+                               then ( ViewAppendState . set gtitle ntitle
+                                      $ hdlmap
+                                    , (set title ntitle hd))
+                               else (ViewAppendState hdlmap,hd)
+                           SelectState thdl -> 
+                             if view gselTitle thdl == "untitled"
+                               then ( SelectState $ set gselTitle ntitle thdl 
+                                    , set title ntitle hd)  
+                               else (SelectState thdl,hd)
+                    liftIO . L.writeFile filename . builder $ hdl'
+                    return . (hoodleFileControl.hoodleFileName .~ Just filename)
+                           . (hoodleModeState .~ hdlmodst') 
+                           . (isSaved .~ True)
+                           $ uhdl
+                xst <- get
+                let ui = view gtkUIManager xst
+                    hdl'' = (rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles) xst
+                liftIO $ toggleSave ui False
+                liftIO $ setTitleFromFileName xst
+                S.afterSaveHook filename hdl''
           
 
 -- | main coroutine for open a file 
 fileReload :: MainCoroutine ()
-fileReload = do 
-    xstate <- get
-    case view (hoodleFileControl.hoodleFileName) xstate of 
-      Nothing -> return () 
+fileReload = do
+    uhdl <- getTheUnit . view unitHoodles <$> get
+    case view (hoodleFileControl.hoodleFileName) uhdl of 
+      Nothing -> return ()
       Just filename -> do
-        if not (view isSaved xstate) 
+        if not (view isSaved uhdl) 
           then do
             b <- okCancelMessageBox "Discard changes and reload the file?" 
             case b of 
@@ -376,7 +373,7 @@ fileAnnotatePDF =
       mhdl <- liftIO $ makeNewHoodleWithPDF doesembed filename 
       flip (maybe warning) mhdl $ \hdl -> do 
         constructNewHoodleStateFromHoodle hdl
-        modify ( hoodleFileControl.hoodleFileName .~ Nothing)
+        pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing)
         commit_        
         setTitleFromFileName_ 
         canvasZoomUpdateAll
@@ -418,9 +415,11 @@ fileLoadPNGorJPG = do
 
 embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
-    xst <- get 
+    xst <- get
+    let fDoesEmbedImg = view (settings.doesEmbedImage) xst
+        uhdl = (getTheUnit . view unitHoodles) xst
     nitm <- 
-      if view (settings.doesEmbedImage) xst
+      if fDoesEmbedImg 
         then do  
           mf <- checkEmbedImageSize filename 
           --
@@ -434,7 +433,7 @@ embedImage filename = do
           RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
           return r
 
-    let cpn = view (currentCanvasInfo . unboxLens currentPageNum) xst
+    let cpn = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
     my <- autoPosText 
     let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
     insertItemAt mpos nitm 
@@ -446,11 +445,11 @@ fileLoadSVG = do
     fileChooser Gtk.FileChooserActionOpen Nothing >>= maybe (return ()) action 
   where 
     action filename = do 
-      xstate <- get 
-      liftIO $ putStrLn filename 
+      xst <- get 
       bstr <- liftIO $ B.readFile filename 
-      let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) xstate
-          hdl = getHoodle xstate 
+      let uhdl = (getTheUnit . view unitHoodles) xst
+          pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
+          hdl = getHoodle uhdl
           currpage = getPageFromGHoodleMap pgnum hdl
           currlayer = getCurrentLayer currpage
       --
@@ -461,14 +460,15 @@ fileLoadSVG = do
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
-      nxstate <- get 
-      let cache = view renderCache nxstate
-      thdl <- case view hoodleModeState nxstate of
-                SelectState thdl' -> return thdl'
-                _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
-      nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
-      put ( ( set hoodleModeState (SelectState nthdl) 
-            . set isOneTimeSelectMode YesAfterSelect) nxstate)
+      cache <- view renderCache <$> get
+      updateUhdl $ \uhdl -> do
+        thdl <- case view hoodleModeState uhdl of
+                  SelectState thdl' -> return thdl'
+                  _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
+        nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
+        return . (hoodleModeState .~ SelectState nthdl)
+               . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl
+      commit_
       invalidateAll 
 
 -- |
@@ -506,8 +506,7 @@ embedPredefinedImage3 = do
 -- | 
 embedAllPDFBackground :: MainCoroutine () 
 embedAllPDFBackground = do 
-  xst <- get 
-  let hdl = (rHoodle2Hoodle  . getHoodle) xst
+  hdl <- (rHoodle2Hoodle  . getHoodle . getTheUnit . view unitHoodles) <$> get
   nhdl <- liftIO . embedPDFInHoodle $ hdl
   constructNewHoodleStateFromHoodle nhdl
   commit_
@@ -550,9 +549,7 @@ mkRevisionPdfFile hdl fname = do
 -- | 
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
-    -- rhdl <- getHoodle <$> get 
-    -- cache <- view renderCache <$> get
-    hdl <- rHoodle2Hoodle . getHoodle <$> get
+    hdl <- rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles <$> get
     rmini <- minibufDialog "Commit Message:"
     case rmini of 
       Right [] -> return ()
@@ -564,14 +561,15 @@ fileVersionSave = do
         r <- waitSomeEvent (\case GotRevisionInk _ _ -> True ; _ -> False )
         let GotRevisionInk md5str strks = r          
             nrev = RevisionInk (B.pack md5str) strks
-        modify (\xst -> let hdlmodst = view hoodleModeState xst 
-                        in case hdlmodst of 
-                             ViewAppendState rhdl' -> 
-                               let nrhdl = over grevisions (<> [nrev]) rhdl' 
-                               in set hoodleModeState (ViewAppendState nrhdl) xst 
-                             SelectState thdl -> 
-                               let nthdl = over gselRevisions (<> [nrev]) thdl
-                               in set hoodleModeState (SelectState nthdl) xst)
+        pureUpdateUhdl $ \uhdl -> 
+          let hdlmodst = view hoodleModeState uhdl
+          in case hdlmodst of 
+               ViewAppendState rhdl' -> 
+                 let nrhdl = over grevisions (<> [nrev]) rhdl' 
+                 in (hoodleModeState .~ ViewAppendState nrhdl) uhdl
+               SelectState thdl -> 
+                 let nthdl = over gselRevisions (<> [nrev]) thdl
+                 in (hoodleModeState .~ SelectState nthdl) uhdl
         commit_ 
       Left () -> do 
         txtstr <- maybe "" id <$> textInputDialog
@@ -582,14 +580,15 @@ fileVersionSave = do
         r <- waitSomeEvent (\case GotRevision _ _ -> True ; _ -> False )
         let GotRevision md5str txtstr' = r          
             nrev = Revision (B.pack md5str) (B.pack txtstr')
-        modify (\xst -> let hdlmodst = view hoodleModeState xst 
-                        in case hdlmodst of 
-                             ViewAppendState rhdl' -> 
-                               let nrhdl = over grevisions (<> [nrev]) rhdl' 
-                               in set hoodleModeState (ViewAppendState nrhdl) xst 
-                             SelectState thdl -> 
-                               let nthdl = over gselRevisions (<> [nrev]) thdl
-                               in set hoodleModeState (SelectState nthdl) xst)
+        pureUpdateUhdl $ \uhdl -> 
+          let hdlmodst = view hoodleModeState uhdl
+          in case hdlmodst of 
+               ViewAppendState rhdl' -> 
+                 let nrhdl = over grevisions (<> [nrev]) rhdl' 
+                 in (hoodleModeState .~ ViewAppendState nrhdl) uhdl
+               SelectState thdl -> 
+                 let nthdl = over gselRevisions (<> [nrev]) thdl
+                 in (hoodleModeState .~ SelectState nthdl) uhdl
         commit_ 
 
 
@@ -664,14 +663,14 @@ addOneRevisionBox cache vbox hdl rev = do
 
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 
-    rhdl <- liftM getHoodle get  
+    rhdl <- getHoodle . getTheUnit . view unitHoodles <$> get  
     let hdl = rHoodle2Hoodle rhdl
     let revs = view grevisions rhdl
     showRevisionDialog hdl revs 
   
 fileShowUUID :: MainCoroutine ()
 fileShowUUID = do 
-    hdl <- liftM getHoodle get  
+    hdl <- getHoodle . getTheUnit . view unitHoodles <$> get  
     let uuidstr = view ghoodleID hdl
     okMessageBox (B.unpack uuidstr)
   

@@ -15,7 +15,7 @@
 module Hoodle.Accessor where
 
 import           Control.Applicative
-import           Control.Lens (Simple,Lens,view,set)
+import           Control.Lens (Simple,Lens,view,set,(.~))
 import           Control.Monad hiding (mapM_, forM_)
 import qualified Control.Monad.State as St hiding (mapM_, forM_)
 import           Control.Monad.Trans
@@ -47,6 +47,13 @@ updateUhdl action = do xst <- St.get
                        let uhdl = (getTheUnit . view unitHoodles) xst
                        uhdl' <- action uhdl
                        St.put ((set unitHoodles (putTheUnit uhdl')) xst)
+
+-- | update unitHoodle
+pureUpdateUhdl :: (UnitHoodle -> UnitHoodle) -> MainCoroutine ()
+pureUpdateUhdl func = do xst <- St.get
+                         let uhdl = (func. getTheUnit . view unitHoodles) xst
+                         St.put ((unitHoodles .~ putTheUnit uhdl) xst)
+
 
 -- | 
 getPenType :: MainCoroutine PenType 

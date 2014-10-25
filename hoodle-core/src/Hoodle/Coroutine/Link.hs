@@ -23,7 +23,7 @@ import           Control.Applicative
 import           Control.Concurrent (forkIO)
 import           Control.Lens (at,view,set,(%~))
 import           Control.Monad (forever,void)
-import           Control.Monad.State (get,put,modify,liftIO,guard,when)
+import           Control.Monad.State (get,modify,liftIO,guard,when)
 import           Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (forM_)
@@ -70,13 +70,13 @@ import           Hoodle.View.Coordinate
 import Prelude hiding (mapM_)
 
 makeTextSVGFromStringAt :: String 
-                           -> CanvasId 
-                           -> HoodleState
-                           -> CanvasCoordinate
-                           -> IO (B.ByteString, BBox)
-makeTextSVGFromStringAt str cid xst ccoord = do 
+                        -> CanvasId 
+                        -> UnitHoodle
+                        -> CanvasCoordinate
+                        -> IO (B.ByteString, BBox)
+makeTextSVGFromStringAt str cid uhdl ccoord = do 
     rdr <- makePangoTextSVG (0,0) (T.pack str) -- for the time being, I use string  
-    geometry <- getCanvasGeometryCvsId cid xst 
+    geometry <- getCanvasGeometryCvsId cid uhdl
     let mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
     return $ case mpgcoord of 
                Nothing -> rdr 
@@ -87,11 +87,11 @@ makeTextSVGFromStringAt str cid xst ccoord = do
 -- | 
 notifyLink :: CanvasId -> PointerCoord -> MainCoroutine () 
 notifyLink cid pcoord = do 
-    xst <- get 
-    (forBoth' unboxBiAct (f xst) . getCanvasInfo cid) xst 
+    uhdl <- getTheUnit . view unitHoodles <$> get 
+    forBoth' unboxBiAct (f uhdl) (getCanvasInfo cid uhdl)
   where 
-    f :: forall b. HoodleState -> CanvasInfo b -> MainCoroutine ()
-    f xst cvsInfo = do 
+    f :: forall b. UnitHoodle -> CanvasInfo b -> MainCoroutine ()
+    f uhdl cvsInfo = do 
       let cpn = PageNum . view currentPageNum $ cvsInfo
           arr = view (viewInfo.pageArrangement) cvsInfo              
           mnotifyitem = view notifiedItem cvsInfo
@@ -101,7 +101,7 @@ notifyLink cid pcoord = do
         case (desktop2Page geometry . device2Desktop geometry) pcoord of 
           Nothing -> return Nothing 
           Just (pnum,PageCoord (x,y)) -> do 
-            let hdl = getHoodle xst
+            let hdl = getHoodle uhdl
                 mpage = view (gpages.at (unPageNum pnum)) hdl
             case mpage of
               Nothing -> return Nothing
@@ -112,26 +112,26 @@ notifyLink cid pcoord = do
                     hitted = takeHitted hlnks 
                 case mnotifyitem of 
                   Nothing -> if ((not.null) hitted) 
-                             then Just <$> newNotify cvsInfo geometry pnum (head hitted) Nothing  
+                             then Just <$> newNotify geometry pnum (head hitted) Nothing  
                              else return Nothing 
                   Just (opnum,obbx,_) -> do
                     let obbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (opnum,) . PageCoord) obbx   
                     if pnum == opnum &&  isPointInBBox obbx (x,y) 
                       then return Nothing
                       else if ((not.null) hitted) 
-                           then Just <$> newNotify cvsInfo geometry pnum (head hitted) (Just obbx_desk)
+                           then Just <$> newNotify geometry pnum (head hitted) (Just obbx_desk)
                            else return (Just (Nothing,obbx_desk))
       forM_ mresult (\(mnewnotified,bbx_desk) -> do
-                      let ncinfobox = (set (unboxLens notifiedItem) mnewnotified . getCanvasInfo cid) xst 
-                      put (setCanvasInfo (cid,ncinfobox) xst)
+                      let ncinfobox = (set (unboxLens notifiedItem) mnewnotified . getCanvasInfo cid) uhdl 
+                      pureUpdateUhdl $ setCanvasInfo (cid,ncinfobox)
                       invalidateInBBox (Just bbx_desk) Efficient cid )
     ----                                                                                      
-    newNotify :: CanvasInfo a -> CanvasGeometry -> PageNum -> RItem -> Maybe BBox 
+    newNotify :: CanvasGeometry -> PageNum -> RItem -> Maybe BBox 
                  -> MainCoroutine (Maybe (PageNum,BBox,RItem),BBox) 
-    newNotify _cvsInfo geometry pnum lnk mobbx_desk = do        
+    newNotify geometry pnum lnk mobbx_desk = do        
       let bbx = getBBox lnk
           bbx_desk = xformBBox (unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord) bbx
-          nbbx_desk = maybe bbx_desk (\obbx_desk->unionBBox bbx_desk obbx_desk) mobbx_desk
+          nbbx_desk = maybe bbx_desk (unionBBox bbx_desk) mobbx_desk
       return (Just (pnum,bbx,lnk),nbbx_desk)
           
 
@@ -139,7 +139,8 @@ notifyLink cid pcoord = do
 gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 
 gotLink mstr (x,y) = do 
   xst <- get 
-  let cid = getCurrentCanvasId xst
+  let uhdl = (getTheUnit . view unitHoodles) xst 
+      cid = getCurrentCanvasId uhdl
       cache = view renderCache xst
   mr <- runMaybeT $ do 
     str <- (MaybeT . return) mstr 
@@ -162,17 +163,16 @@ gotLink mstr (x,y) = do
                                liftIO (makeNewItemImage isembedded file)
               RenderEv (GotRItem nitm) <- 
                 waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
-              geometry <- liftIO $ getCanvasGeometryCvsId cid xst               
+              geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl               
               let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
                   mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
               insertItemAt mpgcoord nitm 
             else return ()  
         Just (HttpUrl url) -> do 
-          case getSelectedItmsFromUnitHoodle xst of     
+          case getSelectedItmsFromUnitHoodle uhdl of     
             Nothing -> do 
               uuidbstr <- liftIO $ B.pack . show <$> nextRandom              
-              rdrbbx <- liftIO $ makeTextSVGFromStringAt url cid xst 
-                                   (CvsCoord (fromIntegral x,fromIntegral y))
+              rdrbbx <- liftIO $ makeTextSVGFromStringAt url cid uhdl (CvsCoord (fromIntegral x,fromIntegral y))
               linkInsert "simple" (uuidbstr,url) url rdrbbx
             Just hititms -> do 
               b <- okCancelMessageBox ("replace selected item with link to " ++ url  ++ "?")
@@ -187,10 +187,10 @@ gotLink mstr (x,y) = do
                   _ -> return ()          
     Just (uuidbstr,fp) -> do 
       let fn = takeFileName fp 
-      case getSelectedItmsFromUnitHoodle xst of     
+      case getSelectedItmsFromUnitHoodle uhdl of     
         Nothing -> do 
           rdr <- liftIO (makePangoTextSVG (0,0) (T.pack fn)) 
-          geometry <- liftIO $ getCanvasGeometryCvsId cid xst 
+          geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl 
           let ccoord = CvsCoord (fromIntegral x,fromIntegral y)
               mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord 
               rdr' = case mpgcoord of 
@@ -259,7 +259,7 @@ addLink = do
                 
 -- | 
 listAnchors :: MainCoroutine ()
-listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle =<< get
+listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles =<< get
 
 getAnchorMap :: Hoodle -> M.Map T.Text (Int, (Double,Double))
 getAnchorMap hdl = 
@@ -281,8 +281,7 @@ getAnchorMap hdl =
 -- | 
 startLinkReceiver :: MainCoroutine ()
 startLinkReceiver = do 
-    xst <- get
-    let callback = view callBack xst 
+    callback <- view callBack <$> get 
     liftIO . forkIO $ do
       client <- connectSession
       requestName client "org.ianwookim" []
@@ -308,9 +307,8 @@ startLinkReceiver = do
 
 goToAnchorPos :: T.Text -> T.Text -> MainCoroutine ()
 goToAnchorPos docid anchorid = do 
-    xst <- get
-    let rhdl = getHoodle xst 
-        hdl = rHoodle2Hoodle rhdl
+    rhdl <- getHoodle . getTheUnit . view unitHoodles <$> get
+    let hdl = rHoodle2Hoodle rhdl
     when (docid == (TE.decodeUtf8 . view ghoodleID) rhdl) $ do
       let anchormap = getAnchorMap hdl
       forM_ (M.lookup anchorid anchormap) $ \(pgnum,(x,y))-> do

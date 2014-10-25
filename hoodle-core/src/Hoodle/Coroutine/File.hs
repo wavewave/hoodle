@@ -89,7 +89,7 @@ import Prelude hiding (readFile,concat,mapM,mapM_)
 -- | 
 askIfSave :: MainCoroutine () -> MainCoroutine () 
 askIfSave action = do 
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     if not (view isSaved uhdl)
       then do  
         okCancelMessageBox "Current canvas is not saved yet. Will you proceed without save?" >>= \b -> 
@@ -179,7 +179,7 @@ fileNew = do
 -- | 
 fileSave :: MainCoroutine ()
 fileSave = do 
-    uhdl <- getTheUnit . view unitHoodles <$> get
+    uhdl <- view (unitHoodles.currentUnit) <$> get
     case view (hoodleFileControl.hoodleFileName) uhdl of
       Nothing -> fileSaveAs 
       Just filename -> do     
@@ -205,13 +205,13 @@ fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ())
       if takeExtension filename /= ".pdf" 
         then fileExtensionInvalid (".pdf","export") >> fileExport 
         else do      
-          hdl <- rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles <$> get
+          hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
           liftIO (renderHoodleToPDF hdl filename) 
 
 -- | 
 fileStartSync :: MainCoroutine ()
 fileStartSync = do 
-  uhdl <- getTheUnit . view unitHoodles <$> get 
+  uhdl <- view (unitHoodles.currentUnit) <$> get 
   let mf = (,) <$> view (hoodleFileControl.hoodleFileName) uhdl <*> view (hoodleFileControl.lastSavedTime) uhdl 
   maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
   where  
@@ -295,7 +295,7 @@ fileOpen = do
 -- | main coroutine for save as 
 fileSaveAs :: MainCoroutine () 
 fileSaveAs = do 
-    hdl <- (rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles) <$> get
+    hdl <- (rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit)) <$> get
     maybe (defSaveAsAction hdl) (\f -> liftIO (f hdl)) =<< hookSaveAsAction
   where 
     hookSaveAsAction = (saveAsHook <=< view hookSet) <$> get
@@ -330,7 +330,7 @@ fileSaveAs = do
                            $ uhdl
                 xst <- get
                 let ui = view gtkUIManager xst
-                    hdl'' = (rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles) xst
+                    hdl'' = (rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit)) xst
                 liftIO $ toggleSave ui False
                 liftIO $ setTitleFromFileName xst
                 S.afterSaveHook filename hdl''
@@ -339,7 +339,7 @@ fileSaveAs = do
 -- | main coroutine for open a file 
 fileReload :: MainCoroutine ()
 fileReload = do
-    uhdl <- getTheUnit . view unitHoodles <$> get
+    uhdl <- view (unitHoodles.currentUnit) <$> get
     case view (hoodleFileControl.hoodleFileName) uhdl of 
       Nothing -> return ()
       Just filename -> do
@@ -417,7 +417,7 @@ embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  
     xst <- get
     let fDoesEmbedImg = view (settings.doesEmbedImage) xst
-        uhdl = (getTheUnit . view unitHoodles) xst
+        uhdl = view (unitHoodles.currentUnit) xst
     nitm <- 
       if fDoesEmbedImg 
         then do  
@@ -447,7 +447,7 @@ fileLoadSVG = do
     action filename = do 
       xst <- get 
       bstr <- liftIO $ B.readFile filename 
-      let uhdl = (getTheUnit . view unitHoodles) xst
+      let uhdl = view (unitHoodles.currentUnit) xst
           pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
           hdl = getHoodle uhdl
           currpage = getPageFromGHoodleMap pgnum hdl
@@ -506,7 +506,7 @@ embedPredefinedImage3 = do
 -- | 
 embedAllPDFBackground :: MainCoroutine () 
 embedAllPDFBackground = do 
-  hdl <- (rHoodle2Hoodle  . getHoodle . getTheUnit . view unitHoodles) <$> get
+  hdl <- (rHoodle2Hoodle  . getHoodle . view (unitHoodles.currentUnit)) <$> get
   nhdl <- liftIO . embedPDFInHoodle $ hdl
   constructNewHoodleStateFromHoodle nhdl
   commit_
@@ -549,7 +549,7 @@ mkRevisionPdfFile hdl fname = do
 -- | 
 fileVersionSave :: MainCoroutine () 
 fileVersionSave = do 
-    hdl <- rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles <$> get
+    hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     rmini <- minibufDialog "Commit Message:"
     case rmini of 
       Right [] -> return ()
@@ -663,14 +663,14 @@ addOneRevisionBox cache vbox hdl rev = do
 
 fileShowRevisions :: MainCoroutine ()
 fileShowRevisions = do 
-    rhdl <- getHoodle . getTheUnit . view unitHoodles <$> get  
+    rhdl <- getHoodle . view (unitHoodles.currentUnit) <$> get  
     let hdl = rHoodle2Hoodle rhdl
     let revs = view grevisions rhdl
     showRevisionDialog hdl revs 
   
 fileShowUUID :: MainCoroutine ()
 fileShowUUID = do 
-    hdl <- getHoodle . getTheUnit . view unitHoodles <$> get  
+    hdl <- getHoodle . view (unitHoodles.currentUnit) <$> get  
     let uuidstr = view ghoodleID hdl
     okMessageBox (B.unpack uuidstr)
   

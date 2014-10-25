@@ -123,25 +123,19 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
               . set (canvasWidgets.widgetConfig.doesUseLayerWidget) uselyr
               $ defaultCvsInfoSinglePage { _canvasId = 1 } 
       initcvsbox = CanvasSinglePage initcvs
-      st2 = st1 # over unitHoodles ( putTheUnit 
-                                   . set frameState (Node 1) 
-                                   . updateFromCanvasInfoAsCurrentCanvas initcvsbox             
-                                   . set cvsInfoMap M.empty 
-                                   . getTheUnit
-                                   ) 
-      uhdl2 = (getTheUnit . view unitHoodles) st2
+      st2 = st1 # over (unitHoodles.currentUnit) ( set frameState (Node 1) 
+                                                 . updateFromCanvasInfoAsCurrentCanvas initcvsbox             
+                                                 . set cvsInfoMap M.empty )
+      uhdl2 = view (unitHoodles.currentUnit) st2
   (uhdl3,cvs,_wconf) <- constructFrame st2 uhdl2 (view frameState uhdl2)
   (uhdl4,wconf') <- eventConnect st2 uhdl3 (view frameState uhdl3)
   notebook <- Gtk.notebookNew
   statusbar <- Gtk.statusbarNew
-  let st4 = st2 # set unitHoodles ( putTheUnit uhdl4 )
-
-      st5 = st4 # over unitHoodles ( putTheUnit 
-                                   . set undoTable (emptyUndo maxundo)  
-                                   . set frameState wconf' 
-                                   . set rootWindow cvs 
-                                   . set (hoodleFileControl.hoodleFileName) Nothing 
-                                   . getTheUnit )
+  let st4 = (unitHoodles.currentUnit .~ uhdl4) st2
+      st5 = st4 # over (unitHoodles.currentUnit) ( set undoTable (emptyUndo maxundo)  
+                                                 . set frameState wconf' 
+                                                 . set rootWindow cvs 
+                                                 . set (hoodleFileControl.hoodleFileName) Nothing)
                 . set (settings.doesUseXInput) xinputbool 
                 . set hookSet mhook 
                 . set rootNotebook notebook
@@ -151,10 +145,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
   Gtk.containerAdd window vbox
   vboxcvs <- Gtk.vBoxNew False 0 
   Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
-  Gtk.containerAdd vboxcvs ((view rootWindow . getTheUnit . view unitHoodles) st5)
-  let startingXstate = st5 # over unitHoodles ( putTheUnit 
-                                              . set rootContainer (Gtk.castToBox vboxcvs) 
-                                              . getTheUnit )
+  Gtk.containerAdd vboxcvs (view (unitHoodles.currentUnit.rootWindow) st5)
+  let startingXstate = (unitHoodles.currentUnit.rootContainer .~ Gtk.castToBox vboxcvs) st5
   let startworld = world startingXstate . ReaderT $ 
                      (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
@@ -177,7 +169,7 @@ initialize ev = do
         getFileContent mfname
         -- 
         xst2 <- get
-        let uhdl = (getTheUnit . view unitHoodles) xst2
+        let uhdl = view (unitHoodles.currentUnit) xst2
             hdlst = uhdl ^. hoodleModeState 
             cache = xst2 ^. renderCache
         hdlst' <- liftIO $ resetHoodleModeStateBuffers cache hdlst
@@ -205,7 +197,7 @@ guiProcess ev = do
 
 -- | 
 dispatchMode :: MainCoroutine () 
-dispatchMode = (getTheUnit . view unitHoodles <$> get) 
+dispatchMode = (view (unitHoodles.currentUnit) <$> get) 
                >>= return . hoodleModeStateEither . view hoodleModeState
                >>= either (const viewAppendMode) (const selectMode)
                      
@@ -323,7 +315,7 @@ defaultEventProcess (PenWidthChanged v) = do
     reflectPenWidthUI
 defaultEventProcess (BackgroundStyleChanged bsty) = do
     modify (backgroundStyle .~ bsty)
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
         hdl = getHoodle uhdl
         pgs = view gpages hdl 
@@ -352,7 +344,7 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
 defaultEventProcess (AssignNewPageMode nmod) = modify (settings.newPageMode .~ nmod)
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess (GetHoodleFileInfo ref) = do 
-  uhdl <- getTheUnit . view unitHoodles <$> get
+  uhdl <- view (unitHoodles.currentUnit) <$> get
   let hdl = getHoodle uhdl
       uuid = B.unpack (view ghoodleID hdl)
   case view (hoodleFileControl.hoodleFileName) uhdl of 
@@ -361,7 +353,7 @@ defaultEventProcess (GetHoodleFileInfo ref) = do
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    
 defaultEventProcess (Sync ctime) = do 
   xst <- get
-  case (view (hoodleFileControl.lastSavedTime) . getTheUnit . view unitHoodles) xst of 
+  case view (unitHoodles.currentUnit.hoodleFileControl.lastSavedTime) xst of 
     Nothing -> return ()
     Just otime -> do 
       let dtime = diffUTCTime ctime otime
@@ -416,7 +408,7 @@ defaultEventProcess ev = -- for debugging
 menuEventProcess :: MenuEvent -> MainCoroutine () 
 menuEventProcess MenuQuit = do 
     xstate <- get
-    if (view isSaved . getTheUnit . view unitHoodles) xstate 
+    if view (unitHoodles.currentUnit.isSaved) xstate 
       then liftIO $ Gtk.mainQuit
       else askQuitProgram
 menuEventProcess MenuPreviousPage = changePage (\x->x-1)
@@ -424,7 +416,7 @@ menuEventProcess MenuNextPage =  changePage (+1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do 
     totalnumofpages <- (either (M.size. view gpages) (M.size . view gselAll) 
-                        . hoodleModeStateEither . view hoodleModeState . getTheUnit . view unitHoodles) <$> get 
+                        . hoodleModeStateEither . view (unitHoodles.currentUnit.hoodleModeState)) <$> get 
     changePage (const (totalnumofpages-1))
 menuEventProcess MenuNewPageBefore = newPage PageBefore 
 menuEventProcess MenuNewPageAfter = newPage PageAfter
@@ -477,7 +469,7 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     let cmap = view cvsInfoMap uhdl
         canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
     updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput) >>= \b -> 
@@ -504,7 +496,7 @@ menuEventProcess MenuEmbedPredefinedImage3 = embedPredefinedImage3
 menuEventProcess MenuApplyToAllPages = do 
     xst <- get 
     let bsty = view backgroundStyle xst
-        uhdl = (getTheUnit . view unitHoodles) xst
+        uhdl = view (unitHoodles.currentUnit) xst
         hdl = getHoodle uhdl
         pgs = view gpages hdl 
         changeBkg cpage = 
@@ -519,10 +511,10 @@ menuEventProcess MenuApplyToAllPages = do
     pureUpdateUhdl (const ((hoodleModeState .~ ViewAppendState nhdl) uhdl))
     invalidateAll 
 menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
-menuEventProcess MenuTogglePanZoomWidget = (togglePanZoom . view (currentCanvas._1) . getTheUnit . view unitHoodles) =<< get 
-menuEventProcess MenuToggleLayerWidget = (toggleLayer . view (currentCanvas._1) . getTheUnit . view unitHoodles) =<< get 
-menuEventProcess MenuToggleClockWidget = (toggleClock . view (currentCanvas._1) . getTheUnit . view unitHoodles) =<< get
-menuEventProcess MenuToggleScrollWidget = (toggleScroll . view (currentCanvas._1) . getTheUnit . view unitHoodles) =<< get
+menuEventProcess MenuTogglePanZoomWidget = togglePanZoom . view (unitHoodles.currentUnit.currentCanvas._1) =<< get 
+menuEventProcess MenuToggleLayerWidget = toggleLayer . view (unitHoodles.currentUnit.currentCanvas._1) =<< get 
+menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
+menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 

@@ -14,7 +14,7 @@
 
 module Hoodle.Widget.Layer where
 
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.State 
 import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
@@ -26,6 +26,7 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Util.HitTest
 --
+import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Layer
 import           Hoodle.Coroutine.Pen
@@ -67,14 +68,12 @@ startLayerWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> MainCoroutine () 
 startLayerWidget (cid,_cinfo,_geometry) Close = toggleLayer cid 
 startLayerWidget (cid,_cinfo,_geometry) ToggleShowContent = do 
-    modify $ over unitHoodles 
-             $ putTheUnit 
-                . over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not
-                . getTheUnit
+    modify $ over (unitHoodles.currentUnit)
+             $ over (currentCanvasInfo . unboxLens (canvasWidgets.layerWidgetConfig.layerWidgetShowContent)) not
     invalidate cid 
 startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         hdl = getHoodle uhdl
         cache = view renderCache xst
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache Nothing geometry hdl)
@@ -125,7 +124,7 @@ moveLayerWidget :: CanvasId
 moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
     get >>= \xst -> do
-      let uhdl = (getTheUnit . view unitHoodles) xst
+      let uhdl = view (unitHoodles.currentUnit) xst
           CanvasDimension (Dim cw ch) = canvasDim geometry 
           cinfobox = getCanvasInfo cid uhdl
           nposx | xw+x-x0 < -50 = -50 
@@ -139,10 +138,10 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
           changeact cinfo =  
             set (canvasWidgets.layerWidgetConfig.layerWidgetPosition) nwpos $ cinfo
           ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
-      put (set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst)
+      put $ (unitHoodles.currentUnit .~ setCanvasInfo (cid,ncinfobox) uhdl) xst
       -- 
       xst2 <- get 
-      let uhdl2 = (getTheUnit . view unitHoodles) xst2
+      let uhdl2 = view (unitHoodles.currentUnit) xst2
           hdl2 = getHoodle uhdl2
           cinfobox2 = getCanvasInfo cid uhdl2
       liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
@@ -152,9 +151,8 @@ moveLayerWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
 -- | 
 toggleLayer :: CanvasId -> MainCoroutine () 
 toggleLayer cid = do 
-  modify $ \xst -> 
-             let uhdl = (getTheUnit . view unitHoodles) xst
-                 ncinfobox = (over (unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not 
-                              . getCanvasInfo cid ) uhdl
-             in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
-  invalidateInBBox Nothing Efficient cid
+    pureUpdateUhdl $ \uhdl -> 
+      let ncinfobox = (over (unboxLens (canvasWidgets.widgetConfig.doesUseLayerWidget)) not 
+                      . getCanvasInfo cid ) uhdl
+      in setCanvasInfo (cid,ncinfobox) uhdl
+    invalidateInBBox Nothing Efficient cid

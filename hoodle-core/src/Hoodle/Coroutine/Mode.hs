@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.Mode where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk (adjustmentGetValue) 
@@ -52,34 +52,29 @@ modeChange command = do
     reflectPenColorUI
     reflectPenWidthUI
   where select2edit xst =  
-          either (noaction xst) (whenselect xst) . hoodleModeStateEither . view hoodleModeState 
-          . getTheUnit . view unitHoodles $ xst
+          either (noaction xst) (whenselect xst) . hoodleModeStateEither 
+          . view (unitHoodles.currentUnit.hoodleModeState) $ xst
         edit2select xst = 
-          either (whenedit xst) (noaction xst) . hoodleModeStateEither . view hoodleModeState 
-          . getTheUnit . view unitHoodles $ xst
+          either (whenedit xst) (noaction xst) . hoodleModeStateEither 
+          . view (unitHoodles.currentUnit.hoodleModeState) $ xst
         noaction :: HoodleState -> a -> MainCoroutine HoodleState
-        noaction xstate = const (return xstate)
+        noaction xst = const (return xst)
         whenselect :: HoodleState -> Hoodle SelectMode -> MainCoroutine HoodleState
-        whenselect xstate thdl = do 
+        whenselect xst thdl = do 
           let pages = view gselAll thdl
               mselect = view gselSelected thdl
-              cache = view renderCache xstate
+              cache = view renderCache xst
           npages <- maybe (return pages) 
                           (\(spgn,spage) -> do 
                              npage <- (liftIO.updatePageBuf cache.hPage2RPage) spage  
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  
-          return $
-            xstate # over unitHoodles ( putTheUnit
-                                      . set hoodleModeState (ViewAppendState (gSelect2GHoodle nthdl))
-                                      . getTheUnit )
+          return $ (unitHoodles.currentUnit.hoodleModeState .~ ViewAppendState (gSelect2GHoodle nthdl)) xst
         whenedit :: HoodleState -> Hoodle EditMode -> MainCoroutine HoodleState   
-        whenedit xstate hdl = do 
-          return $
-            xstate # over unitHoodles ( putTheUnit 
-                                      . set hoodleModeState (SelectState  (gHoodle2GSelect hdl))
-                                      . getTheUnit )
+        whenedit xst hdl =
+          return $ (unitHoodles.currentUnit.hoodleModeState .~ SelectState  (gHoodle2GSelect hdl)) xst
+
 
 -- | 
 viewModeChange :: UserEvent -> MainCoroutine () 
@@ -91,15 +86,15 @@ viewModeChange command = do
     adjustScrollbarWithGeometryCurrent     
   where cont2single :: HoodleState -> MainCoroutine HoodleState
         cont2single xst =  
-          unboxBiAct (noaction xst) (whencont xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
+          unboxBiAct (noaction xst) (whencont xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
         single2cont :: HoodleState -> MainCoroutine HoodleState
         single2cont xst = 
-          unboxBiAct (whensing xst) (noaction xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
+          unboxBiAct (whensing xst) (noaction xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
         noaction :: HoodleState -> a -> MainCoroutine HoodleState  
         noaction xstate = const (return xstate)
         -------------------------------------
-        whencont xstate cinfo = do 
-          let uhdl = (getTheUnit . view unitHoodles) xstate
+        whencont xst cinfo = do 
+          let uhdl = view (unitHoodles.currentUnit) xst
           geometry <- liftIO $ getGeometry4CurrCvs uhdl
           cdim <- liftIO $  return . canvasDim $ geometry 
           page <- getCurrentPageCurr
@@ -125,13 +120,10 @@ viewModeChange command = do
                                   (view vertAdjConnId cinfo)
                                   (view canvasWidgets cinfo)
                                   (view notifiedItem cinfo)
-          return $ 
-            xstate # over unitHoodles ( putTheUnit 
-                                      . set currentCanvasInfo (CanvasSinglePage ncinfo) 
-                                      . getTheUnit )
+          return $ (unitHoodles.currentUnit.currentCanvasInfo .~ CanvasSinglePage ncinfo) xst
         -------------------------------------
-        whensing xstate cinfo = do 
-          let uhdl = (getTheUnit . view unitHoodles) xstate
+        whensing xst cinfo = do 
+          let uhdl = view (unitHoodles.currentUnit) xst
           cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs uhdl
           let zmode = view (viewInfo.zoomMode) cinfo
               canvas = view drawArea cinfo 
@@ -157,10 +149,8 @@ viewModeChange command = do
                                       (view canvasWidgets cinfo) 
                                       (view notifiedItem cinfo)
               ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
-              ncinfo = over currentPageNum (const (unPageNum ncpn)) ncinfotemp
-          return $
-            xstate # over unitHoodles ( putTheUnit 
-                                      . set currentCanvasInfo (CanvasContPage ncinfo) 
-                                      . getTheUnit )
+              ncinfo = (currentPageNum .~ unPageNum ncpn) ncinfotemp
+          return $ (unitHoodles.currentUnit.currentCanvasInfo .~ CanvasContPage ncinfo) xst
+
 
 

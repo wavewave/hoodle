@@ -108,7 +108,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
           let cbkg = view gbackground lpage
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
-          geometry <- liftIO . getGeometry4CurrCvs . getTheUnit . view unitHoodles =<< get
+          geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles.currentUnit) =<< get
           callRenderer $ updateBkgCache geometry (PageNum (totnumpages-1),npage) >> return GotNone
           waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
           let npages = M.insert totnumpages npage pgs  
@@ -131,7 +131,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     updateUhdl zoomUpdateAction 
     adjustScrollbarWithGeometryCvsId cid
     xst <- get
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         hdl = getHoodle uhdl
     geometry <- liftIO (getGeometry4CurrCvs uhdl)
     let cpn = view (unboxLens currentPageNum) .  getCanvasInfo cid $ uhdl
@@ -179,7 +179,7 @@ canvasZoomUpdateCvsId cid mzmode =
 -- | 
 canvasZoomUpdateBufAll :: MainCoroutine () 
 canvasZoomUpdateBufAll = do 
-    klst <- M.keys . view cvsInfoMap . getTheUnit . view unitHoodles <$> get
+    klst <- M.keys . view cvsInfoMap . view (unitHoodles.currentUnit) <$> get
     mapM_ updatefunc klst 
   where 
     updatefunc cid 
@@ -189,14 +189,14 @@ canvasZoomUpdateBufAll = do
 -- |
 canvasZoomUpdateAll :: MainCoroutine () 
 canvasZoomUpdateAll = do 
-  klst <- M.keys . view cvsInfoMap . getTheUnit . view unitHoodles <$> get
+  klst <- M.keys . view cvsInfoMap . view (unitHoodles.currentUnit) <$> get
   mapM_ (flip canvasZoomUpdateCvsId Nothing) klst 
 
 
 -- | 
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine () 
 canvasZoomUpdate mzmode = do  
-  cid <- getCurrentCanvasId . getTheUnit . view unitHoodles <$> get
+  cid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
   canvasZoomUpdateCvsId cid mzmode
 
 -- |
@@ -206,7 +206,7 @@ pageZoomChange = canvasZoomUpdate . Just
 -- | 
 pageZoomChangeRel :: ZoomModeRel -> MainCoroutine () 
 pageZoomChangeRel rzmode = do 
-    forBoth' unboxBiAct fsingle . view currentCanvasInfo . getTheUnit . view unitHoodles =<< get 
+    forBoth' unboxBiAct fsingle . view currentCanvasInfo . view (unitHoodles.currentUnit) =<< get 
   where 
     fsingle :: CanvasInfo a -> MainCoroutine ()
     fsingle cinfo = do 
@@ -280,7 +280,7 @@ addNewPageInHoodle bsty dir hdl cpn = do
         cbkg = view gbackground cpage
     nbkg <- newBkg bsty cbkg
     npage <- set gbackground nbkg <$> newPageFromOld cpage
-    geometry <- liftIO . getGeometry4CurrCvs . getTheUnit . view unitHoodles =<< get
+    geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles.currentUnit) =<< get
     callRenderer_ (updateBkgCache geometry (PageNum cpn,npage))
     let npagelst = case dir of 
                      PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
@@ -293,7 +293,7 @@ newBkg :: BackgroundStyle -> RBackground -> MainCoroutine RBackground
 newBkg bsty bkg = do
     xst <- get
     let npmode = xst ^. settings.newPageMode
-        rhdl = (getHoodle . getTheUnit . view unitHoodles) xst
+        rhdl = (getHoodle . view (unitHoodles.currentUnit)) xst
         mtotN = pdfNumPages <$> (rhdl ^. gembeddedpdf)  
     let bstystr = convertBackgroundStyleToByteString bsty 
         defbkg = RBkgSmpl "white" bstystr <$> liftIO nextRandom

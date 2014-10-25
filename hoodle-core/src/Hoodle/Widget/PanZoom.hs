@@ -87,7 +87,7 @@ startPanZoomWidget :: PanZoomTouch
 startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do 
     modify (doesNotInvalidate .~ True)
     xst <- get 
-    let hdl = (getHoodle . getTheUnit . view unitHoodles) xst
+    let hdl = (getHoodle . view (unitHoodles.currentUnit)) xst
         cache = view renderCache xst
     case mmode of 
       Nothing -> togglePanZoom cid
@@ -184,7 +184,7 @@ manipulatePZW fullmode@(tchmode,mode) cid geometry (srcsfc,tgtsfc)
           case mpnpgxy of 
             Nothing -> return () 
             Just pnpgxy -> do 
-              uhdl <- getTheUnit . view unitHoodles <$> get
+              uhdl <- view (unitHoodles.currentUnit) <$> get
               geom' <- liftIO $ getCanvasGeometryCvsId cid uhdl
               let DeskCoord (xd,yd) = page2Desktop geom' pnpgxy
                   DeskCoord (xd0,yd0) = canvas2Desktop geom' ccoord 
@@ -210,7 +210,7 @@ movingRender :: PanZoomMode -> CanvasId -> CanvasGeometry
              -> MainCoroutine () 
 movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     case mode of
       Moving -> do 
         let CanvasDimension (Dim cw ch) = canvasDim geometry 
@@ -262,7 +262,7 @@ movingRender mode cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,
           (Cairo.restore >> renderPanZoomWidget isTouchZoom Nothing nwpos)
     --   
     xst2 <- get 
-    let cinfobox = getCanvasInfo cid . getTheUnit . view unitHoodles $ xst2 
+    let cinfobox = getCanvasInfo cid . view (unitHoodles.currentUnit) $ xst2 
     liftIO $ forBoth' unboxBiAct (doubleBufferFlush tgtsfc) cinfobox
 
   
@@ -278,7 +278,7 @@ togglePanZoom cid = do
 
 -- | 
 touchStart :: CanvasId -> PointerCoord -> MainCoroutine () 
-touchStart cid pcoord = forBoth' unboxBiAct chk =<< (getCanvasInfo cid . getTheUnit . view unitHoodles <$> get)
+touchStart cid pcoord = forBoth' unboxBiAct chk =<< (getCanvasInfo cid . view (unitHoodles.currentUnit) <$> get)
   where
     chk :: CanvasInfo a -> MainCoroutine () 
     chk cinfo = do 
@@ -324,7 +324,7 @@ toggleTouch = do
     updateFlagFromToggleUI "HANDA"  (settings.doesUseTouch)
     xst <- get 
     let devlst = view deviceList xst 
-        uhdl = (getTheUnit . view unitHoodles) xst
+        uhdl = view (unitHoodles.currentUnit) xst
         (cid,_cinfobox) = view currentCanvas uhdl
     when (view (settings.doesUseTouch) xst) $ do 
       -- ad hoc 

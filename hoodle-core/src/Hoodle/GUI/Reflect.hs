@@ -45,7 +45,7 @@ import           Hoodle.View.Coordinate
 changeCurrentCanvasId :: CanvasId -> MainCoroutine UnitHoodle
 changeCurrentCanvasId cid = do 
     xst <- St.get
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
     case setCurrentCanvasId cid uhdl of
       Nothing -> return uhdl
       Just uhdl' -> do 
@@ -58,7 +58,7 @@ changeCurrentCanvasId cid = do
 --   changed. 
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine () 
 chkCvsIdNInvalidate cid = do 
-  currcid <- liftM (getCurrentCanvasId . getTheUnit . view unitHoodles ) St.get 
+  currcid <- liftM (getCurrentCanvasId . view (unitHoodles.currentUnit) ) St.get 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
 
 
@@ -73,7 +73,7 @@ blockWhile msig act =
 reflectViewModeUI :: MainCoroutine ()
 reflectViewModeUI = do 
     xstate <- St.get
-    let uhdl = (getTheUnit . view unitHoodles) xstate
+    let uhdl = view (unitHoodles.currentUnit) xstate
         cinfobox = view currentCanvasInfo uhdl
         ui = view gtkUIManager xstate
     let mconnid = view (uiComponentSignalHandler.pageModeSignal) xstate
@@ -97,7 +97,7 @@ reflectPenModeUI = do
     reflectCursor
   where 
     f xst = Just $
-      hoodleModeStateEither ((view hoodleModeState . getTheUnit . view unitHoodles) xst) #  
+      hoodleModeStateEither ((view hoodleModeState . view (unitHoodles.currentUnit)) xst) #  
         either (\_ -> (penType2Int. Left .view (penInfo.penType)) xst)
                (\_ -> (penType2Int. Right .view (selectInfo.selectType)) xst)
 
@@ -181,7 +181,7 @@ reflectCursor = do
         act xst >> go 
       else do 
         doIOaction $ \_ -> do
-          let uhdl       = (getTheUnit . view unitHoodles) xst
+          let uhdl       = view (unitHoodles.currentUnit) xst
               cinfobox   = view currentCanvasInfo uhdl           
               canvas     = forBoth' unboxBiAct (view drawArea) cinfobox           
           win <- Gtk.widgetGetDrawWindow canvas
@@ -191,7 +191,7 @@ reflectCursor = do
  where 
    act xst = doIOaction $ \_ -> do 
      Gtk.postGUIAsync $ do 
-       let uhdl = (getTheUnit . view unitHoodles) xst
+       let uhdl = view (unitHoodles.currentUnit) xst
            -- mcur       = view cursorInfo xst 
            cinfobox   = view currentCanvasInfo uhdl
            canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 

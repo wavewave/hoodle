@@ -14,7 +14,7 @@
 
 module Hoodle.Widget.Clock where
 
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.State 
 import           Data.Functor.Identity (Identity(..))
 import           Data.List (delete)
@@ -64,7 +64,7 @@ startClockWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> MainCoroutine () 
 startClockWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         hdl = getHoodle uhdl
         cache = view renderCache xst
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache Nothing geometry hdl)
@@ -109,7 +109,7 @@ moveClockWidget :: CanvasId
 moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0)) pcoord = do 
     let CvsCoord (x,y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord 
     modify $ \xst -> 
-      let uhdl = (getTheUnit . view unitHoodles) xst
+      let uhdl = view (unitHoodles.currentUnit) xst
           CanvasDimension (Dim cw ch) = canvasDim geometry 
           cinfobox = getCanvasInfo cid uhdl
           nposx | xw+x-x0 < -50 = -50 
@@ -123,10 +123,10 @@ moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
           changeact cinfo =  
             set (canvasWidgets.clockWidgetConfig.clockWidgetPosition) nwpos $ cinfo
           ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
-      in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
+      in (unitHoodles.currentUnit .~ (setCanvasInfo (cid,ncinfobox) uhdl)) xst
     -- 
     xst2 <- get 
-    let uhdl = (getTheUnit . view unitHoodles) xst2
+    let uhdl = view (unitHoodles.currentUnit) xst2
         cinfobox2 = getCanvasInfo cid uhdl
         cfg = view (unboxLens (canvasWidgets.clockWidgetConfig)) cinfobox2
     liftIO $ forBoth' unboxBiAct (\cinfo-> virtualDoubleBufferDraw srcsfc tgtsfc (return ()) 
@@ -137,9 +137,9 @@ moveClockWidget cid geometry (srcsfc,tgtsfc) (CvsCoord (xw,yw)) (CvsCoord (x0,y0
 toggleClock :: CanvasId -> MainCoroutine () 
 toggleClock cid = do 
   modify $ \xst ->
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         ncinfobox = (over (unboxLens (canvasWidgets.widgetConfig.doesUseClockWidget)) not 
                            . getCanvasInfo cid ) uhdl
-    in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
+    in (unitHoodles.currentUnit .~ (setCanvasInfo (cid,ncinfobox) uhdl)) xst
   invalidateInBBox Nothing Efficient cid
 

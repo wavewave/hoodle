@@ -79,7 +79,7 @@ import Prelude hiding (mapM_)
 
 processContextMenu :: ContextMenuEvent -> MainCoroutine () 
 processContextMenu (CMenuSaveSelectionAs ityp) = do 
-    mhititms <- getSelectedItmsFromUnitHoodle . getTheUnit . view unitHoodles <$> get
+    mhititms <- getSelectedItmsFromUnitHoodle . view (unitHoodles.currentUnit) <$> get
     forM_ mhititms $ \hititms->  
       let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
       in case ulbbox of 
@@ -92,7 +92,7 @@ processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
 processContextMenu (CMenuCanvasView cid pnum _x _y) = do 
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     let cmap =  uhdl ^. cvsInfoMap 
         mcinfobox = IM.lookup cid cmap 
     case mcinfobox of 
@@ -111,11 +111,11 @@ processContextMenu CMenuAutosavePage = do
       hset <- xst ^. hookSet 
       customAutosavePage hset <*> pure pg 
 processContextMenu (CMenuLinkConvert nlnk) = 
-    either_ action . hoodleModeStateEither . (^. hoodleModeState) . getTheUnit . view unitHoodles  =<< get 
+    either_ action . hoodleModeStateEither . (^. hoodleModeState) . view (unitHoodles.currentUnit)  =<< get 
   where action thdl = do 
           xst <- get 
           let cache = xst ^. renderCache
-              uhdl = (getTheUnit . view unitHoodles) xst
+              uhdl = view (unitHoodles.currentUnit) xst
           case thdl ^. gselSelected of 
             Nothing -> return () 
             Just (n,tpg) -> do 
@@ -134,7 +134,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
                 Right _ -> error "processContextMenu: activelayer"
               nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg n
               uhdl' <- liftIO $ updatePageAll (SelectState nthdl) uhdl
-              commit . (unitHoodles .~ putTheUnit ((hoodleModeState .~ SelectState nthdl) uhdl')) $ xst
+              commit $ (unitHoodles.currentUnit .~ (hoodleModeState .~ SelectState nthdl) uhdl') xst
               invalidateAll 
 processContextMenu CMenuCreateALink = 
   fileChooser FileChooserActionOpen Nothing >>= mapM_ linkSelectionWithFile
@@ -162,7 +162,7 @@ processContextMenu CMenuAssocWithNewFile = do
 processContextMenu (CMenuMakeLinkToAnchor anc) = do 
     xst <- get
     uuidbstr <- liftIO $ B.pack . show <$> nextRandom
-    let uhdl = (getTheUnit . view unitHoodles) xst 
+    let uhdl = view (unitHoodles.currentUnit) xst 
         docidbstr = (view ghoodleID . getHoodle) uhdl
         mloc = view (hoodleFileControl.hoodleFileName) uhdl
         loc = maybe "" B.pack mloc
@@ -190,7 +190,7 @@ processContextMenu (CMenuExportHoodlet itm) = do
         let fp = hoodletdir </> str <.> "hdlt"
         L.writeFile fp (Hoodlet.builder itm) 
 processContextMenu (CMenuConvertSelection itm) = do
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
     deleteSelection
     callRenderer $ return . GotRItem =<< cnstrctRItem itm
@@ -198,7 +198,7 @@ processContextMenu (CMenuConvertSelection itm) = do
     let BBox (x0,y0) _ = getBBox newitem
     insertItemAt (Just (PageNum pgnum, PageCoord (x0,y0))) newitem
 processContextMenu CMenuCustom =  do
-    either_ action . hoodleModeStateEither . view hoodleModeState . getTheUnit . view unitHoodles =<< get 
+    either_ action . hoodleModeStateEither . view hoodleModeState . view (unitHoodles.currentUnit) =<< get 
   where action thdl = do    
           xst <- get 
           forM_ (view gselSelected thdl) 
@@ -211,7 +211,7 @@ processContextMenu CMenuCustom =  do
 --  | 
 linkSelectionWithFile :: FilePath -> MainCoroutine ()  
 linkSelectionWithFile fname = do
-  (getSelectedItmsFromUnitHoodle . getTheUnit . view unitHoodles <$> get) >>=  
+  (getSelectedItmsFromUnitHoodle . view (unitHoodles.currentUnit) <$> get) >>=  
     mapM_ (\hititms -> 
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             in case ulbbox of 
@@ -274,7 +274,7 @@ showContextMenu :: (PageNum,(Double,Double)) -> MainCoroutine ()
 showContextMenu (pnum,(x,y)) = do 
     xstate <- get
     when (view (settings.doesUsePopUpMenu) xstate) $ do 
-      let uhdl = (getTheUnit . view unitHoodles) xstate
+      let uhdl = view (unitHoodles.currentUnit) xstate
           cids = IM.keys . view cvsInfoMap $ uhdl
           cid = fst . view currentCanvas $ uhdl 
           mselitms = do lst <- getSelectedItmsFromUnitHoodle uhdl

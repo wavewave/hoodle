@@ -77,7 +77,7 @@ verticalSpaceStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (return ())
   where 
     verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) _ = do 
-      hdl <- getHoodle . getTheUnit . view unitHoodles <$> get 
+      hdl <- getHoodle . view (unitHoodles.currentUnit) <$> get 
       cache <- view renderCache <$> get
       cpg <- getCurrentPageCurr 
       let (itms,npg,hltedLayers) = splitPageByHLine y cpg 
@@ -158,7 +158,7 @@ verticalSpaceProcess :: CanvasId
 verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg) 
                      (x0,y0) sfcs@(sfcbkg,sfcitm,sfctot) otime = do 
     r <- nextevent 
-    uhdl <- getTheUnit . view unitHoodles <$> get
+    uhdl <- view (unitHoodles.currentUnit) <$> get
     forBoth' unboxBiAct (f r) . getCanvasInfo cid $ uhdl
   where 
     Dim w h = view gdimension pg    

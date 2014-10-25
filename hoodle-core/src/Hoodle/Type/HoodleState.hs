@@ -96,8 +96,9 @@ module Hoodle.Type.HoodleState
 , getCurrentPageDimFromHoodleModeState
 -- | for debug
 -- , showCanvasInfoMapViewPortBBox
-, getTheUnit
-, putTheUnit
+-- , getTheUnit
+-- , putTheUnit
+, currentUnit
 ) where
 
 import           Control.Applicative hiding (empty)
@@ -147,9 +148,6 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          | YesAfterSelect
                          deriving (Show,Eq,Ord)
 
-getTheUnit = head
-putTheUnit x = [x]
-
 data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
                              , _hoodleFileControl :: HoodleFileControl
                              , _cvsInfoMap :: CanvasInfoMap 
@@ -190,17 +188,19 @@ data HoodleState =
                 } 
 
 
+-- getTheUnit = head
+-- putTheUnit x = [x]
+
+currentUnit :: Simple Lens [UnitHoodle] UnitHoodle
+currentUnit = lens head (\f a -> [a])
+
 -- | lens for hoodleModeState
 hoodleModeState :: Simple Lens UnitHoodle HoodleModeState
 hoodleModeState = lens _hoodleModeState (\f a -> f { _hoodleModeState = a } )
 
-
-
 -- | 
 hoodleFileControl :: Simple Lens UnitHoodle HoodleFileControl
 hoodleFileControl = lens _hoodleFileControl (\f a -> f { _hoodleFileControl = a })
-
-
 
 -- | lens for cvsInfoMap
 cvsInfoMap :: Simple Lens UnitHoodle CanvasInfoMap

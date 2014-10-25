@@ -39,37 +39,34 @@ import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
 --
 
+-- |
 updateCanvasInfo :: (forall a. CanvasInfo a -> CanvasInfo a) -> CanvasId -> MainCoroutine ()
-updateCanvasInfo f cid = updateXState (return . updater)
-  where updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
-                          cinfobox = getCanvasInfo cid uhdl
-                          ncinfobox = (runIdentity . forBoth unboxBiXform (return . f)) cinfobox
-                      in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst 
+updateCanvasInfo f cid = pureUpdateUhdl $ \uhdl -> 
+                           let cinfobox = getCanvasInfo cid uhdl
+                               ncinfobox = (runIdentity . forBoth unboxBiXform (return . f)) cinfobox
+                           in setCanvasInfo (cid,ncinfobox) uhdl
 
-
+-- |
 updateCanvasInfo2 :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
                   -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
                   -> CanvasId
                   -> MainCoroutine ()
-updateCanvasInfo2 fs fc cid = updateXState (return . updater)
-  where updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
-                          cinfobox = getCanvasInfo cid uhdl
-                          ncinfobox = (runIdentity . unboxBiXform (return . fs) (return . fc)) cinfobox
-                      in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst 
-
-
+updateCanvasInfo2 fs fc cid = 
+    pureUpdateUhdl $ \uhdl ->
+      let cinfobox = getCanvasInfo cid uhdl
+          ncinfobox = (runIdentity . unboxBiXform (return . fs) (return . fc)) cinfobox
+      in setCanvasInfo (cid,ncinfobox) uhdl
 
 -- | 
 moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double))
                   -> MainCoroutine () 
 moveViewPortBy rndr cid f = 
-    -- updateXState (return . updater) 
     updateCanvasInfo moveact cid >> adjustScrollbarWithGeometryCvsId cid >> rndr 
   where     
-    updater xst = let uhdl = (getTheUnit . view unitHoodles) xst
-                      cinfobox = getCanvasInfo cid uhdl
-                      ncinfobox = (runIdentity . forBoth unboxBiXform (return . moveact)) cinfobox       
-                  in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
+    --updater xst = let uhdl = view (unitHoodles.currentUnit) xst
+    --                  cinfobox = getCanvasInfo cid uhdl
+    --                  ncinfobox = (runIdentity . forBoth unboxBiXform (return . moveact)) cinfobox       
+    --              in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
     moveact :: CanvasInfo a -> CanvasInfo a 
     moveact cinfo = 
       let BBox (x0,y0) _ = 
@@ -85,7 +82,7 @@ moveViewPortBy rndr cid f =
 adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()
 adjustScrollbarWithGeometryCvsId cid = do
   xstate <- get
-  let uhdl = (getTheUnit . view unitHoodles) xstate
+  let uhdl = view (unitHoodles.currentUnit) xstate
       cinfobox = getCanvasInfo cid uhdl
   geometry <- liftIO (getCanvasGeometryCvsId cid uhdl)
   let (hadj,vadj) = view (unboxLens adjustments) cinfobox 
@@ -97,7 +94,7 @@ adjustScrollbarWithGeometryCvsId cid = do
 -- | 
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent = adjustScrollbarWithGeometryCvsId . view (currentCanvas._1) 
-                                     . getTheUnit . view unitHoodles =<< get 
+                                     . view (unitHoodles.currentUnit) =<< get 
 
 -- | 
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()         
@@ -121,7 +118,7 @@ vscrollMove :: CanvasId -> Double -> MainCoroutine ()
 vscrollMove cid v0 = do    
     ev <- nextevent 
     xst <- get 
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
     geometry <- liftIO (getCanvasGeometryCvsId cid uhdl)
     case ev of
       VScrollBarMoved cid' v -> do 

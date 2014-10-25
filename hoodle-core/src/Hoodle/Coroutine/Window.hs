@@ -61,7 +61,7 @@ doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
 eitherSplit :: SplitType -> MainCoroutine () 
 eitherSplit stype = do
     xst <- get
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
     let cmap = view cvsInfoMap uhdl
         currcid = getCurrentCanvasId uhdl
         newcid = newCanvasId cmap 
@@ -77,7 +77,7 @@ eitherSplit stype = do
         liftIO $ containerRemove rtcntr rtwin
         (uhdl',win,fstate'') <- liftIO $ constructFrame' xst cinfobox uhdl fstate'
         let uhdl'' = ((frameState .~ fstate'') . (rootWindow .~ win)) uhdl'
-        let xst3 = (unitHoodles .~ putTheUnit uhdl'') xst
+        let xst3 = (unitHoodles.currentUnit .~ uhdl'') xst
         put xst3 
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
@@ -91,7 +91,7 @@ eitherSplit stype = do
 deleteCanvas :: MainCoroutine () 
 deleteCanvas = do 
     xst <- get
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         cmap = view cvsInfoMap uhdl
         currcid = getCurrentCanvasId uhdl
         fstate = view frameState uhdl
@@ -106,7 +106,7 @@ deleteCanvas = do
           uhdl' <- changeCurrentCanvasId newcurrcid 
           maybe (return uhdl') return $ setCanvasInfoMap cmap' uhdl'
         xst1 <- get
-        let uhdl1 = (getTheUnit . view unitHoodles) xst1
+        let uhdl1 = view (unitHoodles.currentUnit) xst1
         let rtwin = view rootWindow uhdl1
             rtcntr = view rootContainer uhdl1 
             rtrwin = view rootOfRootWindow xst1 

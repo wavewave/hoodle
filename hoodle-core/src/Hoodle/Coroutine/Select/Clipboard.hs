@@ -18,7 +18,7 @@ module Hoodle.Coroutine.Select.Clipboard where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Lens (view,set,(%~))
+import           Control.Lens (view,set,(%~),(.~))
 import           Control.Monad.State 
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
@@ -47,8 +47,8 @@ import           Hoodle.Type.HoodleState
 -- |
 deleteSelection :: MainCoroutine ()
 deleteSelection = do 
-  xstate <- get
-  let uhdl = (getTheUnit . view unitHoodles) xstate
+  xst <- get
+  let uhdl = view (unitHoodles.currentUnit) xst
   case view hoodleModeState uhdl of
     SelectState thdl -> do 
       let Just (n,tpage) = view gselSelected thdl
@@ -58,14 +58,14 @@ deleteSelection = do
         Right alist -> do 
           let newlayer = Left . concat . getA $ alist
               newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
-              cache = view renderCache xstate
+              cache = view renderCache xst
           newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n          
           newuhdl <- liftIO $ updatePageAll (SelectState newthdl) 
                               . set hoodleModeState (SelectState newthdl)
                               $ uhdl
-          let ui = view gtkUIManager xstate
+          let ui = view gtkUIManager xst
           liftIO $ toggleCutCopyDelete ui False 
-          (commit . flip (set unitHoodles) xstate . putTheUnit) newuhdl 
+          commit ((unitHoodles.currentUnit .~ newuhdl) xst)
           modeChange ToViewAppendMode 
           invalidateAll 
     _ -> return ()
@@ -81,13 +81,13 @@ copySelection :: MainCoroutine ()
 copySelection = do 
     updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
-          forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
-        fsingle xstate cinfo = maybe (return xstate) id $ do  
-          let uhdl = (getTheUnit . view unitHoodles) xstate
+          forBoth' unboxBiAct (fsingle xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
+        fsingle xst cinfo = maybe (return xst) id $ do  
+          let uhdl = view (unitHoodles.currentUnit) xst
               hdlmodst = view hoodleModeState uhdl
               epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           eitherMaybe epage `pipe` rItmsInActiveLyr 
-                            `pipe` (Right . liftIO . updateClipboard xstate . map rItem2Item . takeHitted)
+                            `pipe` (Right . liftIO . updateClipboard xst . map rItem2Item . takeHitted)
           where eitherMaybe (Left _) = Nothing
                 eitherMaybe (Right a) = Just a 
                 x `pipe` a = x >>= eitherMaybe . a 
@@ -124,9 +124,10 @@ pasteToSelection = do
         --
         modeChange ToSelectMode >> updateXState (pasteAction ritms) >> invalidateAll  
   where 
-    pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
-    fsimple itms xstate cinfo = do 
-      let uhdl = (getTheUnit . view unitHoodles) xstate
+    pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) 
+                           . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
+    fsimple itms xst cinfo = do 
+      let uhdl = view (unitHoodles.currentUnit) xst
       geometry <- liftIO (getGeometry4CurrCvs uhdl)
       let pagenum = view currentPageNum cinfo 
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
@@ -142,12 +143,12 @@ pasteToSelection = do
                             :- Hitted nclipitms 
                             :- Empty )
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
-          cache = view renderCache xstate
+          cache = view renderCache xst
       thdl' <- liftIO $ updateTempHoodleSelectIO cache thdl tpage' pagenum 
       uhdl' <- liftIO $ updatePageAll (SelectState thdl') 
                  . set hoodleModeState (SelectState thdl') 
                  $ uhdl
-      let ui = view gtkUIManager xstate
+      let ui = view gtkUIManager xst
       liftIO $ toggleCutCopyDelete ui True
-      (commit . flip (set unitHoodles) xstate . putTheUnit) uhdl'
-      return xstate
+      commit ((unitHoodles.currentUnit .~ uhdl') xst)
+      return xst

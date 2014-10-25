@@ -69,7 +69,7 @@ dealWithOneTimeSelectMode :: MainCoroutine ()  -- ^ main action
                           -> MainCoroutine ()  -- ^ terminating action
                           -> MainCoroutine ()
 dealWithOneTimeSelectMode action terminator = do 
-  uhdl <- getTheUnit . view unitHoodles <$> get 
+  uhdl <- view (unitHoodles.currentUnit) <$> get 
   case view isOneTimeSelectMode uhdl of 
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
@@ -134,7 +134,7 @@ commonSelectStart typ pbtn cid = case typ of
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (hPage2RPage tpage)
               action (Left page) = newSelectAction page
-          uhdl <- getTheUnit . view unitHoodles <$> get 
+          uhdl <- view (unitHoodles.currentUnit) <$> get 
           let hdlmodst = view hoodleModeState uhdl 
           let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
           action epage
@@ -159,7 +159,7 @@ newSelectRectangle cid pnum geometry itms orig
     r <- nextevent
     xst <- get 
     let cache = view renderCache xst
-    forBoth' unboxBiAct (fsingle r xst cache) . getCanvasInfo cid . getTheUnit . view unitHoodles $ xst
+    forBoth' unboxBiAct (fsingle r xst cache) . getCanvasInfo cid . view (unitHoodles.currentUnit) $ xst
   where 
     fsingle r xstate cache cinfo = penMoveAndUpOnly r pnum geometry defact (moveact cache) (upact xstate cinfo)
     defact = newSelectRectangle cid pnum geometry itms orig (prev,otime) tempselection 
@@ -198,7 +198,7 @@ newSelectRectangle cid pnum geometry itms orig
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
-          uhdl = (getTheUnit . view unitHoodles) xstate
+          uhdl = view (unitHoodles.currentUnit) xstate
           epage = getCurrentPageEitherFromHoodleModeState cinfo (view hoodleModeState uhdl)
           cpn = view currentPageNum cinfo 
           bbox = BBox orig (x,y)
@@ -249,7 +249,7 @@ moveSelect :: CanvasId
 moveSelect cid pnum geometry orig@(x0,y0) 
            (prev,otime) tempselection = do
     xst <- get
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         cache = view renderCache xst
     r <- nextevent 
     forBoth' unboxBiAct (fsingle r cache uhdl) (getCanvasInfo cid uhdl)
@@ -374,7 +374,7 @@ resizeSelect :: Bool    -- ^ doesKeepRatio
 resizeSelect doesKeepRatio handle cid pnum geometry origbbox 
              (prev,otime) tempselection = do
     xst <- get
-    let uhdl = (getTheUnit . view unitHoodles) xst
+    let uhdl = view (unitHoodles.currentUnit) xst
         cache = view renderCache xst
     r <- nextevent 
     forBoth' unboxBiAct (fsingle r cache uhdl) . getCanvasInfo cid $ uhdl
@@ -444,7 +444,7 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
     cache <- view renderCache <$> get
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     let SelectState thdl = view hoodleModeState uhdl
         Just (n,tpage) = view gselSelected thdl
         slayer = view (glayers.selectedLayer) tpage
@@ -466,7 +466,7 @@ selectPenWidthChanged :: Double -> MainCoroutine ()
 selectPenWidthChanged pwidth = do 
   xst <- get
   let cache = view renderCache xst
-      uhdl = (getTheUnit . view unitHoodles) xst
+      uhdl = view (unitHoodles.currentUnit) xst
       SelectState thdl = view hoodleModeState uhdl
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
@@ -511,7 +511,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
       when willUpdate $ invalidateTemp (view canvasId cinfo) (tempSurfaceSrc tsel) (renderLasso geometry nlasso) 
       newSelectLasso cinfo pnum geometry itms orig (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
-      uhdl <- getTheUnit . view unitHoodles <$> get 
+      uhdl <- view (unitHoodles.currentUnit) <$> get 
       let (_,(x,y)) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return (pcoord,prev)) return
           nlasso = lasso |> (x,y)
           hdlmodst = view hoodleModeState uhdl

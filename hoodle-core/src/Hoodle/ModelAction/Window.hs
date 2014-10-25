@@ -70,7 +70,7 @@ getDBUSEvent callback tvar = do
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO () 
 setTitleFromFileName xstate = do 
-  case (view (hoodleFileControl.hoodleFileName) . getTheUnit . view unitHoodles ) xstate of
+  case view (unitHoodles.currentUnit.hoodleFileControl.hoodleFileName) xstate of
     Nothing -> Gtk.set (view rootOfRootWindow xstate) 
                        [ windowTitle := ("untitled" :: String) ]
     Just filename -> Gtk.set (view rootOfRootWindow xstate) 

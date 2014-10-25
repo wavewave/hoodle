@@ -87,7 +87,7 @@ makeTextSVGFromStringAt str cid uhdl ccoord = do
 -- | 
 notifyLink :: CanvasId -> PointerCoord -> MainCoroutine () 
 notifyLink cid pcoord = do 
-    uhdl <- getTheUnit . view unitHoodles <$> get 
+    uhdl <- view (unitHoodles.currentUnit) <$> get 
     forBoth' unboxBiAct (f uhdl) (getCanvasInfo cid uhdl)
   where 
     f :: forall b. UnitHoodle -> CanvasInfo b -> MainCoroutine ()
@@ -139,7 +139,7 @@ notifyLink cid pcoord = do
 gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 
 gotLink mstr (x,y) = do 
   xst <- get 
-  let uhdl = (getTheUnit . view unitHoodles) xst 
+  let uhdl = view (unitHoodles.currentUnit) xst 
       cid = getCurrentCanvasId uhdl
       cache = view renderCache xst
   mr <- runMaybeT $ do 
@@ -259,7 +259,7 @@ addLink = do
                 
 -- | 
 listAnchors :: MainCoroutine ()
-listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle . getTheUnit . view unitHoodles =<< get
+listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) =<< get
 
 getAnchorMap :: Hoodle -> M.Map T.Text (Int, (Double,Double))
 getAnchorMap hdl = 
@@ -307,7 +307,7 @@ startLinkReceiver = do
 
 goToAnchorPos :: T.Text -> T.Text -> MainCoroutine ()
 goToAnchorPos docid anchorid = do 
-    rhdl <- getHoodle . getTheUnit . view unitHoodles <$> get
+    rhdl <- getHoodle . view (unitHoodles.currentUnit) <$> get
     let hdl = rHoodle2Hoodle rhdl
     when (docid == (TE.decodeUtf8 . view ghoodleID) rhdl) $ do
       let anchormap = getAnchorMap hdl

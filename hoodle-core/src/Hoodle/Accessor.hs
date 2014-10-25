@@ -44,15 +44,15 @@ updateXState action = St.put =<< action =<< St.get
 -- | update unitHoodle
 updateUhdl :: (UnitHoodle -> MainCoroutine UnitHoodle) -> MainCoroutine ()
 updateUhdl action = do xst <- St.get
-                       let uhdl = (getTheUnit . view unitHoodles) xst
+                       let uhdl = view (unitHoodles.currentUnit) xst
                        uhdl' <- action uhdl
-                       St.put ((set unitHoodles (putTheUnit uhdl')) xst)
+                       St.put (set (unitHoodles.currentUnit) uhdl' xst)
 
 -- | update unitHoodle
 pureUpdateUhdl :: (UnitHoodle -> UnitHoodle) -> MainCoroutine ()
 pureUpdateUhdl func = do xst <- St.get
-                         let uhdl = (func. getTheUnit . view unitHoodles) xst
-                         St.put ((unitHoodles .~ putTheUnit uhdl) xst)
+                         let uhdl = (func . view (unitHoodles.currentUnit)) xst
+                         St.put ((unitHoodles.currentUnit .~ uhdl) xst)
 
 
 -- | 
@@ -63,7 +63,7 @@ getPenType = view (penInfo.penType) <$> St.get
 getCurrentPageCurr :: MainCoroutine (Page EditMode) 
 getCurrentPageCurr = do 
   xstate <- St.get 
-  let uhdl = getTheUnit (view unitHoodles xstate)
+  let uhdl = view (unitHoodles.currentUnit) xstate
       hdlmodst = view hoodleModeState uhdl
       cinfobox = view currentCanvasInfo uhdl
   return $ forBoth' unboxBiAct (flip getCurrentPageFromHoodleModeState hdlmodst) cinfobox
@@ -72,7 +72,7 @@ getCurrentPageCurr = do
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode) 
 getCurrentPageCvsId cid = do 
   xstate <- St.get 
-  let uhdl = getTheUnit (view unitHoodles xstate)
+  let uhdl = view (unitHoodles.currentUnit) xstate
       hdlmodst = view hoodleModeState uhdl
       cinfobox = getCanvasInfo cid uhdl
   return $ forBoth' unboxBiAct (flip getCurrentPageFromHoodleModeState hdlmodst) cinfobox
@@ -106,7 +106,7 @@ otherCanvas = M.keys . view cvsInfoMap
 applyActionToAllCVS :: (CanvasId -> MainCoroutine ()) -> MainCoroutine () 
 applyActionToAllCVS action = do 
   xstate <- St.get 
-  let cinfoMap  = (view cvsInfoMap . getTheUnit . view unitHoodles) xstate
+  let cinfoMap = view (unitHoodles.currentUnit.cvsInfoMap) xstate
       keys = M.keys cinfoMap 
   forM_ keys action
 

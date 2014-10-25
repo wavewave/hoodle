@@ -46,7 +46,7 @@ widgetCheckPen :: CanvasId
                -> MainCoroutine ()
 widgetCheckPen cid pcoord defact = 
     get >>= \xst -> 
-      forBoth' unboxBiAct (chk xst) ((getCanvasInfo cid . getTheUnit . view unitHoodles) xst)
+      forBoth' unboxBiAct (chk xst) ((getCanvasInfo cid . view (unitHoodles.currentUnit)) xst)
   where 
     chk :: HoodleState -> CanvasInfo a -> MainCoroutine () 
     chk xstate cinfo = do 

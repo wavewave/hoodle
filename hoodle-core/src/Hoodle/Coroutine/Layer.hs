@@ -43,10 +43,10 @@ layerAction :: (HoodleModeState -> Int -> Page EditMode -> MainCoroutine HoodleM
             -> MainCoroutine UnitHoodle
 layerAction action = do 
     xst <- get 
-    forBoth' unboxBiAct (fsingle xst) . view currentCanvasInfo . getTheUnit . view unitHoodles $ xst
+    forBoth' unboxBiAct (fsingle xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
   where 
     fsingle xstate cvsInfo = do
-      let uhdl = (getTheUnit . view unitHoodles) xstate
+      let uhdl = view (unitHoodles.currentUnit) xstate
           epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
           cpn = view currentPageNum cvsInfo
           hdlmodst = view hoodleModeState uhdl
@@ -58,7 +58,7 @@ layerAction action = do
 makeNewLayer :: MainCoroutine () 
 makeNewLayer = do
     xst <- get
-    commit . flip (set unitHoodles) xst . putTheUnit =<< layerAction newlayeraction
+    commit . flip (set (unitHoodles.currentUnit)) xst =<< layerAction newlayeraction
     invalidateAll 
   where newlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
@@ -70,7 +70,7 @@ makeNewLayer = do
 
 gotoNextLayer :: MainCoroutine ()
 gotoNextLayer = do
-    modify . set unitHoodles . putTheUnit =<< layerAction nextlayeraction 
+    modify . set (unitHoodles.currentUnit) =<< layerAction nextlayeraction 
     invalidateAll 
   where nextlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
@@ -80,7 +80,7 @@ gotoNextLayer = do
 
 gotoPrevLayer :: MainCoroutine ()
 gotoPrevLayer = do
-    modify . set unitHoodles . putTheUnit =<< layerAction prevlayeraction
+    modify . set (unitHoodles.currentUnit) =<< layerAction prevlayeraction
     invalidateAll 
   where prevlayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
@@ -91,7 +91,7 @@ gotoPrevLayer = do
 
 gotoLayerAt :: Int -> MainCoroutine ()
 gotoLayerAt n = do
-    modify . set unitHoodles . putTheUnit =<< layerAction gotoaction 
+    modify . set (unitHoodles.currentUnit) =<< layerAction gotoaction 
     invalidateAll 
   where gotoaction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
@@ -103,7 +103,7 @@ gotoLayerAt n = do
 deleteCurrentLayer :: MainCoroutine ()
 deleteCurrentLayer = do
     xst <- get
-    commit . flip (set unitHoodles) xst . putTheUnit =<< layerAction deletelayeraction
+    commit . flip (set (unitHoodles.currentUnit)) xst =<< layerAction deletelayeraction
     invalidateAll 
   where deletelayeraction hdlmodst cpn page = do 
           let lyrzipper = view glayers page  
@@ -113,11 +113,11 @@ deleteCurrentLayer = do
 
 startGotoLayerAt :: MainCoroutine ()
 startGotoLayerAt = 
-    forBoth' unboxBiAct fsingle . view currentCanvasInfo . getTheUnit . view unitHoodles =<< get
+    forBoth' unboxBiAct fsingle . view (unitHoodles.currentUnit.currentCanvasInfo) =<< get
   where 
     fsingle cvsInfo = do 
       xstate <- get 
-      let uhdl = (getTheUnit . view unitHoodles) xstate
+      let uhdl = view (unitHoodles.currentUnit) xstate
           hdlmodst = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
           page = either id (hPage2RPage) epage 
@@ -132,7 +132,6 @@ startGotoLayerAt =
         ResponseOk ->  do
           liftIO $ widgetDestroy dialog
           newnum <- liftIO (readIORef lref)
-          -- liftIO $ putStrLn (show (newnum))
           gotoLayerAt newnum
         ResponseCancel -> liftIO $ widgetDestroy dialog
         _ -> error "??? in fileOpen " 

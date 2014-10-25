@@ -68,7 +68,7 @@ startGUI mfname mhook = do
       ] 
     setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
-    let canvases = map (getDrawAreaFromBox) . M.elems . view cvsInfoMap . getTheUnit . view unitHoodles $ st0
+    let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles.currentUnit.cvsInfoMap) $ st0
     if xinputbool
         then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
         else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases

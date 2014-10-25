@@ -17,6 +17,7 @@ module Hoodle.Widget.Scroll where
 import Control.Lens (set, view, (%~))
 import Control.Monad.State
 --
+import Hoodle.Accessor
 import Hoodle.Coroutine.Draw
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
@@ -28,10 +29,9 @@ import Hoodle.Type.Widget
 -- | 
 toggleScroll :: CanvasId -> MainCoroutine () 
 toggleScroll cid = do 
-    modify $ \xst -> 
-      let uhdl = (getTheUnit . view unitHoodles) xst
-          ncinfobox = 
+    pureUpdateUhdl $ \uhdl -> 
+      let ncinfobox = 
             ( (unboxLens (canvasWidgets.widgetConfig.doesUseScrollWidget) %~ not)
             . getCanvasInfo cid ) uhdl 
-      in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
+      in setCanvasInfo (cid,ncinfobox) uhdl
     invalidateInBBox Nothing Efficient cid

@@ -22,9 +22,7 @@ import Control.Monad.State hiding (forM_)
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (forM_)
-
-
--- 
+--
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple 
 import Graphics.Hoodle.Render.Util.HitTest
@@ -35,11 +33,9 @@ import Hoodle.ModelAction.ContextMenu
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.HoodleState
-
 import Hoodle.Type.PageArrangement
 import Hoodle.Util
 import Hoodle.View.Coordinate 
-
 import Hoodle.Widget.Clock
 import Hoodle.Widget.Layer
 import Hoodle.Widget.PanZoom
@@ -48,7 +44,9 @@ widgetCheckPen :: CanvasId
                -> PointerCoord 
                -> MainCoroutine ()    -- ^ default action 
                -> MainCoroutine ()
-widgetCheckPen cid pcoord defact = get >>= \xst -> forBoth' unboxBiAct (chk xst) (getCanvasInfo cid xst) 
+widgetCheckPen cid pcoord defact = 
+    get >>= \xst -> 
+      forBoth' unboxBiAct (chk xst) ((getCanvasInfo cid . getTheUnit . view unitHoodles) xst)
   where 
     chk :: HoodleState -> CanvasInfo a -> MainCoroutine () 
     chk xstate cinfo = do 

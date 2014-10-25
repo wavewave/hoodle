@@ -82,8 +82,8 @@ eitherSplit stype = do
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
         liftIO $ widgetQueueDraw rtrwin
-        (xst4,_wconf) <- liftIO $ eventConnect xst3 uhdl' (view frameState uhdl')
-        updateUhdl $ \uhdl -> liftIO $ updatePageAll (view hoodleModeState uhdl) uhdl
+        (uhdl3,_wconf) <- liftIO $ eventConnect xst3 uhdl'' (view frameState uhdl'')
+        updateUhdl $ const (liftIO $ updatePageAll (view hoodleModeState uhdl3) uhdl3)
         canvasZoomUpdateAll
         invalidateAll 
 
@@ -112,7 +112,7 @@ deleteCanvas = do
             rtrwin = view rootOfRootWindow xst1 
         liftIO $ containerRemove rtcntr rtwin
         (uhdl2,win,fstate'') <- liftIO $ constructFrame xst1 uhdl1 fstate'
-        pureUpdateUhdl ((frameState .~ fstate'') . (rootWindow .~ win))
+        pureUpdateUhdl (const (((frameState .~ fstate'') . (rootWindow .~ win)) uhdl2))
         xst3 <- get
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  

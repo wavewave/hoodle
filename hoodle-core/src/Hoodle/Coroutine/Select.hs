@@ -18,8 +18,8 @@ module Hoodle.Coroutine.Select where
 
 -- from other package 
 import           Control.Applicative
-import           Control.Category
-import           Control.Lens (view,set)
+-- import           Control.Category
+import           Control.Lens (view,set,(.~),(^.))
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.State
@@ -62,21 +62,21 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 -- 
-import           Prelude hiding ((.), id)
+-- import           Prelude hiding ((.), id)
 
 -- | For Selection mode from pen mode with 2nd pen button
 dealWithOneTimeSelectMode :: MainCoroutine ()  -- ^ main action 
                           -> MainCoroutine ()  -- ^ terminating action
                           -> MainCoroutine ()
 dealWithOneTimeSelectMode action terminator = do 
-  xstate <- get 
-  case view isOneTimeSelectMode xstate of 
+  uhdl <- getTheUnit . view unitHoodles <$> get 
+  case view isOneTimeSelectMode uhdl of 
     NoOneTimeSelectMode -> action 
     YesBeforeSelect -> 
-      action >> updateXState (return . set isOneTimeSelectMode YesAfterSelect)
+      action >> pureUpdateUhdl (isOneTimeSelectMode .~ YesAfterSelect)
     YesAfterSelect -> do 
       terminator 
-      updateXState (return . set isOneTimeSelectMode NoOneTimeSelectMode) 
+      pureUpdateUhdl (isOneTimeSelectMode .~ NoOneTimeSelectMode) 
       modeChange ToViewAppendMode
 
   
@@ -114,9 +114,9 @@ commonSelectStart typ pbtn cid = case typ of
                   (return ())  
               action (Right tpage) | hitInHandle tpage (x,y) = do  
                 let doesKeepRatio = case pbtn of 
-                                          PenButton1 -> True
-                                          PenButton3 -> False
-                                          _ -> False
+                                      PenButton1 -> True
+                                      PenButton3 -> False
+                                      _ -> False
                 case getULBBoxFromSelected tpage of 
                   Middle bbox ->  
                     maybe (return ()) 
@@ -134,8 +134,8 @@ commonSelectStart typ pbtn cid = case typ of
                   _ -> return () 
               action (Right tpage) | otherwise = newSelectAction (hPage2RPage tpage)
               action (Left page) = newSelectAction page
-          xstate <- get 
-          let hdlmodst = view hoodleModeState xstate 
+          uhdl <- getTheUnit . view unitHoodles <$> get 
+          let hdlmodst = view hoodleModeState uhdl 
           let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
           action epage
 
@@ -158,13 +158,12 @@ newSelectRectangle cid pnum geometry itms orig
                    (prev,otime) tempselection = do  
     r <- nextevent
     xst <- get 
-    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
+    let cache = view renderCache xst
+    forBoth' unboxBiAct (fsingle r xst cache) . getCanvasInfo cid . getTheUnit . view unitHoodles $ xst
   where 
-    fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact
-                               (moveact xstate cinfo) (upact xstate cinfo)
-    defact = newSelectRectangle cid pnum geometry itms orig 
-                         (prev,otime) tempselection 
-    moveact xstate _cinfo (_pcoord,(x,y)) = do 
+    fsingle r xstate cache cinfo = penMoveAndUpOnly r pnum geometry defact (moveact cache) (upact xstate cinfo)
+    defact = newSelectRectangle cid pnum geometry itms orig (prev,otime) tempselection 
+    moveact cache (_pcoord,(x,y)) = do 
       let bbox = BBox orig (x,y)
           hittestbbox = hltEmbeddedByBBox bbox itms
           hitteditms = takeHitted hittestbbox
@@ -174,7 +173,6 @@ newSelectRectangle cid pnum geometry itms orig
       when ((not.null) fitms || (not.null) sitms) $ do 
         let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
             ulbbox = unUnion . mconcat . fmap (Union .Middle . flip inflate 5 . getBBox) $ fitms
-            cache = view renderCache xstate
             xform = mkXform4Page geometry pnum
             renderfunc = do   
               xformfunc 
@@ -200,12 +198,13 @@ newSelectRectangle cid pnum geometry itms orig
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
-          epage = getCurrentPageEitherFromHoodleModeState cinfo (view hoodleModeState xstate)
+          uhdl = (getTheUnit . view unitHoodles) xstate
+          epage = getCurrentPageEitherFromHoodleModeState cinfo (view hoodleModeState uhdl)
           cpn = view currentPageNum cinfo 
           bbox = BBox orig (x,y)
           hittestbbox = hltEmbeddedByBBox bbox itms
           selectitms = fmapAL unNotHitted id hittestbbox
-          SelectState thdl = view hoodleModeState xstate
+          SelectState thdl = view hoodleModeState uhdl
           newpage = case epage of 
                       Left pagebbox -> makePageSelectMode pagebbox selectitms 
                       Right tpage -> 
@@ -215,9 +214,10 @@ newSelectRectangle cid pnum geometry itms orig
                         in npage
           newthdl = set gselSelected (Just (cpn,newpage)) thdl 
           ui = view gtkUIManager xstate
-      liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
-      put . set hoodleModeState (SelectState newthdl) 
-            =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
+      liftIO $ toggleCutCopyDelete ui (isAnyHitted selectitms)
+      uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
+      pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
+      commit_
       invalidateAllInBBox Nothing Efficient
 
 
@@ -249,21 +249,21 @@ moveSelect :: CanvasId
 moveSelect cid pnum geometry orig@(x0,y0) 
            (prev,otime) tempselection = do
     xst <- get
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        cache = view renderCache xst
     r <- nextevent 
-    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst 
+    forBoth' unboxBiAct (fsingle r cache uhdl) (getCanvasInfo cid uhdl)
   where 
-    fsingle r xstate cinfo = 
-      penMoveAndUpInterPage r pnum geometry defact (moveact xstate cinfo) (upact xstate cinfo) 
-    defact = moveSelect cid pnum geometry orig (prev,otime) 
-               tempselection
-    moveact _xstate _cinfo oldpgn pcpair@(newpgn,PageCoord (px,py)) = do 
+    fsingle r cache uhdl cinfo = 
+      penMoveAndUpInterPage r pnum geometry defact moveact (upact cache uhdl cinfo) 
+    defact = moveSelect cid pnum geometry orig (prev,otime) tempselection
+    moveact oldpgn pcpair@(newpgn,PageCoord (px,py)) = do 
       let (x,y) 
             | oldpgn == newpgn = (px,py) 
             | otherwise = 
               let DeskCoord (xo,yo) = page2Desktop geometry (oldpgn,PageCoord (0,0))
                   DeskCoord (xn,yn) = page2Desktop geometry pcpair 
               in (xn-xo,yn-yo)
-      
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
         let sfunc = offsetFunc (x-x0,y-y0)
@@ -278,25 +278,25 @@ moveSelect cid pnum geometry orig@(x0,y0)
         invalidateTempBasePage cid (tempSurfaceSrc tempselection) pnum 
           (drawTempSelectImage geometry tempselection xformmat) 
       moveSelect cid pnum geometry orig (ncoord,ntime) tempselection
-    upact :: HoodleState -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
-    upact xst cinfo pcoord =  
+    upact :: RenderCache -> UnitHoodle -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
+    upact cache uhdl cinfo pcoord = 
       switchActionEnteringDiffPage pnum geometry pcoord (return ()) 
-        (chgaction xst cinfo) 
-        (ordaction xst cinfo)
-    chgaction :: HoodleState -> CanvasInfo a -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
-    chgaction xstate cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
-      let hdlmodst@(SelectState thdl) = view hoodleModeState xstate
+        (chgaction cache uhdl cinfo) 
+        (ordaction cache uhdl cinfo)
+    chgaction :: RenderCache -> UnitHoodle -> CanvasInfo a 
+              -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
+    chgaction cache uhdl cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
+      let hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
-          cache = view renderCache xstate
-      (xstate1,nthdl1,selecteditms) <- 
+      (uhdl1,nthdl1,selecteditms) <- 
         case epage of 
           Right oldtpage -> do 
             let itms = getSelectedItms oldtpage
             let oldtpage' = deleteSelected oldtpage
             nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl oldtpage' (unPageNum oldpgn)
-            xst <- return . set hoodleModeState (SelectState nthdl)
-                     =<< (liftIO (updatePageAll (SelectState nthdl) xstate)) 
-            return (xst,nthdl,itms)       
+            uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
+            let uhdl1 = (hoodleModeState .~ SelectState nthdl) uhdl' 
+            return (uhdl1,nthdl,itms)       
           Left _ -> error "this is impossible, in moveSelect" 
       let maction = do 
             page <- M.lookup (unPageNum newpgn) (view gselAll nthdl1)
@@ -307,32 +307,33 @@ moveSelect cid pnum geometry orig@(x0,y0)
                 ntpage = makePageSelectMode page alist  
                 coroutineaction = do 
                   nthdl2 <- liftIO $ updateTempHoodleSelectIO cache nthdl1 ntpage (unPageNum newpgn)  
-                  let cibox = view currentCanvasInfo xstate1 
-                      ncibox = (runIdentity . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
+                  let cibox = view currentCanvasInfo uhdl1 
+                      ncibox = ( runIdentity 
+                               . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
                                  cibox 
-                      cmap = getCanvasInfoMap xstate1 
+                      cmap = view cvsInfoMap uhdl1
                       cmap' = M.adjust (const ncibox) cid cmap 
-                      xst = maybe xstate1 id $ setCanvasInfoMap cmap' xstate1
-                  return . set hoodleModeState (SelectState nthdl2)
-                    =<< (liftIO (updatePageAll (SelectState nthdl2) xst)) 
+                      uhdl'' = maybe uhdl1 id $ setCanvasInfoMap cmap' uhdl1
+                  uhdl''' <- liftIO (updatePageAll (SelectState nthdl2) uhdl'')
+                  return ((hoodleModeState .~ SelectState nthdl2) uhdl''')
             return coroutineaction
-      xstate2 <- maybe (return xstate1) id maction 
-      commit xstate2
-      -- invalidateAll 
+      uhdl2 <- maybe (return uhdl1) id maction
+      pureUpdateUhdl (const uhdl2)
+      commit_
       invalidateAllInBBox Nothing Efficient
     ----
-    ordaction xstate cinfo _pgn (_cpn,PageCoord (x,y)) = do 
+    ordaction cache uhdl cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
-          hdlmodst@(SelectState thdl) = view hoodleModeState xstate
+          hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset offset tpage
-              cache = view renderCache xstate
           newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newtpage pagenum 
-          commit . set hoodleModeState (SelectState newthdl)
-                 =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
+          uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
+          pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
+          commit_ 
         Left _ -> error "this is impossible, in moveSelect" 
       -- invalidateAll 
       invalidateAllInBBox Nothing Efficient 
@@ -373,12 +374,13 @@ resizeSelect :: Bool    -- ^ doesKeepRatio
 resizeSelect doesKeepRatio handle cid pnum geometry origbbox 
              (prev,otime) tempselection = do
     xst <- get
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        cache = view renderCache xst
     r <- nextevent 
-    forBoth' unboxBiAct (fsingle r xst) . getCanvasInfo cid $ xst
+    forBoth' unboxBiAct (fsingle r cache uhdl) . getCanvasInfo cid $ uhdl
   where
-    fsingle r xstate cinfo = penMoveAndUpOnly r pnum geometry defact moveact (upact xstate cinfo)
-    defact = resizeSelect doesKeepRatio handle cid pnum geometry 
-               origbbox (prev,otime) tempselection
+    fsingle r cache uhdl cinfo = penMoveAndUpOnly r pnum geometry defact moveact (upact cache uhdl cinfo)
+    defact = resizeSelect doesKeepRatio handle cid pnum geometry origbbox (prev,otime) tempselection
     moveact (_pcoord,(x,y)) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
       when willUpdate $ do 
@@ -396,20 +398,16 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
                          | otherwise -> newbbox'
               else newbbox' 
             sfunc = scaleFromToBBox origbbox newbbox
-            xform = unCvsCoord . desktop2Canvas geometry
-                    . page2Desktop geometry . (,) pnum . PageCoord
+            xform = unCvsCoord . desktop2Canvas geometry . page2Desktop geometry . (,) pnum . PageCoord
             (c1,c2) = xform (sfunc (0,0))
             (a1',a2') = xform (sfunc (1,0))
             (a1,a2) = (a1'-c1,a2'-c2)
             (b1',b2') = xform (sfunc (0,1))
             (b1,b2) = (b1'-c1,b2'-c2)
             xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
-        invalidateTemp cid (tempSurfaceSrc tempselection) 
-                           (drawTempSelectImage geometry tempselection 
-                              xformmat)
-      resizeSelect doesKeepRatio handle cid pnum geometry 
-                   origbbox (ncoord,ntime) tempselection
-    upact xstate cinfo pcoord = do 
+        invalidateTemp cid (tempSurfaceSrc tempselection) (drawTempSelectImage geometry tempselection xformmat)
+      resizeSelect doesKeepRatio handle cid pnum geometry origbbox (ncoord,ntime) tempselection
+    upact cache uhdl cinfo pcoord = do 
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
@@ -426,19 +424,18 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
                        | handle == HandleBR -> BBox (x0,y0) (x1,y0+(x1-x0)*r)
                        | otherwise -> newbbox'
             else newbbox' 
-          hdlmodst@(SelectState thdl) = view hoodleModeState xstate
+          hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
       case epage of 
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
               newtpage = changeSelectionBy sfunc tpage 
-              cache = view renderCache xstate
           newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newtpage pagenum 
-          commit . set hoodleModeState (SelectState newthdl)
-                 =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
+          uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
+          pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
+          commit_
         Left _ -> error "this is impossible, in resizeSelect" 
-      -- invalidateAll
       invalidateAllInBBox Nothing Efficient
       return ()    
 
@@ -446,32 +443,33 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
 -- | 
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
-  xstate <- get
-  let SelectState thdl = view hoodleModeState xstate 
-      Just (n,tpage) = view gselSelected thdl
-      slayer = view (glayers.selectedLayer) tpage
-  case unTEitherAlterHitted . view gitems $ slayer of 
-    Left _ -> return () 
-    Right alist -> do 
-      let alist' = fmapAL id 
-                     (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
-          newlayer = Right alist'
-          newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
-          cache = view renderCache xstate
-      newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n
-      commit =<< liftIO (updatePageAll (SelectState newthdl)
-                        . set hoodleModeState (SelectState newthdl) $ xstate )
-      -- invalidateAll 
-      invalidateAllInBBox Nothing Efficient
+    cache <- view renderCache <$> get
+    uhdl <- getTheUnit . view unitHoodles <$> get 
+    let SelectState thdl = view hoodleModeState uhdl
+        Just (n,tpage) = view gselSelected thdl
+        slayer = view (glayers.selectedLayer) tpage
+    case unTEitherAlterHitted . view gitems $ slayer of 
+      Left _ -> return () 
+      Right alist -> do 
+        let alist' = fmapAL id (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
+            newlayer = Right alist'
+            newpage = (glayers.selectedLayer .~ (GLayer (slayer^.gbuffer) (TEitherAlterHitted newlayer))) tpage 
+        newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n
+        let uhdl' = (hoodleModeState .~ SelectState newthdl) uhdl
+        uhdl'' <- liftIO (updatePageAll (SelectState newthdl) uhdl')
+        pureUpdateUhdl (const uhdl'')
+        commit_
+        invalidateAllInBBox Nothing Efficient
           
 -- | 
 selectPenWidthChanged :: Double -> MainCoroutine () 
 selectPenWidthChanged pwidth = do 
-  xstate <- get
-  let SelectState thdl = view hoodleModeState xstate 
+  xst <- get
+  let cache = view renderCache xst
+      uhdl = (getTheUnit . view unitHoodles) xst
+      SelectState thdl = view hoodleModeState uhdl
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
-      cache = view renderCache xstate
   case unTEitherAlterHitted . view gitems $ slayer  of 
     Left _ -> return () 
     Right alist -> do 
@@ -480,9 +478,9 @@ selectPenWidthChanged pwidth = do
           newlayer = Right alist'
           newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
       newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n          
-      commit =<< liftIO (updatePageAll (SelectState newthdl) 
-                         . set hoodleModeState (SelectState newthdl) $ xstate )
-      -- invalidateAll 
+      uhdl' <- (liftIO . updatePageAll (SelectState newthdl) . (hoodleModeState .~ SelectState newthdl)) uhdl
+      pureUpdateUhdl (const uhdl')
+      commit_
       invalidateAllInBBox Nothing Efficient 
 
 -- | main mouse pointer click entrance in lasso selection mode. 
@@ -504,23 +502,19 @@ newSelectLasso :: CanvasInfo a
                   -> MainCoroutine ()
 newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nextevent >>= flip fsingle cvsInfo 
   where  
-    fsingle r cinfo = penMoveAndUpOnly r pnum geometry defact
-                        (moveact cinfo) (upact cinfo)
+    fsingle r cinfo = penMoveAndUpOnly r pnum geometry defact (moveact cinfo) (upact cinfo)
     defact = newSelectLasso cvsInfo pnum geometry itms orig 
                (prev,otime) lasso tsel
     moveact cinfo (_pcoord,(x,y)) = do 
       let nlasso = lasso |> (x,y)
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y)
-      when willUpdate $ do 
-        invalidateTemp (view canvasId cinfo) (tempSurfaceSrc tsel) (renderLasso geometry nlasso) 
+      when willUpdate $ invalidateTemp (view canvasId cinfo) (tempSurfaceSrc tsel) (renderLasso geometry nlasso) 
       newSelectLasso cinfo pnum geometry itms orig (ncoord,ntime) nlasso tsel
     upact cinfo pcoord = do 
-      xstate <- get 
-      let (_,(x,y)) = runIdentity $ 
-            skipIfNotInSamePage pnum geometry pcoord 
-                                (return (pcoord,prev)) return
+      uhdl <- getTheUnit . view unitHoodles <$> get 
+      let (_,(x,y)) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return (pcoord,prev)) return
           nlasso = lasso |> (x,y)
-          hdlmodst = view hoodleModeState xstate 
+          hdlmodst = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           cpn = view currentPageNum cinfo 
           hittestlasso1 = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
@@ -533,7 +527,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
           selectitms 
             | (not.null) selecteditms1 = selectitms1 
             | otherwise = selectitms2
-          SelectState thdl = view hoodleModeState xstate
+          SelectState thdl = view hoodleModeState uhdl
           newpage = case epage of 
                       Left pagebbox -> 
                         let currlayer= getCurrentLayer pagebbox
@@ -547,11 +541,11 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev,otime) lasso tsel = nexteve
                             npage = set (glayers.selectedLayer) newlayer tpage 
                         in npage
           newthdl = set gselSelected (Just (cpn,newpage)) thdl 
-      let ui = view gtkUIManager xstate
+      ui <- view gtkUIManager <$> get
       liftIO $ toggleCutCopyDelete ui (isAnyHitted  selectitms)
-      put . set hoodleModeState (SelectState newthdl) 
-            =<< (liftIO (updatePageAll (SelectState newthdl) xstate))
-      -- invalidateAll 
+      uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
+      pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
+      commit_
       invalidateAllInBBox Nothing Efficient
 
 

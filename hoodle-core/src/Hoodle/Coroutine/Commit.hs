@@ -27,6 +27,7 @@ import Hoodle.Type.Undo
 -- | save state and add the current status in undo history 
 commit :: HoodleState -> MainCoroutine () 
 commit xstate = do 
+  put xstate
   let ui = view gtkUIManager xstate
   liftIO $ toggleSave ui True
   pureUpdateUhdl $ \uhdl -> 

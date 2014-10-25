@@ -45,6 +45,8 @@ uncurry4 f (x,y,z,w) = f x y z w
 maybeRead :: Read a => String -> Maybe a 
 maybeRead = fmap fst . listToMaybe . reads 
 
+either_ :: (Monad m) => (b -> m ()) -> Either a b -> m ()
+either_ = either (const (return ()))
 
 getLargestWidth :: Hoodle -> Double 
 getLargestWidth hdl = 

@@ -205,9 +205,6 @@ saveHoodle uhdl = do
       Just filename -> do 
         L.writeFile filename . builder $ hdl
         ctime <- getCurrentTime 
-        -- for the time being
-        -- let ui = view gtkUIManager uhdl
-        -- toggleSave ui False
         return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ uhdl)
              
 -- | this function must be moved to GUI.Reflect

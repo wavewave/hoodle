@@ -14,7 +14,7 @@ module Hoodle.Coroutine.VerticalSpace where
 
 import           Control.Applicative
 import           Control.Category
-import           Control.Lens (view,set,at)
+import           Control.Lens (view,set,at,(.~))
 import           Control.Monad hiding (mapM_)
 import           Control.Monad.State (get)
 import           Control.Monad.Trans (liftIO)
@@ -77,7 +77,7 @@ verticalSpaceStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (return ())
   where 
     verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) _ = do 
-      hdl <- liftM getHoodle get 
+      hdl <- getHoodle . getTheUnit . view unitHoodles <$> get 
       cache <- view renderCache <$> get
       cpg <- getCurrentPageCurr 
       let (itms,npg,hltedLayers) = splitPageByHLine y cpg 
@@ -103,25 +103,21 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (retur
 -- |
 addNewPageAndMoveBelow :: (PageNum,SeqZipper RItemHitted,BBox) 
                           -> MainCoroutine () 
-addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = 
-    updateXState npgBfrAct 
-    >> commit_ 
-    >> canvasZoomUpdateAll >> invalidateAll
+addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = do
+    bsty <- view backgroundStyle <$> get
+    updateUhdl (npgact bsty) >> commit_  >> canvasZoomUpdateAll >> invalidateAll
   where
-    npgBfrAct xst = forBoth' unboxBiAct (fsimple xst) . view currentCanvasInfo $ xst
-    fsimple :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
-    fsimple xstate _cinfo = do 
-      case view hoodleModeState xstate of 
+    -- npgBfrAct xst = forBoth' unboxBiAct (fsimple xst) . view currentCanvasInfo $ xst
+    npgact :: BackgroundStyle -> UnitHoodle -> MainCoroutine UnitHoodle
+    npgact bsty uhdl = do 
+      case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
-          let bsty = view backgroundStyle xstate 
           hdl' <- addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
-          let hdl'' = moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl' 
-              nhdlmodst = ViewAppendState hdl''
-          return =<< liftIO . updatePageAll nhdlmodst
-                     . set hoodleModeState nhdlmodst $ xstate 
+          let nhdlmodst = ViewAppendState (moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl') 
+          liftIO . updatePageAll nhdlmodst . (hoodleModeState .~ nhdlmodst) $ uhdl
         SelectState _ -> do 
           liftIO $ putStrLn " not implemented yet"
-          return xstate
+          return uhdl
             
 -- |             
 moveBelowToNewPage :: (PageNum,SeqZipper RItemHitted,BBox) 
@@ -145,7 +141,6 @@ moveBelowToNewPage (PageNum n,hltedLayers,BBox (_,y0) _) hdl =
                           . concatMap unHitted
                           . getB ) nhlyrs
             npg2 = set glayers nnlyrs pg2
-            
             nhdl = ( set (gpages.at (n+1)) (Just npg2)
                    . set (gpages.at n) (Just npg) ) hdl 
         in nhdl 
@@ -163,18 +158,15 @@ verticalSpaceProcess :: CanvasId
 verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg) 
                      (x0,y0) sfcs@(sfcbkg,sfcitm,sfctot) otime = do 
     r <- nextevent 
-    xst <- get
-    forBoth' unboxBiAct (f r xst) . getCanvasInfo cid $ xst 
+    uhdl <- getTheUnit . view unitHoodles <$> get
+    forBoth' unboxBiAct (f r) . getCanvasInfo cid $ uhdl
   where 
     Dim w h = view gdimension pg    
     CvsCoord (_,y0_cvs) = (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (x0,y0))
     -------------------------------------------------------------
-    f :: UserEvent -> HoodleState -> CanvasInfo a -> MainCoroutine ()
-    f r xstate cvsInfo = penMoveAndUpOnly r pnum geometry defact 
-                           (moveact xstate cvsInfo) upact
-    -------------------------------------------------------------  
+    f :: UserEvent -> CanvasInfo a -> MainCoroutine ()
+    f r cvsInfo = penMoveAndUpOnly r pnum geometry defact (moveact cvsInfo) upact
     defact = verticalSpaceProcess cid geometry pinfo (x0,y0) sfcs otime
-    -------------------------------------------------------------    
     upact pcoord = do 
       let mpgcoord = (desktop2Page geometry . device2Desktop geometry) pcoord
       case mpgcoord of 
@@ -187,25 +179,19 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
             let BBox _ (_,by1) = bbx
             if by1 + y - y0 < h 
               then do 
-                xst <- get 
-                let hdl = getHoodle xst 
-                let nhlyrs = 
-                      fmap (fmapAL id 
-                            (fmap (changeItemBy (\(x',y')->(x',y'+y-y0)))))
-                                  hltedLayers
-                    nlyrs = fmap 
-                              ((\is -> set gitems is emptyRLayer) 
-                                      . concat
-                                      . interleave unNotHitted unHitted) 
-                              nhlyrs 
-                    npg = set glayers nlyrs pg 
-                    nhdl = set (gpages.at n) (Just npg) hdl 
-                commit (set hoodleModeState (ViewAppendState nhdl) xst)
+                pureUpdateUhdl $ \uhdl -> 
+                  let hdl = getHoodle uhdl
+                      nhlyrs = fmap (fmapAL id (fmap (changeItemBy (\(x',y')->(x',y'+y-y0))))) hltedLayers
+                      nlyrs = fmap ((\is -> set gitems is emptyRLayer) . concat . interleave unNotHitted unHitted) 
+                                nhlyrs 
+                      npg = set glayers nlyrs pg 
+                      nhdl = set (gpages.at n) (Just npg) hdl 
+                  in (hoodleModeState .~ ViewAppendState nhdl) uhdl
+                commit_
                 invalidateAll 
-              else do 
-                addNewPageAndMoveBelow (pnum,hltedLayers,bbx)
+              else addNewPageAndMoveBelow (pnum,hltedLayers,bbx)
     -------------------------------------------------------------
-    moveact _xstate cvsInfo (_,(x,y)) = 
+    moveact cvsInfo (_,(x,y)) = 
       processWithDefTimeInterval 
         (verticalSpaceProcess cid geometry pinfo (x0,y0) sfcs)
         (\ctime -> do 

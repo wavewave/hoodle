@@ -51,8 +51,7 @@ startGUI mfname mhook = do
     windowSetDefaultSize window 800 400
     cfg <- loadConfigFile   
     devlst <- initDevice cfg 
-    maxundo <- getMaxUndo cfg >>= 
-                 \mmax -> maybe (return 50) (return . id) mmax
+    maxundo <- getMaxUndo cfg >>= maybe (return 50) (return . id)
     xinputbool <- getXInputConfig cfg 
     (usepz,uselyr) <- getWidgetConfig cfg 
     (tref,st0,ui,vbox) <- initCoroutine devlst window 
@@ -69,7 +68,7 @@ startGUI mfname mhook = do
       ] 
     setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
-    let canvases = map (getDrawAreaFromBox) . M.elems . getCanvasInfoMap $ st0
+    let canvases = map (getDrawAreaFromBox) . M.elems . view cvsInfoMap . getTheUnit . view unitHoodles $ st0
     if xinputbool
         then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
         else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases

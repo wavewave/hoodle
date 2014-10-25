@@ -238,7 +238,7 @@ eventConnect xst uhdl (VSplit wconf1 wconf2) = do
 constructFrame :: HoodleState 
                -> UnitHoodle -> WindowConfig 
                -> IO (UnitHoodle,Widget,WindowConfig)
-constructFrame xst hst wcfg = constructFrame' xst (CanvasSinglePage defaultCvsInfoSinglePage) hst wcfg 
+constructFrame xst uhdl wcfg = constructFrame' xst (CanvasSinglePage defaultCvsInfoSinglePage) uhdl wcfg 
 
 -- | construct frames with template
 constructFrame' :: HoodleState -> CanvasInfoBox -> UnitHoodle -> WindowConfig 

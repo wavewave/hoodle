@@ -530,13 +530,6 @@ setCurrentCanvasId :: CanvasId -> UnitHoodle -> Maybe UnitHoodle
 setCurrentCanvasId a f = do 
     cinfobox <- M.lookup a (_cvsInfoMap f)
     return (f { _currentCanvas = (a,cinfobox) })
-     
-{-
--- | 
-    
-getCanvasInfoMap :: HoodleState -> CanvasInfoMap 
-getCanvasInfoMap = _cvsInfoMap 
--}
 
 -- | 
 setCanvasInfoMap :: CanvasInfoMap -> UnitHoodle -> Maybe UnitHoodle

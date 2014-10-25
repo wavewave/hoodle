@@ -14,7 +14,7 @@
 
 module Hoodle.Coroutine.Window where
 
-import           Control.Lens (view,set,over)
+import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk hiding (get,set)
@@ -43,17 +43,15 @@ canvasConfigureGenUpdate :: MainCoroutine ()
                             -> CanvasDimension 
                             -> MainCoroutine () 
 canvasConfigureGenUpdate updatefunc cid cdim 
-  = updateXState (unboxBiAct fsingle fcont . getCanvasInfo cid ) >> updatefunc 
-  where fsingle cinfo = do 
-          xstate <- get 
+  = updateUhdl (\uhdl -> unboxBiAct (fsingle uhdl) (fcont uhdl) (getCanvasInfo cid uhdl)) >> updatefunc 
+  where fsingle uhdl cinfo = do 
           cinfo' <- liftIO $ updateCanvasDimForSingle cdim cinfo 
-          return $ setCanvasInfo (cid,CanvasSinglePage cinfo') xstate
-        fcont cinfo = do 
-          xstate <- get
+          return $ setCanvasInfo (cid,CanvasSinglePage cinfo') uhdl
+        fcont uhdl cinfo = do 
           page <- getCurrentPageCvsId cid
           let pdim = PageDimension (view gdimension page)
           cinfo' <- liftIO $ updateCanvasDimForContSingle pdim cdim cinfo 
-          return $ setCanvasInfo (cid,CanvasContPage cinfo') xstate 
+          return $ setCanvasInfo (cid,CanvasContPage cinfo') uhdl 
   
 -- | 
 doCanvasConfigure :: CanvasId -> CanvasDimension -> MainCoroutine () 
@@ -62,43 +60,41 @@ doCanvasConfigure = canvasConfigureGenUpdate canvasZoomUpdateAll
 -- | 
 eitherSplit :: SplitType -> MainCoroutine () 
 eitherSplit stype = do
-    xstate <- get
-    let cmap = getCanvasInfoMap xstate
-        currcid = getCurrentCanvasId xstate
+    xst <- get
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    let cmap = view cvsInfoMap uhdl
+        currcid = getCurrentCanvasId uhdl
         newcid = newCanvasId cmap 
-        fstate = view frameState xstate
+        fstate = view frameState uhdl
         enewfstate = splitWindow currcid (newcid,stype) fstate 
     case enewfstate of 
       Left _ -> return ()
       Right fstate' -> do 
         cinfobox <- maybeError "eitherSplit" . M.lookup currcid $ cmap 
-        let rtwin = view rootWindow xstate
-            -- rtnbk = view rootNotebook xstate
-            rtcntr = view rootContainer xstate 
-            rtrwin = view rootOfRootWindow xstate 
-        liftIO $ containerRemove rtcntr  rtwin
-        (xstate'',win,fstate'') <- 
-          liftIO $ constructFrame' cinfobox xstate fstate'
-        let xstate3 = set frameState fstate'' 
-                      . set rootWindow win 
-                      $ xstate''
-        put xstate3 
+        let rtwin = view rootWindow uhdl
+            rtcntr = view rootContainer uhdl
+            rtrwin = view rootOfRootWindow xst 
+        liftIO $ containerRemove rtcntr rtwin
+        (uhdl',win,fstate'') <- liftIO $ constructFrame' xst cinfobox uhdl fstate'
+        let uhdl'' = ((frameState .~ fstate'') . (rootWindow .~ win)) uhdl'
+        let xst3 = (unitHoodles .~ putTheUnit uhdl'') xst
+        put xst3 
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
         liftIO $ widgetQueueDraw rtrwin
-        (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
-        xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
-        put xstate5 
+        (xst4,_wconf) <- liftIO $ eventConnect xst3 uhdl' (view frameState uhdl')
+        updateUhdl $ \uhdl -> liftIO $ updatePageAll (view hoodleModeState uhdl) uhdl
         canvasZoomUpdateAll
         invalidateAll 
 
 -- | 
 deleteCanvas :: MainCoroutine () 
 deleteCanvas = do 
-    xstate <- get
-    let cmap = getCanvasInfoMap xstate
-        currcid = getCurrentCanvasId xstate
-        fstate = view frameState xstate
+    xst <- get
+    let uhdl = (getTheUnit . view unitHoodles) xst
+        cmap = view cvsInfoMap uhdl
+        currcid = getCurrentCanvasId uhdl
+        fstate = view frameState uhdl
         enewfstate = removeWindow currcid fstate 
     case enewfstate of 
       Left _ -> return ()
@@ -106,25 +102,25 @@ deleteCanvas = do
       Right (Just fstate') -> do 
         let cmap' = M.delete currcid cmap
             newcurrcid = maximum (M.keys cmap')
-        xstate0 <- changeCurrentCanvasId newcurrcid 
-        let xstate1 = maybe xstate0 id $ setCanvasInfoMap cmap' xstate0
-        put xstate1
-        let rtwin = view rootWindow xstate1
-            rtcntr = view rootContainer xstate1 
-            rtrwin = view rootOfRootWindow xstate1 
+        updateUhdl $ \uhdl -> do
+          uhdl' <- changeCurrentCanvasId newcurrcid 
+          maybe (return uhdl') return $ setCanvasInfoMap cmap' uhdl'
+        xst1 <- get
+        let uhdl1 = (getTheUnit . view unitHoodles) xst1
+        let rtwin = view rootWindow uhdl1
+            rtcntr = view rootContainer uhdl1 
+            rtrwin = view rootOfRootWindow xst1 
         liftIO $ containerRemove rtcntr rtwin
-        (xstate'',win,fstate'') <- liftIO $ constructFrame xstate1 fstate'
-        let xstate3 = set frameState fstate'' 
-                      . set rootWindow win 
-                      $ xstate''
-        put xstate3
+        (uhdl2,win,fstate'') <- liftIO $ constructFrame xst1 uhdl1 fstate'
+        pureUpdateUhdl ((frameState .~ fstate'') . (rootWindow .~ win))
+        xst3 <- get
         liftIO $ boxPackEnd rtcntr win PackGrow 0 
         liftIO $ widgetShowAll rtcntr  
         liftIO $ widgetQueueDraw rtrwin
-        (xstate4,_wconf) <- liftIO $ eventConnect xstate3 (view frameState xstate3)
+        updateUhdl $ \uhdl -> do
+          (uhdl',_wconf) <- liftIO $ eventConnect xst3 uhdl (view frameState uhdl)
+          liftIO $ updatePageAll (view hoodleModeState uhdl') uhdl'
         canvasZoomUpdateAll
-        xstate5 <- liftIO $ updatePageAll (view hoodleModeState xstate4) xstate4
-        put xstate5 
         invalidateAll 
 
             

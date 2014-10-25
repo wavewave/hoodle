@@ -26,28 +26,33 @@ import qualified Data.Map as M (lookup)
 import           Data.Word
 import qualified Graphics.UI.Gtk as Gtk
 --
-import Hoodle.GUI.Menu 
-import Hoodle.Coroutine.Draw
-import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum 
-import Hoodle.Type.Event
-import Hoodle.Type.HoodleState
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined 
-import Hoodle.Util 
-import Hoodle.View.Coordinate
+import           Hoodle.Accessor
+import           Hoodle.Coroutine.Draw
+import           Hoodle.GUI.Menu 
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum 
+import           Hoodle.Type.Event
+import           Hoodle.Type.HoodleState
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Predefined 
+import           Hoodle.Util 
+import           Hoodle.View.Coordinate
 -- 
-import Debug.Trace
+-- import Debug.Trace
 
 -- | 
-changeCurrentCanvasId :: CanvasId -> MainCoroutine HoodleState 
+changeCurrentCanvasId :: CanvasId -> MainCoroutine UnitHoodle
 changeCurrentCanvasId cid = do 
-    xstate1 <- St.get
-    let uhdl = (getTheUnit . view unitHoodles) xstate1
-    F.forM_ (setCurrentCanvasId cid uhdl) $ \uhdl' -> modify (set unitHoodles (putTheUnit uhdl'))
-    reflectViewModeUI
-    St.get     
+    xst <- St.get
+    let uhdl = (getTheUnit . view unitHoodles) xst
+    case setCurrentCanvasId cid uhdl of
+      Nothing -> return uhdl
+      Just uhdl' -> do 
+        pureUpdateUhdl (const uhdl')
+        reflectViewModeUI
+        return uhdl'
+
 
 -- | check current canvas id and new active canvas id and invalidate if it's 
 --   changed. 
@@ -126,7 +131,7 @@ reflectPenWidthUI = do
           let x = (Just . point2Int HighlighterWork 
                             . view (penInfo.penSet.currHighlighter.penWidth)) xst
               y = view (penInfo.penSet.currHighlighter.penWidth) xst
-          in trace (" x= " ++ show x ++ " y = " ++ show y ) x 
+          in x 
         EraserWork -> (Just . point2Int EraserWork 
                        . view (penInfo.penSet.currEraser.penWidth)) xst
         _ -> Nothing 

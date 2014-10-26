@@ -158,11 +158,11 @@ invalidateInBBox :: Maybe BBox -- ^ desktop coord
                     -> DrawFlag 
                     -> CanvasId -> MainCoroutine ()
 invalidateInBBox mbbox flag cid = do 
-  xst <- get 
-  let uhdl = view (unitHoodles.currentUnit) xst
-  geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
-  invalidateGeneral cid mbbox flag 
-    (drawSinglePage geometry) (drawSinglePageSel geometry) (drawContHoodle geometry) (drawContHoodleSel geometry)
+    xst <- get 
+    let uhdl = view (unitHoodles.currentUnit) xst
+    geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
+    invalidateGeneral cid mbbox flag 
+      (drawSinglePage geometry) (drawSinglePageSel geometry) (drawContHoodle geometry) (drawContHoodleSel geometry)
 
 -- | 
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 

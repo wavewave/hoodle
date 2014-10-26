@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.Window where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over,(.~))
+import           Control.Lens (view,set,over,(.~),_2,at)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import qualified Graphics.UI.Gtk as Gtk
@@ -73,11 +73,12 @@ eitherSplit stype = do
       Left _ -> return ()
       Right fstate' -> do 
         cinfobox <- maybeError "eitherSplit" . M.lookup currcid $ cmap 
-        let rtwin = view rootWindow uhdl
+        let callback = view callBack xst
+            rtwin = view rootWindow uhdl
             rtcntr = view rootContainer uhdl
             rtrwin = view rootOfRootWindow xst 
         liftIO $ Gtk.containerRemove rtcntr rtwin
-        (uhdl',win,fstate'') <- liftIO $ constructFrame' xst cinfobox uhdl fstate'
+        (uhdl',win,fstate'') <- liftIO $ constructFrame' callback cinfobox uhdl fstate'
         let uhdl'' = ((frameState .~ fstate'') . (rootWindow .~ win)) uhdl'
         let xst3 = (unitHoodles.currentUnit .~ uhdl'') xst
         put xst3 
@@ -113,6 +114,7 @@ deleteCanvas = do
         let rtwin = view rootWindow uhdl1
             rtcntr = view rootContainer uhdl1 
             rtrwin = view rootOfRootWindow xst1 
+            -- callback = view callBack xst1
         liftIO $ Gtk.containerRemove rtcntr rtwin
         (uhdl2,win,fstate'') <- liftIO $ constructFrame xst1 uhdl1 fstate'
         pureUpdateUhdl (const (((frameState .~ fstate'') . (rootWindow .~ win)) uhdl2))
@@ -134,11 +136,9 @@ paneMoveStart = do
     ev <- nextevent 
     case ev of 
       UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> paneMoveStart 
-      PaneMoveEnd -> do 
-        return () 
-      CanvasConfigure cid w' h'-> do 
-        canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h')) 
-        >> paneMoveStart
+      PaneMoveEnd -> return () 
+      CanvasConfigure cid w' h'->
+        canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h')) >> paneMoveStart
       _ -> paneMoveStart
        
 
@@ -151,15 +151,10 @@ paneMoved = do
 fullScreen :: MainCoroutine ()
 fullScreen = do 
     xst <- get 
-    let b = view isFullScreen xst
-        rwin = view rootOfRootWindow xst 
-    if b 
-      then do 
-        liftIO $ Gtk.windowUnfullscreen rwin
-        modify (over isFullScreen (const False))
-      else do 
-        liftIO $ Gtk.windowFullscreen rwin 
-        modify (over isFullScreen (const True))
+    let rwin = view rootOfRootWindow xst 
+    if view isFullScreen xst 
+      then liftIO (Gtk.windowUnfullscreen rwin) >> modify (over isFullScreen (const False))
+      else liftIO (Gtk.windowFullscreen rwin) >> modify (over isFullScreen (const True))
 
 -- |
 addTab :: MainCoroutine ()
@@ -184,21 +179,36 @@ addTab = do
              . (unitKey .~ 1) <$> liftIO emptyUnitHoodle
         
     liftIO $ putStrLn "before constructFrame"
-    (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
+    -- (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
+    (cinfobox,canvas,scrwin) <- liftIO $ do
+      let cid = 1
+      canvas <- Gtk.drawingAreaNew
+      scrwin <- Gtk.scrolledWindowNew Nothing Nothing 
+      Gtk.containerAdd scrwin canvas
+      hadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
+      vadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
+      Gtk.scrolledWindowSetHAdjustment scrwin hadj 
+      Gtk.scrolledWindowSetVAdjustment scrwin vadj 
+      let cinfo = CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
+          cinfobox = CanvasSinglePage cinfo
+      return (cinfobox,canvas,scrwin)
     liftIO $ putStrLn "after constructFrame"
 
-    liftIO $ Gtk.containerAdd vboxcvs wdgt 
+    let wdgt = Gtk.castToWidget scrwin
+    liftIO $ Gtk.containerAdd vboxcvs wdgt
  
-    let uhdl''' = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
+    let uhdl'' = (currentCanvasInfo .~ cinfobox) uhdl'
+        uhdl''' = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
         rtrwin = view rootOfRootWindow xst 
-
-        -- let rtwin = view rootWindow uhdl
-        --     rtcntr = view rootContainer uhdl
+     
     liftIO $ putStrLn "before register"
     liftIO $ registerFrameToContainer rtrwin (Gtk.castToBox vboxcvs) wdgt
     liftIO $ putStrLn "after register"
+    liftIO $ Gtk.widgetShowAll notebook
 
-    modify $ (unitHoodles.currentUnit .~ uhdl''')
+    
+
+    modify $ (unitHoodles._2.at 2 .~ Just uhdl''')
 
     liftIO $ putStrLn "before invalidate"
     invalidateAll

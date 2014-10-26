@@ -90,7 +90,7 @@ initCanvasInfo xstate uhdl cid =
 
 -- | only creating windows 
 minimalCanvasInfo :: CanvasId -> IO (CanvasInfo a)
-minimalCanvasInfo cid = do 
+minimalCanvasInfo cid = do
     canvas <- drawingAreaNew
     scrwin <- scrolledWindowNew Nothing Nothing 
     containerAdd scrwin canvas
@@ -238,12 +238,14 @@ eventConnect xst uhdl (VSplit wconf1 wconf2) = do
 constructFrame :: HoodleState 
                -> UnitHoodle -> WindowConfig 
                -> IO (UnitHoodle,Widget,WindowConfig)
-constructFrame xst uhdl wcfg = constructFrame' xst (CanvasSinglePage defaultCvsInfoSinglePage) uhdl wcfg 
+constructFrame xst uhdl wcfg = 
+    let callback = view callBack xst
+    in constructFrame' callback (CanvasSinglePage defaultCvsInfoSinglePage) uhdl wcfg 
 
 -- | construct frames with template
-constructFrame' :: HoodleState -> CanvasInfoBox -> UnitHoodle -> WindowConfig 
+constructFrame' :: (AllEvent -> IO ()) -> CanvasInfoBox -> UnitHoodle -> WindowConfig 
                 -> IO (UnitHoodle,Widget,WindowConfig)
-constructFrame' xst template ouhdl (Node cid) = do 
+constructFrame' _callback template ouhdl (Node cid) = do 
     let ocmap = view cvsInfoMap ouhdl
     (cinfobox,_cmap,uhdl) <- case M.lookup cid ocmap of 
       Just cinfobox' -> return (cinfobox',ocmap,ouhdl)
@@ -256,10 +258,9 @@ constructFrame' xst template ouhdl (Node cid) = do
     let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
     let scrwin = forBoth' unboxBiAct (castToWidget.view scrolledWindow) ncinfobox
     return (uhdl', scrwin, Node cid)
-constructFrame' xst template uhdl (HSplit wconf1 wconf2) = do  
-    (uhdl',win1,wconf1') <- constructFrame' xst template uhdl wconf1
-    (uhdl'',win2,wconf2') <- constructFrame' xst template uhdl' wconf2 
-    let callback = view callBack xst
+constructFrame' callback template uhdl (HSplit wconf1 wconf2) = do  
+    (uhdl',win1,wconf1') <- constructFrame' callback template uhdl wconf1
+    (uhdl'',win2,wconf2') <- constructFrame' callback template uhdl' wconf2 
     hpane' <- hPanedNew
     hpane' `on` buttonPressEvent $ do 
       liftIO ((callback . UsrEv) PaneMoveStart)
@@ -271,10 +272,9 @@ constructFrame' xst template uhdl (HSplit wconf1 wconf2) = do
     panedPack2 hpane' win2 True False
     widgetShowAll hpane' 
     return (uhdl'',castToWidget hpane', HSplit wconf1' wconf2')
-constructFrame' xst template uhdl (VSplit wconf1 wconf2) = do  
-    (uhdl',win1,wconf1') <- constructFrame' xst template uhdl wconf1 
-    (uhdl'',win2,wconf2') <- constructFrame' xst template uhdl' wconf2 
-    let callback = view callBack xst
+constructFrame' callback template uhdl (VSplit wconf1 wconf2) = do  
+    (uhdl',win1,wconf1') <- constructFrame' callback template uhdl wconf1 
+    (uhdl'',win2,wconf2') <- constructFrame' callback template uhdl' wconf2 
     vpane' <- vPanedNew 
     vpane' `on` buttonPressEvent $ do 
       liftIO ((callback . UsrEv) PaneMoveStart)
@@ -290,5 +290,6 @@ constructFrame' xst template uhdl (VSplit wconf1 wconf2) = do
 registerFrameToContainer :: Gtk.Window -> Gtk.Box -> Gtk.Widget -> IO ()
 registerFrameToContainer rtrwin rtcntr win = do
     boxPackEnd rtcntr win PackGrow 0 
-    widgetShowAll rtcntr  
+   --  widgetShowAll rtcntr  
+    widgetShowAll rtrwin
     widgetQueueDraw rtrwin

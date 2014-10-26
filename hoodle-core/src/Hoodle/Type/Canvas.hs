@@ -196,8 +196,8 @@ xfrmCvsInfo f CanvasInfo {..} =
 -- |     
 defaultCvsInfoSinglePage :: CanvasInfo SinglePage
 defaultCvsInfoSinglePage = 
-  CanvasInfo { _canvasId = error "cvsid"
-             , _drawArea = error "DrawingArea"
+  CanvasInfo { _canvasId = error "defaultCvsInfoSinglePage cvsid"
+             , _drawArea = error "defaultCvsInfoSinglePage DrawingArea"
              , _mDrawSurface = Nothing 
              , _scrolledWindow = error "ScrolledWindow"
              , _viewInfo = defaultViewInfoSinglePage

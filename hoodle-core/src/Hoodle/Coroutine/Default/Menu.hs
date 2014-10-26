@@ -18,7 +18,6 @@ module Hoodle.Coroutine.Default.Menu where
 
 import           Control.Applicative
 import           Control.Lens (_1,view,set,(.~))
--- import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.State hiding (mapM_)
 import           Data.Foldable (mapM_)
@@ -173,24 +172,22 @@ menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles.current
 menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
+menuEventProcess MenuAddTab = addTab
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
-
 
 -- | 
 colorPick :: MainCoroutine () 
 colorPick = colorPickerBox "Pen Color" >>= mapM_ (\c->modify (penInfo.currentTool.penColor .~ c))
 
-
 -- | 
 colorConvert :: Gtk.Color -> PenColor 
 colorConvert (Gtk.Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/65536.0) (realToFrac b/65536.0) 1.0 
-
 -- | 
 colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
 colorPickerBox msg = do 
-   xst <- get 
-   let pcolor = view (penInfo.currentTool.penColor) xst   
-   doIOaction (action pcolor) >> go
+    xst <- get 
+    let pcolor = view (penInfo.currentTool.penColor) xst   
+    doIOaction (action pcolor) >> go
   where 
     action pcolor _evhandler = do 
       dialog <- Gtk.colorSelectionDialogNew msg

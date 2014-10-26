@@ -76,6 +76,7 @@ module Hoodle.Type.HoodleState
 , penColorSignal
 , newPageModeSignal
 -- | others 
+, emptyUnitHoodle
 , emptyHoodleState
 , defaultSettings 
 , defaultUIComponentSignalHandler

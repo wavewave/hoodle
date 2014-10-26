@@ -287,3 +287,8 @@ constructFrame' xst template uhdl (VSplit wconf1 wconf2) = do
     widgetShowAll vpane' 
     return (uhdl'',castToWidget vpane', VSplit wconf1' wconf2')
   
+registerFrameToContainer :: Gtk.Window -> Gtk.Box -> Gtk.Widget -> IO ()
+registerFrameToContainer rtrwin rtcntr win = do
+    boxPackEnd rtcntr win PackGrow 0 
+    widgetShowAll rtcntr  
+    widgetQueueDraw rtrwin

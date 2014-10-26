@@ -141,10 +141,11 @@ doubleBufferFlush sfc cinfo = do
 
 -- | common routine for double buffering 
 doubleBufferDraw :: (DrawWindow, Maybe Cairo.Surface)  
-                    -> CanvasGeometry -> Cairo.Render () -> Cairo.Render a
+                    -> CanvasGeometry 
+                    -> Cairo.Render a
                     -> IntersectBBox
                     -> IO (Maybe a)
-doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do 
+doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do 
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
@@ -177,7 +178,7 @@ doubleBufferDraw (win,msfc) geometry _xform rndr (Intersect ibbox) = do
     Middle _ -> Just <$> action 
     Bottom   -> return Nothing 
 
-
+-- |
 mkXform4Page :: CanvasGeometry -> PageNum -> Xform4Page
 mkXform4Page geometry pnum = 
     let CvsCoord (x0,y0) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (0,0))
@@ -186,21 +187,12 @@ mkXform4Page geometry pnum =
         sy = y1-y0
     in Xform4Page x0 y0 sx sy
 
-
 -- | 
 cairoXform4PageCoordinate :: Xform4Page -> Cairo.Render () 
 cairoXform4PageCoordinate xform = do
     Cairo.translate (transx xform) (transy xform)
     Cairo.scale (scalex xform) (scaley xform)
 
- {- do 
-  let CvsCoord (x0,y0) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (0,0))
-      CvsCoord (x1,y1) = desktop2Canvas geometry . page2Desktop geometry $ (pnum,PageCoord (1,1))
-      sx = x1-x0 
-      sy = y1-y0
-  Cairo.translate x0 y0      
-  Cairo.scale sx sy
--}
 -- |   
 data PressureMode = NoPressure | Pressure
   
@@ -262,7 +254,7 @@ drawFuncGen _typ render = SinglePageDraw func
                 -- End Widget
                 Cairo.resetClip 
                 return pg 
-          doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew 
+          doubleBufferDraw (win,msfc) geometry renderfunc ibboxnew 
           >>= maybe (return page) return 
 
 
@@ -352,7 +344,7 @@ drawContPageGen render = ContPageDraw func
                 drawWidgets allWidgets hdl cinfo mbbox_canvas 
                 Cairo.resetClip 
                 return nhdl 
-          doubleBufferDraw (win,msfc) geometry xformfunc renderfunc ibboxnew
+          doubleBufferDraw (win,msfc) geometry renderfunc ibboxnew
           >>= maybe (return hdl) return  
 
 
@@ -413,8 +405,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                 drawWidgets allWidgets hdl cinfo mbbox_canvas
                 Cairo.resetClip 
                 return nthdl2  
-          doubleBufferDraw (win,msfc) geometry (cairoXform4PageCoordinate (mkXform4Page geometry pnum)) 
-            renderfunc ibboxnew
+          doubleBufferDraw (win,msfc) geometry renderfunc ibboxnew
           >>= maybe (return thdl) return 
 
 

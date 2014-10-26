@@ -15,9 +15,10 @@
 module Hoodle.Coroutine.Window where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over,(.~),_2,at)
+import           Control.Lens (view,set,over,(^.),(.~),_2,at)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
+import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 --
 import           Data.Hoodle.Generic
@@ -37,6 +38,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window
+import           Hoodle.View.Draw
 --
 
 -- | canvas configure with general zoom update func
@@ -83,9 +85,6 @@ eitherSplit stype = do
         let xst3 = (unitHoodles.currentUnit .~ uhdl'') xst
         put xst3 
         liftIO $ registerFrameToContainer rtrwin rtcntr win
-        -- liftIO $ boxPackEnd rtcntr win PackGrow 0 
-        -- liftIO $ widgetShowAll rtcntr  
-        -- liftIO $ widgetQueueDraw rtrwin
         (uhdl3,_wconf) <- liftIO $ eventConnect xst3 uhdl'' (view frameState uhdl'')
         updateUhdl $ const (liftIO $ updatePageAll (view hoodleModeState uhdl3) uhdl3)
         canvasZoomUpdateAll
@@ -114,15 +113,11 @@ deleteCanvas = do
         let rtwin = view rootWindow uhdl1
             rtcntr = view rootContainer uhdl1 
             rtrwin = view rootOfRootWindow xst1 
-            -- callback = view callBack xst1
         liftIO $ Gtk.containerRemove rtcntr rtwin
         (uhdl2,win,fstate'') <- liftIO $ constructFrame xst1 uhdl1 fstate'
         pureUpdateUhdl (const (((frameState .~ fstate'') . (rootWindow .~ win)) uhdl2))
         xst3 <- get
         liftIO $ registerFrameToContainer rtrwin rtcntr win
-        -- liftIO $ Gtk.boxPackEnd rtcntr win PackGrow 0 
-        -- liftIO $ Gtk.widgetShowAll rtcntr  
-        -- liftIO $ Gtk.widgetQueueDraw rtrwin
         updateUhdl $ \uhdl -> do
           (uhdl',_wconf) <- liftIO $ eventConnect xst3 uhdl (view frameState uhdl)
           liftIO $ updatePageAll (view hoodleModeState uhdl') uhdl'
@@ -141,7 +136,6 @@ paneMoveStart = do
         canvasConfigureGenUpdate canvasZoomUpdateBufAll cid (CanvasDimension (Dim w' h')) >> paneMoveStart
       _ -> paneMoveStart
        
-
 -- | not yet implemented?
 paneMoved :: MainCoroutine () 
 paneMoved = do 
@@ -194,61 +188,65 @@ addTab = do
       return (cinfobox,canvas,scrwin)
     liftIO $ putStrLn "after constructFrame"
 
+    liftIO $ do
+      _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
+        liftIO $ Gtk.widgetGrabFocus canvas
+        (liftIO . (xst^.callBack) . UsrEv) (UpdateCanvas 1) 
+      return ()
+
+
     let wdgt = Gtk.castToWidget scrwin
-    liftIO $ Gtk.containerAdd vboxcvs wdgt
+    -- liftIO $ Gtk.containerAdd vboxcvs wdgt
  
     let uhdl'' = (currentCanvasInfo .~ cinfobox) uhdl'
         uhdl''' = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
         rtrwin = view rootOfRootWindow xst 
      
     liftIO $ putStrLn "before register"
-    liftIO $ registerFrameToContainer rtrwin (Gtk.castToBox vboxcvs) wdgt
+    -- liftIO $ registerFrameToContainer rtrwin (Gtk.castToBox vboxcvs) wdgt
+    liftIO $ do 
+      Gtk.boxPackEnd vboxcvs wdgt Gtk.PackGrow 0 
+      Gtk.widgetShowAll vboxcvs
+      Gtk.widgetShowAll notebook
+      Gtk.widgetShowAll rtrwin
+      Gtk.widgetQueueDraw rtrwin
+
+
     liftIO $ putStrLn "after register"
     liftIO $ Gtk.widgetShowAll notebook
-
-    
 
     modify $ (unitHoodles._2.at 2 .~ Just uhdl''')
 
     liftIO $ putStrLn "before invalidate"
     invalidateAll
     liftIO $ putStrLn "after invalidate"
-{-
-    let uhdl = view (unitHoodles.currentUnit) xst
-    let cmap = view cvsInfoMap uhdl
-        currcid = getCurrentCanvasId uhdl
-        newcid = newCanvasId cmap 
-        fstate = view frameState uhdl
-        enewfstate = splitWindow currcid (newcid,stype) fstate 
-    case enewfstate of 
-      Left _ -> return ()
-      Right fstate' -> do 
-        cinfobox <- maybeError "eitherSplit" . M.lookup currcid $ cmap 
-        let rtwin = view rootWindow uhdl
-            rtcntr = view rootContainer uhdl
-            rtrwin = view rootOfRootWindow xst 
-        liftIO $ containerRemove rtcntr rtwin
-        (uhdl',win,fstate'') <- liftIO $ constructFrame' xst cinfobox uhdl fstate'
-        let uhdl'' = ((frameState .~ fstate'') . (rootWindow .~ win)) uhdl'
-        let xst3 = (unitHoodles.currentUnit .~ uhdl'') xst
-        put xst3 
-        liftIO $ registerFrameToContainer rtrwin rtcntr win
-        -- liftIO $ boxPackEnd rtcntr win PackGrow 0 
-        -- liftIO $ widgetShowAll rtcntr  
-        -- liftIO $ widgetQueueDraw rtrwin
-        (uhdl3,_wconf) <- liftIO $ eventConnect xst3 uhdl'' (view frameState uhdl'')
-        updateUhdl $ const (liftIO $ updatePageAll (view hoodleModeState uhdl3) uhdl3)
-        canvasZoomUpdateAll
-        invalidateAll 
-
-
-    liftIO $ do
-      lbtn <- buttonNewWithLabel "test" 
-      notebookAppendPage notebook lbtn "test2"
-      widgetShowAll notebook
-      putStrLn "add tab called"
-           
-  -}  
   
-  
+
+-- |
+nextTab :: MainCoroutine ()
+nextTab = do
+    uhdls <- view unitHoodles <$> get
+    let current = fst uhdls
+        lst = filter ((>current).fst) (M.assocs (snd uhdls))
+    when ((not.null) lst) $ do
+      let uhdl = snd (head lst)
+      modify $ (unitHoodles.currentUnit .~ uhdl)
+      invalidateAll
+{-    
+      liftIO $ print "nextTab"
+          cinfobox = getCanvasInfo 1 uhdl
+          fsingle :: CanvasInfo a -> IO ()
+          fsingle cinfo = do
+            let canvas = view drawArea cinfo
+            win <- Gtk.widgetGetDrawWindow canvas
+            Gtk.renderWithDrawable win $ do
+              Cairo.rectangle 0 0 100 100
+              Cairo.fill
+            print (view currentPageNum cinfo)
+      liftIO $ forBoth' unboxBiAct fsingle cinfobox -}
+      {- 
+      geometry <- liftIO $ getCanvasGeometryCvsId 1 uhdl
+      invalidateGeneral 1 Nothing Clear
+        (drawSinglePage geometry) (drawSinglePageSel geometry) (drawContHoodle geometry) (drawContHoodleSel geometry) -}
+      
 

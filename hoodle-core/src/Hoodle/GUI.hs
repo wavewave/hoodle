@@ -54,8 +54,7 @@ startGUI mfname mhook = do
     maxundo <- getMaxUndo cfg >>= maybe (return 50) (return . id)
     xinputbool <- getXInputConfig cfg 
     (usepz,uselyr) <- getWidgetConfig cfg 
-    (tref,st0,ui,vbox) <- initCoroutine devlst window 
-                            mhook maxundo (xinputbool,usepz,uselyr) 
+    (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) 
     setTitleFromFileName st0
     -- need for refactoring
 

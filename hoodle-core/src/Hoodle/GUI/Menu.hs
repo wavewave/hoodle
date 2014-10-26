@@ -370,6 +370,8 @@ getMenuUI evar = do
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
   -- window menu
   addtaba <- actionNewAndRegister "ADDTABA" "Add new tab" (Just "Just a Stub") Nothing (justMenu MenuAddTab)
+  nexttaba <- actionNewAndRegister "NEXTTABA" "Go to next tab" (Just "Just a Stub") Nothing (justMenu MenuNextTab)
+
 
   -- help menu 
   abouta <- actionNewAndRegister "ABOUTA" "About" (Just "Just a Stub") Nothing (justMenu MenuAbout)
@@ -398,7 +400,7 @@ getMenuUI evar = do
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha
-        , addtaba
+        , addtaba, nexttaba
         , abouta 
         , defaulta         
         ] 

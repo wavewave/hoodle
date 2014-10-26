@@ -217,6 +217,7 @@ data MenuEvent = MenuNew
                | MenuToggleScrollWidget
                | MenuPressureSensitivity
                | MenuAddTab
+               | MenuNextTab
                | MenuAbout
                | MenuDefault
                deriving Show 

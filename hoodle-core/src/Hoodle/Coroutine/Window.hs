@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
@@ -169,65 +170,18 @@ addTab = do
              . (cvsInfoMap .~ M.empty)
              . (hoodleFileControl.hoodleFileName .~ Nothing) 
              . (unitKey .~ 2) <$> liftIO emptyUnitHoodle
-    liftIO $ print (M.keys (view cvsInfoMap uhdl'))
-        
-    liftIO $ putStrLn "before constructFrame"
-
-    (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
-{-
-    (cinfobox,canvas,scrwin) <- liftIO $ do
-      let cid = 1
-      canvas <- Gtk.drawingAreaNew
-      scrwin <- Gtk.scrolledWindowNew Nothing Nothing 
-      Gtk.containerAdd scrwin canvas
-      hadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
-      vadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
-      Gtk.scrolledWindowSetHAdjustment scrwin hadj 
-      Gtk.scrolledWindowSetVAdjustment scrwin vadj 
-      let cinfo = CanvasInfo cid canvas Nothing scrwin defaultViewInfoSinglePage 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
-          cinfobox = CanvasSinglePage cinfo
-      return (cinfobox,canvas,scrwin)
--}
-
-    liftIO $ putStrLn "after constructFrame"
-    -- liftIO $ forBoth' unboxBiAct (putStrLn <=< Gtk.widgetGetName . view drawArea) $ view currentCanvasInfo uhdl''
-    -- let wdgt = Gtk.castToWidget scrwin
-    -- let rtrwin = view rootOfRootWindow xst 
-    --     uhdl3 = (currentCanvasInfo .~ cinfobox) . (rootWindow .~ wdgt) 
-    --            . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
-    --     uhdl4 = uhdl3 
-
-    -- liftIO $ Gtk.containerAdd vboxcvs wdgt
- 
-    -- let rtrwin = view rootOfRootWindow xst 
-    let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
-    (uhdl4,_wconf) <- liftIO $ eventConnect xst uhdl3 (view frameState uhdl3)
-    --     uhdl4 = uhdl3
-{-
-    liftIO $ do 
-      let act cinfo = do
-            let canvas = view drawArea cinfo
-                cid = view canvasId cinfo
-            _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-              liftIO $ Gtk.widgetGrabFocus canvas
-              (liftIO . (xst^.callBack) . UsrEv) (UpdateCanvas cid) 
-            return ()
- 
-      forBoth' unboxBiAct act (view currentCanvasInfo uhdl3)
--}
-{-
-    liftIO $ do
-      _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-        liftIO $ Gtk.widgetGrabFocus canvas
-        (liftIO . (xst^.callBack) . UsrEv) (UpdateCanvas 1) 
-      return ()
--}
-
-
-    liftIO $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
-    liftIO $ registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
-    
-    liftIO $ Gtk.widgetShowAll notebook
+    -- liftIO $ print (M.keys (view cvsInfoMap uhdl'))
+          
+    uhdl4 <- liftIO $ do
+      (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
+      let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
+      (uhdl4,_wconf) <- eventConnect xst uhdl3 (view frameState uhdl3)
+      Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
+      registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
+      Gtk.widgetShowAll notebook
+      return uhdl4
+      -- return (UsrEv (NewUnitHoodle uhdl4))
+    -- NewUnitHoodle uhdl4 <- waitSomeEvent (\case NewUnitHoodle _ -> True; _ -> False)
 
     modify $ (unitHoodles._2.at 2 .~ Just uhdl4)
     -- modify $ (unitHoodles.currentUnit .~ uhdl4)

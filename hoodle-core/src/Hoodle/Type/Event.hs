@@ -107,6 +107,7 @@ data UserEvent = Initialized (Maybe FilePath)
 instance Show (IORef a) where                      
   show _ = "IORef"
 
+
 data RenderEvent = GotRItem RItem
                  | GotRItems [RItem]
                  | GotRBackground RBackground

@@ -21,6 +21,7 @@ module Hoodle.Type.HoodleState
 , Settings
 , UIComponentSignalHandler
 -- | labels
+, unitKey
 , hoodleModeState
 , hoodleFileControl
 , cvsInfoMap
@@ -148,7 +149,8 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          | YesAfterSelect
                          deriving (Show,Eq,Ord)
 
-data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
+data UnitHoodle = UnitHoodle { _unitKey :: Int
+                             , _hoodleModeState :: HoodleModeState
                              , _hoodleFileControl :: HoodleFileControl
                              , _cvsInfoMap :: CanvasInfoMap 
                              , _currentCanvas :: (CanvasId,CanvasInfoBox)
@@ -162,7 +164,7 @@ data UnitHoodle = UnitHoodle { _hoodleModeState :: HoodleModeState
 
 
 data HoodleState = 
-    HoodleState { _unitHoodles :: [ UnitHoodle ]
+    HoodleState { _unitHoodles :: (Int, M.IntMap UnitHoodle)
                 , _rootNotebook :: Gtk.Notebook
                 , _rootOfRootWindow :: Gtk.Window
                 , _currentPenDraw :: PenDraw
@@ -188,11 +190,13 @@ data HoodleState =
                 } 
 
 
--- getTheUnit = head
--- putTheUnit x = [x]
+-- | current unit
+currentUnit :: Simple Lens (Int,M.IntMap UnitHoodle) UnitHoodle
+currentUnit = lens (\(k,m) -> fromJust (M.lookup k m)) (\(_,m) a -> (_unitKey a,M.insert (_unitKey a) a m))
 
-currentUnit :: Simple Lens [UnitHoodle] UnitHoodle
-currentUnit = lens head (\f a -> [a])
+-- | lens for unitKey
+unitKey :: Simple Lens UnitHoodle Int
+unitKey = lens _unitKey (\f a -> f { _unitKey = a })
 
 -- | lens for hoodleModeState
 hoodleModeState :: Simple Lens UnitHoodle HoodleModeState
@@ -235,7 +239,7 @@ isOneTimeSelectMode :: Simple Lens UnitHoodle IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f { _isOneTimeSelectMode = a } )
 
 -- | lens for unitHoodles 
-unitHoodles :: Simple Lens HoodleState [UnitHoodle]
+unitHoodles :: Simple Lens HoodleState (Int,M.IntMap UnitHoodle)
 unitHoodles = lens _unitHoodles (\f a -> f { _unitHoodles = a } )
 
 -- | lens for rootWindow
@@ -437,7 +441,8 @@ emptyUnitHoodle :: IO UnitHoodle
 emptyUnitHoodle = do
   hdl <- emptyGHoodle
   return $ 
-    UnitHoodle { _hoodleModeState = ViewAppendState hdl 
+    UnitHoodle { _unitKey = 0
+               , _hoodleModeState = ViewAppendState hdl 
                , _hoodleFileControl = emptyHoodleFileControl 
                , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"
                , _currentCanvas = error "emtpyHoodleState.currentCanvas"
@@ -455,7 +460,7 @@ emptyHoodleState = do
   unit <- emptyUnitHoodle
   tvar <- atomically $ newTVar empty 
   return $
-    HoodleState { _unitHoodles = [unit]
+    HoodleState { _unitHoodles = (0, M.singleton 0 unit)
                 , _rootNotebook = error "emtpyHoodleState.rootNotebook"
                 , _rootOfRootWindow = error "emptyHoodleState.rootOfRootWindow"
                 , _currentPenDraw = emptyPenDraw 

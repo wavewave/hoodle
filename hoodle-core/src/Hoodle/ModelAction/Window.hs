@@ -98,6 +98,7 @@ minimalCanvasInfo cid = do
     vadj <- adjustmentNew 0 0 500 100 200 200 
     scrolledWindowSetHAdjustment scrwin hadj 
     scrolledWindowSetVAdjustment scrwin vadj 
+    putStrLn "this is called"
     return $ CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
 
 
@@ -256,6 +257,8 @@ constructFrame' _callback template ouhdl (Node cid) = do
         return (cinfobox',cmap',uhdl')
     ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 uhdl) cinfobox
     let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
+    print "hi"
+    forBoth' unboxBiAct (putStrLn <=< widgetGetName . view drawArea) ncinfobox
     let scrwin = forBoth' unboxBiAct (castToWidget.view scrolledWindow) ncinfobox
     return (uhdl', scrwin, Node cid)
 constructFrame' callback template uhdl (HSplit wconf1 wconf2) = do  

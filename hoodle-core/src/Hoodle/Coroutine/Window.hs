@@ -26,6 +26,7 @@ import           Data.Hoodle.Simple (Dimension(..))
 --
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Page
 import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.Page
@@ -157,23 +158,23 @@ addTab = do
     notebook <- view rootNotebook <$> get
     
     vboxcvs <- liftIO $ Gtk.vBoxNew False 0
-    liftIO $ Gtk.notebookAppendPage notebook vboxcvs "test2"
+    tabnum <- liftIO $ Gtk.notebookAppendPage notebook vboxcvs "test2"
 
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
-        -- cvs = (canvasWidgets.widgetConfig.doesUsePanZoomWidget .~ False)
-        --       . (canvasWidgets.widgetConfig.doesUseLayerWidget .~ False)
-        --       $ defaultCvsInfoSinglePage { _canvasId = 1 }
     uhdl' <- (undoTable .~ emptyUndo 50)   -- (undo = 50 for the time being) 
              . (frameState .~ wconf) 
              . updateFromCanvasInfoAsCurrentCanvas initcvsbox
              . (cvsInfoMap .~ M.empty)
              . (hoodleFileControl.hoodleFileName .~ Nothing) 
-             . (unitKey .~ 1) <$> liftIO emptyUnitHoodle
+             . (unitKey .~ 2) <$> liftIO emptyUnitHoodle
+    liftIO $ print (M.keys (view cvsInfoMap uhdl'))
         
     liftIO $ putStrLn "before constructFrame"
-    -- (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
+
+    (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
+{-
     (cinfobox,canvas,scrwin) <- liftIO $ do
       let cid = 1
       canvas <- Gtk.drawingAreaNew
@@ -183,43 +184,60 @@ addTab = do
       vadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
       Gtk.scrolledWindowSetHAdjustment scrwin hadj 
       Gtk.scrolledWindowSetVAdjustment scrwin vadj 
-      let cinfo = CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
+      let cinfo = CanvasInfo cid canvas Nothing scrwin defaultViewInfoSinglePage 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
           cinfobox = CanvasSinglePage cinfo
       return (cinfobox,canvas,scrwin)
-    liftIO $ putStrLn "after constructFrame"
+-}
 
+    liftIO $ putStrLn "after constructFrame"
+    -- liftIO $ forBoth' unboxBiAct (putStrLn <=< Gtk.widgetGetName . view drawArea) $ view currentCanvasInfo uhdl''
+    -- let wdgt = Gtk.castToWidget scrwin
+    -- let rtrwin = view rootOfRootWindow xst 
+    --     uhdl3 = (currentCanvasInfo .~ cinfobox) . (rootWindow .~ wdgt) 
+    --            . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
+    --     uhdl4 = uhdl3 
+
+    -- liftIO $ Gtk.containerAdd vboxcvs wdgt
+ 
+    -- let rtrwin = view rootOfRootWindow xst 
+    let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
+    (uhdl4,_wconf) <- liftIO $ eventConnect xst uhdl3 (view frameState uhdl3)
+    --     uhdl4 = uhdl3
+{-
+    liftIO $ do 
+      let act cinfo = do
+            let canvas = view drawArea cinfo
+                cid = view canvasId cinfo
+            _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
+              liftIO $ Gtk.widgetGrabFocus canvas
+              (liftIO . (xst^.callBack) . UsrEv) (UpdateCanvas cid) 
+            return ()
+ 
+      forBoth' unboxBiAct act (view currentCanvasInfo uhdl3)
+-}
+{-
     liftIO $ do
       _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
         liftIO $ Gtk.widgetGrabFocus canvas
         (liftIO . (xst^.callBack) . UsrEv) (UpdateCanvas 1) 
       return ()
+-}
 
 
-    let wdgt = Gtk.castToWidget scrwin
-    -- liftIO $ Gtk.containerAdd vboxcvs wdgt
- 
-    let uhdl'' = (currentCanvasInfo .~ cinfobox) uhdl'
-        uhdl''' = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
-        rtrwin = view rootOfRootWindow xst 
-     
-    liftIO $ putStrLn "before register"
-    -- liftIO $ registerFrameToContainer rtrwin (Gtk.castToBox vboxcvs) wdgt
-    liftIO $ do 
-      Gtk.boxPackEnd vboxcvs wdgt Gtk.PackGrow 0 
-      Gtk.widgetShowAll vboxcvs
-      Gtk.widgetShowAll notebook
-      Gtk.widgetShowAll rtrwin
-      Gtk.widgetQueueDraw rtrwin
-
-
-    liftIO $ putStrLn "after register"
+    liftIO $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
+    liftIO $ registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
+    
     liftIO $ Gtk.widgetShowAll notebook
 
-    modify $ (unitHoodles._2.at 2 .~ Just uhdl''')
+    modify $ (unitHoodles._2.at 2 .~ Just uhdl4)
+    -- modify $ (unitHoodles.currentUnit .~ uhdl4)
+    -- getFileContent Nothing
+    -- updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+    -- canvasZoomUpdateAll
+    -- invalidateAll 
+    
+ 
 
-    liftIO $ putStrLn "before invalidate"
-    invalidateAll
-    liftIO $ putStrLn "after invalidate"
   
 
 -- |
@@ -231,6 +249,7 @@ nextTab = do
     when ((not.null) lst) $ do
       let uhdl = snd (head lst)
       modify $ (unitHoodles.currentUnit .~ uhdl)
+      getFileContent Nothing
       invalidateAll
 {-    
       liftIO $ print "nextTab"

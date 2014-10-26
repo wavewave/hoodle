@@ -21,18 +21,15 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
-import           Control.Lens (_1,over,view,set,at,(.~),(%~),(^.))
+import           Control.Lens (over,view,set,at,(.~),(%~),(^.))
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
 import qualified Data.ByteString.Char8 as B
-import           Data.Foldable (mapM_)
 import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
-import           Data.Monoid ((<>))
-import           Data.Sequence (Seq, (<|),(|>), empty, singleton, viewl, ViewL(..))
-import qualified Data.Sequence as Seq (null)
-import qualified Data.Text as T (unpack,Text(..))
+import           Data.Sequence (Seq,viewl, ViewL(..))
+import qualified Data.Text as T (Text)
 import           Data.Time.Clock
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -45,8 +42,7 @@ import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Control.Monad.Trans.Crtn.Queue 
-import           Data.Hoodle.Select
-import           Data.Hoodle.Simple (Dimension(..), Background(..), defaultHoodle)
+import           Data.Hoodle.Simple (Dimension(..), Background(..))
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Background
@@ -54,23 +50,19 @@ import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
-import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.ContextMenu
+import           Hoodle.Coroutine.Default.Menu
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
-import           Hoodle.Coroutine.HandwritingRecognition
 import           Hoodle.Coroutine.Highlighter
-import           Hoodle.Coroutine.Layer 
 import           Hoodle.Coroutine.Link
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
-import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
-import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.VerticalSpace 
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
@@ -79,7 +71,6 @@ import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window 
-import           Hoodle.Script
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
@@ -92,11 +83,8 @@ import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.Widget
 import           Hoodle.Util
-import           Hoodle.Widget.Clock
 import           Hoodle.Widget.Dispatch 
-import           Hoodle.Widget.Layer
 import           Hoodle.Widget.PanZoom
-import           Hoodle.Widget.Scroll
 --
 import Prelude hiding (mapM_)
 
@@ -404,160 +392,6 @@ defaultEventProcess ev = -- for debugging
                             liftIO $ putStrLn "------------------"
                             return () 
 
--- |
-menuEventProcess :: MenuEvent -> MainCoroutine () 
-menuEventProcess MenuQuit = do 
-    xstate <- get
-    if view (unitHoodles.currentUnit.isSaved) xstate 
-      then liftIO $ Gtk.mainQuit
-      else askQuitProgram
-menuEventProcess MenuPreviousPage = changePage (\x->x-1)
-menuEventProcess MenuNextPage =  changePage (+1)
-menuEventProcess MenuFirstPage = changePage (const 0)
-menuEventProcess MenuLastPage = do 
-    totalnumofpages <- (either (M.size. view gpages) (M.size . view gselAll) 
-                        . hoodleModeStateEither . view (unitHoodles.currentUnit.hoodleModeState)) <$> get 
-    changePage (const (totalnumofpages-1))
-menuEventProcess MenuNewPageBefore = newPage PageBefore 
-menuEventProcess MenuNewPageAfter = newPage PageAfter
-menuEventProcess MenuDeletePage = deleteCurrentPage
-menuEventProcess MenuExportPageSVG = exportCurrentPageAsSVG 
-menuEventProcess MenuNew  = askIfSave fileNew 
-menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
-menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
-menuEventProcess MenuLoadSVG = fileLoadSVG
-menuEventProcess MenuText = textInput (Just (100,100)) "" 
-menuEventProcess MenuEmbedTextSource = embedTextSource
-menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource
-menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
-menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
-menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
-menuEventProcess MenuLaTeX = 
-    laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
-menuEventProcess MenuLaTeXNetwork = 
-    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
-menuEventProcess MenuCombineLaTeX = combineLaTeXText 
-menuEventProcess MenuLaTeXFromSource = laTeXInputFromSource (100,100)
--- menuEventProcess MenuUpdateLaTeX = updateLaTeX
-menuEventProcess MenuUndo = undo 
-menuEventProcess MenuRedo = redo
-menuEventProcess MenuOpen = askIfSave fileOpen
-menuEventProcess MenuSave = fileSave 
-menuEventProcess MenuSaveAs = fileSaveAs
-menuEventProcess MenuReload = fileReload 
-menuEventProcess MenuExport = fileExport 
-menuEventProcess MenuStartSync = fileStartSync
-menuEventProcess MenuVersionSave = fileVersionSave 
-menuEventProcess MenuShowRevisions = fileShowRevisions
-menuEventProcess MenuShowUUID = fileShowUUID
--- 
-menuEventProcess MenuCut = cutSelection
-menuEventProcess MenuCopy = copySelection
-menuEventProcess MenuPaste = pasteToSelection
-menuEventProcess MenuDelete = deleteSelection
-menuEventProcess MenuZoomIn = pageZoomChangeRel ZoomIn 
-menuEventProcess MenuZoomOut = pageZoomChangeRel ZoomOut
-menuEventProcess MenuNormalSize = pageZoomChange Original  
-menuEventProcess MenuPageWidth = pageZoomChange FitWidth 
-menuEventProcess MenuPageHeight = pageZoomChange FitHeight
-menuEventProcess MenuHSplit = eitherSplit SplitHorizontal
-menuEventProcess MenuVSplit = eitherSplit SplitVertical
-menuEventProcess MenuDelCanvas = deleteCanvas
-menuEventProcess MenuNewLayer = makeNewLayer 
-menuEventProcess MenuNextLayer = gotoNextLayer 
-menuEventProcess MenuPrevLayer = gotoPrevLayer
-menuEventProcess MenuGotoLayer = startGotoLayerAt 
-menuEventProcess MenuDeleteLayer = deleteCurrentLayer
-menuEventProcess MenuUseXInput = do 
-    uhdl <- view (unitHoodles.currentUnit) <$> get 
-    let cmap = view cvsInfoMap uhdl
-        canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
-    updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput) >>= \b -> 
-      if b
-        then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
-        else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
-menuEventProcess MenuUseTouch = toggleTouch
-menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
-menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()
-menuEventProcess MenuEmbedPDF = updateFlagFromToggleUI "EBDPDFA" (settings.doesEmbedPDF) >> return ()
-menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings.doesFollowLinks) >> return ()
-menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings.doesKeepAspectRatio) >> return ()
-menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings.doesUseVariableCursor) >> reflectCursor >> return ()
-menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
-menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
-menuEventProcess MenuColorPicker = colorPick 
-menuEventProcess MenuFullScreen = fullScreen
-menuEventProcess MenuAddLink = addLink
-menuEventProcess MenuAddAnchor = addAnchor
-menuEventProcess MenuListAnchors = listAnchors
-menuEventProcess MenuEmbedPredefinedImage = embedPredefinedImage 
-menuEventProcess MenuEmbedPredefinedImage2 = embedPredefinedImage2 
-menuEventProcess MenuEmbedPredefinedImage3 = embedPredefinedImage3 
-menuEventProcess MenuApplyToAllPages = do 
-    xst <- get 
-    let bsty = view backgroundStyle xst
-        uhdl = view (unitHoodles.currentUnit) xst
-        hdl = getHoodle uhdl
-        pgs = view gpages hdl 
-        changeBkg cpage = 
-          let cbkg = view gbackground cpage
-              nbkg 
-                | isRBkgSmpl cbkg = cbkg { rbkg_style = convertBackgroundStyleToByteString bsty }
-                | otherwise = cbkg 
-          in set gbackground nbkg cpage 
-        npgs = fmap changeBkg pgs 
-        nhdl = set gpages npgs hdl 
-    modeChange ToViewAppendMode     
-    pureUpdateUhdl (const ((hoodleModeState .~ ViewAppendState nhdl) uhdl))
-    invalidateAll 
-menuEventProcess MenuEmbedAllPDFBkg = embedAllPDFBackground
-menuEventProcess MenuTogglePanZoomWidget = togglePanZoom . view (unitHoodles.currentUnit.currentCanvas._1) =<< get 
-menuEventProcess MenuToggleLayerWidget = toggleLayer . view (unitHoodles.currentUnit.currentCanvas._1) =<< get 
-menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
-menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
-menuEventProcess MenuHandwritingRecognitionDialog = 
-    handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
-menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
-
-
--- | 
-colorPick :: MainCoroutine () 
-colorPick = colorPickerBox "Pen Color" >>= mapM_ (\c->modify (penInfo.currentTool.penColor .~ c))
-
-
--- | 
-colorConvert :: Gtk.Color -> PenColor 
-colorConvert (Gtk.Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/65536.0) (realToFrac b/65536.0) 1.0 
-
--- | 
-colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
-colorPickerBox msg = do 
-   xst <- get 
-   let pcolor = view (penInfo.currentTool.penColor) xst   
-   doIOaction (action pcolor) >> go
-  where 
-    action pcolor _evhandler = do 
-      dialog <- Gtk.colorSelectionDialogNew msg
-      csel <- Gtk.colorSelectionDialogGetColor dialog
-      let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
-          color = Gtk.Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
-
-      Gtk.colorSelectionSetCurrentColor csel color
-      res <- Gtk.dialogRun dialog 
-      mc <- case res of 
-              Gtk.ResponseOk -> do 
-                   clrsel <- Gtk.colorSelectionDialogGetColor dialog 
-                   clr <- Gtk.colorSelectionGetCurrentColor clrsel     
-                   return (Just (colorConvert clr))
-              _ -> return Nothing 
-      Gtk.widgetDestroy dialog 
-      return (UsrEv (ColorChosen mc))
-    go = do r <- nextevent                   
-            case r of 
-              ColorChosen mc -> return mc 
-              UpdateCanvas cid -> -- this is temporary
-                invalidateInBBox Nothing Efficient cid >> go
-              _ -> go 
 
 
 pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 

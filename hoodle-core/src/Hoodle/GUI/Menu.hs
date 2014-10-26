@@ -182,6 +182,7 @@ getMenuUI evar = do
   tma     <- actionNewAndRegister "TMA"   "Tool" Nothing Nothing Nothing
   verma   <- actionNewAndRegister "VERMA" "Version" Nothing Nothing Nothing
   oma     <- actionNewAndRegister "OMA"   "Option" Nothing Nothing Nothing
+  wma     <- actionNewAndRegister "WMA"   "Window" Nothing Nothing Nothing
   hma     <- actionNewAndRegister "HMA"   "Help" Nothing Nothing Nothing
 
   ---------------
@@ -367,7 +368,8 @@ getMenuUI evar = do
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
 
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
-
+  -- window menu
+  addtaba <- actionNewAndRegister "ADDTABA" "Add new tab" (Just "Just a Stub") Nothing (justMenu MenuAddTab)
 
   -- help menu 
   abouta <- actionNewAndRegister "ABOUTA" "About" (Just "Just a Stub") Nothing (justMenu MenuAbout)
@@ -377,7 +379,7 @@ getMenuUI evar = do
   
   agr <- actionGroupNew ("AGR" :: String)
   mapM_ (actionGroupAddAction agr) 
-        [fma,ema,vma,lma,ima,pma,tma,verma,oma,hma]
+        [fma,ema,vma,lma,ima,pma,tma,verma,oma,wma,hma]
   mapM_ (actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
   mapM_ (\act -> actionGroupAddActionWithAccel agr act (Nothing :: Maybe String))   
@@ -396,12 +398,13 @@ getMenuUI evar = do
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha
+        , addtaba
         , abouta 
         , defaulta         
         ] 
     
   mapM_ (actionGroupAddAction agr) 
-    [ togglenetsrca, uxinputa, handa, {- smthscra, -} popmenua, ebdimga, ebdpdfa, flwlnka
+    [ togglenetsrca, uxinputa, handa, popmenua, ebdimga, ebdpdfa, flwlnka
     , keepratioa, pressrsensa, vcursora ]
 
   mpgmodconnid <- 

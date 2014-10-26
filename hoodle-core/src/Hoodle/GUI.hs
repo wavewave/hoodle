@@ -136,7 +136,7 @@ outerLayout ui vbox xst = do
     boxPackStart vbox toolbar2 PackNatural 0  
     forM_ mstatusbar $ \statusbar-> boxPackEnd vbox statusbar PackNatural 0
     --
-    lbtn <- buttonNewWithLabel "test" 
-    notebookAppendPage notebook lbtn "test2"
+    -- lbtn <- buttonNewWithLabel "test" 
+    -- notebookAppendPage notebook lbtn "test2"
     boxPackStart vbox notebook PackGrow 0 
 

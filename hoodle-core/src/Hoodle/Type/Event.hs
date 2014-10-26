@@ -205,7 +205,6 @@ data MenuEvent = MenuNew
                | MenuRelaunch
                | MenuUseXInput
                | MenuUseTouch 
-               --  | MenuSmoothScroll
                | MenuUsePopUpMenu
                | MenuEmbedImage
                | MenuEmbedPDF
@@ -217,6 +216,7 @@ data MenuEvent = MenuNew
                | MenuToggleClockWidget
                | MenuToggleScrollWidget
                | MenuPressureSensitivity
+               | MenuAddTab
                | MenuAbout
                | MenuDefault
                deriving Show 

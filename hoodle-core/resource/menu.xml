@@ -176,6 +176,9 @@
        </menu>
        <menuitem action="RELAUNCHA" />
     </menu>
+    <menu action="WMA">
+       <menuitem action="ADDTABA" />
+    </menu>
     <menu action="HMA">
        <menuitem action="ABOUTA" />
     </menu>

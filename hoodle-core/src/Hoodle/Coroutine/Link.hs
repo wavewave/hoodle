@@ -219,8 +219,8 @@ gotLink mstr (x,y) = do
 addLink :: MainCoroutine ()
 addLink = do 
     mfilename <- fileChooser FileChooserActionOpen Nothing 
-    modify (tempQueue %~ enqueue (action mfilename)) 
-    minput <- go
+    doIOaction $ const (action mfilename) 
+    AddLink minput <- waitSomeEvent (\case AddLink _ -> True; _ -> False)
     case minput of 
       Nothing -> return () 
       Just (str,fname) -> do 
@@ -229,15 +229,13 @@ addLink = do
         rdr <- liftIO (makePangoTextSVG (0,0) (T.pack str)) 
         linkInsert "simple" (uuidbstr,fname) str rdr 
   where 
-    go = do r <- nextevent
-            case r of 
-              AddLink minput -> return minput 
-              UpdateCanvas cid -> -- this is temporary 
-                                  (invalidateInBBox Nothing Efficient cid) >> go 
-              _ -> go 
-    action mfn = mkIOaction $ 
-                   \_evhandler -> do 
-                     dialog <- messageDialogNew Nothing [DialogModal]
+    -- go = do r <- nextevent
+    --         case r of 
+    --           AddLink minput -> return minput 
+    --           UpdateCanvas cid -> -- this is temporary 
+    --                               (invalidateInBBox Nothing Efficient cid) >> go 
+    --           _ -> go 
+    action mfn = do  dialog <- messageDialogNew Nothing [DialogModal]
                                  MessageQuestion ButtonsOkCancel ("add link" :: String)
                      vbox <- dialogGetUpper dialog
                      txtvw <- textViewNew

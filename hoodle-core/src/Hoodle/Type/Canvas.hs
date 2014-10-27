@@ -75,19 +75,11 @@ module Hoodle.Type.Canvas
 , xfrmCvsInfo
 , xfrmViewInfo
 , getDrawAreaFromBox
--- , unboxGet
--- , unboxSet
 , unboxLens
 , unboxBiAct
 , unboxBiXform
 , forBoth
 , forBoth'
--- , unboxSelect
--- , fmap4CvsInfoBox
--- , insideAction4CvsInfoBox
--- , insideAction4CvsInfoBoxF
--- , boxAction
--- , selectBox
 -- * others
 , updateCanvasDimForSingle
 , updateCanvasDimForContSingle
@@ -109,7 +101,6 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Widget
 --
-
 
 -- |
 type CanvasId = Int 
@@ -138,9 +129,7 @@ xfrmViewInfo f ViewInfo {..} =
 emptyPenDraw :: PenDraw
 emptyPenDraw = PenDraw empty
 
-
 -- | default view info with single page mode
-
 defaultViewInfoSinglePage :: ViewInfo SinglePage
 defaultViewInfoSinglePage = 
   ViewInfo { _zoomMode = Original 
@@ -156,8 +145,6 @@ zoomMode = lens _zoomMode (\f a -> f { _zoomMode = a } )
 -- | 
 pageArrangement :: Simple Lens (ViewInfo a) (PageArrangement a)
 pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
-
-
 
 -- |
 data CanvasInfo (a :: ViewMode) = 
@@ -270,24 +257,20 @@ data CanvasInfoBox where
   CanvasSinglePage :: CanvasInfo SinglePage -> CanvasInfoBox  
   CanvasContPage :: CanvasInfo ContinuousPage -> CanvasInfoBox
                    
-
-
-forBoth ::  
-          ((CanvasInfo SinglePage -> f (CanvasInfo SinglePage))
-              -> (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) 
-              -> (CanvasInfoBox -> f CanvasInfoBox))   
-          -> (forall a. CanvasInfo a -> f (CanvasInfo a))
-          -> CanvasInfoBox -> f CanvasInfoBox
+forBoth :: ((CanvasInfo SinglePage -> f (CanvasInfo SinglePage))
+             -> (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) 
+             -> (CanvasInfoBox -> f CanvasInfoBox))   
+        -> (forall a. CanvasInfo a -> f (CanvasInfo a))
+        -> CanvasInfoBox -> f CanvasInfoBox
 forBoth m f = m f f 
 
 
-forBoth' ::  ((CanvasInfo SinglePage -> r)
+forBoth' :: ((CanvasInfo SinglePage -> r)
               -> (CanvasInfo ContinuousPage -> r) 
               -> (CanvasInfoBox -> r) )
-          -> (forall a. CanvasInfo a -> r)
-          -> CanvasInfoBox -> r
+         -> (forall a. CanvasInfo a -> r)
+         -> CanvasInfoBox -> r
 forBoth' m f = m f f 
-
 
 -- | single page action and continuous page act
 unboxBiXform :: (Functor f) => 
@@ -338,7 +321,6 @@ penWidth = lens _penWidth (\f a -> f { _penWidth = a } )
 penColor :: Simple Lens WidthColorStyle PenColor
 penColor = lens _penColor (\f a -> f { _penColor = a } )
 
-
 -- | 
 data PenHighlighterEraserSet = PenHighlighterEraserSet 
                                { _currPen :: WidthColorStyle 
@@ -369,7 +351,6 @@ currText = lens _currText (\f a -> f { _currText = a } )
 currVerticalSpace :: Simple Lens PenHighlighterEraserSet WidthColorStyle
 currVerticalSpace = lens _currVerticalSpace 
                       (\f a -> f { _currVerticalSpace = a } )
-
                      
 -- | 
 data PenInfo = PenInfo { _penType :: PenType

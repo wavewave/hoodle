@@ -30,6 +30,7 @@ import           Graphics.Hoodle.Render (cnstrctRHoodle)
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.Page
@@ -42,6 +43,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window
+import           Hoodle.Util
 import           Hoodle.View.Draw
 --
 
@@ -189,8 +191,13 @@ addTab = do
     (liftIO defaultHoodle) >>= \hdl' -> callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
     RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
     let uhdl5 = (hoodleModeState .~ ViewAppendState rhdl) uhdl4
+        current = xst ^. unitHoodles.currentUnit
 
+    
     modify $ (unitHoodles._2.at tabnum .~ Just uhdl5)
+    -- modify $ (unitHoodles.currentUnit .~ uhdl5)
+    -- viewModeChange ToContSinglePage
+    -- modify $ (unitHoodles.currentUnit .~ current)
     -- modify $ (unitHoodles.currentUnit .~ uhdl4)
     -- getFileContent Nothing
     -- updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
@@ -215,6 +222,7 @@ nextTab = do
       doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+      pageZoomChange FitWidth
       canvasZoomUpdateAll
       invalidateAll 
 
@@ -236,6 +244,11 @@ switchTab tabnum = do
       
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
-      canvasZoomUpdateAll
+      pageZoomChange FitWidth
+      view currentCanvasInfo uhdl # 
+        forBoth' unboxBiAct $ \cinfo -> do
+          (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 
+          doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
+      -- canvasZoomUpdateAll
       invalidateAll 
 

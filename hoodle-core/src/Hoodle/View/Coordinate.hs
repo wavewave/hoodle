@@ -50,6 +50,7 @@ data CanvasGeometry =
   , page2Desktop :: (PageNum,PageCoordinate) -> DesktopCoordinate
   } 
 
+
 -- | make a canvas geometry data structure from current status 
 makeCanvasGeometry :: PageNum 
                       -> PageArrangement vm 

@@ -180,13 +180,16 @@ addTab = do
       (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
       let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
       (uhdl4,_wconf) <- eventConnect xst uhdl3 (view frameState uhdl3)
-      blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $
-        Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
       registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
       Gtk.widgetShowAll notebook
       return uhdl4
       -- return (UsrEv (NewUnitHoodle uhdl4))
     -- NewUnitHoodle uhdl4 <- waitSomeEvent (\case NewUnitHoodle _ -> True; _ -> False)
+
+    doIOaction_ $ 
+      blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $
+        Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
+
 
     (liftIO defaultHoodle) >>= \hdl' -> callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
     RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
@@ -194,15 +197,19 @@ addTab = do
         current = xst ^. unitHoodles.currentUnit
 
     
-    modify $ (unitHoodles._2.at tabnum .~ Just uhdl5)
-    -- modify $ (unitHoodles.currentUnit .~ uhdl5)
+    -- modify $ (unitHoodles._2.at tabnum .~ Just uhdl5)
+    modify $ (unitHoodles.currentUnit .~ uhdl5)
     -- viewModeChange ToContSinglePage
+    updateUhdl $ \uhdl -> do
+      liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+      unboxBiAct (sing2ContPage uhdl) (const (return uhdl)) . view currentCanvasInfo $ uhdl
+    pageZoomChange FitWidth
+    invalidateAll 
+  
     -- modify $ (unitHoodles.currentUnit .~ current)
     -- modify $ (unitHoodles.currentUnit .~ uhdl4)
     -- getFileContent Nothing
-    -- updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
     -- canvasZoomUpdateAll
-    -- invalidateAll 
     
  
 
@@ -222,8 +229,6 @@ nextTab = do
       doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
-      pageZoomChange FitWidth
-      canvasZoomUpdateAll
       invalidateAll 
 
 -- |
@@ -244,7 +249,6 @@ switchTab tabnum = do
       
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
-      pageZoomChange FitWidth
       view currentCanvasInfo uhdl # 
         forBoth' unboxBiAct $ \cinfo -> do
           (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 

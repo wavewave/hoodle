@@ -80,83 +80,17 @@ modeChange command = do
 viewModeChange :: UserEvent -> MainCoroutine () 
 viewModeChange command = do 
     case command of 
-      ToSinglePage -> updateXState cont2single >> invalidateAll 
-      ToContSinglePage -> updateXState single2cont >> invalidateAll 
+      ToSinglePage -> updateUhdl cont2single >> invalidateAll 
+      ToContSinglePage -> updateUhdl single2cont >> invalidateAll 
       _ -> return ()
     adjustScrollbarWithGeometryCurrent     
-  where cont2single :: HoodleState -> MainCoroutine HoodleState
-        cont2single xst =  
-          unboxBiAct (noaction xst) (cont2SingPage xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
-        single2cont :: HoodleState -> MainCoroutine HoodleState
-        single2cont xst = 
-          unboxBiAct (sing2ContPage xst) (noaction xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
-        noaction :: HoodleState -> a -> MainCoroutine HoodleState  
-        noaction xstate = const (return xstate)
-        -------------------------------------
-{-        whencont xst cinfo = do 
-          let uhdl = view (unitHoodles.currentUnit) xst
-          geometry <- liftIO $ getGeometry4CurrCvs uhdl
-          cdim <- liftIO $  return . canvasDim $ geometry 
-          page <- getCurrentPageCurr
-          let zmode = view (viewInfo.zoomMode) cinfo
-              canvas = view drawArea cinfo 
-              cpn = PageNum . view currentPageNum $ cinfo 
+  where cont2single :: UnitHoodle -> MainCoroutine UnitHoodle
+        cont2single uhdl = unboxBiAct (const (return uhdl)) (cont2SingPage uhdl) . view currentCanvasInfo $ uhdl
+        single2cont :: UnitHoodle -> MainCoroutine UnitHoodle
+        single2cont uhdl = unboxBiAct (sing2ContPage uhdl) (const (return uhdl)) . view currentCanvasInfo $ uhdl
 
-              pdim = PageDimension (view gdimension page)
-              ViewPortBBox bbox = view (viewInfo.pageArrangement.viewPortBBox) cinfo       
-              (x0,y0) = bbox_upperleft bbox 
-              (xpos,ypos) = maybe (0,0) (unPageCoord.snd) $ desktop2Page geometry (DeskCoord (x0,y0))  
-          let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos) 
-          let nvinfo = ViewInfo (view zoomMode (view viewInfo cinfo)) arr 
-              ncinfo = CanvasInfo (view canvasId cinfo)
-                                  canvas
-                                  (view mDrawSurface cinfo)
-                                  (view scrolledWindow cinfo)
-                                  nvinfo 
-                                  (unPageNum cpn)
-                                  (view horizAdjustment cinfo)
-                                  (view vertAdjustment cinfo)
-                                  (view horizAdjConnId cinfo)
-                                  (view vertAdjConnId cinfo)
-                                  (view canvasWidgets cinfo)
-                                  (view notifiedItem cinfo)
-          return $ (unitHoodles.currentUnit.currentCanvasInfo .~ CanvasSinglePage ncinfo) xst -}
-        -------------------------------------
-{-
-        whensing xst cinfo = do 
-          let uhdl = view (unitHoodles.currentUnit) xst
-          cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs uhdl
-          let zmode = view (viewInfo.zoomMode) cinfo
-              canvas = view drawArea cinfo 
-              cpn = PageNum . view currentPageNum $ cinfo 
-              (hadj,vadj) = view adjustments cinfo 
-          (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
-          let arr = makeContinuousArrangement zmode cdim (getHoodle uhdl) 
-                                                    (cpn, PageCoord (xpos,ypos))
-          geometry <- liftIO $ makeCanvasGeometry cpn arr canvas
-          let DeskCoord (nxpos,nypos) = page2Desktop geometry (cpn,PageCoord (xpos,ypos))
-          let vinfo = view viewInfo cinfo 
-              nvinfo = ViewInfo (view zoomMode vinfo) arr 
-              ncinfotemp = CanvasInfo (view canvasId cinfo)
-                                      (view drawArea cinfo)
-                                      (view mDrawSurface cinfo)
-                                      (view scrolledWindow cinfo)
-                                      nvinfo 
-                                      (view currentPageNum cinfo)
-                                      hadj 
-                                      vadj 
-                                      (view horizAdjConnId cinfo)
-                                      (view vertAdjConnId cinfo)
-                                      (view canvasWidgets cinfo) 
-                                      (view notifiedItem cinfo)
-              ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
-              ncinfo = (currentPageNum .~ unPageNum ncpn) ncinfotemp
-          return $ (unitHoodles.currentUnit.currentCanvasInfo .~ CanvasContPage ncinfo) xst
--}
-
-cont2SingPage :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
-cont2SingPage xst cinfo = do
-    let uhdl = view (unitHoodles.currentUnit) xst
+cont2SingPage :: UnitHoodle -> CanvasInfo a -> MainCoroutine UnitHoodle
+cont2SingPage uhdl cinfo = do
     geometry <- liftIO $ getGeometry4CurrCvs uhdl
     cdim <- liftIO $  return . canvasDim $ geometry 
     page <- getCurrentPageCurr
@@ -182,12 +116,11 @@ cont2SingPage xst cinfo = do
                             (view vertAdjConnId cinfo)
                             (view canvasWidgets cinfo)
                             (view notifiedItem cinfo)
-    return $ (unitHoodles.currentUnit.currentCanvasInfo .~ CanvasSinglePage ncinfo) xst
+    return $ (currentCanvasInfo .~ CanvasSinglePage ncinfo) uhdl
 
 
-sing2ContPage :: HoodleState -> CanvasInfo a -> MainCoroutine HoodleState
-sing2ContPage xst cinfo = do
-    let uhdl = view (unitHoodles.currentUnit) xst
+sing2ContPage :: UnitHoodle -> CanvasInfo a -> MainCoroutine UnitHoodle
+sing2ContPage uhdl cinfo = do
     cdim <- liftIO $  return . canvasDim =<< getGeometry4CurrCvs uhdl
     let zmode = view (viewInfo.zoomMode) cinfo
         canvas = view drawArea cinfo 
@@ -214,7 +147,7 @@ sing2ContPage xst cinfo = do
                                 (view notifiedItem cinfo)
         ncpn = maybe cpn fst $ desktop2Page geometry (DeskCoord (nxpos,nypos))
         ncinfo = (currentPageNum .~ unPageNum ncpn) ncinfotemp
-    return $ (unitHoodles.currentUnit.currentCanvasInfo .~ CanvasContPage ncinfo) xst
+    return $ (currentCanvasInfo .~ CanvasContPage ncinfo) uhdl
 
 
 

@@ -96,17 +96,17 @@ copySelection = do
 -- |
 getClipFromGtk :: MainCoroutine (Maybe [Item])
 getClipFromGtk = do 
-    let action = mkIOaction $ \evhandler -> do 
-          hdltag <- liftIO $ atomNew "hoodle"
-          clipbd <- liftIO $ clipboardGet hdltag
-          liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
-          return (UsrEv ActionOrdered)
-    modify (tempQueue %~ enqueue action)
-    go 
-  where go = do r <- nextevent 
-                case r of 
-                  GotClipboardContent cnt' -> return cnt' 
-                  _ -> go 
+    doIOaction $ \evhandler -> do 
+      hdltag <- liftIO $ atomNew "hoodle"
+      clipbd <- liftIO $ clipboardGet hdltag
+      liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
+      return (UsrEv ActionOrdered)
+    waitSomeEvent (\case GotClipboardContent _ -> True; _ -> False ) >>= \(GotClipboardContent cnt') -> return cnt'
+
+  -- where go = do r <- nextevent 
+  --               case r of 
+  --                 GotClipboardContent cnt' -> return cnt' 
+  --                 _ -> go 
 
 
 -- | 
@@ -118,17 +118,16 @@ pasteToSelection = do
     case mitms of 
       Nothing -> return () 
       Just itms -> do 
-        -- 
         callRenderer $ GotRItems <$> mapM cnstrctRItem itms
-        RenderEv (GotRItems ritms) <- 
-          waitSomeEvent (\case RenderEv (GotRItems _) -> True; _ -> False)
-        --
-        modeChange ToSelectMode >> updateXState (pasteAction ritms) >> invalidateAll  
+        RenderEv (GotRItems ritms) <- waitSomeEvent (\case RenderEv (GotRItems _) -> True; _ -> False)
+        xst <- get
+        let ui = view gtkUIManager xst
+            cache = view renderCache xst
+        modeChange ToSelectMode >> updateUhdl (pasteAction cache ui ritms) >> commit_ >> invalidateAll  
   where 
-    pasteAction itms xst = forBoth' unboxBiAct (fsimple itms xst) 
-                           . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
-    fsimple itms xst cinfo = do 
-      let uhdl = view (unitHoodles.currentUnit) xst
+    pasteAction cache ui itms uhdl = forBoth' unboxBiAct (fsimple cache ui itms uhdl) 
+                                     . view currentCanvasInfo $ uhdl
+    fsimple cache ui itms uhdl cinfo = do 
       geometry <- liftIO (getGeometry4CurrCvs uhdl)
       let pagenum = view currentPageNum cinfo 
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
@@ -144,13 +143,9 @@ pasteToSelection = do
                             :- Hitted nclipitms 
                             :- Empty )
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
-          cache = view renderCache xst
       thdl' <- liftIO $ updateTempHoodleSelectIO cache thdl tpage' pagenum 
       uhdl' <- liftIO $ updatePageAll (SelectState thdl') 
                  . set hoodleModeState (SelectState thdl') 
                  $ uhdl
-      let ui = view gtkUIManager xst
       liftIO $ toggleCutCopyDelete ui True
-      let xst' = (unitHoodles.currentUnit .~ uhdl') xst
-      commit xst'
-      return xst'
+      return uhdl'

@@ -21,7 +21,7 @@ import           Control.Monad (liftM, when)
 import           Control.Monad.State as St
 import           Control.Monad.Trans 
 import           Data.Array.MArray
-import qualified Data.Foldable as F (forM_) 
+import qualified Data.Foldable as F (forM_,mapM_) 
 import qualified Data.Map as M (lookup)
 import           Data.Word
 import qualified Graphics.UI.Gtk as Gtk
@@ -61,13 +61,12 @@ chkCvsIdNInvalidate cid = do
   currcid <- liftM (getCurrentCanvasId . view (unitHoodles.currentUnit) ) St.get 
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
 
-
+-- | block signal for act
 blockWhile :: (Gtk.GObjectClass w) => Maybe (Gtk.ConnectId w) -> IO () -> IO ()
-blockWhile msig act = 
-  maybe (return ()) Gtk.signalBlock msig
-  >> act 
-  >> maybe (return ()) Gtk.signalUnblock msig
-  
+blockWhile msig act = do
+    F.mapM_ (\_ -> print "signal will be blocked") msig
+    F.mapM_ Gtk.signalBlock msig >> act >> F.mapM_ Gtk.signalUnblock msig
+
 
 -- | reflect view mode UI for current canvas info 
 reflectViewModeUI :: MainCoroutine ()

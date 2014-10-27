@@ -134,9 +134,13 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
   vboxcvs <- Gtk.vBoxNew False 0 
   Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
   Gtk.containerAdd vboxcvs (view (unitHoodles.currentUnit.rootWindow) st5)
-  let startingXstate = (unitHoodles.currentUnit.rootContainer .~ Gtk.castToBox vboxcvs) st5
-  let startworld = world startingXstate . ReaderT $ 
-                     (\(Arg DoEvent ev) -> guiProcess ev)  
+
+  sigid <- notebook `Gtk.on` Gtk.switchPage $ \i -> 
+    view callBack st5 (UsrEv (SwitchTab i)) 
+  let st6 = (uiComponentSignalHandler.switchTabSignal .~ Just sigid) st5
+      -- st6 = st5
+      startingXstate = (unitHoodles.currentUnit.rootContainer .~ Gtk.castToBox vboxcvs) st6
+      startworld = world startingXstate . ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)  
   putMVar evar . Just $ (driver simplelogger startworld)
   return (evar,startingXstate,ui,vbox)
 
@@ -386,6 +390,7 @@ defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
 defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
+defaultEventProcess (SwitchTab i) = switchTab i
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

@@ -102,6 +102,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | RenderEv RenderEvent
                | LinePosition (Maybe (Int,Int))
                | Keyword (Maybe T.Text)
+               | SwitchTab Int
                deriving Show
                       
 instance Show (IORef a) where                      

@@ -233,7 +233,13 @@ waitSomeEvent p = do
         invalidateInBBox Nothing Efficient cid >> waitSomeEvent p  
       _ -> if  p r then return r else waitSomeEvent p  
 
+-- | 
+doIOaction_ :: ((AllEvent -> IO ()) -> IO AllEvent) -> MainCoroutine ()
+doIOaction_ action = do doIOaction action 
+                        waitSomeEvent (\case ActionOrdered -> True; _ -> False );
+                        return ()
 
+-- | order rendering routine
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
     tvar <- (^. pdfRenderQueue) <$> get  

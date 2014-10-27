@@ -58,6 +58,7 @@ startGUI mfname mhook = do
     setTitleFromFileName st0
     -- need for refactoring
 
+
     mapM_ (\(x,y :: Simple Lens Settings Bool) -> lensSetToggleUIForFlag x (settings.y) st0 )
       [ ("UXINPUTA", doesUseXInput) 
       , ("HANDA"   , doesUseTouch)
@@ -72,8 +73,7 @@ startGUI mfname mhook = do
         then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
         else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
     --
-    outerLayout ui vbox st0 {- window -}
-    -- boxPackStart vbox (view rootWindow st0) PackGrow 0 
+    outerLayout ui vbox st0 
     window `on` deleteEvent $ do
       liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
       return True
@@ -118,14 +118,16 @@ outerLayout ui vbox xst = do
     dragSourceSetIconStock ebox stockIndex
     dragSourceAddTextTargets ebox
     ebox `on` dragBegin $ \_dc -> do 
-        liftIO $ putStrLn "dragging"
+      liftIO $ putStrLn "dragging"
     ebox `on` dragDataGet $ \_dc _iid _ts -> do 
-        -- very dirty solution but.. 
-        minfo <- liftIO $ do 
-          ref <- newIORef (Nothing :: Maybe String)
-          view callBack xst (UsrEv (GetHoodleFileInfo ref))
-          readIORef ref
-        mapM_ (selectionDataSetText >=> const (return ())) minfo
+      -- very dirty solution but.. 
+      minfo <- liftIO $ do 
+        ref <- newIORef (Nothing :: Maybe String)
+        view callBack xst (UsrEv (GetHoodleFileInfo ref))
+        readIORef ref
+      mapM_ (selectionDataSetText >=> const (return ())) minfo
+        
+
     -- 
     hbox <- hBoxNew False 0 
     boxPackStart hbox toolbar1 PackGrow 0
@@ -135,7 +137,5 @@ outerLayout ui vbox xst = do
     boxPackStart vbox toolbar2 PackNatural 0  
     forM_ mstatusbar $ \statusbar-> boxPackEnd vbox statusbar PackNatural 0
     --
-    -- lbtn <- buttonNewWithLabel "test" 
-    -- notebookAppendPage notebook lbtn "test2"
     boxPackStart vbox notebook PackGrow 0 
 

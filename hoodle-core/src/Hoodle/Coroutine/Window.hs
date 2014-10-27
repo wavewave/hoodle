@@ -19,11 +19,13 @@ import           Control.Applicative
 import           Control.Lens (view,set,over,(^.),(.~),_2,at)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
+import           Data.Maybe
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 --
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple (Dimension(..))
+import           Data.Hoodle.Simple (Dimension(..), defaultHoodle)
+import           Graphics.Hoodle.Render (cnstrctRHoodle)
 --
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
@@ -159,7 +161,7 @@ addTab = do
     notebook <- view rootNotebook <$> get
     
     vboxcvs <- liftIO $ Gtk.vBoxNew False 0
-    tabnum <- liftIO $ Gtk.notebookAppendPage notebook vboxcvs "test2"
+    tabnum <- liftIO $ Gtk.notebookAppendPage notebook vboxcvs "undefined"
 
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
@@ -169,21 +171,26 @@ addTab = do
              . updateFromCanvasInfoAsCurrentCanvas initcvsbox
              . (cvsInfoMap .~ M.empty)
              . (hoodleFileControl.hoodleFileName .~ Nothing) 
-             . (unitKey .~ 2) <$> liftIO emptyUnitHoodle
+             . (unitKey .~ tabnum) <$> liftIO emptyUnitHoodle
     -- liftIO $ print (M.keys (view cvsInfoMap uhdl'))
           
     uhdl4 <- liftIO $ do
       (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
       let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
       (uhdl4,_wconf) <- eventConnect xst uhdl3 (view frameState uhdl3)
-      Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
+      blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $
+        Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
       registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
       Gtk.widgetShowAll notebook
       return uhdl4
       -- return (UsrEv (NewUnitHoodle uhdl4))
     -- NewUnitHoodle uhdl4 <- waitSomeEvent (\case NewUnitHoodle _ -> True; _ -> False)
 
-    modify $ (unitHoodles._2.at 2 .~ Just uhdl4)
+    (liftIO defaultHoodle) >>= \hdl' -> callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
+    RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
+    let uhdl5 = (hoodleModeState .~ ViewAppendState rhdl) uhdl4
+
+    modify $ (unitHoodles._2.at tabnum .~ Just uhdl5)
     -- modify $ (unitHoodles.currentUnit .~ uhdl4)
     -- getFileContent Nothing
     -- updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
@@ -197,29 +204,48 @@ addTab = do
 -- |
 nextTab :: MainCoroutine ()
 nextTab = do
+    xst <- get
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls
         lst = filter ((>current).fst) (M.assocs (snd uhdls))
     when ((not.null) lst) $ do
       let uhdl = snd (head lst)
+          tabnum = uhdl^.unitKey
+          notebook = view rootNotebook xst
+      doIOaction $ \_ -> do
+        Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
+        return (UsrEv ActionOrdered)
+      ActionOrdered <- waitSomeEvent (\case ActionOrdered -> True ; _ -> False );
+
+      --   blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $ do
+      --    Gtk.widgetShowAll notebook
+
       modify $ (unitHoodles.currentUnit .~ uhdl)
-      getFileContent Nothing
-      invalidateAll
-{-    
-      liftIO $ print "nextTab"
-          cinfobox = getCanvasInfo 1 uhdl
-          fsingle :: CanvasInfo a -> IO ()
-          fsingle cinfo = do
-            let canvas = view drawArea cinfo
-            win <- Gtk.widgetGetDrawWindow canvas
-            Gtk.renderWithDrawable win $ do
-              Cairo.rectangle 0 0 100 100
-              Cairo.fill
-            print (view currentPageNum cinfo)
-      liftIO $ forBoth' unboxBiAct fsingle cinfobox -}
-      {- 
-      geometry <- liftIO $ getCanvasGeometryCvsId 1 uhdl
-      invalidateGeneral 1 Nothing Clear
-        (drawSinglePage geometry) (drawSinglePageSel geometry) (drawContHoodle geometry) (drawContHoodleSel geometry) -}
+
+
+      -- getFileContent Nothing
+      updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+      canvasZoomUpdateAll
+      invalidateAll 
+
+-- |
+switchTab :: Int -> MainCoroutine ()
+switchTab tabnum = do
+    liftIO $ putStrLn ("switch to " ++ show tabnum)
+    xst <- get
+    let notebook = view rootNotebook xst
+    doIOaction_ $ \_ -> Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ] >> return (UsrEv ActionOrdered)
+
+    uhdls <- view unitHoodles <$> get
+    let current = fst uhdls
+        ks = M.keys (snd uhdls)
+    liftIO $ print ks
+    liftIO $ print current
+    when (tabnum /= current) $ do 
+      let uhdl = fromJust (M.lookup tabnum (snd uhdls))
       
+      modify $ (unitHoodles.currentUnit .~ uhdl)
+      updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+      canvasZoomUpdateAll
+      invalidateAll 
 

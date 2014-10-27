@@ -75,6 +75,7 @@ module Hoodle.Type.HoodleState
 , penPointSignal
 , penColorSignal
 , newPageModeSignal
+, switchTabSignal
 -- | others 
 , emptyUnitHoodle
 , emptyHoodleState
@@ -360,6 +361,7 @@ data UIComponentSignalHandler = UIComponentSignalHandler
        , _penPointSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
        , _penColorSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
        , _newPageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction)
+       , _switchTabSignal :: Maybe (Gtk.ConnectId Gtk.Notebook)
        } 
 
 -- | lens for penModeSignal
@@ -378,9 +380,14 @@ penPointSignal = lens _penPointSignal (\f a -> f { _penPointSignal = a } )
 penColorSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penColorSignal = lens _penColorSignal (\f a -> f { _penColorSignal = a } )
 
--- | lens for penColorSignal
+-- | lens for newPageModeSignal
 newPageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 newPageModeSignal = lens _newPageModeSignal (\f a -> f { _newPageModeSignal = a } )
+
+-- | lens for switchTabSignal
+switchTabSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.Notebook))
+switchTabSignal = lens _switchTabSignal (\f a -> f { _switchTabSignal = a } )
+
 
 -- | A set of Hoodle settings 
 data Settings = 
@@ -503,6 +510,7 @@ defaultUIComponentSignalHandler =
                           , _penPointSignal = Nothing 
                           , _penColorSignal = Nothing
                           , _newPageModeSignal = Nothing
+                          , _switchTabSignal = Nothing
                           } 
 
 

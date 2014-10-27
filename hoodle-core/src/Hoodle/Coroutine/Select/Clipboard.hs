@@ -96,11 +96,12 @@ copySelection = do
 -- |
 getClipFromGtk :: MainCoroutine (Maybe [Item])
 getClipFromGtk = do 
-    doIOaction $ \evhandler -> do 
-      hdltag <- liftIO $ atomNew "hoodle"
-      clipbd <- liftIO $ clipboardGet hdltag
-      liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
-      return (UsrEv ActionOrdered)
+    let action = mkIOaction $ \evhandler -> do 
+          hdltag <- liftIO $ atomNew "hoodle"
+          clipbd <- liftIO $ clipboardGet hdltag
+          liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
+          return (UsrEv ActionOrdered)
+    modify (tempQueue %~ enqueue action)
     go 
   where go = do r <- nextevent 
                 case r of 
@@ -112,6 +113,8 @@ getClipFromGtk = do
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = do 
     mitms <- getClipFromGtk 
+
+    liftIO $ print mitms
     case mitms of 
       Nothing -> return () 
       Just itms -> do 
@@ -148,5 +151,6 @@ pasteToSelection = do
                  $ uhdl
       let ui = view gtkUIManager xst
       liftIO $ toggleCutCopyDelete ui True
-      commit ((unitHoodles.currentUnit .~ uhdl') xst)
-      return xst
+      let xst' = (unitHoodles.currentUnit .~ uhdl') xst
+      commit xst'
+      return xst'

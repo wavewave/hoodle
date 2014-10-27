@@ -234,8 +234,8 @@ waitSomeEvent p = do
       _ -> if  p r then return r else waitSomeEvent p  
 
 -- | 
-doIOaction_ :: ((AllEvent -> IO ()) -> IO AllEvent) -> MainCoroutine ()
-doIOaction_ action = do doIOaction action 
+doIOaction_ :: IO a -> MainCoroutine ()
+doIOaction_ action = do doIOaction $ \_ -> action >> return (UsrEv ActionOrdered)
                         waitSomeEvent (\case ActionOrdered -> True; _ -> False );
                         return ()
 

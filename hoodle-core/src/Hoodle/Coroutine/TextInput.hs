@@ -620,24 +620,19 @@ toggleNetworkEditSource = do
       if b 
         then do
           (ip,tid,done) <- networkTextInputBody (maybe " " id mtxt)
-          doIOaction $ \_ -> do
+          doIOaction_ $ do
             let msg = ("networkedit " ++ ip ++ " 4040")
             ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
             Gtk.statusbarPush stbar ctxt msg
-            return (UsrEv ActionOrdered)
-          waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
           (put . ((settings.networkEditSourceInfo) .~ (Just tid))) xst
-
         else do
           case xst ^. (settings.networkEditSourceInfo) of
             Nothing -> return ()
             Just tid -> do
-              doIOaction $ \_ -> do
+              doIOaction_ $ do
                 killThread tid
                 ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
                 Gtk.statusbarPush stbar ctxt ("Now no networkedit" :: String)
-                return (UsrEv ActionOrdered)
-              waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
               (put . ((settings.networkEditSourceInfo) .~ Nothing)) xst
 
       

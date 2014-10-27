@@ -149,13 +149,10 @@ processContextMenu CMenuAssocWithNewFile = do
               if b 
                 then okMessageBox "The file already exist!"
                 else do 
-                  let action = mkIOaction $ \_ -> do                      
-                        nhdl <- liftIO $ defaultHoodle   
-                        (L.writeFile fp . builder) nhdl 
-                        createProcess (proc "hoodle" [fp]) 
-                        return (UsrEv ActionOrdered)
-                  modify (tempQueue %~ enqueue action) 
-                  waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
+                  doIOaction_ $ do                      
+                    nhdl <- liftIO $ defaultHoodle   
+                    (L.writeFile fp . builder) nhdl 
+                    createProcess (proc "hoodle" [fp]) 
                   linkSelectionWithFile fp 
                   return ()
           ) 

@@ -155,16 +155,9 @@ reflectUIComponent lnz name f = do
     update xst wpma mconnid   
   where update xst wpma mconnid  = do 
           (f xst) # 
-            (maybe (return ()) $ \v -> do
-              doIOaction $ \_evhandler -> do 
-                    blockWhile mconnid 
-                      (Gtk.set wpma [Gtk.radioActionCurrentValue Gtk.:= v ] )
-                    return (UsrEv ActionOrdered)
-              go)
-         where go = do r <- nextevent
-                       case r of
-                         ActionOrdered -> return ()
-                         _ -> go 
+            (maybe (return ()) $ \v ->
+              doIOaction_ $ blockWhile mconnid (Gtk.set wpma [Gtk.radioActionCurrentValue Gtk.:= v ] )
+            )
 
 -- | 
 reflectCursor :: MainCoroutine () 

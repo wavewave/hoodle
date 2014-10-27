@@ -239,16 +239,13 @@ disableTouch = do
     let devlst = view deviceList xst 
     when (view (settings.doesUseTouch) xst) $ do         
       let nxst = set (settings.doesUseTouch) False xst 
-      doIOaction $ \_ -> do
+      doIOaction_ $ do
         lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) nxst
         let touchstr = dev_touch_str devlst
         -- ad hoc
         when (touchstr /= "touch") $ do 
           readProcess "xinput" [ "disable", touchstr ] "" 
           return ()
-        -- 
-        return (UsrEv ActionOrdered)
-      waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)
       put nxst
 
 -- |
@@ -361,11 +358,7 @@ defaultEventProcess (CustomKeyEvent str) = do
     if | str == "[]:\"Super_L\"" -> do  
            xst <- liftM (over (settings.doesUseTouch) not) get 
            put xst 
-           let action = mkIOaction $ \_evhandler -> do 
-                 lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
-                 return (UsrEv ActionOrdered)
-           modify (tempQueue %~ enqueue action)
-           waitSomeEvent (\x -> case x of ActionOrdered -> True ; _ -> False)    
+           doIOaction_ $ lensSetToggleUIForFlag "HANDA" (settings.doesUseTouch) xst
            toggleTouch
        | str == "[]:\"1\"" -> colorfunc ColorBlack
        | str == "[]:\"2\"" -> colorfunc ColorBlue 

@@ -145,11 +145,7 @@ getFileContent (Just fname) = do
             commit_
       _ -> getFileContent Nothing    
     xstate' <- get
-    doIOaction $ \evhandler -> do 
-      Gtk.postGUIAsync (setTitleFromFileName xstate')
-      return (UsrEv ActionOrdered)
-    ActionOrdered <- waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
-    return ()
+    doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
 getFileContent Nothing = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
     pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing) 
@@ -215,8 +211,7 @@ fileStartSync = do
   let mf = (,) <$> view (hoodleFileControl.hoodleFileName) uhdl <*> view (hoodleFileControl.lastSavedTime) uhdl 
   maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
   where  
-    action filename _lasttime  = do 
-      let ioact = mkIOaction $ \evhandler ->do 
+    action filename _lasttime  = doIOaction $ \evhandler -> do 
             forkIO $ do 
               FS.withManager $ \wm -> do 
                 origfile <- canonicalizePath filename 
@@ -242,7 +237,6 @@ fileStartSync = do
                 let sec = 1000000
                 forever (threadDelay (100 * sec))
             return (UsrEv ActionOrdered)
-      modify (tempQueue %~ enqueue ioact) 
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()

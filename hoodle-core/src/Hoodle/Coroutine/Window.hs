@@ -212,18 +212,8 @@ nextTab = do
       let uhdl = snd (head lst)
           tabnum = uhdl^.unitKey
           notebook = view rootNotebook xst
-      doIOaction $ \_ -> do
-        Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
-        return (UsrEv ActionOrdered)
-      ActionOrdered <- waitSomeEvent (\case ActionOrdered -> True ; _ -> False );
-
-      --   blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $ do
-      --    Gtk.widgetShowAll notebook
-
+      doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
       modify $ (unitHoodles.currentUnit .~ uhdl)
-
-
-      -- getFileContent Nothing
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       canvasZoomUpdateAll
       invalidateAll 
@@ -234,7 +224,7 @@ switchTab tabnum = do
     liftIO $ putStrLn ("switch to " ++ show tabnum)
     xst <- get
     let notebook = view rootNotebook xst
-    doIOaction_ $ \_ -> Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ] >> return (UsrEv ActionOrdered)
+    doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
 
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls

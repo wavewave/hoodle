@@ -111,7 +111,7 @@ deleteCanvas = do
       Right (Just fstate') -> do 
         let cmap' = M.delete currcid cmap
             newcurrcid = maximum (M.keys cmap')
-        updateUhdl $ \uhdl -> do
+        updateUhdl $ \_uhdl -> do
           uhdl' <- changeCurrentCanvasId newcurrcid 
           maybe (return uhdl') return $ setCanvasInfoMap cmap' uhdl'
         xst1 <- get

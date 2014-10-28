@@ -73,46 +73,16 @@ import Prelude hiding (mapM_)
 
 -- | 
 openLinkAction :: UrlPath 
-               -> Maybe (B.ByteString,B.ByteString) -- ^ (docid,anchorid)
+               -> Maybe (T.Text,T.Text) -- ^ (docid,anchorid)
                -> MainCoroutine () 
 openLinkAction urlpath mid = do 
     liftIO $ putStrLn "openLinkAction"
     liftIO $ print urlpath 
     liftIO $ print mid
     case urlpath of 
-      FileUrl fp -> addTab (Just fp)
-      HttpUrl url -> do 
-        let cmdargs = [url]
-        liftIO $ createProcess (proc "xdg-open" cmdargs)  
-        return () 
+      FileUrl fp -> addTab (Just fp) >> forM_ mid (uncurry goToAnchorPos)
+      HttpUrl url -> liftIO $ createProcess (proc "xdg-open" [url]) >> return () 
 
-    --       let cmdargs = [url]
-    
-    --       emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }         
-    --       return () 
-    --     HttpUrl url -> do 
-    --       let cmdargs = [url]
-
-    -- flip catch (\(ex :: SomeException) -> print ex ) $ do
-    --   cli <- connectSession
-    --   case urlpath of 
-    --     FileUrl fp -> do 
-    --       emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }         
-    --       return () 
-    --     HttpUrl url -> do 
-    --       let cmdargs = [url]
-    --       createProcess (proc "xdg-open" cmdargs)  
-    --       return () 
-    --   forkIO $ do 
-    --     threadDelay 2000000
-    --     forM_ mid $ \(docid,anchorid) -> do
-    --                 print (docid,anchorid)
-    --                 emit cli (signal "/" "org.ianwookim.hoodle" "callLink")
-    --                            { signalBody = 
-    --                                [ toVariant (B.unpack docid 
-    --                                             ++ "," 
-    --                                             ++ B.unpack anchorid) ] }
-    --   return ()
 
 makeTextSVGFromStringAt :: String 
                         -> CanvasId 

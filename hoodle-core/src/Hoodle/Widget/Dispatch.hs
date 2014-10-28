@@ -21,6 +21,7 @@ import Control.Lens (view)
 import Control.Monad.State hiding (forM_)
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Text.Encoding as TE
 import Data.Foldable (forM_)
 --
 import Data.Hoodle.BBox
@@ -72,7 +73,7 @@ widgetCheckPen cid pcoord defact =
                      let lnk = bbxed_content lnkbbx
                          loc = link_location lnk
                          mid = case lnk of 
-                           LinkAnchor {..} -> Just (link_linkeddocid,link_anchorid)
+                           LinkAnchor {..} -> Just (TE.decodeUtf8 link_linkeddocid,TE.decodeUtf8 link_anchorid)
                            _ -> Nothing
                      forM_  ((urlParse . B.unpack) loc) (\url -> lift (openLinkAction url mid))
                      MaybeT (return (Just ()))

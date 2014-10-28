@@ -387,7 +387,7 @@ defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt
 defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (SwitchTab i) = switchTab i
-defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> closeTab)
+defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> askIfSave closeTab)
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"

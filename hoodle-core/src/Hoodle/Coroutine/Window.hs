@@ -208,15 +208,12 @@ nextTab = do
 -- |
 switchTab :: Int -> MainCoroutine ()
 switchTab tabnum = do
-    liftIO $ putStrLn ("switch to " ++ show tabnum)
     xst <- get
     let notebook = view rootNotebook xst
     doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls
         ks = M.keys (snd uhdls)
-    liftIO $ print ks
-    liftIO $ print current
     when (tabnum /= current) $ do 
       let uhdl = fromJust (M.lookup tabnum (snd uhdls))
       modify $ (unitHoodles.currentUnit .~ uhdl)

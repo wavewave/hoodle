@@ -222,6 +222,7 @@ data MenuEvent = MenuNew
                | MenuPressureSensitivity
                | MenuAddTab
                | MenuNextTab
+               | MenuCloseTab
                | MenuAbout
                | MenuDefault
                deriving Show 

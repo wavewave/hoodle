@@ -224,3 +224,18 @@ switchTab tabnum = do
           doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
       invalidateAll 
 
+-- |
+closeTab :: MainCoroutine ()
+closeTab = do 
+  xst <- get
+  liftIO $ print "close tab called"
+  let (currk,uhdlmap) = xst ^. unitHoodles
+      uhdlmap' = M.delete currk uhdlmap 
+      sz = M.size uhdlmap
+  when (sz > 1) $ do
+    let (k1,uhdl1) = M.findMin uhdlmap'
+        notebook = xst ^. rootNotebook
+    doIOaction_ $ Gtk.notebookRemovePage notebook currk
+    modify $ (unitHoodles .~ (k1,uhdlmap'))
+    switchTab k1
+    

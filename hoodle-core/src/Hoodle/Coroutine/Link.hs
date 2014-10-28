@@ -21,12 +21,13 @@ module Hoodle.Coroutine.Link where
 
 import           Control.Applicative
 import           Control.Concurrent (forkIO)
-import           Control.Lens (at,view,set,(%~))
-import           Control.Monad (forever,void)
-import           Control.Monad.State (get,modify,liftIO,guard,when)
+import           Control.Lens (_2,at,view,set,(^.))
+import           Control.Monad (filterM,forever,void)
+import           Control.Monad.State (get,liftIO,guard,when)
 import           Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (forM_)
+import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import           Data.Maybe (mapMaybe)
 import           Data.Monoid (mconcat)
@@ -36,10 +37,10 @@ import qualified Data.Text.Encoding as TE
 import           DBus
 import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set) 
+import           System.Directory
 import           System.FilePath 
 import           System.Process (createProcess, proc)
 -- from hoodle-platform
-import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
@@ -76,13 +77,25 @@ openLinkAction :: UrlPath
                -> Maybe (T.Text,T.Text) -- ^ (docid,anchorid)
                -> MainCoroutine () 
 openLinkAction urlpath mid = do 
-    liftIO $ putStrLn "openLinkAction"
-    liftIO $ print urlpath 
-    liftIO $ print mid
     case urlpath of 
-      FileUrl fp -> addTab (Just fp) >> forM_ mid (uncurry goToAnchorPos)
+      FileUrl fp -> do
+        mk <- liftIO . checkPreviouslyOpenedFile fp =<< get
+        case mk of 
+          Just k -> switchTab k >> forM_ mid (uncurry goToAnchorPos)
+          Nothing -> addTab (Just fp) >> forM_ mid (uncurry goToAnchorPos)
       HttpUrl url -> liftIO $ createProcess (proc "xdg-open" [url]) >> return () 
 
+-- |
+checkPreviouslyOpenedFile :: FilePath -> HoodleState -> IO (Maybe Int)
+checkPreviouslyOpenedFile fp xst = do
+    cfp <- canonicalizePath fp
+    lst <- filterM (checker cfp . snd) (IM.assocs (xst ^. unitHoodles._2))
+    case lst of
+      x:_ -> return (Just (fst x))
+      _ -> return Nothing
+  where checker cfp uhdl = (uhdl ^. hoodleFileControl.hoodleFileName) # 
+                             maybe (return False) $ \fp' -> do cfp' <- canonicalizePath fp' 
+                                                               return (cfp == cfp') 
 
 makeTextSVGFromStringAt :: String 
                         -> CanvasId 

@@ -19,7 +19,9 @@ import           Control.Applicative
 import           Control.Lens (view,set,over,(^.),(.~),_2,at)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
+import qualified Data.List as L
 import           Data.Maybe
+import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 --
@@ -160,9 +162,21 @@ fullScreen = do
 addTab :: Maybe FilePath -> MainCoroutine ()
 addTab mfp = do
     xst <- get
-    let notebook = view rootNotebook xst
+    let notebook = xst ^. rootNotebook
+        callback = xst ^. callBack
     vboxcvs <- liftIO $ Gtk.vBoxNew False 0
-    tabnum <- liftIO $ Gtk.notebookAppendPage notebook vboxcvs "undefined"
+    (tabnum,uuid) <- liftIO $ createTab callback notebook vboxcvs
+      -- hbox <- Gtk.hBoxNew False 0 
+      -- label <- Gtk.labelNew (Just "hello")
+      -- button <- Gtk.buttonNewWithLabel "X"
+      -- Gtk.boxPackStart hbox label Gtk.PackNatural 0
+      -- Gtk.boxPackStart hbox button Gtk.PackNatural 0 
+      -- Gtk.widgetShowAll hbox
+      -- mlabel <- Gtk.labelNew (Nothing :: Maybe String)
+      -- n <- Gtk.notebookAppendPageMenu notebook vboxcvs hbox mlabel -- "undefined"
+      -- button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab n))
+      -- return n
+
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
@@ -171,7 +185,8 @@ addTab mfp = do
              . updateFromCanvasInfoAsCurrentCanvas initcvsbox
              . (cvsInfoMap .~ M.empty)
              . (hoodleFileControl.hoodleFileName .~ Nothing) 
-             . (unitKey .~ tabnum) <$> liftIO emptyUnitHoodle
+             . (unitKey .~ tabnum) 
+             . (unitUUID .~ uuid) <$> liftIO emptyUnitHoodle
     modify . set (unitHoodles.currentUnit) =<< (liftIO $ do
       (uhdl'',wdgt,_) <- constructFrame xst uhdl' wconf
       let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
@@ -205,17 +220,27 @@ nextTab = do
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       invalidateAll 
 
+-- | 
+findTab :: UUID -> MainCoroutine (Maybe Int)
+findTab uuid = do
+    uhdlmap <- view (unitHoodles._2) <$> get
+    let assoc = (map (\x -> (view unitUUID x,view unitKey x)) . M.elems) uhdlmap
+    return (L.lookup uuid assoc)
+
 -- |
 switchTab :: Int -> MainCoroutine ()
 switchTab tabnum = do
+    liftIO $ print tabnum
     xst <- get
     let notebook = view rootNotebook xst
     doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls
         ks = M.keys (snd uhdls)
+    liftIO $ print tabnum
+    liftIO $ print ks
     when (tabnum /= current) $ do 
-      let uhdl = fromJust (M.lookup tabnum (snd uhdls))
+      let uhdl = fromJustError "switchTab"  (M.lookup tabnum (snd uhdls))
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       view currentCanvasInfo uhdl # 
@@ -228,14 +253,15 @@ switchTab tabnum = do
 closeTab :: MainCoroutine ()
 closeTab = do 
   xst <- get
-  liftIO $ print "close tab called"
   let (currk,uhdlmap) = xst ^. unitHoodles
       uhdlmap' = M.delete currk uhdlmap 
+      uhdllst'' = (map (\(x,y)-> (x,(unitKey .~ x) y)) . zip [0..] . M.elems) uhdlmap'
+      uhdlmap'' = M.fromList uhdllst''
       sz = M.size uhdlmap
   when (sz > 1) $ do
-    let (k1,uhdl1) = M.findMin uhdlmap'
-        notebook = xst ^. rootNotebook
+    -- let (k1,uhdl1) = M.findMin uhdlmap'
+    let notebook = xst ^. rootNotebook
     doIOaction_ $ Gtk.notebookRemovePage notebook currk
-    modify $ (unitHoodles .~ (k1,uhdlmap'))
-    switchTab k1
+    modify $ (unitHoodles .~ (0,uhdlmap''))
+    switchTab 0
     

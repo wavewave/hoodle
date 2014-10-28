@@ -24,7 +24,9 @@ import           Control.Monad.Trans
 import qualified Data.IntMap as M
 import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
-import           DBus
+import           Data.UUID (UUID)
+import           Data.UUID.V4
+import           DBus hiding (UUID)
 import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk as Gtk
@@ -296,3 +298,18 @@ registerFrameToContainer rtrwin rtcntr win = do
    --  widgetShowAll rtcntr  
     widgetShowAll rtrwin
     widgetQueueDraw rtrwin
+
+
+createTab :: (AllEvent -> IO ()) -> Gtk.Notebook -> Gtk.VBox -> IO (Int,UUID)
+createTab callback notebook vboxcvs = do
+    hbox <- Gtk.hBoxNew False 0 
+    label <- Gtk.labelNew (Just "hello" :: Maybe String)
+    button <- Gtk.buttonNewWithLabel ("X" :: String)
+    Gtk.boxPackStart hbox label Gtk.PackNatural 0
+    Gtk.boxPackStart hbox button Gtk.PackNatural 0 
+    Gtk.widgetShowAll hbox
+    mlabel <- Gtk.labelNew (Nothing :: Maybe String)
+    n <- Gtk.notebookAppendPageMenu notebook vboxcvs hbox mlabel -- "undefined"
+    uuid <- nextRandom
+    button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab uuid))
+    return (n,uuid)

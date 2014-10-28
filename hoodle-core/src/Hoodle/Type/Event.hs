@@ -105,6 +105,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | LinePosition (Maybe (Int,Int))
                | Keyword (Maybe T.Text)
                | SwitchTab Int
+               | CloseTab UUID
                deriving Show
                       
 instance Show (IORef a) where                      

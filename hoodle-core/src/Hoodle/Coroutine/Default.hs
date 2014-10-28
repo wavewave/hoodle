@@ -25,6 +25,7 @@ import           Control.Lens (over,view,set,at,(.~),(%~),(^.))
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
 import qualified Data.ByteString.Char8 as B
+import           Data.Foldable (mapM_)
 import qualified Data.IntMap as M
 import           Data.IORef 
 import           Data.Maybe
@@ -98,9 +99,10 @@ initCoroutine :: DeviceList
 initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
+  let callback = eventHandler evar
   st0new <- set deviceList devlst  
             . set rootOfRootWindow window 
-            . set callBack (eventHandler evar) 
+            . set callBack callback  
             <$> emptyHoodleState 
   -- pdf rendering testing code
   let tvar = st0new ^. pdfRenderQueue
@@ -132,12 +134,13 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
   vbox <- Gtk.vBoxNew False 0 
   Gtk.containerAdd window vbox
   vboxcvs <- Gtk.vBoxNew False 0 
-  Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
+  -- Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
+  (_,uuid) <- createTab callback notebook vboxcvs
   Gtk.containerAdd vboxcvs (view (unitHoodles.currentUnit.rootWindow) st5)
 
-  sigid <- notebook `Gtk.on` Gtk.switchPage $ \i -> 
-    view callBack st5 (UsrEv (SwitchTab i)) 
-  let st6 = (uiComponentSignalHandler.switchTabSignal .~ Just sigid) st5
+  sigid <- notebook `Gtk.on` Gtk.switchPage $ \i -> callback (UsrEv (SwitchTab i)) 
+  let st6 = ( (unitHoodles.currentUnit.unitUUID .~ uuid) 
+            . (uiComponentSignalHandler.switchTabSignal .~ Just sigid)) st5
       -- st6 = st5
       startingXstate = (unitHoodles.currentUnit.rootContainer .~ Gtk.castToBox vboxcvs) st6
       startworld = world startingXstate . ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)  
@@ -384,6 +387,7 @@ defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt
 defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (SwitchTab i) = switchTab i
+defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> closeTab)
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"

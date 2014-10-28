@@ -48,6 +48,11 @@ maybeRead = fmap fst . listToMaybe . reads
 either_ :: (Monad m) => (b -> m ()) -> Either a b -> m ()
 either_ = either (const (return ()))
 
+fromJustError :: String -> Maybe a -> a
+fromJustError _   (Just x) = x
+fromJustError err Nothing = error err
+
+
 getLargestWidth :: Hoodle -> Double 
 getLargestWidth hdl = 
   let ws = map (dim_width . page_dim) (hoodle_pages hdl)  
@@ -81,8 +86,6 @@ errorlog str = do
 -- | 
 maybeError' :: String -> Maybe a -> a
 maybeError' str = maybe (error str) id
-
-
 
 data UrlPath = FileUrl FilePath | HttpUrl String 
              deriving (Show,Eq)

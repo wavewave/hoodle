@@ -20,6 +20,8 @@ import qualified Data.Map as M
 import           Data.Maybe 
 -- 
 import           Data.Hoodle.Predefined
+--
+import           Hoodle.Util
 
 -- | drawing efficiency
 data DrawFlag = Clear | BkgEfficient | Efficient
@@ -107,12 +109,12 @@ penColorNameMap = M.fromList [ (ColorBlack, "black")
                              , (ColorWhite, "white") ]
 
 penColorRGBAmap :: M.Map PenColor (Double,Double,Double,Double)
-penColorRGBAmap = M.fromList $ map (\x->(fst x,fromJust (M.lookup (snd x) predefined_pencolor))) 
+penColorRGBAmap = M.fromList $ map (\x->(fst x,fromJustError "penColorRGBAmap" (M.lookup (snd x) predefined_pencolor))) 
                              $ M.toList penColorNameMap 
 
 convertPenColorToRGBA :: PenColor -> (Double,Double,Double,Double)
 convertPenColorToRGBA (ColorRGBA r g b a) = (r,g,b,a)
-convertPenColorToRGBA c = fromJust (M.lookup c penColorRGBAmap)
+convertPenColorToRGBA c = fromJustError "convertPenColorToRGBA" (M.lookup c penColorRGBAmap)
 
 convertRGBAToHex :: (Double,Double,Double,Double) -> B.ByteString 
 convertRGBAToHex = B.pack . rgbaToHEX 

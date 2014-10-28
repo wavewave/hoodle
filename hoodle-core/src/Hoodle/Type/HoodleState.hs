@@ -22,6 +22,7 @@ module Hoodle.Type.HoodleState
 , UIComponentSignalHandler
 -- | labels
 , unitKey
+, unitUUID
 , hoodleModeState
 , hoodleFileControl
 , cvsInfoMap
@@ -152,6 +153,7 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
                          deriving (Show,Eq,Ord)
 
 data UnitHoodle = UnitHoodle { _unitKey :: Int
+                             , _unitUUID :: UUID
                              , _hoodleModeState :: HoodleModeState
                              , _hoodleFileControl :: HoodleFileControl
                              , _cvsInfoMap :: CanvasInfoMap 
@@ -194,11 +196,15 @@ data HoodleState =
 
 -- | current unit
 currentUnit :: Simple Lens (Int,M.IntMap UnitHoodle) UnitHoodle
-currentUnit = lens (\(k,m) -> fromJust (M.lookup k m)) (\(_,m) a -> (_unitKey a,M.insert (_unitKey a) a m))
+currentUnit = lens (\(k,m) -> fromJustError "currentUnit" (M.lookup k m)) (\(_,m) a -> (_unitKey a,M.insert (_unitKey a) a m))
 
 -- | lens for unitKey
 unitKey :: Simple Lens UnitHoodle Int
 unitKey = lens _unitKey (\f a -> f { _unitKey = a })
+
+-- | lens for unitKey
+unitUUID :: Simple Lens UnitHoodle UUID
+unitUUID = lens _unitUUID (\f a -> f { _unitUUID = a })
 
 -- | lens for hoodleModeState
 hoodleModeState :: Simple Lens UnitHoodle HoodleModeState
@@ -450,6 +456,7 @@ emptyUnitHoodle = do
   hdl <- emptyGHoodle
   return $ 
     UnitHoodle { _unitKey = 0
+               , _unitUUID = error "unitUUID"
                , _hoodleModeState = ViewAppendState hdl 
                , _hoodleFileControl = emptyHoodleFileControl 
                , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"

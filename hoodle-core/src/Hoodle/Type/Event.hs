@@ -35,6 +35,7 @@ import           Hoodle.Device
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.PageArrangement
+import           Hoodle.Util
 
 -- | 
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent
@@ -84,6 +85,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | LaTeXInput (Maybe (ByteString,ByteString))
                | TextInput (Maybe String)
                | AddLink (Maybe (String,FilePath))
+               | OpenLink UrlPath (Maybe (ByteString,ByteString))
                | EventDisconnected
                | GetHoodleFileInfo (IORef (Maybe String))
                | GotLink (Maybe String) (Int,Int)

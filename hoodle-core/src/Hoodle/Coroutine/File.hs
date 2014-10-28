@@ -151,14 +151,12 @@ getFileContent Nothing = do
     pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing) 
     commit_ 
 
-
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> MainCoroutine ()  
 constructNewHoodleStateFromHoodle hdl' = do 
     callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
     RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
     pureUpdateUhdl (hoodleModeState .~ ViewAppendState rhdl)
-
 
 -- | 
 fileNew :: MainCoroutine () 

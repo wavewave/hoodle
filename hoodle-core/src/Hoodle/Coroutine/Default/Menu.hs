@@ -172,7 +172,7 @@ menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles.current
 menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
-menuEventProcess MenuAddTab = addTab
+menuEventProcess MenuAddTab = addTab Nothing
 menuEventProcess MenuNextTab = nextTab
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 

@@ -324,7 +324,7 @@ showContextMenu (pnum,(x,y)) = do
                     RItemLink lnkbbx _msfc -> do 
                       let lnk = bbxed_content lnkbbx
                       forM_ ((urlParse . B.unpack . link_location) lnk)
-                            (\urlpath -> do milnk <- menuOpenALink urlpath
+                            (\urlpath -> do milnk <- menuOpenALink evhandler urlpath
                                             menuAttach menu milnk 0 1 3 4 )
                       case lnk of 
                         Link _i _typ _lstr _txt _cmd _rdr _pos _dim ->  

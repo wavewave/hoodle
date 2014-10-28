@@ -28,6 +28,7 @@ import Data.Hoodle.Simple
 import Graphics.Hoodle.Render.Util.HitTest
 import Graphics.Hoodle.Render.Type.Item
 -- 
+import Hoodle.Coroutine.Link
 import Hoodle.Device 
 import Hoodle.ModelAction.ContextMenu
 import Hoodle.Type.Canvas
@@ -45,8 +46,7 @@ widgetCheckPen :: CanvasId
                -> MainCoroutine ()    -- ^ default action 
                -> MainCoroutine ()
 widgetCheckPen cid pcoord defact = 
-    get >>= \xst -> 
-      forBoth' unboxBiAct (chk xst) ((getCanvasInfo cid . view (unitHoodles.currentUnit)) xst)
+    get >>= \xst -> forBoth' unboxBiAct (chk xst) ((getCanvasInfo cid . view (unitHoodles.currentUnit)) xst)
   where 
     chk :: HoodleState -> CanvasInfo a -> MainCoroutine () 
     chk xstate cinfo = do 
@@ -74,10 +74,7 @@ widgetCheckPen cid pcoord defact =
                          mid = case lnk of 
                            LinkAnchor {..} -> Just (link_linkeddocid,link_anchorid)
                            _ -> Nothing
-
-                     forM_ 
-                       ((urlParse . B.unpack) loc)
-                       (\url -> liftIO (openLinkAction url mid))
+                     forM_  ((urlParse . B.unpack) loc) (\url -> lift (openLinkAction url mid))
                      MaybeT (return (Just ()))
                    _ -> MaybeT (return Nothing))
       case m of        

@@ -157,14 +157,12 @@ fullScreen = do
       else liftIO (Gtk.windowFullscreen rwin) >> modify (over isFullScreen (const True))
 
 -- |
-addTab :: MainCoroutine ()
-addTab = do
+addTab :: Maybe FilePath -> MainCoroutine ()
+addTab mfp = do
     xst <- get
-    notebook <- view rootNotebook <$> get
-    
+    let notebook = view rootNotebook xst
     vboxcvs <- liftIO $ Gtk.vBoxNew False 0
     tabnum <- liftIO $ Gtk.notebookAppendPage notebook vboxcvs "undefined"
-
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
@@ -174,46 +172,22 @@ addTab = do
              . (cvsInfoMap .~ M.empty)
              . (hoodleFileControl.hoodleFileName .~ Nothing) 
              . (unitKey .~ tabnum) <$> liftIO emptyUnitHoodle
-    -- liftIO $ print (M.keys (view cvsInfoMap uhdl'))
-          
-    uhdl4 <- liftIO $ do
-      (uhdl'',wdgt,_) <- liftIO $ constructFrame xst uhdl' wconf
+    modify . set (unitHoodles.currentUnit) =<< (liftIO $ do
+      (uhdl'',wdgt,_) <- constructFrame xst uhdl' wconf
       let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
       (uhdl4,_wconf) <- eventConnect xst uhdl3 (view frameState uhdl3)
       registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
       Gtk.widgetShowAll notebook
-      return uhdl4
-      -- return (UsrEv (NewUnitHoodle uhdl4))
-    -- NewUnitHoodle uhdl4 <- waitSomeEvent (\case NewUnitHoodle _ -> True; _ -> False)
-
+      return uhdl4)
     doIOaction_ $ 
       blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $
         Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
-
-
-    (liftIO defaultHoodle) >>= \hdl' -> callRenderer $ cnstrctRHoodle hdl' >>= return . GotRHoodle
-    RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
-    let uhdl5 = (hoodleModeState .~ ViewAppendState rhdl) uhdl4
-        current = xst ^. unitHoodles.currentUnit
-
-    
-    -- modify $ (unitHoodles._2.at tabnum .~ Just uhdl5)
-    modify $ (unitHoodles.currentUnit .~ uhdl5)
-    -- viewModeChange ToContSinglePage
+    getFileContent mfp
     updateUhdl $ \uhdl -> do
       liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       unboxBiAct (sing2ContPage uhdl) (const (return uhdl)) . view currentCanvasInfo $ uhdl
     pageZoomChange FitWidth
     invalidateAll 
-  
-    -- modify $ (unitHoodles.currentUnit .~ current)
-    -- modify $ (unitHoodles.currentUnit .~ uhdl4)
-    -- getFileContent Nothing
-    -- canvasZoomUpdateAll
-    
- 
-
-  
 
 -- |
 nextTab :: MainCoroutine ()
@@ -238,7 +212,6 @@ switchTab tabnum = do
     xst <- get
     let notebook = view rootNotebook xst
     doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
-
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls
         ks = M.keys (snd uhdls)
@@ -246,13 +219,11 @@ switchTab tabnum = do
     liftIO $ print current
     when (tabnum /= current) $ do 
       let uhdl = fromJust (M.lookup tabnum (snd uhdls))
-      
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       view currentCanvasInfo uhdl # 
         forBoth' unboxBiAct $ \cinfo -> do
           (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 
           doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
-      -- canvasZoomUpdateAll
       invalidateAll 
 

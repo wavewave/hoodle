@@ -37,6 +37,7 @@ import           DBus
 import           DBus.Client
 import           Graphics.UI.Gtk hiding (get,set) 
 import           System.FilePath 
+import           System.Process (createProcess, proc)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.BBox
@@ -54,6 +55,7 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
+import           Hoodle.Coroutine.Window
 import           Hoodle.Device 
 import           Hoodle.ModelAction.ContextMenu
 import           Hoodle.ModelAction.File (makeNewItemImage)
@@ -68,6 +70,49 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 --
 import Prelude hiding (mapM_)
+
+-- | 
+openLinkAction :: UrlPath 
+               -> Maybe (B.ByteString,B.ByteString) -- ^ (docid,anchorid)
+               -> MainCoroutine () 
+openLinkAction urlpath mid = do 
+    liftIO $ putStrLn "openLinkAction"
+    liftIO $ print urlpath 
+    liftIO $ print mid
+    case urlpath of 
+      FileUrl fp -> addTab (Just fp)
+      HttpUrl url -> do 
+        let cmdargs = [url]
+        liftIO $ createProcess (proc "xdg-open" cmdargs)  
+        return () 
+
+    --       let cmdargs = [url]
+    
+    --       emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }         
+    --       return () 
+    --     HttpUrl url -> do 
+    --       let cmdargs = [url]
+
+    -- flip catch (\(ex :: SomeException) -> print ex ) $ do
+    --   cli <- connectSession
+    --   case urlpath of 
+    --     FileUrl fp -> do 
+    --       emit cli (signal "/" "org.ianwookim.hoodle" "findWindow") { signalBody = [ toVariant fp] }         
+    --       return () 
+    --     HttpUrl url -> do 
+    --       let cmdargs = [url]
+    --       createProcess (proc "xdg-open" cmdargs)  
+    --       return () 
+    --   forkIO $ do 
+    --     threadDelay 2000000
+    --     forM_ mid $ \(docid,anchorid) -> do
+    --                 print (docid,anchorid)
+    --                 emit cli (signal "/" "org.ianwookim.hoodle" "callLink")
+    --                            { signalBody = 
+    --                                [ toVariant (B.unpack docid 
+    --                                             ++ "," 
+    --                                             ++ B.unpack anchorid) ] }
+    --   return ()
 
 makeTextSVGFromStringAt :: String 
                         -> CanvasId 
@@ -196,8 +241,7 @@ gotLink mstr (x,y) = do
               rdr' = case mpgcoord of 
                        Nothing -> rdr 
                        Just (_,PageCoord (x',y')) -> 
-                         let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) 
-                         in (fst rdr,bbox')
+                         let bbox' = moveBBoxULCornerTo (x',y') (snd rdr) in (fst rdr,bbox')
           linkInsert "simple" (uuidbstr,fp) fn rdr' 
         Just hititms -> do 
           b <- okCancelMessageBox ("replace selected item with link to " ++ fn ++ "?")
@@ -229,12 +273,6 @@ addLink = do
         rdr <- liftIO (makePangoTextSVG (0,0) (T.pack str)) 
         linkInsert "simple" (uuidbstr,fname) str rdr 
   where 
-    -- go = do r <- nextevent
-    --         case r of 
-    --           AddLink minput -> return minput 
-    --           UpdateCanvas cid -> -- this is temporary 
-    --                               (invalidateInBBox Nothing Efficient cid) >> go 
-    --           _ -> go 
     action mfn = do  dialog <- messageDialogNew Nothing [DialogModal]
                                  MessageQuestion ButtonsOkCancel ("add link" :: String)
                      vbox <- dialogGetUpper dialog
@@ -250,9 +288,7 @@ addLink = do
                          l <- textBufferGetText buf istart iend True
                          widgetDestroy dialog
                          return (UsrEv (AddLink ((l,) <$> mfn)))
-                       _ -> do 
-                         widgetDestroy dialog
-                         return (UsrEv (AddLink Nothing))
+                       _ -> widgetDestroy dialog >> return (UsrEv (AddLink Nothing))
 
                 
 -- | 
@@ -262,19 +298,13 @@ listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle . view 
 getAnchorMap :: Hoodle -> M.Map T.Text (Int, (Double,Double))
 getAnchorMap hdl = 
     let pgs = view pages hdl
-        itemsInPage pg = do l <- view layers pg 
-                            i <- view items l 
-                            return i
+        itemsInPage pg = [i | l <- view layers pg, i <- view items l ]
         anchorsWithPageNum :: [(Int,[Anchor])] 
-        anchorsWithPageNum = zip [0..] 
-                               (map (mapMaybe lookupAnchor . itemsInPage) pgs)
-        anchormap = foldr (\(p,ys) m -> foldr (insertAnchor p) m ys) 
-                      M.empty anchorsWithPageNum
-    in anchormap
+        anchorsWithPageNum = zip [0..] (map (mapMaybe lookupAnchor . itemsInPage) pgs)
+    in foldr (\(p,ys) m -> foldr (insertAnchor p) m ys) M.empty anchorsWithPageNum -- anchormap
   where lookupAnchor (ItemAnchor a) = Just a
         lookupAnchor _ = Nothing
-        insertAnchor pgnum (Anchor {..}) = 
-          M.insert (TE.decodeUtf8 anchor_id) (pgnum,anchor_pos)  
+        insertAnchor pgnum (Anchor {..}) = M.insert (TE.decodeUtf8 anchor_id) (pgnum,anchor_pos)  
          
 -- | 
 startLinkReceiver :: MainCoroutine ()

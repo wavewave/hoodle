@@ -17,6 +17,7 @@ module Hoodle.ModelAction.ContextMenu where
 
 import           Control.Concurrent (forkIO, threadDelay)
 import           Control.Exception
+import           Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (forM_)
 import           Data.UUID.V4
@@ -37,21 +38,20 @@ import Hoodle.Type.Event
 import Hoodle.Util
 
 -- |
-menuOpenALink :: UrlPath -> IO MenuItem
-menuOpenALink urlpath = do 
+menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO MenuItem
+menuOpenALink evhandler urlpath = do 
     let urlname = case urlpath of 
                     FileUrl fp -> fp 
                     HttpUrl url -> url 
     menuitemlnk <- menuItemNewWithLabel ("Open "++urlname :: String) 
-    menuitemlnk `on` menuItemActivate $ openLinkAction urlpath Nothing
+    menuitemlnk `on` menuItemActivate $ evhandler (UsrEv (OpenLink urlpath Nothing)) -- openLinkAction urlpath Nothing
     return menuitemlnk
 
-
 -- | 
-openLinkAction :: UrlPath 
+openLinkActionDBus :: UrlPath 
                -> Maybe (B.ByteString,B.ByteString) -- ^ (docid,anchorid)
                -> IO () 
-openLinkAction urlpath mid = do
+openLinkActionDBus urlpath mid = do
     flip catch (\(ex :: SomeException) -> print ex ) $ do
       cli <- connectSession
       case urlpath of 
@@ -72,6 +72,7 @@ openLinkAction urlpath mid = do
                                                 ++ "," 
                                                 ++ B.unpack anchorid) ] }
       return ()
+
 -- | 
 menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
 menuCreateALink evhandler sitems = 

@@ -198,7 +198,7 @@ viewAppendMode :: MainCoroutine ()
 viewAppendMode = do 
   r1 <- nextevent 
   case r1 of 
-    PenDown cid pbtn pcoord -> do 
+    PenDown cid pbtn pcoord -> 
       widgetCheckPen cid pcoord $ do 
         ptype <- getPenType 
         case (ptype,pbtn) of 
@@ -384,6 +384,7 @@ defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt
 defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (SwitchTab i) = switchTab i
+defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

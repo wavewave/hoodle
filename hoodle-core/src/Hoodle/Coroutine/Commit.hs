@@ -18,6 +18,7 @@ import Control.Monad.State
 -- from this package
 import Hoodle.Accessor
 import Hoodle.Coroutine.Draw 
+import Hoodle.GUI.Reflect
 import Hoodle.ModelAction.File
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Coroutine
@@ -29,7 +30,8 @@ commit :: HoodleState -> MainCoroutine ()
 commit xstate = do 
   put xstate
   let ui = view gtkUIManager xstate
-  liftIO $ toggleSave ui True
+  -- liftIO $ toggleSave ui True
+  liftIO $ reflectUIToggle ui "SAVEA" True
   pureUpdateUhdl $ \uhdl -> 
     let hdlmodst = view hoodleModeState uhdl
         undotable = view undoTable uhdl

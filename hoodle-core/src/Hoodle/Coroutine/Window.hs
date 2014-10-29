@@ -166,17 +166,6 @@ addTab mfp = do
         callback = xst ^. callBack
     vboxcvs <- liftIO $ Gtk.vBoxNew False 0
     (tabnum,uuid) <- liftIO $ createTab callback notebook vboxcvs
-      -- hbox <- Gtk.hBoxNew False 0 
-      -- label <- Gtk.labelNew (Just "hello")
-      -- button <- Gtk.buttonNewWithLabel "X"
-      -- Gtk.boxPackStart hbox label Gtk.PackNatural 0
-      -- Gtk.boxPackStart hbox button Gtk.PackNatural 0 
-      -- Gtk.widgetShowAll hbox
-      -- mlabel <- Gtk.labelNew (Nothing :: Maybe String)
-      -- n <- Gtk.notebookAppendPageMenu notebook vboxcvs hbox mlabel -- "undefined"
-      -- button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab n))
-      -- return n
-
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
@@ -184,7 +173,8 @@ addTab mfp = do
              . (frameState .~ wconf) 
              . updateFromCanvasInfoAsCurrentCanvas initcvsbox
              . (cvsInfoMap .~ M.empty)
-             . (hoodleFileControl.hoodleFileName .~ Nothing) 
+             . (isSaved .~ maybe False (const True) mfp)
+             . (hoodleFileControl.hoodleFileName .~ mfp) 
              . (unitKey .~ tabnum) 
              . (unitUUID .~ uuid) <$> liftIO emptyUnitHoodle
     modify . set (unitHoodles.currentUnit) =<< (liftIO $ do
@@ -230,14 +220,14 @@ findTab uuid = do
 -- |
 switchTab :: Int -> MainCoroutine ()
 switchTab tabnum = do
-    liftIO $ print tabnum
+    -- liftIO $ print tabnum
     xst <- get
     let notebook = view rootNotebook xst
     doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls
         ks = M.keys (snd uhdls)
-    liftIO $ print tabnum
+    -- liftIO $ print tabnum
     liftIO $ print ks
     when (tabnum /= current) $ do 
       let uhdl = fromJustError "switchTab"  (M.lookup tabnum (snd uhdls))
@@ -248,6 +238,8 @@ switchTab tabnum = do
           (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 
           doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
       invalidateAll 
+      liftIO $ print (uhdl ^. isSaved)
+      liftIO $ reflectUIToggle (xst ^. gtkUIManager) "SAVEA" (not (uhdl ^. isSaved))
 
 -- |
 closeTab :: MainCoroutine ()
@@ -258,10 +250,11 @@ closeTab = do
       uhdllst'' = (map (\(x,y)-> (x,(unitKey .~ x) y)) . zip [0..] . M.elems) uhdlmap'
       uhdlmap'' = M.fromList uhdllst''
       sz = M.size uhdlmap
-  when (sz > 1) $ do
-    -- let (k1,uhdl1) = M.findMin uhdlmap'
-    let notebook = xst ^. rootNotebook
-    doIOaction_ $ Gtk.notebookRemovePage notebook currk
-    modify $ (unitHoodles .~ (0,uhdlmap''))
-    switchTab 0
-    
+  if (sz > 1) 
+    then do
+      let notebook = xst ^. rootNotebook
+      doIOaction_ $ Gtk.notebookRemovePage notebook currk
+      modify $ (unitHoodles .~ (0,uhdlmap''))
+      switchTab 0
+    else liftIO $ Gtk.mainQuit
+      

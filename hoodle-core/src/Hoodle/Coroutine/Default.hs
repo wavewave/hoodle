@@ -169,7 +169,8 @@ initialize ev = do
             cache = xst2 ^. renderCache
         hdlst' <- liftIO $ resetHoodleModeStateBuffers cache hdlst
         pureUpdateUhdl (hoodleModeState .~ hdlst')
-        liftIO $ toggleSave ui False
+        -- liftIO $ toggleSave ui False
+        liftIO $ reflectUIToggle ui "SAVEA" False
         pureUpdateUhdl (isSaved .~ True)
       _ -> do ev' <- nextevent
               initialize (UsrEv ev')

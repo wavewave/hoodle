@@ -70,6 +70,8 @@ import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.TextInput
+-- import           Hoodle.Coroutine.Window
+import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
@@ -91,9 +93,8 @@ askIfSave :: MainCoroutine () -> MainCoroutine ()
 askIfSave action = do 
     uhdl <- view (unitHoodles.currentUnit) <$> get 
     if not (view isSaved uhdl)
-      then do  
-        okCancelMessageBox "Current canvas is not saved yet. Will you proceed without save?" >>= \b -> 
-          when b action
+      then 
+        okCancelMessageBox "Current canvas is not saved yet. Will you proceed without save?" >>= flip when action
       else action 
 
 -- | 
@@ -158,9 +159,9 @@ constructNewHoodleStateFromHoodle hdl' = do
     RenderEv (GotRHoodle rhdl) <- waitSomeEvent (\case RenderEv (GotRHoodle _) -> True; _ -> False)
     pureUpdateUhdl (hoodleModeState .~ ViewAppendState rhdl)
 
--- | 
+-- | deprecated
 fileNew :: MainCoroutine () 
-fileNew = do  
+fileNew = do 
     getFileContent Nothing
     updateUhdl $ \uhdl -> do
       ncvsinfo <- liftIO $ setPage uhdl 0 (getCurrentCanvasId uhdl)
@@ -260,7 +261,8 @@ fileLoad filename = do
       return . (currentCanvasInfo .~ ncvsinfo) . (isSaved .~ True) $ uhdl
     xst <- get 
     let ui = view gtkUIManager xst
-    liftIO $ toggleSave ui False
+    -- liftIO $ toggleSave ui False
+    liftIO $ reflectUIToggle ui "SAVEA" False
     liftIO $ setTitleFromFileName xst
     clearUndoHistory 
     modeChange ToViewAppendMode 
@@ -323,7 +325,8 @@ fileSaveAs = do
                 xst <- get
                 let ui = view gtkUIManager xst
                     hdl'' = (rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit)) xst
-                liftIO $ toggleSave ui False
+                -- liftIO $ toggleSave ui False
+                liftIO $ reflectUIToggle ui "SAVEA" False
                 liftIO $ setTitleFromFileName xst
                 S.afterSaveHook filename hdl''
           

@@ -206,7 +206,8 @@ saveHoodle uhdl = do
         L.writeFile filename . builder $ hdl
         ctime <- getCurrentTime 
         return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ uhdl)
-             
+
+{-              
 -- | this function must be moved to GUI.Reflect
 toggleSave :: UIManager -> Bool -> IO ()
 toggleSave ui b = do 
@@ -216,6 +217,7 @@ toggleSave ui b = do
         y:_ -> return y
     Just savea <- actionGroupGetAction agr ("SAVEA" :: String)
     actionSetSensitive savea b
+-}
 
 -- | 
 makeNewItemImage :: Bool  -- ^ isEmbedded?

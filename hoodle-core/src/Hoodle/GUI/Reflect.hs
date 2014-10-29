@@ -92,7 +92,7 @@ reflectViewModeUI = do
 -- | 
 reflectPenModeUI :: MainCoroutine ()
 reflectPenModeUI = do 
-    reflectUIComponent penModeSignal "PENA" f
+    reflectUIRadio penModeSignal "PENA" f
     reflectCursor
   where 
     f xst = Just $
@@ -104,7 +104,7 @@ reflectPenModeUI = do
 -- | 
 reflectPenColorUI :: MainCoroutine () 
 reflectPenColorUI = do 
-    reflectUIComponent penColorSignal "BLUEA" f
+    reflectUIRadio penColorSignal "BLUEA" f
     reflectCursor
   where 
     f xst = 
@@ -119,7 +119,7 @@ reflectPenColorUI = do
 -- | 
 reflectPenWidthUI :: MainCoroutine () 
 reflectPenWidthUI = do 
-    reflectUIComponent penPointSignal "PENVERYFINEA" f
+    reflectUIRadio penPointSignal "PENVERYFINEA" f
     reflectCursor
   where 
     f xst = 
@@ -138,14 +138,14 @@ reflectPenWidthUI = do
 -- |
 reflectNewPageModeUI :: MainCoroutine ()
 reflectNewPageModeUI = 
-    reflectUIComponent newPageModeSignal "NEWPAGEPLAINA" (Just . newPageMode2Int . (^. settings.newPageMode))
+    reflectUIRadio newPageModeSignal "NEWPAGEPLAINA" (Just . newPageMode2Int . (^. settings.newPageMode))
 
 -- | 
-reflectUIComponent :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
-                   -> String 
-                   -> (HoodleState -> Maybe Int)   
-                   -> MainCoroutine ()
-reflectUIComponent lnz name f = do 
+reflectUIRadio :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+               -> String 
+               -> (HoodleState -> Maybe Int)   
+               -> MainCoroutine ()
+reflectUIRadio lnz name f = do 
     xst <- St.get 
     let ui = view gtkUIManager xst 
         mconnid = view (uiComponentSignalHandler.lnz) xst 
@@ -158,6 +158,17 @@ reflectUIComponent lnz name f = do
             (maybe (return ()) $ \v ->
               doIOaction_ $ blockWhile mconnid (Gtk.set wpma [Gtk.radioActionCurrentValue Gtk.:= v ] )
             )
+
+
+-- | this function must be moved to GUI.Reflect
+reflectUIToggle :: Gtk.UIManager -> String -> Bool -> IO ()
+reflectUIToggle ui str b = do 
+    agr <- Gtk.uiManagerGetActionGroups ui >>= \x -> 
+      case x of
+        [] -> error "No action group?"
+        y:_ -> return y
+    Just savea <- Gtk.actionGroupGetAction agr str -- ("SAVEA" :: String)
+    Gtk.actionSetSensitive savea b
 
 -- | 
 reflectCursor :: MainCoroutine () 

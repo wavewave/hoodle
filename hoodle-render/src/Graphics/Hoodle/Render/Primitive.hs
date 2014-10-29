@@ -47,14 +47,23 @@ drawVWStrokeCurve ((xo,yo,_zo) : xs) = do
     Cairo.moveTo xo yo
     let ((xlast,ylast,_zlast):rxs) = reverse xs 
     foldM_ forward (xo,yo) xs 
-    foldM_ backward (xlast,ylast) rxs 
-  where (dx,dy) = (,) <$> fst <*> snd $ predefinedPenShapeAspectXY
-        dir (x,y) = x * dy - y * dx
-        forward (x0,y0) (x,y,z) = do if (dir (x-x0,y-y0) > 0) 
-                                       then Cairo.lineTo (x+0.5*dx*z) (y+0.5*dy*z)
-                                       else Cairo.lineTo (x-0.5*dx*z) (y-0.5*dy*z) 
-                                     return (x,y)       
-        backward (x0,y0) (x,y,z) = do if (dir (x-x0,y-y0) < 0) 
-                                        then Cairo.lineTo (x-0.5*dx*z) (y-0.5*dy*z)
-                                        else Cairo.lineTo (x+0.5*dx*z) (y+0.5*dy*z)
-                                      return (x,y)
+    foldM_ forward (xlast,ylast) rxs 
+  where turn (x,y) = (negate y,x)
+        norm (x,y) = sqrt (x*x + y*y)
+        (x1,y1) .-. (x0,y0) = (x1-x0 , y1-y0)
+        (x1,y1) .+. (x0,y0) = (x1+x0 , y1+y0)
+        z *. (x0,y0) = (z * x0 , z * y0)
+        zFactor = 0.5 -- to be tuned
+        forward p0 (x,y,z) = do
+          let p1 = (x,y)
+              dp = p1 .-. p0
+              dist = norm dp
+          if dist < 0.01 -- otherwise normalisation can diverge
+             then return p0
+             else do
+               -- shift the current position perpendicularly to the
+               -- direction of movement, by an amount proportional to
+               -- the pressure (z).
+               let shift = turn $ ((1/dist) * z * zFactor) *. dp
+               Prelude.uncurry Cairo.lineTo $ shift .+. p1
+               return p1

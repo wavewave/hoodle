@@ -220,15 +220,12 @@ findTab uuid = do
 -- |
 switchTab :: Int -> MainCoroutine ()
 switchTab tabnum = do
-    -- liftIO $ print tabnum
     xst <- get
     let notebook = view rootNotebook xst
     doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
     uhdls <- view unitHoodles <$> get
     let current = fst uhdls
         ks = M.keys (snd uhdls)
-    -- liftIO $ print tabnum
-    liftIO $ print ks
     when (tabnum /= current) $ do 
       let uhdl = fromJustError "switchTab"  (M.lookup tabnum (snd uhdls))
       modify $ (unitHoodles.currentUnit .~ uhdl)
@@ -238,7 +235,6 @@ switchTab tabnum = do
           (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 
           doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
       invalidateAll 
-      liftIO $ print (uhdl ^. isSaved)
       liftIO $ reflectUIToggle (xst ^. gtkUIManager) "SAVEA" (not (uhdl ^. isSaved))
 
 -- |

@@ -567,7 +567,7 @@ fileVersionSave = do
                  in (hoodleModeState .~ SelectState nthdl) uhdl
         commit_ 
       Left () -> do 
-        txtstr <- maybe "" id <$> textInputDialog
+        txtstr <- maybe "" id <$> textInputDialog "revision description"
         doIOaction $ \_evhandler -> do 
           (md5str,fname) <- mkRevisionHdlFile hdl
           mkRevisionPdfFile hdl fname

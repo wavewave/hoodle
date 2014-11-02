@@ -81,35 +81,6 @@ import           Hoodle.Util
 import Prelude hiding (readFile,mapM_)
 
 
--- | single line text input : almost abandoned now
-textInputDialog :: MainCoroutine (Maybe String) 
-textInputDialog = do 
-    doIOaction $ \_evhandler -> do 
-                   dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
-                     Gtk.MessageQuestion Gtk.ButtonsOkCancel ("text input" :: String)
-                   vbox <- Gtk.dialogGetUpper dialog
-                   txtvw <- Gtk.textViewNew
-                   Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
-                   Gtk.widgetShowAll dialog
-                   res <- Gtk.dialogRun dialog 
-                   case res of 
-                     Gtk.ResponseOk -> do 
-                       buf <- Gtk.textViewGetBuffer txtvw 
-                       (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
-                                            <*> Gtk.textBufferGetEndIter buf
-                       l <- Gtk.textBufferGetText buf istart iend True
-                       Gtk.widgetDestroy dialog
-                       return (UsrEv (TextInput (Just l)))
-                     _ -> do 
-                       Gtk.widgetDestroy dialog
-                       return (UsrEv (TextInput Nothing))
-    let go = do r <- nextevent
-                case r of 
-                  TextInput input -> return input 
-                  UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go 
-                  _ -> go 
-    go 
-
 -- | common dialog with multiline edit input box 
 multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
 multiLineDialog str = mkIOaction $ \evhandler -> do
@@ -564,50 +535,10 @@ laTeXInputFromSource (x0,y0) = do
       txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . view (unitHoodles.currentUnit) <$> get
       let keylst = (map fst . M.toList . getKeywordMap) txtsrc
       when ((not.null) keylst) $ do 
-        lift $ doIOaction (keywordDialog keylst)
-        keyword <- MaybeT keywordLoop
+        keyword <- MaybeT (keywordDialog keylst)
         laTeXInputKeyword (x0,y0) Nothing keyword
     return ()
-
--- | need to be moved to Hoodle.Coroutine.Dialog
-keywordDialog :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
-keywordDialog keys = \evhandler -> do
-    dialog <- Gtk.dialogNew
-    vbox <- Gtk.dialogGetUpper dialog
-    hbox <- Gtk.hBoxNew False 0
-    Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
-    _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
-    _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
-
-    cbx <- Gtk.comboBoxNewText 
-    klst <- mapM (Gtk.comboBoxAppendText cbx) keys
-    when ((not.null) klst) $ 
-      Gtk.comboBoxSetActive cbx (head klst)
-
-    Gtk.boxPackStart hbox cbx Gtk.PackGrow 2
-
-    Gtk.widgetShowAll dialog
-    res <- Gtk.dialogRun dialog
-    Gtk.widgetDestroy dialog
-
-    case res of 
-      Gtk.ResponseOk -> do
-        keystr <- Gtk.comboBoxGetActiveText cbx
-        (return . UsrEv . Keyword) keystr
-      Gtk.ResponseCancel -> return (UsrEv (Keyword Nothing))
-      _ -> return (UsrEv (Keyword Nothing))
     
-
--- | main event loop for line position dialog
-keywordLoop :: MainCoroutine (Maybe T.Text)
-keywordLoop = do 
-    r <- nextevent
-    case r of 
-      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> keywordLoop
-      Keyword x -> return x
-      _ -> keywordLoop
-
-
 -- | 
 toggleNetworkEditSource :: MainCoroutine ()
 toggleNetworkEditSource = do 

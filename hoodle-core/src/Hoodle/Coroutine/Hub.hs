@@ -96,7 +96,7 @@ hubtest HubInfo {..} = do
         -- writeFile file (show tokens2)
         liftIO $ writeFile file (show tokens)
 
-    liftIO $ withSocketsDo $ withManager $ \manager -> do
+    liftIO . (`E.catch` (\(StatusCodeException _ _ _) -> return ())) $ withSocketsDo $ withManager $ \manager -> do
       accessTok <- fmap (accessToken . read) (liftIO (readFile file))
       request' <- liftIO $ parseUrl authgoogleurl 
       let request = request' 

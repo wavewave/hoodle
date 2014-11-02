@@ -24,6 +24,7 @@ import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
 -- import           Control.Monad.Trans.State
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.Foldable as F
 import qualified Data.List as L
 import Data.Monoid ((<>))
 import Data.Text (Text,pack,unpack)
@@ -41,42 +42,44 @@ import System.Exit    (ExitCode(..))
 import System.Info (os)
 import System.Process (system, rawSystem,readProcess)
 --
+import Hoodle.Coroutine.Dialog
 import Hoodle.Script.Hook
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
+import Hoodle.Util
 
 hubtestCoroutine :: MainCoroutine ()
 hubtestCoroutine = do
     xst <- get
-    runMaybeT $ do 
+    runMaybeT_ $ do 
       hset <- (MaybeT . return) (view hookSet xst)
       hinfo <- (MaybeT . return) (hubInfo hset)
-      liftIO (hubtest hinfo)  
-    return ()
+      lift (hubtest hinfo)
 
-hubtest :: HubInfo -> IO ()
+hubtest :: HubInfo -> MainCoroutine ()
 hubtest HubInfo {..} = do
-    hdir <- getHomeDirectory
+    hdir <- liftIO $ getHomeDirectory
     let file = hdir </> ".hoodle.d" </> "token.txt"
-    withSocketsDo $ withManager $ \manager -> do
-      -- Ask for permission to read/write your fusion tables:
-      let client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
-          permissionUrl = formUrl client ["email"]
-      liftIO $ doesFileExist file >>= \b -> unless b $ do       
-        putStrLn$ "Load this URL: "++show permissionUrl
-        case os of
-          "linux"  -> rawSystem "chromium" [permissionUrl]
-          "darwin" -> rawSystem "open"       [permissionUrl]
-          _        -> return ExitSuccess
-        putStrLn "Please paste the verification code: "
-        authcode <- getLine
-        tokens   <- exchangeCode client authcode
-        putStrLn$ "Received access token: "++show (accessToken tokens)
-        tokens2  <- refreshTokens client tokens
-        putStrLn$ "As a test, refreshed token: "++show (accessToken tokens2)
-        writeFile file (show tokens2)
+        client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
+        permissionUrl = formUrl client ["email"]
+    liftIO (doesFileExist file) >>= \b -> unless b $ do       
+      liftIO $ putStrLn$ "Load this URL: "++show permissionUrl
+      case os of
+        "linux"  -> liftIO $ rawSystem "chromium" [permissionUrl]
+        "darwin" -> liftIO $ rawSystem "open"       [permissionUrl]
+        _        -> return ExitSuccess
+      mauthcode <- textInputDialog "Please paste the verification code: "
+      F.forM_ mauthcode $ \authcode -> do
+        tokens   <- liftIO $ exchangeCode client authcode
+        liftIO $ putStrLn$ "Received access token: "++show (accessToken tokens)
+        -- Ask for permission to read/write your fusion tables:
+        -- tokens2  <- liftIO $ refreshTokens client tokens
+        -- putStrLn$ "As a test, refreshed token: "++show (accessToken tokens2)
+        -- writeFile file (show tokens2)
+        liftIO $ writeFile file (show tokens)
 
+    liftIO $ withSocketsDo $ withManager $ \manager -> do
       accessTok <- fmap (accessToken . read) (liftIO (readFile file))
       request' <- liftIO $ parseUrl authgoogleurl 
       let request = request' 

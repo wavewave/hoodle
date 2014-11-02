@@ -35,11 +35,10 @@ import           Hoodle.Type.HoodleState
 
 -- |
 okMessageBox :: String -> MainCoroutine () 
-okMessageBox msg = modify (tempQueue %~ enqueue action) 
-                   >> waitSomeEvent (\case GotOk -> True ; _ -> False) 
-                   >> return () 
+okMessageBox msg = -- modify (tempQueue %~ enqueue action) 
+                   action >> waitSomeEvent (\case GotOk -> True ; _ -> False) >> return () 
   where 
-    action = mkIOaction $ 
+    action = doIOaction $ 
                \_evhandler -> do 
                  dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
                    Gtk.MessageQuestion Gtk.ButtonsOk msg 
@@ -48,12 +47,33 @@ okMessageBox msg = modify (tempQueue %~ enqueue action)
                  return (UsrEv GotOk)
 
 
+-- | 
+okCancelMessageBox :: String -> MainCoroutine Bool 
+okCancelMessageBox msg = -- modify (tempQueue %~ enqueue action) 
+                         action >> waitSomeEvent p >>= return . q
+  where 
+    p (OkCancel _) = True 
+    p _ = False 
+    q (OkCancel b) = b 
+    q _ = False 
+    action = doIOaction $ 
+               \_evhandler -> do 
+                 dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                   Gtk.MessageQuestion Gtk.ButtonsOkCancel msg 
+                 res <- Gtk.dialogRun dialog 
+                 let b = case res of 
+                           Gtk.ResponseOk -> True
+                           _ -> False
+                 Gtk.widgetDestroy dialog 
+                 return (UsrEv (OkCancel b))
+
+-- | 
 keywordDialog :: [T.Text] -> MainCoroutine (Maybe T.Text)
 keywordDialog keylst = do
     doIOaction (keywordDialog' keylst)
     keywordLoop
 
--- | need to be moved to Hoodle.Coroutine.Dialog
+-- |
 keywordDialog' :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
 keywordDialog' keys = \evhandler -> do
     dialog <- Gtk.dialogNew
@@ -125,14 +145,14 @@ textInputDialog msg = do
 
 -- |
 longTextMessageBox :: String -> MainCoroutine () 
-longTextMessageBox msg = modify (tempQueue %~ enqueue action) 
+longTextMessageBox msg = -- modify (tempQueue %~ enqueue action) 
+                         action
                          >> waitSomeEvent (\case GotOk -> True ; _ -> False) 
                          >> return () 
   where 
-    action = mkIOaction $ 
+    action = doIOaction $ 
                \_evhandler -> do 
                  dialog <- Gtk.dialogNew
-
                  vbox <- Gtk.dialogGetUpper dialog
                  hbox <- Gtk.hBoxNew False 0
                  txtbuf <- Gtk.textBufferNew Nothing
@@ -144,10 +164,7 @@ longTextMessageBox msg = modify (tempQueue %~ enqueue action)
                  Gtk.boxPackEnd hbox vscr Gtk.PackNatural 0 
                  Gtk.boxPackStart hbox txtview Gtk.PackGrow 0
                  Gtk.boxPackStart vbox hbox Gtk.PackGrow 0
-                 
-
                  _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
-
                  Gtk.widgetShowAll dialog
                  _res <- Gtk.dialogRun dialog 
                  Gtk.widgetDestroy dialog 
@@ -155,25 +172,6 @@ longTextMessageBox msg = modify (tempQueue %~ enqueue action)
 
 
 
--- | 
-okCancelMessageBox :: String -> MainCoroutine Bool 
-okCancelMessageBox msg = modify (tempQueue %~ enqueue action) 
-                         >> waitSomeEvent p >>= return . q
-  where 
-    p (OkCancel _) = True 
-    p _ = False 
-    q (OkCancel b) = b 
-    q _ = False 
-    action = mkIOaction $ 
-               \_evhandler -> do 
-                 dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
-                   Gtk.MessageQuestion Gtk.ButtonsOkCancel msg 
-                 res <- Gtk.dialogRun dialog 
-                 let b = case res of 
-                           Gtk.ResponseOk -> True
-                           _ -> False
-                 Gtk.widgetDestroy dialog 
-                 return (UsrEv (OkCancel b))
 
 -- | 
 fileChooser :: Gtk.FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 

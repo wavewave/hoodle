@@ -15,6 +15,7 @@
 module Hoodle.Util where
 
 import Control.Applicative 
+import Control.Monad.Trans.Maybe
 import Data.Attoparsec.Char8 
 import qualified Data.ByteString.Char8 as B
 import Data.Maybe
@@ -39,19 +40,22 @@ infixr 0 #
 maybeFlip :: Maybe a -> b -> (a->b) -> b  
 maybeFlip m n j = maybe n j m   
 
-uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
-uncurry4 f (x,y,z,w) = f x y z w 
-
 maybeRead :: Read a => String -> Maybe a 
 maybeRead = fmap fst . listToMaybe . reads 
 
-either_ :: (Monad m) => (b -> m ()) -> Either a b -> m ()
-either_ = either (const (return ()))
+runMaybeT_ :: (Monad m) => MaybeT m a -> m ()
+runMaybeT_ m = runMaybeT m >> return () 
 
 fromJustError :: String -> Maybe a -> a
 fromJustError _   (Just x) = x
 fromJustError err Nothing = error err
 
+either_ :: (Monad m) => (b -> m ()) -> Either a b -> m ()
+either_ = either (const (return ()))
+
+
+uncurry4 :: (a->b->c->d->e)->(a,b,c,d)->e 
+uncurry4 f (x,y,z,w) = f x y z w 
 
 getLargestWidth :: Hoodle -> Double 
 getLargestWidth hdl = 

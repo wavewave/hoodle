@@ -368,6 +368,9 @@ getMenuUI evar = do
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
 
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
+  huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuHub)
+
+
   -- window menu
   addtaba <- actionNewAndRegister "ADDTABA" "Add new tab" (Just "Just a Stub") Nothing (justMenu MenuAddTab)
   nexttaba <- actionNewAndRegister "NEXTTABA" "Go to next tab" (Just "Just a Stub") Nothing (justMenu MenuNextTab)
@@ -401,7 +404,7 @@ getMenuUI evar = do
         , linka, anchora, listanchora, handreca, clra, clrpcka, penopta 
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
-        , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha
+        , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha, huba
         , addtaba, nexttaba, closetaba
         , abouta 
         , defaulta         
@@ -440,7 +443,7 @@ getMenuUI evar = do
         [ opena, savea, saveasa, reloada, versiona, showreva, showida, quita
         , pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
-        , newpagemoda, relauncha
+        , newpagemoda, relauncha, huba
         ]
   --
   mapM_ (\x->actionSetSensitive x True) enabledActions  

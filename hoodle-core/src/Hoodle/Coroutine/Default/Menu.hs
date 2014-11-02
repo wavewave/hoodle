@@ -35,6 +35,7 @@ import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.HandwritingRecognition
+import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.Layer
 import           Hoodle.Coroutine.Link
@@ -140,6 +141,7 @@ menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (sett
 menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings.doesUseVariableCursor) >> reflectCursor >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
+menuEventProcess MenuHub = hubtestCoroutine
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuAddLink = addLink

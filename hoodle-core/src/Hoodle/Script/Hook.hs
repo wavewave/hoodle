@@ -15,6 +15,7 @@ module Hoodle.Script.Hook where
 import Data.Hoodle.Simple 
 import Graphics.Hoodle.Render.Type.Hoodle
 -- 
+import Hoodle.Type.Hub
 
 -- | 
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
@@ -33,6 +34,7 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , warningEmbedImageSize :: Maybe Integer
                  , shrinkCmd4EmbedImage :: Maybe (Double -> FilePath -> FilePath -> IO ())  
                  , getIPaddress :: Maybe (IO String)
+                 , hubInfo :: Maybe HubInfo
                  } 
 
 
@@ -53,4 +55,5 @@ defaultHook = Hook { saveAsHook = Nothing
                    , warningEmbedImageSize = Nothing
                    , shrinkCmd4EmbedImage = Nothing
                    , getIPaddress = Nothing
+                   , hubInfo = Nothing
                    }

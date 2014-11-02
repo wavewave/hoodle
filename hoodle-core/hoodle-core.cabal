@@ -50,11 +50,13 @@ Library
                    fsnotify >= 0.0.7, 
                    gd >= 3000.7,               
                    gtk > 0.12, 
+                   handa-gdata >= 0.6.9.3, 
                    hoodle-builder >= 0.3,
                    hoodle-parser >= 0.3,
                    hoodle-publish >= 0.1.999,
                    hoodle-render >= 0.4.0,
                    hoodle-types >= 0.3,
+                   http-conduit, 
                    lens >= 2.5,
                    monad-loops >= 0.3, 
                    mtl > 2,
@@ -94,6 +96,7 @@ Library
                    Hoodle.Coroutine.File
                    Hoodle.Coroutine.HandwritingRecognition
                    Hoodle.Coroutine.Highlighter
+                   Hoodle.Coroutine.Hub
                    Hoodle.Coroutine.Layer
                    Hoodle.Coroutine.Link
                    Hoodle.Coroutine.Minibuffer
@@ -136,6 +139,7 @@ Library
                    Hoodle.Type.Enum
                    Hoodle.Type.Event 
                    Hoodle.Type.HoodleState
+                   Hoodle.Type.Hub
                    Hoodle.Type.PageArrangement 
                    Hoodle.Type.Predefined
                    Hoodle.Type.Undo 

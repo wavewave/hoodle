@@ -175,6 +175,7 @@
          <menuitem action="NEWPAGECYCLEA" />
        </menu>
        <menuitem action="RELAUNCHA" />
+       <menuitem action="HUBA" />
     </menu>
     <menu action="WMA">
        <menuitem action="ADDTABA" />

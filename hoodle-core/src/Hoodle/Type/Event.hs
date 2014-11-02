@@ -208,6 +208,7 @@ data MenuEvent = MenuNew
                | MenuDefaultText 
                | MenuSetAsDefaultOption
                | MenuRelaunch
+               | MenuHub
                | MenuUseXInput
                | MenuUseTouch 
                | MenuUsePopUpMenu

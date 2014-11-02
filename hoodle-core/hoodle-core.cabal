@@ -57,6 +57,7 @@ Library
                    hoodle-render >= 0.4.0,
                    hoodle-types >= 0.3,
                    http-conduit, 
+                   http-types,
                    lens >= 2.5,
                    monad-loops >= 0.3, 
                    mtl > 2,

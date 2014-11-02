@@ -23,12 +23,14 @@ import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
 -- import           Control.Monad.Trans.State
+import           Data.Aeson
+import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Foldable as F
 import qualified Data.List as L
 import Data.Monoid ((<>))
 import Data.Text (Text,pack,unpack)
-import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Encoding (encodeUtf8,decodeUtf8)
 import Data.Time.Calendar
 import Data.Time.Clock
 import Network
@@ -36,11 +38,17 @@ import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
 import Network.Google (makeRequest, doRequest)
 import Network.HTTP.Conduit
+import Network.HTTP.Types (methodPut)
 import System.Directory (doesFileExist,getHomeDirectory)
 import System.FilePath ((</>))
 import System.Exit    (ExitCode(..))
 import System.Info (os)
 import System.Process (system, rawSystem,readProcess)
+--
+-- import Data.Hoodle.Generic
+import Data.Hoodle.Simple
+import Graphics.Hoodle.Render.Type.Hoodle
+import Text.Hoodle.Builder (builder)
 --
 import Hoodle.Coroutine.Dialog
 import Hoodle.Script.Hook
@@ -48,6 +56,14 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Util
+
+data FileContent = FileContent { file_uuid :: Text, file_content :: Text }
+                 deriving Show
+
+instance ToJSON FileContent where
+    toJSON FileContent {..} = object [ "uuid" .= toJSON file_uuid
+                                     , "content" .= toJSON file_content ]
+
 
 hubtestCoroutine :: MainCoroutine ()
 hubtestCoroutine = do
@@ -59,6 +75,7 @@ hubtestCoroutine = do
 
 hubtest :: HubInfo -> MainCoroutine ()
 hubtest HubInfo {..} = do
+    hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
     let file = hdir </> ".hoodle.d" </> "token.txt"
         client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
@@ -92,8 +109,16 @@ hubtest HubInfo {..} = do
 
       liftIO $ print coojar
 
-      request2' <- liftIO $ parseUrl huburl
-      let request2 = request2' { cookieJar = Just coojar }
+      let uuidtxt = decodeUtf8 (view hoodleID hdl)
+          b64txt = (decodeUtf8 . B64.encode . BL.toStrict . builder) hdl
+
+          filecontent = toJSON FileContent { file_uuid = uuidtxt, file_content = b64txt }
+
+
+      request2' <- liftIO $ parseUrl (huburl </> unpack uuidtxt )
+      let request2 = request2' { method = methodPut
+                               , requestBody = RequestBodyLBS (encode filecontent)
+                               , cookieJar = Just coojar }
       response2 <- httpLbs request2 manager
       liftIO $ print response2
 

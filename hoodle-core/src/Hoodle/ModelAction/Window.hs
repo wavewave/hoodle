@@ -22,8 +22,10 @@ import           Control.Lens (view)
 import           Control.Monad
 import           Control.Monad.Trans 
 import qualified Data.IntMap as M
+import           Data.IORef (newIORef, readIORef)
 import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
+import           Data.Traversable (traverse)
 import           Data.UUID (UUID)
 import           Data.UUID.V4
 import           DBus hiding (UUID)
@@ -303,13 +305,32 @@ registerFrameToContainer rtrwin rtcntr win = do
 createTab :: (AllEvent -> IO ()) -> Gtk.Notebook -> Gtk.VBox -> IO (Int,UUID)
 createTab callback notebook vboxcvs = do
     hbox <- Gtk.hBoxNew False 0 
+    ebox <- Gtk.eventBoxNew
     label <- Gtk.labelNew (Just "hello" :: Maybe String)
+    containerAdd ebox label
+    Gtk.dragSourceSet ebox [Gtk.Button1] [Gtk.ActionCopy]
+    Gtk.dragSourceSetIconStock ebox Gtk.stockIndex
+    Gtk.dragSourceAddTextTargets ebox
     button <- Gtk.buttonNewWithLabel ("X" :: String)
-    Gtk.boxPackStart hbox label Gtk.PackNatural 0
+    Gtk.boxPackStart hbox {- label -} ebox Gtk.PackNatural 0
     Gtk.boxPackStart hbox button Gtk.PackNatural 0 
     Gtk.widgetShowAll hbox
     mlabel <- Gtk.labelNew (Nothing :: Maybe String)
     n <- Gtk.notebookAppendPageMenu notebook vboxcvs hbox mlabel -- "undefined"
     uuid <- nextRandom
     button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab uuid))
+
+    ebox `on` Gtk.dragBegin $ \_dc -> do 
+      liftIO $ putStrLn "dragging"
+    ebox `on` Gtk.dragDataGet $ \_dc _iid _ts -> do
+      minfo <- liftIO $ do 
+        ref <- newIORef (Nothing :: Maybe String)
+        callback (UsrEv (GetHoodleFileInfoFromTab uuid ref))
+        readIORef ref
+      liftIO $ print minfo
+ 
+      traverse Gtk.selectionDataSetText minfo >> return ()
+
+
+
     return (n,uuid)

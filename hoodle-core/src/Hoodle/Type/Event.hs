@@ -88,6 +88,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | OpenLink UrlPath (Maybe (T.Text,T.Text))
                | EventDisconnected
                | GetHoodleFileInfo (IORef (Maybe String))
+               | GetHoodleFileInfoFromTab UUID (IORef (Maybe String))
                | GotLink (Maybe String) (Int,Int)
                | Sync UTCTime 
                | FileReloadOrdered

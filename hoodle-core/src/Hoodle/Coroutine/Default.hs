@@ -21,13 +21,14 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
-import           Control.Lens (over,view,set,at,(.~),(%~),(^.))
+import           Control.Lens (over,view,set,at,(.~),(%~),(^.),_2)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
 import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (mapM_)
 import qualified Data.IntMap as M
 import           Data.IORef 
+import qualified Data.List as L
 import           Data.Maybe
 import           Data.Sequence (Seq,viewl, ViewL(..))
 import qualified Data.Text as T (Text)
@@ -343,6 +344,17 @@ defaultEventProcess (GetHoodleFileInfo ref) = do
   case view (hoodleFileControl.hoodleFileName) uhdl of 
     Nothing -> liftIO $ writeIORef ref Nothing
     Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
+defaultEventProcess (GetHoodleFileInfoFromTab uuidtab ref) = do 
+  uhdlmap <- view (unitHoodles._2) <$> get
+  let muhdl = (L.lookup uuidtab . map (\x -> (view unitUUID x,x)) . M.elems) uhdlmap
+  case muhdl of 
+    Nothing -> liftIO $ writeIORef ref Nothing
+    Just uhdl -> do 
+      let hdl = getHoodle uhdl
+          uuid = B.unpack (view ghoodleID hdl)
+      case view (hoodleFileControl.hoodleFileName) uhdl of 
+        Nothing -> liftIO $ writeIORef ref Nothing
+        Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    
 defaultEventProcess (Sync ctime) = do 
   xst <- get

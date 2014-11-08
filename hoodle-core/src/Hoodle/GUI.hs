@@ -125,8 +125,8 @@ outerLayout ui vbox xst = do
         ref <- newIORef (Nothing :: Maybe String)
         view callBack xst (UsrEv (GetHoodleFileInfo ref))
         readIORef ref
-      mapM_ (selectionDataSetText >=> const (return ())) minfo
-        
+      -- mapM_ (selectionDataSetText >=> const (return ())) minfo
+      traverse selectionDataSetText minfo >> return ()
 
     -- 
     hbox <- hBoxNew False 0 

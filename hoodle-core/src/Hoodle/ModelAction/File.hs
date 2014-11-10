@@ -207,18 +207,6 @@ saveHoodle uhdl = do
         ctime <- getCurrentTime 
         return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ uhdl)
 
-{-              
--- | this function must be moved to GUI.Reflect
-toggleSave :: UIManager -> Bool -> IO ()
-toggleSave ui b = do 
-    agr <- uiManagerGetActionGroups ui >>= \x -> 
-      case x of
-        [] -> error "No action group?"
-        y:_ -> return y
-    Just savea <- actionGroupGetAction agr ("SAVEA" :: String)
-    actionSetSensitive savea b
--}
-
 -- | 
 makeNewItemImage :: Bool  -- ^ isEmbedded?
                     -> FilePath 

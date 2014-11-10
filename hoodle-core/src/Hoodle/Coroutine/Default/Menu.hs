@@ -175,7 +175,7 @@ menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.curre
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
 menuEventProcess MenuAddTab = addTab Nothing
-menuEventProcess MenuNextTab = nextTab
+-- menuEventProcess MenuNextTab = nextTab
 menuEventProcess MenuCloseTab = closeTab
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 

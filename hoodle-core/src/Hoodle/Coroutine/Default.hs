@@ -136,11 +136,12 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
   Gtk.containerAdd window vbox
   vboxcvs <- Gtk.vBoxNew False 0 
   -- Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
-  (_,uuid) <- createTab callback notebook vboxcvs
+  (_,uuid,btn) <- createTab callback notebook vboxcvs
   Gtk.containerAdd vboxcvs (view (unitHoodles.currentUnit.rootWindow) st5)
 
   sigid <- notebook `Gtk.on` Gtk.switchPage $ \i -> callback (UsrEv (SwitchTab i)) 
   let st6 = ( (unitHoodles.currentUnit.unitUUID .~ uuid) 
+            . (unitHoodles.currentUnit.unitButton .~ btn)
             . (uiComponentSignalHandler.switchTabSignal .~ Just sigid)) st5
       -- st6 = st5
       startingXstate = (unitHoodles.currentUnit.rootContainer .~ Gtk.castToBox vboxcvs) st6

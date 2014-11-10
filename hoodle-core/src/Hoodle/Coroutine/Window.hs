@@ -164,8 +164,10 @@ addTab mfp = do
     xst <- get
     let notebook = xst ^. rootNotebook
         callback = xst ^. callBack
+        btnold = xst ^. (unitHoodles.currentUnit.unitButton)
+    liftIO $ Gtk.widgetSetSensitive btnold False
     vboxcvs <- liftIO $ Gtk.vBoxNew False 0
-    (tabnum,uuid) <- liftIO $ createTab callback notebook vboxcvs
+    (tabnum,uuid,btn) <- liftIO $ createTab callback notebook vboxcvs
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
@@ -176,7 +178,9 @@ addTab mfp = do
              . (isSaved .~ maybe False (const True) mfp)
              . (hoodleFileControl.hoodleFileName .~ mfp) 
              . (unitKey .~ tabnum) 
-             . (unitUUID .~ uuid) <$> liftIO emptyUnitHoodle
+             . (unitUUID .~ uuid) 
+             . (unitButton .~ btn)
+             <$> liftIO emptyUnitHoodle
     modify . set (unitHoodles.currentUnit) =<< (liftIO $ do
       (uhdl'',wdgt,_) <- constructFrame xst uhdl' wconf
       let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
@@ -194,6 +198,8 @@ addTab mfp = do
     pageZoomChange FitWidth
     invalidateAll 
 
+
+{-
 -- |
 nextTab :: MainCoroutine ()
 nextTab = do
@@ -209,6 +215,8 @@ nextTab = do
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       invalidateAll 
+-}
+
 
 -- | 
 findTab :: UUID -> MainCoroutine (Maybe Int)
@@ -224,10 +232,13 @@ switchTab tabnum = do
     let notebook = view rootNotebook xst
     doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum ]
     uhdls <- view unitHoodles <$> get
+
     let current = fst uhdls
         ks = M.keys (snd uhdls)
     when (tabnum /= current) $ do 
       let uhdl = fromJustError "switchTab"  (M.lookup tabnum (snd uhdls))
+      liftIO $ Gtk.widgetSetSensitive (uhdls^.(currentUnit.unitButton)) False
+      liftIO $ Gtk.widgetSetSensitive (uhdl^.unitButton) True
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       view currentCanvasInfo uhdl # 

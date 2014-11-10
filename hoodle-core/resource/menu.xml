@@ -179,7 +179,6 @@
     </menu>
     <menu action="WMA">
        <menuitem action="ADDTABA" />
-       <menuitem action="NEXTTABA" />
        <menuitem action="CLOSETABA" />
     </menu>
     <menu action="HMA">

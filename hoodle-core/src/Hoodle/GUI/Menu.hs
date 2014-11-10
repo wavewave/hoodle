@@ -373,7 +373,7 @@ getMenuUI evar = do
 
   -- window menu
   addtaba <- actionNewAndRegister "ADDTABA" "Add new tab" (Just "Just a Stub") Nothing (justMenu MenuAddTab)
-  nexttaba <- actionNewAndRegister "NEXTTABA" "Go to next tab" (Just "Just a Stub") Nothing (justMenu MenuNextTab)
+  -- nexttaba <- actionNewAndRegister "NEXTTABA" "Go to next tab" (Just "Just a Stub") Nothing (justMenu MenuNextTab)
   closetaba <- actionNewAndRegister "CLOSETABA" "Close current tab" (Just "Just a Stub") Nothing (justMenu MenuCloseTab)
 
 
@@ -405,7 +405,7 @@ getMenuUI evar = do
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha, huba
-        , addtaba, nexttaba, closetaba
+        , addtaba, {- nexttaba, -} closetaba
         , abouta 
         , defaulta         
         ] 

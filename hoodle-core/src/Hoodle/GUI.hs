@@ -78,6 +78,9 @@ startGUI mfname mhook = do
       liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
       return True
     widgetShowAll window
+
+    forkIO $ clock (eventHandler tref)
+
     let mainaction = do eventHandler tref (UsrEv (Initialized mfname))
                         mainGUI 
     mainaction `catch` \(_e :: SomeException) -> do 
@@ -89,16 +92,13 @@ startGUI mfname mhook = do
       hClose outh 
     return ()
 
-    -- 
-    -- this is a test for asynchronous events
-    -- 
-    -- forkIO $ forever $ do 
-    --   threadDelay 1000000
-    --   postGUIAsync (eventHandler tref (SysEv ClockUpdateEvent))
 
-    -- 
-    -- test end
-    -- 
+clock :: (AllEvent -> IO ()) -> IO ()
+clock evhandler = forever $ do 
+    threadDelay 1000000
+    postGUIAsync (evhandler (SysEv ClockUpdateEvent))
+
+
 
 outerLayout :: UIManager -> VBox -> HoodleState -> IO ()
 outerLayout ui vbox xst = do 
@@ -117,15 +117,14 @@ outerLayout ui vbox xst = do
     dragSourceSet ebox [Button1] [ActionCopy]
     dragSourceSetIconStock ebox stockIndex
     dragSourceAddTextTargets ebox
-    ebox `on` dragBegin $ \_dc -> do 
-      liftIO $ putStrLn "dragging"
+    -- ebox `on` dragBegin $ \_dc -> do 
+    --   liftIO $ putStrLn "dragging"
     ebox `on` dragDataGet $ \_dc _iid _ts -> do 
       -- very dirty solution but.. 
       minfo <- liftIO $ do 
         ref <- newIORef (Nothing :: Maybe String)
         view callBack xst (UsrEv (GetHoodleFileInfo ref))
         readIORef ref
-      -- mapM_ (selectionDataSetText >=> const (return ())) minfo
       traverse selectionDataSetText minfo >> return ()
 
     -- 

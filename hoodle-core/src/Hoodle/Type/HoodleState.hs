@@ -23,6 +23,7 @@ module Hoodle.Type.HoodleState
 -- | labels
 , unitKey
 , unitUUID
+, unitButton
 , hoodleModeState
 , hoodleFileControl
 , cvsInfoMap
@@ -154,6 +155,7 @@ data IsOneTimeSelectMode = NoOneTimeSelectMode
 
 data UnitHoodle = UnitHoodle { _unitKey :: Int
                              , _unitUUID :: UUID
+                             , _unitButton :: Gtk.Button
                              , _hoodleModeState :: HoodleModeState
                              , _hoodleFileControl :: HoodleFileControl
                              , _cvsInfoMap :: CanvasInfoMap 
@@ -205,6 +207,11 @@ unitKey = lens _unitKey (\f a -> f { _unitKey = a })
 -- | lens for unitKey
 unitUUID :: Simple Lens UnitHoodle UUID
 unitUUID = lens _unitUUID (\f a -> f { _unitUUID = a })
+
+-- | lens for unitKey
+unitButton :: Simple Lens UnitHoodle Gtk.Button
+unitButton = lens _unitButton (\f a -> f { _unitButton = a })
+
 
 -- | lens for hoodleModeState
 hoodleModeState :: Simple Lens UnitHoodle HoodleModeState
@@ -457,6 +464,7 @@ emptyUnitHoodle = do
   return $ 
     UnitHoodle { _unitKey = 0
                , _unitUUID = error "unitUUID"
+               , _unitButton = error "unitButton"
                , _hoodleModeState = ViewAppendState hdl 
                , _hoodleFileControl = emptyHoodleFileControl 
                , _cvsInfoMap = error "emptyHoodleState.cvsInfoMap"

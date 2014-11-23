@@ -40,7 +40,7 @@ import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
 import Network.Google (makeRequest, doRequest)
 import Network.HTTP.Conduit
 import Network.HTTP.Types (methodPut)
-import System.Directory (doesFileExist,getHomeDirectory,canonicalizePath)
+import System.Directory
 import System.Environment (getEnv)
 import System.Exit    (ExitCode(..))
 import System.FilePath ((</>),makeRelative)
@@ -92,7 +92,7 @@ hubtestCoroutine = do
                 Just _ -> return ()  
 
 hubtest :: FilePath -> HubInfo -> MainCoroutine ()
-hubtest filepath HubInfo {..} = do
+hubtest filepath hinfo@(HubInfo {..}) = do
     hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
     let file = hdir </> ".hoodle.d" </> "token.txt"
@@ -114,7 +114,7 @@ hubtest filepath HubInfo {..} = do
         -- writeFile file (show tokens2)
         liftIO $ writeFile file (show tokens)
 
-    r <- liftIO . (`E.catch` (\(StatusCodeException _ _ _) -> return False)) $ withSocketsDo $ withManager $ \manager -> do
+    r <- liftIO . (`E.catch` (\(_ :: E.SomeException)-> return False)) $ withSocketsDo $ withManager $ \manager -> do
       accessTok <- fmap (accessToken . read) (liftIO (readFile file))
       request' <- liftIO $ parseUrl authgoogleurl 
       let request = request' 
@@ -142,5 +142,15 @@ hubtest filepath HubInfo {..} = do
       response2 <- httpLbs request2 manager
       liftIO $ print response2
       return True
-    if r then return () else okMessageBox "authentication failure" >> return ()
+    if r 
+      then return () 
+      else do 
+        b <- okCancelMessageBox "authentication failure! do you want to start from the beginning?"
+        when b $ do
+          r' :: Either E.SomeException () <- liftIO (E.try (removeFile file))
+          case r' of 
+            Left _ -> return ()
+            Right _ -> hubtest filepath hinfo
+        
+        
 

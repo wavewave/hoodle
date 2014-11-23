@@ -70,8 +70,8 @@ instance ToJSON FileContent where
                                      , "content" .= toJSON file_content ]
 
 
-hubtestCoroutine :: MainCoroutine ()
-hubtestCoroutine = do
+hubUploadCoroutine :: MainCoroutine ()
+hubUploadCoroutine = do
     xst <- get
     uhdl <- view (unitHoodles.currentUnit) <$> get
     if not (view isSaved uhdl) 
@@ -86,13 +86,13 @@ hubtestCoroutine = do
                      let relfp = makeRelative hdir canfp
 
                      liftIO $ print hinfo
-                     lift (hubtest relfp hinfo)
+                     lift (uploadWork relfp hinfo)
               case r of 
                 Nothing -> okMessageBox "upload not successful" >> return ()
                 Just _ -> return ()  
 
-hubtest :: FilePath -> HubInfo -> MainCoroutine ()
-hubtest filepath hinfo@(HubInfo {..}) = do
+uploadWork :: FilePath -> HubInfo -> MainCoroutine ()
+uploadWork filepath hinfo@(HubInfo {..}) = do
     hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
     let file = hdir </> ".hoodle.d" </> "token.txt"
@@ -150,7 +150,7 @@ hubtest filepath hinfo@(HubInfo {..}) = do
           r' :: Either E.SomeException () <- liftIO (E.try (removeFile file))
           case r' of 
             Left _ -> return ()
-            Right _ -> hubtest filepath hinfo
+            Right _ -> uploadWork filepath hinfo
         
         
 

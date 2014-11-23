@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
-import           Control.Lens (over,view,set,at,(.~),(%~),(^.),_2)
+import           Control.Lens (over,view,set,at,(.~),(^.),_2)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
 import qualified Data.ByteString.Char8 as B
@@ -31,7 +31,6 @@ import           Data.IORef
 import qualified Data.List as L
 import           Data.Maybe
 import           Data.Sequence (Seq,viewl, ViewL(..))
-import qualified Data.Text as T (Text)
 import           Data.Time.Clock
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -43,7 +42,6 @@ import           System.Process
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
-import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Simple (Dimension(..), Background(..))
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
@@ -70,7 +68,6 @@ import           Hoodle.Coroutine.Window
 import           Hoodle.Device
 import           Hoodle.GUI.Menu
 import           Hoodle.GUI.Reflect
-import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Window 
 import           Hoodle.Script.Hook

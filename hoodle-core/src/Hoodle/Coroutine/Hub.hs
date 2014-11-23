@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -39,9 +40,10 @@ import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
 import Network.Google (makeRequest, doRequest)
 import Network.HTTP.Conduit
 import Network.HTTP.Types (methodPut)
-import System.Directory (doesFileExist,getHomeDirectory)
-import System.FilePath ((</>))
+import System.Directory (doesFileExist,getHomeDirectory,canonicalizePath)
+import System.Environment (getEnv)
 import System.Exit    (ExitCode(..))
+import System.FilePath ((</>),makeRelative)
 import System.Info (os)
 import System.Process (system, rawSystem,readProcess)
 --
@@ -57,24 +59,41 @@ import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Util
 
-data FileContent = FileContent { file_uuid :: Text, file_content :: Text }
+data FileContent = FileContent { file_uuid :: Text
+                               , file_path :: Text
+                               , file_content :: Text }
                  deriving Show
 
 instance ToJSON FileContent where
     toJSON FileContent {..} = object [ "uuid" .= toJSON file_uuid
+                                     , "path" .= toJSON file_path
                                      , "content" .= toJSON file_content ]
 
 
 hubtestCoroutine :: MainCoroutine ()
 hubtestCoroutine = do
     xst <- get
-    runMaybeT_ $ do 
-      hset <- (MaybeT . return) (view hookSet xst)
-      hinfo <- (MaybeT . return) (hubInfo hset)
-      lift (hubtest hinfo)
+    uhdl <- view (unitHoodles.currentUnit) <$> get
+    if not (view isSaved uhdl) 
+      then 
+        okMessageBox "hub action can be done only after saved" >> return ()
+      else do r <- runMaybeT $ do 
+                     hset <- (MaybeT . return) (view hookSet xst)
+                     hinfo <- (MaybeT . return) (hubInfo hset)
+                     hdir <- (MaybeT . liftIO) $ do e :: Either E.SomeException String <- E.try (getEnv "HOODLEHOME") 
+                                                    return (either (\_->Nothing) Just e)
+                     fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
+                     canfp <- liftIO $ canonicalizePath fp
+                     let relfp = makeRelative hdir canfp
 
-hubtest :: HubInfo -> MainCoroutine ()
-hubtest HubInfo {..} = do
+                     liftIO $ print hinfo
+                     lift (hubtest relfp hinfo)
+              case r of 
+                Nothing -> okMessageBox "upload not successful" >> return ()
+                Just _ -> return ()  
+
+hubtest :: FilePath -> HubInfo -> MainCoroutine ()
+hubtest filepath HubInfo {..} = do
     hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
     let file = hdir </> ".hoodle.d" </> "token.txt"
@@ -112,7 +131,9 @@ hubtest HubInfo {..} = do
       let uuidtxt = decodeUtf8 (view hoodleID hdl)
           b64txt = (decodeUtf8 . B64.encode . BL.toStrict . builder) hdl
 
-          filecontent = toJSON FileContent { file_uuid = uuidtxt, file_content = b64txt }
+          filecontent = toJSON FileContent { file_uuid = uuidtxt
+                                           , file_path = pack filepath
+                                           , file_content = b64txt }
 
 
       request2' <- liftIO $ parseUrl (huburl </> unpack uuidtxt )

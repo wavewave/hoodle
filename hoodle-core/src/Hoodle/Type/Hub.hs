@@ -7,3 +7,4 @@ data HubInfo = HubInfo { cid :: Text
                        , authgoogleurl :: String
                        , huburl :: String
                        } 
+             deriving (Show,Eq,Ord)

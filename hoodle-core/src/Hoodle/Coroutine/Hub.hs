@@ -24,10 +24,11 @@ import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
 -- import           Control.Monad.Trans.State
-import           Data.Aeson
+import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Foldable as F
+import qualified Data.HashMap.Strict as H
 import qualified Data.List as L
 import Data.Monoid ((<>))
 import Data.Text (Text,pack,unpack)
@@ -69,6 +70,23 @@ instance ToJSON FileContent where
                                      , "path" .= toJSON file_path
                                      , "content" .= toJSON file_content ]
 
+data FileRsync = FileRsync { frsync_uuid :: Text 
+                           , frsync_sig :: Text
+                           }
+               deriving Show
+
+instance ToJSON FileRsync where
+  toJSON FileRsync {..} = object [ "uuid" .= toJSON frsync_uuid
+                                 , "signature" .= toJSON frsync_sig ]
+
+instance FromJSON FileRsync where
+  parseJSON (Object v) = 
+    let r = do 
+          String uuid <- H.lookup "uuid" v
+          String sig <- H.lookup "signature" v
+          return (FileRsync uuid sig)
+    in maybe (fail "error in parsing FileRsync") return r
+  parseJSON _ = fail "error in parsing FileRsync"
 
 hubUploadCoroutine :: MainCoroutine ()
 hubUploadCoroutine = do
@@ -125,22 +143,31 @@ uploadWork filepath hinfo@(HubInfo {..}) = do
       liftIO $ print response
       let coojar = responseCookieJar response
 
-      liftIO $ print coojar
+      -- liftIO $ print coojar
 
       let uuidtxt = decodeUtf8 (view hoodleID hdl)
-          b64txt = (decodeUtf8 . B64.encode . BL.toStrict . builder) hdl
+      request2' <- liftIO $ parseUrl (huburl </> unpack uuidtxt )
+      let request2 = request2' 
+                     { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
+                     , cookieJar = Just coojar  
+                     }
+      response2 <- httpLbs request2 manager
+      -- liftIO $ print request2
+      -- liftIO $ print response2 
+      let mfrsync = AE.decode (responseBody response2) :: Maybe FileRsync
 
+      let b64txt = (decodeUtf8 . B64.encode . BL.toStrict . builder) hdl
           filecontent = toJSON FileContent { file_uuid = uuidtxt
                                            , file_path = pack filepath
                                            , file_content = b64txt }
 
 
-      request2' <- liftIO $ parseUrl (huburl </> unpack uuidtxt )
-      let request2 = request2' { method = methodPut
+      request3' <- liftIO $ parseUrl (huburl </> unpack uuidtxt )
+      let request3 = request3' { method = methodPut
                                , requestBody = RequestBodyLBS (encode filecontent)
                                , cookieJar = Just coojar }
-      response2 <- httpLbs request2 manager
-      liftIO $ print response2
+      response3 <- httpLbs request3 manager
+      -- liftIO $ print response3
       return True
     if r 
       then return () 

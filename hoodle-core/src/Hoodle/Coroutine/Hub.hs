@@ -78,10 +78,11 @@ hubtestCoroutine = do
       then 
         okMessageBox "hub action can be done only after saved" >> return ()
       else do r <- runMaybeT $ do 
-                     hset <- (MaybeT . return) (view hookSet xst)
+                     hset <- (MaybeT . return) $ view hookSet xst
                      hinfo <- (MaybeT . return) (hubInfo hset)
-                     hdir <- (MaybeT . liftIO) $ do e :: Either E.SomeException String <- E.try (getEnv "HOODLEHOME") 
-                                                    return (either (\_->Nothing) Just e)
+                     let hdir = hubfileroot hinfo
+                     -- hdir <- (MaybeT . liftIO) $ do e :: Either E.SomeException String <- E.try (getEnv "HOODLEHOME") 
+                     --                              return (either (\_->Nothing) Just e)
                      fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
                      canfp <- liftIO $ canonicalizePath fp
                      let relfp = makeRelative hdir canfp

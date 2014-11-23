@@ -81,8 +81,6 @@ hubtestCoroutine = do
                      hset <- (MaybeT . return) $ view hookSet xst
                      hinfo <- (MaybeT . return) (hubInfo hset)
                      let hdir = hubfileroot hinfo
-                     -- hdir <- (MaybeT . liftIO) $ do e :: Either E.SomeException String <- E.try (getEnv "HOODLEHOME") 
-                     --                              return (either (\_->Nothing) Just e)
                      fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
                      canfp <- liftIO $ canonicalizePath fp
                      let relfp = makeRelative hdir canfp
@@ -116,7 +114,7 @@ hubtest filepath HubInfo {..} = do
         -- writeFile file (show tokens2)
         liftIO $ writeFile file (show tokens)
 
-    liftIO . (`E.catch` (\(StatusCodeException _ _ _) -> return ())) $ withSocketsDo $ withManager $ \manager -> do
+    r <- liftIO . (`E.catch` (\(StatusCodeException _ _ _) -> return False)) $ withSocketsDo $ withManager $ \manager -> do
       accessTok <- fmap (accessToken . read) (liftIO (readFile file))
       request' <- liftIO $ parseUrl authgoogleurl 
       let request = request' 
@@ -143,6 +141,6 @@ hubtest filepath HubInfo {..} = do
                                , cookieJar = Just coojar }
       response2 <- httpLbs request2 manager
       liftIO $ print response2
-
-
+      return True
+    if r then return () else okMessageBox "authentication failure" >> return ()
 

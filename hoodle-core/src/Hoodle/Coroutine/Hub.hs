@@ -26,6 +26,7 @@ import           Control.Monad.Trans.Maybe
 -- import           Control.Monad.Trans.State
 import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
+import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Foldable as F
 import qualified Data.HashMap.Strict as H
@@ -35,6 +36,7 @@ import Data.Text (Text,pack,unpack)
 import Data.Text.Encoding (encodeUtf8,decodeUtf8)
 import Data.Time.Calendar
 import Data.Time.Clock
+import Data.UUID.V4
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
@@ -44,9 +46,9 @@ import Network.HTTP.Types (methodPut)
 import System.Directory
 import System.Environment (getEnv)
 import System.Exit    (ExitCode(..))
-import System.FilePath ((</>),makeRelative)
+import System.FilePath ((</>),(<.>),makeRelative)
 import System.Info (os)
-import System.Process (system, rawSystem,readProcess)
+import System.Process (system, rawSystem,readProcessWithExitCode)
 --
 -- import Data.Hoodle.Generic
 import Data.Hoodle.Simple
@@ -62,13 +64,17 @@ import Hoodle.Util
 
 data FileContent = FileContent { file_uuid :: Text
                                , file_path :: Text
-                               , file_content :: Text }
+                               , file_content :: Text 
+                               , file_rsync :: Maybe FileRsync
+                               }
                  deriving Show
 
 instance ToJSON FileContent where
-    toJSON FileContent {..} = object [ "uuid" .= toJSON file_uuid
-                                     , "path" .= toJSON file_path
-                                     , "content" .= toJSON file_content ]
+    toJSON FileContent {..} = object [ "uuid"    .= toJSON file_uuid
+                                     , "path"    .= toJSON file_path
+                                     , "content" .= toJSON file_content 
+                                     , "rsync"   .= toJSON file_rsync
+                                     ]
 
 data FileRsync = FileRsync { frsync_uuid :: Text 
                            , frsync_sig :: Text
@@ -104,13 +110,13 @@ hubUploadCoroutine = do
                      let relfp = makeRelative hdir canfp
 
                      liftIO $ print hinfo
-                     lift (uploadWork relfp hinfo)
+                     lift (uploadWork (canfp,relfp) hinfo)
               case r of 
                 Nothing -> okMessageBox "upload not successful" >> return ()
                 Just _ -> return ()  
 
-uploadWork :: FilePath -> HubInfo -> MainCoroutine ()
-uploadWork filepath hinfo@(HubInfo {..}) = do
+uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()
+uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
     hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
     let file = hdir </> ".hoodle.d" </> "token.txt"
@@ -154,12 +160,35 @@ uploadWork filepath hinfo@(HubInfo {..}) = do
       response2 <- httpLbs request2 manager
       -- liftIO $ print request2
       -- liftIO $ print response2 
+      hdlbstr <- liftIO $ B.readFile ofilepath 
       let mfrsync = AE.decode (responseBody response2) :: Maybe FileRsync
+          hdlbstr = (BL.toStrict . builder) hdl
+      b64txt <- case mfrsync of 
+        Nothing -> (return . decodeUtf8 . B64.encode) hdlbstr
+        Just frsync -> liftIO $ do
+          let rsyncbstr = (B64.decodeLenient . encodeUtf8 . frsync_sig) frsync
+          tdir <- getTemporaryDirectory
+          uuid'' <- nextRandom
+          let tsigfile = tdir </> show uuid'' <.> "sig"
+              -- thdlfile = tdir </> show uuid'' <.> "hdl"
+              -- thdlfile = ofilepath
+              tdeltafile = tdir </> show uuid'' <.> "delta"
+          B.writeFile tsigfile rsyncbstr
+          readProcessWithExitCode "rdiff" 
+            ["delta", tsigfile, ofilepath, tdeltafile] ""
+          deltabstr <- B.readFile tdeltafile 
+          mapM_ removeFile [tsigfile,tdeltafile]
+          (return . decodeUtf8 . B64.encode) deltabstr
+          
+        
 
-      let b64txt = (decodeUtf8 . B64.encode . BL.toStrict . builder) hdl
-          filecontent = toJSON FileContent { file_uuid = uuidtxt
+
+ 
+      let filecontent = toJSON FileContent { file_uuid = uuidtxt
                                            , file_path = pack filepath
-                                           , file_content = b64txt }
+                                           , file_content = b64txt 
+                                           , file_rsync = mfrsync
+                                           }
 
 
       request3' <- liftIO $ parseUrl (huburl </> unpack uuidtxt )
@@ -177,7 +206,7 @@ uploadWork filepath hinfo@(HubInfo {..}) = do
           r' :: Either E.SomeException () <- liftIO (E.try (removeFile file))
           case r' of 
             Left _ -> return ()
-            Right _ -> uploadWork filepath hinfo
+            Right _ -> uploadWork (ofilepath,filepath) hinfo
         
         
 

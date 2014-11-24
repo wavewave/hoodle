@@ -64,8 +64,8 @@ import Hoodle.Type.HoodleState
 import Hoodle.Util
 
 -- |
-hubUploadCoroutine :: MainCoroutine ()
-hubUploadCoroutine = do
+hubUpload :: MainCoroutine ()
+hubUpload = do
     xst <- get
     uhdl <- view (unitHoodles.currentUnit) <$> get
     if not (view isSaved uhdl) 

@@ -65,6 +65,7 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.Page
@@ -183,6 +184,7 @@ fileSave = do
           then do 
              updateUhdl $ liftIO . saveHoodle . const uhdl 
              (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) uhdl
+             hubUpload
           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 
 -- | interleaving a monadic action between each pair of subsequent actions

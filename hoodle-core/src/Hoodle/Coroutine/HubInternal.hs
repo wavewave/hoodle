@@ -17,6 +17,7 @@
 module Hoodle.Coroutine.HubInternal where
 
 import           Control.Applicative
+import           Control.Concurrent
 import qualified Control.Exception as E
 import           Control.Lens (view)
 import           Control.Monad (unless)
@@ -119,7 +120,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         -- writeFile file (show tokens2)
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
-      (`E.catch` (\(_ :: E.SomeException)-> evhandler (UsrEv (DisconnectedHub tokfile (ofilepath,filepath) hinfo)))) $ 
+      forkIO $ (`E.catch` (\(_ :: E.SomeException)-> evhandler (UsrEv (DisconnectedHub tokfile (ofilepath,filepath) hinfo)))) $ 
         withSocketsDo $ withManager $ \manager -> do
           accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
           request' <- parseUrl authgoogleurl 
@@ -167,12 +168,3 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       return (UsrEv ActionOrdered)
 
 
-      -- if r 
-      --   then return () 
-      --   else do 
-      --     b <- okCancelMessageBox "authentication failure! do you want to start from the beginning?"
-      --     when b $ do
-      --       r' :: Either E.SomeException () <- liftIO (E.try (removeFile file))
-      --       case r' of 
-      --         Left _ -> return ()
-      --         Right _ -> uploadWork (ofilepath,filepath) hinfo

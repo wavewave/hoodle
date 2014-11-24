@@ -34,6 +34,7 @@ import           Graphics.Hoodle.Render.Type
 import           Hoodle.Device 
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Canvas
+import           Hoodle.Type.Hub
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 
@@ -45,7 +46,9 @@ instance Show (Cairo.Surface) where
   show _ = "cairo surface"
 
 -- | 
-data SystemEvent = TestSystemEvent | ClockUpdateEvent | RenderCacheUpdate (UUID, (Double,Cairo.Surface))
+data SystemEvent = TestSystemEvent 
+                 | ClockUpdateEvent 
+                 | RenderCacheUpdate (UUID, (Double,Cairo.Surface))
                  deriving Show 
                           
 -- | 
@@ -107,6 +110,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | Keyword (Maybe T.Text)
                | SwitchTab Int
                | CloseTab UUID
+               | DisconnectedHub FilePath (FilePath,FilePath) HubInfo
                deriving Show
                       
 instance Show (IORef a) where                      

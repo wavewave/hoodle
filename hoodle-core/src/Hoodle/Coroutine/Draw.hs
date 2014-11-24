@@ -75,7 +75,6 @@ sysevent ClockUpdateEvent = do
       cwgts = view (unboxLens canvasWidgets) cinfo   
       nwgts = set (clockWidgetConfig.clockWidgetTime) (h,m,s) cwgts
       ncinfo = set (unboxLens canvasWidgets) nwgts cinfo
-  -- modify (set unitHoodles ((putTheUnit . set currentCanvasInfo ncinfo) uhdl))
   pureUpdateUhdl (const ((currentCanvasInfo .~ ncinfo) uhdl))
   when (view (widgetConfig.doesUseClockWidget) cwgts) $ do 
     let cid = getCurrentCanvasId uhdl
@@ -85,6 +84,9 @@ sysevent (RenderCacheUpdate (uuid, ssfc)) = do
   b <- ( ^. doesNotInvalidate ) <$> get
   when (not b) $ invalidateAll
 sysevent ev = liftIO $ print ev 
+
+
+
 
 
 -- |

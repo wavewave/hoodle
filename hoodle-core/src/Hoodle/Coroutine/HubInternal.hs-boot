@@ -4,7 +4,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Hoodle.Coroutine.Hub
+-- Module      : Hoodle.Coroutine.HubInternal
 -- Copyright   : (c) 2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Hoodle.Coroutine.Hub where
+module Hoodle.Coroutine.HubInternal where
 
 import           Control.Applicative
 import qualified Control.Exception as E
@@ -55,33 +55,13 @@ import Data.Hoodle.Simple
 import Graphics.Hoodle.Render.Type.Hoodle
 import Text.Hoodle.Builder (builder)
 --
-import Hoodle.Coroutine.HubInternal
-import Hoodle.Coroutine.Dialog
+import Hoodle.Coroutine.Draw
 import Hoodle.Script.Hook
 import Hoodle.Type.Coroutine
+import Hoodle.Type.Event
 import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Util
 
--- |
-hubUploadCoroutine :: MainCoroutine ()
-hubUploadCoroutine = do
-    xst <- get
-    uhdl <- view (unitHoodles.currentUnit) <$> get
-    if not (view isSaved uhdl) 
-      then 
-        okMessageBox "hub action can be done only after saved" >> return ()
-      else do r <- runMaybeT $ do 
-                     hset <- (MaybeT . return) $ view hookSet xst
-                     hinfo <- (MaybeT . return) (hubInfo hset)
-                     let hdir = hubfileroot hinfo
-                     fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
-                     canfp <- liftIO $ canonicalizePath fp
-                     let relfp = makeRelative hdir canfp
 
-                     liftIO $ print hinfo
-                     lift (uploadWork (canfp,relfp) hinfo)
-              case r of 
-                Nothing -> okMessageBox "upload not successful" >> return ()
-                Just _ -> return ()  
-
+uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()

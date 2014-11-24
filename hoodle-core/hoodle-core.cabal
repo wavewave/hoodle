@@ -98,6 +98,7 @@ Library
                    Hoodle.Coroutine.HandwritingRecognition
                    Hoodle.Coroutine.Highlighter
                    Hoodle.Coroutine.Hub
+                   Hoodle.Coroutine.HubInternal
                    Hoodle.Coroutine.Layer
                    Hoodle.Coroutine.Link
                    Hoodle.Coroutine.Minibuffer

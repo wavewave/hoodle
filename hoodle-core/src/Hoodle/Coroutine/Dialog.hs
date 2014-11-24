@@ -67,6 +67,34 @@ okCancelMessageBox msg = -- modify (tempQueue %~ enqueue action)
                  Gtk.widgetDestroy dialog 
                  return (UsrEv (OkCancel b))
 
+
+-- | single line text input : almost abandoned now
+textInputDialog :: String -> MainCoroutine (Maybe String) 
+textInputDialog msg = do 
+    doIOaction $ \_evhandler -> do 
+                   dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                     Gtk.MessageQuestion Gtk.ButtonsOkCancel msg
+                   vbox <- Gtk.dialogGetUpper dialog
+                   txtvw <- Gtk.textViewNew
+                   Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
+                   Gtk.widgetShowAll dialog
+                   res <- Gtk.dialogRun dialog 
+                   case res of 
+                     Gtk.ResponseOk -> do 
+                       buf <- Gtk.textViewGetBuffer txtvw 
+                       (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
+                                            <*> Gtk.textBufferGetEndIter buf
+                       l <- Gtk.textBufferGetText buf istart iend True
+                       Gtk.widgetDestroy dialog
+                       return (UsrEv (TextInput (Just l)))
+                     _ -> do 
+                       Gtk.widgetDestroy dialog
+                       return (UsrEv (TextInput Nothing))
+    TextInput input <- waitSomeEvent (\case TextInput input -> True ; _ -> False)
+    return input 
+
+
+
 -- | 
 keywordDialog :: [T.Text] -> MainCoroutine (Maybe T.Text)
 keywordDialog keylst = do
@@ -101,52 +129,10 @@ keywordDialog' keys = \evhandler -> do
 keywordLoop :: MainCoroutine (Maybe T.Text)
 keywordLoop = waitSomeEvent (\case Keyword _ -> True ; _ -> False ) >>= \(Keyword x) -> return x
 
-{-
-    r <- nextevent
-    case r of 
-      UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> keywordLoop
-      Keyword x -> return x
-      _ -> keywordLoop
--}
-
-
--- | single line text input : almost abandoned now
-textInputDialog :: String -> MainCoroutine (Maybe String) 
-textInputDialog msg = do 
-    doIOaction $ \_evhandler -> do 
-                   dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
-                     Gtk.MessageQuestion Gtk.ButtonsOkCancel msg -- ("text input" :: String)
-                   vbox <- Gtk.dialogGetUpper dialog
-                   txtvw <- Gtk.textViewNew
-                   Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
-                   Gtk.widgetShowAll dialog
-                   res <- Gtk.dialogRun dialog 
-                   case res of 
-                     Gtk.ResponseOk -> do 
-                       buf <- Gtk.textViewGetBuffer txtvw 
-                       (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
-                                            <*> Gtk.textBufferGetEndIter buf
-                       l <- Gtk.textBufferGetText buf istart iend True
-                       Gtk.widgetDestroy dialog
-                       return (UsrEv (TextInput (Just l)))
-                     _ -> do 
-                       Gtk.widgetDestroy dialog
-                       return (UsrEv (TextInput Nothing))
-    TextInput input <- waitSomeEvent (\case TextInput input -> True ; _ -> False)
-    return input 
-
-
-{-    let go = do r <- nextevent
-                case r of 
-                  TextInput input -> return input 
-                  UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> go 
-                  _ -> go 
-    go  -}
 
 -- |
 longTextMessageBox :: String -> MainCoroutine () 
-longTextMessageBox msg = -- modify (tempQueue %~ enqueue action) 
-                         action
+longTextMessageBox msg = action
                          >> waitSomeEvent (\case GotOk -> True ; _ -> False) 
                          >> return () 
   where 
@@ -169,9 +155,6 @@ longTextMessageBox msg = -- modify (tempQueue %~ enqueue action)
                  _res <- Gtk.dialogRun dialog 
                  Gtk.widgetDestroy dialog 
                  return (UsrEv GotOk)
-
-
-
 
 -- | 
 fileChooser :: Gtk.FileChooserAction -> Maybe String -> MainCoroutine (Maybe FilePath) 

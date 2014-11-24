@@ -21,6 +21,7 @@ module Hoodle.Coroutine.Default where
 import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
 import           Control.Concurrent.STM
+import qualified Control.Exception as E
 import           Control.Lens (over,view,set,at,(.~),(^.),_2)
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Reader (ReaderT(..))
@@ -37,6 +38,7 @@ import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
+import           System.Directory
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
@@ -52,10 +54,12 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Coroutine.ContextMenu
 import           Hoodle.Coroutine.Default.Menu
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Highlighter
+import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Link
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
@@ -400,6 +404,14 @@ defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (SwitchTab i) = switchTab i
 defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> askIfSave closeTab)
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
+defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
+    b <- okCancelMessageBox "authentication failure! do you want to start from the beginning?"
+    when b $ do
+      r' :: Either E.SomeException () <- liftIO (E.try (removeFile tokfile))
+      case r' of 
+        Left e ->  liftIO (putStrLn "DisconnectedHub") >>  return ()
+                  -- uploadWork (ofile,file) hinfo
+        Right _ -> uploadWork (ofile,file) hinfo
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
                             liftIO $ print ev 

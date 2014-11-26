@@ -38,6 +38,7 @@ import Data.Text.Encoding (encodeUtf8,decodeUtf8)
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.UUID.V4
+import qualified Graphics.UI.Gtk as Gtk
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
@@ -120,7 +121,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         -- writeFile file (show tokens2)
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
-      forkIO $ (`E.catch` (\(_ :: E.SomeException)-> evhandler (UsrEv (DisconnectedHub tokfile (ofilepath,filepath) hinfo)))) $ 
+      forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withSocketsDo $ withManager $ \manager -> do
           accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
           request' <- parseUrl authgoogleurl 
@@ -130,7 +131,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
                 }
           response <- httpLbs request manager
           let coojar = responseCookieJar response
-
+          liftIO $ print coojar
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
           request2' <- parseUrl (huburl </> unpack uuidtxt )
           let request2 = request2' 

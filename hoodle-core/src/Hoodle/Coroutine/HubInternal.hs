@@ -115,14 +115,17 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       F.forM_ mauthcode $ \authcode -> do
         tokens   <- liftIO $ exchangeCode client authcode
         liftIO $ putStrLn$ "Received access token: "++show (accessToken tokens)
-        -- Ask for permission to read/write your fusion tables:
-        -- tokens2  <- liftIO $ refreshTokens client tokens
-        -- putStrLn$ "As a test, refreshed token: "++show (accessToken tokens2)
-        -- writeFile file (show tokens2)
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withSocketsDo $ withManager $ \manager -> do
+          -- refresh token
+          oldtok <- liftIO $ read <$> (readFile tokfile)
+
+          newtok  <- liftIO $ refreshTokens client oldtok
+          liftIO $ putStrLn$ "As a test, refreshed token: "++show (accessToken newtok)
+          liftIO $ writeFile tokfile (show newtok)
+          --
           accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
           request' <- parseUrl authgoogleurl 
           let request = request' 

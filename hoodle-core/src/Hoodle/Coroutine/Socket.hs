@@ -39,6 +39,7 @@ import Data.Text.Encoding (encodeUtf8,decodeUtf8)
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.UUID.V4
+import qualified Graphics.UI.Gtk as Gtk
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
@@ -66,6 +67,8 @@ import Hoodle.Type.Event
 import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Util
+
+data Message = Message { msgbody :: Text } deriving (Show,Eq,Ord)
 
 -- |
 socketConnect :: MainCoroutine ()
@@ -133,28 +136,13 @@ socketWork hinfo@(HubInfo {..}) = do
           ctime <- liftIO getCurrentTime
           let (bstr,_) = computeCookieString request2' coojar ctime True
               newheaders = [(CI.mk "Cookie",bstr)] 
-          {-
-          let request2 = request2' 
-                { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
-                , cookieJar = Just coojar }
-          response2 <- httpLbs request2 manager
-          liftIO $ print response2 
-          -}
 
           liftIO $ WS.runClientWith hubsocketurl hubsocketport hubsocketpath WS.defaultConnectionOptions newheaders $ \conn -> forever $ do 
             putStrLn "connected"
-            txt :: Text <- WS.receiveData conn
-            print txt
-
-          {-
-          request3' <- parseUrl hubsocketurl
-          let request3 = request3' 
-                { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
-                , cookieJar = Just coojar }
-          response3 <- httpLbs request3 manager
-          liftIO $ print response3 
-          -}
-
+            Message txt <- WS.receiveData conn
+            
+            let urlpath = FileUrl (hubfileroot </> unpack txt) 
+            (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
 
       return (UsrEv ActionOrdered)
 

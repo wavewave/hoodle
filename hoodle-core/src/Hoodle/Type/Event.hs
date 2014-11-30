@@ -214,6 +214,7 @@ data MenuEvent = MenuNew
                | MenuSetAsDefaultOption
                | MenuRelaunch
                | MenuHub
+               | MenuHubSocket
                | MenuUseXInput
                | MenuUseTouch 
                | MenuUsePopUpMenu

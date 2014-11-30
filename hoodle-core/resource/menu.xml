@@ -176,6 +176,7 @@
        </menu>
        <menuitem action="RELAUNCHA" />
        <menuitem action="HUBA" />
+       <menuitem action="HUBSOCKETA" />
     </menu>
     <menu action="WMA">
        <menuitem action="ADDTABA" />

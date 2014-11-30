@@ -36,6 +36,7 @@ Library
                    binary,
                    bytestring >= 0.9, 
                    cairo > 0.12,
+                   case-insensitive, 
                    cereal >= 0.3.5,
                    containers >= 0.4,
                    configurator >= 0.2,
@@ -56,6 +57,7 @@ Library
                    hoodle-publish >= 0.1.999,
                    hoodle-render >= 0.4.0,
                    hoodle-types >= 0.3,
+                   http-client,
                    http-conduit, 
                    http-types,
                    lens >= 2.5,
@@ -81,6 +83,7 @@ Library
                    unordered-containers >= 0.2,
                    uuid >= 1.2.7, 
                    vector >= 0.10,
+                   websockets, 
                    xournal-parser >= 0.5.0.2
 
   Exposed-Modules: 
@@ -110,6 +113,7 @@ Library
                    Hoodle.Coroutine.Select
                    Hoodle.Coroutine.Select.Clipboard
                    Hoodle.Coroutine.Select.ManipulateImage
+                   Hoodle.Coroutine.Socket
                    Hoodle.Coroutine.TextInput
                    Hoodle.Coroutine.LaTeX
                    Hoodle.Coroutine.VerticalSpace 

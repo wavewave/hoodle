@@ -4,7 +4,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Hoodle.Coroutine.HubInternal
+-- Module      : Hoodle.Coroutine.Socket
 -- Copyright   : (c) 2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -14,7 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Hoodle.Coroutine.HubInternal where
+module Hoodle.Coroutine.Socket where
 
 import           Control.Applicative
 import           Control.Concurrent
@@ -29,6 +29,7 @@ import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.CaseInsensitive as CI
 import qualified Data.Foldable as F
 import qualified Data.HashMap.Strict as H
 import qualified Data.List as L
@@ -38,13 +39,14 @@ import Data.Text.Encoding (encodeUtf8,decodeUtf8)
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.UUID.V4
-import qualified Graphics.UI.Gtk as Gtk
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
 import Network.Google (makeRequest, doRequest)
+import Network.HTTP.Client.Internal (computeCookieString)
 import Network.HTTP.Conduit
 import Network.HTTP.Types (methodPut)
+import qualified Network.WebSockets as WS
 import System.Directory
 import System.Environment (getEnv)
 import System.Exit    (ExitCode(..))
@@ -65,41 +67,28 @@ import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Util
 
-data FileContent = FileContent { file_uuid :: Text
-                               , file_path :: Text
-                               , file_content :: Text 
-                               , file_rsync :: Maybe FileRsync
-                               }
-                 deriving Show
+-- |
+socketConnect :: MainCoroutine ()
+socketConnect = do
+    xst <- get
+    uhdl <- view (unitHoodles.currentUnit) <$> get
+    r <- runMaybeT $ do 
+      hset <- (MaybeT . return) $ view hookSet xst
+      hinfo <- (MaybeT . return) (hubInfo hset)
+      -- let hdir = hubfileroot hinfo
+      -- fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
+      -- canfp <- liftIO $ canonicalizePath fp
+      -- let relfp = makeRelative hdir canfp 
 
-instance ToJSON FileContent where
-    toJSON FileContent {..} = object [ "uuid"    .= toJSON file_uuid
-                                     , "path"    .= toJSON file_path
-                                     , "content" .= toJSON file_content 
-                                     , "rsync"   .= toJSON file_rsync
-                                     ]
-
-data FileRsync = FileRsync { frsync_uuid :: Text 
-                           , frsync_sig :: Text
-                           }
-               deriving Show
-
-instance ToJSON FileRsync where
-  toJSON FileRsync {..} = object [ "uuid" .= toJSON frsync_uuid
-                                 , "signature" .= toJSON frsync_sig ]
-
-instance FromJSON FileRsync where
-  parseJSON (Object v) = 
-    let r = do 
-          String uuid <- H.lookup "uuid" v
-          String sig <- H.lookup "signature" v
-          return (FileRsync uuid sig)
-    in maybe (fail "error in parsing FileRsync") return r
-  parseJSON _ = fail "error in parsing FileRsync"
+      -- liftIO $ print (hinfo,relfp)
+      lift (socketWork hinfo)
+    case r of 
+      Nothing -> okMessageBox "socket connect not successful" >> return ()
+      Just _ -> return ()  
 
 
-uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()
-uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
+socketWork :: HubInfo -> MainCoroutine ()
+socketWork hinfo@(HubInfo {..}) = do
     hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
@@ -117,7 +106,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         liftIO $ putStrLn$ "Received access token: "++show (accessToken tokens)
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
-      forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
+      forkIO $ (`E.catch` (\(err:: E.SomeException)-> print err >> return ())) $ 
         withSocketsDo $ withManager $ \manager -> do
           -- refresh token
           oldtok <- liftIO $ read <$> (readFile tokfile)
@@ -135,40 +124,39 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
           response <- httpLbs request manager
           let coojar = responseCookieJar response
           liftIO $ print coojar
+
+
+
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
-          request2' <- parseUrl (hubfileurl </> unpack uuidtxt )
+          request2' <- parseUrl ("http://" <> hubsocketurl <> ":" <> show hubsocketport </> hubsocketpath)
+
+          ctime <- liftIO getCurrentTime
+          let (bstr,_) = computeCookieString request2' coojar ctime True
+              newheaders = [(CI.mk "Cookie",bstr)] 
+          {-
           let request2 = request2' 
                 { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
                 , cookieJar = Just coojar }
           response2 <- httpLbs request2 manager
-          hdlbstr <- liftIO $ B.readFile ofilepath 
-          let mfrsync = AE.decode (responseBody response2) :: Maybe FileRsync
-              hdlbstr = (BL.toStrict . builder) hdl
-          b64txt <- case mfrsync of 
-            Nothing -> (return . decodeUtf8 . B64.encode) hdlbstr
-            Just frsync -> liftIO $ do
-              let rsyncbstr = (B64.decodeLenient . encodeUtf8 . frsync_sig) frsync
-              tdir <- getTemporaryDirectory
-              uuid'' <- nextRandom
-              let tsigfile = tdir </> show uuid'' <.> "sig"
-                  tdeltafile = tdir </> show uuid'' <.> "delta"
-              B.writeFile tsigfile rsyncbstr
-              readProcessWithExitCode "rdiff" 
-                ["delta", tsigfile, ofilepath, tdeltafile] ""
-              deltabstr <- B.readFile tdeltafile 
-              mapM_ removeFile [tsigfile,tdeltafile]
-              (return . decodeUtf8 . B64.encode) deltabstr
-          let filecontent = toJSON FileContent { file_uuid = uuidtxt
-                                               , file_path = pack filepath
-                                               , file_content = b64txt 
-                                               , file_rsync = mfrsync }
-          request3' <- parseUrl (hubfileurl </> unpack uuidtxt )
-          let request3 = request3' { method = methodPut
-                                   , requestBody = RequestBodyLBS (encode filecontent)
-                                   , cookieJar = Just coojar }
+          liftIO $ print response2 
+          -}
+
+          liftIO $ WS.runClientWith hubsocketurl hubsocketport hubsocketpath WS.defaultConnectionOptions newheaders $ \conn -> forever $ do 
+            putStrLn "connected"
+            txt :: Text <- WS.receiveData conn
+            print txt
+
+          {-
+          request3' <- parseUrl hubsocketurl
+          let request3 = request3' 
+                { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
+                , cookieJar = Just coojar }
           response3 <- httpLbs request3 manager
-          -- liftIO $ print response3
-          return ()
+          liftIO $ print response3 
+          -}
+
+
       return (UsrEv ActionOrdered)
+
 
 

@@ -42,6 +42,7 @@ import           Hoodle.Coroutine.Link
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Select.Clipboard
+import           Hoodle.Coroutine.Socket
 import           Hoodle.Coroutine.TextInput
 import           Hoodle.Coroutine.Window
 import           Hoodle.GUI.Reflect
@@ -142,6 +143,7 @@ menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (sett
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
 menuEventProcess MenuHub = hubUpload
+menuEventProcess MenuHubSocket = socketConnect
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuAddLink = addLink

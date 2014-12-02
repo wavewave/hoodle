@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.Mode where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over,(.~))
+import           Control.Lens (view,set,(.~))
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import           Graphics.UI.Gtk (adjustmentGetValue) 
@@ -37,7 +37,6 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
-import           Hoodle.Util
 import           Hoodle.View.Coordinate
 --
 import Prelude hiding (mapM_, mapM)

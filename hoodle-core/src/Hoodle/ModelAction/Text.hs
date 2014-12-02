@@ -19,8 +19,6 @@ import           Data.Attoparsec.Text as A
 import           Data.Char (isAlphaNum)
 import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
-import qualified Data.Text.IO as TIO
 --
 import Debug.Trace
 

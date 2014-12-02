@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Page where
 import           Control.Applicative
 import           Control.Concurrent
 import           Control.Concurrent.STM
-import           Control.Lens (view,set,over, (.~), (^.), (%~) )
+import           Control.Lens (view,set,(.~), (^.))
 import           Control.Monad
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader (ask)
@@ -97,7 +97,6 @@ changePageInHoodleModeState :: BackgroundStyle
                             -> MainCoroutine (Bool,Int,Page EditMode,HoodleModeState)
 changePageInHoodleModeState bsty npgnum hdlmodst = do
     let ehdl = hoodleModeStateEither hdlmodst
-        mpdfinfo = either (^. gembeddedpdf) (^. gselEmbeddedPdf) ehdl
         pgs = either (view gpages) (view gselAll) ehdl
         totnumpages = M.size pgs
         lpage = maybeError' "changePage" (M.lookup (totnumpages-1) pgs)
@@ -311,22 +310,19 @@ newBkg bsty bkg = do
             let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
             case findPDFBkg rhdl n1 of
                  Nothing -> defbkg
-                 Just bkg -> liftIO nextRandom >>= \i -> do
-                               let n' = if n1 >= totN then 1 else (n1+1)
-                               liftIO $ print (n', totN)
-                               put ((nextPdfBkgPageNum .~ Just n') xst)
-                               return bkg { rbkg_uuid = i }
+                 Just bkg' -> liftIO nextRandom >>= \i -> do
+                                let n' = if n1 >= totN then 1 else (n1+1)
+                                liftIO $ print (n', totN)
+                                put ((nextPdfBkgPageNum .~ Just n') xst)
+                                return bkg' { rbkg_uuid = i }
 
-      --   liftIO $ putStrLn "newBkg: NPCycle not implemented"
-      --   RBkgSmpl "white" bstystr <$> liftIO nextRandom
-      -- _              -> RBkgSmpl "white" bstystr <$> liftIO nextRandom
 
 findPDFBkg :: RHoodle -> Int -> Maybe RBackground
 findPDFBkg rhdl n1 = 
     let bkgs = M.elems (rhdl ^. gpages)
         pagematch n (RBkgPDF _ _ n' _ _) = n == n'
         pagematch n (RBkgEmbedPDF n' _ _) = n == n'
-        pagematch n _ = False
+        pagematch _ _ = False
         matched = (filter (pagematch n1) . map (^. gbackground)) bkgs
     in case matched of 
          [] -> Nothing

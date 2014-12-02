@@ -17,7 +17,7 @@
 
 module Hoodle.Coroutine.Scroll where
 
-import           Control.Lens (set,view,over,_1)
+import           Control.Lens (view,over,_1)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
@@ -137,8 +137,8 @@ vscrollMove cid v0 = do
 
 -- | 
 smoothScroll :: CanvasId -> CanvasGeometry -> Double -> Double -> MainCoroutine () 
-smoothScroll cid geometry v0 v = do 
-    xst <- get 
+smoothScroll cid geometry _v0 v = do 
+    -- xst <- get 
     let lst = [v]
     forM_ lst $ \v' -> do 
       -- updateXState $ return . updater 

@@ -22,7 +22,7 @@ import           Control.Monad.State (modify)
 import           Control.Monad.Trans (liftIO)
 import           Control.Monad.Trans.Either
 import           Data.Aeson as A
-import qualified Data.Attoparsec as AP
+import qualified Data.Attoparsec.ByteString.Char8 as AP
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import           Data.Foldable (mapM_)

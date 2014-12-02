@@ -18,17 +18,15 @@ module Hoodle.ModelAction.File where
 
 -- from other package
 import           Control.Applicative
-import           Control.Lens (view,set,(.~))
-import           Data.Attoparsec 
+import           Control.Lens (view,set)
+import           Data.Attoparsec.ByteString.Char8
 import           Data.ByteString.Base64 
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy.Char8 as L
-import qualified Data.IntMap as IM
 import           Data.Maybe 
 import           Data.Monoid ((<>))
 import           Data.Time.Clock
 import           Graphics.GD.ByteString 
-import           Graphics.UI.Gtk hiding (get,set)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory (canonicalizePath)
@@ -36,11 +34,8 @@ import           System.FilePath (takeExtension)
 import           System.IO (hClose, hFileSize, openFile, IOMode(..)) 
 import           System.Process
 -- from hoodle-platform 
-import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
-import           Graphics.Hoodle.Render (cnstrctRHoodle)
 import           Graphics.Hoodle.Render.Background
-import           Graphics.Hoodle.Render.Type.Background 
 import           Graphics.Hoodle.Render.Type.Hoodle
 import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
@@ -61,12 +56,11 @@ checkVersionAndMigrate bstr = do
 
 -- | this is very temporary, need to be changed.     
 findFirstPDFFile :: [Page] -> Maybe C.ByteString
-findFirstPDFFile xs = let ys = (mapMaybe f) xs 
-                      in safehead ys
-  where safehead [] = Nothing
-        safehead (a:as) = a
+findFirstPDFFile xs = let ys = mapMaybe f xs 
+                      in listToMaybe ys
+  where f :: Page -> Maybe C.ByteString
         f p = case page_bkg p of
-                BackgroundPdf _ _ fi _ -> Just fi
+                BackgroundPdf _ _ fi _ -> fi
                 _ -> Nothing
 
       

@@ -23,7 +23,7 @@ import           Control.Concurrent hiding (yield)
 import           Control.Lens 
 import           Control.Monad
 import           Control.Monad.Loops 
-import           Control.Monad.State (modify,get)
+import           Control.Monad.State (get)
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Binary as Bi 
@@ -40,14 +40,12 @@ import           Graphics.UI.Gtk hiding (get,set)
 import           Network.Info
 import           Network.Simple.TCP
 -- 
-import           Control.Monad.Trans.Crtn.Queue (enqueue)
--- 
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
-import           Hoodle.Type.HoodleState (tempQueue,hookSet)
+import           Hoodle.Type.HoodleState (hookSet)
 -- 
 
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
@@ -77,10 +75,10 @@ server evhandler ip txtorig = do
                     then return (bs <> bstr1)
                     else go (s-s') (bs <> bstr1) 
             go size B.empty 
-          Tr.forM mbstr $ \bstr -> do 
-            let txt = TE.decodeUtf8 bstr
-            (evhandler . UsrEv . NetworkProcess . NetworkReceived) txt 
-            writeIORef ref txt
+          Tr.forM mbstr $ \bstr' -> do 
+            let txt' = TE.decodeUtf8 bstr'
+            (evhandler . UsrEv . NetworkProcess . NetworkReceived) txt'
+            writeIORef ref txt'
           return mbstr
         putStrLn "FINISHED"
 

@@ -90,7 +90,7 @@ textInputDialog msg = do
                      _ -> do 
                        Gtk.widgetDestroy dialog
                        return (UsrEv (TextInput Nothing))
-    TextInput input <- waitSomeEvent (\case TextInput input -> True ; _ -> False)
+    TextInput input <- waitSomeEvent (\case TextInput _ -> True ; _ -> False)
     return input 
 
 
@@ -103,7 +103,7 @@ keywordDialog keylst = do
 
 -- |
 keywordDialog' :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
-keywordDialog' keys = \evhandler -> do
+keywordDialog' keys = \_evhandler -> do
     dialog <- Gtk.dialogNew
     vbox <- Gtk.dialogGetUpper dialog
     hbox <- Gtk.hBoxNew False 0

@@ -418,7 +418,7 @@ getMenuUI evar = do
 
   mpgmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr viewmods 0 (assignViewMode evar)
-  mpointconnid <- 
+  _mpointconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr pointmods 0 (assignPoint evar)
   mpenmodconnid <- 
     actionGroupAddRadioActionsAndGetConnID agr penmods   0 (assignPenMode evar)
@@ -667,7 +667,7 @@ int2NewPageMode :: Int -> NewPageModeType
 int2NewPageMode 0 = NPPlain
 int2NewPageMode 1 = NPLast
 int2NewPageMode 2 = NPCycle
-int2newPageMode _ = error "No such new page mode"
+int2NewPageMode _ = error "No such new page mode"
 
 -- |
 newPageMode2Int :: NewPageModeType -> Int

@@ -6,7 +6,7 @@
 -- Module      : Hoodle.Type.HoodleState 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -106,7 +106,6 @@ module Hoodle.Type.HoodleState
 , currentUnit
 ) where
 
-import           Control.Applicative hiding (empty)
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Lens (Simple,Lens,view,set,lens)
@@ -114,11 +113,9 @@ import           Control.Monad.State hiding (get,modify)
 import           Data.Functor.Identity (Identity(..))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
-import           Data.Maybe
 import           Data.Sequence 
 import           Data.Time.Clock
 import           Data.UUID (UUID)
--- import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 

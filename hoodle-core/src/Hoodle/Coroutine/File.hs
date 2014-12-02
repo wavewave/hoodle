@@ -8,7 +8,7 @@
 -- Module      : Hoodle.Coroutine.File 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -24,15 +24,13 @@ import           Control.Lens (view,set,over,(%~), (.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
--- import           Control.Monad.Trans.Reader (runReaderT)
-import           Data.Attoparsec (parseOnly)
+import           Data.Attoparsec.ByteString.Char8 (parseOnly)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
 import           Data.Digest.Pure.MD5 (md5)
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.List as List 
 import           Data.Maybe
-import qualified Data.IntMap as IM
 import           Data.Time.Clock
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -49,8 +47,7 @@ import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
-import           Graphics.Hoodle.Render 
-                   (Xform4Page(..),cnstrctRHoodle, initRenderContext, renderPage, renderPage_StateT)
+import           Graphics.Hoodle.Render (Xform4Page(..),cnstrctRHoodle)
 import           Graphics.Hoodle.Render.Generic
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type
@@ -458,13 +455,13 @@ fileLoadSVG = do
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
       cache <- view renderCache <$> get
-      updateUhdl $ \uhdl -> do
-        thdl <- case view hoodleModeState uhdl of
+      updateUhdl $ \uhdl' -> do
+        thdl <- case view hoodleModeState uhdl' of
                   SelectState thdl' -> return thdl'
                   _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
         nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
         return . (hoodleModeState .~ SelectState nthdl)
-               . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl
+               . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl'
       commit_
       invalidateAll 
 
@@ -473,7 +470,7 @@ askQuitProgram :: MainCoroutine ()
 askQuitProgram = do 
     b <- okCancelMessageBox "Current canvas is not saved yet. Will you close hoodle?" 
     case b of 
-      True -> doIOaction $ \evhander -> Gtk.postGUIAsync Gtk.mainQuit >> return (UsrEv ActionOrdered)
+      True -> doIOaction_ $ Gtk.postGUIAsync Gtk.mainQuit >> return (UsrEv ActionOrdered)
       False -> return ()
   
 -- | 

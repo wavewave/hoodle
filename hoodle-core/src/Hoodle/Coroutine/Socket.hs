@@ -20,45 +20,27 @@ import           Control.Applicative
 import           Control.Concurrent
 import qualified Control.Exception as E
 import           Control.Lens (view)
-import           Control.Monad (unless)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
--- import           Control.Monad.Trans.State
-import           Data.Aeson as AE
-import qualified Data.ByteString.Base64 as B64
-import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.CaseInsensitive as CI
 import qualified Data.Foldable as F
-import qualified Data.HashMap.Strict as H
-import qualified Data.List as L
 import Data.Monoid ((<>))
-import Data.Text (Text,pack,unpack)
-import Data.Text.Encoding (encodeUtf8,decodeUtf8)
-import Data.Time.Calendar
+import Data.Text (pack,unpack)
+import Data.Text.Encoding (encodeUtf8)
 import Data.Time.Clock
-import Data.UUID.V4
 import qualified Graphics.UI.Gtk as Gtk
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
-import Network.Google (makeRequest, doRequest)
 import Network.HTTP.Client.Internal (computeCookieString)
 import Network.HTTP.Conduit
-import Network.HTTP.Types (methodPut)
 import qualified Network.WebSockets as WS
 import System.Directory
-import System.Environment (getEnv)
 import System.Exit    (ExitCode(..))
-import System.FilePath ((</>),(<.>),makeRelative)
+import System.FilePath ((</>))
 import System.Info (os)
-import System.Process (system, rawSystem,readProcessWithExitCode)
---
--- import Data.Hoodle.Generic
-import Data.Hoodle.Simple
-import Graphics.Hoodle.Render.Type.Hoodle
-import Text.Hoodle.Builder (builder)
+import System.Process (rawSystem)
 --
 import Hoodle.Coroutine.Dialog
 import Hoodle.Script.Hook
@@ -67,23 +49,17 @@ import Hoodle.Type.Event
 import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Util
+--
 
-data Message = Message { msgbody :: Text } deriving (Show,Eq,Ord)
+-- data Message = Message { msgbody :: Text } deriving (Show,Eq,Ord)
 
 -- |
 socketConnect :: MainCoroutine ()
 socketConnect = do
     xst <- get
-    uhdl <- view (unitHoodles.currentUnit) <$> get
     r <- runMaybeT $ do 
       hset <- (MaybeT . return) $ view hookSet xst
       hinfo <- (MaybeT . return) (hubInfo hset)
-      -- let hdir = hubfileroot hinfo
-      -- fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
-      -- canfp <- liftIO $ canonicalizePath fp
-      -- let relfp = makeRelative hdir canfp 
-
-      -- liftIO $ print (hinfo,relfp)
       lift (socketWork hinfo)
     case r of 
       Nothing -> okMessageBox "socket connect not successful" >> return ()
@@ -91,8 +67,7 @@ socketConnect = do
 
 
 socketWork :: HubInfo -> MainCoroutine ()
-socketWork hinfo@(HubInfo {..}) = do
-    hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
+socketWork HubInfo {..} = do
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
         client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
@@ -127,19 +102,13 @@ socketWork hinfo@(HubInfo {..}) = do
           response <- httpLbs request manager
           let coojar = responseCookieJar response
           liftIO $ print coojar
-
-
-
-          let uuidtxt = decodeUtf8 (view hoodleID hdl)
           request2' <- parseUrl ("http://" <> hubsocketurl <> ":" <> show hubsocketport </> hubsocketpath)
-
           ctime <- liftIO getCurrentTime
           let (bstr,_) = computeCookieString request2' coojar ctime True
               newheaders = [(CI.mk "Cookie",bstr)] 
-
           liftIO $ WS.runClientWith hubsocketurl hubsocketport hubsocketpath WS.defaultConnectionOptions newheaders $ \conn -> forever $ do 
             putStrLn "connected"
-            Message txt <- WS.receiveData conn
+            txt <- WS.receiveData conn
             
             let urlpath = FileUrl (hubfileroot </> unpack txt) 
             (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)

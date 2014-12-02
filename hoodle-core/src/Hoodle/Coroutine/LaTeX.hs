@@ -7,7 +7,7 @@
 -- Module      : Hoodle.Coroutine.LaTeX
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -16,28 +16,21 @@
 
 module Hoodle.Coroutine.LaTeX where
 
-import Control.Applicative
 import Control.Lens
-import Control.Monad.IO.Class
 import Control.Monad.Trans.Maybe
 import Control.Monad.State
-import qualified Data.ByteString.Char8 as B
 import           Data.Function (on)
-import qualified Data.HashMap.Strict as HM
 import Data.List (sortBy)
 import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 -- 
-import Data.Hoodle.Generic
 import Data.Hoodle.Simple
-import Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle)
 --
 import Hoodle.ModelAction.Text
-import Hoodle.Type.Coroutine
-import Hoodle.Type.HoodleState
+--
 
-
+hoistMaybe :: (Monad m) => Maybe a -> MaybeT m a
 hoistMaybe = MaybeT . return
 
 getLaTeXComponentsFromHdl :: Hoodle -> [(Maybe T.Text,(Int,Double,T.Text))] 

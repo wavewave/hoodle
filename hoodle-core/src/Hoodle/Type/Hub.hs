@@ -1,7 +1,20 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      : Hoodle.Type.Hub
+-- Copyright   : (c) 2014 Ian-Woo Kim
+--
+-- License     : BSD3
+-- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
+-- Stability   : experimental
+-- Portability : GHC
+--
+-----------------------------------------------------------------------------
+
 module Hoodle.Type.Hub where
 
 import Data.Text (Text)
-import System.FilePath
+--
+
 
 data HubInfo = HubInfo { cid :: Text
                        , secret :: Text

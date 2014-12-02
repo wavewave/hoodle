@@ -7,7 +7,7 @@
 -- Module      : Hoodle.GUI.Reflect
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -16,10 +16,8 @@
 
 module Hoodle.GUI.Reflect where
 
-import           Control.Lens (view, set, Simple,Lens, (^.))
-import           Control.Monad (liftM, when)
+import           Control.Lens (view, Simple,Lens, (^.))
 import           Control.Monad.State as St
-import           Control.Monad.Trans 
 import           Data.Array.MArray
 import qualified Data.Foldable as F (forM_,mapM_) 
 import qualified Data.Map as M (lookup)
@@ -129,7 +127,7 @@ reflectPenWidthUI = do
         HighlighterWork -> 
           let x = (Just . point2Int HighlighterWork 
                             . view (penInfo.penSet.currHighlighter.penWidth)) xst
-              y = view (penInfo.penSet.currHighlighter.penWidth) xst
+              -- y = view (penInfo.penSet.currHighlighter.penWidth) xst
           in x 
         EraserWork -> (Just . point2Int EraserWork 
                        . view (penInfo.penSet.currEraser.penWidth)) xst

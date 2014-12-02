@@ -65,10 +65,10 @@ data Handle = HandleTL
 -- |                     
 scaleFromToBBox :: BBox -> BBox -> (Double,Double) -> (Double,Double)
 scaleFromToBBox (BBox (ox1,oy1) (ox2,oy2)) (BBox (nx1,ny1) (nx2,ny2)) (x,y) = 
-  let scalex = (nx2-nx1) / (ox2-ox1)
-      scaley = (ny2-ny1) / (oy2-oy1) 
-      nx = (x-ox1)*scalex+nx1
-      ny = (y-oy1)*scaley+ny1
+  let sx = (nx2-nx1) / (ox2-ox1)
+      sy = (ny2-ny1) / (oy2-oy1) 
+      nx = (x-ox1)*sx+nx1
+      ny = (y-oy1)*sy+ny1
   in (nx,ny)
 
 -- |

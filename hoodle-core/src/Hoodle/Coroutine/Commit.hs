@@ -19,7 +19,6 @@ import Control.Monad.State
 import Hoodle.Accessor
 import Hoodle.Coroutine.Draw 
 import Hoodle.GUI.Reflect
-import Hoodle.ModelAction.File
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Coroutine
 import Hoodle.Type.HoodleState 
@@ -53,9 +52,9 @@ undo = do
       Nothing -> liftIO $ putStrLn "no undo item yet"
       Just (hdlmodst1,newtable) -> do 
         hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
-        updateUhdl $ \uhdl -> do
-          uhdl' <- liftIO (updatePageAll hdlmodst uhdl)
-          return $ ( (hoodleModeState .~ hdlmodst) . (undoTable .~ newtable)) uhdl'
+        updateUhdl $ \uhdl' -> do
+          uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
+          return $ ( (hoodleModeState .~ hdlmodst) . (undoTable .~ newtable)) uhdl''
         invalidateAll 
       
 -- |       
@@ -69,11 +68,11 @@ redo = do
       Nothing -> liftIO $ putStrLn "no redo item"
       Just (hdlmodst1,newtable) -> do 
         hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
-        updateUhdl $ \uhdl -> do 
-          uhdl' <- liftIO (updatePageAll hdlmodst uhdl)
-          let uhdl'' = ( set hoodleModeState hdlmodst
-                       . set undoTable newtable ) uhdl' 
-          return uhdl'' 
+        updateUhdl $ \uhdl' -> do 
+          uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
+          let uhdl''' = ( set hoodleModeState hdlmodst
+                       . set undoTable newtable ) uhdl'' 
+          return uhdl''' 
         -- modify (set unitHoodles (putTheUnit uhdl''))
         invalidateAll 
 

@@ -16,7 +16,7 @@ module Hoodle.Util where
 
 import Control.Applicative 
 import Control.Monad.Trans.Maybe
-import Data.Attoparsec.Char8 
+import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 import Data.Maybe
 import Data.Time.Clock 
@@ -36,6 +36,10 @@ import Data.Hoodle.Simple
 (#) :: a -> (a -> b) -> b 
 (#) = flip ($)
 infixr 0 #
+
+-- safehead :: [a] -> Maybe a
+-- safehead [] = Nothing
+-- safehead (a:_) = a
 
 maybeFlip :: Maybe a -> b -> (a->b) -> b  
 maybeFlip m n j = maybe n j m   

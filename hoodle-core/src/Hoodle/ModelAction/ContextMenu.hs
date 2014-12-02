@@ -17,7 +17,6 @@ module Hoodle.ModelAction.ContextMenu where
 
 import           Control.Concurrent (forkIO, threadDelay)
 import           Control.Exception
-import           Control.Monad.IO.Class
 import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (forM_)
 import           Data.UUID.V4

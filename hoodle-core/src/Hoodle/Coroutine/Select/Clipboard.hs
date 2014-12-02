@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Coroutine.Select.Clipboard 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -18,11 +18,10 @@ module Hoodle.Coroutine.Select.Clipboard where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Lens (view,set,(%~),(.~))
+import           Control.Lens (view,set,(.~))
 import           Control.Monad.State 
 import           Graphics.UI.Gtk hiding (get,set)
 -- from hoodle-platform 
-import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple

@@ -109,7 +109,7 @@ minimalCanvasInfo cid = do
 -- | only connect events 
 connectDefaultEventCanvasInfo 
   :: HoodleState -> UnitHoodle -> CanvasInfo a -> IO (CanvasInfo a )
-connectDefaultEventCanvasInfo xstate uhdl cinfo = do 
+connectDefaultEventCanvasInfo xstate _uhdl cinfo = do 
     let callback = view callBack xstate
         ui = view gtkUIManager xstate 
         dev = view deviceList xstate 
@@ -209,7 +209,7 @@ connectDefaultEventCanvasInfo xstate uhdl cinfo = do
 -- | recreate windows from old canvas info but no event connect
 reinitCanvasInfoStage1 
   :: UnitHoodle -> CanvasInfo a -> IO (CanvasInfo a)
-reinitCanvasInfoStage1 uhdl oldcinfo = do 
+reinitCanvasInfoStage1 _uhdl oldcinfo = do 
   let cid = view canvasId oldcinfo 
   newcinfo <- minimalCanvasInfo cid      
   return $ newcinfo { _viewInfo = _viewInfo oldcinfo 
@@ -261,7 +261,6 @@ constructFrame' _callback template ouhdl (Node cid) = do
         return (cinfobox',cmap',uhdl')
     ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 uhdl) cinfobox
     let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
-    print "hi"
     forBoth' unboxBiAct (putStrLn <=< widgetGetName . view drawArea) ncinfobox
     let scrwin = forBoth' unboxBiAct (castToWidget.view scrolledWindow) ncinfobox
     return (uhdl', scrwin, Node cid)

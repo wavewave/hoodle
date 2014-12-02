@@ -20,17 +20,15 @@ module Hoodle.Coroutine.TextInput where
 import           Control.Applicative
 import           Control.Concurrent
 import qualified Control.Exception
-import           Control.Lens (_1,_2,_3,view,set,(%~),(^.),(.~),over,mapped)
+import           Control.Lens (_2,_3,view,(%~),(^.),(.~))
 import           Control.Monad.State hiding (mapM_, forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe
-import           Data.Attoparsec.Char8
+import           Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (mapM_, forM_)
 import           Data.List (sortBy)
--- import qualified Data.Map as M
 import qualified Data.HashMap.Strict as M
-import           Data.Maybe (catMaybes)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -398,13 +396,13 @@ insertItemAt mpcoord ritm = do
         ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
     modeChange ToSelectMode 
     cache <- view renderCache <$> get
-    updateUhdl $ \uhdl -> do 
-      thdl <- case view hoodleModeState uhdl of
+    updateUhdl $ \uhdl' -> do 
+      thdl <- case view hoodleModeState uhdl' of
         SelectState thdl' -> return thdl'
         _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
       nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
       return . (hoodleModeState .~ SelectState nthdl)
-             . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl 
+             . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl' 
     commit_
     invalidateAll  
 
@@ -432,7 +430,7 @@ editEmbeddedTextSource = do
         Just ntxt -> do 
           pureUpdateUhdl $ \uhdl ->
             let nhdlmodst = case uhdl ^. hoodleModeState of
-                  ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl)
+                  ViewAppendState hdl' -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl')
                   SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just ntxt) $ thdl)
             in (hoodleModeState .~ nhdlmodst) uhdl
           commit_
@@ -472,7 +470,7 @@ textInputFromSource (x0,y0) = do
 
 -- | common dialog with line position 
 linePosDialog :: Either (ActionOrder AllEvent) AllEvent
-linePosDialog = mkIOaction $ \evhandler -> do
+linePosDialog = mkIOaction $ \_evhandler -> do
     dialog <- Gtk.dialogNew
     vbox <- Gtk.dialogGetUpper dialog
 
@@ -550,7 +548,7 @@ toggleNetworkEditSource = do
     forM_ (xst ^. statusBar) $ \stbar -> 
       if b 
         then do
-          (ip,tid,done) <- networkTextInputBody (maybe " " id mtxt)
+          (ip,tid,_done) <- networkTextInputBody (maybe " " id mtxt)
           doIOaction_ $ do
             let msg = ("networkedit " ++ ip ++ " 4040")
             ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)

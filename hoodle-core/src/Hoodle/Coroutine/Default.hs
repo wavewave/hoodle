@@ -106,9 +106,6 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
             . set rootOfRootWindow window 
             . set callBack callback  
             <$> emptyHoodleState 
-  -- pdf rendering testing code
-  let tvar = st0new ^. pdfRenderQueue
-  --
   (ui,uicompsighdlr) <- getMenuUI evar    
   let st1 = set gtkUIManager ui st0new
       initcvs = set (canvasWidgets.widgetConfig.doesUsePanZoomWidget) usepz
@@ -409,8 +406,7 @@ defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
     when b $ do
       r' :: Either E.SomeException () <- liftIO (E.try (removeFile tokfile))
       case r' of 
-        Left e ->  liftIO (putStrLn "DisconnectedHub") >>  return ()
-                  -- uploadWork (ofile,file) hinfo
+        Left _ ->  liftIO (putStrLn "DisconnectedHub") >>  return ()
         Right _ -> uploadWork (ofile,file) hinfo
 defaultEventProcess ev = -- for debugging
                          do liftIO $ putStrLn "--- no default ---"
@@ -444,7 +440,7 @@ pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
 pdfWorker _handler (_,GetNPages doc tmvar) = do
     n <- Poppler.documentGetNPages doc
     atomically $ putTMVar tmvar n
-pdfWorker handler (uuid,RenderPageScaled page (Dim ow oh) (Dim w h)) = do
+pdfWorker handler (uuid,RenderPageScaled page (Dim ow _oh) (Dim w h)) = do
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   

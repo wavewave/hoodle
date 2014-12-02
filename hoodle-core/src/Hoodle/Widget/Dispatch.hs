@@ -31,7 +31,6 @@ import Graphics.Hoodle.Render.Type.Item
 -- 
 import Hoodle.Coroutine.Link
 import Hoodle.Device 
-import Hoodle.ModelAction.ContextMenu
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.HoodleState

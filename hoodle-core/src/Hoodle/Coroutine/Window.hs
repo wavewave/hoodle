@@ -16,18 +16,15 @@
 module Hoodle.Coroutine.Window where
 
 import           Control.Applicative
-import           Control.Lens (view,set,over,(^.),(.~),_2,at)
+import           Control.Lens (view,set,over,(^.),(.~),_2)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import qualified Data.List as L
-import           Data.Maybe
 import           Data.UUID (UUID)
-import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 --
 import           Data.Hoodle.Generic
-import           Data.Hoodle.Simple (Dimension(..), defaultHoodle)
-import           Graphics.Hoodle.Render (cnstrctRHoodle)
+import           Data.Hoodle.Simple (Dimension(..))
 --
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
@@ -46,7 +43,6 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window
 import           Hoodle.Util
-import           Hoodle.View.Draw
 --
 
 -- | canvas configure with general zoom update func
@@ -126,9 +122,9 @@ deleteCanvas = do
         pureUpdateUhdl (const (((frameState .~ fstate'') . (rootWindow .~ win)) uhdl2))
         xst3 <- get
         liftIO $ registerFrameToContainer rtrwin rtcntr win
-        updateUhdl $ \uhdl -> do
-          (uhdl',_wconf) <- liftIO $ eventConnect xst3 uhdl (view frameState uhdl)
-          liftIO $ updatePageAll (view hoodleModeState uhdl') uhdl'
+        updateUhdl $ \uhdl' -> do
+          (uhdl'',_wconf) <- liftIO $ eventConnect xst3 uhdl' (view frameState uhdl')
+          liftIO $ updatePageAll (view hoodleModeState uhdl'') uhdl''
         canvasZoomUpdateAll
         invalidateAll 
 
@@ -198,26 +194,6 @@ addTab mfp = do
     pageZoomChange FitWidth
     invalidateAll 
 
-
-{-
--- |
-nextTab :: MainCoroutine ()
-nextTab = do
-    xst <- get
-    uhdls <- view unitHoodles <$> get
-    let current = fst uhdls
-        lst = filter ((>current).fst) (M.assocs (snd uhdls))
-    when ((not.null) lst) $ do
-      let uhdl = snd (head lst)
-          tabnum = uhdl^.unitKey
-          notebook = view rootNotebook xst
-      doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
-      modify $ (unitHoodles.currentUnit .~ uhdl)
-      updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
-      invalidateAll 
--}
-
-
 -- | 
 findTab :: UUID -> MainCoroutine (Maybe Int)
 findTab uuid = do
@@ -234,13 +210,12 @@ switchTab tabnum = do
     uhdls <- view unitHoodles <$> get
 
     let current = fst uhdls
-        ks = M.keys (snd uhdls)
     when (tabnum /= current) $ do 
       let uhdl = fromJustError "switchTab"  (M.lookup tabnum (snd uhdls))
       liftIO $ Gtk.widgetSetSensitive (uhdls^.(currentUnit.unitButton)) False
       liftIO $ Gtk.widgetSetSensitive (uhdl^.unitButton) True
       modify $ (unitHoodles.currentUnit .~ uhdl)
-      updateUhdl $ \uhdl -> liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+      updateUhdl $ \uhdl' -> liftIO (updatePageAll (view hoodleModeState uhdl') uhdl')
       view currentCanvasInfo uhdl # 
         forBoth' unboxBiAct $ \cinfo -> do
           (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 

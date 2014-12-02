@@ -16,12 +16,12 @@ module Hoodle.Coroutine.Pen where
 
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
-import           Control.Lens (view,set,at,_1,_2,mapped)
+import           Control.Lens (view,set,at)
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.State hiding (mapM_,forM_)
 -- import Control.Monad.Trans
 import           Data.Functor.Identity (Identity(..))
-import           Data.Foldable (forM_,toList)
+import           Data.Foldable (toList)
 import           Data.Sequence hiding (filter)
 import           Data.Maybe 
 import           Data.Ratio

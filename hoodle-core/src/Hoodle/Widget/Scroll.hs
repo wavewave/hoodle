@@ -3,7 +3,7 @@
 -- Module      : Hoodle.Widget.Scroll
 -- Copyright   : (c) 2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -14,8 +14,7 @@
 
 module Hoodle.Widget.Scroll where
 
-import Control.Lens (set, view, (%~))
-import Control.Monad.State
+import Control.Lens ((%~))
 --
 import Hoodle.Accessor
 import Hoodle.Coroutine.Draw

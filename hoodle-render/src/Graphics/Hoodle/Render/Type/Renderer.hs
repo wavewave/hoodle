@@ -7,7 +7,7 @@
 -- Module      : Graphics.Hoodle.Render.Type.Renderer
 -- Copyright   : (c) 2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC

@@ -5,7 +5,7 @@ Description: 	Hoodle is a pen notetaking program written in haskell.
                 hoodle-core is the core library written in haskell and 
                 using gtk2hs
 Homepage:       http://ianwookim.org/hoodle
-License: 	GPL-3
+License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>

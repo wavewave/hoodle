@@ -2,7 +2,7 @@ Name:		hoodle-render
 Version:	0.4.0
 Synopsis:       Hoodle file renderer
 Description: 	Rendering library using cairo for hoodle file format
-License: 	GPL-3
+License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>

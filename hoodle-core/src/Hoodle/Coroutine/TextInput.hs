@@ -80,8 +80,8 @@ import Prelude hiding (readFile,mapM_)
 
 
 -- | common dialog with multiline edit input box 
-multiLineDialog :: T.Text -> Either (ActionOrder AllEvent) AllEvent
-multiLineDialog str = mkIOaction $ \evhandler -> do
+multiLineDialog :: T.Text -> (AllEvent -> IO ()) -> IO AllEvent
+multiLineDialog str evhandler = do
     dialog <- Gtk.dialogNew
     vbox <- Gtk.dialogGetUpper dialog
     textbuf <- Gtk.textBufferNew Nothing
@@ -134,7 +134,7 @@ textInput :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
 textInput mpos str = do 
     case mpos of 
       Just (x0,y0) -> do 
-        modify (tempQueue %~ enqueue (multiLineDialog str))  
+        doIOaction (multiLineDialog str)
         multiLineLoop str >>= 
           mapM_ (\result -> deleteSelection
                             >> liftIO (makePangoTextSVG (x0,y0) result) 
@@ -146,7 +146,7 @@ laTeXInput :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
 laTeXInput mpos str = do 
     case mpos of 
       Just (x0,y0) -> do 
-        modify (tempQueue %~ enqueue (multiLineDialog str))  
+        doIOaction (multiLineDialog str)
         multiLineLoop str >>= 
           mapM_ (\result -> liftIO (makeLaTeXSVG (x0,y0) Nothing result) >>= \case 
                   Right r -> deleteSelection >> svgInsert (result,"latex") r
@@ -424,7 +424,7 @@ editEmbeddedTextSource = do
     hdl <- getHoodle . view (unitHoodles.currentUnit) <$> get
     let mtxt = hdl ^. gembeddedtext 
     forM_ mtxt $ \txt -> do 
-      modify (tempQueue %~ enqueue (multiLineDialog txt))  
+      doIOaction (multiLineDialog txt)
       multiLineLoop txt >>= \case 
         Nothing -> return ()
         Just ntxt -> do 

@@ -15,7 +15,7 @@
 module Hoodle.Coroutine.Dialog where
 
 import           Control.Applicative ((<$>),(<*>))
-import           Control.Lens ((%~),view)
+import           Control.Lens (view)
 import           Control.Monad.Loops
 import           Control.Monad.State
 import qualified Data.Foldable as F
@@ -23,8 +23,6 @@ import qualified Data.Text as T
 import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory (getCurrentDirectory)
 -- 
-import           Control.Monad.Trans.Crtn.Queue
---
 import           Hoodle.Coroutine.Draw
 import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Type.Coroutine
@@ -35,8 +33,7 @@ import           Hoodle.Type.HoodleState
 
 -- |
 okMessageBox :: String -> MainCoroutine () 
-okMessageBox msg = -- modify (tempQueue %~ enqueue action) 
-                   action >> waitSomeEvent (\case GotOk -> True ; _ -> False) >> return () 
+okMessageBox msg = action >> waitSomeEvent (\case GotOk -> True ; _ -> False) >> return () 
   where 
     action = doIOaction $ 
                \_evhandler -> do 
@@ -49,8 +46,7 @@ okMessageBox msg = -- modify (tempQueue %~ enqueue action)
 
 -- | 
 okCancelMessageBox :: String -> MainCoroutine Bool 
-okCancelMessageBox msg = -- modify (tempQueue %~ enqueue action) 
-                         action >> waitSomeEvent p >>= return . q
+okCancelMessageBox msg = action >> waitSomeEvent p >>= return . q
   where 
     p (OkCancel _) = True 
     p _ = False 
@@ -163,7 +159,7 @@ fileChooser choosertyp mfname = do
     xst <- get 
     let rtrwin = view rootOfRootWindow xst 
     liftIO $ Gtk.widgetQueueDraw rtrwin 
-    modify (tempQueue %~ enqueue (action rtrwin mrecentfolder)) >> go 
+    doIOaction (action rtrwin mrecentfolder) >> go
   where 
     go = do r <- nextevent                   
             case r of 
@@ -171,7 +167,7 @@ fileChooser choosertyp mfname = do
               UpdateCanvas cid -> -- this is temporary
                                   invalidateInBBox Nothing Efficient cid >> go  
               _ -> go 
-    action win mrf = mkIOaction $ \_evhandler -> do 
+    action win mrf _evhandler = do 
       dialog <- Gtk.fileChooserDialogNew Nothing (Just win) choosertyp 
                   [ ("OK", Gtk.ResponseOk) 
                   , ("Cancel", Gtk.ResponseCancel) ]

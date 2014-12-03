@@ -20,7 +20,7 @@ module Hoodle.Coroutine.File where
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
-import           Control.Lens (view,set,over,(%~), (.~))
+import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -42,7 +42,6 @@ import           System.IO (hClose, hFileSize, openFile, IOMode(..))
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
-import           Control.Monad.Trans.Crtn.Queue 
 -- import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
@@ -590,20 +589,19 @@ fileVersionSave = do
 showRevisionDialog :: Hoodle -> [Revision] -> MainCoroutine ()
 showRevisionDialog hdl revs = 
     liftM (view renderCache) get >>= \cache -> 
-    modify (tempQueue %~ enqueue (action cache)) 
-    >> waitSomeEvent (\case GotOk -> True ; _ -> False)
-    >> return ()
+      doIOaction (action cache)
+      >> waitSomeEvent (\case GotOk -> True ; _ -> False)
+      >> return ()
   where 
-    action cache 
-       = mkIOaction $ \_evhandler -> do 
-               dialog <- Gtk.dialogNew
-               vbox <- Gtk.dialogGetUpper dialog
-               mapM_ (addOneRevisionBox cache vbox hdl) revs 
-               _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
-               Gtk.widgetShowAll dialog
-               _res <- Gtk.dialogRun dialog
-               Gtk.widgetDestroy dialog
-               return (UsrEv GotOk)
+    action cache _evhandler = do 
+      dialog <- Gtk.dialogNew
+      vbox <- Gtk.dialogGetUpper dialog
+      mapM_ (addOneRevisionBox cache vbox hdl) revs 
+      _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+      Gtk.widgetShowAll dialog
+      _res <- Gtk.dialogRun dialog
+      Gtk.widgetDestroy dialog
+      return (UsrEv GotOk)
 
 
 mkPangoText :: String -> Cairo.Render ()

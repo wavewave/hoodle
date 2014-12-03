@@ -1,5 +1,6 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -119,6 +120,9 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
         vadj = _vertAdjustment cinfo
     Gtk.widgetSetCanFocus canvas True 
     Gtk.widgetGrabFocus canvas     
+#ifdef GTK3
+    {- 
+#endif // GTK3
     _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
     _keyevent <- canvas `Gtk.on` Gtk.keyPressEvent $ Gtk.tryEvent $ do 
       m <- Gtk.eventModifier
@@ -149,7 +153,12 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                 atomically (writeTVar tvar True)
                 Gtk.widgetGrabFocus canvas 
     _focusout <- canvas `Gtk.on` Gtk.focusOutEvent $ Gtk.tryEvent $ liftIO $ atomically (writeTVar tvar False)
+
+#ifdef GTK3
+    _exposeev <- canvas `Gtk.on` Gtk.draw $ do 
+#else // GTK3
     _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
+#endif // GTK3
       liftIO $ Gtk.widgetGrabFocus canvas       
       (liftIO . callback . UsrEv) (UpdateCanvas cid) 
     canvas `Gtk.on` Gtk.motionNotifyEvent $ Gtk.tryEvent $ do 
@@ -171,13 +180,16 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       case x of 
                         [] -> error "No action group? "
                         y:_ -> return y )
-    uxinputa <- liftIO (Gtk.actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) -> 
+    uxinputa <- liftIO (Gtk.actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
                           return (Gtk.castToToggleAction x) )
     b <- liftIO $ Gtk.toggleActionGetActive uxinputa
+#ifdef GTK3    
+#else // GTK3
     if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
          else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
-    hadjconnid <- Gtk.afterValueChanged hadj $ do 
-                    v <- Gtk.adjustmentGetValue hadj 
+#endif // GTK3
+    hadjconnid <- afterValueChanged hadj $ do 
+                    v <- adjustmentGetValue hadj 
                     (callback . UsrEv) (HScrollBarMoved cid v)
     vadjconnid <- Gtk.afterValueChanged vadj $ do 
                     v <- Gtk.adjustmentGetValue vadj     
@@ -193,7 +205,12 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
-    
+#ifdef GTK3
+    -}
+#endif // GTK3
+    -- temp
+    return $ cinfo     
+
 -- | recreate windows from old canvas info but no event connect
 reinitCanvasInfoStage1 
   :: UnitHoodle -> CanvasInfo a -> IO (CanvasInfo a)

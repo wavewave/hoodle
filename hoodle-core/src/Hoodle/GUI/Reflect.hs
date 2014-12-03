@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -185,7 +186,11 @@ reflectCursor = do
           let uhdl       = view (unitHoodles.currentUnit) xst
               cinfobox   = view currentCanvasInfo uhdl           
               canvas     = forBoth' unboxBiAct (view drawArea) cinfobox           
+#ifdef GTK3
+          Just win <- Gtk.widgetGetWindow canvas
+#else // GTK3 
           win <- Gtk.widgetGetDrawWindow canvas
+#endif // GTK3
           Gtk.postGUIAsync (Gtk.drawWindowSetCursor win Nothing) 
           return (UsrEv ActionOrdered)
         go 
@@ -201,7 +206,11 @@ reflectCursor = do
            pinfo = view penInfo xst 
            pcolor = view (penSet . currPen . penColor) pinfo
            pwidth = view (penSet . currPen . penWidth) pinfo 
-       win <- Gtk.widgetGetDrawWindow canvas
+#ifdef GTK3
+       Just win <- widgetGetWindow canvas
+#else // GTK3
+       win <- widgetGetDrawWindow canvas
+#endif // GTK3
        dpy <- Gtk.widgetGetDisplay canvas  
 
        geometry <- 

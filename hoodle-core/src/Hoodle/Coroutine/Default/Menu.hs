@@ -130,9 +130,13 @@ menuEventProcess MenuUseXInput = do
     let cmap = view cvsInfoMap uhdl
         canvases = map (getDrawAreaFromBox) . M.elems $ cmap 
     updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput) >>= \b -> 
+#ifdef GTK3      
+      return ()
+#else // GTK3
       if b
         then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
         else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
+#endif // GTK3
 menuEventProcess MenuUseTouch = toggleTouch
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()
@@ -191,6 +195,10 @@ colorConvert (Gtk.Color r g b) = ColorRGBA (realToFrac r/65536.0) (realToFrac g/
 -- | 
 colorPickerBox :: String -> MainCoroutine (Maybe PenColor) 
 colorPickerBox msg = do 
+#ifdef GTK3 
+    -- color selection dialog is incomplete in gtk3
+    return Nothing
+#else // GTK3
     xst <- get 
     let pcolor = view (penInfo.currentTool.penColor) xst   
     doIOaction (action pcolor) >> go
@@ -217,4 +225,4 @@ colorPickerBox msg = do
               UpdateCanvas cid -> -- this is temporary
                 invalidateInBBox Nothing Efficient cid >> go
               _ -> go 
-
+#endif // GTK3

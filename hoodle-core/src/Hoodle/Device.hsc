@@ -1,9 +1,11 @@
-{-# LANGUAGE ForeignFunctionInterface, ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Device 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -72,12 +74,11 @@ foreign import ccall "c_initdevice.h initdevice" c_initdevice
   -> CString  -- ^ touch 
   -> IO ()
 
-
+{-
 -- | 
 foreign import ccall "c_initdevice.h find_wacom" c_find_wacom
   :: CString -> CString -> IO ()
-
-{- 
+ 
 -- | 
 foreign import ccall "c_initdevice.h enable_touch" c_enable_touch
   :: CString -> IO ()
@@ -97,9 +98,6 @@ initDevice cfg = do
   ptouchname_detect <- newCString "touch"
   -- c_find_wacom pstylusname_detect perasername_detect
   (mcore,mstylus,meraser,mtouch) <- getPenDevConfig cfg 
-  -- putStrLn $ show mstylus 
-  -- putStrLn $ show meraser
-  -- putStrLn $ show mtouch
   with 0 $ \pcore -> 
     with 0 $ \pstylus -> 
       with 0 $ \peraser -> do 
@@ -217,7 +215,11 @@ wacomCoordConvert :: WidgetClass self => self
                      -> (Double,Double) 
                      -> IO (Double,Double)
 wacomCoordConvert canvas (x,y)= do 
+#ifdef GTK3  
+  Just win <- widgetGetWindow canvas -- partial function for the time being 
+#else // GTK3
   win <- widgetGetDrawWindow canvas
+#endif // GTK3
   (x0,y0) <- drawWindowGetOrigin win
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> screenGetWidth screen <*> screenGetHeight screen

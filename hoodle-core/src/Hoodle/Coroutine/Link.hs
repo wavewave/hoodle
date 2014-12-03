@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -258,7 +259,13 @@ addLink = do
   where 
     action mfn = do  dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
                                  Gtk.MessageQuestion Gtk.ButtonsOkCancel ("add link" :: String)
+#ifdef GTK3                               
+                     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+                     vbox <- Gtk.vBoxNew False 0
+                     Gtk.containerAdd upper vbox
+#else // GTK3
                      vbox <- Gtk.dialogGetUpper dialog
+#endif // GTK3
                      txtvw <- Gtk.textViewNew
                      Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
                      Gtk.widgetShowAll dialog

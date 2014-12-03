@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -100,7 +101,13 @@ showRecogTextDialog txts = do
   where 
     action = \evhandler -> do 
                dialog <- Gtk.dialogNew
+#ifdef GTK3
+               upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+               vbox <- Gtk.vBoxNew False 0        
+               Gtk.containerAdd upper vbox
+#else // GTK3
                vbox <- Gtk.dialogGetUpper dialog
+#endif // GTK3
                let txtlst' = zip [1..] txts
                txtlst <- forM txtlst' $ \(n,txt) -> do
                  let str = T.unpack txt 

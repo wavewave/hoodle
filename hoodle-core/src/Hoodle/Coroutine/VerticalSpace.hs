@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.VerticalSpace
@@ -233,8 +235,16 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
              Cairo.paint
              drawguide 
            let canvas = view drawArea cvsInfo 
+#ifdef GTK3
+           Just win <- liftIO $ Gtk.widgetGetWindow canvas
+#else // GTK3               
            win <- liftIO $ Gtk.widgetGetDrawWindow canvas
+#endif // GTK3
+#ifdef GTK3
+           liftIO $ Gtk.renderWithDrawWindow win $ do 
+#else // GTK3
            liftIO $ Gtk.renderWithDrawable win $ do 
+#endif // GTK3
              Cairo.setSourceSurface sfctot 0 0 
              Cairo.setOperator Cairo.OperatorSource 
              Cairo.paint 

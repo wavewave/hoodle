@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -46,6 +47,7 @@ import           Prelude ((.),($),String,Bool(..),error,flip,id,map)
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
 startGUI mfname mhook = do 
+<<<<<<< HEAD
     Gtk.initGUI
     window <- Gtk.windowNew   
     Gtk.windowSetDefaultSize window 800 400
@@ -67,9 +69,11 @@ startGUI mfname mhook = do
     setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles.currentUnit.cvsInfoMap) $ st0
-    if xinputbool
-        then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
-        else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
+#ifndef GTK3      
+  if xinputbool
+      then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
+      else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
+#endif // not GTK3
     --
     outerLayout ui vbox st0 
     window `Gtk.on` Gtk.deleteEvent $ do

@@ -22,6 +22,10 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-core
 
+Flag Gtk3
+  Description:     compile with gtk3
+  Default:         False 
+
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -Werror -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
@@ -50,7 +54,6 @@ Library
                    filepath > 1, 
                    fsnotify >= 0.0.7, 
                    gd >= 3000.7,               
-                   gtk > 0.12, 
                    handa-gdata >= 0.6.9.3, 
                    hoodle-builder >= 0.3,
                    hoodle-parser >= 0.3,
@@ -85,6 +88,10 @@ Library
                    vector >= 0.10,
                    websockets, 
                    xournal-parser >= 0.5.0.2
+  if flag(gtk3) 
+    Build-depends: gtk3 > 0.12 
+  else 
+    Build-depends: gtk > 0.12 
 
   Exposed-Modules: 
                    Hoodle.Accessor
@@ -166,7 +173,9 @@ Library
   include-dirs:    csrc
   install-includes: 
                    csrc/c_initdevice.h
-                   csrc/template-hsc-gtk2hs.h
-                   csrc/XInput.h
-  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG  -fPIC
+                   -- csrc/template-hsc-gtk2hs.h
+                   -- csrc/XInput.h
+  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
   extra-libraries: X11 Xi dl pthread
+  if flag(gtk3)
+    cpp-options: -DGTK3

@@ -1,7 +1,8 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -83,7 +84,13 @@ import Prelude hiding (readFile,mapM_)
 multiLineDialog :: T.Text -> (AllEvent -> IO ()) -> IO AllEvent
 multiLineDialog str evhandler = do
     dialog <- Gtk.dialogNew
+#ifdef GTK3    
+    upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+    vbox <- Gtk.vBoxNew False 0
+    Gtk.containerAdd upper vbox
+#else // GTK3
     vbox <- Gtk.dialogGetUpper dialog
+#endif // GTK3
     textbuf <- Gtk.textBufferNew Nothing
     Gtk.textBufferSetByteString textbuf (TE.encodeUtf8 str)
     textbuf `Gtk.on` Gtk.bufferChanged $ do 
@@ -211,7 +218,6 @@ dbusNetworkInput txt = do
     case rsvg of 
       Right r -> deleteSelection >> svgInsert (txt,"latex") r
       Left err -> okMessageBox err >> laTeXInput (Just pos) txt
-
 
 
 check :: String -> IO (ExitCode,String) -> EitherT String IO ()

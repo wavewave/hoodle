@@ -70,9 +70,15 @@ textInputDialog msg = do
     doIOaction $ \_evhandler -> do 
                    dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
                      Gtk.MessageQuestion Gtk.ButtonsOkCancel msg
+#ifdef GTK3
+                   vbox <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+                   txtvw <- Gtk.textViewNew
+                   Gtk.containerAdd vbox txtvw  
+#else // GTK3
                    vbox <- Gtk.dialogGetUpper dialog
                    txtvw <- Gtk.textViewNew
                    Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
+#endif // GTK3
                    Gtk.widgetShowAll dialog
                    res <- Gtk.dialogRun dialog 
                    case res of 

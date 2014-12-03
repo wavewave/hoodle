@@ -15,15 +15,14 @@
 module Hoodle.Coroutine.Minibuffer where 
 
 import           Control.Applicative ((<$>),(<*>))
-import           Control.Lens ((%~),view)
-import           Control.Monad.State (modify,get)
+import           Control.Lens (view)
+import           Control.Monad.State (get)
 import           Control.Monad.Trans (liftIO)
 import           Data.Foldable (Foldable(..),mapM_,forM_,toList)
 import           Data.Sequence (Seq,(|>),empty,singleton,viewl,ViewL(..))
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- 
-import           Control.Monad.Trans.Crtn.Queue (enqueue)
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render (renderStrk)
 --
@@ -60,40 +59,40 @@ minibufDialog msg = do
     xst <- get
     let dev = view deviceList xst 
     let ui = view gtkUIManager xst 
-    agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+    agr <- liftIO ( Gtk.uiManagerGetActionGroups ui >>= \x ->
                       case x of 
                         [] -> error "No action group? "
                         y:_ -> return y )
-    uxinputa <- liftIO (actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
-                          return (castToToggleAction x) )
-    doesUseX11Ext <- liftIO $ toggleActionGetActive uxinputa
-    modify (tempQueue %~ enqueue (action dev doesUseX11Ext)) 
+    uxinputa <- liftIO (Gtk.actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+                          return (Gtk.castToToggleAction x) )
+    doesUseX11Ext <- liftIO $ Gtk.toggleActionGetActive uxinputa
+    doIOaction (action dev doesUseX11Ext)
     minibufInit
   where 
-    action dev _doesUseX11Ext = mkIOaction $ \evhandler -> do 
-      dialog <- dialogNew 
-      msgLabel <- labelNew (Just msg) 
-      cvs <- drawingAreaNew                           
-      cvs `on` sizeRequest $ return (Requisition 500 50)
-      cvs `on` exposeEvent $ tryEvent $ do
-        drawwdw <- liftIO $ widgetGetDrawWindow cvs                 
-        liftIO (renderWithDrawable drawwdw drawMiniBufBkg)
+    action dev _doesUseX11Ext = \evhandler -> do 
+      dialog <- Gtk.dialogNew 
+      msgLabel <- Gtk.labelNew (Just msg) 
+      cvs <- Gtk.drawingAreaNew                           
+      cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 500 50)
+      cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do
+        drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs                 
+        liftIO (Gtk.renderWithDrawable drawwdw drawMiniBufBkg)
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
-      cvs `on` buttonPressEvent $ tryEvent $ do 
+      cvs `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 
         (mbtn,mp) <- getPointer dev
         forM_ mp $ \p -> do
           let pbtn = maybe PenButton1 id mbtn 
           case pbtn of
             TouchButton -> return ()
             _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenDown pbtn p)
-      cvs `on` buttonReleaseEvent $ tryEvent $ do 
+      cvs `Gtk.on` Gtk.buttonReleaseEvent $ Gtk.tryEvent $ do 
         (mbtn,mp) <- getPointer dev
         forM_ mp $ \p -> do  
           let pbtn = maybe PenButton1 id mbtn 
           case pbtn of
             TouchButton -> return ()
             _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenUp p)
-      cvs `on` motionNotifyEvent $ tryEvent $ do 
+      cvs `Gtk.on` Gtk.motionNotifyEvent $ Gtk.tryEvent $ do 
         (mbtn,mp) <- getPointer dev
         forM_ mp $ \p -> do  
             let pbtn = maybe PenButton1 id mbtn      
@@ -103,23 +102,23 @@ minibufDialog msg = do
       {- if doesUseX11Ext 
         then widgetSetExtensionEvents cvs [ExtensionEventsAll]
         else widgetSetExtensionEvents cvs [ExtensionEventsNone] -}
-      widgetAddEvents cvs [PointerMotionMask,Button1MotionMask]      
+      Gtk.widgetAddEvents cvs [Gtk.PointerMotionMask,Gtk.Button1MotionMask]
       --
-      vbox <- dialogGetUpper dialog
-      hbox <- hBoxNew False 0 
-      boxPackStart hbox msgLabel PackNatural 0 
-      boxPackStart vbox hbox PackNatural 0
-      boxPackStart vbox cvs PackNatural 0
-      _btnOk <- dialogAddButton dialog "Ok" ResponseOk
-      _btnCancel <- dialogAddButton dialog "Cancel" ResponseCancel
-      _btnText <- dialogAddButton dialog "TextInput" (ResponseUser 1) 
-      widgetShowAll dialog
-      res <- dialogRun dialog 
-      widgetDestroy dialog 
+      vbox <- Gtk.dialogGetUpper dialog
+      hbox <- Gtk.hBoxNew False 0 
+      Gtk.boxPackStart hbox msgLabel Gtk.PackNatural 0 
+      Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
+      Gtk.boxPackStart vbox cvs Gtk.PackNatural 0
+      _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
+      _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel
+      _btnText <- Gtk.dialogAddButton dialog "TextInput" (Gtk.ResponseUser 1) 
+      Gtk.widgetShowAll dialog
+      res <- Gtk.dialogRun dialog 
+      Gtk.widgetDestroy dialog 
       case res of 
-        ResponseOk -> return (UsrEv (OkCancel True))
-        ResponseCancel -> return (UsrEv (OkCancel False))
-        ResponseUser 1 -> return (UsrEv ChangeDialog)
+        Gtk.ResponseOk -> return (UsrEv (OkCancel True))
+        Gtk.ResponseCancel -> return (UsrEv (OkCancel False))
+        Gtk.ResponseUser 1 -> return (UsrEv ChangeDialog)
         _ -> return (UsrEv (OkCancel False))
 
 minibufInit :: MainCoroutine (Either () [Stroke])
@@ -135,14 +134,14 @@ minibufInit =
                minibufStart drawwdw (srcsfc,tgtsfc) empty 
              _ -> minibufInit)
 
-invalidateMinibuf :: DrawWindow -> Cairo.Surface -> IO ()
+invalidateMinibuf :: Gtk.DrawWindow -> Cairo.Surface -> IO ()
 invalidateMinibuf drawwdw tgtsfc = 
-  renderWithDrawable drawwdw $ do 
+  Gtk.renderWithDrawable drawwdw $ do 
     Cairo.setSourceSurface tgtsfc 0 0 
     Cairo.setOperator Cairo.OperatorSource 
     Cairo.paint
 
-minibufStart :: DrawWindow 
+minibufStart :: Gtk.DrawWindow 
              -> (Cairo.Surface,Cairo.Surface)  -- ^ (source, target)
              -> Seq Stroke 
              -> MainCoroutine (Either () [Stroke])
@@ -161,7 +160,7 @@ minibufStart drawwdw (srcsfc,tgtsfc) strks = do
         minibufStart drawwdw (srcsfc,tgtsfc) nstrks
       _ -> minibufStart drawwdw (srcsfc,tgtsfc) strks
       
-onestroke :: DrawWindow
+onestroke :: Gtk.DrawWindow
           -> (Cairo.Surface,Cairo.Surface) -- ^ (source, target)
           -> Seq PointerCoord 
           -> MainCoroutine (Seq PointerCoord)

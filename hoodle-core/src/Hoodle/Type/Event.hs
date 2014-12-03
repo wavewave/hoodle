@@ -5,7 +5,7 @@
 -- Module      : Hoodle.Type.Event 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -24,7 +24,7 @@ import qualified Data.Text as T
 import           Data.Time.Clock
 import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (Image)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Data.Hoodle.BBox
@@ -263,13 +263,13 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
 
 
 -- | event for minibuffer operation (currently pen only) 
-data MiniBufferEvent = MiniBufferInitialized DrawWindow
+data MiniBufferEvent = MiniBufferInitialized Gtk.DrawWindow
                      | MiniBufferPenDown PenButton PointerCoord
                      | MiniBufferPenUp PointerCoord
                      | MiniBufferPenMove PointerCoord
                      deriving Show
 
-instance Show DrawWindow where
+instance Show Gtk.DrawWindow where
   show _ = "DrawWindow"
 
 -- | event for multiline text view/buffer
@@ -293,9 +293,9 @@ data DBusEvent = DBusNetworkInput T.Text
                deriving Show
 
 -- | 
-viewModeToUserEvent :: RadioAction -> IO UserEvent
+viewModeToUserEvent :: Gtk.RadioAction -> IO UserEvent
 viewModeToUserEvent a = do 
-    v <- radioActionGetCurrentValue a
+    v <- Gtk.radioActionGetCurrentValue a
     case v of 
       1 -> return ToSinglePage
       0 -> return ToContSinglePage

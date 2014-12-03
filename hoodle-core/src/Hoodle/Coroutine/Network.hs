@@ -36,7 +36,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Traversable as Tr
 import           Data.Word
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 import           Network.Info
 import           Network.Simple.TCP
 -- 
@@ -113,16 +113,16 @@ networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
 networkTextInput txt = do 
     (ip,tid,done) <- networkTextInputBody txt
     let ipdialog msg = \_evhandler -> do                  
-          dialog <- messageDialogNew Nothing [DialogModal]
-            MessageQuestion ButtonsOkCancel msg 
+          dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+            Gtk.MessageQuestion Gtk.ButtonsOkCancel msg 
           forkIO $ do          
             readMVar done 
-            dialogResponse dialog ResponseOk
-          res <- dialogRun dialog 
+            Gtk.dialogResponse dialog Gtk.ResponseOk
+          res <- Gtk.dialogRun dialog 
           let b = case res of 
-                    ResponseOk -> True
+                    Gtk.ResponseOk -> True
                     _ -> False
-          widgetDestroy dialog 
+          Gtk.widgetDestroy dialog 
           return (UsrEv (OkCancel b))
     doIOaction (ipdialog ("networkedit " ++ ip ++ " 4040"))
     --
@@ -134,7 +134,7 @@ networkTextInput txt = do
             OkCancel True -> (return . Just) t
             OkCancel False -> return Nothing
             NetworkProcess (NetworkReceived txt') ->  do 
-              doIOaction $ \_ -> postGUISync (putMVar done ())
+              doIOaction $ \_ -> Gtk.postGUISync (putMVar done ())
                                  >> (return . UsrEv . NetworkProcess) NetworkCloseDialog
               actf txt' 
               

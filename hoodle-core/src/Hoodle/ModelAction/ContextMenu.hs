@@ -23,7 +23,7 @@ import           Data.UUID.V4
 import           DBus 
 import           DBus.Client 
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk
+import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory 
 import           System.FilePath 
 import           System.Process
@@ -37,13 +37,13 @@ import Hoodle.Type.Event
 import Hoodle.Util
 
 -- |
-menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO MenuItem
+menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO Gtk.MenuItem
 menuOpenALink evhandler urlpath = do 
     let urlname = case urlpath of 
                     FileUrl fp -> fp 
                     HttpUrl url -> url 
-    menuitemlnk <- menuItemNewWithLabel ("Open "++urlname :: String) 
-    menuitemlnk `on` menuItemActivate $ evhandler (UsrEv (OpenLink urlpath Nothing)) -- openLinkAction urlpath Nothing
+    menuitemlnk <- Gtk.menuItemNewWithLabel ("Open "++urlname :: String) 
+    menuitemlnk `Gtk.on` Gtk.menuItemActivate $ evhandler (UsrEv (OpenLink urlpath Nothing)) 
     return menuitemlnk
 
 -- | 
@@ -73,12 +73,12 @@ openLinkActionDBus urlpath mid = do
       return ()
 
 -- | 
-menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe MenuItem)
+menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe Gtk.MenuItem)
 menuCreateALink evhandler sitems = 
   if (length . filter isLinkInRItem) sitems > 0
   then return Nothing 
-  else do mi <- menuItemNewWithLabel ("Create a link to..." :: String)
-          mi `on` menuItemActivate $ 
+  else do mi <- Gtk.menuItemNewWithLabel ("Create a link to..." :: String)
+          mi `Gtk.on` Gtk.menuItemActivate $ 
             evhandler (UsrEv (GotContextMenuSignal CMenuCreateALink))
           return (Just mi)
          

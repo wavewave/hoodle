@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Coordinate
--- Copyright   : (c) 2012, 2013 Ian-Woo Kim
+-- Copyright   : (c) 2012-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -22,7 +22,7 @@ import           Data.Foldable (toList)
 import qualified Data.IntMap as M
 import           Data.Maybe
 import           Data.Monoid
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import Data.Hoodle.Simple (Dimension(..))
 import Data.Hoodle.Generic
@@ -54,15 +54,15 @@ data CanvasGeometry =
 -- | make a canvas geometry data structure from current status 
 makeCanvasGeometry :: PageNum 
                       -> PageArrangement vm 
-                      -> DrawingArea 
+                      -> Gtk.DrawingArea 
                       -> IO CanvasGeometry 
 makeCanvasGeometry cpn arr canvas = do 
-  win <- widgetGetDrawWindow canvas
+  win <- Gtk.widgetGetDrawWindow canvas
   let cdim@(CanvasDimension (Dim w' h')) = view canvasDimension arr
-  screen <- widgetGetScreen canvas
-  (ws,hs) <- (,) <$> (fromIntegral <$> screenGetWidth screen)
-                 <*> (fromIntegral <$> screenGetHeight screen)
-  (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< drawWindowGetOrigin win
+  screen <- Gtk.widgetGetScreen canvas
+  (ws,hs) <- (,) <$> (fromIntegral <$> Gtk.screenGetWidth screen)
+                 <*> (fromIntegral <$> Gtk.screenGetHeight screen)
+  (x0,y0) <- return . ((,) <$> fromIntegral.fst <*> fromIntegral.snd ) =<< Gtk.drawWindowGetOrigin win
   let corig = CanvasOrigin (x0,y0)
       (deskdim, cvsvbbox, p2d, d2p) = 
         case arr of  

@@ -24,7 +24,7 @@ import           Data.Foldable (mapM_,forM_)
 import qualified Data.IntMap as M
 import           Data.IORef
 import           Data.Maybe
-import           Graphics.UI.Gtk hiding (get,set,Settings)
+import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory
 import           System.Environment
 import           System.FilePath
@@ -46,9 +46,9 @@ import           Prelude ((.),($),String,Bool(..),error,flip,id,map)
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
 startGUI mfname mhook = do 
-    initGUI
-    window <- windowNew   
-    windowSetDefaultSize window 800 400
+    Gtk.initGUI
+    window <- Gtk.windowNew   
+    Gtk.windowSetDefaultSize window 800 400
     cfg <- loadConfigFile   
     devlst <- initDevice cfg 
     maxundo <- getMaxUndo cfg >>= maybe (return 50) (return . id)
@@ -57,8 +57,6 @@ startGUI mfname mhook = do
     (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) 
     setTitleFromFileName st0
     -- need for refactoring
-
-
     mapM_ (\(x,y :: Simple Lens Settings Bool) -> lensSetToggleUIForFlag x (settings.y) st0 )
       [ ("UXINPUTA", doesUseXInput) 
       , ("HANDA"   , doesUseTouch)
@@ -70,19 +68,17 @@ startGUI mfname mhook = do
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles.currentUnit.cvsInfoMap) $ st0
     if xinputbool
-        then mapM_ (flip widgetSetExtensionEvents [ExtensionEventsAll]) canvases
-        else mapM_ (flip widgetSetExtensionEvents [ExtensionEventsNone]) canvases
+        then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
+        else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
     --
     outerLayout ui vbox st0 
-    window `on` deleteEvent $ do
+    window `Gtk.on` Gtk.deleteEvent $ do
       liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
       return True
-    widgetShowAll window
+    Gtk.widgetShowAll window
 
     forkIO $ clock (eventHandler tref)
-
-    let mainaction = do eventHandler tref (UsrEv (Initialized mfname))
-                        mainGUI 
+    let mainaction = eventHandler tref (UsrEv (Initialized mfname)) >> Gtk.mainGUI 
     mainaction `catch` \(_e :: SomeException) -> do 
       homepath <- getEnv "HOME"
       let dir = homepath </> ".hoodle.d"
@@ -96,45 +92,45 @@ startGUI mfname mhook = do
 clock :: (AllEvent -> IO ()) -> IO ()
 clock evhandler = forever $ do 
     threadDelay 1000000
-    postGUIAsync (evhandler (SysEv ClockUpdateEvent))
+    Gtk.postGUIAsync (evhandler (SysEv ClockUpdateEvent))
 
 
 
-outerLayout :: UIManager -> VBox -> HoodleState -> IO ()
+outerLayout :: Gtk.UIManager -> Gtk.VBox -> HoodleState -> IO ()
 outerLayout ui vbox xst = do 
     let notebook = view rootNotebook xst
         mstatusbar = view statusBar xst
-    menubar <- uiManagerGetWidget ui "/ui/menubar" 
+    menubar <- Gtk.uiManagerGetWidget ui "/ui/menubar" 
                >>= maybe (error "GUI.hs:no menubar") return 
-    toolbar1 <- uiManagerGetWidget ui "/ui/toolbar1" 
+    toolbar1 <- Gtk.uiManagerGetWidget ui "/ui/toolbar1" 
                 >>= maybe (error "GUI.hs:no toolbar1") return 
-    toolbar2 <- uiManagerGetWidget ui "/ui/toolbar2"
+    toolbar2 <- Gtk.uiManagerGetWidget ui "/ui/toolbar2"
                 >>= maybe (error "GUI.hs:no toolbar2") return 
     -- 
-    ebox <- eventBoxNew
-    label <- labelNew (Just "drag me")
-    containerAdd ebox label 
-    dragSourceSet ebox [Button1] [ActionCopy]
-    dragSourceSetIconStock ebox stockIndex
-    dragSourceAddTextTargets ebox
+    ebox <- Gtk.eventBoxNew
+    label <- Gtk.labelNew (Just "drag me")
+    Gtk.containerAdd ebox label 
+    Gtk.dragSourceSet ebox [Gtk.Button1] [Gtk.ActionCopy]
+    Gtk.dragSourceSetIconStock ebox Gtk.stockIndex
+    Gtk.dragSourceAddTextTargets ebox
     -- ebox `on` dragBegin $ \_dc -> do 
     --   liftIO $ putStrLn "dragging"
-    ebox `on` dragDataGet $ \_dc _iid _ts -> do 
+    ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do 
       -- very dirty solution but.. 
       minfo <- liftIO $ do 
         ref <- newIORef (Nothing :: Maybe String)
         view callBack xst (UsrEv (GetHoodleFileInfo ref))
         readIORef ref
-      traverse selectionDataSetText minfo >> return ()
+      traverse Gtk.selectionDataSetText minfo >> return ()
 
     -- 
-    hbox <- hBoxNew False 0 
-    boxPackStart hbox toolbar1 PackGrow 0
-    boxPackStart hbox ebox PackNatural 0
-    boxPackStart vbox menubar PackNatural 0 
-    boxPackStart vbox hbox PackNatural 0
-    boxPackStart vbox toolbar2 PackNatural 0  
-    forM_ mstatusbar $ \statusbar-> boxPackEnd vbox statusbar PackNatural 0
+    hbox <- Gtk.hBoxNew False 0 
+    Gtk.boxPackStart hbox toolbar1 Gtk.PackGrow 0
+    Gtk.boxPackStart hbox ebox Gtk.PackNatural 0
+    Gtk.boxPackStart vbox menubar Gtk.PackNatural 0 
+    Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
+    Gtk.boxPackStart vbox toolbar2 Gtk.PackNatural 0  
+    forM_ mstatusbar $ \statusbar-> Gtk.boxPackEnd vbox statusbar Gtk.PackNatural 0
     --
-    boxPackStart vbox notebook PackGrow 0 
+    Gtk.boxPackStart vbox notebook Gtk.PackGrow 0 
 

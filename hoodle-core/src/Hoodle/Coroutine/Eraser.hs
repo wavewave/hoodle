@@ -16,7 +16,6 @@ import qualified Data.IntMap as IM
 import           Control.Lens (view,set,over,(.~))
 import           Control.Monad.State 
 import qualified Control.Monad.State as St
--- import Graphics.UI.Gtk hiding (get,set,disconnect)
 -- 
 import Data.Hoodle.Generic
 import Graphics.Hoodle.Render

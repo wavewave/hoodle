@@ -27,7 +27,7 @@ import           Data.Strict.Tuple
 import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 import           Graphics.Rendering.Cairo.Matrix ( invert, transformPoint )
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.BBox
@@ -177,27 +177,27 @@ hitInHandle tpage point =
     
 
 -- |
-toggleCutCopyDelete :: UIManager -> Bool -> IO ()
+toggleCutCopyDelete :: Gtk.UIManager -> Bool -> IO ()
 toggleCutCopyDelete ui b = do 
-    agr <- uiManagerGetActionGroups ui >>= \x -> 
+    agr <- Gtk.uiManagerGetActionGroups ui >>= \x -> 
       case x of
         [] -> error "No action group?"
         y:_ -> return y
-    Just deletea <- actionGroupGetAction agr "DELETEA"
-    Just copya <- actionGroupGetAction agr "COPYA"
-    Just cuta <- actionGroupGetAction agr "CUTA"
+    Just deletea <- Gtk.actionGroupGetAction agr "DELETEA"
+    Just copya <- Gtk.actionGroupGetAction agr "COPYA"
+    Just cuta <- Gtk.actionGroupGetAction agr "CUTA"
     let copycutdeletea = [copya,cuta,deletea] 
-    mapM_ (flip actionSetSensitive b) copycutdeletea
+    mapM_ (flip Gtk.actionSetSensitive b) copycutdeletea
 
 -- |
-togglePaste :: UIManager -> Bool -> IO ()
+togglePaste :: Gtk.UIManager -> Bool -> IO ()
 togglePaste ui b = do 
-    agr <- uiManagerGetActionGroups ui >>= \x -> 
+    agr <- Gtk.uiManagerGetActionGroups ui >>= \x -> 
       case x of
         [] -> error "No action group?"
         y:_ -> return y
-    Just pastea <- actionGroupGetAction agr "PASTEA"
-    actionSetSensitive pastea b
+    Just pastea <- Gtk.actionGroupGetAction agr "PASTEA"
+    Gtk.actionSetSensitive pastea b
 
 -- |
 changeStrokeColor :: PenColor -> BBoxed Stroke -> BBoxed Stroke

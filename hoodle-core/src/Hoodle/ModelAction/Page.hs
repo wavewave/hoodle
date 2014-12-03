@@ -21,12 +21,10 @@ import           Control.Monad (liftM)
 import           Data.Functor.Identity (Identity(..))
 import qualified Data.IntMap as M
 import           Data.Traversable (mapM)
-import           Graphics.UI.Gtk (adjustmentGetValue)
+import qualified Graphics.UI.Gtk as Gtk (adjustmentGetValue)
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
--- import           Data.Hoodle.Zipper 
--- import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Util
 import           Hoodle.Type.Alias
@@ -94,7 +92,7 @@ updateCvsInfoFrmHoodle hdl (CanvasSinglePage cinfo) = do
         pg = getPageFromGHoodleMap pagenum hdl 
         pdim = PageDimension $ view gdimension pg
         (hadj,vadj) = view adjustments cinfo
-    (xpos,ypos) <- (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj 
+    (xpos,ypos) <- (,) <$> Gtk.adjustmentGetValue hadj <*> Gtk.adjustmentGetValue vadj 
     let arr = makeSingleArrangement zmode pdim cdim (xpos,ypos)
         vinfo = view viewInfo cinfo 
         nvinfo = xfrmViewInfo (const arr) vinfo
@@ -108,8 +106,8 @@ updateCvsInfoFrmHoodle hdl (CanvasContPage cinfo) = do
         canvas = view drawArea cinfo 
         zmode = view (viewInfo.zoomMode) cinfo
         (hadj,vadj) = view adjustments cinfo
-    (xdesk,ydesk) <- (,) <$> adjustmentGetValue hadj 
-                         <*> adjustmentGetValue vadj 
+    (xdesk,ydesk) <- (,) <$> Gtk.adjustmentGetValue hadj 
+                         <*> Gtk.adjustmentGetValue vadj 
     geometry <- makeCanvasGeometry (PageNum pagenum) oarr canvas 
     case desktop2Page geometry (DeskCoord (xdesk,ydesk)) of
       Nothing -> return (CanvasContPage cinfo)

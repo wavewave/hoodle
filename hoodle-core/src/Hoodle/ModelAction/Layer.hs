@@ -16,8 +16,7 @@ module Hoodle.ModelAction.Layer where
 import           Control.Category
 import           Control.Lens (view,over)
 import           Data.IORef
-import           Graphics.UI.Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk as Gtk (get)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Zipper
@@ -41,23 +40,23 @@ adjustCurrentLayer nlayer = over glayers (replace nlayer)
 
 
 -- | 
-layerChooseDialog :: IORef Int -> Int -> Int -> IO Dialog
+layerChooseDialog :: IORef Int -> Int -> Int -> IO Gtk.Dialog
 layerChooseDialog layernumref cidx len = do 
-    dialog <- dialogNew 
-    layerentry <- entryNew
-    entrySetText layerentry (show (succ cidx))
-    label <- labelNew (Just (" / " ++ show len))
-    hbox <- hBoxNew False 0 
-    upper <- dialogGetUpper dialog
-    boxPackStart upper hbox PackNatural 0 
-    boxPackStart hbox layerentry PackNatural 0 
-    boxPackStart hbox label PackGrow 0 
-    widgetShowAll upper
-    buttonOk <- dialogAddButton dialog stockOk ResponseOk
-    _buttonCancel <- dialogAddButton dialog stockCancel ResponseCancel
+    dialog <- Gtk.dialogNew 
+    layerentry <- Gtk.entryNew
+    Gtk.entrySetText layerentry (show (succ cidx))
+    label <- Gtk.labelNew (Just (" / " ++ show len))
+    hbox <- Gtk.hBoxNew False 0 
+    upper <- Gtk.dialogGetUpper dialog
+    Gtk.boxPackStart upper hbox Gtk.PackNatural 0 
+    Gtk.boxPackStart hbox layerentry Gtk.PackNatural 0 
+    Gtk.boxPackStart hbox label Gtk.PackGrow 0 
+    Gtk.widgetShowAll upper
+    buttonOk <- Gtk.dialogAddButton dialog Gtk.stockOk Gtk.ResponseOk
+    _buttonCancel <- Gtk.dialogAddButton dialog Gtk.stockCancel Gtk.ResponseCancel
 
-    buttonOk `on` buttonActivated $ do 
-      txt <- Gtk.get layerentry entryText
+    buttonOk `Gtk.on` Gtk.buttonActivated $ do 
+      txt <- Gtk.get layerentry Gtk.entryText
       maybe (return ()) (modifyIORef layernumref . const . pred) . maybeRead $ txt
     return dialog
 

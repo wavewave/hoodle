@@ -20,9 +20,8 @@ module Hoodle.GUI.Menu where
 -- from other packages
 import           Control.Lens (set)
 import           Control.Monad
--- import qualified Data.Text as T
-import           Graphics.UI.Gtk hiding (set,get)
-import qualified Graphics.UI.Gtk as Gtk (set)
+import qualified Data.Foldable as F (forM_)
+import qualified Graphics.UI.Gtk as Gtk
 import           System.FilePath
 -- from hoodle-platform 
 import           Data.Hoodle.Predefined 
@@ -36,7 +35,7 @@ justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
 
 
-iconList :: [ (String,StockId) ]
+iconList :: [ (String,Gtk.StockId) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
            , ("pencil.png"     , "mypen")
            , ("eraser.png"     , "myeraser")
@@ -68,109 +67,108 @@ iconList = [ ("fullscreen.png" , "myfullscreen")
            ]
 
 -- | 
-viewmods :: [RadioActionEntry] 
-viewmods = [ RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
-           , RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
+viewmods :: [Gtk.RadioActionEntry] 
+viewmods = [ Gtk.RadioActionEntry "CONTA" "Continuous" Nothing Nothing Nothing 0
+           , Gtk.RadioActionEntry "ONEPAGEA" "One Page" Nothing Nothing Nothing 1
            ]
            
 -- | 
-pointmods :: [RadioActionEntry] 
-pointmods = [ RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothing 0
-            , RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
+pointmods :: [Gtk.RadioActionEntry] 
+pointmods = [ Gtk.RadioActionEntry "PENVERYFINEA" "Very fine" Nothing Nothing Nothing 0
+            , Gtk.RadioActionEntry "PENFINEA" "Fine" (Just "mythin") Nothing Nothing 1
             
-            , RadioActionEntry "PENTHICKA" "Thick" (Just "mythick") Nothing Nothing 3 
-            , RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4 
-            , RadioActionEntry "PENULTRATHICKA" "Ultra Thick" Nothing Nothing Nothing 5   
-            , RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2              
---             , RadioActionEntry "NOWIDTH" "Unknown" Nothing Nothing Nothing 999 
+            , Gtk.RadioActionEntry "PENTHICKA" "Thick" (Just "mythick") Nothing Nothing 3 
+            , Gtk.RadioActionEntry "PENVERYTHICKA" "Very Thick" Nothing Nothing Nothing 4 
+            , Gtk.RadioActionEntry "PENULTRATHICKA" "Ultra Thick" Nothing Nothing Nothing 5   
+            , Gtk.RadioActionEntry "PENMEDIUMA" "Medium" (Just "mymedium") Nothing Nothing 2              
+--             , Gtk.RadioActionEntry "NOWIDTH" "Unknown" Nothing Nothing Nothing 999 
             ]            
 
 -- | 
 
-penmods :: [RadioActionEntry] 
-penmods = [ RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0 
-          , RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
-          , RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
---           , RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
-          , RadioActionEntry "SELREGNA" "Select Region"     (Just "mylasso")        Nothing Nothing 4
-          , RadioActionEntry "SELRECTA" "Select Rectangle" (Just "myrectselect")        Nothing Nothing 5
-          , RadioActionEntry "VERTSPA" "Vertical Space"    (Just "mystretch")        Nothing Nothing 6
+penmods :: [Gtk.RadioActionEntry] 
+penmods = [ Gtk.RadioActionEntry "PENA"    "Pen"         (Just "mypen")         Nothing Nothing 0 
+          , Gtk.RadioActionEntry "ERASERA" "Eraser"      (Just "myeraser")      Nothing Nothing 1
+          , Gtk.RadioActionEntry "HIGHLTA" "Highlighter" (Just "myhighlighter") Nothing Nothing 2
+--           , Gtk.RadioActionEntry "TEXTA"   "Text"        (Just "mytext")        Nothing Nothing 3 
+          , Gtk.RadioActionEntry "SELREGNA" "Select Region"     (Just "mylasso")        Nothing Nothing 4
+          , Gtk.RadioActionEntry "SELRECTA" "Select Rectangle" (Just "myrectselect")        Nothing Nothing 5
+          , Gtk.RadioActionEntry "VERTSPA" "Vertical Space"    (Just "mystretch")        Nothing Nothing 6
           ]            
 
---          , RadioActionEntry "HANDA"   "Hand Tool"         (Just "myhand")        Nothing Nothing 7
+--          , Gtk.RadioActionEntry "HANDA"   "Hand Tool"         (Just "myhand")        Nothing Nothing 7
 
 
 -- | 
 
-colormods :: [RadioActionEntry]
-colormods = [ RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
-            , RadioActionEntry "REDA"        "Red"        (Just "myred")        Nothing Nothing 2
-            , RadioActionEntry "GREENA"      "Green"      (Just "mygreen")      Nothing Nothing 3
-            , RadioActionEntry "GRAYA"       "Gray"       (Just "mygray")       Nothing Nothing 4
-            , RadioActionEntry "LIGHTBLUEA"  "Lightblue"  (Just "mylightblue")  Nothing Nothing 5     
-            , RadioActionEntry "LIGHTGREENA" "Lightgreen" (Just "mylightgreen") Nothing Nothing 6
-            , RadioActionEntry "MAGENTAA"    "Magenta"    (Just "mymagenta")    Nothing Nothing 7
-            , RadioActionEntry "ORANGEA"     "Orange"     (Just "myorange")     Nothing Nothing 8
-            , RadioActionEntry "YELLOWA"     "Yellow"     (Just "myyellow")     Nothing Nothing 9
-            , RadioActionEntry "WHITEA"      "White"      (Just "mywhite")      Nothing Nothing 10
-            , RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0              
----             , RadioActionEntry "NOCOLOR"     "Unknown"    Nothing Nothing Nothing 999 
+colormods :: [Gtk.RadioActionEntry]
+colormods = [ Gtk.RadioActionEntry "BLUEA"       "Blue"       (Just "myblue")       Nothing Nothing 1
+            , Gtk.RadioActionEntry "REDA"        "Red"        (Just "myred")        Nothing Nothing 2
+            , Gtk.RadioActionEntry "GREENA"      "Green"      (Just "mygreen")      Nothing Nothing 3
+            , Gtk.RadioActionEntry "GRAYA"       "Gray"       (Just "mygray")       Nothing Nothing 4
+            , Gtk.RadioActionEntry "LIGHTBLUEA"  "Lightblue"  (Just "mylightblue")  Nothing Nothing 5     
+            , Gtk.RadioActionEntry "LIGHTGREENA" "Lightgreen" (Just "mylightgreen") Nothing Nothing 6
+            , Gtk.RadioActionEntry "MAGENTAA"    "Magenta"    (Just "mymagenta")    Nothing Nothing 7
+            , Gtk.RadioActionEntry "ORANGEA"     "Orange"     (Just "myorange")     Nothing Nothing 8
+            , Gtk.RadioActionEntry "YELLOWA"     "Yellow"     (Just "myyellow")     Nothing Nothing 9
+            , Gtk.RadioActionEntry "WHITEA"      "White"      (Just "mywhite")      Nothing Nothing 10
+            , Gtk.RadioActionEntry "BLACKA"      "Black"      (Just "myblack")      Nothing Nothing 0              
+---             , Gtk.RadioActionEntry "NOCOLOR"     "Unknown"    Nothing Nothing Nothing 999 
             ]
 
 -- | 
-bkgstyles :: [RadioActionEntry] 
-bkgstyles = [ RadioActionEntry "BKGGRAPHA" "Graph" Nothing Nothing Nothing 3 
-            , RadioActionEntry "BKGPLAINA" "Plain" Nothing Nothing Nothing 0
-            , RadioActionEntry "BKGLINEDA" "Lined" Nothing Nothing Nothing 1
-            , RadioActionEntry "BKGRULEDA" "Ruled" Nothing Nothing Nothing 2 
+bkgstyles :: [Gtk.RadioActionEntry] 
+bkgstyles = [ Gtk.RadioActionEntry "BKGGRAPHA" "Graph" Nothing Nothing Nothing 3 
+            , Gtk.RadioActionEntry "BKGPLAINA" "Plain" Nothing Nothing Nothing 0
+            , Gtk.RadioActionEntry "BKGLINEDA" "Lined" Nothing Nothing Nothing 1
+            , Gtk.RadioActionEntry "BKGRULEDA" "Ruled" Nothing Nothing Nothing 2 
             ]
 
-newpagemods :: [RadioActionEntry] 
-newpagemods = [ RadioActionEntry "NEWPAGEPLAINA" "Plain page" Nothing Nothing Nothing 0 
-              , RadioActionEntry "NEWPAGELASTA"  "Last page"  Nothing Nothing Nothing 1
-              , RadioActionEntry "NEWPAGECYCLEA" "Cycle page" Nothing Nothing Nothing 2
+newpagemods :: [Gtk.RadioActionEntry] 
+newpagemods = [ Gtk.RadioActionEntry "NEWPAGEPLAINA" "Plain page" Nothing Nothing Nothing 0 
+              , Gtk.RadioActionEntry "NEWPAGELASTA"  "Last page"  Nothing Nothing Nothing 1
+              , Gtk.RadioActionEntry "NEWPAGECYCLEA" "Cycle page" Nothing Nothing Nothing 2
               ]
 
 
 -- | 
-iconResourceAdd :: IconFactory -> FilePath -> (FilePath, StockId) 
-                   -> IO ()
+iconResourceAdd :: Gtk.IconFactory -> FilePath -> (FilePath, Gtk.StockId) -> IO ()
 iconResourceAdd iconfac resdir (fp,stid) = do 
-  myIconSource <- iconSourceNew 
-  iconSourceSetFilename myIconSource (resdir </> fp)
-  iconSourceSetSize myIconSource IconSizeLargeToolbar
-  myIconSourceSmall <- iconSourceNew 
-  iconSourceSetFilename myIconSourceSmall (resdir </> fp)
-  iconSourceSetSize myIconSource IconSizeMenu
-  myIconSet <- iconSetNew 
-  iconSetAddSource myIconSet myIconSource 
-  iconSetAddSource myIconSet myIconSourceSmall
-  iconFactoryAdd iconfac stid myIconSet
+  myIconSource <- Gtk.iconSourceNew 
+  Gtk.iconSourceSetFilename myIconSource (resdir </> fp)
+  Gtk.iconSourceSetSize myIconSource Gtk.IconSizeLargeToolbar
+  myIconSourceSmall <- Gtk.iconSourceNew 
+  Gtk.iconSourceSetFilename myIconSourceSmall (resdir </> fp)
+  Gtk.iconSourceSetSize myIconSource Gtk.IconSizeMenu
+  myIconSet <- Gtk.iconSetNew 
+  Gtk.iconSetAddSource myIconSet myIconSource 
+  Gtk.iconSetAddSource myIconSet myIconSourceSmall
+  Gtk.iconFactoryAdd iconfac stid myIconSet
 
 -- | 
 
 actionNewAndRegisterRef :: EventVar                            
                            -> String -> String 
-                           -> Maybe String -> Maybe StockId
+                           -> Maybe String -> Maybe Gtk.StockId
                            -> Maybe UserEvent 
-                           -> IO Action
+                           -> IO Gtk.Action
 actionNewAndRegisterRef evar name label tooltip stockId myevent = do 
-    a <- actionNew name label tooltip stockId 
+    a <- Gtk.actionNew name label tooltip stockId 
     case myevent of 
       Nothing -> return a 
       Just ev -> do 
-        a `on` actionActivated $ do 
+        a `Gtk.on` Gtk.actionActivated $ do 
           eventHandler evar (UsrEv ev)
         return a
 
 -- | 
 
-getMenuUI :: EventVar -> IO (UIManager,UIComponentSignalHandler)
+getMenuUI :: EventVar -> IO (Gtk.UIManager,UIComponentSignalHandler)
 getMenuUI evar = do 
   let actionNewAndRegister = actionNewAndRegisterRef evar  
   -- icons   
-  myiconfac <- iconFactoryNew 
-  iconFactoryAddDefault myiconfac 
+  myiconfac <- Gtk.iconFactoryNew 
+  Gtk.iconFactoryAddDefault myiconfac 
   resDir <- getDataDir >>= return . (</> "resource") 
   mapM_ (iconResourceAdd myiconfac resDir) iconList 
   fma     <- actionNewAndRegister "FMA"   "File" Nothing Nothing Nothing
@@ -188,10 +186,10 @@ getMenuUI evar = do
   ---------------
   -- file menu --
   ---------------
-  newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just stockNew) (justMenu MenuNew)
-  opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just stockOpen) (justMenu MenuOpen)
-  savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just stockSave) (justMenu MenuSave)
-  saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just stockSaveAs) (justMenu MenuSaveAs)
+  newa    <- actionNewAndRegister "NEWA"  "New" (Just "Just a Stub") (Just Gtk.stockNew) (justMenu MenuNew)
+  opena   <- actionNewAndRegister "OPENA" "Open" (Just "Just a Stub") (Just Gtk.stockOpen) (justMenu MenuOpen)
+  savea   <- actionNewAndRegister "SAVEA" "Save" (Just "Just a Stub") (Just Gtk.stockSave) (justMenu MenuSave)
+  saveasa <- actionNewAndRegister "SAVEASA" "Save As" (Just "Just a Stub") (Just Gtk.stockSaveAs) (justMenu MenuSaveAs)
   printa  <- actionNewAndRegister "PRINTA" "Print" (Just "Just a Stub") Nothing (justMenu MenuPrint)
   --
   exporta <- actionNewAndRegister "EXPORTA" "Export to PDF" (Just "Just a Stub") Nothing (justMenu MenuExport)
@@ -202,17 +200,17 @@ getMenuUI evar = do
   reloada <- actionNewAndRegister "RELOADA" "Reload File" (Just "Just a Stub") Nothing (justMenu MenuReload)
   recenta <- actionNewAndRegister "RECENTA" "Recent Document" (Just "Just a Stub") Nothing (justMenu MenuRecentDocument)
   --
-  quita   <- actionNewAndRegister "QUITA" "Quit" (Just "Just a Stub") (Just stockQuit) (justMenu MenuQuit)
+  quita   <- actionNewAndRegister "QUITA" "Quit" (Just "Just a Stub") (Just Gtk.stockQuit) (justMenu MenuQuit)
 
   ---------------
   -- edit menu --
   ---------------
-  undoa   <- actionNewAndRegister "UNDOA"   "Undo" (Just "Just a Stub") (Just stockUndo) (justMenu MenuUndo)
-  redoa   <- actionNewAndRegister "REDOA"   "Redo" (Just "Just a Stub") (Just stockRedo) (justMenu MenuRedo)
-  cuta    <- actionNewAndRegister "CUTA"    "Cut" (Just "Just a Stub")  (Just stockCut) (justMenu MenuCut)
-  copya   <- actionNewAndRegister "COPYA"   "Copy" (Just "Just a Stub") (Just stockCopy) (justMenu MenuCopy)
-  pastea  <- actionNewAndRegister "PASTEA"  "Paste" (Just "Just a Stub") (Just stockPaste) (justMenu MenuPaste)
-  deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just stockDelete) (justMenu MenuDelete)
+  undoa   <- actionNewAndRegister "UNDOA"   "Undo" (Just "Just a Stub") (Just Gtk.stockUndo) (justMenu MenuUndo)
+  redoa   <- actionNewAndRegister "REDOA"   "Redo" (Just "Just a Stub") (Just Gtk.stockRedo) (justMenu MenuRedo)
+  cuta    <- actionNewAndRegister "CUTA"    "Cut" (Just "Just a Stub")  (Just Gtk.stockCut) (justMenu MenuCut)
+  copya   <- actionNewAndRegister "COPYA"   "Copy" (Just "Just a Stub") (Just Gtk.stockCopy) (justMenu MenuCopy)
+  pastea  <- actionNewAndRegister "PASTEA"  "Paste" (Just "Just a Stub") (Just Gtk.stockPaste) (justMenu MenuPaste)
+  deletea <- actionNewAndRegister "DELETEA" "Delete" (Just "Just a Stub") (Just Gtk.stockDelete) (justMenu MenuDelete)
 
   ---------------
   -- view menu --
@@ -221,19 +219,19 @@ getMenuUI evar = do
   togscra <- actionNewAndRegister "TOGSCRA" "Show/Hide Scroll Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleScrollWidget)
   -- 
   zooma     <- actionNewAndRegister "ZOOMA"     "Zoom" (Just "Just a Stub") Nothing Nothing -- (justMenu MenuZoom)
-  zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just stockZoomIn) (justMenu MenuZoomIn)
-  zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just stockZoomOut) (justMenu MenuZoomOut)
-  nrmsizea  <- actionNewAndRegister "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just stockZoom100) (justMenu MenuNormalSize)
-  pgwdtha   <- actionNewAndRegister "PGWDTHA" "Page Width" (Just "Page Width") (Just stockZoomFit) (justMenu MenuPageWidth)
+  zmina     <- actionNewAndRegister "ZMINA"     "Zoom In" (Just "Zoom In") (Just Gtk.stockZoomIn) (justMenu MenuZoomIn)
+  zmouta    <- actionNewAndRegister "ZMOUTA"    "Zoom Out" (Just "Zoom Out") (Just Gtk.stockZoomOut) (justMenu MenuZoomOut)
+  nrmsizea  <- actionNewAndRegister "NRMSIZEA"  "Normal Size" (Just "Normal Size") (Just Gtk.stockZoom100) (justMenu MenuNormalSize)
+  pgwdtha   <- actionNewAndRegister "PGWDTHA" "Page Width" (Just "Page Width") (Just Gtk.stockZoomFit) (justMenu MenuPageWidth)
   pgheighta <- actionNewAndRegister "PGHEIGHTA" "Page Height" (Just "Page Height") Nothing (justMenu MenuPageHeight)
-  setzma    <- actionNewAndRegister "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just stockFind) (justMenu MenuSetZoom)
+  setzma    <- actionNewAndRegister "SETZMA"  "Set Zoom" (Just "Set Zoom") (Just Gtk.stockFind) (justMenu MenuSetZoom)
   -- 
   fscra     <- actionNewAndRegister "FSCRA"     "Full Screen" (Just "Just a Stub") (Just "myfullscreen") (justMenu MenuFullScreen)
   --
-  fstpagea  <- actionNewAndRegister "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just stockGotoFirst) (justMenu MenuFirstPage)
-  prvpagea  <- actionNewAndRegister "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just stockGoBack) (justMenu MenuPreviousPage)
-  nxtpagea  <- actionNewAndRegister "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just stockGoForward) (justMenu MenuNextPage)
-  lstpagea  <- actionNewAndRegister "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just stockGotoLast) (justMenu MenuLastPage)
+  fstpagea  <- actionNewAndRegister "FSTPAGEA"  "First Page" (Just "Just a Stub") (Just Gtk.stockGotoFirst) (justMenu MenuFirstPage)
+  prvpagea  <- actionNewAndRegister "PRVPAGEA"  "Previous Page" (Just "Just a Stub") (Just Gtk.stockGoBack) (justMenu MenuPreviousPage)
+  nxtpagea  <- actionNewAndRegister "NXTPAGEA"  "Next Page" (Just "Just a Stub") (Just Gtk.stockGoForward) (justMenu MenuNextPage)
+  lstpagea  <- actionNewAndRegister "LSTPAGEA"  "Last Page" (Just "Just a Stub") (Just Gtk.stockGotoLast) (justMenu MenuLastPage)
   -- 
   hsplita <- actionNewAndRegister "HSPLITA" "Clone View Horizontally" (Just "horizontal split") Nothing (justMenu MenuHSplit)
   vsplita <- actionNewAndRegister "VSPLITA" "Clone View Vertically" (Just "vertical split") Nothing (justMenu MenuVSplit)
@@ -269,8 +267,8 @@ getMenuUI evar = do
   textfromsrca <- actionNewAndRegister "TEXTFROMSRCA" "Text From Source" (Just "Just a Stub") Nothing (justMenu MenuTextFromSource)
 
 
-  togglenetsrca <- toggleActionNew ("TOGGLENETSRCA" :: String) "Toggle network edit text source" (Just "Just a Stub") Nothing
-  togglenetsrca `on` actionToggled $ do
+  togglenetsrca <- Gtk.toggleActionNew ("TOGGLENETSRCA" :: String) "Toggle network edit text source" (Just "Just a Stub") Nothing
+  togglenetsrca `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuToggleNetworkEditSource))
 
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
@@ -298,13 +296,13 @@ getMenuUI evar = do
   setdefppa <- actionNewAndRegister "SETDEFPPA" "Set As Default" (Just "Just a Stub") Nothing (justMenu MenuSetAsDefaultPaper)
   
   -- tools menu
-  linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just stockIndex) (justMenu MenuAddLink)
+  linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just Gtk.stockIndex) (justMenu MenuAddLink)
   anchora <- actionNewAndRegister "ANCHORA" "Add Anchor" (Just "Add Anchor") Nothing (justMenu MenuAddAnchor)
   listanchora <- actionNewAndRegister "LISTANCHORA" "List Anchors" (Just "List Anchors") Nothing (justMenu MenuListAnchors)
   handreca <- actionNewAndRegister "HANDRECA" "Hoodlet load via Handwriting Recognition" (Just "Just a Stub") (Just "myshapes") (justMenu MenuHandwritingRecognitionDialog)
   
   clra      <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
-  clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just stockSelectColor) (justMenu MenuColorPicker ) 
+  clrpcka   <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just Gtk.stockSelectColor) (justMenu MenuColorPicker ) 
   penopta   <- actionNewAndRegister "PENOPTA" "Pen Options" (Just "Just a Stub") Nothing (justMenu MenuPenOptions)
   erasropta <- actionNewAndRegister "ERASROPTA" "Eraser Options" (Just "Just a Stub") Nothing (justMenu MenuEraserOptions)
   hiltropta <- actionNewAndRegister "HILTROPTA" "Highlighter Options" (Just "Just a Stub") Nothing (justMenu MenuHighlighterOptions)
@@ -330,39 +328,39 @@ getMenuUI evar = do
   -----------------  
   -- option menu --
   -----------------
-  uxinputa <- toggleActionNew ("UXINPUTA" :: String) "Use XInput" (Just "Just a Stub") Nothing 
-  uxinputa `on` actionToggled $ do 
+  uxinputa <- Gtk.toggleActionNew ("UXINPUTA" :: String) "Use XInput" (Just "Just a Stub") Nothing 
+  uxinputa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseXInput))
   -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
-  handa     <- toggleActionNew ("HANDA" :: String) "Use Touch" (Just "Toggle touch") (Just "myhand") 
-  handa `on` actionToggled $ do 
+  handa     <- Gtk.toggleActionNew ("HANDA" :: String) "Use Touch" (Just "Toggle touch") (Just "myhand") 
+  handa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseTouch))
-  -- smthscra <- toggleActionNew ("SMTHSCRA" :: String) "Smooth Scrolling" (Just "Just a stub") Nothing
-  -- smthscra `on` actionToggled $ do 
+  -- smthscra <- Gtk.toggleActionNew ("SMTHSCRA" :: String) "Smooth Scrolling" (Just "Just a stub") Nothing
+  -- smthscra `Gtk.on` Gtk.actionToggled $ do 
   --   eventHandler evar (UsrEv (Menu MenuSmoothScroll))
-  popmenua <- toggleActionNew ("POPMENUA" :: String) "Use Popup Menu" (Just "Just a stub") Nothing
-  popmenua `on` actionToggled $ do 
+  popmenua <- Gtk.toggleActionNew ("POPMENUA" :: String) "Use Popup Menu" (Just "Just a stub") Nothing
+  popmenua `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUsePopUpMenu))
-  ebdimga <- toggleActionNew ("EBDIMGA" :: String) "Embed PNG/JPG Image" (Just "Just a stub") Nothing
-  ebdimga `on` actionToggled $ do 
+  ebdimga <- Gtk.toggleActionNew ("EBDIMGA" :: String) "Embed PNG/JPG Image" (Just "Just a stub") Nothing
+  ebdimga `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuEmbedImage))
-  ebdpdfa <- toggleActionNew ("EBDPDFA" :: String) "Embed PDF" (Just "Just a stub") Nothing
-  ebdpdfa `on` actionToggled $ do 
+  ebdpdfa <- Gtk.toggleActionNew ("EBDPDFA" :: String) "Embed PDF" (Just "Just a stub") Nothing
+  ebdpdfa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuEmbedPDF))
-  flwlnka <- toggleActionNew ("FLWLNKA" :: String) "Follow Links" (Just "Just a stub") Nothing
-  flwlnka `on` actionToggled $ do 
+  flwlnka <- Gtk.toggleActionNew ("FLWLNKA" :: String) "Follow Links" (Just "Just a stub") Nothing
+  flwlnka `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuFollowLinks))    
-  keepratioa <- toggleActionNew ("KEEPRATIOA" :: String) "Keep Aspect Ratio" (Just "Just a stub") Nothing
-  keepratioa `on` actionToggled $ do 
+  keepratioa <- Gtk.toggleActionNew ("KEEPRATIOA" :: String) "Keep Aspect Ratio" (Just "Just a stub") Nothing
+  keepratioa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuKeepAspectRatio))
-  vcursora <- toggleActionNew ("VCURSORA" :: String) "Use Variable Cursor" (Just "Just a stub") Nothing
-  vcursora `on` actionToggled $ do 
+  vcursora <- Gtk.toggleActionNew ("VCURSORA" :: String) "Use Variable Cursor" (Just "Just a stub") Nothing
+  vcursora `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseVariableCursor))
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togclocka <- actionNewAndRegister "TOGCLOCKA" "Toggle Clock Widget"  (Just "Just a stub") Nothing (justMenu MenuToggleClockWidget)
     
-  pressrsensa <- toggleActionNew ("PRESSRSENSA" :: String) "Pressure Sensitivity" (Just "Just a Stub") Nothing 
-  pressrsensa `on` actionToggled $ do 
+  pressrsensa <- Gtk.toggleActionNew ("PRESSRSENSA" :: String) "Pressure Sensitivity" (Just "Just a Stub") Nothing 
+  pressrsensa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
@@ -385,12 +383,12 @@ getMenuUI evar = do
   -- others
   defaulta <- actionNewAndRegister "DEFAULTA" "Default" (Just "Default") (Just "mydefault") (justMenu MenuDefault)
   
-  agr <- actionGroupNew ("AGR" :: String)
-  mapM_ (actionGroupAddAction agr) 
+  agr <- Gtk.actionGroupNew ("AGR" :: String)
+  mapM_ (Gtk.actionGroupAddAction agr) 
         [fma,ema,vma,lma,ima,pma,tma,verma,oma,wma,hma]
-  mapM_ (actionGroupAddAction agr)   
+  mapM_ (Gtk.actionGroupAddAction agr)   
         [ undoa, redoa, cuta, copya, pastea, deletea ] 
-  mapM_ (\act -> actionGroupAddActionWithAccel agr act (Nothing :: Maybe String))   
+  mapM_ (\act -> Gtk.actionGroupAddActionWithAccel agr act (Nothing :: Maybe String))   
         [ newa, annpdfa, opena, savea, saveasa
         , reloada, recenta, printa, exporta, synca, versiona, showreva, showida, quita
         , fscra, zooma, zmina, zmouta, nrmsizea, pgwdtha, pgheighta, setzma
@@ -412,7 +410,7 @@ getMenuUI evar = do
         , defaulta         
         ] 
     
-  mapM_ (actionGroupAddAction agr) 
+  mapM_ (Gtk.actionGroupAddAction agr) 
     [ togglenetsrca, uxinputa, handa, popmenua, ebdimga, ebdpdfa, flwlnka
     , keepratioa, pressrsensa, vcursora ]
 
@@ -448,33 +446,33 @@ getMenuUI evar = do
         , newpagemoda, relauncha, huba, hubsocketa
         ]
   --
-  mapM_ (\x->actionSetSensitive x True) enabledActions  
-  mapM_ (\x->actionSetSensitive x False) disabledActions
+  mapM_ (\x->Gtk.actionSetSensitive x True) enabledActions  
+  mapM_ (\x->Gtk.actionSetSensitive x False) disabledActions
   --
   -- 
   -- radio actions
   --
-  ui <- uiManagerNew
+  ui <- Gtk.uiManagerNew
   
   uiDecl <- readFile (resDir </> "menu.xml")   
-  uiManagerAddUiFromString ui uiDecl
-  uiManagerInsertActionGroup ui agr 0 
-  Just ra2 <- actionGroupGetAction agr ("PENFINEA" :: String)
-  Gtk.set (castToRadioAction ra2) [radioActionCurrentValue := 2]
-  Just ra3 <- actionGroupGetAction agr ("SELREGNA" :: String)
-  actionSetSensitive ra3 True 
-  Just ra4 <- actionGroupGetAction agr ("VERTSPA" :: String)
-  actionSetSensitive ra4 True
-  Just ra6 <- actionGroupGetAction agr ("CONTA" :: String)
-  actionSetSensitive ra6 True
-  Just _ra7 <- actionGroupGetAction agr ("PENA" :: String)
-  actionSetSensitive ra6 True  
-  Just toolbar1 <- uiManagerGetWidget ui ("/ui/toolbar1" :: String)
-  toolbarSetStyle (castToToolbar toolbar1) ToolbarIcons 
-  toolbarSetIconSize (castToToolbar toolbar1) IconSizeSmallToolbar
-  Just toolbar2 <- uiManagerGetWidget ui ("/ui/toolbar2" :: String)
-  toolbarSetStyle (castToToolbar toolbar2) ToolbarIcons 
-  toolbarSetIconSize (castToToolbar toolbar2) IconSizeSmallToolbar  
+  Gtk.uiManagerAddUiFromString ui uiDecl
+  Gtk.uiManagerInsertActionGroup ui agr 0 
+  Just ra2 <- Gtk.actionGroupGetAction agr ("PENFINEA" :: String)
+  Gtk.set (Gtk.castToRadioAction ra2) [Gtk.radioActionCurrentValue Gtk.:= 2]
+  Just ra3 <- Gtk.actionGroupGetAction agr ("SELREGNA" :: String)
+  Gtk.actionSetSensitive ra3 True 
+  Just ra4 <- Gtk.actionGroupGetAction agr ("VERTSPA" :: String)
+  Gtk.actionSetSensitive ra4 True
+  Just ra6 <- Gtk.actionGroupGetAction agr ("CONTA" :: String)
+  Gtk.actionSetSensitive ra6 True
+  Just _ra7 <- Gtk.actionGroupGetAction agr ("PENA" :: String)
+  Gtk.actionSetSensitive ra6 True  
+  Just toolbar1 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar1" :: String)
+  Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar1) Gtk.ToolbarIcons 
+  Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar1) Gtk.IconSizeSmallToolbar
+  Just toolbar2 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar2" :: String)
+  Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar2) Gtk.ToolbarIcons 
+  Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar2) Gtk.IconSizeSmallToolbar  
     
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 
@@ -485,65 +483,63 @@ getMenuUI evar = do
 
 
 -- |
-actionGroupAddRadioActionsAndGetConnID :: ActionGroup 
-                                       -> [RadioActionEntry]
+actionGroupAddRadioActionsAndGetConnID :: Gtk.ActionGroup 
+                                       -> [Gtk.RadioActionEntry]
                                        -> Int  
-                                       -> (RadioAction -> IO ()) 
-                                       -> IO (Maybe (ConnectId RadioAction))
+                                       -> (Gtk.RadioAction -> IO ()) 
+                                       -> IO (Maybe (Gtk.ConnectId Gtk.RadioAction))
 actionGroupAddRadioActionsAndGetConnID self entries _value onChange = do 
   mgroup <- foldM 
-    (\mgroup (n,RadioActionEntry name label stockId accelerator tooltip value) -> do
-     action <- radioActionNew name label tooltip stockId value
-     case mgroup of 
-       Nothing -> return () 
-       Just gr -> radioActionSetGroup action gr
-     when (n==value) (toggleActionSetActive action True)
-     actionGroupAddActionWithAccel self action accelerator
+    (\mgroup (n,Gtk.RadioActionEntry name label stockId accelerator tooltip value) -> do
+     action <- Gtk.radioActionNew name label tooltip stockId value
+     F.forM_ mgroup $ \gr -> Gtk.radioActionSetGroup action gr
+     when (n==value) (Gtk.toggleActionSetActive action True)
+     Gtk.actionGroupAddActionWithAccel self action accelerator
      return (Just action))
     Nothing (zip [0..] entries)
   case mgroup of 
     Nothing -> return Nothing 
     Just gr -> do 
-      connid <- (gr `on` radioActionChanged) onChange
+      connid <- (gr `Gtk.on` Gtk.radioActionChanged) onChange
       return (Just connid)
 
 
 -- | 
-assignViewMode :: EventVar -> RadioAction -> IO ()
+assignViewMode :: EventVar -> Gtk.RadioAction -> IO ()
 assignViewMode evar a = viewModeToUserEvent a >>= eventHandler evar . UsrEv
     
 -- | 
-assignPenMode :: EventVar -> RadioAction -> IO ()
+assignPenMode :: EventVar -> Gtk.RadioAction -> IO ()
 assignPenMode evar a = do 
-    v <- radioActionGetCurrentValue a
+    v <- Gtk.radioActionGetCurrentValue a
     eventHandler evar (UsrEv (AssignPenMode (int2PenType v)))
 
       
 -- | 
-assignColor :: EventVar -> RadioAction -> IO () 
+assignColor :: EventVar -> Gtk.RadioAction -> IO () 
 assignColor evar a = do 
-    v <- radioActionGetCurrentValue a
+    v <- Gtk.radioActionGetCurrentValue a
     let c = int2Color v
     eventHandler evar (UsrEv (PenColorChanged c))
 
 -- | 
-assignPoint :: EventVar -> RadioAction -> IO ()  
+assignPoint :: EventVar -> Gtk.RadioAction -> IO ()  
 assignPoint evar a = do 
-    v <- radioActionGetCurrentValue a
+    v <- Gtk.radioActionGetCurrentValue a
     eventHandler evar (UsrEv (PenWidthChanged v))
 
 
 -- | 
-assignBkgStyle :: EventVar -> RadioAction -> IO ()
+assignBkgStyle :: EventVar -> Gtk.RadioAction -> IO ()
 assignBkgStyle evar a = do 
-    v <- radioActionGetCurrentValue a 
+    v <- Gtk.radioActionGetCurrentValue a 
     let sty = int2BkgStyle v 
     eventHandler evar (UsrEv (BackgroundStyleChanged sty))
 
 -- | 
-assignNewPageMode :: EventVar -> RadioAction -> IO ()
+assignNewPageMode :: EventVar -> Gtk.RadioAction -> IO ()
 assignNewPageMode evar a = do 
-    v <- radioActionGetCurrentValue a
+    v <- Gtk.radioActionGetCurrentValue a
     eventHandler evar (UsrEv (AssignNewPageMode (int2NewPageMode v)))
 
 

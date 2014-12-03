@@ -36,7 +36,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           DBus
 import           DBus.Client
-import           Graphics.UI.Gtk hiding (get,set) 
+import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory
 import           System.FilePath 
 import           System.Process (createProcess, proc)
@@ -245,7 +245,7 @@ gotLink mstr (x,y) = do
 -- | 
 addLink :: MainCoroutine ()
 addLink = do 
-    mfilename <- fileChooser FileChooserActionOpen Nothing 
+    mfilename <- fileChooser Gtk.FileChooserActionOpen Nothing 
     doIOaction $ const (action mfilename) 
     AddLink minput <- waitSomeEvent (\case AddLink _ -> True; _ -> False)
     case minput of 
@@ -256,22 +256,22 @@ addLink = do
         rdr <- liftIO (makePangoTextSVG (0,0) (T.pack str)) 
         linkInsert "simple" (uuidbstr,fname) str rdr 
   where 
-    action mfn = do  dialog <- messageDialogNew Nothing [DialogModal]
-                                 MessageQuestion ButtonsOkCancel ("add link" :: String)
-                     vbox <- dialogGetUpper dialog
-                     txtvw <- textViewNew
-                     boxPackStart vbox txtvw PackGrow 0 
-                     widgetShowAll dialog
-                     res <- dialogRun dialog 
+    action mfn = do  dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
+                                 Gtk.MessageQuestion Gtk.ButtonsOkCancel ("add link" :: String)
+                     vbox <- Gtk.dialogGetUpper dialog
+                     txtvw <- Gtk.textViewNew
+                     Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
+                     Gtk.widgetShowAll dialog
+                     res <- Gtk.dialogRun dialog 
                      case res of 
-                       ResponseOk -> do 
-                         buf <- textViewGetBuffer txtvw 
-                         (istart,iend) <- (,) <$> textBufferGetStartIter buf
-                                              <*> textBufferGetEndIter buf
-                         l <- textBufferGetText buf istart iend True
-                         widgetDestroy dialog
+                       Gtk.ResponseOk -> do 
+                         buf <- Gtk.textViewGetBuffer txtvw 
+                         (istart,iend) <- (,) <$> Gtk.textBufferGetStartIter buf
+                                              <*> Gtk.textBufferGetEndIter buf
+                         l <- Gtk.textBufferGetText buf istart iend True
+                         Gtk.widgetDestroy dialog
                          return (UsrEv (AddLink ((l,) <$> mfn)))
-                       _ -> widgetDestroy dialog >> return (UsrEv (AddLink Nothing))
+                       _ -> Gtk.widgetDestroy dialog >> return (UsrEv (AddLink Nothing))
 
                 
 -- | 
@@ -311,7 +311,7 @@ startLinkReceiver = do
               let  r = T.splitOn "," txt
               case r of 
                 docid:anchorid:_ -> 
-                  (postGUISync . callback . UsrEv . DBusEv . GoToLink) 
+                  (Gtk.postGUISync . callback . UsrEv . DBusEv . GoToLink) 
                     (docid,anchorid) 
                 _ -> return ()
             _ -> return ()           

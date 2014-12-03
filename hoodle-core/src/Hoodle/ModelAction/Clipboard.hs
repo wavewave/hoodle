@@ -20,7 +20,7 @@ import           Control.Monad.Trans
 import qualified Data.ByteString.Base64 as B64 
 import qualified Data.ByteString.Char8 as C8
 import qualified Data.Serialize as Se 
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Simple
 -- import           Graphics.Hoodle.Render.Type
@@ -37,12 +37,10 @@ updateClipboard xstate itms
   | null itms = return xstate
   | otherwise = do 
     let ui = view gtkUIManager xstate
-    hdltag <- atomNew "hoodle"
-    -- tgttag <- atomNew "Stroke"
-    -- seltag <- atomNew "Stroke"
-    clipbd <- clipboardGet hdltag
+    hdltag <- Gtk.atomNew "hoodle"
+    clipbd <- Gtk.clipboardGet hdltag
     let bstr = C8.unpack . B64.encode . Se.encode $ itms 
-    clipboardSetText clipbd bstr
+    Gtk.clipboardSetText clipbd bstr
     togglePaste ui True 
     case (view hookSet xstate) of 
       Nothing -> return () 

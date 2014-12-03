@@ -3,9 +3,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Layer 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
--- License     : GPL-3
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -17,10 +17,9 @@ module Hoodle.Coroutine.Layer where
 import Control.Monad.State
 import qualified Data.IntMap as M
 import Control.Category
--- import Data.Label
 import Control.Lens (view,set)
 import Data.IORef
-import Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 --
 import Data.Hoodle.Generic
 import Data.Hoodle.Zipper
@@ -126,14 +125,14 @@ startGotoLayerAt =
           len  = lengthSZ lyrzipper 
       lref <- liftIO $ newIORef cidx
       dialog <- liftIO (layerChooseDialog lref cidx len)
-      res <- liftIO $ dialogRun dialog
+      res <- liftIO $ Gtk.dialogRun dialog
       case res of 
-        ResponseDeleteEvent -> liftIO $ widgetDestroy dialog
-        ResponseOk ->  do
-          liftIO $ widgetDestroy dialog
+        Gtk.ResponseDeleteEvent -> liftIO $ Gtk.widgetDestroy dialog
+        Gtk.ResponseOk ->  do
+          liftIO $ Gtk.widgetDestroy dialog
           newnum <- liftIO (readIORef lref)
           gotoLayerAt newnum
-        ResponseCancel -> liftIO $ widgetDestroy dialog
+        Gtk.ResponseCancel -> liftIO $ Gtk.widgetDestroy dialog
         _ -> error "??? in fileOpen " 
       return ()
 

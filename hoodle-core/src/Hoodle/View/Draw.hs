@@ -28,7 +28,7 @@ import           Data.Maybe hiding (fromMaybe)
 import           Data.Monoid
 import           Data.Sequence
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -64,7 +64,7 @@ newtype SinglePageDraw a =
   SinglePageDraw 
   { unSinglePageDraw :: RenderCache 
                      -> Bool                               -- ^ isCurrentCanvas
-                     -> (DrawingArea, Maybe Cairo.Surface) 
+                     -> (Gtk.DrawingArea, Maybe Cairo.Surface) 
                      -> (PageNum, Page a) 
                      -> ViewInfo SinglePage 
                      -> Maybe BBox 
@@ -131,8 +131,8 @@ virtualDoubleBufferDraw srcsfc tgtsfc pre post =
 doubleBufferFlush :: Cairo.Surface -> CanvasInfo a -> IO () 
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
-      win <- widgetGetDrawWindow canvas
-      renderWithDrawable win $ do 
+      win <- Gtk.widgetGetDrawWindow canvas
+      Gtk.renderWithDrawable win $ do 
         Cairo.setSourceSurface sfc 0 0 
         Cairo.setOperator Cairo.OperatorSource 
         Cairo.paint
@@ -140,7 +140,7 @@ doubleBufferFlush sfc cinfo = do
 
 
 -- | common routine for double buffering 
-doubleBufferDraw :: (DrawWindow, Maybe Cairo.Surface)  
+doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)  
                     -> CanvasGeometry 
                     -> Cairo.Render a
                     -> IntersectBBox
@@ -154,7 +154,7 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
   let action = do 
         case msfc of 
 	  Nothing -> do 
-	    renderWithDrawable win $ do 
+	    Gtk.renderWithDrawable win $ do 
 	      clipBBox mbbox'
               Cairo.setSourceRGBA 0.5 0.5 0.5 1
               Cairo.rectangle 0 0 cw ch 
@@ -168,7 +168,7 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
               Cairo.fill
               clipBBox mbbox' 
 	      rndr 
-	    renderWithDrawable win $ do 
+	    Gtk.renderWithDrawable win $ do 
 	      Cairo.setSourceSurface sfc 0 0   
 	      Cairo.setOperator Cairo.OperatorSource 
 	      Cairo.paint 
@@ -198,7 +198,7 @@ data PressureMode = NoPressure | Pressure
   
 -- | 
 drawCurvebitGen  :: PressureMode 
-                    -> DrawingArea
+                    -> Gtk.DrawingArea
                     -> CanvasGeometry 
                     -> Double 
                     -> (Double,Double,Double,Double) 
@@ -208,8 +208,8 @@ drawCurvebitGen  :: PressureMode
                     -> ((Double,Double),Double) 
                     -> IO () 
 drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x,y),z) = do 
-  win <- widgetGetDrawWindow canvas
-  renderWithDrawable win $ do
+  win <- Gtk.widgetGetDrawWindow canvas
+  Gtk.renderWithDrawable win $ do
     cairoXform4PageCoordinate (mkXform4Page geometry pnum)
     Cairo.setSourceRGBA r g b a
     case pmode of 
@@ -242,7 +242,7 @@ drawFuncGen _typ render = SinglePageDraw func
   where func cache isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
-          win <- widgetGetDrawWindow canvas
+          win <- Gtk.widgetGetDrawWindow canvas
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
@@ -322,7 +322,7 @@ drawContPageGen render = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-          win <- widgetGetDrawWindow canvas
+          win <- Gtk.widgetGetDrawWindow canvas
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
@@ -371,7 +371,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-          win <- widgetGetDrawWindow canvas
+          win <- Gtk.widgetGetDrawWindow canvas
           let ibboxnew = getViewableBBox geometry mbbox
               mbboxnew = toMaybe ibboxnew
               onepagerender (pn,pg) = do  
@@ -757,28 +757,28 @@ renderLayerWidget str mbbox (CvsCoord (x,y)) = do
   Cairo.fill
   -- 
   Cairo.identityMatrix 
-  l1 <- createLayout "layer"
-  updateLayout l1 
-  (_,reclog) <- liftIO $ layoutGetExtents l1
-  let PangoRectangle _ _ w1 h1 = reclog 
+  l1 <- Gtk.createLayout "layer"
+  Gtk.updateLayout l1 
+  (_,reclog) <- liftIO $ Gtk.layoutGetExtents l1
+  let Gtk.PangoRectangle _ _ w1 h1 = reclog 
   Cairo.moveTo (x+15) y
   let sx1 = 50 / w1 
       sy1 = 20 / h1 
   Cairo.scale sx1 sy1 
-  layoutPath l1
+  Gtk.layoutPath l1
   Cairo.setSourceRGBA 0 0 0 0.4
   Cairo.fill
   -- 
   Cairo.identityMatrix
-  l <- createLayout str 
-  updateLayout l 
-  (_,reclog2) <- liftIO $ layoutGetExtents l
-  let PangoRectangle _ _ w h = reclog2 
+  l <- Gtk.createLayout str 
+  Gtk.updateLayout l 
+  (_,reclog2) <- liftIO $ Gtk.layoutGetExtents l
+  let Gtk.PangoRectangle _ _ w h = reclog2 
   Cairo.moveTo (x+30) (y+20)
   let sx = 40 / w 
       sy = 60 / h 
   Cairo.scale sx sy 
-  layoutPath l 
+  Gtk.layoutPath l
   Cairo.setSourceRGBA 0 0 0 0.4
   Cairo.fill
 

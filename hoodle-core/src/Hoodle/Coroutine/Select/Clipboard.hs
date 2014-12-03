@@ -20,7 +20,7 @@ module Hoodle.Coroutine.Select.Clipboard where
 import           Control.Applicative
 import           Control.Lens (view,set,(.~))
 import           Control.Monad.State 
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Select
@@ -96,9 +96,9 @@ copySelection = do
 getClipFromGtk :: MainCoroutine (Maybe [Item])
 getClipFromGtk = do 
     doIOaction $ \evhandler -> do 
-      hdltag <- liftIO $ atomNew "hoodle"
-      clipbd <- liftIO $ clipboardGet hdltag
-      liftIO $ clipboardRequestText clipbd (callback4Clip evhandler)
+      hdltag <- liftIO $ Gtk.atomNew "hoodle"
+      clipbd <- liftIO $ Gtk.clipboardGet hdltag
+      liftIO $ Gtk.clipboardRequestText clipbd (callback4Clip evhandler)
       return (UsrEv ActionOrdered)
     waitSomeEvent (\case GotClipboardContent _ -> True; _ -> False ) >>= \(GotClipboardContent cnt') -> return cnt'
 

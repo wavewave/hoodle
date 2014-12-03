@@ -29,7 +29,7 @@ import qualified Data.IntMap as M
 import           Data.Time.Clock
 import           Data.Time.LocalTime
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Object
@@ -192,9 +192,9 @@ invalidateTemp cid tempsurface rndr = do
       let canvas = view drawArea cvsInfo
           pnum = PageNum . view currentPageNum $ cvsInfo 
       geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
-      win <- liftIO $ widgetGetDrawWindow canvas
+      win <- liftIO $ Gtk.widgetGetDrawWindow canvas
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
-      liftIO $ renderWithDrawable win $ do   
+      liftIO $ Gtk.renderWithDrawable win $ do   
                  Cairo.setSourceSurface tempsurface 0 0 
                  Cairo.setOperator Cairo.OperatorSource 
                  Cairo.paint 
@@ -216,9 +216,9 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
     fsingle uhdl cvsInfo = do 
       let canvas = view drawArea cvsInfo
       geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
-      win <- liftIO $ widgetGetDrawWindow canvas
+      win <- liftIO $ Gtk.widgetGetDrawWindow canvas
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
-      liftIO $ renderWithDrawable win $ do   
+      liftIO $ Gtk.renderWithDrawable win $ do   
                  Cairo.setSourceSurface tempsurface 0 0 
                  Cairo.setOperator Cairo.OperatorSource 
                  Cairo.paint 
@@ -246,7 +246,7 @@ callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
     tvar <- (^. pdfRenderQueue) <$> get  
     doIOaction $ \evhandler -> do
-      let handler = postGUIAsync . evhandler . SysEv . RenderCacheUpdate
+      let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
       UsrEv . RenderEv <$> runReaderT action (handler,tvar)
 
 

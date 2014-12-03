@@ -90,7 +90,7 @@ import           Control.Lens (Simple,Lens,view,set,lens)
 import qualified Data.IntMap as M
 import           Data.Sequence
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- 
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.BBox
@@ -149,15 +149,15 @@ pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 -- |
 data CanvasInfo (a :: ViewMode) = 
        CanvasInfo { _canvasId :: CanvasId
-                  , _drawArea :: DrawingArea
+                  , _drawArea :: Gtk.DrawingArea
                   , _mDrawSurface :: Maybe Cairo.Surface 
-                  , _scrolledWindow :: ScrolledWindow
+                  , _scrolledWindow :: Gtk.ScrolledWindow
                   , _viewInfo :: ViewInfo a
                   , _currentPageNum :: Int
-                  , _horizAdjustment :: Adjustment
-                  , _vertAdjustment :: Adjustment 
-                  , _horizAdjConnId :: Maybe (ConnectId Adjustment)
-                  , _vertAdjConnId :: Maybe (ConnectId Adjustment)
+                  , _horizAdjustment :: Gtk.Adjustment
+                  , _vertAdjustment :: Gtk.Adjustment 
+                  , _horizAdjConnId :: Maybe (Gtk.ConnectId Gtk.Adjustment)
+                  , _vertAdjConnId :: Maybe (Gtk.ConnectId Gtk.Adjustment)
                   , _canvasWidgets :: CanvasWidgets
                   , _notifiedItem :: Maybe (PageNum,BBox,RItem) 
                   }
@@ -202,7 +202,7 @@ canvasId :: Simple Lens (CanvasInfo a) CanvasId
 canvasId = lens _canvasId (\f a -> f { _canvasId = a })
 
 -- | 
-drawArea :: Simple Lens (CanvasInfo a) DrawingArea
+drawArea :: Simple Lens (CanvasInfo a) Gtk.DrawingArea
 drawArea = lens _drawArea (\f a -> f { _drawArea = a })
 
 -- | 
@@ -211,7 +211,7 @@ mDrawSurface = lens _mDrawSurface (\f a -> f { _mDrawSurface = a })
 
 
 -- | 
-scrolledWindow :: Simple Lens (CanvasInfo a) ScrolledWindow
+scrolledWindow :: Simple Lens (CanvasInfo a) Gtk.ScrolledWindow
 scrolledWindow = lens _scrolledWindow (\f a -> f { _scrolledWindow = a })
 
 -- |
@@ -223,23 +223,23 @@ currentPageNum :: Simple Lens (CanvasInfo a) Int
 currentPageNum = lens _currentPageNum (\f a -> f { _currentPageNum = a })
 
 -- | 
-horizAdjustment :: Simple Lens (CanvasInfo a) Adjustment 
+horizAdjustment :: Simple Lens (CanvasInfo a) Gtk.Adjustment 
 horizAdjustment = lens _horizAdjustment (\f a -> f { _horizAdjustment = a })
 
 -- | 
-vertAdjustment :: Simple Lens (CanvasInfo a) Adjustment 
+vertAdjustment :: Simple Lens (CanvasInfo a) Gtk.Adjustment 
 vertAdjustment = lens _vertAdjustment (\f a -> f { _vertAdjustment = a })
 
 -- | ConnectId for horizontal scrollbar value change event 
-horizAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (ConnectId Adjustment))
+horizAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (Gtk.ConnectId Gtk.Adjustment))
 horizAdjConnId = lens _horizAdjConnId (\f a -> f { _horizAdjConnId = a })
 
 -- | ConnectId for vertical scrollbar value change event 
-vertAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (ConnectId Adjustment))
+vertAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (Gtk.ConnectId Gtk.Adjustment))
 vertAdjConnId = lens _vertAdjConnId (\f a -> f { _vertAdjConnId = a })
 
 -- | composition lens
-adjustments :: Simple Lens (CanvasInfo a) (Adjustment,Adjustment) 
+adjustments :: Simple Lens (CanvasInfo a) (Gtk.Adjustment,Gtk.Adjustment) 
 adjustments = lens getter setter  
   where getter = (,) <$> view horizAdjustment <*> view vertAdjustment 
         setter f (h,v) = set horizAdjustment h . set vertAdjustment v $ f
@@ -301,7 +301,7 @@ unboxLens :: (forall a. Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoB
 unboxLens l = lens (unboxGet l) (flip (unboxSet l)) 
 
 -- |
-getDrawAreaFromBox :: CanvasInfoBox -> DrawingArea 
+getDrawAreaFromBox :: CanvasInfoBox -> Gtk.DrawingArea 
 getDrawAreaFromBox = view (unboxLens drawArea)
 
 -- |

@@ -21,7 +21,7 @@ import qualified Control.Monad.State as St hiding (mapM_, forM_)
 import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
-import           Graphics.UI.Gtk hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -140,14 +140,14 @@ updateFlagFromToggleUI :: String  -- ^ UI toggle button id
 updateFlagFromToggleUI toggleid lensforflag = do 
   xstate <- St.get 
   let ui = view gtkUIManager xstate 
-  agr <- liftIO ( uiManagerGetActionGroups ui >>= \x ->
+  agr <- liftIO ( Gtk.uiManagerGetActionGroups ui >>= \x ->
                     case x of 
                       [] -> error "No action group? "
                       y:_ -> return y )
-  togglea <- liftIO (actionGroupGetAction agr toggleid) 
+  togglea <- liftIO (Gtk.actionGroupGetAction agr toggleid) 
              >>= maybe (error "updateFlagFromToggleUI") 
-                       (return . castToToggleAction)
-  b <- liftIO $ toggleActionGetActive togglea
+                       (return . Gtk.castToToggleAction)
+  b <- liftIO $ Gtk.toggleActionGetActive togglea
   St.modify (set lensforflag b) 
   return b 
 
@@ -163,13 +163,13 @@ lensSetToggleUIForFlag toggleid lensforflag xstate =
 setToggleUIForFlag :: String -> Bool -> HoodleState -> IO Bool 
 setToggleUIForFlag toggleid b xstate = do 
   let ui = view gtkUIManager xstate 
-  agr <- uiManagerGetActionGroups ui >>= \x ->
+  agr <- Gtk.uiManagerGetActionGroups ui >>= \x ->
            case x of 
              [] -> error "No action group? "
              y:_ -> return y 
-  togglea <- actionGroupGetAction agr toggleid >>= \(Just x) -> 
-                return (castToToggleAction x) 
-  toggleActionSetActive togglea b
+  togglea <- Gtk.actionGroupGetAction agr toggleid >>= \(Just x) -> 
+                return (Gtk.castToToggleAction x) 
+  Gtk.toggleActionSetActive togglea b
   return b 
 
 

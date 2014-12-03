@@ -22,7 +22,7 @@ import           Data.Foldable
 import           Data.Monoid
 import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk hiding (get,set) 
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -233,8 +233,8 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
              Cairo.paint
              drawguide 
            let canvas = view drawArea cvsInfo 
-           win <- liftIO $ widgetGetDrawWindow canvas
-           liftIO $ renderWithDrawable win $ do 
+           win <- liftIO $ Gtk.widgetGetDrawWindow canvas
+           liftIO $ Gtk.renderWithDrawable win $ do 
              Cairo.setSourceSurface sfctot 0 0 
              Cairo.setOperator Cairo.OperatorSource 
              Cairo.paint 

@@ -16,9 +16,8 @@
 
 module Hoodle.Coroutine.HandwritingRecognition where
 
-import           Control.Lens (view,_1,_2,(%~))
+import           Control.Lens (view,_1,_2)
 import           Control.Monad ((<=<),guard,when)
-import           Control.Monad.State (modify)
 import           Control.Monad.Trans (liftIO)
 import           Control.Monad.Trans.Either
 import           Data.Aeson as A
@@ -34,20 +33,18 @@ import qualified Data.Text as T
 import           Data.Traversable (forM)
 import           Data.UUID.V4
 import           Data.Vector hiding (map,head,null,(++),take,modify,mapM_,zip,forM)
-import           Graphics.UI.Gtk 
+import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory
 import           System.Exit
 import           System.FilePath
 import           System.Process
 -- 
-import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Simple
 -- from this package
 import           Hoodle.Coroutine.Draw (waitSomeEvent)
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
-import           Hoodle.Type.HoodleState
 -- 
 import           Prelude hiding (fst,snd,mapM_)
 
@@ -93,7 +90,7 @@ handwritingRecognitionDialog = do
 
 showRecogTextDialog :: [T.Text] -> MainCoroutine (Maybe (Bool,T.Text))
 showRecogTextDialog txts = do 
-    modify (tempQueue %~ enqueue action) 
+    doIOaction action
     >> waitSomeEvent (\case OkCancel _ -> True 
                             GotRecogResult _ _ -> True
                             _ -> False)
@@ -101,9 +98,9 @@ showRecogTextDialog txts = do
               GotRecogResult b txt -> return (Just (b,txt))
               _ -> return Nothing
   where 
-    action = mkIOaction $ \evhandler -> do 
-               dialog <- dialogNew
-               vbox <- dialogGetUpper dialog
+    action = \evhandler -> do 
+               dialog <- Gtk.dialogNew
+               vbox <- Gtk.dialogGetUpper dialog
                let txtlst' = zip [1..] txts
                txtlst <- forM txtlst' $ \(n,txt) -> do
                  let str = T.unpack txt 
@@ -116,26 +113,27 @@ showRecogTextDialog txts = do
                          else doesFileExist (hoodletdir </> str <.> "hdlt")      
                  return (n,(b2,txt))
                mapM_ (addOneTextBox evhandler dialog vbox) txtlst  
-               _btnCancel <- dialogAddButton dialog ("Cancel" :: String) ResponseCancel
-               widgetShowAll dialog
-               res <- dialogRun dialog
-               widgetDestroy dialog
+               _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
+               Gtk.widgetShowAll dialog
+               res <- Gtk.dialogRun dialog
+               Gtk.widgetDestroy dialog
                case res of 
-                 ResponseUser n -> case L.lookup n txtlst of
+                 Gtk.ResponseUser n -> case L.lookup n txtlst of
                                      Nothing -> return (UsrEv (OkCancel False))
                                      Just (b,txt) -> return (UsrEv (GotRecogResult b txt)) 
                  _ -> return (UsrEv (OkCancel False))
                  
-addOneTextBox :: (AllEvent -> IO ()) -> Dialog -> VBox -> (Int,(Bool,T.Text)) -> IO ()
+addOneTextBox :: (AllEvent -> IO ()) -> Gtk.Dialog -> Gtk.VBox 
+              -> (Int,(Bool,T.Text)) -> IO ()
 addOneTextBox _evhandler dialog vbox (n,(b,txt)) = do
-  btn <- buttonNewWithLabel (T.unpack txt)
+  btn <- Gtk.buttonNewWithLabel (T.unpack txt)
   when b $ do 
-    widgetModifyBg btn StateNormal (Color 60000 60000 30000)
-    widgetModifyBg btn StatePrelight (Color 63000 63000 40000)
-    widgetModifyBg btn StateActive (Color 45000 45000 18000)
-  btn `on` buttonPressEvent $ tryEvent $ do
-    liftIO $ dialogResponse dialog (ResponseUser n)
-  boxPackStart vbox btn PackNatural 0 
+    Gtk.widgetModifyBg btn Gtk.StateNormal (Gtk.Color 60000 60000 30000)
+    Gtk.widgetModifyBg btn Gtk.StatePrelight (Gtk.Color 63000 63000 40000)
+    Gtk.widgetModifyBg btn Gtk.StateActive (Gtk.Color 45000 45000 18000)
+  btn `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do
+    liftIO $ Gtk.dialogResponse dialog (Gtk.ResponseUser n)
+  Gtk.boxPackStart vbox btn Gtk.PackNatural 0 
 
 mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks = 

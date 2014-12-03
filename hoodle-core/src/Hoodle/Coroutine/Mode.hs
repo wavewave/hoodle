@@ -18,7 +18,7 @@ import           Control.Applicative
 import           Control.Lens (view,set,(.~))
 import           Control.Monad.State 
 import qualified Data.IntMap as M
-import           Graphics.UI.Gtk (adjustmentGetValue) 
+import qualified Graphics.UI.Gtk as Gtk (adjustmentGetValue)
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -125,7 +125,7 @@ sing2ContPage uhdl cinfo = do
         canvas = view drawArea cinfo 
         cpn = PageNum . view currentPageNum $ cinfo 
         (hadj,vadj) = view adjustments cinfo 
-    (xpos,ypos) <- liftIO $ (,) <$> adjustmentGetValue hadj <*> adjustmentGetValue vadj
+    (xpos,ypos) <- liftIO $ (,) <$> Gtk.adjustmentGetValue hadj <*> Gtk.adjustmentGetValue vadj
     let arr = makeContinuousArrangement zmode cdim (getHoodle uhdl) 
                                               (cpn, PageCoord (xpos,ypos))
     geometry <- liftIO $ makeCanvasGeometry cpn arr canvas

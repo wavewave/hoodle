@@ -93,7 +93,7 @@ processContextMenu (CMenuCanvasView cid pnum _x _y) = do
     let cmap =  uhdl ^. cvsInfoMap 
         mcinfobox = IM.lookup cid cmap 
     case mcinfobox of 
-      Nothing -> liftIO $ putStrLn "error in processContextMenu"
+      Nothing -> msgShout "error in processContextMenu"
       Just _cinfobox -> do 
         cinfobox' <- liftIO (setPage uhdl pnum cid)
         pureUpdateUhdl (cvsInfoMap .~ IM.adjust (const cinfobox') cid cmap)

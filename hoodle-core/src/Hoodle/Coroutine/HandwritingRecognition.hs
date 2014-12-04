@@ -46,6 +46,7 @@ import           Hoodle.Coroutine.Draw (waitSomeEvent)
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
+import           Hoodle.Util
 -- 
 import           Prelude hiding (fst,snd,mapM_)
 
@@ -59,7 +60,6 @@ getArrayVal n v = getArray v >>= \vs ->
 
 handwritingRecognitionDialog :: MainCoroutine (Maybe (Bool,T.Text))
 handwritingRecognitionDialog = do
-  liftIO $ putStrLn "handwriting recognition test here"
   r <- minibufDialog "test handwriting recognition"
   case r of 
     Left err -> liftIO $ putStrLn (show err) >> return Nothing 
@@ -83,9 +83,9 @@ handwritingRecognitionDialog = do
             (return . mapMaybe f . toList) v4
       
           case r_parse of 
-            Left err -> liftIO $ putStrLn err >> return Nothing 
+            Left err -> msgShout ("handwritingRecognitionDialog: " ++ err) >> return Nothing 
             Right lst -> showRecogTextDialog lst 
-        _ -> liftIO $ print gerror >> return Nothing 
+        _ -> msgShout ("handwritingRecognitionDialog: " ++ gerror) >> return Nothing 
 
 
 

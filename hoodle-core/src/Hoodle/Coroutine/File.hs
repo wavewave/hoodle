@@ -124,7 +124,7 @@ getFileContent (Just fname) = do
             commit_
       ".xoj" -> do 
           liftIO (XP.parseXojFile fname) >>= \x -> case x of  
-            Left str -> liftIO $ putStrLn $ "file reading error : " ++ str 
+            Left str -> msgShout $ "file reading error : " ++ str 
             Right xojcontent -> do 
               hdlcontent <- liftIO $ mkHoodleFromXournal xojcontent 
               constructNewHoodleStateFromHoodle hdlcontent
@@ -692,7 +692,7 @@ loadHoodlet str = do
          let fp = hoodletdir </> str <.> "hdlt"
          bstr <- liftIO $ B.readFile fp 
          case parseOnly Hoodlet.hoodlet bstr of 
-           Left err -> liftIO $ putStrLn err >> return Nothing
+           Left err -> msgShout err >> return Nothing
            Right itm -> do
              --
              callRenderer $ cnstrctRItem itm >>= return . GotRItem 

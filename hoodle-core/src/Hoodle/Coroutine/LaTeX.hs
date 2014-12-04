@@ -63,7 +63,6 @@ getLaTeXComponentsFromHdl hdl =
 {- 
 updateLaTeX :: MainCoroutine ()
 updateLaTeX = do
-    liftIO $ putStrLn "updateLaTeX called"
     rhdl <- getHoodle <$> get
     let hdl = rHoodle2Hoodle rhdl
     runMaybeT $ do 

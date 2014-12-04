@@ -60,7 +60,7 @@ import           Hoodle.View.Coordinate
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty -> 
                          updateUhdl (changePageAction bsty) >>
-                         adjustScrollbarWithGeometryCurrent >> liftIO (putStrLn "changePage 3") >>
+                         adjustScrollbarWithGeometryCurrent >>
                          invalidateAllInBBox Nothing Efficient  
   where changePageAction bsty uhdl = unboxBiAct (fsingle bsty uhdl) (fcont bsty uhdl) 
                                . (^. currentCanvasInfo) $ uhdl
@@ -77,7 +77,6 @@ changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty ->
           return uhdlfinal 
         
         fcont bsty uhdl cvsInfo = do 
-          liftIO $ putStrLn "changePage here"
           let xojst = view hoodleModeState uhdl
               npgnum = modifyfn (cvsInfo ^. currentPageNum)
               cid  = cvsInfo ^. canvasId
@@ -86,7 +85,6 @@ changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty ->
           ncvsInfo <- liftIO $ setPage uhdl' (PageNum npgnum') cid
           let uhdlfinal = (currentCanvasInfo .~ ncvsInfo) uhdl'
           when b $ updateUhdl (const (return uhdlfinal)) >> commit_
-          liftIO $ putStrLn "changePage here2"
           return uhdlfinal 
 
 
@@ -103,7 +101,6 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
     (isChanged,npgnum',npage',ehdl') <- 
       if (npgnum >= totnumpages) 
         then do 
-          -- liftIO $ print (pdfNumPages <$> mpdfinfo) 
           let cbkg = view gbackground lpage
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
@@ -230,11 +227,10 @@ newPage dir = (view backgroundStyle <$> get) >>= \bsty ->
       case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
           hdl' <- addNewPageInHoodle bsty dir hdl (view currentPageNum cinfo)
-          liftIO $ putStrLn "in newPage"
           liftIO . updatePageAll (ViewAppendState hdl')
                  . set hoodleModeState  (ViewAppendState hdl') $ uhdl
         SelectState _ -> do 
-          liftIO $ putStrLn " not implemented yet"
+          msgShout  "newPage: not implemented yet"
           return uhdl
       
 -- | delete current page of current canvas
@@ -255,7 +251,7 @@ deleteCurrentPage =
           liftIO . updatePageAll (ViewAppendState hdl')
                  . set hoodleModeState  (ViewAppendState hdl') $ uhdl
         SelectState _ -> do 
-          liftIO $ putStrLn " not implemented yet"
+          msgShout "deleteCurrentPage: not implemented yet"
           return uhdl
       
 -- | delete designated page
@@ -307,13 +303,13 @@ newBkg bsty bkg = do
         case mtotN of
           Nothing -> defbkg
           Just totN -> do
-            liftIO $ print (xst ^. nextPdfBkgPageNum)
+            -- liftIO $ print (xst ^. nextPdfBkgPageNum)
             let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
             case findPDFBkg rhdl n1 of
                  Nothing -> defbkg
                  Just bkg' -> liftIO nextRandom >>= \i -> do
                                 let n' = if n1 >= totN then 1 else (n1+1)
-                                liftIO $ print (n', totN)
+                                -- liftIO $ print (n', totN)
                                 put ((nextPdfBkgPageNum .~ Just n') xst)
                                 return bkg' { rbkg_uuid = i }
 

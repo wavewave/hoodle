@@ -239,9 +239,7 @@ gotLink mstr (x,y) = do
                 deleteSelection 
                 linkInsert "simple" (uuidbstr',fp) fn (svg_render svg,bbox)  
               _ -> return ()          
-  liftIO $ putStrLn "gotLink"
-  liftIO $ print mstr 
-  liftIO $ print (x,y)
+
 
 -- | 
 addLink :: MainCoroutine ()
@@ -283,7 +281,7 @@ addLink = do
                 
 -- | 
 listAnchors :: MainCoroutine ()
-listAnchors = liftIO . print . getAnchorMap . rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) =<< get
+listAnchors = msgShout . show . getAnchorMap . rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) =<< get
 
 getAnchorMap :: Hoodle -> M.Map T.Text (Int, (Double,Double))
 getAnchorMap hdl = 
@@ -329,7 +327,5 @@ goToAnchorPos docid anchorid = do
     let hdl = rHoodle2Hoodle rhdl
     when (docid == (TE.decodeUtf8 . view ghoodleID) rhdl) $ do
       let anchormap = getAnchorMap hdl
-      forM_ (M.lookup anchorid anchormap) $ \(pgnum,(x,y))-> do
-        liftIO $ print (pgnum,(x,y))
-        changePage (const pgnum)
+      forM_ (M.lookup anchorid anchormap) $ \(pgnum,(x,y))-> changePage (const pgnum)
 

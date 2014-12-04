@@ -23,6 +23,4 @@ import Control.Monad.Trans
 
 highlighterStart :: CanvasId -> PointerCoord 
                  -> MainCoroutine (Maybe (Maybe (Maybe ())))
-highlighterStart cid pcoord = do 
-  liftIO $ putStrLn "highlighter started"
-  penStart cid pcoord
+highlighterStart cid pcoord = penStart cid pcoord

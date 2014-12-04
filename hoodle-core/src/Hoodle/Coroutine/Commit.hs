@@ -22,7 +22,8 @@ import Hoodle.GUI.Reflect
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Coroutine
 import Hoodle.Type.HoodleState 
-import Hoodle.Type.Undo 
+import Hoodle.Type.Undo
+import Hoodle.Util
 
 -- | save state and add the current status in undo history 
 commit :: HoodleState -> MainCoroutine () 
@@ -49,7 +50,7 @@ undo = do
     let utable = view undoTable uhdl
         cache = view renderCache xstate
     case getPrevUndo utable of 
-      Nothing -> liftIO $ putStrLn "no undo item yet"
+      Nothing -> msgShout "no undo item yet"
       Just (hdlmodst1,newtable) -> do 
         hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
         updateUhdl $ \uhdl' -> do
@@ -65,7 +66,7 @@ redo = do
         utable = view undoTable uhdl
         cache = view renderCache xstate
     case getNextUndo utable of 
-      Nothing -> liftIO $ putStrLn "no redo item"
+      Nothing -> msgShout "no redo item"
       Just (hdlmodst1,newtable) -> do 
         hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
         updateUhdl $ \uhdl' -> do 

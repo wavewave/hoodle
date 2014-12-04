@@ -98,7 +98,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
         permissionUrl = formUrl client ["email"]
     liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
-      liftIO $ putStrLn$ "Load this URL: "++show permissionUrl
+      -- liftIO $ putStrLn$ "Load this URL: "++show permissionUrl
       case os of
         "linux"  -> liftIO $ rawSystem "chromium" [permissionUrl]
         "darwin" -> liftIO $ rawSystem "open"       [permissionUrl]
@@ -106,7 +106,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       mauthcode <- textInputDialog "Please paste the verification code: "
       F.forM_ mauthcode $ \authcode -> do
         tokens   <- liftIO $ exchangeCode client authcode
-        liftIO $ putStrLn$ "Received access token: "++show (accessToken tokens)
+        -- liftIO $ putStrLn$ "Received access token: "++show (accessToken tokens)
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
@@ -115,7 +115,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
           oldtok <- liftIO $ read <$> (readFile tokfile)
 
           newtok  <- liftIO $ refreshTokens client oldtok
-          liftIO $ putStrLn$ "As a test, refreshed token: "++show (accessToken newtok)
+          -- liftIO $ putStrLn$ "As a test, refreshed token: "++show (accessToken newtok)
           liftIO $ writeFile tokfile (show newtok)
           --
           accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
@@ -126,7 +126,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
                 }
           response <- httpLbs request manager
           let coojar = responseCookieJar response
-          liftIO $ print coojar
+          -- liftIO $ print coojar
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
           request2' <- parseUrl (hubfileurl </> unpack uuidtxt )
           let request2 = request2' 

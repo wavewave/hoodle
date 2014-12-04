@@ -73,7 +73,7 @@ socketWork HubInfo {..} = do
         client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
         permissionUrl = formUrl client ["email"]
     liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
-      liftIO $ putStrLn$ "Load this URL: "++show permissionUrl
+      msgShout $ "Load this URL: "++show permissionUrl
       case os of
         "linux"  -> liftIO $ rawSystem "chromium" [permissionUrl]
         "darwin" -> liftIO $ rawSystem "open"       [permissionUrl]
@@ -81,7 +81,7 @@ socketWork HubInfo {..} = do
       mauthcode <- textInputDialog "Please paste the verification code: "
       F.forM_ mauthcode $ \authcode -> do
         tokens   <- liftIO $ exchangeCode client authcode
-        liftIO $ putStrLn$ "Received access token: "++show (accessToken tokens)
+        -- msgShout $ "Received access token: "++show (accessToken tokens)
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(err:: E.SomeException)-> print err >> return ())) $ 
@@ -90,7 +90,7 @@ socketWork HubInfo {..} = do
           oldtok <- liftIO $ read <$> (readFile tokfile)
 
           newtok  <- liftIO $ refreshTokens client oldtok
-          liftIO $ putStrLn$ "As a test, refreshed token: "++show (accessToken newtok)
+          -- msgShout $ "As a test, refreshed token: "++show (accessToken newtok)
           liftIO $ writeFile tokfile (show newtok)
           --
           accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
@@ -101,7 +101,7 @@ socketWork HubInfo {..} = do
                 }
           response <- httpLbs request manager
           let coojar = responseCookieJar response
-          liftIO $ print coojar
+          -- liftIO $ print coojar
           request2' <- parseUrl ("http://" <> hubsocketurl <> ":" <> show hubsocketport </> hubsocketpath)
           ctime <- liftIO getCurrentTime
           let (bstr,_) = computeCookieString request2' coojar ctime True

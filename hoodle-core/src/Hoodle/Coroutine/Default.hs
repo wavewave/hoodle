@@ -371,7 +371,6 @@ defaultEventProcess (Sync ctime) = do
             return (UsrEv ActionOrdered)
 defaultEventProcess FileReloadOrdered = fileReload 
 defaultEventProcess (CustomKeyEvent str) = do
-    liftIO $ print str
     if | str == "[]:\"Super_L\"" -> do  
            xst <- liftM (over (settings.doesUseTouch) not) get 
            put xst 
@@ -408,16 +407,14 @@ defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
     when b $ do
       r' :: Either E.SomeException () <- liftIO (E.try (removeFile tokfile))
       case r' of 
-        Left _ ->  liftIO (putStrLn "DisconnectedHub") >>  return ()
+        Left _ ->  msgShout "DisconnectedHub" >>  return ()
         Right _ -> uploadWork (ofile,file) hinfo
 defaultEventProcess ev = -- for debugging
-                         do liftIO $ putStrLn "--- no default ---"
-                            liftIO $ print ev 
-                            liftIO $ putStrLn "------------------"
-                            return () 
+                         do msgShout "--- no default ---"
+                            msgShout (show ev)
+                            msgShout "------------------"
 
-
-
+-- |
 pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 
 pdfRendererMain handler tvar = forever $ do     
     p <- atomically $ do 

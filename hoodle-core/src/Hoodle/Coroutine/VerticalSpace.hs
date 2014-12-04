@@ -54,6 +54,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Predefined 
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
+import           Hoodle.Util
 --
 import Prelude hiding ((.), id, concat,concatMap,mapM_)
 
@@ -118,7 +119,7 @@ addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = do
           let nhdlmodst = ViewAppendState (moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl') 
           liftIO . updatePageAll nhdlmodst . (hoodleModeState .~ nhdlmodst) $ uhdl
         SelectState _ -> do 
-          liftIO $ putStrLn " not implemented yet"
+          msgShout "addNewPageAndMoveBelow: not implemented yet"
           return uhdl
             
 -- |             

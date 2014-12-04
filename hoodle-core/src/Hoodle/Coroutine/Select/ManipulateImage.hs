@@ -55,7 +55,6 @@ import           Hoodle.View.Draw
 
 cropImage :: BBoxed Image -> MainCoroutine ()
 cropImage imgbbx = do 
-    liftIO $ putStrLn "cropImage called"
     xst <- get
     let uhdl = view (unitHoodles.currentUnit) xst
         (cid,cinfobox) = view currentCanvas uhdl

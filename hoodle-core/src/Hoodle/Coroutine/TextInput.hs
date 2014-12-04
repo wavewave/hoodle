@@ -146,7 +146,7 @@ textInput mpos str = do
           mapM_ (\result -> deleteSelection
                             >> liftIO (makePangoTextSVG (x0,y0) result) 
                             >>= svgInsert (result,"pango"))
-      Nothing -> liftIO $ putStrLn "textInput: not implemented"
+      Nothing -> msgShout "textInput: not implemented"
   
 -- | insert latex
 laTeXInput :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()

@@ -47,8 +47,7 @@ hubUpload = do
                      fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
                      canfp <- liftIO $ canonicalizePath fp
                      let relfp = makeRelative hdir canfp
-
-                     liftIO $ print (hinfo,relfp)
+                     -- liftIO $ print (hinfo,relfp)
                      lift (uploadWork (canfp,relfp) hinfo)
               case r of 
                 Nothing -> okMessageBox "upload not successful" >> return ()

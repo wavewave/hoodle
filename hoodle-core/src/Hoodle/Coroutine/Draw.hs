@@ -48,8 +48,8 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Widget
+import           Hoodle.Util
 import           Hoodle.View.Draw
--- import           Hoodle.Widget.Clock
 -- 
 
 
@@ -84,9 +84,7 @@ sysevent (RenderCacheUpdate (uuid, ssfc)) = do
   modify (renderCache %~ HM.insert uuid ssfc)
   b <- ( ^. doesNotInvalidate ) <$> get
   when (not b) $ invalidateAll
-sysevent ev = liftIO $ print ev 
-
-
+sysevent ev = msgShout (show ev)
 
 -- | update flag in HoodleState when corresponding toggle UI changed 
 updateFlagFromToggleUI :: String  -- ^ UI toggle button id

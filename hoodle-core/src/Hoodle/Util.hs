@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Util 
--- Copyright   : (c) 2013 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,6 +15,7 @@
 module Hoodle.Util where
 
 import Control.Applicative 
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Maybe
 import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
@@ -90,6 +91,12 @@ errorlog str = do
   hPutStr outh (timestr ++ " : " )  
   hPutStrLn outh str
   hClose outh 
+
+
+-- | for debugging
+msgShout :: (MonadIO m) => String -> m ()
+msgShout = liftIO . putStrLn
+
 
 -- | 
 maybeError' :: String -> Maybe a -> a

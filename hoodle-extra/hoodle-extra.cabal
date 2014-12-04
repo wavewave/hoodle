@@ -116,7 +116,7 @@ Executable idfilepathdb
                    hoodle-extra
 
   Other-modules:   DiffDB
-                   Migrate
+                   -- Migrate
                    TextFileDB
                    Util
 

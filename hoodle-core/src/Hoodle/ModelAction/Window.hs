@@ -180,7 +180,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       case x of 
                         [] -> error "No action group? "
                         y:_ -> return y )
-    uxinputa <- liftIO (Gtk.actionGroupGetAction agr "UXINPUTA" >>= \(Just x) -> 
+    uxinputa <- liftIO (Gtk.actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) -> 
                           return (Gtk.castToToggleAction x) )
     b <- liftIO $ Gtk.toggleActionGetActive uxinputa
 #ifdef GTK3    
@@ -188,8 +188,8 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
     if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
          else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
 #endif // GTK3
-    hadjconnid <- afterValueChanged hadj $ do 
-                    v <- adjustmentGetValue hadj 
+    hadjconnid <- Gtk.afterValueChanged hadj $ do 
+                    v <- Gtk.adjustmentGetValue hadj 
                     (callback . UsrEv) (HScrollBarMoved cid v)
     vadjconnid <- Gtk.afterValueChanged vadj $ do 
                     v <- Gtk.adjustmentGetValue vadj     

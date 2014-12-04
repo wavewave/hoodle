@@ -47,7 +47,7 @@ import           Text.Hoodle.Parse.Attoparsec
 import           Hoodle.Manage.Connect
 import           Hoodle.Manage.DocDatabase
 import           DiffDB
-import           Migrate
+-- import           Migrate
 import qualified Hoodle.Manage.SqliteDB as SqliteDB
 import qualified TextFileDB
 import           Util

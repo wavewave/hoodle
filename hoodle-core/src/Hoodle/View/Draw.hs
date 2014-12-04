@@ -354,7 +354,7 @@ drawContPageGen render = ContPageDraw func
 #ifdef GTK3          
           Just win <- Gtk.widgetGetWindow canvas
 #else // GTK3
-          win <- widgetGetDrawWindow canvas
+          win <- Gtk.widgetGetDrawWindow canvas
 #endif // GTK3
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 

@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifndef GTK3
+#include "XInput.h"
+#endif // GTK3
 
-// #include "XInput.h"
-
-/*
+#ifndef GTK3
 //
 // Globals.
 //
@@ -114,9 +115,9 @@ static bool xinput_findDevices(Display *display, XDeviceInfo *stylus_info, XDevi
 
   return (found == 2);
 }
-*/
 
-/*
+
+
 void find_wacom( char* stylus_name, char* eraser_name) 
 {
   Display *display = XOpenDisplay(NULL); 
@@ -138,7 +139,7 @@ void find_wacom( char* stylus_name, char* eraser_name)
   }
   return ; 
 }
-*/
+#endif // not GTK3
 
 void initdevice ( int* core
                 , int* stylus
@@ -156,10 +157,14 @@ void initdevice ( int* core
 
   GList* dev_list;
   GdkDevice* device;
+#ifdef GTK3
   GdkDisplay* disp = gdk_display_get_default();
   GdkDeviceManager *devman = gdk_display_get_device_manager(disp);
 
   dev_list = gdk_device_manager_list_devices(devman, GDK_DEVICE_TYPE_SLAVE );
+#else // GTK3
+  dev_list = gdk_devices_list();
+#endif // GTK3
   (*stylus) = 0;
   while (dev_list != NULL) {
     device = (GdkDevice *)dev_list->data;
@@ -184,22 +189,24 @@ void initdevice ( int* core
         (*core) = (int) device; 
       } 
     } 
+#ifdef GTK3
     dev_list = g_list_next(dev_list); 
+#else // GTK3
+    dev_list = dev_list->next;
+#endif // GTK3
   }
 
 }
 
-/*
+#ifndef GTK3
 void enable_touch( char* touch_name ) 
 {
   printf("enable touch: %s\n", touch_name ) ; 
 }
-*/
 
- /*
 void disable_touch( GdkDrawable *gdkwin, char* touch_name ) 
 {
   printf("disable touch: %s\n", touch_name ); 
   
 }
-*/
+#endif // GTK3

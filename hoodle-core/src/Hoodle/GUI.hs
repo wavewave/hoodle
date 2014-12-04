@@ -69,9 +69,9 @@ startGUI mfname mhook = do
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles.currentUnit.cvsInfoMap) $ st0
 #ifndef GTK3      
-  if xinputbool
-      then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
-      else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
+    if xinputbool
+        then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
+        else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
 #endif // not GTK3
     --
     outerLayout ui vbox st0 

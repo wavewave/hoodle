@@ -21,6 +21,7 @@ import           Control.Lens (view,over,_1)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
+import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Data.Functor.Identity (Identity(..))
@@ -88,7 +89,7 @@ adjustScrollbarWithGeometryCvsId cid = do
   let (hadj,vadj) = view (unboxLens adjustments) cinfobox 
       connidh = view (unboxLens horizAdjConnId) cinfobox 
       connidv = view (unboxLens vertAdjConnId) cinfobox
-  liftIO $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
+  doIOaction_ $ Gtk.postGUIAsync $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
 
 
 -- | 

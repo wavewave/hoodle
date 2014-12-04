@@ -35,6 +35,8 @@ adjustScrollbarWithGeometry geometry ((hadj,mconnidh),(vadj,mconnidv)) = do
       ysize = y1-y0 
   F.mapM_ Gtk.signalBlock mconnidh
   F.mapM_ Gtk.signalBlock mconnidv
+  putStrLn "adjustScrollbarWithGeometry"
+  print (x0,y0,x1,y1,xsize,ysize,w,h)
   Gtk.adjustmentSetUpper hadj w 
   Gtk.adjustmentSetUpper vadj h 
   Gtk.adjustmentSetValue hadj x0 
@@ -45,6 +47,7 @@ adjustScrollbarWithGeometry geometry ((hadj,mconnidh),(vadj,mconnidv)) = do
   Gtk.adjustmentSetPageIncrement vadj (ysize*0.9)
   F.mapM_ Gtk.signalUnblock mconnidh
   F.mapM_ Gtk.signalUnblock mconnidv
+  putStrLn "adjustScrollbarWithGeometry2"
 
 -- | 
 

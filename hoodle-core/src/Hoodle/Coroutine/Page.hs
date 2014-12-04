@@ -60,7 +60,7 @@ import           Hoodle.View.Coordinate
 changePage :: (Int -> Int) -> MainCoroutine () 
 changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty -> 
                          updateUhdl (changePageAction bsty) >>
-                         adjustScrollbarWithGeometryCurrent >>
+                         adjustScrollbarWithGeometryCurrent >> liftIO (putStrLn "changePage 3") >>
                          invalidateAllInBBox Nothing Efficient  
   where changePageAction bsty uhdl = unboxBiAct (fsingle bsty uhdl) (fcont bsty uhdl) 
                                . (^. currentCanvasInfo) $ uhdl
@@ -77,6 +77,7 @@ changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty ->
           return uhdlfinal 
         
         fcont bsty uhdl cvsInfo = do 
+          liftIO $ putStrLn "changePage here"
           let xojst = view hoodleModeState uhdl
               npgnum = modifyfn (cvsInfo ^. currentPageNum)
               cid  = cvsInfo ^. canvasId
@@ -85,6 +86,7 @@ changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty ->
           ncvsInfo <- liftIO $ setPage uhdl' (PageNum npgnum') cid
           let uhdlfinal = (currentCanvasInfo .~ ncvsInfo) uhdl'
           when b $ updateUhdl (const (return uhdlfinal)) >> commit_
+          liftIO $ putStrLn "changePage here2"
           return uhdlfinal 
 
 
@@ -228,6 +230,7 @@ newPage dir = (view backgroundStyle <$> get) >>= \bsty ->
       case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
           hdl' <- addNewPageInHoodle bsty dir hdl (view currentPageNum cinfo)
+          liftIO $ putStrLn "in newPage"
           liftIO . updatePageAll (ViewAppendState hdl')
                  . set hoodleModeState  (ViewAppendState hdl') $ uhdl
         SelectState _ -> do 

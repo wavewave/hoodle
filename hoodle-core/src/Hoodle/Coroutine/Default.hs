@@ -97,9 +97,9 @@ initCoroutine :: DeviceList
               -> Gtk.Window 
               -> Maybe Hook 
               -> Int -- ^ maxundo 
-              -> (Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr)
+              -> (Bool,Bool,Bool,Bool) -- ^ (xinputbool,usepz,uselyr,varcsr)
               -> IO (EventVar,HoodleState,Gtk.UIManager,Gtk.VBox)
-initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do 
+initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do 
   evar <- newEmptyMVar  
   putMVar evar Nothing 
   let callback = eventHandler evar
@@ -127,6 +127,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) = do
                                                  . set rootWindow cvs 
                                                  . set (hoodleFileControl.hoodleFileName) Nothing)
                 . set (settings.doesUseXInput) xinputbool 
+                . set (settings.doesUseVariableCursor) varcsr
                 . set hookSet mhook 
                 . set rootNotebook notebook
                 . set uiComponentSignalHandler uicompsighdlr 

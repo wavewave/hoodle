@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Config 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -62,17 +62,25 @@ getWidgetConfig c = do
     (mpanzoom :: Maybe String) <- C.lookup c "PanZoomWidget"
     (mlayer :: Maybe String) <- C.lookup c "LayerWidget"
 
-    let panzoom = maybe True (parse "PanZoomWidget") mpanzoom 
-        layer = maybe True (parse "LayerWidget") mlayer
+    let panzoom = maybe True (parseBool "PanZoomWidget") mpanzoom 
+        layer = maybe True (parseBool "LayerWidget") mlayer
         
     print ("WidgetConfig =" ++ show (panzoom,layer) )
     return (panzoom,layer)
-  where parse msg str = case str of
-                          "true" -> True
-                          "false" -> False 
-                          _ -> error ("cannot understand " ++ msg ++ " in configfile")
+
+parseBool :: String -> String -> Bool
+parseBool msg str = case str of
+                      "true" -> True
+                      "false" -> False 
+                      _ -> error ("cannot understand " ++ msg ++ " in configfile")
 
          
+getPenConfig :: Config -> IO Bool
+getPenConfig c = do
+    (mvcursor :: Maybe String) <- C.lookup c "variablecursor"
+    let vcursor = maybe False (parseBool "variablecursor") mvcursor
+    return vcursor
+     
 
 {-
 getNetworkInfo :: Config -> IO (Maybe HoodleClipClientConfiguration)

@@ -54,8 +54,9 @@ startGUI mfname mhook = do
     devlst <- initDevice cfg 
     maxundo <- getMaxUndo cfg >>= maybe (return 50) (return . id)
     xinputbool <- getXInputConfig cfg 
+    varcsr <- getPenConfig cfg
     (usepz,uselyr) <- getWidgetConfig cfg 
-    (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr) 
+    (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) 
     setTitleFromFileName st0
     -- need for refactoring
     mapM_ (\(x,y :: Simple Lens Settings Bool) -> lensSetToggleUIForFlag x (settings.y) st0 )

@@ -143,7 +143,7 @@ doubleBufferFlush sfc cinfo = do
       Gtk.renderWithDrawable win $ do 
 #endif // GTK3
         Cairo.setSourceSurface sfc 0 0 
-        Cairo.setOperator OperatorSource 
+        Cairo.setOperator Cairo.OperatorSource 
         Cairo.paint
   
 
@@ -186,9 +186,9 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
 #else // GTK3
 	    Gtk.renderWithDrawable win $ do 
 #endif // GTK3
-	      setSourceSurface sfc 0 0   
-	      setOperator OperatorSource 
-	      paint 
+	      Cairo.setSourceSurface sfc 0 0   
+	      Cairo.setOperator Cairo.OperatorSource 
+	      Cairo.paint 
             return r 
   case ibbox of
     Top      -> Just <$> action 
@@ -235,8 +235,8 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x
 #else // GTK3
   Gtk.renderWithDrawable win $ do
 #endif // GTK3
-    cairoXform4PageCoordinate geometry pnum 
-    setSourceRGBA r g b a
+    cairoXform4PageCoordinate (mkXform4Page geometry pnum) 
+    Cairo.setSourceRGBA r g b a
     case pmode of 
       NoPressure -> do 
         Cairo.setLineWidth wdth

@@ -47,7 +47,6 @@ import           Prelude ((.),($),String,Bool(..),error,flip,id,map)
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO () 
 startGUI mfname mhook = do 
-<<<<<<< HEAD
     Gtk.initGUI
     window <- Gtk.windowNew   
     Gtk.windowSetDefaultSize window 800 400

@@ -456,7 +456,6 @@ getMenuUI evar = do
   ui <- Gtk.uiManagerNew
   
   uiDecl <- readFile (resDir </> "menu.xml")   
-<<<<<<< HEAD
   Gtk.uiManagerAddUiFromString ui uiDecl
   Gtk.uiManagerInsertActionGroup ui agr 0 
   Just ra2 <- Gtk.actionGroupGetAction agr ("PENFINEA" :: String)

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 
 -----------------------------------------------------------------------------
@@ -107,7 +108,13 @@ keywordDialog keylst = do
 keywordDialog' :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
 keywordDialog' keys = \_evhandler -> do
     dialog <- Gtk.dialogNew
+#ifdef GTK3
+    upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+    vbox <- Gtk.vBoxNew False 0 
+    Gtk.containerAdd upper vbox
+#else // GTK3
     vbox <- Gtk.dialogGetUpper dialog
+#endif // GTK3
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
     _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
@@ -141,7 +148,14 @@ longTextMessageBox msg = action
     action = doIOaction $ 
                \_evhandler -> do 
                  dialog <- Gtk.dialogNew
+
+#ifdef GTK3
+                 upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+                 vbox <- Gtk.vBoxNew False 0 
+                 Gtk.containerAdd upper vbox
+#else // GTK3
                  vbox <- Gtk.dialogGetUpper dialog
+#endif // GTK3
                  hbox <- Gtk.hBoxNew False 0
                  txtbuf <- Gtk.textBufferNew Nothing
                  Gtk.textBufferSetText txtbuf msg

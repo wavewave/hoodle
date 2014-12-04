@@ -207,9 +207,9 @@ reflectCursor = do
            pcolor = view (penSet . currPen . penColor) pinfo
            pwidth = view (penSet . currPen . penWidth) pinfo 
 #ifdef GTK3
-       Just win <- widgetGetWindow canvas
+       Just win <- Gtk.widgetGetWindow canvas
 #else // GTK3
-       win <- widgetGetDrawWindow canvas
+       win <- Gtk.widgetGetDrawWindow canvas
 #endif // GTK3
        dpy <- Gtk.widgetGetDisplay canvas  
 

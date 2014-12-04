@@ -478,7 +478,13 @@ textInputFromSource (x0,y0) = do
 linePosDialog :: Either (ActionOrder AllEvent) AllEvent
 linePosDialog = mkIOaction $ \_evhandler -> do
     dialog <- Gtk.dialogNew
+#ifdef GTK3
+    upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+    vbox <- Gtk.vBoxNew False 0 
+    Gtk.containerAdd upper vbox
+#else // GTK3
     vbox <- Gtk.dialogGetUpper dialog
+#endif // GTK3
 
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0

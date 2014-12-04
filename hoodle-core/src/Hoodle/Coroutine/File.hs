@@ -629,7 +629,6 @@ mkPangoText str = do
     layout <- liftIO $ pangordr 
     rdr layout
 
-<<<<<<< HEAD
 addOneRevisionBox :: RenderCache -> Gtk.VBox -> Hoodle -> Revision -> IO ()
 addOneRevisionBox cache vbox hdl rev = do 
     cvs <- Gtk.drawingAreaNew 

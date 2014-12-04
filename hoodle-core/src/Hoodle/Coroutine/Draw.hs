@@ -200,7 +200,7 @@ invalidateTemp cid tempsurface rndr = do
 #endif // GTK3
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
 #ifdef GTK3              
-      liftIO $ renderWithDrawWindow win $ do 
+      liftIO $ Gtk.renderWithDrawWindow win $ do 
 #else // GTK3              
       liftIO $ Gtk.renderWithDrawable win $ do   
 #endif // GTK3

@@ -463,7 +463,6 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
               Cairo.rectangle 0 0 w' h' 
               Cairo.fill 
             return sfc 
-  liftIO $ print "gtk3 debug test3"
 
 
   return $ (set (viewInfo.pageArrangement) arr'.set mDrawSurface msfc) cinfo

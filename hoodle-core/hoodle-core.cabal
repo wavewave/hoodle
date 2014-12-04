@@ -28,7 +28,7 @@ Flag Gtk3
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -Werror -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   aeson>=0.7,
@@ -39,7 +39,7 @@ Library
                    base64-bytestring >= 0.1,
                    binary,
                    bytestring >= 0.9, 
-                   cairo > 0.12,
+                   cairo > 0.13,
                    case-insensitive, 
                    cereal >= 0.3.5,
                    containers >= 0.4,
@@ -89,9 +89,9 @@ Library
                    websockets, 
                    xournal-parser >= 0.5.0.2
   if flag(gtk3) 
-    Build-depends: gtk3 > 0.12 
+    Build-depends: gtk3 > 0.13 
   else 
-    Build-depends: gtk > 0.12 
+    Build-depends: gtk > 0.13
 
   Exposed-Modules: 
                    Hoodle.Accessor

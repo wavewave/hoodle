@@ -111,10 +111,14 @@ data UserEvent = Initialized (Maybe FilePath)
                | SwitchTab Int
                | CloseTab UUID
                | DisconnectedHub FilePath (FilePath,FilePath) HubInfo
+               | UIEv UIEvent 
                deriving Show
                       
 instance Show (IORef a) where                      
   show _ = "IORef"
+
+data UIEvent = UIGetFlag Bool
+             deriving Show
 
 
 data RenderEvent = GotRItem RItem

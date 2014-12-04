@@ -1,4 +1,8 @@
-{-# LANGUAGE TypeOperators, GADTs, ScopedTypeVariables, Rank2Types  #-}
+-- {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE Rank2Types  #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -132,24 +136,14 @@ getGeometry4CurrCvs uhdl = do
                 . view (viewInfo.pageArrangement) 
   forBoth' unboxBiAct fsingle cinfobox
 
+
+-- -- | 
+-- waitOnlyEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 
+-- waitOnlyEvent p = do 
+--     r <- nextevent
+--     if  p r then return r else waitOnlyEvent p  
+
   
--- | update flag in HoodleState when corresponding toggle UI changed 
-updateFlagFromToggleUI :: String  -- ^ UI toggle button id
-                       -> Simple Lens HoodleState Bool -- ^ lens for flag 
-                       -> MainCoroutine Bool
-updateFlagFromToggleUI toggleid lensforflag = do 
-  xstate <- St.get 
-  let ui = view gtkUIManager xstate 
-  agr <- liftIO ( Gtk.uiManagerGetActionGroups ui >>= \x ->
-                    case x of 
-                      [] -> error "No action group? "
-                      y:_ -> return y )
-  togglea <- liftIO (Gtk.actionGroupGetAction agr toggleid) 
-             >>= maybe (error "updateFlagFromToggleUI") 
-                       (return . Gtk.castToToggleAction)
-  b <- liftIO $ Gtk.toggleActionGetActive togglea
-  St.modify (set lensforflag b) 
-  return b 
 
 -- | set toggle UI button to the corresponding HoodleState 
 lensSetToggleUIForFlag :: String 

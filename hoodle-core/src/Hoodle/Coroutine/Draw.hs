@@ -21,7 +21,7 @@ module Hoodle.Coroutine.Draw where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Lens (view,set,(^.),(%~),(.~))
+import           Control.Lens -- (view,set,(^.),(%~),(.~))
 import           Control.Monad
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader (runReaderT)
@@ -88,8 +88,29 @@ sysevent ev = liftIO $ print ev
 
 
 
-
-
+-- | update flag in HoodleState when corresponding toggle UI changed 
+updateFlagFromToggleUI :: String  -- ^ UI toggle button id
+                       -> Simple Lens HoodleState Bool -- ^ lens for flag 
+                       -> MainCoroutine Bool
+updateFlagFromToggleUI toggleid lensforflag = do 
+  xstate <- get 
+  let ui = view gtkUIManager xstate 
+  doIOaction $ \_ -> do
+    putStrLn "I am in"
+    agr <- Gtk.uiManagerGetActionGroups ui >>= \x ->
+             case x of 
+               [] -> error "No action group? "
+               y:_ -> return y 
+    togglea <- Gtk.actionGroupGetAction agr toggleid 
+                 >>= maybe (error "updateFlagFromToggleUI") 
+                           (return . Gtk.castToToggleAction)
+    b <- Gtk.toggleActionGetActive togglea
+    putStrLn "I am in 2"
+    return (UsrEv (UIEv (UIGetFlag b)))
+  UIEv (UIGetFlag b) <- 
+    waitSomeEvent (\case UIEv (UIGetFlag _) -> True ; _ -> False) 
+  modify (set lensforflag b) >> return b 
+  
 -- |
 data DrawingFunctionSet = 
   DrawingFunctionSet { singleEditDraw :: DrawingFunction SinglePage EditMode

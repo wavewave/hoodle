@@ -28,7 +28,7 @@ Flag Gtk3
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
+  ghc-options: 	-Wall -dynamic-too  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   aeson>=0.7,
@@ -175,7 +175,7 @@ Library
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
                    csrc/XInput.h
-  cc-options:      -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
+  cc-options:      -fPIC -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
   extra-libraries: X11 Xi dl pthread
   if flag(gtk3)
     cpp-options: -DGTK3

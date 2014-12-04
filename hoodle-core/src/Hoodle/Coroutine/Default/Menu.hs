@@ -127,6 +127,7 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt 
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do 
+    liftIO $ putStrLn "MenuUseXInput called"
     uhdl <- view (unitHoodles.currentUnit) <$> get 
     let cmap = view cvsInfoMap uhdl
         canvases = map (getDrawAreaFromBox) . M.elems $ cmap 

@@ -19,7 +19,9 @@ module Hoodle.Coroutine.Select.Clipboard where
 -- from other packages
 import           Control.Applicative
 import           Control.Lens (view,set,(.~))
-import           Control.Monad.State 
+import           Control.Monad.State
+import           Control.Monad.Trans.Maybe
+import           Data.Maybe (fromMaybe)
 import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Generic 
@@ -81,16 +83,17 @@ copySelection = do
     updateXState copySelectionAction >> invalidateAll 
   where copySelectionAction xst = 
           forBoth' unboxBiAct (fsingle xst) . view (unitHoodles.currentUnit.currentCanvasInfo) $ xst
-        fsingle xst cinfo = maybe (return xst) id $ do  
-          let uhdl = view (unitHoodles.currentUnit) xst
-              hdlmodst = view hoodleModeState uhdl
-              epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
-          eitherMaybe epage `pipe` rItmsInActiveLyr 
-                            `pipe` (Right . liftIO . updateClipboard xst . map rItem2Item . takeHitted)
+        fsingle xst cinfo = do
+            r <- runMaybeT $ do 
+              let uhdl = view (unitHoodles.currentUnit) xst
+                  hdlmodst = view hoodleModeState uhdl
+                  epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
+              pg <- (MaybeT . return . eitherMaybe) epage
+              hitted <- (MaybeT . return . eitherMaybe) (rItmsInActiveLyr pg)
+              (liftIO . updateClipboard xst . map rItem2Item . takeHitted) hitted
+            return (fromMaybe xst r)
           where eitherMaybe (Left _) = Nothing
                 eitherMaybe (Right a) = Just a 
-                x `pipe` a = x >>= eitherMaybe . a 
-                infixl 6 `pipe`
 
 -- |
 getClipFromGtk :: MainCoroutine (Maybe [Item])
@@ -101,11 +104,6 @@ getClipFromGtk = do
       liftIO $ Gtk.clipboardRequestText clipbd (callback4Clip evhandler)
       return (UsrEv ActionOrdered)
     waitSomeEvent (\case GotClipboardContent _ -> True; _ -> False ) >>= \(GotClipboardContent cnt') -> return cnt'
-
-  -- where go = do r <- nextevent 
-  --               case r of 
-  --                 GotClipboardContent cnt' -> return cnt' 
-  --                 _ -> go 
 
 
 -- | 

@@ -39,6 +39,7 @@ module Hoodle.Type.HoodleState
 , callBack
 , deviceList
 , penInfo
+, cursorInfo
 , selectInfo
 , gtkUIManager
 , isSaved
@@ -55,7 +56,6 @@ module Hoodle.Type.HoodleState
 , renderCache
 , pdfRenderQueue
 , doesNotInvalidate
--- , cursorInfo
 , nextPdfBkgPageNum
 -- 
 , hoodleFileName 
@@ -108,7 +108,7 @@ module Hoodle.Type.HoodleState
 
 import           Control.Concurrent
 import           Control.Concurrent.STM
-import           Control.Lens (Simple,Lens,view,set,lens)
+import           Control.Lens (Simple,Lens,view,set,lens,(^.))
 import           Control.Monad.State hiding (get,modify)
 import           Data.Functor.Identity (Identity(..))
 import qualified Data.HashMap.Strict as HM
@@ -174,6 +174,7 @@ data HoodleState =
                 , _callBack ::  AllEvent -> IO ()
                 , _deviceList :: DeviceList
                 , _penInfo :: PenInfo
+                , _cursorInfo :: (PenColor,Double,Bool) -- ^ (pen color, pen width, use variable cursor)
                 , _selectInfo :: SelectInfo 
                 , _gtkUIManager :: Gtk.UIManager 
                 , _isFullScreen :: Bool 
@@ -189,7 +190,6 @@ data HoodleState =
                 , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
                 , _doesNotInvalidate :: Bool
                 , _nextPdfBkgPageNum :: Maybe Int
-                -- , _cursorInfo :: Maybe Cursor
                 } 
 
 
@@ -277,6 +277,11 @@ deviceList = lens _deviceList (\f a -> f { _deviceList = a } )
 -- | lens for penInfo
 penInfo :: Simple Lens HoodleState PenInfo
 penInfo = lens _penInfo (\f a -> f { _penInfo = a } )
+
+-- | lens for cursorInfo
+cursorInfo :: Simple Lens HoodleState (PenColor,Double,Bool)
+cursorInfo = lens _cursorInfo (\f a -> f { _cursorInfo = a } )
+
 
 -- | lens for selectInfo
 selectInfo :: Simple Lens HoodleState SelectInfo
@@ -487,6 +492,7 @@ emptyHoodleState = do
                 , _callBack = error "emtpyHoodleState.callBack"
                 , _deviceList = error "emtpyHoodleState.deviceList"
                 , _penInfo = defaultPenInfo 
+                , _cursorInfo = (defaultPenInfo ^. penSet.currPen.penColor, defaultPenInfo ^. penSet.currPen.penWidth, False)
                 , _selectInfo = SelectInfo SelectLassoWork 
                 , _gtkUIManager = error "emptyHoodleState.gtkUIManager"
                 -- , _isEventBlocked = False 

@@ -21,6 +21,7 @@ import           Control.Applicative
 import           Control.Lens (view,set,(.~))
 import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
+import qualified Data.Foldable as F
 import           Data.Maybe (fromMaybe)
 import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
@@ -109,18 +110,18 @@ getClipFromGtk = do
 -- | 
 pasteToSelection :: MainCoroutine () 
 pasteToSelection = do 
-    mitms <- getClipFromGtk 
-
-    liftIO $ print mitms
-    case mitms of 
-      Nothing -> return () 
-      Just itms -> do 
-        callRenderer $ GotRItems <$> mapM cnstrctRItem itms
-        RenderEv (GotRItems ritms) <- waitSomeEvent (\case RenderEv (GotRItems _) -> True; _ -> False)
-        xst <- get
-        let ui = view gtkUIManager xst
-            cache = view renderCache xst
-        modeChange ToSelectMode >> updateUhdl (pasteAction cache ui ritms) >> commit_ >> invalidateAll  
+    mitms <- getClipFromGtk
+    F.forM_ mitms $ \itms -> do
+      callRenderer $ GotRItems <$> mapM cnstrctRItem itms
+      RenderEv (GotRItems ritms) <- 
+        waitSomeEvent (\case RenderEv (GotRItems _) -> True; _ -> False)
+      xst <- get
+      let ui = view gtkUIManager xst
+          cache = view renderCache xst
+      modeChange ToSelectMode 
+      updateUhdl (pasteAction cache ui ritms)
+      commit_ 
+      invalidateAll  
   where 
     pasteAction cache ui itms uhdl = forBoth' unboxBiAct (fsimple cache ui itms uhdl) 
                                      . view currentCanvasInfo $ uhdl

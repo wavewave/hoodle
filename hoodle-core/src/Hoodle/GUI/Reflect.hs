@@ -17,7 +17,7 @@
 
 module Hoodle.GUI.Reflect where
 
-import           Control.Lens (view, Simple,Lens, (^.))
+import           Control.Lens (view, Simple,Lens, (^.), (.~), _1,_2,_3)
 import           Control.Monad.State as St
 import           Data.Array.MArray
 import qualified Data.Foldable as F (forM_,mapM_) 
@@ -173,78 +173,81 @@ reflectUIToggle ui str b = do
 reflectCursor :: MainCoroutine () 
 reflectCursor = do 
     xst <- St.get 
-    let useVCursor = view (settings.doesUseVariableCursor) xst 
-    let go = do r <- nextevent 
-                case r of
-                  ActionOrdered -> return ()
-                  _ -> go 
-    if useVCursor 
-      then 
-        act xst >> go 
-      else do 
-        doIOaction $ \_ -> do
-          let uhdl       = view (unitHoodles.currentUnit) xst
-              cinfobox   = view currentCanvasInfo uhdl           
-              canvas     = forBoth' unboxBiAct (view drawArea) cinfobox           
+    msgShout "reflectCursor called"
+    let b = view (settings.doesUseVariableCursor) xst
+        pinfo = view penInfo xst 
+        pcolor = view (penSet . currPen . penColor) pinfo
+        pwidth = view (penSet . currPen . penWidth) pinfo 
+        cinfo = view cursorInfo xst
+        (ccolor,cwidth,cvar) = cinfo
+    when (pcolor /= ccolor || pwidth /= cwidth || b /= cvar) $ do
+      msgShout "reflectCursor: change cursor"
+      put . (cursorInfo._1 .~ pcolor) . (cursorInfo._2 .~ pwidth) . (cursorInfo._3 .~ b) $ xst 
+      doIOaction_ $ if b  
+                      then varyCursor xst 
+                      else do let uhdl       = view (unitHoodles.currentUnit) xst
+                                  cinfobox   = view currentCanvasInfo uhdl           
+                                  canvas     = forBoth' unboxBiAct (view drawArea) cinfobox
 #ifdef GTK3
-          Just win <- Gtk.widgetGetWindow canvas
+                              Just win <- Gtk.widgetGetWindow canvas
 #else // GTK3 
-          win <- Gtk.widgetGetDrawWindow canvas
+                              win <- Gtk.widgetGetDrawWindow canvas
 #endif // GTK3
-          Gtk.postGUIAsync (Gtk.drawWindowSetCursor win Nothing) 
-          return (UsrEv ActionOrdered)
-        go 
+                              Gtk.postGUIAsync (Gtk.drawWindowSetCursor win Nothing) 
+                              return (UsrEv ActionOrdered)
  where 
-   act xst = doIOaction $ \_ -> do 
-     Gtk.postGUIAsync $ do 
-       let uhdl = view (unitHoodles.currentUnit) xst
-           -- mcur       = view cursorInfo xst 
-           cinfobox   = view currentCanvasInfo uhdl
-           canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
-           cpn        = PageNum $ 
-                          forBoth' unboxBiAct (view currentPageNum) cinfobox
-           pinfo = view penInfo xst 
-           pcolor = view (penSet . currPen . penColor) pinfo
-           pwidth = view (penSet . currPen . penWidth) pinfo 
+   varyCursor xst = do 
+     putStrLn "reflectCursor : inside act"
+
+     -- Gtk.postGUIAsync $ do 
+     let uhdl = view (unitHoodles.currentUnit) xst
+         -- mcur       = view cursorInfo xst 
+         cinfobox   = view currentCanvasInfo uhdl
+         canvas     = forBoth' unboxBiAct (view drawArea) cinfobox 
+         cpn        = PageNum $ 
+                        forBoth' unboxBiAct (view currentPageNum) cinfobox
+         pinfo = view penInfo xst 
+         pcolor = view (penSet . currPen . penColor) pinfo
+         pwidth = view (penSet . currPen . penWidth) pinfo 
 #ifdef GTK3
-       Just win <- Gtk.widgetGetWindow canvas
+     Just win <- Gtk.widgetGetWindow canvas
 #else // GTK3
-       win <- Gtk.widgetGetDrawWindow canvas
+     win <- Gtk.widgetGetDrawWindow canvas
 #endif // GTK3
-       dpy <- Gtk.widgetGetDisplay canvas  
+     dpy <- Gtk.widgetGetDisplay canvas  
 
-       geometry <- 
-         forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
-                                    in makeCanvasGeometry cpn arr canvas
-                             ) cinfobox
-       let p2c = desktop2Canvas geometry . page2Desktop geometry
-           CvsCoord (x0,_y0) = p2c (cpn, PageCoord (0,0))  
-           CvsCoord (x1,_y1) = p2c (cpn, PageCoord (pwidth,pwidth))
-           cursize = (x1-x0) 
-           (r,g,b,a) = case pcolor of  
-                         ColorRGBA r' g' b' a' -> (r',g',b',a')
-                         _ -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
-       pb <- Gtk.pixbufNew Gtk.ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
-       let numPixels = maxCursorWidth*maxCursorHeight
-       pbData <- (Gtk.pixbufGetPixels pb :: IO (Gtk.PixbufData Int Word8))
-       F.forM_ [0..numPixels-1] $ \i -> do 
-         let cvt :: Double -> Word8
-             cvt x | x < 0.0039 = 0
-                   | x > 0.996  = 255
-                   | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
-         if (fromIntegral (i `mod` maxCursorWidth)) < cursize 
-            && (fromIntegral (i `div` maxCursorWidth)) < cursize 
-           then do 
-             writeArray pbData (4*i)   (cvt r)
-             writeArray pbData (4*i+1) (cvt g)                  
-             writeArray pbData (4*i+2) (cvt b)
-             writeArray pbData (4*i+3) (cvt a)
-           else do
-             writeArray pbData (4*i)   0
-             writeArray pbData (4*i+1) 0
-             writeArray pbData (4*i+2) 0
-             writeArray pbData (4*i+3) 0
+     geometry <- 
+       forBoth' unboxBiAct (\c -> let arr = view (viewInfo.pageArrangement) c
+                                  in makeCanvasGeometry cpn arr canvas
+                           ) cinfobox
+     let p2c = desktop2Canvas geometry . page2Desktop geometry
+         CvsCoord (x0,_y0) = p2c (cpn, PageCoord (0,0))  
+         CvsCoord (x1,_y1) = p2c (cpn, PageCoord (pwidth,pwidth))
+         cursize = (x1-x0) 
+         (r,g,b,a) = case pcolor of  
+                       ColorRGBA r' g' b' a' -> (r',g',b',a')
+                       _ -> maybe (0,0,0,1) id (M.lookup pcolor penColorRGBAmap)
+     pb <- Gtk.pixbufNew Gtk.ColorspaceRgb True 8 maxCursorWidth maxCursorHeight 
+     let numPixels = maxCursorWidth*maxCursorHeight
+     pbData <- (Gtk.pixbufGetPixels pb :: IO (Gtk.PixbufData Int Word8))
+     F.forM_ [0..numPixels-1] $ \i -> do 
+       let cvt :: Double -> Word8
+           cvt x | x < 0.0039 = 0
+                 | x > 0.996  = 255
+                 | otherwise  = fromIntegral (floor (x*256-1) `mod` 256 :: Int)
+       if (fromIntegral (i `mod` maxCursorWidth)) < cursize 
+          && (fromIntegral (i `div` maxCursorWidth)) < cursize 
+         then do 
+           writeArray pbData (4*i)   (cvt r)
+           writeArray pbData (4*i+1) (cvt g)                  
+           writeArray pbData (4*i+2) (cvt b)
+           writeArray pbData (4*i+3) (cvt a)
+         else do
+           writeArray pbData (4*i)   0
+           writeArray pbData (4*i+1) 0
+           writeArray pbData (4*i+2) 0
+           writeArray pbData (4*i+3) 0
 
-       Gtk.drawWindowSetCursor win . Just =<< 
-         Gtk.cursorNewFromPixbuf dpy pb (floor cursize `div` 2) (floor cursize `div` 2)
+     Gtk.drawWindowSetCursor win . Just =<< 
+       Gtk.cursorNewFromPixbuf dpy pb (floor cursize `div` 2) (floor cursize `div` 2)
      return (UsrEv ActionOrdered)

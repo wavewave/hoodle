@@ -64,10 +64,6 @@ moveViewPortBy :: MainCoroutine ()->CanvasId-> ((Double,Double)->(Double,Double)
 moveViewPortBy rndr cid f = 
     updateCanvasInfo moveact cid >> adjustScrollbarWithGeometryCvsId cid >> rndr 
   where     
-    --updater xst = let uhdl = view (unitHoodles.currentUnit) xst
-    --                  cinfobox = getCanvasInfo cid uhdl
-    --                  ncinfobox = (runIdentity . forBoth unboxBiXform (return . moveact)) cinfobox       
-    --              in set unitHoodles (putTheUnit (setCanvasInfo (cid,ncinfobox) uhdl)) xst
     moveact :: CanvasInfo a -> CanvasInfo a 
     moveact cinfo = 
       let BBox (x0,y0) _ = 
@@ -89,7 +85,7 @@ adjustScrollbarWithGeometryCvsId cid = do
   let (hadj,vadj) = view (unboxLens adjustments) cinfobox 
       connidh = view (unboxLens horizAdjConnId) cinfobox 
       connidv = view (unboxLens vertAdjConnId) cinfobox
-  doIOaction_ $ Gtk.postGUIAsync $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
+  doIOaction_ $ A.adjustScrollbarWithGeometry geometry ((hadj,connidh),(vadj,connidv))  
 
 
 -- | 

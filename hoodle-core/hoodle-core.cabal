@@ -69,6 +69,7 @@ Library
                    network, 
                    network-info, 
                    network-simple >= 0.3,
+                   network-uri,
                    old-locale >= 1.0, 
                    pango > 0.12,
                    poppler >= 0.12.2.2, 

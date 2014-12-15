@@ -5,5 +5,5 @@
 > import Config 
 > 
 > main :: IO ()
-> -- main = defaultMainWithHooks myConfigHook
-> main = defaultMain
+> main = defaultMainWithHooks myConfigHook
+> -- main = defaultMain

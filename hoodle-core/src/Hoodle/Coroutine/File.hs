@@ -327,7 +327,7 @@ fileSaveAs = do
                 liftIO $ reflectUIToggle ui "SAVEA" False
                 liftIO $ setTitleFromFileName xst
                 S.afterSaveHook filename hdl''
-          
+                hubUpload          
 
 -- | main coroutine for open a file 
 fileReload :: MainCoroutine ()

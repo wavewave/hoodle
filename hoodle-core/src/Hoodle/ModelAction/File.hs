@@ -26,6 +26,7 @@ import qualified Data.ByteString.Lazy.Char8 as L
 import           Data.Maybe 
 import           Data.Monoid ((<>))
 import           Data.Time.Clock
+import qualified Data.Traversable as T
 import           Graphics.GD.ByteString 
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
@@ -39,7 +40,8 @@ import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Type.Hoodle
 import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
-import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2 as MV
+import qualified Text.Hoodle.Migrate.V0_2_2_to_V0_3 as MV
+import qualified Text.Hoodle.Migrate.V0_3_to_HEAD as MVHEAD
 -- from this package
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
@@ -50,8 +52,8 @@ checkVersionAndMigrate bstr = do
   case parseOnly PA.checkHoodleVersion bstr of 
     Left str -> error str 
     Right v -> do 
-      if ( v <= "0.1.1" ) 
-        then MV.migrate bstr
+      if ( v <= "0.2.2" ) 
+        then T.traverse MVHEAD.hoodle2Hoodle =<< (MV.migrate bstr)
         else return (parseOnly PA.hoodle bstr)
 
 -- | this is very temporary, need to be changed.     

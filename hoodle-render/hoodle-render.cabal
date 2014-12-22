@@ -32,7 +32,7 @@ Library
                  directory, 
                  filepath, 
                  gd >= 3000.7,  
-                 hoodle-types >= 0.3,
+                 hoodle-types >= 0.3.0,
                  lens >= 2.5, 
                  monad-loops >= 0.3,  
                  mtl == 2.*, 

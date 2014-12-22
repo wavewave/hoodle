@@ -32,6 +32,7 @@ Library
                    Text.Hoodle.Builder
                    Text.Hoodle.Builder.V0_1_1
                    Text.Hoodle.Builder.V0_2_2
+                   Text.Hoodle.Builder.V0_3
                    Text.Hoodlet.Builder
   Other-Modules: 
 

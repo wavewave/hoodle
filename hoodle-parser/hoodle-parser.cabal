@@ -33,10 +33,12 @@ Library
                  either >= 3.1
   Exposed-Modules: 
                    Text.Hoodle.Migrate.FromXournal
-                   Text.Hoodle.Migrate.V0_1_1_to_V0_2
+                   Text.Hoodle.Migrate.V0_1_1_to_V0_2_2
+                   Text.Hoodle.Migrate.V0_2_2_to_V0_3
                    Text.Hoodle.Parse.Attoparsec
                    Text.Hoodle.Parse.Attoparsec.V0_1_1
                    Text.Hoodle.Parse.Attoparsec.V0_2_2
+                   Text.Hoodle.Parse.Attoparsec.V0_3
                    Text.Hoodle.Parse.Zlib
                    Text.Hoodlet.Parse.Attoparsec
 

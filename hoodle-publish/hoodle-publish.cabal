@@ -1,5 +1,5 @@
 Name:		hoodle-publish
-Version:	0.1.999
+Version:	0.2
 Synopsis:	publish hoodle files as a static web site
 Description: 	This package provieds a simple tool hoodle-publish which make a static web site from a directory containing hoodle files
 Homepage:       http://ianwookim.org/hoodle
@@ -31,22 +31,19 @@ Library
                    bytestring >= 0.9, 
                    cairo > 0.12,
                    containers >= 0.4,
-                   -- coroutine-object >= 0.2, 
                    directory > 1,
                    directory-tree, 
                    filepath > 1, 
-                   hoodle-parser >= 0.2,
+                   hoodle-parser >= 0.4,
                    hoodle-render >= 0.3.1,
-                   hoodle-types >= 0.3,
+                   hoodle-types >= 0.4,
                    HTTP,
                    io-streams, 
                    lens >= 2.5,
                    mtl > 2,
-                   -- network, 
                    network-uri > 2.6,
                    pdf-toolbox-core >= 0.0.3, 
                    pdf-toolbox-document >= 0.0.3, 
-                   -- poppler >= 0.12.2.2, 
                    process >= 1.1, 
                    transformers >= 0.3,
                    unordered-containers,

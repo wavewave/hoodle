@@ -1,5 +1,5 @@
 Name:		hoodle-builder
-Version:	0.3
+Version:	0.4
 Synopsis:	text builder for hoodle file format 
 Description: 	This library builds text xoj format file from hoodle data structure
 License: 	BSD3
@@ -23,7 +23,7 @@ Library
                    base == 4.*,
                    blaze-builder >= 0.3, 
                    bytestring >= 0.9, 
-                   hoodle-types >= 0.3,
+                   hoodle-types >= 0.4,
                    lens >= 2.5,
                    strict >= 0.3, 
                    text > 0.11

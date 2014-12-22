@@ -147,7 +147,9 @@ menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings.do
 menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings.doesKeepAspectRatio) >> return ()
 menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings.doesUseVariableCursor) >> reflectCursor >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
+#ifdef DYRE
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
+#endif
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuAddLink = addLink

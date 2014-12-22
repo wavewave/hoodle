@@ -1,9 +1,10 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.StartUp
--- Copyright   : (c) 2012 Ian-Woo Kim
+-- Copyright   : (c) 2012, 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,7 +16,9 @@
 module Hoodle.StartUp where 
 
 -- from other packages 
+#ifdef DYRE
 import qualified Config.Dyre as Dyre 
+#endif
 import           System.Console.CmdArgs
 import           System.FilePath
 import           System.Environment
@@ -37,13 +40,18 @@ hoodleMain ScriptConfig {..} = do
 
 -- | 
 hoodleStartMain :: ScriptConfig -> IO ()
-hoodleStartMain = Dyre.wrapMain $ Dyre.defaultParams 
-  { Dyre.projectName = "start"
-  , Dyre.configDir = Just dirHoodled
-  , Dyre.realMain = hoodleMain 
-  , Dyre.showError = showError 
-  , Dyre.ghcOpts = [ "-threaded" ]
-  } 
+hoodleStartMain = 
+#ifdef DYRE
+  Dyre.wrapMain $ Dyre.defaultParams 
+    { Dyre.projectName = "start"
+    , Dyre.configDir = Just dirHoodled
+    , Dyre.realMain = hoodleMain 
+    , Dyre.showError = showError 
+    , Dyre.ghcOpts = [ "-threaded" ]
+    } 
+#else
+  hoodleMain
+#endif
 
 -- | 
 dirHoodled :: IO FilePath 

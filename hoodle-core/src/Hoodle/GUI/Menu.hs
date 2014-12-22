@@ -376,8 +376,12 @@ getMenuUI evar = do
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
-
+#ifdef DYRE
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
+#else
+  relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuDefault)
+#endif
+
 #ifdef HUB
   huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuHub)
   hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuHubSocket)
@@ -455,6 +459,9 @@ getMenuUI evar = do
         , setdefopta
         , abouta
         , defaulta         
+#ifndef DYRE
+        , relauncha
+#endif
 #ifndef HUB
         , editnetsrca
         , huba
@@ -465,7 +472,7 @@ getMenuUI evar = do
         [ opena, savea, saveasa, reloada, versiona, showreva, showida, quita
         , pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
-        , newpagemoda, relauncha
+        , newpagemoda
         ]
   --
   mapM_ (\x->Gtk.actionSetSensitive x True) enabledActions  

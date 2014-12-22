@@ -218,7 +218,9 @@ data MenuEvent = MenuNew
                | MenuDefaultHighlighter
                | MenuDefaultText 
                | MenuSetAsDefaultOption
+#ifdef DYRE
                | MenuRelaunch
+#endif
                | MenuUseXInput
                | MenuUseTouch 
                | MenuUsePopUpMenu

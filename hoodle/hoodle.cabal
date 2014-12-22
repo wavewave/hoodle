@@ -16,6 +16,11 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle
 
+Flag Dyre
+  Description:     dynamic reconfiguration support
+  Default:         False
+
+
 Executable hoodle
   Main-is: hoodle.hs
   hs-source-dirs: exe
@@ -38,8 +43,10 @@ Library
                    containers >= 0.4,
                    cmdargs >= 0.7,
                    configurator >= 0.2,
-                   dyre >= 0.8.11, 
                    hoodle-core >= 0.14.999
+  if flag(dyre)
+    Build-depends:   dyre >= 0.8.11
+   
   Exposed-Modules: 
                    Hoodle.ProgType
                    Hoodle.Job
@@ -47,3 +54,5 @@ Library
                    Hoodle.StartUp
   Other-Modules: 
                    Paths_hoodle
+  if flag(dyre)
+    cpp-options: -DDYRE

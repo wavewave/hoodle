@@ -1,7 +1,9 @@
+{-# LANGUAGE CPP #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Script
--- Copyright   : (c) 2012, 2013 Ian-Woo Kim
+-- Copyright   : (c) 2012-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -13,7 +15,9 @@
 module Hoodle.Script where 
 
 import Hoodle.Script.Hook
+#ifdef DYRE
 import Config.Dyre.Relaunch
+#endif
 
 -- | 
 
@@ -34,10 +38,10 @@ showError cfg msg = cfg { errorMsg = Just msg }
 
 
 -- | 
-
+#ifdef DYRE
 relaunchApplication :: IO ()
 relaunchApplication = do 
   putStrLn "relaunching hoodle!"
   relaunchMaster Nothing 
-  
+#endif
   

@@ -21,7 +21,7 @@ import           Control.Lens (view,over,_1)
 import           Control.Monad
 import           Control.Monad.State 
 import           Control.Monad.Trans.Either
-import qualified Graphics.UI.Gtk as Gtk
+-- import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Data.Functor.Identity (Identity(..))

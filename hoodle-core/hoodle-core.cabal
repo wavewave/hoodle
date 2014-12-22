@@ -26,6 +26,10 @@ Flag Gtk3
   Description:     compile with gtk3
   Default:         False 
 
+Flag Hub
+  Description:     communication with Hub
+  Default:         False
+
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -dynamic-too  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
@@ -45,7 +49,6 @@ Library
                    containers >= 0.4,
                    configurator >= 0.2,
                    coroutine-object >= 0.2, 
-                   dbus >= 0.10, 
                    Diff >= 0.3,
                    directory > 1,
                    dyre >= 0.8.11, 
@@ -60,15 +63,15 @@ Library
                    hoodle-publish >= 0.1.999,
                    hoodle-render >= 0.4.0,
                    hoodle-types >= 0.3,
-                   http-client,
-                   http-conduit, 
+                   -- http-client,
+                   -- http-conduit, 
                    http-types,
                    lens >= 2.5,
                    monad-loops >= 0.3, 
                    mtl > 2,
-                   network > 2.6, 
-                   network-info, 
-                   network-simple >= 0.3,
+                   -- network > 2.6, 
+                   -- network-info, 
+                   -- network-simple >= 0.3,
                    network-uri > 2.6,
                    old-locale >= 1.0, 
                    pango > 0.12,
@@ -93,6 +96,15 @@ Library
     Build-depends: gtk3 > 0.13 
   else 
     Build-depends: gtk > 0.13
+  if flag(hub)
+    Build-depends: 
+                   dbus >= 0.10, 
+                   http-client,
+                   http-conduit,
+                   network > 2.6, 
+                   network-info, 
+                   network-simple >= 0.3
+                   -- network-uri > 2.6
 
   Exposed-Modules: 
                    Hoodle.Accessor
@@ -108,20 +120,16 @@ Library
                    Hoodle.Coroutine.File
                    Hoodle.Coroutine.HandwritingRecognition
                    Hoodle.Coroutine.Highlighter
-                   Hoodle.Coroutine.Hub
-                   Hoodle.Coroutine.HubInternal
                    Hoodle.Coroutine.Layer
                    Hoodle.Coroutine.Link
                    Hoodle.Coroutine.Minibuffer
                    Hoodle.Coroutine.Mode
-                   Hoodle.Coroutine.Network
                    Hoodle.Coroutine.Page
                    Hoodle.Coroutine.Pen
                    Hoodle.Coroutine.Scroll
                    Hoodle.Coroutine.Select
                    Hoodle.Coroutine.Select.Clipboard
                    Hoodle.Coroutine.Select.ManipulateImage
-                   Hoodle.Coroutine.Socket
                    Hoodle.Coroutine.TextInput
                    Hoodle.Coroutine.LaTeX
                    Hoodle.Coroutine.VerticalSpace 
@@ -153,7 +161,6 @@ Library
                    Hoodle.Type.Enum
                    Hoodle.Type.Event 
                    Hoodle.Type.HoodleState
-                   Hoodle.Type.Hub
                    Hoodle.Type.PageArrangement 
                    Hoodle.Type.Predefined
                    Hoodle.Type.Undo 
@@ -167,6 +174,14 @@ Library
                    Hoodle.Widget.Layer 
                    Hoodle.Widget.PanZoom
                    Hoodle.Widget.Scroll
+  if flag(hub)
+    Exposed-Modules: Hoodle.Coroutine.Hub
+                     Hoodle.Coroutine.HubInternal
+                     Hoodle.Coroutine.Network
+                     Hoodle.Coroutine.Socket
+                     Hoodle.Type.Hub
+
+
   Other-Modules: 
                    Paths_hoodle_core
   c-sources: 
@@ -180,3 +195,5 @@ Library
   extra-libraries: X11 Xi dl pthread
   if flag(gtk3)
     cpp-options: -DGTK3
+  if flag(hub)
+    cpp-options: -DHUB

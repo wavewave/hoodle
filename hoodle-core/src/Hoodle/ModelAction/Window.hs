@@ -30,8 +30,10 @@ import qualified Data.Text as T
 import           Data.Traversable (traverse)
 import           Data.UUID (UUID)
 import           Data.UUID.V4
+#ifdef HUB
 import           DBus hiding (UUID)
 import           DBus.Client
+#endif
 import qualified Graphics.UI.Gtk as Gtk
 import           System.FilePath
 -- from this package
@@ -43,6 +45,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Util
 -- 
 
+#ifdef HUB
 getDBUSEvent :: (AllEvent -> IO ()) -> TVar Bool -> IO ()
 getDBUSEvent callback tvar = do
     client <- connectSession
@@ -71,6 +74,7 @@ getDBUSEvent callback tvar = do
             (Gtk.postGUISync . callback . UsrEv . DBusEv . DBusNetworkInput . head) 
               latex
             return ()
+#endif
 
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO () 
@@ -122,7 +126,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
     Gtk.widgetGrabFocus canvas     
 #ifdef GTK3
     {- 
-#endif // GTK3
+#endif
     _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
     _keyevent <- canvas `Gtk.on` Gtk.keyPressEvent $ Gtk.tryEvent $ do 
       m <- Gtk.eventModifier
@@ -147,18 +151,21 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                     case pbtn of 
                       TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
                       _ -> (liftIO . callback . UsrEv) (PenUp cid p)
+#ifdef HUB
     tvar <- newTVarIO False 
     forkIO $ getDBUSEvent callback tvar
     _focus <- canvas `Gtk.on` Gtk.focusInEvent $ Gtk.tryEvent $ liftIO $ do
                 atomically (writeTVar tvar True)
                 Gtk.widgetGrabFocus canvas 
     _focusout <- canvas `Gtk.on` Gtk.focusOutEvent $ Gtk.tryEvent $ liftIO $ atomically (writeTVar tvar False)
+#endif
+
 
 #ifdef GTK3
     _exposeev <- canvas `Gtk.on` Gtk.draw $ do 
-#else // GTK3
+#else
     _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-#endif // GTK3
+#endif
       liftIO $ Gtk.widgetGrabFocus canvas       
       (liftIO . callback . UsrEv) (UpdateCanvas cid) 
     canvas `Gtk.on` Gtk.motionNotifyEvent $ Gtk.tryEvent $ do 
@@ -184,10 +191,10 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                           return (Gtk.castToToggleAction x) )
     b <- liftIO $ Gtk.toggleActionGetActive uxinputa
 #ifdef GTK3    
-#else // GTK3
+#else
     if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
          else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
-#endif // GTK3
+#endif
     hadjconnid <- Gtk.afterValueChanged hadj $ do 
                     v <- Gtk.adjustmentGetValue hadj 
                     (callback . UsrEv) (HScrollBarMoved cid v)
@@ -207,7 +214,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                    , _vertAdjConnId = Just vadjconnid }
 #ifdef GTK3
     -}
-#endif // GTK3
+#endif
     -- temp
     return $ cinfo     
 

@@ -222,7 +222,7 @@ switchTab tabnum = do
         forBoth' unboxBiAct $ \cinfo -> do
           (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 
           doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
-#endif // not GTK3
+#endif
       invalidateAll 
       liftIO $ reflectUIToggle (xst ^. gtkUIManager) "SAVEA" (not (uhdl ^. isSaved))
 

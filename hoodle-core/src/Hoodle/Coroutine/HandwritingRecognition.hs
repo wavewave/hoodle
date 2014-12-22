@@ -105,9 +105,9 @@ showRecogTextDialog txts = do
                upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                vbox <- Gtk.vBoxNew False 0        
                Gtk.containerAdd upper vbox
-#else // GTK3
+#else
                vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
                let txtlst' = zip [1..] txts
                txtlst <- forM txtlst' $ \(n,txt) -> do
                  let str = T.unpack txt 

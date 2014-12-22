@@ -61,7 +61,6 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
-import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.Page
@@ -82,6 +81,9 @@ import           Hoodle.Type.Event hiding (TypSVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
+#ifdef HUB
+import           Hoodle.Coroutine.Hub
+#endif
 --
 import Prelude hiding (readFile,concat,mapM,mapM_)
 
@@ -180,7 +182,9 @@ fileSave = do
           then do 
              updateUhdl $ liftIO . saveHoodle . const uhdl 
              (S.afterSaveHook filename . rHoodle2Hoodle . getHoodle) uhdl
+#ifdef HUB
              hubUpload
+#endif
           else fileExtensionInvalid (".hdl","save") >> fileSaveAs 
 
 -- | interleaving a monadic action between each pair of subsequent actions
@@ -327,7 +331,9 @@ fileSaveAs = do
                 liftIO $ reflectUIToggle ui "SAVEA" False
                 liftIO $ setTitleFromFileName xst
                 S.afterSaveHook filename hdl''
+#ifdef HUB
                 hubUpload          
+#endif
 
 -- | main coroutine for open a file 
 fileReload :: MainCoroutine ()
@@ -599,9 +605,9 @@ showRevisionDialog hdl revs =
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
       vbox <- Gtk.vBoxNew False 0
       Gtk.containerAdd upper vbox 
-#else // GTK3
+#else 
       vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
       mapM_ (addOneRevisionBox cache vbox hdl) revs 
       _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
       Gtk.widgetShowAll dialog
@@ -636,14 +642,14 @@ addOneRevisionBox cache vbox hdl rev = do
     cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
 #ifdef GTK3      
       Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs 
-#else // GTK3
+#else
       drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs 
-#endif // GTK3
+#endif
 #ifdef GTK3
       liftIO . Gtk.renderWithDrawWindow drawwdw $ do
-#else // GTK3
+#else 
       liftIO . Gtk.renderWithDrawable drawwdw $ do 
-#endif // GTK3
+#endif
         case rev of 
           RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache) strks
           Revision _ txt -> mkPangoText (B.unpack txt)            

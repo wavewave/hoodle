@@ -263,17 +263,28 @@ getMenuUI evar = do
   texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   textsrca <- actionNewAndRegister "TEXTSRCA" "Embed Text Source" (Just "Just a Stub") Nothing (justMenu MenuEmbedTextSource)
   editsrca <- actionNewAndRegister "EDITSRCA" "Edit text source" (Just "Just a Stub") Nothing (justMenu MenuEditEmbedTextSource)
+#ifdef HUB
   editnetsrca <- actionNewAndRegister "EDITNETSRCA" "Network edit text source" (Just "Just a Stub") Nothing (justMenu MenuEditNetEmbedTextSource)
-
+#else
+  editnetsrca <- actionNewAndRegister "EDITNETSRCA" "Network edit text source" (Just "Just a Stub") Nothing (justMenu MenuDefault)
+#endif
   textfromsrca <- actionNewAndRegister "TEXTFROMSRCA" "Text From Source" (Just "Just a Stub") Nothing (justMenu MenuTextFromSource)
 
 
   togglenetsrca <- Gtk.toggleActionNew ("TOGGLENETSRCA" :: String) "Toggle network edit text source" (Just "Just a Stub") Nothing
+#ifdef HUB
   togglenetsrca `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuToggleNetworkEditSource))
-
+#else
+  togglenetsrca `Gtk.on` Gtk.actionToggled $ do
+    eventHandler evar (UsrEv (Menu MenuDefault))
+#endif
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
+#ifdef HUB
   latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
+#else
+  latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuDefault)  
+#endif
   combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
   latexfromsrca <- actionNewAndRegister "LATEXFROMSRCA" "LaTeX From Source" (Just "Just a Stub") Nothing (justMenu MenuLaTeXFromSource)   
   updatelatexa <- actionNewAndRegister "UPDATELATEXA" "Update LaTeX" (Just "Just a Stub") Nothing (justMenu MenuUpdateLaTeX)   
@@ -367,8 +378,13 @@ getMenuUI evar = do
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
 
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
+#ifdef HUB
   huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuHub)
   hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuHubSocket)
+#else
+  huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuDefault)
+  hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuDefault)
+#endif
 
 
   -- window menu
@@ -439,12 +455,17 @@ getMenuUI evar = do
         , setdefopta
         , abouta
         , defaulta         
+#ifndef HUB
+        , editnetsrca
+        , huba
+        , hubsocketa
+#endif
         ] 
       enabledActions = 
         [ opena, savea, saveasa, reloada, versiona, showreva, showida, quita
         , pastea, fstpagea, prvpagea, nxtpagea, lstpagea
         , clra, penopta, zooma, nrmsizea, pgwdtha, texta  
-        , newpagemoda, relauncha, huba, hubsocketa
+        , newpagemoda, relauncha
         ]
   --
   mapM_ (\x->Gtk.actionSetSensitive x True) enabledActions  
@@ -472,12 +493,12 @@ getMenuUI evar = do
   Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar1) Gtk.ToolbarIcons 
 #ifndef GTK3
   Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar1) Gtk.IconSizeSmallToolbar
-#endif // not GTK3
+#endif 
   Just toolbar2 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar2" :: String)
   Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar2) Gtk.ToolbarIcons 
 #ifndef GTK3
   Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar2) Gtk.IconSizeSmallToolbar  
-#endif // not GTK3
+#endif 
     
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 

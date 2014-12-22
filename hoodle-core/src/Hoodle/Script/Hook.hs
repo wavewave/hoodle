@@ -1,7 +1,9 @@
+{-# LANGUAGE CPP #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Script.Hook
--- Copyright   : (c) 2012, 2013 Ian-Woo Kim
+-- Copyright   : (c) 2012-2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -15,7 +17,9 @@ module Hoodle.Script.Hook where
 import Data.Hoodle.Simple 
 import Graphics.Hoodle.Render.Type.Hoodle
 -- 
+#ifdef HUB
 import Hoodle.Type.Hub
+#endif
 
 -- | 
 data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
@@ -34,7 +38,9 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , warningEmbedImageSize :: Maybe Integer
                  , shrinkCmd4EmbedImage :: Maybe (Double -> FilePath -> FilePath -> IO ())  
                  , getIPaddress :: Maybe (IO String)
+#ifdef HUB
                  , hubInfo :: Maybe HubInfo
+#endif
                  } 
 
 
@@ -55,5 +61,7 @@ defaultHook = Hook { saveAsHook = Nothing
                    , warningEmbedImageSize = Nothing
                    , shrinkCmd4EmbedImage = Nothing
                    , getIPaddress = Nothing
+#ifdef HUB
                    , hubInfo = Nothing
+#endif
                    }

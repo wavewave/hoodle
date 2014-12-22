@@ -73,7 +73,7 @@ startGUI mfname mhook = do
     if xinputbool
         then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
         else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
-#endif // not GTK3
+#endif
     --
     outerLayout ui vbox st0 
     window `Gtk.on` Gtk.deleteEvent $ do

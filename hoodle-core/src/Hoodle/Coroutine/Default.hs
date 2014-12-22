@@ -60,7 +60,6 @@ import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Highlighter
-import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Link
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
@@ -89,6 +88,9 @@ import           Hoodle.Type.Widget
 import           Hoodle.Util
 import           Hoodle.Widget.Dispatch 
 import           Hoodle.Widget.PanZoom
+#ifdef HUB
+import           Hoodle.Coroutine.HubInternal
+#endif
 --
 import Prelude hiding (mapM_)
 
@@ -189,7 +191,9 @@ guiProcess ev = do
     reflectNewPageModeUI
     viewModeChange ToContSinglePage
     pageZoomChange FitWidth
+#ifdef HUB
     startLinkReceiver
+#endif
     -- main loop 
     sequence_ (repeat dispatchMode)
 
@@ -396,13 +400,14 @@ defaultEventProcess (CustomKeyEvent str) = do
   where 
     colorfunc c = doIOaction $ \_evhandler -> return (UsrEv (PenColorChanged c))
     toolfunc t = doIOaction $ \_evhandler -> return (UsrEv (AssignPenMode (Left t)))
-defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
-defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
-defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
-defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (SwitchTab i) = switchTab i
 defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> askIfSave closeTab)
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
+#ifdef HUB
+defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
+defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
+defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
+defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
 defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
     b <- okCancelMessageBox "authentication failure! do you want to start from the beginning?"
     when b $ do
@@ -410,6 +415,7 @@ defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
       case r' of 
         Left _ ->  msgShout "DisconnectedHub" >>  return ()
         Right _ -> uploadWork (ofile,file) hinfo
+#endif
 defaultEventProcess ev = -- for debugging
                          do msgShout "--- no default ---"
                             msgShout (show ev)

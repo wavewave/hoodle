@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -20,13 +21,15 @@ import           Control.Exception
 import qualified Data.ByteString.Char8 as B
 import           Data.Foldable (forM_)
 import           Data.UUID.V4
-import           DBus 
-import           DBus.Client 
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory 
 import           System.FilePath 
 import           System.Process
+#ifdef HUB
+import           DBus 
+import           DBus.Client 
+#endif
 -- 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -47,6 +50,7 @@ menuOpenALink evhandler urlpath = do
     return menuitemlnk
 
 -- | 
+#ifdef HUB
 openLinkActionDBus :: UrlPath 
                -> Maybe (B.ByteString,B.ByteString) -- ^ (docid,anchorid)
                -> IO () 
@@ -71,6 +75,8 @@ openLinkActionDBus urlpath mid = do
                                                 ++ "," 
                                                 ++ B.unpack anchorid) ] }
       return ()
+#endif
+
 
 -- | 
 menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe Gtk.MenuItem)

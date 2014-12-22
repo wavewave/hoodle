@@ -75,11 +75,11 @@ textInputDialog msg = do
                    vbox <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                    txtvw <- Gtk.textViewNew
                    Gtk.containerAdd vbox txtvw  
-#else // GTK3
+#else 
                    vbox <- Gtk.dialogGetUpper dialog
                    txtvw <- Gtk.textViewNew
                    Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
-#endif // GTK3
+#endif
                    Gtk.widgetShowAll dialog
                    res <- Gtk.dialogRun dialog 
                    case res of 
@@ -112,9 +112,9 @@ keywordDialog' keys = \_evhandler -> do
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     vbox <- Gtk.vBoxNew False 0 
     Gtk.containerAdd upper vbox
-#else // GTK3
+#else
     vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
     _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
@@ -153,9 +153,9 @@ longTextMessageBox msg = action
                  upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                  vbox <- Gtk.vBoxNew False 0 
                  Gtk.containerAdd upper vbox
-#else // GTK3
+#else
                  vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
                  hbox <- Gtk.hBoxNew False 0
                  txtbuf <- Gtk.textBufferNew Nothing
                  Gtk.textBufferSetText txtbuf msg

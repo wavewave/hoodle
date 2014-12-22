@@ -190,9 +190,9 @@ reflectCursor = do
                                   canvas     = forBoth' unboxBiAct (view drawArea) cinfobox
 #ifdef GTK3
                               Just win <- Gtk.widgetGetWindow canvas
-#else // GTK3 
+#else
                               win <- Gtk.widgetGetDrawWindow canvas
-#endif // GTK3
+#endif
                               Gtk.postGUIAsync (Gtk.drawWindowSetCursor win Nothing) 
                               return (UsrEv ActionOrdered)
  where 
@@ -211,9 +211,9 @@ reflectCursor = do
          pwidth = view (penSet . currPen . penWidth) pinfo 
 #ifdef GTK3
      Just win <- Gtk.widgetGetWindow canvas
-#else // GTK3
+#else
      win <- Gtk.widgetGetDrawWindow canvas
-#endif // GTK3
+#endif
      dpy <- Gtk.widgetGetDisplay canvas  
 
      geometry <- 

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -167,7 +168,9 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
     insertItemAt Nothing newitem 
 processContextMenu (CMenuPangoConvert (x0,y0) txt) = textInput (Just (x0,y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0,y0) txt) = laTeXInput (Just (x0,y0)) txt
+#ifdef HUB
 processContextMenu (CMenuLaTeXConvertNetwork (x0,y0) txt) = laTeXInputNetwork (Just (x0,y0)) txt
+#endif
 processContextMenu (CMenuLaTeXUpdate (x0,y0) dim key) = runMaybeT (laTeXInputKeyword (x0,y0) (Just dim) key) >> return ()
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
@@ -387,11 +390,13 @@ showContextMenu (pnum,(x,y)) = do
                           evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert (x0,y0) txt)))
                         Gtk.menuAttach menu menuitemedt 0 1 4 5 
                         --
+#ifdef HUB
                         menuitemnet <- Gtk.menuItemNewWithLabel ("Edit LaTeX Network" :: String)
                         menuitemnet `Gtk.on` Gtk.menuItemActivate $ do
                           evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvertNetwork (x0,y0) txt)))
                         Gtk.menuAttach menu menuitemnet 0 1 5 6
                         return ()
+#endif
                         -- 
                         let (txth,txtt) = T.splitAt 19 txt 
                         when ( txth == "embedlatex:keyword:" ) $ do

@@ -22,7 +22,6 @@ import           Control.Applicative
 import           Control.Lens (Simple,Lens,view,set,(.~))
 import           Control.Monad hiding (mapM_, forM_)
 import qualified Control.Monad.State as St hiding (mapM_, forM_)
-import           Control.Monad.Trans
 import           Data.Foldable
 import qualified Data.IntMap as M
 import qualified Graphics.UI.Gtk as Gtk
@@ -31,8 +30,6 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render.Type
 -- from this package
--- import           Hoodle.GUI.Menu
--- import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.Type
 import           Hoodle.Type.Alias

@@ -52,10 +52,10 @@ layerChooseDialog layernumref cidx len = do
 #ifdef GTK3    
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     Gtk.containerAdd upper hbox
-#else // GTK3
+#else
     upper <- Gtk.dialogGetUpper dialog
     Gtk.boxPackStart upper hbox Gtk.PackNatural 0 
-#endif // GTK3
+#endif
     Gtk.boxPackStart hbox layerentry Gtk.PackNatural 0 
     Gtk.boxPackStart hbox label Gtk.PackGrow 0 
     Gtk.widgetShowAll upper

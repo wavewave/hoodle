@@ -36,14 +36,12 @@ import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.HandwritingRecognition
-import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.Layer
 import           Hoodle.Coroutine.Link
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Select.Clipboard
-import           Hoodle.Coroutine.Socket
 import           Hoodle.Coroutine.TextInput
 import           Hoodle.Coroutine.Window
 import           Hoodle.GUI.Reflect
@@ -59,8 +57,14 @@ import           Hoodle.Widget.Clock
 import           Hoodle.Widget.Layer
 import           Hoodle.Widget.PanZoom
 import           Hoodle.Widget.Scroll
+#ifdef HUB
+import           Hoodle.Coroutine.Hub
+import           Hoodle.Coroutine.Socket
+#endif
 --
 import Prelude hiding (mapM_)
+
+
 
 -- |
 menuEventProcess :: MenuEvent -> MainCoroutine () 
@@ -87,13 +91,9 @@ menuEventProcess MenuLoadSVG = fileLoadSVG
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuEmbedTextSource = embedTextSource
 menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource
-menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
 menuEventProcess MenuTextFromSource = textInputFromSource (100,100)
-menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
 menuEventProcess MenuLaTeX = 
     laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
-menuEventProcess MenuLaTeXNetwork = 
-    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuCombineLaTeX = combineLaTeXText 
 menuEventProcess MenuLaTeXFromSource = laTeXInputFromSource (100,100)
 -- menuEventProcess MenuUpdateLaTeX = updateLaTeX
@@ -134,11 +134,11 @@ menuEventProcess MenuUseXInput = do
     updateFlagFromToggleUI "UXINPUTA" (settings.doesUseXInput) >>= \b -> 
 #ifdef GTK3      
       return ()
-#else // GTK3
+#else
       if b
         then mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsAll]) canvases
         else mapM_ (\x->liftIO $ Gtk.widgetSetExtensionEvents x [Gtk.ExtensionEventsNone] ) canvases
-#endif // GTK3
+#endif
 menuEventProcess MenuUseTouch = toggleTouch
 menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings.doesUsePopUpMenu) >> return ()
 menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings.doesEmbedImage) >> return ()
@@ -148,8 +148,6 @@ menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (sett
 menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings.doesUseVariableCursor) >> reflectCursor >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo.variableWidthPen) >> return ()  
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
-menuEventProcess MenuHub = hubUpload
-menuEventProcess MenuHubSocket = socketConnect
 menuEventProcess MenuColorPicker = colorPick 
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuAddLink = addLink
@@ -185,6 +183,14 @@ menuEventProcess MenuHandwritingRecognitionDialog =
 menuEventProcess MenuAddTab = addTab Nothing
 -- menuEventProcess MenuNextTab = nextTab
 menuEventProcess MenuCloseTab = closeTab
+#ifdef HUB
+menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
+menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
+menuEventProcess MenuLaTeXNetwork = 
+    laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
+menuEventProcess MenuHub = hubUpload
+menuEventProcess MenuHubSocket = socketConnect
+#endif
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 -- | 
@@ -200,7 +206,7 @@ colorPickerBox msg = do
 #ifdef GTK3 
     -- color selection dialog is incomplete in gtk3
     return Nothing
-#else // GTK3
+#else
     xst <- get 
     let pcolor = view (penInfo.currentTool.penColor) xst   
     doIOaction (action pcolor) >> go
@@ -227,4 +233,4 @@ colorPickerBox msg = do
               UpdateCanvas cid -> -- this is temporary
                 invalidateInBBox Nothing Efficient cid >> go
               _ -> go 
-#endif // GTK3
+#endif

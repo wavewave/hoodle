@@ -78,14 +78,14 @@ minibufDialog msg = do
       cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do
 #ifdef GTK3        
         Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs
-#else // GTK3
+#else
         drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs                 
-#endif // GTK3
+#endif
 #ifdef GTK3
         liftIO (Gtk.renderWithDrawWindow drawwdw drawMiniBufBkg)
-#else // GTK3
+#else
         liftIO (Gtk.renderWithDrawable drawwdw drawMiniBufBkg)
-#endif // GTK3
+#endif
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
       cvs `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 
         (mbtn,mp) <- getPointer dev
@@ -117,9 +117,9 @@ minibufDialog msg = do
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
       vbox <- Gtk.vBoxNew False 0 
       Gtk.containerAdd upper vbox
-#else // GTK3
+#else 
       vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
       hbox <- Gtk.hBoxNew False 0 
       Gtk.boxPackStart hbox msgLabel Gtk.PackNatural 0 
       Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
@@ -153,9 +153,9 @@ invalidateMinibuf :: Gtk.DrawWindow -> Cairo.Surface -> IO ()
 invalidateMinibuf drawwdw tgtsfc = 
 #ifdef GTK3
   Gtk.renderWithDrawWindow drawwdw $ do 
-#else // GTK3
+#else 
   Gtk.renderWithDrawable drawwdw $ do 
-#endif // GTK3
+#endif
     Cairo.setSourceSurface tgtsfc 0 0 
     Cairo.setOperator Cairo.OperatorSource 
     Cairo.paint

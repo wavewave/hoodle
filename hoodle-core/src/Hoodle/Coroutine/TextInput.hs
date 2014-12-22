@@ -62,7 +62,6 @@ import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.Mode
-import           Hoodle.Coroutine.Network
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
@@ -76,6 +75,9 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState 
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
+#ifdef HUB
+import           Hoodle.Coroutine.Network
+#endif
 -- 
 import Prelude hiding (readFile,mapM_)
 
@@ -88,9 +90,9 @@ multiLineDialog str evhandler = do
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     vbox <- Gtk.vBoxNew False 0
     Gtk.containerAdd upper vbox
-#else // GTK3
+#else 
     vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
     textbuf <- Gtk.textBufferNew Nothing
     Gtk.textBufferSetByteString textbuf (TE.encodeUtf8 str)
     textbuf `Gtk.on` Gtk.bufferChanged $ do 
@@ -113,14 +115,18 @@ multiLineDialog str evhandler = do
     -- 
     _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
     _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
+#ifdef HUB
     _btnNetwork <- Gtk.dialogAddButton dialog ("Network" :: String) (Gtk.ResponseUser 1)
+#endif
     Gtk.widgetShowAll dialog
     res <- Gtk.dialogRun dialog
     Gtk.widgetDestroy dialog
     case res of 
       Gtk.ResponseOk -> return (UsrEv (OkCancel True))
       Gtk.ResponseCancel -> return (UsrEv (OkCancel False))
+#ifdef HUB
       Gtk.ResponseUser 1 -> return (UsrEv (NetworkProcess NetworkDialog))
+#endif
       _ -> return (UsrEv (OkCancel False))
 
 -- | main event loop for multiline edit box
@@ -132,7 +138,9 @@ multiLineLoop txt = do
                           >> multiLineLoop txt
       OkCancel True -> (return . Just) txt
       OkCancel False -> return Nothing
+#ifdef HUB
       NetworkProcess NetworkDialog -> networkTextInput txt
+#endif
       MultiLine (MultiLineChanged txt') -> multiLineLoop txt'
       _ -> multiLineLoop txt
 
@@ -193,6 +201,7 @@ autoPosText = do
 
 
 -- | 
+#ifdef HUB
 laTeXInputNetwork :: Maybe (Double,Double) -> T.Text -> MainCoroutine ()
 laTeXInputNetwork mpos str =  
     case mpos of 
@@ -207,7 +216,7 @@ laTeXInputNetwork mpos str =
         autoPosText >>=
           maybe (laTeXInputNetwork (Just (100,100)) str) 
                 (\y'->laTeXInputNetwork (Just (100,y')) str) 
-
+#endif
 
 dbusNetworkInput :: T.Text -> MainCoroutine ()
 dbusNetworkInput txt = do 
@@ -441,7 +450,9 @@ editEmbeddedTextSource = do
             in (hoodleModeState .~ nhdlmodst) uhdl
           commit_
 
+
 -- |
+#ifdef HUB
 editNetEmbeddedTextSource :: MainCoroutine ()
 editNetEmbeddedTextSource = do 
     hdl <- getHoodle . view (unitHoodles.currentUnit) <$> get
@@ -450,7 +461,9 @@ editNetEmbeddedTextSource = do
       networkTextInput txt >>= \case 
         Nothing -> return ()
         Just ntxt -> networkReceived ntxt
+#endif
 
+#ifdef HUB
 networkReceived :: T.Text -> MainCoroutine ()
 networkReceived txt = do
     pureUpdateUhdl $ \uhdl -> 
@@ -459,7 +472,7 @@ networkReceived txt = do
             SelectState thdl    -> (SelectState     . (gselEmbeddedText .~ Just txt) $ thdl)
       in (hoodleModeState .~ nhdlmodst) uhdl
     commit_
-
+#endif
 
 -- | insert text 
 textInputFromSource :: (Double,Double) -> MainCoroutine ()
@@ -482,9 +495,9 @@ linePosDialog = mkIOaction $ \_evhandler -> do
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     vbox <- Gtk.vBoxNew False 0 
     Gtk.containerAdd upper vbox
-#else // GTK3
+#else 
     vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
 
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
@@ -550,6 +563,7 @@ laTeXInputFromSource (x0,y0) = do
     return ()
     
 -- | 
+#ifdef HUB
 toggleNetworkEditSource :: MainCoroutine ()
 toggleNetworkEditSource = do 
     xst <- get
@@ -575,6 +589,6 @@ toggleNetworkEditSource = do
                 ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
                 Gtk.statusbarPush stbar ctxt ("Now no networkedit" :: String)
               (put . ((settings.networkEditSourceInfo) .~ Nothing)) xst
-
+#endif
       
 

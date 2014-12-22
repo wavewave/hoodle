@@ -214,15 +214,15 @@ invalidateTemp cid tempsurface rndr = do
       geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
 #ifdef GTK3          
       Just win <- liftIO $ Gtk.widgetGetWindow canvas
-#else // GTK3
+#else
       win <- liftIO $ Gtk.widgetGetDrawWindow canvas
-#endif // GTK3
+#endif 
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
 #ifdef GTK3              
       liftIO $ Gtk.renderWithDrawWindow win $ do 
-#else // GTK3              
+#else 
       liftIO $ Gtk.renderWithDrawable win $ do   
-#endif // GTK3
+#endif
                  Cairo.setSourceSurface tempsurface 0 0 
                  Cairo.setOperator Cairo.OperatorSource 
                  Cairo.paint 
@@ -246,15 +246,15 @@ invalidateTempBasePage cid tempsurface pnum rndr = do
       geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
 #ifdef GTK3          
       Just win <- liftIO $ Gtk.widgetGetWindow canvas
-#else // GTK3
+#else
       win <- liftIO $ Gtk.widgetGetDrawWindow canvas
-#endif // GTK3                 
+#endif
       let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
 #ifdef GTK3              
       liftIO $ Gtk.renderWithDrawWindow win $ do   
-#else // GTK3
+#else 
       liftIO $ Gtk.renderWithDrawable win $ do   
-#endif // GTK3
+#endif
                  Cairo.setSourceSurface tempsurface 0 0 
                  Cairo.setOperator Cairo.OperatorSource 
                  Cairo.paint 

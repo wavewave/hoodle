@@ -17,8 +17,6 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.Canvas
 import Hoodle.Coroutine.Pen 
 
-import Control.Monad.Trans
-
 -- | 
 
 highlighterStart :: CanvasId -> PointerCoord 

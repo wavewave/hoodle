@@ -35,12 +35,14 @@ import           Data.Monoid (mconcat)
 import           Data.UUID.V4 (nextRandom)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import           DBus
-import           DBus.Client
 import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory
 import           System.FilePath 
 import           System.Process (createProcess, proc)
+#ifdef HUB
+import           DBus
+import           DBus.Client
+#endif
 -- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
@@ -261,9 +263,9 @@ addLink = do
                      upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                      vbox <- Gtk.vBoxNew False 0
                      Gtk.containerAdd upper vbox
-#else // GTK3
+#else
                      vbox <- Gtk.dialogGetUpper dialog
-#endif // GTK3
+#endif
                      txtvw <- Gtk.textViewNew
                      Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
                      Gtk.widgetShowAll dialog
@@ -294,7 +296,9 @@ getAnchorMap hdl =
         lookupAnchor _ = Nothing
         insertAnchor pgnum (Anchor {..}) = M.insert (TE.decodeUtf8 anchor_id) (pgnum,anchor_pos)  
          
+
 -- | 
+#ifdef HUB
 startLinkReceiver :: MainCoroutine ()
 startLinkReceiver = do 
     callback <- view callBack <$> get 
@@ -320,6 +324,8 @@ startLinkReceiver = do
                     (docid,anchorid) 
                 _ -> return ()
             _ -> return ()           
+#endif
+
 
 goToAnchorPos :: T.Text -> T.Text -> MainCoroutine ()
 goToAnchorPos docid anchorid = do 

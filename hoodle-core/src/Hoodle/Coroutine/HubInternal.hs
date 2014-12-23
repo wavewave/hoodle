@@ -29,6 +29,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Foldable as F
 import qualified Data.HashMap.Strict as H
+import           Data.IORef
 import Data.Monoid ((<>))
 import Data.Text (Text,pack,unpack)
 import Data.Text.Encoding (encodeUtf8,decodeUtf8)
@@ -37,6 +38,8 @@ import qualified Graphics.UI.Gtk as Gtk
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
+import Network.HTTP.Client (GivesPopper)
+-- import Network.HTTP.Client.MultipartFormData
 import Network.HTTP.Conduit
 import Network.HTTP.Types (methodPut)
 import System.Directory
@@ -88,6 +91,26 @@ instance FromJSON FileRsync where
           return (FileRsync uuid sig)
     in maybe (fail "error in parsing FileRsync") return r
   parseJSON _ = fail "error in parsing FileRsync"
+
+
+streamContent :: BL.ByteString -> GivesPopper ()
+streamContent lb np = do
+    lbref <- newIORef lb 
+    np (popper lbref)
+  where popper lbref = do
+          lbstr <- readIORef lbref
+          if (not .BL.null) lbstr
+            then do 
+              let (lbstr1,lbstr2) = BL.splitAt 10240 lbstr
+              writeIORef lbref lbstr2
+              return (BL.toStrict lbstr1)
+            else do
+              return ""
+          
+
+-- GivesPopper () = NeedPopper () -> IO ()
+-- np :: Popper -> IO ()
+-- Popper = IO ByteString
 
 
 uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()
@@ -154,9 +177,21 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
                                                , file_path = pack filepath
                                                , file_content = b64txt 
                                                , file_rsync = mfrsync }
+              filecontentbstr = encode filecontent
           request3' <- parseUrl (hubfileurl </> unpack uuidtxt )
+          -- bd <- liftIO $ webkitBoundary
+          -- liftIO $ putStrLn "length of toChunks"
+          -- liftIO $ print (length (BL.toChunks filecontentbstr))
+          -- let parts = (map (partBS "filecontent") . BL.toChunks) filecontentbstr
+          -- reqbdy@(RequestBodyStreamChunked n _)  <- liftIO $ renderParts bd parts
+          -- liftIO $ putStrLn (" n= " ++ show n)
+          -- let teststr = BL.pack $ "{ \"hello\": \" " <> take 1000000 (repeat 'c') <> " \" } "
+          -- let givepopper = \f -> 
           let request3 = request3' { method = methodPut
-                                   , requestBody = RequestBodyLBS (encode filecontent)
+                                   , requestBody = RequestBodyStreamChunked (streamContent filecontentbstr)
+                                                   -- reqbdy 
+                                                   -- reqbdy -- RequestBodyStreamChunked 10240 givepopper 
+                                                   -- RequestBodyLBS filecontentbstr
                                    , cookieJar = Just coojar }
           _response3 <- httpLbs request3 manager
           -- liftIO $ print response3

@@ -41,7 +41,7 @@ data GHoodle cntnr pg = GHoodle
                         { ghoodle_id :: ByteString 
                         , ghoodle_ttl :: ByteString 
                         , ghoodle_revisions :: [Revision]
-                        , ghoodle_embeddedpdf :: Maybe PDFData -- Maybe ByteString 
+                        , ghoodle_embeddedpdf :: Maybe PDFData
                         , ghoodle_embeddedtext :: Maybe T.Text
                         , ghoodle_pgs :: cntnr pg }  
 

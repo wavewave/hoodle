@@ -138,7 +138,7 @@ updateTempHoodleSelectIO :: RenderCache
                          -> IO (Hoodle SelectMode)
 updateTempHoodleSelectIO cache thdl tpage pagenum = do   
   let pgs = view gselAll thdl 
-  newpage <- (updatePageBuf cache . hPage2RPage) tpage
+  newpage <- (updatePageBuf cache 1.0 . hPage2RPage) tpage
   let pgs' = M.adjust (const newpage) pagenum pgs
   return $  set gselAll pgs' 
             . set gselSelected (Just (pagenum,tpage))

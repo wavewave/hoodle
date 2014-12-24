@@ -384,10 +384,10 @@ getMenuUI evar = do
 
 #ifdef HUB
   huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuHub)
-  hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuHubSocket)
+  -- hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuHubSocket)
 #else
   huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuDefault)
-  hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuDefault)
+  -- hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuDefault)
 #endif
 
 
@@ -425,7 +425,7 @@ getMenuUI evar = do
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha
-        , huba, hubsocketa
+        , huba -- , hubsocketa
         , addtaba, {- nexttaba, -} closetaba
         , abouta 
         , defaulta         

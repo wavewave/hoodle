@@ -3,14 +3,14 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Engine
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2014 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
 --
--- collection of rendering routine 
+-- rendering engine that can run as a separate thread
 --
 -----------------------------------------------------------------------------
 

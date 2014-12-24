@@ -382,6 +382,7 @@ renderRBkg_InBBox cache mbbox (b,dim,mx) = do
 -- | render RLayer within BBox after hittest items
 renderRLayer_InBBox :: RenderCache -> Maybe BBox -> RLayer -> Cairo.Render RLayer
 renderRLayer_InBBox cache mbbox layer = do  
+  liftIO $ putStrLn "renderRLayer_InBBox : I am called"
   clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
@@ -448,10 +449,16 @@ renderRLayer_InBBoxBuf cache mbbox lyr = do
 -------------------
 
 -- | 
-updateLayerBuf :: RenderCache -> Dimension -> Maybe BBox -> RLayer -> IO RLayer
-updateLayerBuf cache (Dim w h) mbbox lyr = do 
+updateLayerBuf :: RenderCache 
+               -> Double      -- ^ scale factor
+               -> Dimension 
+               -> Maybe BBox 
+               -> RLayer 
+               -> IO RLayer
+updateLayerBuf cache s (Dim w h) mbbox lyr = do 
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
+      putStrLn "updateLayerBuf : buffer called"
       Cairo.renderWith sfc $ do 
         renderRLayer_InBBox cache mbbox lyr 
       return lyr
@@ -462,18 +469,24 @@ updateLayerBuf cache (Dim w h) mbbox lyr = do
       return (set gbuffer (LyBuf (Just sfc)) lyr) 
       
 -- | 
-updatePageBuf :: RenderCache -> RPage -> IO RPage 
-updatePageBuf cache pg = do 
+updatePageBuf :: RenderCache 
+              -> Double      -- ^ scale factor 
+              -> RPage 
+              -> IO RPage 
+updatePageBuf cache s pg = do 
   let dim = view gdimension pg
       mbbox = Just . dimToBBox $ dim 
-  nlyrs <- mapM (updateLayerBuf cache dim mbbox) . view glayers $ pg 
+  nlyrs <- mapM (updateLayerBuf cache s dim mbbox) . view glayers $ pg 
   return (set glayers nlyrs pg)
 
 -- | 
-updateHoodleBuf :: RenderCache -> RHoodle -> IO RHoodle 
-updateHoodleBuf cache hdl = do 
+updateHoodleBuf :: RenderCache 
+                -> Double       -- ^ scale factor
+                -> RHoodle   
+                -> IO RHoodle 
+updateHoodleBuf cache s hdl = do 
   let pgs = view gpages hdl 
-  npgs <- mapM (updatePageBuf cache) pgs
+  npgs <- mapM (updatePageBuf cache s) pgs
   return . set gpages npgs $ hdl
 
 -------

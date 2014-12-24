@@ -65,7 +65,7 @@ modeChange command = do
               cache = view renderCache xst
           npages <- maybe (return pages) 
                           (\(spgn,spage) -> do 
-                             npage <- (liftIO.updatePageBuf cache.hPage2RPage) spage  
+                             npage <- (liftIO.updatePageBuf cache 1.0 . hPage2RPage) spage  
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  

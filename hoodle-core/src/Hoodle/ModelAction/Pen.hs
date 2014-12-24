@@ -93,7 +93,7 @@ addPDraw cache pinfo hdl (PageNum pgnum) pdraw = do
         newstroke = createNewStroke pinfo pdraw         
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
-    newlayerbbox <- updateLayerBuf cache dim (Just bbox)
+    newlayerbbox <- updateLayerBuf cache 1.0 dim (Just bbox)
                     . over gitems (++[RItemStroke newstrokebbox]) 
                     $ currlayer
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 

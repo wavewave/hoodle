@@ -91,6 +91,7 @@ import           Hoodle.Widget.Dispatch
 import           Hoodle.Widget.PanZoom
 #ifdef HUB
 import           Hoodle.Coroutine.HubInternal
+import           Hoodle.Coroutine.Socket
 #endif
 --
 import Prelude hiding (mapM_)
@@ -196,6 +197,7 @@ guiProcess ev = do
     pageZoomChange FitWidth
 #ifdef HUB
     startLinkReceiver
+    socketConnect
 #endif
     -- main loop 
     sequence_ (repeat dispatchMode)

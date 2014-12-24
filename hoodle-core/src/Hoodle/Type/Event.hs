@@ -243,7 +243,7 @@ data MenuEvent = MenuNew
                | MenuToggleNetworkEditSource
                | MenuLaTeXNetwork
                | MenuHub
-               | MenuHubSocket
+--                | MenuHubSocket
 #endif
                deriving Show 
 

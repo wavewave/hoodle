@@ -597,7 +597,7 @@ currentCanvasInfo = lens getter setter
 resetHoodleModeStateBuffers :: RenderCache -> HoodleModeState -> IO HoodleModeState 
 resetHoodleModeStateBuffers cache hdlmodestate1 = 
   case hdlmodestate1 of 
-    ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf cache $ hdl
+    ViewAppendState hdl -> liftIO . liftM ViewAppendState . updateHoodleBuf cache 1.0 $ hdl
     _ -> return hdlmodestate1
 
 -- |

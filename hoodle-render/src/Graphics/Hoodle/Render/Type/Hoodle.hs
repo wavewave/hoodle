@@ -30,12 +30,15 @@ import Data.Hoodle.Zipper
 -- from this package
 import Graphics.Hoodle.Render.Type.Background 
 import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render.Type.Renderer
 
 ----------------------------
 -- normal state rendering --
 ----------------------------
 
 newtype LyBuf = LyBuf (Maybe Cairo.Surface)
+
+            -- { unLyBuf :: SurfaceID }  
 
 -- | normal rendering data structure for layer, R for rendering
 --   buffer is Surface, container for item = list 
@@ -55,8 +58,8 @@ type RHoodle = GHoodle IM.IntMap RPage
 instance Show RHoodle where
   show _ = "RHoodle"
 
-emptyRLayer :: RLayer 
-emptyRLayer = GLayer (LyBuf Nothing) []
+emptyRLayer :: {- SurfaceID -> -} RLayer 
+emptyRLayer {- sfcid -} = GLayer (LyBuf Nothing {- sfcid -} ) []
 
 
 -------

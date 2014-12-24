@@ -191,7 +191,7 @@ menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
 menuEventProcess MenuLaTeXNetwork = 
     laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuHub = hubUpload
-menuEventProcess MenuHubSocket = socketConnect
+-- menuEventProcess MenuHubSocket = socketConnect
 #endif
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 

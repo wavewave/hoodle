@@ -348,13 +348,6 @@ updateBkgCache geometry (pnum,page) = do
       cmdid <- issueGenCommandID
       (liftIO . atomically) (sendGenCommand qgen cmdid (BkgSmplScaled sfcid rbkg_color rbkg_style (Dim w h) (Dim (x1-x0) (y1-y0))))
       return ()
-
--- liftIO . forkIO $ do
---                           sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
---                           Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
---                           handler (sfcid, (s,sfc))
---                         return ()
-  
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
       cmdid <- issuePDFCommandID
       (liftIO . atomically) (sendPDFCommand qpdf cmdid 

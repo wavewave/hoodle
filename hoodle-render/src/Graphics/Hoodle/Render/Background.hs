@@ -196,8 +196,6 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
     Cairo.rectangle 0 0 w h 
     Cairo.fill
 
-
-
 -- | this has some bugs. need to fix 
 cnstrctRBkg_StateT :: Dimension 
                    -> Background 

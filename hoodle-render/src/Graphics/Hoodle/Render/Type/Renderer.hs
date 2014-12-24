@@ -33,6 +33,7 @@ import           Data.Hoodle.Simple (Dimension(..))
 
 
 newtype PDFCommandID = PDFCommandID UUID
+                     deriving (Show,Eq,Ord)
 
 data PDFCommand where
   GetDocFromFile    :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
@@ -45,19 +46,24 @@ instance Show PDFCommand where
   show _ = "PDFCommand"
 
 
-type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), TVar (Seq (UUID, PDFCommand))) IO
+newtype SurfaceID = SurfaceID UUID
+                  deriving (Show,Eq,Ord)
 
+type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), PDFCommandQueue) IO
+
+
+type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
 
 sendPDFCommand :: PDFCommandID 
-               -> TVar (Seq (UUID,PDFCommand)) 
+               -> PDFCommandQueue 
                -> PDFCommand 
                -> STM ()
-sendPDFCommand (PDFCommandID uuid) !queuevar !cmd = do
+sendPDFCommand !cmdid !queuevar !cmd = do
     queue <- readTVar queuevar
-    let queue' = Seq.filter ((/=uuid) .fst) queue 
-        nqueue = queue' |> (uuid,cmd)
+    let queue' = Seq.filter ((/=cmdid) .fst) queue 
+        nqueue = queue' |> (cmdid,cmd)
     writeTVar queuevar nqueue
 

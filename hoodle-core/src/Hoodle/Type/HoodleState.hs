@@ -55,6 +55,7 @@ module Hoodle.Type.HoodleState
 , statusBar
 , renderCache
 , pdfRenderQueue
+, genRenderQueue
 , doesNotInvalidate
 , nextPdfBkgPageNum
 -- 
@@ -188,6 +189,7 @@ data HoodleState =
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
                 , _pdfRenderQueue :: PDFCommandQueue
+                , _genRenderQueue :: GenCommandQueue
                 , _doesNotInvalidate :: Bool
                 , _nextPdfBkgPageNum :: Maybe Int
                 } 
@@ -335,6 +337,10 @@ renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 -- | 
 pdfRenderQueue :: Simple Lens HoodleState PDFCommandQueue
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
+
+-- | 
+genRenderQueue :: Simple Lens HoodleState GenCommandQueue
+genRenderQueue = lens _genRenderQueue (\f a -> f { _genRenderQueue = a })
 
 
 -- | 

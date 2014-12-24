@@ -48,8 +48,8 @@ instance Show PDFCommand where
 
 newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
 
--- data GenericCommand where
---   DrawRBkgSmpl :: B.ByteString -> B.ByteString -> 
+data GenCommand where
+  BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
 
 
 
@@ -63,7 +63,7 @@ type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
 
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
--- type GenericQueue = TVar (Seq (GenCommandID,GenericCommand)
+type GenCommandQueue = TVar (Seq (GenCommandID,GenCommand))
 
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
@@ -71,11 +71,11 @@ issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
 issueSurfaceID :: (Functor m, MonadIO m) => m SurfaceID
 issueSurfaceID = SurfaceID <$> liftIO nextRandom
 
-sendPDFCommand :: PDFCommandID 
-               -> PDFCommandQueue 
+sendPDFCommand :: PDFCommandQueue 
+               -> PDFCommandID
                -> PDFCommand 
                -> STM ()
-sendPDFCommand cmdid queuevar cmd = do
+sendPDFCommand queuevar cmdid cmd = do
     queue <- readTVar queuevar
     let queue' = Seq.filter (not . isRemoved (cmdid,cmd)) queue -- ((/=cmdid) .fst) queue 
         nqueue = queue' |> (cmdid,cmd)
@@ -90,3 +90,5 @@ isRemoved n@(cmdid,ncmd) o@(ocmdid,ocmd)
                       RenderPageScaled osfcid _ _ _ -> nsfcid == osfcid
                       _ -> False
                   _ -> False
+
+

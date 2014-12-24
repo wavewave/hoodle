@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.PDFBackground 
+-- Module      : Graphics.Hoodle.Render.Background 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -211,7 +211,7 @@ cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do
           (Just d, Just f) -> do 
             cmdiddoc <- issuePDFCommandID
             docvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand cmdiddoc qvar (GetDocFromFile f docvar)
+            liftIO . atomically $ sendPDFCommand qvar cmdiddoc (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
             lift . put $ Just (Context d f (Just doc) Nothing)
             pg <- pdfRequest qvar doc pn
@@ -237,7 +237,7 @@ cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do
   where pdfRequest qvar doc pn = do
           cmdidpg <- issuePDFCommandID
           pgvar <- liftIO (atomically newEmptyTMVar)
-          liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
+          liftIO . atomically $ sendPDFCommand qvar cmdidpg (GetPageFromDoc doc pn pgvar)
           MaybeT . liftIO $ atomically $ takeTMVar pgvar
 
  

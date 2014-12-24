@@ -34,43 +34,83 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import           Data.Hoodle.Simple (Dimension(..))
 
 
-newtype PDFCommandID = PDFCommandID UUID
-                     deriving (Show,Eq,Ord)
+newtype PDFCommandID = PDFCommandID UUID deriving (Show,Eq,Ord)
 
 data PDFCommand where
-  GetDocFromFile    :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
-  GetDocFromDataURI :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
-  GetPageFromDoc    :: !Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
+  GetDocFromFile    :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
+  GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
+  GetPageFromDoc    :: Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
   GetNPages :: !Poppler.Document -> (TMVar Int) -> PDFCommand
-  RenderPageScaled  :: !Poppler.Page -> !Dimension -> !Dimension -> PDFCommand 
+  RenderPageScaled  :: SurfaceID -> Poppler.Page -> Dimension -> Dimension -> PDFCommand 
 
 instance Show PDFCommand where
   show _ = "PDFCommand"
+
+newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
+
+data GenCommand where
+  BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
+
 
 
 newtype SurfaceID = SurfaceID UUID
                   deriving (Show,Eq,Ord,Hashable)
 
-type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), PDFCommandQueue) IO
+type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), (PDFCommandQueue,GenCommandQueue)) IO
 
 -- | hashmap: key = UUID, value = (original size, view size, surface)
 type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
 
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
+type GenCommandQueue = TVar (Seq (GenCommandID,GenCommand))
+
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
+
+issueGenCommandID :: (Functor m, MonadIO m) => m GenCommandID
+issueGenCommandID = GenCommandID <$> liftIO nextRandom
 
 issueSurfaceID :: (Functor m, MonadIO m) => m SurfaceID
 issueSurfaceID = SurfaceID <$> liftIO nextRandom
 
-sendPDFCommand :: PDFCommandID 
-               -> PDFCommandQueue 
+sendPDFCommand :: PDFCommandQueue 
+               -> PDFCommandID
                -> PDFCommand 
                -> STM ()
-sendPDFCommand !cmdid !queuevar !cmd = do
+sendPDFCommand queuevar cmdid cmd = do
     queue <- readTVar queuevar
-    let queue' = Seq.filter ((/=cmdid) .fst) queue 
+    let queue' = Seq.filter (not . isRemoved (cmdid,cmd)) queue -- ((/=cmdid) .fst) queue 
         nqueue = queue' |> (cmdid,cmd)
     writeTVar queuevar nqueue
 
+isRemoved :: (PDFCommandID,PDFCommand) -> (PDFCommandID,PDFCommand) -> Bool
+isRemoved n@(cmdid,ncmd) o@(ocmdid,ocmd) 
+  | cmdid == ocmdid = True
+  | otherwise = case ncmd of
+                  RenderPageScaled nsfcid _ _ _ -> 
+                    case ocmd of
+                      RenderPageScaled osfcid _ _ _ -> nsfcid == osfcid
+                      _ -> False
+                  _ -> False
+
+
+sendGenCommand :: GenCommandQueue 
+               -> GenCommandID
+               -> GenCommand 
+               -> STM ()
+sendGenCommand queuevar cmdid cmd = do
+    queue <- readTVar queuevar
+    let queue' = Seq.filter (not . isRemovedGen (cmdid,cmd)) queue 
+        nqueue = queue' |> (cmdid,cmd)
+    writeTVar queuevar nqueue
+
+isRemovedGen :: (GenCommandID,GenCommand) -> (GenCommandID,GenCommand) -> Bool
+isRemovedGen n@(cmdid,ncmd) o@(ocmdid,ocmd) 
+  | cmdid == ocmdid = True
+  | otherwise = case ncmd of
+                  BkgSmplScaled nsfcid _ _ _ _ -> 
+                    case ocmd of
+                      BkgSmplScaled osfcid _ _ _ _ -> nsfcid == osfcid
+                      _ -> False
+                  _ -> False

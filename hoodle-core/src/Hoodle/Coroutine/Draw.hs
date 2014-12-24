@@ -280,10 +280,10 @@ doIOaction_ action = do doIOaction $ \_ -> action >> return (UsrEv ActionOrdered
 -- | order rendering routine
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
-    tvar <- (^. pdfRenderQueue) <$> get  
+    tvars <- ((,)<$>(^. pdfRenderQueue)<*>(^. genRenderQueue)) <$> get  
     doIOaction $ \evhandler -> do
       let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-      UsrEv . RenderEv <$> runReaderT action (handler,tvar)
+      UsrEv . RenderEv <$> runReaderT action (handler,tvars)
 
 
 callRenderer_ :: Renderer a -> MainCoroutine ()

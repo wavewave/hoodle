@@ -55,6 +55,7 @@ module Hoodle.Type.HoodleState
 , statusBar
 , renderCache
 , pdfRenderQueue
+, genRenderQueue
 , doesNotInvalidate
 , nextPdfBkgPageNum
 -- 
@@ -188,6 +189,7 @@ data HoodleState =
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
                 , _pdfRenderQueue :: PDFCommandQueue
+                , _genRenderQueue :: GenCommandQueue
                 , _doesNotInvalidate :: Bool
                 , _nextPdfBkgPageNum :: Maybe Int
                 } 
@@ -336,6 +338,10 @@ renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 pdfRenderQueue :: Simple Lens HoodleState PDFCommandQueue
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 
+-- | 
+genRenderQueue :: Simple Lens HoodleState GenCommandQueue
+genRenderQueue = lens _genRenderQueue (\f a -> f { _genRenderQueue = a })
+
 
 -- | 
 doesNotInvalidate :: Simple Lens HoodleState Bool
@@ -483,7 +489,8 @@ emptyUnitHoodle = do
 emptyHoodleState :: IO HoodleState 
 emptyHoodleState = do
   unit <- emptyUnitHoodle
-  tvar <- atomically $ newTVar empty 
+  tvarpdf <- atomically $ newTVar empty 
+  tvargen <- atomically $ newTVar empty 
   return $
     HoodleState { _unitHoodles = (0, M.singleton 0 unit)
                 , _rootNotebook = error "emtpyHoodleState.rootNotebook"
@@ -508,7 +515,8 @@ emptyHoodleState = do
                 , _tempLog = id 
                 , _statusBar = Nothing 
                 , _renderCache = HM.empty
-                , _pdfRenderQueue = tvar
+                , _pdfRenderQueue = tvarpdf
+                , _genRenderQueue = tvargen
                 , _doesNotInvalidate = False
                 , _nextPdfBkgPageNum = Nothing
                 -- , _cursorInfo = Nothing

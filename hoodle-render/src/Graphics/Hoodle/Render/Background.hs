@@ -3,7 +3,7 @@
 
 -----------------------------------------------------------------------------
 -- |
--- Module      : Graphics.Hoodle.Render.PDFBackground 
+-- Module      : Graphics.Hoodle.Render.Background 
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
 --
 -- License     : BSD3
@@ -201,7 +201,7 @@ cnstrctRBkg_StateT :: Dimension
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
 cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do  
-  (_handler,qvar) <- lift ask
+  (_handler,(qpdf,qgen)) <- lift ask
   sfcid <- issueSurfaceID
   case bkg of 
     Background _t c s -> return (RBkgSmpl c s sfcid) 
@@ -211,15 +211,15 @@ cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do
           (Just d, Just f) -> do 
             cmdiddoc <- issuePDFCommandID
             docvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand cmdiddoc qvar (GetDocFromFile f docvar)
+            liftIO . atomically $ sendPDFCommand qpdf cmdiddoc (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
             lift . put $ Just (Context d f (Just doc) Nothing)
-            pg <- pdfRequest qvar doc pn
+            pg <- pdfRequest qpdf doc pn
             return (pg, RBkgPDF md f pn (Just pg) sfcid)
           _ -> do 
             Context oldd oldf olddoc _ <- MaybeT get
             doc <- MaybeT . return $ olddoc  
-            pg <- pdfRequest qvar doc pn
+            pg <- pdfRequest qpdf doc pn
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) sfcid)
         return rbkg
       case r of
@@ -229,15 +229,15 @@ cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do
       r <- runMaybeT $ do 
         Context _ _ _ mdoc <- MaybeT get
         doc <- (MaybeT . return) mdoc 
-        pg <- pdfRequest qvar doc pn
+        pg <- pdfRequest qpdf doc pn
         return (RBkgEmbedPDF pn (Just pg) sfcid)
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"
         Just x -> return x
-  where pdfRequest qvar doc pn = do
+  where pdfRequest q doc pn = do
           cmdidpg <- issuePDFCommandID
           pgvar <- liftIO (atomically newEmptyTMVar)
-          liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
+          liftIO . atomically $ sendPDFCommand q cmdidpg (GetPageFromDoc doc pn pgvar)
           MaybeT . liftIO $ atomically $ takeTMVar pgvar
 
  

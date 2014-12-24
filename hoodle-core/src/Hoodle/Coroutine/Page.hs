@@ -333,7 +333,7 @@ newPageFromOld =
 
 updateBkgCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
 updateBkgCache geometry (pnum,page) = do
-  (handler,qvar) <- ask
+  (handler,(qpdf,qgen)) <- ask
   let dim@(Dim w h) = page ^. gdimension 
       CvsCoord (x0,y0) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))
@@ -342,17 +342,24 @@ updateBkgCache geometry (pnum,page) = do
       s = (x1-x0) / w 
       rbkg = page ^. gbackground
       bkg = rbkg2Bkg rbkg
-      sfcid@(SurfaceID uuid) = rbkg_surfaceid rbkg 
+      sfcid = rbkg_surfaceid rbkg 
   case rbkg of 
-    RBkgSmpl {..} -> do liftIO . forkIO $ do
-                          sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
-                          Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
-                          handler (sfcid, (s,sfc))
-                        return ()
+    RBkgSmpl {..} -> do
+      cmdid <- issueGenCommandID
+      (liftIO . atomically) (sendGenCommand qgen cmdid (BkgSmplScaled sfcid rbkg_color rbkg_style (Dim w h) (Dim (x1-x0) (y1-y0))))
+      return ()
+
+-- liftIO . forkIO $ do
+--                           sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
+--                           Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
+--                           handler (sfcid, (s,sfc))
+--                         return ()
   
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-                       (liftIO . atomically) (sendPDFCommand (PDFCommandID uuid) qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
-                       return ()
+      cmdid <- issuePDFCommandID
+      (liftIO . atomically) (sendPDFCommand qpdf cmdid 
+        (RenderPageScaled sfcid pg (Dim w h) (Dim (x1-x0) (y1-y0))))
+      return ()
 
 
 

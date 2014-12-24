@@ -37,8 +37,8 @@ import           Data.Time.Clock
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+-- import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 import           System.Directory
 import           System.Process 
 -- from hoodle-platform
@@ -159,10 +159,12 @@ initialize ev = do
         -- additional initialization goes here
         xst1 <- get
         let ui = xst1 ^. gtkUIManager
-            tvar = xst1 ^. pdfRenderQueue
+            tvarpdf = xst1 ^. pdfRenderQueue
+            tvargen = xst1 ^. genRenderQueue
         doIOaction $ \evhandler -> do 
           let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-          forkOn 2 $ pdfRendererMain handler tvar
+          forkOn 2 $ pdfRendererMain handler tvarpdf
+          forkIO $ genRendererMain handler tvargen
           return (UsrEv ActionOrdered)
         waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
         getFileContent mfname
@@ -421,38 +423,3 @@ defaultEventProcess ev = -- for debugging
                             msgShout (show ev)
                             msgShout "------------------"
 
--- |
-pdfRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> PDFCommandQueue -> IO () 
-pdfRendererMain handler tvar = forever $ do     
-    p <- atomically $ do 
-      lst' <- readTVar tvar
-      case viewl lst' of
-        EmptyL -> retry
-        p :< ps -> do 
-          writeTVar tvar ps 
-          return p 
-    pdfWorker handler p
-
-pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> (PDFCommandID,PDFCommand) -> IO ()
-pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
-    mdoc <- popplerGetDocFromFile fp
-    atomically $ putTMVar tmvar mdoc 
-pdfWorker _handler (_,GetDocFromDataURI str tmvar) = do
-    mdoc <- popplerGetDocFromDataURI str
-    atomically $ putTMVar tmvar mdoc
-pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
-    mpg <- popplerGetPageFromDoc doc pn
-    atomically $ putTMVar tmvar mpg
-pdfWorker _handler (_,GetNPages doc tmvar) = do
-    n <- Poppler.documentGetNPages doc
-    atomically $ putTMVar tmvar n
-pdfWorker handler (PDFCommandID uuid,RenderPageScaled page (Dim ow _oh) (Dim w h)) = do
-    let s = w / ow
-    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-    Cairo.renderWith sfc $ do   
-      Cairo.setSourceRGBA 1 1 1 1
-      Cairo.rectangle 0 0 w h 
-      Cairo.fill
-      Cairo.scale s s
-      Poppler.pageRender page 
-    handler (SurfaceID uuid,(s,sfc))

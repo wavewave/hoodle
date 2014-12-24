@@ -542,10 +542,6 @@ renderPage_StateT pg = do
 -- | 
 initRenderContext :: Hoodle -> IO Context
 initRenderContext hdl = do
-  let -- hid = view hoodleID hdl 
-      -- ttl = view title hdl 
-      --revs = view revisions hdl 
-      -- pgs = view pages hdl
-      pdf = view embeddedPdf hdl 
+  let pdf = view embeddedPdf hdl 
   mdoc <- join <$> mapM popplerGetDocFromDataURI pdf
   return (Context "" "" Nothing mdoc)

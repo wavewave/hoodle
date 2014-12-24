@@ -292,11 +292,14 @@ drawFallBackBkg (Dim w h) = do
 renderRBkg :: RenderCache 
            -> (RBackground,Dimension, Maybe Xform4Page) 
            -> Cairo.Render (RBackground,Dimension, Maybe Xform4Page)
-renderRBkg cache (r,dim,mx) = 
-    case r of 
-      (RBkgSmpl _ _ _)     ->  renderBkg (rbkg2Bkg r,dim) >> return (r,dim,mx)
-      (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim,mx)
-      (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim,mx)
+renderRBkg = renderRBkg_Buf
+
+-- cache (r,dim,mx) = 
+    -- case r of 
+    --   (RBkgSmpl _ _ _)     -> renderRBkg_Buf cache (r,dim,mx)
+    --      --  renderBkg (rbkg2Bkg r,dim) >> return (r,dim,mx)
+    --   (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim,mx)
+    --   (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim,mx)
 
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
@@ -492,17 +495,17 @@ cnstrctRHoodle hdl = do
       pgs = view pages hdl
       pdf = view embeddedPdf hdl 
       txt = view embeddedText hdl
-  (_,qvar) <- ask
+  (_,(qpdf,qgen)) <- ask
   mdoc <- maybe (return Nothing) (\src -> liftIO $ do
             cmdid <- issuePDFCommandID
             docvar <- atomically newEmptyTMVar
-            atomically $ sendPDFCommand qvar cmdid (GetDocFromDataURI src docvar)
+            atomically $ sendPDFCommand qpdf cmdid (GetDocFromDataURI src docvar)
             atomically $ takeTMVar docvar 
           ) pdf
   let getNumPgs doc = liftIO $ do
         cmdid <- issuePDFCommandID
         nvar <- atomically newEmptyTMVar
-        atomically $ sendPDFCommand qvar cmdid (GetNPages doc nvar)
+        atomically $ sendPDFCommand qpdf cmdid (GetNPages doc nvar)
         atomically $ takeTMVar nvar
   mnumpdfpgs <- sequenceA (getNumPgs <$> mdoc)
   -- liftIO $print mnumpdfpgs

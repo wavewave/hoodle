@@ -489,7 +489,8 @@ emptyUnitHoodle = do
 emptyHoodleState :: IO HoodleState 
 emptyHoodleState = do
   unit <- emptyUnitHoodle
-  tvar <- atomically $ newTVar empty 
+  tvarpdf <- atomically $ newTVar empty 
+  tvargen <- atomically $ newTVar empty 
   return $
     HoodleState { _unitHoodles = (0, M.singleton 0 unit)
                 , _rootNotebook = error "emtpyHoodleState.rootNotebook"
@@ -514,7 +515,8 @@ emptyHoodleState = do
                 , _tempLog = id 
                 , _statusBar = Nothing 
                 , _renderCache = HM.empty
-                , _pdfRenderQueue = tvar
+                , _pdfRenderQueue = tvarpdf
+                , _genRenderQueue = tvargen
                 , _doesNotInvalidate = False
                 , _nextPdfBkgPageNum = Nothing
                 -- , _cursorInfo = Nothing

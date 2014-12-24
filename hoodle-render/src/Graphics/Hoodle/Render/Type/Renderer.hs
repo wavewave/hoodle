@@ -56,7 +56,7 @@ data GenCommand where
 newtype SurfaceID = SurfaceID UUID
                   deriving (Show,Eq,Ord,Hashable)
 
-type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), PDFCommandQueue) IO
+type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), (PDFCommandQueue,GenCommandQueue)) IO
 
 -- | hashmap: key = UUID, value = (original size, view size, surface)
 type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
@@ -67,6 +67,9 @@ type GenCommandQueue = TVar (Seq (GenCommandID,GenCommand))
 
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
+
+issueGenCommandID :: (Functor m, MonadIO m) => m GenCommandID
+issueGenCommandID = GenCommandID <$> liftIO nextRandom
 
 issueSurfaceID :: (Functor m, MonadIO m) => m SurfaceID
 issueSurfaceID = SurfaceID <$> liftIO nextRandom
@@ -92,3 +95,22 @@ isRemoved n@(cmdid,ncmd) o@(ocmdid,ocmd)
                   _ -> False
 
 
+sendGenCommand :: GenCommandQueue 
+               -> GenCommandID
+               -> GenCommand 
+               -> STM ()
+sendGenCommand queuevar cmdid cmd = do
+    queue <- readTVar queuevar
+    let queue' = Seq.filter (not . isRemovedGen (cmdid,cmd)) queue 
+        nqueue = queue' |> (cmdid,cmd)
+    writeTVar queuevar nqueue
+
+isRemovedGen :: (GenCommandID,GenCommand) -> (GenCommandID,GenCommand) -> Bool
+isRemovedGen n@(cmdid,ncmd) o@(ocmdid,ocmd) 
+  | cmdid == ocmdid = True
+  | otherwise = case ncmd of
+                  BkgSmplScaled nsfcid _ _ _ _ -> 
+                    case ocmd of
+                      BkgSmplScaled osfcid _ _ _ _ -> nsfcid == osfcid
+                      _ -> False
+                  _ -> False

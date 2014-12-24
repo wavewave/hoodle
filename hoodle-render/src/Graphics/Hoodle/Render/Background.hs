@@ -237,17 +237,11 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
     BackgroundEmbedPdf _ pn -> do 
       r <- runMaybeT $ do 
         Context _ _ _ mdoc <- MaybeT get
-        liftIO $ putStrLn "1"
         doc <- (MaybeT . return) mdoc 
-        liftIO $ putStrLn "2"
         uuidpg <- liftIO nextRandom
-        liftIO $ putStrLn "3"
         pgvar <- liftIO (atomically newEmptyTMVar)
-        liftIO $ putStrLn "4"
         liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
-        liftIO $ putStrLn "5"
         pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
-        liftIO $ putStrLn "6"
         return (RBkgEmbedPDF pn (Just pg) uuid)
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"

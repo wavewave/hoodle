@@ -54,10 +54,7 @@ checkVersionAndMigrate bstr = do
     Left str -> error str 
     Right v -> do 
       if ( v <= "0.2.2" ) 
-        then do 
-          -- hdl' <- MV.migrate bstr
-          -- print (fmap (view V0_3.embeddedPdf) hdl')
-          T.traverse MVHEAD.hoodle2Hoodle =<< (MV.migrate bstr)
+        then T.traverse MVHEAD.hoodle2Hoodle =<< (MV.migrate bstr)
         else return (parseOnly PA.hoodle bstr)
 
 -- | this is very temporary, need to be changed.     

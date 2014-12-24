@@ -214,19 +214,12 @@ cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do
             liftIO . atomically $ sendPDFCommand cmdiddoc qvar (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
             lift . put $ Just (Context d f (Just doc) Nothing)
-            --
-            cmdidpg <- issuePDFCommandID
-            pgvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
-            pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
+            pg <- pdfRequest qvar doc pn
             return (pg, RBkgPDF md f pn (Just pg) sfcid)
           _ -> do 
             Context oldd oldf olddoc _ <- MaybeT get
             doc <- MaybeT . return $ olddoc  
-            cmdidpg <- issuePDFCommandID
-            pgvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
-            pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
+            pg <- pdfRequest qvar doc pn
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) sfcid)
         return rbkg
       case r of
@@ -236,14 +229,16 @@ cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do
       r <- runMaybeT $ do 
         Context _ _ _ mdoc <- MaybeT get
         doc <- (MaybeT . return) mdoc 
-        cmdidpg <- issuePDFCommandID
-        pgvar <- liftIO (atomically newEmptyTMVar)
-        liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
-        pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
+        pg <- pdfRequest qvar doc pn
         return (RBkgEmbedPDF pn (Just pg) sfcid)
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"
         Just x -> return x
+  where pdfRequest qvar doc pn = do
+          cmdidpg <- issuePDFCommandID
+          pgvar <- liftIO (atomically newEmptyTMVar)
+          liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
+          MaybeT . liftIO $ atomically $ takeTMVar pgvar
 
  
 -- | For simple hoodle background
@@ -257,22 +252,21 @@ renderBackground_StateT dim@(Dim w h) bkg = do
             (Just d, Just f) -> do
               doc <- (MaybeT . liftIO . popplerGetDocFromFile) f
               lift . put $ (Context d f (Just doc) Nothing)
-              pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
-              lift . lift $ pdfRender pg
+              pdfRenderDoc doc pn
             _ -> do 
               Context _oldd _oldf olddoc _ <- lift get
               doc <- MaybeT . return $ olddoc  
-              pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
-              lift . lift $ pdfRender pg
+              pdfRenderDoc doc pn
         maybe (error "renderBackground_StateT") (const (return ())) r
       BackgroundEmbedPdf _ pn -> do 
         r <- runMaybeT $ do 
           Context _ _ _ mdoc <- lift get
-          doc <- (MaybeT . return) mdoc 
-          pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
-          lift . lift $ pdfRender pg
+          doc <- (MaybeT . return) mdoc
+          pdfRenderDoc doc pn
         maybe (error "renderBackground_StateT") (const (return ())) r
   where pdfRender pg = do Cairo.setSourceRGBA 1 1 1 1
                           Cairo.rectangle 0 0 w h
                           Cairo.fill
                           PopplerPage.pageRender pg
+        pdfRenderDoc doc pn = (MaybeT . liftIO) (popplerGetPageFromDoc doc pn)
+                              >>= lift . lift . pdfRender

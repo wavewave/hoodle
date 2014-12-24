@@ -422,7 +422,7 @@ defaultEventProcess ev = -- for debugging
                             msgShout "------------------"
 
 -- |
-pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> TVar (Seq (UUID,PDFCommand)) -> IO () 
+pdfRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> PDFCommandQueue -> IO () 
 pdfRendererMain handler tvar = forever $ do     
     p <- atomically $ do 
       lst' <- readTVar tvar
@@ -433,7 +433,7 @@ pdfRendererMain handler tvar = forever $ do
           return p 
     pdfWorker handler p
 
-pdfWorker :: ((UUID,(Double,Cairo.Surface))->IO ()) -> (UUID,PDFCommand) -> IO ()
+pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> (PDFCommandID,PDFCommand) -> IO ()
 pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
@@ -446,7 +446,7 @@ pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
 pdfWorker _handler (_,GetNPages doc tmvar) = do
     n <- Poppler.documentGetNPages doc
     atomically $ putTMVar tmvar n
-pdfWorker handler (uuid,RenderPageScaled page (Dim ow _oh) (Dim w h)) = do
+pdfWorker handler (PDFCommandID uuid,RenderPageScaled page (Dim ow _oh) (Dim w h)) = do
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
@@ -455,4 +455,4 @@ pdfWorker handler (uuid,RenderPageScaled page (Dim ow _oh) (Dim w h)) = do
       Cairo.fill
       Cairo.scale s s
       Poppler.pageRender page 
-    handler (uuid,(s,sfc))
+    handler (SurfaceID uuid,(s,sfc))

@@ -33,10 +33,6 @@ import qualified Text.Hoodle.Parse.Attoparsec.V0_2_2 as OP
 import qualified Text.Hoodle.Parse.Attoparsec.V0_3 as NP
 
 
-page2Page :: OH.Page -> NH.Page
-page2Page OH.Page {..} = NH.Page { NH.page_dim = dim2Dim page_dim
-                                 , NH.page_bkg = bkg2Bkg page_bkg
-                                 , NH.page_layers = fmap layer2Layer page_layers } 
 
 dim2Dim :: OH.Dimension -> NH.Dimension 
 dim2Dim (OH.Dim w h) = NH.Dim w h 
@@ -105,6 +101,24 @@ link2Link OH.LinkDocID {..} = NH.LinkDocID { NH.link_id = link_id
 layer2Layer :: OH.Layer -> NH.Layer
 layer2Layer OH.Layer {..} = NH.Layer { NH.layer_items = fmap item2Item layer_items } 
 
+page2Page :: OH.Page -> NH.Page
+page2Page OH.Page {..} = NH.Page { NH.page_dim = dim2Dim page_dim
+                                 , NH.page_bkg = bkg2Bkg page_bkg
+                                 , NH.page_layers = fmap layer2Layer page_layers } 
+
+rev2Rev :: OH.Revision -> NH.Revision
+rev2Rev OH.Revision {..} = NH.Revision { NH._revmd5 = _revmd5 
+                                       , NH._revtxt = _revtxt }
+rev2Rev OH.RevisionInk {..} = NH.RevisionInk { NH._revmd5 = _revmd5 
+                                             , NH._revink = map stroke2Stroke _revink }
+
+hoodle2Hoodle :: OH.Hoodle -> IO NH.Hoodle
+hoodle2Hoodle oh =  set NH.hoodleID  (view OH.hoodleID oh)
+                  . set NH.title     (view OH.title oh)
+                  . set NH.revisions (map rev2Rev (view OH.revisions oh))
+                  . set NH.embeddedPdf (view OH.embeddedPdf oh)
+                  . set NH.pages ((fmap page2Page . view OH.pages) oh)
+                  <$> NH.emptyHoodle 
 
 migrate :: B.ByteString -> IO (Either String NH.Hoodle)
 migrate bstr = do 
@@ -116,9 +130,7 @@ migrate bstr = do
                             set NH.title ttl . set NH.pages pgs <$> lift NH.emptyHoodle 
        | v <= "0.2.2" && v > "0.1.1" ->
                          do oh <- hoistEither (parseOnly OP.hoodle bstr)
-                            let ttl = view OH.title oh 
-                                pgs = (fmap page2Page . view OH.pages) oh 
-                            set NH.title ttl . set NH.pages pgs <$> lift NH.emptyHoodle 
+                            lift (hoodle2Hoodle oh)
        | otherwise -> hoistEither (parseOnly NP.hoodle bstr)
 
 

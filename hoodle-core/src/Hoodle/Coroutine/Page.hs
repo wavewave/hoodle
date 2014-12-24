@@ -292,13 +292,13 @@ newBkg bsty bkg = do
         rhdl = (getHoodle . view (unitHoodles.currentUnit)) xst
         mtotN = pdfNumPages <$> (rhdl ^. gembeddedpdf)  
     let bstystr = convertBackgroundStyleToByteString bsty 
-        defbkg = RBkgSmpl "white" bstystr <$> liftIO nextRandom
+        defbkg = RBkgSmpl "white" bstystr <$> issueSurfaceID
     case npmode of 
       NPPlain -> defbkg
       NPLast -> case bkg of 
-        RBkgSmpl c _ _ -> RBkgSmpl c bstystr <$> liftIO nextRandom
-        RBkgPDF d f n pg _ -> RBkgPDF d f n pg <$> liftIO nextRandom
-        RBkgEmbedPDF n pg _ -> RBkgEmbedPDF n pg <$> liftIO nextRandom
+        RBkgSmpl c _ _ -> RBkgSmpl c bstystr <$> issueSurfaceID
+        RBkgPDF d f n pg _ -> RBkgPDF d f n pg <$> issueSurfaceID
+        RBkgEmbedPDF n pg _ -> RBkgEmbedPDF n pg <$> issueSurfaceID
       NPCycle -> 
         case mtotN of
           Nothing -> defbkg
@@ -307,11 +307,10 @@ newBkg bsty bkg = do
             let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
             case findPDFBkg rhdl n1 of
                  Nothing -> defbkg
-                 Just bkg' -> liftIO nextRandom >>= \i -> do
+                 Just bkg' -> issueSurfaceID >>= \i -> do
                                 let n' = if n1 >= totN then 1 else (n1+1)
-                                -- liftIO $ print (n', totN)
                                 put ((nextPdfBkgPageNum .~ Just n') xst)
-                                return bkg' { rbkg_uuid = i }
+                                return bkg' { rbkg_surfaceid = i }
 
 
 findPDFBkg :: RHoodle -> Int -> Maybe RBackground
@@ -343,16 +342,16 @@ updateBkgCache geometry (pnum,page) = do
       s = (x1-x0) / w 
       rbkg = page ^. gbackground
       bkg = rbkg2Bkg rbkg
-      uuid = rbkg_uuid rbkg 
+      sfcid@(SurfaceID uuid) = rbkg_surfaceid rbkg 
   case rbkg of 
     RBkgSmpl {..} -> do liftIO . forkIO $ do
                           sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
                           Cairo.renderWith sfc $ Cairo.scale s s >> renderBkg (bkg,dim)
-                          handler (uuid, (s,sfc))
+                          handler (sfcid, (s,sfc))
                         return ()
   
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-                       (liftIO . atomically) (sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
+                       (liftIO . atomically) (sendPDFCommand (PDFCommandID uuid) qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
                        return ()
 
 

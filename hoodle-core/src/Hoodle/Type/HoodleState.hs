@@ -187,7 +187,7 @@ data HoodleState =
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Gtk.Statusbar
                 , _renderCache :: RenderCache
-                , _pdfRenderQueue :: TVar (Seq (UUID,PDFCommand))
+                , _pdfRenderQueue :: PDFCommandQueue
                 , _doesNotInvalidate :: Bool
                 , _nextPdfBkgPageNum :: Maybe Int
                 } 
@@ -333,7 +333,7 @@ renderCache :: Simple Lens HoodleState RenderCache
 renderCache = lens _renderCache (\f a -> f { _renderCache = a })
 
 -- | 
-pdfRenderQueue :: Simple Lens HoodleState (TVar (Seq (UUID, PDFCommand)))
+pdfRenderQueue :: Simple Lens HoodleState PDFCommandQueue
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f { _pdfRenderQueue = a })
 
 

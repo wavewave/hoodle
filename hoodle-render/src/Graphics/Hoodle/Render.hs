@@ -89,10 +89,10 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
 data Xform4Page = Xform4Page { transx :: Double
-                                                 , transy :: Double 
-                                                 , scalex :: Double
-                                                 , scaley :: Double } 
-                          deriving (Show)
+                             , transy :: Double 
+                             , scalex :: Double
+                             , scaley :: Double } 
+                deriving (Show)
 
 ------------
 -- simple --
@@ -412,7 +412,7 @@ renderRBkg_Buf :: RenderCache
                -> (RBackground,Dimension,Maybe Xform4Page) 
                -> Cairo.Render (RBackground,Dimension,Maybe Xform4Page)
 renderRBkg_Buf cache (b,dim,mx) = do 
-    case HM.lookup (rbkg_uuid b) cache of
+    case HM.lookup (rbkg_surfaceid b) cache of
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
         Cairo.save
@@ -490,15 +490,15 @@ cnstrctRHoodle hdl = do
       txt = view embeddedText hdl
   (_,qvar) <- ask
   mdoc <- maybe (return Nothing) (\src -> liftIO $ do
-            uuid <- nextRandom
+            cmdid <- issuePDFCommandID
             docvar <- atomically newEmptyTMVar
-            atomically $ sendPDFCommand uuid qvar (GetDocFromDataURI src docvar)
+            atomically $ sendPDFCommand cmdid qvar (GetDocFromDataURI src docvar)
             atomically $ takeTMVar docvar 
           ) pdf
   let getNumPgs doc = liftIO $ do
-        uuid <- nextRandom
+        cmdid <- issuePDFCommandID
         nvar <- atomically newEmptyTMVar
-        atomically $ sendPDFCommand uuid qvar (GetNPages doc nvar)
+        atomically $ sendPDFCommand cmdid qvar (GetNPages doc nvar)
         atomically $ takeTMVar nvar
   mnumpdfpgs <- sequenceA (getNumPgs <$> mdoc)
   -- liftIO $print mnumpdfpgs

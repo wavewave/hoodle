@@ -16,7 +16,7 @@
 
 module Graphics.Hoodle.Render.Type.Renderer where
 
--- import           Control.Concurrent.MVar
+import           Control.Applicative
 import           Control.Concurrent.STM
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -32,6 +32,8 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import           Data.Hoodle.Simple (Dimension(..))
 
 
+newtype PDFCommandID = PDFCommandID UUID
+
 data PDFCommand where
   GetDocFromFile    :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
   GetDocFromDataURI :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
@@ -46,8 +48,14 @@ instance Show PDFCommand where
 type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), TVar (Seq (UUID, PDFCommand))) IO
 
 
-sendPDFCommand :: UUID -> TVar (Seq (UUID,PDFCommand)) -> PDFCommand -> STM ()
-sendPDFCommand !uuid !queuevar !cmd = do
+issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
+issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
+
+sendPDFCommand :: PDFCommandID 
+               -> TVar (Seq (UUID,PDFCommand)) 
+               -> PDFCommand 
+               -> STM ()
+sendPDFCommand (PDFCommandID uuid) !queuevar !cmd = do
     queue <- readTVar queuevar
     let queue' = Seq.filter ((/=uuid) .fst) queue 
         nqueue = queue' |> (uuid,cmd)

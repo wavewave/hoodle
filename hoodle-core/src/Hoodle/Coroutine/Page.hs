@@ -352,7 +352,7 @@ updateBkgCache geometry (pnum,page) = do
                         return ()
   
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-                       (liftIO . atomically) (sendPDFCommand uuid qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
+                       (liftIO . atomically) (sendPDFCommand (PDFCommandID uuid) qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
                        return ()
 
 

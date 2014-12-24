@@ -211,13 +211,13 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do
         (pg,rbkg) <- case (md,mf) of 
           (Just d, Just f) -> do 
-            uuiddoc <- liftIO nextRandom
+            cmdiddoc <- issuePDFCommandID
             docvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand uuiddoc qvar (GetDocFromFile f docvar)
+            liftIO . atomically $ sendPDFCommand cmdiddoc qvar (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
             lift . put $ Just (Context d f (Just doc) Nothing)
             --
-            uuidpg <- liftIO nextRandom
+            uuidpg <- issuePDFCommandID
             pgvar <- liftIO (atomically newEmptyTMVar)
             liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
@@ -225,9 +225,9 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
           _ -> do 
             Context oldd oldf olddoc _ <- MaybeT get
             doc <- MaybeT . return $ olddoc  
-            uuidpg <- liftIO nextRandom
+            cmdidpg <- issuePDFCommandID
             pgvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
+            liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) uuid)
         return rbkg
@@ -238,9 +238,9 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do 
         Context _ _ _ mdoc <- MaybeT get
         doc <- (MaybeT . return) mdoc 
-        uuidpg <- liftIO nextRandom
+        cmdidpg <- issuePDFCommandID
         pgvar <- liftIO (atomically newEmptyTMVar)
-        liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
+        liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
         pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
         return (RBkgEmbedPDF pn (Just pg) uuid)
       case r of 

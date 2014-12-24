@@ -32,6 +32,7 @@ Library
                  directory, 
                  filepath, 
                  gd >= 3000.7,  
+                 hashable,
                  hoodle-types >= 0.3.0,
                  lens >= 2.5, 
                  monad-loops >= 0.3,  
@@ -63,7 +64,7 @@ Library
                    Graphics.Hoodle.Render.Type.HitTest
                    Graphics.Hoodle.Render.Type.Hoodle
                    Graphics.Hoodle.Render.Type.Item
-                   Graphics.Hoodle.Render.Type.RenderCache
+                   -- Graphics.Hoodle.Render.Type.RenderCache
                    Graphics.Hoodle.Render.Type.Renderer
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util

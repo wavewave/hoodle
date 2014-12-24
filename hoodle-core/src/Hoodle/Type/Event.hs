@@ -51,7 +51,7 @@ instance Show (Cairo.Surface) where
 -- | 
 data SystemEvent = TestSystemEvent 
                  | ClockUpdateEvent 
-                 | RenderCacheUpdate (UUID, (Double,Cairo.Surface))
+                 | RenderCacheUpdate (SurfaceID, (Double,Cairo.Surface))
                  deriving Show 
                           
 -- | 

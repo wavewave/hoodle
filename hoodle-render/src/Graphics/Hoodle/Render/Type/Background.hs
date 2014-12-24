@@ -23,6 +23,7 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple 
 -- from this package
+import           Graphics.Hoodle.Render.Type.Renderer
 
 -- 
 import Prelude hiding (mapM_)
@@ -40,19 +41,19 @@ data Context = Context { ctxt_domain :: ByteString
 data RBackground = RBkgSmpl 
                    { rbkg_color :: ByteString
                    , rbkg_style :: ByteString
-                   , rbkg_uuid :: UUID
+                   , rbkg_surfaceid :: SurfaceID -- UUID
                    }
                  | RBkgPDF 
                    { rbkg_domain :: Maybe ByteString
                    , rbkg_filename :: ByteString
                    , rbkg_pageno :: Int 
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-                   , rbkg_uuid :: UUID
+                   , rbkg_surfaceid :: SurfaceID -- UUID
                    } 
                  | RBkgEmbedPDF
                    { rbkg_pageno :: Int
                    , rbkg_popplerpage :: Maybe Poppler.Page 
-                   , rbkg_uuid :: UUID
+                   , rbkg_surfaceid :: SurfaceID -- UUID
                    } 
 instance Show (RBackground) where
   show _ = "RBackground"

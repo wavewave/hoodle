@@ -412,7 +412,7 @@ renderRBkg_Buf :: RenderCache
                -> (RBackground,Dimension,Maybe Xform4Page) 
                -> Cairo.Render (RBackground,Dimension,Maybe Xform4Page)
 renderRBkg_Buf cache (b,dim,mx) = do 
-    case HM.lookup (rbkg_uuid b) cache of
+    case HM.lookup (rbkg_surfaceid b) cache of
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
         Cairo.save

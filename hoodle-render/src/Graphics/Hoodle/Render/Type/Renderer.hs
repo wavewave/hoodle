@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
@@ -22,6 +23,8 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as B
+import           Data.Hashable (Hashable(..))
+import qualified Data.HashMap.Strict as HM
 import           Data.Sequence hiding (null,filter)
 import qualified Data.Sequence as Seq (null,filter)
 import           Data.UUID
@@ -47,15 +50,20 @@ instance Show PDFCommand where
 
 
 newtype SurfaceID = SurfaceID UUID
-                  deriving (Show,Eq,Ord)
+                  deriving (Show,Eq,Ord,Hashable)
 
-type Renderer = ReaderT ((UUID, (Double,Cairo.Surface)) -> IO (), PDFCommandQueue) IO
+type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), PDFCommandQueue) IO
 
+-- | hashmap: key = UUID, value = (original size, view size, surface)
+type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
 
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
+
+issueSurfaceID :: (Functor m, MonadIO m) => m SurfaceID
+issueSurfaceID = SurfaceID <$> liftIO nextRandom
 
 sendPDFCommand :: PDFCommandID 
                -> PDFCommandQueue 

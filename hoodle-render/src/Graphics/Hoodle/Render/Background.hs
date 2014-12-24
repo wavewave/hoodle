@@ -202,9 +202,9 @@ cnstrctRBkg_StateT :: Dimension
                    -> StateT (Maybe Context) Renderer RBackground
 cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
   (handler,qvar) <- lift ask
-  uuid <- liftIO nextRandom
+  sfcid <- issueSurfaceID
   case bkg of 
-    Background _t c s -> return (RBkgSmpl c s uuid) 
+    Background _t c s -> return (RBkgSmpl c s sfcid) 
     BackgroundPdf _t md mf pn -> do 
       r <- runMaybeT $ do
         (pg,rbkg) <- case (md,mf) of 
@@ -215,11 +215,11 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar 
             lift . put $ Just (Context d f (Just doc) Nothing)
             --
-            uuidpg <- issuePDFCommandID
+            cmdidpg <- issuePDFCommandID
             pgvar <- liftIO (atomically newEmptyTMVar)
-            liftIO . atomically $ sendPDFCommand uuidpg qvar (GetPageFromDoc doc pn pgvar)
+            liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
-            return (pg, RBkgPDF md f pn (Just pg) uuid)
+            return (pg, RBkgPDF md f pn (Just pg) sfcid)
           _ -> do 
             Context oldd oldf olddoc _ <- MaybeT get
             doc <- MaybeT . return $ olddoc  
@@ -227,7 +227,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
             pgvar <- liftIO (atomically newEmptyTMVar)
             liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
             pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
-            return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) uuid)
+            return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) sfcid)
         return rbkg
       case r of
         Nothing -> error "error in cnstrctRBkg_StateT"
@@ -240,7 +240,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
         pgvar <- liftIO (atomically newEmptyTMVar)
         liftIO . atomically $ sendPDFCommand cmdidpg qvar (GetPageFromDoc doc pn pgvar)
         pg <- MaybeT . liftIO $ atomically $ takeTMVar pgvar        
-        return (RBkgEmbedPDF pn (Just pg) uuid)
+        return (RBkgEmbedPDF pn (Just pg) sfcid)
       case r of 
         Nothing -> error "error in cnstrctRBkg_StateT"
         Just x -> return x

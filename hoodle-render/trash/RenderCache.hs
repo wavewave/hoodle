@@ -12,10 +12,9 @@
 
 module Graphics.Hoodle.Render.Type.RenderCache where
 
-import qualified Data.HashMap.Strict as HM
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
+-- 
+import           Graphics.Hoodle.Render.Type.Renderer 
 
--- | hashmap: key = UUID, value = (original size, view size, surface)
-type RenderCache = HM.HashMap UUID (Double, Cairo.Surface)
 

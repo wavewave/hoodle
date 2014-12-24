@@ -422,7 +422,7 @@ defaultEventProcess ev = -- for debugging
                             msgShout "------------------"
 
 -- |
-pdfRendererMain :: ((UUID,(Double,Cairo.Surface))->IO ()) -> PDFCommandQueue -> IO () 
+pdfRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> PDFCommandQueue -> IO () 
 pdfRendererMain handler tvar = forever $ do     
     p <- atomically $ do 
       lst' <- readTVar tvar
@@ -433,7 +433,7 @@ pdfRendererMain handler tvar = forever $ do
           return p 
     pdfWorker handler p
 
-pdfWorker :: ((UUID,(Double,Cairo.Surface))->IO ()) -> (PDFCommandID,PDFCommand) -> IO ()
+pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> (PDFCommandID,PDFCommand) -> IO ()
 pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
@@ -455,4 +455,4 @@ pdfWorker handler (PDFCommandID uuid,RenderPageScaled page (Dim ow _oh) (Dim w h
       Cairo.fill
       Cairo.scale s s
       Poppler.pageRender page 
-    handler (uuid,(s,sfc))
+    handler (SurfaceID uuid,(s,sfc))

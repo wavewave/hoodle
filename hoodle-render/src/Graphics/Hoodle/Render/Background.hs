@@ -15,7 +15,7 @@
 
 module Graphics.Hoodle.Render.Background where
 
-import           Control.Concurrent
+-- import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Maybe
@@ -28,7 +28,7 @@ import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
-import           Graphics.UI.Gtk (postGUIAsync)
+-- import           Graphics.UI.Gtk (postGUIAsync)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory
@@ -200,14 +200,14 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
 cnstrctRBkg_StateT :: Dimension 
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
-cnstrctRBkg_StateT dim@(Dim w h) bkg = do  
-  (handler,qvar) <- lift ask
+cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do  
+  (_handler,qvar) <- lift ask
   sfcid <- issueSurfaceID
   case bkg of 
     Background _t c s -> return (RBkgSmpl c s sfcid) 
     BackgroundPdf _t md mf pn -> do 
       r <- runMaybeT $ do
-        (pg,rbkg) <- case (md,mf) of 
+        (_pg,rbkg) <- case (md,mf) of 
           (Just d, Just f) -> do 
             cmdiddoc <- issuePDFCommandID
             docvar <- liftIO (atomically newEmptyTMVar)
@@ -250,7 +250,7 @@ cnstrctRBkg_StateT dim@(Dim w h) bkg = do
 renderBackground_StateT :: Dimension -> Background -> StateT Context Cairo.Render ()
 renderBackground_StateT dim@(Dim w h) bkg = do
     case bkg of 
-      Background _t c s -> lift (renderBkg (bkg,dim))
+      Background _t _c _s -> lift (renderBkg (bkg,dim))
       BackgroundPdf _t md mf pn -> do 
         r <- runMaybeT $ do
           case (md,mf) of 
@@ -260,7 +260,7 @@ renderBackground_StateT dim@(Dim w h) bkg = do
               pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
               lift . lift $ pdfRender pg
             _ -> do 
-              Context oldd oldf olddoc _ <- lift get
+              Context _oldd _oldf olddoc _ <- lift get
               doc <- MaybeT . return $ olddoc  
               pg <- MaybeT . liftIO $ popplerGetPageFromDoc doc pn
               lift . lift $ pdfRender pg

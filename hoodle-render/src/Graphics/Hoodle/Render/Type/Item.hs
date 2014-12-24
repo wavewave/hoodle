@@ -1,4 +1,6 @@
-{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
+-- {-# LANGUAGE TypeOperators #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -16,7 +18,7 @@
 
 module Graphics.Hoodle.Render.Type.Item where
 
-import           Data.UUID
+-- import           Data.UUID
 -- import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG

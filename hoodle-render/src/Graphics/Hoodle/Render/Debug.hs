@@ -118,7 +118,7 @@ renderRItem_BBoxOnly _ (RItemStroke sbbox) = renderStrkBBx_BBoxOnly sbbox
 renderRItem_BBoxOnly _ (RItemImage ibbox _) = renderImgBBx_BBoxOnly ibbox
 renderRItem_BBoxOnly _ (RItemSVG svg _) = renderSVGBBx_BBoxOnly svg
 renderRItem_BBoxOnly _ (RItemLink lnk _) = renderLnkBBx_BBoxOnly lnk
-renderRItem_BBoxOnly _ itm@(RItemAnchor anc _) = (renderHltBBox . getBBox) anc
+renderRItem_BBoxOnly _ (RItemAnchor anc _) = (renderHltBBox . getBBox) anc
 
 -- | 
 renderRLayer_BBoxOnly :: RenderCache -> RLayer -> Cairo.Render ()

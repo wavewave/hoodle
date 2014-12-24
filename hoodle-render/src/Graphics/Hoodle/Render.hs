@@ -489,6 +489,7 @@ cnstrctRHoodle hdl = do
       pdf = view embeddedPdf hdl 
       txt = view embeddedText hdl
   (_,qvar) <- ask
+  liftIO $ putStrLn (show pdf)
   mdoc <- maybe (return Nothing) (\src -> liftIO $ do
             uuid <- nextRandom
             docvar <- atomically newEmptyTMVar

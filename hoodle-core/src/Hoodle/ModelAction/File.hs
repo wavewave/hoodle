@@ -41,6 +41,7 @@ import           Graphics.Hoodle.Render.Type.Hoodle
 import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import qualified Text.Hoodle.Migrate.V0_2_2_to_V0_3 as MV
+import qualified Data.Hoodle.Simple.V0_3 as V0_3
 import qualified Text.Hoodle.Migrate.V0_3_to_HEAD as MVHEAD
 -- from this package
 import           Hoodle.Type.HoodleState
@@ -53,7 +54,10 @@ checkVersionAndMigrate bstr = do
     Left str -> error str 
     Right v -> do 
       if ( v <= "0.2.2" ) 
-        then T.traverse MVHEAD.hoodle2Hoodle =<< (MV.migrate bstr)
+        then do 
+          -- hdl' <- MV.migrate bstr
+          -- print (fmap (view V0_3.embeddedPdf) hdl')
+          T.traverse MVHEAD.hoodle2Hoodle =<< (MV.migrate bstr)
         else return (parseOnly PA.hoodle bstr)
 
 -- | this is very temporary, need to be changed.     

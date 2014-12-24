@@ -342,7 +342,7 @@ updateBkgCache geometry (pnum,page) = do
       s = (x1-x0) / w 
       rbkg = page ^. gbackground
       bkg = rbkg2Bkg rbkg
-      sfcid@(SurfaceID uuid) = rbkg_surfaceid rbkg 
+      sfcid = rbkg_surfaceid rbkg 
   case rbkg of 
     RBkgSmpl {..} -> do liftIO . forkIO $ do
                           sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor (x1-x0)) (floor (y1-y0))
@@ -351,7 +351,8 @@ updateBkgCache geometry (pnum,page) = do
                         return ()
   
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
-                       (liftIO . atomically) (sendPDFCommand (PDFCommandID uuid) qvar (RenderPageScaled pg (Dim w h) (Dim (x1-x0) (y1-y0))))
+                       cmdid <- issuePDFCommandID
+                       (liftIO . atomically) (sendPDFCommand cmdid qvar (RenderPageScaled sfcid pg (Dim w h) (Dim (x1-x0) (y1-y0))))
                        return ()
 
 

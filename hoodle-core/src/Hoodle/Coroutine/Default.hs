@@ -433,7 +433,8 @@ pdfRendererMain handler tvar = forever $ do
           return p 
     pdfWorker handler p
 
-pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> (PDFCommandID,PDFCommand) -> IO ()
+pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
+          -> (PDFCommandID,PDFCommand) -> IO ()
 pdfWorker _handler (_,GetDocFromFile fp tmvar) = do
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
@@ -446,7 +447,7 @@ pdfWorker _handler (_,GetPageFromDoc doc pn tmvar) = do
 pdfWorker _handler (_,GetNPages doc tmvar) = do
     n <- Poppler.documentGetNPages doc
     atomically $ putTMVar tmvar n
-pdfWorker handler (PDFCommandID uuid,RenderPageScaled page (Dim ow _oh) (Dim w h)) = do
+pdfWorker handler (_,RenderPageScaled sfcid page (Dim ow _oh) (Dim w h)) = do
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
@@ -455,4 +456,4 @@ pdfWorker handler (PDFCommandID uuid,RenderPageScaled page (Dim ow _oh) (Dim w h
       Cairo.fill
       Cairo.scale s s
       Poppler.pageRender page 
-    handler (SurfaceID uuid,(s,sfc))
+    handler (sfcid,(s,sfc))

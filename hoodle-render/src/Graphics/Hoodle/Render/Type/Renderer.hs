@@ -34,18 +34,23 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import           Data.Hoodle.Simple (Dimension(..))
 
 
-newtype PDFCommandID = PDFCommandID UUID
-                     deriving (Show,Eq,Ord)
+newtype PDFCommandID = PDFCommandID UUID deriving (Show,Eq,Ord)
 
 data PDFCommand where
-  GetDocFromFile    :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
-  GetDocFromDataURI :: !B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
-  GetPageFromDoc    :: !Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
+  GetDocFromFile    :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
+  GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand 
+  GetPageFromDoc    :: Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand 
   GetNPages :: !Poppler.Document -> (TMVar Int) -> PDFCommand
-  RenderPageScaled  :: !Poppler.Page -> !Dimension -> !Dimension -> PDFCommand 
+  RenderPageScaled  :: SurfaceID -> Poppler.Page -> Dimension -> Dimension -> PDFCommand 
 
 instance Show PDFCommand where
   show _ = "PDFCommand"
+
+newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
+
+-- data GenericCommand where
+--   DrawRBkgSmpl :: B.ByteString -> B.ByteString -> 
+
 
 
 newtype SurfaceID = SurfaceID UUID
@@ -58,6 +63,8 @@ type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
 
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
+-- type GenericQueue = TVar (Seq (GenCommandID,GenericCommand)
+
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom
 
@@ -68,9 +75,18 @@ sendPDFCommand :: PDFCommandID
                -> PDFCommandQueue 
                -> PDFCommand 
                -> STM ()
-sendPDFCommand !cmdid !queuevar !cmd = do
+sendPDFCommand cmdid queuevar cmd = do
     queue <- readTVar queuevar
-    let queue' = Seq.filter ((/=cmdid) .fst) queue 
+    let queue' = Seq.filter (not . isRemoved (cmdid,cmd)) queue -- ((/=cmdid) .fst) queue 
         nqueue = queue' |> (cmdid,cmd)
     writeTVar queuevar nqueue
 
+isRemoved :: (PDFCommandID,PDFCommand) -> (PDFCommandID,PDFCommand) -> Bool
+isRemoved n@(cmdid,ncmd) o@(ocmdid,ocmd) 
+  | cmdid == ocmdid = True
+  | otherwise = case ncmd of
+                  RenderPageScaled nsfcid _ _ _ -> 
+                    case ocmd of
+                      RenderPageScaled osfcid _ _ _ -> nsfcid == osfcid
+                      _ -> False
+                  _ -> False

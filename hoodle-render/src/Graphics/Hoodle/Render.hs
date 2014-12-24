@@ -52,7 +52,7 @@ module Graphics.Hoodle.Render
 ) where
 
 import           Control.Applicative
-import           Control.Concurrent (putMVar)
+-- import           Control.Concurrent (putMVar)
 import           Control.Concurrent.STM
 import           Control.Lens (view,set)
 import           Control.Monad.Identity (runIdentity)
@@ -61,13 +61,13 @@ import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
-import           Data.Sequence ( (|>))
-import qualified Data.Sequence as Seq (null)
+-- import           Data.Sequence ( (|>))
+-- import qualified Data.Sequence as Seq (null)
 import           Data.Traversable (mapM,sequenceA)
-import           Data.UUID.V4
+-- import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+-- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory (doesFileExist)
 import           System.FilePath (takeExtension)
 -- from hoodle-platform 
@@ -127,7 +127,7 @@ renderStrk s@(VWStroke _ _ d) = do
 renderImg :: Image -> Cairo.Render () 
 renderImg img@(Image src (x,y) (Dim w h))  = do  
     let (x2,y2) = (x+w,y+h)
-        imgbbx = BBox (x,y) (x2,y2)
+        -- imgbbx = BBox (x,y) (x2,y2)
         embed = getByteStringIfEmbeddedPNG src 
     msfc <- liftIO $ case embed of         
       Just bstr -> do 
@@ -297,7 +297,7 @@ renderRBkg cache (r,dim,mx) =
 -- |
 renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
 renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem cache itm@(RItemImage img msfc) = do
+renderRItem _cache itm@(RItemImage img msfc) = do
     case msfc of
       Nothing -> renderImg (bbxed_content img)
       Just sfc -> do 
@@ -536,21 +536,16 @@ renderPage_StateT pg = do
   let bkg = view background pg
       dim = view dimension pg 
       lyrs = view layers pg
-  -- nlyrs_lst <- lift (mapM cnstrctRLayer lyrs)
-  -- let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
-  --     nlyrs = fromNonEmptyList nlyrs_nonemptylst 
-  -- nbkg <- cnstrctRBkg_StateT dim bkg
-  -- return $ GPage dim nbkg nlyrs 
   renderBackground_StateT dim bkg
   lift (mapM_ renderLayer lyrs)
   
 -- | 
 initRenderContext :: Hoodle -> IO Context
 initRenderContext hdl = do
-  let hid = view hoodleID hdl 
-      ttl = view title hdl 
-      revs = view revisions hdl 
-      pgs = view pages hdl
+  let -- hid = view hoodleID hdl 
+      -- ttl = view title hdl 
+      --revs = view revisions hdl 
+      -- pgs = view pages hdl
       pdf = view embeddedPdf hdl 
   mdoc <- join <$> mapM popplerGetDocFromDataURI pdf
   return (Context "" "" Nothing mdoc)

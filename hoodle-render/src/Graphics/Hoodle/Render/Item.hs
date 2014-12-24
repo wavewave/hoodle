@@ -18,7 +18,6 @@
 module Graphics.Hoodle.Render.Item where
 
 import           Control.Applicative
-import           Control.Concurrent (forkIO) 
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.IO.Class
@@ -28,7 +27,7 @@ import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64
 -- import           Data.UUID
-import           Data.UUID.V4
+-- import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -73,7 +72,7 @@ import           Graphics.Hoodle.Render.Type.Renderer
 cnstrctRItem :: Item -> Renderer RItem 
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem (ItemImage img) = do 
-    (handler,_) <- ask 
+    (_handler,_) <- ask 
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
     let embed = getByteStringIfEmbeddedPNG src 

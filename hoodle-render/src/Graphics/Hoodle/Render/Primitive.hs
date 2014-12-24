@@ -1,4 +1,3 @@
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Primitive
@@ -18,12 +17,12 @@ module Graphics.Hoodle.Render.Primitive
 , drawVWStrokeCurve 
 ) where 
 
-import           Control.Applicative
+-- import           Control.Applicative
 import           Control.Monad 
 import           Data.Strict.Tuple hiding (fst,snd)
 import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
-import           Data.Hoodle.Predefined 
+-- import           Data.Hoodle.Predefined 
 -- 
 -- import Prelude hiding (foldM_)
 

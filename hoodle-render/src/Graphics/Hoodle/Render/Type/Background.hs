@@ -16,7 +16,7 @@
 module Graphics.Hoodle.Render.Type.Background where
 
 import           Data.ByteString 
-import           Data.UUID
+-- import           Data.UUID
 -- import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 -- from hoodle-platform

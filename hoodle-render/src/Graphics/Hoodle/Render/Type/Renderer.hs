@@ -19,14 +19,13 @@ module Graphics.Hoodle.Render.Type.Renderer where
 
 import           Control.Applicative
 import           Control.Concurrent.STM
-import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as B
 import           Data.Hashable (Hashable(..))
 import qualified Data.HashMap.Strict as HM
 import           Data.Sequence hiding (null,filter)
-import qualified Data.Sequence as Seq (null,filter)
+import qualified Data.Sequence as Seq (filter)
 import           Data.UUID
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo

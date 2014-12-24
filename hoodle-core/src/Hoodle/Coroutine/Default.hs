@@ -48,6 +48,7 @@ import           Control.Monad.Trans.Crtn.Logger.Simple
 import           Data.Hoodle.Simple (Dimension(..), Background(..))
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Engine
 import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Type
 -- from this package

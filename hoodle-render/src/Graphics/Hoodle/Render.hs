@@ -49,9 +49,6 @@ module Graphics.Hoodle.Render
 -- * some simple render with state
 , renderPage_StateT
 , initRenderContext
--- * renderer process
-, pdfRendererMain
-, genRendererMain
 ) where
 
 import           Control.Applicative
@@ -64,14 +61,11 @@ import           Control.Monad.Trans.Reader
 import qualified Data.ByteString.Char8 as C
 import           Data.Foldable
 import qualified Data.HashMap.Strict as HM
-import           Data.Sequence ( viewl, ViewL(..) )
 -- import qualified Data.Sequence as Seq (null)
 import           Data.Traversable (mapM,sequenceA)
 -- import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 import           System.Directory (doesFileExist)
 import           System.FilePath (takeExtension)
 -- from hoodle-platform 
@@ -553,68 +547,4 @@ initRenderContext hdl = do
   mdoc <- join <$> mapM popplerGetDocFromDataURI pdf
   return (Context "" "" Nothing mdoc)
 
-
--- |
-pdfRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> PDFCommandQueue -> IO () 
-pdfRendererMain handler tvar = forever $ do     
-    p <- atomically $ do 
-      lst' <- readTVar tvar
-      case viewl lst' of
-        EmptyL -> retry
-        p :< ps -> do 
-          writeTVar tvar ps 
-          return p 
-    pdfWorker handler (snd p)
-
-pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
-          -> PDFCommand -> IO ()
-pdfWorker _handler (GetDocFromFile fp tmvar) = do
-    mdoc <- popplerGetDocFromFile fp
-    atomically $ putTMVar tmvar mdoc 
-pdfWorker _handler (GetDocFromDataURI str tmvar) = do
-    mdoc <- popplerGetDocFromDataURI str
-    atomically $ putTMVar tmvar mdoc
-pdfWorker _handler (GetPageFromDoc doc pn tmvar) = do
-    mpg <- popplerGetPageFromDoc doc pn
-    atomically $ putTMVar tmvar mpg
-pdfWorker _handler (GetNPages doc tmvar) = do
-    n <- Poppler.documentGetNPages doc
-    atomically $ putTMVar tmvar n
-pdfWorker handler (RenderPageScaled sfcid page (Dim ow _oh) (Dim w h)) = do
-    let s = w / ow
-    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-    Cairo.renderWith sfc $ do   
-      Cairo.setSourceRGBA 1 1 1 1
-      Cairo.rectangle 0 0 w h 
-      Cairo.fill
-      Cairo.scale s s
-      Poppler.pageRender page 
-    handler (sfcid,(s,sfc))
-
--- |
-genRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
-                -> GenCommandQueue -> IO () 
-genRendererMain handler tvar = forever $ do     
-    p <- atomically $ do 
-      lst' <- readTVar tvar
-      case viewl lst' of
-        EmptyL -> retry
-        p :< ps -> do 
-          writeTVar tvar ps 
-          return p 
-    genWorker handler (snd p)
-
-genWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
-          -> GenCommand -> IO ()
-genWorker handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
-    let s = w / ow
-        bkg = Background "solid" col sty
-    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-    Cairo.renderWith sfc $ do   
-      Cairo.setSourceRGBA 1 1 1 1
-      Cairo.rectangle 0 0 w h 
-      Cairo.fill
-      Cairo.scale s s
-      renderBkg (bkg,dim)
-    handler (sfcid,(s,sfc))
 

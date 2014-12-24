@@ -55,6 +55,7 @@ Library
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
                    Graphics.Hoodle.Render.Debug
+                   Graphics.Hoodle.Render.Engine
                    Graphics.Hoodle.Render.Generic
                    Graphics.Hoodle.Render.Highlight
                    Graphics.Hoodle.Render.Item  

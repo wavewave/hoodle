@@ -93,9 +93,9 @@ startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do
       Nothing -> togglePanZoom cid
       Just (mode,(oxy,owxy)) -> do 
         (srcsfc,Dim wsfc hsfc) <- case mode of 
-          Moving -> liftIO (canvasImageSurface cache Nothing geometry hdl)
-          Zooming -> liftIO (canvasImageSurface cache (Just 1) geometry hdl)
-          Panning _ -> liftIO (canvasImageSurface cache (Just 1) geometry hdl) 
+          Moving -> liftIO (canvasImageSurface cache cid Nothing geometry hdl)
+          Zooming -> liftIO (canvasImageSurface cache cid (Just 1) geometry hdl)
+          Panning _ -> liftIO (canvasImageSurface cache cid (Just 1) geometry hdl) 
         -- need to draw other widgets here                             
         let otherwidgets = delete PanZoomWidget allWidgets 
         liftIO $ Cairo.renderWith 

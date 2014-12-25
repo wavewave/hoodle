@@ -284,21 +284,16 @@ drawFallBackBkg (Dim w h) = do
 
 -- | 
 renderRBkg :: RenderCache 
+           -> CanvasId
            -> (RBackground,Dimension, Maybe Xform4Page) 
            -> Cairo.Render (RBackground,Dimension, Maybe Xform4Page)
 renderRBkg = renderRBkg_Buf
 
--- cache (r,dim,mx) = 
-    -- case r of 
-    --   (RBkgSmpl _ _ _)     -> renderRBkg_Buf cache (r,dim,mx)
-    --      --  renderBkg (rbkg2Bkg r,dim) >> return (r,dim,mx)
-    --   (RBkgPDF _ _ _ _ _)  -> renderRBkg_Buf cache (r,dim,mx)
-    --   (RBkgEmbedPDF _ _ _) -> renderRBkg_Buf cache (r,dim,mx)
 
 -- |
-renderRItem :: RenderCache -> RItem -> Cairo.Render RItem  
-renderRItem _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem _cache itm@(RItemImage img msfc) = do
+renderRItem :: RenderCache -> CanvasId -> RItem -> Cairo.Render RItem  
+renderRItem _ _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
+renderRItem _cache cid itm@(RItemImage img msfc) = do
     case msfc of
       Nothing -> renderImg (bbxed_content img)
       Just sfc -> do 
@@ -313,7 +308,7 @@ renderRItem _cache itm@(RItemImage img msfc) = do
 	Cairo.paint 
 	Cairo.restore
     return itm 
-renderRItem _ itm@(RItemSVG svgbbx mrsvg) = do 
+renderRItem _ _ itm@(RItemSVG svgbbx mrsvg) = do 
     case mrsvg of
       Nothing -> renderSVG (bbxed_content svgbbx)
       Just rsvg -> do 
@@ -329,7 +324,7 @@ renderRItem _ itm@(RItemSVG svgbbx mrsvg) = do
 	Cairo.restore
 	return () 
     return itm 
-renderRItem _ itm@(RItemLink lnkbbx mrsvg) = do 
+renderRItem _ _ itm@(RItemLink lnkbbx mrsvg) = do 
     case mrsvg of
       Nothing -> renderLink (bbxed_content lnkbbx)
       Just rsvg -> do 
@@ -345,7 +340,7 @@ renderRItem _ itm@(RItemLink lnkbbx mrsvg) = do
 	Cairo.restore
 	return () 
     return itm 
-renderRItem _ itm@(RItemAnchor ancbbx mrsvg) = do
+renderRItem _ _ itm@(RItemAnchor ancbbx mrsvg) = do
     case mrsvg of
       Nothing -> renderAnchor (bbxed_content ancbbx)
       Just rsvg -> do 
@@ -369,27 +364,27 @@ renderRItem _ itm@(RItemAnchor ancbbx mrsvg) = do
 
 -- | background drawing in bbox 
 renderRBkg_InBBox :: RenderCache 
+                  -> CanvasId
                   -> Maybe BBox 
                   -> (RBackground,Dimension,Maybe Xform4Page) 
                   -> Cairo.Render (RBackground,Dimension, Maybe Xform4Page)
-renderRBkg_InBBox cache mbbox (b,dim,mx) = do 
+renderRBkg_InBBox cache cid mbbox (b,dim,mx) = do 
     clipBBox (fmap (flip inflate 1) mbbox)
-    renderRBkg_Buf cache (b,dim,mx)
+    renderRBkg_Buf cache cid (b,dim,mx)
     Cairo.resetClip
     return (b,dim,mx)
 
 
 -- | render RLayer within BBox after hittest items
-renderRLayer_InBBox :: RenderCache -> Maybe BBox -> RLayer -> Cairo.Render RLayer
-renderRLayer_InBBox cache mbbox layer = do  
-  liftIO $ putStrLn "renderRLayer_InBBox : I am called"
+renderRLayer_InBBox :: RenderCache -> CanvasId -> Maybe BBox -> RLayer -> Cairo.Render RLayer
+renderRLayer_InBBox cache cid mbbox layer = do  
   clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
                    :- Empty 
         Just bbox -> (hltHittedByBBox bbox . view gitems) layer
-  (mapM_ (renderRItem cache) . concatMap unHitted  . getB) hittestbbox
+  (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
   Cairo.resetClip  
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
@@ -400,7 +395,7 @@ renderRLayer_InBBox cache mbbox layer = do
         Cairo.setOperator Cairo.OperatorSource
         Cairo.paint
         Cairo.setOperator Cairo.OperatorOver
-        (mapM_ (renderRItem cache) . concatMap unHitted  . getB) hittestbbox
+        (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
         Cairo.resetClip 
         return layer 
     _ -> return layer 
@@ -411,10 +406,11 @@ renderRLayer_InBBox cache mbbox layer = do
 
 -- | Background rendering using buffer
 renderRBkg_Buf :: RenderCache
+               -> CanvasId
                -> (RBackground,Dimension,Maybe Xform4Page) 
                -> Cairo.Render (RBackground,Dimension,Maybe Xform4Page)
-renderRBkg_Buf cache (b,dim,mx) = do 
-    case HM.lookup (rbkg_surfaceid b) cache of
+renderRBkg_Buf cache cid (b,dim,mx) = do 
+    case HM.lookup (rbkg_surfaceid b) {- (rbkg_surfaceid b,cid) -} cache of
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
         Cairo.save
@@ -431,9 +427,9 @@ renderRBkg_Buf cache (b,dim,mx) = do
     return (b,dim,mx)
 
 -- | 
-renderRLayer_InBBoxBuf :: RenderCache 
+renderRLayer_InBBoxBuf :: RenderCache -> CanvasId
                        -> Maybe BBox -> RLayer -> Cairo.Render RLayer 
-renderRLayer_InBBoxBuf cache mbbox lyr = do
+renderRLayer_InBBoxBuf cache cid mbbox lyr = do
     case view gbuffer lyr of 
       LyBuf (Just sfc) -> do 
         clipBBox mbbox
@@ -442,7 +438,7 @@ renderRLayer_InBBoxBuf cache mbbox lyr = do
         Cairo.resetClip 
         return lyr 
       _ -> do 
-        renderRLayer_InBBox cache mbbox lyr         
+        renderRLayer_InBBox cache cid mbbox lyr         
 
 -------------------
 -- update buffer
@@ -450,43 +446,46 @@ renderRLayer_InBBoxBuf cache mbbox lyr = do
 
 -- | 
 updateLayerBuf :: RenderCache 
+               -> CanvasId 
                -> Double      -- ^ scale factor
                -> Dimension 
                -> Maybe BBox 
                -> RLayer 
                -> IO RLayer
-updateLayerBuf cache s (Dim w h) mbbox lyr = do 
+updateLayerBuf cache cid s (Dim w h) mbbox lyr = do 
   case view gbuffer lyr of 
     LyBuf (Just sfc) -> do 
       putStrLn "updateLayerBuf : buffer called"
       Cairo.renderWith sfc $ do 
-        renderRLayer_InBBox cache mbbox lyr 
+        renderRLayer_InBBox cache cid mbbox lyr 
       return lyr
     LyBuf Nothing -> do 
       sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
       Cairo.renderWith sfc $ do 
-        renderRLayer_InBBox cache Nothing lyr
+        renderRLayer_InBBox cache cid Nothing lyr
       return (set gbuffer (LyBuf (Just sfc)) lyr) 
       
 -- | 
 updatePageBuf :: RenderCache 
+              -> CanvasId
               -> Double      -- ^ scale factor 
               -> RPage 
               -> IO RPage 
-updatePageBuf cache s pg = do 
+updatePageBuf cache cid s pg = do 
   let dim = view gdimension pg
       mbbox = Just . dimToBBox $ dim 
-  nlyrs <- mapM (updateLayerBuf cache s dim mbbox) . view glayers $ pg 
+  nlyrs <- mapM (updateLayerBuf cache cid s dim mbbox) . view glayers $ pg 
   return (set glayers nlyrs pg)
 
 -- | 
 updateHoodleBuf :: RenderCache 
+                -> CanvasId
                 -> Double       -- ^ scale factor
                 -> RHoodle   
                 -> IO RHoodle 
-updateHoodleBuf cache s hdl = do 
+updateHoodleBuf cache cid s hdl = do 
   let pgs = view gpages hdl 
-  npgs <- mapM (updatePageBuf cache s) pgs
+  npgs <- mapM (updatePageBuf cache cid s) pgs
   return . set gpages npgs $ hdl
 
 -------

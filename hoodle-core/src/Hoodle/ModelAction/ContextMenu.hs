@@ -90,8 +90,8 @@ menuCreateALink evhandler sitems =
          
 
 -- |
-makeSVGFromSelection :: RenderCache -> [RItem] -> BBox -> IO SVG 
-makeSVGFromSelection cache hititms (BBox (ulx,uly) (lrx,lry)) = do 
+makeSVGFromSelection :: RenderCache -> CanvasId -> [RItem] -> BBox -> IO SVG 
+makeSVGFromSelection cache cid hititms (BBox (ulx,uly) (lrx,lry)) = do 
   uuid <- nextRandom
   tdir <- getTemporaryDirectory
   let filename = tdir </> show uuid <.> "svg"
@@ -99,7 +99,7 @@ makeSVGFromSelection cache hititms (BBox (ulx,uly) (lrx,lry)) = do
       (w,h) = (lrx-ulx,lry-uly)
   Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ do 
     Cairo.translate (-ulx) (-uly) 
-    mapM_ (renderRItem cache) hititms 
+    mapM_ (renderRItem cache cid) hititms 
   bstr <- B.readFile filename
   let svg = SVG Nothing Nothing bstr (x,y) (Dim w h)
   svg `seq` removeFile filename 

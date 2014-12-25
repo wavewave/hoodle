@@ -248,11 +248,11 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
       if takeExtension filename /= ".svg" 
       then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
       else do
-        cache <- view renderCache <$> get
+        (cache,cid) <- ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) <$> get
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
         liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
-         cairoRenderOption (InBBoxOption Nothing) cache (InBBox cpg,Nothing :: Maybe Xform4Page) >> return ()
+         cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox cpg,Nothing :: Maybe Xform4Page) >> return ()
 
 -- | 
 fileLoad :: FilePath -> MainCoroutine () 
@@ -278,7 +278,8 @@ resetHoodleBuffers = do
     rcache <- view renderCache <$> get
     updateUhdl $ \uhdl -> do 
       let hdlst = view hoodleModeState uhdl
-      nhdlst <- liftIO $ resetHoodleModeStateBuffers rcache hdlst 
+          cid = getCurrentCanvasId uhdl
+      nhdlst <- liftIO $ resetHoodleModeStateBuffers rcache cid hdlst 
       return . (hoodleModeState .~ nhdlst) $ uhdl
 
 
@@ -447,6 +448,7 @@ fileLoadSVG = do
       xst <- get 
       bstr <- liftIO $ B.readFile filename 
       let uhdl = view (unitHoodles.currentUnit) xst
+          cid = getCurrentCanvasId uhdl
           pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
           hdl = getHoodle uhdl
           currpage = getPageFromGHoodleMap pgnum hdl
@@ -464,7 +466,7 @@ fileLoadSVG = do
         thdl <- case view hoodleModeState uhdl' of
                   SelectState thdl' -> return thdl'
                   _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
-        nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
+        nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg pgnum 
         return . (hoodleModeState .~ SelectState nthdl)
                . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl'
       commit_
@@ -594,12 +596,12 @@ fileVersionSave = do
 
 showRevisionDialog :: Hoodle -> [Revision] -> MainCoroutine ()
 showRevisionDialog hdl revs = 
-    liftM (view renderCache) get >>= \cache -> 
+    liftM ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) get >>= \cache -> 
       doIOaction (action cache)
       >> waitSomeEvent (\case GotOk -> True ; _ -> False)
       >> return ()
   where 
-    action cache _evhandler = do 
+    action (cache,cid) _evhandler = do 
       dialog <- Gtk.dialogNew
 #ifdef GTK3
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
@@ -608,7 +610,7 @@ showRevisionDialog hdl revs =
 #else 
       vbox <- Gtk.dialogGetUpper dialog
 #endif
-      mapM_ (addOneRevisionBox cache vbox hdl) revs 
+      mapM_ (addOneRevisionBox cache cid vbox hdl) revs 
       _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
       Gtk.widgetShowAll dialog
       _res <- Gtk.dialogRun dialog
@@ -635,8 +637,8 @@ mkPangoText str = do
     layout <- liftIO $ pangordr 
     rdr layout
 
-addOneRevisionBox :: RenderCache -> Gtk.VBox -> Hoodle -> Revision -> IO ()
-addOneRevisionBox cache vbox hdl rev = do 
+addOneRevisionBox :: RenderCache -> CanvasId -> Gtk.VBox -> Hoodle -> Revision -> IO ()
+addOneRevisionBox cache cid vbox hdl rev = do 
     cvs <- Gtk.drawingAreaNew 
     cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 250 25)
     cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
@@ -651,7 +653,7 @@ addOneRevisionBox cache vbox hdl rev = do
       liftIO . Gtk.renderWithDrawable drawwdw $ do 
 #endif
         case rev of 
-          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache) strks
+          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache cid) strks
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"

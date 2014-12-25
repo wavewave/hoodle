@@ -114,6 +114,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
           xst <- get 
           let cache = xst ^. renderCache
               uhdl = view (unitHoodles.currentUnit) xst
+              cid = getCurrentCanvasId uhdl
           case thdl ^. gselSelected of 
             Nothing -> return () 
             Just (n,tpg) -> do 
@@ -130,7 +131,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
                 Right _ -> error "processContextMenu: activelayer"
-              nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg n
+              nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg n
               uhdl' <- liftIO $ updatePageAll (SelectState nthdl) uhdl
               commit $ (unitHoodles.currentUnit .~ (hoodleModeState .~ SelectState nthdl) uhdl') xst
               invalidateAll 
@@ -208,18 +209,19 @@ processContextMenu CMenuCustom =  do
 --  | 
 linkSelectionWithFile :: FilePath -> MainCoroutine ()  
 linkSelectionWithFile fname = do
-  (getSelectedItmsFromUnitHoodle . view (unitHoodles.currentUnit) <$> get) >>=  
-    mapM_ (\hititms -> 
-            let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
-            in case ulbbox of 
-              Middle bbox -> do 
-                cache <- view renderCache <$> get 
-                svg <- liftIO $ makeSVGFromSelection cache hititms bbox
-                uuid <- liftIO $ nextRandom
-                let uuidbstr = B.pack (show uuid) 
-                deleteSelection 
-                linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)
-              _ -> return () )
+  uhdl <- view (unitHoodles.currentUnit) <$> get
+  let cid = getCurrentCanvasId uhdl
+  forM_ (getSelectedItmsFromUnitHoodle uhdl) $ \hititms -> 
+    let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
+    in case ulbbox of 
+         Middle bbox -> do 
+           cache <- view renderCache <$> get 
+           svg <- liftIO $ makeSVGFromSelection cache cid hititms bbox
+           uuid <- liftIO $ nextRandom
+           let uuidbstr = B.pack (show uuid) 
+           deleteSelection 
+           linkInsert "simple" (uuidbstr,fname) fname (svg_render svg,bbox)
+         _ -> return () 
 
           
 -- | 
@@ -228,7 +230,8 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
     fileChooser Gtk.FileChooserActionSave Nothing >>= mapM_ action 
   where 
     action filename = do
-      cache <- view renderCache <$> get
+      (cache,cid) <- ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) <$> get
+
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".svg" 
         then fileExtensionInvalid (".svg","export") 
@@ -237,7 +240,7 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
           liftIO $ Cairo.withSVGSurface filename (lrx-ulx) (lry-uly) $ \s -> 
             Cairo.renderWith s $ do 
               Cairo.translate (-ulx) (-uly)
-              mapM_ (renderRItem cache) hititms
+              mapM_ (renderRItem cache cid) hititms
 
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine () 
@@ -245,7 +248,7 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
     fileChooser Gtk.FileChooserActionSave Nothing >>= mapM_ action 
   where 
     action filename = do
-      cache <- view renderCache <$> get
+      (cache,cid) <- ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) <$> get
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".pdf" 
         then fileExtensionInvalid (".svg","export") 
@@ -254,7 +257,7 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
           liftIO $ Cairo.withPDFSurface filename (lrx-ulx) (lry-uly) $ \s -> 
             Cairo.renderWith s $ do 
               Cairo.translate (-ulx) (-uly)
-              mapM_ (renderRItem cache) hititms
+              mapM_ (renderRItem cache cid) hititms
 
 -- |
 exportImage :: S.Image -> MainCoroutine ()
@@ -450,7 +453,7 @@ showContextMenu (pnum,(x,y)) = do
                       Middle bbox -> do
                         let BBox (x0,y0) (x1,y1) = bbox
                             dim = Dim (x1-x0) (y1-y0)
-                        svg <- svg_render <$> makeSVGFromSelection cache others bbox
+                        svg <- svg_render <$> makeSVGFromSelection cache cid others bbox
                         let mitm = case l of 
                               RItemLink lnkbbx _   -> (Just . ItemLink) ((bbxed_content lnkbbx) { link_render = svg, link_dim = dim })
                               RItemAnchor ancbbx _ -> (Just . ItemAnchor) ((bbxed_content ancbbx) { anchor_render = svg, anchor_dim = dim })

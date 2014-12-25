@@ -273,6 +273,7 @@ svgInsert :: (T.Text,String) -> (B.ByteString,BBox) -> MainCoroutine ()
 svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do 
     xst <- get 
     let uhdl = view (unitHoodles.currentUnit) xst
+        cid = getCurrentCanvasId uhdl
         pgnum = view (unboxLens currentPageNum) . view currentCanvasInfo $ uhdl
         hdl = getHoodle uhdl
         currpage = getPageFromGHoodleMap pgnum hdl
@@ -293,7 +294,7 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
       thdl <- case view hoodleModeState nuhdl of
                 SelectState thdl' -> return thdl'
                 _ -> (lift . EitherT . return . Left . Other) "svgInsert"
-      nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
+      nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg pgnum 
       return $ (hoodleModeState .~ SelectState nthdl) nuhdl
     commit_
     invalidateAll 
@@ -394,7 +395,8 @@ insertItemAt mpcoord ritm = do
     xst <- get   
     let uhdl = view (unitHoodles.currentUnit) xst
     geometry <- liftIO (getGeometry4CurrCvs uhdl) 
-    let hdl = getHoodle uhdl
+    let cid = getCurrentCanvasId uhdl
+        hdl = getHoodle uhdl
         (pgnum,mpos) = case mpcoord of 
           Just (PageNum n,pos) -> (n,Just pos)
           Nothing -> (view (currentCanvasInfo . unboxLens currentPageNum) uhdl,Nothing)
@@ -415,7 +417,7 @@ insertItemAt mpcoord ritm = do
       thdl <- case view hoodleModeState uhdl' of
         SelectState thdl' -> return thdl'
         _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-      nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpg pgnum 
+      nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg pgnum 
       return . (hoodleModeState .~ SelectState nthdl)
              . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl' 
     commit_

@@ -178,11 +178,11 @@ newSelectRectangle cid pnum geometry itms orig
               xformfunc 
               case ulbbox of 
                 Top -> do                
-                  cairoRenderOption (InBBoxOption Nothing) cache (InBBox page, Just xform) 
+                  cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox page, Just xform) 
                   mapM_ renderSelectedItem hitteditms
                 Middle sbbox -> do 
                   let redrawee = filter (do2BBoxIntersect sbbox.getBBox) hitteditms  
-                  cairoRenderOption (InBBoxOption (Just sbbox)) cache (InBBox page, Just xform)
+                  cairoRenderOption (InBBoxOption (Just sbbox)) cache cid (InBBox page, Just xform)
                   clipBBox (Just sbbox)
                   mapM_ renderSelectedItem redrawee 
                 Bottom -> return ()
@@ -230,7 +230,7 @@ startMoveSelect :: CanvasId
                    -> MainCoroutine () 
 startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do
     cache <- view renderCache <$> get
-    itmimage <- liftIO $ mkItmsNImg cache tpage
+    itmimage <- liftIO $ mkItmsNImg cache cid tpage
     tsel <- createTempRender geometry itmimage 
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
     Cairo.surfaceFinish (tempSurfaceSrc tsel)
@@ -288,12 +288,13 @@ moveSelect cid pnum geometry orig@(x0,y0)
     chgaction cache uhdl cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
       let hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
+          cid = view canvasId cinfo
       (uhdl1,nthdl1,selecteditms) <- 
         case epage of 
           Right oldtpage -> do 
             let itms = getSelectedItms oldtpage
             let oldtpage' = deleteSelected oldtpage
-            nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl oldtpage' (unPageNum oldpgn)
+            nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl oldtpage' (unPageNum oldpgn)
             uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
             let uhdl1 = (hoodleModeState .~ SelectState nthdl) uhdl' 
             return (uhdl1,nthdl,itms)       
@@ -306,7 +307,7 @@ moveSelect cid pnum geometry orig@(x0,y0)
                 alist = olditms :- Hitted newitms :- Empty 
                 ntpage = makePageSelectMode page alist  
                 coroutineaction = do 
-                  nthdl2 <- liftIO $ updateTempHoodleSelectIO cache nthdl1 ntpage (unPageNum newpgn)  
+                  nthdl2 <- liftIO $ updateTempHoodleSelectIO cache cid nthdl1 ntpage (unPageNum newpgn)  
                   let cibox = view currentCanvasInfo uhdl1 
                       ncibox = ( runIdentity 
                                . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
@@ -327,10 +328,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
+          cid = view canvasId cinfo
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset offset tpage
-          newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newtpage pagenum 
+          newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
           pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
           commit_ 
@@ -352,7 +354,7 @@ startResizeSelect :: Bool   -- ^ doesKeepRatio
 startResizeSelect doesKeepRatio handle cid pnum geometry bbox 
                   ((x,y),ctime) tpage = do
     cache <- view renderCache <$> get  
-    itmimage <- liftIO $ mkItmsNImg cache tpage  
+    itmimage <- liftIO $ mkItmsNImg cache cid tpage  
     tsel <- createTempRender geometry itmimage 
     resizeSelect doesKeepRatio 
       handle cid pnum geometry bbox ((x,y),ctime) tsel 
@@ -427,11 +429,12 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
+          cid = view canvasId cinfo
       case epage of 
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
               newtpage = changeSelectionBy sfunc tpage 
-          newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newtpage pagenum 
+          newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
           pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
           commit_
@@ -445,7 +448,8 @@ selectPenColorChanged :: PenColor -> MainCoroutine ()
 selectPenColorChanged pcolor = do 
     cache <- view renderCache <$> get
     uhdl <- view (unitHoodles.currentUnit) <$> get 
-    let SelectState thdl = view hoodleModeState uhdl
+    let cid = getCurrentCanvasId uhdl
+        SelectState thdl = view hoodleModeState uhdl
         Just (n,tpage) = view gselSelected thdl
         slayer = view (glayers.selectedLayer) tpage
     case unTEitherAlterHitted . view gitems $ slayer of 
@@ -454,7 +458,7 @@ selectPenColorChanged pcolor = do
         let alist' = fmapAL id (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
             newlayer = Right alist'
             newpage = (glayers.selectedLayer .~ (GLayer (slayer^.gbuffer) (TEitherAlterHitted newlayer))) tpage 
-        newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n
+        newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newpage n
         let uhdl' = (hoodleModeState .~ SelectState newthdl) uhdl
         uhdl'' <- liftIO (updatePageAll (SelectState newthdl) uhdl')
         pureUpdateUhdl (const uhdl'')
@@ -467,6 +471,7 @@ selectPenWidthChanged pwidth = do
   xst <- get
   let cache = view renderCache xst
       uhdl = view (unitHoodles.currentUnit) xst
+      cid = getCurrentCanvasId uhdl
       SelectState thdl = view hoodleModeState uhdl
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
@@ -477,7 +482,7 @@ selectPenWidthChanged pwidth = do
                      (Hitted . map (changeItemStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
           newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
-      newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n          
+      newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newpage n          
       uhdl' <- (liftIO . updatePageAll (SelectState newthdl) . (hoodleModeState .~ SelectState newthdl)) uhdl
       pureUpdateUhdl (const uhdl')
       commit_

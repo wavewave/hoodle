@@ -81,19 +81,20 @@ createNewStroke pinfo pdraw =
 
 -- | 
 addPDraw :: RenderCache
+         -> CanvasId
          -> PenInfo 
          -> RHoodle
          -> PageNum 
          -> Seq (Double,Double,Double) 
          -> IO (RHoodle,BBox) -- ^ new hoodle and bbox in page coordinate
-addPDraw cache pinfo hdl (PageNum pgnum) pdraw = do 
+addPDraw cache cid pinfo hdl (PageNum pgnum) pdraw = do 
     let currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
         dim = view gdimension currpage
         newstroke = createNewStroke pinfo pdraw         
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
-    newlayerbbox <- updateLayerBuf cache 1.0 dim (Just bbox)
+    newlayerbbox <- updateLayerBuf cache cid 1.0 dim (Just bbox)
                     . over gitems (++[RItemStroke newstrokebbox]) 
                     $ currlayer
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 

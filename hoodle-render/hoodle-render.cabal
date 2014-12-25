@@ -54,7 +54,7 @@ Library
   Exposed-Modules: 
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
-                   Graphics.Hoodle.Render.Debug
+                   -- Graphics.Hoodle.Render.Debug
                    Graphics.Hoodle.Render.Engine
                    Graphics.Hoodle.Render.Generic
                    Graphics.Hoodle.Render.Highlight

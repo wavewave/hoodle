@@ -211,7 +211,7 @@ gotLink mstr (x,y) = do
                 let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
                 case ulbbox of 
                   Middle bbox -> do 
-                    svg <- liftIO $ makeSVGFromSelection cache hititms bbox
+                    svg <- liftIO $ makeSVGFromSelection cache cid hititms bbox
                     uuidbstr <- liftIO $ B.pack . show <$> nextRandom
                     deleteSelection 
                     linkInsert "simple" (uuidbstr,url) url (svg_render svg,bbox)  
@@ -235,7 +235,7 @@ gotLink mstr (x,y) = do
             let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
             case ulbbox of 
               Middle bbox -> do 
-                svg <- liftIO $ makeSVGFromSelection cache hititms bbox
+                svg <- liftIO $ makeSVGFromSelection cache cid hititms bbox
                 uuid <- liftIO $ nextRandom
                 let uuidbstr' = B.pack (show uuid) 
                 deleteSelection 

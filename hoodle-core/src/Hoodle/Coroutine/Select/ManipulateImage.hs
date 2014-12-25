@@ -93,6 +93,7 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
           img = bbxed_content imgbbx
           obbox = getBBox imgbbx
           cache = view renderCache xst
+          cid = getCurrentCanvasId uhdl
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
         forM_ mimg' $ \img' -> do
@@ -102,7 +103,7 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
             waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
           --
           let ntpage = replaceSelection rimg' tpage
-          nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
+          nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpage (unPageNum pnum)
           uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
           commit $ (unitHoodles.currentUnit .~ (hoodleModeState .~ SelectState nthdl) uhdl') xst  
       invalidateAllInBBox Nothing Efficient      
@@ -159,7 +160,7 @@ rotateImage :: RotateDir -> BBoxed Image -> MainCoroutine ()
 rotateImage dir imgbbx = do 
     xst <- get
     let uhdl = view (unitHoodles.currentUnit) xst
-    let (_cid,cinfobox) = view currentCanvas uhdl
+    let (cid,cinfobox) = view currentCanvas uhdl
         hdlmodst = view hoodleModeState uhdl
         pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox        
         epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
@@ -179,7 +180,7 @@ rotateImage dir imgbbx = do
                 waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
               --
               let ntpage = replaceSelection rimg' tpage
-              nthdl <- liftIO $ updateTempHoodleSelectIO cache thdl ntpage (unPageNum pnum)
+              nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpage (unPageNum pnum)
               uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
               commit $ (unitHoodles.currentUnit .~ ((hoodleModeState .~ SelectState nthdl) uhdl')) xst
             invalidateAllInBBox Nothing Efficient      

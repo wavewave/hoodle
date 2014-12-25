@@ -51,6 +51,7 @@ deleteSelection :: MainCoroutine ()
 deleteSelection = do 
   xst <- get
   let uhdl = view (unitHoodles.currentUnit) xst
+      cid = getCurrentCanvasId uhdl
   case view hoodleModeState uhdl of
     SelectState thdl -> do 
       let Just (n,tpage) = view gselSelected thdl
@@ -61,7 +62,7 @@ deleteSelection = do
           let newlayer = Left . concat . getA $ alist
               newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
               cache = view renderCache xst
-          newthdl <- liftIO $ updateTempHoodleSelectIO cache thdl newpage n          
+          newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newpage n
           newuhdl <- liftIO $ updatePageAll (SelectState newthdl) 
                               . set hoodleModeState (SelectState newthdl)
                               $ uhdl
@@ -127,7 +128,8 @@ pasteToSelection = do
                                      . view currentCanvasInfo $ uhdl
     fsimple cache ui itms uhdl cinfo = do 
       geometry <- liftIO (getGeometry4CurrCvs uhdl)
-      let pagenum = view currentPageNum cinfo 
+      let cid = view canvasId cinfo
+          pagenum = view currentPageNum cinfo 
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           nclipitms = adjustItemPosition4Paste geometry (PageNum pagenum) itms
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst 
@@ -141,7 +143,7 @@ pasteToSelection = do
                             :- Hitted nclipitms 
                             :- Empty )
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
-      thdl' <- liftIO $ updateTempHoodleSelectIO cache thdl tpage' pagenum 
+      thdl' <- liftIO $ updateTempHoodleSelectIO cache cid thdl tpage' pagenum 
       uhdl' <- liftIO $ updatePageAll (SelectState thdl') 
                  . set hoodleModeState (SelectState thdl') 
                  $ uhdl

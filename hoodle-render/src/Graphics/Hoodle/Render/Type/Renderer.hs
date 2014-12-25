@@ -33,7 +33,6 @@ import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 --
 import           Data.Hoodle.Simple (Dimension(..))
 
-
 newtype PDFCommandID = PDFCommandID UUID deriving (Show,Eq,Ord)
 
 data PDFCommand where
@@ -51,15 +50,17 @@ newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
 data GenCommand where
   BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
 
+newtype SurfaceID = SurfaceID UUID deriving (Show,Eq,Ord,Hashable)
 
+-- |
+type CanvasId = Int 
 
-newtype SurfaceID = SurfaceID UUID
-                  deriving (Show,Eq,Ord,Hashable)
 
 type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), (PDFCommandQueue,GenCommandQueue)) IO
 
 -- | hashmap: key = UUID, value = (original size, view size, surface)
 type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
+       -- HM.HashMap (SurfaceID,CanvasId) (Double, Cairo.Surface)
 
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 

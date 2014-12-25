@@ -52,7 +52,8 @@ undo = do
     case getPrevUndo utable of 
       Nothing -> msgShout "no undo item yet"
       Just (hdlmodst1,newtable) -> do 
-        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
+        let cid = getCurrentCanvasId uhdl
+        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache cid hdlmodst1
         updateUhdl $ \uhdl' -> do
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           return $ ( (hoodleModeState .~ hdlmodst) . (undoTable .~ newtable)) uhdl''
@@ -65,26 +66,22 @@ redo = do
     let uhdl = view (unitHoodles.currentUnit) xstate
         utable = view undoTable uhdl
         cache = view renderCache xstate
+        cid = getCurrentCanvasId uhdl
     case getNextUndo utable of 
       Nothing -> msgShout "no redo item"
       Just (hdlmodst1,newtable) -> do 
-        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache hdlmodst1
+        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache cid hdlmodst1
         updateUhdl $ \uhdl' -> do 
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           let uhdl''' = ( set hoodleModeState hdlmodst
                        . set undoTable newtable ) uhdl'' 
           return uhdl''' 
-        -- modify (set unitHoodles (putTheUnit uhdl''))
         invalidateAll 
 
 -- | 
         
 clearUndoHistory :: MainCoroutine () 
-clearUndoHistory = -- do 
-    -- xstate <- get
-    -- let uhdl = view (unitHoodles.currentUnit) xstate
-    -- modify (set unitHoodles (putTheUnit (set undoTable (emptyUndo 1) uhdl)))
-    pureUpdateUhdl (undoTable .~ (emptyUndo 1))
+clearUndoHistory = pureUpdateUhdl (undoTable .~ (emptyUndo 1))
     
 
 

@@ -96,14 +96,13 @@ import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 import           Graphics.Hoodle.Render.Type.Item
+import           Graphics.Hoodle.Render.Type.Renderer
 --
 import           Hoodle.Type.Enum 
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Widget
 --
 
--- |
-type CanvasId = Int 
 
 -- |
 data PenDraw = PenDraw { _points :: Seq (Double,Double) } 

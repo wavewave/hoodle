@@ -34,7 +34,7 @@ import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Device 
 import           Hoodle.Type.Enum
-import           Hoodle.Type.Canvas
+-- import           Hoodle.Type.Canvas
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 #ifdef HUB

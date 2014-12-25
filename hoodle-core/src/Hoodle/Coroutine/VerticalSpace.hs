@@ -89,7 +89,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (retur
       case mbbx of
         Nothing -> return ()   
         Just bbx -> do 
-          (sfcbkg,Dim w h) <- liftIO $ canvasImageSurface cache Nothing geometry nhdl 
+          (sfcbkg,Dim w h) <- liftIO $ canvasImageSurface cache cid Nothing geometry nhdl 
           sfcitm <- liftIO $ Cairo.createImageSurface 
                                Cairo.FormatARGB32 (floor w) (floor h)
           sfctot <- liftIO $ Cairo.createImageSurface 
@@ -97,7 +97,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (retur
           liftIO $ Cairo.renderWith sfcitm $ do 
             Cairo.identityMatrix 
             cairoXform4PageCoordinate (mkXform4Page geometry pnum)
-            mapM_ (renderRItem cache) itms
+            mapM_ (renderRItem cache cid) itms
           ctime <- liftIO getCurrentTime 
           verticalSpaceProcess cid geometry (bbx,hltedLayers,pnum,cpg) (x,y) 
             (sfcbkg,sfcitm,sfctot) ctime 

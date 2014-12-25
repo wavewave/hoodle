@@ -76,7 +76,7 @@ startLayerWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do
     let uhdl = view (unitHoodles.currentUnit) xst
         hdl = getHoodle uhdl
         cache = view renderCache xst
-    (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache Nothing geometry hdl)
+    (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache cid Nothing geometry hdl)
     -- need to draw other widgets here                             
     let otherwidgets = delete LayerWidget allWidgets 
     liftIO $ Cairo.renderWith srcsfc (drawWidgets otherwidgets hdl cinfo Nothing) 

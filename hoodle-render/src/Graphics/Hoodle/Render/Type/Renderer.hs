@@ -32,6 +32,8 @@ import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 --
 import           Data.Hoodle.Simple (Dimension(..))
+--
+import           Graphics.Hoodle.Render.Type.Item
 
 newtype PDFCommandID = PDFCommandID UUID deriving (Show,Eq,Ord)
 
@@ -49,6 +51,8 @@ newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
 
 data GenCommand where
   BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
+  LayerScaled :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
+
 
 newtype SurfaceID = SurfaceID UUID deriving (Show,Eq,Ord,Hashable)
 

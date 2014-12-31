@@ -143,8 +143,7 @@ paneMoveStart = do
        
 -- | not yet implemented?
 paneMoved :: MainCoroutine () 
-paneMoved = do 
-    liftIO $ putStrLn "pane moved called"
+paneMoved = msgShout "paneMoved: not implemented"
     
 -- | start full screen mode
 fullScreen :: MainCoroutine ()

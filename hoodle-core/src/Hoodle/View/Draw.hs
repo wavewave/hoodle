@@ -734,11 +734,12 @@ drawLayerWidget hdl cinfo mbbox cvscoord = do
       let lyrs = view glayers pg
           n = currIndex lyrs 
           l = current lyrs 
-          LyBuf msfc = view gbuffer l
+          -- LyBuf msfc = view gbuffer l
       lift $ renderLayerWidget (show n) mbbox cvscoord 
       when (view layerWidgetShowContent lc) $ do 
-        sfc <- MaybeT . return $ msfc 
-        lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
+        liftIO $ putStrLn "drawLayerWidget: not implemented"
+        -- sfc <- MaybeT . return $ msfc 
+        -- lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
     return () 
 
 renderLayerContent :: Maybe BBox 

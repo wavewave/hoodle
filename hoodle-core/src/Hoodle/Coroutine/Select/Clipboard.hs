@@ -27,7 +27,8 @@ import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Select
-import           Data.Hoodle.Simple
+import           Data.Hoodle.Simple (Item(..))
+import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Type 
 import           Graphics.Hoodle.Render.Type.HitTest
@@ -40,11 +41,25 @@ import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
 import           Hoodle.ModelAction.Clipboard
+import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas 
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event 
 import           Hoodle.Type.PageArrangement 
 import           Hoodle.Type.HoodleState 
+
+-- |
+updateTempHoodleSelectM :: RenderCache 
+                       -> CanvasId
+                       -> Hoodle SelectMode 
+                       -> Page SelectMode 
+                       -> Int
+                       -> MainCoroutine (Hoodle SelectMode)
+updateTempHoodleSelectM cache cid thdl tpage pagenum = do   
+  let newpage = hPage2RPage tpage
+  callRenderer $ updatePageBuf cache cid 1.0 newpage >> return GotNone
+  return (updateTempHoodleSelect thdl tpage pagenum)
+
  
 -- |
 deleteSelection :: MainCoroutine ()
@@ -62,10 +77,8 @@ deleteSelection = do
           let newlayer = Left . concat . getA $ alist
               newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
               cache = view renderCache xst
-          newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newpage n
-          newuhdl <- liftIO $ updatePageAll (SelectState newthdl) 
-                              . set hoodleModeState (SelectState newthdl)
-                              $ uhdl
+          newthdl <- updateTempHoodleSelectM cache cid thdl newpage n
+          newuhdl <- liftIO . updatePageAll (SelectState newthdl) $ uhdl 
           let ui = view gtkUIManager xst
           liftIO $ toggleCutCopyDelete ui False 
           commit ((unitHoodles.currentUnit .~ newuhdl) xst)
@@ -143,9 +156,7 @@ pasteToSelection = do
                             :- Hitted nclipitms 
                             :- Empty )
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
-      thdl' <- liftIO $ updateTempHoodleSelectIO cache cid thdl tpage' pagenum 
-      uhdl' <- liftIO $ updatePageAll (SelectState thdl') 
-                 . set hoodleModeState (SelectState thdl') 
-                 $ uhdl
+      thdl' <- updateTempHoodleSelectM cache cid thdl tpage' pagenum 
+      uhdl' <- liftIO $ updatePageAll (SelectState thdl') uhdl
       liftIO $ toggleCutCopyDelete ui True
       return uhdl'

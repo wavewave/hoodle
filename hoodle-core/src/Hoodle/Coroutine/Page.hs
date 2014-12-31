@@ -303,7 +303,6 @@ newBkg bsty bkg = do
         case mtotN of
           Nothing -> defbkg
           Just totN -> do
-            -- liftIO $ print (xst ^. nextPdfBkgPageNum)
             let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
             case findPDFBkg rhdl n1 of
                  Nothing -> defbkg
@@ -327,8 +326,9 @@ findPDFBkg rhdl n1 =
 
 -- | 
 newPageFromOld :: Page EditMode -> MainCoroutine (Page EditMode)
-newPageFromOld =
-    return . ( glayers .~ (fromNonEmptyList (emptyRLayer,[])))
+newPageFromOld pg = do
+    sfcid <- issueSurfaceID
+    return . ( glayers .~ (fromNonEmptyList (emptyRLayer sfcid,[]))) $ pg
 
 
 updateBkgCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()

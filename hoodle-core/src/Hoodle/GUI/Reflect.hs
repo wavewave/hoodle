@@ -173,7 +173,6 @@ reflectUIToggle ui str b = do
 reflectCursor :: MainCoroutine () 
 reflectCursor = do 
     xst <- St.get 
-    msgShout "reflectCursor called"
     let b = view (settings.doesUseVariableCursor) xst
         pinfo = view penInfo xst 
         pcolor = view (penSet . currPen . penColor) pinfo

@@ -294,7 +294,7 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
       thdl <- case view hoodleModeState nuhdl of
                 SelectState thdl' -> return thdl'
                 _ -> (lift . EitherT . return . Left . Other) "svgInsert"
-      nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg pgnum 
+      nthdl <- updateTempHoodleSelectM cache cid thdl ntpg pgnum 
       return $ (hoodleModeState .~ SelectState nthdl) nuhdl
     commit_
     invalidateAll 
@@ -417,7 +417,7 @@ insertItemAt mpcoord ritm = do
       thdl <- case view hoodleModeState uhdl' of
         SelectState thdl' -> return thdl'
         _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-      nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg pgnum 
+      nthdl <- updateTempHoodleSelectM cache cid thdl ntpg pgnum 
       return . (hoodleModeState .~ SelectState nthdl)
              . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl' 
     commit_

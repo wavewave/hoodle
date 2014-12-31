@@ -176,8 +176,8 @@ initialize ev = do
             hdlst = uhdl ^. hoodleModeState 
             cache = xst2 ^. renderCache
             cid = getCurrentCanvasId uhdl
-        hdlst' <- liftIO $ resetHoodleModeStateBuffers cache cid hdlst
-        pureUpdateUhdl (hoodleModeState .~ hdlst')
+        callRenderer $ resetHoodleModeStateBuffers cache cid hdlst >> return GotNone
+        pureUpdateUhdl (hoodleModeState .~ hdlst)
         -- liftIO $ toggleSave ui False
         liftIO $ reflectUIToggle ui "SAVEA" False
         pureUpdateUhdl (isSaved .~ True)

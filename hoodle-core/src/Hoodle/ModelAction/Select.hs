@@ -120,30 +120,16 @@ deleteSelected tpage =
 
 
 
+
 -- |
 updateTempHoodleSelect :: Hoodle SelectMode -> Page SelectMode -> Int 
                            -> Hoodle SelectMode 
 updateTempHoodleSelect thdl tpage pagenum =                
   let pgs = view gselAll thdl 
       pgs' = M.adjust (const (hPage2RPage tpage)) pagenum pgs
-  in set gselAll pgs' 
-     . set gselSelected (Just (pagenum,tpage))
-     $ thdl 
-     
--- |
-updateTempHoodleSelectIO :: RenderCache 
-                         -> CanvasId
-                         -> Hoodle SelectMode 
-                         -> Page SelectMode 
-                         -> Int
-                         -> IO (Hoodle SelectMode)
-updateTempHoodleSelectIO cache cid thdl tpage pagenum = do   
-  let pgs = view gselAll thdl 
-  newpage <- (updatePageBuf cache cid 1.0 . hPage2RPage) tpage
-  let pgs' = M.adjust (const newpage) pagenum pgs
-  return $  set gselAll pgs' 
-            . set gselSelected (Just (pagenum,tpage))
-            $ thdl 
+  in set gselAll pgs' . set gselSelected (Just (pagenum,tpage)) $ thdl 
+
+  
   
 -- |   
 calculateWholeBBox :: [BBoxed Stroke] -> Maybe BBox  

@@ -36,9 +36,8 @@ import Graphics.Hoodle.Render.Type.Renderer
 -- normal state rendering --
 ----------------------------
 
-newtype LyBuf = LyBuf (Maybe Cairo.Surface)
-
-            -- { unLyBuf :: SurfaceID }  
+newtype LyBuf = LyBuf { unLyBuf :: SurfaceID }  
+-- (Maybe Cairo.Surface)
 
 -- | normal rendering data structure for layer, R for rendering
 --   buffer is Surface, container for item = list 
@@ -58,9 +57,10 @@ type RHoodle = GHoodle IM.IntMap RPage
 instance Show RHoodle where
   show _ = "RHoodle"
 
-emptyRLayer :: {- SurfaceID -> -} RLayer 
-emptyRLayer {- sfcid -} = GLayer (LyBuf Nothing {- sfcid -} ) []
+emptyRLayer :: SurfaceID -> RLayer 
+emptyRLayer sfcid = GLayer (LyBuf sfcid ) []
 
+-- LyBuf Nothing
 
 -------
 -- get simple hoodle data structure 

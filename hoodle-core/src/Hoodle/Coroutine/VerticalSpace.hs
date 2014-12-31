@@ -31,9 +31,8 @@ import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Zipper (SeqZipper,toSeq) 
 import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
-import           Graphics.Hoodle.Render.Type.Hoodle
-import           Graphics.Hoodle.Render.Type.Item 
 import           Graphics.Hoodle.Render.Util.HitTest
 -- from this package
 import           Hoodle.Accessor
@@ -116,17 +115,19 @@ addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = do
       case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
           hdl' <- addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
-          let nhdlmodst = ViewAppendState (moveBelowToNewPage (pnum,hltedLyrs,bbx) hdl') 
+          sfcid <- issueSurfaceID
+          let nhdlmodst = ViewAppendState (moveBelowToNewPage sfcid (pnum,hltedLyrs,bbx) hdl') 
           liftIO . updatePageAll nhdlmodst . (hoodleModeState .~ nhdlmodst) $ uhdl
         SelectState _ -> do 
           msgShout "addNewPageAndMoveBelow: not implemented yet"
           return uhdl
             
 -- |             
-moveBelowToNewPage :: (PageNum,SeqZipper RItemHitted,BBox) 
-                      -> Hoodle EditMode
-                      -> Hoodle EditMode
-moveBelowToNewPage (PageNum n,hltedLayers,BBox (_,y0) _) hdl = 
+moveBelowToNewPage :: SurfaceID   -- ^ for new layer
+                   -> (PageNum,SeqZipper RItemHitted,BBox) 
+                   -> Hoodle EditMode
+                   -> Hoodle EditMode
+moveBelowToNewPage sfcid (PageNum n,hltedLayers,BBox (_,y0) _) hdl = 
     let mpg = view (gpages.at n) hdl 
         mpg2 = view (gpages.at (n+1)) hdl 
     in case (,) <$> mpg <*> mpg2 of    
@@ -136,11 +137,11 @@ moveBelowToNewPage (PageNum n,hltedLayers,BBox (_,y0) _) hdl =
               fmap (fmapAL id 
                      (fmap (changeItemBy (\(x',y')->(x',y'+10-y0)))))
                    hltedLayers
-            nlyrs = fmap ((\x -> set gitems x emptyRLayer) 
+            nlyrs = fmap ((\x -> set gitems x (emptyRLayer sfcid)) 
                           . concatMap unNotHitted 
                           . getA ) nhlyrs 
             npg = set glayers nlyrs pg 
-            nnlyrs = fmap ((\x -> set gitems x emptyRLayer)
+            nnlyrs = fmap ((\x -> set gitems x (emptyRLayer sfcid))
                           . concatMap unHitted
                           . getB ) nhlyrs
             npg2 = set glayers nnlyrs pg2
@@ -182,10 +183,12 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
             let BBox _ (_,by1) = bbx
             if by1 + y - y0 < h 
               then do 
+                sfcid <- issueSurfaceID
                 pureUpdateUhdl $ \uhdl -> 
                   let hdl = getHoodle uhdl
                       nhlyrs = fmap (fmapAL id (fmap (changeItemBy (\(x',y')->(x',y'+y-y0))))) hltedLayers
-                      nlyrs = fmap ((\is -> set gitems is emptyRLayer) . concat . interleave unNotHitted unHitted) 
+                      nlyrs = fmap ( (\is -> set gitems is (emptyRLayer sfcid)) 
+                                     . concat . interleave unNotHitted unHitted ) 
                                 nhlyrs 
                       npg = set glayers nlyrs pg 
                       nhdl = set (gpages.at n) (Just npg) hdl 

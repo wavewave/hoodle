@@ -594,13 +594,11 @@ currentCanvasInfo = lens getter setter
       in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
 
 -- | 
-resetHoodleModeStateBuffers :: RenderCache -> CanvasId 
-                            -> HoodleModeState -> IO HoodleModeState 
+resetHoodleModeStateBuffers :: RenderCache -> CanvasId -> HoodleModeState -> Renderer ()
 resetHoodleModeStateBuffers cache cid hdlmodestate1 = 
   case hdlmodestate1 of 
-    ViewAppendState hdl -> 
-      liftIO . liftM ViewAppendState . updateHoodleBuf cache cid 1.0 $ hdl
-    _ -> return hdlmodestate1
+    ViewAppendState hdl -> updateHoodleBuf cache cid 1.0 hdl
+    _ -> return ()
 
 -- |
 getCanvasInfo :: CanvasId -> UnitHoodle -> CanvasInfoBox 

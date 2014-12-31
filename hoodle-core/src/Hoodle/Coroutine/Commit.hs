@@ -21,6 +21,7 @@ import Hoodle.Coroutine.Draw
 import Hoodle.GUI.Reflect
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Coroutine
+import Hoodle.Type.Event
 import Hoodle.Type.HoodleState 
 import Hoodle.Type.Undo
 import Hoodle.Util
@@ -30,7 +31,6 @@ commit :: HoodleState -> MainCoroutine ()
 commit xstate = do 
   put xstate
   let ui = view gtkUIManager xstate
-  -- liftIO $ toggleSave ui True
   liftIO $ reflectUIToggle ui "SAVEA" True
   pureUpdateUhdl $ \uhdl -> 
     let hdlmodst = view hoodleModeState uhdl
@@ -51,9 +51,9 @@ undo = do
         cache = view renderCache xstate
     case getPrevUndo utable of 
       Nothing -> msgShout "no undo item yet"
-      Just (hdlmodst1,newtable) -> do 
+      Just (hdlmodst,newtable) -> do 
         let cid = getCurrentCanvasId uhdl
-        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache cid hdlmodst1
+        callRenderer $ resetHoodleModeStateBuffers cache cid hdlmodst >> return GotNone
         updateUhdl $ \uhdl' -> do
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           return $ ( (hoodleModeState .~ hdlmodst) . (undoTable .~ newtable)) uhdl''
@@ -69,8 +69,8 @@ redo = do
         cid = getCurrentCanvasId uhdl
     case getNextUndo utable of 
       Nothing -> msgShout "no redo item"
-      Just (hdlmodst1,newtable) -> do 
-        hdlmodst <- liftIO $ resetHoodleModeStateBuffers cache cid hdlmodst1
+      Just (hdlmodst,newtable) -> do 
+        callRenderer $ resetHoodleModeStateBuffers cache cid hdlmodst >> return GotNone
         updateUhdl $ \uhdl' -> do 
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           let uhdl''' = ( set hoodleModeState hdlmodst

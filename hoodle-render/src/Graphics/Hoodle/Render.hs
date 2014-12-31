@@ -388,16 +388,17 @@ renderRLayer_InBBox cache cid mbbox layer = do
   Cairo.resetClip  
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
-    LyBuf (Just sfc) -> do 
-      liftIO $ Cairo.renderWith sfc $ do 
-        clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
-        Cairo.setSourceRGBA 0 0 0 0 
-        Cairo.setOperator Cairo.OperatorSource
-        Cairo.paint
-        Cairo.setOperator Cairo.OperatorOver
-        (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
-        Cairo.resetClip 
-        return layer 
+    LyBuf sfcid -> liftIO $ putStrLn "renderRLayer_InBBox: not implemented" >> return layer
+    -- LyBuf (Just sfc) -> do 
+    --   liftIO $ Cairo.renderWith sfc $ do 
+    --     clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
+    --     Cairo.setSourceRGBA 0 0 0 0 
+    --     Cairo.setOperator Cairo.OperatorSource
+    --     Cairo.paint
+    --     Cairo.setOperator Cairo.OperatorOver
+    --     (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
+    --     Cairo.resetClip 
+    --     return layer 
     _ -> return layer 
 
 -----------------------
@@ -431,14 +432,26 @@ renderRLayer_InBBoxBuf :: RenderCache -> CanvasId
                        -> Maybe BBox -> RLayer -> Cairo.Render RLayer 
 renderRLayer_InBBoxBuf cache cid mbbox lyr = do
     case view gbuffer lyr of 
-      LyBuf (Just sfc) -> do 
-        clipBBox mbbox
-        Cairo.setSourceSurface sfc 0 0 
-        Cairo.paint 
-        Cairo.resetClip 
-        return lyr 
-      _ -> do 
-        renderRLayer_InBBox cache cid mbbox lyr         
+      LyBuf sfcid -> do 
+        case HM.lookup sfcid cache of
+          Nothing -> return lyr
+          Just (_,sfc) -> do 
+            clipBBox mbbox
+            Cairo.setSourceSurface sfc 0 0 
+            Cairo.paint 
+            Cairo.resetClip 
+            return lyr 
+
+      -- liftIO $ putStrLn "renderRLayer_InBBoxBuf: not implemented"  >> return lyr
+
+      -- LyBuf (Just sfc) -> do 
+      --   clipBBox mbbox
+      --   Cairo.setSourceSurface sfc 0 0 
+      --   Cairo.paint 
+      --   Cairo.resetClip 
+      --   return lyr 
+      -- _ -> do 
+      --   renderRLayer_InBBox cache cid mbbox lyr         
 
 -------------------
 -- update buffer
@@ -451,42 +464,47 @@ updateLayerBuf :: RenderCache
                -> Dimension 
                -> Maybe BBox 
                -> RLayer 
-               -> IO RLayer
+               -> Renderer ()
 updateLayerBuf cache cid s (Dim w h) mbbox lyr = do 
+  (_,(_,qgen)) <- ask 
   case view gbuffer lyr of 
-    LyBuf (Just sfc) -> do 
-      putStrLn "updateLayerBuf : buffer called"
-      Cairo.renderWith sfc $ do 
-        renderRLayer_InBBox cache cid mbbox lyr 
-      return lyr
-    LyBuf Nothing -> do 
-      sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-      Cairo.renderWith sfc $ do 
-        renderRLayer_InBBox cache cid Nothing lyr
-      return (set gbuffer (LyBuf (Just sfc)) lyr) 
+    LyBuf sfcid -> do
+      cmdid <- issueGenCommandID
+      (liftIO . atomically) (sendGenCommand qgen cmdid (LayerScaled sfcid (view gitems lyr) s (Dim w h)))
+      -- liftIO (putStrLn "updateLayerBuf: not implemented")
+
+
+
+--   LayerScaled :: SurfaceID -> [RItem] -> Dimension -> Dimension -> GenCommand
+
+    -- LyBuf (Just sfc) -> do 
+    --   Cairo.renderWith sfc $ do 
+    --     renderRLayer_InBBox cache cid mbbox lyr 
+    --   return lyr
+    -- LyBuf Nothing -> do 
+    --   sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+    --   Cairo.renderWith sfc $ do 
+    --     renderRLayer_InBBox cache cid Nothing lyr
+    --   return (set gbuffer (LyBuf (Just sfc)) lyr) 
       
 -- | 
 updatePageBuf :: RenderCache 
               -> CanvasId
               -> Double      -- ^ scale factor 
               -> RPage 
-              -> IO RPage 
+              -> Renderer ()
 updatePageBuf cache cid s pg = do 
   let dim = view gdimension pg
       mbbox = Just . dimToBBox $ dim 
-  nlyrs <- mapM (updateLayerBuf cache cid s dim mbbox) . view glayers $ pg 
-  return (set glayers nlyrs pg)
+  mapM_ (updateLayerBuf cache cid s dim mbbox) . view glayers $ pg 
 
 -- | 
 updateHoodleBuf :: RenderCache 
                 -> CanvasId
                 -> Double       -- ^ scale factor
                 -> RHoodle   
-                -> IO RHoodle 
-updateHoodleBuf cache cid s hdl = do 
-  let pgs = view gpages hdl 
-  npgs <- mapM (updatePageBuf cache cid s) pgs
-  return . set gpages npgs $ hdl
+                -> Renderer ()
+updateHoodleBuf cache cid s = mapM_ (updatePageBuf cache cid s) . view gpages
 
 -------
 -- smart constructor for R hoodle structures
@@ -526,7 +544,8 @@ cnstrctRPage_StateT pg = do
       dim = view dimension pg 
       lyrs = view layers pg
   nlyrs_lst <- lift (mapM cnstrctRLayer lyrs)
-  let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer,[]) else (head nlyrs_lst,tail nlyrs_lst) 
+  sfcid <- issueSurfaceID
+  let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer sfcid,[]) else (head nlyrs_lst,tail nlyrs_lst) 
       nlyrs = fromNonEmptyList nlyrs_nonemptylst 
   nbkg <- cnstrctRBkg_StateT dim bkg
   return $ GPage dim nbkg nlyrs 
@@ -534,8 +553,9 @@ cnstrctRPage_StateT pg = do
 -- |
 cnstrctRLayer :: Layer -> Renderer RLayer 
 cnstrctRLayer lyr = do 
+  sfcid <- issueSurfaceID
   nitms <- (mapM cnstrctRItem . view items) lyr 
-  return (set gitems nitms emptyRLayer)
+  return (set gitems nitms (emptyRLayer sfcid))
 
 
 

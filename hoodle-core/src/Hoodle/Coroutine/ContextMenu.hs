@@ -131,9 +131,9 @@ processContextMenu (CMenuLinkConvert nlnk) =
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
                 Right _ -> error "processContextMenu: activelayer"
-              nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg n
+              nthdl <- updateTempHoodleSelectM cache cid thdl ntpg n
               uhdl' <- liftIO $ updatePageAll (SelectState nthdl) uhdl
-              commit $ (unitHoodles.currentUnit .~ (hoodleModeState .~ SelectState nthdl) uhdl') xst
+              commit $ (unitHoodles.currentUnit .~ uhdl') xst
               invalidateAll 
 processContextMenu CMenuCreateALink = 
   fileChooser Gtk.FileChooserActionOpen Nothing >>= mapM_ linkSelectionWithFile

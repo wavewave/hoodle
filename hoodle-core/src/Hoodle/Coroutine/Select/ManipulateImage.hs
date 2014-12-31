@@ -37,6 +37,7 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Pen
+import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Device
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
@@ -103,9 +104,9 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
             waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
           --
           let ntpage = replaceSelection rimg' tpage
-          nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpage (unPageNum pnum)
+          nthdl <- updateTempHoodleSelectM cache cid thdl ntpage (unPageNum pnum)
           uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
-          commit $ (unitHoodles.currentUnit .~ (hoodleModeState .~ SelectState nthdl) uhdl') xst  
+          commit $ (unitHoodles.currentUnit .~ uhdl') xst  
       invalidateAllInBBox Nothing Efficient      
       return ()
     
@@ -174,15 +175,13 @@ rotateImage dir imgbbx = do
             let img = bbxed_content imgbbx 
             mimg' <- liftIO (createRotatedImage dir img (getBBox imgbbx))
             forM_ mimg' $ \img' -> do 
-              --
               callRenderer $ return . GotRItem =<< cnstrctRItem (ItemImage img')
               RenderEv (GotRItem rimg') <- 
                 waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
-              --
               let ntpage = replaceSelection rimg' tpage
-              nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpage (unPageNum pnum)
+              nthdl <- updateTempHoodleSelectM cache cid thdl ntpage (unPageNum pnum)
               uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
-              commit $ (unitHoodles.currentUnit .~ ((hoodleModeState .~ SelectState nthdl) uhdl')) xst
+              commit $ (unitHoodles.currentUnit .~ uhdl') xst
             invalidateAllInBBox Nothing Efficient      
             return ()
 

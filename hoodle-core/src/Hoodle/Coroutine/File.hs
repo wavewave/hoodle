@@ -65,6 +65,7 @@ import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Scroll
+import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput
 -- import           Hoodle.Coroutine.Window
 import           Hoodle.GUI.Reflect
@@ -279,8 +280,8 @@ resetHoodleBuffers = do
     updateUhdl $ \uhdl -> do 
       let hdlst = view hoodleModeState uhdl
           cid = getCurrentCanvasId uhdl
-      nhdlst <- liftIO $ resetHoodleModeStateBuffers rcache cid hdlst 
-      return . (hoodleModeState .~ nhdlst) $ uhdl
+      callRenderer $ resetHoodleModeStateBuffers rcache cid hdlst >> return GotNone
+      return . (hoodleModeState .~ hdlst) $ uhdl
 
 
 -- | main coroutine for open a file 
@@ -466,7 +467,7 @@ fileLoadSVG = do
         thdl <- case view hoodleModeState uhdl' of
                   SelectState thdl' -> return thdl'
                   _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
-        nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl ntpg pgnum 
+        nthdl <- updateTempHoodleSelectM cache cid thdl ntpg pgnum 
         return . (hoodleModeState .~ SelectState nthdl)
                . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl'
       commit_

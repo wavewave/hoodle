@@ -60,8 +60,9 @@ makeNewLayer = do
     commit . flip (set (unitHoodles.currentUnit)) xst =<< layerAction newlayeraction
     invalidateAll 
   where newlayeraction hdlmodst cpn page = do 
+          sfcid <- issueSurfaceID
           let lyrzipper = view glayers page  
-              emptylyr = emptyRLayer 
+              emptylyr = emptyRLayer sfcid
               nlyrzipper = appendGoLast lyrzipper emptylyr 
               npage = set glayers nlyrzipper page
           return . setPageMap (M.adjust (const npage) cpn . getPageMap $ hdlmodst) $ hdlmodst 

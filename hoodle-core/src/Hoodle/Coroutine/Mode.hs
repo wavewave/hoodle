@@ -66,7 +66,8 @@ modeChange command = do
               cid = getCurrentCanvasId (view (unitHoodles.currentUnit) xst)
           npages <- maybe (return pages) 
                           (\(spgn,spage) -> do 
-                             npage <- (liftIO.updatePageBuf cache cid 1.0 . hPage2RPage) spage  
+                             let npage = hPage2RPage spage
+                             callRenderer $ updatePageBuf cache cid 1.0 npage >> return GotNone
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  

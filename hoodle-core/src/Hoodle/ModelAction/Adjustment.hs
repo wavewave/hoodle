@@ -33,8 +33,6 @@ adjustScrollbarWithGeometry geometry ((hadj,mconnidh),(vadj,mconnidv)) = do
       ViewPortBBox (BBox (x0,y0) (x1,y1)) = canvasViewPort geometry 
       xsize = x1-x0
       ysize = y1-y0 
-  putStrLn "adjustScrollbarWithGeometry called"
-  print (x0,y0,x1,y1,w,h)
   F.mapM_ Gtk.signalBlock mconnidh
   F.mapM_ Gtk.signalBlock mconnidv
   Gtk.adjustmentSetUpper hadj w 

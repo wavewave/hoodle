@@ -47,6 +47,7 @@ import           Hoodle.Coroutine.ContextMenu
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Pen
+import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
@@ -294,10 +295,9 @@ moveSelect cid pnum geometry orig@(x0,y0)
           Right oldtpage -> do 
             let itms = getSelectedItms oldtpage
             let oldtpage' = deleteSelected oldtpage
-            nthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl oldtpage' (unPageNum oldpgn)
+            nthdl <- updateTempHoodleSelectM cache cid thdl oldtpage' (unPageNum oldpgn)
             uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
-            let uhdl1 = (hoodleModeState .~ SelectState nthdl) uhdl' 
-            return (uhdl1,nthdl,itms)       
+            return (uhdl',nthdl,itms)       
           Left _ -> error "this is impossible, in moveSelect" 
       let maction = do 
             page <- M.lookup (unPageNum newpgn) (view gselAll nthdl1)
@@ -307,16 +307,15 @@ moveSelect cid pnum geometry orig@(x0,y0)
                 alist = olditms :- Hitted newitms :- Empty 
                 ntpage = makePageSelectMode page alist  
                 coroutineaction = do 
-                  nthdl2 <- liftIO $ updateTempHoodleSelectIO cache cid nthdl1 ntpage (unPageNum newpgn)  
+                  nthdl2 <- updateTempHoodleSelectM cache cid nthdl1 ntpage (unPageNum newpgn)  
                   let cibox = view currentCanvasInfo uhdl1 
                       ncibox = ( runIdentity 
                                . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
                                  cibox 
-                      cmap = view cvsInfoMap uhdl1
-                      cmap' = M.adjust (const ncibox) cid cmap 
-                      uhdl'' = maybe uhdl1 id $ setCanvasInfoMap cmap' uhdl1
-                  uhdl''' <- liftIO (updatePageAll (SelectState nthdl2) uhdl'')
-                  return ((hoodleModeState .~ SelectState nthdl2) uhdl''')
+                      -- cmap = view cvsInfoMap uhdl1
+                      -- cmap' = M.adjust (const ncibox) cid cmap 
+                      -- uhdl'' = maybe uhdl1 id $ setCanvasInfoMap cmap' uhdl1
+                  liftIO (updatePageAll (SelectState nthdl2) uhdl1)
             return coroutineaction
       uhdl2 <- maybe (return uhdl1) id maction
       pureUpdateUhdl (const uhdl2)
@@ -332,9 +331,9 @@ moveSelect cid pnum geometry orig@(x0,y0)
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset offset tpage
-          newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newtpage pagenum 
+          newthdl <- updateTempHoodleSelectM cache cid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
-          pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
+          pureUpdateUhdl (const uhdl')
           commit_ 
         Left _ -> error "this is impossible, in moveSelect" 
       -- invalidateAll 
@@ -434,9 +433,9 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
               newtpage = changeSelectionBy sfunc tpage 
-          newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newtpage pagenum 
+          newthdl <- updateTempHoodleSelectM cache cid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
-          pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))
+          pureUpdateUhdl (const uhdl')
           commit_
         Left _ -> error "this is impossible, in resizeSelect" 
       invalidateAllInBBox Nothing Efficient
@@ -458,10 +457,9 @@ selectPenColorChanged pcolor = do
         let alist' = fmapAL id (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
             newlayer = Right alist'
             newpage = (glayers.selectedLayer .~ (GLayer (slayer^.gbuffer) (TEitherAlterHitted newlayer))) tpage 
-        newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newpage n
-        let uhdl' = (hoodleModeState .~ SelectState newthdl) uhdl
-        uhdl'' <- liftIO (updatePageAll (SelectState newthdl) uhdl')
-        pureUpdateUhdl (const uhdl'')
+        newthdl <- updateTempHoodleSelectM cache cid thdl newpage n
+        uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
+        pureUpdateUhdl (const uhdl')
         commit_
         invalidateAllInBBox Nothing Efficient
           
@@ -482,8 +480,8 @@ selectPenWidthChanged pwidth = do
                      (Hitted . map (changeItemStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
           newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
-      newthdl <- liftIO $ updateTempHoodleSelectIO cache cid thdl newpage n          
-      uhdl' <- (liftIO . updatePageAll (SelectState newthdl) . (hoodleModeState .~ SelectState newthdl)) uhdl
+      newthdl <- updateTempHoodleSelectM cache cid thdl newpage n          
+      uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
       pureUpdateUhdl (const uhdl')
       commit_
       invalidateAllInBBox Nothing Efficient 

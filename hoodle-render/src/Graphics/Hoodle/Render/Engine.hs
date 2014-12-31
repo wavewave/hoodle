@@ -94,4 +94,14 @@ genWorker handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
       Cairo.scale s s
       renderBkg (bkg,dim)
     handler (sfcid,(s,sfc))
+genWorker handler (LayerScaled sfcid ritems s (Dim w h)) = do
+    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+    Cairo.renderWith sfc $ do   
+      Cairo.setSourceRGBA 0 1 1 0.5
+      Cairo.rectangle 0 0 w h 
+      Cairo.fill
+      -- Cairo.scale s s
+      -- renderBkg (bkg,dim)
+    handler (sfcid,(1.0,sfc))
+
 

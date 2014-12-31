@@ -16,28 +16,31 @@ module Hoodle.Coroutine.Pen where
 
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
-import           Control.Lens (view,set,at)
+import           Control.Lens (at,over,set,view)
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.State hiding (mapM_,forM_)
 -- import Control.Monad.Trans
 import           Data.Functor.Identity (Identity(..))
 import           Data.Foldable (toList)
 import           Data.Sequence hiding (filter)
+import qualified Data.IntMap as IM
 import           Data.Maybe 
 import           Data.Ratio
 import           Data.Time.Clock 
 import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic (gpages)
+import           Data.Hoodle.Generic (gdimension,gitems,gpages)
 import           Data.Hoodle.Simple (Dimension(..))
-import           Graphics.Hoodle.Render (renderStrk)
+import           Graphics.Hoodle.Render (renderStrk,updateLayerBuf)
+import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Device 
 import           Hoodle.GUI.Reflect
+import           Hoodle.ModelAction.Layer
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Pen
 import           Hoodle.Type.Canvas
@@ -52,6 +55,29 @@ import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
 import Prelude hiding (mapM_)
+
+
+-- | 
+addPDraw :: RenderCache
+         -> CanvasId
+         -> PenInfo 
+         -> RHoodle
+         -> PageNum 
+         -> Seq (Double,Double,Double) 
+         -> MainCoroutine (RHoodle,BBox) -- ^ new hoodle and bbox in page coordinate
+addPDraw cache cid pinfo hdl (PageNum pgnum) pdraw = do 
+    let currpage = getPageFromGHoodleMap pgnum hdl
+        currlayer = getCurrentLayer currpage
+        dim = view gdimension currpage
+        newstroke = createNewStroke pinfo pdraw         
+        newstrokebbox = runIdentity (makeBBoxed newstroke)
+        bbox = getBBox newstrokebbox
+        newlayerbbox = over gitems (++[RItemStroke newstrokebbox]) currlayer
+    callRenderer $ updateLayerBuf cache cid 1.0 dim (Just bbox) newlayerbbox >> return GotNone
+    let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
+        newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
+    return (newhdlbbox,bbox)
+
 
 -- |
 createTempRender :: CanvasGeometry -> a -> MainCoroutine (TempRender a) 
@@ -152,7 +178,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                   if x1 <= 1e-3      -- this is ad hoc but.. 
                     then invalidateAll
                     else do  
-                      (newhdl,bbox) <- liftIO $ addPDraw cache cid pinfo currhdl pnum pdraw
+                      (newhdl,bbox) <- addPDraw cache cid pinfo currhdl pnum pdraw
                       uhdl' <- liftIO (updatePageAll (ViewAppendState newhdl) uhdl)
                       let uhdl'' = set hoodleModeState (ViewAppendState newhdl) uhdl'
                       commit (set (unitHoodles.currentUnit) uhdl'' xstate)

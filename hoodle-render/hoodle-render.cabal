@@ -41,6 +41,7 @@ Library
                  stm,
                  strict >= 0.3, 
                  svgcairo >= 0.12,
+                 time,
                  transformers >= 0.3,
                  unix >= 2.5,
                  unordered-containers, 

@@ -105,8 +105,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
           geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles.currentUnit) =<< get
-          callRenderer $ updateBkgCache geometry (PageNum (totnumpages-1),npage) >> return GotNone
-          waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
+          callRenderer_ $ updateBkgCache geometry (PageNum (totnumpages-1),npage)
           let npages = M.insert totnumpages npage pgs  
           return  (True,totnumpages,npage,
                      either (Left . set gpages npages) (Right. set gselAll npages) ehdl ) 

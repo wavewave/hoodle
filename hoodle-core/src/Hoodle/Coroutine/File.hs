@@ -280,7 +280,7 @@ resetHoodleBuffers = do
     updateUhdl $ \uhdl -> do 
       let hdlst = view hoodleModeState uhdl
           cid = getCurrentCanvasId uhdl
-      callRenderer $ resetHoodleModeStateBuffers rcache cid hdlst >> return GotNone
+      callRenderer_ $ resetHoodleModeStateBuffers rcache cid hdlst
       return . (hoodleModeState .~ hdlst) $ uhdl
 
 

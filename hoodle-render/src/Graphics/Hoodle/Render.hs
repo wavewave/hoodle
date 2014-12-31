@@ -377,8 +377,9 @@ renderRBkg_InBBox cache cid mbbox (b,dim,mx) = do
 
 -- | render RLayer within BBox after hittest items
 renderRLayer_InBBox :: RenderCache -> CanvasId -> Maybe BBox -> RLayer -> Cairo.Render RLayer
-renderRLayer_InBBox cache cid mbbox layer = do  
-  clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
+renderRLayer_InBBox = renderRLayer_InBBoxBuf
+-- cache cid mbbox layer = do  
+{-   clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
   let hittestbbox = case mbbox of 
         Nothing -> NotHitted [] 
                    :- Hitted (view gitems layer) 
@@ -388,18 +389,19 @@ renderRLayer_InBBox cache cid mbbox layer = do
   Cairo.resetClip  
   -- simply twice rendering if whole redraw happening 
   case view gbuffer layer of 
-    LyBuf sfcid -> liftIO $ putStrLn "renderRLayer_InBBox: not implemented" >> return layer
-    -- LyBuf (Just sfc) -> do 
-    --   liftIO $ Cairo.renderWith sfc $ do 
-    --     clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
-    --     Cairo.setSourceRGBA 0 0 0 0 
-    --     Cairo.setOperator Cairo.OperatorSource
-    --     Cairo.paint
-    --     Cairo.setOperator Cairo.OperatorOver
-    --     (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
+    LyBuf sfcid -> do
+      case HM.lookup sfcid cache of
+        liftIO $ Cairo.renderWith sfc $ do 
+          clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
+          Cairo.setSourceRGBA 0 0 0 0 
+          Cairo.setOperator Cairo.OperatorSource
+          Cairo.paint
+          Cairo.setOperator Cairo.OperatorOver
+          (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
     --     Cairo.resetClip 
     --     return layer 
     _ -> return layer 
+-}
 
 -----------------------
 -- draw using buffer -- 
@@ -436,7 +438,8 @@ renderRLayer_InBBoxBuf cache cid mbbox lyr = do
         case HM.lookup sfcid cache of
           Nothing -> return lyr
           Just (_,sfc) -> do 
-            clipBBox mbbox
+            clipBBox (fmap (flip inflate 2) mbbox)
+            -- clipBBox mbbox
             Cairo.setSourceSurface sfc 0 0 
             Cairo.paint 
             Cairo.resetClip 
@@ -467,9 +470,11 @@ updateLayerBuf :: RenderCache
                -> Renderer ()
 updateLayerBuf cache cid s (Dim w h) mbbox lyr = do 
   (_,(_,qgen)) <- ask 
+  liftIO $ putStrLn "updateLayerBuf"
   case view gbuffer lyr of 
     LyBuf sfcid -> do
       cmdid <- issueGenCommandID
+      liftIO $ putStrLn ("updateLayerBuf : sfcid = " ++ show sfcid ++ " cmdid = " ++ show cmdid)
       (liftIO . atomically) (sendGenCommand qgen cmdid (LayerScaled sfcid (view gitems lyr) s (Dim w h)))
       -- liftIO (putStrLn "updateLayerBuf: not implemented")
 

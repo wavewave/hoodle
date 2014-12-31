@@ -82,7 +82,7 @@ eraserProcess cid pnum geometry itms (x0,y0) = do
               cache       = view renderCache xstate
           let (newitms,maybebbox) = St.runState (eraseHitted hittestitem) Nothing
               newlayerbbox = set gitems newitms currlayer
-          callRenderer $ updateLayerBuf cache cid 1.0 dim maybebbox newlayerbbox >> return GotNone
+          callRenderer_ $ updateLayerBuf cache cid 1.0 dim maybebbox newlayerbbox
           let newpagebbox = adjustCurrentLayer newlayerbbox page 
               newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
               newhdlmodst = ViewAppendState newhdlbbox

@@ -22,12 +22,14 @@ module Graphics.Hoodle.Render.Engine
 import           Control.Concurrent.STM
 import           Control.Monad (forever)
 import           Data.Sequence ( viewl, ViewL(..) )
+import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 --
 import           Data.Hoodle.Simple
 --
+import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Background
 
@@ -79,6 +81,7 @@ genRendererMain handler tvar = forever $ do
         p :< ps -> do 
           writeTVar tvar ps 
           return p 
+    putStrLn $ "genRendererMain: " ++ show p
     genWorker handler (snd p)
 
 genWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
@@ -94,13 +97,16 @@ genWorker handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
       Cairo.scale s s
       renderBkg (bkg,dim)
     handler (sfcid,(s,sfc))
-genWorker handler (LayerScaled sfcid ritems s (Dim w h)) = do
+genWorker handler (LayerScaled sfcid ritms s (Dim w h)) = do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
-      Cairo.setSourceRGBA 0 1 1 0.5
+      Cairo.setSourceRGBA 0 0 0 0
       Cairo.rectangle 0 0 w h 
       Cairo.fill
-      -- Cairo.scale s s
+      Cairo.scale s s
+      mapM_ (renderRItem undefined undefined) ritms
+    ctime <- getCurrentTime
+    print ctime
       -- renderBkg (bkg,dim)
     handler (sfcid,(1.0,sfc))
 

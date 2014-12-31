@@ -57,7 +57,7 @@ updateTempHoodleSelectM :: RenderCache
                        -> MainCoroutine (Hoodle SelectMode)
 updateTempHoodleSelectM cache cid thdl tpage pagenum = do   
   let newpage = hPage2RPage tpage
-  callRenderer $ updatePageBuf cache cid 1.0 newpage >> return GotNone
+  callRenderer_ $ updatePageBuf cache cid 1.0 newpage
   return (updateTempHoodleSelect thdl tpage pagenum)
 
  

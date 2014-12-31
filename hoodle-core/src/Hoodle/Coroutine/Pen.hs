@@ -73,7 +73,7 @@ addPDraw cache cid pinfo hdl (PageNum pgnum) pdraw = do
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
         newlayerbbox = over gitems (++[RItemStroke newstrokebbox]) currlayer
-    callRenderer $ updateLayerBuf cache cid 1.0 dim (Just bbox) newlayerbbox >> return GotNone
+    callRenderer_ $ updateLayerBuf cache cid 1.0 dim (Just bbox) newlayerbbox 
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
         newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
     return (newhdlbbox,bbox)

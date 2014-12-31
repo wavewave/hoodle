@@ -53,7 +53,7 @@ undo = do
       Nothing -> msgShout "no undo item yet"
       Just (hdlmodst,newtable) -> do 
         let cid = getCurrentCanvasId uhdl
-        callRenderer $ resetHoodleModeStateBuffers cache cid hdlmodst >> return GotNone
+        callRenderer_ $ resetHoodleModeStateBuffers cache cid hdlmodst
         updateUhdl $ \uhdl' -> do
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           return $ ( (hoodleModeState .~ hdlmodst) . (undoTable .~ newtable)) uhdl''
@@ -70,7 +70,7 @@ redo = do
     case getNextUndo utable of 
       Nothing -> msgShout "no redo item"
       Just (hdlmodst,newtable) -> do 
-        callRenderer $ resetHoodleModeStateBuffers cache cid hdlmodst >> return GotNone
+        callRenderer_ $ resetHoodleModeStateBuffers cache cid hdlmodst
         updateUhdl $ \uhdl' -> do 
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           let uhdl''' = ( set hoodleModeState hdlmodst

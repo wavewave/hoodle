@@ -166,7 +166,7 @@ initialize ev = do
         doIOaction $ \evhandler -> do 
           let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
           forkOn 2 $ pdfRendererMain handler tvarpdf
-          forkIO $ genRendererMain handler tvargen
+          forkIO $ E.catch (genRendererMain handler tvargen) (\e -> print (e :: E.SomeException)) 
           return (UsrEv ActionOrdered)
         waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
         getFileContent mfname
@@ -176,7 +176,7 @@ initialize ev = do
             hdlst = uhdl ^. hoodleModeState 
             cache = xst2 ^. renderCache
             cid = getCurrentCanvasId uhdl
-        callRenderer $ resetHoodleModeStateBuffers cache cid hdlst >> return GotNone
+        callRenderer_ $ resetHoodleModeStateBuffers cache cid hdlst
         pureUpdateUhdl (hoodleModeState .~ hdlst)
         -- liftIO $ toggleSave ui False
         liftIO $ reflectUIToggle ui "SAVEA" False

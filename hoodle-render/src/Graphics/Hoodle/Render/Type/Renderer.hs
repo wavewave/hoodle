@@ -53,6 +53,9 @@ data GenCommand where
   BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
   LayerScaled :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
 
+instance Show GenCommand where
+  show (BkgSmplScaled sfcid _ _ _ _) = "BkgSmplScaled:"++show sfcid
+  show (LayerScaled sfcid _ _ _ ) = "LayerScaled:"++show sfcid
 
 newtype SurfaceID = SurfaceID UUID deriving (Show,Eq,Ord,Hashable)
 

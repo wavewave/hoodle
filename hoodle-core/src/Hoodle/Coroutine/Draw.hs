@@ -190,7 +190,10 @@ invalidateInBBox mbbox flag cid = do
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
                        -> DrawFlag
                        -> MainCoroutine ()
-invalidateAllInBBox mbbox flag = applyActionToAllCVS (invalidateInBBox mbbox flag)
+invalidateAllInBBox mbbox flag = do
+    liftIO $ do ctime <- getCurrentTime
+                putStrLn $ "invalidateAllInBBox:" ++ show ctime
+    applyActionToAllCVS (invalidateInBBox mbbox flag)
 
 -- | 
 invalidateAll :: MainCoroutine () 

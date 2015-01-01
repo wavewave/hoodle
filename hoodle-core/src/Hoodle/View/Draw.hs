@@ -28,6 +28,7 @@ import qualified Data.IntMap as M
 import           Data.Maybe hiding (fromMaybe)
 import           Data.Monoid
 import           Data.Sequence
+import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
@@ -156,6 +157,8 @@ doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)
                     -> IntersectBBox
                     -> IO (Maybe a)
 doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do 
+  ctime <- getCurrentTime
+  print ctime
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
@@ -346,6 +349,10 @@ drawContPageGen render = ContPageDraw func
               pnum = PageNum . view currentPageNum $ cinfo 
               canvas = view drawArea cinfo 
               msfc = view mDrawSurface cinfo
+          case msfc of
+            Nothing -> putStrLn "Nothing"
+            Just sfc -> putStrLn "Just"
+
           geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = view gpages hdl 
               mcpg = view (at (unPageNum pnum)) pgs 

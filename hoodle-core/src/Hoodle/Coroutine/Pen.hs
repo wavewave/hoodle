@@ -186,12 +186,13 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                     else do  
                       (newhdl,bbox) <- addPDraw cid pinfo currhdl pnum pdraw
                       uhdl' <- liftIO (updatePageAll (ViewAppendState newhdl) uhdl)
-                      let uhdl'' = set hoodleModeState (ViewAppendState newhdl) uhdl'
-                      commit (set (unitHoodles.currentUnit) uhdl'' xstate)
+                      -- let uhdl'' = set hoodleModeState (ViewAppendState newhdl) uhdl'
+                      commit (set (unitHoodles.currentUnit) uhdl' xstate)
                       let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
                           nbbox = xformBBox f bbox 
                       -- invalidateAllInBBox (Just nbbox) BkgEfficient
-                      invalidateAllInBBox (Just nbbox) Efficient
+                      -- invalidateAllInBBox (Just nbbox) Efficient
+                      return ()
                   return (Just (Just ()))
           
 -- | main pen coordinate adding process

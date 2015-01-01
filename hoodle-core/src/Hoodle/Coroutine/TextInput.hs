@@ -288,13 +288,12 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
     let otheritems = view gitems currlayer  
     let ntpg = makePageSelectMode currpage 
                  (otheritems :- (Hitted [newitem]) :- Empty)  
-        cache = view renderCache xst
     modeChange ToSelectMode 
     updateUhdl $ \nuhdl -> do
       thdl <- case view hoodleModeState nuhdl of
                 SelectState thdl' -> return thdl'
                 _ -> (lift . EitherT . return . Left . Other) "svgInsert"
-      nthdl <- updateTempHoodleSelectM cache cid thdl ntpg pgnum 
+      nthdl <- updateTempHoodleSelectM cid thdl ntpg pgnum 
       return $ (hoodleModeState .~ SelectState nthdl) nuhdl
     commit_
     invalidateAll 
@@ -412,12 +411,11 @@ insertItemAt mpcoord ritm = do
         oitms = view gitems lyr  
         ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)  
     modeChange ToSelectMode 
-    cache <- view renderCache <$> get
     updateUhdl $ \uhdl' -> do 
       thdl <- case view hoodleModeState uhdl' of
         SelectState thdl' -> return thdl'
         _ -> (lift . EitherT . return . Left . Other) "insertItemAt"
-      nthdl <- updateTempHoodleSelectM cache cid thdl ntpg pgnum 
+      nthdl <- updateTempHoodleSelectM cid thdl ntpg pgnum 
       return . (hoodleModeState .~ SelectState nthdl)
              . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl' 
     commit_

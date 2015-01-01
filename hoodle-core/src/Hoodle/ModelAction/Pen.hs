@@ -65,7 +65,7 @@ createNewStroke pinfo pdraw =
       ptool = case ptype of 
                   PenWork -> "pen" 
                   HighlighterWork -> "highlighter"
-                  _ -> error "error in addPDraw"
+                  _ -> error "error in createNewStroke"
       
       newstroke = 
         case pvwpen of 

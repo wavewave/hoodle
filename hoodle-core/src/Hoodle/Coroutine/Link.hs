@@ -170,9 +170,9 @@ notifyLink cid pcoord = do
 gotLink :: Maybe String -> (Int,Int) -> MainCoroutine () 
 gotLink mstr (x,y) = do 
   xst <- get 
+  cache <- renderCache
   let uhdl = view (unitHoodles.currentUnit) xst 
       cid = getCurrentCanvasId uhdl
-      cache = view renderCache xst
   mr <- runMaybeT $ do 
     str <- (MaybeT . return) mstr 
     let (str1,rem1) = break (== ',') str 

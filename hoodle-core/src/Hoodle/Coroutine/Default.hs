@@ -161,12 +161,13 @@ initialize ev = do
         -- additional initialization goes here
         xst1 <- get
         let ui = xst1 ^. gtkUIManager
+            cachevar = xst1 ^. renderCacheVar
             tvarpdf = xst1 ^. pdfRenderQueue
             tvargen = xst1 ^. genRenderQueue
         doIOaction $ \evhandler -> do 
           let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
           forkOn 2 $ pdfRendererMain handler tvarpdf
-          forkIO $ E.catch (genRendererMain handler tvargen) (\e -> print (e :: E.SomeException)) 
+          forkIO $ E.catch (genRendererMain cachevar handler tvargen) (\e -> print (e :: E.SomeException)) 
           return (UsrEv ActionOrdered)
         waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
         getFileContent mfname
@@ -174,9 +175,8 @@ initialize ev = do
         xst2 <- get
         let uhdl = view (unitHoodles.currentUnit) xst2
             hdlst = uhdl ^. hoodleModeState 
-            cache = xst2 ^. renderCache
             cid = getCurrentCanvasId uhdl
-        callRenderer_ $ resetHoodleModeStateBuffers cache cid hdlst
+        callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
         pureUpdateUhdl (hoodleModeState .~ hdlst)
         -- liftIO $ toggleSave ui False
         liftIO $ reflectUIToggle ui "SAVEA" False

@@ -249,7 +249,8 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
       if takeExtension filename /= ".svg" 
       then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
       else do
-        (cache,cid) <- ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) <$> get
+        cid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
+        cache <- renderCache
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
         liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
@@ -276,11 +277,10 @@ fileLoad filename = do
 -- | 
 resetHoodleBuffers :: MainCoroutine () 
 resetHoodleBuffers = do 
-    rcache <- view renderCache <$> get
     updateUhdl $ \uhdl -> do 
       let hdlst = view hoodleModeState uhdl
           cid = getCurrentCanvasId uhdl
-      callRenderer_ $ resetHoodleModeStateBuffers rcache cid hdlst
+      callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
       return . (hoodleModeState .~ hdlst) $ uhdl
 
 
@@ -462,12 +462,11 @@ fileLoadSVG = do
       let otheritems = view gitems currlayer  
       let ntpg = makePageSelectMode currpage (otheritems :- (Hitted [newitem]) :- Empty)  
       modeChange ToSelectMode 
-      cache <- view renderCache <$> get
       updateUhdl $ \uhdl' -> do
         thdl <- case view hoodleModeState uhdl' of
                   SelectState thdl' -> return thdl'
                   _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
-        nthdl <- updateTempHoodleSelectM cache cid thdl ntpg pgnum 
+        nthdl <- updateTempHoodleSelectM cid thdl ntpg pgnum 
         return . (hoodleModeState .~ SelectState nthdl)
                . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl'
       commit_
@@ -596,11 +595,12 @@ fileVersionSave = do
 
 
 showRevisionDialog :: Hoodle -> [Revision] -> MainCoroutine ()
-showRevisionDialog hdl revs = 
-    liftM ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) get >>= \cache -> 
-      doIOaction (action cache)
-      >> waitSomeEvent (\case GotOk -> True ; _ -> False)
-      >> return ()
+showRevisionDialog hdl revs = do
+    cid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
+    cache <- renderCache
+    doIOaction (action (cache,cid))
+    waitSomeEvent (\case GotOk -> True ; _ -> False)
+    return ()
   where 
     action (cache,cid) _evhandler = do 
       dialog <- Gtk.dialogNew

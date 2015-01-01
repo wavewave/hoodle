@@ -21,6 +21,7 @@ module Graphics.Hoodle.Render.Engine
 
 import           Control.Concurrent.STM
 import           Control.Monad (forever)
+import qualified Data.HashMap.Strict as HM
 import           Data.Sequence ( viewl, ViewL(..) )
 import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
@@ -71,22 +72,23 @@ pdfWorker handler (RenderPageScaled sfcid page (Dim ow _oh) (Dim w h)) = do
     handler (sfcid,(s,sfc))
 
 -- | generic renderer engine
-genRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
+genRendererMain :: TVar RenderCache -> ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
                 -> GenCommandQueue -> IO () 
-genRendererMain handler tvar = forever $ do     
-    p <- atomically $ do 
+genRendererMain cachevar handler tvar = forever $ do     
+    (p,cache) <- atomically $ do 
+      cache <- readTVar cachevar
       lst' <- readTVar tvar
       case viewl lst' of
         EmptyL -> retry
         p :< ps -> do 
           writeTVar tvar ps 
-          return p 
+          return (p,cache)
     putStrLn $ "genRendererMain: " ++ show p
-    genWorker handler (snd p)
+    genWorker cache handler (snd p)
 
-genWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
+genWorker :: RenderCache -> ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
           -> GenCommand -> IO ()
-genWorker handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
+genWorker _cache handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
     let s = w / ow
         bkg = Background "solid" col sty
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
@@ -97,7 +99,7 @@ genWorker handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
       Cairo.scale s s
       renderBkg (bkg,dim)
     handler (sfcid,(s,sfc))
-genWorker handler (LayerScaled sfcid ritms s (Dim w h)) = do
+genWorker _cache handler (LayerInit sfcid ritms s (Dim w h)) = do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
       Cairo.setSourceRGBA 0 0 0 0
@@ -108,6 +110,26 @@ genWorker handler (LayerScaled sfcid ritms s (Dim w h)) = do
     ctime <- getCurrentTime
     print ctime
       -- renderBkg (bkg,dim)
-    handler (sfcid,(1.0,sfc))
+    handler (sfcid,(s,sfc))
+genWorker cache handler (LayerRedraw sfcid ritms s (Dim w h)) = do
+    case HM.lookup sfcid cache of
+      Nothing -> genWorker cache handler (LayerInit sfcid ritms s (Dim w h))
+      Just (s,sfc) -> do
+        Cairo.renderWith sfc $ do   
+          Cairo.setSourceRGBA 0 0 0 0
+          Cairo.rectangle 0 0 w h 
+          Cairo.fill
+          Cairo.scale s s
+          mapM_ (renderRItem undefined undefined) ritms
+        handler (sfcid,(s,sfc))
+genWorker _cache handler (LayerScaled sfcid ritms s (Dim w h)) = do
+    sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
+    Cairo.renderWith sfc $ do   
+      Cairo.setSourceRGBA 0 0 0 0
+      Cairo.rectangle 0 0 w h 
+      Cairo.fill
+      Cairo.scale s s
+      mapM_ (renderRItem undefined undefined) ritms
+    handler (sfcid,(s,sfc))
 
 

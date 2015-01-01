@@ -19,8 +19,10 @@
 module Hoodle.Accessor where
 
 import           Control.Applicative
+import           Control.Concurrent.STM (readTVarIO)
 import           Control.Lens (Simple,Lens,view,set,(.~))
 import           Control.Monad hiding (mapM_, forM_)
+import           Control.Monad.IO.Class
 import qualified Control.Monad.State as St hiding (mapM_, forM_)
 import           Data.Foldable
 import qualified Data.IntMap as M
@@ -164,4 +166,7 @@ setToggleUIForFlag toggleid b xstate = do
   return b 
 
 
+-- |
+renderCache :: MainCoroutine RenderCache
+renderCache = (view renderCacheVar <$> St.get) >>= liftIO . readTVarIO
 

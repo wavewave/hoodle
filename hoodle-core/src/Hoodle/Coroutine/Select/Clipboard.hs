@@ -49,15 +49,14 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState 
 
 -- |
-updateTempHoodleSelectM :: RenderCache 
-                       -> CanvasId
+updateTempHoodleSelectM :: CanvasId
                        -> Hoodle SelectMode 
                        -> Page SelectMode 
                        -> Int
                        -> MainCoroutine (Hoodle SelectMode)
-updateTempHoodleSelectM cache cid thdl tpage pagenum = do   
+updateTempHoodleSelectM cid thdl tpage pagenum = do   
   let newpage = hPage2RPage tpage
-  callRenderer_ $ updatePageBuf cache cid 1.0 newpage
+  callRenderer_ $ updatePageBuf cid 1.0 newpage
   return (updateTempHoodleSelect thdl tpage pagenum)
 
  
@@ -76,8 +75,7 @@ deleteSelection = do
         Right alist -> do 
           let newlayer = Left . concat . getA $ alist
               newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage 
-              cache = view renderCache xst
-          newthdl <- updateTempHoodleSelectM cache cid thdl newpage n
+          newthdl <- updateTempHoodleSelectM cid thdl newpage n
           newuhdl <- liftIO . updatePageAll (SelectState newthdl) $ uhdl 
           let ui = view gtkUIManager xst
           liftIO $ toggleCutCopyDelete ui False 
@@ -130,8 +128,8 @@ pasteToSelection = do
       RenderEv (GotRItems ritms) <- 
         waitSomeEvent (\case RenderEv (GotRItems _) -> True; _ -> False)
       xst <- get
+      cache <- renderCache 
       let ui = view gtkUIManager xst
-          cache = view renderCache xst
       modeChange ToSelectMode 
       updateUhdl (pasteAction cache ui ritms)
       commit_ 
@@ -156,7 +154,7 @@ pasteToSelection = do
                             :- Hitted nclipitms 
                             :- Empty )
           tpage' = set (glayers.selectedLayer) newlayerselect tpage
-      thdl' <- updateTempHoodleSelectM cache cid thdl tpage' pagenum 
+      thdl' <- updateTempHoodleSelectM cid thdl tpage' pagenum 
       uhdl' <- liftIO $ updatePageAll (SelectState thdl') uhdl
       liftIO $ toggleCutCopyDelete ui True
       return uhdl'

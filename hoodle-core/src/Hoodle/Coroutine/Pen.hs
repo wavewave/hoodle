@@ -58,14 +58,13 @@ import Prelude hiding (mapM_)
 
 
 -- | 
-addPDraw :: RenderCache
-         -> CanvasId
+addPDraw :: CanvasId
          -> PenInfo 
          -> RHoodle
          -> PageNum 
          -> Seq (Double,Double,Double) 
          -> MainCoroutine (RHoodle,BBox) -- ^ new hoodle and bbox in page coordinate
-addPDraw cache cid pinfo hdl (PageNum pgnum) pdraw = do 
+addPDraw cid pinfo hdl (PageNum pgnum) pdraw = do 
     let currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
         dim = view gdimension currpage
@@ -73,7 +72,7 @@ addPDraw cache cid pinfo hdl (PageNum pgnum) pdraw = do
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
         newlayerbbox = over gitems (++[RItemStroke newstrokebbox]) currlayer
-    callRenderer_ $ updateLayerBuf cache cid 1.0 dim (Just bbox) newlayerbbox 
+    callRenderer_ $ updateLayerBuf cid 1.0 dim (Just bbox) newlayerbbox 
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
         newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
     return (newhdlbbox,bbox)
@@ -83,10 +82,10 @@ addPDraw cache cid pinfo hdl (PageNum pgnum) pdraw = do
 createTempRender :: CanvasGeometry -> a -> MainCoroutine (TempRender a) 
 createTempRender geometry x = do 
     xst <- get
+    cache <- renderCache
     let uhdl = view (unitHoodles.currentUnit) xst
         cinfobox = view currentCanvasInfo uhdl
         mcvssfc = view (unboxLens mDrawSurface) cinfobox 
-        cache = view renderCache xst
         cid = getCurrentCanvasId uhdl
         hdl = getHoodle uhdl
         Dim cw ch = unCanvasDimension . canvasDim $ geometry
@@ -165,7 +164,6 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
           let currhdl = getHoodle  uhdl
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
-              cache = view renderCache xstate
           maybeFlip mpage (return Nothing)  $ \_page -> do 
             trdr <- createTempRender geometry (empty |> (x,y,z)) 
             mpdraw <-penProcess cid pnum geometry trdr ((x,y),z) ctime
@@ -178,7 +176,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                   if x1 <= 1e-3      -- this is ad hoc but.. 
                     then invalidateAll
                     else do  
-                      (newhdl,bbox) <- addPDraw cache cid pinfo currhdl pnum pdraw
+                      (newhdl,bbox) <- addPDraw cid pinfo currhdl pnum pdraw
                       uhdl' <- liftIO (updatePageAll (ViewAppendState newhdl) uhdl)
                       let uhdl'' = set hoodleModeState (ViewAppendState newhdl) uhdl'
                       commit (set (unitHoodles.currentUnit) uhdl'' xstate)

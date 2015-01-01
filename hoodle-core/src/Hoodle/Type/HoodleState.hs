@@ -53,7 +53,7 @@ module Hoodle.Type.HoodleState
 , tempLog 
 , tempQueue 
 , statusBar
-, renderCache
+, renderCacheVar
 , pdfRenderQueue
 , genRenderQueue
 , doesNotInvalidate
@@ -187,7 +187,7 @@ data HoodleState =
                 , _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent)
                 , _tempLog :: String -> String 
                 , _statusBar :: Maybe Gtk.Statusbar
-                , _renderCache :: RenderCache
+                , _renderCacheVar :: TVar RenderCache
                 , _pdfRenderQueue :: PDFCommandQueue
                 , _genRenderQueue :: GenCommandQueue
                 , _doesNotInvalidate :: Bool
@@ -331,8 +331,8 @@ statusBar :: Simple Lens HoodleState (Maybe Gtk.Statusbar)
 statusBar = lens _statusBar (\f a -> f { _statusBar = a })
 
 -- | 
-renderCache :: Simple Lens HoodleState RenderCache
-renderCache = lens _renderCache (\f a -> f { _renderCache = a })
+renderCacheVar :: Simple Lens HoodleState (TVar RenderCache)
+renderCacheVar = lens _renderCacheVar (\f a -> f { _renderCacheVar = a })
 
 -- | 
 pdfRenderQueue :: Simple Lens HoodleState PDFCommandQueue
@@ -491,6 +491,7 @@ emptyHoodleState = do
   unit <- emptyUnitHoodle
   tvarpdf <- atomically $ newTVar empty 
   tvargen <- atomically $ newTVar empty 
+  tvarcache <- atomically $ newTVar HM.empty
   return $
     HoodleState { _unitHoodles = (0, M.singleton 0 unit)
                 , _rootNotebook = error "emtpyHoodleState.rootNotebook"
@@ -514,7 +515,7 @@ emptyHoodleState = do
                 , _tempQueue = emptyQueue
                 , _tempLog = id 
                 , _statusBar = Nothing 
-                , _renderCache = HM.empty
+                , _renderCacheVar = tvarcache -- HM.empty
                 , _pdfRenderQueue = tvarpdf
                 , _genRenderQueue = tvargen
                 , _doesNotInvalidate = False
@@ -594,10 +595,10 @@ currentCanvasInfo = lens getter setter
       in f { _currentCanvas = (cid,a), _cvsInfoMap = cmap' }
 
 -- | 
-resetHoodleModeStateBuffers :: RenderCache -> CanvasId -> HoodleModeState -> Renderer ()
-resetHoodleModeStateBuffers cache cid hdlmodestate1 = 
+resetHoodleModeStateBuffers :: CanvasId -> HoodleModeState -> Renderer ()
+resetHoodleModeStateBuffers cid hdlmodestate1 = 
   case hdlmodestate1 of 
-    ViewAppendState hdl -> updateHoodleBuf cache cid 1.0 hdl
+    ViewAppendState hdl -> updateHoodleBuf cid 1.0 hdl
     _ -> return ()
 
 -- |
@@ -669,5 +670,6 @@ showCanvasInfoMapViewPortBBox xstate = do
   let cmap = view canvasInfoMap xstate
   print . map (view (unboxLens (viewInfo.pageArrangement.viewPortBBox))) . M.elems $ cmap 
 -}
+
 
 

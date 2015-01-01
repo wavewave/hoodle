@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Select.ManipulateImage
--- Copyright   : (c) 2013, 2014 Ian-Woo Kim
+-- Copyright   : (c) 2013-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -93,7 +93,6 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       let pnum = (fst . tempInfo) tsel
           img = bbxed_content imgbbx
           obbox = getBBox imgbbx
-          cache = view renderCache xst
           cid = getCurrentCanvasId uhdl
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
@@ -104,7 +103,7 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
             waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
           --
           let ntpage = replaceSelection rimg' tpage
-          nthdl <- updateTempHoodleSelectM cache cid thdl ntpage (unPageNum pnum)
+          nthdl <- updateTempHoodleSelectM cid thdl ntpage (unPageNum pnum)
           uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
           commit $ (unitHoodles.currentUnit .~ uhdl') xst  
       invalidateAllInBBox Nothing Efficient      
@@ -165,7 +164,6 @@ rotateImage dir imgbbx = do
         hdlmodst = view hoodleModeState uhdl
         pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox        
         epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
-        cache = view renderCache xst
     case hdlmodst of 
       ViewAppendState _ -> return ()
       SelectState thdl -> do 
@@ -179,7 +177,7 @@ rotateImage dir imgbbx = do
               RenderEv (GotRItem rimg') <- 
                 waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
               let ntpage = replaceSelection rimg' tpage
-              nthdl <- updateTempHoodleSelectM cache cid thdl ntpage (unPageNum pnum)
+              nthdl <- updateTempHoodleSelectM cid thdl ntpage (unPageNum pnum)
               uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
               commit $ (unitHoodles.currentUnit .~ uhdl') xst
             invalidateAllInBBox Nothing Efficient      

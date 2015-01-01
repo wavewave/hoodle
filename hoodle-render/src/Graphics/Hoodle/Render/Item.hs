@@ -42,37 +42,11 @@ import           Hoodle.Util.Process
 import           Graphics.Hoodle.Render.Type.Item
 import           Graphics.Hoodle.Render.Type.Renderer
 
-
-    -- uuid <- liftIO $  nextRandom
-
-    -- liftIO . forkIO $ do
-    --   let embed = getByteStringIfEmbeddedPNG src 
-    --   msfc <- case embed of         
-    --     Just bstr -> do 
-    --       sfc <- saveTempPNGToCreateSurface bstr 
-    --       return (Just sfc)
-    --     Nothing -> do
-    --       let filesrc = C8.unpack (img_src img)
-    --           filesrcext = takeExtension filesrc 
-    --           imgaction 
-    --             | filesrcext == ".PNG" || filesrcext == ".png" = do 
-    --                 b <- doesFileExist filesrc 
-    --                 if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
-    --                      else return Nothing 
-    --             | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
-    --                 b <- doesFileExist filesrc 
-    --                 if b then Just <$> getJPGandCreateSurface filesrc 
-    --                      else return Nothing 
-    --             | otherwise = return Nothing 
-    --       imgaction
-    --   maybe (return ()) (\sfc-> handler (uuid, (1.0,sfc))) msfc
-
-
 -- | construct renderable item 
 cnstrctRItem :: Item -> Renderer RItem 
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
 cnstrctRItem (ItemImage img) = do 
-    (_handler,_) <- ask 
+    handler <- rendererHandler <$> ask 
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
     let embed = getByteStringIfEmbeddedPNG src 

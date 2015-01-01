@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Widget.PanZoom
--- Copyright   : (c) 2013, 2014 Ian-Woo Kim
+-- Copyright   : (c) 2013-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -87,8 +87,8 @@ startPanZoomWidget :: PanZoomTouch
 startPanZoomWidget tchmode (cid,cinfo,geometry) mmode = do 
     modify (doesNotInvalidate .~ True)
     xst <- get 
+    cache <- renderCache
     let hdl = (getHoodle . view (unitHoodles.currentUnit)) xst
-        cache = view renderCache xst
     case mmode of 
       Nothing -> togglePanZoom cid
       Just (mode,(oxy,owxy)) -> do 

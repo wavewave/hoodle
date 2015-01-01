@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Select 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -159,7 +159,7 @@ newSelectRectangle cid pnum geometry itms orig
                    (prev,otime) tempselection = do  
     r <- nextevent
     xst <- get 
-    let cache = view renderCache xst
+    cache <- renderCache
     forBoth' unboxBiAct (fsingle r xst cache) . getCanvasInfo cid . view (unitHoodles.currentUnit) $ xst
   where 
     fsingle r xstate cache cinfo = penMoveAndUpOnly r pnum geometry defact (moveact cache) (upact xstate cinfo)
@@ -230,7 +230,7 @@ startMoveSelect :: CanvasId
                    -> Page SelectMode
                    -> MainCoroutine () 
 startMoveSelect cid pnum geometry ((x,y),ctime) tpage = do
-    cache <- view renderCache <$> get
+    cache <- renderCache
     itmimage <- liftIO $ mkItmsNImg cache cid tpage
     tsel <- createTempRender geometry itmimage 
     moveSelect cid pnum geometry (x,y) ((x,y),ctime) tsel 
@@ -251,12 +251,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
            (prev,otime) tempselection = do
     xst <- get
     let uhdl = view (unitHoodles.currentUnit) xst
-        cache = view renderCache xst
     r <- nextevent 
-    forBoth' unboxBiAct (fsingle r cache uhdl) (getCanvasInfo cid uhdl)
+    forBoth' unboxBiAct (fsingle r uhdl) (getCanvasInfo cid uhdl)
   where 
-    fsingle r cache uhdl cinfo = 
-      penMoveAndUpInterPage r pnum geometry defact moveact (upact cache uhdl cinfo) 
+    fsingle r uhdl cinfo = 
+      penMoveAndUpInterPage r pnum geometry defact moveact (upact uhdl cinfo) 
     defact = moveSelect cid pnum geometry orig (prev,otime) tempselection
     moveact oldpgn pcpair@(newpgn,PageCoord (px,py)) = do 
       let (x,y) 
@@ -279,14 +278,14 @@ moveSelect cid pnum geometry orig@(x0,y0)
         invalidateTempBasePage cid (tempSurfaceSrc tempselection) pnum 
           (drawTempSelectImage geometry tempselection xformmat) 
       moveSelect cid pnum geometry orig (ncoord,ntime) tempselection
-    upact :: RenderCache -> UnitHoodle -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
-    upact cache uhdl cinfo pcoord = 
+    upact :: UnitHoodle -> CanvasInfo a -> PointerCoord -> MainCoroutine () 
+    upact uhdl cinfo pcoord = 
       switchActionEnteringDiffPage pnum geometry pcoord (return ()) 
-        (chgaction cache uhdl cinfo) 
-        (ordaction cache uhdl cinfo)
-    chgaction :: RenderCache -> UnitHoodle -> CanvasInfo a 
+        (chgaction uhdl cinfo) 
+        (ordaction uhdl cinfo)
+    chgaction :: UnitHoodle -> CanvasInfo a 
               -> PageNum -> (PageNum,PageCoordinate) -> MainCoroutine () 
-    chgaction cache uhdl cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
+    chgaction uhdl cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
       let hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           cid = view canvasId cinfo
@@ -295,7 +294,7 @@ moveSelect cid pnum geometry orig@(x0,y0)
           Right oldtpage -> do 
             let itms = getSelectedItms oldtpage
             let oldtpage' = deleteSelected oldtpage
-            nthdl <- updateTempHoodleSelectM cache cid thdl oldtpage' (unPageNum oldpgn)
+            nthdl <- updateTempHoodleSelectM cid thdl oldtpage' (unPageNum oldpgn)
             uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
             return (uhdl',nthdl,itms)       
           Left _ -> error "this is impossible, in moveSelect" 
@@ -307,14 +306,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
                 alist = olditms :- Hitted newitms :- Empty 
                 ntpage = makePageSelectMode page alist  
                 coroutineaction = do 
-                  nthdl2 <- updateTempHoodleSelectM cache cid nthdl1 ntpage (unPageNum newpgn)  
+                  nthdl2 <- updateTempHoodleSelectM cid nthdl1 ntpage (unPageNum newpgn)  
                   let cibox = view currentCanvasInfo uhdl1 
                       ncibox = ( runIdentity 
                                . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
                                  cibox 
-                      -- cmap = view cvsInfoMap uhdl1
-                      -- cmap' = M.adjust (const ncibox) cid cmap 
-                      -- uhdl'' = maybe uhdl1 id $ setCanvasInfoMap cmap' uhdl1
                   liftIO (updatePageAll (SelectState nthdl2) uhdl1)
             return coroutineaction
       uhdl2 <- maybe (return uhdl1) id maction
@@ -322,7 +318,7 @@ moveSelect cid pnum geometry orig@(x0,y0)
       commit_
       invalidateAllInBBox Nothing Efficient
     ----
-    ordaction cache uhdl cinfo _pgn (_cpn,PageCoord (x,y)) = do 
+    ordaction uhdl cinfo _pgn (_cpn,PageCoord (x,y)) = do 
       let offset = (x-x0,y-y0)
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
@@ -331,12 +327,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset offset tpage
-          newthdl <- updateTempHoodleSelectM cache cid thdl newtpage pagenum 
+          newthdl <- updateTempHoodleSelectM cid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
           pureUpdateUhdl (const uhdl')
           commit_ 
         Left _ -> error "this is impossible, in moveSelect" 
-      -- invalidateAll 
       invalidateAllInBBox Nothing Efficient 
       
 
@@ -352,7 +347,7 @@ startResizeSelect :: Bool   -- ^ doesKeepRatio
                   -> MainCoroutine () 
 startResizeSelect doesKeepRatio handle cid pnum geometry bbox 
                   ((x,y),ctime) tpage = do
-    cache <- view renderCache <$> get  
+    cache <- renderCache
     itmimage <- liftIO $ mkItmsNImg cache cid tpage  
     tsel <- createTempRender geometry itmimage 
     resizeSelect doesKeepRatio 
@@ -376,11 +371,10 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
              (prev,otime) tempselection = do
     xst <- get
     let uhdl = view (unitHoodles.currentUnit) xst
-        cache = view renderCache xst
     r <- nextevent 
-    forBoth' unboxBiAct (fsingle r cache uhdl) . getCanvasInfo cid $ uhdl
+    forBoth' unboxBiAct (fsingle r uhdl) . getCanvasInfo cid $ uhdl
   where
-    fsingle r cache uhdl cinfo = penMoveAndUpOnly r pnum geometry defact moveact (upact cache uhdl cinfo)
+    fsingle r uhdl cinfo = penMoveAndUpOnly r pnum geometry defact moveact (upact uhdl cinfo)
     defact = resizeSelect doesKeepRatio handle cid pnum geometry origbbox (prev,otime) tempselection
     moveact (_pcoord,(x,y)) = do 
       (willUpdate,(ncoord,ntime)) <- liftIO $ getNewCoordTime (prev,otime) (x,y) 
@@ -408,7 +402,7 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
             xformmat = Mat.Matrix a1 a2 b1 b2 c1 c2 
         invalidateTemp cid (tempSurfaceSrc tempselection) (drawTempSelectImage geometry tempselection xformmat)
       resizeSelect doesKeepRatio handle cid pnum geometry origbbox (ncoord,ntime) tempselection
-    upact cache uhdl cinfo pcoord = do 
+    upact uhdl cinfo pcoord = do 
       let (_,(x,y)) = runIdentity $ 
             skipIfNotInSamePage pnum geometry pcoord 
                                 (return (pcoord,prev)) return
@@ -433,7 +427,7 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
               newtpage = changeSelectionBy sfunc tpage 
-          newthdl <- updateTempHoodleSelectM cache cid thdl newtpage pagenum 
+          newthdl <- updateTempHoodleSelectM cid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
           pureUpdateUhdl (const uhdl')
           commit_
@@ -445,7 +439,6 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
 -- | 
 selectPenColorChanged :: PenColor -> MainCoroutine () 
 selectPenColorChanged pcolor = do 
-    cache <- view renderCache <$> get
     uhdl <- view (unitHoodles.currentUnit) <$> get 
     let cid = getCurrentCanvasId uhdl
         SelectState thdl = view hoodleModeState uhdl
@@ -457,7 +450,7 @@ selectPenColorChanged pcolor = do
         let alist' = fmapAL id (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
             newlayer = Right alist'
             newpage = (glayers.selectedLayer .~ (GLayer (slayer^.gbuffer) (TEitherAlterHitted newlayer))) tpage 
-        newthdl <- updateTempHoodleSelectM cache cid thdl newpage n
+        newthdl <- updateTempHoodleSelectM cid thdl newpage n
         uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
         pureUpdateUhdl (const uhdl')
         commit_
@@ -467,20 +460,19 @@ selectPenColorChanged pcolor = do
 selectPenWidthChanged :: Double -> MainCoroutine () 
 selectPenWidthChanged pwidth = do 
   xst <- get
-  let cache = view renderCache xst
-      uhdl = view (unitHoodles.currentUnit) xst
+  let uhdl = view (unitHoodles.currentUnit) xst
       cid = getCurrentCanvasId uhdl
       SelectState thdl = view hoodleModeState uhdl
       Just (n,tpage) = view gselSelected thdl
       slayer = view (glayers.selectedLayer) tpage
-  case unTEitherAlterHitted . view gitems $ slayer  of 
+  case (unTEitherAlterHitted . view gitems) slayer of 
     Left _ -> return () 
     Right alist -> do 
       let alist' = fmapAL id 
                      (Hitted . map (changeItemStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
           newpage = set (glayers.selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
-      newthdl <- updateTempHoodleSelectM cache cid thdl newpage n          
+      newthdl <- updateTempHoodleSelectM cid thdl newpage n          
       uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
       pureUpdateUhdl (const uhdl')
       commit_

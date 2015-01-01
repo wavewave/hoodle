@@ -80,7 +80,7 @@ verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (retur
   where 
     verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x,y) _ = do 
       hdl <- getHoodle . view (unitHoodles.currentUnit) <$> get 
-      cache <- view renderCache <$> get
+      cache <- renderCache
       cpg <- getCurrentPageCurr 
       let (itms,npg,hltedLayers) = splitPageByHLine y cpg 
           nhdl = set (gpages.at n) (Just npg) hdl 

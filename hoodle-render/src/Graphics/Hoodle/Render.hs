@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -461,55 +462,38 @@ renderRLayer_InBBoxBuf cache cid mbbox lyr = do
 -------------------
 
 -- | 
-updateLayerBuf :: RenderCache 
-               -> CanvasId 
+updateLayerBuf :: CanvasId 
                -> Double      -- ^ scale factor
                -> Dimension 
                -> Maybe BBox 
                -> RLayer 
                -> Renderer ()
-updateLayerBuf cache cid s (Dim w h) mbbox lyr = do 
-  (_,(_,qgen)) <- ask 
-  liftIO $ putStrLn "updateLayerBuf"
+updateLayerBuf cid s (Dim w h) mbbox lyr = do 
+  rst <- ask
+  (qgen,cache) <- (rendererGenCmdQ rst,) <$> liftIO (getRenderCache rst)
+  -- (cache,qgen)) <- fmap ((,) <$> rendererCache <*> rendererGenCmdQ)  ask 
   case view gbuffer lyr of 
     LyBuf sfcid -> do
       cmdid <- issueGenCommandID
       liftIO $ putStrLn ("updateLayerBuf : sfcid = " ++ show sfcid ++ " cmdid = " ++ show cmdid)
       (liftIO . atomically) (sendGenCommand qgen cmdid (LayerScaled sfcid (view gitems lyr) s (Dim w h)))
-      -- liftIO (putStrLn "updateLayerBuf: not implemented")
 
-
-
---   LayerScaled :: SurfaceID -> [RItem] -> Dimension -> Dimension -> GenCommand
-
-    -- LyBuf (Just sfc) -> do 
-    --   Cairo.renderWith sfc $ do 
-    --     renderRLayer_InBBox cache cid mbbox lyr 
-    --   return lyr
-    -- LyBuf Nothing -> do 
-    --   sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
-    --   Cairo.renderWith sfc $ do 
-    --     renderRLayer_InBBox cache cid Nothing lyr
-    --   return (set gbuffer (LyBuf (Just sfc)) lyr) 
-      
 -- | 
-updatePageBuf :: RenderCache 
-              -> CanvasId
+updatePageBuf :: CanvasId
               -> Double      -- ^ scale factor 
               -> RPage 
               -> Renderer ()
-updatePageBuf cache cid s pg = do 
+updatePageBuf cid s pg = 
   let dim = view gdimension pg
       mbbox = Just . dimToBBox $ dim 
-  mapM_ (updateLayerBuf cache cid s dim mbbox) . view glayers $ pg 
+  in mapM_ (updateLayerBuf cid s dim mbbox) . view glayers $ pg 
 
 -- | 
-updateHoodleBuf :: RenderCache 
-                -> CanvasId
+updateHoodleBuf :: CanvasId
                 -> Double       -- ^ scale factor
                 -> RHoodle   
                 -> Renderer ()
-updateHoodleBuf cache cid s = mapM_ (updatePageBuf cache cid s) . view gpages
+updateHoodleBuf cid s = mapM_ (updatePageBuf cid s) . view gpages
 
 -------
 -- smart constructor for R hoodle structures
@@ -524,7 +508,7 @@ cnstrctRHoodle hdl = do
       pgs = view pages hdl
       pdf = view embeddedPdf hdl 
       txt = view embeddedText hdl
-  (_,(qpdf,qgen)) <- ask
+  (qpdf,qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ)<$> ask
   mdoc <- maybe (return Nothing) (\src -> liftIO $ do
             cmdid <- issuePDFCommandID
             docvar <- atomically newEmptyTMVar

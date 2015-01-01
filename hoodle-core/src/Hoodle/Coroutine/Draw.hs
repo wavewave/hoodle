@@ -21,7 +21,8 @@ module Hoodle.Coroutine.Draw where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Lens -- (view,set,(^.),(%~),(.~))
+import           Control.Concurrent.STM (atomically, modifyTVar')
+import           Control.Lens
 import           Control.Monad
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader (runReaderT)
@@ -81,7 +82,8 @@ sysevent ClockUpdateEvent = do
     let cid = getCurrentCanvasId uhdl
     modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
 sysevent (RenderCacheUpdate (uuid, ssfc)) = do
-  modify (renderCache %~ HM.insert uuid ssfc)
+  cachevar <- view renderCacheVar <$> get
+  liftIO $ atomically $ modifyTVar' cachevar (HM.insert uuid ssfc) 
   b <- ( ^. doesNotInvalidate ) <$> get
   when (not b) $ invalidateAll
 sysevent ev = msgShout (show ev)
@@ -103,7 +105,6 @@ updateFlagFromToggleUI toggleid lensforflag = do
                  >>= maybe (error "updateFlagFromToggleUI") 
                            (return . Gtk.castToToggleAction)
     b <- Gtk.toggleActionGetActive togglea
-    putStrLn "I am in 2"
     return (UsrEv (UIEv (UIGetFlag b)))
   UIEv (UIGetFlag b) <- 
     waitSomeEvent (\case UIEv (UIGetFlag _) -> True ; _ -> False) 
@@ -127,7 +128,7 @@ invalidateGeneral :: CanvasId -> Maybe BBox -> DrawFlag
 invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do 
     xst <- get
     let uhdl = view (unitHoodles.currentUnit) xst
-        cache = view renderCache xst
+    cache <- renderCache
     unboxBiAct (fsingle cache uhdl) (fcont cache uhdl) . getCanvasInfo cid $ uhdl
   where 
     fsingle :: RenderCache -> UnitHoodle -> CanvasInfo SinglePage -> MainCoroutine () 
@@ -154,11 +155,9 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
       case hdlmodst of 
 	ViewAppendState hdl -> do  
 	  hdl' <- liftIO (unContPageDraw drawcont cache isCurrentCvs cvsInfo mbbox hdl flag)
-	  -- modify (set unitHoodles (putTheUnit (set hoodleModeState (ViewAppendState hdl') uhdl)))
           pureUpdateUhdl (const ((hoodleModeState .~ ViewAppendState hdl') uhdl))
 	SelectState thdl -> do 
 	  thdl' <- liftIO (unContPageDraw drawcontsel cache isCurrentCvs cvsInfo mbbox thdl flag)
-	  -- modify (set unitHoodles (putTheUnit (set hoodleModeState (SelectState thdl') uhdl)))
           pureUpdateUhdl (const ((hoodleModeState .~ SelectState thdl') uhdl))
           
 -- |         
@@ -281,11 +280,10 @@ doIOaction_ action = do doIOaction $ \_ -> action >> return (UsrEv ActionOrdered
 -- | order rendering routine
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
-    tvars <- ((,)<$>(^. pdfRenderQueue)<*>(^. genRenderQueue)) <$> get  
+    (tvarpdf,tvargen,tvarcache) <- ((,,)<$>(^. pdfRenderQueue)<*>(^. genRenderQueue)<*>(^. renderCacheVar))<$>get  
     doIOaction $ \evhandler -> do
       let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-      UsrEv . RenderEv <$> runReaderT action (handler,tvars)
-
+      UsrEv . RenderEv <$> runReaderT action (RendererState handler tvarpdf tvargen tvarcache)
 
 callRenderer_ :: Renderer a -> MainCoroutine ()
 callRenderer_ action = do

@@ -48,12 +48,11 @@ undo = do
     xstate <- get
     let uhdl = view (unitHoodles.currentUnit) xstate
     let utable = view undoTable uhdl
-        cache = view renderCache xstate
     case getPrevUndo utable of 
       Nothing -> msgShout "no undo item yet"
       Just (hdlmodst,newtable) -> do 
         let cid = getCurrentCanvasId uhdl
-        callRenderer_ $ resetHoodleModeStateBuffers cache cid hdlmodst
+        callRenderer_ $ resetHoodleModeStateBuffers cid hdlmodst
         updateUhdl $ \uhdl' -> do
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           return $ ( (hoodleModeState .~ hdlmodst) . (undoTable .~ newtable)) uhdl''
@@ -65,12 +64,11 @@ redo = do
     xstate <- get
     let uhdl = view (unitHoodles.currentUnit) xstate
         utable = view undoTable uhdl
-        cache = view renderCache xstate
         cid = getCurrentCanvasId uhdl
     case getNextUndo utable of 
       Nothing -> msgShout "no redo item"
       Just (hdlmodst,newtable) -> do 
-        callRenderer_ $ resetHoodleModeStateBuffers cache cid hdlmodst
+        callRenderer_ $ resetHoodleModeStateBuffers cid hdlmodst
         updateUhdl $ \uhdl' -> do 
           uhdl'' <- liftIO (updatePageAll hdlmodst uhdl')
           let uhdl''' = ( set hoodleModeState hdlmodst

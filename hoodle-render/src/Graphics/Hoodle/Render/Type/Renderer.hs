@@ -51,7 +51,11 @@ newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
 
 data GenCommand where
   BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
+  LayerInit :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
+  LayerRedraw :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
   LayerScaled :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
+
+
 
 instance Show GenCommand where
   show (BkgSmplScaled sfcid _ _ _ _) = "BkgSmplScaled:"++show sfcid
@@ -63,7 +67,7 @@ newtype SurfaceID = SurfaceID UUID deriving (Show,Eq,Ord,Hashable)
 type CanvasId = Int 
 
 
-type Renderer = ReaderT ((SurfaceID, (Double,Cairo.Surface)) -> IO (), (PDFCommandQueue,GenCommandQueue)) IO
+-- ((SurfaceID, (Double,Cairo.Surface)) -> IO (), (PDFCommandQueue,GenCommandQueue)) IO
 
 -- | hashmap: key = UUID, value = (original size, view size, surface)
 type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
@@ -72,6 +76,16 @@ type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
 type GenCommandQueue = TVar (Seq (GenCommandID,GenCommand))
+
+data RendererState = RendererState { rendererHandler :: (SurfaceID, (Double,Cairo.Surface)) -> IO ()
+                                   , rendererPDFCmdQ :: PDFCommandQueue
+                                   , rendererGenCmdQ :: GenCommandQueue
+                                   , rendererCache :: TVar RenderCache }
+
+getRenderCache :: RendererState -> IO RenderCache
+getRenderCache RendererState {..} = atomically (readTVar rendererCache)
+
+type Renderer = ReaderT RendererState IO
 
 issuePDFCommandID :: (Functor m, MonadIO m) => m PDFCommandID
 issuePDFCommandID = PDFCommandID <$> liftIO nextRandom

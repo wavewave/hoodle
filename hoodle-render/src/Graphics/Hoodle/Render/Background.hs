@@ -15,6 +15,7 @@
 
 module Graphics.Hoodle.Render.Background where
 
+import           Control.Applicative
 -- import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad.State hiding (mapM_)
@@ -200,8 +201,8 @@ renderBkg (BackgroundEmbedPdf _ _,Dim w h) = do
 cnstrctRBkg_StateT :: Dimension 
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
-cnstrctRBkg_StateT _dim@(Dim _w _h) bkg = do  
-  (_handler,(qpdf,qgen)) <- lift ask
+cnstrctRBkg_StateT _ bkg = do  
+  (qpdf,qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ) <$> lift ask
   sfcid <- issueSurfaceID
   case bkg of 
     Background _t c s -> return (RBkgSmpl c s sfcid) 

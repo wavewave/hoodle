@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.ContextMenu
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -19,6 +19,7 @@ module Hoodle.Coroutine.ContextMenu where
 
 -- from other packages
 import           Control.Applicative
+import           Control.Concurrent.STM (readTVarIO)
 import           Control.Lens (view,set,(^.),(.~))
 import           Control.Monad.State hiding (mapM_,forM_)
 import           Control.Monad.Trans.Maybe
@@ -112,8 +113,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
     either_ action . hoodleModeStateEither . (^. hoodleModeState) . view (unitHoodles.currentUnit)  =<< get 
   where action thdl = do 
           xst <- get 
-          let cache = xst ^. renderCache
-              uhdl = view (unitHoodles.currentUnit) xst
+          let uhdl = view (unitHoodles.currentUnit) xst
               cid = getCurrentCanvasId uhdl
           case thdl ^. gselSelected of 
             Nothing -> return () 
@@ -131,7 +131,7 @@ processContextMenu (CMenuLinkConvert nlnk) =
                       layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
                   return (set (glayers.selectedLayer) layer' tpg)
                 Right _ -> error "processContextMenu: activelayer"
-              nthdl <- updateTempHoodleSelectM cache cid thdl ntpg n
+              nthdl <- updateTempHoodleSelectM cid thdl ntpg n
               uhdl' <- liftIO $ updatePageAll (SelectState nthdl) uhdl
               commit $ (unitHoodles.currentUnit .~ uhdl') xst
               invalidateAll 
@@ -215,7 +215,7 @@ linkSelectionWithFile fname = do
     let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms 
     in case ulbbox of 
          Middle bbox -> do 
-           cache <- view renderCache <$> get 
+           cache <- renderCache
            svg <- liftIO $ makeSVGFromSelection cache cid hititms bbox
            uuid <- liftIO $ nextRandom
            let uuidbstr = B.pack (show uuid) 
@@ -230,8 +230,7 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
     fileChooser Gtk.FileChooserActionSave Nothing >>= mapM_ action 
   where 
     action filename = do
-      (cache,cid) <- ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) <$> get
-
+      (cache,cid) <- (,) <$> renderCache <*> (getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get)
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".svg" 
         then fileExtensionInvalid (".svg","export") 
@@ -248,7 +247,7 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx,uly) (lrx,lry)) =
     fileChooser Gtk.FileChooserActionSave Nothing >>= mapM_ action 
   where 
     action filename = do
-      (cache,cid) <- ((,) <$> view renderCache <*> getCurrentCanvasId . view (unitHoodles.currentUnit) ) <$> get
+      (cache,cid) <- (,) <$> renderCache <*> (getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get)
       -- this is rather temporary not to make mistake 
       if takeExtension filename /= ".pdf" 
         then fileExtensionInvalid (".svg","export") 
@@ -447,8 +446,8 @@ showContextMenu (pnum,(x,y)) = do
                 l : [] -> do
                   menuitemreplace <- Gtk.menuItemNewWithLabel ("replace link/anchor render" :: String)
                   menuitemreplace `Gtk.on` Gtk.menuItemActivate $ do
-                    let cache = xstate ^. renderCache
-                        ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) others
+                    cache <- readTVarIO (xstate ^. renderCacheVar)
+                    let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) others
                     case ulbbox of 
                       Middle bbox -> do
                         let BBox (x0,y0) (x1,y1) = bbox

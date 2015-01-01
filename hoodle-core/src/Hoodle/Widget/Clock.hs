@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Widget.Clock
--- Copyright   : (c) 2013, 2014 Ian-Woo Kim
+-- Copyright   : (c) 2013-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -25,6 +25,7 @@ import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple 
 import           Graphics.Hoodle.Render.Util.HitTest
 --
+import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Device
@@ -64,9 +65,9 @@ startClockWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> MainCoroutine () 
 startClockWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
+    cache <- renderCache
     let uhdl = view (unitHoodles.currentUnit) xst
         hdl = getHoodle uhdl
-        cache = view renderCache xst
         cid = getCurrentCanvasId uhdl
     (srcsfc,Dim wsfc hsfc) <- liftIO (canvasImageSurface cache cid Nothing geometry hdl)
     -- need to draw other widgets here                             

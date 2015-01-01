@@ -56,7 +56,7 @@ updateTempHoodleSelectM :: CanvasId
                        -> MainCoroutine (Hoodle SelectMode)
 updateTempHoodleSelectM cid thdl tpage pagenum = do   
   let newpage = hPage2RPage tpage
-  callRenderer_ $ updatePageBuf cid 1.0 newpage
+  callRenderer_ $ updatePageBuf cid newpage
   return (updateTempHoodleSelect thdl tpage pagenum)
 
  

@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Page 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -105,7 +105,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
           nbkg <- newBkg bsty cbkg  
           npage <- set gbackground nbkg <$> (newPageFromOld lpage)
           geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles.currentUnit) =<< get
-          callRenderer_ $ updateBkgCache geometry (PageNum (totnumpages-1),npage)
+          callRenderer_ $ updatePageCache geometry (PageNum (totnumpages-1),npage)
           let npages = M.insert totnumpages npage pgs  
           return  (True,totnumpages,npage,
                      either (Left . set gpages npages) (Right. set gselAll npages) ehdl ) 
@@ -131,7 +131,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     geometry <- liftIO (getGeometry4CurrCvs uhdl)
     let cpn = view (unboxLens currentPageNum) .  getCanvasInfo cid $ uhdl
     let plst = sortBy ( compare `on` (\(n,_) -> abs (n - cpn)) ) . zip [0..] . F.toList $ hdl ^. gpages
-    forM_ plst $ \(pn,pg) -> callRenderer_ (updateBkgCache geometry (PageNum pn,pg))
+    forM_ plst $ \(pn,pg) -> callRenderer_ (updatePageCache geometry (PageNum pn,pg))
     renderfunc
   where zoomUpdateAction uhdl =  
           unboxBiAct (fsingle uhdl) (fcont uhdl) . getCanvasInfo cid $ uhdl 
@@ -276,7 +276,7 @@ addNewPageInHoodle bsty dir hdl cpn = do
     nbkg <- newBkg bsty cbkg
     npage <- set gbackground nbkg <$> newPageFromOld cpage
     geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles.currentUnit) =<< get
-    callRenderer_ (updateBkgCache geometry (PageNum cpn,npage))
+    callRenderer_ (updatePageCache geometry (PageNum cpn,npage))
     let npagelst = case dir of 
                      PageBefore -> pagesbefore ++ (npage : cpage : pagesafter)
                      PageAfter -> pagesbefore ++ (cpage : npage : pagesafter)
@@ -330,28 +330,43 @@ newPageFromOld pg = do
     return . ( glayers .~ (fromNonEmptyList (emptyRLayer sfcid,[]))) $ pg
 
 
-updateBkgCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
-updateBkgCache geometry (pnum,page) = do
-  RendererState handler qpdf qgen _ <- ask
+updatePageCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
+updatePageCache geometry (pnum,page) = do
   let dim@(Dim w h) = page ^. gdimension 
       CvsCoord (x0,y0) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))
       CvsCoord (x1,y1) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (w,h))
       s = (x1-x0) / w 
-      rbkg = page ^. gbackground
-      bkg = rbkg2Bkg rbkg
+  updateBkgCache (Dim w h) (Dim (x1-x0) (y1-y0)) (page ^. gbackground) 
+  mapM_ (updateLayerCache (Dim w h) (Dim (x1-x0) (y1-y0))) (F.toList (page ^. glayers))
+
+
+updateBkgCache :: Dimension -> Dimension -> RBackground -> Renderer ()
+updateBkgCache dimo dimv rbkg =  do
+  RendererState handler qpdf qgen _ <- ask
+  let bkg = rbkg2Bkg rbkg
       sfcid = rbkg_surfaceid rbkg 
   case rbkg of 
     RBkgSmpl {..} -> do
       cmdid <- issueGenCommandID
-      (liftIO . atomically) (sendGenCommand qgen cmdid (BkgSmplScaled sfcid rbkg_color rbkg_style (Dim w h) (Dim (x1-x0) (y1-y0))))
+      (liftIO . atomically) (sendGenCommand qgen cmdid (BkgSmplScaled sfcid rbkg_color rbkg_style dimo dimv))
       return ()
     _             -> F.forM_ (rbkg_popplerpage rbkg) $ \pg -> do
       cmdid <- issuePDFCommandID
-      (liftIO . atomically) (sendPDFCommand qpdf cmdid 
-        (RenderPageScaled sfcid pg (Dim w h) (Dim (x1-x0) (y1-y0))))
+      (liftIO . atomically) (sendPDFCommand qpdf cmdid (RenderPageScaled sfcid pg dimo dimv))
       return ()
+
+
+updateLayerCache :: Dimension -> Dimension -> RLayer -> Renderer ()
+updateLayerCache dimo dimv lyr =  do
+  RendererState _ _ qgen _ <- ask
+  case view gbuffer lyr of
+    LyBuf sfcid -> do
+      cmdid <- issueGenCommandID
+      (liftIO . atomically) (sendGenCommand qgen cmdid (LayerScaled sfcid (view gitems lyr) dimo dimv))
+      return ()
+
 
 
 

@@ -66,7 +66,7 @@ modeChange command = do
           npages <- maybe (return pages) 
                           (\(spgn,spage) -> do 
                              let npage = hPage2RPage spage
-                             callRenderer_ $ updatePageBuf cid 1.0 npage
+                             callRenderer_ $ updatePageBuf cid npage
                              return $ M.adjust (const npage) spgn pages )
                           mselect
           let nthdl = set gselAll npages . set gselSelected Nothing $ thdl  

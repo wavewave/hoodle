@@ -598,7 +598,7 @@ currentCanvasInfo = lens getter setter
 resetHoodleModeStateBuffers :: CanvasId -> HoodleModeState -> Renderer ()
 resetHoodleModeStateBuffers cid hdlmodestate1 = 
   case hdlmodestate1 of 
-    ViewAppendState hdl -> updateHoodleBuf cid 1.0 hdl
+    ViewAppendState hdl -> updateHoodleBuf cid hdl
     _ -> return ()
 
 -- |
@@ -663,13 +663,6 @@ getPageMapFromHoodleModeState :: HoodleModeState -> M.IntMap (Page EditMode)
 getPageMapFromHoodleModeState = either (view gpages) (view gselAll) . hoodleModeStateEither 
   
       
-{-
--- | 
-showCanvasInfoMapViewPortBBox :: UnitHoodle -> IO ()
-showCanvasInfoMapViewPortBBox xstate = do 
-  let cmap = view canvasInfoMap xstate
-  print . map (view (unboxLens (viewInfo.pageArrangement.viewPortBBox))) . M.elems $ cmap 
--}
 
 
 

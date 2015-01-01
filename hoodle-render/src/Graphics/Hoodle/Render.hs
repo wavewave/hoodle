@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -377,36 +377,24 @@ renderRBkg_InBBox cache cid mbbox (b,dim,mx) = do
 
 
 -- | render RLayer within BBox after hittest items
-renderRLayer_InBBox :: RenderCache -> CanvasId -> Maybe BBox -> RLayer -> Cairo.Render RLayer
+renderRLayer_InBBox :: RenderCache -> CanvasId -> Maybe BBox 
+                    -> (RLayer,Dimension,Maybe Xform4Page) 
+                    -> Cairo.Render (RLayer, Dimension, Maybe Xform4Page)
 renderRLayer_InBBox = renderRLayer_InBBoxBuf
--- cache cid mbbox layer = do  
-{-   clipBBox (fmap (flip inflate 2) mbbox)  -- temporary
-  let hittestbbox = case mbbox of 
-        Nothing -> NotHitted [] 
-                   :- Hitted (view gitems layer) 
-                   :- Empty 
-        Just bbox -> (hltHittedByBBox bbox . view gitems) layer
-  (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
-  Cairo.resetClip  
-  -- simply twice rendering if whole redraw happening 
-  case view gbuffer layer of 
-    LyBuf sfcid -> do
-      case HM.lookup sfcid cache of
-        liftIO $ Cairo.renderWith sfc $ do 
-          clipBBox (fmap (flip inflate 2) mbbox ) -- temporary
-          Cairo.setSourceRGBA 0 0 0 0 
-          Cairo.setOperator Cairo.OperatorSource
-          Cairo.paint
-          Cairo.setOperator Cairo.OperatorOver
-          (mapM_ (renderRItem cache cid) . concatMap unHitted  . getB) hittestbbox
-    --     Cairo.resetClip 
-    --     return layer 
-    _ -> return layer 
--}
 
 -----------------------
 -- draw using buffer -- 
 -----------------------
+
+adjustScale s mx =
+  case mx of 
+    Nothing -> Cairo.scale (1/s) (1/s) 
+    Just xform -> if (scalex xform /s > 0.999 && scalex xform /s < 1.001) 
+                    then do Cairo.identityMatrix
+                            Cairo.translate (transx xform) (transy xform)
+                            Cairo.setAntialias Cairo.AntialiasNone
+                    else Cairo.scale (1/s) (1/s)
+
 
 -- | Background rendering using buffer
 renderRBkg_Buf :: RenderCache
@@ -418,33 +406,37 @@ renderRBkg_Buf cache cid (b,dim,mx) = do
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
         Cairo.save
-        case mx of 
-          Nothing -> Cairo.scale (1/s) (1/s) 
-          Just xform -> if (scalex xform /s > 0.999 && scalex xform /s < 1.001) 
-                          then do Cairo.identityMatrix
-                                  Cairo.translate (transx xform) (transy xform)
-                                  Cairo.setAntialias Cairo.AntialiasNone
-                          else Cairo.scale (1/s) (1/s)
+        adjustScale s mx
+        -- case mx of 
+        --   Nothing -> Cairo.scale (1/s) (1/s) 
+        --   Just xform -> if (scalex xform /s > 0.999 && scalex xform /s < 1.001) 
+        --                   then do Cairo.identityMatrix
+        --                           Cairo.translate (transx xform) (transy xform)
+        --                           Cairo.setAntialias Cairo.AntialiasNone
+        --                   else Cairo.scale (1/s) (1/s)
         Cairo.setSourceSurface sfc 0 0 
         Cairo.paint 
         Cairo.restore
     return (b,dim,mx)
 
 -- | 
-renderRLayer_InBBoxBuf :: RenderCache -> CanvasId
-                       -> Maybe BBox -> RLayer -> Cairo.Render RLayer 
-renderRLayer_InBBoxBuf cache cid mbbox lyr = do
+renderRLayer_InBBoxBuf :: RenderCache -> CanvasId -> Maybe BBox 
+                       -> (RLayer,Dimension,Maybe Xform4Page) 
+                       -> Cairo.Render (RLayer,Dimension,Maybe Xform4Page) 
+renderRLayer_InBBoxBuf cache cid mbbox (lyr,dim,mx) = do
     case view gbuffer lyr of 
       LyBuf sfcid -> do 
         case HM.lookup sfcid cache of
-          Nothing -> return lyr
-          Just (_,sfc) -> do 
+          Nothing -> return (lyr,dim,mx)
+          Just (s,sfc) -> do 
+            Cairo.save
+            adjustScale s mx
             clipBBox (fmap (flip inflate 2) mbbox)
             -- clipBBox mbbox
             Cairo.setSourceSurface sfc 0 0 
             Cairo.paint 
             Cairo.resetClip 
-            return lyr 
+            return (lyr,dim,mx)
 
       -- liftIO $ putStrLn "renderRLayer_InBBoxBuf: not implemented"  >> return lyr
 
@@ -462,38 +454,22 @@ renderRLayer_InBBoxBuf cache cid mbbox lyr = do
 -------------------
 
 -- | 
-updateLayerBuf :: CanvasId 
-               -> Double      -- ^ scale factor
-               -> Dimension 
-               -> Maybe BBox 
-               -> RLayer 
-               -> Renderer ()
-updateLayerBuf cid s (Dim w h) mbbox lyr = do 
-  rst <- ask
-  (qgen,cache) <- (rendererGenCmdQ rst,) <$> liftIO (getRenderCache rst)
-  -- (cache,qgen)) <- fmap ((,) <$> rendererCache <*> rendererGenCmdQ)  ask 
+updateLayerBuf :: CanvasId -> RLayer -> Renderer ()
+updateLayerBuf cid lyr = do 
+  qgen <- rendererGenCmdQ <$> ask
   case view gbuffer lyr of 
     LyBuf sfcid -> do
       cmdid <- issueGenCommandID
       liftIO $ putStrLn ("updateLayerBuf : sfcid = " ++ show sfcid ++ " cmdid = " ++ show cmdid)
-      (liftIO . atomically) (sendGenCommand qgen cmdid (LayerRedraw sfcid (view gitems lyr) s (Dim w h)))
+      (liftIO . atomically) (sendGenCommand qgen cmdid (LayerRedraw sfcid (view gitems lyr)))
 
 -- | 
-updatePageBuf :: CanvasId
-              -> Double      -- ^ scale factor 
-              -> RPage 
-              -> Renderer ()
-updatePageBuf cid s pg = 
-  let dim = view gdimension pg
-      mbbox = Just . dimToBBox $ dim 
-  in mapM_ (updateLayerBuf cid s dim mbbox) . view glayers $ pg 
+updatePageBuf :: CanvasId -> RPage -> Renderer ()
+updatePageBuf cid = mapM_ (updateLayerBuf cid) . view glayers
 
 -- | 
-updateHoodleBuf :: CanvasId
-                -> Double       -- ^ scale factor
-                -> RHoodle   
-                -> Renderer ()
-updateHoodleBuf cid s = mapM_ (updatePageBuf cid s) . view gpages
+updateHoodleBuf :: CanvasId -> RHoodle -> Renderer ()
+updateHoodleBuf cid = mapM_ (updatePageBuf cid) . view gpages
 
 -------
 -- smart constructor for R hoodle structures

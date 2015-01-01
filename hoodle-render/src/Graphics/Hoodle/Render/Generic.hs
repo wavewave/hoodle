@@ -1,9 +1,10 @@
 {-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Generic 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -59,7 +60,7 @@ instance Renderable (BBoxed Stroke) where
   cairoRender =const2 (passarg1 (renderStrk . bbxed_content))
   
 -- | 
-instance Renderable RLayer where
+instance Renderable (RLayer,Dimension,Maybe Xform4Page) where
   cairoRender cache cid = renderRLayer_InBBox cache cid Nothing 
   
 -- | 
@@ -95,57 +96,62 @@ instance RenderOptionable (RBackground,Dimension,Maybe Xform4Page) where
   cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid = renderRBkg_InBBox cache cid mbbox 
 
 -- | 
-instance RenderOptionable RLayer where
-  type RenderOption RLayer = StrokeBBoxOption 
+instance RenderOptionable (RLayer,Dimension,Maybe Xform4Page) where
+  type RenderOption (RLayer,Dimension,Maybe Xform4Page) = StrokeBBoxOption 
   cairoRenderOption DrawFull cache cid = cairoRender cache cid
   cairoRenderOption DrawBoxOnly cache cid = error "RLayer.cairoRenderOption: DrawBoxOnly deprecated" -- passarg (renderRLayer_BBoxOnly cache)
 
 -- | 
-instance RenderOptionable (InBBox RLayer) where
-  type RenderOption (InBBox RLayer) = InBBoxOption
-  cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox lyr) = 
-    InBBox <$> renderRLayer_InBBoxBuf cache cid mbbox lyr
+instance RenderOptionable (InBBox (RLayer,Dimension,Maybe Xform4Page)) where
+  type RenderOption (InBBox (RLayer,Dimension,Maybe Xform4Page)) = InBBoxOption
+  cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox lyrinfo) = 
+    InBBox <$> renderRLayer_InBBoxBuf cache cid mbbox lyrinfo
     
 -- |
 cairoOptionPage :: ( RenderOptionable (b,Dimension,Maybe Xform4Page)
-                   , RenderOptionable a
-                   , Foldable s) => 
-                   (RenderOption (b,Dimension,Maybe Xform4Page), RenderOption a) 
+                   , RenderOptionable (a,Dimension,Maybe Xform4Page)
+                   , Foldable s, Functor s) => 
+                   ( RenderOption (b,Dimension,Maybe Xform4Page)
+                   , RenderOption (a,Dimension,Maybe Xform4Page)) 
                    -> RenderCache
                    -> CanvasId
                    -> (GPage b s a, Maybe Xform4Page)
                    -> Cairo.Render (GPage b s a, Maybe Xform4Page)
 cairoOptionPage (optb,opta) cache cid (p,mx) = do 
-    cairoRenderOption optb cache cid (view gbackground p, view gdimension p,mx)
-    mapM_ (cairoRenderOption opta cache cid) (view glayers p)
+    let (bkg,dim) = (view gbackground p, view gdimension p)
+    cairoRenderOption optb cache cid (bkg,dim,mx)
+    mapM_ (cairoRenderOption opta cache cid) . fmap (,dim,mx) $ (view glayers p)
     return (p,mx) 
   
 -- | 
 instance ( RenderOptionable (b,Dimension,Maybe Xform4Page)
-         , RenderOptionable a
-         , Foldable s) =>
+         , RenderOptionable (a,Dimension,Maybe Xform4Page)
+         , Foldable s, Functor s) =>
          RenderOptionable (GPage b s a,Maybe Xform4Page) where
-  type RenderOption (GPage b s a,Maybe Xform4Page) = (RenderOption (b,Dimension,Maybe Xform4Page), RenderOption a)
+  type RenderOption (GPage b s a,Maybe Xform4Page) = (RenderOption (b,Dimension,Maybe Xform4Page), RenderOption (a,Dimension,Maybe Xform4Page))
   cairoRenderOption = cairoOptionPage
             
 -- | 
 instance RenderOptionable (InBBox RPage,Maybe Xform4Page) where
   type RenderOption (InBBox RPage,Maybe Xform4Page) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox page,mx) = do 
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (view gbackground page, view gdimension page, mx)
+    let (bkg,dim) = (view gbackground page, view gdimension page)
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (bkg,dim,mx)
     let lyrs = view glayers page
-    nlyrs <- mapM (liftM unInBBox . cairoRenderOption (InBBoxOption mbbox) cache cid . InBBox ) lyrs
-    let npage = set glayers nlyrs page
+    nlyrs <- mapM (liftM unInBBox . cairoRenderOption (InBBoxOption mbbox) cache cid . InBBox ) . fmap (,dim,mx) $ lyrs
+    let npage = set glayers (fmap (view _1) nlyrs) page
     return (InBBox npage,mx) 
 
 -- | 
 instance RenderOptionable (InBBoxBkgBuf RPage,Maybe Xform4Page) where
   type RenderOption (InBBoxBkgBuf RPage,Maybe Xform4Page) = InBBoxOption 
   cairoRenderOption (InBBoxOption mbbox) cache cid (InBBoxBkgBuf page,mx) = do 
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (view gbackground page, view gdimension page, mx)
+    let bkg = view gbackground page
+        dim = view gdimension page
+    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (bkg,dim,mx)
     let lyrs = view glayers page
-    nlyrs <- mapM (renderRLayer_InBBox cache cid mbbox) lyrs
-    let npage = set glayers nlyrs page
+    nlyrs <- mapM (renderRLayer_InBBox cache cid mbbox) . fmap (,dim,mx) $ lyrs
+    let npage = set glayers (fmap (view _1) nlyrs) page
     return (InBBoxBkgBuf npage,mx) 
 
 

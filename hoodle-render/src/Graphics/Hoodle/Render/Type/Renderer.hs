@@ -51,16 +51,16 @@ newtype GenCommandID = GenCommandID UUID deriving (Show,Eq,Ord)
 
 data GenCommand where
   BkgSmplScaled :: SurfaceID -> B.ByteString -> B.ByteString -> Dimension -> Dimension -> GenCommand
-  LayerInit :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
-  LayerRedraw :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
-  LayerScaled :: SurfaceID -> [RItem] -> Double -> Dimension -> GenCommand
+  LayerInit :: SurfaceID -> [RItem] -> GenCommand
+  LayerRedraw :: SurfaceID -> [RItem] -> GenCommand
+  LayerScaled :: SurfaceID -> [RItem] -> Dimension -> Dimension -> GenCommand
 
 
 
 instance Show GenCommand where
   show (BkgSmplScaled sfcid _ _ _ _) = "BkgSmplScaled:"++show sfcid
-  show (LayerInit sfcid _ _ _ ) = "LayerInit:"++show sfcid
-  show (LayerRedraw sfcid _ _ _ ) = "LayerRedraw:"++show sfcid
+  show (LayerInit sfcid _  ) = "LayerInit:"++show sfcid
+  show (LayerRedraw sfcid _ ) = "LayerRedraw:"++show sfcid
   show (LayerScaled sfcid _ _ _ ) = "LayerScaled:"++show sfcid
 
 
@@ -130,12 +130,17 @@ sendGenCommand queuevar cmdid cmd = do
         nqueue = queue' |> (cmdid,cmd)
     writeTVar queuevar nqueue
 
+surfaceID :: GenCommand -> SurfaceID
+surfaceID (BkgSmplScaled sfcid _ _ _ _) = sfcid
+surfaceID (LayerInit sfcid _ ) = sfcid
+surfaceID (LayerRedraw sfcid _ ) = sfcid
+surfaceID (LayerScaled sfcid _ _ _ ) = sfcid
+
+
 isRemovedGen :: (GenCommandID,GenCommand) -> (GenCommandID,GenCommand) -> Bool
 isRemovedGen n@(cmdid,ncmd) o@(ocmdid,ocmd) 
   | cmdid == ocmdid = True
   | otherwise = case ncmd of
-                  BkgSmplScaled nsfcid _ _ _ _ -> 
-                    case ocmd of
-                      BkgSmplScaled osfcid _ _ _ _ -> nsfcid == osfcid
-                      _ -> False
+                  BkgSmplScaled nsfcid _ _ _ _ -> surfaceID ocmd == nsfcid
+                  LayerScaled nsfcid _ _ _ -> surfaceID ocmd == nsfcid
                   _ -> False

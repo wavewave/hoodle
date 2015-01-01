@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Draw 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -96,7 +96,6 @@ updateFlagFromToggleUI toggleid lensforflag = do
   xstate <- get 
   let ui = view gtkUIManager xstate 
   doIOaction $ \_ -> do
-    putStrLn "I am in"
     agr <- Gtk.uiManagerGetActionGroups ui >>= \x ->
              case x of 
                [] -> error "No action group? "
@@ -190,10 +189,7 @@ invalidateInBBox mbbox flag cid = do
 invalidateAllInBBox :: Maybe BBox -- ^ desktop coordinate 
                        -> DrawFlag
                        -> MainCoroutine ()
-invalidateAllInBBox mbbox flag = do
-    liftIO $ do ctime <- getCurrentTime
-                putStrLn $ "invalidateAllInBBox:" ++ show ctime
-    applyActionToAllCVS (invalidateInBBox mbbox flag)
+invalidateAllInBBox mbbox flag = applyActionToAllCVS (invalidateInBBox mbbox flag)
 
 -- | 
 invalidateAll :: MainCoroutine () 

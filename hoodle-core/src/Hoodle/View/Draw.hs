@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Draw 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -157,8 +157,6 @@ doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)
                     -> IntersectBBox
                     -> IO (Maybe a)
 doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do 
-  ctime <- getCurrentTime
-  print ctime
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
@@ -349,10 +347,6 @@ drawContPageGen render = ContPageDraw func
               pnum = PageNum . view currentPageNum $ cinfo 
               canvas = view drawArea cinfo 
               msfc = view mDrawSurface cinfo
-          case msfc of
-            Nothing -> putStrLn "Nothing"
-            Just sfc -> putStrLn "Just"
-
           geometry <- makeCanvasGeometry pnum arr canvas
           let pgs = view gpages hdl 
               mcpg = view (at (unPageNum pnum)) pgs 

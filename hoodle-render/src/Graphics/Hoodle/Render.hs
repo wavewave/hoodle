@@ -476,7 +476,7 @@ updateLayerBuf cid s (Dim w h) mbbox lyr = do
     LyBuf sfcid -> do
       cmdid <- issueGenCommandID
       liftIO $ putStrLn ("updateLayerBuf : sfcid = " ++ show sfcid ++ " cmdid = " ++ show cmdid)
-      (liftIO . atomically) (sendGenCommand qgen cmdid (LayerScaled sfcid (view gitems lyr) s (Dim w h)))
+      (liftIO . atomically) (sendGenCommand qgen cmdid (LayerRedraw sfcid (view gitems lyr) s (Dim w h)))
 
 -- | 
 updatePageBuf :: CanvasId

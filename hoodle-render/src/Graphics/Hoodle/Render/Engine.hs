@@ -103,8 +103,11 @@ genWorker _cache handler (LayerInit sfcid ritms s (Dim w h)) = do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
       Cairo.setSourceRGBA 0 0 0 0
-      Cairo.rectangle 0 0 w h 
-      Cairo.fill
+      Cairo.setOperator Cairo.OperatorSource
+      Cairo.paint
+      Cairo.setOperator Cairo.OperatorOver
+      -- Cairo.rectangle 0 0 w h 
+      -- Cairo.fill
       Cairo.scale s s
       mapM_ (renderRItem undefined undefined) ritms
     ctime <- getCurrentTime
@@ -113,12 +116,18 @@ genWorker _cache handler (LayerInit sfcid ritms s (Dim w h)) = do
     handler (sfcid,(s,sfc))
 genWorker cache handler (LayerRedraw sfcid ritms s (Dim w h)) = do
     case HM.lookup sfcid cache of
-      Nothing -> genWorker cache handler (LayerInit sfcid ritms s (Dim w h))
+      Nothing -> do 
+        ctime <- getCurrentTime
+        putStrLn $ show ctime ++ ": Nothing"
+        genWorker cache handler (LayerInit sfcid ritms s (Dim w h))
       Just (s,sfc) -> do
+        ctime <- getCurrentTime
+        putStrLn $ show ctime ++ ": Just " ++ show s
         Cairo.renderWith sfc $ do   
           Cairo.setSourceRGBA 0 0 0 0
-          Cairo.rectangle 0 0 w h 
-          Cairo.fill
+          Cairo.setOperator Cairo.OperatorSource
+          Cairo.paint
+          Cairo.setOperator Cairo.OperatorOver
           Cairo.scale s s
           mapM_ (renderRItem undefined undefined) ritms
         handler (sfcid,(s,sfc))
@@ -126,8 +135,9 @@ genWorker _cache handler (LayerScaled sfcid ritms s (Dim w h)) = do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
       Cairo.setSourceRGBA 0 0 0 0
-      Cairo.rectangle 0 0 w h 
-      Cairo.fill
+      Cairo.setOperator Cairo.OperatorSource
+      Cairo.paint
+      Cairo.setOperator Cairo.OperatorOver
       Cairo.scale s s
       mapM_ (renderRItem undefined undefined) ritms
     handler (sfcid,(s,sfc))

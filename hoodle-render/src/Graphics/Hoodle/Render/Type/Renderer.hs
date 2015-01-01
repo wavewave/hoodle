@@ -59,7 +59,10 @@ data GenCommand where
 
 instance Show GenCommand where
   show (BkgSmplScaled sfcid _ _ _ _) = "BkgSmplScaled:"++show sfcid
+  show (LayerInit sfcid _ _ _ ) = "LayerInit:"++show sfcid
+  show (LayerRedraw sfcid _ _ _ ) = "LayerRedraw:"++show sfcid
   show (LayerScaled sfcid _ _ _ ) = "LayerScaled:"++show sfcid
+
 
 newtype SurfaceID = SurfaceID UUID deriving (Show,Eq,Ord,Hashable)
 

@@ -277,13 +277,23 @@ doIOaction_ action = do doIOaction $ \_ -> action >> return (UsrEv ActionOrdered
                         waitSomeEvent (\case ActionOrdered -> True; _ -> False );
                         return ()
 
+defaultHandler :: (AllEvent -> IO ()) -> RendererEvent -> IO ()
+defaultHandler evhandler (SurfaceUpdate s) = 
+    Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate $ s
+defaultHandler evhandler (FinishCommandFor sfcid) =  
+    Gtk.postGUIAsync . evhandler . UsrEv . RenderEv . FinishCommand $ sfcid
+
+
 -- | order rendering routine
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
     (tvarpdf,tvargen,tvarcache) <- ((,,)<$>(^. pdfRenderQueue)<*>(^. genRenderQueue)<*>(^. renderCacheVar))<$>get  
     doIOaction $ \evhandler -> do
-      let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-      UsrEv . RenderEv <$> runReaderT action (RendererState handler tvarpdf tvargen tvarcache)
+      -- let handler (SurfaceUpdate s) = 
+      --       Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate $ s
+      --     handler (FinishCommandFor sfcid) =
+      --       Gtk.postGUIAsync . evhandler . UsrEv . RenderEv . FinishCommand $ sfcid
+      UsrEv . RenderEv <$> runReaderT action (RendererState (defaultHandler evhandler) tvarpdf tvargen tvarcache)
 
 callRenderer_ :: Renderer a -> MainCoroutine ()
 callRenderer_ action = do

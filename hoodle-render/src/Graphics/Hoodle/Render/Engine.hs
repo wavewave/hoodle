@@ -35,7 +35,7 @@ import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Background
 
 -- | main pdf renderer engine. need to be in a single thread
-pdfRendererMain :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) -> PDFCommandQueue -> IO () 
+pdfRendererMain :: (RendererEvent->IO ()) -> PDFCommandQueue -> IO () 
 pdfRendererMain handler tvar = forever $ do     
     p <- atomically $ do 
       lst' <- readTVar tvar
@@ -46,8 +46,7 @@ pdfRendererMain handler tvar = forever $ do
           return p 
     pdfWorker handler (snd p)
 
-pdfWorker :: ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
-          -> PDFCommand -> IO ()
+pdfWorker :: (RendererEvent->IO ()) -> PDFCommand -> IO ()
 pdfWorker _handler (GetDocFromFile fp tmvar) = do
     mdoc <- popplerGetDocFromFile fp
     atomically $ putTMVar tmvar mdoc 
@@ -69,10 +68,10 @@ pdfWorker handler (RenderPageScaled sfcid page (Dim ow _oh) (Dim w h)) = do
       Cairo.fill
       Cairo.scale s s
       Poppler.pageRender page 
-    handler (sfcid,(s,sfc))
+    handler (SurfaceUpdate (sfcid,(s,sfc)))
 
 -- | generic renderer engine
-genRendererMain :: TVar RenderCache -> ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
+genRendererMain :: TVar RenderCache -> (RendererEvent->IO ()) 
                 -> GenCommandQueue -> IO () 
 genRendererMain cachevar handler tvar = forever $ do     
     (p,cache) <- atomically $ do 
@@ -83,11 +82,9 @@ genRendererMain cachevar handler tvar = forever $ do
         p :< ps -> do 
           writeTVar tvar ps 
           return (p,cache)
-    putStrLn $ "genRendererMain: " ++ show p
     genWorker cache handler (snd p)
 
-genWorker :: RenderCache -> ((SurfaceID,(Double,Cairo.Surface))->IO ()) 
-          -> GenCommand -> IO ()
+genWorker :: RenderCache -> (RendererEvent->IO ()) -> GenCommand -> IO ()
 genWorker _cache handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)) = do
     let s = w / ow
         bkg = Background "solid" col sty
@@ -98,7 +95,7 @@ genWorker _cache handler (BkgSmplScaled sfcid col sty dim@(Dim ow _oh) (Dim w h)
       Cairo.fill
       Cairo.scale s s
       renderBkg (bkg,dim)
-    handler (sfcid,(s,sfc))
+    handler (SurfaceUpdate (sfcid,(s,sfc)))
 genWorker _cache handler (LayerInit sfcid ritms) = do
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 612 792 -- (floor w) (floor h) -- for the time being
     Cairo.renderWith sfc $ do   
@@ -106,14 +103,8 @@ genWorker _cache handler (LayerInit sfcid ritms) = do
       Cairo.setOperator Cairo.OperatorSource
       Cairo.paint
       Cairo.setOperator Cairo.OperatorOver
-      -- Cairo.rectangle 0 0 w h 
-      -- Cairo.fill
-      -- Cairo.scale 1.0 1.0
       mapM_ (renderRItem undefined undefined) ritms
-    ctime <- getCurrentTime
-    print ctime
-      -- renderBkg (bkg,dim)
-    handler (sfcid,(1.0,sfc))
+    handler (SurfaceUpdate (sfcid,(1.0,sfc)))
 genWorker cache handler (LayerRedraw sfcid ritms) = do
     case HM.lookup sfcid cache of
       Nothing -> genWorker cache handler (LayerInit sfcid ritms)
@@ -125,18 +116,25 @@ genWorker cache handler (LayerRedraw sfcid ritms) = do
           Cairo.setOperator Cairo.OperatorOver
           Cairo.scale s s
           mapM_ (renderRItem undefined undefined) ritms
-        handler (sfcid,(s,sfc))
+        handler (SurfaceUpdate (sfcid,(s,sfc)))
+        handler (FinishCommandFor sfcid)
 genWorker _cache handler (LayerScaled sfcid ritms dim@(Dim ow _) (Dim w h)) = do
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   
-      Cairo.setSourceRGBA 0 1 1 0.5
-      -- Cairo.setOperator Cairo.OperatorSource
-      -- Cairo.paint
-      -- Cairo.setOperator Cairo.OperatorOver
-      Cairo.fill
+      Cairo.setSourceRGBA 0 0 0 0
+      Cairo.setOperator Cairo.OperatorSource
+      Cairo.paint
+      Cairo.setOperator Cairo.OperatorOver
       Cairo.scale s s
       mapM_ (renderRItem undefined undefined) ritms
-    handler (sfcid,(s,sfc))
+    handler (SurfaceUpdate (sfcid,(s,sfc)))
+
+transparentClear :: Cairo.Render ()
+transparentClear = do
+  Cairo.setSourceRGBA 0 0 0 0
+  Cairo.setOperator Cairo.OperatorSource
+  Cairo.paint
+  Cairo.setOperator Cairo.OperatorOver
 
 

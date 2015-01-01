@@ -460,7 +460,6 @@ updateLayerBuf cid lyr = do
   case view gbuffer lyr of 
     LyBuf sfcid -> do
       cmdid <- issueGenCommandID
-      liftIO $ putStrLn ("updateLayerBuf : sfcid = " ++ show sfcid ++ " cmdid = " ++ show cmdid)
       (liftIO . atomically) (sendGenCommand qgen cmdid (LayerRedraw sfcid (view gitems lyr)))
 
 -- | 

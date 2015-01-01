@@ -1,9 +1,13 @@
-{-# LANGUAGE Rank2Types, GADTs, ScopedTypeVariables, TupleSections #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Pen 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -16,6 +20,7 @@ module Hoodle.Coroutine.Pen where
 
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
+import           Control.Concurrent (threadDelay)
 import           Control.Lens (at,over,set,view)
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.State hiding (mapM_,forM_)
@@ -30,7 +35,7 @@ import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic (gdimension,gitems,gpages)
+import           Data.Hoodle.Generic (gbuffer,gdimension,gitems,gpages)
 import           Data.Hoodle.Simple (Dimension(..))
 import           Graphics.Hoodle.Render (renderStrk,updateLayerBuf)
 import           Graphics.Hoodle.Render.Type
@@ -72,7 +77,10 @@ addPDraw cid pinfo hdl (PageNum pgnum) pdraw = do
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
         newlayerbbox = over gitems (++[RItemStroke newstrokebbox]) currlayer
-    callRenderer_ $ updateLayerBuf cid newlayerbbox 
+        sfcid = (unLyBuf .  view gbuffer) newlayerbbox
+    callRenderer_ $ updateLayerBuf cid newlayerbbox
+    -- waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
+    -- waitSomeEvent (\case RenderEv (FinishCommand sfcid') -> sfcid == sfcid' ; _ -> False )
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
         newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
     return (newhdlbbox,bbox)
@@ -182,7 +190,8 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                       commit (set (unitHoodles.currentUnit) uhdl'' xstate)
                       let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
                           nbbox = xformBBox f bbox 
-                      invalidateAllInBBox (Just nbbox) BkgEfficient
+                      -- invalidateAllInBBox (Just nbbox) BkgEfficient
+                      invalidateAllInBBox (Just nbbox) Efficient
                   return (Just (Just ()))
           
 -- | main pen coordinate adding process

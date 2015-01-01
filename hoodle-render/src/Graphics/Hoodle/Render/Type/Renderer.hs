@@ -69,18 +69,19 @@ newtype SurfaceID = SurfaceID UUID deriving (Show,Eq,Ord,Hashable)
 -- |
 type CanvasId = Int 
 
-
--- ((SurfaceID, (Double,Cairo.Surface)) -> IO (), (PDFCommandQueue,GenCommandQueue)) IO
-
 -- | hashmap: key = UUID, value = (original size, view size, surface)
 type RenderCache = HM.HashMap SurfaceID (Double, Cairo.Surface)
-       -- HM.HashMap (SurfaceID,CanvasId) (Double, Cairo.Surface)
+
+
+-- |
+data RendererEvent = SurfaceUpdate (SurfaceID, (Double,Cairo.Surface))
+                   | FinishCommandFor SurfaceID
 
 type PDFCommandQueue = TVar (Seq (PDFCommandID,PDFCommand))
 
 type GenCommandQueue = TVar (Seq (GenCommandID,GenCommand))
 
-data RendererState = RendererState { rendererHandler :: (SurfaceID, (Double,Cairo.Surface)) -> IO ()
+data RendererState = RendererState { rendererHandler :: RendererEvent -> IO ()
                                    , rendererPDFCmdQ :: PDFCommandQueue
                                    , rendererGenCmdQ :: GenCommandQueue
                                    , rendererCache :: TVar RenderCache }
@@ -105,7 +106,7 @@ sendPDFCommand :: PDFCommandQueue
                -> STM ()
 sendPDFCommand queuevar cmdid cmd = do
     queue <- readTVar queuevar
-    let queue' = Seq.filter (not . isRemoved (cmdid,cmd)) queue -- ((/=cmdid) .fst) queue 
+    let queue' = Seq.filter (not . isRemoved (cmdid,cmd)) queue
         nqueue = queue' |> (cmdid,cmd)
     writeTVar queuevar nqueue
 

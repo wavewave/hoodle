@@ -131,6 +131,7 @@ data RenderEvent = GotRItem RItem
                  | GotRBackground RBackground
                  | GotRHoodle RHoodle
                  | GotNone
+                 | FinishCommand SurfaceID
                  deriving Show
 
 -- | 

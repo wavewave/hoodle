@@ -165,9 +165,9 @@ initialize ev = do
             tvarpdf = xst1 ^. pdfRenderQueue
             tvargen = xst1 ^. genRenderQueue
         doIOaction $ \evhandler -> do 
-          let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-          forkOn 2 $ pdfRendererMain handler tvarpdf
-          forkIO $ E.catch (genRendererMain cachevar handler tvargen) (\e -> print (e :: E.SomeException)) 
+          -- let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
+          forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
+          forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
           return (UsrEv ActionOrdered)
         waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
         getFileContent mfname

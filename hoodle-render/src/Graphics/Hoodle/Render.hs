@@ -392,7 +392,7 @@ adjustScale s mx =
     Just xform -> if (scalex xform /s > 0.999 && scalex xform /s < 1.001) 
                     then do Cairo.identityMatrix
                             Cairo.translate (transx xform) (transy xform)
-                            Cairo.setAntialias Cairo.AntialiasNone
+                            -- Cairo.setAntialias Cairo.AntialiasNone
                     else Cairo.scale (1/s) (1/s)
 
 

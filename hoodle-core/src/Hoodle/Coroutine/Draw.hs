@@ -59,9 +59,7 @@ nextevent :: MainCoroutine UserEvent
 nextevent = do Arg DoEvent ev <- request (Res DoEvent ())
                case ev of
                  SysEv sev -> sysevent sev >> nextevent 
-                 UsrEv uev -> do
-                   liftIO $ print uev
-                   return uev 
+                 UsrEv uev -> return uev 
 
 -- | system event 
 sysevent :: SystemEvent -> MainCoroutine () 

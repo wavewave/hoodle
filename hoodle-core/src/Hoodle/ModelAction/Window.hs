@@ -143,7 +143,6 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                      _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
     _confevent <- canvas `Gtk.on` Gtk.configureEvent $ Gtk.tryEvent $ do 
                     (w,h) <- Gtk.eventSize 
-                    liftIO $ print (w,h)
                     liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
     _brevent <- canvas `Gtk.on` Gtk.buttonReleaseEvent $ Gtk.tryEvent $ do 
                   (mbtn,mp) <- getPointer dev

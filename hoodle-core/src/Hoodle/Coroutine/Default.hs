@@ -45,6 +45,7 @@ import           System.Process
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
+import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Simple (Dimension(..), Background(..))
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
@@ -154,40 +155,51 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
   return (evar,startingXstate,ui,vbox)
 
 -- | initialization according to the setting 
-initialize :: AllEvent -> MainCoroutine ()
-initialize ev = do  
+initialize :: Maybe (CanvasId,CanvasDimension) -> Bool -> AllEvent -> MainCoroutine (CanvasId, CanvasDimension)
+initialize cvs isInitialized ev = do  
     case ev of 
       UsrEv (Initialized mfname) -> do 
-        -- additional initialization goes here
-        xst1 <- get
-        let ui = xst1 ^. gtkUIManager
-            cachevar = xst1 ^. renderCacheVar
-            tvarpdf = xst1 ^. pdfRenderQueue
-            tvargen = xst1 ^. genRenderQueue
-        doIOaction $ \evhandler -> do 
-          -- let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
-          forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
-          forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
-          return (UsrEv ActionOrdered)
-        waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
-        getFileContent mfname
-        -- 
-        xst2 <- get
-        let uhdl = view (unitHoodles.currentUnit) xst2
-            hdlst = uhdl ^. hoodleModeState 
-            cid = getCurrentCanvasId uhdl
-        callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
-        pureUpdateUhdl (hoodleModeState .~ hdlst)
-        -- liftIO $ toggleSave ui False
-        liftIO $ reflectUIToggle ui "SAVEA" False
-        pureUpdateUhdl (isSaved .~ True)
-      _ -> do ev' <- nextevent
-              initialize (UsrEv ev')
-
+        if isInitialized 
+          then case cvs of
+                 Nothing -> nextevent >>= initialize Nothing True . UsrEv
+                 Just cvsi -> return cvsi
+          else do
+	    -- additional initialization goes here
+	    xst1 <- get
+	    let ui = xst1 ^. gtkUIManager
+		cachevar = xst1 ^. renderCacheVar
+		tvarpdf = xst1 ^. pdfRenderQueue
+		tvargen = xst1 ^. genRenderQueue
+	    doIOaction $ \evhandler -> do 
+	      -- let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
+	      forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
+	      forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
+	      return (UsrEv ActionOrdered)
+	    waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
+	    getFileContent mfname
+	    -- 
+	    xst2 <- get
+	    let uhdl = view (unitHoodles.currentUnit) xst2
+		hdlst = uhdl ^. hoodleModeState 
+		cid = getCurrentCanvasId uhdl
+	    callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
+	    pureUpdateUhdl (hoodleModeState .~ hdlst)
+	    -- liftIO $ toggleSave ui False
+	    liftIO $ reflectUIToggle ui "SAVEA" False
+	    pureUpdateUhdl (isSaved .~ True)
+            case cvs of
+              Just cvsi -> return cvsi
+              Nothing -> nextevent >>= initialize Nothing True . UsrEv
+      UsrEv (CanvasConfigure cid w h) -> do
+        nextevent >>= initialize (Just (cid,CanvasDimension (Dim w h))) isInitialized . UsrEv 
+      _ -> case (cvs,isInitialized) of
+             (Just cvsi,True) -> return cvsi
+             _ -> nextevent >>= initialize cvs isInitialized . UsrEv
 -- |
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess ev = do 
-    initialize ev
+    (cid,cdim) <- initialize Nothing False ev
+    liftIO $ print (cid,cdim)
     changePage (const 0)
     reflectViewModeUI
     reflectPenModeUI
@@ -200,6 +212,7 @@ guiProcess ev = do
     startLinkReceiver
     socketConnect
 #endif
+    doCanvasConfigure cid cdim
     -- main loop 
     sequence_ (repeat dispatchMode)
 

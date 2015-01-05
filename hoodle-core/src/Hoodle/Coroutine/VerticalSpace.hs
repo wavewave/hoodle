@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.VerticalSpace
--- Copyright   : (c) 2013, 2014 Ian-Woo Kim
+-- Copyright   : (c) 2013-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -109,25 +109,26 @@ addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = do
     bsty <- view backgroundStyle <$> get
     updateUhdl (npgact bsty) >> commit_  >> canvasZoomUpdateAll >> invalidateAll
   where
-    -- npgBfrAct xst = forBoth' unboxBiAct (fsimple xst) . view currentCanvasInfo $ xst
     npgact :: BackgroundStyle -> UnitHoodle -> MainCoroutine UnitHoodle
     npgact bsty uhdl = do 
       case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
           hdl' <- addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
           sfcid <- issueSurfaceID
-          let nhdlmodst = ViewAppendState (moveBelowToNewPage sfcid (pnum,hltedLyrs,bbx) hdl') 
+          sfcid2 <- issueSurfaceID
+          let nhdlmodst = ViewAppendState (moveBelowToNewPage (sfcid,sfcid2) (pnum,hltedLyrs,bbx) hdl') 
           liftIO . updatePageAll nhdlmodst . (hoodleModeState .~ nhdlmodst) $ uhdl
         SelectState _ -> do 
           msgShout "addNewPageAndMoveBelow: not implemented yet"
           return uhdl
             
 -- |             
-moveBelowToNewPage :: SurfaceID   -- ^ for new layer
+moveBelowToNewPage :: (SurfaceID,SurfaceID)   
+                      -- ^ sfcid: old page, sfcid2: new page
                    -> (PageNum,SeqZipper RItemHitted,BBox) 
                    -> Hoodle EditMode
                    -> Hoodle EditMode
-moveBelowToNewPage sfcid (PageNum n,hltedLayers,BBox (_,y0) _) hdl = 
+moveBelowToNewPage (sfcid,sfcid2) (PageNum n,hltedLayers,BBox (_,y0) _) hdl = 
     let mpg = view (gpages.at n) hdl 
         mpg2 = view (gpages.at (n+1)) hdl 
     in case (,) <$> mpg <*> mpg2 of    
@@ -141,7 +142,7 @@ moveBelowToNewPage sfcid (PageNum n,hltedLayers,BBox (_,y0) _) hdl =
                           . concatMap unNotHitted 
                           . getA ) nhlyrs 
             npg = set glayers nlyrs pg 
-            nnlyrs = fmap ((\x -> set gitems x (emptyRLayer sfcid))
+            nnlyrs = fmap ((\x -> set gitems x (emptyRLayer sfcid2))
                           . concatMap unHitted
                           . getB ) nhlyrs
             npg2 = set glayers nnlyrs pg2
@@ -184,7 +185,7 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
             if by1 + y - y0 < h 
               then do 
                 sfcid <- issueSurfaceID
-                pureUpdateUhdl $ \uhdl -> 
+                pureUpdateUhdl $ \uhdl -> do
                   let hdl = getHoodle uhdl
                       nhlyrs = fmap (fmapAL id (fmap (changeItemBy (\(x',y')->(x',y'+y-y0))))) hltedLayers
                       nlyrs = fmap ( (\is -> set gitems is (emptyRLayer sfcid)) 
@@ -192,8 +193,11 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
                                 nhlyrs 
                       npg = set glayers nlyrs pg 
                       nhdl = set (gpages.at n) (Just npg) hdl 
-                  in (hoodleModeState .~ ViewAppendState nhdl) uhdl
+                      nhdlmodst = ViewAppendState nhdl
+                      nuhdl = (hoodleModeState .~ nhdlmodst) uhdl
+                   in nuhdl
                 commit_
+                canvasZoomUpdateAll
                 invalidateAll 
               else addNewPageAndMoveBelow (pnum,hltedLayers,bbx)
     -------------------------------------------------------------

@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.TextInput 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -62,6 +62,7 @@ import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw 
 import           Hoodle.Coroutine.LaTeX
 import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.ModelAction.Layer 
 import           Hoodle.ModelAction.Page
@@ -296,6 +297,7 @@ svgInsert (txt,cmd) (svgbstr,BBox (x0,y0) (x1,y1)) = do
       nthdl <- updateTempHoodleSelectM cid thdl ntpg pgnum 
       return $ (hoodleModeState .~ SelectState nthdl) nuhdl
     commit_
+    canvasZoomUpdateAll
     invalidateAll 
   
 -- |     
@@ -419,6 +421,7 @@ insertItemAt mpcoord ritm = do
       return . (hoodleModeState .~ SelectState nthdl)
              . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl' 
     commit_
+    canvasZoomUpdateAll
     invalidateAll  
 
 embedTextSource :: MainCoroutine ()

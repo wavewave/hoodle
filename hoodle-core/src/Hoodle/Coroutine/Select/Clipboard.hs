@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Select.Clipboard 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -36,7 +36,8 @@ import           Graphics.Hoodle.Render.Type.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit 
-import           Hoodle.Coroutine.Mode 
+import           Hoodle.Coroutine.Mode
+import           Hoodle.Coroutine.Page
 import           Hoodle.ModelAction.Page
 import           Hoodle.ModelAction.Select
 import           Hoodle.ModelAction.Select.Transform
@@ -133,6 +134,7 @@ pasteToSelection = do
       modeChange ToSelectMode 
       updateUhdl (pasteAction cache ui ritms)
       commit_ 
+      canvasZoomUpdateAll
       invalidateAll  
   where 
     pasteAction cache ui itms uhdl = forBoth' unboxBiAct (fsimple cache ui itms uhdl) 

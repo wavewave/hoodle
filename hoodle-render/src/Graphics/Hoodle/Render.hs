@@ -407,13 +407,6 @@ renderRBkg_Buf cache cid (b,dim,mx) = do
       Just (s,sfc) -> do 
         Cairo.save
         adjustScale s mx
-        -- case mx of 
-        --   Nothing -> Cairo.scale (1/s) (1/s) 
-        --   Just xform -> if (scalex xform /s > 0.999 && scalex xform /s < 1.001) 
-        --                   then do Cairo.identityMatrix
-        --                           Cairo.translate (transx xform) (transy xform)
-        --                           Cairo.setAntialias Cairo.AntialiasNone
-        --                   else Cairo.scale (1/s) (1/s)
         Cairo.setSourceSurface sfc 0 0 
         Cairo.paint 
         Cairo.restore
@@ -429,8 +422,8 @@ renderRLayer_InBBoxBuf cache cid mbbox (lyr,dim,mx) = do
         case HM.lookup sfcid cache of
           Nothing -> return (lyr,dim,mx)
           Just (s,sfc) -> do 
-            -- clipBBox (fmap (flip inflate 2) mbbox)
-            clipBBox mbbox
+            clipBBox (fmap (flip inflate 2) mbbox)
+            -- clipBBox mbbox
             Cairo.save
             adjustScale s mx
             Cairo.setSourceSurface sfc 0 0 
@@ -438,17 +431,6 @@ renderRLayer_InBBoxBuf cache cid mbbox (lyr,dim,mx) = do
             Cairo.restore
             Cairo.resetClip 
             return (lyr,dim,mx)
-
-      -- liftIO $ putStrLn "renderRLayer_InBBoxBuf: not implemented"  >> return lyr
-
-      -- LyBuf (Just sfc) -> do 
-      --   clipBBox mbbox
-      --   Cairo.setSourceSurface sfc 0 0 
-      --   Cairo.paint 
-      --   Cairo.resetClip 
-      --   return lyr 
-      -- _ -> do 
-      --   renderRLayer_InBBox cache cid mbbox lyr         
 
 -------------------
 -- update buffer

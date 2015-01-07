@@ -27,7 +27,7 @@ import qualified Data.ByteString.Char8 as C8
 -- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64
 -- import           Data.UUID
--- import           Data.UUID.V4
+import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
@@ -45,8 +45,9 @@ import           Graphics.Hoodle.Render.Type.Renderer
 -- | construct renderable item 
 cnstrctRItem :: Item -> Renderer RItem 
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
-cnstrctRItem (ItemImage img) = do 
+cnstrctRItem (ItemImage img) = {- do 
     handler <- rendererHandler <$> ask 
+    liftIO $ print "cnstrctRItem:ItemImage"
     let imgbbx = runIdentity (makeBBoxed img)
         src = img_src img
     let embed = getByteStringIfEmbeddedPNG src 
@@ -68,7 +69,10 @@ cnstrctRItem (ItemImage img) = do
 		       else return Nothing 
 	      | otherwise = return Nothing 
 	imgaction
-    return (RItemImage imgbbx msfc)
+    liftIO $ print "cnstrctRItem:ItemImage2"
+    return (RItemImage imgbbx msfc) -}
+    let imgbbx = runIdentity (makeBBoxed img)
+    in return (RItemImage imgbbx Nothing)
 cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
     let str = C8.unpack bstr 
         svgbbx = runIdentity (makeBBoxed svg)
@@ -124,5 +128,14 @@ getJPGandCreateSurface fp = do
 -- | 
 saveTempPNGToCreateSurface :: C8.ByteString -> IO Cairo.Surface
 saveTempPNGToCreateSurface bstr = do 
-    pipeActionWith (B.writeFile "/dev/stdout" bstr) Cairo.imageSurfaceCreateFromPNG 
+    tdir <- getTemporaryDirectory
+    tuuid <- nextRandom
+    let tfile = tdir </> show tuuid <.> "png"
+    B.writeFile tfile bstr
+    checkPipe tfile
+    sfc <- Cairo.imageSurfaceCreateFromPNG tfile
+    removeFile tfile
+    return sfc
 
+    -- completely wrong way 
+    -- pipeActionWith (B.writeFile "/dev/stdout" bstr) Cairo.imageSurfaceCreateFromPNG 

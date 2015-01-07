@@ -429,12 +429,13 @@ renderRLayer_InBBoxBuf cache cid mbbox (lyr,dim,mx) = do
         case HM.lookup sfcid cache of
           Nothing -> return (lyr,dim,mx)
           Just (s,sfc) -> do 
+            -- clipBBox (fmap (flip inflate 2) mbbox)
+            clipBBox mbbox
             Cairo.save
             adjustScale s mx
-            clipBBox (fmap (flip inflate 2) mbbox)
-            -- clipBBox mbbox
             Cairo.setSourceSurface sfc 0 0 
             Cairo.paint 
+            Cairo.restore
             Cairo.resetClip 
             return (lyr,dim,mx)
 

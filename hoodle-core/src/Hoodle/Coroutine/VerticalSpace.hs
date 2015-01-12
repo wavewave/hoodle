@@ -113,7 +113,7 @@ addNewPageAndMoveBelow (pnum,hltedLyrs,bbx) = do
     npgact bsty uhdl = do 
       case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
-          hdl' <- addNewPageInHoodle bsty PageAfter hdl (unPageNum pnum)
+          hdl' <- addNewPageInHoodle Nothing bsty PageAfter hdl (unPageNum pnum)
           sfcid <- issueSurfaceID
           sfcid2 <- issueSurfaceID
           let nhdlmodst = ViewAppendState (moveBelowToNewPage (sfcid,sfcid2) (pnum,hltedLyrs,bbx) hdl') 

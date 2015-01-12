@@ -213,19 +213,19 @@ pageZoomChangeRel rzmode = do
       pageZoomChange (Zoom nratio)
 
 -- |
-newPage :: AddDirection -> MainCoroutine () 
-newPage dir = (view backgroundStyle <$> get) >>= \bsty ->
-                updateUhdl (npgBfrAct bsty) >>
-                commit_                     >>
-                canvasZoomUpdateAll         >>
-                invalidateAll
+newPage :: Maybe Dimension -> AddDirection -> MainCoroutine () 
+newPage mdim dir = (view backgroundStyle <$> get) >>= \bsty ->
+                     updateUhdl (npgBfrAct bsty) >>
+                     commit_                     >>
+                     canvasZoomUpdateAll         >>
+                     invalidateAll
   where 
     npgBfrAct bsty uhdl = forBoth' unboxBiAct (fsimple bsty uhdl) . view currentCanvasInfo $ uhdl
     fsimple :: BackgroundStyle -> UnitHoodle -> CanvasInfo a -> MainCoroutine UnitHoodle
     fsimple bsty uhdl cinfo = do 
       case view hoodleModeState uhdl of 
         ViewAppendState hdl -> do 
-          hdl' <- addNewPageInHoodle bsty dir hdl (view currentPageNum cinfo)
+          hdl' <- addNewPageInHoodle mdim bsty dir hdl (view currentPageNum cinfo)
           liftIO . updatePageAll (ViewAppendState hdl')
                  . set hoodleModeState  (ViewAppendState hdl') $ uhdl
         SelectState _ -> do 
@@ -264,17 +264,18 @@ deletePageInHoodle hdl (PageNum pgn) = do
 
 
 -- | 
-addNewPageInHoodle :: BackgroundStyle
+addNewPageInHoodle :: Maybe Dimension
+                   -> BackgroundStyle
                    -> AddDirection  
                    -> Hoodle EditMode
                    -> Int 
                    -> MainCoroutine (Hoodle EditMode)
-addNewPageInHoodle bsty dir hdl cpn = do
+addNewPageInHoodle mdim bsty dir hdl cpn = do
     let pagelst = M.elems . view gpages $ hdl
         (pagesbefore,cpage:pagesafter) = splitAt cpn pagelst
         cbkg = view gbackground cpage
     nbkg <- newBkg bsty cbkg
-    npage <- set gbackground nbkg <$> newPageFromOld cpage
+    npage <- maybe id (set gdimension) mdim . set gbackground nbkg <$> newPageFromOld cpage
     geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles.currentUnit) =<< get
     callRenderer_ (updatePageCache geometry (PageNum cpn,npage))
     let npagelst = case dir of 

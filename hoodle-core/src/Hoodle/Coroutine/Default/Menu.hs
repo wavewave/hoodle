@@ -80,8 +80,8 @@ menuEventProcess MenuLastPage = do
     totalnumofpages <- (either (M.size. view gpages) (M.size . view gselAll) 
                         . hoodleModeStateEither . view (unitHoodles.currentUnit.hoodleModeState)) <$> get 
     changePage (const (totalnumofpages-1))
-menuEventProcess MenuNewPageBefore = newPage PageBefore 
-menuEventProcess MenuNewPageAfter = newPage PageAfter
+menuEventProcess MenuNewPageBefore = newPage Nothing PageBefore 
+menuEventProcess MenuNewPageAfter = newPage Nothing PageAfter
 menuEventProcess MenuDeletePage = deleteCurrentPage
 menuEventProcess MenuExportPageSVG = exportCurrentPageAsSVG 
 menuEventProcess MenuNew  = addTab Nothing -- askIfSave fileNew 

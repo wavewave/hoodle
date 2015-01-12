@@ -437,9 +437,10 @@ fileLoadImageBackground = do
       let ItemImage img = itm
           Dim w h = img_dim img
           ratio = h/w 
-          img' = img { img_dim = Dim pw (pw*ratio) }
+          ndim = Dim pw (pw*ratio)
+          img' = img { img_dim = ndim }
       changePage (const 0)
-      newPage PageBefore
+      newPage (Just ndim) PageBefore
       callRenderer $ cnstrctRItem (ItemImage img') >>= return . GotRItem 
       RenderEv (GotRItem nitm) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False)
       insertItemAt (Just (PageNum 0, PageCoord (0,0))) nitm

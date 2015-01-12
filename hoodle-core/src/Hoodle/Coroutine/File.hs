@@ -20,7 +20,7 @@ module Hoodle.Coroutine.File where
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
-import           Control.Lens (view,set,over,(.~))
+import           Control.Lens (at,view,set,over,(.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
@@ -61,6 +61,7 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Commit
+import           Hoodle.Coroutine.Layer
 import           Hoodle.Coroutine.Minibuffer
 import           Hoodle.Coroutine.Mode 
 import           Hoodle.Coroutine.Page
@@ -78,6 +79,7 @@ import qualified Hoodle.Script.Coroutine as S
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
+import           Hoodle.Type.Enum
 import           Hoodle.Type.Event hiding (TypSVG)
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
@@ -413,6 +415,54 @@ checkEmbedImageSize filename = do
 fileLoadPNGorJPG :: MainCoroutine ()
 fileLoadPNGorJPG = do 
     fileChooser Gtk.FileChooserActionOpen Nothing >>= maybe (return ()) embedImage
+
+
+-- | 
+fileLoadImageBackground :: MainCoroutine ()
+fileLoadImageBackground = do 
+    fileChooser Gtk.FileChooserActionOpen Nothing >>= maybe (return ()) action
+  where 
+    action filename = do 
+      xst <- get
+      let fDoesEmbedImg = view (settings.doesEmbedImage) xst
+          uhdl = view (unitHoodles.currentUnit) xst
+          hdl = getHoodle uhdl
+          Dim pw ph = (view gdimension . fromJust . view (gpages.at 0)) hdl 
+
+      itm <- if fDoesEmbedImg 
+               then checkEmbedImageSize filename 
+                    >>= maybe (liftIO $ makeNewItemImage True filename) 
+                              (liftIO . makeNewItemImage True)
+               else liftIO (makeNewItemImage False filename)
+      let ItemImage img = itm
+          Dim w h = img_dim img
+          ratio = h/w 
+          img' = img { img_dim = Dim pw (pw*ratio) }
+      changePage (const 0)
+      newPage PageBefore
+      callRenderer $ cnstrctRItem (ItemImage img') >>= return . GotRItem 
+      RenderEv (GotRItem nitm) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False)
+      insertItemAt (Just (PageNum 0, PageCoord (0,0))) nitm
+      modeChange ToViewAppendMode
+      makeNewLayer
+{-
+            --
+            callRenderer $ case mf of  
+              Nothing -> liftIO (makeNewItemImage True filename) >>= cnstrctRItem >>= return . GotRItem 
+              Just f -> liftIO (makeNewItemImage True f) >>= cnstrctRItem >>= return . GotRItem
+            RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
+            return r
+          else do 
+            callRenderer $ liftIO (makeNewItemImage False filename) >>= cnstrctRItem >>= return . GotRItem
+            RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
+            return r
+
+    let cpn = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
+    my <- autoPosText 
+    let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
+    insertItemAt mpos nitm 
+  -}  
+
 
 embedImage :: FilePath -> MainCoroutine ()
 embedImage filename = do  

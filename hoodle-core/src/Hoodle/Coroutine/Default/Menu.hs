@@ -88,6 +88,7 @@ menuEventProcess MenuNew  = addTab Nothing -- askIfSave fileNew
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
+menuEventProcess MenuLoadImageBackground = fileLoadImageBackground
 menuEventProcess MenuText = textInput (Just (100,100)) "" 
 menuEventProcess MenuEmbedTextSource = embedTextSource
 menuEventProcess MenuEditEmbedTextSource = editEmbeddedTextSource

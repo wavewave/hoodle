@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Event 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -144,6 +144,7 @@ data MenuEvent = MenuNew
                | MenuRecentDocument
                | MenuLoadPNGorJPG
                | MenuLoadSVG
+               | MenuLoadImageBackground
                | MenuText
                | MenuEmbedTextSource
                | MenuEditEmbedTextSource

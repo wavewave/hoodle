@@ -65,6 +65,7 @@
     <menu action="IMA">
        <menuitem action="LDIMGA" />
        <menuitem action="LDSVGA" />
+       <menuitem action="LDIMGBKGA" />
        <menuitem action="LDPREIMGA" />   
        <menuitem action="LDPREIMG2A" />
        <menuitem action="LDPREIMG3A" />

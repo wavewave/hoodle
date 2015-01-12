@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI.Menu 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -256,6 +256,7 @@ getMenuUI evar = do
 
   ldpnga <- actionNewAndRegister "LDIMGA" "Load PNG or JPG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadPNGorJPG)
   ldsvga <- actionNewAndRegister "LDSVGA" "Load SVG Image" (Just "Just a Stub") Nothing (justMenu MenuLoadSVG)
+  ldimgbkga <- actionNewAndRegister "LDIMGBKGA" "Make Title Page from Image" (Just "Just a Stub") Nothing (justMenu MenuLoadImageBackground)
   ldpreimga <- actionNewAndRegister "LDPREIMGA" "Embed Predefined Image File" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage)
   ldpreimg2a <- actionNewAndRegister "LDPREIMG2A" "Embed Predefined Image File 2" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage2)
   ldpreimg3a <- actionNewAndRegister "LDPREIMG3A" "Embed Predefined Image File 3" (Just "Just a Stub") Nothing (justMenu MenuEmbedPredefinedImage3)
@@ -418,7 +419,7 @@ getMenuUI evar = do
         , newpgba, newpgaa, newpgea, delpga, expsvga, newlyra, nextlayera, prevlayera, gotolayera, dellyra, ppsizea, ppclra
         , ppstya 
         , apallpga, embedbkgpdfa, defppa, setdefppa
-        , ldpnga, ldsvga, texta, textsrca, editsrca, editnetsrca, textfromsrca
+        , ldpnga, ldsvga, ldimgbkga, texta, textsrca, editsrca, editnetsrca, textfromsrca
         , latexa, latexneta, combinelatexa, latexfromsrca, updatelatexa
         , ldpreimga, ldpreimg2a, ldpreimg3a
         , linka, anchora, listanchora, handreca, clra, clrpcka, penopta 

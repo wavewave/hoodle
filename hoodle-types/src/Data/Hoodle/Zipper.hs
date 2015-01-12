@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Data.Hoodle.Zipper 
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
+-- Copyright   : (c) 2011-2013,2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -39,7 +39,11 @@ newtype SeqZipper a = SZ { unSZ :: (a, (Seq a,Seq a)) }
 deriving instance Functor SeqZipper
 
 -- |
-deriving instance Foldable SeqZipper 
+-- deriving instance Foldable SeqZipper 
+
+instance Foldable SeqZipper where
+  foldr f acc (SZ (x,(y1s,y2s))) = Data.Foldable.foldr f acc (y1s <> singleton x <> y2s)
+
 
 -- |
 instance Applicative SeqZipper where

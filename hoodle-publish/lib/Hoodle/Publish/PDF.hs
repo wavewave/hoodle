@@ -333,9 +333,11 @@ renderHoodleToPDF h ofp = do
     uuid <- nextRandom
     let tempfile = tdir </> show uuid <.> "pdf"
     ctxt <- initRenderContext h
+    let setsize sfc pg = let S.Dim w h = view S.dimension pg 
+                         in pdfSurfaceSetSize sfc w h >> return pg
     withPDFSurface {- ofp -} tempfile width height $ \s -> 
-      renderWith s . flip runStateT ctxt $
-        sequence1_ (lift showPage) . map renderPage_StateT . view S.pages $ h 
+      renderWith s . flip runStateT ctxt $ 
+        sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages $ h 
     readProcessWithExitCode "pdftk" [ tempfile, "cat", "output", ofp ] ""
     return ()
 

@@ -58,7 +58,6 @@ import Hoodle.Type.HoodleState
 import Hoodle.Util
 --
 
--- data Message = Message { msgbody :: Text } deriving (Show,Eq,Ord)
 data HoodleWSEvent = HWSOpen { hws_filepath :: T.Text }
                    deriving Show
 
@@ -124,25 +123,3 @@ socketWork hinfo@HubInfo {..} = do
               (liftIO . Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
       return (UsrEv ActionOrdered)
 
-
-
-
-{-
-        withSocketsDo $ withManager $ \manager -> do
-          -- refresh token
-          oldtok <- liftIO $ read <$> (readFile tokfile)
-
-          newtok  <- liftIO $ refreshTokens client oldtok
-          -- msgShout $ "As a test, refreshed token: "++show (accessToken newtok)
-          liftIO $ writeFile tokfile (show newtok)
-          --
-          accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
-          request' <- parseUrl authgoogleurl 
-          let request = request' 
-                { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> pack accessTok) ]
-                , cookieJar = Just (createCookieJar  [])
-                }
-          response <- httpLbs request manager
-          let coojar = responseCookieJar response
-          -- liftIO $ print coojar
--}

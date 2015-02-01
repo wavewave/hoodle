@@ -209,6 +209,9 @@ guiProcess ev = do
     viewModeChange ToContSinglePage
     pageZoomChange FitWidth
 #ifdef HUB
+    sqlinfo <- join . fmap sqliteInfo . view hookSet <$> get
+    modify (set (settings.sqliteFileName) sqlinfo) 
+    initSqliteDB
     startLinkReceiver
     socketConnect
 #endif

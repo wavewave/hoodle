@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -72,6 +73,9 @@ module Hoodle.Type.HoodleState
 , doesUseVariableCursor
 , newPageMode
 , networkEditSourceInfo
+#ifdef HUB
+, sqliteFileName
+#endif
 -- 
 , penModeSignal
 , pageModeSignal
@@ -422,6 +426,9 @@ data Settings =
            , _doesUseVariableCursor :: Bool 
            , _newPageMode :: NewPageModeType
            , _networkEditSourceInfo :: Maybe ThreadId
+#ifdef HUB
+           , _sqliteFileName :: Maybe FilePath
+#endif
            } 
   
 
@@ -464,6 +471,10 @@ newPageMode = lens _newPageMode (\f a -> f {_newPageMode=a})
 -- | network edit source mode
 networkEditSourceInfo :: Simple Lens Settings (Maybe ThreadId)
 networkEditSourceInfo = lens _networkEditSourceInfo (\f a -> f {_networkEditSourceInfo=a})
+
+-- | sqlite file
+sqliteFileName :: Simple Lens Settings (Maybe FilePath)
+sqliteFileName = lens _sqliteFileName (\f a -> f {_sqliteFileName=a})
 
 -- |
 emptyUnitHoodle :: IO UnitHoodle
@@ -555,6 +566,9 @@ defaultSettings =
   , _doesUseVariableCursor = False
   , _newPageMode = NPPlain
   , _networkEditSourceInfo = Nothing
+#ifdef HUB
+  , _sqliteFileName = Nothing
+#endif 
   } 
   
 

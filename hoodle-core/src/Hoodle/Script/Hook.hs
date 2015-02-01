@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Script.Hook
--- Copyright   : (c) 2012-2014 Ian-Woo Kim
+-- Copyright   : (c) 2012-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -40,6 +40,7 @@ data Hook = Hook { saveAsHook :: Maybe (Hoodle -> IO ())
                  , getIPaddress :: Maybe (IO String)
 #ifdef HUB
                  , hubInfo :: Maybe HubInfo
+                 , sqliteInfo :: Maybe FilePath
 #endif
                  } 
 
@@ -63,5 +64,6 @@ defaultHook = Hook { saveAsHook = Nothing
                    , getIPaddress = Nothing
 #ifdef HUB
                    , hubInfo = Nothing
+                   , sqliteInfo = Nothing
 #endif
                    }

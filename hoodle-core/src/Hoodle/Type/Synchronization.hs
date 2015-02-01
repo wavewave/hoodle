@@ -1,5 +1,12 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -13,19 +20,31 @@
 --
 -----------------------------------------------------------------------------
 
-
 module Hoodle.Type.Synchronization where
 
 import           Control.Applicative
 import           Data.Aeson as AE
+import           Data.Data
 import qualified Data.HashMap.Strict as H
 import           Data.Text
 import           Data.Time.Clock (UTCTime)
+import           Database.Persist.Sqlite
+import           Database.Persist.TH
 
-data FileSyncStatus = FileSyncStatus { fileSyncStatusUuid :: Text
-                                     , fileSyncStatusMd5 :: Text
-                                     , fileSyncStatusTime :: UTCTime }
-                    deriving Show 
+share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
+FileSyncStatus
+    uuid    Text
+    md5     Text
+    time    UTCTime
+    UniqueFileSyncStatusUUID uuid
+    deriving Typeable
+    deriving Show
+|]
+
+-- data FileSyncStatus = FileSyncStatus { fileSyncStatusUuid :: Text
+--                                    , fileSyncStatusMd5 :: Text
+--                                      , fileSyncStatusTime :: UTCTime }
+--                    deriving Show 
 
 instance ToJSON FileSyncStatus where
   toJSON FileSyncStatus {..} = object [ "uuid" .= toJSON fileSyncStatusUuid 

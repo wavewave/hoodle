@@ -32,10 +32,13 @@ import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Foldable as F
 import qualified Data.HashMap.Strict as H
 import           Data.IORef
-import Data.Monoid ((<>))
-import Data.Text (Text,pack,unpack)
-import Data.Text.Encoding (encodeUtf8,decodeUtf8)
-import Data.UUID.V4
+import           Data.Monoid ((<>))
+import qualified Data.Text as T (Text,pack,unpack)
+import           Data.Text.Encoding (encodeUtf8,decodeUtf8)
+import           Data.UUID.V4
+import           Database.Persist (upsert)
+import           Database.Persist.Sql (runMigration)
+import           Database.Persist.Sqlite (runSqlite)
 import qualified Graphics.UI.Gtk as Gtk
 import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
@@ -83,8 +86,9 @@ uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()
 uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
     hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
     hdir <- liftIO $ getHomeDirectory
+    msqlfile <- view (settings.sqliteFileName) <$> get
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-        client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
+        client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
         permissionUrl = formUrl client ["email"]
     liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
       case os of
@@ -96,13 +100,13 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         tokens   <- liftIO $ exchangeCode client authcode
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
-      forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
+      forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
           flip runReaderT (manager,coojar) $ do
-            mfstat <- sessionGetJSON (hubURL </> "sync" </> unpack uuidtxt)
+            mfstat <- sessionGetJSON (hubURL </> "sync" </> T.unpack uuidtxt)
             liftIO $ print (mfstat :: Maybe FileSyncStatus)
-            mfrsync <- sessionGetJSON (hubURL </> "file" </> unpack uuidtxt) 
+            mfrsync <- sessionGetJSON (hubURL </> "file" </> T.unpack uuidtxt) 
             -- let  = AE.decode (responseBody response2) :: Maybe FileRsync
             let hdlbstr = (BL.toStrict . builder) hdl
             b64txt <- case mfrsync of 
@@ -120,35 +124,24 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
                 mapM_ removeFile [tsigfile,tdeltafile]
                 (return . decodeUtf8 . B64.encode) deltabstr
             let filecontent = toJSON FileContent { file_uuid = uuidtxt
-                                                 , file_path = pack filepath
+                                                 , file_path = T.pack filepath
                                                  , file_content = b64txt 
                                                  , file_rsync = mfrsync }
                 filecontentbstr = encode filecontent
             (manager,coojar) <- ask
-            request3' <- lift $ parseUrl (hubURL </> "file" </> unpack uuidtxt )
+            request3' <- lift $ parseUrl (hubURL </> "file" </> T.unpack uuidtxt )
             let request3 = request3' { method = methodPut
                                      , requestBody = RequestBodyStreamChunked (streamContent filecontentbstr)
                                      , cookieJar = Just coojar }
             _response3 <- lift $ httpLbs request3 manager
+            mfstat2 :: Maybe FileSyncStatus 
+              <- sessionGetJSON (hubURL </> "sync" </> T.unpack uuidtxt)
+            -- liftIO $ print (mfstat2 :: Maybe FileSyncStatus)
+            F.forM_ ((,) <$> msqlfile <*> mfstat2) $ \(sqlfile,fstat2) -> do 
+              runSqlite (T.pack sqlfile) $ upsert fstat2 []
+              return ()
             return ()
       return (UsrEv ActionOrdered)
-
-
-{-         withSocketsDo $ withManager $ \manager -> do
-          -- refresh token
-          oldtok <- liftIO $ read <$> (readFile tokfile)
-
-          newtok  <- liftIO $ refreshTokens client oldtok
-          liftIO $ writeFile tokfile (show newtok)
-          --
-          accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
-          request' <- parseUrl authgoogleurl 
-          let request = request' 
-                { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> pack accessTok) ]
-                , cookieJar = Just (createCookieJar  [])
-                }
-          response <- httpLbs request manager
-          let coojar = responseCookieJar response -}
 
 
 
@@ -156,7 +149,8 @@ withHub :: HubInfo -> FilePath
            -> (Manager -> CookieJar -> ResourceT IO a) -> IO a 
 withHub HubInfo {..} tokfile action = 
     withSocketsDo $ withManager $ \manager -> do
-      let client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
+      let client = OAuth2Client { clientId = T.unpack cid
+                                , clientSecret = T.unpack secret }
       -- refresh token
       oldtok <- liftIO $ read <$> (readFile tokfile)
       newtok  <- liftIO $ refreshTokens client oldtok
@@ -165,7 +159,7 @@ withHub HubInfo {..} tokfile action =
       accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
       request' <- parseUrl authgoogleurl 
       let request = request' 
-            { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> pack accessTok) ]
+            { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> T.pack accessTok) ]
             , cookieJar = Just (createCookieJar  [])
             }
       response <- httpLbs request manager
@@ -187,3 +181,9 @@ sessionGetJSON url = do
 
 --  :: Maybe FileSyncStatus
 --     liftIO $ print mfstat
+
+initSqliteDB :: MainCoroutine ()
+initSqliteDB = do
+    msqlfile <- view (settings.sqliteFileName) <$> get
+    F.forM_ msqlfile $ \sqlfile -> liftIO $ do
+      runSqlite (T.pack sqlfile) $ runMigration $ migrateAll

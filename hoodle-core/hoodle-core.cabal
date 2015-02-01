@@ -108,6 +108,9 @@ Library
                    network > 2.6, 
                    network-info, 
                    network-simple >= 0.3,
+                   persistent,
+                   persistent-sqlite,
+                   persistent-template,
                    resourcet
 
   Exposed-Modules: 
@@ -167,7 +170,6 @@ Library
                    Hoodle.Type.HoodleState
                    Hoodle.Type.PageArrangement 
                    Hoodle.Type.Predefined
-                   Hoodle.Type.Synchronization
                    Hoodle.Type.Undo 
                    Hoodle.Type.Window
                    Hoodle.Type.Widget 
@@ -185,8 +187,7 @@ Library
                      Hoodle.Coroutine.Network
                      Hoodle.Coroutine.Socket
                      Hoodle.Type.Hub
-
-
+                     Hoodle.Type.Synchronization
   Other-Modules: 
                    Paths_hoodle_core
   c-sources: 

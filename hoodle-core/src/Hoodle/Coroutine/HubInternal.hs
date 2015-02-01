@@ -23,6 +23,7 @@ import qualified Control.Exception as E
 import           Control.Lens (view)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
+import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
@@ -98,13 +99,16 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
-          request1' <- parseUrl (hubURL </> "sync" </> unpack uuidtxt )
-          let request1 = request1' 
+          flip runReaderT (manager,coojar) $ do
+            
+            {- request1' <- parseUrl (hubURL </> "sync" </> unpack uuidtxt )
+            let request1 = request1' 
                 { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
                 , cookieJar = Just coojar }
-          response1 <- httpLbs request1 manager
-          let mfstat = AE.decode (responseBody response1) :: Maybe FileSyncStatus
-          liftIO $ print mfstat
+            response1 <- httpLbs request1 manager 
+            let mfstat = AE.decode (responseBody response1) :: Maybe FileSyncStatus -}
+            mfstat <- sessionGetJSON (hubURL </> "sync" </> unpack uuidtxt )
+            liftIO $ print (mfstat :: Maybe FileSyncStatus)
           
 
           request2' <- parseUrl (hubURL </> "file" </> unpack uuidtxt )
@@ -179,3 +183,19 @@ withHub HubInfo {..} tokfile action =
       response <- httpLbs request manager
       let coojar = responseCookieJar response
       action manager coojar
+
+
+sessionGetJSON :: (FromJSON a) => 
+                  String -> ReaderT (Manager,CookieJar) (ResourceT IO) (Maybe a)
+sessionGetJSON url = do
+    (manager,coojar) <- ask 
+    req' <- lift $ parseUrl url
+    let req = req' 
+          { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
+          , cookieJar = Just coojar }
+    res <- lift $ httpLbs req manager
+    return (AE.decode (responseBody res))
+
+
+--  :: Maybe FileSyncStatus
+--     liftIO $ print mfstat

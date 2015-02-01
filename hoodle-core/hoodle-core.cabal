@@ -166,6 +166,7 @@ Library
                    Hoodle.Type.HoodleState
                    Hoodle.Type.PageArrangement 
                    Hoodle.Type.Predefined
+                   Hoodle.Type.Synchronization
                    Hoodle.Type.Undo 
                    Hoodle.Type.Window
                    Hoodle.Type.Widget 

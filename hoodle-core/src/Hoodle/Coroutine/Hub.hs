@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Hub
--- Copyright   : (c) 2014 Ian-Woo Kim
+-- Copyright   : (c) 2014,2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -47,7 +47,6 @@ hubUpload = do
                      fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
                      canfp <- liftIO $ canonicalizePath fp
                      let relfp = makeRelative hdir canfp
-                     -- liftIO $ print (hinfo,relfp)
                      lift (uploadWork (canfp,relfp) hinfo)
               case r of 
                 Nothing -> okMessageBox "upload not successful" >> return ()

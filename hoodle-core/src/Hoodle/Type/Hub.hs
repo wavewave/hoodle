@@ -19,7 +19,7 @@ import Data.Text (Text)
 data HubInfo = HubInfo { cid :: Text
                        , secret :: Text
                        , authgoogleurl :: String
-                       , hubfileurl :: String
+                       , hubURL :: String
                        , hubfileroot :: FilePath
                        , hubsocketurl :: String
                        , hubsocketport :: Int

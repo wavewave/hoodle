@@ -98,7 +98,16 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
-          request2' <- parseUrl (hubfileurl </> unpack uuidtxt )
+          request1' <- parseUrl (hubURL </> "sync" </> unpack uuidtxt )
+          let request1 = request1' 
+                { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
+                , cookieJar = Just coojar }
+          response1 <- httpLbs request1 manager
+          let mfstat = AE.decode (responseBody response1) :: Maybe FileSyncStatus
+          liftIO $ print mfstat
+          
+
+          request2' <- parseUrl (hubURL </> "file" </> unpack uuidtxt )
           let request2 = request2' 
                 { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
                 , cookieJar = Just coojar }
@@ -124,7 +133,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
                                                , file_content = b64txt 
                                                , file_rsync = mfrsync }
               filecontentbstr = encode filecontent
-          request3' <- parseUrl (hubfileurl </> unpack uuidtxt )
+          request3' <- parseUrl (hubURL </> "file" </> unpack uuidtxt )
           let request3 = request3' { method = methodPut
                                    , requestBody = RequestBodyStreamChunked (streamContent filecontentbstr)
                                    , cookieJar = Just coojar }

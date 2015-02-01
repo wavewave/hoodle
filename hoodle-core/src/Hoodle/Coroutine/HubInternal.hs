@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -22,6 +23,7 @@ import qualified Control.Exception as E
 import           Control.Lens (view)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
+import           Control.Monad.Trans.Resource
 import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
@@ -38,7 +40,11 @@ import Network
 import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
                                OAuth2Client(..), OAuth2Tokens(..))
 import Network.HTTP.Client (GivesPopper)
-import Network.HTTP.Conduit
+import Network.HTTP.Conduit ( RequestBody(..), CookieJar (..), Manager (..)
+                            , cookieJar, createCookieJar
+                            , httpLbs, method, parseUrl
+                            , requestBody, requestHeaders
+                            , responseBody, responseCookieJar, withManager)
 import Network.HTTP.Types (methodPut)
 import System.Directory
 import System.Exit    (ExitCode(..))
@@ -57,8 +63,6 @@ import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
 import Hoodle.Type.Synchronization
 --
-
-
 
 streamContent :: BL.ByteString -> GivesPopper ()
 streamContent lb np = do
@@ -92,21 +96,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         liftIO $ writeFile tokfile (show tokens)
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(_ :: E.SomeException)-> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
-        withSocketsDo $ withManager $ \manager -> do
-          -- refresh token
-          oldtok <- liftIO $ read <$> (readFile tokfile)
-
-          newtok  <- liftIO $ refreshTokens client oldtok
-          liftIO $ writeFile tokfile (show newtok)
-          --
-          accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
-          request' <- parseUrl authgoogleurl 
-          let request = request' 
-                { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> pack accessTok) ]
-                , cookieJar = Just (createCookieJar  [])
-                }
-          response <- httpLbs request manager
-          let coojar = responseCookieJar response
+        withHub hinfo tokfile $ \manager coojar -> do
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
           request2' <- parseUrl (hubfileurl </> unpack uuidtxt )
           let request2 = request2' 
@@ -143,3 +133,40 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       return (UsrEv ActionOrdered)
 
 
+{-         withSocketsDo $ withManager $ \manager -> do
+          -- refresh token
+          oldtok <- liftIO $ read <$> (readFile tokfile)
+
+          newtok  <- liftIO $ refreshTokens client oldtok
+          liftIO $ writeFile tokfile (show newtok)
+          --
+          accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
+          request' <- parseUrl authgoogleurl 
+          let request = request' 
+                { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> pack accessTok) ]
+                , cookieJar = Just (createCookieJar  [])
+                }
+          response <- httpLbs request manager
+          let coojar = responseCookieJar response -}
+
+
+
+withHub :: HubInfo -> FilePath 
+           -> (Manager -> CookieJar -> ResourceT IO a) -> IO a 
+withHub HubInfo {..} tokfile action = 
+    withSocketsDo $ withManager $ \manager -> do
+      let client = OAuth2Client { clientId = unpack cid, clientSecret = unpack secret }
+      -- refresh token
+      oldtok <- liftIO $ read <$> (readFile tokfile)
+      newtok  <- liftIO $ refreshTokens client oldtok
+      liftIO $ writeFile tokfile (show newtok)
+      --
+      accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
+      request' <- parseUrl authgoogleurl 
+      let request = request' 
+            { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> pack accessTok) ]
+            , cookieJar = Just (createCookieJar  [])
+            }
+      response <- httpLbs request manager
+      let coojar = responseCookieJar response
+      action manager coojar

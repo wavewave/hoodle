@@ -107,7 +107,8 @@ Library
                    http-conduit,
                    network > 2.6, 
                    network-info, 
-                   network-simple >= 0.3
+                   network-simple >= 0.3,
+                   resourcet
 
   Exposed-Modules: 
                    Hoodle.Accessor

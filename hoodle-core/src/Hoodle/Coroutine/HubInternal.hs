@@ -100,49 +100,37 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
         withHub hinfo tokfile $ \manager coojar -> do
           let uuidtxt = decodeUtf8 (view hoodleID hdl)
           flip runReaderT (manager,coojar) $ do
-            
-            {- request1' <- parseUrl (hubURL </> "sync" </> unpack uuidtxt )
-            let request1 = request1' 
-                { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
-                , cookieJar = Just coojar }
-            response1 <- httpLbs request1 manager 
-            let mfstat = AE.decode (responseBody response1) :: Maybe FileSyncStatus -}
-            mfstat <- sessionGetJSON (hubURL </> "sync" </> unpack uuidtxt )
+            mfstat <- sessionGetJSON (hubURL </> "sync" </> unpack uuidtxt)
             liftIO $ print (mfstat :: Maybe FileSyncStatus)
-          
-
-          request2' <- parseUrl (hubURL </> "file" </> unpack uuidtxt )
-          let request2 = request2' 
-                { requestHeaders = [ ("Accept", "application/json; charset=utf-8") ] 
-                , cookieJar = Just coojar }
-          response2 <- httpLbs request2 manager
-          let mfrsync = AE.decode (responseBody response2) :: Maybe FileRsync
-              hdlbstr = (BL.toStrict . builder) hdl
-          b64txt <- case mfrsync of 
-            Nothing -> (return . decodeUtf8 . B64.encode) hdlbstr
-            Just frsync -> liftIO $ do
-              let rsyncbstr = (B64.decodeLenient . encodeUtf8 . frsync_sig) frsync
-              tdir <- getTemporaryDirectory
-              uuid'' <- nextRandom
-              let tsigfile = tdir </> show uuid'' <.> "sig"
-                  tdeltafile = tdir </> show uuid'' <.> "delta"
-              B.writeFile tsigfile rsyncbstr
-              readProcessWithExitCode "rdiff" 
-                ["delta", tsigfile, ofilepath, tdeltafile] ""
-              deltabstr <- B.readFile tdeltafile 
-              mapM_ removeFile [tsigfile,tdeltafile]
-              (return . decodeUtf8 . B64.encode) deltabstr
-          let filecontent = toJSON FileContent { file_uuid = uuidtxt
-                                               , file_path = pack filepath
-                                               , file_content = b64txt 
-                                               , file_rsync = mfrsync }
-              filecontentbstr = encode filecontent
-          request3' <- parseUrl (hubURL </> "file" </> unpack uuidtxt )
-          let request3 = request3' { method = methodPut
-                                   , requestBody = RequestBodyStreamChunked (streamContent filecontentbstr)
-                                   , cookieJar = Just coojar }
-          _response3 <- httpLbs request3 manager
-          return ()
+            mfrsync <- sessionGetJSON (hubURL </> "file" </> unpack uuidtxt) 
+            -- let  = AE.decode (responseBody response2) :: Maybe FileRsync
+            let hdlbstr = (BL.toStrict . builder) hdl
+            b64txt <- case mfrsync of 
+              Nothing -> (return . decodeUtf8 . B64.encode) hdlbstr
+              Just frsync -> liftIO $ do
+                let rsyncbstr = (B64.decodeLenient . encodeUtf8 . frsync_sig) frsync
+                tdir <- getTemporaryDirectory
+                uuid'' <- nextRandom
+                let tsigfile = tdir </> show uuid'' <.> "sig"
+                    tdeltafile = tdir </> show uuid'' <.> "delta"
+                B.writeFile tsigfile rsyncbstr
+                readProcessWithExitCode "rdiff" 
+                  ["delta", tsigfile, ofilepath, tdeltafile] ""
+                deltabstr <- B.readFile tdeltafile 
+                mapM_ removeFile [tsigfile,tdeltafile]
+                (return . decodeUtf8 . B64.encode) deltabstr
+            let filecontent = toJSON FileContent { file_uuid = uuidtxt
+                                                 , file_path = pack filepath
+                                                 , file_content = b64txt 
+                                                 , file_rsync = mfrsync }
+                filecontentbstr = encode filecontent
+            (manager,coojar) <- ask
+            request3' <- lift $ parseUrl (hubURL </> "file" </> unpack uuidtxt )
+            let request3 = request3' { method = methodPut
+                                     , requestBody = RequestBodyStreamChunked (streamContent filecontentbstr)
+                                     , cookieJar = Just coojar }
+            _response3 <- lift $ httpLbs request3 manager
+            return ()
       return (UsrEv ActionOrdered)
 
 

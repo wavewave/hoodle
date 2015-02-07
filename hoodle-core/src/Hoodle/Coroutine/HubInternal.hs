@@ -61,6 +61,7 @@ import           System.FilePath ((</>),(<.>))
 import           System.Info (os)
 import           System.Process (rawSystem,readProcessWithExitCode)
 --
+import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Type.Hoodle
 import           Text.Hoodle.Builder (builder)
@@ -130,7 +131,9 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdl ofilepath filepath msql
     let filecontent = toJSON FileContent { file_uuid = uuidtxt
                                          , file_path = T.pack filepath
                                          , file_content = b64txt 
-                                         , file_rsync = mfrsync }
+                                         , file_rsync = mfrsync 
+                                         , client_uuid = T.pack (show uhdluuid)
+                                         }
         filecontentbstr = encode filecontent
     (manager,coojar) <- ask
     request3' <- lift $ parseUrl (hubURL hinfo </> "file" </> T.unpack uuidtxt )
@@ -172,7 +175,6 @@ fileSyncFromHub unituuid fstat = do
 
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-        uuidtxt = fileSyncStatusUuid fstat
     xst <- get
     runMaybeT $ do
       uhdl <- (MaybeT . return . find (\x -> view unitUUID x == unituuid)) uhdls 
@@ -183,7 +185,8 @@ fileSyncFromHub unituuid fstat = do
       lift $ doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
           withHub hinfo tokfile $ \manager coojar -> do
-            sigtxt <- liftIO $ do 
+            runReaderT (rsyncPatchWork evhandler hinfo hdlfile fstat) (manager,coojar)
+{-             sigtxt <- liftIO $ do 
                         uuid' <- nextRandom
                         tdir <- getTemporaryDirectory
                         let sigfile = tdir </> show uuid' <.> "sig"
@@ -210,15 +213,75 @@ fileSyncFromHub unituuid fstat = do
                 when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ do
                   copyFile newfile hdlfile
                   mapM_ removeFile [deltafile,newfile]
-                  (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
-          
-              -- liftIO $ print (mfcont :: Maybe FileContent)-- (BL.take 500 hdlbstr)
-{-
-                md5str = show (md5 hdlbstr)
-            when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ liftIO $ do
-              BL.writeFile hdlfile hdlbstr
-              (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered -}
+                  (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered  -}
         return (UsrEv ActionOrdered)
     return ()
+
+
+
+rsyncPatchWork evhandler hinfo hdlfile fstat = do 
+    (manager,coojar) <- ask
+    let uuidtxt = fileSyncStatusUuid fstat
+    sigtxt <- liftIO $ do 
+                uuid' <- nextRandom
+                tdir <- getTemporaryDirectory
+                let sigfile = tdir </> show uuid' <.> "sig"
+                readProcessWithExitCode "rdiff" ["signature", hdlfile, sigfile] ""
+                bstr <- B.readFile sigfile
+                return (TE.decodeUtf8 (B64.encode bstr))
+    let frsync = FileRsync uuidtxt sigtxt
+        frsyncjsonbstr = (encode . toJSON) frsync
+    req' <- lift $ parseUrl (hubURL hinfo </> "rsyncdown" </> T.unpack uuidtxt)
+    let req = req' { cookieJar = Just coojar 
+                   , requestBody = RequestBodyStreamChunked (streamContent frsyncjsonbstr)
+                   }
+    mfcont <- lift $ AE.decode . responseBody <$> httpLbs req manager
+    F.forM_ mfcont $ \fcont -> do
+      let filebstr = (B64.decodeLenient . TE.encodeUtf8 . file_content) fcont 
+      liftIO $ do 
+        uuid' <- nextRandom
+        tdir <- getTemporaryDirectory 
+        let deltafile = tdir </> show uuid' <.> "delta"
+            newfile = tdir </> show uuid' <.> "hdlnew"
+        B.writeFile deltafile filebstr
+        readProcessWithExitCode "rdiff" ["patch", hdlfile, deltafile, newfile] ""
+        md5str <- show . md5 <$> BL.readFile newfile 
+        when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ do
+          copyFile newfile hdlfile
+          mapM_ removeFile [deltafile,newfile]
+          (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
+
             
 
+gotSyncEvent :: UUID -> UUID -> MainCoroutine ()
+gotSyncEvent fileuuid uhdluuid = do
+    liftIO $ putStrLn "gotSyncEvent called"
+    liftIO $ putStrLn (show fileuuid)
+    uhdlsMap <-  snd . view unitHoodles <$> get
+    let uhdls = IM.elems uhdlsMap
+    hdir <- liftIO $ getHomeDirectory
+    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
+        uuidtxt = T.pack (show fileuuid)
+    xst <- get
+    case find (\x -> view unitUUID x == uhdluuid) uhdls of
+      Just _ -> return () 
+      Nothing -> do 
+        mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
+        runMaybeT $ do
+          uhdl <- (MaybeT . return .  find (\x -> B.unpack (view ghoodleID (getHoodle x)) == show fileuuid)) uhdls 
+          liftIO $ print "i am here"
+          hdlfile <- (MaybeT . return . view (hoodleFileControl.hoodleFileName)) uhdl
+
+          hset <- (MaybeT . return . view hookSet) xst
+          hinfo <- (MaybeT . return) (hubInfo hset)
+          lift $ prepareToken hinfo tokfile 
+          lift $ doIOaction $ \evhandler -> do 
+            forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
+              withHub hinfo tokfile $ \manager coojar -> do
+                flip runReaderT (manager,coojar) $ do
+                  mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
+                  liftIO $ print mfstat
+                  F.forM_ mfstat $ \fstat -> do 
+                    rsyncPatchWork evhandler hinfo hdlfile fstat
+            return (UsrEv ActionOrdered)
+        return () 

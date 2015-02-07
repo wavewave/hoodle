@@ -119,6 +119,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | DisconnectedHub FilePath (FilePath,FilePath) HubInfo
                | SyncInfoUpdated UUID FileSyncStatus
                | FileSyncFromHub UUID FileSyncStatus
+               | GotSyncEvent UUID UUID
 #endif
                deriving Show
                       

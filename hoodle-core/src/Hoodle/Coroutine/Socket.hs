@@ -60,6 +60,8 @@ import Hoodle.Util
 --
 
 data HoodleWSEvent = HWSOpen { hws_filepath :: T.Text }
+                   | HWSSync { hws_fileuuid :: T.Text 
+                             , hws_clientuuid :: T.Text }
                    deriving Show
 
 instance ToJSON HoodleWSEvent where
@@ -73,6 +75,10 @@ instance FromJSON HoodleWSEvent where
           case typ of
             "open" -> do String fp <- HM.lookup "filepath" v
                          return HWSOpen { hws_filepath = fp }
+            "sync" -> do String fileuuid <- HM.lookup "fileuuid" v
+                         String clientuuid <- HM.lookup "clientuuid" v
+                         return HWSSync { hws_fileuuid = fileuuid 
+                                        , hws_clientuuid = clientuuid }
             _ -> Nothing
     in case r of
          Nothing -> fail "error in parsing HoodleWSEvent"
@@ -86,28 +92,17 @@ socketConnect = do
     r <- runMaybeT $ do 
       hset <- (MaybeT . return) $ view hookSet xst
       hinfo <- (MaybeT . return) (hubInfo hset)
-      lift (socketWork hinfo)
+      lift (hoodleWSStart hinfo)
     case r of 
       Nothing -> okMessageBox "socket connect not successful" >> return ()
       Just _ -> return ()  
 
 
-socketWork :: HubInfo -> MainCoroutine ()
-socketWork hinfo@HubInfo {..} = do
+hoodleWSStart :: HubInfo -> MainCoroutine ()
+hoodleWSStart hinfo@HubInfo {..} = do
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-        client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
-        permissionUrl = formUrl client ["email"]
-    liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
-      msgShout $ "Load this URL: "++show permissionUrl
-      case os of
-        "linux"  -> liftIO $ rawSystem "chromium" [permissionUrl]
-        "darwin" -> liftIO $ rawSystem "open"       [permissionUrl]
-        _        -> return ExitSuccess
-      mauthcode <- textInputDialog "Please paste the verification code: "
-      F.forM_ mauthcode $ \authcode -> do
-        tokens   <- liftIO $ exchangeCode client authcode
-        liftIO $ writeFile tokfile (show tokens)
+    prepareToken hinfo tokfile 
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(err:: E.SomeException)-> print err >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
@@ -120,7 +115,14 @@ socketWork hinfo@HubInfo {..} = do
             runEitherT $ do
               v <- hoistEither $ A.parseOnly json (TE.encodeUtf8 txt)
               o :: HoodleWSEvent <- hoistEither $ parseEither parseJSON v
-              let urlpath = FileUrl (hubfileroot </> T.unpack (hws_filepath o)) 
-              (liftIO . Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
+              lift $ hoodleWSDispatchEvent evhandler hinfo o 
       return (UsrEv ActionOrdered)
 
+hoodleWSDispatchEvent :: (AllEvent -> IO ()) -> HubInfo -> HoodleWSEvent -> IO ()
+hoodleWSDispatchEvent evhandler HubInfo {..} HWSOpen {..} = do
+    let urlpath = FileUrl (hubfileroot </> T.unpack hws_filepath)
+    (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
+hoodleWSDispatchEvent evhandler HubInfo {..} HWSSync {..} = do
+    let fileuuid = read (T.unpack hws_fileuuid)
+        clientuuid = read (T.unpack hws_clientuuid) 
+    (Gtk.postGUIAsync . evhandler . UsrEv) (GotSyncEvent fileuuid clientuuid) 

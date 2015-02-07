@@ -439,6 +439,7 @@ defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
         Right _ -> uploadWork (ofile,file) hinfo
 defaultEventProcess (SyncInfoUpdated uhdluuid fstat) = updateSyncInfo uhdluuid fstat
 defaultEventProcess (FileSyncFromHub uhdluuid fstat) = fileSyncFromHub uhdluuid fstat
+defaultEventProcess (GotSyncEvent fileuuid uhdluuid) = gotSyncEvent fileuuid uhdluuid 
 #endif
 defaultEventProcess ev = -- for debugging
                          do msgShout "--- no default ---"

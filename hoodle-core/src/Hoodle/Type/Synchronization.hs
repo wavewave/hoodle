@@ -65,6 +65,7 @@ data FileContent = FileContent { file_uuid :: Text
                                , file_path :: Text
                                , file_content :: Text 
                                , file_rsync :: Maybe FileRsync
+                               , client_uuid :: Text
                                }
                  deriving Show
 
@@ -73,6 +74,7 @@ instance ToJSON FileContent where
                                    , "path"    .= toJSON file_path
                                    , "content" .= toJSON file_content 
                                    , "rsync"   .= toJSON file_rsync
+                                   , "client"  .= toJSON client_uuid
                                    ]
 
 instance FromJSON FileContent where
@@ -82,12 +84,13 @@ instance FromJSON FileContent where
           String path <- H.lookup "path" v
           String content <- H.lookup "content" v
           o <- H.lookup "rsync" v
-          return (uuid,path,content,o)
+          String cid <- H.lookup "client" v
+          return (uuid,path,content,o,cid)
     in case r of
          Nothing -> fail "error in parsing FileContent"
-         Just (uuid,path,content,o) -> do
+         Just (uuid,path,content,o,cid) -> do
            rsync <- parseJSON o
-           return (FileContent uuid path content rsync)
+           return (FileContent uuid path content rsync cid)
   parseJSON _ = fail "error in parsing FileContent"
 
 data FileRsync = FileRsync { frsync_uuid :: Text 

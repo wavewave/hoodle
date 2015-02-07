@@ -20,7 +20,7 @@ module Hoodle.Coroutine.HubInternal where
 import           Control.Applicative
 import           Control.Concurrent
 import qualified Control.Exception as E
-import           Control.Lens (view)
+import           Control.Lens (view,set,_2)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Reader
@@ -31,10 +31,13 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Foldable as F
 import qualified Data.HashMap.Strict as H
+import qualified Data.IntMap as IM
 import           Data.IORef
+import           Data.List (find)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T (Text,pack,unpack)
 import           Data.Text.Encoding (encodeUtf8,decodeUtf8)
+import           Data.UUID
 import           Data.UUID.V4
 import           Database.Persist (upsert, getBy, entityVal)
 import           Database.Persist.Sql (runMigration)
@@ -74,8 +77,8 @@ uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()
 uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
     uhdl <- view (unitHoodles.currentUnit) <$> get
     let mlastsyncmd5 = view (hoodleFileControl.lastSyncMD5) uhdl
-    let hdl = (rHoodle2Hoodle . getHoodle) uhdl
-    
+        uhdluuid = view unitUUID uhdl
+        hdl = (rHoodle2Hoodle . getHoodle) uhdl
     hdir <- liftIO $ getHomeDirectory
     msqlfile <- view (settings.sqliteFileName) <$> get
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
@@ -98,22 +101,21 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
             mfstat <- sessionGetJSON (hubURL </> "sync" </> T.unpack uuidtxt)
             liftIO $ print (mfstat :: Maybe FileSyncStatus)
             liftIO $ print (mlastsyncmd5)
-            let uploading = uploadAndUpdateSync hinfo uuidtxt hdl ofilepath filepath msqlfile
+            let uploading = uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdl ofilepath filepath msqlfile
             flip (maybe uploading) ((,,) <$> msqlfile <*> mfstat <*> mlastsyncmd5) $ \(sqlfile,fstat,lastsyncmd5) -> do
               me <- runSqlite (T.pack sqlfile) $ getBy (UniqueFileSyncStatusUUID (fileSyncStatusUuid fstat))
               case me of 
                 Just e -> do 
-                  let -- localmd5saved = fileSyncStatusMd5 (entityVal e)
-                      remotemd5saved = fileSyncStatusMd5 fstat
+                  let remotemd5saved = fileSyncStatusMd5 fstat
                   if lastsyncmd5 /= remotemd5saved 
-                    then liftIO $ print "need to be synchorized backwards"
+                    then liftIO $ evhandler (UsrEv FileReloadOrdered)
                     else uploading
                 Nothing -> uploading
       return (UsrEv ActionOrdered)
 
 
 
-uploadAndUpdateSync hinfo uuidtxt hdl ofilepath filepath msqlfile = do
+uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdl ofilepath filepath msqlfile = do
     mfrsync <- sessionGetJSON (hubURL hinfo </> "file" </> T.unpack uuidtxt) 
     -- let  = AE.decode (responseBody response2) :: Maybe FileRsync
     let hdlbstr = (BL.toStrict . builder) hdl
@@ -147,6 +149,7 @@ uploadAndUpdateSync hinfo uuidtxt hdl ofilepath filepath msqlfile = do
     -- liftIO $ print (mfstat2 :: Maybe FileSyncStatus)
     F.forM_ ((,) <$> msqlfile <*> mfstat2) $ \(sqlfile,fstat2) -> do 
       runSqlite (T.pack sqlfile) $ upsert fstat2 []
+      liftIO $ evhandler (UsrEv (SyncInfoUpdated uhdluuid fstat2))
       return ()
     return ()
 
@@ -156,3 +159,15 @@ initSqliteDB = do
     msqlfile <- view (settings.sqliteFileName) <$> get
     F.forM_ msqlfile $ \sqlfile -> liftIO $ do
       runSqlite (T.pack sqlfile) $ runMigration $ migrateAll
+
+updateSyncInfo :: UUID -> FileSyncStatus -> MainCoroutine ()
+updateSyncInfo uuid fstat = do
+    liftIO $ putStrLn "updateSyncInfo called"
+    uhdlsMap <-  snd . view unitHoodles <$> get
+    let uhdls = IM.elems uhdlsMap
+    case find (\x -> view unitUUID x == uuid) uhdls of 
+      Nothing -> return ()
+      Just uhdl -> do 
+        let nuhdlsMap = IM.adjust (set (hoodleFileControl.lastSyncMD5) (Just (fileSyncStatusMd5 fstat)) ) (view unitKey uhdl) uhdlsMap
+        modify (set (unitHoodles._2) nuhdlsMap)
+    

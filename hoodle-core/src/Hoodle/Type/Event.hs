@@ -39,6 +39,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 #ifdef HUB
 import           Hoodle.Type.Hub
+import           Hoodle.Type.Synchronization
 #endif
 
 -- | 
@@ -97,6 +98,9 @@ data UserEvent = Initialized (Maybe FilePath)
                | GetHoodleFileInfoFromTab UUID (IORef (Maybe String))
                | GotLink (Maybe String) (Int,Int)
                | Sync UTCTime 
+#ifdef HUB
+               | SyncInfoUpdated UUID FileSyncStatus
+#endif
                | FileReloadOrdered
                | CustomKeyEvent String 
                | GotRevision String String

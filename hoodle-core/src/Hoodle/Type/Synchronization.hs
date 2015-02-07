@@ -69,11 +69,26 @@ data FileContent = FileContent { file_uuid :: Text
                  deriving Show
 
 instance ToJSON FileContent where
-    toJSON FileContent {..} = object [ "uuid"    .= toJSON file_uuid
-                                     , "path"    .= toJSON file_path
-                                     , "content" .= toJSON file_content 
-                                     , "rsync"   .= toJSON file_rsync
-                                     ]
+  toJSON FileContent {..} = object [ "uuid"    .= toJSON file_uuid
+                                   , "path"    .= toJSON file_path
+                                   , "content" .= toJSON file_content 
+                                   , "rsync"   .= toJSON file_rsync
+                                   ]
+
+instance FromJSON FileContent where
+  parseJSON (Object v) = 
+    let r = do
+          String uuid <- H.lookup "uuid" v
+          String path <- H.lookup "path" v
+          String content <- H.lookup "content" v
+          o <- H.lookup "rsync" v
+          return (uuid,path,content,o)
+    in case r of
+         Nothing -> fail "error in parsing FileContent"
+         Just (uuid,path,content,o) -> do
+           rsync <- parseJSON o
+           return (FileContent uuid path content rsync)
+  parseJSON _ = fail "error in parsing FileContent"
 
 data FileRsync = FileRsync { frsync_uuid :: Text 
                            , frsync_sig :: Text

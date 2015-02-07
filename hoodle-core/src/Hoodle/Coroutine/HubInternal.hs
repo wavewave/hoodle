@@ -38,7 +38,7 @@ import           Data.IORef
 import           Data.List (find)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T (Text,pack,unpack)
-import           Data.Text.Encoding (encodeUtf8,decodeUtf8)
+import qualified Data.Text.Encoding as TE (encodeUtf8,decodeUtf8)
 import           Data.UUID
 import           Data.UUID.V4
 import           Database.Persist (upsert, getBy, entityVal)
@@ -89,7 +89,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
-          let uuidtxt = decodeUtf8 (view hoodleID hdl)
+          let uuidtxt = TE.decodeUtf8 (view hoodleID hdl)
           flip runReaderT (manager,coojar) $ do
             mfstat <- sessionGetJSON (hubURL </> "sync" </> T.unpack uuidtxt)
             liftIO $ print (mfstat :: Maybe FileSyncStatus)
@@ -107,15 +107,16 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       return (UsrEv ActionOrdered)
 
 
-
+uploadAndUpdateSync :: (AllEvent -> IO ()) -> UUID -> HubInfo -> T.Text -> Hoodle 
+                    -> FilePath -> FilePath -> Maybe FilePath 
+                    -> ReaderT (Manager,CookieJar) (ResourceT IO) ()
 uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdl ofilepath filepath msqlfile = do
     mfrsync <- sessionGetJSON (hubURL hinfo </> "file" </> T.unpack uuidtxt) 
-    -- let  = AE.decode (responseBody response2) :: Maybe FileRsync
     let hdlbstr = (BL.toStrict . builder) hdl
     b64txt <- case mfrsync of 
-      Nothing -> (return . decodeUtf8 . B64.encode) hdlbstr
+      Nothing -> (return . TE.decodeUtf8 . B64.encode) hdlbstr
       Just frsync -> liftIO $ do
-        let rsyncbstr = (B64.decodeLenient . encodeUtf8 . frsync_sig) frsync
+        let rsyncbstr = (B64.decodeLenient . TE.encodeUtf8 . frsync_sig) frsync
         tdir <- getTemporaryDirectory
         uuid'' <- nextRandom
         let tsigfile = tdir </> show uuid'' <.> "sig"
@@ -125,7 +126,7 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdl ofilepath filepath msql
           ["delta", tsigfile, ofilepath, tdeltafile] ""
         deltabstr <- B.readFile tdeltafile 
         mapM_ removeFile [tsigfile,tdeltafile]
-        (return . decodeUtf8 . B64.encode) deltabstr
+        (return . TE.decodeUtf8 . B64.encode) deltabstr
     let filecontent = toJSON FileContent { file_uuid = uuidtxt
                                          , file_path = T.pack filepath
                                          , file_content = b64txt 
@@ -182,14 +183,41 @@ fileSyncFromHub unituuid fstat = do
       lift $ doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
           withHub hinfo tokfile $ \manager coojar -> do
-            req' <- lift $ parseUrl (hubURL hinfo </> "fileraw" </> T.unpack uuidtxt)
-            let req = req' { cookieJar = Just coojar }
-            res <- lift $ httpLbs req manager
-            let hdlbstr = responseBody res
+            sigtxt <- liftIO $ do 
+                        uuid' <- nextRandom
+                        tdir <- getTemporaryDirectory
+                        let sigfile = tdir </> show uuid' <.> "sig"
+                        readProcessWithExitCode "rdiff" ["signature", hdlfile, sigfile] ""
+                        bstr <- B.readFile sigfile
+                        return (TE.decodeUtf8 (B64.encode bstr))
+            let frsync = FileRsync uuidtxt sigtxt
+                frsyncjsonbstr = (encode . toJSON) frsync
+            req' <- lift $ parseUrl (hubURL hinfo </> "rsyncdown" </> T.unpack uuidtxt)
+            let req = req' { cookieJar = Just coojar 
+                           , requestBody = RequestBodyStreamChunked (streamContent frsyncjsonbstr)
+                           }
+            mfcont <- lift $ AE.decode . responseBody <$> httpLbs req manager
+            F.forM_ mfcont $ \fcont -> do
+              let filebstr = (B64.decodeLenient . TE.encodeUtf8 . file_content) fcont 
+              liftIO $ do 
+                uuid' <- nextRandom
+                tdir <- getTemporaryDirectory 
+                let deltafile = tdir </> show uuid' <.> "delta"
+                    newfile = tdir </> show uuid' <.> "hdlnew"
+                B.writeFile deltafile filebstr
+                readProcessWithExitCode "rdiff" ["patch", hdlfile, deltafile, newfile] ""
+                md5str <- show . md5 <$> BL.readFile newfile 
+                when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ do
+                  copyFile newfile hdlfile
+                  mapM_ removeFile [deltafile,newfile]
+                  (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
+          
+              -- liftIO $ print (mfcont :: Maybe FileContent)-- (BL.take 500 hdlbstr)
+{-
                 md5str = show (md5 hdlbstr)
             when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ liftIO $ do
               BL.writeFile hdlfile hdlbstr
-              (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered
+              (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered -}
         return (UsrEv ActionOrdered)
     return ()
             

@@ -82,6 +82,9 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
     hdir <- liftIO $ getHomeDirectory
     msqlfile <- view (settings.sqliteFileName) <$> get
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
+
+    {-
+    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
         client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
         permissionUrl = formUrl client ["email"]
     liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
@@ -92,7 +95,8 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
       mauthcode <- textInputDialog "Please paste the verification code: "
       F.forM_ mauthcode $ \authcode -> do
         tokens   <- liftIO $ exchangeCode client authcode
-        liftIO $ writeFile tokfile (show tokens)
+        liftIO $ writeFile tokfile (show tokens) -}
+    prepareToken hinfo tokfile
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
@@ -108,7 +112,7 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
                 Just e -> do 
                   let remotemd5saved = fileSyncStatusMd5 fstat
                   if lastsyncmd5 /= remotemd5saved 
-                    then liftIO $ evhandler (UsrEv FileReloadOrdered)
+                    then liftIO $ evhandler (UsrEv (FileSyncFromHub uhdluuid fstat))
                     else uploading
                 Nothing -> uploading
       return (UsrEv ActionOrdered)
@@ -171,3 +175,7 @@ updateSyncInfo uuid fstat = do
         let nuhdlsMap = IM.adjust (set (hoodleFileControl.lastSyncMD5) (Just (fileSyncStatusMd5 fstat)) ) (view unitKey uhdl) uhdlsMap
         modify (set (unitHoodles._2) nuhdlsMap)
     
+fileSyncFromHub :: UUID -> FileSyncStatus -> MainCoroutine ()
+fileSyncFromHub uuid fstat = do
+    liftIO $ putStrLn "fileSyncFromHub called"
+

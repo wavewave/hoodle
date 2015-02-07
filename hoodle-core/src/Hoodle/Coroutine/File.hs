@@ -346,7 +346,6 @@ fileSaveAs = do
                 xst <- get
                 let ui = view gtkUIManager xst
                     hdl'' = (rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit)) xst
-                -- liftIO $ toggleSave ui False
                 liftIO $ reflectUIToggle ui "SAVEA" False
                 liftIO $ setTitleFromFileName xst
                 S.afterSaveHook filename hdl''
@@ -395,7 +394,6 @@ fileAnnotatePDF =
         commit_        
         setTitleFromFileName_ 
         canvasZoomUpdateAll
-        -- invalidateAll  
       
 
 -- | set frame title according to file name

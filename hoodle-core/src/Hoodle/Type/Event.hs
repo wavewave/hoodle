@@ -98,9 +98,6 @@ data UserEvent = Initialized (Maybe FilePath)
                | GetHoodleFileInfoFromTab UUID (IORef (Maybe String))
                | GotLink (Maybe String) (Int,Int)
                | Sync UTCTime 
-#ifdef HUB
-               | SyncInfoUpdated UUID FileSyncStatus
-#endif
                | FileReloadOrdered
                | CustomKeyEvent String 
                | GotRevision String String
@@ -120,6 +117,8 @@ data UserEvent = Initialized (Maybe FilePath)
                | DBusEv DBusEvent
                | NetworkProcess NetworkEvent
                | DisconnectedHub FilePath (FilePath,FilePath) HubInfo
+               | SyncInfoUpdated UUID FileSyncStatus
+               | FileSyncFromHub UUID FileSyncStatus
 #endif
                deriving Show
                       

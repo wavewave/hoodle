@@ -23,12 +23,14 @@ import qualified Control.Exception as E
 import           Control.Lens (view,set,_2)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
+import           Control.Monad.Trans.Maybe
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.Resource
 import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
+import           Data.Digest.Pure.MD5 (md5)
 import qualified Data.Foldable as F
 import qualified Data.HashMap.Strict as H
 import qualified Data.IntMap as IM
@@ -65,6 +67,7 @@ import           Text.Hoodle.Builder (builder)
 --
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Hub.Common
+import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Event
 import           Hoodle.Type.Hub
@@ -82,20 +85,6 @@ uploadWork (ofilepath,filepath) hinfo@(HubInfo {..}) = do
     hdir <- liftIO $ getHomeDirectory
     msqlfile <- view (settings.sqliteFileName) <$> get
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-
-    {-
-    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-        client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
-        permissionUrl = formUrl client ["email"]
-    liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
-      case os of
-        "linux"  -> liftIO $ rawSystem "chromium" [permissionUrl]
-        "darwin" -> liftIO $ rawSystem "open"       [permissionUrl]
-        _        -> return ExitSuccess
-      mauthcode <- textInputDialog "Please paste the verification code: "
-      F.forM_ mauthcode $ \authcode -> do
-        tokens   <- liftIO $ exchangeCode client authcode
-        liftIO $ writeFile tokfile (show tokens) -}
     prepareToken hinfo tokfile
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (ofilepath,filepath) hinfo) >> return ())) $ 
@@ -150,7 +139,6 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdl ofilepath filepath msql
     _response3 <- lift $ httpLbs request3 manager
     mfstat2 :: Maybe FileSyncStatus 
       <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
-    -- liftIO $ print (mfstat2 :: Maybe FileSyncStatus)
     F.forM_ ((,) <$> msqlfile <*> mfstat2) $ \(sqlfile,fstat2) -> do 
       runSqlite (T.pack sqlfile) $ upsert fstat2 []
       liftIO $ evhandler (UsrEv (SyncInfoUpdated uhdluuid fstat2))
@@ -176,6 +164,33 @@ updateSyncInfo uuid fstat = do
         modify (set (unitHoodles._2) nuhdlsMap)
     
 fileSyncFromHub :: UUID -> FileSyncStatus -> MainCoroutine ()
-fileSyncFromHub uuid fstat = do
+fileSyncFromHub unituuid fstat = do
     liftIO $ putStrLn "fileSyncFromHub called"
+    uhdlsMap <-  snd . view unitHoodles <$> get
+    let uhdls = IM.elems uhdlsMap
+
+    hdir <- liftIO $ getHomeDirectory
+    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
+        uuidtxt = fileSyncStatusUuid fstat
+    xst <- get
+    runMaybeT $ do
+      uhdl <- (MaybeT . return . find (\x -> view unitUUID x == unituuid)) uhdls 
+      hdlfile <- (MaybeT . return . view (hoodleFileControl.hoodleFileName)) uhdl
+      hset <- (MaybeT . return . view hookSet) xst
+      hinfo <- (MaybeT . return) (hubInfo hset)
+      lift $ prepareToken hinfo tokfile
+      lift $ doIOaction $ \evhandler -> do 
+        forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
+          withHub hinfo tokfile $ \manager coojar -> do
+            req' <- lift $ parseUrl (hubURL hinfo </> "fileraw" </> T.unpack uuidtxt)
+            let req = req' { cookieJar = Just coojar }
+            res <- lift $ httpLbs req manager
+            let hdlbstr = responseBody res
+                md5str = show (md5 hdlbstr)
+            when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ liftIO $ do
+              BL.writeFile hdlfile hdlbstr
+              (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered
+        return (UsrEv ActionOrdered)
+    return ()
+            
 

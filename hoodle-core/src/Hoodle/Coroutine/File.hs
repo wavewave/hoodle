@@ -31,10 +31,11 @@ import           Data.Digest.Pure.MD5 (md5)
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.List as List 
 import           Data.Maybe
+import qualified Data.Text.Encoding as TE
 import           Data.Time.Clock
 import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk as Gtk -- hiding (get,set)
+import qualified Graphics.UI.Gtk as Gtk 
 import           System.Directory
 import           System.FilePath
 import qualified System.FSNotify as FS
@@ -86,6 +87,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 #ifdef HUB
 import           Hoodle.Coroutine.Hub
+import           Hoodle.Coroutine.Hub.Common
 #endif
 --
 import Prelude hiding (readFile,concat,mapM,mapM_)
@@ -124,8 +126,22 @@ getFileContent (Just fname) = do
           Right h -> do 
             constructNewHoodleStateFromHoodle h
             ctime <- liftIO $ getCurrentTime
+#ifdef HUB
+            msqlfile <- view (settings.sqliteFileName) <$> get
+#endif    
+
+#ifdef HUB
+            mmd5 <- case msqlfile of
+              Nothing -> return Nothing
+              Just sqlfile -> (liftIO . getLastSyncMD5 sqlfile . TE.decodeUtf8 . view hoodleID) h
+#else 
+            let mmd5 = Nothing 
+#endif    
+
             pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ Just fname)
-                           . (hoodleFileControl.lastSavedTime  .~ Just ctime) )
+                           . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
+                           . (hoodleFileControl.lastSyncMD5 .~ mmd5) 
+                           )
             commit_
       ".xoj" -> do 
           liftIO (XP.parseXojFile fname) >>= \x -> case x of  
@@ -267,7 +283,6 @@ fileLoad filename = do
       return . (currentCanvasInfo .~ ncvsinfo) . (isSaved .~ True) $ uhdl
     xst <- get 
     let ui = view gtkUIManager xst
-    -- liftIO $ toggleSave ui False
     liftIO $ reflectUIToggle ui "SAVEA" False
     liftIO $ setTitleFromFileName xst
     clearUndoHistory 

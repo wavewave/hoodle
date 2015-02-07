@@ -41,10 +41,6 @@ FileSyncStatus
     deriving Show
 |]
 
--- data FileSyncStatus = FileSyncStatus { fileSyncStatusUuid :: Text
---                                    , fileSyncStatusMd5 :: Text
---                                      , fileSyncStatusTime :: UTCTime }
---                    deriving Show 
 
 instance ToJSON FileSyncStatus where
   toJSON FileSyncStatus {..} = object [ "uuid" .= toJSON fileSyncStatusUuid 

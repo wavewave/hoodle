@@ -183,6 +183,7 @@ Library
                    Hoodle.Widget.Scroll
   if flag(hub)
     Exposed-Modules: Hoodle.Coroutine.Hub
+                     Hoodle.Coroutine.Hub.Common
                      Hoodle.Coroutine.HubInternal
                      Hoodle.Coroutine.Network
                      Hoodle.Coroutine.Socket

@@ -49,7 +49,8 @@ import System.Info (os)
 import System.Process (rawSystem)
 --
 import Hoodle.Coroutine.Dialog
-import Hoodle.Coroutine.HubInternal
+-- import Hoodle.Coroutine.HubInternal
+import Hoodle.Coroutine.Hub.Common
 import Hoodle.Script.Hook
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Event

@@ -62,6 +62,7 @@ module Hoodle.Type.HoodleState
 -- 
 , hoodleFileName 
 , lastSavedTime
+, lastSyncMD5
 --
 , doesUseXInput 
 , doesUseTouch
@@ -119,6 +120,7 @@ import           Data.Functor.Identity (Identity(..))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
 import           Data.Sequence 
+import qualified Data.Text as T
 import           Data.Time.Clock
 import           Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
@@ -367,6 +369,7 @@ cursorInfo = lens _cursorInfo (\f a -> f { _cursorInfo = a })
 data HoodleFileControl = 
   HoodleFileControl { _hoodleFileName :: Maybe FilePath 
                     , _lastSavedTime  :: Maybe UTCTime 
+                    , _lastSyncMD5 :: Maybe T.Text
                     } 
 
 -- | lens for currFileName
@@ -376,6 +379,11 @@ hoodleFileName = lens _hoodleFileName (\f a -> f { _hoodleFileName = a } )
 -- | lens for last saved time
 lastSavedTime :: Simple Lens HoodleFileControl (Maybe UTCTime) 
 lastSavedTime = lens _lastSavedTime (\f a -> f { _lastSavedTime = a } )
+
+
+-- | lens for last saved time
+lastSyncMD5 :: Simple Lens HoodleFileControl (Maybe T.Text) 
+lastSyncMD5 = lens _lastSyncMD5 (\f a -> f { _lastSyncMD5 = a } )
 
 
 
@@ -538,6 +546,7 @@ emptyHoodleFileControl :: HoodleFileControl
 emptyHoodleFileControl = 
   HoodleFileControl { _hoodleFileName = Nothing 
                     , _lastSavedTime = Nothing 
+                    , _lastSyncMD5 = Nothing
                     } 
 
 

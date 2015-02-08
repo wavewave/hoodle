@@ -43,7 +43,6 @@ import           System.IO (hClose, hFileSize, openFile, IOMode(..))
 import           System.Process 
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
--- import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
 import           Data.Hoodle.Select
@@ -69,7 +68,6 @@ import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput
--- import           Hoodle.Coroutine.Window
 import           Hoodle.GUI.Reflect
 import           Hoodle.ModelAction.File
 import           Hoodle.ModelAction.Layer 
@@ -88,6 +86,8 @@ import           Hoodle.Util
 #ifdef HUB
 import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.Hub.Common
+import           Hoodle.Coroutine.HubInternal
+import           Hoodle.Type.Synchronization
 #endif
 --
 import Prelude hiding (readFile,concat,mapM,mapM_)
@@ -116,6 +116,7 @@ askIfOverwrite fp action = do
 getFileContent :: Maybe FilePath -> MainCoroutine ()
 getFileContent (Just fname) = do 
     xstate <- get
+    let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
     let ext = takeExtension fname
     case ext of 
       ".hdl" -> do 
@@ -131,9 +132,14 @@ getFileContent (Just fname) = do
 #endif    
 
 #ifdef HUB
-            mmd5 <- case msqlfile of
+            let fileuuidbstr = view hoodleID h
+                fileuuidtxt = TE.decodeUtf8 fileuuidbstr
+            mfstat <- case msqlfile of
               Nothing -> return Nothing
-              Just sqlfile -> (liftIO . getLastSyncMD5 sqlfile . TE.decodeUtf8 . view hoodleID) h
+              Just sqlfile -> liftIO (getLastSyncStatus sqlfile fileuuidtxt)
+            mfstat' <- maybe (registerFile uhdluuid (fname,h) >> return Nothing) 
+                         syncFile mfstat 
+            let mmd5 = fileSyncStatusMd5 <$> mfstat'
 #else 
             let mmd5 = Nothing 
 #endif    

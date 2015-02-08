@@ -130,8 +130,8 @@ sessionGetJSON url = do
     res <- lift $ httpLbs req manager
     return (AE.decode (responseBody res))
 
-getLastSyncMD5 :: FilePath -> T.Text -> IO (Maybe T.Text)
-getLastSyncMD5 fp uuidtxt = do
-    me <- runSqlite (T.pack fp) $ getBy (UniqueFileSyncStatusUUID uuidtxt)
-    return (fmap (fileSyncStatusMd5.entityVal) me)
+getLastSyncStatus :: FilePath -> T.Text -> IO (Maybe FileSyncStatus)
+getLastSyncStatus fp uuidtxt = 
+    fmap entityVal <$> runSqlite (T.pack fp) (getBy (UniqueFileSyncStatusUUID uuidtxt))
+
  

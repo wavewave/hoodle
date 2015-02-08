@@ -136,13 +136,7 @@ getGeometry4CurrCvs uhdl = do
   forBoth' unboxBiAct fsingle cinfobox
 
 
--- -- | 
--- waitOnlyEvent :: (UserEvent -> Bool) -> MainCoroutine UserEvent 
--- waitOnlyEvent p = do 
---     r <- nextevent
---     if  p r then return r else waitOnlyEvent p  
-
-  
+ 
 
 -- | set toggle UI button to the corresponding HoodleState 
 lensSetToggleUIForFlag :: String 

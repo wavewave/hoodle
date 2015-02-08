@@ -39,6 +39,7 @@ FileSyncStatus
     UniqueFileSyncStatusUUID uuid
     deriving Typeable
     deriving Show
+    deriving Eq
 |]
 
 

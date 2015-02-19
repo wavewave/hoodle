@@ -56,6 +56,7 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
@@ -85,7 +86,7 @@ openLinkAction urlpath mid = do
         mk <- liftIO . checkPreviouslyOpenedFile fp =<< get
         case mk of 
           Just k -> switchTab k >> forM_ mid (uncurry goToAnchorPos)
-          Nothing -> addTab (Just fp) >> forM_ mid (uncurry goToAnchorPos)
+          Nothing -> addTab (LocalDir (Just fp)) >> forM_ mid (uncurry goToAnchorPos)
       HttpUrl url -> liftIO $ createProcess (proc "xdg-open" [url]) >> return () 
 
 -- |
@@ -96,7 +97,7 @@ checkPreviouslyOpenedFile fp xst = do
     case lst of
       x:_ -> return (Just (fst x))
       _ -> return Nothing
-  where checker cfp uhdl = (uhdl ^. hoodleFileControl.hoodleFileName) # 
+  where checker cfp uhdl = getHoodleFilePath uhdl # 
                              maybe (return False) $ \fp' -> do cfp' <- canonicalizePath fp' 
                                                                return (cfp == cfp') 
 

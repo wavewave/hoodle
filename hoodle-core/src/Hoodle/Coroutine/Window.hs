@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Window 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -30,6 +30,7 @@ import           Data.Hoodle.Simple (Dimension(..))
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
+import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.GUI.Reflect
@@ -155,8 +156,8 @@ fullScreen = do
       else liftIO (Gtk.windowFullscreen rwin) >> modify (over isFullScreen (const True))
 
 -- |
-addTab :: Maybe FilePath -> MainCoroutine ()
-addTab mfp = do
+addTab :: FileStore -> MainCoroutine ()
+addTab filestore = do
     xst <- get
     let notebook = xst ^. rootNotebook
         callback = xst ^. callBack
@@ -167,12 +168,13 @@ addTab mfp = do
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
+        mfp = fileStore2Maybe filestore
     uhdl' <- (undoTable .~ emptyUndo 50)   -- (undo = 50 for the time being) 
              . (frameState .~ wconf) 
              . updateFromCanvasInfoAsCurrentCanvas initcvsbox
              . (cvsInfoMap .~ M.empty)
-             . (isSaved .~ maybe False (const True) mfp)
-             . (hoodleFileControl.hoodleFileName .~ mfp) 
+             . (isSaved .~ True)
+             . (hoodleFileControl.hoodleFileName .~ filestore) 
              . (unitKey .~ tabnum) 
              . (unitUUID .~ uuid) 
              . (unitButton .~ btn)
@@ -187,7 +189,7 @@ addTab mfp = do
     doIOaction_ $ 
       blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $
         Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
-    getFileContent mfp
+    getFileContent filestore
     updateUhdl $ \uhdl -> do
       liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       unboxBiAct (sing2ContPage uhdl) (const (return uhdl)) . view currentCanvasInfo $ uhdl

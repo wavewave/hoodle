@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Window 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -40,6 +40,7 @@ import           System.FilePath
 import           Hoodle.Device
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
+import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Window
 import           Hoodle.Type.HoodleState
 import           Hoodle.Util
@@ -80,10 +81,12 @@ getDBUSEvent callback tvar = do
 setTitleFromFileName :: HoodleState -> IO () 
 setTitleFromFileName xstate = do 
   case view (unitHoodles.currentUnit.hoodleFileControl.hoodleFileName) xstate of
-    Nothing -> Gtk.set (view rootOfRootWindow xstate) 
-                       [ Gtk.windowTitle Gtk.:= ("untitled" :: String) ]
-    Just filename -> Gtk.set (view rootOfRootWindow xstate) 
-                             [ Gtk.windowTitle Gtk.:= takeFileName filename] 
+    LocalDir Nothing         -> Gtk.set (view rootOfRootWindow xstate) 
+                                  [ Gtk.windowTitle Gtk.:= ("untitled" :: String) ]
+    LocalDir (Just filename) -> Gtk.set (view rootOfRootWindow xstate) 
+                                  [ Gtk.windowTitle Gtk.:= takeFileName filename] 
+    TempDir  filename       -> Gtk.set (view rootOfRootWindow xstate) 
+                                  [ Gtk.windowTitle Gtk.:= ("shared document" :: String)]
 
 -- | 
 newCanvasId :: CanvasInfoMap -> CanvasId 

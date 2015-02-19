@@ -84,7 +84,7 @@ menuEventProcess MenuNewPageBefore = newPage Nothing PageBefore
 menuEventProcess MenuNewPageAfter = newPage Nothing PageAfter
 menuEventProcess MenuDeletePage = deleteCurrentPage
 menuEventProcess MenuExportPageSVG = exportCurrentPageAsSVG 
-menuEventProcess MenuNew  = addTab Nothing -- askIfSave fileNew 
+menuEventProcess MenuNew  = addTab (LocalDir Nothing) -- askIfSave fileNew 
 menuEventProcess MenuAnnotatePDF = askIfSave fileAnnotatePDF
 menuEventProcess MenuLoadPNGorJPG = fileLoadPNGorJPG
 menuEventProcess MenuLoadSVG = fileLoadSVG
@@ -105,7 +105,7 @@ menuEventProcess MenuSave = fileSave
 menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuReload = fileReload 
 menuEventProcess MenuExport = fileExport 
-menuEventProcess MenuStartSync = fileStartSync
+-- menuEventProcess MenuStartSync = fileStartSync
 menuEventProcess MenuVersionSave = fileVersionSave 
 menuEventProcess MenuShowRevisions = fileShowRevisions
 menuEventProcess MenuShowUUID = fileShowUUID
@@ -182,7 +182,7 @@ menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles.current
 menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.currentUnit.currentCanvas._1) =<< get
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
-menuEventProcess MenuAddTab = addTab Nothing
+menuEventProcess MenuAddTab = addTab (LocalDir Nothing)
 -- menuEventProcess MenuNextTab = nextTab
 menuEventProcess MenuCloseTab = closeTab
 #ifdef HUB

@@ -44,10 +44,17 @@ hubUpload = do
                      hset <- (MaybeT . return) $ view hookSet xst
                      hinfo <- (MaybeT . return) (hubInfo hset)
                      let hdir = hubfileroot hinfo
-                     fp <- (MaybeT . return) (view (hoodleFileControl.hoodleFileName) uhdl)
-                     canfp <- liftIO $ canonicalizePath fp
-                     let relfp = makeRelative hdir canfp
-                     lift (uploadWork (canfp,relfp) hinfo)
+                     (canfp,mhdlfp) <- 
+                          case view (hoodleFileControl.hoodleFileName) uhdl of
+                             LocalDir Nothing -> MaybeT (return Nothing)
+                             LocalDir (Just fp) -> do 
+                               canfp <- liftIO $ canonicalizePath fp
+                               let relfp = makeRelative hdir canfp
+                               MaybeT . return . Just $ (canfp,Just relfp)
+                             TempDir fp -> do 
+                               canfp <- liftIO $ canonicalizePath fp
+                               MaybeT . return . Just $ (canfp,Nothing)
+                     lift (uploadWork (canfp,mhdlfp) hinfo)
               case r of 
                 Nothing -> okMessageBox "upload not successful" >> return ()
                 Just _ -> return ()  

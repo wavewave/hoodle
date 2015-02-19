@@ -113,8 +113,8 @@ askIfOverwrite fp action = do
 
 
 -- | get file content from xournal file and update xournal state 
-getFileContent :: Maybe FilePath -> MainCoroutine ()
-getFileContent (Just fname) = do 
+getFileContent :: FileStore -> MainCoroutine ()
+getFileContent store@(LocalDir (Just fname)) = do 
     xstate <- get
     let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
     let ext = takeExtension fname
@@ -149,7 +149,7 @@ getFileContent (Just fname) = do
             liftIO $ print mfstat
             liftIO $ print mfstat'
             liftIO $ print mmd5
-            pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ Just fname)
+            pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
                            . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
                            . (hoodleFileControl.syncMD5History .~ maybeToList mmd5) 
                            )
@@ -161,24 +161,24 @@ getFileContent (Just fname) = do
               hdlcontent <- liftIO $ mkHoodleFromXournal xojcontent 
               constructNewHoodleStateFromHoodle hdlcontent
               ctime <- liftIO $ getCurrentTime 
-              pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ Just fname)
+              pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ LocalDir Nothing)
                              . (hoodleFileControl.lastSavedTime  .~ Just ctime) )
               commit_
       ".pdf" -> do 
         let doesembed = view (settings.doesEmbedPDF) xstate
         mhdl <- liftIO $ makeNewHoodleWithPDF doesembed fname 
         case mhdl of 
-          Nothing -> getFileContent Nothing
+          Nothing -> getFileContent (LocalDir Nothing)
           Just hdl -> do 
             constructNewHoodleStateFromHoodle hdl
-            pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing)
+            pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing)
             commit_
-      _ -> getFileContent Nothing    
+      _ -> getFileContent (LocalDir Nothing)
     xstate' <- get
     doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
-getFileContent Nothing = do
+getFileContent (LocalDir Nothing) = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
-    pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing) 
+    pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing) 
     commit_ 
 
 -- |
@@ -191,7 +191,7 @@ constructNewHoodleStateFromHoodle hdl' = do
 -- | deprecated
 fileNew :: MainCoroutine () 
 fileNew = do 
-    getFileContent Nothing
+    getFileContent (LocalDir Nothing)
     updateUhdl $ \uhdl -> do
       ncvsinfo <- liftIO $ setPage uhdl 0 (getCurrentCanvasId uhdl)
       return $ (currentCanvasInfo .~ ncvsinfo) uhdl
@@ -204,7 +204,7 @@ fileNew = do
 fileSave :: MainCoroutine ()
 fileSave = do 
     uhdl <- view (unitHoodles.currentUnit) <$> get
-    case view (hoodleFileControl.hoodleFileName) uhdl of
+    case getHoodleFilePath uhdl of
       Nothing -> fileSaveAs 
       Just filename -> do     
         -- this is rather temporary not to make mistake 
@@ -235,6 +235,7 @@ fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ())
           hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
           liftIO (renderHoodleToPDF hdl filename) 
 
+{-
 -- | 
 fileStartSync :: MainCoroutine ()
 fileStartSync = do 
@@ -268,6 +269,8 @@ fileStartSync = do
                 let sec = 1000000
                 forever (threadDelay (100 * sec))
             return (UsrEv ActionOrdered)
+-}
+
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()
@@ -286,9 +289,9 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
          cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox cpg,Nothing :: Maybe Xform4Page) >> return ()
 
 -- | 
-fileLoad :: FilePath -> MainCoroutine () 
-fileLoad filename = do
-    getFileContent (Just filename)
+fileLoad :: FileStore -> MainCoroutine () 
+fileLoad filestore = do
+    getFileContent filestore
     updateUhdl $ \uhdl -> do 
       ncvsinfo <- liftIO $ setPage uhdl 0 (getCurrentCanvasId uhdl)
       return . (currentCanvasInfo .~ ncvsinfo) . (isSaved .~ True) $ uhdl
@@ -316,7 +319,7 @@ resetHoodleBuffers = do
 fileOpen :: MainCoroutine ()
 fileOpen = do 
     mfilename <- fileChooser Gtk.FileChooserActionOpen Nothing
-    forM_ mfilename fileLoad 
+    forM_ mfilename (fileLoad . LocalDir . Just)
 
 -- | main coroutine for save as 
 fileSaveAs :: MainCoroutine () 
@@ -350,7 +353,7 @@ fileSaveAs = do
                                     , set title ntitle hd)  
                                else (SelectState thdl,hd)
                     liftIO . L.writeFile filename . builder $ hdl'
-                    return . (hoodleFileControl.hoodleFileName .~ Just filename)
+                    return . (hoodleFileControl.hoodleFileName .~ LocalDir (Just filename))
                            . (hoodleModeState .~ hdlmodst') 
                            . (isSaved .~ True)
                            $ uhdl
@@ -368,16 +371,12 @@ fileSaveAs = do
 fileReload :: MainCoroutine ()
 fileReload = do
     uhdl <- view (unitHoodles.currentUnit) <$> get
-    case view (hoodleFileControl.hoodleFileName) uhdl of 
-      Nothing -> return ()
-      Just filename -> do
-        if not (view isSaved uhdl) 
-          then do
-            b <- okCancelMessageBox "Discard changes and reload the file?" 
-            case b of 
-              True -> fileLoad filename 
-              False -> return ()
-          else fileLoad filename
+    let filestore = view (hoodleFileControl.hoodleFileName) uhdl
+    if not (view isSaved uhdl) 
+      then do
+        b <- okCancelMessageBox "Discard changes and reload the file?" 
+        when b (fileLoad filestore)
+      else fileLoad filestore
 
 -- | 
 fileExtensionInvalid :: (String,String) -> MainCoroutine ()
@@ -401,7 +400,7 @@ fileAnnotatePDF =
       mhdl <- liftIO $ makeNewHoodleWithPDF doesembed filename 
       flip (maybe warning) mhdl $ \hdl -> do 
         constructNewHoodleStateFromHoodle hdl
-        pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ Nothing)
+        pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing)
         commit_        
         setTitleFromFileName_ 
         canvasZoomUpdateAll

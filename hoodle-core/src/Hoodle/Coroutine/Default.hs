@@ -127,10 +127,11 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
   notebook <- Gtk.notebookNew
   statusbar <- Gtk.statusbarNew
   let st4 = (unitHoodles.currentUnit .~ uhdl4) st2
-      st5 = st4 # over (unitHoodles.currentUnit) ( set undoTable (emptyUndo maxundo)  
-                                                 . set frameState wconf' 
-                                                 . set rootWindow cvs 
-                                                 . set (hoodleFileControl.hoodleFileName) Nothing)
+      st5 = st4 # over (unitHoodles.currentUnit) 
+                       ( set undoTable (emptyUndo maxundo)  
+                       . set frameState wconf' 
+                       . set rootWindow cvs 
+                       . set (hoodleFileControl.hoodleFileName) (LocalDir Nothing))
                 . set (settings.doesUseXInput) xinputbool 
                 . set (settings.doesUseVariableCursor) varcsr
                 . set hookSet mhook 
@@ -176,7 +177,7 @@ initialize cvs isInitialized ev = do
 	      forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
 	      return (UsrEv ActionOrdered)
 	    waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
-	    getFileContent mfname
+	    getFileContent (LocalDir mfname)
 	    -- 
 	    xst2 <- get
 	    let uhdl = view (unitHoodles.currentUnit) xst2
@@ -369,7 +370,7 @@ defaultEventProcess (GetHoodleFileInfo ref) = do
   uhdl <- view (unitHoodles.currentUnit) <$> get
   let hdl = getHoodle uhdl
       uuid = B.unpack (view ghoodleID hdl)
-  case view (hoodleFileControl.hoodleFileName) uhdl of 
+  case getHoodleFilePath uhdl of 
     Nothing -> liftIO $ writeIORef ref Nothing
     Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GetHoodleFileInfoFromTab uuidtab ref) = do 
@@ -380,7 +381,7 @@ defaultEventProcess (GetHoodleFileInfoFromTab uuidtab ref) = do
     Just uhdl -> do 
       let hdl = getHoodle uhdl
           uuid = B.unpack (view ghoodleID hdl)
-      case view (hoodleFileControl.hoodleFileName) uhdl of 
+      case getHoodleFilePath uhdl of 
         Nothing -> liftIO $ writeIORef ref Nothing
         Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    

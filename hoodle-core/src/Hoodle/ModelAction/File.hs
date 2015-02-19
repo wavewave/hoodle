@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.File 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -198,11 +198,14 @@ saveHoodle :: UnitHoodle -> IO UnitHoodle
 saveHoodle uhdl = do 
     let hdl = (rHoodle2Hoodle . getHoodle) uhdl 
     case view (hoodleFileControl.hoodleFileName) uhdl of 
-      Nothing -> return uhdl 
-      Just filename -> do 
-        L.writeFile filename . builder $ hdl
-        ctime <- getCurrentTime 
-        return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ uhdl)
+      LocalDir Nothing -> return uhdl 
+      LocalDir (Just filename) -> action hdl filename 
+      TempDir filename -> action hdl filename 
+  where 
+    action hdl filename = do 
+      L.writeFile filename . builder $ hdl
+      ctime <- getCurrentTime 
+      return (set isSaved True . set (hoodleFileControl.lastSavedTime) (Just ctime) $ uhdl)
 
 -- | 
 makeNewItemImage :: Bool  -- ^ isEmbedded?

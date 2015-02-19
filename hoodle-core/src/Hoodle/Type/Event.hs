@@ -116,7 +116,7 @@ data UserEvent = Initialized (Maybe FilePath)
 #ifdef HUB
                | DBusEv DBusEvent
                | NetworkProcess NetworkEvent
-               | DisconnectedHub FilePath (FilePath,FilePath) HubInfo
+               | DisconnectedHub FilePath (FilePath,Maybe FilePath) HubInfo
                | SyncInfoUpdated UUID FileSyncStatus
                | FileSyncFromHub UUID FileSyncStatus
                | GotSyncEvent UUID UUID

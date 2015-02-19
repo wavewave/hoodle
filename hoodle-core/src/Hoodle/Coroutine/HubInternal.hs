@@ -80,8 +80,8 @@ import           Hoodle.Type.Synchronization
 --
 
          
-uploadWork :: (FilePath,FilePath) -> HubInfo -> MainCoroutine ()
-uploadWork (canfp,relfp) hinfo@(HubInfo {..}) = do
+uploadWork :: (FilePath,Maybe FilePath) -> HubInfo -> MainCoroutine ()
+uploadWork (canfp,mhdlfp) hinfo@(HubInfo {..}) = do
     uhdl0 <- view (unitHoodles.currentUnit) <$> get
     let hdl = (rHoodle2Hoodle . getHoodle) uhdl0
         hdllbstr = builder hdl
@@ -97,14 +97,14 @@ uploadWork (canfp,relfp) hinfo@(HubInfo {..}) = do
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
     prepareToken hinfo tokfile
     doIOaction $ \evhandler -> do 
-      forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (canfp,relfp) hinfo) >> return ())) $ 
+      forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> (Gtk.postGUIAsync . evhandler . UsrEv) (DisconnectedHub tokfile (canfp,mhdlfp) hinfo) >> return ())) $ 
         withHub hinfo tokfile $ \manager coojar -> do
           let uuidtxt = TE.decodeUtf8 (view hoodleID hdl)
           flip runReaderT (manager,coojar) $ do
             mfstat <- sessionGetJSON (hubURL </> "sync" </> T.unpack uuidtxt)
             liftIO $ print (mfstat :: Maybe FileSyncStatus)
             liftIO $ print synchist
-            let uploading = uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,relfp) msqlfile
+            let uploading = uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msqlfile
             flip (maybe uploading) ((,) <$> msqlfile <*> mfstat) $ 
               \(sqlfile,fstat) -> do
                 me <- runSqlite (T.pack sqlfile) $ getBy (UniqueFileSyncStatusUUID (fileSyncStatusUuid fstat))
@@ -120,10 +120,10 @@ uploadWork (canfp,relfp) hinfo@(HubInfo {..}) = do
       return (UsrEv ActionOrdered)
 
 
-uploadAndUpdateSync :: (AllEvent -> IO ()) -> UUID -> HubInfo -> T.Text -> B.ByteString -- Hoodle 
-                    -> (FilePath,FilePath) -> Maybe FilePath 
+uploadAndUpdateSync :: (AllEvent -> IO ()) -> UUID -> HubInfo -> T.Text -> B.ByteString  
+                    -> (FilePath,Maybe FilePath) -> Maybe FilePath 
                     -> ReaderT (Manager,CookieJar) (ResourceT IO) ()
-uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,relfp) msqlfile = do
+uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msqlfile = do
     mfrsync <- sessionGetJSON (hubURL hinfo </> "file" </> T.unpack uuidtxt) 
     b64txt <- case mfrsync of 
       Nothing -> (return . TE.decodeUtf8 . B64.encode) hdlbstr
@@ -140,7 +140,7 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,relfp) msqlf
         mapM_ removeFile [tsigfile,tdeltafile]
         (return . TE.decodeUtf8 . B64.encode) deltabstr
     let filecontent = toJSON FileContent { file_uuid = uuidtxt
-                                         , file_path = T.pack relfp
+                                         , file_path = T.pack <$> mhdlfp 
                                          , file_content = b64txt 
                                          , file_rsync = mfrsync 
                                          , client_uuid = T.pack (show uhdluuid)
@@ -190,18 +190,25 @@ fileSyncFromHub unituuid fstat = do
     runMaybeT $ do
       uhdl <- (MaybeT . return . find (\x -> view unitUUID x == unituuid)) uhdls 
       -- guard (not (fileSyncStatusMd5 fstat `elem` view (hoodleFileControl.syncMD5History) uhdl))
-      hdlfile <- (MaybeT . return . view (hoodleFileControl.hoodleFileName)) uhdl
-
+      hdlfp <- MaybeT . return $ getHoodleFilePath uhdl  
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
       lift $ prepareToken hinfo tokfile
       lift $ doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
           withHub hinfo tokfile $ \manager coojar -> do
-            runReaderT (rsyncPatchWork evhandler hinfo hdlfile fstat) (manager,coojar)
+            runReaderT (rsyncPatchWork evhandler hinfo hdlfp fstat) (manager,coojar)
         return (UsrEv ActionOrdered)
     return ()
 
+
+getHoodleFilePath :: UnitHoodle -> Maybe FilePath 
+getHoodleFilePath = fileStore2Maybe . view (hoodleFileControl.hoodleFileName) 
+
+fileStore2Maybe :: FileStore -> Maybe FilePath 
+fileStore2Maybe (LocalDir Nothing)         = Nothing
+fileStore2Maybe (LocalDir (Just filename)) = Just filename
+fileStore2Maybe (TempDir filename)         = Just filename
 
 rsyncPatchWork :: (AllEvent -> IO ()) -> HubInfo -> FilePath -> FileSyncStatus -> ReaderT (Manager,CookieJar) (ResourceT IO) ()
 rsyncPatchWork evhandler hinfo hdlfile fstat = do 
@@ -254,8 +261,7 @@ gotSyncEvent fileuuid uhdluuid = do
         mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
         runMaybeT $ do
           uhdl <- (MaybeT . return .  find (\x -> B.unpack (view ghoodleID (getHoodle x)) == show fileuuid)) uhdls 
-          hdlfile <- (MaybeT . return . view (hoodleFileControl.hoodleFileName)) uhdl
-
+          hdlfp <- MaybeT . return $ getHoodleFilePath uhdl  
           hset <- (MaybeT . return . view hookSet) xst
           hinfo <- (MaybeT . return) (hubInfo hset)
           lift $ prepareToken hinfo tokfile 
@@ -266,7 +272,7 @@ gotSyncEvent fileuuid uhdluuid = do
                   mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
                   liftIO $ print mfstat
                   F.forM_ mfstat $ \fstat -> do 
-                    rsyncPatchWork evhandler hinfo hdlfile fstat
+                    rsyncPatchWork evhandler hinfo hdlfp fstat
             return (UsrEv ActionOrdered)
         return () 
 
@@ -276,7 +282,7 @@ registerFile uhdluuid (fp,hdl) = do
     let hdlbstr = (BL.toStrict . builder) hdl
     hdir <- liftIO $ getHomeDirectory
     canfp <- liftIO $ canonicalizePath fp
-    let relfp = makeRelative hdir canfp
+    let mhdlfp = Just (makeRelative hdir canfp)
     xst <- get
     let fileuuidbstr = view hoodleID hdl
         fileuuidtxt = TE.decodeUtf8 fileuuidbstr
@@ -292,7 +298,7 @@ registerFile uhdluuid (fp,hdl) = do
           withHub hinfo tokfile $ \manager coojar -> do
             let uuidtxt = TE.decodeUtf8 (view hoodleID hdl)
             flip runReaderT (manager,coojar) $ do
-              uploadAndUpdateSync evhandler uhdluuid hinfo fileuuidtxt hdlbstr (canfp,relfp) (Just sqlfile)
+              uploadAndUpdateSync evhandler uhdluuid hinfo fileuuidtxt hdlbstr (canfp,mhdlfp) (Just sqlfile)
               Just fstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack fileuuidtxt)
 
               (liftIO . Gtk.postGUIAsync . evhandler . UsrEv) (SyncInfoUpdated uhdluuid fstat)

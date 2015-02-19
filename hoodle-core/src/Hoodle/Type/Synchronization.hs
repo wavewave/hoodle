@@ -63,7 +63,7 @@ instance FromJSON FileSyncStatus where
 
 
 data FileContent = FileContent { file_uuid :: Text
-                               , file_path :: Text
+                               , file_path :: Maybe Text
                                , file_content :: Text 
                                , file_rsync :: Maybe FileRsync
                                , client_uuid :: Text
@@ -80,18 +80,11 @@ instance ToJSON FileContent where
 
 instance FromJSON FileContent where
   parseJSON (Object v) = 
-    let r = do
-          String uuid <- H.lookup "uuid" v
-          String path <- H.lookup "path" v
-          String content <- H.lookup "content" v
-          o <- H.lookup "rsync" v
-          String cid <- H.lookup "client" v
-          return (uuid,path,content,o,cid)
-    in case r of
-         Nothing -> fail "error in parsing FileContent"
-         Just (uuid,path,content,o,cid) -> do
-           rsync <- parseJSON o
-           return (FileContent uuid path content rsync cid)
+    FileContent <$> v .: "uuid" 
+                <*> v .: "path" 
+                <*> v .: "content" 
+                <*> v .: "rsync" 
+                <*> v .: "client"
   parseJSON _ = fail "error in parsing FileContent"
 
 data FileRsync = FileRsync { frsync_uuid :: Text 

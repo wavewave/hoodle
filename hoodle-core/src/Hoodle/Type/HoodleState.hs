@@ -21,6 +21,7 @@ module Hoodle.Type.HoodleState
 , IsOneTimeSelectMode(..)
 , Settings
 , UIComponentSignalHandler
+, FileStore(..)
 -- | labels
 , unitKey
 , unitUUID
@@ -365,15 +366,18 @@ cursorInfo :: Simple Lens HoodleState (Maybe Cursor)
 cursorInfo = lens _cursorInfo (\f a -> f { _cursorInfo = a })
 -}
 
+data FileStore = LocalDir (Maybe FilePath)
+               | TempDir FilePath
+
 -- | 
 data HoodleFileControl = 
-  HoodleFileControl { _hoodleFileName :: Maybe FilePath 
+  HoodleFileControl { _hoodleFileName :: FileStore -- Maybe FilePath 
                     , _lastSavedTime  :: Maybe UTCTime 
                     , _syncMD5History :: [T.Text]
                     } 
 
 -- | lens for currFileName
-hoodleFileName :: Simple Lens HoodleFileControl (Maybe FilePath)
+hoodleFileName :: Simple Lens HoodleFileControl FileStore -- (Maybe FilePath)
 hoodleFileName = lens _hoodleFileName (\f a -> f { _hoodleFileName = a } )
 
 -- | lens for last saved time
@@ -544,7 +548,7 @@ emptyHoodleState = do
 
 emptyHoodleFileControl :: HoodleFileControl 
 emptyHoodleFileControl = 
-  HoodleFileControl { _hoodleFileName = Nothing 
+  HoodleFileControl { _hoodleFileName = LocalDir Nothing 
                     , _lastSavedTime = Nothing 
                     , _syncMD5History = []
                     } 

@@ -62,7 +62,7 @@ module Hoodle.Type.HoodleState
 -- 
 , hoodleFileName 
 , lastSavedTime
-, lastSyncMD5
+, syncMD5History
 --
 , doesUseXInput 
 , doesUseTouch
@@ -369,7 +369,7 @@ cursorInfo = lens _cursorInfo (\f a -> f { _cursorInfo = a })
 data HoodleFileControl = 
   HoodleFileControl { _hoodleFileName :: Maybe FilePath 
                     , _lastSavedTime  :: Maybe UTCTime 
-                    , _lastSyncMD5 :: Maybe T.Text
+                    , _syncMD5History :: [T.Text]
                     } 
 
 -- | lens for currFileName
@@ -382,8 +382,8 @@ lastSavedTime = lens _lastSavedTime (\f a -> f { _lastSavedTime = a } )
 
 
 -- | lens for last saved time
-lastSyncMD5 :: Simple Lens HoodleFileControl (Maybe T.Text) 
-lastSyncMD5 = lens _lastSyncMD5 (\f a -> f { _lastSyncMD5 = a } )
+syncMD5History :: Simple Lens HoodleFileControl [T.Text] 
+syncMD5History = lens _syncMD5History (\f a -> f { _syncMD5History = a } )
 
 
 
@@ -546,7 +546,7 @@ emptyHoodleFileControl :: HoodleFileControl
 emptyHoodleFileControl = 
   HoodleFileControl { _hoodleFileName = Nothing 
                     , _lastSavedTime = Nothing 
-                    , _lastSyncMD5 = Nothing
+                    , _syncMD5History = []
                     } 
 
 

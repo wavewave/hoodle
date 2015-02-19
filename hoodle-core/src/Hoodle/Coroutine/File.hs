@@ -138,15 +138,20 @@ getFileContent (Just fname) = do
               Nothing -> return Nothing
               Just sqlfile -> liftIO (getLastSyncStatus sqlfile fileuuidtxt)
             mfstat' <- maybe (registerFile uhdluuid (fname,h) >> return Nothing) 
-                         syncFile mfstat 
+                         -- syncFile 
+                         (return . Just)
+                         mfstat 
             let mmd5 = fileSyncStatusMd5 <$> mfstat'
 #else 
             let mmd5 = Nothing 
 #endif    
-
+            liftIO $ print "getFileContent"
+            liftIO $ print mfstat
+            liftIO $ print mfstat'
+            liftIO $ print mmd5
             pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ Just fname)
                            . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
-                           . (hoodleFileControl.lastSyncMD5 .~ mmd5) 
+                           . (hoodleFileControl.syncMD5History .~ maybeToList mmd5) 
                            )
             commit_
       ".xoj" -> do 

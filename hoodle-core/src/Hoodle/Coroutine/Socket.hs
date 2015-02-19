@@ -59,30 +59,46 @@ import Hoodle.Type.HoodleState
 import Hoodle.Util
 --
 
-data HoodleWSEvent = HWSOpen { hws_filepath :: T.Text }
-                   | HWSSync { hws_fileuuid :: T.Text 
-                             , hws_clientuuid :: T.Text }
-                   deriving Show
+data Permission = Owner | Editor | Viewer | Stranger deriving (Show,Eq,Ord,Read)
+
+instance ToJSON Permission where
+  toJSON Owner    = String "owner"
+  toJSON Editor   = String "editor"
+  toJSON Viewer   = String "viewer"
+  toJSON Stranger = String "stranger"
+
+instance FromJSON Permission where
+  parseJSON (String t) =
+    case t of
+      "owner"    -> return Owner
+      "editor"   -> return Editor
+      "viewer"   -> return Viewer
+      "stranger" -> return Stranger
+      _ -> fail "error in parsing Permission"
+  parseJSON _ = fail "error in parsing Permission"
+
+data HoodleWSEvent = HWSOpen { hws_permission :: Permission 
+                             , hws_filepath   :: T.Text }
+                   | HWSSync { hws_fileuuid   :: T.Text 
+                             , hws_clientuuid :: T.Text
+                             } 
+               deriving Show
 
 instance ToJSON HoodleWSEvent where
-  toJSON HWSOpen {..} = object [ "eventType" .= toJSON ("open" :: T.Text) 
-                               , "filepath"  .= toJSON hws_filepath ]
+  toJSON HWSOpen {..} = object [ "eventType"  .= toJSON ("open" :: T.Text)
+                               , "permission" .= toJSON hws_permission
+                               , "filepath"   .= toJSON hws_filepath ]
+  toJSON HWSSync {..} = object [ "eventType"  .= toJSON ("sync" :: T.Text)
+                               , "fileuuid"   .= toJSON hws_fileuuid 
+                               , "clientuuid" .= toJSON hws_clientuuid
+                               ]
 
 instance FromJSON HoodleWSEvent where
-  parseJSON (Object v) =
-    let r = do 
-          String typ <- HM.lookup "eventType" v
-          case typ of
-            "open" -> do String fp <- HM.lookup "filepath" v
-                         return HWSOpen { hws_filepath = fp }
-            "sync" -> do String fileuuid <- HM.lookup "fileuuid" v
-                         String clientuuid <- HM.lookup "clientuuid" v
-                         return HWSSync { hws_fileuuid = fileuuid 
-                                        , hws_clientuuid = clientuuid }
-            _ -> Nothing
-    in case r of
-         Nothing -> fail "error in parsing HoodleWSEvent"
-         Just result -> return result
+  parseJSON (Object v) = do
+      typ :: T.Text <- v .: "eventType"
+      case typ of
+        "open" -> HWSOpen <$> v .: "permission" <*> v .: "filepath" 
+        "sync" -> HWSSync <$> v .: "fileuuid" <*> v .: "clientuuid"
   parseJSON _ = fail "error in parsing HoodleWSEvent"
 
 -- |
@@ -121,7 +137,10 @@ hoodleWSStart hinfo@HubInfo {..} = do
 hoodleWSDispatchEvent :: (AllEvent -> IO ()) -> HubInfo -> HoodleWSEvent -> IO ()
 hoodleWSDispatchEvent evhandler HubInfo {..} HWSOpen {..} = do
     let urlpath = FileUrl (hubfileroot </> T.unpack hws_filepath)
-    (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
+    case hws_permission of
+      Owner -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
+      Editor -> putStrLn "Editor Open event"
+      _ -> return ()
 hoodleWSDispatchEvent evhandler HubInfo {..} HWSSync {..} = do
     let fileuuid = read (T.unpack hws_fileuuid)
         clientuuid = read (T.unpack hws_clientuuid) 

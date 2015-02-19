@@ -77,7 +77,8 @@ instance FromJSON Permission where
       _ -> fail "error in parsing Permission"
   parseJSON _ = fail "error in parsing Permission"
 
-data HoodleWSEvent = HWSOpen { hws_permission :: Permission 
+data HoodleWSEvent = HWSOpen { hws_permission :: Permission
+                             , hws_fileuuid   :: T.Text
                              , hws_filepath   :: T.Text }
                    | HWSSync { hws_fileuuid   :: T.Text 
                              , hws_clientuuid :: T.Text
@@ -87,6 +88,7 @@ data HoodleWSEvent = HWSOpen { hws_permission :: Permission
 instance ToJSON HoodleWSEvent where
   toJSON HWSOpen {..} = object [ "eventType"  .= toJSON ("open" :: T.Text)
                                , "permission" .= toJSON hws_permission
+                               , "fileuuid"   .= toJSON hws_fileuuid
                                , "filepath"   .= toJSON hws_filepath ]
   toJSON HWSSync {..} = object [ "eventType"  .= toJSON ("sync" :: T.Text)
                                , "fileuuid"   .= toJSON hws_fileuuid 
@@ -97,8 +99,9 @@ instance FromJSON HoodleWSEvent where
   parseJSON (Object v) = do
       typ :: T.Text <- v .: "eventType"
       case typ of
-        "open" -> HWSOpen <$> v .: "permission" <*> v .: "filepath" 
+        "open" -> HWSOpen <$> v .: "permission" <*> v .: "fileuuid" <*> v .: "filepath" 
         "sync" -> HWSSync <$> v .: "fileuuid" <*> v .: "clientuuid"
+        _ -> fail "error in parsing HoodleWSEvent"
   parseJSON _ = fail "error in parsing HoodleWSEvent"
 
 -- |
@@ -137,9 +140,10 @@ hoodleWSStart hinfo@HubInfo {..} = do
 hoodleWSDispatchEvent :: (AllEvent -> IO ()) -> HubInfo -> HoodleWSEvent -> IO ()
 hoodleWSDispatchEvent evhandler HubInfo {..} HWSOpen {..} = do
     let urlpath = FileUrl (hubfileroot </> T.unpack hws_filepath)
+        uuid = read (T.unpack hws_fileuuid)
     case hws_permission of
-      Owner -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
-      Editor -> putStrLn "Editor Open event"
+      Owner  -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
+      Editor -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenShared uuid)
       _ -> return ()
 hoodleWSDispatchEvent evhandler HubInfo {..} HWSSync {..} = do
     let fileuuid = read (T.unpack hws_fileuuid)

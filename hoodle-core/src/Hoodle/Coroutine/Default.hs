@@ -427,6 +427,7 @@ defaultEventProcess (SwitchTab i) = switchTab i
 defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> askIfSave closeTab)
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 #ifdef HUB
+defaultEventProcess (OpenShared uuid) = openShared uuid
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 

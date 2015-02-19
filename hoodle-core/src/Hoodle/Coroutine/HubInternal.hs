@@ -241,7 +241,6 @@ rsyncPatchWork evhandler hinfo hdlfile fstat = do
         when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ do
           copyFile newfile hdlfile
           mapM_ removeFile [deltafile,newfile]
-          putStrLn ("rsyncPathWork work well: " ++ md5str)
           (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
 
             
@@ -330,3 +329,36 @@ syncFile fstat = do
               --   rsyncPatchWork evhandler hinfo hdlfile fstat
         return (UsrEv ActionOrdered)
     return Nothing -- temp
+
+
+openShared :: UUID -> MainCoroutine ()
+openShared uuid = do 
+    xst <- get
+    hdir <- liftIO $ getHomeDirectory
+    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
+    tmpfile <- liftIO $ (</> show uuid <.> "hdl" ) <$> getTemporaryDirectory 
+    liftIO $ writeFile tmpfile "" 
+    liftIO $ print tmpfile
+{-    
+    runMaybeT $ do
+      let fileuuidtxt = fileSyncStatusUuid fstat
+     
+      hset <- (MaybeT . return . view hookSet) xst
+      hinfo <- (MaybeT . return) (hubInfo hset)
+      lift $ prepareToken hinfo tokfile 
+      lift $ doIOaction $ \evhandler -> do 
+        forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
+          withHub hinfo tokfile $ \manager coojar -> do
+            flip runReaderT (manager,coojar) $ do
+              Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack fileuuidtxt)
+              if fstat == fstatServer 
+                then liftIO $ print "matched"
+                else liftIO $ print "unmatched"
+              -- liftIO $ print (fstat,mfstatServer :: Maybe FileSyncStatus)
+              -- F.forM_ mfstat $ \fstat -> do 
+              --   rsyncPatchWork evhandler hinfo hdlfile fstat
+        return (UsrEv ActionOrdered)
+    return Nothing -- temp
+-}
+
+    liftIO $ print uuid

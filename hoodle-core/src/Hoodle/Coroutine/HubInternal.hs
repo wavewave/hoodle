@@ -202,7 +202,6 @@ fileSyncFromHub unituuid fstat = do
     xst <- get
     runMaybeT $ do
       uhdl <- (MaybeT . return . find (\x -> view unitUUID x == unituuid)) uhdls 
-      -- guard (not (fileSyncStatusMd5 fstat `elem` view (hoodleFileControl.syncMD5History) uhdl))
       hdlfp <- MaybeT . return $ getHoodleFilePath uhdl  
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
@@ -251,7 +250,6 @@ rsyncPatchWork hinfo hdlfile fstat action = do
           copyFile newfile hdlfile
           mapM_ removeFile [deltafile,newfile]
           Gtk.postGUIAsync action
-          -- (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
         
 -- |
 gotSyncEvent :: Bool -> UUID -> FileSyncStatus -> MainCoroutine ()
@@ -259,32 +257,8 @@ gotSyncEvent isforced unituuid fstat = do
     liftIO $ putStrLn "gotSyncEvent called"
     uhdlsMap <-  snd . view unitHoodles <$> get
     let uhdls = IM.elems uhdlsMap
-    -- hdir <- liftIO $ getHomeDirectory
-    -- let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-    --     uuidtxt = T.pack (show fileuuid)
-    -- xst <- get
     let b = maybe True (const isforced) (find (\x -> view unitUUID x == unituuid) uhdls)
     when b $ fileSyncFromHub unituuid fstat
-{-       mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
-      muhdl <- findUnitHoodleByHoodleID (show fileuuid) 
-      runMaybeT $ do
-        uhdl <- (MaybeT . return) muhdl
-        hdlfp <- MaybeT . return $ getHoodleFilePath uhdl  
-        hset <- (MaybeT . return . view hookSet) xst
-        hinfo <- (MaybeT . return) (hubInfo hset)
-        lift $ prepareToken hinfo tokfile 
-        lift $ doIOaction $ \evhandler -> do 
-          forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
-            withHub hinfo tokfile $ \manager coojar -> do
-              flip runReaderT (manager,coojar) $ do
-                mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
-                liftIO $ print mfstat
-                F.forM_ mfstat $ \fstat -> 
-                  rsyncPatchWork hinfo hdlfp fstat $
-                    (evhandler . UsrEv) FileReloadOrdered  
-          return (UsrEv ActionOrdered)
-      return () 
--}
 
 -- |
 registerFile :: UUID -> (FilePath,Hoodle) -> MainCoroutine ()
@@ -316,15 +290,6 @@ registerFile uhdluuid (fp,hdl) = do
         return (UsrEv ActionOrdered)
     return ()    
 
-{-
-getHoodleFilePathDoublet :: HubInfo -> FilePath -> IO (FilePath,FilePath)
-getHoodleFilePathDoublet hubinfo fp = do
-    let hdir = hubfileroot hubinfo
-    canfp <- canonicalizePath fp
-    let relfp = makeRelative hdir canfp
-    return (canfp,relfp)
--}
-
 -- |
 findUnitHoodleByHoodleID :: String ->  MainCoroutine (Maybe UnitHoodle)
 findUnitHoodleByHoodleID uuidstr = do 
@@ -341,11 +306,9 @@ openShared uuid = do
     xst <- get
     hdir <- liftIO $ getHomeDirectory
     let uuidstr = show uuid
-        -- uuidtxt = T.pack uuidstr
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
     tmpfile <- liftIO $ (</> uuidstr <.> "hdl" ) <$> getTemporaryDirectory 
     liftIO $ writeFile tmpfile "" 
-    -- TmpliftIO $ print tmpfile
     runMaybeT $ do
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
@@ -362,28 +325,4 @@ openShared uuid = do
                     (evhandler . UsrEv) (OpenTemp uuid tmpfile)
         return (UsrEv ActionOrdered)
     return ()
-
-
-
-{-    
-    runMaybeT $ do
-      let fileuuidtxt = fileSyncStatusUuid fstat
-     
-      hset <- (MaybeT . return . view hookSet) xst
-      hinfo <- (MaybeT . return) (hubInfo hset)
-      lift $ prepareToken hinfo tokfile 
-      lift $ doIOaction $ \evhandler -> do 
-        forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
-          withHub hinfo tokfile $ \manager coojar -> do
-            flip runReaderT (manager,coojar) $ do
-              Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack fileuuidtxt)
-              if fstat == fstatServer 
-                then liftIO $ print "matched"
-                else liftIO $ print "unmatched"
-              -- liftIO $ print (fstat,mfstatServer :: Maybe FileSyncStatus)
-              -- F.forM_ mfstat $ \fstat -> do 
-              --   rsyncPatchWork evhandler hinfo hdlfile fstat
-        return (UsrEv ActionOrdered)
-    return Nothing -- temp
--}
 

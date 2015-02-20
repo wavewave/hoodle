@@ -34,7 +34,6 @@ import           Data.Monoid ((<>))
 import qualified Data.Text as T (Text,pack,unpack)
 import           Data.Text.Encoding (encodeUtf8,decodeUtf8)
 import           Data.UUID
--- import           Data.UUID.V4
 import           Database.Persist (upsert,getBy,entityVal)
 import           Database.Persist.Sql (runMigration)
 import           Database.Persist.Sqlite (runSqlite)
@@ -67,6 +66,7 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Synchronization
 --
 
+-- |
 streamContent :: BL.ByteString -> GivesPopper ()
 streamContent lb np = do
     lbref <- newIORef lb 
@@ -81,6 +81,7 @@ streamContent lb np = do
             else do
               return ""
 
+-- |
 prepareToken :: HubInfo -> FilePath -> MainCoroutine ()
 prepareToken HubInfo {..} tokfile = do
     let client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
@@ -96,8 +97,7 @@ prepareToken HubInfo {..} tokfile = do
         tokens  <- liftIO $ exchangeCode client authcode
         liftIO $ writeFile tokfile (show tokens)
 
-
-
+-- |
 withHub :: HubInfo -> FilePath 
            -> (Manager -> CookieJar -> ResourceT IO a) -> IO a 
 withHub HubInfo {..} tokfile action = 
@@ -131,6 +131,7 @@ sessionGetJSON url = do
     res <- lift $ httpLbs req manager
     return (AE.decode (responseBody res))
 
+-- |
 getLastSyncStatus :: FilePath -> T.Text -> IO (Maybe FileSyncStatus)
 getLastSyncStatus fp uuidtxt = 
     fmap entityVal <$> runSqlite (T.pack fp) (getBy (UniqueFileSyncStatusUUID uuidtxt))

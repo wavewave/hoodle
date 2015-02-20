@@ -175,13 +175,6 @@ getFileContent store@(LocalDir (Just fname)) = do
       _ -> getFileContent (LocalDir Nothing)
     xstate' <- get
     doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
-{-
-            mfstat' <- maybe (registerFile uhdluuid (fname,h) >> return Nothing) 
-                         (syncFile >=> \x -> invalidateAll >> return x)
-                         -- (return . Just)
-                         mfstat 
--}
-
 getFileContent (LocalDir Nothing) = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
     pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing) 
@@ -202,8 +195,6 @@ getFileContent store@(TempDir fname) = do
           let fileuuidbstr = view hoodleID h
               fileuuidtxt = TE.decodeUtf8 fileuuidbstr
               md5txt = T.pack . show . md5 . L.fromStrict $ bstr
-          -- liftIO $ runSqlite (T.pack sqlfile) $ 
-          --   upsert (FileSyncStatus fileuuidtxt md5txt ctime) []
           pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
                          . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
                          . (hoodleFileControl.syncMD5History .~ [md5txt] ) 
@@ -269,43 +260,6 @@ fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ())
         else do      
           hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles.currentUnit) <$> get
           liftIO (renderHoodleToPDF hdl filename) 
-
-{-
--- | 
-fileStartSync :: MainCoroutine ()
-fileStartSync = do 
-  uhdl <- view (unitHoodles.currentUnit) <$> get 
-  let mf = (,) <$> view (hoodleFileControl.hoodleFileName) uhdl <*> view (hoodleFileControl.lastSavedTime) uhdl 
-  maybe (return ()) (\(filename,lasttime) -> action filename lasttime) mf  
-  where  
-    action filename _lasttime  = doIOaction $ \evhandler -> do 
-            forkIO $ do 
-              FS.withManager $ \wm -> do 
-                origfile <- canonicalizePath filename 
-                let (filedir,_) = splitFileName origfile
-                print filedir 
-                _ <- FS.watchDir wm (decodeString filedir) (const True) $ \ev -> do
-                  let mchangedfile = case ev of 
-                        FS.Added fp _ -> Just (encodeString fp)
-                        FS.Modified fp _ -> Just (encodeString fp)
-                        FS.Removed _fp _ -> Nothing 
-                  print mchangedfile 
-                  case mchangedfile of 
-                    Nothing -> return ()
-                    Just changedfile -> do                       
-                      let changedfilename = takeFileName changedfile 
-                          changedfile' = (filedir </> changedfilename)
-                      if changedfile' == origfile 
-                        then do 
-                          ctime <- getCurrentTime 
-                          evhandler (UsrEv (Sync ctime))
-                        else return () 
-
-                let sec = 1000000
-                forever (threadDelay (100 * sec))
-            return (UsrEv ActionOrdered)
--}
-
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()
@@ -504,23 +458,6 @@ fileLoadImageBackground = do
       insertItemAt (Just (PageNum 0, PageCoord (0,0))) nitm
       modeChange ToViewAppendMode
       makeNewLayer
-{-
-            --
-            callRenderer $ case mf of  
-              Nothing -> liftIO (makeNewItemImage True filename) >>= cnstrctRItem >>= return . GotRItem 
-              Just f -> liftIO (makeNewItemImage True f) >>= cnstrctRItem >>= return . GotRItem
-            RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
-            return r
-          else do 
-            callRenderer $ liftIO (makeNewItemImage False filename) >>= cnstrctRItem >>= return . GotRItem
-            RenderEv (GotRItem r) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True ; _ -> False )
-            return r
-
-    let cpn = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
-    my <- autoPosText 
-    let mpos = (\y->(PageNum cpn,PageCoord (50,y)))<$>my  
-    insertItemAt mpos nitm 
-  -}  
 
 
 embedImage :: FilePath -> MainCoroutine ()
@@ -822,20 +759,19 @@ loadHoodlet str = do
 
   
 -- |
-syncFile :: {- FileSyncStatus -> -} MainCoroutine () -- (Maybe FileSyncStatus)
-syncFile {- fstat -} = do 
+syncFile :: MainCoroutine ()
+syncFile = do 
     liftIO (putStrLn "syncFile called")
     xst <- get
     let uhdl = view (unitHoodles.currentUnit) xst
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
     runMaybeT $ do
-      let hdlidtxt = getHoodleID uhdl -- fileSyncStatusUuid fstat
+      let hdlidtxt = getHoodleID uhdl 
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
       sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
       fstat <- MaybeT . liftIO $ getLastSyncStatus sqlfile hdlidtxt 
-      -- uhdl <- MaybeT $ findUnitHoodleByHoodleID (T.unpack fileuuidtxt)
       hdlfp <- MaybeT . return $ getHoodleFilePath uhdl
       lift $ prepareToken hinfo tokfile 
       lift $ doIOaction $ \evhandler -> do 
@@ -853,17 +789,9 @@ syncFile {- fstat -} = do
         return (UsrEv ActionOrdered)
       SyncFileFinished nfstat <- 
         lift (waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ))
-      -- liftIO $ runSqlite (T.pack sqlfile) $ upsert nfstat []
       liftIO $ print nfstat
       lift (updateSyncInfoAll nfstat)
       when (nfstat /= fstat) (lift fileReload)
     return ()
-    -- return (Just nfstat)
-
-
-              -- liftIO $ print "matched"
-              --  else liftIO $ print "unmatched"
-              -- liftIO $ print (fstat,mfstatServer :: Maybe FileSyncStatus)
-              -- F.forM_ mfstat $ \fstat -> do 
   
   

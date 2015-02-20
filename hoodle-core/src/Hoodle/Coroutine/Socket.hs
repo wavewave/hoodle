@@ -56,6 +56,7 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.Event
 import Hoodle.Type.Hub
 import Hoodle.Type.HoodleState
+import Hoodle.Type.Synchronization
 import Hoodle.Util
 --
 
@@ -80,8 +81,8 @@ instance FromJSON Permission where
 data HoodleWSEvent = HWSOpen { hws_permission :: Permission
                              , hws_fileuuid   :: T.Text
                              , hws_filepath   :: T.Text }
-                   | HWSSync { hws_fileuuid   :: T.Text 
-                             , hws_clientuuid :: T.Text
+                   | HWSSync { hws_clientuuid :: T.Text
+                             , hws_filesyncstatus :: FileSyncStatus
                              } 
                deriving Show
 
@@ -91,8 +92,8 @@ instance ToJSON HoodleWSEvent where
                                , "fileuuid"   .= toJSON hws_fileuuid
                                , "filepath"   .= toJSON hws_filepath ]
   toJSON HWSSync {..} = object [ "eventType"  .= toJSON ("sync" :: T.Text)
-                               , "fileuuid"   .= toJSON hws_fileuuid 
                                , "clientuuid" .= toJSON hws_clientuuid
+                               , "filesyncstatus"   .= toJSON hws_filesyncstatus
                                ]
 
 instance FromJSON HoodleWSEvent where
@@ -100,7 +101,7 @@ instance FromJSON HoodleWSEvent where
       typ :: T.Text <- v .: "eventType"
       case typ of
         "open" -> HWSOpen <$> v .: "permission" <*> v .: "fileuuid" <*> v .: "filepath" 
-        "sync" -> HWSSync <$> v .: "fileuuid" <*> v .: "clientuuid"
+        "sync" -> HWSSync <$> v .: "clientuuid" <*> v .: "filesyncstatus"
         _ -> fail "error in parsing HoodleWSEvent"
   parseJSON _ = fail "error in parsing HoodleWSEvent"
 
@@ -145,7 +146,6 @@ hoodleWSDispatchEvent evhandler HubInfo {..} HWSOpen {..} = do
       Owner  -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)
       Editor -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenShared uuid)
       _ -> return ()
-hoodleWSDispatchEvent evhandler HubInfo {..} HWSSync {..} = do
-    let fileuuid = read (T.unpack hws_fileuuid)
-        clientuuid = read (T.unpack hws_clientuuid) 
-    (Gtk.postGUIAsync . evhandler . UsrEv) (GotSyncEvent False fileuuid clientuuid) 
+hoodleWSDispatchEvent evhandler HubInfo {..} HWSSync {..} = 
+    let clientuuid = read (T.unpack hws_clientuuid) 
+    in (Gtk.postGUIAsync . evhandler . UsrEv) (GotSyncEvent False clientuuid hws_filesyncstatus)

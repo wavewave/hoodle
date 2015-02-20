@@ -160,13 +160,14 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msql
       return ()
     return ()
 
-
+-- | 
 initSqliteDB :: MainCoroutine ()
 initSqliteDB = do
     msqlfile <- view (settings.sqliteFileName) <$> get
     F.forM_ msqlfile $ \sqlfile -> liftIO $ do
       runSqlite (T.pack sqlfile) $ runMigration $ migrateAll
 
+-- | 
 updateSyncInfo :: UUID -> FileSyncStatus -> MainCoroutine ()
 updateSyncInfo uuid fstat = do
     liftIO $ putStrLn "updateSyncInfo called"
@@ -177,13 +178,26 @@ updateSyncInfo uuid fstat = do
       Just uhdl -> do 
         let nuhdlsMap = IM.adjust (over (hoodleFileControl.syncMD5History) (fileSyncStatusMd5 fstat :) ) (view unitKey uhdl) uhdlsMap
         modify (set (unitHoodles._2) nuhdlsMap)
+
+
+-- | 
+updateSyncInfoAll :: FileSyncStatus -> MainCoroutine ()
+updateSyncInfoAll fstat = do
+    let fileuuid = fileSyncStatusUuid fstat    
+    uhdlsMap <-  snd . view unitHoodles <$> get
+    let f uhdl = let fileuuid' = getHoodleID uhdl
+                 in if fileuuid == fileuuid' 
+                    then over (hoodleFileControl.syncMD5History) (fileSyncStatusMd5 fstat :) uhdl
+                    else uhdl
+        nuhdlsMap = fmap f uhdlsMap
+    modify (set (unitHoodles._2) nuhdlsMap)
     
+-- |
 fileSyncFromHub :: UUID -> FileSyncStatus -> MainCoroutine ()
 fileSyncFromHub unituuid fstat = do
     liftIO $ putStrLn "fileSyncFromHub called"
     uhdlsMap <-  snd . view unitHoodles <$> get
     let uhdls = IM.elems uhdlsMap
-
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
     xst <- get
@@ -199,12 +213,11 @@ fileSyncFromHub unituuid fstat = do
           withHub hinfo tokfile $ \manager coojar -> do
             flip runReaderT (manager,coojar) $
               rsyncPatchWork hinfo hdlfp fstat $
-                (evhandler . UsrEv) FileReloadOrdered 
+                (evhandler . UsrEv) (SyncInfoUpdated unituuid fstat)
         return (UsrEv ActionOrdered)
     return ()
 
-
--- (AllEvent -> IO ()) ->
+-- |
 rsyncPatchWork :: HubInfo -> FilePath -> FileSyncStatus 
                -> IO ()
                -> ReaderT (Manager,CookieJar) (ResourceT IO) ()
@@ -240,21 +253,20 @@ rsyncPatchWork hinfo hdlfile fstat action = do
           mapM_ removeFile [deltafile,newfile]
           Gtk.postGUIAsync action
           -- (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
-
-            
-
-gotSyncEvent :: Bool -> UUID -> UUID -> MainCoroutine ()
-gotSyncEvent isforced fileuuid uhdluuid = do
+        
+-- |
+gotSyncEvent :: Bool -> UUID -> FileSyncStatus -> MainCoroutine ()
+gotSyncEvent isforced unituuid fstat = do
     liftIO $ putStrLn "gotSyncEvent called"
     uhdlsMap <-  snd . view unitHoodles <$> get
     let uhdls = IM.elems uhdlsMap
-    hdir <- liftIO $ getHomeDirectory
-    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-        uuidtxt = T.pack (show fileuuid)
-    xst <- get
-    let b = maybe True (const isforced) (find (\x -> view unitUUID x == uhdluuid) uhdls)
-    when b $ do 
-      mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
+    -- hdir <- liftIO $ getHomeDirectory
+    -- let tokfile = hdir </> ".hoodle.d" </> "token.txt"
+    --     uuidtxt = T.pack (show fileuuid)
+    -- xst <- get
+    let b = maybe True (const isforced) (find (\x -> view unitUUID x == unituuid) uhdls)
+    when b $ fileSyncFromHub unituuid fstat
+{-       mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
       muhdl <- findUnitHoodleByHoodleID (show fileuuid) 
       runMaybeT $ do
         uhdl <- (MaybeT . return) muhdl
@@ -273,7 +285,9 @@ gotSyncEvent isforced fileuuid uhdluuid = do
                     (evhandler . UsrEv) FileReloadOrdered  
           return (UsrEv ActionOrdered)
       return () 
+-}
 
+-- |
 registerFile :: UUID -> (FilePath,Hoodle) -> MainCoroutine ()
 registerFile uhdluuid (fp,hdl) = do 
     liftIO $ putStrLn "registerFile called"
@@ -312,6 +326,7 @@ getHoodleFilePathDoublet hubinfo fp = do
     return (canfp,relfp)
 -}
 
+-- |
 findUnitHoodleByHoodleID :: String ->  MainCoroutine (Maybe UnitHoodle)
 findUnitHoodleByHoodleID uuidstr = do 
     uhdlsMap <-  snd . view unitHoodles <$> get
@@ -319,7 +334,7 @@ findUnitHoodleByHoodleID uuidstr = do
         muhdl = find ((== uuidstr) . B.unpack . view ghoodleID . getHoodle) uhdls 
     return muhdl 
 
-
+-- |
 syncFile :: FileSyncStatus -> MainCoroutine (Maybe FileSyncStatus)
 syncFile fstat = do 
     liftIO (putStrLn "syncFile called")
@@ -330,6 +345,7 @@ syncFile fstat = do
       let fileuuidtxt = fileSyncStatusUuid fstat
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
+      sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
       liftIO $ putStrLn "syncFile : a"
       uhdl <- MaybeT $ findUnitHoodleByHoodleID (T.unpack fileuuidtxt)
       hdlfp <- MaybeT . return $ getHoodleFilePath uhdl
@@ -348,9 +364,12 @@ syncFile fstat = do
                 else 
                   (liftIO . Gtk.postGUIAsync . evhandler . UsrEv . SyncFileFinished) fstat
         return (UsrEv ActionOrdered)
-    SyncFileFinished nfstat <- 
-      waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ) 
-    return (Just nfstat)
+      SyncFileFinished nfstat <- 
+        lift (waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ))
+      -- liftIO $ runSqlite (T.pack sqlfile) $ upsert nfstat []
+      lift (updateSyncInfoAll nfstat)
+      return nfstat
+    -- return (Just nfstat)
 
 
               -- liftIO $ print "matched"

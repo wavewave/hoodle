@@ -26,6 +26,8 @@ import           Control.Monad.IO.Class
 import qualified Control.Monad.State as St hiding (mapM_, forM_)
 import           Data.Foldable
 import qualified Data.IntMap as M
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
 import           Data.Hoodle.Generic
@@ -173,3 +175,7 @@ fileStore2Maybe :: FileStore -> Maybe FilePath
 fileStore2Maybe (LocalDir Nothing)         = Nothing
 fileStore2Maybe (LocalDir (Just filename)) = Just filename
 fileStore2Maybe (TempDir filename)         = Just filename
+
+-- |
+getHoodleID :: UnitHoodle -> T.Text
+getHoodleID = TE.decodeUtf8 . view ghoodleID . getHoodle

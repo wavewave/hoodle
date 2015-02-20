@@ -120,7 +120,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | DisconnectedHub FilePath (FilePath,Maybe FilePath) HubInfo
                | SyncInfoUpdated UUID FileSyncStatus
                | FileSyncFromHub UUID FileSyncStatus
-               | GotSyncEvent Bool UUID UUID
+               | GotSyncEvent Bool UUID FileSyncStatus
                | Sync UTCTime 
                | SyncFileFinished FileSyncStatus
 #endif

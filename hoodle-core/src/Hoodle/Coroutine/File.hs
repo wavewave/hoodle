@@ -132,25 +132,18 @@ getFileContent store@(LocalDir (Just fname)) = do
             ctime <- liftIO $ getCurrentTime
 #ifdef HUB
             msqlfile <- view (settings.sqliteFileName) <$> get
-#endif    
-
-#ifdef HUB
             let fileuuidbstr = view hoodleID h
                 fileuuidtxt = TE.decodeUtf8 fileuuidbstr
+            liftIO $ print fileuuidtxt
             mfstat <- case msqlfile of
               Nothing -> return Nothing
               Just sqlfile -> liftIO (getLastSyncStatus sqlfile fileuuidtxt)
-            mfstat' <- maybe (registerFile uhdluuid (fname,h) >> return Nothing) 
-                         -- syncFile 
-                         (return . Just)
-                         mfstat 
-            let mmd5 = fileSyncStatusMd5 <$> mfstat'
+            let mmd5 = fileSyncStatusMd5 <$> mfstat
 #else 
             let mmd5 = Nothing 
 #endif    
             liftIO $ print "getFileContent"
             liftIO $ print mfstat
-            liftIO $ print mfstat'
             liftIO $ print mmd5
             pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
                            . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
@@ -179,6 +172,13 @@ getFileContent store@(LocalDir (Just fname)) = do
       _ -> getFileContent (LocalDir Nothing)
     xstate' <- get
     doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
+{-
+            mfstat' <- maybe (registerFile uhdluuid (fname,h) >> return Nothing) 
+                         (syncFile >=> \x -> invalidateAll >> return x)
+                         -- (return . Just)
+                         mfstat 
+-}
+
 getFileContent (LocalDir Nothing) = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
     pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing) 
@@ -194,26 +194,24 @@ getFileContent store@(TempDir fname) = do
       case r of 
         Left err -> liftIO $ putStrLn err
         Right h -> do 
-          msqlfile <- view (settings.sqliteFileName) <$> get
-         
-          forM_ msqlfile $ \sqlfile -> do
-            constructNewHoodleStateFromHoodle h
-            ctime <- liftIO $ getCurrentTime
-            let fileuuidbstr = view hoodleID h
-                fileuuidtxt = TE.decodeUtf8 fileuuidbstr
-                md5txt = T.pack . show . md5 . L.fromStrict $ bstr
-            liftIO $ runSqlite (T.pack sqlfile) $ 
-              upsert (FileSyncStatus fileuuidtxt md5txt ctime) []
-            pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
-                           . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
-                           . (hoodleFileControl.syncMD5History .~ [md5txt] ) 
-                           )
-            commit_
-            xstate' <- get
-            doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
+          constructNewHoodleStateFromHoodle h
+          ctime <- liftIO $ getCurrentTime
+          let fileuuidbstr = view hoodleID h
+              fileuuidtxt = TE.decodeUtf8 fileuuidbstr
+              md5txt = T.pack . show . md5 . L.fromStrict $ bstr
+          -- liftIO $ runSqlite (T.pack sqlfile) $ 
+          --   upsert (FileSyncStatus fileuuidtxt md5txt ctime) []
+          pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
+                         . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
+                         . (hoodleFileControl.syncMD5History .~ [md5txt] ) 
+                         )
+          commit_
+          xstate' <- get
+          doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
 #else
     return ()
 #endif
+
 
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> MainCoroutine ()  

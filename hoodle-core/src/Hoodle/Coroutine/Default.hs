@@ -126,6 +126,9 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
   (uhdl4,wconf') <- eventConnect st2 uhdl3 (view frameState uhdl3)
   notebook <- Gtk.notebookNew
   statusbar <- Gtk.statusbarNew
+#ifdef HUB
+  let sqlinfo =  (join . fmap sqliteInfo) mhook 
+#endif
   let st4 = (unitHoodles.currentUnit .~ uhdl4) st2
       st5 = st4 # over (unitHoodles.currentUnit) 
                        ( set undoTable (emptyUndo maxundo)  
@@ -134,10 +137,14 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
                        . set (hoodleFileControl.hoodleFileName) (LocalDir Nothing))
                 . set (settings.doesUseXInput) xinputbool 
                 . set (settings.doesUseVariableCursor) varcsr
+#ifdef HUB
+                . set (settings.sqliteFileName) sqlinfo
+#endif
                 . set hookSet mhook 
                 . set rootNotebook notebook
                 . set uiComponentSignalHandler uicompsighdlr 
                 . set statusBar (Just statusbar)
+
   vbox <- Gtk.vBoxNew False 0 
   Gtk.containerAdd window vbox
   vboxcvs <- Gtk.vBoxNew False 0 
@@ -210,8 +217,6 @@ guiProcess ev = do
     viewModeChange ToContSinglePage
     pageZoomChange FitWidth
 #ifdef HUB
-    sqlinfo <- join . fmap sqliteInfo . view hookSet <$> get
-    modify (set (settings.sqliteFileName) sqlinfo) 
     initSqliteDB
     startLinkReceiver
     socketConnect

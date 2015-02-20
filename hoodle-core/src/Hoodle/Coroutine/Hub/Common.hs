@@ -85,6 +85,7 @@ prepareToken :: HubInfo -> FilePath -> MainCoroutine ()
 prepareToken HubInfo {..} tokfile = do
     let client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
         permissionUrl = formUrl client ["email"]
+    liftIO $ putStrLn "prepareToken"
     liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
       case os of
         "linux"  -> liftIO $ rawSystem "chromium" [permissionUrl]

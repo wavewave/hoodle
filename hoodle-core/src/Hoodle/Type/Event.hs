@@ -100,6 +100,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | GetHoodleFileInfoFromTab UUID (IORef (Maybe String))
                | GotLink (Maybe String) (Int,Int)
                | Sync UTCTime 
+               | SyncFileFinished FileSyncStatus
                | FileReloadOrdered
                | CustomKeyEvent String 
                | GotRevision String String

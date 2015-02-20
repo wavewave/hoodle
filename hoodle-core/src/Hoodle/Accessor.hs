@@ -164,3 +164,12 @@ setToggleUIForFlag toggleid b xstate = do
 renderCache :: MainCoroutine RenderCache
 renderCache = (view renderCacheVar <$> St.get) >>= liftIO . readTVarIO
 
+-- |
+getHoodleFilePath :: UnitHoodle -> Maybe FilePath 
+getHoodleFilePath = fileStore2Maybe . view (hoodleFileControl.hoodleFileName) 
+
+-- |
+fileStore2Maybe :: FileStore -> Maybe FilePath 
+fileStore2Maybe (LocalDir Nothing)         = Nothing
+fileStore2Maybe (LocalDir (Just filename)) = Just filename
+fileStore2Maybe (TempDir filename)         = Just filename

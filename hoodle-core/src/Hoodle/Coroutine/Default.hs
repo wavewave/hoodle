@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -428,6 +428,8 @@ defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x 
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 #ifdef HUB
 defaultEventProcess (OpenShared uuid) = openShared uuid
+defaultEventProcess (OpenTemp uuid tmpfile) = getFileContent (TempDir tmpfile)
+                                              >> invalidateAll
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
 defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 

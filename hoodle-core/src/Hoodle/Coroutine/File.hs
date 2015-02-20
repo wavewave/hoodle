@@ -112,7 +112,7 @@ askIfOverwrite fp action = do
       else action 
 
 
--- | get file content from xournal file and update xournal state 
+-- | get file content from xournal file and update hoodle state 
 getFileContent :: FileStore -> MainCoroutine ()
 getFileContent store@(LocalDir (Just fname)) = do 
     xstate <- get
@@ -180,6 +180,50 @@ getFileContent (LocalDir Nothing) = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
     pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing) 
     commit_ 
+getFileContent store@(TempDir fname) = do 
+    xstate <- get
+    let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
+    let ext = takeExtension fname
+    when (ext == ".hdl") $ do
+      bstr <- liftIO $ B.readFile fname
+      r <- liftIO $ checkVersionAndMigrate bstr 
+      case r of 
+        Left err -> liftIO $ putStrLn err
+        Right h -> do 
+          constructNewHoodleStateFromHoodle h
+          ctime <- liftIO $ getCurrentTime
+#ifdef HUB
+          msqlfile <- view (settings.sqliteFileName) <$> get
+#endif    
+
+#ifdef HUB
+          let fileuuidbstr = view hoodleID h
+              fileuuidtxt = TE.decodeUtf8 fileuuidbstr
+          mfstat <- case msqlfile of
+            Nothing -> return Nothing
+            Just sqlfile -> liftIO (getLastSyncStatus sqlfile fileuuidtxt)
+          mfstat' <- maybe (registerFile uhdluuid (fname,h) >> return Nothing) 
+                       -- syncFile 
+                       (return . Just)
+                       mfstat 
+          let mmd5 = fileSyncStatusMd5 <$> mfstat'
+#else 
+          let mmd5 = Nothing 
+#endif    
+          liftIO $ print "getFileContent"
+          liftIO $ print mfstat
+          liftIO $ print mfstat'
+          liftIO $ print mmd5
+          pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
+                         . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
+                         . (hoodleFileControl.syncMD5History .~ maybeToList mmd5) 
+                         )
+          commit_
+          xstate' <- get
+          doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
+
+
+
 
 -- |
 constructNewHoodleStateFromHoodle :: Hoodle -> MainCoroutine ()  

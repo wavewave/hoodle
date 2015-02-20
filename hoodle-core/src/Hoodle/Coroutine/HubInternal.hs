@@ -67,7 +67,7 @@ import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Type.Hoodle
 import           Text.Hoodle.Builder (builder)
 --
-import           Hoodle.Accessor (pureUpdateUhdl)
+import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Hub.Common
@@ -197,21 +197,18 @@ fileSyncFromHub unituuid fstat = do
       lift $ doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
           withHub hinfo tokfile $ \manager coojar -> do
-            runReaderT (rsyncPatchWork evhandler hinfo hdlfp fstat) (manager,coojar)
+            flip runReaderT (manager,coojar) $
+              rsyncPatchWork hinfo hdlfp fstat $
+                (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
         return (UsrEv ActionOrdered)
     return ()
 
 
-getHoodleFilePath :: UnitHoodle -> Maybe FilePath 
-getHoodleFilePath = fileStore2Maybe . view (hoodleFileControl.hoodleFileName) 
-
-fileStore2Maybe :: FileStore -> Maybe FilePath 
-fileStore2Maybe (LocalDir Nothing)         = Nothing
-fileStore2Maybe (LocalDir (Just filename)) = Just filename
-fileStore2Maybe (TempDir filename)         = Just filename
-
-rsyncPatchWork :: (AllEvent -> IO ()) -> HubInfo -> FilePath -> FileSyncStatus -> ReaderT (Manager,CookieJar) (ResourceT IO) ()
-rsyncPatchWork evhandler hinfo hdlfile fstat = do 
+-- (AllEvent -> IO ()) ->
+rsyncPatchWork :: HubInfo -> FilePath -> FileSyncStatus 
+               -> IO ()
+               -> ReaderT (Manager,CookieJar) (ResourceT IO) ()
+rsyncPatchWork hinfo hdlfile fstat action = do 
     (manager,coojar) <- ask
     let uuidtxt = fileSyncStatusUuid fstat
     sigtxt <- liftIO $ do 
@@ -241,7 +238,8 @@ rsyncPatchWork evhandler hinfo hdlfile fstat = do
         when (md5str == T.unpack (fileSyncStatusMd5 fstat)) $ do
           copyFile newfile hdlfile
           mapM_ removeFile [deltafile,newfile]
-          (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
+          action
+          -- (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered 
 
             
 
@@ -270,8 +268,9 @@ gotSyncEvent fileuuid uhdluuid = do
                 flip runReaderT (manager,coojar) $ do
                   mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
                   liftIO $ print mfstat
-                  F.forM_ mfstat $ \fstat -> do 
-                    rsyncPatchWork evhandler hinfo hdlfp fstat
+                  F.forM_ mfstat $ \fstat -> 
+                    rsyncPatchWork hinfo hdlfp fstat $
+                      (Gtk.postGUIAsync . evhandler . UsrEv) FileReloadOrdered  
             return (UsrEv ActionOrdered)
         return () 
 
@@ -335,10 +334,30 @@ openShared :: UUID -> MainCoroutine ()
 openShared uuid = do 
     xst <- get
     hdir <- liftIO $ getHomeDirectory
+    let uuidstr = show uuid
+        -- uuidtxt = T.pack uuidstr
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-    tmpfile <- liftIO $ (</> show uuid <.> "hdl" ) <$> getTemporaryDirectory 
+    tmpfile <- liftIO $ (</> uuidstr <.> "hdl" ) <$> getTemporaryDirectory 
     liftIO $ writeFile tmpfile "" 
-    liftIO $ print tmpfile
+    -- TmpliftIO $ print tmpfile
+    runMaybeT $ do
+      hset <- (MaybeT . return . view hookSet) xst
+      hinfo <- (MaybeT . return) (hubInfo hset)
+      lift $ prepareToken hinfo tokfile
+      lift $ doIOaction $ \evhandler -> do 
+        forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
+          withHub hinfo tokfile $ \manager coojar -> do
+            flip runReaderT (manager,coojar) $ do
+              mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> uuidstr)
+              case mfstat of
+                Nothing -> return ()
+                Just fstat -> rsyncPatchWork hinfo tmpfile fstat $
+                  (Gtk.postGUIAsync . evhandler . UsrEv) (OpenTemp uuid tmpfile)
+        return (UsrEv ActionOrdered)
+    return ()
+
+
+
 {-    
     runMaybeT $ do
       let fileuuidtxt = fileSyncStatusUuid fstat
@@ -361,4 +380,3 @@ openShared uuid = do
     return Nothing -- temp
 -}
 
-    liftIO $ print uuid

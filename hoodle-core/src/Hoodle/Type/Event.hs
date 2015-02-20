@@ -94,6 +94,7 @@ data UserEvent = Initialized (Maybe FilePath)
                | AddLink (Maybe (String,FilePath))
                | OpenLink UrlPath (Maybe (T.Text,T.Text))
                | OpenShared UUID
+               | OpenTemp UUID FilePath
                | EventDisconnected
                | GetHoodleFileInfo (IORef (Maybe String))
                | GetHoodleFileInfoFromTab UUID (IORef (Maybe String))

@@ -56,6 +56,7 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
+import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
@@ -86,7 +87,11 @@ openLinkAction urlpath mid = do
         mk <- liftIO . checkPreviouslyOpenedFile fp =<< get
         case mk of 
           Just k -> switchTab k >> forM_ mid (uncurry goToAnchorPos)
-          Nothing -> addTab (LocalDir (Just fp)) >> forM_ mid (uncurry goToAnchorPos)
+          Nothing -> addTab (LocalDir (Just fp)) >> 
+#ifdef HUB
+                     syncFile >> 
+#endif
+                     forM_ mid (uncurry goToAnchorPos)
       HttpUrl url -> liftIO $ createProcess (proc "xdg-open" [url]) >> return () 
 
 -- |

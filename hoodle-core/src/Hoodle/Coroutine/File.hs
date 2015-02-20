@@ -20,10 +20,12 @@ module Hoodle.Coroutine.File where
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
 import           Control.Concurrent
+import qualified Control.Exception as E
 import           Control.Lens (at,view,set,over,(.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Control.Monad.Trans.Reader
 import           Data.Attoparsec.ByteString.Char8 (parseOnly)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
@@ -90,6 +92,7 @@ import           Database.Persist.Sqlite (runSqlite)
 import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.Hub.Common
 import           Hoodle.Coroutine.HubInternal
+import           Hoodle.Type.Hub
 import           Hoodle.Type.Synchronization
 #endif
 --
@@ -818,5 +821,49 @@ loadHoodlet str = do
        else return Nothing
 
   
+-- |
+syncFile :: {- FileSyncStatus -> -} MainCoroutine () -- (Maybe FileSyncStatus)
+syncFile {- fstat -} = do 
+    liftIO (putStrLn "syncFile called")
+    xst <- get
+    let uhdl = view (unitHoodles.currentUnit) xst
+    hdir <- liftIO $ getHomeDirectory
+    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
+    runMaybeT $ do
+      let hdlidtxt = getHoodleID uhdl -- fileSyncStatusUuid fstat
+      hset <- (MaybeT . return . view hookSet) xst
+      hinfo <- (MaybeT . return) (hubInfo hset)
+      sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
+      fstat <- MaybeT . liftIO $ getLastSyncStatus sqlfile hdlidtxt 
+      -- uhdl <- MaybeT $ findUnitHoodleByHoodleID (T.unpack fileuuidtxt)
+      hdlfp <- MaybeT . return $ getHoodleFilePath uhdl
+      lift $ prepareToken hinfo tokfile 
+      lift $ doIOaction $ \evhandler -> do 
+        forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
+          withHub hinfo tokfile $ \manager coojar -> do
+            flip runReaderT (manager,coojar) $ do
+              Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack hdlidtxt)
+              if fileSyncStatusTime fstat < fileSyncStatusTime fstatServer
+                then 
+                  rsyncPatchWork hinfo hdlfp fstatServer $ do
+                    putStrLn "Am I called?"
+                    (evhandler . UsrEv . SyncFileFinished) fstatServer
+                else 
+                  (liftIO . Gtk.postGUIAsync . evhandler . UsrEv . SyncFileFinished) fstat
+        return (UsrEv ActionOrdered)
+      SyncFileFinished nfstat <- 
+        lift (waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ))
+      -- liftIO $ runSqlite (T.pack sqlfile) $ upsert nfstat []
+      liftIO $ print nfstat
+      lift (updateSyncInfoAll nfstat)
+      when (nfstat /= fstat) (lift fileReload)
+    return ()
+    -- return (Just nfstat)
+
+
+              -- liftIO $ print "matched"
+              --  else liftIO $ print "unmatched"
+              -- liftIO $ print (fstat,mfstatServer :: Maybe FileSyncStatus)
+              -- F.forM_ mfstat $ \fstat -> do 
   
   

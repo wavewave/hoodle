@@ -333,49 +333,6 @@ findUnitHoodleByHoodleID uuidstr = do
         muhdl = find ((== uuidstr) . B.unpack . view ghoodleID . getHoodle) uhdls 
     return muhdl 
 
--- |
-syncFile :: {- FileSyncStatus -> -} MainCoroutine () -- (Maybe FileSyncStatus)
-syncFile {- fstat -} = do 
-    liftIO (putStrLn "syncFile called")
-    xst <- get
-    let uhdl = view (unitHoodles.currentUnit) xst
-    hdir <- liftIO $ getHomeDirectory
-    let tokfile = hdir </> ".hoodle.d" </> "token.txt"
-    runMaybeT $ do
-      let hdlidtxt = getHoodleID uhdl -- fileSyncStatusUuid fstat
-      hset <- (MaybeT . return . view hookSet) xst
-      hinfo <- (MaybeT . return) (hubInfo hset)
-      sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
-      fstat <- MaybeT . liftIO $ getLastSyncStatus sqlfile hdlidtxt 
-      -- uhdl <- MaybeT $ findUnitHoodleByHoodleID (T.unpack fileuuidtxt)
-      hdlfp <- MaybeT . return $ getHoodleFilePath uhdl
-      lift $ prepareToken hinfo tokfile 
-      lift $ doIOaction $ \evhandler -> do 
-        forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
-          withHub hinfo tokfile $ \manager coojar -> do
-            flip runReaderT (manager,coojar) $ do
-              Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack hdlidtxt)
-              if fileSyncStatusTime fstat < fileSyncStatusTime fstatServer
-                then 
-                  rsyncPatchWork hinfo hdlfp fstatServer $ do
-                    putStrLn "Am I called?"
-                    (evhandler . UsrEv . SyncFileFinished) fstatServer
-                else 
-                  (liftIO . Gtk.postGUIAsync . evhandler . UsrEv . SyncFileFinished) fstat
-        return (UsrEv ActionOrdered)
-      SyncFileFinished nfstat <- 
-        lift (waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ))
-      -- liftIO $ runSqlite (T.pack sqlfile) $ upsert nfstat []
-      lift (updateSyncInfoAll nfstat)
-      return nfstat
-    return ()
-    -- return (Just nfstat)
-
-
-              -- liftIO $ print "matched"
-              --  else liftIO $ print "unmatched"
-              -- liftIO $ print (fstat,mfstatServer :: Maybe FileSyncStatus)
-              -- F.forM_ mfstat $ \fstat -> do 
 
 
 

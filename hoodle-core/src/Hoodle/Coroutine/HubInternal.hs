@@ -243,8 +243,8 @@ rsyncPatchWork hinfo hdlfile fstat action = do
 
             
 
-gotSyncEvent :: UUID -> UUID -> MainCoroutine ()
-gotSyncEvent fileuuid uhdluuid = do
+gotSyncEvent :: Bool -> UUID -> UUID -> MainCoroutine ()
+gotSyncEvent isforced fileuuid uhdluuid = do
     liftIO $ putStrLn "gotSyncEvent called"
     uhdlsMap <-  snd . view unitHoodles <$> get
     let uhdls = IM.elems uhdlsMap
@@ -252,28 +252,27 @@ gotSyncEvent fileuuid uhdluuid = do
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
         uuidtxt = T.pack (show fileuuid)
     xst <- get
-    case find (\x -> view unitUUID x == uhdluuid) uhdls of
-      Just _ -> return () 
-      Nothing -> do 
-        mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
-        muhdl <- findUnitHoodleByHoodleID (show fileuuid) 
-        runMaybeT $ do
-          uhdl <- (MaybeT . return) muhdl
-          hdlfp <- MaybeT . return $ getHoodleFilePath uhdl  
-          hset <- (MaybeT . return . view hookSet) xst
-          hinfo <- (MaybeT . return) (hubInfo hset)
-          lift $ prepareToken hinfo tokfile 
-          lift $ doIOaction $ \evhandler -> do 
-            forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
-              withHub hinfo tokfile $ \manager coojar -> do
-                flip runReaderT (manager,coojar) $ do
-                  mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
-                  liftIO $ print mfstat
-                  F.forM_ mfstat $ \fstat -> 
-                    rsyncPatchWork hinfo hdlfp fstat $
-                      (evhandler . UsrEv) FileReloadOrdered  
-            return (UsrEv ActionOrdered)
-        return () 
+    let b = maybe True (const isforced) (find (\x -> view unitUUID x == uhdluuid) uhdls)
+    when b $ do 
+      mapM_ (liftIO . putStrLn . show . view ghoodleID . getHoodle) uhdls 
+      muhdl <- findUnitHoodleByHoodleID (show fileuuid) 
+      runMaybeT $ do
+        uhdl <- (MaybeT . return) muhdl
+        hdlfp <- MaybeT . return $ getHoodleFilePath uhdl  
+        hset <- (MaybeT . return . view hookSet) xst
+        hinfo <- (MaybeT . return) (hubInfo hset)
+        lift $ prepareToken hinfo tokfile 
+        lift $ doIOaction $ \evhandler -> do 
+          forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
+            withHub hinfo tokfile $ \manager coojar -> do
+              flip runReaderT (manager,coojar) $ do
+                mfstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack uuidtxt)
+                liftIO $ print mfstat
+                F.forM_ mfstat $ \fstat -> 
+                  rsyncPatchWork hinfo hdlfp fstat $
+                    (evhandler . UsrEv) FileReloadOrdered  
+          return (UsrEv ActionOrdered)
+      return () 
 
 registerFile :: UUID -> (FilePath,Hoodle) -> MainCoroutine ()
 registerFile uhdluuid (fp,hdl) = do 

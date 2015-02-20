@@ -148,4 +148,4 @@ hoodleWSDispatchEvent evhandler HubInfo {..} HWSOpen {..} = do
 hoodleWSDispatchEvent evhandler HubInfo {..} HWSSync {..} = do
     let fileuuid = read (T.unpack hws_fileuuid)
         clientuuid = read (T.unpack hws_clientuuid) 
-    (Gtk.postGUIAsync . evhandler . UsrEv) (GotSyncEvent fileuuid clientuuid) 
+    (Gtk.postGUIAsync . evhandler . UsrEv) (GotSyncEvent False fileuuid clientuuid) 

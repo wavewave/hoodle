@@ -220,6 +220,7 @@ guiProcess ev = do
     initSqliteDB
     startLinkReceiver
     socketConnect
+    syncFile
 #endif
     doCanvasConfigure cid cdim
     -- main loop 

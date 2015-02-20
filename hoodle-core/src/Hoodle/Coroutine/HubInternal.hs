@@ -157,7 +157,6 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msql
     F.forM_ ((,) <$> msqlfile <*> mfstat2) $ \(sqlfile,fstat2) -> do 
       runSqlite (T.pack sqlfile) $ upsert fstat2 []
       liftIO $ evhandler (UsrEv (SyncInfoUpdated uhdluuid fstat2))
-      return ()
     return ()
 
 -- | 
@@ -335,27 +334,27 @@ findUnitHoodleByHoodleID uuidstr = do
     return muhdl 
 
 -- |
-syncFile :: FileSyncStatus -> MainCoroutine (Maybe FileSyncStatus)
-syncFile fstat = do 
+syncFile :: {- FileSyncStatus -> -} MainCoroutine () -- (Maybe FileSyncStatus)
+syncFile {- fstat -} = do 
     liftIO (putStrLn "syncFile called")
     xst <- get
+    let uhdl = view (unitHoodles.currentUnit) xst
     hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
     runMaybeT $ do
-      let fileuuidtxt = fileSyncStatusUuid fstat
+      let hdlidtxt = getHoodleID uhdl -- fileSyncStatusUuid fstat
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
       sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
-      liftIO $ putStrLn "syncFile : a"
-      uhdl <- MaybeT $ findUnitHoodleByHoodleID (T.unpack fileuuidtxt)
+      fstat <- MaybeT . liftIO $ getLastSyncStatus sqlfile hdlidtxt 
+      -- uhdl <- MaybeT $ findUnitHoodleByHoodleID (T.unpack fileuuidtxt)
       hdlfp <- MaybeT . return $ getHoodleFilePath uhdl
       lift $ prepareToken hinfo tokfile 
-      liftIO $ putStrLn "syncFile: here"
       lift $ doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
           withHub hinfo tokfile $ \manager coojar -> do
             flip runReaderT (manager,coojar) $ do
-              Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack fileuuidtxt)
+              Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack hdlidtxt)
               if fileSyncStatusTime fstat < fileSyncStatusTime fstatServer
                 then 
                   rsyncPatchWork hinfo hdlfp fstatServer $ do
@@ -369,6 +368,7 @@ syncFile fstat = do
       -- liftIO $ runSqlite (T.pack sqlfile) $ upsert nfstat []
       lift (updateSyncInfoAll nfstat)
       return nfstat
+    return ()
     -- return (Just nfstat)
 
 

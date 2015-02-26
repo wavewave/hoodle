@@ -1,10 +1,12 @@
-{-# LANGUAGE TypeFamilies, TypeOperators, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Item 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,21 +19,16 @@
 
 module Graphics.Hoodle.Render.Item where
 
-import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.Identity
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Reader
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C8
--- import qualified Data.ByteString.Lazy as LB
 import           Data.ByteString.Base64
--- import           Data.UUID
 import           Data.UUID.V4
 import           Graphics.GD.ByteString
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
--- import           Graphics.UI.Gtk (postGUIAsync)
 import           System.Directory
 import           System.FilePath
 -- from hoodle-platform 
@@ -45,32 +42,7 @@ import           Graphics.Hoodle.Render.Type.Renderer
 -- | construct renderable item 
 cnstrctRItem :: Item -> Renderer RItem 
 cnstrctRItem (ItemStroke strk) = return (RItemStroke (runIdentity (makeBBoxed strk)))
-cnstrctRItem (ItemImage img) = {- do 
-    handler <- rendererHandler <$> ask 
-    liftIO $ print "cnstrctRItem:ItemImage"
-    let imgbbx = runIdentity (makeBBoxed img)
-        src = img_src img
-    let embed = getByteStringIfEmbeddedPNG src 
-    msfc <- liftIO $ case embed of         
-      Just bstr -> do 
-        sfc <- saveTempPNGToCreateSurface bstr 
-        return (Just sfc)
-      Nothing -> do
-	let filesrc = C8.unpack (img_src img)
-	    filesrcext = takeExtension filesrc 
-	    imgaction 
-	      | filesrcext == ".PNG" || filesrcext == ".png" = do 
-		  b <- doesFileExist filesrc 
-		  if b then Just <$> Cairo.imageSurfaceCreateFromPNG filesrc
-		       else return Nothing 
-	      | filesrcext == ".JPG" || filesrcext == ".jpg" = do 
-		  b <- doesFileExist filesrc 
-		  if b then Just <$> getJPGandCreateSurface filesrc 
-		       else return Nothing 
-	      | otherwise = return Nothing 
-	imgaction
-    liftIO $ print "cnstrctRItem:ItemImage2"
-    return (RItemImage imgbbx msfc) -}
+cnstrctRItem (ItemImage img) = 
     let imgbbx = runIdentity (makeBBoxed img)
     in return (RItemImage imgbbx Nothing)
 cnstrctRItem (ItemSVG svg@(SVG _ _ bstr _ _)) = do 
@@ -137,5 +109,3 @@ saveTempPNGToCreateSurface bstr = do
     removeFile tfile
     return sfc
 
-    -- completely wrong way 
-    -- pipeActionWith (B.writeFile "/dev/stdout" bstr) Cairo.imageSurfaceCreateFromPNG 

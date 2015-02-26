@@ -37,7 +37,7 @@ Flag Hub
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -dynamic-too  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
+  ghc-options: 	-Werror -Wall -dynamic-too  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends:   aeson>=0.7,

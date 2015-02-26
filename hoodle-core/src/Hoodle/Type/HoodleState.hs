@@ -116,7 +116,6 @@ module Hoodle.Type.HoodleState
 import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Lens (Simple,Lens,view,set,lens,(^.))
-import           Control.Monad.State hiding (get,modify)
 import           Data.Functor.Identity (Identity(..))
 import qualified Data.HashMap.Strict as HM
 import qualified Data.IntMap as M
@@ -125,6 +124,9 @@ import qualified Data.Text as T
 import           Data.Time.Clock
 import           Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
+#ifdef HUB
+import           Control.Monad.State hiding (get,modify)
+#endif
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 

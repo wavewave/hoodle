@@ -139,7 +139,7 @@ pasteToSelection = do
   where 
     pasteAction cache ui itms uhdl = forBoth' unboxBiAct (fsimple cache ui itms uhdl) 
                                      . view currentCanvasInfo $ uhdl
-    fsimple cache ui itms uhdl cinfo = do 
+    fsimple _cache ui itms uhdl cinfo = do 
       geometry <- liftIO (getGeometry4CurrCvs uhdl)
       let cid = view canvasId cinfo
           pagenum = view currentPageNum cinfo 

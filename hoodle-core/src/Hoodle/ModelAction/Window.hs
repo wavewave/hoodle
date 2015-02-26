@@ -17,20 +17,20 @@
 module Hoodle.ModelAction.Window where
 
 -- from other packages
-import           Control.Concurrent
-import           Control.Concurrent.STM
 import           Control.Lens (view)
 import           Control.Monad hiding (forM_)
 import           Control.Monad.Trans
 import           Data.Foldable (forM_)
 import qualified Data.IntMap as M
 import           Data.IORef (newIORef, readIORef)
-import           Data.Maybe (mapMaybe)
-import qualified Data.Text as T
 import           Data.Traversable (traverse)
 import           Data.UUID (UUID)
 import           Data.UUID.V4
 #ifdef HUB
+import           Control.Concurrent
+import           Control.Concurrent.STM
+import           Data.Maybe (mapMaybe)
+import qualified Data.Text as T
 import           DBus hiding (UUID)
 import           DBus.Client
 #endif
@@ -42,8 +42,10 @@ import           Hoodle.Type.Canvas
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Window
-import           Hoodle.Type.HoodleState
 import           Hoodle.Util
+#ifdef HUB
+import           Hoodle.Type.HoodleState
+#endif
 -- 
 
 #ifdef HUB
@@ -85,14 +87,12 @@ setTitleFromFileName xstate = do
                                   [ Gtk.windowTitle Gtk.:= ("untitled" :: String) ]
     LocalDir (Just filename) -> Gtk.set (view rootOfRootWindow xstate) 
                                   [ Gtk.windowTitle Gtk.:= takeFileName filename] 
-    TempDir  filename       -> Gtk.set (view rootOfRootWindow xstate) 
+    TempDir  _filename       -> Gtk.set (view rootOfRootWindow xstate) 
                                   [ Gtk.windowTitle Gtk.:= ("shared document" :: String)]
 
 -- | 
 newCanvasId :: CanvasInfoMap -> CanvasId 
-newCanvasId cmap = 
-  let cids = M.keys cmap 
-  in  (maximum cids) + 1  
+newCanvasId cmap = let cids = M.keys cmap in (maximum cids) + 1  
 
 -- | initialize CanvasInfo with creating windows and connect events
 initCanvasInfo :: HoodleState -> UnitHoodle -> CanvasId -> IO (CanvasInfo a)

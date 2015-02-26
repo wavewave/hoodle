@@ -20,7 +20,6 @@ module Hoodle.Coroutine.Pen where
 
 -- from other packages
 import           Control.Applicative ((<$>),(<*>))
-import           Control.Concurrent (threadDelay)
 import           Control.Lens (at,over,set,view)
 import           Control.Monad hiding (mapM_,forM_)
 import           Control.Monad.State hiding (mapM_,forM_)
@@ -35,7 +34,7 @@ import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
 import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic (gbuffer,gdimension,gitems,gpages)
+import           Data.Hoodle.Generic (gitems,gpages)
 import           Data.Hoodle.Simple (Dimension(..))
 import           Graphics.Hoodle.Render (renderStrk,updateLayerBuf)
 import           Graphics.Hoodle.Render.Type
@@ -72,15 +71,11 @@ addPDraw :: CanvasId
 addPDraw cid pinfo hdl (PageNum pgnum) pdraw = do 
     let currpage = getPageFromGHoodleMap pgnum hdl
         currlayer = getCurrentLayer currpage
-        dim = view gdimension currpage
         newstroke = createNewStroke pinfo pdraw         
         newstrokebbox = runIdentity (makeBBoxed newstroke)
         bbox = getBBox newstrokebbox
         newlayerbbox = over gitems (++[RItemStroke newstrokebbox]) currlayer
-        sfcid = (unLyBuf .  view gbuffer) newlayerbbox
     callRenderer_ $ updateLayerBuf cid newlayerbbox
-    -- waitSomeEvent (\case RenderEv GotNone -> True ; _ -> False )
-    -- waitSomeEvent (\case RenderEv (FinishCommand sfcid') -> sfcid == sfcid' ; _ -> False )
     let newpagebbox = adjustCurrentLayer newlayerbbox currpage 
         newhdlbbox = set gpages (IM.adjust (const newpagebbox) pgnum (view gpages hdl) ) hdl 
     return (newhdlbbox,bbox)
@@ -184,11 +179,9 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                   if x1 <= 1e-3      -- this is ad hoc but.. 
                     then invalidateAll
                     else do  
-                      (newhdl,bbox) <- addPDraw cid pinfo currhdl pnum pdraw
+                      (newhdl,_bbox) <- addPDraw cid pinfo currhdl pnum pdraw
                       uhdl' <- liftIO (updatePageAll (ViewAppendState newhdl) uhdl)
                       commit (set (unitHoodles.currentUnit) uhdl' xstate)
-                      let f = unDeskCoord . page2Desktop geometry . (pnum,) . PageCoord
-                          nbbox = xformBBox f bbox 
                       return ()
                   return (Just (Just ()))
           

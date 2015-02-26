@@ -93,7 +93,7 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
       let pnum = (fst . tempInfo) tsel
           img = bbxed_content imgbbx
           obbox = getBBox imgbbx
-          cid = getCurrentCanvasId uhdl
+          cvsid = getCurrentCanvasId uhdl
       when (isBBox2InBBox1 obbox nbbox) $ do
         mimg' <- liftIO $ createCroppedImage img obbox nbbox 
         forM_ mimg' $ \img' -> do
@@ -103,7 +103,7 @@ startCropRect cid imgbbx (thdl,tpage) pcoord0 = do
             waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
           --
           let ntpage = replaceSelection rimg' tpage
-          nthdl <- updateTempHoodleSelectM cid thdl ntpage (unPageNum pnum)
+          nthdl <- updateTempHoodleSelectM cvsid thdl ntpage (unPageNum pnum)
           uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
           commit $ (unitHoodles.currentUnit .~ uhdl') xst  
       invalidateAllInBBox Nothing Efficient      

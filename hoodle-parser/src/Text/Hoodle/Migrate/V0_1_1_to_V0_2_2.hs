@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Text.Hoodle.Migrate.V0_1_1_to_V0_2_2
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -20,7 +20,7 @@ import           Control.Applicative
 import           Control.Lens
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Either
-import           Data.Attoparsec
+import           Data.Attoparsec.ByteString
 import qualified Data.ByteString.Char8 as B
 --
 import qualified Data.Hoodle.Simple.V0_1_1 as OH

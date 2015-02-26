@@ -21,10 +21,9 @@
 module Hoodle.Coroutine.Link where
 
 import           Control.Applicative
-import           Control.Concurrent (forkIO)
 import           Control.Lens (_2,at,view,set,(^.))
-import           Control.Monad (filterM,forever,void)
-import           Control.Monad.State (get,liftIO,guard,when)
+import           Control.Monad hiding (forM_)
+import           Control.Monad.State (get,liftIO)
 import           Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B 
 import           Data.Foldable (forM_)
@@ -40,6 +39,7 @@ import           System.Directory
 import           System.FilePath 
 import           System.Process (createProcess, proc)
 #ifdef HUB
+import           Control.Concurrent (forkIO)
 import           DBus
 import           DBus.Client
 #endif
@@ -56,7 +56,6 @@ import           Graphics.Hoodle.Render.Util.HitTest
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
-import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
@@ -74,6 +73,7 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Util 
 import           Hoodle.View.Coordinate
 #ifdef HUB
+import           Hoodle.Coroutine.File
 import           Hoodle.Coroutine.HubInternal
 #endif
 --
@@ -341,5 +341,5 @@ goToAnchorPos docid anchorid = do
     let hdl = rHoodle2Hoodle rhdl
     when (docid == (TE.decodeUtf8 . view ghoodleID) rhdl) $ do
       let anchormap = getAnchorMap hdl
-      forM_ (M.lookup anchorid anchormap) $ \(pgnum,(x,y))-> changePage (const pgnum)
+      forM_ (M.lookup anchorid anchormap) $ \(pgnum,_)-> changePage (const pgnum)
 

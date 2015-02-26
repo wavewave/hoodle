@@ -17,8 +17,8 @@
 module Text.Hoodlet.Parse.Attoparsec where
 
 import           Control.Applicative 
-import           Data.Attoparsec
-import           Data.Attoparsec.Char8
+import           Data.Attoparsec.ByteString
+import           Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 -- 
 import qualified Data.Hoodle.Simple as H

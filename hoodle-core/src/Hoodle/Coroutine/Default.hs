@@ -21,7 +21,6 @@ module Hoodle.Coroutine.Default where
 
 import           Control.Applicative hiding (empty)
 import           Control.Concurrent 
-import           Control.Concurrent.STM
 import qualified Control.Exception as E
 import           Control.Lens (over,view,set,at,(.~),(^.),_2)
 import           Control.Monad.State hiding (mapM_)
@@ -32,32 +31,34 @@ import qualified Data.IntMap as M
 import           Data.IORef 
 import qualified Data.List as L
 import           Data.Maybe
+import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
+import           System.Process 
+#ifdef HUB
+import           Control.Concurrent.STM
 import           Data.Sequence (Seq,viewl, ViewL(..))
 import           Data.Time.Clock
 import           Data.UUID
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
--- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
--- import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 import           System.Directory
-import           System.Process 
+#endif
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
-import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.Simple (Dimension(..), Background(..))
 import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Engine
-import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Type
+#ifdef HUB
+import           Control.Monad.Trans.Crtn.Queue
+import           Graphics.Hoodle.Render.Background
+#endif
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Coroutine.ContextMenu
 import           Hoodle.Coroutine.Default.Menu
-import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Eraser
 import           Hoodle.Coroutine.File
@@ -68,7 +69,6 @@ import           Hoodle.Coroutine.Page
 import           Hoodle.Coroutine.Pen
 import           Hoodle.Coroutine.Scroll
 import           Hoodle.Coroutine.Select
-import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Coroutine.VerticalSpace 
 import           Hoodle.Coroutine.Window
 import           Hoodle.Device
@@ -83,7 +83,6 @@ import           Hoodle.Type.Enum
 import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
-import           Hoodle.Type.Predefined
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window 
 import           Hoodle.Type.Widget
@@ -91,8 +90,11 @@ import           Hoodle.Util
 import           Hoodle.Widget.Dispatch 
 import           Hoodle.Widget.PanZoom
 #ifdef HUB
+import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Socket
+import           Hoodle.Coroutine.TextInput 
+import           Hoodle.Type.Predefined
 #endif
 --
 import Prelude hiding (mapM_)

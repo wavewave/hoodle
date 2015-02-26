@@ -19,7 +19,6 @@
 module Hoodle.Coroutine.TextInput where
 
 import           Control.Applicative
-import           Control.Concurrent
 import qualified Control.Exception
 import           Control.Lens (_2,_3,view,(%~),(^.),(.~))
 import           Control.Monad.State hiding (mapM_, forM_)

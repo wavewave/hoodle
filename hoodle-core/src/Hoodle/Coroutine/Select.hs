@@ -288,13 +288,13 @@ moveSelect cid pnum geometry orig@(x0,y0)
     chgaction uhdl cinfo oldpgn (newpgn,PageCoord (x,y)) = do 
       let hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
-          cid = view canvasId cinfo
+          cvsid = view canvasId cinfo
       (uhdl1,nthdl1,selecteditms) <- 
         case epage of 
           Right oldtpage -> do 
             let itms = getSelectedItms oldtpage
             let oldtpage' = deleteSelected oldtpage
-            nthdl <- updateTempHoodleSelectM cid thdl oldtpage' (unPageNum oldpgn)
+            nthdl <- updateTempHoodleSelectM cvsid thdl oldtpage' (unPageNum oldpgn)
             uhdl' <- liftIO (updatePageAll (SelectState nthdl) uhdl)
             return (uhdl',nthdl,itms)       
           Left _ -> error "this is impossible, in moveSelect" 
@@ -306,11 +306,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
                 alist = olditms :- Hitted newitms :- Empty 
                 ntpage = makePageSelectMode page alist  
                 coroutineaction = do 
-                  nthdl2 <- updateTempHoodleSelectM cid nthdl1 ntpage (unPageNum newpgn)  
-                  let cibox = view currentCanvasInfo uhdl1 
-                      ncibox = ( runIdentity 
-                               . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
-                                 cibox 
+                  nthdl2 <- updateTempHoodleSelectM cvsid nthdl1 ntpage (unPageNum newpgn)  
+                  -- let cibox = view currentCanvasInfo uhdl1 
+                  --     ncibox = ( runIdentity 
+                  --             . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn))) 
+                  --               cibox 
                   liftIO (updatePageAll (SelectState nthdl2) uhdl1)
             return coroutineaction
       uhdl2 <- maybe (return uhdl1) id maction
@@ -323,11 +323,11 @@ moveSelect cid pnum geometry orig@(x0,y0)
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
-          cid = view canvasId cinfo
+          cvsid = view canvasId cinfo
       case epage of 
         Right tpage -> do 
           let newtpage = changeSelectionByOffset offset tpage
-          newthdl <- updateTempHoodleSelectM cid thdl newtpage pagenum 
+          newthdl <- updateTempHoodleSelectM cvsid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
           pureUpdateUhdl (const uhdl')
           commit_ 
@@ -422,12 +422,12 @@ resizeSelect doesKeepRatio handle cid pnum geometry origbbox
           hdlmodst@(SelectState thdl) = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           pagenum = view currentPageNum cinfo
-          cid = view canvasId cinfo
+          cvsid = view canvasId cinfo
       case epage of 
         Right tpage -> do 
           let sfunc = scaleFromToBBox origbbox newbbox
               newtpage = changeSelectionBy sfunc tpage 
-          newthdl <- updateTempHoodleSelectM cid thdl newtpage pagenum 
+          newthdl <- updateTempHoodleSelectM cvsid thdl newtpage pagenum 
           uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
           pureUpdateUhdl (const uhdl')
           commit_

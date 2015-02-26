@@ -17,13 +17,15 @@
 module Hoodle.Coroutine.Window where
 
 import           Control.Applicative
-import           Control.Concurrent
 import           Control.Lens (view,set,over,(^.),(.~),_2)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
 import qualified Data.List as L
 import           Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk
+#ifdef HUB
+import           Control.Concurrent
+#endif
 --
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple (Dimension(..))
@@ -172,7 +174,7 @@ addTab filestore = do
     let wconf = Node 1
         initcvs = defaultCvsInfoSinglePage { _canvasId = 1 }
         initcvsbox = CanvasSinglePage initcvs
-        mfp = fileStore2Maybe filestore
+        -- mfp = fileStore2Maybe filestore
     uhdl' <- (undoTable .~ emptyUndo 50)   -- (undo = 50 for the time being) 
              . (frameState .~ wconf) 
              . updateFromCanvasInfoAsCurrentCanvas initcvsbox

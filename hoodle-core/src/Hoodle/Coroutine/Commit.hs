@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Commit 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -21,7 +21,6 @@ import Hoodle.Coroutine.Draw
 import Hoodle.GUI.Reflect
 import Hoodle.ModelAction.Page
 import Hoodle.Type.Coroutine
-import Hoodle.Type.Event
 import Hoodle.Type.HoodleState 
 import Hoodle.Type.Undo
 import Hoodle.Util

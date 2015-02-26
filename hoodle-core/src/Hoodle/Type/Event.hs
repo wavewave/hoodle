@@ -22,10 +22,12 @@ import           Control.Concurrent
 import           Data.ByteString 
 import           Data.IORef
 import qualified Data.Text as T
-import           Data.Time.Clock
 import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
+#ifdef HUB
+import           Data.Time.Clock
+#endif
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Data.Hoodle.BBox
@@ -34,7 +36,6 @@ import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Device 
 import           Hoodle.Type.Enum
--- import           Hoodle.Type.Canvas
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 #ifdef HUB

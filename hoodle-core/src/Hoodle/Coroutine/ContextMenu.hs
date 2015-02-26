@@ -163,7 +163,7 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
         mloc = case view (hoodleFileControl.hoodleFileName) uhdl of
                  LocalDir Nothing -> Nothing
                  LocalDir (Just fp) -> Just fp
-                 TempDir fp -> Nothing
+                 TempDir _ -> Nothing
         loc = maybe "" B.pack mloc
         lnk = LinkAnchor uuidbstr docidbstr loc (anchor_id anc) "" (0,0) (Dim 50 50)
     callRenderer $ cnstrctRItem (ItemLink lnk) >>= return . GotRItem

@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -77,13 +76,10 @@ import           Data.Hoodle.Predefined
 import           Data.Hoodle.Zipper
 -- from this package
 import           Graphics.Hoodle.Render.Background
--- import Graphics.Hoodle.Render.Highlight
 import           Graphics.Hoodle.Render.Item
 import           Graphics.Hoodle.Render.Primitive
 import           Graphics.Hoodle.Render.Type
-import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Util
-import           Graphics.Hoodle.Render.Util.HitTest
 -- 
 import           Prelude hiding (curry,uncurry,mapM,mapM_,concatMap)
 
@@ -294,7 +290,7 @@ renderRBkg = renderRBkg_Buf
 -- |
 renderRItem :: RenderCache -> CanvasId -> RItem -> Cairo.Render RItem  
 renderRItem _ _ itm@(RItemStroke strk) = renderStrk (bbxed_content strk) >> return itm
-renderRItem _cache cid itm@(RItemImage img msfc) = do
+renderRItem _cache _cid itm@(RItemImage img msfc) = do
     case msfc of
       Nothing -> renderImg (bbxed_content img)
       Just sfc -> do 
@@ -386,13 +382,13 @@ renderRLayer_InBBox = renderRLayer_InBBoxBuf
 -- draw using buffer -- 
 -----------------------
 
+adjustScale :: Double -> Maybe Xform4Page -> Cairo.Render ()
 adjustScale s mx =
   case mx of 
     Nothing -> Cairo.scale (1/s) (1/s) 
     Just xform -> if (scalex xform /s > 0.999 && scalex xform /s < 1.001) 
                     then do Cairo.identityMatrix
                             Cairo.translate (transx xform) (transy xform)
-                            -- Cairo.setAntialias Cairo.AntialiasNone
                     else Cairo.scale (1/s) (1/s)
 
 
@@ -401,8 +397,8 @@ renderRBkg_Buf :: RenderCache
                -> CanvasId
                -> (RBackground,Dimension,Maybe Xform4Page) 
                -> Cairo.Render (RBackground,Dimension,Maybe Xform4Page)
-renderRBkg_Buf cache cid (b,dim,mx) = do 
-    case HM.lookup (rbkg_surfaceid b) {- (rbkg_surfaceid b,cid) -} cache of
+renderRBkg_Buf cache _cid (b,dim,mx) = do 
+    case HM.lookup (rbkg_surfaceid b) cache of
       Nothing -> drawFallBackBkg dim >> return ()
       Just (s,sfc) -> do 
         Cairo.save
@@ -416,7 +412,7 @@ renderRBkg_Buf cache cid (b,dim,mx) = do
 renderRLayer_InBBoxBuf :: RenderCache -> CanvasId -> Maybe BBox 
                        -> (RLayer,Dimension,Maybe Xform4Page) 
                        -> Cairo.Render (RLayer,Dimension,Maybe Xform4Page) 
-renderRLayer_InBBoxBuf cache cid mbbox (lyr,dim,mx) = do
+renderRLayer_InBBoxBuf cache _cid mbbox (lyr,dim,mx) = do
     case view gbuffer lyr of 
       LyBuf sfcid -> do 
         case HM.lookup sfcid cache of
@@ -438,7 +434,7 @@ renderRLayer_InBBoxBuf cache cid mbbox (lyr,dim,mx) = do
 
 -- | 
 updateLayerBuf :: CanvasId -> RLayer -> Renderer ()
-updateLayerBuf cid lyr = do 
+updateLayerBuf _cid lyr = do 
   qgen <- rendererGenCmdQ <$> ask
   case view gbuffer lyr of 
     LyBuf sfcid -> do
@@ -466,7 +462,7 @@ cnstrctRHoodle hdl = do
       pgs = view pages hdl
       pdf = view embeddedPdf hdl 
       txt = view embeddedText hdl
-  (qpdf,qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ)<$> ask
+  (qpdf,_qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ)<$> ask
   mdoc <- maybe (return Nothing) (\src -> liftIO $ do
             cmdid <- issuePDFCommandID
             docvar <- atomically newEmptyTMVar

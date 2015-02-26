@@ -18,14 +18,11 @@
 module Hoodle.Coroutine.File where
 
 -- from other packages
-import           Control.Applicative ((<$>),(<*>))
-import           Control.Concurrent
-import qualified Control.Exception as E
+import           Control.Applicative
 import           Control.Lens (at,view,set,over,(.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe (MaybeT(..))
-import           Control.Monad.Trans.Reader
 import           Data.Attoparsec.ByteString.Char8 (parseOnly)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
 import qualified Data.ByteString.Lazy as L
@@ -33,17 +30,22 @@ import           Data.Digest.Pure.MD5 (md5)
 import           Data.Foldable (mapM_,forM_)
 import qualified Data.List as List 
 import           Data.Maybe
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import           Data.Time.Clock
-import           Filesystem.Path.CurrentOS (decodeString, encodeString)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk 
 import           System.Directory
 import           System.FilePath
-import qualified System.FSNotify as FS
 import           System.IO (hClose, hFileSize, openFile, IOMode(..))
 import           System.Process 
+#ifdef HUB
+import           Control.Concurrent
+import qualified Control.Exception as E
+import           Control.Monad.Trans.Reader
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
+import           Filesystem.Path.CurrentOS (decodeString, encodeString)
+import qualified System.FSNotify as FS
+#endif
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.Generic
@@ -122,7 +124,6 @@ askIfOverwrite fp action = do
 getFileContent :: FileStore -> MainCoroutine ()
 getFileContent store@(LocalDir (Just fname)) = do 
     xstate <- get
-    let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
     let ext = takeExtension fname
     case ext of 
       ".hdl" -> do 
@@ -134,6 +135,7 @@ getFileContent store@(LocalDir (Just fname)) = do
             constructNewHoodleStateFromHoodle h
             ctime <- liftIO $ getCurrentTime
 #ifdef HUB
+            -- let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
             msqlfile <- view (settings.sqliteFileName) <$> get
             let fileuuidbstr = view hoodleID h
                 fileuuidtxt = TE.decodeUtf8 fileuuidbstr
@@ -147,8 +149,7 @@ getFileContent store@(LocalDir (Just fname)) = do
 #endif    
             pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
                            . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
-                           . (hoodleFileControl.syncMD5History .~ maybeToList mmd5) 
-                           )
+                           . (hoodleFileControl.syncMD5History .~ maybeToList mmd5)  )
             commit_
       ".xoj" -> do 
           liftIO (XP.parseXojFile fname) >>= \x -> case x of  
@@ -176,8 +177,8 @@ getFileContent (LocalDir Nothing) = do
     constructNewHoodleStateFromHoodle =<< liftIO defaultHoodle 
     pureUpdateUhdl (hoodleFileControl.hoodleFileName .~ LocalDir Nothing) 
     commit_ 
-getFileContent store@(TempDir fname) = do 
 #ifdef HUB
+getFileContent store@(TempDir fname) = do 
     xstate <- get
     let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
     let ext = takeExtension fname
@@ -200,7 +201,7 @@ getFileContent store@(TempDir fname) = do
           xstate' <- get
           doIOaction_ $ Gtk.postGUIAsync (setTitleFromFileName xstate')
 #else
-    return ()
+getFileContent _ = return ()
 #endif
 
 
@@ -437,7 +438,7 @@ fileLoadImageBackground = do
       let fDoesEmbedImg = view (settings.doesEmbedImage) xst
           uhdl = view (unitHoodles.currentUnit) xst
           hdl = getHoodle uhdl
-          Dim pw ph = (view gdimension . fromJust . view (gpages.at 0)) hdl 
+          Dim pw _ph = (view gdimension . fromJust . view (gpages.at 0)) hdl 
 
       itm <- if fDoesEmbedImg 
                then checkEmbedImageSize filename 

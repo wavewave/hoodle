@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Background 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -202,7 +202,7 @@ cnstrctRBkg_StateT :: Dimension
                    -> Background 
                    -> StateT (Maybe Context) Renderer RBackground
 cnstrctRBkg_StateT _ bkg = do  
-  (qpdf,qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ) <$> lift ask
+  (qpdf,_qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ) <$> lift ask
   sfcid <- issueSurfaceID
   case bkg of 
     Background _t c s -> return (RBkgSmpl c s sfcid) 

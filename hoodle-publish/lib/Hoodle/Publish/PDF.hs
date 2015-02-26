@@ -6,9 +6,9 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Publish.PDF
--- Copyright   : (c) 2013,2014 Ian-Woo Kim
+-- Copyright   : (c) 2013-2015 Ian-Woo Kim
 --
--- License     : GPL-3 
+-- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
@@ -29,7 +29,7 @@ import           Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
 import           Data.Int
-import           Data.UUID (fromString, UUID(..))
+import           Data.UUID (fromString, UUID)
 import           Data.UUID.V4
 import           Graphics.Rendering.Cairo
 import           Network.HTTP.Base
@@ -268,7 +268,7 @@ writePdfFile :: FilePath -- ^ hoodle file path
              -> [(Int,[S.Link])]
              -> Maybe UUID
              -> StateT AppState (PdfWriter IO) ()
-writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks muuid = do
+writePdfFile _hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks muuid = do
     handle <- liftIO $ openBinaryFile path ReadMode
     res <- runPdfWithHandle handle knownFilters $ do
       encrypted <- isEncrypted
@@ -280,14 +280,12 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks m
         mannots <- runMaybeT $ do 
                      lnks <- MaybeT . return $ lookup (i+1) nlnks
                      liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath,currpath)) $ lnks 
-        hdlfp' <- liftIO $ canonicalizePath hdlfp 
-        let (hdldir,hdlfn) = splitFileName hdlfp' 
-            (hdlfb,_ext) = splitExtension hdlfn
+        -- hdlfp' <- liftIO $ canonicalizePath hdlfp 
         let special = if i == 0 
                       then let S.Dim _w h = dim 
                            in  [ Annot { annot_rect = (0,floor h,100,floor h-100)
                                        , annot_border = (16,16,1) 
-                                       , annot_act = specialURIFunction specialurlbase muuid -- (hdldir,hdlfb) 
+                                       , annot_act = specialURIFunction specialurlbase muuid 
                                        }
                                ]
                       else []  
@@ -298,8 +296,8 @@ writePdfFile hdlfp dim (urlbase,specialurlbase) (rootpath,currpath) path nlnks m
     when (isLeft res) $ error $ show res
     liftIO $ hClose handle
 
-specialURIFunction :: FilePath -> Maybe UUID {- (FilePath,FilePath) -} -> AnnotActions
-specialURIFunction baseurl muuid {- (hdldir,hdlfb) -} = 
+specialURIFunction :: FilePath -> Maybe UUID -> AnnotActions
+specialURIFunction baseurl muuid = 
     case muuid of
       Nothing -> error "muuid = Nothing?" -- OpenURI baseurl
       Just uuid -> OpenURI (baseurl  </>  urlEncode (show uuid))
@@ -326,18 +324,18 @@ sequence1_ i (a:as) = a >> i >> sequence1_ i as
 
 -- | render a hoodle file to PDF simply
 renderHoodleToPDF :: S.Hoodle -> FilePath -> IO () 
-renderHoodleToPDF h ofp = do 
-    let p = head (view S.pages h)
+renderHoodleToPDF hdl ofp = do 
+    let p = head (view S.pages hdl)
     let S.Dim width height = view S.dimension p  
     tdir <- getTemporaryDirectory
     uuid <- nextRandom
     let tempfile = tdir </> show uuid <.> "pdf"
-    ctxt <- initRenderContext h
+    ctxt <- initRenderContext hdl
     let setsize sfc pg = let S.Dim w h = view S.dimension pg 
                          in pdfSurfaceSetSize sfc w h >> return pg
-    withPDFSurface {- ofp -} tempfile width height $ \s -> 
+    withPDFSurface tempfile width height $ \s -> 
       renderWith s . flip runStateT ctxt $ 
-        sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages $ h 
+        sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages $ hdl 
     readProcessWithExitCode "pdftk" [ tempfile, "cat", "output", ofp ] ""
     return ()
 
@@ -370,7 +368,6 @@ createPdf (urlbase,specialurlbase) rootpath (fn,ofn) = catch action (\(e :: Some
                 npglnks = map ((,) <$> fst <*> getLinks . snd) npgs  
                 dim = (view S.dimension . snd . head) npgs 
                 muuid = (fromString . B.unpack . view S.hoodleID) hdl
-            -- print muuid
             tempfile <- (</>) <$> getTemporaryDirectory <*> liftM show nextRandom
             renderHoodleToPDF hdl tempfile
             --

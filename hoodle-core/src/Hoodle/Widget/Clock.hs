@@ -63,7 +63,7 @@ checkPointerInClock (_cid,cinfo,geometry) pcoord
 startClockWidget :: (CanvasId,CanvasInfo a,CanvasGeometry)
                  -> CWAction 
                  -> MainCoroutine () 
-startClockWidget (cid,cinfo,geometry) (Move (oxy,owxy)) = do 
+startClockWidget (_cid,cinfo,geometry) (Move (oxy,owxy)) = do 
     xst <- get 
     cache <- renderCache
     let uhdl = view (unitHoodles.currentUnit) xst

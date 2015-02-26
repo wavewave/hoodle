@@ -111,7 +111,7 @@ sendPDFCommand queuevar cmdid cmd = do
     writeTVar queuevar nqueue
 
 isRemoved :: (PDFCommandID,PDFCommand) -> (PDFCommandID,PDFCommand) -> Bool
-isRemoved n@(cmdid,ncmd) o@(ocmdid,ocmd) 
+isRemoved (cmdid,ncmd) (ocmdid,ocmd) 
   | cmdid == ocmdid = True
   | otherwise = case ncmd of
                   RenderPageScaled nsfcid _ _ _ -> 
@@ -139,7 +139,7 @@ surfaceID (LayerScaled sfcid _ _ _ ) = sfcid
 
 
 isRemovedGen :: (GenCommandID,GenCommand) -> (GenCommandID,GenCommand) -> Bool
-isRemovedGen n@(cmdid,ncmd) o@(ocmdid,ocmd) 
+isRemovedGen (cmdid,ncmd) (ocmdid,ocmd) 
   | cmdid == ocmdid = True
   | otherwise = case ncmd of
                   BkgSmplScaled nsfcid _ _ _ _ -> surfaceID ocmd == nsfcid

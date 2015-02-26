@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Pen 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -14,26 +14,17 @@
 
 module Hoodle.ModelAction.Pen where
 
-import           Control.Lens (view,set,over)
+import           Control.Lens (view)
 import           Control.Monad (when)
-import           Control.Monad.Identity (runIdentity)
 import           Data.Foldable
-import qualified Data.IntMap as IM
 import           Data.Sequence hiding (take, drop)
 import           Data.Strict.Tuple hiding (uncurry)
 import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform 
-import           Data.Hoodle.BBox
-import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
-import           Graphics.Hoodle.Render
-import           Graphics.Hoodle.Render.Type
 -- from this package 
-import           Hoodle.ModelAction.Layer
-import           Hoodle.ModelAction.Page
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Enum
-import           Hoodle.Type.PageArrangement
 --
 
 data TempRender a = TempRender { tempSurfaceSrc :: Cairo.Surface  

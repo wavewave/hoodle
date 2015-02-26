@@ -21,7 +21,6 @@ import Control.Applicative
 import Control.Lens 
 import Data.Foldable (toList)
 import qualified Data.IntMap as IM
-import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform 
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -37,17 +36,16 @@ import Graphics.Hoodle.Render.Type.Renderer
 ----------------------------
 
 newtype LyBuf = LyBuf { unLyBuf :: SurfaceID }  
--- (Maybe Cairo.Surface)
 
 -- | normal rendering data structure for layer, R for rendering
 --   buffer is Surface, container for item = list 
 --   and StrokeBBox as contained items
-type RLayer = GLayer LyBuf [] RItem -- StrokeBBox 
+type RLayer = GLayer LyBuf [] RItem 
 
 -- | normal rendering data structure for page 
 --   background is RBackground and container for layer is IntMap 
 --   and layer is RLayer  
-type RPage = GPage RBackground ZipperSelect RLayer -- change from IntMap 
+type RPage = GPage RBackground ZipperSelect RLayer
 
 -- | normal rendering data struture for hoodle 
 --   container for page is IntMap 
@@ -60,8 +58,6 @@ instance Show RHoodle where
 emptyRLayer :: SurfaceID -> RLayer 
 emptyRLayer sfcid = GLayer (LyBuf sfcid ) []
 
--- LyBuf Nothing
-
 -------
 -- get simple hoodle data structure 
 -------
@@ -69,8 +65,6 @@ emptyRLayer sfcid = GLayer (LyBuf sfcid ) []
 -- | project to simple Layer out of RLayer 
 rLayer2Layer :: RLayer -> Layer
 rLayer2Layer = Layer <$> fmap rItem2Item . view gitems 
-
- -- strkbbx_strk . view gstrokes
 
 -- | project to simple Page out of RPage
 rPage2Page :: RPage -> Page 

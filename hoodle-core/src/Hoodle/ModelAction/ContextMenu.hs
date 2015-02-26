@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.ContextMenu
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -16,19 +16,19 @@
 
 module Hoodle.ModelAction.ContextMenu where
 
-import           Control.Concurrent (forkIO, threadDelay)
-import           Control.Exception
 import qualified Data.ByteString.Char8 as B
-import           Data.Foldable (forM_)
 import           Data.UUID.V4
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory 
 import           System.FilePath 
-import           System.Process
 #ifdef HUB
+import           Control.Concurrent (forkIO, threadDelay)
+import           Control.Exception
+import           Data.Foldable (forM_)
 import           DBus 
 import           DBus.Client 
+import           System.Process
 #endif
 -- 
 import           Data.Hoodle.BBox

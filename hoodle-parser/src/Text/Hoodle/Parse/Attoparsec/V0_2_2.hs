@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Text.Hoodle.Parse.Attoparsec.V0_2_2
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,9 +17,10 @@
 module Text.Hoodle.Parse.Attoparsec.V0_2_2 where
 
 import           Control.Applicative 
-import           Data.Attoparsec
-import           Data.Attoparsec.Char8 ( char, decimal, double, skipSpace
-                                      , isHorizontalSpace, anyChar)
+import           Data.Attoparsec.ByteString
+import           Data.Attoparsec.ByteString.Char8 ( char, decimal, double
+                                                  , skipSpace
+                                                  , isHorizontalSpace, anyChar)
 import qualified Data.ByteString.Char8 as B hiding (map) 
 import           Data.Char 
 import           Data.Strict.Tuple

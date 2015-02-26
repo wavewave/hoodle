@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Graphics.Hoodle.Render.Engine
--- Copyright   : (c) 2014 Ian-Woo Kim
+-- Copyright   : (c) 2014, 2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,13 +17,13 @@
 module Graphics.Hoodle.Render.Engine
 ( pdfRendererMain
 , genRendererMain
+, transparentClear
 ) where
 
 import           Control.Concurrent.STM
 import           Control.Monad (forever)
 import qualified Data.HashMap.Strict as HM
 import           Data.Sequence ( viewl, ViewL(..) )
-import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
@@ -118,7 +118,7 @@ genWorker cache handler (LayerRedraw sfcid ritms) = do
           mapM_ (renderRItem undefined undefined) ritms
         handler (SurfaceUpdate (sfcid,(s,sfc)))
         handler (FinishCommandFor sfcid)
-genWorker _cache handler (LayerScaled sfcid ritms dim@(Dim ow _) (Dim w h)) = do
+genWorker _cache handler (LayerScaled sfcid ritms (Dim ow _) (Dim w h)) = do
     let s = w / ow
     sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w) (floor h)
     Cairo.renderWith sfc $ do   

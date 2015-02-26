@@ -28,7 +28,6 @@ import qualified Data.IntMap as M
 import           Data.Maybe hiding (fromMaybe)
 import           Data.Monoid
 import           Data.Sequence
-import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
@@ -37,7 +36,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Predefined
 import Data.Hoodle.Select
 import Data.Hoodle.Simple (Dimension(..),Stroke(..))
-import Data.Hoodle.Zipper (currIndex,current)
+import Data.Hoodle.Zipper (currIndex)
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Generic
 import Graphics.Hoodle.Render.Highlight
@@ -475,7 +474,7 @@ drawSinglePageSel geometry = drawFuncSelGen rendercontent renderselect
             BkgEfficient -> cairoRenderOption (InBBoxOption mbbox) cache cid (InBBoxBkgBuf pg',Just xform) >> return ()
             Efficient -> cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox pg',Just xform) >> return ()
           return ()
-        renderselect _cache cid (_pnum,tpg) mbbox _flag = do 
+        renderselect _cache _cid (_pnum,tpg) mbbox _flag = do 
           cairoHittedBoxDraw geometry tpg mbbox
           return ()
 
@@ -504,7 +503,7 @@ drawContHoodleSel geometry = drawContPageSelGen renderother renderselect
             Clear -> (,) n . fst <$> cairoRenderOption (RBkgDrawPDF,DrawFull) cache cid (page,Just xform) 
             BkgEfficient -> (,) n . unInBBoxBkgBuf . fst <$> cairoRenderOption (InBBoxOption mbbox) cache cid (InBBoxBkgBuf page,Just xform)
             Efficient -> (,) n . unInBBox . fst <$> cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox page,Just xform)
-        renderselect _cache cid (PageNum n,tpg) mbbox _flag = do
+        renderselect _cache _cid (PageNum n,tpg) mbbox _flag = do
           cairoHittedBoxDraw geometry tpg mbbox 
           return (n,tpg)
 
@@ -648,7 +647,7 @@ canvasImageSurface cache cid mmulti geometry hdl = do
             Cairo.translate (z*ws_cvs) (z*hs_cvs)
         let xform = mkXform4Page geometry pn
         cairoXform4PageCoordinate xform
-        cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox pg,Nothing :: Maybe Xform4Page)  -- Just xform
+        cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox pg, Nothing :: Maybe Xform4Page)
       renderfunc = do 
         Cairo.setSourceRGBA 0.5 0.5 0.5 1
         Cairo.rectangle 0 0 w_cvs h_cvs        
@@ -734,8 +733,7 @@ drawLayerWidget hdl cinfo mbbox cvscoord = do
       pg <- MaybeT . return $ view (gpages.at cpn) hdl
       let lyrs = view glayers pg
           n = currIndex lyrs 
-          l = current lyrs 
-          -- LyBuf msfc = view gbuffer l
+          -- l = current lyrs 
       lift $ renderLayerWidget (show n) mbbox cvscoord 
       when (view layerWidgetShowContent lc) $ do 
         liftIO $ putStrLn "drawLayerWidget: not implemented"

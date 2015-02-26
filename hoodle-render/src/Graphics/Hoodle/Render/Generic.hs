@@ -1,5 +1,7 @@
-{-# LANGUAGE FlexibleInstances, FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeFamilies #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -27,7 +29,6 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 -- from this package 
 import Graphics.Hoodle.Render
--- import Graphics.Hoodle.Render.Debug
 import Graphics.Hoodle.Render.Type 
 -- 
 import Prelude hiding (mapM_,mapM)
@@ -41,7 +42,7 @@ passarg1 :: (Monad m) => (a -> m ()) -> a -> m a
 passarg1 f a = f a >> return a
 
 const2 :: c -> a -> b -> c
-const2 f x y = f
+const2 f _x _y = f
 
 -- | 
 class Renderable a where 
@@ -85,13 +86,13 @@ data StrokeBBoxOption = DrawFull | DrawBoxOnly
 instance RenderOptionable (BBoxed Stroke) where
   type RenderOption (BBoxed Stroke) = StrokeBBoxOption
   cairoRenderOption DrawFull = cairoRender 
-  cairoRenderOption DrawBoxOnly = error "BBoxed Stroke.cairoRenderOption: DrawBoxOnly deprecated" -- const (passarg renderStrkBBx_BBoxOnly)
+  cairoRenderOption DrawBoxOnly = error "BBoxed Stroke.cairoRenderOption: DrawBoxOnly deprecated" 
   
 -- | 
 instance RenderOptionable (RBackground,Dimension,Maybe Xform4Page) where 
   type RenderOption (RBackground,Dimension,Maybe Xform4Page) = RBkgOpt 
   cairoRenderOption RBkgDrawPDF cache cid = renderRBkg cache cid
-  cairoRenderOption RBkgDrawWhite cache cid = error "RBackground...cairoRenderOption: RBkgDrawWhite deprecated" -- passarg (renderRBkg_Dummy cache)
+  cairoRenderOption RBkgDrawWhite _cache _cid = error "RBackground...cairoRenderOption: RBkgDrawWhite deprecated" 
   cairoRenderOption RBkgDrawBuffer cache cid = renderRBkg_Buf cache cid 
   cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid = renderRBkg_InBBox cache cid mbbox 
 
@@ -99,7 +100,7 @@ instance RenderOptionable (RBackground,Dimension,Maybe Xform4Page) where
 instance RenderOptionable (RLayer,Dimension,Maybe Xform4Page) where
   type RenderOption (RLayer,Dimension,Maybe Xform4Page) = StrokeBBoxOption 
   cairoRenderOption DrawFull cache cid = cairoRender cache cid
-  cairoRenderOption DrawBoxOnly cache cid = error "RLayer.cairoRenderOption: DrawBoxOnly deprecated" -- passarg (renderRLayer_BBoxOnly cache)
+  cairoRenderOption DrawBoxOnly _cache _cid = error "RLayer.cairoRenderOption: DrawBoxOnly deprecated" 
 
 -- | 
 instance RenderOptionable (InBBox (RLayer,Dimension,Maybe Xform4Page)) where

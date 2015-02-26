@@ -19,7 +19,6 @@
 module Hoodle.Coroutine.Page where
 
 import           Control.Applicative
-import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Lens (view,set,(.~), (^.))
 import           Control.Monad
@@ -29,15 +28,11 @@ import qualified Data.Foldable as F
 import           Data.Function (on)
 import qualified Data.IntMap as M
 import           Data.List (sortBy)
-import           Data.UUID.V4
-import qualified Graphics.Rendering.Cairo as Cairo
 -- from hoodle-platform
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Data.Hoodle.Simple (Dimension(..))
 import           Data.Hoodle.Zipper
-import           Graphics.Hoodle.Render
--- import           Graphics.Hoodle.Render.Background
 import           Graphics.Hoodle.Render.Type
 -- from this package
 import           Hoodle.Accessor
@@ -48,7 +43,6 @@ import           Hoodle.ModelAction.Page
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Canvas
-import           Hoodle.Type.Event
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Enum
@@ -332,21 +326,19 @@ newPageFromOld pg = do
 
 updatePageCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
 updatePageCache geometry (pnum,page) = do
-  let dim@(Dim w h) = page ^. gdimension 
+  let Dim w h = page ^. gdimension 
       CvsCoord (x0,y0) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (0,0))
       CvsCoord (x1,y1) = 
         (desktop2Canvas geometry . page2Desktop geometry) (pnum,PageCoord (w,h))
-      s = (x1-x0) / w 
   updateBkgCache (Dim w h) (Dim (x1-x0) (y1-y0)) (page ^. gbackground) 
   mapM_ (updateLayerCache (Dim w h) (Dim (x1-x0) (y1-y0))) (F.toList (page ^. glayers))
 
 
 updateBkgCache :: Dimension -> Dimension -> RBackground -> Renderer ()
 updateBkgCache dimo dimv rbkg =  do
-  RendererState handler qpdf qgen _ <- ask
-  let bkg = rbkg2Bkg rbkg
-      sfcid = rbkg_surfaceid rbkg 
+  RendererState _handler qpdf qgen _ <- ask
+  let sfcid = rbkg_surfaceid rbkg 
   case rbkg of 
     RBkgSmpl {..} -> do
       cmdid <- issueGenCommandID

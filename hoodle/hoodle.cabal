@@ -29,7 +29,7 @@ Executable hoodle
   Build-Depends: 
                  base == 4.*, 
                  cmdargs >= 0.7, 
-                 hoodle-core >= 0.15, 
+                 hoodle-core == 0.15.*, 
                  hoodle 
 
 Library
@@ -43,7 +43,7 @@ Library
                    containers >= 0.4,
                    cmdargs >= 0.7,
                    configurator >= 0.2,
-                   hoodle-core >= 0.15
+                   hoodle-core == 0.15.*
   if flag(dyre)
     Build-depends:   dyre >= 0.8.11
    

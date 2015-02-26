@@ -317,7 +317,7 @@ createTab :: (AllEvent -> IO ()) -> Gtk.Notebook -> Gtk.VBox -> IO (Int,UUID,Gtk
 createTab callback notebook vboxcvs = do
     hbox <- Gtk.hBoxNew False 0 
     ebox <- Gtk.eventBoxNew
-    label <- Gtk.labelNew (Just "hello" :: Maybe String)
+    label <- Gtk.labelNew (Just "      " :: Maybe String)
     Gtk.containerAdd ebox label
     Gtk.dragSourceSet ebox [Gtk.Button1] [Gtk.ActionCopy]
     Gtk.dragSourceSetIconStock ebox Gtk.stockIndex

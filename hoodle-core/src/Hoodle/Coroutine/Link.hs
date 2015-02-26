@@ -57,7 +57,6 @@ import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
-import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Page (changePage)
 import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput 
@@ -74,6 +73,9 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util 
 import           Hoodle.View.Coordinate
+#ifdef HUB
+import           Hoodle.Coroutine.HubInternal
+#endif
 --
 import Prelude hiding (mapM_)
 

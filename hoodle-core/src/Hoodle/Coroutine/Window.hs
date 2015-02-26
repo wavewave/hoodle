@@ -31,7 +31,6 @@ import           Data.Hoodle.Simple (Dimension(..))
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.File
-import           Hoodle.Coroutine.HubInternal
 import           Hoodle.Coroutine.Mode
 import           Hoodle.Coroutine.Page
 import           Hoodle.GUI.Reflect
@@ -46,6 +45,10 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window
 import           Hoodle.Util
+#ifdef HUB
+import           Hoodle.Coroutine.HubInternal
+#endif
+
 --
 
 -- | canvas configure with general zoom update func

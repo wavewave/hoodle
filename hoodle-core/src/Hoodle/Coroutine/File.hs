@@ -145,9 +145,6 @@ getFileContent store@(LocalDir (Just fname)) = do
 #else 
             let mmd5 = Nothing 
 #endif    
-            liftIO $ print "getFileContent"
-            liftIO $ print mfstat
-            liftIO $ print mmd5
             pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
                            . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
                            . (hoodleFileControl.syncMD5History .~ maybeToList mmd5) 
@@ -759,6 +756,7 @@ loadHoodlet str = do
        else return Nothing
 
   
+#ifdef HUB
 -- |
 syncFile :: MainCoroutine ()
 syncFile = do 
@@ -798,5 +796,5 @@ syncFile = do
       lift (updateSyncInfoAll nfstat)
       when (Just nfstat /= mfstat) (lift fileReload)
     return ()
-  
+#endif
   

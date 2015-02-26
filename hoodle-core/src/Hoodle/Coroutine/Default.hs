@@ -391,18 +391,7 @@ defaultEventProcess (GetHoodleFileInfoFromTab uuidtab ref) = do
         Nothing -> liftIO $ writeIORef ref Nothing
         Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GotLink mstr (x,y)) = gotLink mstr (x,y)    
-defaultEventProcess (Sync ctime) = do 
-  xst <- get
-  case view (unitHoodles.currentUnit.hoodleFileControl.lastSavedTime) xst of 
-    Nothing -> return ()
-    Just otime -> do 
-      let dtime = diffUTCTime ctime otime
-      if dtime < dtime_bound * 10 
-        then return () 
-        else 
-          doIOaction $ \evhandler -> do 
-            Gtk.postGUISync (evhandler (UsrEv FileReloadOrdered))
-            return (UsrEv ActionOrdered)
+
 defaultEventProcess FileReloadOrdered = fileReload 
 defaultEventProcess (CustomKeyEvent str) = do
     if | str == "[]:\"Super_L\"" -> do  
@@ -448,11 +437,24 @@ defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
       case r' of 
         Left _ ->  msgShout "DisconnectedHub" >>  return ()
         Right _ -> uploadWork (ofile,file) hinfo
+defaultEventProcess (Sync ctime) = do 
+  xst <- get
+  case view (unitHoodles.currentUnit.hoodleFileControl.lastSavedTime) xst of 
+    Nothing -> return ()
+    Just otime -> do 
+      let dtime = diffUTCTime ctime otime
+      if dtime < dtime_bound * 10 
+        then return () 
+        else 
+          doIOaction $ \evhandler -> do 
+            Gtk.postGUISync (evhandler (UsrEv FileReloadOrdered))
+            return (UsrEv ActionOrdered)
 defaultEventProcess (SyncInfoUpdated uhdluuid fstat) = updateSyncInfo uhdluuid fstat
 defaultEventProcess (SyncFileFinished fstat) = updateSyncInfoAll fstat
 defaultEventProcess (FileSyncFromHub uhdluuid fstat) = fileSyncFromHub uhdluuid fstat
 defaultEventProcess (GotSyncEvent isforced fileuuid uhdluuid) = gotSyncEvent isforced fileuuid uhdluuid
 #endif
+
 defaultEventProcess ev = -- for debugging
                          do msgShout "--- no default ---"
                             msgShout (show ev)

@@ -45,7 +45,6 @@ import           Hoodle.Coroutine.Select.Clipboard
 import           Hoodle.Coroutine.TextInput
 import           Hoodle.Coroutine.Window
 import           Hoodle.GUI.Reflect
-import           Hoodle.Script
 import           Hoodle.Type.Canvas
 import           Hoodle.Type.Coroutine
 import           Hoodle.Type.Enum

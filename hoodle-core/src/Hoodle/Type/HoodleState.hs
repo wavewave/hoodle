@@ -484,9 +484,11 @@ newPageMode = lens _newPageMode (\f a -> f {_newPageMode=a})
 networkEditSourceInfo :: Simple Lens Settings (Maybe ThreadId)
 networkEditSourceInfo = lens _networkEditSourceInfo (\f a -> f {_networkEditSourceInfo=a})
 
+#ifdef HUB
 -- | sqlite file
 sqliteFileName :: Simple Lens Settings (Maybe FilePath)
 sqliteFileName = lens _sqliteFileName (\f a -> f {_sqliteFileName=a})
+#endif
 
 -- |
 emptyUnitHoodle :: IO UnitHoodle

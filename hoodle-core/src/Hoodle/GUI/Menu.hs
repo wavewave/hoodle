@@ -466,7 +466,6 @@ getMenuUI evar = do
 #ifndef HUB
         , editnetsrca
         , huba
-        , hubsocketa
 #endif
         ] 
       enabledActions = 

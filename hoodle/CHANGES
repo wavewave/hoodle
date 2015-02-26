@@ -36,71 +36,82 @@ hoodle
 ------
 
 0.1: 29 Nov 2012
-   * new hoodle format   
-   * simplify namespace to Hoodle
-   * inter-process clipboard support using GtkClipboard
-   * Image embedding support 
-   * pdf export support 
+    * new hoodle format   
+    * simplify namespace to Hoodle
+    * inter-process clipboard support using GtkClipboard
+    * Image embedding support 
+    * pdf export support 
 
 0.1.1: 16 Jan 2013 
-   * context menu support 
-   * text input support (experimental latex support with lasem installed)
-   * SVG import support
-   * JPG import support 
-   * image can be embedded
-   * full screen support 
-   * color picker menu and toolbar button 
-   * experimental smooth scrolling support 
-   * rendering engine improved
+    * context menu support 
+    * text input support (experimental latex support with lasem installed)
+    * SVG import support
+    * JPG import support 
+    * image can be embedded
+    * full screen support 
+    * color picker menu and toolbar button 
+    * experimental smooth scrolling support 
+    * rendering engine improved
 
 0.2: 24 Mar 2013
-   * hoodle data format updated. now hoodle document has a unique id.  
-   * linking between documents implemented 
-   * vertical space inserting tool implemented
-   * a widget introduced for panning and zooming 
-   * drag and drop linking implemented 
-   * drag and drop image embedding implemented 
-   * poppler pdf support is mandatory 
-   * pdf can be embedded in a file
-   * toolbox ui reflects current hoodle state more correctly
-   * slimmer select box design
-   * several rendering glitches fixed 
+    * hoodle data format updated. now hoodle document has a unique id.  
+    * linking between documents implemented 
+    * vertical space inserting tool implemented
+    * a widget introduced for panning and zooming 
+    * drag and drop linking implemented 
+    * drag and drop image embedding implemented 
+    * poppler pdf support is mandatory 
+    * pdf can be embedded in a file
+    * toolbox ui reflects current hoodle state more correctly
+    * slimmer select box design
+    * several rendering glitches fixed 
 
 0.2.0: 8 Apr 2013
-   * selected group of item can be transformed to a link
-   * link to external URL 
-   * when drag-and-drop link, it automatically transform currently selected item to the link
-   * drag and drop URL as a link (from address bar in web browser, such as firefox or chromium )   
-   * close button for Pan/Zoom widget
-   * single image selection using wacom side button (convenient when overlapped images) 
-   * grey out save button when reading a file at first
-   * white-out bug fix when opening multiple pdf files 
+    * selected group of item can be transformed to a link
+    * link to external URL 
+    * when drag-and-drop link, it automatically transform currently selected item to the link
+    * drag and drop URL as a link (from address bar in web browser, such as firefox or chromium )   
+    * close button for Pan/Zoom widget
+    * single image selection using wacom side button (convenient when overlapped images) 
+    * grey out save button when reading a file at first
+    * white-out bug fix when opening multiple pdf files 
 
 0.2.1: 2 Jun 2013 
-   * touch support: touch is now used for zooming and panning
-   * any selected items can be transformed into a link
-   * layer widget (show current content of layer and navigate other layers)
-   * very simple versioning support (available under File/Save Version) 
-   * notify a linked item with transparent yellow box when hovered over
-   * page arranged at the center not left-upper corner
-   * rendering improvement especially when a pen stroke is being drawn 
-   * context menu whenever right-clicking on selected item 
+    * touch support: touch is now used for zooming and panning
+    * any selected items can be transformed into a link
+    * layer widget (show current content of layer and navigate other layers)
+    * very simple versioning support (available under File/Save Version) 
+    * notify a linked item with transparent yellow box when hovered over
+    * page arranged at the center not left-upper corner
+    * rendering improvement especially when a pen stroke is being drawn 
+    * context menu whenever right-clicking on selected item 
 
 0.2.2: 31 Dec 2013
-   * ink message for revision commit
-   * full latex support (using external tools: xelatex, pdfcrop, pdf2svg)
-   * network editing for latex and text
-   * add context menus for image cropping/rotating on the fly
-   * when resizing selection, keep aspect ratio by default. but if using handle in the middle of side, or with right pen click, arbtrary resizing is still possible
-   * resizing image and pdf background if it's too big. (100k/10MB)  
-   * clock widget (test for asynchronous event processing)
-   * assign shortcut keys for color/pen tools   
+    * ink message for revision commit
+    * full latex support (using external tools: xelatex, pdfcrop, pdf2svg)
+    * network editing for latex and text
+    * add context menus for image cropping/rotating on the fly
+    * when resizing selection, keep aspect ratio by default. but if using handle in the middle of side, or with right pen click, arbtrary resizing is still possible
+    * resizing image and pdf background if it's too big. (100k/10MB)  
+    * clock widget (test for asynchronous event processing)
+    * assign shortcut keys for color/pen tools   
 
 0.3: 14 Jul 2014
-   * asynchronous PDF rendering engine
-   * anchored link (link to specific location of a document)
-   * hoodlet (small hoodle snippet) 
-   * handwriting recognition for registering and searching for hoodlets
-   * reorganized menu 
-   * pen cursor reflects current pen choice
-   * include hoodle-extra package: idfilepathdb/networkedit
+    * asynchronous PDF rendering engine
+    * anchored link (link to specific location of a document)
+    * hoodlet (small hoodle snippet) 
+    * handwriting recognition for registering and searching for hoodlets
+    * reorganized menu 
+    * pen cursor reflects current pen choice
+    * include hoodle-extra package: idfilepathdb/networkedit
+
+0.4: 26 Feb 2015
+    * tabbed interface!
+    * better rendering engine architecture with caching
+    * fully asynchronous rendering for both backgrounds and layers
+    * synchronization/shared document support associated with planned web service
+    * local document database support associated with planned web service
+    * embedding full text source in hoodle file
+    * gtk3 integration almost done
+    * relicense all code under BSD3
+

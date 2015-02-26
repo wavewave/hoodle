@@ -43,7 +43,7 @@ hubUpload = do
       else do r <- runMaybeT $ do 
                      hset <- (MaybeT . return) $ view hookSet xst
                      hinfo <- (MaybeT . return) (hubInfo hset)
-                     let hdir = hubfileroot hinfo
+                     let hdir = hubFileRoot hinfo
                      (canfp,mhdlfp) <- 
                           case view (hoodleFileControl.hoodleFileName) uhdl of
                              LocalDir Nothing -> MaybeT (return Nothing)

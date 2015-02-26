@@ -116,11 +116,11 @@ hoodleWSStart hinfo@HubInfo {..} = do
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(err:: E.SomeException)-> print err >> return ())) $ 
         withHub hinfo tokfile $ \_manager coojar -> do
-          request2' <- parseUrl ("http://" <> hubsocketurl <> ":" <> show hubsocketport </> hubsocketpath)
+          request2' <- parseUrl ("http://" <> hubSocketURL <> ":" <> show hubSocketPort </> hubSocketPath)
           ctime <- liftIO getCurrentTime
           let (bstr,_) = computeCookieString request2' coojar ctime True
               newheaders = [(CI.mk "Cookie",bstr)] 
-          liftIO $ WS.runClientWith hubsocketurl hubsocketport hubsocketpath WS.defaultConnectionOptions newheaders $ \conn -> forever $ do 
+          liftIO $ WS.runClientWith hubSocketURL hubSocketPort hubSocketPath WS.defaultConnectionOptions newheaders $ \conn -> forever $ do 
             txt <- WS.receiveData conn
             runEitherT $ do
               v <- hoistEither $ A.parseOnly json (TE.encodeUtf8 txt)
@@ -130,7 +130,7 @@ hoodleWSStart hinfo@HubInfo {..} = do
 
 hoodleWSDispatchEvent :: (AllEvent -> IO ()) -> HubInfo -> HoodleWSEvent -> IO ()
 hoodleWSDispatchEvent evhandler HubInfo {..} HWSOpen {..} = do
-    let urlpath = FileUrl (hubfileroot </> T.unpack hws_filepath)
+    let urlpath = FileUrl (hubFileRoot </> T.unpack hws_filepath)
         uuid = read (T.unpack hws_fileuuid)
     case hws_permission of
       Owner  -> (Gtk.postGUIAsync . evhandler . UsrEv) (OpenLink urlpath Nothing)

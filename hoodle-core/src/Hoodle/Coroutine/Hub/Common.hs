@@ -68,7 +68,7 @@ streamContent lb np = do
 -- |
 prepareToken :: HubInfo -> FilePath -> MainCoroutine ()
 prepareToken HubInfo {..} tokfile = do
-    let client = OAuth2Client { clientId = T.unpack cid, clientSecret = T.unpack secret }
+    let client = OAuth2Client { clientId = T.unpack googleClientId, clientSecret = T.unpack googleClientSecret }
         permissionUrl = formUrl client ["email"]
     liftIO $ putStrLn "prepareToken"
     liftIO (doesFileExist tokfile) >>= \b -> unless b $ do       
@@ -86,15 +86,15 @@ withHub :: HubInfo -> FilePath
            -> (Manager -> CookieJar -> ResourceT IO a) -> IO a 
 withHub HubInfo {..} tokfile action = 
     withSocketsDo $ withManager $ \manager -> do
-      let client = OAuth2Client { clientId = T.unpack cid
-                                , clientSecret = T.unpack secret }
+      let client = OAuth2Client { clientId = T.unpack googleClientId
+                                , clientSecret = T.unpack googleClientSecret }
       -- refresh token
       oldtok <- liftIO $ read <$> (readFile tokfile)
       newtok  <- liftIO $ refreshTokens client oldtok
       liftIO $ writeFile tokfile (show newtok)
       --
       accessTok <- fmap (accessToken . read) (liftIO (readFile tokfile))
-      request' <- parseUrl authgoogleurl 
+      request' <- parseUrl googleAuthURL
       let request = request' 
             { requestHeaders =  [ ("Authorization", encodeUtf8 $ "Bearer " <> T.pack accessTok) ]
             , cookieJar = Just (createCookieJar  [])

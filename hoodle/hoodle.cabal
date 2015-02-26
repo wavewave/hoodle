@@ -24,7 +24,7 @@ Flag Dyre
 Executable hoodle
   Main-is: hoodle.hs
   hs-source-dirs: exe
-  ghc-options: 	-Werror -Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                  base == 4.*, 
@@ -34,7 +34,7 @@ Executable hoodle
 
 Library
   hs-source-dirs: lib
-  ghc-options: 	-Werror -Wall -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends:   base == 4.*, 
                    mtl >= 2,

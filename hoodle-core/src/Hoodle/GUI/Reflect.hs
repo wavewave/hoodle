@@ -92,7 +92,7 @@ reflectViewModeUI = do
 reflectPenModeUI :: MainCoroutine ()
 reflectPenModeUI = do 
     reflectUIRadio penModeSignal "PENA" f
-    reflectCursor
+    reflectCursor False
   where 
     f xst = Just $
       hoodleModeStateEither ((view hoodleModeState . view (unitHoodles.currentUnit)) xst) #  
@@ -104,7 +104,7 @@ reflectPenModeUI = do
 reflectPenColorUI :: MainCoroutine () 
 reflectPenColorUI = do 
     reflectUIRadio penColorSignal "BLUEA" f
-    reflectCursor
+    reflectCursor False
   where 
     f xst = 
       let mcolor = 
@@ -119,7 +119,7 @@ reflectPenColorUI = do
 reflectPenWidthUI :: MainCoroutine () 
 reflectPenWidthUI = do 
     reflectUIRadio penPointSignal "PENVERYFINEA" f
-    reflectCursor
+    reflectCursor False
   where 
     f xst = 
       case view (penInfo.penType) xst of 
@@ -170,8 +170,8 @@ reflectUIToggle ui str b = do
     Gtk.actionSetSensitive savea b
 
 -- | 
-reflectCursor :: MainCoroutine () 
-reflectCursor = do 
+reflectCursor :: Bool -> MainCoroutine () 
+reflectCursor isforced = do 
     xst <- St.get 
     let b = view (settings.doesUseVariableCursor) xst
         pinfo = view penInfo xst 
@@ -179,7 +179,7 @@ reflectCursor = do
         pwidth = view (penSet . currPen . penWidth) pinfo 
         cinfo = view cursorInfo xst
         (ccolor,cwidth,cvar) = cinfo
-    when (pcolor /= ccolor || pwidth /= cwidth || b /= cvar) $ do
+    when (pcolor /= ccolor || pwidth /= cwidth || b /= cvar || isforced) $ do
       msgShout "reflectCursor: change cursor"
       put . (cursorInfo._1 .~ pcolor) . (cursorInfo._2 .~ pwidth) . (cursorInfo._3 .~ b) $ xst 
       doIOaction_ $ if b  

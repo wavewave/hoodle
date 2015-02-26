@@ -198,6 +198,7 @@ addTab filestore = do
     pageZoomChange FitWidth
     canvasZoomUpdateAll
     invalidateAll 
+    reflectCursor True
 
 -- | 
 findTab :: UUID -> MainCoroutine (Maybe Int)
@@ -229,6 +230,8 @@ switchTab tabnum = do
 #endif
       invalidateAll 
       liftIO $ reflectUIToggle (xst ^. gtkUIManager) "SAVEA" (not (uhdl ^. isSaved))
+      reflectPenModeUI
+      reflectCursor True
 
 -- |
 closeTab :: MainCoroutine ()

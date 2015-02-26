@@ -290,6 +290,7 @@ fileLoad filestore = do
     liftIO $ setTitleFromFileName xst
     clearUndoHistory 
     modeChange ToViewAppendMode 
+    canvasZoomUpdateAll
     resetHoodleBuffers 
     invalidateAll 
     applyActionToAllCVS adjustScrollbarWithGeometryCvsId

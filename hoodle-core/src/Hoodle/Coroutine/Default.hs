@@ -435,6 +435,7 @@ defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 #ifdef HUB
 defaultEventProcess (OpenShared uuid) = openShared uuid
 defaultEventProcess (OpenTemp uuid tmpfile) = getFileContent (TempDir tmpfile)
+                                              >> canvasZoomUpdateAll 
                                               >> invalidateAll
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
 defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname

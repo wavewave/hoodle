@@ -69,7 +69,6 @@ changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty ->
               npgnum = modifyfn (cvsInfo ^. currentPageNum)
               cid = view canvasId cvsInfo
           (b,npgnum',_,xojst') <- changePageInHoodleModeState bsty npgnum xojst
-          -- xstate1 <- get
           uhdl' <- liftIO $ updatePageAll xojst' uhdl
           ncvsInfo <- liftIO $ setPage uhdl' (PageNum npgnum') cid
           let uhdlfinal = (currentCanvasInfo .~ ncvsInfo) uhdl'

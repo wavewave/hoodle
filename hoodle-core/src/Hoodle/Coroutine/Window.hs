@@ -17,6 +17,7 @@
 module Hoodle.Coroutine.Window where
 
 import           Control.Applicative
+import           Control.Concurrent
 import           Control.Lens (view,set,over,(^.),(.~),_2)
 import           Control.Monad.State 
 import qualified Data.IntMap as M
@@ -186,6 +187,7 @@ addTab filestore = do
       registerFrameToContainer (xst^.rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
       Gtk.widgetShowAll notebook
       return uhdl4)
+
     doIOaction_ $ 
       blockWhile (view (uiComponentSignalHandler.switchTabSignal) xst) $
         Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
@@ -194,6 +196,7 @@ addTab filestore = do
       liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
       unboxBiAct (sing2ContPage uhdl) (const (return uhdl)) . view currentCanvasInfo $ uhdl
     pageZoomChange FitWidth
+    canvasZoomUpdateAll
     invalidateAll 
 
 -- | 
@@ -241,6 +244,7 @@ closeTab = do
       let notebook = xst ^. rootNotebook
       doIOaction_ $ Gtk.notebookRemovePage notebook currk
       modify $ (unitHoodles .~ (0,uhdlmap''))
+      canvasZoomUpdateAll
       switchTab 0
     else liftIO $ Gtk.mainQuit
       

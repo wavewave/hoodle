@@ -9,7 +9,7 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Data
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
-data-files:     CHANGES
+data-files:     
 Source-repository head
   type: git
   location: https://www.github.com/wavewave/hxournal

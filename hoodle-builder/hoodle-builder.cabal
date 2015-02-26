@@ -9,7 +9,7 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Text
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
-data-files:     CHANGES
+data-files:     
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-builder

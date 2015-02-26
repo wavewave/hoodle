@@ -16,7 +16,6 @@ Cabal-Version:  >= 1.8
 data-files:     template/*.html.st
                 resource/*.png
                 resource/*.xml
-                CHANGES
                 Config.hs
 Source-repository head
   type: git

@@ -16,13 +16,13 @@ import Data.Text (Text)
 --
 
 
-data HubInfo = HubInfo { cid :: Text
-                       , secret :: Text
-                       , authgoogleurl :: String
+data HubInfo = HubInfo { googleClientId :: Text
+                       , googleClientSecret :: Text
+                       , googleAuthURL :: String
                        , hubURL :: String
-                       , hubfileroot :: FilePath
-                       , hubsocketurl :: String
-                       , hubsocketport :: Int
-                       , hubsocketpath :: String
+                       , hubFileRoot :: FilePath
+                       , hubSocketURL :: String
+                       , hubSocketPort :: Int
+                       , hubSocketPath :: String
                        } 
              deriving (Show,Eq,Ord)

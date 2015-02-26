@@ -772,27 +772,31 @@ syncFile = do
       hset <- (MaybeT . return . view hookSet) xst
       hinfo <- (MaybeT . return) (hubInfo hset)
       sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
-      fstat <- MaybeT . liftIO $ getLastSyncStatus sqlfile hdlidtxt 
       hdlfp <- MaybeT . return $ getHoodleFilePath uhdl
+      mfstat <- liftIO $ getLastSyncStatus sqlfile hdlidtxt 
       lift $ prepareToken hinfo tokfile 
       lift $ doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e >> return ())) $ 
           withHub hinfo tokfile $ \manager coojar -> do
             flip runReaderT (manager,coojar) $ do
               Just fstatServer <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack hdlidtxt)
-              if fileSyncStatusTime fstat < fileSyncStatusTime fstatServer
-                then 
-                  rsyncPatchWork hinfo hdlfp fstatServer $ do
-                    putStrLn "Am I called?"
-                    (evhandler . UsrEv . SyncFileFinished) fstatServer
-                else 
-                  (liftIO . Gtk.postGUIAsync . evhandler . UsrEv . SyncFileFinished) fstat
+              let patchwork = 
+                    rsyncPatchWork hinfo hdlfp fstatServer $ do
+                      putStrLn "Am I called?"
+                      (evhandler . UsrEv . SyncFileFinished) fstatServer
+
+              case mfstat of 
+                Nothing -> patchwork
+                Just fstat ->  
+                  if fileSyncStatusTime fstat < fileSyncStatusTime fstatServer
+                  then patchwork 
+                  else (liftIO . Gtk.postGUIAsync . evhandler . UsrEv . SyncFileFinished) fstat
         return (UsrEv ActionOrdered)
       SyncFileFinished nfstat <- 
         lift (waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ))
       liftIO $ print nfstat
       lift (updateSyncInfoAll nfstat)
-      when (nfstat /= fstat) (lift fileReload)
+      when (Just nfstat /= mfstat) (lift fileReload)
     return ()
   
   

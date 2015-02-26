@@ -43,8 +43,6 @@ import qualified Control.Exception as E
 import           Control.Monad.Trans.Reader
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import           Filesystem.Path.CurrentOS (decodeString, encodeString)
-import qualified System.FSNotify as FS
 #endif
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn
@@ -89,8 +87,6 @@ import           Hoodle.Type.HoodleState
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
 #ifdef HUB
-import           Database.Persist (upsert)
-import           Database.Persist.Sqlite (runSqlite)
 import           Hoodle.Coroutine.Hub
 import           Hoodle.Coroutine.Hub.Common
 import           Hoodle.Coroutine.HubInternal
@@ -179,8 +175,8 @@ getFileContent (LocalDir Nothing) = do
     commit_ 
 #ifdef HUB
 getFileContent store@(TempDir fname) = do 
-    xstate <- get
-    let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
+    -- xstate <- get
+    -- let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
     let ext = takeExtension fname
     when (ext == ".hdl") $ do
       bstr <- liftIO $ B.readFile fname
@@ -190,8 +186,8 @@ getFileContent store@(TempDir fname) = do
         Right h -> do 
           constructNewHoodleStateFromHoodle h
           ctime <- liftIO $ getCurrentTime
-          let fileuuidbstr = view hoodleID h
-              fileuuidtxt = TE.decodeUtf8 fileuuidbstr
+          let -- fileuuidbstr = view hoodleID h
+              -- fileuuidtxt = TE.decodeUtf8 fileuuidbstr
               md5txt = T.pack . show . md5 . L.fromStrict $ bstr
           pureUpdateUhdl ( (hoodleFileControl.hoodleFileName .~ store)
                          . (hoodleFileControl.lastSavedTime  .~ Just ctime) 
@@ -268,12 +264,12 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
       if takeExtension filename /= ".svg" 
       then fileExtensionInvalid (".svg","export") >> exportCurrentPageAsSVG 
       else do
-        cid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
+        cvsid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
         cache <- renderCache
         cpg <- getCurrentPageCurr
         let Dim w h = view gdimension cpg 
         liftIO $ Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ 
-         cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox cpg,Nothing :: Maybe Xform4Page) >> return ()
+         cairoRenderOption (InBBoxOption Nothing) cache cvsid (InBBox cpg,Nothing :: Maybe Xform4Page) >> return ()
 
 -- | 
 fileLoad :: FileStore -> MainCoroutine () 
@@ -298,8 +294,8 @@ resetHoodleBuffers :: MainCoroutine ()
 resetHoodleBuffers = do 
     updateUhdl $ \uhdl -> do 
       let hdlst = view hoodleModeState uhdl
-          cid = getCurrentCanvasId uhdl
-      callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
+          cvsid = getCurrentCanvasId uhdl
+      callRenderer_ $ resetHoodleModeStateBuffers cvsid hdlst
       return . (hoodleModeState .~ hdlst) $ uhdl
 
 
@@ -494,7 +490,7 @@ fileLoadSVG = do
       xst <- get 
       bstr <- liftIO $ B.readFile filename 
       let uhdl = view (unitHoodles.currentUnit) xst
-          cid = getCurrentCanvasId uhdl
+          cvsid = getCurrentCanvasId uhdl
           pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
           hdl = getHoodle uhdl
           currpage = getPageFromGHoodleMap pgnum hdl
@@ -511,7 +507,7 @@ fileLoadSVG = do
         thdl <- case view hoodleModeState uhdl' of
                   SelectState thdl' -> return thdl'
                   _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
-        nthdl <- updateTempHoodleSelectM cid thdl ntpg pgnum 
+        nthdl <- updateTempHoodleSelectM cvsid thdl ntpg pgnum 
         return . (hoodleModeState .~ SelectState nthdl)
                . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl'
       commit_
@@ -641,13 +637,13 @@ fileVersionSave = do
 
 showRevisionDialog :: Hoodle -> [Revision] -> MainCoroutine ()
 showRevisionDialog hdl revs = do
-    cid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
+    cvsid <- getCurrentCanvasId . view (unitHoodles.currentUnit) <$> get
     cache <- renderCache
-    doIOaction (action (cache,cid))
+    doIOaction (action (cache,cvsid))
     waitSomeEvent (\case GotOk -> True ; _ -> False)
     return ()
   where 
-    action (cache,cid) _evhandler = do 
+    action (cache,cvsid) _evhandler = do 
       dialog <- Gtk.dialogNew
 #ifdef GTK3
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
@@ -656,7 +652,7 @@ showRevisionDialog hdl revs = do
 #else 
       vbox <- Gtk.dialogGetUpper dialog
 #endif
-      mapM_ (addOneRevisionBox cache cid vbox hdl) revs 
+      mapM_ (addOneRevisionBox cache cvsid vbox hdl) revs 
       _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
       Gtk.widgetShowAll dialog
       _res <- Gtk.dialogRun dialog
@@ -684,7 +680,7 @@ mkPangoText str = do
     rdr layout
 
 addOneRevisionBox :: RenderCache -> CanvasId -> Gtk.VBox -> Hoodle -> Revision -> IO ()
-addOneRevisionBox cache cid vbox hdl rev = do 
+addOneRevisionBox cache cvsid vbox hdl rev = do 
     cvs <- Gtk.drawingAreaNew 
     cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 250 25)
     cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
@@ -699,7 +695,7 @@ addOneRevisionBox cache cid vbox hdl rev = do
       liftIO . Gtk.renderWithDrawable drawwdw $ do 
 #endif
         case rev of 
-          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache cid) strks
+          RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache cvsid) strks
           Revision _ txt -> mkPangoText (B.unpack txt)            
     hdir <- getHomeDirectory
     let vcsdir = hdir </> ".hoodle.d" </> "vcs"

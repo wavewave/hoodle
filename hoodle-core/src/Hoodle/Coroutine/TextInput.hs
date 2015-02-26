@@ -41,6 +41,9 @@ import           System.Directory
 import           System.Exit (ExitCode(..))
 import           System.FilePath 
 import           System.Process (readProcessWithExitCode)
+#ifdef HUB
+import           Control.Concurrent (killThread)
+#endif
 -- 
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Event 

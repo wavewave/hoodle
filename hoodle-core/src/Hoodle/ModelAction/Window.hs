@@ -43,9 +43,6 @@ import           Hoodle.Type.Event
 import           Hoodle.Type.HoodleState
 import           Hoodle.Type.Window
 import           Hoodle.Util
-#ifdef HUB
-import           Hoodle.Type.HoodleState
-#endif
 -- 
 
 #ifdef HUB

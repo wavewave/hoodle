@@ -58,7 +58,9 @@ import           Hoodle.Widget.PanZoom
 import           Hoodle.Widget.Scroll
 #ifdef HUB
 import           Hoodle.Coroutine.Hub
-import           Hoodle.Coroutine.Socket
+#endif
+#ifdef DYRE
+import           Hoodle.Script
 #endif
 --
 import Prelude hiding (mapM_)

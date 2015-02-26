@@ -74,7 +74,6 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 #ifdef HUB
 import           Hoodle.Coroutine.File
-import           Hoodle.Coroutine.HubInternal
 #endif
 --
 import Prelude hiding (mapM_)

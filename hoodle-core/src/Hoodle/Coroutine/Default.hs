@@ -34,11 +34,7 @@ import           Data.Maybe
 import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
 import           System.Process 
 #ifdef HUB
-import           Control.Concurrent.STM
-import           Data.Sequence (Seq,viewl, ViewL(..))
 import           Data.Time.Clock
-import           Data.UUID
-import qualified Graphics.Rendering.Cairo as Cairo
 import           System.Directory
 #endif
 -- from hoodle-platform
@@ -50,10 +46,6 @@ import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Engine
 import           Graphics.Hoodle.Render.Type
-#ifdef HUB
-import           Control.Monad.Trans.Crtn.Queue
-import           Graphics.Hoodle.Render.Background
-#endif
 -- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
@@ -425,7 +417,7 @@ defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x 
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
 #ifdef HUB
 defaultEventProcess (OpenShared uuid) = openShared uuid
-defaultEventProcess (OpenTemp uuid tmpfile) = getFileContent (TempDir tmpfile)
+defaultEventProcess (OpenTemp _uuid tmpfile) = getFileContent (TempDir tmpfile)
                                               >> canvasZoomUpdateAll 
                                               >> invalidateAll
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt

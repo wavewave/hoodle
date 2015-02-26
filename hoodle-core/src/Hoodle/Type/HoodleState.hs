@@ -124,9 +124,6 @@ import qualified Data.Text as T
 import           Data.Time.Clock
 import           Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
-#ifdef HUB
-import           Control.Monad.State hiding (get,modify)
-#endif
 -- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 

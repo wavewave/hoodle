@@ -24,29 +24,20 @@ import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Either
 import           Control.Monad.Trans.Maybe
-import qualified Data.Aeson.Encode as AE
 import           Data.Aeson.Parser
 import           Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.CaseInsensitive as CI
-import qualified Data.Foldable as F
-import qualified Data.HashMap.Strict as HM
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Data.Time.Clock
 import qualified Graphics.UI.Gtk as Gtk
-import Network
-import Network.Google.OAuth2 (formUrl, exchangeCode, refreshTokens,
-                               OAuth2Client(..), OAuth2Tokens(..))
 import Network.HTTP.Client.Internal (computeCookieString)
 import Network.HTTP.Conduit
 import qualified Network.WebSockets as WS
 import System.Directory
-import System.Exit    (ExitCode(..))
 import System.FilePath ((</>))
-import System.Info (os)
-import System.Process (rawSystem)
 --
 import Hoodle.Coroutine.Dialog
 import Hoodle.Coroutine.Hub.Common
@@ -124,7 +115,7 @@ hoodleWSStart hinfo@HubInfo {..} = do
     prepareToken hinfo tokfile 
     doIOaction $ \evhandler -> do 
       forkIO $ (`E.catch` (\(err:: E.SomeException)-> print err >> return ())) $ 
-        withHub hinfo tokfile $ \manager coojar -> do
+        withHub hinfo tokfile $ \_manager coojar -> do
           request2' <- parseUrl ("http://" <> hubsocketurl <> ":" <> show hubsocketport </> hubsocketpath)
           ctime <- liftIO getCurrentTime
           let (bstr,_) = computeCookieString request2' coojar ctime True

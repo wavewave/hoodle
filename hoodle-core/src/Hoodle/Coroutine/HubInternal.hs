@@ -34,34 +34,23 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as BL
 import           Data.Digest.Pure.MD5 (md5)
 import qualified Data.Foldable as F
-import qualified Data.HashMap.Strict as H
 import qualified Data.IntMap as IM
-import           Data.IORef
 import           Data.List (find)
-import           Data.Monoid ((<>))
 import qualified Data.Text as T (Text,pack,unpack)
 import qualified Data.Text.Encoding as TE (encodeUtf8,decodeUtf8)
 import           Data.UUID
 import           Data.UUID.V4
-import           Database.Persist (upsert, getBy, entityVal)
+import           Database.Persist (upsert, getBy)
 import           Database.Persist.Sql (runMigration)
 import           Database.Persist.Sqlite (runSqlite)
 import qualified Graphics.UI.Gtk as Gtk
-import           Network
-import           Network.Google.OAuth2 ( formUrl, exchangeCode, refreshTokens
-                                       , OAuth2Client(..), OAuth2Tokens(..))
-import           Network.HTTP.Client (GivesPopper)
-import           Network.HTTP.Conduit ( RequestBody(..), CookieJar (..), Manager (..)
-                                      , cookieJar, createCookieJar
-                                      , httpLbs, method, parseUrl
-                                      , requestBody, requestHeaders
-                                      , responseBody, responseCookieJar, withManager)
+import           Network.HTTP.Conduit ( RequestBody(..), CookieJar, Manager
+                                      , cookieJar, httpLbs, method, parseUrl
+                                      , requestBody, responseBody)
 import           Network.HTTP.Types (methodPut)
 import           System.Directory
-import           System.Exit    (ExitCode(..))
 import           System.FilePath ((</>),(<.>),makeRelative)
-import           System.Info (os)
-import           System.Process (rawSystem,readProcessWithExitCode)
+import           System.Process (readProcessWithExitCode)
 --
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
@@ -69,8 +58,6 @@ import           Graphics.Hoodle.Render.Type.Hoodle
 import           Text.Hoodle.Builder (builder)
 --
 import           Hoodle.Accessor
-import           Hoodle.Coroutine.Dialog
-import           Hoodle.Coroutine.Draw
 import           Hoodle.Coroutine.Hub.Common
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Coroutine
@@ -110,7 +97,7 @@ uploadWork (canfp,mhdlfp) hinfo@(HubInfo {..}) = do
               \(sqlfile,fstat) -> do
                 me <- runSqlite (T.pack sqlfile) $ getBy (UniqueFileSyncStatusUUID (fileSyncStatusUuid fstat))
                 case me of 
-                  Just e -> do 
+                  Just _ -> do 
                     let remotemd5saved = fileSyncStatusMd5 fstat
                     if (remotemd5saved `elem` synchist ) || (Prelude.null synchist)
                       then uploading
@@ -272,7 +259,6 @@ registerFile uhdluuid (fp,hdl) = do
     xst <- get
     let fileuuidbstr = view hoodleID hdl
         fileuuidtxt = TE.decodeUtf8 fileuuidbstr
-    hdir <- liftIO $ getHomeDirectory
     let tokfile = hdir </> ".hoodle.d" </> "token.txt"
     runMaybeT $ do
       sqlfile <- (MaybeT . return . view (settings.sqliteFileName)) xst
@@ -282,7 +268,6 @@ registerFile uhdluuid (fp,hdl) = do
       lift . doIOaction $ \evhandler -> do 
         forkIO $ (`E.catch` (\(e :: E.SomeException)-> print e)) $ 
           withHub hinfo tokfile $ \manager coojar -> do
-            let uuidtxt = TE.decodeUtf8 (view hoodleID hdl)
             flip runReaderT (manager,coojar) $ do
               uploadAndUpdateSync evhandler uhdluuid hinfo fileuuidtxt hdlbstr (canfp,mhdlfp) (Just sqlfile)
               Just fstat <- sessionGetJSON (hubURL hinfo </> "sync" </> T.unpack fileuuidtxt)

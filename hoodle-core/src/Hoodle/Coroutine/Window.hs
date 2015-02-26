@@ -23,9 +23,6 @@ import qualified Data.IntMap as M
 import qualified Data.List as L
 import           Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk
-#ifdef HUB
-import           Control.Concurrent
-#endif
 --
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple (Dimension(..))
@@ -47,10 +44,6 @@ import           Hoodle.Type.PageArrangement
 import           Hoodle.Type.Undo
 import           Hoodle.Type.Window
 import           Hoodle.Util
-#ifdef HUB
-import           Hoodle.Coroutine.HubInternal
-#endif
-
 --
 
 -- | canvas configure with general zoom update func

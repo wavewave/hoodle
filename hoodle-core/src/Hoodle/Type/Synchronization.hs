@@ -28,7 +28,6 @@ import           Data.Data
 import qualified Data.HashMap.Strict as H
 import           Data.Text
 import           Data.Time.Clock (UTCTime)
-import           Database.Persist.Sqlite
 import           Database.Persist.TH
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|

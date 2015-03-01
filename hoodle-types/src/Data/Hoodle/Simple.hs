@@ -40,8 +40,6 @@ import Prelude hiding (putStrLn,fst,snd,curry,uncurry)
 -- | 
 type Title = ByteString
 
---  $(deriveJSON defaultOptions ''ByteString)
-
 instance ToJSON ByteString where
     toJSON = String . TE.decodeUtf8
 

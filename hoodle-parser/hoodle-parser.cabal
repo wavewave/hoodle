@@ -1,5 +1,5 @@
 Name:		hoodle-parser
-Version:	0.3.0
+Version:	0.3.999
 Synopsis:       Hoodle file parser
 Description: 	Text parser for hoodle xml file
 Homepage:       http://ianwookim.org/hoodle
@@ -20,17 +20,19 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: base == 4.*, 
-                 mtl > 2, 
-                 transformers >= 0.3, 
                  attoparsec >= 0.10, 
+                 either >= 3.1,
                  bytestring >= 0.9, 
                  containers >= 0.4, 
-                 strict >= 0.3, 
-                 hoodle-types >= 0.3.0, 
-                 xournal-types >= 0.5.1,
-                 text >= 0.11,
+                 directory, 
+                 hoodle-types >= 0.3.999, 
                  lens >= 2.5, 
-                 either >= 3.1
+                 mtl > 2, 
+                 strict >= 0.3, 
+                 text >= 0.11,
+                 transformers >= 0.3, 
+                 xournal-types >= 0.5.1
+
   Exposed-Modules: 
                    Text.Hoodle.Migrate.FromXournal
                    Text.Hoodle.Migrate.V0_1_1_to_V0_2_2
@@ -40,6 +42,7 @@ Library
                    Text.Hoodle.Parse.Attoparsec.V0_1_1
                    Text.Hoodle.Parse.Attoparsec.V0_2_2
                    Text.Hoodle.Parse.Attoparsec.V0_3
+                   Text.Hoodle.Parse.Util
                    Text.Hoodle.Parse.Zlib
                    Text.Hoodlet.Parse.Attoparsec
 

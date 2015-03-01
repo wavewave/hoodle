@@ -27,7 +27,7 @@ Library
                  base == 4.*, 
                  base64-bytestring >= 0.1, 
                  bytestring >= 0.9,
-                 cairo >= 0.12, 
+                 cairo >= 0.13.0.3, 
                  containers >= 0.4, 
                  directory, 
                  filepath, 

@@ -1,5 +1,5 @@
 Name:		hoodle-types
-Version:	0.3.0
+Version:	0.3.999
 Synopsis:	Data types for programs for hoodle file format
 Description: 	Hoodle file format data type including generic interface
 License: 	BSD3
@@ -21,6 +21,7 @@ Library
   ghc-prof-options: -caf-all -auto-all
   Build-Depends: 
                    base == 4.*, 
+                   aeson >= 0.8, 
                    bytestring >= 0.9, 
                    containers >= 0.4, 
                    cereal > 0.3, 

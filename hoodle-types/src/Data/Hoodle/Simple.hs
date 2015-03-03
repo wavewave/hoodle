@@ -1,7 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -22,7 +24,7 @@ module Data.Hoodle.Simple where
 
 -- from other packages
 import           Control.Applicative 
-import           Control.Lens 
+import           Control.Lens hiding ((.=))
 import           Data.Aeson.TH
 import           Data.Aeson.Types hiding (Pair(..))
 import           Data.Char
@@ -32,6 +34,8 @@ import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import           Data.Vector ((!),fromList)
+import           Text.Printf
 -- from this package
 import           Data.Hoodle.Util
 -- 
@@ -52,8 +56,18 @@ instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
                     >> SE.put y
     get = (:!:) <$> SE.get <*> SE.get
 
-$(deriveJSON defaultOptions {constructorTagModifier = const "Pair"} ''Pair)
+-- $(deriveJSON defaultOptions {constructorTagModifier = const "Pair"} ''Pair)
+instance ToJSON (Pair Double Double) where
+     toJSON (x :!: y) = Array (fromList [fmtjson x,fmtjson y])
+       where fmtjson = toJSON .  (printf "%.2f" :: Double -> String)
 
+instance FromJSON (Pair Double Double) where
+     parseJSON (Array a) = let String xtxt = a ! 0  
+                               String ytxt = a ! 1
+                               x = read (T.unpack xtxt)
+                               y = read (T.unpack ytxt)
+                           in pure (x :!: y)
+     parseJSON _ = fail "error in reading pair of doubles"
 
 -- | 
 data Dimension = Dim { dim_width :: !Double, dim_height :: !Double }
@@ -106,7 +120,16 @@ data Image = Image { img_src :: ByteString
                    } 
              deriving (Show,Eq,Ord)
 
-$(deriveJSON defaultOptions {fieldLabelModifier = drop 4}  ''Image)
+instance ToJSON Image where
+    toJSON Image {..} = object [ "pos" .= toJSON img_pos
+                               , "dim" .= toJSON img_dim ]
+
+instance FromJSON Image where
+    parseJSON (Object v) = Image "" <$> v .: "pos" <*> v .: "dim"
+    parseJSON _ = fail "error in parsing Image"
+
+--   $(deriveJSON defaultOptions {fieldLabelModifier = drop 4}  ''Image)
+
 
 instance SE.Serialize Image where
     put Image {..} = SE.put img_src
@@ -122,7 +145,17 @@ data SVG = SVG { svg_text :: Maybe ByteString
                , svg_dim :: !Dimension }  
            deriving (Show,Eq,Ord)
                     
-$(deriveJSON defaultOptions {fieldLabelModifier = drop 4} ''SVG)
+--  $(deriveJSON defaultOptions {fieldLabelModifier = drop 4} ''SVG)
+
+
+instance ToJSON SVG where
+    toJSON SVG {..} = object [ "pos" .= toJSON svg_pos 
+                             , "dim" .= toJSON svg_dim ]
+
+instance FromJSON SVG where
+    parseJSON (Object v) = SVG Nothing Nothing "" <$> v .: "pos" <*> v .: "dim"
+    parseJSON _ = fail "error in parsing SVG"
+
 
 -- | 
 instance SE.Serialize SVG where
@@ -158,10 +191,49 @@ data Link = Link { link_id :: ByteString
                        , link_pos :: (Double,Double)
                        , link_dim :: !Dimension
                        }
-
            deriving (Show,Eq,Ord)                    
 
-$(deriveJSON defaultOptions { fieldLabelModifier = drop 5 } ''Link) 
+
+instance ToJSON Link where
+    toJSON Link {..}       = object [ "tag"         .= String "Link"
+                                    , "id"          .= toJSON link_id 
+                                    , "type"        .= toJSON link_type
+                                    , "location"    .= toJSON link_location
+                                    , "pos"         .= toJSON link_pos
+                                    , "dim"         .= toJSON link_dim ]
+    toJSON LinkDocID {..}  = object [ "tag"         .= String "LinkDocID"
+                                    , "id"          .= toJSON link_id 
+                                    , "linkeddocid" .= toJSON link_linkeddocid
+                                    , "location"    .= toJSON link_location
+                                    , "pos"         .= toJSON link_pos
+                                    , "dim"         .= toJSON link_dim ]
+    toJSON LinkAnchor {..} = object [ "tag"         .= String "LinkAnchor"
+                                    , "id"          .= toJSON link_id 
+                                    , "linkeddocid" .= toJSON link_linkeddocid
+                                    , "location"    .= toJSON link_location
+                                    , "anchorid"    .= toJSON link_anchorid
+                                    , "pos"         .= toJSON link_pos
+                                    , "dim"         .= toJSON link_dim ]
+
+instance FromJSON Link where
+  parseJSON (Object v) = do 
+    tag :: T.Text <- v .: "tag" 
+    case tag of 
+      "Link"       -> Link       <$> v .: "id" <*> v .: "type" <*> v .: "location"
+                                 <*> pure Nothing <*> pure Nothing <*> pure ""
+                                 <*> v .: "pos" <*> v .: "dim"
+      "LinkDocID"  -> LinkDocID  <$> v .: "id" <*> v .: "linkeddocid"
+                                 <*> v .: "location" <*> pure Nothing 
+                                 <*> pure Nothing <*> pure ""
+                                 <*> v .: "pos" <*> v .: "dim"
+      "LinkAnchor" -> LinkAnchor <$> v .: "id" <*> v .: "linkeddocid"
+                                 <*> v .: "location" <*> v .: "anchorid"
+                                 <*> pure "" <*> v .: "pos" <*> v .: "dim"
+      _ -> fail "error in parsing Link"
+  parseJSON _ = fail "error in parsing Link"
+
+
+--  $(deriveJSON defaultOptions { fieldLabelModifier = drop 5 } ''Link) 
 
 instance SE.Serialize Link where
     put Link {..}       = SE.putWord8 0 

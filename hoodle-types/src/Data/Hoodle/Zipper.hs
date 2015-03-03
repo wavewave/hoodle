@@ -59,11 +59,11 @@ singletonSZ x = SZ (x, (empty,empty))
 
 -- |
 lengthSZ :: SeqZipper a -> Int 
-lengthSZ (SZ (_x, (x1s,x2s))) = length x1s + length x2s + 1 
+lengthSZ (SZ (_x, (x1s,x2s))) = Data.Sequence.length x1s + Data.Sequence.length x2s + 1 
 
 -- |
 currIndex :: SeqZipper a -> Int
-currIndex (SZ (_x, (x1s,_x2s))) = length x1s 
+currIndex (SZ (_x, (x1s,_x2s))) = Data.Sequence.length x1s 
 
 -- |
 appendGoLast :: SeqZipper a -> a -> SeqZipper a
@@ -95,8 +95,8 @@ moveRight (SZ (x,(x1s,x2s))) =
 -- |
 moveTo :: Int -> SeqZipper a -> Maybe (SeqZipper a) 
 moveTo n orig@(SZ (x,(x1s,x2s))) = 
-  let n_x1s = length x1s 
-      n_x2s = length x2s 
+  let n_x1s = Data.Sequence.length x1s 
+      n_x2s = Data.Sequence.length x2s 
       res | n < 0 || n > n_x1s + n_x2s = Nothing 
           | n == n_x1s = Just orig 
           | n < n_x1s = let (x1s1, x1s2) = splitAt n x1s 

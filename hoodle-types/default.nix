@@ -1,9 +1,3 @@
-#{ nixpkgs ? import <nixpkgs> {}, 
-#  haskellngPackages ? nixpkgs.haskellngPackages }:
-
-#haskellngPackages ? (import <nixpkgs> {}).haskellngPackages }:
-
-
 let nixpkgs = import <nixpkgs> {}; 
     haskellngPackages = nixpkgs.haskellngPackages;
     stdenv = nixpkgs.stdenv;
@@ -15,5 +9,5 @@ haskellngPackages.callPackage ({mkDerivation}:
     version = "0.3.999";
     src = ./.;
     license = stdenv.lib.licenses.bsd3;
-    buildDepends = with haskellngPackages; [ lens cereal mtl strict text uuid ];
+    buildDepends = with haskellngPackages; [ aeson lens cereal mtl strict text uuid ];
   }) {}

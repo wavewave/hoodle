@@ -39,11 +39,11 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   aeson>=0.7,
+  Build-Depends:   base == 4.*, 
+                   aeson>=0.7,
                    aeson-pretty > 0.7,
                    array,
                    attoparsec >= 0.10,
-                   base == 4.*, 
                    base64-bytestring >= 0.1,
                    binary,
                    bytestring >= 0.9, 

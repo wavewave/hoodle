@@ -37,13 +37,13 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
   Build-Depends:   base == 4.*, 
-                   mtl >= 2,
-                   directory,
-                   filepath, 
-                   containers >= 0.4,
                    cmdargs >= 0.7,
                    configurator >= 0.2,
+                   containers >= 0.4,
+                   directory,
+                   filepath, 
                    hoodle-core >= 0.15.0 && < 0.16
+                   mtl >= 2,
   if flag(dyre)
     Build-depends:   dyre >= 0.8.11
    

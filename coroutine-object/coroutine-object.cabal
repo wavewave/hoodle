@@ -15,16 +15,16 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends:   base >4 && <5, 
-                   mtl>2, 
-                   lens >= 2.5,
+                   bytestring >= 0.9,
+                   cereal > 0.3, 
                    containers >= 0.4,
+                   either >= 3.1, 
+                   lens >= 2.5,
+                   mtl>2, 
+                   safecopy >= 0.6,
                    transformers >= 0.3, 
                    transformers-free >= 1.0, 
-                   bytestring >= 0.9,
-                   safecopy >= 0.6,
-                   uuid > 1.2,
-                   cereal > 0.3, 
-                   either >= 3.1 
+                   uuid > 1.2
 
   Other-Modules:   
   exposed-modules:

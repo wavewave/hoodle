@@ -1,6 +1,8 @@
-{ hoodlesrc ? { outPath = ./.; revCount = 1234; shortRev = "abcdef"; } }:
+#{ hoodlesrc ? { outPath = ./.; revCount = 1234; shortRev = "abcdef"; }
+{ pkgs ? import <nixpkgs> {} }:
 
-let pkgs = import <nixpkgs> {};
+let
+    #pkgs = import <nixpkgs> {};
     haskellngPackages = pkgs.haskellngPackages;
     stdenv = pkgs.stdenv;
     jobs = rec { 
@@ -9,7 +11,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "coroutine-object";
             version = "0.3";
-            src = hoodlesrc.outPath + "/coroutine-object";
+            src = "./coroutine-object";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ cereal containers either lens mtl safecopy transformers transformers-free uuid ];
         }) {};
@@ -19,7 +21,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle-types";
             version = "0.3.999";
-            src = hoodlesrc.outPath + "/hoodle-types";
+            src = "./hoodle-types";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ aeson lens cereal mtl strict text uuid ];
         }) {};
@@ -28,7 +30,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle-parser";
             version = "0.3.999";
-            src = hoodlesrc.outPath + "/hoodle-parser";
+            src = "./hoodle-parser";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ attoparsec either directory hoodle-types lens cereal mtl strict text xournal-types ];
         }) {};
@@ -37,7 +39,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "xournal-types";
             version = "0.5.1";
-            src = hoodlesrc.outPath + "/xournal-types";
+            src = "./xournal-types";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ cereal lens strict TypeCompose ];
         }) {};
@@ -46,7 +48,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle-builder";
             version = "0.3.999";
-            src = hoodlesrc.outPath + "/hoodle-builder";
+            src = "./hoodle-builder";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ blaze-builder double-conversion hoodle-types lens strict text ];
         }) {};
@@ -55,7 +57,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle-render";
             version = "0.5.0";
-            src = hoodlesrc.outPath + "/hoodle-render";
+            src = "./hoodle-render";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ base64-bytestring cairo containers directory filepath gd hashable hoodle-types 
                                                      lens monad-loops mtl poppler stm strict svgcairo time transformers unix unordered-containers 
@@ -66,7 +68,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle-publish";
             version = "0.2.0";
-            src = hoodlesrc.outPath + "/hoodle-publish";
+            src = "./hoodle-publish";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ attoparsec cairo cmdargs containers directory directory-tree filepath 
                                                      gtk hoodle-parser hoodle-render hoodle-types 
@@ -78,7 +80,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle-core";
             version = "0.15.0";
-            src = hoodlesrc.outPath + "/hoodle-core";
+            src = "./hoodle-core";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ aeson aeson-pretty array attoparsec base64-bytestring binary cairo 
                                                      case-insensitive cereal containers configurator coroutine-object Diff 
@@ -94,7 +96,7 @@ let pkgs = import <nixpkgs> {};
           mkDerivation {
             pname = "hoodle";
             version = "0.4.0";
-            src = hoodlesrc.outPath + "/hoodle";
+            src = "./hoodle";
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ cmdargs configurator containers directory dyre filepath  hoodle-core mtl ];
         }) {};

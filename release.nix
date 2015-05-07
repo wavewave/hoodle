@@ -11,7 +11,7 @@ let
           mkDerivation {
             pname = "coroutine-object";
             version = "0.3";
-            src = "./coroutine-object";
+            src = ./coroutine-object;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ cereal containers either lens mtl safecopy transformers transformers-free uuid ];
         }) {};
@@ -21,7 +21,7 @@ let
           mkDerivation {
             pname = "hoodle-types";
             version = "0.3.999";
-            src = "./hoodle-types";
+            src = ./hoodle-types;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ aeson lens cereal mtl strict text uuid ];
         }) {};
@@ -30,7 +30,7 @@ let
           mkDerivation {
             pname = "hoodle-parser";
             version = "0.3.999";
-            src = "./hoodle-parser";
+            src = ./hoodle-parser;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ attoparsec either directory hoodle-types lens cereal mtl strict text xournal-types ];
         }) {};
@@ -39,7 +39,7 @@ let
           mkDerivation {
             pname = "xournal-types";
             version = "0.5.1";
-            src = "./xournal-types";
+            src = ./xournal-types;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ cereal lens strict TypeCompose ];
         }) {};
@@ -48,7 +48,7 @@ let
           mkDerivation {
             pname = "hoodle-builder";
             version = "0.3.999";
-            src = "./hoodle-builder";
+            src = ./hoodle-builder;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ blaze-builder double-conversion hoodle-types lens strict text ];
         }) {};
@@ -57,7 +57,7 @@ let
           mkDerivation {
             pname = "hoodle-render";
             version = "0.5.0";
-            src = "./hoodle-render";
+            src = ./hoodle-render;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ base64-bytestring cairo containers directory filepath gd hashable hoodle-types 
                                                      lens monad-loops mtl poppler stm strict svgcairo time transformers unix unordered-containers 
@@ -68,7 +68,7 @@ let
           mkDerivation {
             pname = "hoodle-publish";
             version = "0.2.0";
-            src = "./hoodle-publish";
+            src = ./hoodle-publish;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ attoparsec cairo cmdargs containers directory directory-tree filepath 
                                                      gtk hoodle-parser hoodle-render hoodle-types 
@@ -80,7 +80,7 @@ let
           mkDerivation {
             pname = "hoodle-core";
             version = "0.15.0";
-            src = "./hoodle-core";
+            src = ./hoodle-core;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ aeson aeson-pretty array attoparsec base64-bytestring binary cairo 
                                                      case-insensitive cereal containers configurator coroutine-object Diff 
@@ -96,7 +96,7 @@ let
           mkDerivation {
             pname = "hoodle";
             version = "0.4.0";
-            src = "./hoodle";
+            src = ./hoodle;
             license = stdenv.lib.licenses.bsd3;
             buildDepends = with haskellngPackages; [ cmdargs configurator containers directory dyre filepath  hoodle-core mtl ];
         }) {};

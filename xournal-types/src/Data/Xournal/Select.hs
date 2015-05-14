@@ -20,7 +20,7 @@ module Data.Xournal.Select where
 
 import Control.Applicative hiding (empty)
 import Control.Compose
-import Data.Foldable
+import Data.Foldable hiding (length)
 import Data.Monoid
 import Data.Sequence
 import Data.Traversable

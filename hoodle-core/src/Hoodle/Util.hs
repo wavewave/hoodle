@@ -3,7 +3,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Util 
--- Copyright   : (c) 2013, 2014 Ian-Woo Kim
+-- Copyright   : (c) 2013-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -28,7 +28,6 @@ import System.Directory
 import System.Environment 
 import System.FilePath
 import System.IO
-import System.Locale
 -- 
 import Data.Hoodle.Simple
 -- 

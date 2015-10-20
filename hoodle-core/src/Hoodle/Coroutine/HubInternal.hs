@@ -125,7 +125,9 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msql
         readProcessWithExitCode "rdiff" 
           ["delta", tsigfile, canfp, tdeltafile] ""
         deltabstr <- B.readFile tdeltafile 
-        mapM_ removeFile [tsigfile,tdeltafile]
+        print tsigfile
+        print tdeltafile
+        -- mapM_ removeFile [tsigfile,tdeltafile]
         (return . TE.decodeUtf8 . B64.encode) deltabstr
     let filecontent = toJSON FileContent { file_uuid = uuidtxt
                                          , file_path = T.pack <$> mhdlfp 
@@ -161,8 +163,11 @@ updateSyncInfo uuid fstat = do
     uhdlsMap <-  snd . view unitHoodles <$> get
     let uhdls = IM.elems uhdlsMap
     case find (\x -> view unitUUID x == uuid) uhdls of 
-      Nothing -> return ()
+      Nothing -> do
+        liftIO $ putStrLn ("uuid=" ++ show uuid)
+        return ()
       Just uhdl -> do 
+        liftIO $ putStrLn "HERE"
         let nuhdlsMap = IM.adjust (over (hoodleFileControl.syncMD5History) (fileSyncStatusMd5 fstat :) ) (view unitKey uhdl) uhdlsMap
         modify (set (unitHoodles._2) nuhdlsMap)
 

@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Device 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2015 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -74,29 +74,12 @@ foreign import ccall "c_initdevice.h initdevice" c_initdevice
   -> CString  -- ^ touch 
   -> IO ()
 
-{-
--- | 
-foreign import ccall "c_initdevice.h find_wacom" c_find_wacom
-  :: CString -> CString -> IO ()
- 
--- | 
-foreign import ccall "c_initdevice.h enable_touch" c_enable_touch
-  :: CString -> IO ()
-     
--- | 
-foreign import ccall "c_initdevice.h disable_touch" c_disable_touch
-  :: DrawWindow -> CString -> IO ()
--}
-
-
-
 -- | 
 initDevice :: Config -> IO DeviceList  
 initDevice cfg = do 
   pstylusname_detect <- newCString "stylus" 
   perasername_detect <- newCString "eraser" 
   ptouchname_detect <- newCString "touch"
-  -- c_find_wacom pstylusname_detect perasername_detect
   (mcore,mstylus,meraser,mtouch) <- getPenDevConfig cfg 
   with 0 $ \pcore -> 
     with 0 $ \pstylus -> 
@@ -122,6 +105,7 @@ initDevice cfg = do
           stylus_val <- peek pstylus
           eraser_val <- peek peraser
           touch_val <- peek ptouch
+          
           return $ DeviceList core_val corename stylus_val stylusname eraser_val erasername touch_val touchname  
                  
 -- |
@@ -135,12 +119,11 @@ getPointer devlst = do
              | btn == 3 = Just PenButton3
              | otherwise = Nothing 
     case mdev of 
-      Nothing -> -- return (rbtn,PointerCoord Core x y 1.0)
-                 return (rbtn,Nothing)
+      Nothing  -> return (rbtn,Nothing)
       Just dev -> case maxf of 
                     Nothing -> return (rbtn,Just (PointerCoord Core x y 1.0))
-                               -- return (rbtn,Nothing)
                     Just axf -> do 
+                      -- liftIO $ print dev
                       mpcoord <- liftIO $ coord ptr x y dev axf 
                       let rbtnfinal = case mpcoord of 
                                         Nothing -> rbtn 

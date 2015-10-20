@@ -168,8 +168,7 @@ void initdevice ( int* core
   (*stylus) = 0;
   while (dev_list != NULL) {
     device = (GdkDevice *)dev_list->data;
-    // device = GPOINTER_TO_INT(dev_list->data);
-    if ( gdk_device_get_source(device) != GDK_SOURCE_MOUSE ) {
+    //if ( gdk_device_get_source(device) != GDK_SOURCE_MOUSE ) {
       gdk_device_set_axis_use(device, 0, GDK_AXIS_IGNORE);
       gdk_device_set_axis_use(device, 1, GDK_AXIS_IGNORE);
       gdk_device_set_mode(device, GDK_MODE_SCREEN);
@@ -180,21 +179,23 @@ void initdevice ( int* core
       if( !strcmp (gdk_device_get_name(device), erasername) ) { 
         (*eraser) = (int) device;
       } 
-      if( !strcmp (gdk_device_get_name(device), touchname) ) { 
+      if( !strcmp (gdk_device_get_name(device), touchname) ) {
         (*touch) = (int) device;
       } 
-    } 
-    else { 
+      //} 
+      // else { 
       if( !strcmp (gdk_device_get_name(device), corepointername) ) { 
         (*core) = (int) device; 
       } 
-    } 
+      //} 
+
 #ifdef GTK3
     dev_list = g_list_next(dev_list); 
 #else // GTK3
     dev_list = dev_list->next;
 #endif // GTK3
   }
+
 
 }
 

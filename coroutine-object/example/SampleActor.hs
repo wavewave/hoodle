@@ -1,4 +1,6 @@
-{-# LANGUAGE GADTs, NoMonomorphismRestriction, ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 ----------------------------
 -- | describe world object
@@ -110,18 +112,11 @@ data SubOp i o where
 giveEventSub :: (Monad m) => Event -> CObjT SubOp m () 
 giveEventSub ev = request (Arg GiveEventSub ev) >> return ()
 
-{-
-getState l = lift ( liftM ( getL (l.worldState) ) get )
-
-putState l x = lift ( put . ( setL (l.worldState) x ) =<<  get  )
-
-modState l m = lift ( put . modL (l.worldState) m =<< get ) 
--}
-
 -- | air object 
-air :: (Monad m) => SObjT SubOp (StateT (WorldAttrib m) m) () 
+air :: forall m. (Monad m) => SObjT SubOp (StateT (WorldAttrib m) m) () 
 air = ReaderT airW 
-  where airW (Arg GiveEventSub ev) = do 
+  where airW :: Arg SubOp -> CrtnT (Res SubOp) (Arg SubOp) (StateT (WorldAttrib m) m) ()
+        airW (Arg GiveEventSub ev) = do 
           r <- case ev of 
                  Sound s -> do 
                    modify ( worldState.tempLog %~ (. (++ "sound " ++ s ++"\n")))
@@ -141,9 +136,10 @@ air = ReaderT airW
 
 
 -- | door object 
-door :: (Monad m) => SObjT SubOp (StateT (WorldAttrib m) m) () 
+door :: forall m. (Monad m) => SObjT SubOp (StateT (WorldAttrib m) m) () 
 door = ReaderT doorW 
-  where doorW (Arg GiveEventSub ev) = do 
+  where doorW :: Arg SubOp -> CrtnT (Res SubOp) (Arg SubOp) (StateT (WorldAttrib m) m) ()
+        doorW (Arg GiveEventSub ev) = do 
           r <- case ev of 
                 Open   -> do 
                   b <- (^. worldState.isDoorOpen) <$> get
@@ -168,9 +164,10 @@ door = ReaderT doorW
           doorW req 
   
 -- | 
-messageBoard :: Monad m => SObjT SubOp (StateT (WorldAttrib m) m) ()
+messageBoard :: forall m. Monad m => SObjT SubOp (StateT (WorldAttrib m) m) ()
 messageBoard = ReaderT msgbdW
-  where msgbdW (Arg GiveEventSub ev) = do 
+  where msgbdW :: Arg SubOp -> CrtnT (Res SubOp) (Arg SubOp) (StateT (WorldAttrib m) m) ()
+        msgbdW (Arg GiveEventSub ev) = do 
           r <- case ev of 
                  Message msg -> do modify (worldState.message .~ msg)
                                    return True 

@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Control.Monad.Trans.Crtn
--- Copyright   : (c) 2012 Ian-Woo Kim
+-- Copyright   : (c) 2012-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -17,19 +17,9 @@
 
 module Control.Monad.Trans.Crtn where 
 
--- import Control.Monad.Error
 import Control.Monad.Reader 
 import Control.Monad.State 
 import Control.Monad.Trans.Free
-
-
-----------------------------
--- added instance of FreeT monad
-----------------------------
-
-instance (Monad m, MonadState st m, Functor f) => MonadState st (FreeT f m) where 
-  get = lift get
-  put = lift . put
 
 ---------------------------
 -- general generator 

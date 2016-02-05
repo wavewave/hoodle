@@ -1,14 +1,9 @@
-{ mkDerivation, base, bytestring, cereal, containers, either, lens
-, mtl, safecopy, stdenv, transformers, transformers-free, uuid
-}:
+{ mkDerivation, base, either, free, mtl, stdenv, transformers }:
 mkDerivation {
   pname = "coroutine-object";
-  version = "0.3";
+  version = "0.3.0";
   src = ./.;
-  buildDepends = [
-    base bytestring cereal containers either lens mtl safecopy
-    transformers transformers-free uuid
-  ];
+  libraryHaskellDepends = [ base either free mtl transformers ];
   description = "Object-oriented programming realization using coroutine";
   license = stdenv.lib.licenses.bsd3;
 }

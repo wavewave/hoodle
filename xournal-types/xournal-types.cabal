@@ -12,7 +12,7 @@ Cabal-Version:  >= 1.8
 data-files:     
 Source-repository head
   type: git
-  location: https://www.github.com/wavewave/hxournal
+  location: https://www.github.com/wavewave/hoodle
 
 
 Library

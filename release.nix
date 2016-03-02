@@ -2,7 +2,7 @@
 
 let stdenv = pkgs.stdenv;
     newghcpkgs = pkgs.callPackage <nixpkgs/pkgs/development/haskell-modules> {
-      ghc = pkgs.haskell.compiler.ghc7101;
+      ghc = pkgs.haskell.compiler.ghc;
       packageSetConfig = pkgs.callPackage <nixpkgs/pkgs/development/haskell-modules/configuration-ghc-7.10.x.nix> {};
       overrides = self: super: rec { 
         poppler = self.callPackage (

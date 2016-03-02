@@ -4,7 +4,7 @@ let lib = pkgs.haskell.lib;
     extend = rattrs: f: self: let super = rattrs self; in super // f self super;
     fix = f: let x = f x // { __unfix__ = f; }; in x;
 
-    ghc = pkgs.haskell-ng.packages.ghc;
+    ghc = pkgs.haskell-ng.packages.ghc7103;
     ghcjs = pkgs.haskell-ng.packages.ghcjs;
     stdenv = pkgs.stdenv;
     

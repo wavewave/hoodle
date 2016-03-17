@@ -8,7 +8,7 @@
 -- uuid,md5hash,filepath map utility  
 -- 
 import           Control.Applicative
-import           Control.Lens
+import           Control.Lens hiding (List)
 import           Control.Monad
 import           Control.Monad.IO.Class (MonadIO (..))
 import           Control.Monad.Logger

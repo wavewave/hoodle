@@ -22,7 +22,7 @@ workChan cli chan =
     ev <- readChan chan 
     case ev of 
       Added fp _ -> do 
-        case (toText fp) of
+        case (toText $ decodeString fp) of
           Right txt -> emit cli (signal "/image" "org.ianwookim.hoodle" "filepath") { signalBody = [toVariant txt] }
           _ -> return ()
       _ -> return ()
@@ -33,5 +33,5 @@ startImageFileNotify :: Chan Event -> FilePath -> IO ()
 startImageFileNotify chan fp = do 
   withManager $ \wm -> do 
     putStrLn "watching start"
-    watchTreeChan wm fp actpred chan
+    watchTreeChan wm (encodeString fp) actpred chan
     getLine >> putStrLn "startImageFileNotify is over"

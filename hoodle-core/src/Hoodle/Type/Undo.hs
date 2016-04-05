@@ -35,8 +35,11 @@ addToUndo utable e =
        Nothing -> UndoTable an 1 . Just . singletonSZ $ e
        Just zs -> 
          if tn < an
-           then UndoTable an (tn+1) . Just . appendGoLast zs $ e
-           else UndoTable an an . chopFirst . appendGoLast zs $ e
+           -- FIXME: this causes undo_totalnum to be an overestimate and can
+           --        cause the oldest undo item to be dropped unnecessarily.
+           then UndoTable an (length zs') . Just $ zs'
+           else UndoTable an (length zs') . chopFirst $ zs'
+         where zs' = appendDropSecond zs e
 
 getCurrentUndoItem :: UndoTable a -> Maybe a
 getCurrentUndoItem = fmap current . undo_zipper

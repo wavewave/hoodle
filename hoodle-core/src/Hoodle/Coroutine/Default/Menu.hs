@@ -208,32 +208,36 @@ colorPickerBox :: String -> MainCoroutine (Maybe PenColor)
 colorPickerBox msg = do 
     -- #ifdef GTK3 
     -- color selection dialog is incomplete in gtk3
-    return Nothing
+    -- return Nothing
     -- #else
-    -- xst <- get 
-    -- let pcolor = view (penInfo.currentTool.penColor) xst   
-    -- doIOaction (action pcolor) >> go
---   where 
---     action pcolor _evhandler = do 
---       dialog <- Gtk.colorSelectionDialogNew msg
---       csel <- Gtk.colorSelectionDialogGetColor dialog
---       let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
---           color = Gtk.Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
+    xst <- get 
+    let pcolor = view (penInfo.currentTool.penColor) xst   
+    doIOaction (action pcolor) >> go
+  where 
+    action pcolor _evhandler = do
+      dialog <- Gtk.dialogNew -- Gtk.colorSelectionDialogNew msg
+      upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
+      vbox <- Gtk.vBoxNew False 0
+      Gtk.containerAdd upper vbox
+      csel <- Gtk.colorSelectionNew
+      let (r,g,b,_a) =  convertPenColorToRGBA pcolor 
+          color = Gtk.Color (floor (r*65535.0)) (floor (g*65535.0)) (floor (b*65535.0))
+      Gtk.colorSelectionSetCurrentColor csel color
+      Gtk.boxPackStart vbox csel Gtk.PackGrow 0
+      _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
+      Gtk.widgetShowAll dialog
+      res <- Gtk.dialogRun dialog 
+      mc <- case res of 
+              Gtk.ResponseOk -> do 
+                   clr <- Gtk.colorSelectionGetCurrentColor csel 
+                   return (Just (colorConvert clr))
+              _ -> return Nothing 
+      Gtk.widgetDestroy dialog 
+      return (UsrEv (ColorChosen mc)) 
+    go = do r <- nextevent                   
+            case r of 
+              ColorChosen mc -> return mc 
+              UpdateCanvas cid -> -- this is temporary
+                invalidateInBBox Nothing Efficient cid >> go
+              _ -> go 
 
---       Gtk.colorSelectionSetCurrentColor csel color
---       res <- Gtk.dialogRun dialog 
---       mc <- case res of 
---               Gtk.ResponseOk -> do 
---                    clrsel <- Gtk.colorSelectionDialogGetColor dialog 
---                    clr <- Gtk.colorSelectionGetCurrentColor clrsel     
---                    return (Just (colorConvert clr))
---               _ -> return Nothing 
---       Gtk.widgetDestroy dialog 
---       return (UsrEv (ColorChosen mc))
---     go = do r <- nextevent                   
---             case r of 
---               ColorChosen mc -> return mc 
---               UpdateCanvas cid -> -- this is temporary
---                 invalidateInBBox Nothing Efficient cid >> go
---               _ -> go 
--- -- #endif

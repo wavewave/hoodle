@@ -124,26 +124,24 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
         vadj = _vertAdjustment cinfo
     Gtk.widgetSetCanFocus canvas True 
     Gtk.widgetGrabFocus canvas
-{-     
--- #ifdef GTK3
--- #endif
-    _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
+    _confevent <- canvas `Gtk.on` Gtk.configureEvent $ Gtk.tryEvent $ do 
+                    (w,h) <- Gtk.eventSize 
+                    liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
     _keyevent <- canvas `Gtk.on` Gtk.keyPressEvent $ Gtk.tryEvent $ do 
       m <- Gtk.eventModifier
       n <- Gtk.eventKeyName 
       let keystr = show m ++ ":" ++ show n
       liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
-    _bpevent <- canvas `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 
+    _bpevent <- canvas `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do
+                 liftIO $ print "in buttonPressEvent"
                  liftIO $ Gtk.widgetGrabFocus canvas 
                  (mbtn,mp) <- getPointer dev
+                 liftIO $ print (mbtn,mp)
                  forM_ mp $ \p -> do 
                    let pbtn = maybe PenButton1 id mbtn
                    case pbtn of 
                      TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
                      _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
-    _confevent <- canvas `Gtk.on` Gtk.configureEvent $ Gtk.tryEvent $ do 
-                    (w,h) <- Gtk.eventSize 
-                    liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
     _brevent <- canvas `Gtk.on` Gtk.buttonReleaseEvent $ Gtk.tryEvent $ do 
                   (mbtn,mp) <- getPointer dev
                   forM_ mp $ \p -> do 
@@ -159,13 +157,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                 Gtk.widgetGrabFocus canvas 
     _focusout <- canvas `Gtk.on` Gtk.focusOutEvent $ Gtk.tryEvent $ liftIO $ atomically (writeTVar tvar False)
 #endif
-
-
-#ifdef GTK3
     _exposeev <- canvas `Gtk.on` Gtk.draw $ do 
-#else
-    _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-#endif
       liftIO $ Gtk.widgetGrabFocus canvas       
       (liftIO . callback . UsrEv) (UpdateCanvas cid) 
     canvas `Gtk.on` Gtk.motionNotifyEvent $ Gtk.tryEvent $ do 
@@ -189,12 +181,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                         y:_ -> return y )
     uxinputa <- liftIO (Gtk.actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) -> 
                           return (Gtk.castToToggleAction x) )
-    b <- liftIO $ Gtk.toggleActionGetActive uxinputa
-#ifdef GTK3    
-#else
-    if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
-         else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
-#endif
+    -- b <- liftIO $ Gtk.toggleActionGetActive uxinputa
     hadjconnid <- Gtk.afterValueChanged hadj $ do 
                     v <- Gtk.adjustmentGetValue hadj 
                     (callback . UsrEv) (HScrollBarMoved cid v)
@@ -212,6 +199,22 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
+    
+{-     
+-- #ifdef GTK3
+-- #endif
+    _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
+
+
+#ifdef GTK3
+#else
+    _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
+#endif
+#ifdef GTK3    
+#else
+    if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
+         else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
+#endif
 -- #ifdef GTK3
     -}
 -- #endif

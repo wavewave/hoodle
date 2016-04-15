@@ -71,15 +71,15 @@ textInputDialog msg = do
     doIOaction $ \_evhandler -> do 
                    dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
                      Gtk.MessageQuestion Gtk.ButtonsOkCancel msg
-#ifdef GTK3
+                   -- #ifdef GTK3
                    vbox <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                    txtvw <- Gtk.textViewNew
                    Gtk.containerAdd vbox txtvw  
-#else 
-                   vbox <- Gtk.dialogGetUpper dialog
-                   txtvw <- Gtk.textViewNew
-                   Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
-#endif
+                   -- #else 
+                   -- vbox <- Gtk.dialogGetUpper dialog
+                   -- txtvw <- Gtk.textViewNew
+                   -- Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
+                   -- #endif
                    Gtk.widgetShowAll dialog
                    res <- Gtk.dialogRun dialog 
                    case res of 
@@ -108,13 +108,13 @@ keywordDialog keylst = do
 keywordDialog' :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
 keywordDialog' keys = \_evhandler -> do
     dialog <- Gtk.dialogNew
-#ifdef GTK3
+    -- #ifdef GTK3
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     vbox <- Gtk.vBoxNew False 0 
     Gtk.containerAdd upper vbox
-#else
-    vbox <- Gtk.dialogGetUpper dialog
-#endif
+    -- #else
+    -- vbox <- Gtk.dialogGetUpper dialog
+    -- #endif
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
     _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
@@ -148,14 +148,13 @@ longTextMessageBox msg = action
     action = doIOaction $ 
                \_evhandler -> do 
                  dialog <- Gtk.dialogNew
-
-#ifdef GTK3
+                 -- #ifdef GTK3
                  upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                  vbox <- Gtk.vBoxNew False 0 
                  Gtk.containerAdd upper vbox
-#else
-                 vbox <- Gtk.dialogGetUpper dialog
-#endif
+                 -- #else
+                 -- vbox <- Gtk.dialogGetUpper dialog
+                 -- #endif
                  hbox <- Gtk.hBoxNew False 0
                  txtbuf <- Gtk.textBufferNew Nothing
                  Gtk.textBufferSetText txtbuf msg

@@ -34,7 +34,7 @@ let hsenv = haskellPackages.ghcWithPackages
           failure
           fsnotify
           gd
-          gtk 
+          gtk3
           handa-gdata
           http-client-conduit
           http-conduit
@@ -75,7 +75,7 @@ let hsenv = haskellPackages.ghcWithPackages
     ]);
 in stdenv.mkDerivation { 
      name = "env-hoodle-build";
-     buildInputs = [ hsenv x11 xlibs.libXi gtk poppler pkgconfig sqlite ];
+     buildInputs = [ hsenv x11 xlibs.libXi gtk3 poppler pkgconfig sqlite ];
      shellHook = ''
         $(grep export ${hsenv.outPath}/bin/ghc)
         export PATH=${binutils}/bin:${coreutils}/bin:$PATH

@@ -137,16 +137,16 @@ virtualDoubleBufferDraw srcsfc tgtsfc pre post =
 doubleBufferFlush :: Cairo.Surface -> CanvasInfo a -> IO () 
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
-#ifdef GTK3
+      -- #ifdef GTK3
       Just win <- Gtk.widgetGetWindow canvas
-#else 
-      win <- Gtk.widgetGetDrawWindow canvas
-#endif
-#ifdef GTK3
+      -- #else 
+      -- win <- Gtk.widgetGetDrawWindow canvas
+      -- #endif
+       -- #ifdef GTK3
       Gtk.renderWithDrawWindow win $ do 
-#else 
-      Gtk.renderWithDrawable win $ do 
-#endif
+      -- #else 
+      -- Gtk.renderWithDrawable win $ do 
+      -- -#endif
         Cairo.setSourceSurface sfc 0 0 
         Cairo.setOperator Cairo.OperatorSource 
         Cairo.paint
@@ -168,11 +168,11 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
   let action = do 
         case msfc of 
 	  Nothing -> do 
-#ifdef GTK3            
+            -- #ifdef GTK3            
             Gtk.renderWithDrawWindow win $ do
-#else
-	    Gtk.renderWithDrawable win $ do 
-#endif
+            -- #else
+	    -- Gtk.renderWithDrawable win $ do 
+            -- #endif
 	      clipBBox mbbox'
               Cairo.setSourceRGBA 0.5 0.5 0.5 1
               Cairo.rectangle 0 0 cw ch 
@@ -186,11 +186,11 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
               Cairo.fill
               clipBBox mbbox' 
 	      rndr 
-#ifdef GTK3
+            -- #ifdef GTK3
             Gtk.renderWithDrawWindow win $ do
-#else
-	    Gtk.renderWithDrawable win $ do 
-#endif 
+            -- #else
+	    --   Gtk.renderWithDrawable win $ do 
+            -- #endif 
 	      Cairo.setSourceSurface sfc 0 0   
 	      Cairo.setOperator Cairo.OperatorSource 
 	      Cairo.paint 
@@ -230,16 +230,16 @@ drawCurvebitGen  :: PressureMode
                     -> ((Double,Double),Double) 
                     -> IO () 
 drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x,y),z) = do 
-#ifdef GTK3  
+  -- #ifdef GTK3  
   Just win <- Gtk.widgetGetWindow canvas
-#else 
-  win <- Gtk.widgetGetDrawWindow canvas
-#endif 
-#ifdef GTK3
+  -- #else 
+  -- win <- Gtk.widgetGetDrawWindow canvas
+  -- #endif 
+  -- #ifdef GTK3
   Gtk.renderWithDrawWindow win $ do 
-#else 
-  Gtk.renderWithDrawable win $ do
-#endif
+  -- #else 
+  -- Gtk.renderWithDrawable win $ do
+  -- #endif
     cairoXform4PageCoordinate (mkXform4Page geometry pnum) 
     Cairo.setSourceRGBA r g b a
     case pmode of 
@@ -272,11 +272,11 @@ drawFuncGen _typ render = SinglePageDraw func
   where func cache cid isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
-#ifdef GTK3          
+          -- #ifdef GTK3          
           Just win <- Gtk.widgetGetWindow canvas
-#else
-          win <- Gtk.widgetGetDrawWindow canvas
-#endif 
+          -- #else
+          -- win <- Gtk.widgetGetDrawWindow canvas
+          -- #endif 
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
@@ -357,11 +357,11 @@ drawContPageGen render = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-#ifdef GTK3          
+          -- #ifdef GTK3          
           Just win <- Gtk.widgetGetWindow canvas
-#else
-          win <- Gtk.widgetGetDrawWindow canvas
-#endif
+          -- #else
+          -- win <- Gtk.widgetGetDrawWindow canvas
+          -- #endif
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
@@ -411,11 +411,11 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-#ifdef GTK3                            
+          -- #ifdef GTK3                            
           Just win <- Gtk.widgetGetWindow canvas
-#else
-          win <- Gtk.widgetGetDrawWindow canvas
-#endif
+          -- #else
+          -- win <- Gtk.widgetGetDrawWindow canvas
+          -- #endif
           let ibboxnew = getViewableBBox geometry mbbox
               mbboxnew = toMaybe ibboxnew
               onepagerender (pn,pg) = do  

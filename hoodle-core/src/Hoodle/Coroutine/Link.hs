@@ -266,13 +266,13 @@ addLink = do
   where 
     action mfn = do  dialog <- Gtk.messageDialogNew Nothing [Gtk.DialogModal]
                                  Gtk.MessageQuestion Gtk.ButtonsOkCancel ("add link" :: String)
-#ifdef GTK3                               
+                     -- #ifdef GTK3                               
                      upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
                      vbox <- Gtk.vBoxNew False 0
                      Gtk.containerAdd upper vbox
-#else
-                     vbox <- Gtk.dialogGetUpper dialog
-#endif
+                     -- #else
+                     -- vbox <- Gtk.dialogGetUpper dialog
+                     -- #endif
                      txtvw <- Gtk.textViewNew
                      Gtk.boxPackStart vbox txtvw Gtk.PackGrow 0 
                      Gtk.widgetShowAll dialog

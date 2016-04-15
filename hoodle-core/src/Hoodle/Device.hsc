@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Device 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -198,11 +198,11 @@ wacomCoordConvert :: WidgetClass self => self
                      -> (Double,Double) 
                      -> IO (Double,Double)
 wacomCoordConvert canvas (x,y)= do 
-#ifdef GTK3  
+  -- #ifdef GTK3  
   Just win <- widgetGetWindow canvas -- partial function for the time being 
-#else // GTK3
-  win <- widgetGetDrawWindow canvas
-#endif // GTK3
+  -- #else // GTK3
+  -- win <- widgetGetDrawWindow canvas
+  -- #endif // GTK3
   (x0,y0) <- drawWindowGetOrigin win
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> screenGetWidth screen <*> screenGetHeight screen

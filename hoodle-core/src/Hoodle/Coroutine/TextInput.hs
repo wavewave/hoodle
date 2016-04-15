@@ -89,13 +89,13 @@ import Prelude hiding (readFile,mapM_)
 multiLineDialog :: T.Text -> (AllEvent -> IO ()) -> IO AllEvent
 multiLineDialog str evhandler = do
     dialog <- Gtk.dialogNew
-#ifdef GTK3    
+    -- #ifdef GTK3    
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     vbox <- Gtk.vBoxNew False 0
     Gtk.containerAdd upper vbox
-#else 
-    vbox <- Gtk.dialogGetUpper dialog
-#endif
+    -- #else 
+    -- vbox <- Gtk.dialogGetUpper dialog
+    -- #endif
     textbuf <- Gtk.textBufferNew Nothing
     Gtk.textBufferSetByteString textbuf (TE.encodeUtf8 str)
     textbuf `Gtk.on` Gtk.bufferChanged $ do 
@@ -496,14 +496,13 @@ textInputFromSource (x0,y0) = do
 linePosDialog :: Either (ActionOrder AllEvent) AllEvent
 linePosDialog = mkIOaction $ \_evhandler -> do
     dialog <- Gtk.dialogNew
-#ifdef GTK3
+    -- #ifdef GTK3
     upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
     vbox <- Gtk.vBoxNew False 0 
     Gtk.containerAdd upper vbox
-#else 
-    vbox <- Gtk.dialogGetUpper dialog
-#endif
-
+    -- #else 
+    -- vbox <- Gtk.dialogGetUpper dialog
+    -- #endif
     hbox <- Gtk.hBoxNew False 0
     Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
 

@@ -498,14 +498,14 @@ getMenuUI evar = do
   Gtk.actionSetSensitive ra6 True  
   Just toolbar1 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar1" :: String)
   Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar1) Gtk.ToolbarIcons 
-#ifndef GTK3
-  Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar1) Gtk.IconSizeSmallToolbar
-#endif 
+  -- #ifndef GTK3
+  -- Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar1) Gtk.IconSizeSmallToolbar
+  -- #endif 
   Just toolbar2 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar2" :: String)
   Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar2) Gtk.ToolbarIcons 
-#ifndef GTK3
-  Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar2) Gtk.IconSizeSmallToolbar  
-#endif 
+  -- #ifndef GTK3
+  -- Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar2) Gtk.IconSizeSmallToolbar  
+  -- #endif 
     
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 

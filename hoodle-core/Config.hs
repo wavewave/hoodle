@@ -55,18 +55,20 @@ hookfunction x cflags = do
 config :: LocalBuildInfo -> IO (Maybe HookedBuildInfo)
 config bInfo = do 
   let cflags = (configConfigurationsFlags . configFlags) bInfo
-      b = maybe False id (lookup (FlagName "gtk3") cflags)
-  incdirs <- if b 
-               then do 
-                 (excode,out,err) <- readProcessWithExitCode "pkg-config" ["--cflags", "gtk+-3.0"] "" 
-                 case excode of 
-                   ExitSuccess -> return . extractIncDir $ out
-                   _ -> error $ ("failure when running pkg-config --cflags gtk+-3.0 :\n" ++ err) 
-               else do 
-                 (excode,out,err) <- readProcessWithExitCode "pkg-config" ["--cflags", "gtk+-2.0"] "" 
-                 case excode of 
-                   ExitSuccess -> return . extractIncDir $ out
-                   _ -> error $ ("failure when running pkg-config --cflags gtk+-2.0 :\n" ++ err) 
+      -- b = maybe False id (lookup (FlagName "gtk3") cflags)
+  incdirs <- -- if b 
+             --   then
+             do
+    (excode,out,err) <- readProcessWithExitCode "pkg-config" ["--cflags", "gtk+-3.0"] ""
+    case excode of 
+     ExitSuccess -> return . extractIncDir $ out
+     _ -> error $ ("failure when running pkg-config --cflags gtk+-3.0 :\n" ++ err) 
+
+             -- else do 
+             --     (excode,out,err) <- readProcessWithExitCode "pkg-config" ["--cflags", "gtk+-2.0"] "" 
+              --    case excode of 
+               --     ExitSuccess -> return . extractIncDir $ out
+               --     _ -> error $ ("failure when running pkg-config --cflags gtk+-2.0 :\n" ++ err) 
 
  
   let Just lib = library . localPkgDescr $ bInfo

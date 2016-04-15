@@ -123,10 +123,10 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
         hadj = _horizAdjustment cinfo 
         vadj = _vertAdjustment cinfo
     Gtk.widgetSetCanFocus canvas True 
-    Gtk.widgetGrabFocus canvas     
-#ifdef GTK3
-    {- 
-#endif
+    Gtk.widgetGrabFocus canvas
+{-     
+-- #ifdef GTK3
+-- #endif
     _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
     _keyevent <- canvas `Gtk.on` Gtk.keyPressEvent $ Gtk.tryEvent $ do 
       m <- Gtk.eventModifier
@@ -212,9 +212,10 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
-#ifdef GTK3
+-- #ifdef GTK3
     -}
-#endif
+-- #endif
+
     -- temp
     return $ cinfo     
 

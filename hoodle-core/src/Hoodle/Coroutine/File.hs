@@ -645,13 +645,13 @@ showRevisionDialog hdl revs = do
   where 
     action (cache,cvsid) _evhandler = do 
       dialog <- Gtk.dialogNew
-#ifdef GTK3
+      -- #ifdef GTK3
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
       vbox <- Gtk.vBoxNew False 0
       Gtk.containerAdd upper vbox 
-#else 
-      vbox <- Gtk.dialogGetUpper dialog
-#endif
+      -- #else 
+      -- vbox <- Gtk.dialogGetUpper dialog
+      -- #endif
       mapM_ (addOneRevisionBox cache cvsid vbox hdl) revs 
       _btnOk <- Gtk.dialogAddButton dialog ("Ok" :: String) Gtk.ResponseOk
       Gtk.widgetShowAll dialog
@@ -684,16 +684,16 @@ addOneRevisionBox cache cvsid vbox hdl rev = do
     cvs <- Gtk.drawingAreaNew 
     cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 250 25)
     cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-#ifdef GTK3      
+      -- #ifdef GTK3      
       Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs 
-#else
-      drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs 
-#endif
-#ifdef GTK3
+      -- #else
+      -- drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs 
+      -- #endif
+      -- #ifdef GTK3
       liftIO . Gtk.renderWithDrawWindow drawwdw $ do
-#else 
-      liftIO . Gtk.renderWithDrawable drawwdw $ do 
-#endif
+      -- #else 
+      -- liftIO . Gtk.renderWithDrawable drawwdw $ do 
+      -- #endif
         case rev of 
           RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache cvsid) strks
           Revision _ txt -> mkPangoText (B.unpack txt)            

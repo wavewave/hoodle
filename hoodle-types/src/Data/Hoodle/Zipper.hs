@@ -70,6 +70,10 @@ appendGoLast :: SeqZipper a -> a -> SeqZipper a
 appendGoLast (SZ (y,(y1s,y2s))) x = SZ (x, ((y1s |> y) >< y2s, empty))
 
 -- |
+appendDropSecond :: SeqZipper a -> a -> SeqZipper a
+appendDropSecond (SZ (y,(y1s,y2s))) x = SZ (x, ((y1s |> y), empty))
+
+-- |
 chopFirst :: SeqZipper a -> Maybe (SeqZipper a)
 chopFirst (SZ (y,(y1s,y2s))) = 
   case viewl y1s of

@@ -86,7 +86,7 @@ initDevice cfg = do
       with 0 $ \peraser -> do 
         with 0 $ \ptouch -> do 
           (pcorename,corename) <- case mcore of 
-            Nothing -> (,) <$> newCString "Core Pointer" <*> pure "Core Pointer"
+            Nothing -> (,) <$> newCString "Virtual core pointer" <*> pure "Virtual core pointer"
             Just core -> (,) <$> newCString core <*> pure core
           (pstylusname,stylusname) <- case mstylus of 
             Nothing -> return (pstylusname_detect,"stylus")
@@ -113,6 +113,7 @@ getPointer :: DeviceList -> EventM t (Maybe PenButton,Maybe PointerCoord)
 getPointer devlst = do 
     ptr <- ask 
     (_ty,btn,x,y,mdev,maxf) <- liftIO (getInfo ptr)
+    -- liftIO $ print (btn,x,y,mdev)
     let rbtn | btn == 0 = Nothing 
              | btn == 1 = Just PenButton1
              | btn == 2 = Just PenButton2 
@@ -124,7 +125,8 @@ getPointer devlst = do
                     Nothing -> return (rbtn,Just (PointerCoord Core x y 1.0))
                     Just axf -> do 
                       -- liftIO $ print dev
-                      mpcoord <- liftIO $ coord ptr x y dev axf 
+                      mpcoord <- liftIO $ coord ptr x y dev axf
+                      when (btn /= 0) (liftIO $ print (btn,mdev,mpcoord))
                       let rbtnfinal = case mpcoord of 
                                         Nothing -> rbtn 
                                         Just pcoord -> case pointerType pcoord of 

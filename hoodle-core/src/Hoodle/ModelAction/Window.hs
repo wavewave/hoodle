@@ -157,9 +157,9 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                 Gtk.widgetGrabFocus canvas 
     _focusout <- canvas `Gtk.on` Gtk.focusOutEvent $ Gtk.tryEvent $ liftIO $ atomically (writeTVar tvar False)
 #endif
-    _exposeev <- canvas `Gtk.on` Gtk.draw $ do 
+    _drawev <- canvas `Gtk.on` Gtk.draw $ do 
       liftIO $ Gtk.widgetGrabFocus canvas       
-      (liftIO . callback . UsrEv) (UpdateCanvas cid) 
+      (liftIO . callback . UsrEv) (UpdateCanvas cid)
     canvas `Gtk.on` Gtk.motionNotifyEvent $ Gtk.tryEvent $ do 
       (mbtn,mp) <- getPointer dev
       forM_ mp $ \p -> do

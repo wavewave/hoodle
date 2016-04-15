@@ -2,7 +2,7 @@
 
 with pkgs;
 
-let hsenv = haskell.packages.ghc7102.ghcWithPackages 
+let hsenv = haskellPackages.ghcWithPackages 
       (p: with p; [ 
           cabal-install
           Diff
@@ -52,7 +52,7 @@ let hsenv = haskell.packages.ghc7102.ghcWithPackages
           persistent
           persistent-sqlite
           persistent-template
-          poppler
+          #poppler
           pureMD5
           safecopy
           stm
@@ -71,6 +71,7 @@ let hsenv = haskell.packages.ghc7102.ghcWithPackages
           filemanip
           hslogger
           regex-base regex-posix regex-compat MissingH
+          gtk2hs-buildtools
     ]);
 in stdenv.mkDerivation { 
      name = "env-hoodle-build";

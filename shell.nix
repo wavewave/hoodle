@@ -75,8 +75,10 @@ let hsenv = haskellPackages.ghcWithPackages
     ]);
 in stdenv.mkDerivation { 
      name = "env-hoodle-build";
-     buildInputs = [ hsenv x11 xlibs.libXi gtk3 poppler pkgconfig sqlite wrapGAppsHook
+     propagatedBuildInputs = [ wrapGAppsHook ] ;
+     buildInputs = [ hsenv x11 xlibs.libXi gtk3 poppler pkgconfig sqlite
                      gnome3.defaultIconTheme
+                     gnome3.gsettings_desktop_schemas
                    ];
      shellHook = ''
         $(grep export ${hsenv.outPath}/bin/ghc)
@@ -85,5 +87,9 @@ in stdenv.mkDerivation {
         export LD_LIBRARY_PATH=${xlibs.libX11}/lib:${xlibs.libXi}/lib
         export LIBRARY_PATH=${xlibs.libX11}/lib:${xlibs.libXi}/lib
         export C_INCLUDE_PATH=${xlibs.libX11}/include:${xlibs.libXi}/include:${xlibs.xproto}/include:${xlibs.inputproto}/include
+        #export XDG_DATA_DIRS=${gtk3}/share/gsettings-schemas/${gtk3.name}/glib-2.0/schemas:${gnome3.gsettings_desktop_schemas}/share/gsettings-schemas/${gnome3.gsettings_desktop_schemas.name}:$XDG_DATA_DIRS
+        export XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH:$XDG_DATA_DIRS
      '';
    }
+
+# 

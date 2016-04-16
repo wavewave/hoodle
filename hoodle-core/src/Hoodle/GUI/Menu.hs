@@ -1,11 +1,12 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI.Menu 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -22,7 +23,11 @@ module Hoodle.GUI.Menu where
 import           Control.Lens (set)
 import           Control.Monad
 import qualified Data.Foldable as F (forM_)
+import           Foreign.C.Types (CInt(..))
+import           Foreign.ForeignPtr (withForeignPtr) 
+import           Foreign.Ptr (Ptr(..))
 import qualified Graphics.UI.Gtk as Gtk
+import qualified Graphics.UI.GtkInternals as Gtk (unToolbar)
 import           System.FilePath
 -- from hoodle-platform 
 import           Data.Hoodle.Predefined 
@@ -31,6 +36,18 @@ import           Hoodle.Coroutine.Callback
 import           Hoodle.Type
 --
 import Paths_hoodle_core
+
+
+-- This is because haskell gtk3 package miss gtk_toolbar_set_icon_size. 
+-- Refer to leksah IDE.Find module.
+
+foreign import ccall safe "gtk_toolbar_set_icon_size"
+  gtk_toolbar_set_icon_size :: Ptr Gtk.Toolbar -> CInt -> IO ()
+
+toolbarSetIconSize :: Gtk.ToolbarClass self => self -> Gtk.IconSize -> IO ()
+toolbarSetIconSize self iconSize = 
+  withForeignPtr (Gtk.unToolbar $ Gtk.toToolbar self) $
+    \selfPtr -> gtk_toolbar_set_icon_size selfPtr (fromIntegral $ fromEnum iconSize)
 
 justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
@@ -498,14 +515,10 @@ getMenuUI evar = do
   Gtk.actionSetSensitive ra6 True  
   Just toolbar1 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar1" :: String)
   Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar1) Gtk.ToolbarIcons 
-  -- #ifndef GTK3
-  -- Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar1) Gtk.IconSizeSmallToolbar
-  -- #endif 
+  toolbarSetIconSize (Gtk.castToToolbar toolbar1) Gtk.IconSizeSmallToolbar
   Just toolbar2 <- Gtk.uiManagerGetWidget ui ("/ui/toolbar2" :: String)
   Gtk.toolbarSetStyle (Gtk.castToToolbar toolbar2) Gtk.ToolbarIcons 
-  -- #ifndef GTK3
-  -- Gtk.toolbarSetIconSize (Gtk.castToToolbar toolbar2) Gtk.IconSizeSmallToolbar  
-  -- #endif 
+  toolbarSetIconSize (Gtk.castToToolbar toolbar2) Gtk.IconSizeSmallToolbar  
     
   let uicomponentsignalhandler = set penModeSignal mpenmodconnid 
                                  . set pageModeSignal mpgmodconnid 

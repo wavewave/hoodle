@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -150,9 +150,8 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
   let st6 = ( (unitHoodles.currentUnit.unitUUID .~ uuid) 
             . (unitHoodles.currentUnit.unitButton .~ btn)
             . (uiComponentSignalHandler.switchTabSignal .~ Just sigid)) st5
-      -- st6 = st5
       startingXstate = (unitHoodles.currentUnit.rootContainer .~ Gtk.castToBox vboxcvs) st6
-      startworld = world startingXstate . ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)  
+      startworld = world startingXstate . ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
   putMVar evar . Just $ (driver simplelogger startworld)
   return (evar,startingXstate,ui,vbox)
 
@@ -162,22 +161,25 @@ initialize cvs isInitialized ev = do
     case ev of 
       UsrEv (Initialized mfname) -> do 
         if isInitialized 
-          then case cvs of
-                 Nothing -> nextevent >>= initialize Nothing True . UsrEv
-                 Just cvsi -> return cvsi
+          then do
+            liftIO $ print "point0"
+            case cvs of
+              Nothing -> nextevent >>= initialize Nothing True . UsrEv
+              Just cvsi -> return cvsi
           else do
 	    -- additional initialization goes here
 	    xst1 <- get
+            
 	    let ui = xst1 ^. gtkUIManager
 		cachevar = xst1 ^. renderCacheVar
 		tvarpdf = xst1 ^. pdfRenderQueue
 		tvargen = xst1 ^. genRenderQueue
 	    doIOaction $ \evhandler -> do 
-	      -- let handler = Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate
 	      forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
 	      forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
 	      return (UsrEv ActionOrdered)
-	    waitSomeEvent (\case ActionOrdered -> True ; _ -> False ) 
+	    waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+            
 	    getFileContent (LocalDir mfname)
 	    -- 
 	    xst2 <- get
@@ -186,9 +188,9 @@ initialize cvs isInitialized ev = do
 		cid = getCurrentCanvasId uhdl
 	    callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
 	    pureUpdateUhdl (hoodleModeState .~ hdlst)
-	    -- liftIO $ toggleSave ui False
 	    liftIO $ reflectUIToggle ui "SAVEA" False
 	    pureUpdateUhdl (isSaved .~ True)
+
             case cvs of
               Just cvsi -> return cvsi
               Nothing -> nextevent >>= initialize Nothing True . UsrEv
@@ -197,11 +199,11 @@ initialize cvs isInitialized ev = do
       _ -> case (cvs,isInitialized) of
              (Just cvsi,True) -> return cvsi
              _ -> nextevent >>= initialize cvs isInitialized . UsrEv
+
 -- |
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess ev = do 
     (cid,cdim) <- initialize Nothing False ev
-    liftIO $ print (cid,cdim)
     changePage (const 0)
     reflectViewModeUI
     reflectPenModeUI
@@ -217,19 +219,21 @@ guiProcess ev = do
     syncFile
 #endif
     doCanvasConfigure cid cdim
-    -- main loop 
+    -- main loop
     sequence_ (repeat dispatchMode)
 
 -- | 
 dispatchMode :: MainCoroutine () 
-dispatchMode = (view (unitHoodles.currentUnit) <$> get) 
+dispatchMode = do
+               (view (unitHoodles.currentUnit) <$> get) 
                >>= return . hoodleModeStateEither . view hoodleModeState
                >>= either (const viewAppendMode) (const selectMode)
                      
 -- | 
 viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 
-  r1 <- nextevent 
+  r1 <- nextevent
+  -- liftIO $ print r1
   case r1 of 
     PenDown cid pbtn pcoord -> 
       widgetCheckPen cid pcoord $ do 

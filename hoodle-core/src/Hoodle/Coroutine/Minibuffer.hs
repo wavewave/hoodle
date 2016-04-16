@@ -76,16 +76,16 @@ minibufDialog msg = do
       cvs <- Gtk.drawingAreaNew                           
       cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 500 50)
       cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do
-#ifdef GTK3        
+        -- #ifdef GTK3        
         Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs
-#else
-        drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs                 
-#endif
-#ifdef GTK3
+        -- #else
+        -- drawwdw <- liftIO $ Gtk.widgetGetDrawWindow cvs                 
+        -- #endif
+        -- #ifdef GTK3
         liftIO (Gtk.renderWithDrawWindow drawwdw drawMiniBufBkg)
-#else
-        liftIO (Gtk.renderWithDrawable drawwdw drawMiniBufBkg)
-#endif
+        -- #else
+        -- liftIO (Gtk.renderWithDrawable drawwdw drawMiniBufBkg)
+        -- #endif
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
       cvs `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 
         (mbtn,mp) <- getPointer dev
@@ -108,18 +108,15 @@ minibufDialog msg = do
             case pbtn of 
               TouchButton -> return () 
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenMove p)
-      {- if doesUseX11Ext 
-        then widgetSetExtensionEvents cvs [ExtensionEventsAll]
-        else widgetSetExtensionEvents cvs [ExtensionEventsNone] -}
       Gtk.widgetAddEvents cvs [Gtk.PointerMotionMask,Gtk.Button1MotionMask]
       --
-#ifdef GTK3
+      -- #ifdef GTK3
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
       vbox <- Gtk.vBoxNew False 0 
       Gtk.containerAdd upper vbox
-#else 
-      vbox <- Gtk.dialogGetUpper dialog
-#endif
+      -- #else 
+      -- vbox <- Gtk.dialogGetUpper dialog
+      -- #endif
       hbox <- Gtk.hBoxNew False 0 
       Gtk.boxPackStart hbox msgLabel Gtk.PackNatural 0 
       Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
@@ -151,11 +148,11 @@ minibufInit =
 
 invalidateMinibuf :: Gtk.DrawWindow -> Cairo.Surface -> IO ()
 invalidateMinibuf drawwdw tgtsfc = 
-#ifdef GTK3
+  -- #ifdef GTK3
   Gtk.renderWithDrawWindow drawwdw $ do 
-#else 
-  Gtk.renderWithDrawable drawwdw $ do 
-#endif
+  -- #else 
+  -- Gtk.renderWithDrawable drawwdw $ do 
+  -- #endif
     Cairo.setSourceSurface tgtsfc 0 0 
     Cairo.setOperator Cairo.OperatorSource 
     Cairo.paint

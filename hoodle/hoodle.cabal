@@ -1,5 +1,5 @@
 Name:		hoodle
-Version:	0.4.0
+Version:	0.4.999
 Synopsis:	Executable for hoodle
 Description: 	Hoodle is a pen notetaking program written in haskell. 
 Homepage:       http://ianwookim.org/hoodle
@@ -8,7 +8,7 @@ License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 7.6
+Tested-with:    GHC == 7.10
 Build-Type: 	Custom
 Cabal-Version:  >= 1.8
 data-files:     CHANGES

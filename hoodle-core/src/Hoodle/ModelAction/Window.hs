@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Window 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -133,10 +133,8 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
       let keystr = show m ++ ":" ++ show n
       liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
     _bpevent <- canvas `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do
-                 liftIO $ print "in buttonPressEvent"
                  liftIO $ Gtk.widgetGrabFocus canvas 
                  (mbtn,mp) <- getPointer dev
-                 liftIO $ print (mbtn,mp)
                  forM_ mp $ \p -> do 
                    let pbtn = maybe PenButton1 id mbtn
                    case pbtn of 

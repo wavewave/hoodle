@@ -154,7 +154,8 @@ iconResourceAdd :: Gtk.IconFactory -> FilePath -> (FilePath, Gtk.StockId) -> IO 
 iconResourceAdd iconfac resdir (fp,stid) = do 
   myIconSource <- Gtk.iconSourceNew 
   Gtk.iconSourceSetFilename myIconSource (resdir </> fp)
-  Gtk.iconSourceSetSize myIconSource Gtk.IconSizeLargeToolbar
+  -- Gtk.iconSourceSetSize myIconSource Gtk.IconSizeLargeToolbar
+  Gtk.iconSourceSetSize myIconSource Gtk.IconSizeSmallToolbar
   myIconSourceSmall <- Gtk.iconSourceNew 
   Gtk.iconSourceSetFilename myIconSourceSmall (resdir </> fp)
   Gtk.iconSourceSetSize myIconSource Gtk.IconSizeMenu

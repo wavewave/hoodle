@@ -162,34 +162,33 @@ initialize cvs isInitialized ev = do
       UsrEv (Initialized mfname) -> do 
         if isInitialized 
           then do
-            liftIO $ print "point0"
             case cvs of
               Nothing -> nextevent >>= initialize Nothing True . UsrEv
               Just cvsi -> return cvsi
           else do
-	    -- additional initialization goes here
-	    xst1 <- get
+            -- additional initialization goes here
+            xst1 <- get
             
-	    let ui = xst1 ^. gtkUIManager
-		cachevar = xst1 ^. renderCacheVar
-		tvarpdf = xst1 ^. pdfRenderQueue
-		tvargen = xst1 ^. genRenderQueue
-	    doIOaction $ \evhandler -> do 
-	      forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
-	      forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
-	      return (UsrEv ActionOrdered)
-	    waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
+            let ui = xst1 ^. gtkUIManager
+                cachevar = xst1 ^. renderCacheVar
+                tvarpdf = xst1 ^. pdfRenderQueue
+                tvargen = xst1 ^. genRenderQueue
+            doIOaction $ \evhandler -> do 
+              forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
+              forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException)) 
+              return (UsrEv ActionOrdered)
+            waitSomeEvent (\case ActionOrdered -> True ; _ -> False )
             
-	    getFileContent (LocalDir mfname)
-	    -- 
-	    xst2 <- get
-	    let uhdl = view (unitHoodles.currentUnit) xst2
-		hdlst = uhdl ^. hoodleModeState 
-		cid = getCurrentCanvasId uhdl
-	    callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
-	    pureUpdateUhdl (hoodleModeState .~ hdlst)
-	    liftIO $ reflectUIToggle ui "SAVEA" False
-	    pureUpdateUhdl (isSaved .~ True)
+            getFileContent (LocalDir mfname)
+            -- 
+            xst2 <- get
+            let uhdl = view (unitHoodles.currentUnit) xst2
+                hdlst = uhdl ^. hoodleModeState 
+                cid = getCurrentCanvasId uhdl
+            callRenderer_ $ resetHoodleModeStateBuffers cid hdlst
+            pureUpdateUhdl (hoodleModeState .~ hdlst)
+            liftIO $ reflectUIToggle ui "SAVEA" False
+            pureUpdateUhdl (isSaved .~ True)
 
             case cvs of
               Just cvsi -> return cvsi
@@ -233,7 +232,6 @@ dispatchMode = do
 viewAppendMode :: MainCoroutine () 
 viewAppendMode = do 
   r1 <- nextevent
-  -- liftIO $ print r1
   case r1 of 
     PenDown cid pbtn pcoord -> 
       widgetCheckPen cid pcoord $ do 

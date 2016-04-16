@@ -113,7 +113,6 @@ getPointer :: DeviceList -> EventM t (Maybe PenButton,Maybe PointerCoord)
 getPointer devlst = do 
     ptr <- ask 
     (_ty,btn,x,y,mdev,maxf) <- liftIO (getInfo ptr)
-    -- liftIO $ print (btn,x,y,mdev)
     let rbtn | btn == 0 = Nothing 
              | btn == 1 = Just PenButton1
              | btn == 2 = Just PenButton2 
@@ -124,9 +123,7 @@ getPointer devlst = do
       Just dev -> case maxf of 
                     Nothing -> return (rbtn,Just (PointerCoord Core x y 1.0))
                     Just axf -> do 
-                      -- liftIO $ print dev
                       mpcoord <- liftIO $ coord ptr x y dev axf
-                      when (btn /= 0) (liftIO $ print (btn,mdev,mpcoord))
                       let rbtnfinal = case mpcoord of 
                                         Nothing -> rbtn 
                                         Just pcoord -> case pointerType pcoord of 

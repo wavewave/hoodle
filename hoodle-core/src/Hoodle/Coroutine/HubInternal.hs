@@ -90,8 +90,6 @@ uploadWork (canfp,mhdlfp) hinfo@(HubInfo {..}) = do
           let uuidtxt = TE.decodeUtf8 (view hoodleID hdl)
           flip runReaderT (manager,coojar) $ do
             mfstat <- sessionGetJSON (hubURL </> "sync" </> T.unpack uuidtxt)
-            liftIO $ print (mfstat :: Maybe FileSyncStatus)
-            liftIO $ print synchist
             let uploading = uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msqlfile
             flip (maybe uploading) ((,) <$> msqlfile <*> mfstat) $ 
               \(sqlfile,fstat) -> do
@@ -125,8 +123,6 @@ uploadAndUpdateSync evhandler uhdluuid hinfo uuidtxt hdlbstr (canfp,mhdlfp) msql
         readProcessWithExitCode "rdiff" 
           ["delta", tsigfile, canfp, tdeltafile] ""
         deltabstr <- B.readFile tdeltafile 
-        print tsigfile
-        print tdeltafile
         -- mapM_ removeFile [tsigfile,tdeltafile]
         (return . TE.decodeUtf8 . B64.encode) deltabstr
     let filecontent = toJSON FileContent { file_uuid = uuidtxt

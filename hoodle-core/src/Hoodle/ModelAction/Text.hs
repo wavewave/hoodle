@@ -38,7 +38,7 @@ getKeywordContent k txt = M.lookup k (getKeywordMap txt)
 -- | 
 getKeywordMap :: T.Text -> M.HashMap T.Text T.Text
 getKeywordMap txt = case parseOnly (many keywordContents) txt of 
-                      Left err -> trace (show err) $ M.empty
+                      Left err -> M.empty
                       Right lst -> M.fromList lst
 
 

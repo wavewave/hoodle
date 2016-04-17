@@ -33,8 +33,6 @@ import           Hoodle.Type.Predefined
 import           Hoodle.Type.Alias
 import           Hoodle.Util
 -- 
-import           Debug.Trace
-
 
 -- | supported zoom modes
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
@@ -113,10 +111,7 @@ xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) =
         | y2>h && h-(y2-y1)<=0 = (-ymargin,-ymargin+y2-y1) 
         | y1 < (-ymargin) =  (-ymargin,-ymargin+y2-y1) 
         | otherwise            = (y1,y2)
-      r = ViewPortBBox (BBox (x1',y1') (x2',y2') )
-  in trace (show r) r    
-      
-      
+  in ViewPortBBox (BBox (x1',y1') (x2',y2') )
 
 -- | data structure for coordinate arrangement of pages in desktop coordinate
 data PageArrangement (a :: ViewMode) where

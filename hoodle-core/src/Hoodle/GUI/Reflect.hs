@@ -63,7 +63,7 @@ chkCvsIdNInvalidate cid = do
 -- | block signal for act
 blockWhile :: (Gtk.GObjectClass w) => Maybe (Gtk.ConnectId w) -> IO () -> IO ()
 blockWhile msig act = do
-    F.mapM_ (\_ -> print "signal will be blocked") msig
+    -- F.mapM_ (\_ -> print "signal will be blocked") msig
     F.mapM_ Gtk.signalBlock msig >> act >> F.mapM_ Gtk.signalUnblock msig
 
 

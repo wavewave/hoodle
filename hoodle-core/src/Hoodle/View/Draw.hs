@@ -4,6 +4,7 @@
 {-# LANGUAGE Rank2Types #-} 
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-} 
+
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Draw 
@@ -54,14 +55,11 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 -- 
 import           Prelude hiding (mapM_,concatMap,foldr)
-import           Debug.Trace
-
                        
 -- | 
 type family DrawingFunction (v :: ViewMode) :: * -> * 
 
 -- |
-
 newtype SinglePageDraw a = 
   SinglePageDraw 
   { unSinglePageDraw :: RenderCache 
@@ -161,26 +159,6 @@ doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)
                     -> IntersectBBox
                     -> IO (Maybe a)
 doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do 
-{-    action >> return Nothing
-  where 
-    action = 
-      Gtk.renderWithDrawWindow win $ do
-        {- Cairo.identityMatrix
-        Cairo.setSourceRGBA 1.0 0.0 0.5 1
-        Cairo.rectangle 100 100 200 200
-        Cairo.fill  -}
-        emphasisCanvasRender ColorGreen geometry
-        Cairo.setSourceRGBA 1.0 0.0 0.5 1
-        Cairo.rectangle 100 100 200 200
-        Cairo.fill 
-
-
-        --Cairo.setSourceSurface sfc 0 0   
-        --Cairo.setOperator Cairo.OperatorSource 
-        --Cairo.paint 
-
--}
-
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
@@ -245,16 +223,8 @@ drawCurvebitGen  :: PressureMode
                     -> ((Double,Double),Double) 
                     -> IO () 
 drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x,y),z) = do 
-  -- #ifdef GTK3  
   Just win <- Gtk.widgetGetWindow canvas
-  -- #else 
-  -- win <- Gtk.widgetGetDrawWindow canvas
-  -- #endif 
-  -- #ifdef GTK3
   Gtk.renderWithDrawWindow win $ do 
-  -- #else 
-  -- Gtk.renderWithDrawable win $ do
-  -- #endif
     cairoXform4PageCoordinate (mkXform4Page geometry pnum) 
     Cairo.setSourceRGBA r g b a
     case pmode of 
@@ -287,11 +257,7 @@ drawFuncGen _typ render = SinglePageDraw func
   where func cache cid isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
           geometry <- makeCanvasGeometry pnum arr canvas
-          -- #ifdef GTK3          
           Just win <- Gtk.widgetGetWindow canvas
-          -- #else
-          -- win <- Gtk.widgetGetDrawWindow canvas
-          -- #endif 
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
@@ -321,19 +287,6 @@ emphasisCanvasRender pcolor geometry = do
   Cairo.save
   Cairo.identityMatrix
   let CanvasDimension (Dim cw ch) = canvasDim geometry 
-  -- for debug
-  liftIO $ do
-    putStrLn ("in emphasisCanvasRender : " ++ show (Dim cw ch))
-    print $ screenDim geometry  
-    print $ canvasDim geometry
-    print $ desktopDim geometry
-    print $ canvasViewPort geometry
-    putStrLn $ "screen2Canvas 0 0 =" ++ show (screen2Canvas geometry (ScrCoord (0,0)))
-    putStrLn $ "canvas2Screen 0 0 =" ++ show (canvas2Screen geometry (CvsCoord (0,0)))
-    putStrLn $ "canvas2Desktop 0 0 = " ++ show (canvas2Desktop geometry (CvsCoord (0,0)))
-    putStrLn $ "desktop2Canvas 0 0 = " ++ show (desktop2Canvas geometry (DeskCoord (0,0)))
-    putStrLn $ "desktop2Page 0 0 = " ++ show (desktop2Page geometry (DeskCoord (0,0)))
-
   let (r,g,b,a) = convertPenColorToRGBA pcolor
   Cairo.setSourceRGBA r g b a 
   Cairo.setLineWidth 10
@@ -385,11 +338,7 @@ drawContPageGen render = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-          -- #ifdef GTK3          
           Just win <- Gtk.widgetGetWindow canvas
-          -- #else
-          -- win <- Gtk.widgetGetDrawWindow canvas
-          -- #endif
           let ibboxnew = getViewableBBox geometry mbbox 
           let mbboxnew = toMaybe ibboxnew 
               xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum)
@@ -439,11 +388,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
                         $ (getPagesInViewPortRange geometry hdl) 
                 where f k = maybe Nothing (\a->Just (k,a)) 
                             . M.lookup (unPageNum k) $ pgs
-          -- #ifdef GTK3                            
           Just win <- Gtk.widgetGetWindow canvas
-          -- #else
-          -- win <- Gtk.widgetGetDrawWindow canvas
-          -- #endif
           let ibboxnew = getViewableBBox geometry mbbox
               mbboxnew = toMaybe ibboxnew
               onepagerender (pn,pg) = do  

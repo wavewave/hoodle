@@ -2,7 +2,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Scroll 
@@ -39,7 +38,7 @@ import qualified Hoodle.ModelAction.Adjustment as A
 import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
 --
-import           Debug.Trace
+
 
 -- |
 updateCanvasInfo :: (forall a. CanvasInfo a -> CanvasInfo a) -> CanvasId -> MainCoroutine ()
@@ -71,12 +70,9 @@ moveViewPortBy rndr cid f =
             (unViewPortBBox . view (viewInfo.pageArrangement.viewPortBBox)) cinfo
           DesktopDimension ddim = 
             view (viewInfo.pageArrangement.desktopDimension) cinfo
-      in trace (show (ddim, b)) $ 
-
-         over (viewInfo.pageArrangement.viewPortBBox) 
+      in over (viewInfo.pageArrangement.viewPortBBox) 
            (xformViewPortFitInSize ddim (moveBBoxULCornerTo (f (x0,y0)))) 
            cinfo
-
 
 -- | 
 adjustScrollbarWithGeometryCvsId :: CanvasId -> MainCoroutine ()

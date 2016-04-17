@@ -191,7 +191,7 @@ getMenuUI evar = do
   resDir <- getDataDir >>= return . (</> "resource") 
 
   css <- Gtk.cssProviderNew
-  Gtk.cssProviderLoadFromPath css ("/home/wavewave/repo/src/hoodle/hoodle-core/resource/hoodle.css") -- (resDir </> "hoodle.css")
+  Gtk.cssProviderLoadFromPath css (resDir </> "hoodle.css")
   Just screen <- Gtk.screenGetDefault
   Gtk.styleContextAddProviderForScreen screen css 800
  

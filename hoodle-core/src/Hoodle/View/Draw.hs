@@ -136,21 +136,11 @@ virtualDoubleBufferDraw srcsfc tgtsfc pre post =
 doubleBufferFlush :: Cairo.Surface -> CanvasInfo a -> IO () 
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
-      -- #ifdef GTK3
       Just win <- Gtk.widgetGetWindow canvas
-      -- #else 
-      -- win <- Gtk.widgetGetDrawWindow canvas
-      -- #endif
-       -- #ifdef GTK3
       Gtk.renderWithDrawWindow win $ do 
-      -- #else 
-      -- Gtk.renderWithDrawable win $ do 
-      -- -#endif
         Cairo.setSourceSurface sfc 0 0 
         Cairo.setOperator Cairo.OperatorSource 
         Cairo.paint
-  
-
 
 -- | common routine for double buffering 
 doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)  
@@ -284,15 +274,15 @@ drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\c i x y f -> rencont c 
 -- |
 emphasisCanvasRender :: PenColor -> CanvasGeometry -> Cairo.Render ()
 emphasisCanvasRender pcolor geometry = do 
-  Cairo.save
-  Cairo.identityMatrix
-  let CanvasDimension (Dim cw ch) = canvasDim geometry 
-  let (r,g,b,a) = convertPenColorToRGBA pcolor
-  Cairo.setSourceRGBA r g b a 
-  Cairo.setLineWidth 10
-  Cairo.rectangle 0 0 cw ch 
-  Cairo.stroke
-  Cairo.restore
+    Cairo.save
+    Cairo.identityMatrix
+    let CanvasDimension (Dim cw ch) = canvasDim geometry 
+    let (r,g,b,a) = convertPenColorToRGBA pcolor
+    Cairo.setSourceRGBA r g b a 
+    Cairo.setLineWidth 2
+    Cairo.rectangle 0 0 cw ch 
+    Cairo.stroke
+    Cairo.restore
 
 -- | highlight current page
 emphasisPageRender :: CanvasGeometry -> (PageNum,Page EditMode) -> Cairo.Render ()

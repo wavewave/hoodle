@@ -13,7 +13,7 @@ Category:       Application
 Tested-with:    GHC == 7.6, GHC == 7.8
 Build-Type: 	Custom
 Cabal-Version:  >= 1.8
-data-files:     template/*.html.st
+data-files:     resource/*.css
                 resource/*.png
                 resource/*.xml
                 Config.hs

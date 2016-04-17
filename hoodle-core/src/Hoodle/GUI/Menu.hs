@@ -27,6 +27,8 @@ import           Foreign.C.Types (CInt(..))
 import           Foreign.ForeignPtr (withForeignPtr) 
 import           Foreign.Ptr (Ptr(..))
 import qualified Graphics.UI.Gtk as Gtk
+import qualified Graphics.UI.Gtk.General.CssProvider as Gtk
+import qualified Graphics.UI.Gtk.General.StyleContext as Gtk
 import qualified Graphics.UI.GtkInternals as Gtk (unToolbar)
 import           System.FilePath
 -- from hoodle-platform 
@@ -38,9 +40,8 @@ import           Hoodle.Type
 import Paths_hoodle_core
 
 
--- This is because haskell gtk3 package miss gtk_toolbar_set_icon_size. 
--- Refer to leksah IDE.Find module.
-
+-- | This is because haskell gtk3 package miss gtk_toolbar_set_icon_size. 
+--   Refer to leksah IDE.Find module.
 foreign import ccall safe "gtk_toolbar_set_icon_size"
   gtk_toolbar_set_icon_size :: Ptr Gtk.Toolbar -> CInt -> IO ()
 
@@ -51,7 +52,6 @@ toolbarSetIconSize self iconSize =
 
 justMenu :: MenuEvent -> Maybe UserEvent
 justMenu = Just . Menu 
-
 
 iconList :: [ (String,Gtk.StockId) ]
 iconList = [ ("fullscreen.png" , "myfullscreen")
@@ -189,6 +189,12 @@ getMenuUI evar = do
   myiconfac <- Gtk.iconFactoryNew 
   Gtk.iconFactoryAddDefault myiconfac 
   resDir <- getDataDir >>= return . (</> "resource") 
+
+  css <- Gtk.cssProviderNew
+  Gtk.cssProviderLoadFromPath css ("/home/wavewave/repo/src/hoodle/hoodle-core/resource/hoodle.css") -- (resDir </> "hoodle.css")
+  Just screen <- Gtk.screenGetDefault
+  Gtk.styleContextAddProviderForScreen screen css 800
+ 
   mapM_ (iconResourceAdd myiconfac resDir) iconList 
   fma     <- actionNewAndRegister "FMA"   "File" Nothing Nothing Nothing
   ema     <- actionNewAndRegister "EMA"   "Edit" Nothing Nothing Nothing
@@ -362,13 +368,9 @@ getMenuUI evar = do
   uxinputa <- Gtk.toggleActionNew ("UXINPUTA" :: String) "Use XInput" (Just "Just a Stub") Nothing 
   uxinputa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseXInput))
-  -- handa <- actionNewAndRegister "HANDA" "Use Touch" (Just "Use touch") (Just "myhand") (justMenu MenuUseTouch)    
   handa     <- Gtk.toggleActionNew ("HANDA" :: String) "Use Touch" (Just "Toggle touch") (Just "myhand") 
   handa `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUseTouch))
-  -- smthscra <- Gtk.toggleActionNew ("SMTHSCRA" :: String) "Smooth Scrolling" (Just "Just a stub") Nothing
-  -- smthscra `Gtk.on` Gtk.actionToggled $ do 
-  --   eventHandler evar (UsrEv (Menu MenuSmoothScroll))
   popmenua <- Gtk.toggleActionNew ("POPMENUA" :: String) "Use Popup Menu" (Just "Just a stub") Nothing
   popmenua `Gtk.on` Gtk.actionToggled $ do 
     eventHandler evar (UsrEv (Menu MenuUsePopUpMenu))
@@ -403,10 +405,8 @@ getMenuUI evar = do
 
 #ifdef HUB
   huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuHub)
-  -- hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuHubSocket)
 #else
   huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuDefault)
-  -- hubsocketa <- actionNewAndRegister "HUBSOCKETA" "Hub Socket" (Just "Just a Stub") Nothing (justMenu MenuDefault)
 #endif
 
 

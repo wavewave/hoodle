@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.ModelAction.Page 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -138,8 +138,8 @@ setPage uhdl pnum cid = do
 
 -- | setPageSingle : in Single Page mode   
 setPageSingle :: UnitHoodle -> PageNum  
-              -> CanvasInfo SinglePage
-              -> IO (CanvasInfo SinglePage)
+              -> CanvasInfo 'SinglePage
+              -> IO (CanvasInfo 'SinglePage)
 setPageSingle uhdl pnum cinfo = do 
   let hdl = getHoodle uhdl
   geometry <- getCvsGeomFrmCvsInfo cinfo
@@ -153,8 +153,8 @@ setPageSingle uhdl pnum cinfo = do
 
 -- | setPageCont : in Continuous Page mode   
 setPageCont :: UnitHoodle -> PageNum  
-            -> CanvasInfo ContinuousPage
-            -> IO (CanvasInfo ContinuousPage)
+            -> CanvasInfo 'ContinuousPage
+            -> IO (CanvasInfo 'ContinuousPage)
 setPageCont uhdl pnum cinfo = do 
   let hdl = getHoodle uhdl
   geometry <- getCvsGeomFrmCvsInfo cinfo

@@ -8,7 +8,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Draw 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -133,30 +133,30 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
     fsingle :: RenderCache -> UnitHoodle -> CanvasInfo SinglePage -> MainCoroutine () 
     fsingle cache uhdl cvsInfo = do 
       let cpn = PageNum . view currentPageNum $ cvsInfo 
-	  isCurrentCvs = cid == getCurrentCanvasId uhdl
-	  epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState uhdl)
+          isCurrentCvs = cid == getCurrentCanvasId uhdl
+          epage = getCurrentPageEitherFromHoodleModeState cvsInfo (view hoodleModeState uhdl)
           cvsid = view canvasId cvsInfo
-	  cvs = view drawArea cvsInfo
-	  msfc = view mDrawSurface cvsInfo 
+          cvs = view drawArea cvsInfo
+          msfc = view mDrawSurface cvsInfo 
       case epage of 
-	Left page -> do  
-	  liftIO (unSinglePageDraw drawf cache cvsid isCurrentCvs (cvs,msfc) (cpn,page)
-		  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
-	  return ()
-	Right tpage -> do 
-	  liftIO (unSinglePageDraw drawfsel cache cvsid isCurrentCvs (cvs,msfc) (cpn,tpage)
-		  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
-	  return ()
+        Left page -> do  
+          liftIO (unSinglePageDraw drawf cache cvsid isCurrentCvs (cvs,msfc) (cpn,page)
+                  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+          return ()
+        Right tpage -> do 
+          liftIO (unSinglePageDraw drawfsel cache cvsid isCurrentCvs (cvs,msfc) (cpn,tpage)
+                  <$> view viewInfo <*> pure mbbox <*> pure flag $ cvsInfo )
+          return ()
     fcont :: RenderCache -> UnitHoodle -> CanvasInfo ContinuousPage -> MainCoroutine () 
     fcont cache uhdl cvsInfo = do 
       let hdlmodst = view hoodleModeState uhdl 
-	  isCurrentCvs = cid == getCurrentCanvasId uhdl
+          isCurrentCvs = cid == getCurrentCanvasId uhdl
       case hdlmodst of 
-	ViewAppendState hdl -> do  
-	  hdl' <- liftIO (unContPageDraw drawcont cache isCurrentCvs cvsInfo mbbox hdl flag)
+        ViewAppendState hdl -> do  
+          hdl' <- liftIO (unContPageDraw drawcont cache isCurrentCvs cvsInfo mbbox hdl flag)
           pureUpdateUhdl (const ((hoodleModeState .~ ViewAppendState hdl') uhdl))
-	SelectState thdl -> do 
-	  thdl' <- liftIO (unContPageDraw drawcontsel cache isCurrentCvs cvsInfo mbbox thdl flag)
+        SelectState thdl -> do 
+          thdl' <- liftIO (unContPageDraw drawcontsel cache isCurrentCvs cvsInfo mbbox thdl flag)
           pureUpdateUhdl (const ((hoodleModeState .~ SelectState thdl') uhdl))
           
 -- |         

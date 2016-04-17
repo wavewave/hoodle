@@ -29,9 +29,10 @@ module Hoodle.Type.Canvas
 , CanvasInfo (..) 
 , CanvasInfoBox (..)
 , CanvasInfoMap
-, WidthColorStyle
+, MyScrollWindow (..)
 , PenHighlighterEraserSet
 , PenInfo
+, WidthColorStyle
 -- * default constructor 
 , defaultViewInfoSinglePage 
 , defaultCvsInfoSinglePage
@@ -145,12 +146,17 @@ zoomMode = lens _zoomMode (\f a -> f { _zoomMode = a } )
 pageArrangement :: Simple Lens (ViewInfo a) (PageArrangement a)
 pageArrangement = lens _pageArrangement (\f a -> f { _pageArrangement = a })
 
+data MyScrollWindow = MyScrollWindow { _scrollCanvas     :: Gtk.VBox
+                                     , _scrollHScrollbar :: Gtk.HScrollbar
+                                     , _scrollVScrollbar :: Gtk.VScrollbar
+                                     } 
+
 -- |
 data CanvasInfo (a :: ViewMode) = 
        CanvasInfo { _canvasId :: CanvasId
                   , _drawArea :: Gtk.DrawingArea
                   , _mDrawSurface :: Maybe Cairo.Surface 
-                  , _scrolledWindow :: Gtk.ScrolledWindow
+                  , _scrolledWindow :: MyScrollWindow -- Gtk.ScrolledWindow
                   , _viewInfo :: ViewInfo a
                   , _currentPageNum :: Int
                   , _horizAdjustment :: Gtk.Adjustment
@@ -180,7 +186,7 @@ xfrmCvsInfo f CanvasInfo {..} =
                }
 
 -- |     
-defaultCvsInfoSinglePage :: CanvasInfo SinglePage
+defaultCvsInfoSinglePage :: CanvasInfo 'SinglePage
 defaultCvsInfoSinglePage = 
   CanvasInfo { _canvasId = error "defaultCvsInfoSinglePage cvsid"
              , _drawArea = error "defaultCvsInfoSinglePage DrawingArea"
@@ -210,7 +216,7 @@ mDrawSurface = lens _mDrawSurface (\f a -> f { _mDrawSurface = a })
 
 
 -- | 
-scrolledWindow :: Simple Lens (CanvasInfo a) Gtk.ScrolledWindow
+scrolledWindow :: Simple Lens (CanvasInfo a) MyScrollWindow
 scrolledWindow = lens _scrolledWindow (\f a -> f { _scrolledWindow = a })
 
 -- |

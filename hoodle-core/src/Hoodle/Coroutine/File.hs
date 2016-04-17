@@ -131,11 +131,9 @@ getFileContent store@(LocalDir (Just fname)) = do
             constructNewHoodleStateFromHoodle h
             ctime <- liftIO $ getCurrentTime
 #ifdef HUB
-            -- let uhdluuid = view (unitHoodles.currentUnit.unitUUID) xstate
             msqlfile <- view (settings.sqliteFileName) <$> get
             let fileuuidbstr = view hoodleID h
                 fileuuidtxt = TE.decodeUtf8 fileuuidbstr
-            liftIO $ print fileuuidtxt
             mfstat <- case msqlfile of
               Nothing -> return Nothing
               Just sqlfile -> liftIO (getLastSyncStatus sqlfile fileuuidtxt)
@@ -789,7 +787,6 @@ syncFile = do
         return (UsrEv ActionOrdered)
       SyncFileFinished nfstat <- 
         lift (waitSomeEvent (\case SyncFileFinished _-> True ; _ -> False ))
-      liftIO $ print nfstat
       lift (updateSyncInfoAll nfstat)
       when (Just nfstat /= mfstat) (lift fileReload)
     return ()

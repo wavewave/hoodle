@@ -9,7 +9,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.PageArrangement
--- Copyright   : (c) 2012-2014 Ian-Woo Kim
+-- Copyright   : (c) 2012-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -25,14 +25,16 @@ import           Control.Applicative
 import           Control.Lens (Simple,Lens,view,lens)
 import           Data.Foldable (toList)
 -- from hoodle-platform 
-import Data.Hoodle.Simple (Dimension(..))
-import Data.Hoodle.Generic
-import Data.Hoodle.BBox
+import           Data.Hoodle.Simple (Dimension(..))
+import           Data.Hoodle.Generic
+import           Data.Hoodle.BBox
 -- from this package
-import Hoodle.Type.Predefined 
-import Hoodle.Type.Alias
-import Hoodle.Util
+import           Hoodle.Type.Predefined 
+import           Hoodle.Type.Alias
+import           Hoodle.Util
 -- 
+import           Debug.Trace
+
 
 -- | supported zoom modes
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double 
@@ -111,8 +113,8 @@ xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) =
         | y2>h && h-(y2-y1)<=0 = (-ymargin,-ymargin+y2-y1) 
         | y1 < (-ymargin) =  (-ymargin,-ymargin+y2-y1) 
         | otherwise            = (y1,y2)
-  in ViewPortBBox (BBox (x1',y1') (x2',y2') )
-      
+      r = ViewPortBBox (BBox (x1',y1') (x2',y2') )
+  in trace (show r) r    
       
       
 

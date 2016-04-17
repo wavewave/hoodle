@@ -116,7 +116,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
                                                  . updateFromCanvasInfoAsCurrentCanvas initcvsbox             
                                                  . set cvsInfoMap M.empty )
       uhdl2 = view (unitHoodles.currentUnit) st2
-  (uhdl3,cvs,_wconf) <- constructFrame st2 uhdl2 (view frameState uhdl2)
+  (uhdl3,rtwdw,_wconf) <- constructFrame st2 uhdl2 (view frameState uhdl2)
   (uhdl4,wconf') <- eventConnect st2 uhdl3 (view frameState uhdl3)
   notebook <- Gtk.notebookNew
   statusbar <- Gtk.statusbarNew
@@ -127,7 +127,7 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
       st5 = st4 # over (unitHoodles.currentUnit) 
                        ( set undoTable (emptyUndo maxundo)  
                        . set frameState wconf' 
-                       . set rootWindow cvs 
+                       . set rootWindow rtwdw 
                        . set (hoodleFileControl.hoodleFileName) (LocalDir Nothing))
                 . set (settings.doesUseXInput) xinputbool 
                 . set (settings.doesUseVariableCursor) varcsr
@@ -138,14 +138,13 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
                 . set rootNotebook notebook
                 . set uiComponentSignalHandler uicompsighdlr 
                 . set statusBar (Just statusbar)
-
+  -- 
   vbox <- Gtk.vBoxNew False 0 
   Gtk.containerAdd window vbox
   vboxcvs <- Gtk.vBoxNew False 0 
-  -- Gtk.notebookAppendPage notebook vboxcvs  ("untitled" :: T.Text)
   (_,uuid,btn) <- createTab callback notebook vboxcvs
   Gtk.containerAdd vboxcvs (view (unitHoodles.currentUnit.rootWindow) st5)
-
+  -- 
   sigid <- notebook `Gtk.on` Gtk.switchPage $ \i -> callback (UsrEv (SwitchTab i)) 
   let st6 = ( (unitHoodles.currentUnit.unitUUID .~ uuid) 
             . (unitHoodles.currentUnit.unitButton .~ btn)

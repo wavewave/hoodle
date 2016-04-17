@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Scroll 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -39,6 +39,7 @@ import qualified Hoodle.ModelAction.Adjustment as A
 import           Hoodle.Accessor
 import           Hoodle.View.Coordinate
 --
+import           Debug.Trace
 
 -- |
 updateCanvasInfo :: (forall a. CanvasInfo a -> CanvasInfo a) -> CanvasId -> MainCoroutine ()
@@ -48,8 +49,8 @@ updateCanvasInfo f cid = pureUpdateUhdl $ \uhdl ->
                            in setCanvasInfo (cid,ncinfobox) uhdl
 
 -- |
-updateCanvasInfo2 :: (CanvasInfo SinglePage -> CanvasInfo SinglePage) 
-                  -> (CanvasInfo ContinuousPage -> CanvasInfo ContinuousPage)
+updateCanvasInfo2 :: (CanvasInfo 'SinglePage -> CanvasInfo 'SinglePage) 
+                  -> (CanvasInfo 'ContinuousPage -> CanvasInfo 'ContinuousPage)
                   -> CanvasId
                   -> MainCoroutine ()
 updateCanvasInfo2 fs fc cid = 
@@ -66,11 +67,13 @@ moveViewPortBy rndr cid f =
   where     
     moveact :: CanvasInfo a -> CanvasInfo a 
     moveact cinfo = 
-      let BBox (x0,y0) _ = 
+      let b@(BBox (x0,y0) _) = 
             (unViewPortBBox . view (viewInfo.pageArrangement.viewPortBBox)) cinfo
           DesktopDimension ddim = 
             view (viewInfo.pageArrangement.desktopDimension) cinfo
-      in over (viewInfo.pageArrangement.viewPortBBox) 
+      in trace (show (ddim, b)) $ 
+
+         over (viewInfo.pageArrangement.viewPortBBox) 
            (xformViewPortFitInSize ddim (moveBBoxULCornerTo (f (x0,y0)))) 
            cinfo
 
@@ -135,10 +138,8 @@ vscrollMove cid v0 = do
 -- | 
 smoothScroll :: CanvasId -> CanvasGeometry -> Double -> Double -> MainCoroutine () 
 smoothScroll cid geometry _v0 v = do 
-    -- xst <- get 
     let lst = [v]
     forM_ lst $ \v' -> do 
-      -- updateXState $ return . updater 
       updateCanvasInfo2 (scrollmovecanvas v) (scrollmovecanvasCont geometry v') cid
       invalidateInBBox Nothing Efficient cid 
   where 

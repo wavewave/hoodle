@@ -101,12 +101,29 @@ initCanvasInfo xstate uhdl cid =
 minimalCanvasInfo :: CanvasId -> IO (CanvasInfo a)
 minimalCanvasInfo cid = do
     canvas <- Gtk.drawingAreaNew
-    scrwin <- Gtk.scrolledWindowNew Nothing Nothing 
-    Gtk.containerAdd scrwin canvas
     hadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
     vadj <- Gtk.adjustmentNew 0 0 500 100 200 200 
-    Gtk.scrolledWindowSetHAdjustment scrwin hadj 
-    Gtk.scrolledWindowSetVAdjustment scrwin vadj 
+
+    vbox <- Gtk.vBoxNew False 0 
+    hscr <- Gtk.hScrollbarNew hadj
+    hbox <- Gtk.hBoxNew False 0 
+    vscr <- Gtk.vScrollbarNew vadj
+    Gtk.boxPackStart hbox canvas Gtk.PackGrow    0
+    Gtk.boxPackEnd   hbox vscr   Gtk.PackNatural 0
+    Gtk.boxPackStart vbox hbox   Gtk.PackGrow    0 
+    Gtk.boxPackEnd   vbox hscr   Gtk.PackNatural 0
+
+    let scrwin = MyScrollWindow vbox hscr vscr 
+    -- scrwin <- Gtk.scrolledWindowNew (Just hadj) (Just vadj) --  Nothing Nothing 
+
+    -- viewport <- Gtk.viewportNew hadj vadj
+
+    -- Gtk.containerAdd viewport canvas
+    -- Gtk.containerAdd scrwin viewport  -- canvas
+    -- 
+    --
+    -- Gtk.scrolledWindowSetHAdjustment scrwin hadj 
+    -- Gtk.scrolledWindowSetVAdjustment scrwin vadj 
     return $ CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
 
 
@@ -177,7 +194,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       case x of 
                         [] -> error "No action group? "
                         y:_ -> return y )
-    uxinputa <- liftIO (Gtk.actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) -> 
+    uxinputa <- liftIO (Gtk.actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) ->
                           return (Gtk.castToToggleAction x) )
     -- b <- liftIO $ Gtk.toggleActionGetActive uxinputa
     hadjconnid <- Gtk.afterValueChanged hadj $ do 
@@ -186,7 +203,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
     vadjconnid <- Gtk.afterValueChanged vadj $ do 
                     v <- Gtk.adjustmentGetValue vadj     
                     (callback . UsrEv) (VScrollBarMoved cid v)
-    Just vscrbar <- Gtk.scrolledWindowGetVScrollbar scrwin
+    let vscrbar = _scrollVScrollbar scrwin -- Just vscrbar <- Gtk.scrolledWindowGetVScrollbar scrwin
     _bpevtvscrbar <- vscrbar `Gtk.on` Gtk.buttonPressEvent $ do 
                       v <- liftIO $ Gtk.adjustmentGetValue vadj 
                       liftIO ((callback . UsrEv) (VScrollBarStart cid v))
@@ -276,7 +293,7 @@ constructFrame' _callback template ouhdl (Node cid) = do
     ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 uhdl) cinfobox
     let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
     forBoth' unboxBiAct (putStrLn <=< Gtk.widgetGetName . view drawArea) ncinfobox
-    let scrwin = forBoth' unboxBiAct (Gtk.castToWidget.view scrolledWindow) ncinfobox
+    let scrwin = forBoth' unboxBiAct (Gtk.castToWidget . _scrollCanvas . view scrolledWindow) ncinfobox
     return (uhdl', scrwin, Node cid)
 constructFrame' callback template uhdl (HSplit wconf1 wconf2) = do  
     (uhdl',win1,wconf1') <- constructFrame' callback template uhdl wconf1

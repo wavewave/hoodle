@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.View.Draw 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -18,12 +18,12 @@
 
 module Hoodle.View.Draw where
 
-import Control.Applicative 
-import Control.Monad.Trans
-import Control.Monad.Trans.Maybe
+import           Control.Applicative 
+import           Control.Monad.Trans
+import           Control.Monad.Trans.Maybe
 import           Control.Lens (view,set,at)
-import Control.Monad (when)
-import Data.Foldable hiding (elem)
+import           Control.Monad (when)
+import           Data.Foldable hiding (elem)
 import qualified Data.IntMap as M
 import           Data.Maybe hiding (fromMaybe)
 import           Data.Monoid
@@ -31,29 +31,30 @@ import           Data.Sequence
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 -- from hoodle-platform 
-import Data.Hoodle.BBox
-import Data.Hoodle.Generic
-import Data.Hoodle.Predefined
-import Data.Hoodle.Select
-import Data.Hoodle.Simple (Dimension(..),Stroke(..))
-import Data.Hoodle.Zipper (currIndex)
-import Graphics.Hoodle.Render
-import Graphics.Hoodle.Render.Generic
-import Graphics.Hoodle.Render.Highlight
-import Graphics.Hoodle.Render.Type
-import Graphics.Hoodle.Render.Type.HitTest 
-import Graphics.Hoodle.Render.Util 
+import           Data.Hoodle.BBox
+import           Data.Hoodle.Generic
+import           Data.Hoodle.Predefined
+import           Data.Hoodle.Select
+import           Data.Hoodle.Simple (Dimension(..),Stroke(..))
+import           Data.Hoodle.Zipper (currIndex)
+import           Graphics.Hoodle.Render
+import           Graphics.Hoodle.Render.Generic
+import           Graphics.Hoodle.Render.Highlight
+import           Graphics.Hoodle.Render.Type
+import           Graphics.Hoodle.Render.Type.HitTest 
+import           Graphics.Hoodle.Render.Util 
 -- from this package
-import Hoodle.Type.Alias 
-import Hoodle.Type.Canvas
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.Enum
-import Hoodle.Type.Predefined
-import Hoodle.Type.Widget
-import Hoodle.Util
-import Hoodle.View.Coordinate
+import           Hoodle.Type.Alias 
+import           Hoodle.Type.Canvas
+import           Hoodle.Type.PageArrangement
+import           Hoodle.Type.Enum
+import           Hoodle.Type.Predefined
+import           Hoodle.Type.Widget
+import           Hoodle.Util
+import           Hoodle.View.Coordinate
 -- 
-import Prelude hiding (mapM_,concatMap,foldr)
+import           Prelude hiding (mapM_,concatMap,foldr)
+import           Debug.Trace
 
                        
 -- | 
@@ -68,7 +69,7 @@ newtype SinglePageDraw a =
                      -> Bool                               
                      -> (Gtk.DrawingArea, Maybe Cairo.Surface) 
                      -> (PageNum, Page a) 
-                     -> ViewInfo SinglePage 
+                     -> ViewInfo 'SinglePage 
                      -> Maybe BBox 
                      -> DrawFlag
                      -> IO (Page a) }
@@ -81,7 +82,7 @@ newtype ContPageDraw a =
   ContPageDraw 
   { unContPageDraw :: RenderCache
                    -> Bool                               
-                   -> CanvasInfo ContinuousPage 
+                   -> CanvasInfo 'ContinuousPage 
                    -> Maybe BBox 
                    -> Hoodle a 
                    -> DrawFlag
@@ -90,10 +91,10 @@ newtype ContPageDraw a =
 -- Bool = isCurrentCanvas
 
 -- | 
-type instance DrawingFunction SinglePage = SinglePageDraw
+type instance DrawingFunction 'SinglePage = SinglePageDraw
 
 -- | 
-type instance DrawingFunction ContinuousPage = ContPageDraw
+type instance DrawingFunction 'ContinuousPage = ContPageDraw
 
 -- | 
 getCanvasViewPort :: CanvasGeometry -> ViewPortBBox 
@@ -160,6 +161,26 @@ doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)
                     -> IntersectBBox
                     -> IO (Maybe a)
 doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do 
+{-    action >> return Nothing
+  where 
+    action = 
+      Gtk.renderWithDrawWindow win $ do
+        {- Cairo.identityMatrix
+        Cairo.setSourceRGBA 1.0 0.0 0.5 1
+        Cairo.rectangle 100 100 200 200
+        Cairo.fill  -}
+        emphasisCanvasRender ColorGreen geometry
+        Cairo.setSourceRGBA 1.0 0.0 0.5 1
+        Cairo.rectangle 100 100 200 200
+        Cairo.fill 
+
+
+        --Cairo.setSourceSurface sfc 0 0   
+        --Cairo.setOperator Cairo.OperatorSource 
+        --Cairo.paint 
+
+-}
+
   let Dim cw ch = unCanvasDimension . canvasDim $ geometry 
       mbbox' = case ibbox of 
         Top -> Just (BBox (0,0) (cw,ch))
@@ -167,38 +188,32 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
         Bottom -> Nothing 
   let action = do 
         case msfc of 
-	  Nothing -> do 
-            -- #ifdef GTK3            
+          Nothing -> do 
             Gtk.renderWithDrawWindow win $ do
-            -- #else
-	    -- Gtk.renderWithDrawable win $ do 
-            -- #endif
-	      clipBBox mbbox'
+              clipBBox mbbox'
               Cairo.setSourceRGBA 0.5 0.5 0.5 1
               Cairo.rectangle 0 0 cw ch 
               Cairo.fill 
-	      rndr 
-	  Just sfc -> do 
-	    r <- Cairo.renderWith sfc $ do 
+              rndr 
+          Just sfc -> do 
+            r <- Cairo.renderWith sfc $ do 
               clipBBox mbbox' 
               Cairo.setSourceRGBA 0.5 0.5 0.5 1
               Cairo.rectangle 0 0 cw ch 
               Cairo.fill
               clipBBox mbbox' 
-	      rndr 
-            -- #ifdef GTK3
+              rndr 
             Gtk.renderWithDrawWindow win $ do
-            -- #else
-	    --   Gtk.renderWithDrawable win $ do 
-            -- #endif 
-	      Cairo.setSourceSurface sfc 0 0   
-	      Cairo.setOperator Cairo.OperatorSource 
-	      Cairo.paint 
+              Cairo.setSourceSurface sfc 0 0   
+              Cairo.setOperator Cairo.OperatorSource 
+              Cairo.paint 
             return r 
   case ibbox of
     Top      -> Just <$> action 
     Middle _ -> Just <$> action 
     Bottom   -> return Nothing 
+
+
 
 -- |
 mkXform4Page :: CanvasGeometry -> PageNum -> Xform4Page
@@ -267,7 +282,7 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x
 drawFuncGen :: em 
                -> (RenderCache -> CanvasId -> (PageNum,Page em) -> Maybe BBox 
                    -> DrawFlag -> Cairo.Render (Page em)) 
-               -> DrawingFunction SinglePage em
+               -> DrawingFunction 'SinglePage em
 drawFuncGen _typ render = SinglePageDraw func 
   where func cache cid isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
@@ -297,19 +312,34 @@ drawFuncSelGen :: (RenderCache -> CanvasId -> (PageNum,Page SelectMode) -> Maybe
                    -> DrawFlag -> Cairo.Render ()) 
                   -> (RenderCache -> CanvasId -> (PageNum,Page SelectMode) -> Maybe BBox 
                       -> DrawFlag -> Cairo.Render ())
-                  -> DrawingFunction SinglePage SelectMode  
+                  -> DrawingFunction 'SinglePage SelectMode  
 drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\c i x y f -> rencont c i x y f >> rensel c i x y f >> return (snd x)) 
 
 -- |
 emphasisCanvasRender :: PenColor -> CanvasGeometry -> Cairo.Render ()
 emphasisCanvasRender pcolor geometry = do 
+  Cairo.save
   Cairo.identityMatrix
   let CanvasDimension (Dim cw ch) = canvasDim geometry 
+  -- for debug
+  liftIO $ do
+    putStrLn ("in emphasisCanvasRender : " ++ show (Dim cw ch))
+    print $ screenDim geometry  
+    print $ canvasDim geometry
+    print $ desktopDim geometry
+    print $ canvasViewPort geometry
+    putStrLn $ "screen2Canvas 0 0 =" ++ show (screen2Canvas geometry (ScrCoord (0,0)))
+    putStrLn $ "canvas2Screen 0 0 =" ++ show (canvas2Screen geometry (CvsCoord (0,0)))
+    putStrLn $ "canvas2Desktop 0 0 = " ++ show (canvas2Desktop geometry (CvsCoord (0,0)))
+    putStrLn $ "desktop2Canvas 0 0 = " ++ show (desktop2Canvas geometry (DeskCoord (0,0)))
+    putStrLn $ "desktop2Page 0 0 = " ++ show (desktop2Page geometry (DeskCoord (0,0)))
+
   let (r,g,b,a) = convertPenColorToRGBA pcolor
   Cairo.setSourceRGBA r g b a 
-  Cairo.setLineWidth 2
+  Cairo.setLineWidth 10
   Cairo.rectangle 0 0 cw ch 
   Cairo.stroke
+  Cairo.restore
 
 -- | highlight current page
 emphasisPageRender :: CanvasGeometry -> (PageNum,Page EditMode) -> Cairo.Render ()
@@ -335,14 +365,12 @@ emphasisNotifiedRender geometry (pn,BBox (x1,y1) (x2,y2),_) = do
     Cairo.fill 
     Cairo.restore 
 
-
-
 -- |
 drawContPageGen :: (RenderCache -> CanvasId -> (PageNum,Page EditMode) -> Maybe BBox 
                     -> DrawFlag -> Cairo.Render (Int,Page EditMode)) 
-                   -> DrawingFunction ContinuousPage EditMode
+                   -> DrawingFunction 'ContinuousPage EditMode
 drawContPageGen render = ContPageDraw func 
-  where func :: RenderCache -> Bool -> CanvasInfo ContinuousPage 
+  where func :: RenderCache -> Bool -> CanvasInfo 'ContinuousPage 
              -> Maybe BBox -> Hoodle EditMode -> DrawFlag -> IO (Hoodle EditMode)
         func cache isCurrentCvs cinfo mbbox hdl flag = do 
           let cid = view canvasId cinfo
@@ -392,9 +420,9 @@ drawContPageSelGen :: (RenderCache -> CanvasId -> (PageNum,Page EditMode) -> May
                        -> DrawFlag -> Cairo.Render (Int,Page EditMode)) 
                    -> (RenderCache -> CanvasId -> (PageNum, Page SelectMode) -> Maybe BBox 
                        -> DrawFlag -> Cairo.Render (Int,Page SelectMode))
-                   -> DrawingFunction ContinuousPage SelectMode
+                   -> DrawingFunction 'ContinuousPage SelectMode
 drawContPageSelGen rendergen rendersel = ContPageDraw func 
-  where func :: RenderCache -> Bool -> CanvasInfo ContinuousPage 
+  where func :: RenderCache -> Bool -> CanvasInfo 'ContinuousPage 
              -> Maybe BBox -> Hoodle SelectMode ->DrawFlag -> IO (Hoodle SelectMode) 
         func cache isCurrentCvs cinfo mbbox thdl flag = do 
           let cid = view canvasId cinfo
@@ -454,7 +482,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
 
 
 -- |
-drawSinglePage :: CanvasGeometry -> DrawingFunction SinglePage EditMode
+drawSinglePage :: CanvasGeometry -> DrawingFunction 'SinglePage EditMode
 drawSinglePage geometry = drawFuncGen EditMode f 
   where 
     f cache cid (pnum,page) mbbox flag = do 
@@ -468,7 +496,7 @@ drawSinglePage geometry = drawFuncGen EditMode f
                            return pg' 
 
 -- |
-drawSinglePageSel :: CanvasGeometry -> DrawingFunction SinglePage SelectMode    
+drawSinglePageSel :: CanvasGeometry -> DrawingFunction 'SinglePage SelectMode    
 drawSinglePageSel geometry = drawFuncSelGen rendercontent renderselect
   where rendercontent cache cid (pnum,tpg) mbbox flag = do
           let pg' = hPage2RPage tpg 
@@ -483,7 +511,7 @@ drawSinglePageSel geometry = drawFuncSelGen rendercontent renderselect
           return ()
 
 -- | 
-drawContHoodle :: CanvasGeometry -> DrawingFunction ContinuousPage EditMode
+drawContHoodle :: CanvasGeometry -> DrawingFunction 'ContinuousPage EditMode
 drawContHoodle geometry = drawContPageGen f  
   where 
     f cache cid (pnum@(PageNum n),page) mbbox flag = do 
@@ -499,7 +527,7 @@ drawContHoodle geometry = drawContPageGen f
 
 -- |
 drawContHoodleSel :: CanvasGeometry 
-                  -> DrawingFunction ContinuousPage SelectMode
+                  -> DrawingFunction 'ContinuousPage SelectMode
 drawContHoodleSel geometry = drawContPageSelGen renderother renderselect 
   where renderother cache cid (pnum@(PageNum n),page) mbbox flag = do
           let xform = mkXform4Page geometry pnum

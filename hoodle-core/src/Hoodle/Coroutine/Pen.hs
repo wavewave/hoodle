@@ -7,7 +7,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Pen 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -58,7 +58,7 @@ import           Hoodle.Util
 import           Hoodle.View.Coordinate
 import           Hoodle.View.Draw
 --
-import Prelude hiding (mapM_)
+import           Prelude hiding (mapM_)
 
 
 -- | 
@@ -96,17 +96,20 @@ createTempRender geometry x = do
       maybe (fst <$> canvasImageSurface cache cid Nothing geometry hdl)
             (\cvssfc -> do 
               sfc <- Cairo.createImageSurface 
-                       Cairo.FormatARGB32 (floor cw) (floor ch) 
-              Cairo.renderWith sfc $ do 
+                       Cairo.FormatARGB32 (floor cw) (floor ch)
+              Cairo.renderWith sfc $ do
                 Cairo.setSourceSurface cvssfc 0 0 
                 Cairo.setOperator Cairo.OperatorSource 
                 Cairo.paint
+                Cairo.setSourceRGBA 1 0 0 1
+                Cairo.rectangle 100 100 200 200
+                Cairo.fill
+
               return sfc) 
             mcvssfc
     liftIO $ Cairo.renderWith srcsfc $ do 
       emphasisCanvasRender ColorRed geometry 
-    tgtsfc <- liftIO $ Cairo.createImageSurface 
-                         Cairo.FormatARGB32 (floor cw) (floor ch) 
+    tgtsfc <- liftIO (Cairo.createImageSurface Cairo.FormatARGB32 (floor cw) (floor ch))
     let trdr = TempRender srcsfc tgtsfc (cw,ch) x
     return trdr 
 
@@ -160,7 +163,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
   where penAction :: forall b. CanvasInfo b -> PageNum -> CanvasGeometry 
                   -> (Double,Double) -> UTCTime 
                   -> MainCoroutine (Maybe (Maybe ()))
-        penAction _cinfo pnum geometry (x,y) ctime = do 
+        penAction _cinfo pnum geometry (x,y) ctime = do
           xstate <- get
           let uhdl = view (unitHoodles.currentUnit) xstate
           let PointerCoord _ _ _ z = pcoord 
@@ -208,16 +211,17 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
     if (deltax < 20 && deltay < 20 && ispressandhold && Prelude.length lst < 20) 
       then return Nothing 
       else do xst <- get 
-              forBoth' unboxBiAct (fsingle r xst) . (getCanvasInfo cid . view (unitHoodles.currentUnit)) $ xst
+              forBoth' unboxBiAct (f r xst) . (getCanvasInfo cid . view (unitHoodles.currentUnit)) $ xst
   where 
     pdraw = tempInfo trdr 
-    fsingle :: forall b.  
-               UserEvent -> HoodleState -> CanvasInfo b 
-               -> MainCoroutine (Maybe (Seq (Double,Double,Double)))
-    fsingle r xstate cvsInfo = 
+    f :: forall b.  
+         UserEvent -> HoodleState -> CanvasInfo b  
+      -> MainCoroutine (Maybe (Seq (Double,Double,Double)))
+    f r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
         (penProcess cid pnum geometry trdr ((x0,y0),z0) ctime)
         (\(pcoord,(x,y)) -> do 
+           liftIO $ print (x,y)
            let PointerCoord _ _ _ z = pcoord 
            let pinfo  = view penInfo xstate
            let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum )
@@ -226,7 +230,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
                  xformfunc 
                  renderStrk tmpstrk
            let (srcsfc,tgtsfc) = (,) <$> tempSurfaceSrc <*> tempSurfaceTgt $ trdr
-           virtualDoubleBufferDraw srcsfc tgtsfc (return ()) renderfunc
+           -- virtualDoubleBufferDraw srcsfc tgtsfc (return ()) renderfunc
            liftIO $ doubleBufferFlush tgtsfc cvsInfo
            ---                                
            let ntrdr = trdr { tempInfo = pdraw |> (x,y,z) }
@@ -312,8 +316,4 @@ processWithDefTimeInterval :: (Monad m, MonadIO m) =>
                               -> UTCTime           -- ^ last updated time
                               -> m a
 processWithDefTimeInterval = processWithTimeInterval dtime_bound 
-
-                   
-
-
 

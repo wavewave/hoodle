@@ -240,9 +240,9 @@ drawCurvebitGen pmode canvas geometry wdth (r,g,b,a) pnum pdraw ((x0,y0),z0) ((x
 
 -- | 
 drawFuncGen :: em 
-               -> (RenderCache -> CanvasId -> (PageNum,Page em) -> Maybe BBox 
-                   -> DrawFlag -> Cairo.Render (Page em)) 
-               -> DrawingFunction 'SinglePage em
+            -> (RenderCache -> CanvasId -> (PageNum,Page em) -> Maybe BBox 
+                -> DrawFlag -> Cairo.Render (Page em)) 
+             -> DrawingFunction 'SinglePage em
 drawFuncGen _typ render = SinglePageDraw func 
   where func cache cid isCurrentCvs (canvas,msfc) (pnum,page) vinfo mbbox flag = do 
           let arr = view pageArrangement vinfo
@@ -266,9 +266,9 @@ drawFuncGen _typ render = SinglePageDraw func
 -- | 
 drawFuncSelGen :: (RenderCache -> CanvasId -> (PageNum,Page SelectMode) -> Maybe BBox 
                    -> DrawFlag -> Cairo.Render ()) 
-                  -> (RenderCache -> CanvasId -> (PageNum,Page SelectMode) -> Maybe BBox 
-                      -> DrawFlag -> Cairo.Render ())
-                  -> DrawingFunction 'SinglePage SelectMode  
+               -> (RenderCache -> CanvasId -> (PageNum,Page SelectMode) -> Maybe BBox 
+                   -> DrawFlag -> Cairo.Render ())
+               -> DrawingFunction 'SinglePage SelectMode  
 drawFuncSelGen rencont rensel = drawFuncGen SelectMode (\c i x y f -> rencont c i x y f >> rensel c i x y f >> return (snd x)) 
 
 -- |
@@ -277,6 +277,19 @@ emphasisCanvasRender pcolor geometry = do
     Cairo.save
     Cairo.identityMatrix
     let CanvasDimension (Dim cw ch) = canvasDim geometry 
+    {- liftIO $ do 
+      putStrLn ("in emphasisCanvasRender: ")
+      print $ canvasDim geometry
+      print $ screenDim geometry
+      print $ desktopDim geometry
+      print $ canvasViewPort geometry
+      putStrLn $ "screen2Canvas 0 0 = " ++ show (screen2Canvas geometry (ScrCoord (0,0)))
+      putStrLn $ "canvas2Screen 0 0 = " ++ show (canvas2Screen geometry (CvsCoord (0,0)))
+      putStrLn $ "canvas2Desktop 0 0= " ++ show (canvas2Desktop geometry (CvsCoord (0,0)))
+      putStrLn $ "desktop2Canvas 0 0= " ++ show (desktop2Canvas geometry (DeskCoord (0,0)))
+      putStrLn $ "desktop2Page 0 0  = " ++ show (desktop2Page geometry (DeskCoord (0,0)))
+
+    -}
     let (r,g,b,a) = convertPenColorToRGBA pcolor
     Cairo.setSourceRGBA r g b a 
     Cairo.setLineWidth 2

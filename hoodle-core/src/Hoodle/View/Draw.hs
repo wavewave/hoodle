@@ -137,10 +137,16 @@ doubleBufferFlush :: Cairo.Surface -> CanvasInfo a -> IO ()
 doubleBufferFlush sfc cinfo = do 
       let canvas = view drawArea cinfo 
       Just win <- Gtk.widgetGetWindow canvas
-      Gtk.renderWithDrawWindow win $ do 
+      Gtk.renderWithDrawWindow win $ do
         Cairo.setSourceSurface sfc 0 0 
         Cairo.setOperator Cairo.OperatorSource 
         Cairo.paint
+{-        -- test
+        Cairo.setSourceRGBA 1 0 0 1
+        Cairo.rectangle 100 100 100 100
+        Cairo.fill
+-}
+        
 
 -- | common routine for double buffering 
 doubleBufferDraw :: (Gtk.DrawWindow, Maybe Cairo.Surface)  
@@ -174,7 +180,7 @@ doubleBufferDraw (win,msfc) geometry rndr (Intersect ibbox) = do
             Gtk.renderWithDrawWindow win $ do
               Cairo.setSourceSurface sfc 0 0   
               Cairo.setOperator Cairo.OperatorSource 
-              Cairo.paint 
+              Cairo.paint
             return r 
   case ibbox of
     Top      -> Just <$> action 
@@ -633,7 +639,10 @@ canvasImageSurface cache cid mmulti geometry hdl = do
         Cairo.rectangle 0 0 w_cvs h_cvs        
         Cairo.fill 
         mapM_ onepagerender drawpgs 
-  print (Prelude.length drawpgs)
+  -- print (Prelude.length drawpgs)
+  print (w_cvs, h_cvs)
+  print bbx_desk
+  print nvport
   sfc <- Cairo.createImageSurface Cairo.FormatARGB32 (floor w_cvs) (floor h_cvs)
   Cairo.renderWith sfc renderfunc 
   return (sfc, Dim w_cvs h_cvs)

@@ -114,16 +114,7 @@ minimalCanvasInfo cid = do
     Gtk.boxPackEnd   vbox hscr   Gtk.PackNatural 0
 
     let scrwin = MyScrollWindow vbox hscr vscr 
-    -- scrwin <- Gtk.scrolledWindowNew (Just hadj) (Just vadj) --  Nothing Nothing 
 
-    -- viewport <- Gtk.viewportNew hadj vadj
-
-    -- Gtk.containerAdd viewport canvas
-    -- Gtk.containerAdd scrwin viewport  -- canvas
-    -- 
-    --
-    -- Gtk.scrolledWindowSetHAdjustment scrwin hadj 
-    -- Gtk.scrolledWindowSetVAdjustment scrwin vadj 
     return $ CanvasInfo cid canvas Nothing scrwin (error "no viewInfo" :: ViewInfo a) 0 hadj vadj Nothing Nothing defaultCanvasWidgets Nothing 
 
 
@@ -203,7 +194,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
     vadjconnid <- Gtk.afterValueChanged vadj $ do 
                     v <- Gtk.adjustmentGetValue vadj     
                     (callback . UsrEv) (VScrollBarMoved cid v)
-    let vscrbar = _scrollVScrollbar scrwin -- Just vscrbar <- Gtk.scrolledWindowGetVScrollbar scrwin
+    let vscrbar = _scrollVScrollbar scrwin
     _bpevtvscrbar <- vscrbar `Gtk.on` Gtk.buttonPressEvent $ do 
                       v <- liftIO $ Gtk.adjustmentGetValue vadj 
                       liftIO ((callback . UsrEv) (VScrollBarStart cid v))
@@ -214,28 +205,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
-    
-{-     
--- #ifdef GTK3
--- #endif
-    _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
 
-
-#ifdef GTK3
-#else
-    _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-#endif
-#ifdef GTK3    
-#else
-    if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
-         else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
-#endif
--- #ifdef GTK3
-    -}
--- #endif
-
-    -- temp
-    return $ cinfo     
 
 -- | recreate windows from old canvas info but no event connect
 reinitCanvasInfoStage1 
@@ -343,7 +313,7 @@ createTab callback notebook vboxcvs = do
     Gtk.dragSourceAddTextTargets ebox
     button <- Gtk.buttonNewWithLabel ("X" :: String)
     -- Gtk.Gtk.widgetSetSensitive button False
-    Gtk.boxPackStart hbox {- label -} ebox Gtk.PackNatural 0
+    Gtk.boxPackStart hbox ebox Gtk.PackNatural 0
     Gtk.boxPackStart hbox button Gtk.PackNatural 0 
     Gtk.widgetShowAll hbox
     mlabel <- Gtk.labelNew (Nothing :: Maybe String)
@@ -351,8 +321,6 @@ createTab callback notebook vboxcvs = do
     uuid <- nextRandom
     button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab uuid))
 
-    -- ebox `Gtk.on` Gtk.dragBegin $ \_dc -> do 
-    --   liftIO $ putStrLn "dragging"
     ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do
       minfo <- liftIO $ do 
         ref <- newIORef (Nothing :: Maybe String)

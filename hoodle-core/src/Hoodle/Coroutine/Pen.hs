@@ -83,7 +83,7 @@ addPDraw cid pinfo hdl (PageNum pgnum) pdraw = do
 
 -- |
 createTempRender :: CanvasGeometry -> a -> MainCoroutine (TempRender a) 
-createTempRender geometry x = do 
+createTempRender geometry x = do
     xst <- get
     cache <- renderCache
     let uhdl = view (unitHoodles.currentUnit) xst
@@ -92,8 +92,9 @@ createTempRender geometry x = do
         cid = getCurrentCanvasId uhdl
         hdl = getHoodle uhdl
         Dim cw ch = unCanvasDimension . canvasDim $ geometry
+    liftIO $ putStrLn $ "createTempRender " ++ show cw ++ "," ++ show ch
     srcsfc <- liftIO $  
-      maybe (fst <$> canvasImageSurface cache cid Nothing geometry hdl)
+      maybe (putStrLn "source surface created" >> fst <$> canvasImageSurface cache cid Nothing geometry hdl)
             (\cvssfc -> do 
               sfc <- Cairo.createImageSurface 
                        Cairo.FormatARGB32 (floor cw) (floor ch)
@@ -101,15 +102,15 @@ createTempRender geometry x = do
                 Cairo.setSourceSurface cvssfc 0 0 
                 Cairo.setOperator Cairo.OperatorSource 
                 Cairo.paint
-                Cairo.setSourceRGBA 1 0 0 1
-                Cairo.rectangle 100 100 200 200
-                Cairo.fill
+                --Cairo.setSourceRGBA 1 0 0 1
+                --Cairo.rectangle 100 100 200 200
+                --Cairo.fill
 
               return sfc) 
             mcvssfc
     liftIO $ Cairo.renderWith srcsfc $ do 
       emphasisCanvasRender ColorRed geometry 
-    tgtsfc <- liftIO (Cairo.createImageSurface Cairo.FormatARGB32 (floor cw) (floor ch))
+    tgtsfc <- liftIO (Cairo.createImageSurface Cairo.FormatARGB32 (floor cw) (floor ch)) 
     let trdr = TempRender srcsfc tgtsfc (cw,ch) x
     return trdr 
 
@@ -171,7 +172,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
               pinfo = view penInfo xstate
               mpage = view (gpages . at (unPageNum pnum)) currhdl 
           maybeFlip mpage (return Nothing)  $ \_page -> do 
-            trdr <- createTempRender geometry (empty |> (x,y,z)) 
+            trdr <- createTempRender geometry (empty |> (x,y,z))
             mpdraw <-penProcess cid pnum geometry trdr ((x,y),z) ctime
             Cairo.surfaceFinish (tempSurfaceSrc trdr)
             Cairo.surfaceFinish (tempSurfaceTgt trdr)
@@ -187,7 +188,7 @@ penStart cid pcoord = commonPenStart penAction cid pcoord
                       commit (set (unitHoodles.currentUnit) uhdl' xstate)
                       return ()
                   return (Just (Just ()))
-          
+
 -- | main pen coordinate adding process
 -- | now being changed
 penProcess :: CanvasId 
@@ -199,6 +200,7 @@ penProcess :: CanvasId
            -> MainCoroutine (Maybe (Seq (Double,Double,Double)))
 penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do 
     r <- nextevent
+    liftIO $ print r
     ntime <- liftIO getCurrentTime
     let ispressandhold = 
           abs (toRational (diffUTCTime ctime ntime)) > 1 % 2
@@ -220,8 +222,7 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
     f r xstate cvsInfo = 
       penMoveAndUpOnly r pnum geometry 
         (penProcess cid pnum geometry trdr ((x0,y0),z0) ctime)
-        (\(pcoord,(x,y)) -> do 
-           liftIO $ print (x,y)
+        (\(pcoord,(x,y)) -> do
            let PointerCoord _ _ _ z = pcoord 
            let pinfo  = view penInfo xstate
            let xformfunc = cairoXform4PageCoordinate (mkXform4Page geometry pnum )
@@ -229,12 +230,12 @@ penProcess cid pnum geometry trdr ((x0,y0),z0) ctime = do
                renderfunc = do 
                  xformfunc 
                  renderStrk tmpstrk
-           let (srcsfc,tgtsfc) = (,) <$> tempSurfaceSrc <*> tempSurfaceTgt $ trdr
-           -- virtualDoubleBufferDraw srcsfc tgtsfc (return ()) renderfunc
+           let (srcsfc,tgtsfc) = (tempSurfaceSrc trdr, tempSurfaceTgt trdr)
+           virtualDoubleBufferDraw srcsfc tgtsfc (return ()) renderfunc
            liftIO $ doubleBufferFlush tgtsfc cvsInfo
            ---                                
            let ntrdr = trdr { tempInfo = pdraw |> (x,y,z) }
-           penProcess cid pnum geometry ntrdr ((x,y),z) ctime)
+           penProcess cid pnum geometry ntrdr ((x,y),z) ctime) 
         (\_ -> return (Just pdraw))
 
 -- | 
@@ -266,34 +267,36 @@ switchActionEnteringDiffPage pgn geometry pcoord skipaction chgaction ordaction 
                        else chgaction pgn (cpn,pxy)
                                                                  
 -- | in page action  
-penMoveAndUpOnly :: Monad m => 
+penMoveAndUpOnly :: -- Monad m =>
                     UserEvent 
                  -> PageNum 
                  -> CanvasGeometry 
-                 -> m a 
-                 -> ((PointerCoord,(Double,Double)) -> m a) 
-                 -> (PointerCoord -> m a) 
-                 -> m a
+                 -> MainCoroutine a 
+                 -> ((PointerCoord,(Double,Double)) -> MainCoroutine a) 
+                 -> (PointerCoord -> MainCoroutine a) 
+                 -> MainCoroutine a
 penMoveAndUpOnly r pgn geometry defact moveaction upaction = 
   case r of 
     PenMove _ pcoord -> skipIfNotInSamePage pgn geometry pcoord defact moveaction
-    PenUp _ pcoord -> upaction pcoord  
+    PenUp _ pcoord -> upaction pcoord
+    UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> defact
     _ -> defact 
   
 -- | 
-penMoveAndUpInterPage :: Monad m => 
+penMoveAndUpInterPage :: -- Monad m => 
                          UserEvent 
                       -> PageNum 
                       -> CanvasGeometry 
-                      -> m a 
-                      -> (PageNum -> (PageNum,PageCoordinate) -> m a) 
-                      -> (PointerCoord -> m a) 
-                      -> m a
+                      -> MainCoroutine a 
+                      -> (PageNum -> (PageNum,PageCoordinate) -> MainCoroutine a) 
+                      -> (PointerCoord -> MainCoroutine a) 
+                      -> MainCoroutine a
 penMoveAndUpInterPage r pgn geometry defact moveaction upaction = 
   case r of 
     PenMove _ pcoord -> 
       switchActionEnteringDiffPage pgn geometry pcoord defact moveaction moveaction  
-    PenUp _ pcoord -> upaction pcoord  
+    PenUp _ pcoord -> upaction pcoord
+    UpdateCanvas cid -> invalidateInBBox Nothing Efficient cid >> defact    
     _ -> defact 
   
 -- | process action when last time was before time diff limit, otherwise

@@ -10,7 +10,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Type.Canvas 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -468,7 +468,5 @@ updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
               Cairo.rectangle 0 0 w' h' 
               Cairo.fill 
             return sfc 
-
-
   return $ (set (viewInfo.pageArrangement) arr'.set mDrawSurface msfc) cinfo
      

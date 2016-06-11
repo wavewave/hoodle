@@ -104,13 +104,17 @@ let hsconfig = self: super: {
 in pkgs.stdenv.mkDerivation { 
      name = "env-hoodle-build";
      propagatedBuildInputs = [ pkgs.wrapGAppsHook ] ;
-     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig pkgs.sqlite
+     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig pkgs.sqlite pkgs.dbus_daemon
                      #gnome3.defaultIconTheme
                      #gnome3.gsettings_desktop_schemas
                    ];
      shellHook = ''
         $(grep export ${hsenv.outPath}/bin/ghc)
-     '';
+     '' + (if pkgs.stdenv.isDarwin then ''
+        export NIX_LDFLAGS_AFTER+=" -L/usr/lib -F/Library/Frameworks -F/System/Library/Frameworks"
+	export NIX_ENFORCE_PURITY=
+     '' else "");
+
    }
 
 #

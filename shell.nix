@@ -1,8 +1,36 @@
 { pkgs ? (import <nixpkgs>{}) }:
 
-with pkgs;
+#with pkgs;
 
-let hsenv = haskellPackages.ghcWithPackages 
+let hsconfig = self: super: {
+     "poppler" = self.callPackage
+     ({ mkDerivation, array, base, bytestring, cairo, containers
+      , glib, gtk3, gtk3lib, gtk2hs-buildtools, mtl, pango, popplerlib
+      , stdenv
+      }:
+      mkDerivation {
+	pname = "poppler";
+	version = "0.14.0";
+	#src = fetchgit {
+        #  url = "git://github.com/wavewave/poppler.git";
+	#  rev = "021b41865672b10ed4f97e987afd0976b1587e29";
+	#  sha256 = "00zv90vn1krva7jzjszjlbqypf4dzhrnvgbw6d1l071zxxipad8v";
+        #};
+
+        configureFlags = ["-fgtk3"];
+	libraryHaskellDepends = [
+	  array base bytestring cairo containers glib gtk3 mtl
+	];
+	libraryPkgconfigDepends = [ gtk3lib pango popplerlib ];
+	libraryToolDepends = [ gtk2hs-buildtools ];
+	homepage = "http://projects.haskell.org/gtk2hs";
+	description = "Binding to the Poppler";
+	license = stdenv.lib.licenses.gpl2;
+      }) { popplerlib = pkgs.poppler; gtk3lib = pkgs.gtk3; };
+    };
+
+    newhaskellpackages = pkgs.haskellPackages.override { overrides = hsconfig; };
+    hsenv = newhaskellpackages.ghcWithPackages 
       (p: with p; [ 
           cabal-install
           Diff
@@ -52,7 +80,7 @@ let hsenv = haskellPackages.ghcWithPackages
           persistent
           persistent-sqlite
           persistent-template
-          #poppler
+          poppler
           pureMD5
           safecopy
           stm
@@ -73,23 +101,25 @@ let hsenv = haskellPackages.ghcWithPackages
           regex-base regex-posix regex-compat MissingH
           gtk2hs-buildtools
     ]);
-in stdenv.mkDerivation { 
+in pkgs.stdenv.mkDerivation { 
      name = "env-hoodle-build";
-     propagatedBuildInputs = [ wrapGAppsHook ] ;
-     buildInputs = [ hsenv x11 xlibs.libXi gtk3 poppler pkgconfig sqlite
-                     gnome3.defaultIconTheme
-                     gnome3.gsettings_desktop_schemas
+     propagatedBuildInputs = [ pkgs.wrapGAppsHook ] ;
+     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig pkgs.sqlite
+                     #gnome3.defaultIconTheme
+                     #gnome3.gsettings_desktop_schemas
                    ];
      shellHook = ''
         $(grep export ${hsenv.outPath}/bin/ghc)
-        export PATH=${binutils}/bin:${coreutils}/bin:$PATH
-        export NIX_STORE=$NIX_STORE
-        export LD_LIBRARY_PATH=${xlibs.libX11}/lib:${xlibs.libXi}/lib
-        export LIBRARY_PATH=${xlibs.libX11}/lib:${xlibs.libXi}/lib
-        export C_INCLUDE_PATH=${xlibs.libX11}/include:${xlibs.libXi}/include:${xlibs.xproto}/include:${xlibs.inputproto}/include
-        #export XDG_DATA_DIRS=${gtk3}/share/gsettings-schemas/${gtk3.name}/glib-2.0/schemas:${gnome3.gsettings_desktop_schemas}/share/gsettings-schemas/${gnome3.gsettings_desktop_schemas.name}:$XDG_DATA_DIRS
-        export XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH:$XDG_DATA_DIRS
      '';
    }
 
-# 
+#
+
+        #export XDG_DATA_DIRS=${gtk3}/share/gsettings-schemas/${gtk3.name}/glib-2.0/schemas:${gnome3.gsettings_desktop_schemas}/share/gsettings-schemas/${gnome3.gsettings_desktop_schemas.name}:$XDG_DATA_DIRS
+        #export XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH:$XDG_DATA_DIRS
+
+#        export PATH=${pkgs.binutils}/bin:${pkgs.coreutils}/bin:$PATH
+#        export NIX_STORE=$NIX_STORE
+#        export LD_LIBRARY_PATH=${pkgs.xlibs.libX11}/lib:${pkgs.xlibs.libXi}/lib
+#        export LIBRARY_PATH=${pkgs.xlibs.libX11}/lib:${pkgs.xlibs.libXi}/lib
+#        export C_INCLUDE_PATH=${pkgs.xlibs.libX11}/include:${pkgs.xlibs.libXi}/include:${pkgs.xlibs.xproto}/include:${xlibs.inputproto}/include

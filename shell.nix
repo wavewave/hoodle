@@ -1,7 +1,5 @@
 { pkgs ? (import <nixpkgs>{}) }:
 
-#with pkgs;
-
 let hsconfig = self: super: {
      "poppler" = self.callPackage
      ({ mkDerivation, array, base, bytestring, cairo, containers
@@ -11,11 +9,6 @@ let hsconfig = self: super: {
       mkDerivation {
 	pname = "poppler";
 	version = "0.14.0";
-	#src = fetchgit {
-        #  url = "git://github.com/wavewave/poppler.git";
-	#  rev = "021b41865672b10ed4f97e987afd0976b1587e29";
-	#  sha256 = "00zv90vn1krva7jzjszjlbqypf4dzhrnvgbw6d1l071zxxipad8v";
-        #};
 
         configureFlags = ["-fgtk3"];
 	libraryHaskellDepends = [
@@ -27,9 +20,31 @@ let hsconfig = self: super: {
 	description = "Binding to the Poppler";
 	license = stdenv.lib.licenses.gpl2;
       }) { popplerlib = pkgs.poppler; gtk3lib = pkgs.gtk3; };
+      
+      "svgcairo" = self.callPackage
+      ({ mkDerivation, base, cairo, glib, gtk2hs-buildtools, librsvg, mtl
+       , stdenv, text
+       }:
+       mkDerivation {
+         pname = "svgcairo";
+	 version = "0.13.0.4";
+	 libraryHaskellDepends = [ base cairo glib mtl text ];
+	 libraryPkgconfigDepends = [ librsvg ];
+	 libraryToolDepends = [ gtk2hs-buildtools ];
+	 homepage = "http://projects.haskell.org/gtk2hs/";
+	 description = "Binding to the libsvg-cairo library";
+	 license = stdenv.lib.licenses.bsd3;
+       }) { };
+       
+      "gtk3"              = self.gtk3_0_14_1;
+      "gtk2hs-buildtools" = self.gtk2hs-buildtools_0_13_0_5;
+      "cairo"             = self.cairo_0_13_1_1;
+      "glib"              = self.glib_0_13_2_2;
+      "gio"               = self.gio_0_13_1_1;
+      "pango"             = self.pango_0_13_1_1;
     };
 
-    newhaskellpackages = pkgs.haskellPackages.override { overrides = hsconfig; };
+    newhaskellpackages = pkgs.haskell.packages.ghc7103.override { overrides = hsconfig; };
     hsenv = newhaskellpackages.ghcWithPackages 
       (p: with p; [ 
           cabal-install
@@ -58,10 +73,10 @@ let hsconfig = self: super: {
           either
           entropy
           errors
-          esqueleto
+          #esqueleto
           failure
           fsnotify
-          gd
+          #gd
           gtk3
           handa-gdata
           http-client-conduit
@@ -104,12 +119,14 @@ let hsconfig = self: super: {
 in pkgs.stdenv.mkDerivation { 
      name = "env-hoodle-build";
      propagatedBuildInputs = [ pkgs.wrapGAppsHook ] ;
-     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig pkgs.sqlite pkgs.dbus_daemon
+     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig pkgs.sqlite pkgs.dbus_daemon 
+                     #pkgs.valgrind
                      #gnome3.defaultIconTheme
                      #gnome3.gsettings_desktop_schemas
                    ];
      shellHook = ''
         $(grep export ${hsenv.outPath}/bin/ghc)
+	export GTK3PATH=${pkgs.gtk3}
      '' + (if pkgs.stdenv.isDarwin then ''
         export NIX_LDFLAGS_AFTER+=" -L/usr/lib -F/Library/Frameworks -F/System/Library/Frameworks"
 	export NIX_ENFORCE_PURITY=

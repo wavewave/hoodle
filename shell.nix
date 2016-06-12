@@ -76,7 +76,7 @@ let hsconfig = self: super: {
           #esqueleto
           failure
           fsnotify
-          #gd
+          gd
           gtk3
           handa-gdata
           http-client-conduit

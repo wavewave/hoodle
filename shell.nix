@@ -7,18 +7,18 @@ let hsconfig = self: super: {
       , stdenv
       }:
       mkDerivation {
-	pname = "poppler";
-	version = "0.14.0";
+        pname = "poppler";
+        version = "0.14.0";
 
         configureFlags = ["-fgtk3"];
-	libraryHaskellDepends = [
-	  array base bytestring cairo containers glib gtk3 mtl
-	];
-	libraryPkgconfigDepends = [ gtk3lib pango popplerlib ];
-	libraryToolDepends = [ gtk2hs-buildtools ];
-	homepage = "http://projects.haskell.org/gtk2hs";
-	description = "Binding to the Poppler";
-	license = stdenv.lib.licenses.gpl2;
+        libraryHaskellDepends = [
+          array base bytestring cairo containers glib gtk3 mtl
+        ];
+        libraryPkgconfigDepends = [ gtk3lib pango popplerlib ];
+        libraryToolDepends = [ gtk2hs-buildtools ];
+        homepage = "http://projects.haskell.org/gtk2hs";
+        description = "Binding to the Poppler";
+        license = stdenv.lib.licenses.gpl2;
       }) { popplerlib = pkgs.poppler; gtk3lib = pkgs.gtk3; };
       
       "svgcairo" = self.callPackage
@@ -27,13 +27,13 @@ let hsconfig = self: super: {
        }:
        mkDerivation {
          pname = "svgcairo";
-	 version = "0.13.0.4";
-	 libraryHaskellDepends = [ base cairo glib mtl text ];
-	 libraryPkgconfigDepends = [ librsvg ];
-	 libraryToolDepends = [ gtk2hs-buildtools ];
-	 homepage = "http://projects.haskell.org/gtk2hs/";
-	 description = "Binding to the libsvg-cairo library";
-	 license = stdenv.lib.licenses.bsd3;
+         version = "0.13.0.4";
+         libraryHaskellDepends = [ base cairo glib mtl text ];
+         libraryPkgconfigDepends = [ librsvg ];
+         libraryToolDepends = [ gtk2hs-buildtools ];
+         homepage = "http://projects.haskell.org/gtk2hs/";
+         description = "Binding to the libsvg-cairo library";
+         license = stdenv.lib.licenses.bsd3;
        }) { };
        
       "gtk3"              = self.gtk3_0_14_1;
@@ -119,17 +119,76 @@ let hsconfig = self: super: {
 in pkgs.stdenv.mkDerivation { 
      name = "env-hoodle-build";
      propagatedBuildInputs = [ pkgs.wrapGAppsHook ] ;
-     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig pkgs.sqlite pkgs.dbus_daemon 
+     buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig
+                     pkgs.sqlite pkgs.dbus_daemon
+                     pkgs.fontconfig
                      #pkgs.valgrind
-                     #gnome3.defaultIconTheme
-                     #gnome3.gsettings_desktop_schemas
+                     pkgs.gnome3.defaultIconTheme
+                     pkgs.gnome3.gsettings_desktop_schemas
+                     pkgs.dejavu_fonts
                    ];
      shellHook = ''
-        $(grep export ${hsenv.outPath}/bin/ghc)
-	export GTK3PATH=${pkgs.gtk3}
+       $(grep export ${hsenv.outPath}/bin/ghc)
+       export GTK3PATH=${pkgs.gtk3}
+       #export FONTCONFIG_PATH=${pkgs.fontconfig}
+       export DEJAVU=${pkgs.dejavu_fonts}
+       cat > fonts.conf <<EOF 
+       <?xml version="1.0"?>
+       <!DOCTYPE fontconfig SYSTEM "fonts.dtd">
+       <fontconfig>
+         <dir>${pkgs.dejavu_fonts}/share/fonts/truetype</dir>
+         <!--
+           Accept deprecated 'mono' alias, replacing it with 'monospace'
+         -->
+         <match target="pattern">
+           <test qual="any" name="family">
+             <string>mono</string>
+           </test>
+           <edit name="family" mode="assign">
+             <string>monospace</string>
+           </edit>
+         </match>
+         <!--
+           Accept alternate 'sans serif' spelling, replacing it with 'sans-serif'
+         -->
+         <match target="pattern">
+           <test qual="any" name="family">
+             <string>sans serif</string>
+           </test>
+           <edit name="family" mode="assign">
+             <string>sans-serif</string>
+           </edit>
+         </match>
+         <!--
+           Accept deprecated 'sans' alias, replacing it with 'sans-serif'
+         -->
+         <match target="pattern">
+           <test qual="any" name="family">
+             <string>sans</string>
+           </test>
+           <edit name="family" mode="assign">
+             <string>sans-serif</string>
+           </edit>
+         </match>
+                                                   
+         <alias>
+           <family>DejaVu Serif</family>
+         </alias>
+         <alias>
+           <family>DejaVu Sans</family>
+         </alias>
+         <alias>
+           <family>DejaVu Sans Mono</family>
+         </alias>
+       </fontconfig>
+       EOF
+
+       export XDG_DATA_DIRS=${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}/glib-2.0/schemas:${pkgs.gnome3.gsettings_desktop_schemas}/share/gsettings-schemas/${pkgs.gnome3.gsettings_desktop_schemas.name}:$XDG_DATA_DIRS
+       export XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH:$XDG_DATA_DIRS      
      '' + (if pkgs.stdenv.isDarwin then ''
         export NIX_LDFLAGS_AFTER+=" -L/usr/lib -F/Library/Frameworks -F/System/Library/Frameworks"
-	export NIX_ENFORCE_PURITY=
+        export NIX_ENFORCE_PURITY=
+        
      '' else "");
 
    }

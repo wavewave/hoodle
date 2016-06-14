@@ -121,7 +121,7 @@ in pkgs.stdenv.mkDerivation {
      propagatedBuildInputs = [ pkgs.wrapGAppsHook ] ;
      buildInputs = [ hsenv pkgs.x11 pkgs.xlibs.libXi pkgs.gtk3 pkgs.poppler pkgs.pkgconfig
                      pkgs.sqlite pkgs.dbus_daemon
-                     pkgs.fontconfig
+                     #pkgs.fontconfig
                      #pkgs.valgrind
                      pkgs.gnome3.defaultIconTheme
                      pkgs.gnome3.gsettings_desktop_schemas
@@ -182,7 +182,7 @@ in pkgs.stdenv.mkDerivation {
          </alias>
        </fontconfig>
        EOF
-
+       export XDG_CONFIG_HOME=`pwd`
        export XDG_DATA_DIRS=${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}/glib-2.0/schemas:${pkgs.gnome3.gsettings_desktop_schemas}/share/gsettings-schemas/${pkgs.gnome3.gsettings_desktop_schemas.name}:$XDG_DATA_DIRS
        export XDG_DATA_DIRS=$GSETTINGS_SCHEMAS_PATH:$XDG_DATA_DIRS      
      '' + (if pkgs.stdenv.isDarwin then ''

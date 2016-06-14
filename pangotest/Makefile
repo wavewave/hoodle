@@ -5,17 +5,20 @@ LIBS = $(shell $(PKGCONFIG) --libs gtk+-3.0)
 GLIB_COMPILE_RESOURCES = $(shell $(PKGCONFIG) --variable=glib_compile_resources gio-2.0)
 GLIB_COMPILE_SCHEMAS = $(shell $(PKGCONFIG) --variable=glib_compile_schemas gio-2.0)
 
-SRC = test.c
+SRC = cairo.c gtk.c
 
 OBJS = $(BUILT_SRC:.c=.o) $(SRC:.c=.o)
 
-all: test
+all: cairo gtk
 
 %.o: %.c
 	$(CC) -g -c -o $(@F) $(CFLAGS) $<
 
-test: $(OBJS) 
-	$(CC) -o $(@F) $(LIBS) $(OBJS)
+cairo: $(OBJS) 
+	$(CC) -o $(@F) $(LIBS) cairo.o
+
+gtk: $(OBJS) 
+	$(CC) -o $(@F) $(LIBS) gtk.o
 
 clean:
 	rm -f $(OBJS)

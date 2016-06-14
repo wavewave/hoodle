@@ -22,4 +22,4 @@ gtk: $(OBJS)
 
 clean:
 	rm -f $(OBJS)
-	rm -f test
+	rm -f cairo gtk

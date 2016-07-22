@@ -14,25 +14,3 @@ in stdenv.mkDerivation {
         --set NIX_GHC "${hoodleEnv}/bin/ghc" 
      '';
    }
-
-#name = "testenv";
-#     #propagatedBuildInputs = [ pkgs.wrapGAppsHook ] ;
-#     buildInputs = [ hsenv ];
-#   }
-
-#     hoodleEnv = ghcWithPackages (self: [ self.hoodle ] ++ packages self);
-# in stdenv.mkDerivation {
-#   name = "hoodle-with-packages";
-
-#   nativeBuildInputs = [ makeWrapper ];
-
-#   buildCommand = ''
-#     mkdir -p $out/bin
-#     makeWrapper ${hoodleEnv}/bin/hoodle $out/bin/hoodle \
-#       --set NIX_GHC "${hoodleEnv}/bin/ghc" \
-#   '';
-
-#   # trivial derivation
-#   preferLocalBuild = true;
-#   allowSubstitutes = false;
-# }

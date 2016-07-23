@@ -187,11 +187,7 @@ reflectCursor isforced = do
                       else do let uhdl       = view (unitHoodles.currentUnit) xst
                                   cinfobox   = view currentCanvasInfo uhdl           
                                   canvas     = forBoth' unboxBiAct (view drawArea) cinfobox
-                              -- #ifdef GTK3
                               Just win <- Gtk.widgetGetWindow canvas
-                              -- #else
-                              -- win <- Gtk.widgetGetDrawWindow canvas
-                              -- #endif
                               Gtk.postGUIAsync (Gtk.drawWindowSetCursor win Nothing) 
                               return (UsrEv ActionOrdered)
  where 
@@ -208,11 +204,7 @@ reflectCursor isforced = do
          pinfo = view penInfo xst 
          pcolor = view (penSet . currPen . penColor) pinfo
          pwidth = view (penSet . currPen . penWidth) pinfo 
-     -- #ifdef GTK3
      Just win <- Gtk.widgetGetWindow canvas
-     -- #else
-     -- win <- Gtk.widgetGetDrawWindow canvas
-     -- #endif
      dpy <- Gtk.widgetGetDisplay canvas  
 
      geometry <- 

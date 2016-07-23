@@ -243,16 +243,8 @@ verticalSpaceProcess cid geometry pinfo@(bbx,hltedLayers,pnum@(PageNum n),pg)
              Cairo.paint
              drawguide 
            let canvas = view drawArea cvsInfo 
-           -- #ifdef GTK3
            Just win <- liftIO $ Gtk.widgetGetWindow canvas
-           -- #else 
-           -- win <- liftIO $ Gtk.widgetGetDrawWindow canvas
-           -- #endif
-           -- #ifdef GTK3
            liftIO $ Gtk.renderWithDrawWindow win $ do 
-           -- #else 
-           -- liftIO $ Gtk.renderWithDrawable win $ do 
-           -- #endif
              Cairo.setSourceSurface sfctot 0 0 
              Cairo.setOperator Cairo.OperatorSource 
              Cairo.paint 

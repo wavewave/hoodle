@@ -214,28 +214,6 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
                       return False
     return $ cinfo { _horizAdjConnId = Just hadjconnid
                    , _vertAdjConnId = Just vadjconnid }
-    
-{-     
--- #ifdef GTK3
--- #endif
-    _sizereq <- canvas `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 800 400)
-
-
-#ifdef GTK3
-#else
-    _exposeev <- canvas `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
-#endif
-#ifdef GTK3    
-#else
-    if b then Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsAll]
-         else Gtk.widgetSetExtensionEvents canvas [Gtk.ExtensionEventsNone]
-#endif
--- #ifdef GTK3
-    -}
--- #endif
-
-    -- temp
-    return $ cinfo     
 
 -- | recreate windows from old canvas info but no event connect
 reinitCanvasInfoStage1 

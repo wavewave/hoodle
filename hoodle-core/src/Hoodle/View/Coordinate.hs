@@ -58,11 +58,7 @@ makeCanvasGeometry :: PageNum
                       -> Gtk.DrawingArea 
                       -> IO CanvasGeometry 
 makeCanvasGeometry cpn arr canvas = do 
-  -- #ifdef GTK3  
   Just win <- Gtk.widgetGetWindow canvas
-  -- #else
-  -- win <- Gtk.widgetGetDrawWindow canvas
-  -- #endif
   let cdim@(CanvasDimension (Dim w' h')) = view canvasDimension arr
   screen <- Gtk.widgetGetScreen canvas
   (ws,hs) <- (,) <$> (fromIntegral <$> Gtk.screenGetWidth screen)

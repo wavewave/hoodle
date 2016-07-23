@@ -69,12 +69,6 @@ startGUI mfname mhook = do
     setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles.currentUnit.cvsInfoMap) $ st0
--- #ifndef GTK3      
---     if xinputbool
---         then mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsAll]) canvases
---         else mapM_ (flip Gtk.widgetSetExtensionEvents [Gtk.ExtensionEventsNone]) canvases
--- #endif
-    --
     outerLayout ui vbox st0 
     window `Gtk.on` Gtk.deleteEvent $ do
       liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))

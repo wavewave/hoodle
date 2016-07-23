@@ -220,12 +220,6 @@ switchTab tabnum = do
       liftIO $ Gtk.widgetSetSensitive (uhdl^.unitButton) True
       modify $ (unitHoodles.currentUnit .~ uhdl)
       updateUhdl $ \uhdl' -> liftIO (updatePageAll (view hoodleModeState uhdl') uhdl')
-      -- #ifndef GTK3
-      -- view currentCanvasInfo uhdl # 
-      --   forBoth' unboxBiAct $ \cinfo -> do
-      --    (w,h) <- liftIO $ Gtk.widgetGetSize (cinfo^.drawArea) 
-      --     doCanvasConfigure (cinfo^.canvasId) (CanvasDimension (Dim (fromIntegral w) (fromIntegral h)))
-      -- #endif
       invalidateAll 
       liftIO $ reflectUIToggle (xst ^. gtkUIManager) "SAVEA" (not (uhdl ^. isSaved))
       reflectPenModeUI

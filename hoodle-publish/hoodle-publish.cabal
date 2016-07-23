@@ -16,11 +16,6 @@ Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle
 
--- Flag Gtk3
---  Description:     compile with gtk3
---  Default:         True
-  -- False 
-
 Library
   hs-source-dirs:  lib
   ghc-options: 	    -Wall  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
@@ -35,9 +30,7 @@ Library
                    directory > 1,
                    directory-tree, 
                    filepath > 1, 
-                   hoodle-parser >= 0.3.0,
-                   hoodle-render >= 0.5.0,
-                   hoodle-types >= 0.3.0,
+                   gtk3 >= 0.14,
                    HTTP,
                    io-streams, 
                    lens >= 2.5,
@@ -49,12 +42,10 @@ Library
                    transformers >= 0.3,
                    unordered-containers,
                    uuid >= 1.2.7,
-                   gtk3 >= 0.14
-  -- if flag(gtk3) 
-  --  Build-depends: gtk3 >= 0.13.0.3 
-  -- else 
-  --   Build-depends: gtk >= 0.13.0.3
-
+                   -- 
+                   hoodle-parser >= 0.4,
+                   hoodle-render >= 0.6,
+                   hoodle-types >= 0.4
 
   Exposed-modules: 
                    Hoodle.Publish.PDF
@@ -72,7 +63,3 @@ Executable hoodle-publish
                    filepath,
                    hoodle-publish,
                    gtk3 >= 0.14
-  -- if flag(gtk3) 
-  --   Build-depends: gtk3 >= 0.13.0.3 
-  -- else 
-  --   Build-depends: gtk >= 0.13.0.3

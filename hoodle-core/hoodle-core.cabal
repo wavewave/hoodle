@@ -1,5 +1,5 @@
 Name:		hoodle-core
-Version:	0.15.999
+Version:	0.16
 Synopsis:	Core library for hoodle
 Description: 	Hoodle is a pen notetaking program written in haskell. 
                 hoodle-core is the core library written in haskell and 
@@ -25,11 +25,6 @@ Source-repository head
 Flag Dyre
   Description:     dynamic reconfiguration support
   Default:         False
-
--- Flag Gtk3
---   Description:     compile with gtk3
---   Default:         True
-  -- False 
 
 Flag Hub
   Description:     communication with Hub
@@ -62,11 +57,6 @@ Library
                    fsnotify >= 0.0.7, 
                    gd >= 3000.7,               
                    handa-gdata >= 0.6.9.3, 
-                   hoodle-builder >= 0.3.0,
-                   hoodle-parser >= 0.3.0,
-                   hoodle-publish >= 0.2,
-                   hoodle-render >= 0.5.0 && < 0.6,
-                   hoodle-types >= 0.3.0,
                    http-types,
                    lens >= 2.5,
                    monad-loops >= 0.3, 
@@ -89,17 +79,17 @@ Library
                    uuid >= 1.2.7, 
                    vector >= 0.10,
                    websockets, 
+                   gtk3 >= 0.14,
+                   --
                    xournal-parser >= 0.5.0.2,
-                   gtk3 >= 0.14
-  --
+                   hoodle-builder >= 0.4,
+                   hoodle-parser >= 0.4,
+                   hoodle-publish >= 0.2,
+                   hoodle-render >= 0.6,
+                   hoodle-types >= 0.4
+
   if flag(dyre)
     Build-depends: dyre >= 0.8.11
-  -- 
-  -- if flag(gtk3) 
-  --   Build-depends: gtk3 >= 0.13.0.3 
-  -- else 
-  --   Build-depends: gtk >= 0.13.0.3
-  -- 
   if flag(hub)
     Build-depends: 
                    dbus >= 0.10, 
@@ -202,7 +192,5 @@ Library
   extra-libraries: X11 Xi dl pthread
   if flag(dyre)
     cpp-options: -DDYRE
-  -- if flag(gtk3)
-  --   cpp-options: -DGTK3
   if flag(hub)
     cpp-options: -DHUB

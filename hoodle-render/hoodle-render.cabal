@@ -1,5 +1,5 @@
 Name:		hoodle-render
-Version:	0.5.999
+Version:	0.6
 Synopsis:       Hoodle file renderer
 Description: 	Rendering library using cairo for hoodle file format
 License: 	BSD3
@@ -34,11 +34,11 @@ Library
                  filepath, 
                  gd >= 3000.7,  
                  hashable,
-                 hoodle-types >= 0.3.0,
+                 hoodle-types >= 0.4,
                  lens >= 2.5, 
                  monad-loops >= 0.3,  
-                 mtl == 2.*, 
-                 poppler >= 0.12.2.2,
+                 mtl > 2, 
+                 poppler >= 0.14,
                  stm,
                  strict >= 0.3, 
                  svgcairo >= 0.12,
@@ -48,16 +48,10 @@ Library
                  unordered-containers, 
                  uuid >= 1.2,
                  gtk3 >= 0.14
-  -- if flag(gtk3)
-  --   build-depends: gtk3 >= 0.13
-  -- else 
-  --  build-depends: gtk > 0.13
-
 
   Exposed-Modules: 
                    Graphics.Hoodle.Render 
                    Graphics.Hoodle.Render.Background
-                   -- Graphics.Hoodle.Render.Debug
                    Graphics.Hoodle.Render.Engine
                    Graphics.Hoodle.Render.Generic
                    Graphics.Hoodle.Render.Highlight
@@ -68,7 +62,6 @@ Library
                    Graphics.Hoodle.Render.Type.HitTest
                    Graphics.Hoodle.Render.Type.Hoodle
                    Graphics.Hoodle.Render.Type.Item
-                   -- Graphics.Hoodle.Render.Type.RenderCache
                    Graphics.Hoodle.Render.Type.Renderer
                    Graphics.Hoodle.Render.Type.Select
                    Graphics.Hoodle.Render.Util

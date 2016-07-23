@@ -1,5 +1,5 @@
 Name:		hoodle-parser
-Version:	0.3.999
+Version:	0.4
 Synopsis:       Hoodle file parser
 Description: 	Text parser for hoodle xml file
 Homepage:       http://ianwookim.org/hoodle
@@ -25,7 +25,7 @@ Library
                  bytestring >= 0.9, 
                  containers >= 0.4, 
                  directory, 
-                 hoodle-types >= 0.3.999, 
+                 hoodle-types >= 0.4, 
                  lens >= 2.5, 
                  mtl > 2, 
                  strict >= 0.3, 

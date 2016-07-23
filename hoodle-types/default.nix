@@ -3,9 +3,9 @@
 }:
 mkDerivation {
   pname = "hoodle-types";
-  version = "0.3.999";
+  version = "0.4";
   src = ./.;
-  buildDepends = [
+  libraryHaskellDepends = [
     aeson base bytestring cereal containers lens mtl strict text uuid
     vector
   ];

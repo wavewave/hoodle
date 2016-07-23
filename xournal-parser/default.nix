@@ -7,7 +7,7 @@ mkDerivation {
   pname = "xournal-parser";
   version = "0.5.1";
   src = ./.;
-  buildDepends = [
+  libraryHaskellDepends = [
     attoparsec attoparsec-conduit base bytestring conduit conduit-extra
     containers exceptions lens mtl strict text transformers xml-conduit
     xml-types xournal-types zlib-conduit

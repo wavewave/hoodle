@@ -3,9 +3,9 @@
 }:
 mkDerivation {
   pname = "hoodle-builder";
-  version = "0.3.999";
+  version = "0.4";
   src = ./.;
-  buildDepends = [
+  libraryHaskellDepends = [
     base blaze-builder bytestring double-conversion hoodle-types lens
     strict text
   ];

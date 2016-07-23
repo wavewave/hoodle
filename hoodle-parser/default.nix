@@ -4,9 +4,9 @@
 }:
 mkDerivation {
   pname = "hoodle-parser";
-  version = "0.3.999";
+  version = "0.4";
   src = ./.;
-  buildDepends = [
+  libraryHaskellDepends = [
     attoparsec base bytestring containers directory either hoodle-types
     lens mtl strict text transformers xournal-types
   ];

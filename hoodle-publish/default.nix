@@ -1,5 +1,5 @@
 { mkDerivation, attoparsec, base, bytestring, cairo, cmdargs
-, containers, directory, directory-tree, filepath, gtk
+, containers, directory, directory-tree, filepath, gtk3
 , hoodle-parser, hoodle-render, hoodle-types, HTTP, io-streams
 , lens, mtl, network-uri, pdf-toolbox-core, pdf-toolbox-document
 , process, stdenv, transformers, unordered-containers, uuid
@@ -10,11 +10,14 @@ mkDerivation {
   src = ./.;
   isLibrary = true;
   isExecutable = true;
-  buildDepends = [
-    attoparsec base bytestring cairo cmdargs containers directory
-    directory-tree filepath gtk hoodle-parser hoodle-render
+  libraryHaskellDepends = [
+    attoparsec base bytestring cairo containers directory
+    directory-tree filepath gtk3 hoodle-parser hoodle-render
     hoodle-types HTTP io-streams lens mtl network-uri pdf-toolbox-core
     pdf-toolbox-document process transformers unordered-containers uuid
+  ];
+  executableHaskellDepends = [
+    base cmdargs directory directory-tree filepath gtk3
   ];
   homepage = "http://ianwookim.org/hoodle";
   description = "publish hoodle files as a static web site";

@@ -7,13 +7,11 @@
 , monad-loops, mtl, network-uri, pango, poppler, process, pureMD5
 , stdenv, stm, strict, svgcairo, system-filepath, template-haskell
 , text, time, transformers, transformers-free, unordered-containers
-, uuid, vector, websockets, xournal-parser
-, dyre
-, pkgconfig
+, uuid, vector, websockets, xournal-parser, dyre, pkgconfig
 }:
 mkDerivation {
   pname = "hoodle-core";
-  version = "0.15.999";
+  version = "0.16";
   src = ./.;
   libraryHaskellDepends = [
     aeson aeson-pretty array attoparsec base base64-bytestring binary
@@ -24,13 +22,11 @@ mkDerivation {
     network-uri pango poppler process pureMD5 stm strict svgcairo
     system-filepath template-haskell text time transformers
     transformers-free unordered-containers uuid vector websockets
-    xournal-parser
-    dyre
+    xournal-parser dyre
   ];
-  configureFlags = ["-fdyre"];
-  librarySystemDepends = [ libX11 libXi gtk3 ];
+  configureFlags = [ "-fdyre" ];
+  librarySystemDepends = [ libX11 libXi ];
   buildDepends = [ pkgconfig ];
-  doHaddock = false;
   homepage = "http://ianwookim.org/hoodle";
   description = "Core library for hoodle";
   license = stdenv.lib.licenses.bsd3;

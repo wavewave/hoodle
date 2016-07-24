@@ -10,9 +10,6 @@ packages:
 - hoodle/
 - hoodle-builder/
 - hoodle-core/
-- hoodle-daemon/
-- hoodle-extra/
-- hoodle-manage/
 - hoodle-parser/
 - hoodle-publish/
 - hoodle-render/

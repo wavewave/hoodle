@@ -1,6 +1,31 @@
 { poppler, gtk3 }:
 
 self: super: {
+   "gtk2hs-buildtools" = self.callPackage
+    ({ mkDerivation, alex, array, base, Cabal,
+       containers, directory
+     , filepath, happy, hashtables, pretty, process, random, stdenv
+     }:
+     mkDerivation {
+       pname = "gtk2hs-buildtools";
+       version = "0.13.2.1";
+       sha256 = "86ea21a2e07d83dcff57eb224a7c76835fb4ea561e4d6ba9b52b8035b38d064b";
+       isLibrary = true;
+       isExecutable = true;
+       libraryHaskellDepends = [
+         array base #Cabal
+         containers directory filepath hashtables pretty
+         process random
+       ];
+       libraryToolDepends = [ alex happy ];
+       executableHaskellDepends = [ base ];
+       homepage = "http://projects.haskell.org/gtk2hs/";
+       description = "Tools to build the Gtk2Hs suite of User Interface libraries";
+       license = stdenv.lib.licenses.gpl2;
+     }) {};
+  
+
+
   "poppler" = self.callPackage
   ({ mkDerivation, array, base, bytestring, cairo, containers
    , glib, gtk3, gtk3lib, gtk2hs-buildtools, mtl, pango, popplerlib
@@ -8,7 +33,7 @@ self: super: {
    }:
     mkDerivation {
     pname = "poppler";
-    version = "0.14.0";
+    version = "0.14.1";
 
     configureFlags = ["-fgtk3"];
     libraryHaskellDepends = [

@@ -5,7 +5,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.GUI 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
+-- Copyright   : (c) 2011-2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -59,13 +59,21 @@ startGUI mfname mhook = do
     (tref,st0,ui,vbox) <- initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) 
     setTitleFromFileName st0
     -- need for refactoring
-    mapM_ (\(x,y :: Simple Lens Settings Bool) -> lensSetToggleUIForFlag x (settings.y) st0 )
+    {- 
+    mapM_ (\(x,y :: Simple Lens Settings Bool ) -> lensSetToggleUIForFlag  x (settings.y) st0 )
       [ ("UXINPUTA", doesUseXInput) 
       , ("HANDA"   , doesUseTouch)
       , ("POPMENUA", doesUsePopUpMenu)
       , ("EBDIMGA" , doesEmbedImage)
       , ("EBDPDFA" , doesEmbedPDF)
-      ] 
+      ]   -}
+    lensSetToggleUIForFlag "UXINPUTA" (settings.doesUseXInput)    st0
+    lensSetToggleUIForFlag "HANDA"    (settings.doesUseTouch)     st0
+    lensSetToggleUIForFlag "POPMENUA" (settings.doesUsePopUpMenu) st0
+    lensSetToggleUIForFlag "EBDIMGA"  (settings.doesEmbedImage)   st0
+    lensSetToggleUIForFlag "EBDPDFA"  (settings.doesEmbedPDF)     st0
+    
+      
     setToggleUIForFlag "TOGGLENETSRCA" False st0
     -- 
     let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles.currentUnit.cvsInfoMap) $ st0

@@ -4,7 +4,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.Minibuffer 
--- Copyright   : (c) 2013, 2014 Ian-Woo Kim
+-- Copyright   : (c) 2013, 2014, 2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -74,8 +74,8 @@ minibufDialog msg = do
       dialog <- Gtk.dialogNew 
       msgLabel <- Gtk.labelNew (Just msg) 
       cvs <- Gtk.drawingAreaNew                           
-      cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 500 50)
-      cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do
+      Gtk.widgetSetSizeRequest cvs 500 50
+      cvs `Gtk.on` Gtk.draw $  do
         Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs
         liftIO (Gtk.renderWithDrawWindow drawwdw drawMiniBufBkg)
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
@@ -105,8 +105,8 @@ minibufDialog msg = do
       vbox <- Gtk.vBoxNew False 0 
       Gtk.containerAdd upper vbox
       hbox <- Gtk.hBoxNew False 0 
-      Gtk.boxPackStart hbox msgLabel Gtk.PackNatural 0 
-      Gtk.boxPackStart vbox hbox Gtk.PackNatural 0
+      Gtk.boxPackStart hbox msgLabel Gtk.PackGrow 0 
+      Gtk.boxPackStart vbox hbox Gtk.PackGrow 0
       Gtk.boxPackStart vbox cvs Gtk.PackNatural 0
       _btnOk <- Gtk.dialogAddButton dialog "Ok" Gtk.ResponseOk
       _btnCancel <- Gtk.dialogAddButton dialog "Cancel" Gtk.ResponseCancel

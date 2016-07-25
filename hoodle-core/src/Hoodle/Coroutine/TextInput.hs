@@ -101,7 +101,7 @@ multiLineDialog str evhandler = do
     textarea <- Gtk.textViewNewWithBuffer textbuf
     vscrbar <- Gtk.vScrollbarNew =<< Gtk.textViewGetVadjustment textarea
     hscrbar <- Gtk.hScrollbarNew =<< Gtk.textViewGetHadjustment textarea 
-    textarea `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 500 600)
+    Gtk.widgetSetSizeRequest textarea 500 600
     fdesc <- Gtk.fontDescriptionNew
     Gtk.fontDescriptionSetFamily fdesc ("Mono" :: String)
     Gtk.widgetModifyFont textarea (Just fdesc)

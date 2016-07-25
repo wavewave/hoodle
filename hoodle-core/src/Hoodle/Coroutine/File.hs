@@ -676,8 +676,8 @@ mkPangoText str = do
 addOneRevisionBox :: RenderCache -> CanvasId -> Gtk.VBox -> Hoodle -> Revision -> IO ()
 addOneRevisionBox cache cvsid vbox hdl rev = do 
     cvs <- Gtk.drawingAreaNew 
-    cvs `Gtk.on` Gtk.sizeRequest $ return (Gtk.Requisition 250 25)
-    cvs `Gtk.on` Gtk.exposeEvent $ Gtk.tryEvent $ do 
+    Gtk.widgetSetSizeRequest cvs 250 25
+    cvs `Gtk.on` Gtk.draw $ do 
       Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs 
       liftIO . Gtk.renderWithDrawWindow drawwdw $ do
         case rev of 

@@ -6,7 +6,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      : Hoodle.Coroutine.HandwritingRecognition
--- Copyright   : (c) 2014 Ian-Woo Kim
+-- Copyright   : (c) 2014,2016 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
@@ -60,7 +60,7 @@ getArrayVal n v = getArray v >>= \vs ->
 
 handwritingRecognitionDialog :: MainCoroutine (Maybe (Bool,T.Text))
 handwritingRecognitionDialog = do
-  r <- minibufDialog "test handwriting recognition"
+  r <- minibufDialog "Write hoodlet here"
   case r of 
     Left err -> liftIO $ putStrLn (show err) >> return Nothing 
     Right strks -> do 

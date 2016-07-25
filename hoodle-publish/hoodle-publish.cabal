@@ -1,5 +1,5 @@
 Name:		hoodle-publish
-Version:	0.2.0
+Version:	0.2.1
 Synopsis:	publish hoodle files as a static web site
 Description: 	This package provides a simple tool hoodle-publish which make a static web site from a directory containing hoodle files
 Homepage:       http://ianwookim.org/hoodle
@@ -8,7 +8,7 @@ License-file:	LICENSE
 Author:	        Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 7.8
+Tested-with:    GHC == 8.0
 Build-Type: 	Simple
 Cabal-Version:  >= 1.8
 data-files:     

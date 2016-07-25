@@ -1,5 +1,5 @@
 Name:		hoodle-core
-Version:	0.16
+Version:	0.16.0
 Synopsis:	Core library for hoodle
 Description: 	Hoodle is a pen notetaking program written in haskell. 
                 hoodle-core is the core library written in haskell and 
@@ -81,7 +81,7 @@ Library
                    xournal-parser >= 0.5.0.2,
                    hoodle-builder >= 0.4,
                    hoodle-parser >= 0.4,
-                   hoodle-publish >= 0.2,
+                   hoodle-publish >= 0.2.1,
                    hoodle-render >= 0.6,
                    hoodle-types >= 0.4
 

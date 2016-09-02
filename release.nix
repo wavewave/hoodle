@@ -1,6 +1,6 @@
-{ pkgs }:
+{ nixpkgs }:
 
-with pkgs; 
+with import nixpkgs {}; 
 
 let hsconfig = import ./default.nix { poppler = poppler; gtk3 = gtk3; };
     newHaskellPackages = haskellPackages.override { overrides = hsconfig; };

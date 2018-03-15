@@ -80,7 +80,7 @@ handwritingRecognitionDialog = do
                   <=< getArrayVal 0 <=< getArrayVal 1) v0 
             let f (String v) = Just v
                 f _ = Nothing
-            (return . mapMaybe f . toList) v4
+            (return . Data.Maybe.mapMaybe f . toList) v4
       
           case r_parse of 
             Left err -> msgShout ("handwritingRecognitionDialog: " ++ err) >> return Nothing 

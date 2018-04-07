@@ -1,4 +1,5 @@
-{ nixpkgs }:
+{ nixpkgs ? <nixpkgs>
+}:
 
 with import nixpkgs {}; 
 

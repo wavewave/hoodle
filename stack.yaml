@@ -2,7 +2,7 @@
 # For more information, see: http://docs.haskellstack.org/en/stable/yaml_configuration/
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-5.8
+resolver: lts-10.5
 
 # Local packages, usually specified by relative directory name
 packages:
@@ -18,15 +18,11 @@ packages:
 - xournal-types/
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
-- TypeCompose-0.9.11
-- aeson-0.11.1.1
 - attoparsec-conduit-1.1.0
-- gtk-0.13.9
-- handa-gdata-0.7.0.3
-- persistent-sqlite-2.2.1
+- gio-0.13.4.1
+- gtk3-0.14.8
 - poppler-0.14.0
 - svgcairo-0.13.0.4
-- text-1.2.2.0
 - transformers-free-1.0.1
 - zlib-conduit-1.1.0
 
@@ -34,6 +30,11 @@ extra-deps:
 flags:
   poppler:
     gtk3: true
+
+nix:
+  path:
+    - nixpkgs=https://nixos.org/channels/nixos-17.09/nixexprs.tar.xz
+  shell-file: stack.nix 
 
 # Extra package databases containing global packages
 extra-package-dbs: []

@@ -1,6 +1,14 @@
 # hoodle
 hoodle : A pen notetaking program written in haskell
 
+Build with nix
+--------------
+tested with nixpkgs at nixos 17.09 revision
+```
+$ nix-build release.nix -A hoodle 
+```
+
+
 Installation using stack
 ------------------------
 

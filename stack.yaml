@@ -22,9 +22,14 @@ extra-deps:
 - gio-0.13.4.1
 - gtk3-0.14.8
 - poppler-0.14.0
-- svgcairo-0.13.0.4
 - transformers-free-1.0.1
 - zlib-conduit-1.1.0
+- git: https://github.com/cohomology/svgcairo.git
+  commit: 652d1919b6c90229c6c2d4f34e5b2e3b9c7e3024
+  # svgcairo-0.13.0.4
+
+
+
 
 # Override default flag values for local packages and extra-deps
 flags:

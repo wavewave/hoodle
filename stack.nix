@@ -9,5 +9,7 @@ pkgs.haskell.lib.buildStackProject {
       pkgs.gtk3
       pkgs.poppler
       pkgs.gd
+      pkgs.git
+      pkgs.librsvg
   ];
 }

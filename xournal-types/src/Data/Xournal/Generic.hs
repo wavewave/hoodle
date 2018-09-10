@@ -17,10 +17,10 @@ module Data.Xournal.Generic where
 -- from other packages
 import Control.Applicative
 import Control.Category
-import Control.Lens 
 import Data.ByteString hiding (map,zip)
 import Data.Functor
 import Data.IntMap hiding (map)
+import Lens.Micro
 -- from this package
 import Data.Xournal.Simple
 -- 
@@ -144,47 +144,47 @@ instance SListable GXournal where
   chgStreamToList (GXournal t ps) = GXournal t (gToList ps)
   
 -- |
-g_title :: Simple Lens (GXournal s a) ByteString
+g_title :: Lens' (GXournal s a) ByteString
 g_title = lens gtitle (\f a -> f { gtitle = a } )
 
 -- |
-g_pages :: Simple Lens (GXournal s a) (s a)
+g_pages :: Lens' (GXournal s a) (s a)
 g_pages = lens gpages (\f a -> f { gpages = a } )
 
 -- |
-g_dimension :: Simple Lens (GPage b s a) Dimension 
+g_dimension :: Lens' (GPage b s a) Dimension 
 g_dimension = lens gdimension (\f a -> f { gdimension = a } )
 
 -- |
-g_background :: Simple Lens (GPage b s a) b 
+g_background :: Lens' (GPage b s a) b 
 g_background = lens gbackground (\f a -> f { gbackground = a } ) 
 
 -- |
-g_layers :: Simple Lens (GPage b s a) (s a)
+g_layers :: Lens' (GPage b s a) (s a)
 g_layers = lens glayers (\f a -> f { glayers = a } ) 
 
 -- |
-g_strokes :: Simple Lens (GLayer s a) (s a)
+g_strokes :: Lens' (GLayer s a) (s a)
 g_strokes = lens gstrokes (\f a -> f { gstrokes = a } )
 
 -- |
-g_bstrokes :: Simple Lens (GLayerBuf b s a) (s a)
+g_bstrokes :: Lens' (GLayerBuf b s a) (s a)
 g_bstrokes = lens gbstrokes (\f a -> f { gbstrokes = a } )
 
 -- |
-g_buffer :: Simple Lens (GLayerBuf b s a) b 
+g_buffer :: Lens' (GLayerBuf b s a) b 
 g_buffer = lens gbuffer (\f a -> f { gbuffer = a } )
 
 -- |
-g_selectTitle :: Simple Lens (GSelect a b) ByteString
+g_selectTitle :: Lens' (GSelect a b) ByteString
 g_selectTitle = lens gselectTitle (\f a -> f {gselectTitle = a})
 
 -- |
-g_selectAll :: Simple Lens (GSelect a b) a 
+g_selectAll :: Lens' (GSelect a b) a 
 g_selectAll = lens gselectAll (\f a -> f {gselectAll = a} )
 
 -- |
-g_selectSelected :: Simple Lens (GSelect a b) b
+g_selectSelected :: Lens' (GSelect a b) b
 g_selectSelected = lens gselectSelected (\f a -> f {gselectSelected = a})
 
 -- |

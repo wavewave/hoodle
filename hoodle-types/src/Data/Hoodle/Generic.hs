@@ -19,7 +19,6 @@ module Data.Hoodle.Generic where
 
 -- from other packages
 import Control.Category
-import Control.Lens 
 import Data.ByteString.Char8 hiding (map,zip)
 import Data.Foldable
 import Data.Functor
@@ -27,6 +26,7 @@ import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq 
 import qualified Data.Text as T
 import Data.UUID.V4 
+import Lens.Micro
 -- from this package
 import Data.Hoodle.Simple
 -- 
@@ -75,49 +75,49 @@ instance (Functor cntnr) => Functor (GHoodle cntnr) where
 ------------------------------
 
 -- | 
-ghoodleID :: Simple Lens (GHoodle cntnr pg) ByteString 
+ghoodleID :: Lens' (GHoodle cntnr pg) ByteString 
 ghoodleID = lens ghoodle_id (\f a -> f { ghoodle_id = a } )
 
 -- |
-gtitle :: Simple Lens (GHoodle cntnr pg) ByteString
+gtitle :: Lens' (GHoodle cntnr pg) ByteString
 gtitle = lens ghoodle_ttl (\f a -> f { ghoodle_ttl = a } )
 
 -- | 
-grevisions :: Simple Lens (GHoodle cntnr pg) [Revision]
+grevisions :: Lens' (GHoodle cntnr pg) [Revision]
 grevisions = lens ghoodle_revisions (\f a -> f { ghoodle_revisions = a } )
 
 -- | 
-gembeddedpdf :: Simple Lens (GHoodle cntnr pg) (Maybe PDFData)
+gembeddedpdf :: Lens' (GHoodle cntnr pg) (Maybe PDFData)
 gembeddedpdf = lens ghoodle_embeddedpdf (\f a -> f { ghoodle_embeddedpdf = a } )
 
 -- | 
-gembeddedtext :: Simple Lens (GHoodle cntnr pg) (Maybe T.Text)
+gembeddedtext :: Lens' (GHoodle cntnr pg) (Maybe T.Text)
 gembeddedtext = lens ghoodle_embeddedtext (\f a -> f { ghoodle_embeddedtext = a } )
 
 -- |
-gpages :: Simple Lens (GHoodle cntnr pg) (cntnr pg)
+gpages :: Lens' (GHoodle cntnr pg) (cntnr pg)
 gpages = lens ghoodle_pgs (\f a -> f { ghoodle_pgs = a } )
 
 -- |
-gdimension :: Simple Lens (GPage bkg cntnr pg) Dimension 
+gdimension :: Lens' (GPage bkg cntnr pg) Dimension 
 gdimension = lens gpage_dim (\f a -> f { gpage_dim = a } )
 
 -- |
-gbackground :: Simple Lens (GPage bkg cntnr lyr) bkg 
+gbackground :: Lens' (GPage bkg cntnr lyr) bkg 
 gbackground = lens gpage_bkg (\f a -> f { gpage_bkg = a } ) 
 
 -- |
-glayers :: Simple Lens (GPage bkg cntnr lyr) (cntnr lyr)
+glayers :: Lens' (GPage bkg cntnr lyr) (cntnr lyr)
 glayers = lens gpage_lyrs (\f a -> f { gpage_lyrs = a } ) 
 
 
 -- |
-gitems :: Simple Lens (GLayer buf cntnr itm) (cntnr itm)
+gitems :: Lens' (GLayer buf cntnr itm) (cntnr itm)
 gitems = lens glayer_itms (\f a -> f { glayer_itms = a } )
 
 
 -- |
-gbuffer :: Simple Lens (GLayer buf cntnr itm) buf 
+gbuffer :: Lens' (GLayer buf cntnr itm) buf 
 gbuffer = lens glayer_buf (\f a -> f { glayer_buf = a } )
 
 -- |

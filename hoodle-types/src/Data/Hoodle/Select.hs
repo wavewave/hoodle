@@ -16,9 +16,10 @@ module Data.Hoodle.Select where
 
 -- from other packages
 import           Control.Applicative
-import           Control.Lens
 import           Data.ByteString
 import qualified Data.Text as T
+import           Lens.Micro
+import           Lens.Micro.Extras (view)
 --
 import           Data.Hoodle.Generic 
 import           Data.Hoodle.Simple 
@@ -33,31 +34,31 @@ data GSelect a b = GSelect { gselect_id :: ByteString
                            , gselect_selected :: b
                            }
 
-gselHoodleID :: Simple Lens (GSelect a b) ByteString 
+gselHoodleID :: Lens' (GSelect a b) ByteString 
 gselHoodleID = lens gselect_id (\f a -> f { gselect_id = a } )
 
 -- |
-gselTitle :: Simple Lens (GSelect a b) ByteString
+gselTitle :: Lens' (GSelect a b) ByteString
 gselTitle = lens gselect_ttl (\f a -> f {gselect_ttl = a})
 
 -- | 
-gselRevisions :: Simple Lens (GSelect a b) [Revision]
+gselRevisions :: Lens' (GSelect a b) [Revision]
 gselRevisions = lens gselect_revisions (\f a -> f {gselect_revisions = a } )
 
 -- |
-gselEmbeddedPdf :: Simple Lens (GSelect a b) (Maybe PDFData)
+gselEmbeddedPdf :: Lens' (GSelect a b) (Maybe PDFData)
 gselEmbeddedPdf = lens gselect_embeddedpdf (\f a -> f {gselect_embeddedpdf = a})
 
 -- |
-gselEmbeddedText :: Simple Lens (GSelect a b) (Maybe T.Text)
+gselEmbeddedText :: Lens' (GSelect a b) (Maybe T.Text)
 gselEmbeddedText = lens gselect_embeddedtext (\f a -> f {gselect_embeddedtext = a})
 
 -- |
-gselAll :: Simple Lens (GSelect a b) a 
+gselAll :: Lens' (GSelect a b) a 
 gselAll = lens gselect_all (\f a -> f {gselect_all = a} )
 
 -- |
-gselSelected :: Simple Lens (GSelect a b) b
+gselSelected :: Lens' (GSelect a b) b
 gselSelected = lens gselect_selected (\f a -> f {gselect_selected = a})
 
 

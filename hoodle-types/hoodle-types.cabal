@@ -25,7 +25,7 @@ Library
                    bytestring >= 0.9, 
                    containers >= 0.4, 
                    cereal > 0.3, 
-                   lens >= 2.5,
+                   microlens >= 0.4,
                    mtl > 2, 
                    strict > 0.3, 
                    text > 0.11,

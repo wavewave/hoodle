@@ -19,12 +19,12 @@ module Data.Hoodle.Simple.V0_1_1 where
 
 -- from other packages
 import           Control.Applicative 
-import           Control.Lens 
 import qualified Data.ByteString as S
 import           Data.ByteString.Char8 hiding (map)
 -- import           Data.Label
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
+import           Lens.Micro
 -- from this package
 import           Data.Hoodle.Util
 -- 
@@ -172,35 +172,35 @@ getXYtuples (VWStroke _t _c d) = map ((,)<$>fst3<*>snd3) d
 ----------------------------
 
 -- | 
-tool :: Simple Lens Stroke ByteString
+tool :: Lens' Stroke ByteString
 tool = lens stroke_tool (\f a -> f { stroke_tool = a })  
 
 -- | 
-color :: Simple Lens Stroke ByteString 
+color :: Lens' Stroke ByteString 
 color = lens stroke_color (\f a -> f { stroke_color = a } )
 
 -- | 
-title :: Simple Lens Hoodle Title
+title :: Lens' Hoodle Title
 title = lens hoodle_title (\f a -> f { hoodle_title = a } )
 
 -- | 
-pages :: Simple Lens Hoodle [Page]
+pages :: Lens' Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
 
 -- | 
-dimension :: Simple Lens Page Dimension 
+dimension :: Lens' Page Dimension 
 dimension = lens page_dim (\f a -> f { page_dim = a } )
 
 -- | 
-background :: Simple Lens Page Background 
+background :: Lens' Page Background 
 background = lens page_bkg (\f a -> f { page_bkg = a } )
 
 -- | 
-layers :: Simple Lens Page [Layer] 
+layers :: Lens' Page [Layer] 
 layers = lens page_layers (\f a -> f { page_layers = a } )
 
 -- | 
-items :: Simple Lens Layer [Item]
+items :: Lens' Layer [Item]
 items = lens layer_items (\f a -> f { layer_items = a } )
 
 --------------------------

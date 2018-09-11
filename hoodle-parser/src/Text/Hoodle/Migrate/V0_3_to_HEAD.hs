@@ -19,7 +19,8 @@
 module Text.Hoodle.Migrate.V0_3_to_HEAD where
 
 import           Control.Applicative 
-import           Control.Lens
+import           Lens.Micro
+import           Lens.Micro.Extras (view)
 --
 import qualified Data.Hoodle.Simple.V0_3 as OH
 import qualified Data.Hoodle.Simple as NH

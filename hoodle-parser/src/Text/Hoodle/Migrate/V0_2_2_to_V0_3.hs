@@ -18,9 +18,10 @@
 
 module Text.Hoodle.Migrate.V0_2_2_to_V0_3 where
 
-import           Control.Applicative 
+import           Control.Applicative
+import           Control.Error.Util (hoistEither)
 import           Control.Monad.Trans
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.Attoparsec.ByteString
 import qualified Data.ByteString.Char8 as B
 import           Lens.Micro
@@ -123,9 +124,9 @@ hoodle2Hoodle oh =  set NH.hoodleID  (view OH.hoodleID oh)
 
 migrate :: B.ByteString -> IO (Either String NH.Hoodle)
 migrate bstr = do 
-  runEitherT $ do 
+  runExceptT $ do 
     v <- hoistEither (parseOnly NP.checkHoodleVersion bstr)
-    if | v <= "0.1.1" -> do oh <- EitherT (Text.Hoodle.Migrate.V0_1_1_to_V0_2_2.migrate bstr)
+    if | v <= "0.1.1" -> do oh <- ExceptT (Text.Hoodle.Migrate.V0_1_1_to_V0_2_2.migrate bstr)
                             let ttl = view OH.title oh 
                                 pgs = (fmap page2Page . view OH.pages) oh 
                             set NH.title ttl . set NH.pages pgs <$> lift NH.emptyHoodle 
@@ -137,5 +138,3 @@ migrate bstr = do
 
             -- pdf = view OH.embeddedPdf oh 
 {- . set NH.embeddedPdf pdf -}
-
-

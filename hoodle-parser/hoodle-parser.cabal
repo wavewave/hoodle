@@ -22,6 +22,7 @@ Library
   Build-Depends: base == 4.*, 
                  attoparsec >= 0.10, 
                  either >= 3.1,
+                 errors >= 2.0,
                  bytestring >= 0.9, 
                  containers >= 0.4, 
                  directory, 
@@ -30,7 +31,7 @@ Library
                  mtl > 2, 
                  strict >= 0.3, 
                  text >= 0.11,
-                 transformers >= 0.3, 
+                 transformers >= 0.4.1,
                  xournal-types >= 0.5.1
 
   Exposed-Modules: 

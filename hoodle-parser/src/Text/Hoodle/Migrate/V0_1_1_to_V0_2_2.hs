@@ -16,9 +16,10 @@
 
 module Text.Hoodle.Migrate.V0_1_1_to_V0_2_2 where
 
-import           Control.Applicative 
+import           Control.Applicative
+import           Control.Error.Util (hoistEither)
 import           Control.Monad.Trans
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except
 import           Data.Attoparsec.ByteString
 import qualified Data.ByteString.Char8 as B
 import           Lens.Micro
@@ -93,7 +94,7 @@ layer2Layer OH.Layer {..} = NH.Layer { NH.layer_items = fmap item2Item layer_ite
 
 migrate :: B.ByteString -> IO (Either String NH.Hoodle)
 migrate bstr = do 
-  runEitherT $ do 
+  runExceptT $ do 
     v <- hoistEither (parseOnly NP.checkHoodleVersion bstr)
     if v <= "0.1.1" 
       then do  
@@ -106,5 +107,3 @@ migrate bstr = do
 
             -- pdf = view OH.embeddedPdf oh 
 {- . set NH.embeddedPdf pdf -}
-
-

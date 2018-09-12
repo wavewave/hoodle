@@ -26,7 +26,7 @@ Library
                  containers >= 0.4, 
                  directory, 
                  hoodle-types >= 0.4, 
-                 lens >= 2.5, 
+                 microlens >= 0.4,
                  mtl > 2, 
                  strict >= 0.3, 
                  text >= 0.11,

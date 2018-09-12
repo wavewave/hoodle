@@ -15,7 +15,6 @@
 module Text.Hoodle.Builder.V0_1_1 where
 
 -- from other packages 
-import           Control.Lens 
 import qualified Data.ByteString as S
 -- import qualified Data.ByteString.Char8 as SC
 import qualified Data.ByteString.Lazy as L
@@ -28,6 +27,7 @@ import Data.Monoid hiding ((<>))
 import Data.Monoid 
 #endif 
 import Data.Strict.Tuple
+import Lens.Micro.Extras (view)
 -- from this package 
 import Data.Hoodle.Simple.V0_1_1
 

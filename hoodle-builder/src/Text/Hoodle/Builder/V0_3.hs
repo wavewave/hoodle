@@ -18,7 +18,6 @@ module Text.Hoodle.Builder.V0_3 where
 -- from other packages 
 import           Blaze.ByteString.Builder
 import           Blaze.ByteString.Builder.Char8 (fromChar, fromString)
-import           Control.Lens 
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import           Data.Double.Conversion.ByteString (toFixed)
@@ -31,6 +30,7 @@ import           Data.Monoid
 import           Data.Strict.Tuple
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
+import           Lens.Micro.Extras (view)
 -- from hoodle platform 
 import           Data.Hoodle.Simple
 -- 

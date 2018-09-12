@@ -24,7 +24,6 @@ module Data.Hoodle.Simple where
 
 -- from other packages
 import           Control.Applicative 
-import           Control.Lens hiding ((.=))
 import           Data.Aeson.TH
 import           Data.Aeson.Types hiding (Pair(..))
 import           Data.Char
@@ -35,6 +34,7 @@ import           Data.Strict.Tuple
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import           Data.Vector ((!),fromList)
+import           Lens.Micro
 import           Text.Printf
 -- from this package
 import           Data.Hoodle.Util
@@ -384,56 +384,56 @@ getXYtuples (VWStroke _t _c d) = map ((,)<$>fst3<*>snd3) d
 ----------------------------
 
 -- | 
-tool :: Simple Lens Stroke ByteString
+tool :: Lens' Stroke ByteString
 tool = lens stroke_tool (\f a -> f { stroke_tool = a })  
 
 -- | 
-color :: Simple Lens Stroke ByteString 
+color :: Lens' Stroke ByteString 
 color = lens stroke_color (\f a -> f { stroke_color = a } )
 
 -- |
-hoodleID :: Simple Lens Hoodle ByteString 
+hoodleID :: Lens' Hoodle ByteString 
 hoodleID = lens hoodle_id (\f a -> f { hoodle_id = a } )
 
 -- | 
-title :: Simple Lens Hoodle Title
+title :: Lens' Hoodle Title
 title = lens hoodle_title (\f a -> f { hoodle_title = a } )
 
 -- | 
-revisions :: Simple Lens Hoodle [Revision]
+revisions :: Lens' Hoodle [Revision]
 revisions = lens hoodle_revisions (\f a -> f { hoodle_revisions = a } )
 
 -- | 
-revmd5 :: Simple Lens Revision ByteString
+revmd5 :: Lens' Revision ByteString
 revmd5 = lens _revmd5 (\f a -> f { _revmd5 = a } )
 
 -- | 
-embeddedPdf :: Simple Lens Hoodle (Maybe ByteString)
+embeddedPdf :: Lens' Hoodle (Maybe ByteString)
 embeddedPdf = lens hoodle_embeddedpdf (\f a -> f { hoodle_embeddedpdf = a} )
 
 -- | 
-embeddedText :: Simple Lens Hoodle (Maybe T.Text)
+embeddedText :: Lens' Hoodle (Maybe T.Text)
 embeddedText = lens hoodle_embeddedtext (\f a -> f { hoodle_embeddedtext = a} )
 
 -- | 
-pages :: Simple Lens Hoodle [Page]
+pages :: Lens' Hoodle [Page]
 pages = lens hoodle_pages (\f a -> f { hoodle_pages = a } )
 
 
 -- | 
-dimension :: Simple Lens Page Dimension 
+dimension :: Lens' Page Dimension 
 dimension = lens page_dim (\f a -> f { page_dim = a } )
 
 -- | 
-background :: Simple Lens Page Background 
+background :: Lens' Page Background 
 background = lens page_bkg (\f a -> f { page_bkg = a } )
 
 -- | 
-layers :: Simple Lens Page [Layer] 
+layers :: Lens' Page [Layer] 
 layers = lens page_layers (\f a -> f { page_layers = a } )
 
 -- | 
-items :: Simple Lens Layer [Item]
+items :: Lens' Layer [Item]
 items = lens layer_items (\f a -> f { layer_items = a } )
 
 

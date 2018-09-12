@@ -19,11 +19,12 @@
 module Text.Hoodle.Migrate.V0_2_2_to_V0_3 where
 
 import           Control.Applicative 
-import           Control.Lens
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Either
 import           Data.Attoparsec.ByteString
 import qualified Data.ByteString.Char8 as B
+import           Lens.Micro
+import           Lens.Micro.Extras (view)
 --
 import qualified Data.Hoodle.Simple.V0_2_2 as OH
 import qualified Data.Hoodle.Simple.V0_3 as NH

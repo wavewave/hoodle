@@ -24,7 +24,7 @@ Library
                    bytestring >= 0.9, 
                    double-conversion >= 0.2.0.6,
                    hoodle-types >= 0.4,
-                   lens >= 2.5,
+                   microlens >= 0.4,
                    strict >= 0.3, 
                    text > 0.11
                  

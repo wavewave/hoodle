@@ -17,11 +17,11 @@ module Data.Xournal.Simple where
 
 -- from other packages
 import           Control.Applicative 
-import           Control.Lens 
 import qualified Data.ByteString as S
 import           Data.ByteString.Char8 hiding (map)
 import qualified Data.Serialize as SE
 import           Data.Strict.Tuple
+import           Lens.Micro
 -- from this package
 import           Data.Xournal.Util
 -- 
@@ -105,35 +105,35 @@ getXYtuples (VWStroke _t _c d) = map ((,)<$>fst3<*>snd3) d
 ----------------------------
 
 -- | 
-s_tool :: Simple Lens Stroke ByteString
+s_tool :: Lens' Stroke ByteString
 s_tool = lens stroke_tool (\f a -> f { stroke_tool = a })  
 
 -- | 
-s_color :: Simple Lens Stroke ByteString 
+s_color :: Lens' Stroke ByteString 
 s_color = lens stroke_color (\f a -> f { stroke_color = a } )
 
 -- | 
-s_title :: Simple Lens Xournal Title
+s_title :: Lens' Xournal Title
 s_title = lens xoj_title (\f a -> f { xoj_title = a } )
 
 -- | 
-s_pages :: Simple Lens Xournal [Page]
+s_pages :: Lens' Xournal [Page]
 s_pages = lens xoj_pages (\f a -> f { xoj_pages = a } )
 
 -- | 
-s_dim :: Simple Lens Page Dimension 
+s_dim :: Lens' Page Dimension 
 s_dim = lens page_dim (\f a -> f { page_dim = a } )
 
 -- | 
-s_bkg :: Simple Lens Page Background 
+s_bkg :: Lens' Page Background 
 s_bkg = lens page_bkg (\f a -> f { page_bkg = a } )
 
 -- | 
-s_layers :: Simple Lens Page [Layer] 
+s_layers :: Lens' Page [Layer] 
 s_layers = lens page_layers (\f a -> f { page_layers = a } )
 
 -- | 
-s_strokes :: Simple Lens Layer [Stroke]
+s_strokes :: Lens' Layer [Stroke]
 s_strokes = lens layer_strokes (\f a -> f { layer_strokes = a } )
 
 --------------------------

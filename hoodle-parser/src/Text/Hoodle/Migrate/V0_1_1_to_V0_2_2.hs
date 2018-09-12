@@ -16,7 +16,8 @@
 
 module Text.Hoodle.Migrate.V0_1_1_to_V0_2_2 where
 
-import           Control.Applicative 
+import           Control.Applicative
+import           Control.Error.Util (hoistEither)
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Except
 import           Data.Attoparsec.ByteString
@@ -106,7 +107,3 @@ migrate bstr = do
 
             -- pdf = view OH.embeddedPdf oh 
 {- . set NH.embeddedPdf pdf -}
-
-
-hoistEither :: Monad m => Either e a -> ExceptT e m a
-hoistEither = ExceptT . return

@@ -22,6 +22,7 @@ Library
   Build-Depends: base == 4.*, 
                  attoparsec >= 0.10, 
                  either >= 3.1,
+                 errors >= 2.0,
                  bytestring >= 0.9, 
                  containers >= 0.4, 
                  directory, 

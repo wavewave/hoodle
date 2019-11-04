@@ -25,8 +25,8 @@ jobs:
       - restore_cache:
           name: "Restore Nix Store Paths"
           keys:
-            - paymentserver-nix-store-v1-{{ checksum "nixpkgs.rev" }}
-            - paymentserver-nix-store-v1-
+            - v1-dependencies-{{ checksum "nixpkgs.rev" }}
+            - v1-dependencies-
 
       - run:
           name: Setup NIX_PATH Environment Variable
@@ -38,22 +38,7 @@ jobs:
           command: |
             nix-build release.nix
 
-      - save_cache:
+     - save_cache:
           paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
-
-      # run tests!
-      # this example uses Django's built-in test-runner
-      # other common Python testing frameworks include pytest and nose
-      # https://pytest.org
-      # https://nose.readthedocs.io
-      - run:
-          name: run tests
-          command: |
-            . venv/bin/activate
-            python manage.py test
-
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
+            - /nix
+          key: v1-dependencies-{{ checksum "nixpkgs.rev" }}

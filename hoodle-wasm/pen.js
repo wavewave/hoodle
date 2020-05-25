@@ -1,3 +1,4 @@
+var callback;
 
 function shoutPointerType(e) {
     switch(e.pointerType) {
@@ -34,6 +35,7 @@ function drawRectangle(cvs, ctxt, e) {
 
 function onPointerDown(e) {
     console.log("on pointerdown");
+    callback();
     shoutPointerType(e);
     shoutPointerCoord(e);
     drawRectangle(canvas,context,e);

@@ -28,11 +28,23 @@ function shoutPointerCoord(e) {
     console.log("(x,y) = (" + x + " , " + y + ")");
 }
 
-function drawRectangle(cvs, ctxt, e) {
+function startLineBit(cvs, ctxt, e) {
     var p = getCanvasCoord(cvs,e);
-    ctxt.fillStyle = "#ff0000";
-    ctxt.fillRect(p.x,p.y,1,1);
+    ctxt.strokeStyle = "#ff0000";
+    ctxt.moveTo(p.x,p.y);
 }
+
+function drawLineBit(cvs, ctxt, e) {
+    var p = getCanvasCoord(cvs,e);
+    ctxt.lineTo(p.x,p.y);
+}
+
+function endLineBit(cvs, ctxt, e) {
+    var p = getCanvasCoord(cvs,e);
+    ctxt.lineTo(p.x,p.y);
+    ctxt.stroke();
+}
+
 
 function onPointerDown(e) {
     isDrawing = true;
@@ -40,6 +52,7 @@ function onPointerDown(e) {
     //callback();
     shoutPointerType(e);
     shoutPointerCoord(e);
+    startLineBit(canvas,context2,e);
 }
 
 function onPointerUp(e) {
@@ -47,11 +60,12 @@ function onPointerUp(e) {
     console.log("on pointerup");
     shoutPointerType(e);
     shoutPointerCoord(e);
+    endLineBit(canvas,context2,e);
 }
 
 function onPointerMove(e) {
     if (isDrawing) {
-        drawRectangle(canvas,context2,e);
+        drawLineBit(canvas,context2,e);
     }
 }
 

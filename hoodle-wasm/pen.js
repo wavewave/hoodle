@@ -51,24 +51,52 @@ function onPointerUp(e) {
 
 function onPointerMove(e) {
     if (isDrawing) {
-        drawRectangle(canvas,context,e);
+        drawRectangle(canvas,context2,e);
     }
 }
 
 var canvas = document.getElementById("box");
 var context = canvas.getContext("2d");
 
+canvas.width = 640;
+canvas.height = 480;
 canvas.addEventListener("pointerdown", onPointerDown);
 canvas.addEventListener("pointerup"  , onPointerUp);
 canvas.addEventListener("pointermove", onPointerMove);
 
+var canvas1 = document.createElement("canvas");
+canvas1.width = 640;
+canvas1.height = 480;
+var context1 = canvas1.getContext("2d");
+
 var background = new Image();
 background.src = "img_640x480.jpg";
 background.onload = function() {
-    context.drawImage(background,0,0);
+    context1.drawImage(background,0,0);
 };
 
+var canvas2 = document.createElement("canvas");
+canvas2.width = 640;
+canvas2.height = 480;
+var context2 = canvas2.getContext("2d");
+
 // asterius callback
-setInterval(function () { callback(); },1000);
+//setInterval(function () { callback(); },1000);
+
+var n = 0;
+var start = null;
+function step(timestamp) {
+    if(!start) start = timestamp;
+    var progress = timestamp - start;
+    var x = 640* Math.sin (progress / 10000);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0,0,canvas.width,canvas.height);
+    context.drawImage(canvas1,x,0);
+    context.drawImage(canvas2,0,0);
+    //    console.log(timestamp);
+    window.requestAnimationFrame(step);
+}
+
+window.requestAnimationFrame(step);
 
 console.log ("pen.js is loaded");

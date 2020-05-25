@@ -1,4 +1,12 @@
 var callback;
+var isDrawing = false;
+
+function getCanvasCoord(cvs,e) {
+    var rect = cvs.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    return { x: (e.clientX - rect.left)*scaleX, y: (e.clientY - rect.top)*scaleY };
+}
 
 function shoutPointerType(e) {
     switch(e.pointerType) {
@@ -21,27 +29,21 @@ function shoutPointerCoord(e) {
 }
 
 function drawRectangle(cvs, ctxt, e) {
-    //var x = e.clientX;
-    //var y = e.clientY;
-    var rect = cvs.getBoundingClientRect();
-    var scaleX = canvas.width / rect.width;
-    var scaleY = canvas.height / rect.height;
-    var x = (e.clientX - rect.left)*scaleX;
-    var y = (e.clientY - rect.top)*scaleY;
-
+    var p = getCanvasCoord(cvs,e);
     ctxt.fillStyle = "#ff0000";
-    ctxt.fillRect(x,y,5,5);
+    ctxt.fillRect(p.x,p.y,1,1);
 }
 
 function onPointerDown(e) {
+    isDrawing = true;
     console.log("on pointerdown");
-    callback();
+    //callback();
     shoutPointerType(e);
     shoutPointerCoord(e);
-    drawRectangle(canvas,context,e);
 }
 
 function onPointerUp(e) {
+    isDrawing = false;
     console.log("on pointerup");
     shoutPointerType(e);
     shoutPointerCoord(e);
@@ -50,7 +52,10 @@ function onPointerUp(e) {
 function onPointerMove(e) {
     //console.log("on pointermove");
     //shoutPointerType(e);
-    shoutPointerCoord(e);
+    //shoutPointerCoord(e);
+    if (isDrawing) {
+        drawRectangle(canvas,context,e);
+    }
 }
 
 var canvas = document.getElementById("box");

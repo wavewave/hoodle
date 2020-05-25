@@ -15,7 +15,7 @@ foreign import javascript "callback = $1" register :: JSFunction -> IO ()
 tester :: IO ()
 tester = do
   ref <- newIORef (0::Int)
-  putStrLn "asterius start"
+  putStrLn "tester"
   replicateM_ 10 $ do
     threadDelay 100000
     n <- readIORef ref

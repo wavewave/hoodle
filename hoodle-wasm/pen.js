@@ -50,9 +50,6 @@ function onPointerUp(e) {
 }
 
 function onPointerMove(e) {
-    //console.log("on pointermove");
-    //shoutPointerType(e);
-    //shoutPointerCoord(e);
     if (isDrawing) {
         drawRectangle(canvas,context,e);
     }
@@ -64,5 +61,14 @@ var context = canvas.getContext("2d");
 canvas.addEventListener("pointerdown", onPointerDown);
 canvas.addEventListener("pointerup"  , onPointerUp);
 canvas.addEventListener("pointermove", onPointerMove);
+
+var background = new Image();
+background.src = "img_640x480.jpg";
+background.onload = function() {
+    context.drawImage(background,0,0);
+};
+
+// asterius callback
+setInterval(function () { callback(); },1000);
 
 console.log ("pen.js is loaded");

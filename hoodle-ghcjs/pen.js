@@ -72,6 +72,9 @@ function onPointerMove(e) {
 var canvas = document.getElementById("box");
 var context = canvas.getContext("2d");
 
+//var body = document.getElementsByTagName("body")[0];
+document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
+
 canvas.width = 640;
 canvas.height = 480;
 canvas.addEventListener("pointerdown", onPointerDown);

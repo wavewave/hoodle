@@ -1,5 +1,5 @@
 var isDrawing = false;
-var xy = [];
+var xy = new SVG.PointArray();
 
 
 function getCanvasCoord(svg,e) {
@@ -33,23 +33,21 @@ function shoutPointerCoord(e) {
 
 function startLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
-    xy.push({x: p.x, y: p.y});
+    xy = new SVG.PointArray([ p.x, p.y ]);
 }
 
 function drawLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
-    xy.push({x: p.x, y: p.y});
+    xy.push([ p.x, p.y ]);
+    console.log("drawLineBit");
+    console.log(xy);
 }
 
 function endLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
-    xy.push({x: p.x, y: p.y});
+    xy.push([ p.x, p.y ]);
     console.log(xy);
-
-
-    var draw = SVG('#box')
-    var circle = draw.circle().x(xy[0].x).y(xy[0].y).radius(1).fill('#f06');
-    xy = [];
+    var path = svg.polyline(xy).fill("none").stroke({width:0.2, color:'#f06'});
 }
 
 

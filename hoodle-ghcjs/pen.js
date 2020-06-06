@@ -74,13 +74,6 @@ function onPointerMove(e) {
     }
 }
 
-
-function onPointerRawUpdate(e) {
-    if (isDrawing) {
-        drawLineBit(canvas,context2,e);
-    }
-}
-
 var svg = SVG("#box");
 
 document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
@@ -88,7 +81,6 @@ document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { p
 svg.on("pointerdown", onPointerDown);
 svg.on("pointerup"  , onPointerUp);
 svg.on("pointermove", onPointerMove);
-
 
 var n = 0;
 var start = null;

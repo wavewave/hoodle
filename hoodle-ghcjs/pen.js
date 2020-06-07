@@ -1,5 +1,3 @@
-var callback = [];
-//var isDrawing = false;
 var xy = new SVG.PointArray();
 
 function getCanvasCoord(svg,e) {
@@ -30,6 +28,21 @@ function shoutPointerCoord(e) {
     console.log("(x,y) = (" + x + " , " + y + ")");
 }
 
+function toSVGPointArray(svg,xys) {
+    var ctm = svg.screenCTM();
+    var xys_canvas = xys.map( function(xy) {
+        var x = xy[0];
+        var y = xy[1];
+        var pt = (new SVG.Point(x,y)).transform(ctm.inverse());
+        return [pt.x, pt.y];
+    });
+    var arr = new SVG.PointArray(xys_canvas);
+    return arr;
+    // console.log(arr);
+    //console.log(xys_canvas);
+    //return xys_canvas;
+}
+
 function startLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
     xy = new SVG.PointArray([ p.x, p.y ]);
@@ -44,6 +57,10 @@ function endLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
     xy.push([ p.x, p.y ]);
     var path = svg.polyline(xy).fill("none").stroke({width:0.2, color:'#f06'});
+}
+
+function drawPath(svg,xys) {
+    var path = svg.polyline(xys).fill("none").stroke({width:0.2, color:'#f06'});
 }
 
 

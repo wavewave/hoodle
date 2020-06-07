@@ -9,7 +9,17 @@
 with pkgs;
 
 let
-  hsenv = haskell.packages.ghcjs.ghcWithPackages (p: with p; [ ]);
+  newhspkgs = haskell.packages.ghcjs.override {
+    overrides = self: super: {
+      QuickCheck = haskell.lib.dontCheck super.QuickCheck;
+      scientific = haskell.lib.dontCheck super.scientific;
+      tasty-quickcheck = haskell.lib.dontCheck super.tasty-quickcheck;
+      time-compat = haskell.lib.dontCheck super.time-compat;
+    };
+  };
+  hsenv = newhspkgs.ghcWithPackages (p: with p; [
+    ghcjs-base
+  ]);
 
 in
 mkShell {

@@ -1,4 +1,4 @@
-var callback;
+var callback = [];
 var isDrawing = false;
 var xy = new SVG.PointArray();
 
@@ -49,50 +49,38 @@ function endLineBit(svg,e) {
 
 
 function onPointerDown(e) {
-    isDrawing = true;
-    // console.log("on pointerdown");
-    //shoutPointerType(e);
-    //shoutPointerCoord(e);
-    startLineBit(svg,e);
+    callback["onpointerdown"]( function() {
+        console.log('down');
+        isDrawing = true;
+        startLineBit(svg,e);
+    });
 }
 
 function onPointerUp(e) {
-    callback();
-    // console.log("callback onPointerUp");
-    // console.log(callback);
-    isDrawing = false;
-    //console.log("on pointerup");
-    //shoutPointerType(e);
-    //shoutPointerCoord(e);
-    endLineBit(svg,e);
+    callback["onpointerup"]( function() {
+        isDrawing = false;
+        endLineBit(svg,e);
+    });
 }
 
 
 function onPointerMove(e) {
-    if (isDrawing) {
-        drawLineBit(svg,e);
-    }
+    callback["onpointermove"]( function() {
+        if (isDrawing) {
+            drawLineBit(svg,e);
+        }
+    });
 }
 
 var svg = SVG("#box");
 
-document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
+function preventDefaultTouchMove() {
+  document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
+}
 
 svg.on("pointerdown", onPointerDown);
 svg.on("pointerup"  , onPointerUp);
 svg.on("pointermove", onPointerMove);
-
-var n = 0;
-var start = null;
-function step(timestamp) {
-    if(!start) start = timestamp;
-    var progress = timestamp - start;
-    window.requestAnimationFrame(step);
-}
-
-window.requestAnimationFrame(step);
-
-console.log ("pen.js is loaded");
 
 // GHCJS start
 h$main(h$mainZCMainzimain);

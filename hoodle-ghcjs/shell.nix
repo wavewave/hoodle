@@ -19,6 +19,7 @@ let
   };
   hsenv = newhspkgs.ghcWithPackages (p: with p; [
     ghcjs-base
+    stm
   ]);
 
 in

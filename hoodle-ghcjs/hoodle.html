@@ -10,10 +10,11 @@
 <body>
   <p> Pen event testing
   </p>
-  <div style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%; overflow:hidden;";>
-    <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 1280px; height: 1024px; background-color: white; "> </svg>
+  <div style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%; overflow:hidden; position: relative;";>
+    <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 1280px; height: 1024px; background-color: white; ">
+    </svg>
+    <canvas id="overlay" style="width: 1280px; height: 1024px; position: absolute; top: 0; left: 0; z-index: 10;" />
   </div>
-  </canvas>
 
   <script src="./svg.min.js"></script>
   <script type="text/javascript" src="pen.js" defer></script>

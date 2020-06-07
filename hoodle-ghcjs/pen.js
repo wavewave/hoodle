@@ -1,31 +1,3 @@
-function getCanvasCoord(svg,e) {
-    var x = e.clientX;
-    var y = e.clientY;
-    var ctm = svg.screenCTM();
-    var point = (new SVG.Point(x,y)).transform(ctm.inverse());
-    return { x: point.x, y: point.y };
-}
-
-function shoutPointerType(e) {
-    switch(e.pointerType) {
-    case "mouse":
-        console.log("it's a mouse event!");
-        break;
-    case "pen":
-        console.log("it's a pen event!");
-        break;
-    case "touch":
-        console.log("it's a touch event!");
-        break;
-    }
-}
-
-function shoutPointerCoord(e) {
-    var x = e.clientX;
-    var y = e.clientY;
-    console.log("(x,y) = (" + x + " , " + y + ")");
-}
-
 function toSVGPointArray(svg,xys) {
     var ctm = svg.screenCTM();
     var xys_canvas = xys.map( function(xy) {
@@ -45,6 +17,43 @@ function drawPath(svg,xys) {
 
 function preventDefaultTouchMove() {
   document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
+}
+
+
+var canvas = document.getElementById("overlay");
+var context = canvas.getContext("2d");
+
+
+var offcanvas = document.createElement("canvas");
+offcanvas.width = 1280;
+offcanvas.height = 1024;
+var offcontext = offcanvas.getContext("2d");
+
+function refresh() {
+    context.clearRect(0,0,offcanvas.width,offcanvas.height);
+    context.drawImage(offcanvas,0,0);
+}
+
+function overlay_point(x,y) {
+   var rect = canvas.getBoundingClientRect();
+   var scaleX = canvas.width / rect.width;
+   var scaleY = canvas.height / rect.height;
+
+    var cx = (x - rect.left)*scaleX;
+    var cy = (y - rect.top)*scaleY;
+    console.log(x + "," + y);
+    var radius = 1*scaleX;
+    offcontext.beginPath();
+    offcontext.arc(cx, cy, radius, 0, 2 * Math.PI, false);
+    offcontext.fillStyle = 'green';
+    offcontext.fill();
+    offcontext.lineWidth = 1;
+    offcontext.strokeStyle = '#003300';
+    offcontext.stroke();
+}
+
+function clear_overlay() {
+    offcontext.clearRect(0,0,offcanvas.width,offcanvas.height);
 }
 
 // GHCJS start

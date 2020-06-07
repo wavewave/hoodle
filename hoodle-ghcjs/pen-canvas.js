@@ -46,7 +46,6 @@ function onPointerMove(e) {
 var canvas = document.getElementById("box");
 var context = canvas.getContext("2d");
 
-//var body = document.getElementsByTagName("body")[0];
 document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
 
 canvas.width = 1280;
@@ -61,7 +60,7 @@ canvas1.height = 1024;
 var context1 = canvas1.getContext("2d");
 
 var background = new Image();
-background.src = "https://upload.wikimedia.org/wikipedia/commons/d/d3/BG_1280x1024.jpg"; //"BG_1280x1024.jpg";
+background.src = "https://upload.wikimedia.org/wikipedia/commons/d/d3/BG_1280x1024.jpg";
 background.onload = function() {
     context1.drawImage(background,0,0);
 };
@@ -81,7 +80,6 @@ function step(timestamp) {
     context.fillRect(0,0,canvas.width,canvas.height);
     context.drawImage(canvas1,x,0);
     context.drawImage(canvas2,0,0);
-    //    console.log(timestamp);
     window.requestAnimationFrame(step);
 }
 

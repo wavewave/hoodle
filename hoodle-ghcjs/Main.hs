@@ -73,7 +73,6 @@ getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
 onPointerDown :: TVar MyState -> JSVal -> IO ()
 onPointerDown ref ev = do
   (x,y) <- getXY ev
-  -- js_overlay_point x y
   atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = Drawing (singleton (x,y)) })
 
 
@@ -106,8 +105,6 @@ onPointerMove ref ev = do
 
 test :: Callback (IO ()) -> IO ()
 test rAF = do
-  -- hPutStrLn stdout "test"
-  -- hFlush stdout
   js_refresh
   js_requestAnimationFrame rAF
 
@@ -122,15 +119,12 @@ main = do
   ref <- newTVarIO (MyState NotDrawing svg)
 
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown ref)
-  -- js_on svg "pointerdown" onpointerdown
   js_addEventListener cvs "pointerdown" onpointerdown
 
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove ref)
-  -- js_on svg "pointermove" onpointermove
   js_addEventListener cvs "pointermove" onpointermove
 
   onpointerup   <- syncCallback1 ThrowWouldBlock (onPointerUp ref)
-  -- js_on svg "pointerup" onpointerup
   js_addEventListener cvs "pointerup" onpointerup
 
   mdo

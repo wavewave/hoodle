@@ -9,7 +9,7 @@ import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVar, writeTVar)
 import Control.Monad (forever, void, when)
 import Data.Foldable (toList)
-import Data.Sequence (Seq, (|>), singleton)
+import Data.Sequence (Seq, (|>), ViewR(..), singleton, viewr)
 import GHCJS.Foreign.Callback (Callback, OnBlocked(ContinueAsync, ThrowWouldBlock)
                               , syncCallback, syncCallback1)
 import GHCJS.Marshal (ToJSVal(toJSValListOf))
@@ -52,8 +52,8 @@ foreign import javascript unsafe "refresh()"
 foreign import javascript unsafe "$1.addEventListener($2,$3)"
   js_addEventListener :: JSVal -> JSString -> Callback a -> IO ()
 
-foreign import javascript unsafe "overlay_point($1,$2)"
-  js_overlay_point :: Double -> Double -> IO ()
+foreign import javascript unsafe "overlay_point($1,$2,$3,$4)"
+  js_overlay_point :: Double -> Double -> Double -> Double -> IO ()
 
 foreign import javascript unsafe "clear_overlay()"
   js_clear_overlay :: IO ()
@@ -73,7 +73,7 @@ getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
 onPointerDown :: TVar MyState -> JSVal -> IO ()
 onPointerDown ref ev = do
   (x,y) <- getXY ev
-  js_overlay_point x y
+  -- js_overlay_point x y
   atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = Drawing (singleton (x,y)) })
 
 
@@ -97,7 +97,9 @@ onPointerMove ref ev = do
   case drawingState of
     Drawing xys -> do
       xy@(x,y) <- getXY ev
-      js_overlay_point x y
+      case viewr xys of
+        _ :> (x0,y0) -> js_overlay_point x0 y0 x y
+        _ -> pure ()
       atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = Drawing (xys |> xy)})
     _ ->
       pure ()

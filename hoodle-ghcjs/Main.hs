@@ -24,15 +24,6 @@ foreign import javascript unsafe "preventDefaultTouchMove()"
 foreign import javascript unsafe "$r = SVG('#box')"
   js_svg_box :: IO JSVal
 
-foreign import javascript unsafe "startLineBit($1,$2)"
-  js_start_line_bit :: JSVal -> JSVal -> IO ()
-
-foreign import javascript unsafe "drawLineBit($1,$2)"
-  js_draw_line_bit :: JSVal -> JSVal -> IO ()
-
-foreign import javascript unsafe "endLineBit($1,$2)"
-  js_end_line_bit :: JSVal -> JSVal -> IO ()
-
 foreign import javascript unsafe "$1.on($2,$3)"
   js_on :: JSVal -> JSString -> Callback a -> IO ()
 
@@ -63,8 +54,6 @@ onPointerDown :: TVar MyState -> JSVal -> IO ()
 onPointerDown ref ev = do
   (x,y) <- getXY ev
   atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = Drawing (singleton (x,y)) })
-  -- MyState _ svg <- atomically $ readTVar ref
-  -- js_start_line_bit svg ev
 
 onPointerUp :: TVar MyState -> JSVal -> IO ()
 onPointerUp ref ev = do
@@ -74,10 +63,7 @@ onPointerUp ref ev = do
       xy <- getXY ev
       let xys' = xys |> xy
       atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = NotDrawing })
-      -- j <- toJSValListOf (toList xys')
-      -- js_console_log j
       arr <- js_to_svg_point_array svg =<< toJSValListOf (toList xys')
-      -- js_end_line_bit svg ev
       js_draw_path svg arr
     _ -> pure ()
 
@@ -88,7 +74,6 @@ onPointerMove ref ev = do
     Drawing xys -> do
       xy <- getXY ev
       atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = Drawing (xys |> xy)})
-      -- js_draw_line_bit svg ev
     _ ->
       pure ()
 

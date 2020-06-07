@@ -1,5 +1,3 @@
-var xy = new SVG.PointArray();
-
 function getCanvasCoord(svg,e) {
     var x = e.clientX;
     var y = e.clientY;
@@ -38,25 +36,6 @@ function toSVGPointArray(svg,xys) {
     });
     var arr = new SVG.PointArray(xys_canvas);
     return arr;
-    // console.log(arr);
-    //console.log(xys_canvas);
-    //return xys_canvas;
-}
-
-function startLineBit(svg,e) {
-    var p = getCanvasCoord(svg,e);
-    xy = new SVG.PointArray([ p.x, p.y ]);
-}
-
-function drawLineBit(svg,e) {
-    var p = getCanvasCoord(svg,e);
-    xy.push([ p.x, p.y ]);
-}
-
-function endLineBit(svg,e) {
-    var p = getCanvasCoord(svg,e);
-    xy.push([ p.x, p.y ]);
-    var path = svg.polyline(xy).fill("none").stroke({width:0.2, color:'#f06'});
 }
 
 function drawPath(svg,xys) {

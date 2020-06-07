@@ -5,8 +5,8 @@ module Main where
 
 import Control.Concurrent (forkIO, threadDelay)
 -- import Control.Concurrent.MVar (MVar,takeMVar,newEmptyMVar)
-import Control.Concurrent.STM (TVar, newTVarIO)
-import Control.Monad (forever, void)
+import Control.Concurrent.STM (TVar, atomically, newTVarIO, readTVar, writeTVar)
+import Control.Monad (forever, void, when)
 import GHCJS.Foreign.Callback (Callback, OnBlocked(ContinueAsync, ThrowWouldBlock)
                               , syncCallback1)
 import GHCJS.Types (JSString, JSVal)
@@ -23,24 +23,28 @@ foreign import javascript unsafe "$1()"
 
 data MyState = MyState { _mystateIsDrawing :: Bool }
 
-onPointerDown :: JSVal -> IO ()
-onPointerDown j = do
+onPointerDown :: TVar MyState -> JSVal -> IO ()
+onPointerDown ref j = do
   hPutStrLn stdout "GHCJS: on pointerdown event"
   hFlush stdout
+  atomically $ writeTVar ref (MyState True)
   js_eval j
 
-onPointerUp :: JSVal -> IO ()
-onPointerUp j = do
+onPointerUp :: TVar MyState -> JSVal -> IO ()
+onPointerUp ref j = do
   hPutStrLn stdout "GHCJS: on pointerup event"
   hFlush stdout
+  atomically $ writeTVar ref (MyState False)
   js_eval j
 
 
-onPointerMove :: JSVal -> IO ()
-onPointerMove j = do
+onPointerMove :: TVar MyState -> JSVal -> IO ()
+onPointerMove ref j = do
   hPutStrLn stdout "GHCJS: on pointermove event"
   hFlush stdout
-  js_eval j
+  MyState isDrawing <- atomically $ readTVar ref
+  when isDrawing $
+    js_eval j
 
 
 main :: IO ()
@@ -48,11 +52,13 @@ main = do
   putStrLn "ghcjs started"
   js_prevent_default_touch_move
 
-  onpointerdown <- syncCallback1 ThrowWouldBlock onPointerDown
+  ref <- newTVarIO (MyState False)
+
+  onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown ref)
   js_set_callback "onpointerdown" onpointerdown
 
-  onpointermove <- syncCallback1 ThrowWouldBlock onPointerMove
+  onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove ref)
   js_set_callback "onpointermove" onpointermove
 
-  onpointerup   <- syncCallback1 ThrowWouldBlock onPointerUp
+  onpointerup   <- syncCallback1 ThrowWouldBlock (onPointerUp ref)
   js_set_callback "onpointerup"   onpointerup

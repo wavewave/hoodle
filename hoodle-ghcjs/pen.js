@@ -1,7 +1,6 @@
 var callback = [];
-var isDrawing = false;
+//var isDrawing = false;
 var xy = new SVG.PointArray();
-
 
 function getCanvasCoord(svg,e) {
     var x = e.clientX;
@@ -50,15 +49,14 @@ function endLineBit(svg,e) {
 
 function onPointerDown(e) {
     callback["onpointerdown"]( function() {
-        console.log('down');
-        isDrawing = true;
+        //isDrawing = true;
         startLineBit(svg,e);
     });
 }
 
 function onPointerUp(e) {
     callback["onpointerup"]( function() {
-        isDrawing = false;
+        //isDrawing = false;
         endLineBit(svg,e);
     });
 }
@@ -66,9 +64,9 @@ function onPointerUp(e) {
 
 function onPointerMove(e) {
     callback["onpointermove"]( function() {
-        if (isDrawing) {
-            drawLineBit(svg,e);
-        }
+        //if (isDrawing) {
+        drawLineBit(svg,e);
+        //}
     });
 }
 

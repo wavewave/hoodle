@@ -47,38 +47,9 @@ function endLineBit(svg,e) {
 }
 
 
-function onPointerDown(e) {
-    callback["onpointerdown"]( function() {
-        //isDrawing = true;
-        startLineBit(svg,e);
-    });
-}
-
-function onPointerUp(e) {
-    callback["onpointerup"]( function() {
-        //isDrawing = false;
-        endLineBit(svg,e);
-    });
-}
-
-
-function onPointerMove(e) {
-    callback["onpointermove"]( function() {
-        //if (isDrawing) {
-        drawLineBit(svg,e);
-        //}
-    });
-}
-
-var svg = SVG("#box");
-
 function preventDefaultTouchMove() {
   document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
 }
-
-svg.on("pointerdown", onPointerDown);
-svg.on("pointerup"  , onPointerUp);
-svg.on("pointermove", onPointerMove);
 
 // GHCJS start
 h$main(h$mainZCMainzimain);

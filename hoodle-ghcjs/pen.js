@@ -58,8 +58,8 @@ function onPointerDown(e) {
 
 function onPointerUp(e) {
     callback();
-    console.log("callback onPointerUp");
-    console.log(callback);
+    // console.log("callback onPointerUp");
+    // console.log(callback);
     isDrawing = false;
     //console.log("on pointerup");
     //shoutPointerType(e);

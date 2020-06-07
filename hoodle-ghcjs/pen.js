@@ -1,3 +1,4 @@
+var callback;
 var isDrawing = false;
 var xy = new SVG.PointArray();
 
@@ -7,7 +8,6 @@ function getCanvasCoord(svg,e) {
     var y = e.clientY;
     var ctm = svg.screenCTM();
     var point = (new SVG.Point(x,y)).transform(ctm.inverse());
-    console.log(point);
     return { x: point.x, y: point.y };
 }
 
@@ -39,31 +39,31 @@ function startLineBit(svg,e) {
 function drawLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
     xy.push([ p.x, p.y ]);
-    console.log("drawLineBit");
-    console.log(xy);
 }
 
 function endLineBit(svg,e) {
     var p = getCanvasCoord(svg,e);
     xy.push([ p.x, p.y ]);
-    console.log(xy);
     var path = svg.polyline(xy).fill("none").stroke({width:0.2, color:'#f06'});
 }
 
 
 function onPointerDown(e) {
     isDrawing = true;
-    console.log("on pointerdown");
-    shoutPointerType(e);
-    shoutPointerCoord(e);
+    // console.log("on pointerdown");
+    //shoutPointerType(e);
+    //shoutPointerCoord(e);
     startLineBit(svg,e);
 }
 
 function onPointerUp(e) {
+    callback();
+    console.log("callback onPointerUp");
+    console.log(callback);
     isDrawing = false;
-    console.log("on pointerup");
-    shoutPointerType(e);
-    shoutPointerCoord(e);
+    //console.log("on pointerup");
+    //shoutPointerType(e);
+    //shoutPointerCoord(e);
     endLineBit(svg,e);
 }
 
@@ -93,3 +93,6 @@ function step(timestamp) {
 window.requestAnimationFrame(step);
 
 console.log ("pen.js is loaded");
+
+// GHCJS start
+h$main(h$mainZCMainzimain);

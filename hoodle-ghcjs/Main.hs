@@ -12,14 +12,17 @@ import Data.Foldable (toList)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack,unpack)
 import Data.Sequence (Seq, (|>), ViewR(..), singleton, viewr)
+import qualified Data.Text as T
 import GHCJS.Foreign.Callback (Callback, OnBlocked(ContinueAsync, ThrowWouldBlock)
                               , syncCallback, syncCallback1)
 import GHCJS.Marshal (FromJSVal(..), ToJSVal(..))
 import GHCJS.Types (JSString, JSVal)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
-
 import System.IO (hPutStrLn, hFlush, stdout)
+--
+import Message (C2SMsg(NewStroke,SyncRequest),serialize)
+
 
 foreign import javascript unsafe "console.log($1)"
   js_console_log :: JSVal -> IO ()
@@ -122,7 +125,7 @@ onPointerDown ref ev = do
 
 onPointerUp :: TVar MyState -> JSVal -> IO ()
 onPointerUp ref ev = do
-  MyState drawingState svg _ offcvs sock (DocState n) _ <- atomically $ readTVar ref
+  MyState drawingState svg _ offcvs sock _ {- (DocState n) -} _ <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
       js_clear_overlay offcvs
@@ -134,14 +137,13 @@ onPointerUp ref ev = do
       path <- fromJSValUncheckedListOf path_arr
 
       atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = NotDrawing
-                                            , _mystateDocState = DocState (n+1)
+                                            -- , _mystateDocState = DocState (n+1)
                                             , _mystateSyncState = SyncState [path]
                                             })
       let hsh = hash path
-      -- putStrLnAndFlush (show (hash path))
-      let dat = (hsh,path)
+          msg = NewStroke (hsh,path)
       js_draw_path svg path_arr
-      WS.send (JSS.pack (show dat)) sock
+      WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> pure ()
 
 onPointerMove :: TVar MyState -> JSVal -> IO ()
@@ -162,6 +164,19 @@ test cvs offcvs rAF = do
   js_refresh cvs offcvs
   js_requestAnimationFrame rAF
 
+onMessage :: WS.WebSocket -> TVar MyState -> JSString -> IO ()
+onMessage sock ref s = do
+  myst@(MyState _ _ _ _ _ (DocState n) _) <- atomically $ readTVar ref
+  let (s',hsh') = read @(Int,Int) (JSS.unpack s)
+  putStrLnAndFlush (show s' ++ " <-> " ++ show n)
+  putStrLnAndFlush (show hsh')
+  when (s' > n) $ do
+    let msg = SyncRequest (n,s')
+    WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+
+    -- atomically $ writeTVar ref (myst { _mystateDocState = DocState s' })
+
+
 main :: IO ()
 main = do
   putStrLn "ghcjs started"
@@ -179,25 +194,20 @@ main = do
   putStrLn "websocket start"
   let wsClose _ =
         putStrLnAndFlush "connection closed"
-      wsMessage ref msg = do
+      wsMessage sock ref msg = do
         let d = ME.getData msg
         case d of
-          ME.StringData s -> do
-            myst@(MyState _ _ _ _ _ (DocState n) _) <- atomically $ readTVar ref
-            let (s',hsh') = read @(Int,Int) (JSS.unpack s)
-            putStrLnAndFlush (show s' ++ " <-> " ++ show n)
-            putStrLnAndFlush (show hsh')
-            when (s' > n) $
-              atomically $ writeTVar ref (myst { _mystateDocState = DocState s' })
+          ME.StringData s -> onMessage sock ref s
           _ -> pure ()
+
   ref <- mdo
     ref <- newTVarIO (MyState NotDrawing svg cvs offcvs sock (DocState 0) (SyncState []))
     sock <- WS.connect
               WS.WebSocketRequest {
-                  WS.url = "ws://localhost:7080"
+                  WS.url = "ws://192.168.1.42:7080"
                 , WS.protocols = []
                 , WS.onClose = Just wsClose
-                , WS.onMessage = Just (wsMessage ref)
+                , WS.onMessage = Just (wsMessage sock ref)
                 }
     pure ref
 

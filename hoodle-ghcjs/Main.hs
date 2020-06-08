@@ -14,6 +14,9 @@ import GHCJS.Foreign.Callback (Callback, OnBlocked(ContinueAsync, ThrowWouldBloc
                               , syncCallback, syncCallback1)
 import GHCJS.Marshal (ToJSVal(toJSValListOf))
 import GHCJS.Types (JSString, JSVal)
+import qualified JavaScript.Web.MessageEvent as ME
+import qualified JavaScript.Web.WebSocket as WS
+
 import System.IO (hPutStrLn, hFlush, stdout)
 
 foreign import javascript unsafe "console.log($1)"
@@ -155,3 +158,23 @@ main = do
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF
+
+  putStrLn "websocket start"
+  let wsClose _ = do
+        hPutStrLn stdout "connection closed"
+        hFlush stdout
+      wsMessage msg = do
+        let d = ME.getData msg
+        case d of
+          ME.StringData s -> do
+            hPutStrLn stdout (show s)
+            hFlush stdout
+          _ -> pure ()
+  sock <- WS.connect
+            WS.WebSocketRequest {
+              WS.url = "ws://localhost:7080"
+            , WS.protocols = []
+            , WS.onClose = Just wsClose
+            , WS.onMessage = Just wsMessage
+            }
+  pure () -- threadDelay 100000000

@@ -9,6 +9,8 @@ import Control.Concurrent (forkIO,threadDelay)
 import Control.Concurrent.STM (TVar, atomically, newTVarIO, readTVar, retry, writeTVar)
 import Control.Monad (forever,void)
 import Control.Monad.Loops (iterateM_)
+import Data.Sequence (Seq,ViewR((:>)),(|>))
+import qualified Data.Sequence as S (empty,viewr)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.Wai.Handler.Warp as Warp
@@ -23,10 +25,16 @@ api = Proxy
 server :: Server API
 server = pure "hello world"
 
+getLast :: Seq a -> Maybe a
+getLast s =
+  case S.viewr s of
+    _ :> x -> Just x
+    _ -> Nothing
+
 main :: IO ()
 main = do
   putStrLn "servant server"
-  ref <- newTVarIO (0 :: Int)
+  ref <- newTVarIO S.empty
 
   void $ forkIO $ runServer "127.0.0.1" 7080 $ \pending -> do
     conn <- acceptRequest pending
@@ -38,17 +46,22 @@ main = do
     -- synchronization
     void $ forkIO $ forever $ do
       t :: Text <- receiveData conn
-      let r :: Int = read (T.unpack t)
-      putStrLn ("got " ++ show r)
-      atomically (writeTVar ref r)
+      let (hsh,coords) :: (Int,[(Double,Double)]) = read (T.unpack t)
+      -- putStrLn ("got " ++ show r)
+      atomically $ do
+        dat <- readTVar ref
+        case getLast dat of
+          Just (r,_,_) -> writeTVar ref (dat |> (r+1,hsh,coords))
+          Nothing    -> writeTVar ref (dat |> (1,hsh,coords))
 
     void $ flip iterateM_ 0 $ \r -> do
-      r' <- atomically $ do
-              r' <- readTVar ref
-              if (r' <= r)
-                then retry
-                else pure r'
-      sendTextData conn (T.pack (show r'))
+      (r',hsh') <-
+        atomically $ do
+          dat <- readTVar ref
+          case getLast dat of
+            Just (r',hsh',_) -> if (r' <= r) then retry else pure (r',hsh')
+            Nothing -> retry
+      sendTextData conn (T.pack (show (r',hsh')))
       pure r'
 
   Warp.run 7070 $ serve api server

@@ -17,9 +17,13 @@ tag_SyncRequest = 'S'
 
 data S2CMsg =
     RegisterStroke (Int,Int) -- ^ (id,hash)
+  | DataStrokes [(Int,[(Double,Double)])] -- ^ [(id,[(x,y)])]
 
 tag_RegisterStroke :: Char
 tag_RegisterStroke = 'R'
+
+tag_DataStrokes :: Char
+tag_DataStrokes = 'D'
 
 class TextSerializable a where
   serialize :: a -> Text
@@ -38,9 +42,11 @@ instance TextSerializable C2SMsg where
 
 instance TextSerializable S2CMsg where
   serialize (RegisterStroke payload) = T.cons 'R' $ T.pack (show payload)
+  serialize (DataStrokes payload) = T.cons 'D' $ T.pack (show payload)
 
   deserialize t =
     let c = T.head t
     in case c of
          'R' -> RegisterStroke $ read $ T.unpack $ T.tail t
+         'D' -> DataStrokes $ read $ T.unpack $ T.tail t
          _ -> error "cannot parse"

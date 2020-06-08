@@ -9,8 +9,9 @@ import Control.Concurrent (forkIO,threadDelay)
 import Control.Concurrent.STM (TVar, atomically, newTVarIO, readTVar, retry, writeTVar)
 import Control.Monad (forever,void)
 import Control.Monad.Loops (iterateM_)
+import Data.Foldable (toList)
 import Data.Sequence (Seq,ViewR((:>)),(|>))
-import qualified Data.Sequence as S (empty,viewr)
+import qualified Data.Sequence as S (empty,filter,viewr)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Network.Wai.Handler.Warp as Warp
@@ -44,9 +45,13 @@ handler conn ref = forever $ do
         case getLast dat of
           Just (r,_,_) -> writeTVar ref (dat |> (r+1,hsh,coords))
           Nothing    -> writeTVar ref (dat |> (1,hsh,coords))
-    SyncRequest (s,e) ->
-      print (s,e)
-      -- error "cannot handle"
+    SyncRequest (s,e) -> do
+      dat <- atomically $ readTVar ref
+      let dat' = toList $
+                   fmap (\(i,_,xy) -> (i,xy)) $
+                     S.filter (\(i,_,_) -> i > s && i <= e) dat
+          msg = DataStrokes dat'
+      sendTextData conn (serialize msg)
 
 main :: IO ()
 main = do

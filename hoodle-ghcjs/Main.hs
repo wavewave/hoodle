@@ -22,7 +22,7 @@ import qualified JavaScript.Web.WebSocket as WS
 import System.IO (hPutStrLn, hFlush, stdout)
 --
 import Message (C2SMsg(NewStroke,SyncRequest)
-               ,S2CMsg(RegisterStroke)
+               ,S2CMsg(DataStrokes,RegisterStroke)
                ,TextSerializable(deserialize,serialize))
 
 
@@ -118,6 +118,10 @@ putStrLnAndFlush s = do
   hPutStrLn stdout s
   hFlush stdout
 
+drawPath :: JSVal -> [(Double,Double)] -> IO ()
+drawPath svg xys = do
+  arr <- toJSValListOf xys
+  js_draw_path svg arr
 
 onPointerDown :: TVar MyState -> JSVal -> IO ()
 onPointerDown ref ev = do
@@ -176,8 +180,11 @@ onMessage sock ref s = do
       when (s' > n) $ do
         let msg = SyncRequest (n,s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-
-    -- atomically $ writeTVar ref (myst { _mystateDocState = DocState s' })
+    DataStrokes dat -> do
+      myst@(MyState _ svg _ _ _ (DocState n) _) <- atomically $ readTVar ref
+      mapM_ (drawPath svg . snd) dat
+      let i = maximum (map fst dat)
+      atomically $ writeTVar ref (myst { _mystateDocState = DocState i })
 
 
 main :: IO ()

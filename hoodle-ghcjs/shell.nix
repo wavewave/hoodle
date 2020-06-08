@@ -19,6 +19,7 @@ let
   };
 
   hsenv = haskellPackages.ghcWithPackages (p: with p; [
+    monad-loops
     servant
     servant-server
     websockets

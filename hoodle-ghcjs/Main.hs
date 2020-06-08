@@ -9,6 +9,7 @@ import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVar, writeTVar)
 import Control.Monad (forever, void, when)
 import Data.Foldable (toList)
+import qualified Data.JSString as JSS (pack,unpack)
 import Data.Sequence (Seq, (|>), ViewR(..), singleton, viewr)
 import GHCJS.Foreign.Callback (Callback, OnBlocked(ContinueAsync, ThrowWouldBlock)
                               , syncCallback, syncCallback1)
@@ -82,11 +83,17 @@ foreign import javascript unsafe "$r = document.createElement('canvas')"
 data DrawingState = NotDrawing
                   | Drawing (Seq (Double,Double))
 
+data DocState = DocState {
+    _docstateCount :: Int
+  }
+
 data MyState = MyState {
     _mystateIsDrawing :: DrawingState
   , _mystateSVGBox :: JSVal
   , _mystateOverlayCanvas :: JSVal
   , _mystateOverlayOffCanvas :: JSVal
+  , _mystateWebSocket :: WS.WebSocket
+  , _mystateDocState :: DocState
   }
 
 getXY :: JSVal -> IO (Double,Double)
@@ -100,21 +107,24 @@ onPointerDown ref ev = do
 
 onPointerUp :: TVar MyState -> JSVal -> IO ()
 onPointerUp ref ev = do
-  MyState drawingState svg _ offcvs <- atomically $ readTVar ref
+  MyState drawingState svg _ offcvs sock (DocState n) <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
       js_clear_overlay offcvs
       xy@(x,y) <- getXY ev
 
       let xys' = xys |> xy
-      atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = NotDrawing })
+      atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = NotDrawing
+                                            , _mystateDocState = DocState (n+1)
+                                            })
       arr <- js_to_svg_point_array svg =<< toJSValListOf (toList xys')
       js_draw_path svg arr
+      WS.send (JSS.pack (show (n+1))) sock
     _ -> pure ()
 
 onPointerMove :: TVar MyState -> JSVal -> IO ()
 onPointerMove ref ev = do
-  MyState drawingState svg cvs offcvs <- atomically $ readTVar ref
+  MyState drawingState svg cvs offcvs _ _ <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
       xy@(x,y) <- getXY ev
@@ -144,7 +154,31 @@ main = do
   js_set_width offcvs w
   js_set_height offcvs h
 
-  ref <- newTVarIO (MyState NotDrawing svg cvs offcvs)
+  putStrLn "websocket start"
+  let wsClose _ = do
+        hPutStrLn stdout "connection closed"
+        hFlush stdout
+      wsMessage ref msg = do
+        let d = ME.getData msg
+        case d of
+          ME.StringData s -> do
+            myst@(MyState _ _ _ _ _ (DocState n)) <- atomically $ readTVar ref
+            let s' = read @Int (JSS.unpack s)
+            hPutStrLn stdout (show s' ++ " <-> " ++ show n)
+            when (s' > n) $
+              atomically $ writeTVar ref (myst { _mystateDocState = DocState s' })
+            hFlush stdout
+          _ -> pure ()
+  ref <- mdo
+    ref <- newTVarIO (MyState NotDrawing svg cvs offcvs sock (DocState 0))
+    sock <- WS.connect
+              WS.WebSocketRequest {
+                  WS.url = "ws://localhost:7080"
+                , WS.protocols = []
+                , WS.onClose = Just wsClose
+                , WS.onMessage = Just (wsMessage ref)
+                }
+    pure ref
 
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown ref)
   js_addEventListener cvs "pointerdown" onpointerdown
@@ -158,23 +192,3 @@ main = do
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF
-
-  putStrLn "websocket start"
-  let wsClose _ = do
-        hPutStrLn stdout "connection closed"
-        hFlush stdout
-      wsMessage msg = do
-        let d = ME.getData msg
-        case d of
-          ME.StringData s -> do
-            hPutStrLn stdout (show s)
-            hFlush stdout
-          _ -> pure ()
-  sock <- WS.connect
-            WS.WebSocketRequest {
-              WS.url = "ws://localhost:7080"
-            , WS.protocols = []
-            , WS.onClose = Just wsClose
-            , WS.onMessage = Just wsMessage
-            }
-  pure () -- threadDelay 100000000

@@ -46,18 +46,35 @@ foreign import javascript unsafe "drawPath($1,$2)"
 foreign import javascript unsafe "window.requestAnimationFrame($1)"
   js_requestAnimationFrame :: Callback a -> IO ()
 
-foreign import javascript unsafe "refresh()"
-  js_refresh :: IO ()
+foreign import javascript unsafe "refresh($1,$2)"
+  js_refresh :: JSVal -> JSVal -> IO ()
 
 foreign import javascript unsafe "$1.addEventListener($2,$3)"
   js_addEventListener :: JSVal -> JSString -> Callback a -> IO ()
 
-foreign import javascript unsafe "overlay_point($1,$2,$3,$4)"
-  js_overlay_point :: Double -> Double -> Double -> Double -> IO ()
+foreign import javascript unsafe "overlay_point($1,$2,$3,$4,$5,$6)"
+  js_overlay_point :: JSVal -> JSVal -> Double -> Double -> Double -> Double -> IO ()
 
-foreign import javascript unsafe "clear_overlay()"
-  js_clear_overlay :: IO ()
+foreign import javascript unsafe "clear_overlay($1)"
+  js_clear_overlay :: JSVal -> IO ()
 
+foreign import javascript unsafe "fix_dpi($1)"
+  js_fix_dpi :: JSVal -> IO ()
+
+foreign import javascript unsafe "$r = $1.width"
+  js_get_width :: JSVal -> IO Double
+
+foreign import javascript unsafe "$1.width = $2"
+  js_set_width :: JSVal -> Double -> IO ()
+
+foreign import javascript unsafe "$r = $1.height"
+  js_get_height :: JSVal -> IO Double
+
+foreign import javascript unsafe "$1.height = $2"
+  js_set_height :: JSVal -> Double -> IO ()
+
+foreign import javascript unsafe "$r = document.createElement('canvas')"
+  js_create_canvas :: IO JSVal
 
 data DrawingState = NotDrawing
                   | Drawing (Seq (Double,Double))
@@ -65,6 +82,8 @@ data DrawingState = NotDrawing
 data MyState = MyState {
     _mystateIsDrawing :: DrawingState
   , _mystateSVGBox :: JSVal
+  , _mystateOverlayCanvas :: JSVal
+  , _mystateOverlayOffCanvas :: JSVal
   }
 
 getXY :: JSVal -> IO (Double,Double)
@@ -78,10 +97,10 @@ onPointerDown ref ev = do
 
 onPointerUp :: TVar MyState -> JSVal -> IO ()
 onPointerUp ref ev = do
-  MyState drawingState svg <- atomically $ readTVar ref
+  MyState drawingState svg _ offcvs <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
-      js_clear_overlay
+      js_clear_overlay offcvs
       xy@(x,y) <- getXY ev
 
       let xys' = xys |> xy
@@ -92,20 +111,20 @@ onPointerUp ref ev = do
 
 onPointerMove :: TVar MyState -> JSVal -> IO ()
 onPointerMove ref ev = do
-  MyState drawingState svg <- atomically $ readTVar ref
+  MyState drawingState svg cvs offcvs <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
       xy@(x,y) <- getXY ev
       case viewr xys of
-        _ :> (x0,y0) -> js_overlay_point x0 y0 x y
+        _ :> (x0,y0) -> js_overlay_point cvs offcvs x0 y0 x y
         _ -> pure ()
       atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = Drawing (xys |> xy)})
     _ ->
       pure ()
 
-test :: Callback (IO ()) -> IO ()
-test rAF = do
-  js_refresh
+test :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
+test cvs offcvs rAF = do
+  js_refresh cvs offcvs
   js_requestAnimationFrame rAF
 
 main :: IO ()
@@ -115,8 +134,14 @@ main = do
 
   svg <- js_svg_box
   cvs <- js_canvas_overlay
+  js_fix_dpi cvs
+  offcvs <- js_create_canvas
+  w <- js_get_width cvs
+  h <- js_get_height cvs
+  js_set_width offcvs w
+  js_set_height offcvs h
 
-  ref <- newTVarIO (MyState NotDrawing svg)
+  ref <- newTVarIO (MyState NotDrawing svg cvs offcvs)
 
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown ref)
   js_addEventListener cvs "pointerdown" onpointerdown
@@ -128,5 +153,5 @@ main = do
   js_addEventListener cvs "pointerup" onpointerup
 
   mdo
-    rAF <- syncCallback ThrowWouldBlock (test rAF)
+    rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF

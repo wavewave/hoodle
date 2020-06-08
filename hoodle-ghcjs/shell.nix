@@ -21,6 +21,7 @@ let
   hsenv = haskellPackages.ghcWithPackages (p: with p; [
     servant
     servant-server
+    websockets
   ]);
 
   hsenv_ghcjs = newhspkgs_ghcjs.ghcWithPackages (p: with p; [

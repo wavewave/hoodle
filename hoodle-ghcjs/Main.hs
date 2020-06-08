@@ -21,7 +21,9 @@ import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
 import System.IO (hPutStrLn, hFlush, stdout)
 --
-import Message (C2SMsg(NewStroke,SyncRequest),serialize)
+import Message (C2SMsg(NewStroke,SyncRequest)
+               ,S2CMsg(RegisterStroke)
+               ,TextSerializable(deserialize,serialize))
 
 
 foreign import javascript unsafe "console.log($1)"
@@ -125,7 +127,7 @@ onPointerDown ref ev = do
 
 onPointerUp :: TVar MyState -> JSVal -> IO ()
 onPointerUp ref ev = do
-  MyState drawingState svg _ offcvs sock _ {- (DocState n) -} _ <- atomically $ readTVar ref
+  MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
       js_clear_overlay offcvs
@@ -166,13 +168,14 @@ test cvs offcvs rAF = do
 
 onMessage :: WS.WebSocket -> TVar MyState -> JSString -> IO ()
 onMessage sock ref s = do
-  myst@(MyState _ _ _ _ _ (DocState n) _) <- atomically $ readTVar ref
-  let (s',hsh') = read @(Int,Int) (JSS.unpack s)
-  putStrLnAndFlush (show s' ++ " <-> " ++ show n)
-  putStrLnAndFlush (show hsh')
-  when (s' > n) $ do
-    let msg = SyncRequest (n,s')
-    WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+  case deserialize $ T.pack $ JSS.unpack s of
+    RegisterStroke (s',hsh') -> do
+      myst@(MyState _ _ _ _ _ (DocState n) _) <- atomically $ readTVar ref
+      putStrLnAndFlush (show s' ++ " <-> " ++ show n)
+      putStrLnAndFlush (show hsh')
+      when (s' > n) $ do
+        let msg = SyncRequest (n,s')
+        WS.send (JSS.pack . T.unpack . serialize $ msg) sock
 
     -- atomically $ writeTVar ref (myst { _mystateDocState = DocState s' })
 

@@ -17,7 +17,7 @@ import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets ( Connection, acceptRequest, receiveData, runServer, sendPing, sendTextData )
 import Servant ( (:>), Get, JSON, Proxy(..), Server, serve )
 --
-import Message (C2SMsg(..),deserialize)
+import Message (C2SMsg(..), S2CMsg(..), TextSerializable(serialize,deserialize))
 
 
 type API = "hello" :> Get '[JSON] String
@@ -69,7 +69,8 @@ main = do
           case getLast dat of
             Just (r',hsh',_) -> if (r' <= r) then retry else pure (r',hsh')
             Nothing -> retry
-      sendTextData conn (T.pack (show (r',hsh')))
+      let msg = RegisterStroke (r',hsh')
+      sendTextData conn (serialize msg)
       pure r'
 
   Warp.run 7070 $ serve api server

@@ -19,9 +19,8 @@ function preventDefaultTouchMove() {
   document.body.addEventListener("touchmove", function(e){e.preventDefault()}, { passive: false, useCapture: false });
 }
 
-var dpi = window.devicePixelRatio;
-
 function fix_dpi(canvas) {
+    var dpi = window.devicePixelRatio;
     //get CSS height
     //the + prefix casts it to an integer
     //the slice method gets rid of "px"
@@ -33,28 +32,14 @@ function fix_dpi(canvas) {
     canvas.setAttribute('width', style_width * dpi);
 }
 
-var canvas = document.getElementById("overlay");
-var context = canvas.getContext("2d");
-
-
-console.log(dpi);
-var offcanvas = document.createElement("canvas");
-
-fix_dpi(canvas);
-
-offcanvas.width = canvas.width;
-offcanvas.height = canvas.height;
-var offcontext = offcanvas.getContext("2d");
-
-console.log("canvas:" + canvas.width + "," + canvas.height);
-console.log("offcanvas:" + offcanvas.width + "," + offcanvas.height);
-
-function refresh() {
+function refresh(canvas,offcanvas) {
+    let context = canvas.getContext("2d");
     context.clearRect(0,0,canvas.width,canvas.height);
     context.drawImage(offcanvas,0,0);
 }
 
-function overlay_point(x0,y0,x1,y1) {
+function overlay_point(canvas,offcanvas,x0,y0,x1,y1) {
+    let offcontext = offcanvas.getContext("2d");
     var rect = canvas.getBoundingClientRect();
     var scaleX = canvas.width / rect.width;
     var scaleY = canvas.height / rect.height;
@@ -71,7 +56,8 @@ function overlay_point(x0,y0,x1,y1) {
     offcontext.stroke();
 }
 
-function clear_overlay() {
+function clear_overlay(offcanvas) {
+    let offcontext = offcanvas.getContext('2d');
     offcontext.clearRect(0,0,offcanvas.width,offcanvas.height);
 }
 

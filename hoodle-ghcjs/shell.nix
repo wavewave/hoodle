@@ -9,7 +9,7 @@
 with pkgs;
 
 let
-  newhspkgs = haskell.packages.ghcjs.override {
+  newhspkgs_ghcjs = haskell.packages.ghcjs.override {
     overrides = self: super: {
       QuickCheck = haskell.lib.dontCheck super.QuickCheck;
       scientific = haskell.lib.dontCheck super.scientific;
@@ -17,7 +17,15 @@ let
       time-compat = haskell.lib.dontCheck super.time-compat;
     };
   };
-  hsenv = newhspkgs.ghcWithPackages (p: with p; [
+
+  hsenv = haskellPackages.ghcWithPackages (p: with p; [
+    monad-loops
+    servant
+    servant-server
+    websockets
+  ]);
+
+  hsenv_ghcjs = newhspkgs_ghcjs.ghcWithPackages (p: with p; [
     ghcjs-base
     stm
   ]);
@@ -28,5 +36,6 @@ mkShell {
   buildInputs = [
     nodejs
     hsenv
+    hsenv_ghcjs
   ];
 }

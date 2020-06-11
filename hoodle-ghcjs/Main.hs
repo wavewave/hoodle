@@ -134,7 +134,6 @@ onPointerUp ref ev = do
   MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
   case drawingState of
     Drawing xys -> do
-      js_clear_overlay offcvs
       xy@(x,y) <- getXY ev
 
       let xys' = xys |> xy
@@ -143,12 +142,11 @@ onPointerUp ref ev = do
       path <- fromJSValUncheckedListOf path_arr
 
       atomically $ modifyTVar' ref (\s -> s { _mystateIsDrawing = NotDrawing
-                                            -- , _mystateDocState = DocState (n+1)
                                             , _mystateSyncState = SyncState [path]
                                             })
       let hsh = hash path
           msg = NewStroke (hsh,path)
-      js_draw_path svg path_arr
+
       WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> pure ()
 
@@ -181,7 +179,9 @@ onMessage sock ref s = do
         let msg = SyncRequest (n,s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     DataStrokes dat -> do
-      myst@(MyState _ svg _ _ _ (DocState n) _) <- atomically $ readTVar ref
+      myst@(MyState _ svg _ offcvs _ (DocState n) _) <- atomically $ readTVar ref
+      js_clear_overlay offcvs
+
       mapM_ (drawPath svg . snd) dat
       let i = maximum (map fst dat)
       atomically $ writeTVar ref (myst { _mystateDocState = DocState i })

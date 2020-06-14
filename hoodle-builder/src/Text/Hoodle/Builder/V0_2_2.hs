@@ -1,21 +1,8 @@
 {-# LANGUAGE CPP, OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Text.Hoodle.Builder.V0_2_2 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Text.Hoodle.Builder.V0_2_2 where
 
--- from other packages 
 import           Blaze.ByteString.Builder
 import           Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import qualified Data.ByteString as S
@@ -29,9 +16,7 @@ import           Data.Monoid
 #endif 
 import           Data.Strict.Tuple
 import           Lens.Micro.Extras (view)
--- from hoodle platform 
 import           Data.Hoodle.Simple.V0_2_2
--- 
 
 -- | 
 (<>) :: Monoid a => a -> a -> a 

@@ -1,13 +1,41 @@
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE JavaScriptFFI #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Main where
 
 import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVar, writeTVar)
+import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar)
+import Control.Concurrent.STM
+  ( TVar,
+    atomically,
+    modifyTVar',
+    newTVarIO,
+    readTVar,
+    writeTVar,
+  )
 import Control.Monad (forever, void, when)
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
+import Control.Monad.Trans.Crtn.Driver (Driver, driver)
+import Control.Monad.Trans.Crtn.Event ()
+import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
+import Control.Monad.Trans.Crtn.Logger
+  ( LogInput,
+    LogOp (..),
+    LogServer,
+    MonadLog (..),
+    writeLog,
+  )
+import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..), SObjBT, SObjT)
+import Control.Monad.Trans.Crtn.World (WorldOp (..))
+import Control.Monad.Trans.Reader (ReaderT (..))
+import Control.Monad.Trans.State (StateT (..))
 import Data.Foldable (toList)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack, unpack)
@@ -23,7 +51,6 @@ import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSString, JSVal, jsval)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
---
 import Message
   ( C2SMsg (NewStroke, SyncRequest),
     S2CMsg (DataStrokes, RegisterStroke),
@@ -217,8 +244,8 @@ onMessage sock ref s = do
       let i = maximum (map fst dat)
       atomically $ writeTVar ref (myst {_mystateDocState = DocState i})
 
-main :: IO ()
-main = do
+main0 :: IO ()
+main0 = do
   putStrLn "ghcjs started"
   js_prevent_default_touch_move
   svg <- js_svg_box
@@ -257,3 +284,66 @@ main = do
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF
+
+data Event = Fire
+
+data WorldAttrib (m :: * -> *) = WorldAttrib
+
+initWorld :: (Monad m) => WorldAttrib m
+initWorld = WorldAttrib
+
+simplelogger :: (MonadLog m) => LogServer m ()
+simplelogger = loggerW 0
+
+ticking :: MVar (Maybe (Driver Event IO ())) -> Int -> IO ()
+ticking mvar n = do
+  putStrLnAndFlush ("ticking: " ++ show n)
+  when (n `mod` 10 == 0) $
+    eventHandler mvar Fire
+  threadDelay (1000000)
+  ticking mvar (n + 1)
+
+-- |
+loggerW :: forall m. (MonadLog m) => Int -> LogServer m ()
+loggerW num = ReaderT (f num)
+  where
+    f :: Int -> LogInput -> CrtnT (Res LogOp) (Arg LogOp) m ()
+    f n (Arg WriteLog msg) = do
+      lift (scribe ("log number " ++ show n ++ " : " ++ msg))
+      req' <- request (Res WriteLog ())
+      f (n + 1) req'
+
+-- |
+world :: forall m. (MonadIO m) => SObjT (WorldOp Event m) m ()
+world = ReaderT staction
+  where
+    staction req = void $ runStateT (go req) initWorld
+    go ::
+      (MonadIO m) =>
+      Arg (WorldOp Event m) ->
+      StateT (WorldAttrib (SObjBT (WorldOp Event m) m)) (SObjBT (WorldOp Event m) m) ()
+    go (Arg GiveEvent ev) = do
+      liftIO $ putStrLnAndFlush "giveevent"
+      req <- lift $ request $ Res GiveEvent ()
+      go req
+    go (Arg FlushLog (logobj :: LogServer m ())) = do
+      liftIO $ putStrLnAndFlush "flushlog"
+      res <- lift $ lift $ (logobj <==| writeLog ("[Log]"))
+      case res of
+        Right (logobj', _) -> do
+          req <- lift $ request $ Res FlushLog logobj'
+          go req
+        _ -> error "error in flushlog"
+    go (Arg FlushQueue ()) = do
+      liftIO $ putStrLnAndFlush "flushqueue"
+      req <- lift $ request $ Res FlushQueue []
+      go req
+
+main :: IO ()
+main = do
+  putStrLn "new start"
+  dref <- newEmptyMVar :: IO (MVar (Maybe (Driver Event IO ())))
+  let logger = simplelogger
+  putMVar dref . Just $ driver logger world
+  putStrLn "starting ticking"
+  ticking dref 0

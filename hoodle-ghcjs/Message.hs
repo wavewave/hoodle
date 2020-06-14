@@ -5,9 +5,9 @@ module Message where
 import Data.Text (Text)
 import qualified Data.Text as T
 
-data C2SMsg =
-    NewStroke (Int, [(Double,Double)])
-  | SyncRequest (Int,Int)
+data C2SMsg
+  = NewStroke (Int, [(Double, Double)])
+  | SyncRequest (Int, Int)
 
 tag_NewStroke :: Char
 tag_NewStroke = 'N'
@@ -15,9 +15,11 @@ tag_NewStroke = 'N'
 tag_SyncRequest :: Char
 tag_SyncRequest = 'S'
 
-data S2CMsg =
-    RegisterStroke (Int,Int) -- ^ (id,hash)
-  | DataStrokes [(Int,[(Double,Double)])] -- ^ [(id,[(x,y)])]
+data S2CMsg
+  = -- | (id,hash)
+    RegisterStroke (Int, Int)
+  | -- | [(id,[(x,y)])]
+    DataStrokes [(Int, [(Double, Double)])]
 
 tag_RegisterStroke :: Char
 tag_RegisterStroke = 'R'
@@ -35,10 +37,10 @@ instance TextSerializable C2SMsg where
 
   deserialize t =
     let c = T.head t
-    in case c of
-         'N' -> NewStroke $ read $ T.unpack $ T.tail t
-         'S' -> SyncRequest $ read $ T.unpack $ T.tail t
-         _ -> error "cannot parse"
+     in case c of
+          'N' -> NewStroke $ read $ T.unpack $ T.tail t
+          'S' -> SyncRequest $ read $ T.unpack $ T.tail t
+          _ -> error "cannot parse"
 
 instance TextSerializable S2CMsg where
   serialize (RegisterStroke payload) = T.cons 'R' $ T.pack (show payload)
@@ -46,7 +48,7 @@ instance TextSerializable S2CMsg where
 
   deserialize t =
     let c = T.head t
-    in case c of
-         'R' -> RegisterStroke $ read $ T.unpack $ T.tail t
-         'D' -> DataStrokes $ read $ T.unpack $ T.tail t
-         _ -> error "cannot parse"
+     in case c of
+          'R' -> RegisterStroke $ read $ T.unpack $ T.tail t
+          'D' -> DataStrokes $ read $ T.unpack $ T.tail t
+          _ -> error "cannot parse"

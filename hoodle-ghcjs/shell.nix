@@ -19,6 +19,7 @@ let
   };
 
   hsenv = haskellPackages.ghcWithPackages (p: with p; [
+    acid-state
     monad-loops
     servant
     servant-server
@@ -37,5 +38,6 @@ mkShell {
     nodejs
     hsenv
     hsenv_ghcjs
+    ormolu
   ];
 }

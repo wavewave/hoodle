@@ -61,5 +61,12 @@ function clear_overlay(offcanvas) {
     offcontext.clearRect(0,0,offcanvas.width,offcanvas.height);
 }
 
+function debug_show(val) {
+    let debugbox = document.getElementById("debugbox");
+    debugbox.innerText = val;
+}
+
+debug_show("ready for input");
+
 // GHCJS start
 h$main(h$mainZCMainzimain);

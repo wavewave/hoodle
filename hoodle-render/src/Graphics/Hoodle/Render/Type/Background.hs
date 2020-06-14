@@ -1,30 +1,13 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Graphics.Hoodle.Render.Type.Background 
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Graphics.Hoodle.Render.Type.Background where
 
 import           Data.ByteString 
--- import           Data.UUID
--- import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
--- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple 
--- from this package
 import           Graphics.Hoodle.Render.Type.Renderer
-
 -- 
 import Prelude hiding (mapM_)
 

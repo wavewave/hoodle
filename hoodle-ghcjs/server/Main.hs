@@ -21,11 +21,11 @@ import qualified Data.Sequence as S (empty, filter, viewr)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Typeable (Typeable)
---
 import Message (C2SMsg (..), S2CMsg (..), TextSerializable (deserialize, serialize))
 import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendPing, sendTextData)
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
+import System.IO (IOMode (..), hFlush, hPutStrLn, withFile)
 
 type API = "hello" :> Get '[JSON] String
 
@@ -77,6 +77,14 @@ handler conn acid ref = forever $ do
           msg = DataStrokes dat'
       sendTextData conn (serialize msg)
 
+serializer :: AcidState DocState -> IO ()
+serializer acid = forever $ do
+  threadDelay 5000000
+  DocState v <- query acid QueryState
+  withFile "serialized.dat" WriteMode $ \h -> do
+    hPutStrLn h (show v)
+    hFlush h
+
 main :: IO ()
 main = do
   acid <- openLocalState (DocState S.empty)
@@ -92,6 +100,7 @@ main = do
       sendPing conn ("ping" :: Text)
     -- synchronization
     void $ forkIO $ handler conn acid ref
+    void $ forkIO $ serializer acid
     void $ flip iterateM_ 0 $ \r -> do
       (r', hsh') <-
         atomically $ do

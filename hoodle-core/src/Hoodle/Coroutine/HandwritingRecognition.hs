@@ -3,18 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.HandwritingRecognition
--- Copyright   : (c) 2014,2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.HandwritingRecognition where
 
 import           Control.Lens (view,_1,_2)

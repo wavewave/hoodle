@@ -5,18 +5,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.Default 
--- Copyright   : (c) 2011-2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.Default where
 
 import           Control.Applicative hiding (empty)
@@ -37,7 +25,6 @@ import           System.Process
 import           Data.Time.Clock
 import           System.Directory
 #endif
--- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
@@ -46,7 +33,6 @@ import           Data.Hoodle.Generic
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Engine
 import           Graphics.Hoodle.Render.Type
--- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Callback
 import           Hoodle.Coroutine.ContextMenu

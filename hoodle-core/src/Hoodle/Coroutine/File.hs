@@ -3,21 +3,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.File 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.File where
 
--- from other packages
 import           Control.Applicative
 import           Control.Lens (at,view,set,over,(.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
@@ -44,7 +31,6 @@ import           Control.Monad.Trans.Reader
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 #endif
--- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple
@@ -59,7 +45,6 @@ import           Text.Hoodle.Builder
 import           Text.Hoodle.Migrate.FromXournal
 import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Xournal.Parse.Conduit as XP
--- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Dialog
 import           Hoodle.Coroutine.Draw

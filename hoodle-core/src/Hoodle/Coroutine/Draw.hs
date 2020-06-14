@@ -5,21 +5,8 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.Draw 
--- Copyright   : (c) 2011-2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.Draw where
 
--- from other packages
 import           Control.Applicative
 import           Control.Concurrent.STM (atomically, modifyTVar')
 import           Control.Lens
@@ -32,14 +19,11 @@ import           Data.Time.Clock
 import           Data.Time.LocalTime
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
--- from hoodle-platform
 import           Control.Monad.Trans.Crtn
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Queue
 import           Data.Hoodle.BBox
 import           Graphics.Hoodle.Render.Type
--- import           Graphics.Hoodle.Render.Type.Renderer
--- from this package
 import           Hoodle.Accessor
 import           Hoodle.Type.Alias
 import           Hoodle.Type.Canvas

@@ -4,21 +4,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.ContextMenu
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.ContextMenu where
 
--- from other packages
 import           Control.Applicative
 import           Control.Concurrent.STM (readTVarIO)
 import           Control.Lens (view,set,(^.),(.~))
@@ -38,7 +25,6 @@ import qualified Graphics.UI.Gtk as Gtk
 import           System.Directory 
 import           System.FilePath
 import           System.Process
--- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
@@ -50,7 +36,6 @@ import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Text.Hoodle.Builder (builder)
 import qualified Text.Hoodlet.Builder as Hoodlet (builder)
--- from this package 
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit 
 import           Hoodle.Coroutine.Dialog

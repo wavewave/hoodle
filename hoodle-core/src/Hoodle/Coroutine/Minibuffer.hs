@@ -1,18 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.Minibuffer 
--- Copyright   : (c) 2013, 2014, 2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.Minibuffer where 
 
 import           Control.Applicative ((<$>),(<*>))

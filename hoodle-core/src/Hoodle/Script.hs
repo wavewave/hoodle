@@ -1,17 +1,5 @@
 {-# LANGUAGE CPP #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Script
--- Copyright   : (c) 2012-2014 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Script where 
 
 import Hoodle.Script.Hook

@@ -341,6 +341,7 @@ world = ReaderT staction
 
 main :: IO ()
 main = do
+  main0
   putStrLn "new start"
   dref <- newEmptyMVar :: IO (MVar (Maybe (Driver Event IO ())))
   let logger = simplelogger

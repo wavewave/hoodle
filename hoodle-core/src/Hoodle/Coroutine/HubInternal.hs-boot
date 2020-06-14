@@ -2,18 +2,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.HubInternal
--- Copyright   : (c) 2014 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.HubInternal where
 
 import           Control.Applicative
@@ -23,7 +11,6 @@ import           Control.Monad (unless)
 import           Control.Monad.IO.Class
 import           Control.Monad.State
 import           Control.Monad.Trans.Maybe
--- import           Control.Monad.Trans.State
 import           Data.Aeson as AE
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B
@@ -50,7 +37,6 @@ import System.FilePath ((</>),(<.>),makeRelative)
 import System.Info (os)
 import System.Process (system, rawSystem,readProcessWithExitCode)
 --
--- import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 import Graphics.Hoodle.Render.Type.Hoodle
 import Text.Hoodle.Builder (builder)

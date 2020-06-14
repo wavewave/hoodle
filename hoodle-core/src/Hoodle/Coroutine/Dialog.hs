@@ -1,18 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE LambdaCase #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.Dialog
--- Copyright   : (c) 2013,2014 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.Dialog where
 
 import           Control.Applicative ((<$>),(<*>))

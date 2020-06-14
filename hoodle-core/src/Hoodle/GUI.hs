@@ -2,18 +2,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.GUI 
--- Copyright   : (c) 2011-2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.GUI where
 
 import           Control.Concurrent (threadDelay, forkIO)
@@ -30,7 +18,6 @@ import           System.Directory
 import           System.Environment
 import           System.FilePath
 import           System.IO
--- from this package
 import           Hoodle.Accessor 
 import           Hoodle.Config 
 import           Hoodle.Coroutine.Callback

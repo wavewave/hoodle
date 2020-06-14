@@ -1,17 +1,5 @@
 {-# LANGUAGE CPP #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.VerticalSpace
--- Copyright   : (c) 2013-2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.VerticalSpace where
 
 import           Control.Applicative
@@ -25,7 +13,6 @@ import           Data.Monoid
 import           Data.Time.Clock
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
--- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Simple (Dimension(..))
@@ -34,7 +21,6 @@ import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
 import           Graphics.Hoodle.Render.Type.HitTest
 import           Graphics.Hoodle.Render.Util.HitTest
--- from this package
 import           Hoodle.Accessor
 import           Hoodle.Coroutine.Commit
 import           Hoodle.Coroutine.Draw

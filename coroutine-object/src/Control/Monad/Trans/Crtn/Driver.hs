@@ -10,7 +10,7 @@ import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Logger
 import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.World
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 import Data.Foldable
 
 -- | signature of IO event driver
@@ -26,8 +26,10 @@ type DrvClient e m r = CObjT (DrvOp e) m r
 -- |
 dispatch :: (Monad m) => e -> DrvClient e m (Maybe (ActionOrder e))
 dispatch ev = do
-  Res Dispatch r <- request (Arg Dispatch ev)
-  return r
+  res <- request (Arg Dispatch ev)
+  case res of
+    Res Dispatch r -> return r
+    Ign -> error "dispatch: Ignore happened"
 
 -- | basic driver
 driver ::
@@ -65,10 +67,10 @@ singleDispatch ::
 singleDispatch (Right ev) (logobj, worldobj, evacc) = do
   -- Right (logobj',worldobj',events) <-
   r <-
-    runEitherT $ do
-      (worldobj1, _) <- EitherT (worldobj <==| giveEvent ev)
-      (worldobj2, logobj1) <- EitherT (worldobj1 <==| flushLog logobj)
-      (worldobj3, events) <- EitherT (worldobj2 <==| flushQueue)
+    runExceptT $ do
+      (worldobj1, _) <- ExceptT (worldobj <==| giveEvent ev)
+      (worldobj2, logobj1) <- ExceptT (worldobj1 <==| flushLog logobj)
+      (worldobj3, events) <- ExceptT (worldobj2 <==| flushQueue)
       return (logobj1, worldobj3, events)
   case r of
     Left _ ->

@@ -6,7 +6,7 @@ module Control.Monad.Trans.Crtn.Object where
 
 import Control.Monad.State
 import Control.Monad.Trans.Crtn
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 
 -- | input of method of an object with signature s
 data Arg s = forall i o. Arg (s i o) i
@@ -26,7 +26,7 @@ type CObjT s = CliT (Arg s) (Res s)
 type SObjBT s m = CrtnT (Res s) (Arg s) m
 
 -- | convenient error state monad for object
-type EStT s m = EitherT CrtnErr (StateT s m)
+type EStT s m = ExceptT CrtnErr (StateT s m)
 
 -- |
 query :: forall m s r. (Monad m) => CObjT s m r -> EStT (SObjT s m ()) m r
@@ -36,6 +36,6 @@ query cli = do
       result = qserv <==| cli
       r2 :: StateT (SObjT s m ()) m (Either CrtnErr (SrvT (Arg s) (Res s) m (), r))
       r2 = lift result
-  (qserv', r) <- EitherT r2
+  (qserv', r) <- ExceptT r2
   lift (put qserv')
   return r

@@ -5,7 +5,7 @@ import Control.Monad.State
 import Control.Monad.Trans.Crtn.Driver
 import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Logger
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 
 -- |
 eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()
@@ -22,4 +22,4 @@ eventHandler evar ev = do
         Right (Just (ActionOrder act)) ->
           act (eventHandler evar) >>= eventHandler evar
   where
-    eaction = runStateT (runEitherT $ fire ev)
+    eaction = runStateT (runExceptT $ fire ev)

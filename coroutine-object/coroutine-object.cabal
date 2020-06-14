@@ -1,5 +1,5 @@
 Name:		coroutine-object
-Version:	0.3.0
+Version:	0.4
 Synopsis:       Object-oriented programming realization using coroutine 
 Description: 	Object-oriented programming realization using coroutine 
 License: 	BSD3
@@ -15,7 +15,6 @@ Library
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
   Build-Depends:   base >4 && <5, 
-                   either >= 3.1, 
                    mtl>2, 
                    transformers >= 0.3,
                    free >= 4.0

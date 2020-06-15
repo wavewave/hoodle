@@ -35,8 +35,9 @@ import Control.Monad.Trans.Crtn.Logger
     MonadLog (..),
     writeLog,
   )
-import Control.Monad.Trans.Crtn.Object (Arg (..), CObjT, Res (..), SObjBT, SObjT)
+import Control.Monad.Trans.Crtn.Object (Arg (..), CObjT, EStT, Res (..), SObjBT, SObjT)
 import Control.Monad.Trans.Crtn.World (WorldOp (..))
+import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Control.Monad.Trans.State (StateT (..))
 import Data.Foldable (toList)
@@ -293,7 +294,10 @@ main0 mvar = do
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF
 
+data HoodleState = HoodleState
+
 data AllEvent = Fire
+  deriving (Show)
 
 data MainOp i o where
   DoEvent :: MainOp AllEvent ()
@@ -303,9 +307,9 @@ doEvent ev = request (Arg DoEvent ev) >> pure ()
 
 type MainCoroutine = MainObjB
 
-type MainObjB = SObjBT MainOp WorldObjB
+type MainObjB = SObjBT MainOp (EStT HoodleState WorldObjB)
 
-type MainObj = SObjT MainOp WorldObjB
+type MainObj = SObjT MainOp (EStT HoodleState WorldObjB)
 
 type WorldObj = SObjT (WorldOp AllEvent DriverB) DriverB
 
@@ -317,10 +321,10 @@ type DriverB = SObjBT (D.DrvOp AllEvent) IO
 
 type EventVar = MVar (Maybe (Driver ()))
 
-data WorldAttrib (m :: * -> *) = WorldAttrib
+-- data WorldAttrib (m :: * -> *) = WorldAttrib
 
-initWorld :: (Monad m) => WorldAttrib m
-initWorld = WorldAttrib
+-- initWorld :: (Monad m) => WorldAttrib m
+-- initWorld = WorldAttrib
 
 simplelogger :: (MonadLog m) => LogServer m ()
 simplelogger = loggerW 0
@@ -343,32 +347,55 @@ loggerW num = ReaderT (f num)
       req' <- request (Res WriteLog ())
       f (n + 1) req'
 
+errorlog :: String -> IO ()
+errorlog = putStrLnAndFlush
+
+nextevent :: MainCoroutine AllEvent
+nextevent = do
+  Arg DoEvent ev <- request (Res DoEvent ())
+  pure ev
+
 -- |
-world :: forall m. (MonadIO m) => SObjT (WorldOp AllEvent m) m ()
-world = ReaderT staction
+world :: HoodleState -> MainObj () -> WorldObj ()
+world xstate initmc = ReaderT staction
   where
-    staction req = void $ runStateT (go req) initWorld
+    staction req = void $ runStateT erract xstate
+      where
+        erract = do
+          r <- runExceptT (go initmc req)
+          case r of
+            Left e -> liftIO (errorlog (show e))
+            Right _ -> pure ()
     go ::
-      (MonadIO m) =>
-      Arg (WorldOp AllEvent m) ->
-      StateT (WorldAttrib (SObjBT (WorldOp AllEvent m) m)) (SObjBT (WorldOp AllEvent m) m) ()
-    go (Arg GiveEvent ev) = do
+      MainObj () ->
+      Arg (WorldOp AllEvent DriverB) ->
+      EStT HoodleState WorldObjB ()
+    go mcobj (Arg GiveEvent ev) = do
       liftIO $ putStrLnAndFlush "giveevent"
       -- liftIO $ putStrLnAndFlush (show ev)
-      req <- lift $ request $ Res GiveEvent ()
-      go req
-    go (Arg FlushLog (logobj :: LogServer m ())) = do
+      req <- lift $ lift $ request $ Res GiveEvent ()
+      go mcobj req
+    go mcobj (Arg FlushLog logobj) = do
       liftIO $ putStrLnAndFlush "flushlog"
-      res <- lift $ lift $ (logobj <==| writeLog ("[Log]"))
+      res <- lift $ lift $ lift $ (logobj <==| writeLog ("[Log]"))
       case res of
         Right (logobj', _) -> do
-          req <- lift $ request $ Res FlushLog logobj'
-          go req
+          req <- lift $ lift $ request $ Res FlushLog logobj'
+          go mcobj req
         _ -> error "error in flushlog"
-    go (Arg FlushQueue ()) = do
+    go mcobj (Arg FlushQueue ()) = do
       liftIO $ putStrLnAndFlush "flushqueue"
-      req <- lift $ request $ Res FlushQueue []
-      go req
+      req <- lift $ lift $ request $ Res FlushQueue []
+      go mcobj req
+
+guiProcess :: AllEvent -> MainCoroutine ()
+guiProcess ev = do
+  liftIO $ putStrLnAndFlush (show ev)
+  ev <- nextevent
+  guiProcess ev
+
+initmc :: MainObj ()
+initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
 
 main :: IO ()
 main = do
@@ -376,6 +403,6 @@ main = do
   mvar <- newEmptyMVar :: IO EventVar
   main0 mvar
   let logger = simplelogger
-  putMVar mvar . Just $ D.driver logger world
+  putMVar mvar . Just $ D.driver logger (world HoodleState initmc)
   putStrLn "starting ticking"
   ticking mvar 0

@@ -1,6 +1,8 @@
 # hoodle
 hoodle : A pen notetaking program written in haskell
 
+[![hoodle](https://img.youtube.com/vi/Z2wzpyxsVSU/0.jpg)](https://www.youtube.com/watch?v=Z2wzpyxsVSU)
+
 Build with nix
 --------------
 tested with nixpkgs at nixos 17.09 revision

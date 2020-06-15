@@ -7,7 +7,6 @@
 
 module Hoodle.Type.Coroutine where
 
--- from other packages
 import Control.Applicative
 import Control.Concurrent
 import Control.Lens ((%~), (.~), (^.))
@@ -23,8 +22,6 @@ import Control.Monad.Trans.Either
 import Hoodle.Type.Event
 import Hoodle.Type.HoodleState
 import Hoodle.Util
-
---
 
 -- |
 data MainOp i o where

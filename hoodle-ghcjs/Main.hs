@@ -18,7 +18,7 @@ import Control.Concurrent.STM
     readTVar,
     writeTVar,
   )
-import Control.Monad (forever, void, when)
+import Control.Monad (forever, liftM, void, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
@@ -190,11 +190,11 @@ onPointerUp ::
   TVar MyState ->
   JSVal ->
   IO ()
-onPointerUp mvar ref ev = do
+onPointerUp evar ref ev = do
   js_debug_show $ jsval ("ready for input" :: JSString)
   t <- getPointerType ev
   when (t /= Touch) $ do
-    eventHandler mvar Fire
+    eventHandler evar Fire
     MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
     case drawingState of
       Drawing xys -> do
@@ -254,7 +254,7 @@ onMessage sock ref s = do
       atomically $ writeTVar ref (myst {_mystateDocState = DocState i})
 
 main0 :: EventVar -> IO ()
-main0 mvar = do
+main0 evar = do
   putStrLn "ghcjs started"
   js_prevent_default_touch_move
   svg <- js_svg_box
@@ -288,7 +288,7 @@ main0 mvar = do
   js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove ref)
   js_addEventListener cvs "pointermove" onpointermove
-  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp mvar ref)
+  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp evar ref)
   js_addEventListener cvs "pointerup" onpointerup
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
@@ -329,13 +329,15 @@ type EventVar = MVar (Maybe (Driver ()))
 simplelogger :: (MonadLog m) => LogServer m ()
 simplelogger = loggerW 0
 
+{-
 ticking :: EventVar -> Int -> IO ()
-ticking mvar n = do
+ticking evar n = do
   putStrLnAndFlush ("ticking: " ++ show n)
   when (n `mod` 10 == 0) $
-    eventHandler mvar Fire
+    eventHandler evar Fire
   threadDelay (1000000)
   ticking mvar (n + 1)
+-}
 
 -- |
 loggerW :: forall m. (MonadLog m) => Int -> LogServer m ()
@@ -371,20 +373,14 @@ world xstate initmc = ReaderT staction
       Arg (WorldOp AllEvent DriverB) ->
       EStT HoodleState WorldObjB ()
     go mcobj (Arg GiveEvent ev) = do
-      liftIO $ putStrLnAndFlush "giveevent"
-      -- liftIO $ putStrLnAndFlush (show ev)
+      Right mcobj' <- liftM (fmap fst) (mcobj <==| doEvent ev)
       req <- lift $ lift $ request $ Res GiveEvent ()
-      go mcobj req
+      go mcobj' req
     go mcobj (Arg FlushLog logobj) = do
-      liftIO $ putStrLnAndFlush "flushlog"
-      res <- lift $ lift $ lift $ (logobj <==| writeLog ("[Log]"))
-      case res of
-        Right (logobj', _) -> do
-          req <- lift $ lift $ request $ Res FlushLog logobj'
-          go mcobj req
-        _ -> error "error in flushlog"
+      Right logobj' <- lift $ lift $ lift $ liftM (fmap fst) (logobj <==| writeLog ("[Log]"))
+      req <- lift $ lift $ request $ Res FlushLog logobj'
+      go mcobj req
     go mcobj (Arg FlushQueue ()) = do
-      liftIO $ putStrLnAndFlush "flushqueue"
       req <- lift $ lift $ request $ Res FlushQueue []
       go mcobj req
 
@@ -400,9 +396,8 @@ initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
 main :: IO ()
 main = do
   putStrLn "new start"
-  mvar <- newEmptyMVar :: IO EventVar
-  main0 mvar
-  let logger = simplelogger
-  putMVar mvar . Just $ D.driver logger (world HoodleState initmc)
-  putStrLn "starting ticking"
-  ticking mvar 0
+  evar <- newEmptyMVar :: IO EventVar
+  main0 evar
+  putMVar evar . Just $ D.driver simplelogger (world HoodleState initmc)
+--putStrLn "starting ticking"
+--ticking evar 0

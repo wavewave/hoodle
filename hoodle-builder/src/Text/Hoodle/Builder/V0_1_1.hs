@@ -1,22 +1,8 @@
 {-# LANGUAGE CPP, OverloadedStrings #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Text.Hoodle.Builder.V0_1_1
--- Copyright   : (c) 2011-2013 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Text.Hoodle.Builder.V0_1_1 where
 
--- from other packages 
 import qualified Data.ByteString as S
--- import qualified Data.ByteString.Char8 as SC
 import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
@@ -28,7 +14,6 @@ import Data.Monoid
 #endif 
 import Data.Strict.Tuple
 import Lens.Micro.Extras (view)
--- from this package 
 import Data.Hoodle.Simple.V0_1_1
 
 infixl 4 <>

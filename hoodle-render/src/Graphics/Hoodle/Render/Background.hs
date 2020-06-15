@@ -1,22 +1,9 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Graphics.Hoodle.Render.Background 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Graphics.Hoodle.Render.Background where
 
 import           Control.Applicative
--- import           Control.Concurrent
 import           Control.Concurrent.STM
 import           Control.Monad.State hiding (mapM_)
 import           Control.Monad.Trans.Maybe
@@ -29,19 +16,15 @@ import qualified Data.ByteString.Char8 as C
 import           Data.Monoid
 import           Data.UUID.V4 (nextRandom)
 import qualified Graphics.Rendering.Cairo as Cairo
--- import           Graphics.UI.Gtk (postGUIAsync)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import           System.Directory
 import           System.FilePath ((</>),(<.>))
--- from hoodle-platform
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Predefined 
 import           Data.Hoodle.Simple
---
 import           Graphics.Hoodle.Render.Type.Background
 import           Graphics.Hoodle.Render.Type.Renderer
--- 
 import Prelude hiding (mapM_)
 
 -- |

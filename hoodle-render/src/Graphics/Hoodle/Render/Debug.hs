@@ -1,21 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Graphics.Hoodle.Render.Debug
--- Copyright   : (c) 2011-2014 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
--- collection of rendering routine 
---
------------------------------------------------------------------------------
-
-
 module Graphics.Hoodle.Render.Debug
 (      
 -- * dummy rendering 

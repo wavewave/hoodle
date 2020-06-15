@@ -1,17 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
--- |
--- Module      : Control.Monad.Trans.Crtn.EventHandler
--- Copyright   : (c) 2012 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
--- Common event handling
 module Control.Monad.Trans.Crtn.EventHandler where
 
 import Control.Concurrent.MVar

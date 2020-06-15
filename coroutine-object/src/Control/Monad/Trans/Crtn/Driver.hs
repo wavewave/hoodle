@@ -2,11 +2,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-----------------------------
-
-----------------------------
-
--- | IO event driverzo
 module Control.Monad.Trans.Crtn.Driver where
 
 import Control.Monad.Reader

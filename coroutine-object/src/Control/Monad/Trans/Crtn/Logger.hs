@@ -3,24 +3,9 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
--- |
--- Module      : Control.Monad.Trans.Crtn.Logger
--- Copyright   : (c) 2012 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
--- describe logger
 module Control.Monad.Trans.Crtn.Logger where
 
 import Control.Monad.Reader
---
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Object
 

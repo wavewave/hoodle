@@ -1,23 +1,8 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Type.Event 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
--- GUI events in hoodle application
---
------------------------------------------------------------------------------
-
 module Hoodle.Type.Event where
 
--- from other package
 import           Control.Concurrent 
 import           Data.ByteString 
 import           Data.IORef
@@ -28,12 +13,10 @@ import qualified Graphics.UI.Gtk as Gtk
 #ifdef HUB
 import           Data.Time.Clock
 #endif
--- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
 import           Graphics.Hoodle.Render.Type
--- from this package
 import           Hoodle.Device 
 import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement

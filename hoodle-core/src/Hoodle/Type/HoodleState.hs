@@ -2,18 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Type.HoodleState 
--- Copyright   : (c) 2011-2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Type.HoodleState 
 ( HoodleState
 , HoodleModeState(..)
@@ -124,14 +112,12 @@ import qualified Data.Text as T
 import           Data.Time.Clock
 import           Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get,set)
--- from hoodle-platform
 import           Control.Monad.Trans.Crtn.Event 
 import           Control.Monad.Trans.Crtn.Queue 
 import           Data.Hoodle.Generic
 import           Data.Hoodle.Select
 import           Graphics.Hoodle.Render
 import           Graphics.Hoodle.Render.Type
--- from this package 
 import           Hoodle.Device
 import           Hoodle.Script.Hook
 import           Hoodle.Type.Enum 
@@ -142,8 +128,6 @@ import           Hoodle.Type.Undo
 import           Hoodle.Type.Alias 
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
--- 
--- import Prelude hiding ((.), id)
 
 -- | 
 

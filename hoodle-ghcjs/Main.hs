@@ -22,8 +22,11 @@ import Control.Monad (forever, void, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
-import Control.Monad.Trans.Crtn.Driver (Driver, driver)
-import Control.Monad.Trans.Crtn.Event ()
+import qualified Control.Monad.Trans.Crtn.Driver as D
+  ( Driver,
+    DrvOp,
+    driver,
+  )
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
 import Control.Monad.Trans.Crtn.Logger
   ( LogInput,
@@ -32,7 +35,7 @@ import Control.Monad.Trans.Crtn.Logger
     MonadLog (..),
     writeLog,
   )
-import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..), SObjBT, SObjT)
+import Control.Monad.Trans.Crtn.Object (Arg (..), CObjT, Res (..), SObjBT, SObjT)
 import Control.Monad.Trans.Crtn.World (WorldOp (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Control.Monad.Trans.State (StateT (..))
@@ -181,11 +184,16 @@ onPointerDown ref ev = do
     (x, y) <- getXY ev
     atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (singleton (x, y))})
 
-onPointerUp :: TVar MyState -> JSVal -> IO ()
-onPointerUp ref ev = do
+onPointerUp ::
+  EventVar ->
+  TVar MyState ->
+  JSVal ->
+  IO ()
+onPointerUp mvar ref ev = do
   js_debug_show $ jsval ("ready for input" :: JSString)
   t <- getPointerType ev
   when (t /= Touch) $ do
+    eventHandler mvar Fire
     MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
     case drawingState of
       Drawing xys -> do
@@ -244,8 +252,8 @@ onMessage sock ref s = do
       let i = maximum (map fst dat)
       atomically $ writeTVar ref (myst {_mystateDocState = DocState i})
 
-main0 :: IO ()
-main0 = do
+main0 :: EventVar -> IO ()
+main0 mvar = do
   putStrLn "ghcjs started"
   js_prevent_default_touch_move
   svg <- js_svg_box
@@ -279,13 +287,35 @@ main0 = do
   js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove ref)
   js_addEventListener cvs "pointermove" onpointermove
-  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp ref)
+  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp mvar ref)
   js_addEventListener cvs "pointerup" onpointerup
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF
 
-data Event = Fire
+data AllEvent = Fire
+
+data MainOp i o where
+  DoEvent :: MainOp AllEvent ()
+
+doEvent :: (Monad m) => AllEvent -> CObjT MainOp m ()
+doEvent ev = request (Arg DoEvent ev) >> pure ()
+
+type MainCoroutine = MainObjB
+
+type MainObjB = SObjBT MainOp WorldObjB
+
+type MainObj = SObjT MainOp WorldObjB
+
+type WorldObj = SObjT (WorldOp AllEvent DriverB) DriverB
+
+type WorldObjB = SObjBT (WorldOp AllEvent DriverB) DriverB
+
+type Driver a = D.Driver AllEvent IO a
+
+type DriverB = SObjBT (D.DrvOp AllEvent) IO
+
+type EventVar = MVar (Maybe (Driver ()))
 
 data WorldAttrib (m :: * -> *) = WorldAttrib
 
@@ -295,7 +325,7 @@ initWorld = WorldAttrib
 simplelogger :: (MonadLog m) => LogServer m ()
 simplelogger = loggerW 0
 
-ticking :: MVar (Maybe (Driver Event IO ())) -> Int -> IO ()
+ticking :: EventVar -> Int -> IO ()
 ticking mvar n = do
   putStrLnAndFlush ("ticking: " ++ show n)
   when (n `mod` 10 == 0) $
@@ -314,16 +344,17 @@ loggerW num = ReaderT (f num)
       f (n + 1) req'
 
 -- |
-world :: forall m. (MonadIO m) => SObjT (WorldOp Event m) m ()
+world :: forall m. (MonadIO m) => SObjT (WorldOp AllEvent m) m ()
 world = ReaderT staction
   where
     staction req = void $ runStateT (go req) initWorld
     go ::
       (MonadIO m) =>
-      Arg (WorldOp Event m) ->
-      StateT (WorldAttrib (SObjBT (WorldOp Event m) m)) (SObjBT (WorldOp Event m) m) ()
+      Arg (WorldOp AllEvent m) ->
+      StateT (WorldAttrib (SObjBT (WorldOp AllEvent m) m)) (SObjBT (WorldOp AllEvent m) m) ()
     go (Arg GiveEvent ev) = do
       liftIO $ putStrLnAndFlush "giveevent"
+      -- liftIO $ putStrLnAndFlush (show ev)
       req <- lift $ request $ Res GiveEvent ()
       go req
     go (Arg FlushLog (logobj :: LogServer m ())) = do
@@ -341,10 +372,10 @@ world = ReaderT staction
 
 main :: IO ()
 main = do
-  main0
   putStrLn "new start"
-  dref <- newEmptyMVar :: IO (MVar (Maybe (Driver Event IO ())))
+  mvar <- newEmptyMVar :: IO EventVar
+  main0 mvar
   let logger = simplelogger
-  putMVar dref . Just $ driver logger world
+  putMVar mvar . Just $ D.driver logger world
   putStrLn "starting ticking"
-  ticking dref 0
+  ticking mvar 0

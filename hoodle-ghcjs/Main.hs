@@ -20,7 +20,7 @@ import Control.Concurrent.STM
   )
 import Control.Monad (forever, liftM, void, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.State (MonadState (get, put))
+import Control.Monad.State (MonadState (get, put), modify')
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
 import qualified Control.Monad.Trans.Crtn.Driver as D
@@ -187,9 +187,10 @@ onPointerDown evar {- ref -} ev = do
   js_debug_show (jsval v)
   t <- getPointerType ev
   when (t /= Touch) $ do
-    eventHandler evar Fire
+    (x, y) <- getXY ev
+    eventHandler evar $ PointerDown (x, y)
 
-{-    (x, y) <- getXY ev
+{-
     atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (singleton (x, y))})
 -}
 
@@ -202,30 +203,8 @@ onPointerUp evar {- ref -} ev = do
   js_debug_show $ jsval ("ready for input" :: JSString)
   t <- getPointerType ev
   when (t /= Touch) $ do
-    eventHandler evar Fire
-
-{-
-    MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
-    case drawingState of
-      Drawing xys -> do
-        xy@(x, y) <- getXY ev
-        let xys' = xys |> xy
-        path_arr <- js_to_svg_point_array svg =<< toJSValListOf (toList xys')
-        path <- fromJSValUncheckedListOf path_arr
-        atomically $
-          modifyTVar'
-            ref
-            ( \s ->
-                s
-                  { _mystateIsDrawing = NotDrawing,
-                    _mystateSyncState = SyncState [path]
-                  }
-            )
-        let hsh = hash path
-            msg = NewStroke (hsh, path)
-        WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-      _ -> pure ()
--}
+    (x, y) <- getXY ev
+    eventHandler evar (PointerUp (x, y))
 
 onPointerMove ::
   EventVar ->
@@ -235,20 +214,8 @@ onPointerMove ::
 onPointerMove evar {- ref -} ev = do
   t <- getPointerType ev
   when (t /= Touch) $ do
-    eventHandler evar Fire
-
-{-
-MyState drawingState svg cvs offcvs _ _ _ <- atomically $ readTVar ref
-case drawingState of
-  Drawing xys -> do
-    xy@(x, y) <- getXY ev
-    case viewr xys of
-      _ :> (x0, y0) -> js_overlay_point cvs offcvs x0 y0 x y
-      _ -> pure ()
-    atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (xys |> xy)})
-  _ ->
-    pure ()
--}
+    (x, y) <- getXY ev
+    eventHandler evar (PointerMove (x, y))
 
 test :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
 test cvs offcvs rAF = do
@@ -270,6 +237,9 @@ data AllEvent
   = Fire
   | ERegisterStroke (Int, Int)
   | EDataStrokes [(Int, [(Double, Double)])]
+  | PointerDown (Double, Double)
+  | PointerMove (Double, Double)
+  | PointerUp (Double, Double)
   deriving (Show)
 
 data MainOp i o where
@@ -359,10 +329,56 @@ guiProcess ev = do
         mapM_ (drawPath svg . snd) dat
       let i = maximum (map fst dat)
       put $ HoodleState (myst {_mystateDocState = DocState i})
+    PointerDown (x, y) ->
+      drawingMode (singleton (x, y))
     _ -> do
       liftIO $ putStrLnAndFlush (show ev)
   ev <- nextevent
   guiProcess ev
+
+drawingMode :: Seq (Double, Double) -> MainCoroutine ()
+drawingMode xys = do
+  ev <- nextevent
+  case ev of
+    PointerMove xy@(x, y) -> do
+      HoodleState (MyState drawingState svg cvs offcvs _ _ _) <- get
+      case viewr xys of
+        _ :> (x0, y0) -> liftIO $ js_overlay_point cvs offcvs x0 y0 x y
+        _ -> pure ()
+      drawingMode (xys |> xy)
+    PointerUp xy -> do
+      HoodleState (MyState drawingState svg _ offcvs sock _ _) <- get
+      let xys' = xys |> xy
+      path_arr <-
+        liftIO $
+          js_to_svg_point_array svg =<< toJSValListOf (toList xys')
+      path <- liftIO $ fromJSValUncheckedListOf path_arr
+      modify' (\(HoodleState s) -> HoodleState s {_mystateSyncState = SyncState [path]})
+      let hsh = hash path
+          msg = NewStroke (hsh, path)
+      liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+    _ -> drawingMode xys
+
+{-
+    MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
+    case drawingState of
+      Drawing xys -> do
+        xy@(x, y) <- getXY ev
+      _ -> pure ()
+-}
+
+{-
+
+case drawingState of
+  Drawing xys -> do
+    xy@(x, y) <- getXY ev
+    case viewr xys of
+      _ :> (x0, y0) -> js_overlay_point cvs offcvs x0 y0 x y
+      _ -> pure ()
+    atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (xys |> xy)})
+  _ ->
+    pure ()
+-}
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

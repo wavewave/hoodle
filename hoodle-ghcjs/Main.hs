@@ -139,10 +139,6 @@ getPointerType ev = js_pointer_type ev >>= \s -> do
     "pen" -> pure Pen
     _ -> pure Mouse
 
-data DrawingState
-  = NotDrawing
-  | Drawing (Seq (Double, Double))
-
 data SyncState
   = SyncState
       { _syncstateQueue :: [[(Double, Double)]]
@@ -214,8 +210,7 @@ onMessage sock evar s = do
 
 data HoodleState
   = HoodleState
-      { _hdlstateIsDrawing :: DrawingState,
-        _hdlstateSVGBox :: JSVal,
+      { _hdlstateSVGBox :: JSVal,
         _hdlstateOverlayCanvas :: JSVal,
         _hdlstateOverlayOffCanvas :: JSVal,
         _hdlstateWebSocket :: WS.WebSocket,
@@ -306,14 +301,14 @@ guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess ev = do
   case ev of
     ERegisterStroke (s', hsh') -> do
-      HoodleState _ _ _ _ sock (DocState n) _ <- get
+      HoodleState _ _ _ sock (DocState n) _ <- get
       liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
       liftIO $ putStrLnAndFlush (show hsh')
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     EDataStrokes dat -> do
-      st@(HoodleState _ svg _ offcvs _ (DocState n) _) <- get
+      st@(HoodleState svg _ offcvs _ (DocState n) _) <- get
       liftIO $ do
         js_clear_overlay offcvs
         mapM_ (drawPath svg . snd) dat
@@ -331,13 +326,13 @@ drawingMode xys = do
   ev <- nextevent
   case ev of
     PointerMove xy@(x, y) -> do
-      HoodleState drawingState svg cvs offcvs _ _ _ <- get
+      HoodleState svg cvs offcvs _ _ _ <- get
       case viewr xys of
         _ :> (x0, y0) -> liftIO $ js_overlay_point cvs offcvs x0 y0 x y
         _ -> pure ()
       drawingMode (xys |> xy)
     PointerUp xy -> do
-      HoodleState drawingState svg _ offcvs sock _ _ <- get
+      HoodleState svg _ offcvs sock _ _ <- get
       let xys' = xys |> xy
       path_arr <-
         liftIO $
@@ -381,7 +376,7 @@ setupCallback evar = do
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage sock evar)
           }
-    pure $ HoodleState NotDrawing svg cvs offcvs sock (DocState 0) (SyncState [])
+    pure $ HoodleState svg cvs offcvs sock (DocState 0) (SyncState [])
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
   js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar)

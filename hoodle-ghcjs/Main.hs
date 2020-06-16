@@ -153,17 +153,6 @@ data DocState
       { _docstateCount :: Int
       }
 
-data MyState
-  = MyState
-      { _mystateIsDrawing :: DrawingState,
-        _mystateSVGBox :: JSVal,
-        _mystateOverlayCanvas :: JSVal,
-        _mystateOverlayOffCanvas :: JSVal,
-        _mystateWebSocket :: WS.WebSocket,
-        _mystateDocState :: DocState,
-        _mystateSyncState :: SyncState
-      }
-
 getXY :: JSVal -> IO (Double, Double)
 getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
 
@@ -224,7 +213,15 @@ onMessage sock evar s = do
       eventHandler evar (EDataStrokes dat)
 
 data HoodleState
-  = HoodleState MyState
+  = HoodleState
+      { _hdlstateIsDrawing :: DrawingState,
+        _hdlstateSVGBox :: JSVal,
+        _hdlstateOverlayCanvas :: JSVal,
+        _hdlstateOverlayOffCanvas :: JSVal,
+        _hdlstateWebSocket :: WS.WebSocket,
+        _hdlstateDocState :: DocState,
+        _hdlstateSyncState :: SyncState
+      }
 
 data AllEvent
   = Fire
@@ -309,19 +306,19 @@ guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess ev = do
   case ev of
     ERegisterStroke (s', hsh') -> do
-      HoodleState myst@(MyState _ _ _ _ sock (DocState n) _) <- get
+      HoodleState _ _ _ _ sock (DocState n) _ <- get
       liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
       liftIO $ putStrLnAndFlush (show hsh')
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     EDataStrokes dat -> do
-      HoodleState myst@(MyState _ svg _ offcvs _ (DocState n) _) <- get
+      st@(HoodleState _ svg _ offcvs _ (DocState n) _) <- get
       liftIO $ do
         js_clear_overlay offcvs
         mapM_ (drawPath svg . snd) dat
       let i = maximum (map fst dat)
-      put $ HoodleState (myst {_mystateDocState = DocState i})
+      put $ st {_hdlstateDocState = DocState i}
     PointerDown (x, y) ->
       drawingMode (singleton (x, y))
     _ -> do
@@ -334,19 +331,19 @@ drawingMode xys = do
   ev <- nextevent
   case ev of
     PointerMove xy@(x, y) -> do
-      HoodleState (MyState drawingState svg cvs offcvs _ _ _) <- get
+      HoodleState drawingState svg cvs offcvs _ _ _ <- get
       case viewr xys of
         _ :> (x0, y0) -> liftIO $ js_overlay_point cvs offcvs x0 y0 x y
         _ -> pure ()
       drawingMode (xys |> xy)
     PointerUp xy -> do
-      HoodleState (MyState drawingState svg _ offcvs sock _ _) <- get
+      HoodleState drawingState svg _ offcvs sock _ _ <- get
       let xys' = xys |> xy
       path_arr <-
         liftIO $
           js_to_svg_point_array svg =<< toJSValListOf (toList xys')
       path <- liftIO $ fromJSValUncheckedListOf path_arr
-      modify' (\(HoodleState s) -> HoodleState s {_mystateSyncState = SyncState [path]})
+      modify' (\s -> s {_hdlstateSyncState = SyncState [path]})
       let hsh = hash path
           msg = NewStroke (hsh, path)
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
@@ -384,8 +381,7 @@ setupCallback evar = do
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage sock evar)
           }
-    let mystate = (MyState NotDrawing svg cvs offcvs sock (DocState 0) (SyncState []))
-    pure (HoodleState mystate)
+    pure $ HoodleState NotDrawing svg cvs offcvs sock (DocState 0) (SyncState [])
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
   js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar)

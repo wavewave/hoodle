@@ -20,6 +20,7 @@ import Control.Concurrent.STM
   )
 import Control.Monad (forever, liftM, void, when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.State (MonadState (get, put))
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
 import qualified Control.Monad.Trans.Crtn.Driver as D
@@ -176,25 +177,34 @@ drawPath svg xys = do
   arr <- toJSValListOf xys
   js_draw_path svg arr
 
-onPointerDown :: TVar MyState -> JSVal -> IO ()
-onPointerDown ref ev = do
+onPointerDown ::
+  EventVar ->
+  -- TVar MyState ->
+  JSVal ->
+  IO ()
+onPointerDown evar {- ref -} ev = do
   v <- js_pointer_type ev
   js_debug_show (jsval v)
   t <- getPointerType ev
   when (t /= Touch) $ do
-    (x, y) <- getXY ev
+    eventHandler evar Fire
+
+{-    (x, y) <- getXY ev
     atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (singleton (x, y))})
+-}
 
 onPointerUp ::
   EventVar ->
-  TVar MyState ->
+  -- TVar MyState ->
   JSVal ->
   IO ()
-onPointerUp evar ref ev = do
+onPointerUp evar {- ref -} ev = do
   js_debug_show $ jsval ("ready for input" :: JSString)
   t <- getPointerType ev
   when (t /= Touch) $ do
     eventHandler evar Fire
+
+{-
     MyState drawingState svg _ offcvs sock _ _ <- atomically $ readTVar ref
     case drawingState of
       Drawing xys -> do
@@ -215,88 +225,51 @@ onPointerUp evar ref ev = do
             msg = NewStroke (hsh, path)
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
       _ -> pure ()
+-}
 
-onPointerMove :: TVar MyState -> JSVal -> IO ()
-onPointerMove ref ev = do
+onPointerMove ::
+  EventVar ->
+  -- TVar MyState ->
+  JSVal ->
+  IO ()
+onPointerMove evar {- ref -} ev = do
   t <- getPointerType ev
   when (t /= Touch) $ do
-    MyState drawingState svg cvs offcvs _ _ _ <- atomically $ readTVar ref
-    case drawingState of
-      Drawing xys -> do
-        xy@(x, y) <- getXY ev
-        case viewr xys of
-          _ :> (x0, y0) -> js_overlay_point cvs offcvs x0 y0 x y
-          _ -> pure ()
-        atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (xys |> xy)})
-      _ ->
-        pure ()
+    eventHandler evar Fire
+
+{-
+MyState drawingState svg cvs offcvs _ _ _ <- atomically $ readTVar ref
+case drawingState of
+  Drawing xys -> do
+    xy@(x, y) <- getXY ev
+    case viewr xys of
+      _ :> (x0, y0) -> js_overlay_point cvs offcvs x0 y0 x y
+      _ -> pure ()
+    atomically $ modifyTVar' ref (\s -> s {_mystateIsDrawing = Drawing (xys |> xy)})
+  _ ->
+    pure ()
+-}
 
 test :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
 test cvs offcvs rAF = do
   js_refresh cvs offcvs
   js_requestAnimationFrame rAF
 
-onMessage :: WS.WebSocket -> TVar MyState -> JSString -> IO ()
-onMessage sock ref s = do
+onMessage :: WS.WebSocket -> EventVar {- -> TVar MyState -} -> JSString -> IO ()
+onMessage sock evar {- ref -} s = do
   case deserialize $ T.pack $ JSS.unpack s of
     RegisterStroke (s', hsh') -> do
-      myst@(MyState _ _ _ _ _ (DocState n) _) <- atomically $ readTVar ref
-      putStrLnAndFlush (show s' ++ " <-> " ++ show n)
-      putStrLnAndFlush (show hsh')
-      when (s' > n) $ do
-        let msg = SyncRequest (n, s')
-        WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+      eventHandler evar (ERegisterStroke (s', hsh'))
     DataStrokes dat -> do
-      myst@(MyState _ svg _ offcvs _ (DocState n) _) <- atomically $ readTVar ref
-      js_clear_overlay offcvs
-      mapM_ (drawPath svg . snd) dat
-      let i = maximum (map fst dat)
-      atomically $ writeTVar ref (myst {_mystateDocState = DocState i})
+      eventHandler evar (EDataStrokes dat)
 
-main0 :: EventVar -> IO ()
-main0 evar = do
-  putStrLn "ghcjs started"
-  js_prevent_default_touch_move
-  svg <- js_svg_box
-  cvs <- js_canvas_overlay
-  js_fix_dpi cvs
-  offcvs <- js_create_canvas
-  w <- js_get_width cvs
-  h <- js_get_height cvs
-  js_set_width offcvs w
-  js_set_height offcvs h
-  putStrLn "websocket start"
-  let wsClose _ =
-        putStrLnAndFlush "connection closed"
-      wsMessage sock ref msg = do
-        let d = ME.getData msg
-        case d of
-          ME.StringData s -> onMessage sock ref s
-          _ -> pure ()
-  ref <- mdo
-    ref <- newTVarIO (MyState NotDrawing svg cvs offcvs sock (DocState 0) (SyncState []))
-    sock <-
-      WS.connect
-        WS.WebSocketRequest
-          { WS.url = "ws://192.168.1.42:7080",
-            WS.protocols = [],
-            WS.onClose = Just wsClose,
-            WS.onMessage = Just (wsMessage sock ref)
-          }
-    pure ref
-  onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown ref)
-  js_addEventListener cvs "pointerdown" onpointerdown
-  onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove ref)
-  js_addEventListener cvs "pointermove" onpointermove
-  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp evar ref)
-  js_addEventListener cvs "pointerup" onpointerup
-  mdo
-    rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
-    js_requestAnimationFrame rAF
+data HoodleState
+  = HoodleState MyState
 
-data HoodleState = HoodleState
-
-data AllEvent = Fire
+data AllEvent
+  = Fire
+  | ERegisterStroke (Int, Int)
+  | EDataStrokes [(Int, [(Double, Double)])]
   deriving (Show)
 
 data MainOp i o where
@@ -321,23 +294,8 @@ type DriverB = SObjBT (D.DrvOp AllEvent) IO
 
 type EventVar = MVar (Maybe (Driver ()))
 
--- data WorldAttrib (m :: * -> *) = WorldAttrib
-
--- initWorld :: (Monad m) => WorldAttrib m
--- initWorld = WorldAttrib
-
 simplelogger :: (MonadLog m) => LogServer m ()
 simplelogger = loggerW 0
-
-{-
-ticking :: EventVar -> Int -> IO ()
-ticking evar n = do
-  putStrLnAndFlush ("ticking: " ++ show n)
-  when (n `mod` 10 == 0) $
-    eventHandler evar Fire
-  threadDelay (1000000)
-  ticking mvar (n + 1)
--}
 
 -- |
 loggerW :: forall m. (MonadLog m) => Int -> LogServer m ()
@@ -386,18 +344,75 @@ world xstate initmc = ReaderT staction
 
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess ev = do
-  liftIO $ putStrLnAndFlush (show ev)
+  case ev of
+    ERegisterStroke (s', hsh') -> do
+      HoodleState myst@(MyState _ _ _ _ sock (DocState n) _) <- get
+      liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
+      liftIO $ putStrLnAndFlush (show hsh')
+      when (s' > n) $ liftIO $ do
+        let msg = SyncRequest (n, s')
+        WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+    EDataStrokes dat -> do
+      HoodleState myst@(MyState _ svg _ offcvs _ (DocState n) _) <- get
+      liftIO $ do
+        js_clear_overlay offcvs
+        mapM_ (drawPath svg . snd) dat
+      let i = maximum (map fst dat)
+      put $ HoodleState (myst {_mystateDocState = DocState i})
+    _ -> do
+      liftIO $ putStrLnAndFlush (show ev)
   ev <- nextevent
   guiProcess ev
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
 
+setupCallback :: EventVar -> IO HoodleState
+setupCallback evar = do
+  putStrLn "ghcjs started"
+  js_prevent_default_touch_move
+  svg <- js_svg_box
+  cvs <- js_canvas_overlay
+  js_fix_dpi cvs
+  offcvs <- js_create_canvas
+  w <- js_get_width cvs
+  h <- js_get_height cvs
+  js_set_width offcvs w
+  js_set_height offcvs h
+  putStrLn "websocket start"
+  let wsClose _ =
+        putStrLnAndFlush "connection closed"
+      wsMessage sock evar {- ref -} msg = do
+        let d = ME.getData msg
+        case d of
+          ME.StringData s -> onMessage sock evar {-ref -} s
+          _ -> pure ()
+  xstate <- mdo
+    sock <-
+      WS.connect
+        WS.WebSocketRequest
+          { WS.url = "ws://192.168.1.42:7080",
+            WS.protocols = [],
+            WS.onClose = Just wsClose,
+            WS.onMessage = Just (wsMessage sock evar) -- ref)
+          }
+    let mystate = (MyState NotDrawing svg cvs offcvs sock (DocState 0) (SyncState []))
+    -- ref <- newTVarIO mystate
+    pure (HoodleState mystate)
+  onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar) --  ref)
+  js_addEventListener cvs "pointerdown" onpointerdown
+  onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar) --  ref)
+  js_addEventListener cvs "pointermove" onpointermove
+  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp evar) --  ref)
+  js_addEventListener cvs "pointerup" onpointerup
+  mdo
+    rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
+    js_requestAnimationFrame rAF
+  pure xstate
+
 main :: IO ()
 main = do
   putStrLn "new start"
   evar <- newEmptyMVar :: IO EventVar
-  main0 evar
-  putMVar evar . Just $ D.driver simplelogger (world HoodleState initmc)
---putStrLn "starting ticking"
---ticking evar 0
+  xstate <- setupCallback evar
+  putMVar evar . Just $ D.driver simplelogger (world xstate initmc)

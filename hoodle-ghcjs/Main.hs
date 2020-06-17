@@ -2,6 +2,7 @@
 {-# LANGUAGE JavaScriptFFI #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
@@ -72,8 +73,8 @@ foreign import javascript unsafe "preventDefaultTouchMove()"
 foreign import javascript unsafe "$r = SVG('#box')"
   js_svg_box :: IO JSVal
 
-foreign import javascript unsafe "$r = document.getElementById('overlay')"
-  js_canvas_overlay :: IO JSVal
+-- foreign import javascript unsafe "$r = document.getElementById('overlay')"
+--  js_canvas_overlay :: IO JSVal
 
 foreign import javascript unsafe "$1.on($2,$3)"
   js_on :: JSVal -> JSString -> Callback a -> IO ()
@@ -128,6 +129,9 @@ foreign import javascript unsafe "$r = $1.pointerType"
 
 foreign import javascript unsafe "debug_show($1)"
   js_debug_show :: JSVal -> IO ()
+
+foreign import javascript unsafe "document.getElementById($1)"
+  js_document_getElementById :: JSString -> IO JSVal
 
 data PointerType = Mouse | Touch | Pen
   deriving (Show, Eq)
@@ -208,6 +212,15 @@ onMessage sock evar s = do
     DataStrokes dat -> do
       eventHandler evar (EDataStrokes dat)
 
+data Mode = ModePen | ModeEraser
+  deriving (Show)
+
+onModeChange :: Mode -> EventVar -> JSVal -> IO ()
+onModeChange m evar _ = do
+  case m of
+    ModePen -> eventHandler evar ToPenMode
+    ModeEraser -> eventHandler evar ToEraserMode
+
 data HoodleState
   = HoodleState
       { _hdlstateSVGBox :: JSVal,
@@ -225,6 +238,8 @@ data AllEvent
   | PointerDown (Double, Double)
   | PointerMove (Double, Double)
   | PointerUp (Double, Double)
+  | ToPenMode
+  | ToEraserMode
   deriving (Show)
 
 data MainOp i o where
@@ -298,7 +313,10 @@ world xstate initmc = ReaderT staction
       go mcobj req
 
 guiProcess :: AllEvent -> MainCoroutine ()
-guiProcess ev = do
+guiProcess = toPenMode
+
+toPenMode :: AllEvent -> MainCoroutine ()
+toPenMode ev = do
   case ev of
     ERegisterStroke (s', hsh') -> do
       HoodleState _ _ _ sock (DocState n) _ <- get
@@ -316,10 +334,17 @@ guiProcess ev = do
       put $ st {_hdlstateDocState = DocState i}
     PointerDown (x, y) ->
       drawingMode (singleton (x, y))
+    ToPenMode -> pure ()
+    ToEraserMode -> nextevent >>= toEraseMode
     _ -> do
       liftIO $ putStrLnAndFlush (show ev)
-  ev <- nextevent
-  guiProcess ev
+  nextevent >>= toPenMode
+
+toEraseMode :: AllEvent -> MainCoroutine ()
+toEraseMode ev = do
+  case ev of
+    ToPenMode -> nextevent >>= toPenMode
+    _ -> nextevent >>= toEraseMode
 
 drawingMode :: Seq (Double, Double) -> MainCoroutine ()
 drawingMode xys = do
@@ -352,7 +377,7 @@ setupCallback evar = do
   putStrLn "ghcjs started"
   js_prevent_default_touch_move
   svg <- js_svg_box
-  cvs <- js_canvas_overlay
+  cvs <- js_document_getElementById "overlay"
   js_fix_dpi cvs
   offcvs <- js_create_canvas
   w <- js_get_width cvs
@@ -386,6 +411,10 @@ setupCallback evar = do
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
     js_requestAnimationFrame rAF
+  radio_pen <- js_document_getElementById "pen"
+  radio_eraser <- js_document_getElementById "eraser"
+  js_addEventListener radio_pen "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar)
+  js_addEventListener radio_eraser "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar)
   pure xstate
 
 main :: IO ()

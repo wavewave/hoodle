@@ -9,47 +9,33 @@
 
 module Main where
 
-import Control.Concurrent (forkIO, threadDelay)
-import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar)
-import Control.Concurrent.STM
-  ( TVar,
-    atomically,
-    modifyTVar',
-    newTVarIO,
-    readTVar,
-    writeTVar,
-  )
-import Control.Monad (forever, liftM, void, when)
+import Control.Concurrent.MVar (newEmptyMVar, putMVar)
+import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.State (MonadState (get, put), modify')
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
-import qualified Control.Monad.Trans.Crtn.Driver as D
-  ( Driver,
-    DrvOp,
-    driver,
-  )
+import qualified Control.Monad.Trans.Crtn.Driver as D (driver)
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
-import Control.Monad.Trans.Crtn.Logger
-  ( LogInput,
-    LogOp (..),
-    LogServer,
-    MonadLog (..),
-    writeLog,
-  )
-import Control.Monad.Trans.Crtn.Object (Arg (..), CObjT, EStT, Res (..), SObjBT, SObjT)
-import Control.Monad.Trans.Crtn.World (WorldOp (..))
-import Control.Monad.Trans.Except (runExceptT)
+import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
-import Control.Monad.Trans.State (StateT (..))
+import Coroutine
+  ( EventVar,
+    MainCoroutine,
+    MainObj,
+    MainOp (DoEvent),
+    nextevent,
+    putStrLnAndFlush,
+    simplelogger,
+    world,
+  )
 import Data.Foldable (toList)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack, unpack)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Text as T
+import Event (AllEvent (..))
 import GHCJS.Foreign.Callback
   ( Callback,
-    OnBlocked (ContinueAsync, ThrowWouldBlock),
+    OnBlocked (ThrowWouldBlock),
     syncCallback,
     syncCallback1,
   )
@@ -62,7 +48,7 @@ import Message
     S2CMsg (DataStrokes, RegisterStroke),
     TextSerializable (deserialize, serialize),
   )
-import System.IO (hFlush, hPutStrLn, stdout)
+import State (DocState (..), HoodleState (..), SyncState (..))
 
 foreign import javascript unsafe "console.log($1)"
   js_console_log :: JSVal -> IO ()
@@ -143,23 +129,8 @@ getPointerType ev = js_pointer_type ev >>= \s -> do
     "pen" -> pure Pen
     _ -> pure Mouse
 
-data SyncState
-  = SyncState
-      { _syncstateQueue :: [[(Double, Double)]]
-      }
-
-data DocState
-  = DocState
-      { _docstateCount :: Int
-      }
-
 getXY :: JSVal -> IO (Double, Double)
 getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
-
-putStrLnAndFlush :: String -> IO ()
-putStrLnAndFlush s = do
-  hPutStrLn stdout s
-  hFlush stdout
 
 drawPath :: JSVal -> [(Double, Double)] -> IO ()
 drawPath svg xys = do
@@ -204,8 +175,8 @@ test cvs offcvs rAF = do
   js_refresh cvs offcvs
   js_requestAnimationFrame rAF
 
-onMessage :: WS.WebSocket -> EventVar -> JSString -> IO ()
-onMessage sock evar s = do
+onMessage :: EventVar -> JSString -> IO ()
+onMessage evar s = do
   case deserialize $ T.pack $ JSS.unpack s of
     RegisterStroke (s', hsh') -> do
       eventHandler evar (ERegisterStroke (s', hsh'))
@@ -221,97 +192,6 @@ onModeChange m evar _ = do
     ModePen -> eventHandler evar ToPenMode
     ModeEraser -> eventHandler evar ToEraserMode
 
-data HoodleState
-  = HoodleState
-      { _hdlstateSVGBox :: JSVal,
-        _hdlstateOverlayCanvas :: JSVal,
-        _hdlstateOverlayOffCanvas :: JSVal,
-        _hdlstateWebSocket :: WS.WebSocket,
-        _hdlstateDocState :: DocState,
-        _hdlstateSyncState :: SyncState
-      }
-
-data AllEvent
-  = Fire
-  | ERegisterStroke (Int, Int)
-  | EDataStrokes [(Int, [(Double, Double)])]
-  | PointerDown (Double, Double)
-  | PointerMove (Double, Double)
-  | PointerUp (Double, Double)
-  | ToPenMode
-  | ToEraserMode
-  deriving (Show)
-
-data MainOp i o where
-  DoEvent :: MainOp AllEvent ()
-
-doEvent :: (Monad m) => AllEvent -> CObjT MainOp m ()
-doEvent ev = request (Arg DoEvent ev) >> pure ()
-
-type MainCoroutine = MainObjB
-
-type MainObjB = SObjBT MainOp (EStT HoodleState WorldObjB)
-
-type MainObj = SObjT MainOp (EStT HoodleState WorldObjB)
-
-type WorldObj = SObjT (WorldOp AllEvent DriverB) DriverB
-
-type WorldObjB = SObjBT (WorldOp AllEvent DriverB) DriverB
-
-type Driver a = D.Driver AllEvent IO a
-
-type DriverB = SObjBT (D.DrvOp AllEvent) IO
-
-type EventVar = MVar (Maybe (Driver ()))
-
-simplelogger :: (MonadLog m) => LogServer m ()
-simplelogger = loggerW 0
-
--- |
-loggerW :: forall m. (MonadLog m) => Int -> LogServer m ()
-loggerW num = ReaderT (f num)
-  where
-    f :: Int -> LogInput -> CrtnT (Res LogOp) (Arg LogOp) m ()
-    f n (Arg WriteLog msg) = do
-      lift (scribe ("log number " ++ show n ++ " : " ++ msg))
-      req' <- request (Res WriteLog ())
-      f (n + 1) req'
-
-errorlog :: String -> IO ()
-errorlog = putStrLnAndFlush
-
-nextevent :: MainCoroutine AllEvent
-nextevent = do
-  Arg DoEvent ev <- request (Res DoEvent ())
-  pure ev
-
--- |
-world :: HoodleState -> MainObj () -> WorldObj ()
-world xstate initmc = ReaderT staction
-  where
-    staction req = void $ runStateT erract xstate
-      where
-        erract = do
-          r <- runExceptT (go initmc req)
-          case r of
-            Left e -> liftIO (errorlog (show e))
-            Right _ -> pure ()
-    go ::
-      MainObj () ->
-      Arg (WorldOp AllEvent DriverB) ->
-      EStT HoodleState WorldObjB ()
-    go mcobj (Arg GiveEvent ev) = do
-      Right mcobj' <- liftM (fmap fst) (mcobj <==| doEvent ev)
-      req <- lift $ lift $ request $ Res GiveEvent ()
-      go mcobj' req
-    go mcobj (Arg FlushLog logobj) = do
-      Right logobj' <- lift $ lift $ lift $ liftM (fmap fst) (logobj <==| writeLog ("[Log]"))
-      req <- lift $ lift $ request $ Res FlushLog logobj'
-      go mcobj req
-    go mcobj (Arg FlushQueue ()) = do
-      req <- lift $ lift $ request $ Res FlushQueue []
-      go mcobj req
-
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess = toPenMode
 
@@ -326,7 +206,7 @@ toPenMode ev = do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     EDataStrokes dat -> do
-      st@(HoodleState svg _ offcvs _ (DocState n) _) <- get
+      st@(HoodleState svg _ offcvs _ _ _) <- get
       liftIO $ do
         js_clear_overlay offcvs
         mapM_ (drawPath svg . snd) dat
@@ -351,13 +231,13 @@ drawingMode xys = do
   ev <- nextevent
   case ev of
     PointerMove xy@(x, y) -> do
-      HoodleState svg cvs offcvs _ _ _ <- get
+      HoodleState _svg cvs offcvs _ _ _ <- get
       case viewr xys of
         _ :> (x0, y0) -> liftIO $ js_overlay_point cvs offcvs x0 y0 x y
         _ -> pure ()
       drawingMode (xys |> xy)
     PointerUp xy -> do
-      HoodleState svg _ offcvs sock _ _ <- get
+      HoodleState svg _ _offcvs sock _ _ <- get
       let xys' = xys |> xy
       path_arr <-
         liftIO $
@@ -387,10 +267,10 @@ setupCallback evar = do
   putStrLn "websocket start"
   let wsClose _ =
         putStrLnAndFlush "connection closed"
-      wsMessage sock evar msg = do
+      wsMessage ev msg = do
         let d = ME.getData msg
         case d of
-          ME.StringData s -> onMessage sock evar s
+          ME.StringData s -> onMessage ev s
           _ -> pure ()
   xstate <- mdo
     sock <-
@@ -399,7 +279,7 @@ setupCallback evar = do
           { WS.url = "ws://192.168.1.42:7080",
             WS.protocols = [],
             WS.onClose = Just wsClose,
-            WS.onMessage = Just (wsMessage sock evar)
+            WS.onMessage = Just (wsMessage evar)
           }
     pure $ HoodleState svg cvs offcvs sock (DocState 0) (SyncState [])
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)

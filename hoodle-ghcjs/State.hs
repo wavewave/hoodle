@@ -10,7 +10,8 @@ data SyncState
 
 data DocState
   = DocState
-      { _docstateCount :: Int
+      { _docstateCount :: Int,
+        _docstateData :: [(Int, [(Double, Double)])]
       }
 
 data HoodleState

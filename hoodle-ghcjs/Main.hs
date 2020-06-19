@@ -199,19 +199,19 @@ toPenMode :: AllEvent -> MainCoroutine ()
 toPenMode ev = do
   case ev of
     ERegisterStroke (s', hsh') -> do
-      HoodleState _ _ _ sock (DocState n) _ <- get
+      HoodleState _ _ _ sock (DocState n _) _ <- get
       liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
       liftIO $ putStrLnAndFlush (show hsh')
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     EDataStrokes dat -> do
-      st@(HoodleState svg _ offcvs _ _ _) <- get
+      st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
         js_clear_overlay offcvs
         mapM_ (drawPath svg . snd) dat
       let i = maximum (map fst dat)
-      put $ st {_hdlstateDocState = DocState i}
+      put $ st {_hdlstateDocState = DocState i (dat0 ++ dat)}
     PointerDown (x, y) ->
       drawingMode (singleton (x, y))
     ToPenMode -> pure ()
@@ -281,7 +281,7 @@ setupCallback evar = do
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage evar)
           }
-    pure $ HoodleState svg cvs offcvs sock (DocState 0) (SyncState [])
+    pure $ HoodleState svg cvs offcvs sock (DocState 0 []) (SyncState [])
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
   js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar)

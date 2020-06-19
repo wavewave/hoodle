@@ -23,6 +23,15 @@ foreign import javascript unsafe "$r = $1.clientX"
 foreign import javascript unsafe "$r = $1.clientY"
   js_clientY :: JSVal -> IO Double
 
+foreign import javascript unsafe "$r = $1.clientX"
+  js_x :: JSVal -> IO Double
+
+foreign import javascript unsafe "$r = $1.clientY"
+  js_y :: JSVal -> IO Double
+
+foreign import javascript unsafe "$r = toSVGPoint($1,$2,$3)"
+  js_to_svg_point :: JSVal -> Double -> Double -> IO JSVal
+
 foreign import javascript unsafe "$r = toSVGPointArray($1,$2)"
   js_to_svg_point_array :: JSVal -> JSVal -> IO JSVal
 

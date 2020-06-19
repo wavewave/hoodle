@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -29,6 +30,7 @@ import Coroutine
 import Data.Foldable (toList)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack, unpack)
+import Data.List (nub, sort)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Text as T
 import Event (AllEvent (..))
@@ -41,6 +43,7 @@ import GHCJS.Foreign.Callback
   )
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSString, JSVal, jsval)
+import HitTest (do2LinesIntersect, doesLineHitStrk)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
 import Message
@@ -124,10 +127,10 @@ onModeChange m evar _ = do
     ModeEraser -> eventHandler evar ToEraserMode
 
 guiProcess :: AllEvent -> MainCoroutine ()
-guiProcess = toPenMode
+guiProcess = penReady
 
-toPenMode :: AllEvent -> MainCoroutine ()
-toPenMode ev = do
+penReady :: AllEvent -> MainCoroutine ()
+penReady ev = do
   case ev of
     ERegisterStroke (s', hsh') -> do
       HoodleState _ _ _ sock (DocState n _) _ <- get
@@ -146,16 +149,27 @@ toPenMode ev = do
     PointerDown (x, y) ->
       drawingMode (singleton (x, y))
     ToPenMode -> pure ()
-    ToEraserMode -> nextevent >>= toEraseMode
+    ToEraserMode -> nextevent >>= eraserReady
     _ -> do
       liftIO $ putStrLnAndFlush (show ev)
-  nextevent >>= toPenMode
+  nextevent >>= penReady
 
-toEraseMode :: AllEvent -> MainCoroutine ()
-toEraseMode ev = do
+getXYinSVG :: JSVal -> (Double, Double) -> IO (Double, Double)
+getXYinSVG svg (x0, y0) = do
+  r <- J.js_to_svg_point svg x0 y0
+  [x, y] <- fromJSValUncheckedListOf r
+  pure (x, y)
+
+eraserReady :: AllEvent -> MainCoroutine ()
+eraserReady ev = do
   case ev of
-    ToPenMode -> nextevent >>= toPenMode
-    _ -> nextevent >>= toEraseMode
+    ToPenMode -> nextevent >>= penReady
+    PointerDown (x0, y0) -> do
+      HoodleState svg _ _ _ _ _ <- get
+      (x, y) <- liftIO $ getXYinSVG svg (x0, y0)
+      erasingMode [] (x, y)
+    _ -> pure ()
+  nextevent >>= eraserReady
 
 drawingMode :: Seq (Double, Double) -> MainCoroutine ()
 drawingMode xys = do
@@ -168,7 +182,7 @@ drawingMode xys = do
         _ -> pure ()
       drawingMode (xys |> xy)
     PointerUp xy -> do
-      HoodleState svg _ _offcvs sock _ _ <- get
+      HoodleState svg _ _ sock _ _ <- get
       let xys' = xys |> xy
       path_arr <-
         liftIO $
@@ -179,6 +193,22 @@ drawingMode xys = do
           msg = NewStroke (hsh, path)
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> drawingMode xys
+
+erasingMode :: [Int] -> (Double, Double) -> MainCoroutine ()
+erasingMode hitted0 (x0, y0) = do
+  ev <- nextevent
+  case ev of
+    PointerMove (cx, cy) -> do
+      HoodleState svg _ _ _ (DocState _ strks) _ <- get
+      (x, y) <- liftIO $ getXYinSVG svg (cx, cy)
+      let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
+          !hitted' = nub $ sort (hitted ++ hitted0)
+      -- liftIO $ putStrLnAndFlush $ show $ ((x0, y0), (x, y))
+      -- liftIO $ putStrLnAndFlush $ show (map fst strksHitted)
+      erasingMode hitted' (x, y)
+    PointerUp _ ->
+      liftIO $ putStrLnAndFlush $ show hitted0
+    _ -> erasingMode hitted0 (x0, y0)
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

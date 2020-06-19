@@ -1,3 +1,9 @@
+function toSVGPoint(svg,x,y) {
+    var ctm = svg.screenCTM();
+    var pt = (new SVG.Point(x,y)).transform(ctm.inverse());
+    return [pt.x, pt.y];
+}
+
 function toSVGPointArray(svg,xys) {
     var ctm = svg.screenCTM();
     var xys_canvas = xys.map( function(xy) {

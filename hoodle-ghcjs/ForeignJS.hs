@@ -1,0 +1,72 @@
+{-# LANGUAGE JavaScriptFFI #-}
+
+module ForeignJS where
+
+import GHCJS.Foreign.Callback (Callback)
+import GHCJS.Types (JSString, JSVal)
+
+foreign import javascript unsafe "console.log($1)"
+  js_console_log :: JSVal -> IO ()
+
+foreign import javascript unsafe "preventDefaultTouchMove()"
+  js_prevent_default_touch_move :: IO ()
+
+foreign import javascript unsafe "$r = SVG('#box')"
+  js_svg_box :: IO JSVal
+
+foreign import javascript unsafe "$1.on($2,$3)"
+  js_on :: JSVal -> JSString -> Callback a -> IO ()
+
+foreign import javascript unsafe "$r = $1.clientX"
+  js_clientX :: JSVal -> IO Double
+
+foreign import javascript unsafe "$r = $1.clientY"
+  js_clientY :: JSVal -> IO Double
+
+foreign import javascript unsafe "$r = toSVGPointArray($1,$2)"
+  js_to_svg_point_array :: JSVal -> JSVal -> IO JSVal
+
+foreign import javascript unsafe "drawPath($1,$2)"
+  js_draw_path :: JSVal -> JSVal -> IO ()
+
+foreign import javascript unsafe "window.requestAnimationFrame($1)"
+  js_requestAnimationFrame :: Callback a -> IO ()
+
+foreign import javascript unsafe "refresh($1,$2)"
+  js_refresh :: JSVal -> JSVal -> IO ()
+
+foreign import javascript unsafe "$1.addEventListener($2,$3)"
+  js_addEventListener :: JSVal -> JSString -> Callback a -> IO ()
+
+foreign import javascript unsafe "overlay_point($1,$2,$3,$4,$5,$6)"
+  js_overlay_point :: JSVal -> JSVal -> Double -> Double -> Double -> Double -> IO ()
+
+foreign import javascript unsafe "clear_overlay($1)"
+  js_clear_overlay :: JSVal -> IO ()
+
+foreign import javascript unsafe "fix_dpi($1)"
+  js_fix_dpi :: JSVal -> IO ()
+
+foreign import javascript unsafe "$r = $1.width"
+  js_get_width :: JSVal -> IO Double
+
+foreign import javascript unsafe "$1.width = $2"
+  js_set_width :: JSVal -> Double -> IO ()
+
+foreign import javascript unsafe "$r = $1.height"
+  js_get_height :: JSVal -> IO Double
+
+foreign import javascript unsafe "$1.height = $2"
+  js_set_height :: JSVal -> Double -> IO ()
+
+foreign import javascript unsafe "$r = document.createElement('canvas')"
+  js_create_canvas :: IO JSVal
+
+foreign import javascript unsafe "$r = $1.pointerType"
+  js_pointer_type :: JSVal -> IO JSString
+
+foreign import javascript unsafe "debug_show($1)"
+  js_debug_show :: JSVal -> IO ()
+
+foreign import javascript unsafe "document.getElementById($1)"
+  js_document_getElementById :: JSString -> IO JSVal

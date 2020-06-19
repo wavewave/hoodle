@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE JavaScriptFFI #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
@@ -33,6 +32,7 @@ import qualified Data.JSString as JSS (pack, unpack)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Text as T
 import Event (AllEvent (..))
+import qualified ForeignJS as J
 import GHCJS.Foreign.Callback
   ( Callback,
     OnBlocked (ThrowWouldBlock),
@@ -50,100 +50,31 @@ import Message
   )
 import State (DocState (..), HoodleState (..), SyncState (..))
 
-foreign import javascript unsafe "console.log($1)"
-  js_console_log :: JSVal -> IO ()
-
-foreign import javascript unsafe "preventDefaultTouchMove()"
-  js_prevent_default_touch_move :: IO ()
-
-foreign import javascript unsafe "$r = SVG('#box')"
-  js_svg_box :: IO JSVal
-
--- foreign import javascript unsafe "$r = document.getElementById('overlay')"
---  js_canvas_overlay :: IO JSVal
-
-foreign import javascript unsafe "$1.on($2,$3)"
-  js_on :: JSVal -> JSString -> Callback a -> IO ()
-
-foreign import javascript unsafe "$r = $1.clientX"
-  js_clientX :: JSVal -> IO Double
-
-foreign import javascript unsafe "$r = $1.clientY"
-  js_clientY :: JSVal -> IO Double
-
-foreign import javascript unsafe "$r = toSVGPointArray($1,$2)"
-  js_to_svg_point_array :: JSVal -> JSVal -> IO JSVal
-
-foreign import javascript unsafe "drawPath($1,$2)"
-  js_draw_path :: JSVal -> JSVal -> IO ()
-
-foreign import javascript unsafe "window.requestAnimationFrame($1)"
-  js_requestAnimationFrame :: Callback a -> IO ()
-
-foreign import javascript unsafe "refresh($1,$2)"
-  js_refresh :: JSVal -> JSVal -> IO ()
-
-foreign import javascript unsafe "$1.addEventListener($2,$3)"
-  js_addEventListener :: JSVal -> JSString -> Callback a -> IO ()
-
-foreign import javascript unsafe "overlay_point($1,$2,$3,$4,$5,$6)"
-  js_overlay_point :: JSVal -> JSVal -> Double -> Double -> Double -> Double -> IO ()
-
-foreign import javascript unsafe "clear_overlay($1)"
-  js_clear_overlay :: JSVal -> IO ()
-
-foreign import javascript unsafe "fix_dpi($1)"
-  js_fix_dpi :: JSVal -> IO ()
-
-foreign import javascript unsafe "$r = $1.width"
-  js_get_width :: JSVal -> IO Double
-
-foreign import javascript unsafe "$1.width = $2"
-  js_set_width :: JSVal -> Double -> IO ()
-
-foreign import javascript unsafe "$r = $1.height"
-  js_get_height :: JSVal -> IO Double
-
-foreign import javascript unsafe "$1.height = $2"
-  js_set_height :: JSVal -> Double -> IO ()
-
-foreign import javascript unsafe "$r = document.createElement('canvas')"
-  js_create_canvas :: IO JSVal
-
-foreign import javascript unsafe "$r = $1.pointerType"
-  js_pointer_type :: JSVal -> IO JSString
-
-foreign import javascript unsafe "debug_show($1)"
-  js_debug_show :: JSVal -> IO ()
-
-foreign import javascript unsafe "document.getElementById($1)"
-  js_document_getElementById :: JSString -> IO JSVal
-
 data PointerType = Mouse | Touch | Pen
   deriving (Show, Eq)
 
 getPointerType :: JSVal -> IO PointerType
-getPointerType ev = js_pointer_type ev >>= \s -> do
+getPointerType ev = J.js_pointer_type ev >>= \s -> do
   case JSS.unpack s of
     "touch" -> pure Touch
     "pen" -> pure Pen
     _ -> pure Mouse
 
 getXY :: JSVal -> IO (Double, Double)
-getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
+getXY ev = (,) <$> J.js_clientX ev <*> J.js_clientY ev
 
 drawPath :: JSVal -> [(Double, Double)] -> IO ()
 drawPath svg xys = do
   arr <- toJSValListOf xys
-  js_draw_path svg arr
+  J.js_draw_path svg arr
 
 onPointerDown ::
   EventVar ->
   JSVal ->
   IO ()
 onPointerDown evar ev = do
-  v <- js_pointer_type ev
-  js_debug_show (jsval v)
+  v <- J.js_pointer_type ev
+  J.js_debug_show (jsval v)
   t <- getPointerType ev
   when (t /= Touch) $ do
     (x, y) <- getXY ev
@@ -154,7 +85,7 @@ onPointerUp ::
   JSVal ->
   IO ()
 onPointerUp evar ev = do
-  js_debug_show $ jsval ("ready for input" :: JSString)
+  J.js_debug_show $ jsval ("ready for input" :: JSString)
   t <- getPointerType ev
   when (t /= Touch) $ do
     (x, y) <- getXY ev
@@ -172,8 +103,8 @@ onPointerMove evar ev = do
 
 test :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
 test cvs offcvs rAF = do
-  js_refresh cvs offcvs
-  js_requestAnimationFrame rAF
+  J.js_refresh cvs offcvs
+  J.js_requestAnimationFrame rAF
 
 onMessage :: EventVar -> JSString -> IO ()
 onMessage evar s = do
@@ -208,7 +139,7 @@ toPenMode ev = do
     EDataStrokes dat -> do
       st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
-        js_clear_overlay offcvs
+        J.js_clear_overlay offcvs
         mapM_ (drawPath svg . snd) dat
       let i = maximum (map fst dat)
       put $ st {_hdlstateDocState = DocState i (dat0 ++ dat)}
@@ -233,7 +164,7 @@ drawingMode xys = do
     PointerMove xy@(x, y) -> do
       HoodleState _svg cvs offcvs _ _ _ <- get
       case viewr xys of
-        _ :> (x0, y0) -> liftIO $ js_overlay_point cvs offcvs x0 y0 x y
+        _ :> (x0, y0) -> liftIO $ J.js_overlay_point cvs offcvs x0 y0 x y
         _ -> pure ()
       drawingMode (xys |> xy)
     PointerUp xy -> do
@@ -241,7 +172,7 @@ drawingMode xys = do
       let xys' = xys |> xy
       path_arr <-
         liftIO $
-          js_to_svg_point_array svg =<< toJSValListOf (toList xys')
+          J.js_to_svg_point_array svg =<< toJSValListOf (toList xys')
       path <- liftIO $ fromJSValUncheckedListOf path_arr
       modify' (\s -> s {_hdlstateSyncState = SyncState [path]})
       let hsh = hash path
@@ -255,15 +186,15 @@ initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
 setupCallback :: EventVar -> IO HoodleState
 setupCallback evar = do
   putStrLn "ghcjs started"
-  js_prevent_default_touch_move
-  svg <- js_svg_box
-  cvs <- js_document_getElementById "overlay"
-  js_fix_dpi cvs
-  offcvs <- js_create_canvas
-  w <- js_get_width cvs
-  h <- js_get_height cvs
-  js_set_width offcvs w
-  js_set_height offcvs h
+  J.js_prevent_default_touch_move
+  svg <- J.js_svg_box
+  cvs <- J.js_document_getElementById "overlay"
+  J.js_fix_dpi cvs
+  offcvs <- J.js_create_canvas
+  w <- J.js_get_width cvs
+  h <- J.js_get_height cvs
+  J.js_set_width offcvs w
+  J.js_set_height offcvs h
   putStrLn "websocket start"
   let wsClose _ =
         putStrLnAndFlush "connection closed"
@@ -283,18 +214,18 @@ setupCallback evar = do
           }
     pure $ HoodleState svg cvs offcvs sock (DocState 0 []) (SyncState [])
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
-  js_addEventListener cvs "pointerdown" onpointerdown
+  J.js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar)
-  js_addEventListener cvs "pointermove" onpointermove
+  J.js_addEventListener cvs "pointermove" onpointermove
   onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp evar)
-  js_addEventListener cvs "pointerup" onpointerup
+  J.js_addEventListener cvs "pointerup" onpointerup
   mdo
     rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
-    js_requestAnimationFrame rAF
-  radio_pen <- js_document_getElementById "pen"
-  radio_eraser <- js_document_getElementById "eraser"
-  js_addEventListener radio_pen "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar)
-  js_addEventListener radio_eraser "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar)
+    J.js_requestAnimationFrame rAF
+  radio_pen <- J.js_document_getElementById "pen"
+  radio_eraser <- J.js_document_getElementById "eraser"
+  J.js_addEventListener radio_pen "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar)
+  J.js_addEventListener radio_eraser "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar)
   pure xstate
 
 main :: IO ()

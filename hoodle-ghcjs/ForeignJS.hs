@@ -2,6 +2,7 @@
 
 module ForeignJS where
 
+import qualified Data.JSString as JSS
 import GHCJS.Foreign.Callback (Callback)
 import GHCJS.Types (JSString, JSVal)
 
@@ -79,3 +80,16 @@ foreign import javascript unsafe "debug_show($1)"
 
 foreign import javascript unsafe "document.getElementById($1)"
   js_document_getElementById :: JSString -> IO JSVal
+
+data PointerType = Mouse | Touch | Pen
+  deriving (Show, Eq)
+
+getXY :: JSVal -> IO (Double, Double)
+getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
+
+getPointerType :: JSVal -> IO PointerType
+getPointerType ev = js_pointer_type ev >>= \s -> do
+  case JSS.unpack s of
+    "touch" -> pure Touch
+    "pen" -> pure Pen
+    _ -> pure Mouse

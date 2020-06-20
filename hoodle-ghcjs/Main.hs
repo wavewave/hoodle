@@ -14,7 +14,6 @@ import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.State (MonadState (get, put), modify')
 import qualified Control.Monad.Trans.Crtn.Driver as D (driver)
-import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
 import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Coroutine
@@ -29,102 +28,27 @@ import Coroutine
   )
 import Data.Foldable (toList)
 import Data.Hashable (hash)
-import qualified Data.JSString as JSS (pack, unpack)
+import qualified Data.JSString as JSS (pack)
 import Data.List (nub, sort)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Text as T
 import Event (AllEvent (..))
 import qualified ForeignJS as J
-import GHCJS.Foreign.Callback
-  ( Callback,
-    OnBlocked (ThrowWouldBlock),
-    syncCallback,
-    syncCallback1,
-  )
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
-import GHCJS.Types (JSString, JSVal, jsval)
-import HitTest (do2LinesIntersect, doesLineHitStrk)
-import qualified JavaScript.Web.MessageEvent as ME
+import GHCJS.Types (JSVal)
+import Handler (setupCallback)
+import HitTest (doesLineHitStrk)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (NewStroke, SyncRequest),
-    S2CMsg (DataStrokes, RegisterStroke),
-    TextSerializable (deserialize, serialize),
+    TextSerializable (serialize),
   )
 import State (DocState (..), HoodleState (..), SyncState (..))
-
-data PointerType = Mouse | Touch | Pen
-  deriving (Show, Eq)
-
-getPointerType :: JSVal -> IO PointerType
-getPointerType ev = J.js_pointer_type ev >>= \s -> do
-  case JSS.unpack s of
-    "touch" -> pure Touch
-    "pen" -> pure Pen
-    _ -> pure Mouse
-
-getXY :: JSVal -> IO (Double, Double)
-getXY ev = (,) <$> J.js_clientX ev <*> J.js_clientY ev
 
 drawPath :: JSVal -> [(Double, Double)] -> IO ()
 drawPath svg xys = do
   arr <- toJSValListOf xys
   J.js_draw_path svg arr
-
-onPointerDown ::
-  EventVar ->
-  JSVal ->
-  IO ()
-onPointerDown evar ev = do
-  v <- J.js_pointer_type ev
-  J.js_debug_show (jsval v)
-  t <- getPointerType ev
-  when (t /= Touch) $ do
-    (x, y) <- getXY ev
-    eventHandler evar $ PointerDown (x, y)
-
-onPointerUp ::
-  EventVar ->
-  JSVal ->
-  IO ()
-onPointerUp evar ev = do
-  J.js_debug_show $ jsval ("ready for input" :: JSString)
-  t <- getPointerType ev
-  when (t /= Touch) $ do
-    (x, y) <- getXY ev
-    eventHandler evar (PointerUp (x, y))
-
-onPointerMove ::
-  EventVar ->
-  JSVal ->
-  IO ()
-onPointerMove evar ev = do
-  t <- getPointerType ev
-  when (t /= Touch) $ do
-    (x, y) <- getXY ev
-    eventHandler evar (PointerMove (x, y))
-
-test :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
-test cvs offcvs rAF = do
-  J.js_refresh cvs offcvs
-  J.js_requestAnimationFrame rAF
-
-onMessage :: EventVar -> JSString -> IO ()
-onMessage evar s = do
-  case deserialize $ T.pack $ JSS.unpack s of
-    RegisterStroke (s', hsh') -> do
-      eventHandler evar (ERegisterStroke (s', hsh'))
-    DataStrokes dat -> do
-      eventHandler evar (EDataStrokes dat)
-
-data Mode = ModePen | ModeEraser
-  deriving (Show)
-
-onModeChange :: Mode -> EventVar -> JSVal -> IO ()
-onModeChange m evar _ = do
-  case m of
-    ModePen -> eventHandler evar ToPenMode
-    ModeEraser -> eventHandler evar ToEraserMode
 
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess = penReady
@@ -212,51 +136,6 @@ erasingMode hitted0 (x0, y0) = do
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
-
-setupCallback :: EventVar -> IO HoodleState
-setupCallback evar = do
-  putStrLn "ghcjs started"
-  J.js_prevent_default_touch_move
-  svg <- J.js_svg_box
-  cvs <- J.js_document_getElementById "overlay"
-  J.js_fix_dpi cvs
-  offcvs <- J.js_create_canvas
-  w <- J.js_get_width cvs
-  h <- J.js_get_height cvs
-  J.js_set_width offcvs w
-  J.js_set_height offcvs h
-  putStrLn "websocket start"
-  let wsClose _ =
-        putStrLnAndFlush "connection closed"
-      wsMessage ev msg = do
-        let d = ME.getData msg
-        case d of
-          ME.StringData s -> onMessage ev s
-          _ -> pure ()
-  xstate <- mdo
-    sock <-
-      WS.connect
-        WS.WebSocketRequest
-          { WS.url = "ws://192.168.1.42:7080",
-            WS.protocols = [],
-            WS.onClose = Just wsClose,
-            WS.onMessage = Just (wsMessage evar)
-          }
-    pure $ HoodleState svg cvs offcvs sock (DocState 0 []) (SyncState [])
-  onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
-  J.js_addEventListener cvs "pointerdown" onpointerdown
-  onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar)
-  J.js_addEventListener cvs "pointermove" onpointermove
-  onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp evar)
-  J.js_addEventListener cvs "pointerup" onpointerup
-  mdo
-    rAF <- syncCallback ThrowWouldBlock (test cvs offcvs rAF)
-    J.js_requestAnimationFrame rAF
-  radio_pen <- J.js_document_getElementById "pen"
-  radio_eraser <- J.js_document_getElementById "eraser"
-  J.js_addEventListener radio_pen "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar)
-  J.js_addEventListener radio_eraser "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar)
-  pure xstate
 
 main :: IO ()
 main = do

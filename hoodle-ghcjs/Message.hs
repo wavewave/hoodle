@@ -1,3 +1,6 @@
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 -- common message type between server and client
 
 module Message where
@@ -22,11 +25,26 @@ tag_DeleteStroke = 'D'
 tag_SyncRequest :: Char
 tag_SyncRequest = 'S'
 
+data Commit
+  = Add Int [(Double, Double)]
+  | Delete Int [Int]
+  deriving (Show)
+
+commitId :: Commit -> Int
+commitId (Add i _) = i
+commitId (Delete i _) = i
+
+tag_Add :: Char
+tag_Add = 'A'
+
+tag_Delete :: Char
+tag_Delete = 'D'
+
 data S2CMsg
   = -- | (id,hash)
     RegisterStroke (Int, Int)
-  | -- | [(id,[(x,y)])]
-    DataStrokes [(Int, [(Double, Double)])]
+  | -- | commits
+    DataStrokes [Commit]
 
 tag_RegisterStroke :: Char
 tag_RegisterStroke = 'R'
@@ -53,11 +71,35 @@ instance TextSerializable C2SMsg where
 
 instance TextSerializable S2CMsg where
   serialize (RegisterStroke payload) = T.cons 'R' $ T.pack (show payload)
-  serialize (DataStrokes payload) = T.cons 'D' $ T.pack (show payload)
+  serialize (DataStrokes commits) =
+    T.cons 'D'
+      $ T.intercalate ":"
+      $ map
+        ( \case
+            Add i dat -> T.cons 'A' $ T.pack (show (i, dat))
+            Delete i js -> T.cons 'D' $ T.pack (show (i, js))
+        )
+        commits
 
   deserialize t =
     let c = T.head t
      in case c of
           'R' -> RegisterStroke $ read $ T.unpack $ T.tail t
-          'D' -> DataStrokes $ read $ T.unpack $ T.tail t
+          'D' ->
+            let t' = T.tail t
+                ts = T.splitOn ":" t'
+                commits =
+                  map
+                    ( \tt ->
+                        let c' = T.head tt
+                         in case c' of
+                              'A' ->
+                                let (i, dat) = read $ T.unpack $ T.tail tt
+                                 in Add i dat
+                              'D' ->
+                                let (i, js) = read $ T.unpack $ T.tail tt
+                                 in Delete i js
+                    )
+                    ts
+             in DataStrokes commits
           _ -> error "cannot parse"

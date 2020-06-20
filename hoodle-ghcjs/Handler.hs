@@ -65,7 +65,9 @@ onAnimationFrame cvs offcvs rAF = do
 
 onMessage :: EventVar -> JSString -> IO ()
 onMessage evar s = do
-  case deserialize $ T.pack $ JSS.unpack s of
+  let str = JSS.unpack s
+      txt = T.pack str
+  case deserialize txt of
     RegisterStroke (s', hsh') -> do
       eventHandler evar (ERegisterStroke (s', hsh'))
     DataStrokes dat -> do

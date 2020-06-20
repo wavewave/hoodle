@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RecursiveDo #-}
@@ -29,7 +30,7 @@ import Coroutine
 import Data.Foldable (toList, traverse_)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
-import Data.List (nub, sort)
+import Data.List (foldl', nub, sort)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Text as T
 import Event (AllEvent (..))
@@ -41,7 +42,9 @@ import HitTest (doesLineHitStrk)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
+    Commit (Add, Delete),
     TextSerializable (serialize),
+    commitId,
   )
 import State (DocState (..), HoodleState (..), SyncState (..))
 
@@ -56,13 +59,28 @@ penReady ev = do
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-    EDataStrokes dat -> do
+    -- TODO: refactor this out.
+    EDataStrokes commits -> do
       st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
         J.js_clear_overlay offcvs
-        traverse_ (\(i, lst) -> J.drawPath svg ("stroke" ++ show i) lst) dat
-      let i = maximum (map fst dat)
-      put $ st {_hdlstateDocState = DocState i (dat0 ++ dat)}
+        traverse_
+          ( \case
+              Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
+              Delete _ js -> do
+                putStrLnAndFlush
+                  ("in pen: " ++ show js)
+                traverse_
+                  (J.strokeRemove svg . ("stroke" ++) . show)
+                  js
+          )
+          commits
+      let i = maximum (map commitId commits)
+          dat' = foldl' f dat0 commits
+            where
+              f !acc (Add i xys) = acc ++ [(i, xys)]
+              f !acc (Delete i js) = filter (\(j, _) -> not (j `elem` js)) acc
+      put $ st {_hdlstateDocState = DocState i dat'}
     PointerDown (x, y) ->
       drawingMode (singleton (x, y))
     ToPenMode -> pure ()
@@ -123,10 +141,30 @@ erasingMode hitted0 (x0, y0) = do
       erasingMode hitted' (x, y)
     PointerUp _ -> do
       HoodleState svg _ _ sock _ _ <- get
-      liftIO $ traverse_ (J.strokeRemove svg . ("stroke" ++) . show) hitted0
       when (not . null $ hitted0) $ liftIO $ do
         let msg = DeleteStrokes hitted0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+    -- TODO: need to refactor this out. using SysEv.
+    EDataStrokes commits -> do
+      st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
+      liftIO $ do
+        J.js_clear_overlay offcvs
+        traverse_
+          ( \case
+              Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
+              Delete _ js -> do
+                putStrLnAndFlush ("in erase: " ++ show js)
+                traverse_
+                  (J.strokeRemove svg . ("stroke" ++) . show)
+                  js
+          )
+          commits
+      let i = maximum (map commitId commits)
+          dat' = foldl' f dat0 commits
+            where
+              f !acc (Add i xys) = acc ++ [(i, xys)]
+              f !acc (Delete i js) = filter (\(j, _) -> not (j `elem` js)) acc
+      put $ st {_hdlstateDocState = DocState i dat'}
     _ -> erasingMode hitted0 (x0, y0)
 
 initmc :: MainObj ()

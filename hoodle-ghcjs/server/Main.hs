@@ -20,7 +20,13 @@ import Data.Sequence (Seq, ViewR ((:>)), (|>))
 import qualified Data.Sequence as S (empty, filter, length, singleton, viewr)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Message (C2SMsg (..), S2CMsg (..), TextSerializable (deserialize, serialize))
+import Message
+  ( C2SMsg (..),
+    Commit (..),
+    S2CMsg (..),
+    TextSerializable (deserialize, serialize),
+    commitId,
+  )
 import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendPing, sendTextData)
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
@@ -40,16 +46,11 @@ getLast s =
     _ :> x -> Just x
     _ -> Nothing
 
-data Commit
-  = Add Int [(Double, Double)]
-  | Delete [Int]
-  deriving (Show)
-
 $(deriveSafeCopy 0 'base ''Commit)
 
 data DocState
   = DocState
-      { _docStateCommits :: Seq (Int, Commit),
+      { _docStateCommits :: Seq Commit,
         _docStateCurrentDoc :: Seq (Int, Int, [(Double, Double)])
       }
   deriving (Show)
@@ -76,12 +77,14 @@ handler conn acid ref = forever $ do
       s' <-
         atomically $ do
           DocState commits dat <- readTVar ref
-          let commit = Add hsh coords
-              (commits', dat') = case getLast commits of
-                Just (r, _) ->
-                  (commits |> (r + 1, commit), dat |> (r + 1, hsh, coords))
+          let (commits', dat') = case getLast commits of
+                Just commitLast ->
+                  let r = commitId commitLast
+                      commit = Add (r + 1) coords
+                   in (commits |> commit, dat |> (r + 1, hsh, coords))
                 Nothing ->
-                  (S.singleton (1, commit), S.singleton (1, hsh, coords))
+                  let commit = Add 1 coords
+                   in (S.singleton commit, S.singleton (1, hsh, coords))
               s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
           writeTVar ref s'
           pure s'
@@ -90,23 +93,25 @@ handler conn acid ref = forever $ do
       s' <-
         atomically $ do
           DocState commits dat <- readTVar ref
-          let commit = Delete is
-              dat' = S.filter (\(i, _, _) -> not (i `elem` is)) dat
+          let dat' = S.filter (\(i, _, _) -> not (i `elem` is)) dat
               commits' = case getLast commits of
-                Just (r, _) -> commits |> (r + 1, commit)
-                Nothing -> S.singleton (1, commit)
+                Just commitLast ->
+                  let r = commitId commitLast
+                      commit = Delete (r + 1) is
+                   in commits |> commit
+                Nothing -> S.singleton (Delete 1 is)
               s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
           writeTVar ref s'
           pure s'
       print $ S.length (_docStateCurrentDoc s')
       update acid $ WriteState s'
     SyncRequest (s, e) -> do
-      DocState _ dat <- atomically $ readTVar ref
-      let dat' =
-            toList
-              $ fmap (\(i, _, xy) -> (i, xy))
-              $ S.filter (\(i, _, _) -> i > s && i <= e) dat
-          msg = DataStrokes dat'
+      DocState commits _ <- atomically $ readTVar ref
+      let commits' =
+            toList $
+              S.filter (\c -> let i = commitId c in i > s && i <= e) commits
+          msg = DataStrokes commits'
+      print $ commits
       sendTextData conn (serialize msg)
 
 serializer :: AcidState DocState -> IO ()

@@ -1,9 +1,11 @@
 module Event where
 
+import Message (Commit)
+
 data AllEvent
   = Fire
   | ERegisterStroke (Int, Int)
-  | EDataStrokes [(Int, [(Double, Double)])]
+  | EDataStrokes [Commit] -- [(Int, [(Double, Double)])]
   | PointerDown (Double, Double)
   | PointerMove (Double, Double)
   | PointerUp (Double, Double)

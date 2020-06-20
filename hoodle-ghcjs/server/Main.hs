@@ -17,10 +17,9 @@ import Data.Acid (AcidState, Query, Update, makeAcidic, openLocalState, query, u
 import Data.Foldable (toList)
 import Data.SafeCopy (SafeCopy, base, deriveSafeCopy)
 import Data.Sequence (Seq, ViewR ((:>)), (|>))
-import qualified Data.Sequence as S (empty, filter, viewr)
+import qualified Data.Sequence as S (empty, filter, length, singleton, viewr)
 import Data.Text (Text)
 import qualified Data.Text as T
-import Data.Typeable (Typeable)
 import Message (C2SMsg (..), S2CMsg (..), TextSerializable (deserialize, serialize))
 import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendPing, sendTextData)
@@ -41,37 +40,68 @@ getLast s =
     _ :> x -> Just x
     _ -> Nothing
 
-data DocState = DocState (Seq (Int, Int, [(Double, Double)]))
-  deriving (Show, Typeable)
+data Commit
+  = Add Int [(Double, Double)]
+  | Delete [Int]
+  deriving (Show)
+
+$(deriveSafeCopy 0 'base ''Commit)
+
+data DocState
+  = DocState
+      { _docStateCommits :: Seq (Int, Commit),
+        _docStateCurrentDoc :: Seq (Int, Int, [(Double, Double)])
+      }
+  deriving (Show)
 
 $(deriveSafeCopy 0 'base ''DocState)
 
-writeState :: Seq (Int, Int, [(Double, Double)]) -> Update DocState ()
-writeState newValue = put (DocState newValue)
+writeState :: DocState -> Update DocState ()
+writeState = put
 
 queryState :: Query DocState DocState
 queryState = ask
 
 $(makeAcidic ''DocState ['writeState, 'queryState])
 
-handler :: Connection -> AcidState DocState -> TVar (Seq (Int, Int, [(Double, Double)])) -> IO ()
+handler ::
+  Connection ->
+  AcidState DocState ->
+  TVar DocState ->
+  IO ()
 handler conn acid ref = forever $ do
   t :: Text <- receiveData conn
   case deserialize t of
     NewStroke (hsh, coords) -> do
-      dat' <-
+      s' <-
         atomically $ do
-          dat <- readTVar ref
-          let dat' = case getLast dat of
-                Just (r, _, _) -> dat |> (r + 1, hsh, coords)
-                Nothing -> dat |> (1, hsh, coords)
-          writeTVar ref dat'
-          pure dat'
-      update acid (WriteState dat')
+          DocState commits dat <- readTVar ref
+          let commit = Add hsh coords
+              (commits', dat') = case getLast commits of
+                Just (r, _) ->
+                  (commits |> (r + 1, commit), dat |> (r + 1, hsh, coords))
+                Nothing ->
+                  (S.singleton (1, commit), S.singleton (1, hsh, coords))
+              s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
+          writeTVar ref s'
+          pure s'
+      update acid $ WriteState s'
     DeleteStrokes is -> do
-      putStrLn (show is)
+      s' <-
+        atomically $ do
+          DocState commits dat <- readTVar ref
+          let commit = Delete is
+              dat' = S.filter (\(i, _, _) -> not (i `elem` is)) dat
+              commits' = case getLast commits of
+                Just (r, _) -> commits |> (r + 1, commit)
+                Nothing -> S.singleton (1, commit)
+              s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
+          writeTVar ref s'
+          pure s'
+      print $ S.length (_docStateCurrentDoc s')
+      update acid $ WriteState s'
     SyncRequest (s, e) -> do
-      dat <- atomically $ readTVar ref
+      DocState _ dat <- atomically $ readTVar ref
       let dat' =
             toList
               $ fmap (\(i, _, xy) -> (i, xy))
@@ -82,17 +112,16 @@ handler conn acid ref = forever $ do
 serializer :: AcidState DocState -> IO ()
 serializer acid = forever $ do
   threadDelay 5000000
-  DocState v <- query acid QueryState
+  DocState _ v <- query acid QueryState
   withFile "serialized.dat" WriteMode $ \h -> do
     hPutStrLn h (show v)
     hFlush h
 
 main :: IO ()
 main = do
-  acid <- openLocalState (DocState S.empty)
-  -- putStrLn "servant server"
-  DocState v <- query acid QueryState
-  ref <- newTVarIO v
+  acid <- openLocalState (DocState S.empty S.empty)
+  s <- query acid QueryState
+  ref <- newTVarIO s
   void $ forkIO $ runServer "192.168.1.42" 7080 $ \pending -> do
     conn <- acceptRequest pending
     putStrLn "websocket connected"
@@ -106,7 +135,7 @@ main = do
     void $ flip iterateM_ 0 $ \r -> do
       (r', hsh') <-
         atomically $ do
-          dat <- readTVar ref
+          DocState _ dat <- readTVar ref
           case getLast dat of
             Just (r', hsh', _) -> if (r' <= r) then retry else pure (r', hsh')
             Nothing -> retry

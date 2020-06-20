@@ -16,8 +16,8 @@ function toSVGPointArray(svg,xys) {
     return arr;
 }
 
-function drawPath(svg,xys) {
-    var path = svg.polyline(xys).fill("none").stroke({width:0.2, color:'#f06'});
+function drawPath(svg,id,xys) {
+    var path = svg.polyline(xys).fill("none").stroke({width:0.2, color:'#f06'}).id(id);
 }
 
 
@@ -70,6 +70,11 @@ function clear_overlay(offcanvas) {
 function debug_show(val) {
     let debugbox = document.getElementById("debugbox");
     debugbox.innerText = val;
+}
+
+function stroke_change_color(svg,id) {
+    var element = svg.find('#'+id);
+    element.stroke({ color: '#bbb' });
 }
 
 debug_show("ready for input");

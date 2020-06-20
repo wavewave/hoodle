@@ -26,7 +26,7 @@ import Coroutine
     simplelogger,
     world,
   )
-import Data.Foldable (toList)
+import Data.Foldable (toList, traverse_)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
 import Data.List (nub, sort)
@@ -45,11 +45,6 @@ import Message
   )
 import State (DocState (..), HoodleState (..), SyncState (..))
 
-drawPath :: JSVal -> [(Double, Double)] -> IO ()
-drawPath svg xys = do
-  arr <- toJSValListOf xys
-  J.js_draw_path svg arr
-
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess = penReady
 
@@ -67,7 +62,7 @@ penReady ev = do
       st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
         J.js_clear_overlay offcvs
-        mapM_ (drawPath svg . snd) dat
+        traverse_ (\(i, lst) -> J.drawPath svg ("stroke" ++ show i) lst) dat
       let i = maximum (map fst dat)
       put $ st {_hdlstateDocState = DocState i (dat0 ++ dat)}
     PointerDown (x, y) ->
@@ -127,8 +122,7 @@ erasingMode hitted0 (x0, y0) = do
       (x, y) <- liftIO $ getXYinSVG svg (cx, cy)
       let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
           !hitted' = nub $ sort (hitted ++ hitted0)
-      -- liftIO $ putStrLnAndFlush $ show $ ((x0, y0), (x, y))
-      -- liftIO $ putStrLnAndFlush $ show (map fst strksHitted)
+      liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show) hitted0
       erasingMode hitted' (x, y)
     PointerUp _ ->
       liftIO $ putStrLnAndFlush $ show hitted0

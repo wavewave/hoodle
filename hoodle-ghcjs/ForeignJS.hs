@@ -4,6 +4,7 @@ module ForeignJS where
 
 import qualified Data.JSString as JSS
 import GHCJS.Foreign.Callback (Callback)
+import GHCJS.Marshal (ToJSVal (toJSValListOf))
 import GHCJS.Types (JSString, JSVal)
 
 foreign import javascript unsafe "console.log($1)"
@@ -36,8 +37,8 @@ foreign import javascript unsafe "$r = toSVGPoint($1,$2,$3)"
 foreign import javascript unsafe "$r = toSVGPointArray($1,$2)"
   js_to_svg_point_array :: JSVal -> JSVal -> IO JSVal
 
-foreign import javascript unsafe "drawPath($1,$2)"
-  js_draw_path :: JSVal -> JSVal -> IO ()
+foreign import javascript unsafe "drawPath($1,$2,$3)"
+  js_draw_path :: JSVal -> JSString -> JSVal -> IO ()
 
 foreign import javascript unsafe "window.requestAnimationFrame($1)"
   js_requestAnimationFrame :: Callback a -> IO ()
@@ -81,6 +82,9 @@ foreign import javascript unsafe "debug_show($1)"
 foreign import javascript unsafe "document.getElementById($1)"
   js_document_getElementById :: JSString -> IO JSVal
 
+foreign import javascript unsafe "stroke_change_color($1,$2)"
+  js_stroke_change_color :: JSVal -> JSString -> IO ()
+
 data PointerType = Mouse | Touch | Pen
   deriving (Show, Eq)
 
@@ -93,3 +97,12 @@ getPointerType ev = js_pointer_type ev >>= \s -> do
     "touch" -> pure Touch
     "pen" -> pure Pen
     _ -> pure Mouse
+
+drawPath :: JSVal -> String -> [(Double, Double)] -> IO ()
+drawPath svg id' xys = do
+  arr <- toJSValListOf xys
+  js_draw_path svg (JSS.pack id') arr
+
+strokeChangeColor :: JSVal -> String -> IO ()
+strokeChangeColor svg id' =
+  js_stroke_change_color svg (JSS.pack id')

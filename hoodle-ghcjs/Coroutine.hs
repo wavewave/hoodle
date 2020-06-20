@@ -96,7 +96,9 @@ world xstate initmc = ReaderT staction
       req <- lift $ lift $ request $ Res GiveEvent ()
       go mcobj' req
     go mcobj (Arg FlushLog logobj) = do
-      Right logobj' <- lift $ lift $ lift $ liftM (fmap fst) (logobj <==| writeLog ("[Log]"))
+      -- -- disable log
+      -- Right logobj' <- lift $ lift $ lift $ liftM (fmap fst) (logobj <==| writeLog ("[Log]"))
+      let logobj' = logobj
       req <- lift $ lift $ request $ Res FlushLog logobj'
       go mcobj req
     go mcobj (Arg FlushQueue ()) = do

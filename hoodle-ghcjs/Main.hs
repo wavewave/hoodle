@@ -61,6 +61,7 @@ penReady ev = do
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     -- TODO: refactor this out.
     EDataStrokes commits -> do
+      liftIO $ putStrLnAndFlush $ show commits -- show (map commitId commits)
       st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
         J.js_clear_overlay offcvs
@@ -102,6 +103,33 @@ eraserReady ev = do
       HoodleState svg _ _ _ _ _ <- get
       (x, y) <- liftIO $ getXYinSVG svg (x0, y0)
       erasingMode [] (x, y)
+    -- TODO: need to refactor this out. using SysEv.
+    ERegisterStroke (s', _hsh') -> do
+      HoodleState _ _ _ sock (DocState n _) _ <- get
+      when (s' > n) $ liftIO $ do
+        let msg = SyncRequest (n, s')
+        WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+    -- TODO: refactor this out.
+    EDataStrokes commits -> do
+      st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
+      liftIO $ do
+        J.js_clear_overlay offcvs
+        traverse_
+          ( \case
+              Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
+              Delete _ js -> do
+                putStrLnAndFlush ("in erase: " ++ show js)
+                traverse_
+                  (J.strokeRemove svg . ("stroke" ++) . show)
+                  js
+          )
+          commits
+      let i = maximum (map commitId commits)
+          dat' = foldl' f dat0 commits
+            where
+              f !acc (Add i xys) = acc ++ [(i, xys)]
+              f !acc (Delete i js) = filter (\(j, _) -> not (j `elem` js)) acc
+      put $ st {_hdlstateDocState = DocState i dat'}
     _ -> pure ()
   nextevent >>= eraserReady
 
@@ -144,27 +172,6 @@ erasingMode hitted0 (x0, y0) = do
       when (not . null $ hitted0) $ liftIO $ do
         let msg = DeleteStrokes hitted0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-    -- TODO: need to refactor this out. using SysEv.
-    EDataStrokes commits -> do
-      st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
-      liftIO $ do
-        J.js_clear_overlay offcvs
-        traverse_
-          ( \case
-              Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
-              Delete _ js -> do
-                putStrLnAndFlush ("in erase: " ++ show js)
-                traverse_
-                  (J.strokeRemove svg . ("stroke" ++) . show)
-                  js
-          )
-          commits
-      let i = maximum (map commitId commits)
-          dat' = foldl' f dat0 commits
-            where
-              f !acc (Add i xys) = acc ++ [(i, xys)]
-              f !acc (Delete i js) = filter (\(j, _) -> not (j `elem` js)) acc
-      put $ st {_hdlstateDocState = DocState i dat'}
     _ -> erasingMode hitted0 (x0, y0)
 
 initmc :: MainObj ()

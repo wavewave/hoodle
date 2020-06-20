@@ -111,7 +111,8 @@ handler conn acid ref = forever $ do
             toList $
               S.filter (\c -> let i = commitId c in i > s && i <= e) commits
           msg = DataStrokes commits'
-      print $ commits
+      print $ commits'
+      print (s, e)
       sendTextData conn (serialize msg)
 
 serializer :: AcidState DocState -> IO ()
@@ -138,13 +139,13 @@ main = do
     void $ forkIO $ handler conn acid ref
     void $ forkIO $ serializer acid
     void $ flip iterateM_ 0 $ \r -> do
-      (r', hsh') <-
+      r' <-
         atomically $ do
-          DocState _ dat <- readTVar ref
-          case getLast dat of
-            Just (r', hsh', _) -> if (r' <= r) then retry else pure (r', hsh')
+          DocState commits _ <- readTVar ref
+          case getLast commits of
+            Just commit -> let r' = commitId commit in if (r' <= r) then retry else pure r'
             Nothing -> retry
-      let msg = RegisterStroke (r', hsh')
+      let msg = RegisterStroke (r', r') -- for the time being -- (r', hsh')
       sendTextData conn (serialize msg)
       pure r'
   Warp.run 7070 $ serve api server

@@ -41,8 +41,8 @@ tag_Delete :: Char
 tag_Delete = 'D'
 
 data S2CMsg
-  = -- | (id,hash)
-    RegisterStroke (Int, Int)
+  = -- | (id,id) -- (id,hash)
+    RegisterStroke (Int, Int) -- (Int, Int)
   | -- | commits
     DataStrokes [Commit]
 

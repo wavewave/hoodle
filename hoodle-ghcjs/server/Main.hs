@@ -68,6 +68,8 @@ handler conn acid ref = forever $ do
           writeTVar ref dat'
           pure dat'
       update acid (WriteState dat')
+    DeleteStrokes is -> do
+      putStrLn (show is)
     SyncRequest (s, e) -> do
       dat <- atomically $ readTVar ref
       let dat' =

@@ -40,7 +40,7 @@ import Handler (setupCallback)
 import HitTest (doesLineHitStrk)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
-  ( C2SMsg (NewStroke, SyncRequest),
+  ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
     TextSerializable (serialize),
   )
 import State (DocState (..), HoodleState (..), SyncState (..))
@@ -53,8 +53,6 @@ penReady ev = do
   case ev of
     ERegisterStroke (s', _hsh') -> do
       HoodleState _ _ _ sock (DocState n _) _ <- get
-      -- liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
-      -- liftIO $ putStrLnAndFlush (show hsh')
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
@@ -70,7 +68,6 @@ penReady ev = do
     ToPenMode -> pure ()
     ToEraserMode -> nextevent >>= eraserReady
     _ -> pure ()
-  -- liftIO $ putStrLnAndFlush (show ev)
   nextevent >>= penReady
 
 getXYinSVG :: JSVal -> (Double, Double) -> IO (Double, Double)
@@ -125,9 +122,11 @@ erasingMode hitted0 (x0, y0) = do
       liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show) hitted
       erasingMode hitted' (x, y)
     PointerUp _ -> do
-      HoodleState svg _ _ _ _ _ <- get
-      -- liftIO $ putStrLnAndFlush $ show hitted0
+      HoodleState svg _ _ sock _ _ <- get
       liftIO $ traverse_ (J.strokeRemove svg . ("stroke" ++) . show) hitted0
+      when (not . null $ hitted0) $ liftIO $ do
+        let msg = DeleteStrokes hitted0
+        WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> erasingMode hitted0 (x0, y0)
 
 initmc :: MainObj ()

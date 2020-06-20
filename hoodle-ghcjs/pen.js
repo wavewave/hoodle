@@ -77,6 +77,13 @@ function stroke_change_color(svg,id) {
     element.stroke({ color: '#bbb' });
 }
 
+function stroke_remove(svg,id) {
+    var element = svg.find('#'+id);
+    element.remove();
+}
+
+
+
 debug_show("ready for input");
 
 // GHCJS start

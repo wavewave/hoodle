@@ -85,6 +85,9 @@ foreign import javascript unsafe "document.getElementById($1)"
 foreign import javascript unsafe "stroke_change_color($1,$2)"
   js_stroke_change_color :: JSVal -> JSString -> IO ()
 
+foreign import javascript unsafe "stroke_remove($1,$2)"
+  js_stroke_remove :: JSVal -> JSString -> IO ()
+
 data PointerType = Mouse | Touch | Pen
   deriving (Show, Eq)
 
@@ -106,3 +109,7 @@ drawPath svg id' xys = do
 strokeChangeColor :: JSVal -> String -> IO ()
 strokeChangeColor svg id' =
   js_stroke_change_color svg (JSS.pack id')
+
+strokeRemove :: JSVal -> String -> IO ()
+strokeRemove svg id' =
+  js_stroke_remove svg (JSS.pack id')

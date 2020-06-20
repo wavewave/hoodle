@@ -51,10 +51,10 @@ guiProcess = penReady
 penReady :: AllEvent -> MainCoroutine ()
 penReady ev = do
   case ev of
-    ERegisterStroke (s', hsh') -> do
+    ERegisterStroke (s', _hsh') -> do
       HoodleState _ _ _ sock (DocState n _) _ <- get
-      liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
-      liftIO $ putStrLnAndFlush (show hsh')
+      -- liftIO $ putStrLnAndFlush (show s' ++ " <-> " ++ show n)
+      -- liftIO $ putStrLnAndFlush (show hsh')
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
@@ -69,8 +69,8 @@ penReady ev = do
       drawingMode (singleton (x, y))
     ToPenMode -> pure ()
     ToEraserMode -> nextevent >>= eraserReady
-    _ -> do
-      liftIO $ putStrLnAndFlush (show ev)
+    _ -> pure ()
+  -- liftIO $ putStrLnAndFlush (show ev)
   nextevent >>= penReady
 
 getXYinSVG :: JSVal -> (Double, Double) -> IO (Double, Double)
@@ -122,10 +122,12 @@ erasingMode hitted0 (x0, y0) = do
       (x, y) <- liftIO $ getXYinSVG svg (cx, cy)
       let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
           !hitted' = nub $ sort (hitted ++ hitted0)
-      liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show) hitted0
+      liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show) hitted
       erasingMode hitted' (x, y)
-    PointerUp _ ->
-      liftIO $ putStrLnAndFlush $ show hitted0
+    PointerUp _ -> do
+      HoodleState svg _ _ _ _ _ <- get
+      -- liftIO $ putStrLnAndFlush $ show hitted0
+      liftIO $ traverse_ (J.strokeRemove svg . ("stroke" ++) . show) hitted0
     _ -> erasingMode hitted0 (x0, y0)
 
 initmc :: MainObj ()
@@ -133,7 +135,6 @@ initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
 
 main :: IO ()
 main = do
-  putStrLn "new start"
   evar <- newEmptyMVar :: IO EventVar
   xstate <- setupCallback evar
   putMVar evar . Just $ D.driver simplelogger (world xstate initmc)

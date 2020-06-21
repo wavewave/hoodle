@@ -43,6 +43,7 @@ import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
     Commit (Add, Delete),
+    CommitId (..),
     TextSerializable (serialize),
     commitId,
   )
@@ -148,7 +149,7 @@ drawingMode xys = do
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> drawingMode xys
 
-erasingMode :: [Int] -> (Double, Double) -> MainCoroutine ()
+erasingMode :: [CommitId] -> (Double, Double) -> MainCoroutine ()
 erasingMode hitted0 (x0, y0) = do
   ev <- nextevent
   case ev of

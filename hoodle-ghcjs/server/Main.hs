@@ -23,12 +23,20 @@ import qualified Data.Text as T
 import Message
   ( C2SMsg (..),
     Commit (..),
+    CommitId (..),
     S2CMsg (..),
     TextSerializable (deserialize, serialize),
     commitId,
   )
 import qualified Network.Wai.Handler.Warp as Warp
-import Network.WebSockets (Connection, acceptRequest, receiveData, runServer, sendPing, sendTextData)
+import Network.WebSockets
+  ( Connection,
+    acceptRequest,
+    receiveData,
+    runServer,
+    sendPing,
+    sendTextData,
+  )
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
 import System.IO (IOMode (..), hFlush, hPutStrLn, withFile)
 
@@ -46,12 +54,16 @@ getLast s =
     _ :> x -> Just x
     _ -> Nothing
 
+-- orphans.
+
+$(deriveSafeCopy 0 'base ''CommitId)
+
 $(deriveSafeCopy 0 'base ''Commit)
 
 data DocState
   = DocState
       { _docStateCommits :: Seq Commit,
-        _docStateCurrentDoc :: Seq (Int, Int, [(Double, Double)])
+        _docStateCurrentDoc :: Seq (CommitId, Int, [(Double, Double)])
       }
   deriving (Show)
 
@@ -142,7 +154,7 @@ main = do
           case getLast commits of
             Just commit -> let r' = commitId commit in if (r' <= r) then retry else pure r'
             Nothing -> retry
-      let msg = RegisterStroke r' -- for the time being -- (r', hsh')
+      let msg = RegisterStroke r'
       sendTextData conn (serialize msg)
       pure r'
   Warp.run 7070 $ serve api server

@@ -1,13 +1,13 @@
 module Event where
 
-import Message (Commit)
+import Message (Commit, CommitId)
 
 data AllEvent
   = UsrEv UserEvent
   | SysEv SystemEvent
 
 data SystemEvent
-  = ERegisterStroke Int
+  = ERegisterStroke CommitId
   | EDataStrokes [Commit]
   | ERefresh
 

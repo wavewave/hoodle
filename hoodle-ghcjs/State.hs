@@ -2,6 +2,7 @@ module State where
 
 import GHCJS.Types (JSVal)
 import qualified JavaScript.Web.WebSocket as WS
+import Message (CommitId (..))
 
 data SyncState
   = SyncState
@@ -10,8 +11,8 @@ data SyncState
 
 data DocState
   = DocState
-      { _docstateCount :: Int,
-        _docstateData :: [(Int, [(Double, Double)])]
+      { _docstateLastCommit :: CommitId,
+        _docstateData :: [(CommitId, [(Double, Double)])]
       }
 
 data HoodleState

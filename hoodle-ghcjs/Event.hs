@@ -9,6 +9,7 @@ data AllEvent
 data SystemEvent
   = ERegisterStroke (Int, Int)
   | EDataStrokes [Commit]
+  | ERefresh
 
 data UserEvent
   = PointerDown (Double, Double)

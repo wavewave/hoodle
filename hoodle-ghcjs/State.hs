@@ -21,5 +21,6 @@ data HoodleState
         _hdlstateOverlayOffCanvas :: JSVal,
         _hdlstateWebSocket :: WS.WebSocket,
         _hdlstateDocState :: DocState,
-        _hdlstateSyncState :: SyncState
+        _hdlstateSyncState :: SyncState,
+        _hdlstateOverlayUpdated :: Bool
       }

@@ -82,8 +82,6 @@ function stroke_remove(svg,id) {
     element.remove();
 }
 
-
-
 debug_show("ready for input");
 
 // GHCJS start

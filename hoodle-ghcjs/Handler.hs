@@ -58,9 +58,9 @@ onPointerMove evar ev = do
     (x, y) <- J.getXY ev
     eventHandler evar $ UsrEv $ PointerMove (x, y)
 
-onAnimationFrame :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
-onAnimationFrame cvs offcvs rAF = do
-  J.js_refresh cvs offcvs
+onAnimationFrame :: EventVar -> Callback (IO ()) -> IO ()
+onAnimationFrame evar rAF = do
+  eventHandler evar $ SysEv $ ERefresh
   J.js_requestAnimationFrame rAF
 
 onMessage :: EventVar -> JSString -> IO ()
@@ -111,7 +111,7 @@ setupCallback evar = do
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage evar)
           }
-    pure $ HoodleState svg cvs offcvs sock (DocState 0 []) (SyncState [])
+    pure $ HoodleState svg cvs offcvs sock (DocState 0 []) (SyncState []) True
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
   J.js_addEventListener cvs "pointerdown" onpointerdown
   onpointermove <- syncCallback1 ThrowWouldBlock (onPointerMove evar)
@@ -119,7 +119,7 @@ setupCallback evar = do
   onpointerup <- syncCallback1 ThrowWouldBlock (onPointerUp evar)
   J.js_addEventListener cvs "pointerup" onpointerup
   mdo
-    rAF <- syncCallback ThrowWouldBlock (onAnimationFrame cvs offcvs rAF)
+    rAF <- syncCallback ThrowWouldBlock (onAnimationFrame evar rAF)
     J.js_requestAnimationFrame rAF
   radio_pen <- J.js_document_getElementById "pen"
   radio_eraser <- J.js_document_getElementById "eraser"

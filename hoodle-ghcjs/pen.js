@@ -1,3 +1,9 @@
+function toSVGPoint(svg,x,y) {
+    var ctm = svg.screenCTM();
+    var pt = (new SVG.Point(x,y)).transform(ctm.inverse());
+    return [pt.x, pt.y];
+}
+
 function toSVGPointArray(svg,xys) {
     var ctm = svg.screenCTM();
     var xys_canvas = xys.map( function(xy) {
@@ -10,8 +16,8 @@ function toSVGPointArray(svg,xys) {
     return arr;
 }
 
-function drawPath(svg,xys) {
-    var path = svg.polyline(xys).fill("none").stroke({width:0.2, color:'#f06'});
+function drawPath(svg,id,xys) {
+    var path = svg.polyline(xys).fill("none").stroke({width:0.2, color:'#f06'}).id(id);
 }
 
 
@@ -65,6 +71,18 @@ function debug_show(val) {
     let debugbox = document.getElementById("debugbox");
     debugbox.innerText = val;
 }
+
+function stroke_change_color(svg,id) {
+    var element = svg.find('#'+id);
+    element.stroke({ color: '#bbb' });
+}
+
+function stroke_remove(svg,id) {
+    var element = svg.find('#'+id);
+    element.remove();
+}
+
+
 
 debug_show("ready for input");
 

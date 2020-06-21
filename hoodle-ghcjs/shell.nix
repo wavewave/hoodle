@@ -32,6 +32,7 @@ let
   hsenv_ghcjs = newhspkgs_ghcjs.ghcWithPackages (p: with p; [
     coroutine-object
     ghcjs-base
+    ghcjs-dom
     stm
   ]);
 

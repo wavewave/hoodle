@@ -8,8 +8,20 @@
   <script language="javascript" src="./Main.jsexe/out.js"></script>
 </head>
 <body>
-  <p> Pen event testing
-  </p>
+  <div>
+    <div>
+      <input type="radio" id="pen" name="mode" value="pen"
+             checked>
+      <label for="pen">Pen</label>
+    </div>
+
+    <div>
+      <input type="radio" id="eraser" name="mode" value="eraser">
+      <label for="eraser">Eraser</label>
+    </div>
+
+  </div>
+
   <div style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%; overflow:hidden; position: relative;">
     <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 100%; height: 100%; background-color: white; ">
     </svg>

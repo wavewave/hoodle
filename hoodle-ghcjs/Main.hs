@@ -43,6 +43,7 @@ import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
     Commit (Add, Delete),
+    CommitId (..),
     TextSerializable (serialize),
     commitId,
   )
@@ -69,10 +70,10 @@ sysevent (EDataStrokes commits) = do
     J.js_clear_overlay offcvs
     traverse_
       ( \case
-          Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
+          Add i xys -> J.drawPath svg ("stroke" ++ show (unCommitId i)) xys
           Delete _ js -> do
             traverse_
-              (J.strokeRemove svg . ("stroke" ++) . show)
+              (J.strokeRemove svg . ("stroke" ++) . show . unCommitId)
               js
       )
       commits
@@ -148,7 +149,7 @@ drawingMode xys = do
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> drawingMode xys
 
-erasingMode :: [Int] -> (Double, Double) -> MainCoroutine ()
+erasingMode :: [CommitId] -> (Double, Double) -> MainCoroutine ()
 erasingMode hitted0 (x0, y0) = do
   ev <- nextevent
   case ev of
@@ -157,7 +158,7 @@ erasingMode hitted0 (x0, y0) = do
       (x, y) <- liftIO $ J.getXYinSVG svg (cx, cy)
       let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
           !hitted' = nub $ sort (hitted ++ hitted0)
-      liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show) hitted
+      liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hitted
       erasingMode hitted' (x, y)
     PointerUp _ -> do
       HoodleState svg _ _ sock _ _ _ <- get

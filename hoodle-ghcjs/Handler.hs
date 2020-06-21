@@ -20,7 +20,8 @@ import GHCJS.Types (JSString, JSVal, jsval)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
 import Message
-  ( S2CMsg (DataStrokes, RegisterStroke),
+  ( CommitId (..),
+    S2CMsg (DataStrokes, RegisterStroke),
     TextSerializable (deserialize),
   )
 import State (DocState (..), HoodleState (..), SyncState (..))

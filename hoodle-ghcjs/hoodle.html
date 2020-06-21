@@ -3,32 +3,24 @@
 <head>
   <title>HOODLE</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
   <script language="javascript" src="./Main.jsexe/rts.js"></script>
   <script language="javascript" src="./Main.jsexe/lib.js"></script>
   <script language="javascript" src="./Main.jsexe/out.js"></script>
 </head>
 <body>
-  <div>
-    <div>
-      <input type="radio" id="pen" name="mode" value="pen"
-             checked>
-      <label for="pen">Pen</label>
+  <div class="container is-fluid">
+    <div style="display:inline-block; overflow:hidden" >
+      <button id="pen" class="button is-primary is-rounded">Pen</button>
+      <button id="eraser" class="button is-rounded">Eraser</button>
     </div>
 
-    <div>
-      <input type="radio" id="eraser" name="mode" value="eraser">
-      <label for="eraser">Eraser</label>
+    <div style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%; overflow:hidden; position: relative;">
+      <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 100%; height: 100%; background-color: white;" />
+      <canvas id="overlay" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10;" />
     </div>
-
+    <div id="debugbox" style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%;">loading</div>
   </div>
-
-  <div style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%; overflow:hidden; position: relative;">
-    <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 100%; height: 100%; background-color: white; ">
-    </svg>
-    <canvas id="overlay" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10;" />
-  </div>
-  <div id="debugbox" style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%;"></div>
-
   <script src="./svg.min.js"></script>
   <script type="text/javascript" src="pen.js" defer></script>
 </body>

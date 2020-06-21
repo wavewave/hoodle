@@ -76,11 +76,17 @@ onMessage evar s = do
 data Mode = ModePen | ModeEraser
   deriving (Show)
 
-onModeChange :: Mode -> EventVar -> JSVal -> IO ()
-onModeChange m evar _ = do
+onModeChange :: Mode -> EventVar -> (JSVal, JSVal) -> JSVal -> IO ()
+onModeChange m evar (pen, eraser) _ = do
   case m of
-    ModePen -> eventHandler evar $ UsrEv ToPenMode
-    ModeEraser -> eventHandler evar $ UsrEv ToEraserMode
+    ModePen -> do
+      J.js_add_class pen "is-primary"
+      J.js_remove_class eraser "is-primary"
+      eventHandler evar $ UsrEv ToPenMode
+    ModeEraser -> do
+      J.js_add_class eraser "is-primary"
+      J.js_remove_class pen "is-primary"
+      eventHandler evar $ UsrEv ToEraserMode
 
 setupCallback :: EventVar -> IO HoodleState
 setupCallback evar = do
@@ -121,8 +127,10 @@ setupCallback evar = do
   mdo
     rAF <- syncCallback ThrowWouldBlock (onAnimationFrame evar rAF)
     J.js_requestAnimationFrame rAF
-  radio_pen <- J.js_document_getElementById "pen"
-  radio_eraser <- J.js_document_getElementById "eraser"
-  J.js_addEventListener radio_pen "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar)
-  J.js_addEventListener radio_eraser "click" =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar)
+  pen <- J.js_document_getElementById "pen"
+  eraser <- J.js_document_getElementById "eraser"
+  J.js_addEventListener pen "click"
+    =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar (pen, eraser))
+  J.js_addEventListener eraser "click"
+    =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar (pen, eraser))
   pure xstate

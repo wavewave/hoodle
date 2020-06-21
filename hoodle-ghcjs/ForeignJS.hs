@@ -88,6 +88,12 @@ foreign import javascript unsafe "stroke_change_color($1,$2)"
 foreign import javascript unsafe "stroke_remove($1,$2)"
   js_stroke_remove :: JSVal -> JSString -> IO ()
 
+foreign import javascript unsafe "$1.classList.add($2)"
+  js_add_class :: JSVal -> JSString -> IO ()
+
+foreign import javascript unsafe "$1.classList.remove($2)"
+  js_remove_class :: JSVal -> JSString -> IO ()
+
 data PointerType = Mouse | Touch | Pen
   deriving (Show, Eq)
 

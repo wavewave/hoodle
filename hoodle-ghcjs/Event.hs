@@ -3,10 +3,15 @@ module Event where
 import Message (Commit)
 
 data AllEvent
-  = Fire
-  | ERegisterStroke (Int, Int)
-  | EDataStrokes [Commit] -- [(Int, [(Double, Double)])]
-  | PointerDown (Double, Double)
+  = UsrEv UserEvent
+  | SysEv SystemEvent
+
+data SystemEvent
+  = ERegisterStroke (Int, Int)
+  | EDataStrokes [Commit]
+
+data UserEvent
+  = PointerDown (Double, Double)
   | PointerMove (Double, Double)
   | PointerUp (Double, Double)
   | ToPenMode

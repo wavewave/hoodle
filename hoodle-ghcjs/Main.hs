@@ -23,7 +23,6 @@ import Coroutine
     MainObj,
     MainOp (DoEvent),
     nextevent,
-    putStrLnAndFlush,
     simplelogger,
     world,
   )
@@ -33,7 +32,7 @@ import qualified Data.JSString as JSS (pack)
 import Data.List (foldl', nub, sort)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Text as T
-import Event (AllEvent (..))
+import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
@@ -54,14 +53,13 @@ guiProcess = penReady
 penReady :: AllEvent -> MainCoroutine ()
 penReady ev = do
   case ev of
-    ERegisterStroke (s', _hsh') -> do
+    SysEv (ERegisterStroke (s', _hsh')) -> do
       HoodleState _ _ _ sock (DocState n _) _ <- get
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     -- TODO: refactor this out.
-    EDataStrokes commits -> do
-      liftIO $ putStrLnAndFlush $ show commits -- show (map commitId commits)
+    SysEv (EDataStrokes commits) -> do
       st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
         J.js_clear_overlay offcvs
@@ -69,8 +67,6 @@ penReady ev = do
           ( \case
               Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
               Delete _ js -> do
-                putStrLnAndFlush
-                  ("in pen: " ++ show js)
                 traverse_
                   (J.strokeRemove svg . ("stroke" ++) . show)
                   js
@@ -82,10 +78,10 @@ penReady ev = do
               f !acc (Add i xys) = acc ++ [(i, xys)]
               f !acc (Delete i js) = filter (\(j, _) -> not (j `elem` js)) acc
       put $ st {_hdlstateDocState = DocState i dat'}
-    PointerDown (x, y) ->
+    UsrEv (PointerDown (x, y)) ->
       drawingMode (singleton (x, y))
-    ToPenMode -> pure ()
-    ToEraserMode -> nextevent >>= eraserReady
+    UsrEv (ToPenMode) -> pure ()
+    UsrEv (ToEraserMode) -> nextevent >>= eraserReady
     _ -> pure ()
   nextevent >>= penReady
 
@@ -98,19 +94,19 @@ getXYinSVG svg (x0, y0) = do
 eraserReady :: AllEvent -> MainCoroutine ()
 eraserReady ev = do
   case ev of
-    ToPenMode -> nextevent >>= penReady
-    PointerDown (x0, y0) -> do
+    UsrEv ToPenMode -> nextevent >>= penReady
+    UsrEv (PointerDown (x0, y0)) -> do
       HoodleState svg _ _ _ _ _ <- get
       (x, y) <- liftIO $ getXYinSVG svg (x0, y0)
       erasingMode [] (x, y)
     -- TODO: need to refactor this out. using SysEv.
-    ERegisterStroke (s', _hsh') -> do
+    SysEv (ERegisterStroke (s', _hsh')) -> do
       HoodleState _ _ _ sock (DocState n _) _ <- get
       when (s' > n) $ liftIO $ do
         let msg = SyncRequest (n, s')
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     -- TODO: refactor this out.
-    EDataStrokes commits -> do
+    SysEv (EDataStrokes commits) -> do
       st@(HoodleState svg _ offcvs _ (DocState _ dat0) _) <- get
       liftIO $ do
         J.js_clear_overlay offcvs
@@ -118,7 +114,6 @@ eraserReady ev = do
           ( \case
               Add i xys -> J.drawPath svg ("stroke" ++ show i) xys
               Delete _ js -> do
-                putStrLnAndFlush ("in erase: " ++ show js)
                 traverse_
                   (J.strokeRemove svg . ("stroke" ++) . show)
                   js
@@ -137,13 +132,13 @@ drawingMode :: Seq (Double, Double) -> MainCoroutine ()
 drawingMode xys = do
   ev <- nextevent
   case ev of
-    PointerMove xy@(x, y) -> do
+    UsrEv (PointerMove xy@(x, y)) -> do
       HoodleState _svg cvs offcvs _ _ _ <- get
       case viewr xys of
         _ :> (x0, y0) -> liftIO $ J.js_overlay_point cvs offcvs x0 y0 x y
         _ -> pure ()
       drawingMode (xys |> xy)
-    PointerUp xy -> do
+    UsrEv (PointerUp xy) -> do
       HoodleState svg _ _ sock _ _ <- get
       let xys' = xys |> xy
       path_arr <-
@@ -160,14 +155,14 @@ erasingMode :: [Int] -> (Double, Double) -> MainCoroutine ()
 erasingMode hitted0 (x0, y0) = do
   ev <- nextevent
   case ev of
-    PointerMove (cx, cy) -> do
+    UsrEv (PointerMove (cx, cy)) -> do
       HoodleState svg _ _ _ (DocState _ strks) _ <- get
       (x, y) <- liftIO $ getXYinSVG svg (cx, cy)
       let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
           !hitted' = nub $ sort (hitted ++ hitted0)
       liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show) hitted
       erasingMode hitted' (x, y)
-    PointerUp _ -> do
+    UsrEv (PointerUp _) -> do
       HoodleState svg _ _ sock _ _ <- get
       when (not . null $ hitted0) $ liftIO $ do
         let msg = DeleteStrokes hitted0

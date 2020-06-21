@@ -103,7 +103,6 @@ handler conn acid ref = forever $ do
               s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
           writeTVar ref s'
           pure s'
-      print $ S.length (_docStateCurrentDoc s')
       update acid $ WriteState s'
     SyncRequest (s, e) -> do
       DocState commits _ <- atomically $ readTVar ref
@@ -111,8 +110,6 @@ handler conn acid ref = forever $ do
             toList $
               S.filter (\c -> let i = commitId c in i > s && i <= e) commits
           msg = DataStrokes commits'
-      print $ commits'
-      print (s, e)
       sendTextData conn (serialize msg)
 
 serializer :: AcidState DocState -> IO ()

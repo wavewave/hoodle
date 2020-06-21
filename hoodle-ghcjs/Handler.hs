@@ -8,7 +8,7 @@ import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
 import Coroutine (EventVar, putStrLnAndFlush)
 import qualified Data.JSString as JSS (unpack)
 import qualified Data.Text as T
-import Event (AllEvent (..))
+import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import qualified ForeignJS as J
 import GHCJS.Foreign.Callback
   ( Callback,
@@ -35,7 +35,7 @@ onPointerDown evar ev = do
   t <- J.getPointerType ev
   when (t /= J.Touch) $ do
     (x, y) <- J.getXY ev
-    eventHandler evar $ PointerDown (x, y)
+    eventHandler evar $ UsrEv $ PointerDown (x, y)
 
 onPointerUp ::
   EventVar ->
@@ -46,7 +46,7 @@ onPointerUp evar ev = do
   t <- J.getPointerType ev
   when (t /= J.Touch) $ do
     (x, y) <- J.getXY ev
-    eventHandler evar (PointerUp (x, y))
+    eventHandler evar $ UsrEv $ PointerUp (x, y)
 
 onPointerMove ::
   EventVar ->
@@ -56,7 +56,7 @@ onPointerMove evar ev = do
   t <- J.getPointerType ev
   when (t /= J.Touch) $ do
     (x, y) <- J.getXY ev
-    eventHandler evar (PointerMove (x, y))
+    eventHandler evar $ UsrEv $ PointerMove (x, y)
 
 onAnimationFrame :: JSVal -> JSVal -> Callback (IO ()) -> IO ()
 onAnimationFrame cvs offcvs rAF = do
@@ -69,9 +69,9 @@ onMessage evar s = do
       txt = T.pack str
   case deserialize txt of
     RegisterStroke (s', hsh') -> do
-      eventHandler evar (ERegisterStroke (s', hsh'))
+      eventHandler evar $ SysEv $ ERegisterStroke (s', hsh')
     DataStrokes dat -> do
-      eventHandler evar (EDataStrokes dat)
+      eventHandler evar $ SysEv $ EDataStrokes dat
 
 data Mode = ModePen | ModeEraser
   deriving (Show)
@@ -79,8 +79,8 @@ data Mode = ModePen | ModeEraser
 onModeChange :: Mode -> EventVar -> JSVal -> IO ()
 onModeChange m evar _ = do
   case m of
-    ModePen -> eventHandler evar ToPenMode
-    ModeEraser -> eventHandler evar ToEraserMode
+    ModePen -> eventHandler evar $ UsrEv ToPenMode
+    ModeEraser -> eventHandler evar $ UsrEv ToEraserMode
 
 setupCallback :: EventVar -> IO HoodleState
 setupCallback evar = do

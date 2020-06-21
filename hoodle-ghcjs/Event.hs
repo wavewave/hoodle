@@ -7,7 +7,7 @@ data AllEvent
   | SysEv SystemEvent
 
 data SystemEvent
-  = ERegisterStroke (Int, Int)
+  = ERegisterStroke Int
   | EDataStrokes [Commit]
   | ERefresh
 

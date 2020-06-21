@@ -58,7 +58,7 @@ nextevent = do
 
 -- | Handling a system event
 sysevent :: SystemEvent -> MainCoroutine ()
-sysevent (ERegisterStroke (s', _hsh')) = do
+sysevent (ERegisterStroke s') = do
   HoodleState _ _ _ sock (DocState n _) _ _ <- get
   when (s' > n) $ liftIO $ do
     let msg = SyncRequest (n, s')

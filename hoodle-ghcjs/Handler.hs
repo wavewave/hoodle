@@ -68,8 +68,8 @@ onMessage evar s = do
   let str = JSS.unpack s
       txt = T.pack str
   case deserialize txt of
-    RegisterStroke (s', hsh') -> do
-      eventHandler evar $ SysEv $ ERegisterStroke (s', hsh')
+    RegisterStroke s' -> do
+      eventHandler evar $ SysEv $ ERegisterStroke s'
     DataStrokes dat -> do
       eventHandler evar $ SysEv $ EDataStrokes dat
 

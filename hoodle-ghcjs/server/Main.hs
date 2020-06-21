@@ -142,7 +142,7 @@ main = do
           case getLast commits of
             Just commit -> let r' = commitId commit in if (r' <= r) then retry else pure r'
             Nothing -> retry
-      let msg = RegisterStroke (r', r') -- for the time being -- (r', hsh')
+      let msg = RegisterStroke r' -- for the time being -- (r', hsh')
       sendTextData conn (serialize msg)
       pure r'
   Warp.run 7070 $ serve api server

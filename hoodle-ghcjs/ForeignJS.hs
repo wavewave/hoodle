@@ -4,7 +4,7 @@ module ForeignJS where
 
 import qualified Data.JSString as JSS
 import GHCJS.Foreign.Callback (Callback)
-import GHCJS.Marshal (ToJSVal (toJSValListOf))
+import GHCJS.Marshal (FromJSVal (fromJSValUncheckedListOf), ToJSVal (toJSValListOf))
 import GHCJS.Types (JSString, JSVal)
 
 foreign import javascript unsafe "console.log($1)"
@@ -93,6 +93,12 @@ data PointerType = Mouse | Touch | Pen
 
 getXY :: JSVal -> IO (Double, Double)
 getXY ev = (,) <$> js_clientX ev <*> js_clientY ev
+
+getXYinSVG :: JSVal -> (Double, Double) -> IO (Double, Double)
+getXYinSVG svg (x0, y0) = do
+  r <- js_to_svg_point svg x0 y0
+  [x, y] <- fromJSValUncheckedListOf r
+  pure (x, y)
 
 getPointerType :: JSVal -> IO PointerType
 getPointerType ev = js_pointer_type ev >>= \s -> do

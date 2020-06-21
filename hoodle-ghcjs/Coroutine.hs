@@ -71,11 +71,6 @@ loggerW num = ReaderT (f num)
 errorlog :: String -> IO ()
 errorlog = putStrLnAndFlush
 
-nextevent :: MainCoroutine AllEvent
-nextevent = do
-  Arg DoEvent ev <- request (Res DoEvent ())
-  pure ev
-
 -- |
 world :: HoodleState -> MainObj () -> WorldObj ()
 world xstate initmc = ReaderT staction

@@ -82,6 +82,20 @@ function stroke_remove(svg,id) {
     element.remove();
 }
 
+function page_down() {
+    let svg = SVG('#box');
+    let vbox = svg.viewbox();
+    let vbox1 = new SVG.Box( vbox.x, vbox.y + 10, vbox.width, vbox.height );
+    svg.viewbox(vbox1);
+}
+
+function page_up() {
+    let svg = SVG('#box');
+    let vbox = svg.viewbox();
+    let vbox1 = new SVG.Box( vbox.x, vbox.y - 10, vbox.width, vbox.height );
+    svg.viewbox(vbox1);
+}
+
 debug_show("ready for input");
 
 // GHCJS start

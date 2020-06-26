@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -8,13 +9,16 @@ module Message where
 import Data.Text (Text)
 import qualified Data.Text as T
 
+newtype CommitId = CommitId {unCommitId :: Int}
+  deriving (Show, Eq, Ord, Num)
+
 data C2SMsg
   = -- | (hash,data)
     NewStroke (Int, [(Double, Double)])
   | -- | ids
-    DeleteStrokes [Int]
+    DeleteStrokes [CommitId]
   | -- | (id0,id1)
-    SyncRequest (Int, Int)
+    SyncRequest (CommitId, CommitId)
 
 tag_NewStroke :: Char
 tag_NewStroke = 'N'
@@ -26,11 +30,11 @@ tag_SyncRequest :: Char
 tag_SyncRequest = 'S'
 
 data Commit
-  = Add Int [(Double, Double)]
-  | Delete Int [Int]
+  = Add CommitId [(Double, Double)]
+  | Delete CommitId [CommitId]
   deriving (Show)
 
-commitId :: Commit -> Int
+commitId :: Commit -> CommitId
 commitId (Add i _) = i
 commitId (Delete i _) = i
 
@@ -41,8 +45,8 @@ tag_Delete :: Char
 tag_Delete = 'D'
 
 data S2CMsg
-  = -- | (id,id) -- (id,hash)
-    RegisterStroke (Int, Int) -- (Int, Int)
+  = -- | id
+    RegisterStroke CommitId
   | -- | commits
     DataStrokes [Commit]
 
@@ -58,33 +62,36 @@ class TextSerializable a where
 
 instance TextSerializable C2SMsg where
   serialize (NewStroke payload) = T.cons 'N' $ T.pack (show payload)
-  serialize (DeleteStrokes payload) = T.cons 'D' $ T.pack (show payload)
-  serialize (SyncRequest range) = T.cons 'S' $ T.pack (show range)
+  serialize (DeleteStrokes payload) = T.cons 'D' $ T.pack $ show $ map unCommitId payload
+  serialize (SyncRequest (s, e)) = T.cons 'S' $ T.pack (show (unCommitId s, unCommitId e))
 
   deserialize t =
     let c = T.head t
      in case c of
           'N' -> NewStroke $ read $ T.unpack $ T.tail t
-          'D' -> DeleteStrokes $ read $ T.unpack $ T.tail t
-          'S' -> SyncRequest $ read $ T.unpack $ T.tail t
+          'D' -> DeleteStrokes $ map CommitId $ read $ T.unpack $ T.tail t
+          'S' ->
+            SyncRequest $
+              let (s, e) = read $ T.unpack $ T.tail t
+               in (CommitId s, CommitId e)
           _ -> error "cannot parse"
 
 instance TextSerializable S2CMsg where
-  serialize (RegisterStroke payload) = T.cons 'R' $ T.pack (show payload)
+  serialize (RegisterStroke commit) = T.cons 'R' $ T.pack $ show (unCommitId commit)
   serialize (DataStrokes commits) =
     T.cons 'D'
       $ T.intercalate ":"
       $ map
         ( \case
-            Add i dat -> T.cons 'A' $ T.pack (show (i, dat))
-            Delete i js -> T.cons 'D' $ T.pack (show (i, js))
+            Add (CommitId i) dat -> T.cons 'A' $ T.pack (show (i, dat))
+            Delete (CommitId i) js -> T.cons 'D' $ T.pack (show (i, map unCommitId js))
         )
         commits
 
   deserialize t =
     let c = T.head t
      in case c of
-          'R' -> RegisterStroke $ read $ T.unpack $ T.tail t
+          'R' -> RegisterStroke $ CommitId $ read $ T.unpack $ T.tail t
           'D' ->
             let t' = T.tail t
                 ts = T.splitOn ":" t'
@@ -95,10 +102,10 @@ instance TextSerializable S2CMsg where
                          in case c' of
                               'A' ->
                                 let (i, dat) = read $ T.unpack $ T.tail tt
-                                 in Add i dat
+                                 in Add (CommitId i) dat
                               'D' ->
                                 let (i, js) = read $ T.unpack $ T.tail tt
-                                 in Delete i js
+                                 in Delete (CommitId i) (map CommitId js)
                     )
                     ts
              in DataStrokes commits

@@ -20,7 +20,8 @@ import GHCJS.Types (JSString, JSVal, jsval)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
 import Message
-  ( S2CMsg (DataStrokes, RegisterStroke),
+  ( CommitId (..),
+    S2CMsg (DataStrokes, RegisterStroke),
     TextSerializable (deserialize),
   )
 import State (DocState (..), HoodleState (..), SyncState (..))
@@ -68,8 +69,8 @@ onMessage evar s = do
   let str = JSS.unpack s
       txt = T.pack str
   case deserialize txt of
-    RegisterStroke (s', hsh') -> do
-      eventHandler evar $ SysEv $ ERegisterStroke (s', hsh')
+    RegisterStroke s' -> do
+      eventHandler evar $ SysEv $ ERegisterStroke s'
     DataStrokes dat -> do
       eventHandler evar $ SysEv $ EDataStrokes dat
 

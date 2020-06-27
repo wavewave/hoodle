@@ -10,6 +10,7 @@ module Main where
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM (TVar, atomically, newTVarIO, readTVar, retry, writeTVar)
 import Control.Monad (forever, void)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Loops (iterateM_)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (put)
@@ -39,14 +40,7 @@ import Network.WebSockets
   )
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
 import System.IO (IOMode (..), hFlush, hPutStrLn, withFile)
-
-type API = "hello" :> Get '[JSON] String
-
-api :: Proxy API
-api = Proxy
-
-server :: Server API
-server = pure "hello world"
+import Type (Doc (..), Stroke (..))
 
 getLast :: Seq a -> Maybe a
 getLast s =
@@ -132,6 +126,20 @@ serializer acid = forever $ do
     hPutStrLn h (show v)
     hFlush h
 
+type API = "doc" :> Get '[JSON] Doc
+
+api :: Proxy API
+api = Proxy
+
+server :: TVar DocState -> Server API
+server var = do
+  s <- liftIO $ atomically $ readTVar var
+  let doc =
+        Doc
+          $ map (\(i, _, xys) -> Stroke i xys)
+          $ toList (_docStateCurrentDoc s)
+  pure doc
+
 main :: IO ()
 main = do
   acid <- openLocalState (DocState S.empty S.empty)
@@ -157,4 +165,4 @@ main = do
       let msg = RegisterStroke r'
       sendTextData conn (serialize msg)
       pure r'
-  Warp.run 7070 $ serve api server
+  Warp.run 7070 $ serve api (server ref)

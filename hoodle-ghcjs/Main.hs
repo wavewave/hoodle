@@ -92,7 +92,6 @@ sysevent ERefresh = do
   s@(HoodleState _ cvs offcvs _ _ _ isUpdated) <- get
   when isUpdated $ do
     liftIO $ J.js_refresh cvs offcvs
-    liftIO $ putStrLnAndFlush "refresh"
     put $ s {_hdlstateOverlayUpdated = False}
 
 guiProcess :: AllEvent -> MainCoroutine ()

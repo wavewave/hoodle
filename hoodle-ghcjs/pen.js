@@ -17,7 +17,7 @@ function toSVGPointArray(svg,xys) {
 }
 
 function drawPath(svg,id,xys) {
-    var path = svg.polyline(xys).fill("none").stroke({width:0.2, color:'#f06'}).id(id);
+    var path = svg.polyline(xys).fill("none").stroke({width:0.1, color:'#f06'}).id(id);
 }
 
 

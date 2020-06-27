@@ -7,21 +7,45 @@
   <script language="javascript" src="./Main.jsexe/rts.js"></script>
   <script language="javascript" src="./Main.jsexe/lib.js"></script>
   <script language="javascript" src="./Main.jsexe/out.js"></script>
+
+  <script src="https://unpkg.com/vh-check/dist/vh-check.min.js"></script>
+  <script>
+    (function () {
+      // initialize the test
+      var test = vhCheck();
+    }());
+  </script>
+  <style>
+    //html {
+    //    height: -webkit-fill-available;
+    //}
+    main {
+        height: 100vh;
+        /* If you need to support browser without CSS var support (<= IE11) */
+        height: calc(100vh - var(--vh-offset, 0px));
+    }
+    //.is-fullheight {
+    //    max-height: 80vh;
+    //}
+  </style>
 </head>
-<body>
-  <div class="container is-fluid">
-    <div style="display:inline-block; overflow:hidden" >
+<body >
+  <div class="hero is-fullheight">
+    <div class="hero-head" style="display:inline-block; overflow:hidden" >
       <button id="pen" class="button is-primary is-rounded">Pen</button>
       <button id="eraser" class="button is-rounded">Eraser</button>
       <button id="pageup" class="button is-rounded" onclick="page_up()">Page Up</button>
       <button id="pagedown" class="button is-rounded" onclick="page_down()">Page Down</button>
     </div>
 
-    <div style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%; overflow:hidden; position: relative;">
+    <div class="hero-body custom-padding" style="border-style: solid; border-color:black; overflow:hidden; position: relative; padding: 0 0 0 0;">
       <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 100%; height: 100%; background-color: white;" />
-      <canvas id="overlay" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10;" />
+        <canvas id="overlay" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10;" />
+      </div>
+    <div class="hero-foot">
+      <div id="debugbox" style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%;">loading</div>
+      <div style="height: 100px;"></div>
     </div>
-    <div id="debugbox" style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%;">loading</div>
   </div>
   <script src="./svg.min.js"></script>
   <script type="text/javascript" src="pen.js" defer></script>

@@ -67,9 +67,12 @@ function clear_overlay(offcanvas) {
     offcontext.clearRect(0,0,offcanvas.width,offcanvas.height);
 }
 
+let debugbox = document.getElementById("debugbox");
+let debugTextNode = document.createTextNode("");
+debugbox.appendChild(debugTextNode);
+
 function debug_show(val) {
-    let debugbox = document.getElementById("debugbox");
-    debugbox.innerText = val;
+    debugTextNode.nodeValue = val;
 }
 
 function stroke_change_color(svg,id) {

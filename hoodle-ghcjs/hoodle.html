@@ -8,43 +8,71 @@
   <script language="javascript" src="./Main.jsexe/lib.js"></script>
   <script language="javascript" src="./Main.jsexe/out.js"></script>
 
-  <script src="https://unpkg.com/vh-check/dist/vh-check.min.js"></script>
-  <script>
-    (function () {
-      // initialize the test
-      var test = vhCheck();
-    }());
-  </script>
   <style>
-    //html {
-    //    height: -webkit-fill-available;
-    //}
-    main {
-        height: 100vh;
-        /* If you need to support browser without CSS var support (<= IE11) */
-        height: calc(100vh - var(--vh-offset, 0px));
+    html {
+        box-sizing: border-box;
+        height: 100%;
     }
-    //.is-fullheight {
-    //    max-height: 80vh;
-    //}
+    body {
+        box-sizing: border-box;
+        height: 100%;
+        padding: 0 0 0 0;
+        margin: 0 0 0 0;
+    }
+    .all {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .head {
+        overflow:hidden;
+    }
+    .main {
+        border: 1px black solid;
+        height: 100%;
+        overflow:hidden;
+        position: relative;
+        padding: 0 0 0 0;
+    }
+    .canvas {
+        width: 100%;
+        height: 100%;
+        background-color: white;
+    }
+    #overlay {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+    }
+    .foot {
+        height: 20px;
+        position: relative;
+        padding: 0 0 0 0;
+    }
+    #debugbox {
+        height: 18px;
+        position: absolute;
+    }
   </style>
 </head>
 <body >
-  <div class="hero is-fullheight">
-    <div class="hero-head" style="display:inline-block; overflow:hidden" >
+  <div class="all">
+    <div class="head">
       <button id="pen" class="button is-primary is-rounded">Pen</button>
       <button id="eraser" class="button is-rounded">Eraser</button>
       <button id="pageup" class="button is-rounded" onclick="page_up()">Page Up</button>
       <button id="pagedown" class="button is-rounded" onclick="page_down()">Page Down</button>
     </div>
 
-    <div class="hero-body custom-padding" style="border-style: solid; border-color:black; overflow:hidden; position: relative; padding: 0 0 0 0;">
-      <svg id="box" width="1280px" height="1024px" viewBox="0 0 100 100" style="width: 100%; height: 100%; background-color: white;" />
-        <canvas id="overlay" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 10;" />
-      </div>
-    <div class="hero-foot">
-      <div id="debugbox" style="border-style: solid; border-color:black; display:inline-block; height: 100%; width: 100%;">loading</div>
-      <div style="height: 100px;"></div>
+    <div class="main">
+      <svg class="canvas" id="box" width="1280px" height="1024px" viewBox="0 0 100 100"  />
+      <canvas id="overlay" />
+    </div>
+    <div class="foot">
+      <div id="debugbox"></div>
     </div>
   </div>
   <script src="./svg.min.js"></script>

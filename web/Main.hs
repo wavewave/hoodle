@@ -104,8 +104,8 @@ penReady ev = do
   case ev of
     PointerDown (cx, cy) ->
       drawingMode (singleton (cx, cy))
-    ToPenMode -> pure ()
     ToEraserMode -> nextevent >>= eraserReady
+    ToSelectMode -> nextevent >>= selectReady
     _ -> pure ()
   nextevent >>= penReady
 
@@ -113,11 +113,21 @@ eraserReady :: UserEvent -> MainCoroutine ()
 eraserReady ev = do
   case ev of
     ToPenMode -> nextevent >>= penReady
+    ToSelectMode -> nextevent >>= selectReady
     PointerDown (cx0, cy0) -> do
       HoodleState svg _ _ _ _ _ _ <- get
       erasingMode [] (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= eraserReady
+
+selectReady :: UserEvent -> MainCoroutine ()
+selectReady ev = do
+  liftIO $ putStrLnAndFlush "selectReady"
+  case ev of
+    ToPenMode -> nextevent >>= penReady
+    ToEraserMode -> nextevent >>= eraserReady
+    _ -> pure ()
+  nextevent >>= selectReady
 
 drawingMode :: Seq (Double, Double) -> MainCoroutine ()
 drawingMode cxys = do

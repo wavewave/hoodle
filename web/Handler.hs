@@ -74,20 +74,34 @@ onMessage evar s = do
     DataStrokes dat -> do
       eventHandler evar $ SysEv $ EDataStrokes dat
 
-data Mode = ModePen | ModeEraser
+data Mode = ModePen | ModeEraser | ModeSelect
   deriving (Show)
 
-onModeChange :: Mode -> EventVar -> (JSVal, JSVal) -> JSVal -> IO ()
-onModeChange m evar (pen, eraser) _ = do
+data ModeButtons
+  = ModeButtons
+      { _mbPen :: JSVal,
+        _mbEraser :: JSVal,
+        _mbSelect :: JSVal
+      }
+
+onModeChange :: Mode -> EventVar -> ModeButtons -> JSVal -> IO ()
+onModeChange m evar btns _ = do
   case m of
     ModePen -> do
-      J.js_add_class pen "is-primary"
-      J.js_remove_class eraser "is-primary"
+      J.js_add_class (_mbPen btns) "is-primary"
+      J.js_remove_class (_mbEraser btns) "is-primary"
+      J.js_remove_class (_mbSelect btns) "is-primary"
       eventHandler evar $ UsrEv ToPenMode
     ModeEraser -> do
-      J.js_add_class eraser "is-primary"
-      J.js_remove_class pen "is-primary"
+      J.js_remove_class (_mbPen btns) "is-primary"
+      J.js_add_class (_mbEraser btns) "is-primary"
+      J.js_remove_class (_mbSelect btns) "is-primary"
       eventHandler evar $ UsrEv ToEraserMode
+    ModeSelect -> do
+      J.js_remove_class (_mbPen btns) "is-primary"
+      J.js_remove_class (_mbEraser btns) "is-primary"
+      J.js_add_class (_mbSelect btns) "is-primary"
+      eventHandler evar $ UsrEv ToSelectMode
 
 setupCallback :: EventVar -> IO HoodleState
 setupCallback evar = do
@@ -130,8 +144,12 @@ setupCallback evar = do
     J.js_requestAnimationFrame rAF
   pen <- J.js_document_getElementById "pen"
   eraser <- J.js_document_getElementById "eraser"
+  select <- J.js_document_getElementById "select"
+  let btns = ModeButtons pen eraser select
   J.js_addEventListener pen "click"
-    =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar (pen, eraser))
+    =<< syncCallback1 ThrowWouldBlock (onModeChange ModePen evar btns)
   J.js_addEventListener eraser "click"
-    =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar (pen, eraser))
+    =<< syncCallback1 ThrowWouldBlock (onModeChange ModeEraser evar btns)
+  J.js_addEventListener select "click"
+    =<< syncCallback1 ThrowWouldBlock (onModeChange ModeSelect evar btns)
   pure xstate

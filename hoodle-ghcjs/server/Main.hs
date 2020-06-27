@@ -118,14 +118,6 @@ handler conn acid ref = forever $ do
           msg = DataStrokes commits'
       sendTextData conn (serialize msg)
 
-serializer :: AcidState DocState -> IO ()
-serializer acid = forever $ do
-  threadDelay 5000000
-  DocState _ v <- query acid QueryState
-  withFile "serialized.dat" WriteMode $ \h -> do
-    hPutStrLn h (show v)
-    hFlush h
-
 type API = "doc" :> Get '[JSON] Doc
 
 api :: Proxy API
@@ -154,7 +146,6 @@ main = do
       sendPing conn ("ping" :: Text)
     -- synchronization
     void $ forkIO $ handler conn acid ref
-    void $ forkIO $ serializer acid
     void $ flip iterateM_ 0 $ \r -> do
       r' <-
         atomically $ do

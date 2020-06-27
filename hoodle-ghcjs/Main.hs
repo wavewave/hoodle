@@ -32,6 +32,7 @@ import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
 import Data.List (foldl', nub, sort)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
+import qualified Data.Sequence as Seq (length)
 import qualified Data.Text as T
 import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import qualified ForeignJS as J
@@ -114,7 +115,7 @@ eraserReady ev = do
     ToPenMode -> nextevent >>= penReady
     PointerDown (cx0, cy0) -> do
       HoodleState svg _ _ _ _ _ _ <- get
-      erasingMode (singleton (cx0, cy0))
+      erasingMode [] (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= eraserReady
 
@@ -161,38 +162,36 @@ findHitStrokes svg cxys strks = do
       hitstrks = flip concatMap pairs $ \((x0, y0), (x, y)) ->
         map fst $
           filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
-  -- !hitted' = nub $ sort (hitted ++ hitted0)
   pure hitstrks
 
-{-
-    (x0, y0) <- liftIO $ J.getXYinSVG svg (cx0, cy0)
-          (x, y) <- liftIO $ J.getXYinSVG svg (cx, cy)
-          let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
-              !hitted' = nub $ sort (hitted ++ hitted0)
+updateEraseStatePeriod :: Int
+updateEraseStatePeriod = 10
 
--}
-
-erasingMode {- [CommitId] -> -} :: Seq (Double, Double) -> MainCoroutine ()
-erasingMode {- hitted0 -} cxys = do
+erasingMode :: [CommitId] -> Seq (Double, Double) -> MainCoroutine ()
+erasingMode hstrks0 cxys = do
   ev <- nextevent
   case ev of
     PointerMove cxy@(cx, cy) -> do
-      s@(HoodleState svg cvs offcvs _ _ _ _) <- get
+      s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
       case viewr cxys of
         _ :> (cx0, cy0) -> do
           liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
           put $ s {_hdlstateOverlayUpdated = True}
-          erasingMode (cxys |> cxy)
+          if Seq.length cxys >= updateEraseStatePeriod
+            then do
+              hstrks <- liftIO $ findHitStrokes svg cxys strks
+              liftIO $
+                traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hstrks
+              let !hstrks' = nub $ sort (hstrks ++ hstrks0)
+              erasingMode hstrks' (singleton cxy)
+            else erasingMode hstrks0 (cxys |> cxy)
         _ -> pure ()
     PointerUp _ -> do
-      HoodleState svg _ _ sock (DocState _ strks) _ _ <- get
-      hstrks <- liftIO $ findHitStrokes svg cxys strks
-      liftIO $
-        traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hstrks
-      when (not . null $ hstrks) $ liftIO $ do
-        let msg = DeleteStrokes hstrks
+      HoodleState svg _ _ sock _ _ _ <- get
+      when (not . null $ hstrks0) $ liftIO $ do
+        let msg = DeleteStrokes hstrks0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-    _ -> erasingMode cxys
+    _ -> erasingMode hstrks0 cxys
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

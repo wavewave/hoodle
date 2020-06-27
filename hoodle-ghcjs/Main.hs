@@ -101,8 +101,8 @@ guiProcess (UsrEv uev) = penReady uev
 penReady :: UserEvent -> MainCoroutine ()
 penReady ev = do
   case ev of
-    PointerDown (x, y) ->
-      drawingMode (singleton (x, y))
+    PointerDown (cx, cy) ->
+      drawingMode (singleton (cx, cy))
     ToPenMode -> pure ()
     ToEraserMode -> nextevent >>= eraserReady
     _ -> pure ()
@@ -112,30 +112,29 @@ eraserReady :: UserEvent -> MainCoroutine ()
 eraserReady ev = do
   case ev of
     ToPenMode -> nextevent >>= penReady
-    PointerDown (x0, y0) -> do
+    PointerDown (cx0, cy0) -> do
       HoodleState svg _ _ _ _ _ _ <- get
-      (x, y) <- liftIO $ J.getXYinSVG svg (x0, y0)
-      erasingMode [] (x, y)
+      erasingMode [] (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= eraserReady
 
 drawingMode :: Seq (Double, Double) -> MainCoroutine ()
-drawingMode xys = do
+drawingMode cxys = do
   ev <- nextevent
   case ev of
-    PointerMove xy@(x, y) -> do
+    PointerMove cxy@(cx, cy) -> do
       s@(HoodleState _ cvs offcvs _ _ _ _) <- get
-      case viewr xys of
-        _ :> (x0, y0) -> liftIO $ J.js_overlay_point cvs offcvs x0 y0 x y
+      case viewr cxys of
+        _ :> (cx0, cy0) -> liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
         _ -> pure ()
       put $ s {_hdlstateOverlayUpdated = True}
-      drawingMode (xys |> xy)
-    PointerUp xy -> do
+      drawingMode (cxys |> cxy)
+    PointerUp cxy -> do
       HoodleState svg _ _ sock _ _ _ <- get
-      let xys' = xys |> xy
+      let cxys' = cxys |> cxy
       path_arr <-
         liftIO $
-          J.js_to_svg_point_array svg =<< toJSValListOf (toList xys')
+          J.js_to_svg_point_array svg =<< toJSValListOf (toList cxys')
       path <- liftIO $ fromJSValUncheckedListOf path_arr
       modify'
         ( \s ->
@@ -147,25 +146,31 @@ drawingMode xys = do
       let hsh = hash path
           msg = NewStroke (hsh, path)
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-    _ -> drawingMode xys
+    _ -> drawingMode cxys
 
-erasingMode :: [CommitId] -> (Double, Double) -> MainCoroutine ()
-erasingMode hitted0 (x0, y0) = do
+erasingMode :: [CommitId] -> Seq (Double, Double) -> MainCoroutine ()
+erasingMode hitted0 cxys = do
   ev <- nextevent
   case ev of
-    PointerMove (cx, cy) -> do
-      HoodleState svg _ _ _ (DocState _ strks) _ _ <- get
-      (x, y) <- liftIO $ J.getXYinSVG svg (cx, cy)
-      let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
-          !hitted' = nub $ sort (hitted ++ hitted0)
-      liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hitted
-      erasingMode hitted' (x, y)
+    PointerMove cxy@(cx, cy) -> do
+      s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
+      case viewr cxys of
+        _ :> (cx0, cy0) -> do
+          liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
+          (x0, y0) <- liftIO $ J.getXYinSVG svg (cx0, cy0)
+          (x, y) <- liftIO $ J.getXYinSVG svg (cx, cy)
+          let !hitted = map fst $ filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
+              !hitted' = nub $ sort (hitted ++ hitted0)
+          liftIO $ traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hitted
+          put $ s {_hdlstateOverlayUpdated = True}
+          erasingMode hitted' (cxys |> cxy)
+        _ -> pure ()
     PointerUp _ -> do
       HoodleState svg _ _ sock _ _ _ <- get
       when (not . null $ hitted0) $ liftIO $ do
         let msg = DeleteStrokes hitted0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-    _ -> erasingMode hitted0 (x0, y0)
+    _ -> erasingMode hitted0 cxys
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

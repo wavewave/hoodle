@@ -1,98 +1,90 @@
-{-# LANGUAGE TypeFamilies, StandaloneDeriving, RecordWildCards, MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Data.Hoodle.BBox 
--- Copyright   : (c) 2011, 2012 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
+module Data.Hoodle.BBox
+  ( BBox (..),
+    GetBBoxable (..),
+    MakeBBoxedable (..),
+    BBoxed (..),
+    mkbbox,
+    mkbboxF,
+    bboxFromStroke,
+    bboxFromImage,
+    bboxFromSVG,
+    dimToBBox,
+    bboxToDim,
+    xformBBox,
+    inflate,
+    moveBBoxToOrigin,
+    moveBBoxByOffset,
+    moveBBoxULCornerTo,
+    intersectBBox,
+    unionBBox,
+    ULMaybe (..),
+    IntersectBBox (..),
+    UnionBBox (..),
+    Maybeable (..),
+    bbox4All,
+  )
+where
 
-module Data.Hoodle.BBox 
-( BBox (..) 
-, GetBBoxable (..) 
-, MakeBBoxedable (..) 
-, BBoxed (..)
-, mkbbox
-, mkbboxF
-, bboxFromStroke
-, bboxFromImage
-, bboxFromSVG
-, dimToBBox
-, bboxToDim
-, xformBBox
-, inflate
-, moveBBoxToOrigin
-, moveBBoxByOffset
-, moveBBoxULCornerTo
-, intersectBBox
-, unionBBox
-, ULMaybe (..) 
-, IntersectBBox (..) 
-, UnionBBox (..)
-, Maybeable (..)
-, bbox4All
-) where
-
-import           Control.Applicative 
-import           Control.Monad
-import           Control.Monad.Identity
+import Control.Applicative
+import Control.Monad
+import Control.Monad.Identity
 import qualified Data.Foldable as F
-import           Data.Monoid
-import           Data.Serialize
-import           Data.Strict.Tuple 
--- from this package
-import           Data.Hoodle.Simple
-import           Data.Hoodle.Util
--- 
-import Prelude hiding (fst,snd)
-import qualified Prelude as Prelude (fst,snd)
+import Data.Hoodle.Simple
+import Data.Hoodle.Util
+import Data.Monoid
+import Data.Serialize
+import Data.Strict.Tuple
+import Prelude hiding (fst, snd)
+import qualified Prelude as Prelude (fst, snd)
 
+-- | bounding box type
+data BBox
+  = BBox
+      { bbox_upperleft :: (Double, Double),
+        bbox_lowerright :: (Double, Double)
+      }
+  deriving (Show, Eq, Ord)
 
-
--- | bounding box type 
-data BBox = BBox { bbox_upperleft :: (Double,Double) 
-                 , bbox_lowerright :: (Double,Double) } 
-          deriving (Show,Eq,Ord)
-
--- | 
+-- |
 instance Serialize BBox where
-    put BBox{..} = put bbox_upperleft >> put bbox_lowerright  
-    get = liftM2 BBox get get 
+  put BBox {..} = put bbox_upperleft >> put bbox_lowerright
+  get = liftM2 BBox get get
 
+data BBoxed a
+  = BBoxed
+      { bbxed_content :: a,
+        bbxed_bbx :: BBox
+      }
 
+deriving instance (Show a) => Show (BBoxed a)
 
-data BBoxed a = BBoxed { bbxed_content :: a 
-                       , bbxed_bbx :: BBox } 
-
-deriving instance (Show a) => Show (BBoxed a) 
 deriving instance (Eq a) => Eq (BBoxed a)
+
 deriving instance (Ord a) => Ord (BBoxed a)
 
--- | 
-class GetBBoxable a where 
-  getBBox :: a -> BBox 
-  
+-- |
+class GetBBoxable a where
+  getBBox :: a -> BBox
+
 instance GetBBoxable (BBoxed a) where
-  getBBox = bbxed_bbx 
+  getBBox = bbxed_bbx
 
 -- |
-class (Monad m) => MakeBBoxedable m a where 
+class (Monad m) => MakeBBoxedable m a where
   makeBBoxed :: a -> m (BBoxed a)
 
-
-
-instance MakeBBoxedable Identity Stroke where 
+instance MakeBBoxedable Identity Stroke where
   makeBBoxed strk = return (BBoxed strk (bboxFromStroke strk))
 
-instance MakeBBoxedable Identity Image where 
-  makeBBoxed img = return (BBoxed img (bboxFromImage img)) 
+instance MakeBBoxedable Identity Image where
+  makeBBoxed img = return (BBoxed img (bboxFromImage img))
 
-instance MakeBBoxedable Identity SVG where 
+instance MakeBBoxedable Identity SVG where
   makeBBoxed svg = return (BBoxed svg (bboxFromSVG svg))
 
 instance MakeBBoxedable Identity Link where
@@ -101,155 +93,155 @@ instance MakeBBoxedable Identity Link where
 instance MakeBBoxedable Identity Anchor where
   makeBBoxed anc = return (BBoxed anc (bboxFromAnchor anc))
 
+-- |
+mkbbox :: [Pair Double Double] -> BBox
+mkbbox lst =
+  let xs = map fst lst
+      ys = map snd lst
+   in BBox
+        { bbox_upperleft = (minimum xs, minimum ys),
+          bbox_lowerright = (maximum xs, maximum ys)
+        }
 
 -- |
-mkbbox :: [Pair Double Double] -> BBox 
-mkbbox lst = let xs = map fst lst 
-                 ys = map snd lst
-             in  BBox { bbox_upperleft = (minimum xs, minimum ys)
-                      , bbox_lowerright = (maximum xs, maximum ys) } 
-                 
--- |                 
-mkbboxF :: (F.Foldable m, Functor m) => m (Double,Double) -> BBox 
-mkbboxF lst = 
-  let xs = fmap Prelude.fst lst  
-      ys = fmap Prelude.snd lst 
-  in BBox{bbox_upperleft=(F.minimum xs, F.minimum ys)
-         ,bbox_lowerright=(F.maximum xs, F.maximum ys)}
+mkbboxF :: (F.Foldable m, Functor m) => m (Double, Double) -> BBox
+mkbboxF lst =
+  let xs = fmap Prelude.fst lst
+      ys = fmap Prelude.snd lst
+   in BBox
+        { bbox_upperleft = (F.minimum xs, F.minimum ys),
+          bbox_lowerright = (F.maximum xs, F.maximum ys)
+        }
 
 -- |
-bboxFromStroke :: Stroke -> BBox 
+bboxFromStroke :: Stroke -> BBox
 bboxFromStroke (Stroke _ _ w dat) = inflate (mkbbox dat) w
-bboxFromStroke (VWStroke _ _ dat) = 
-  let dat' = map ((,) <$> fst3 <*> snd3) dat 
+bboxFromStroke (VWStroke _ _ dat) =
+  let dat' = map ((,) <$> fst3 <*> snd3) dat
       widthmax = F.maximum (map trd3 dat)
-  in inflate (mkbboxF dat') widthmax
+   in inflate (mkbboxF dat') widthmax
 
 -- |
-dimToBBox :: Dimension -> BBox 
-dimToBBox (Dim w h) = BBox (0,0) (w,h)
+dimToBBox :: Dimension -> BBox
+dimToBBox (Dim w h) = BBox (0, 0) (w, h)
 
 -- |
 -- |
 bboxToDim :: BBox -> Dimension
-bboxToDim (BBox (x1,y1) (x2,y2)) = Dim (x2-x1) (y2-y1)
-
-
--- | 
-bboxFromImage :: Image -> BBox 
-bboxFromImage (Image _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
-
-
--- | 
-bboxFromSVG :: SVG -> BBox 
-bboxFromSVG (SVG _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)    
-
--- | 
-bboxFromLink :: Link -> BBox 
-bboxFromLink (Link _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
-bboxFromLink (LinkDocID _ _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
-bboxFromLink (LinkAnchor _ _ _ _ _ (x,y) d) = moveBBoxULCornerTo (x,y) (dimToBBox d)
+bboxToDim (BBox (x1, y1) (x2, y2)) = Dim (x2 - x1) (y2 - y1)
 
 -- |
-bboxFromAnchor :: Anchor -> BBox 
-bboxFromAnchor (Anchor _ _ (x,y) d) =  moveBBoxULCornerTo (x,y) (dimToBBox d)
+bboxFromImage :: Image -> BBox
+bboxFromImage (Image _ (x, y) d) = moveBBoxULCornerTo (x, y) (dimToBBox d)
 
+-- |
+bboxFromSVG :: SVG -> BBox
+bboxFromSVG (SVG _ _ _ (x, y) d) = moveBBoxULCornerTo (x, y) (dimToBBox d)
 
--- | general transform BBox         
-xformBBox :: ((Double,Double) -> (Double,Double)) -> BBox -> BBox 
+-- |
+bboxFromLink :: Link -> BBox
+bboxFromLink (Link _ _ _ _ _ _ (x, y) d) = moveBBoxULCornerTo (x, y) (dimToBBox d)
+bboxFromLink (LinkDocID _ _ _ _ _ _ (x, y) d) = moveBBoxULCornerTo (x, y) (dimToBBox d)
+bboxFromLink (LinkAnchor _ _ _ _ _ (x, y) d) = moveBBoxULCornerTo (x, y) (dimToBBox d)
+
+-- |
+bboxFromAnchor :: Anchor -> BBox
+bboxFromAnchor (Anchor _ _ (x, y) d) = moveBBoxULCornerTo (x, y) (dimToBBox d)
+
+-- | general transform BBox
+xformBBox :: ((Double, Double) -> (Double, Double)) -> BBox -> BBox
 xformBBox f (BBox c1 c2) = BBox (f c1) (f c2)
 
--- | inflate bbox by amount r 
-inflate :: BBox -> Double -> BBox 
-inflate (BBox (x1,y1) (x2,y2)) r = BBox (x1-r,y1-r) (x2+r,y2+r)
-
--- | 
-moveBBoxToOrigin :: BBox -> BBox 
-moveBBoxToOrigin (BBox (x0,y0) (x1,y1)) = BBox (0,0) (x1-x0,y1-y0)
+-- | inflate bbox by amount r
+inflate :: BBox -> Double -> BBox
+inflate (BBox (x1, y1) (x2, y2)) r = BBox (x1 - r, y1 - r) (x2 + r, y2 + r)
 
 -- |
-moveBBoxByOffset :: (Double,Double) -> BBox -> BBox 
-moveBBoxByOffset (xoff,yoff) (BBox (x0,y0) (x1,y1)) = BBox (x0+xoff,y0+yoff) (x1+xoff,y1+yoff)
+moveBBoxToOrigin :: BBox -> BBox
+moveBBoxToOrigin (BBox (x0, y0) (x1, y1)) = BBox (0, 0) (x1 - x0, y1 - y0)
 
 -- |
-moveBBoxULCornerTo :: (Double,Double) -> BBox -> BBox 
-moveBBoxULCornerTo (x,y) b@(BBox (x0,y0) _) = moveBBoxByOffset (x-x0,y-y0) b 
+moveBBoxByOffset :: (Double, Double) -> BBox -> BBox
+moveBBoxByOffset (xoff, yoff) (BBox (x0, y0) (x1, y1)) = BBox (x0 + xoff, y0 + yoff) (x1 + xoff, y1 + yoff)
+
+-- |
+moveBBoxULCornerTo :: (Double, Double) -> BBox -> BBox
+moveBBoxULCornerTo (x, y) b@(BBox (x0, y0) _) = moveBBoxByOffset (x - x0, y - y0) b
 
 -- |
 intersectBBox :: BBox -> BBox -> Maybe BBox
-intersectBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = do 
-  guard $ (x1 <= x3 && x3 <= x2) || (x3 <= x1 && x1 <= x4 ) 
-  guard $ (y1 <= y3 && y3 <= y2) || (y3 <= y1 && y1 <= y4 )
-  let x5 = if x1 <= x3 then x3 else x1 
-      y5 = if y1 <= y3 then y3 else y1 
-      x6 = min x2 x4 
+intersectBBox (BBox (x1, y1) (x2, y2)) (BBox (x3, y3) (x4, y4)) = do
+  guard $ (x1 <= x3 && x3 <= x2) || (x3 <= x1 && x1 <= x4)
+  guard $ (y1 <= y3 && y3 <= y2) || (y3 <= y1 && y1 <= y4)
+  let x5 = if x1 <= x3 then x3 else x1
+      y5 = if y1 <= y3 then y3 else y1
+      x6 = min x2 x4
       y6 = min y2 y4
-  return (BBox (x5,y5) (x6,y6))
-  
--- |  
+  return (BBox (x5, y5) (x6, y6))
+
+-- |
 unionBBox :: BBox -> BBox -> BBox
-unionBBox (BBox (x1,y1) (x2,y2)) (BBox (x3,y3) (x4,y4)) = 
+unionBBox (BBox (x1, y1) (x2, y2)) (BBox (x3, y3) (x4, y4)) =
   let x5 = if x1 < x3 then x1 else x3
       y5 = if y1 < y3 then y1 else y3
       x6 = if x2 < x4 then x4 else x2
       y6 = if y2 < y4 then y4 else y2
-  in BBox (x5,y5) (x6,y6)
-  
+   in BBox (x5, y5) (x6, y6)
+
 -- |
-data ULMaybe a = Bottom | Middle a | Top      
+data ULMaybe a = Bottom | Middle a | Top
 
 deriving instance Show a => Show (ULMaybe a)
 
 deriving instance Eq a => Eq (ULMaybe a)
-                                     
--- |
-newtype IntersectBBox = Intersect { unIntersect :: ULMaybe BBox } 
-                        deriving (Show,Eq)
 
 -- |
-newtype UnionBBox = Union { unUnion :: ULMaybe BBox }
-                    deriving (Show,Eq)
-     
-instance Monoid (IntersectBBox) where 
+newtype IntersectBBox = Intersect {unIntersect :: ULMaybe BBox}
+  deriving (Show, Eq)
+
+-- |
+newtype UnionBBox = Union {unUnion :: ULMaybe BBox}
+  deriving (Show, Eq)
+
+instance Monoid (IntersectBBox) where
   (Intersect Bottom) `mappend` _ = Intersect Bottom
-  _ `mappend` (Intersect Bottom) = Intersect Bottom 
-  (Intersect Top) `mappend` x = x 
-  x `mappend` (Intersect Top) = x 
-  (Intersect (Middle x)) `mappend` (Intersect (Middle y)) = 
+  _ `mappend` (Intersect Bottom) = Intersect Bottom
+  (Intersect Top) `mappend` x = x
+  x `mappend` (Intersect Top) = x
+  (Intersect (Middle x)) `mappend` (Intersect (Middle y)) =
     maybe (Intersect Bottom) (Intersect . Middle) (x `intersectBBox` y)
-  mempty = Intersect Top 
-  
+  mempty = Intersect Top
+
 instance Monoid (UnionBBox) where
-  (Union Bottom) `mappend` x = x 
+  (Union Bottom) `mappend` x = x
   x `mappend` (Union Bottom) = x
   (Union Top) `mappend` _ = Union Top
-  _ `mappend` (Union Top) = Union Top 
+  _ `mappend` (Union Top) = Union Top
   (Union (Middle x)) `mappend` (Union (Middle y)) = Union (Middle (x `unionBBox` y))
   mempty = Union Bottom
-  
+
 -- |
 class Maybeable a where
   type ElemType a :: *
-  toMaybe :: a -> Maybe (ElemType a) 
-  fromMaybe :: Maybe (ElemType a) -> a 
-  
+  toMaybe :: a -> Maybe (ElemType a)
+  fromMaybe :: Maybe (ElemType a) -> a
+
 instance Maybeable IntersectBBox where
   type ElemType IntersectBBox = BBox
-  toMaybe (Intersect Bottom) = Nothing  
-  toMaybe (Intersect Top) = Nothing 
-  toMaybe (Intersect (Middle x)) = Just x 
-  fromMaybe Nothing = Intersect Top 
+  toMaybe (Intersect Bottom) = Nothing
+  toMaybe (Intersect Top) = Nothing
+  toMaybe (Intersect (Middle x)) = Just x
+  fromMaybe Nothing = Intersect Top
   fromMaybe (Just x) = Intersect (Middle x)
-  
+
 instance Maybeable UnionBBox where
   type ElemType UnionBBox = BBox
-  toMaybe (Union Bottom) = Nothing 
-  toMaybe (Union Top) = Nothing 
-  toMaybe (Union (Middle x)) = Just x 
-  fromMaybe Nothing = Union Top 
+  toMaybe (Union Bottom) = Nothing
+  toMaybe (Union Top) = Nothing
+  toMaybe (Union (Middle x)) = Just x
+  fromMaybe Nothing = Union Top
   fromMaybe (Just x) = Union (Middle x)
 
-
--- | 
-bbox4All :: (F.Foldable t, Functor t, GetBBoxable a)  => t a -> ULMaybe BBox 
+-- |
+bbox4All :: (F.Foldable t, Functor t, GetBBoxable a) => t a -> ULMaybe BBox
 bbox4All = unUnion . F.fold . fmap (Union . Middle . getBBox)

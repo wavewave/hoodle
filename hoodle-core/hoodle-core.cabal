@@ -11,7 +11,10 @@ Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
 Tested-with:    GHC == 8.6
-Build-Type: 	Custom
+Build-Type:     Simple
+-- Custom
+-- custom-setup
+--   setup-depends: Cabal, base, directory, filepath, process
 Cabal-Version:  >= 2
 data-files:     resource/*.css
                 resource/*.png
@@ -50,7 +53,6 @@ Library
                    coroutine-object >= 0.2, 
                    Diff >= 0.3,
                    directory > 1,
-                   either >= 3.1, 
                    errors >= 1.3, 
                    filepath > 1, 
                    fsnotify >= 0.0.7, 

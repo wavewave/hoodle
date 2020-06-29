@@ -9,6 +9,7 @@ module Hoodle.Type.Coroutine where
 
 import Control.Applicative
 import Control.Concurrent
+import Control.Error.Util (hoistEither)
 import Control.Lens ((%~), (.~), (^.))
 import Control.Monad.Reader
 import Control.Monad.State
@@ -18,7 +19,7 @@ import Control.Monad.Trans.Crtn.Logger
 import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.Queue
 import Control.Monad.Trans.Crtn.World
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except (runExceptT)
 import Hoodle.Type.Event
 import Hoodle.Type.HoodleState
 import Hoodle.Util
@@ -51,7 +52,7 @@ world xstate initmc = ReaderT staction
     staction req = runStateT erract xstate >> return ()
       where
         erract = do
-          r <- runEitherT (go initmc req)
+          r <- runExceptT (go initmc req)
           case r of
             Left e -> liftIO (errorlog (show e))
             Right _r' -> return ()

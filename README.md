@@ -1,6 +1,9 @@
 # hoodle
 hoodle : A pen notetaking program written in haskell
 
+[![CircleCI](https://circleci.com/gh/wavewave/hoodle.svg?style=svg)](https://circleci.com/gh/wavewave/hoodle)
+
+
 [![hoodle](https://img.youtube.com/vi/Z2wzpyxsVSU/0.jpg)](https://www.youtube.com/watch?v=Z2wzpyxsVSU)
 
 Build with nix

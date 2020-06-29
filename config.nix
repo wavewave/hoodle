@@ -48,6 +48,8 @@ self: super: {
                        xournal-types = self.xournal-types;
                      };
 
+  hoodle-util      = self.callPackage ./util {};
+
   hoodle-render    = self.callPackage ./render {
                        hoodle-types = self.hoodle-types;
                      };

@@ -3,6 +3,7 @@ packages:
   ./xournal-types/
   ./xournal-parser/
   ./types/
+  ./util/
   ./parser/
   ./builder/
   ./render/

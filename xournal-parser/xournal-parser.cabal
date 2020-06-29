@@ -9,7 +9,7 @@ Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Text
 Build-Type: 	Simple
-Cabal-Version:  >= 1.8
+Cabal-Version:  >= 2
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/xournal-parser

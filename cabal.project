@@ -5,3 +5,5 @@ packages:
   ./hoodle-types/
   ./hoodle-parser/
   ./hoodle-builder/
+  ./hoodle-render/
+  ./hoodle-publish/

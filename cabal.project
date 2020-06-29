@@ -2,3 +2,4 @@ packages:
   ./coroutine-object/
   ./xournal-types/
   ./xournal-parser/
+  ./hoodle-types/

@@ -203,21 +203,25 @@ newtype IntersectBBox = Intersect {unIntersect :: ULMaybe BBox}
 newtype UnionBBox = Union {unUnion :: ULMaybe BBox}
   deriving (Show, Eq)
 
-instance Monoid (IntersectBBox) where
-  (Intersect Bottom) `mappend` _ = Intersect Bottom
-  _ `mappend` (Intersect Bottom) = Intersect Bottom
-  (Intersect Top) `mappend` x = x
-  x `mappend` (Intersect Top) = x
-  (Intersect (Middle x)) `mappend` (Intersect (Middle y)) =
+instance Semigroup IntersectBBox where
+  (Intersect Bottom) <> _ = Intersect Bottom
+  _ <> (Intersect Bottom) = Intersect Bottom
+  (Intersect Top) <> x = x
+  x <> (Intersect Top) = x
+  (Intersect (Middle x)) <> (Intersect (Middle y)) =
     maybe (Intersect Bottom) (Intersect . Middle) (x `intersectBBox` y)
+
+instance Monoid IntersectBBox where
   mempty = Intersect Top
 
+instance Semigroup UnionBBox where
+  (Union Bottom) <> x = x
+  x <> (Union Bottom) = x
+  (Union Top) <> _ = Union Top
+  _ <> (Union Top) = Union Top
+  (Union (Middle x)) <> (Union (Middle y)) = Union (Middle (x `unionBBox` y))
+
 instance Monoid (UnionBBox) where
-  (Union Bottom) `mappend` x = x
-  x `mappend` (Union Bottom) = x
-  (Union Top) `mappend` _ = Union Top
-  _ `mappend` (Union Top) = Union Top
-  (Union (Middle x)) `mappend` (Union (Middle y)) = Union (Middle (x `unionBBox` y))
   mempty = Union Bottom
 
 -- |

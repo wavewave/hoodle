@@ -37,27 +37,27 @@ self: super: {
                        xournal-types = self.xournal-types;
                      };
 
-  hoodle-types     = self.callPackage ./hoodle-types {};
+  hoodle-types     = self.callPackage ./types {};
 
-  hoodle-builder   = self.callPackage ./hoodle-builder {
+  hoodle-builder   = self.callPackage ./builder {
                        hoodle-types = self.hoodle-types;
                      };
 
-  hoodle-parser    = self.callPackage ./hoodle-parser {
+  hoodle-parser    = self.callPackage ./parser {
                        hoodle-types = self.hoodle-types;
                        xournal-types = self.xournal-types;
                      };
 
-  hoodle-render    = self.callPackage ./hoodle-render {
+  hoodle-render    = self.callPackage ./render {
                        hoodle-types = self.hoodle-types;
                      };
 
-  hoodle-publish   = self.callPackage ./hoodle-publish {
+  hoodle-publish   = self.callPackage ./publish {
                        hoodle-types = self.hoodle-types;
                        hoodle-render = self.hoodle-render;
                      };
 
-  hoodle-core      = self.callPackage ./hoodle-core {
+  hoodle-core      = self.callPackage ./core {
                        coroutine-object = self.coroutine-object;
                        hoodle-types = self.hoodle-types;
                        hoodle-parser = self.hoodle-parser;

@@ -8,7 +8,7 @@ module Hoodle.Coroutine.File where
 import           Control.Applicative
 import           Control.Lens (at,view,set,over,(.~))
 import           Control.Monad.State hiding (mapM,mapM_,forM_)
-import           Control.Monad.Trans.Either
+import           Control.Monad.Trans.Except (ExceptT(..))
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import           Data.Attoparsec.ByteString.Char8 (parseOnly)
 import           Data.ByteString.Char8 as B (pack,unpack,readFile)
@@ -489,7 +489,7 @@ fileLoadSVG = do
       updateUhdl $ \uhdl' -> do
         thdl <- case view hoodleModeState uhdl' of
                   SelectState thdl' -> return thdl'
-                  _ -> (lift . EitherT . return . Left . Other) "fileLoadSVG"
+                  _ -> (lift . ExceptT . return . Left . Other) "fileLoadSVG"
         nthdl <- updateTempHoodleSelectM cvsid thdl ntpg pgnum 
         return . (hoodleModeState .~ SelectState nthdl)
                . (isOneTimeSelectMode .~ YesAfterSelect) $ uhdl'
@@ -662,8 +662,12 @@ addOneRevisionBox :: RenderCache -> CanvasId -> Gtk.VBox -> Hoodle -> Revision -
 addOneRevisionBox cache cvsid vbox hdl rev = do 
     cvs <- Gtk.drawingAreaNew 
     Gtk.widgetSetSizeRequest cvs 250 25
-    cvs `Gtk.on` Gtk.draw $ do 
-      Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs 
+    cvs `Gtk.on` Gtk.draw $ do
+      -- TODO: make a safe version
+      drawwdw <-
+        liftIO (Gtk.widgetGetWindow cvs) >>= \case
+          Just drawwdw -> pure drawwdw
+          _ -> error "addOneRevisionBox: no canvas window"
       liftIO . Gtk.renderWithDrawWindow drawwdw $ do
         case rev of 
           RevisionInk _ strks -> Cairo.scale 0.5 0.5 >> mapM_ (cairoRender cache cvsid) strks

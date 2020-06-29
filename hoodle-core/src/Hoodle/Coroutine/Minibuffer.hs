@@ -64,7 +64,11 @@ minibufDialog msg = do
       cvs <- Gtk.drawingAreaNew                           
       Gtk.widgetSetSizeRequest cvs 500 50
       cvs `Gtk.on` Gtk.draw $  do
-        Just drawwdw <- liftIO $ Gtk.widgetGetWindow cvs
+        -- TODO: purify this
+        drawwdw <-
+          liftIO $ Gtk.widgetGetWindow cvs >>= \case
+            Just drawwdw -> pure drawwdw
+            _ -> error "minibufDialog: now canvas window"
         liftIO (Gtk.renderWithDrawWindow drawwdw drawMiniBufBkg)
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
       cvs `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do 

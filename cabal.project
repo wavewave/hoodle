@@ -7,3 +7,4 @@ packages:
   ./hoodle-builder/
   ./hoodle-render/
   ./hoodle-publish/
+  ./hoodle-core/

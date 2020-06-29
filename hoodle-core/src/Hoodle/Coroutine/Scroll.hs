@@ -4,11 +4,11 @@
 
 module Hoodle.Coroutine.Scroll where
 
+import Control.Error.Util (hoistEither)
 import Control.Lens (_1, over, view)
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Crtn
-import Control.Monad.Trans.Either
 import Data.Functor.Identity (Identity (..))
 import Data.Hoodle.BBox
 import Hoodle.Accessor

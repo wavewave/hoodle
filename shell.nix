@@ -76,7 +76,7 @@ let
 in
 
 mkShell {
-  buildInputs = [ hsenv cabal-install ];
+  buildInputs = [ hsenv cabal-install pkgconfig ];
 }
 
 

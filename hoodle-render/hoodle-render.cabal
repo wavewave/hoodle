@@ -8,7 +8,7 @@ Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Graphics
 Build-Type: 	Simple
-Cabal-Version:  >= 1.8
+Cabal-Version:  >= 2
 data-files:     
 Source-repository head
   type: git

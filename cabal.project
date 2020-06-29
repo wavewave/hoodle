@@ -8,3 +8,4 @@ packages:
   ./hoodle-render/
   ./hoodle-publish/
   ./hoodle-core/
+  ./hoodle/

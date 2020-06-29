@@ -24,7 +24,6 @@ import Data.Attoparsec.ByteString.Char8
   )
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
---
 import qualified Data.Hoodle.Simple as S
 import Data.Int
 import Data.UUID (UUID, fromString)
@@ -214,7 +213,11 @@ writeAnnot Annot {..} = do
   return annotRef
 
 -- |
-writePdfPageWithAnnot :: S.Dimension -> Maybe [Annot] -> Page -> Pdf (StateT AppState (PdfWriter IO)) ()
+writePdfPageWithAnnot ::
+  S.Dimension ->
+  Maybe [Annot] ->
+  Page ->
+  Pdf (StateT AppState (PdfWriter IO)) ()
 writePdfPageWithAnnot (S.Dim w h) mannots pg@(Page _ pageDict) = do
   parentRef <- lift . lift $ gets stRootNode
   pageIndex <- (lift . lift) nextFreeIndex
@@ -248,7 +251,12 @@ writePdfPageWithAnnot (S.Dim w h) mannots pg@(Page _ pageDict) = do
           ]
 
 -- |
-makeAnnot :: S.Dimension -> String -> (FilePath, FilePath) -> S.Link -> IO (Maybe Annot)
+makeAnnot ::
+  S.Dimension ->
+  String ->
+  (FilePath, FilePath) ->
+  S.Link ->
+  IO (Maybe Annot)
 makeAnnot (S.Dim _pw ph) urlbase (rootpath, _currpath) lnk = do
   let (x, y) = S.link_pos lnk
       S.Dim w h = S.link_dim lnk
@@ -335,7 +343,10 @@ writePdfFile _hdlfp dim (urlbase, specialurlbase) (rootpath, currpath) path nlnk
   when (isLeft res) $ error $ show res
   liftIO $ hClose handle
 
-specialURIFunction :: FilePath -> Maybe UUID -> AnnotActions
+specialURIFunction ::
+  FilePath ->
+  Maybe UUID ->
+  AnnotActions
 specialURIFunction baseurl muuid =
   case muuid of
     Nothing -> error "muuid = Nothing?" -- OpenURI baseurl
@@ -389,7 +400,11 @@ isUpdated (ofp, nfp) = do
       return (otime > ntime)
 
 -- | create pdf file with appropriate links
-createPdf :: (String, String) -> FilePath -> (FilePath, FilePath) -> IO ()
+createPdf ::
+  (String, String) ->
+  FilePath ->
+  (FilePath, FilePath) ->
+  IO ()
 createPdf (urlbase, specialurlbase) rootpath (fn, ofn) = catch action (\(e :: SomeException) -> print e)
   where
     action = do

@@ -3,3 +3,5 @@ packages:
   ./xournal-types/
   ./xournal-parser/
   ./hoodle-types/
+  ./hoodle-parser/
+  ./hoodle-builder/

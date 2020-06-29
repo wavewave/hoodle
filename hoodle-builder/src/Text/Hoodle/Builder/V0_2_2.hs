@@ -9,20 +9,9 @@ import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import           Data.Double.Conversion.ByteString (toFixed)
 import           Data.Foldable (foldMap)
-#if MIN_VERSION_base(4,5,0) 
-import           Data.Monoid hiding ((<>)) 
-#else
-import           Data.Monoid 
-#endif 
 import           Data.Strict.Tuple
 import           Lens.Micro.Extras (view)
 import           Data.Hoodle.Simple.V0_2_2
-
--- | 
-(<>) :: Monoid a => a -> a -> a 
-(<>) = mappend 
-
-infixl 4 <>
 
 -- | 
 builder :: Hoodle -> L.ByteString

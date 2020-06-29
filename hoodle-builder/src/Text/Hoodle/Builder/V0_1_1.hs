@@ -7,20 +7,9 @@ import qualified Data.ByteString.Lazy as L
 import Blaze.ByteString.Builder
 import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import Data.Double.Conversion.ByteString 
-#if MIN_VERSION_base(4,5,0) 
-import Data.Monoid hiding ((<>)) 
-#else
-import Data.Monoid 
-#endif 
 import Data.Strict.Tuple
 import Lens.Micro.Extras (view)
 import Data.Hoodle.Simple.V0_1_1
-
-infixl 4 <>
-
--- | 
-(<>) :: Monoid a => a -> a -> a 
-(<>) = mappend 
 
 -- | 
 {- toFixed :: Int -> Double -> S.ByteString

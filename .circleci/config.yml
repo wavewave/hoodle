@@ -38,7 +38,7 @@ jobs:
           command: |
             nix-build release.nix
 
-     - save_cache:
+      - save_cache:
           paths:
             - /nix
           key: v1-dependencies-{{ checksum "nixpkgs.rev" }}

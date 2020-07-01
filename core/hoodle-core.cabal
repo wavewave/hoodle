@@ -19,7 +19,6 @@ Cabal-Version:  >= 2
 data-files:     resource/*.css
                 resource/*.png
                 resource/*.xml
-                Config.hs
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-core

@@ -1,5 +1,5 @@
 { mkDerivation, attoparsec, base, bytestring, containers, directory
-, either, hoodle-types, lens, mtl, stdenv, strict, text
+, either, errors, hoodle-types, lens, mtl, stdenv, strict, text
 , transformers, xournal-types
 }:
 mkDerivation {
@@ -7,7 +7,7 @@ mkDerivation {
   version = "0.4";
   src = ./.;
   libraryHaskellDepends = [
-    attoparsec base bytestring containers directory either hoodle-types
+    attoparsec base bytestring containers directory either errors hoodle-types
     lens mtl strict text transformers xournal-types
   ];
   homepage = "http://ianwookim.org/hoodle";

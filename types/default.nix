@@ -1,4 +1,4 @@
-{ mkDerivation, aeson, base, bytestring, cereal, containers, lens
+{ mkDerivation, aeson, base, bytestring, cereal, containers, microlens
 , mtl, stdenv, strict, text, uuid, vector
 }:
 mkDerivation {
@@ -6,7 +6,7 @@ mkDerivation {
   version = "0.4";
   src = ./.;
   libraryHaskellDepends = [
-    aeson base bytestring cereal containers lens mtl strict text uuid
+    aeson base bytestring cereal containers microlens mtl strict text uuid
     vector
   ];
   description = "Data types for programs for hoodle file format";

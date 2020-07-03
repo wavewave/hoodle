@@ -39,6 +39,13 @@ do2LinesIntersect ((x1, y1), (x2, y2)) ((x3, y3), (x4, y4)) =
     y43 = y4 - y3
     xc = (x21 * x43 * (y3 - y1) + y21 * x43 * x1 - y43 * x21 * x3) / (y21 * x43 - y43 * x21)
 
+-- | Does a line hit a stroke (a sequence of points)?
+doesLineHitStrk :: ((Double, Double), (Double, Double)) -> [(Double, Double)] -> Bool
+doesLineHitStrk _ [] = False
+doesLineHitStrk _ (_ : []) = False
+doesLineHitStrk line1 ((x0, y0) : (x, y) : rest) =
+  do2LinesIntersect line1 ((x0, y0), (x, y)) || doesLineHitStrk line1 ((x, y) : rest)
+
 -- | Do two bounding boxes intersect with each other?
 --   previously, hitTestBBoxBBox
 do2BBoxIntersect :: BBox -> BBox -> Bool

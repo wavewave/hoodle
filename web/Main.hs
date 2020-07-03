@@ -39,7 +39,7 @@ import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
 import Handler (setupCallback)
-import HitTest (doesLineHitStrk)
+import Hoodle.HitTest (doesLineHitStrk)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),

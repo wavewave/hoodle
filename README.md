@@ -13,3 +13,10 @@ The build script has pinned nixpkgs at nixos 20.03 revision by default unless it
 ```
 $ nix-build release.nix -A hoodle 
 ```
+
+For developement, build in nix-shell and cabal:
+```
+$ nix-shell
+$ cabal v2-build hoodle 
+$ cabal v2-run hoodle
+```

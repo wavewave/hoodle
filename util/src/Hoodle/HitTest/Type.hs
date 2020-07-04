@@ -1,7 +1,23 @@
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
-module Hoodle.HitTest.Type where
+module Hoodle.HitTest.Type
+  ( BBox (..),
+    BBoxed (..),
+    GetBBoxable (..),
+    AlterList (..),
+    NotHitted (..),
+    Hitted (..),
+    TAlterHitted,
+    TEitherAlterHitted (..),
+    fmapAL,
+    getA,
+    getB,
+    interleave,
+    takeHitted,
+    isAnyHitted,
+  )
+where
 
 import Prelude hiding (fst, snd)
 

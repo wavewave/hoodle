@@ -1,71 +1,47 @@
-{-# LANGUAGE DeriveFunctor #-}
-
-module Graphics.Hoodle.Render.Type.HitTest where
+-- deprecated. will be removed
+module Graphics.Hoodle.Render.Type.HitTest
+  ( AlterList (..), -- re-export
+    NotHitted (..), -- re-export
+    Hitted (..), -- re-export
+    TAlterHitted, -- re-export
+    TEitherAlterHitted (..), -- re-export
+    fmapAL, -- re-export
+    getA, -- re-export
+    getB, -- re-export
+    interleave, -- re-export
+    takeHitted, -- re-export
+    isAnyHitted, -- re-export
+    StrokeHitted,
+    RItemHitted,
+    takeFirstFromHitted,
+    takeLastFromHitted,
+  )
+where
 
 import Control.Applicative
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple
 import Graphics.Hoodle.Render.Type.Item
+import Hoodle.HitTest.Type
+  ( AlterList (..),
+    Hitted (..),
+    NotHitted (..),
+    TAlterHitted,
+    TEitherAlterHitted (..),
+    fmapAL,
+    getA,
+    getB,
+    interleave,
+    isAnyHitted,
+    takeHitted,
+  )
 import Prelude hiding (fst, snd)
-
--- |
-data AlterList a b = Empty | a :- AlterList b a
-  deriving (Show)
-
-infixr 6 :-
-
--- |
-newtype NotHitted a = NotHitted {unNotHitted :: [a]}
-  deriving (Show, Functor)
-
--- |
-newtype Hitted a = Hitted {unHitted :: [a]}
-  deriving (Show, Functor)
 
 -- |
 type StrokeHitted = AlterList (NotHitted (BBoxed Stroke)) (Hitted (BBoxed Stroke))
 
 -- |
 type RItemHitted = AlterList (NotHitted RItem) (Hitted RItem)
-
--- |
-fmapAL :: (a -> c) -> (b -> d) -> AlterList a b -> AlterList c d
-fmapAL _ _ Empty = Empty
-fmapAL f g (x :- ys) = f x :- fmapAL g f ys
-
--- |
-getA :: AlterList a b -> [a]
-getA Empty = []
-getA (x :- xs) = x : getB xs
-
--- |
-getB :: AlterList a b -> [b]
-getB Empty = []
-getB (_x :- xs) = getA xs
-
--- |
-interleave :: (a -> c) -> (b -> c) -> AlterList a b -> [c]
-interleave _fa _fb Empty = []
-interleave fa fb (x :- xs) = fa x : (interleave fb fa xs)
-
-----
-
--- |
-type TAlterHitted a = AlterList [a] (Hitted a)
-
--- |
-newtype TEitherAlterHitted a
-  = TEitherAlterHitted
-      { unTEitherAlterHitted :: Either [a] (TAlterHitted a)
-      }
-
--- |
-takeHitted :: AlterList x (Hitted a) -> [a]
-takeHitted = concatMap unHitted . getB
-
--- |
-isAnyHitted :: AlterList x (Hitted a) -> Bool
-isAnyHitted = not . null . takeHitted
 
 -- |
 takeFirstFromHitted :: RItemHitted -> RItemHitted

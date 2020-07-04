@@ -1,4 +1,17 @@
-module Hoodle.HitTest where
+module Hoodle.HitTest
+  ( isPointInBBox,
+    do2LinesIntersect,
+    doesLineHitStrk,
+    do2BBoxIntersect,
+    isBBox2InBBox1,
+    hltHittedByBBox,
+    hltEmbeddedByBBox,
+    hltHittedByLineRough,
+    elimHitted,
+    merge,
+    getTotalBBox,
+  )
+where
 
 import Control.Monad.State (MonadState (get, put), State, evalState, modify)
 import Hoodle.HitTest.Type

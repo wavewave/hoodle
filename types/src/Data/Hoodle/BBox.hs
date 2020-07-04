@@ -4,10 +4,10 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.Hoodle.BBox
-  ( BBox (..),
-    GetBBoxable (..),
+  ( BBox (..), -- re-export
+    BBoxed (..), -- re-export
+    GetBBoxable (..), -- re-export
     MakeBBoxedable (..),
-    BBoxed (..),
     mkbbox,
     mkbboxF,
     bboxFromStroke,
@@ -39,9 +39,15 @@ import Data.Hoodle.Util
 import Data.Monoid
 import Data.Serialize
 import Data.Strict.Tuple
+import Hoodle.HitTest.Type
+  ( BBox (..),
+    BBoxed (..),
+    GetBBoxable (..),
+  )
 import Prelude hiding (fst, snd)
 import qualified Prelude as Prelude (fst, snd)
 
+{-
 -- | bounding box type
 data BBox
   = BBox
@@ -49,12 +55,14 @@ data BBox
         bbox_lowerright :: (Double, Double)
       }
   deriving (Show, Eq, Ord)
+-}
 
--- |
+-- | orphan instance for BBox
 instance Serialize BBox where
   put BBox {..} = put bbox_upperleft >> put bbox_lowerright
   get = liftM2 BBox get get
 
+{-
 data BBoxed a
   = BBoxed
       { bbxed_content :: a,
@@ -66,13 +74,16 @@ deriving instance (Show a) => Show (BBoxed a)
 deriving instance (Eq a) => Eq (BBoxed a)
 
 deriving instance (Ord a) => Ord (BBoxed a)
+-}
 
+{-
 -- |
 class GetBBoxable a where
   getBBox :: a -> BBox
 
 instance GetBBoxable (BBoxed a) where
   getBBox = bbxed_bbx
+-}
 
 -- |
 class (Monad m) => MakeBBoxedable m a where

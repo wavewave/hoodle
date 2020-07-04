@@ -24,7 +24,7 @@ import Data.Foldable (toList, traverse_)
 import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
 import Data.List (foldl', nub, sort)
-import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
+import Data.Sequence (Seq, ViewR (..), empty, singleton, viewr, (|>))
 import qualified Data.Sequence as Seq (length)
 import qualified Data.Text as T
 import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
@@ -119,7 +119,7 @@ selectReady ev = do
     ToEraserMode -> nextevent >>= eraserReady
     PointerDown (cx0, cy0) -> do
       HoodleState _ _ _ _ _ _ _ <- get
-      lassoMode (singleton (cx0, cy0))
+      lassoMode empty (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= selectReady
 
@@ -153,8 +153,8 @@ drawingMode cxys = do
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> drawingMode cxys
 
-updateEraseStatePeriod :: Int
-updateEraseStatePeriod = 10
+eraseUpdatePeriod :: Int
+eraseUpdatePeriod = 10
 
 erasingMode :: [CommitId] -> Seq (Double, Double) -> MainCoroutine ()
 erasingMode hstrks0 cxys = do
@@ -163,8 +163,8 @@ erasingMode hstrks0 cxys = do
     PointerMove cxy -> do
       HoodleState svg _ _ _ (DocState _ strks) _ _ <- get
       case viewr cxys of
-        _ :> _ -> do
-          if Seq.length cxys >= updateEraseStatePeriod
+        _ :> _ ->
+          if Seq.length cxys >= eraseUpdatePeriod
             then do
               hstrks <- liftIO $ findHitStrokes svg cxys strks
               liftIO $
@@ -180,20 +180,27 @@ erasingMode hstrks0 cxys = do
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> erasingMode hstrks0 cxys
 
-lassoMode :: Seq (Double, Double) -> MainCoroutine ()
-lassoMode cxys = do
+lassoUpdatePeriod :: Int
+lassoUpdatePeriod = 10
+
+lassoMode :: Seq (Double, Double) -> Seq (Double, Double) -> MainCoroutine ()
+lassoMode lassodata cxys = do
   ev <- nextevent
   case ev of
     PointerMove cxy@(cx, cy) -> do
       s@(HoodleState _ cvs offcvs _ (DocState _ _strks) _ _) <- get
       case viewr cxys of
-        _ :> (cx0, cy0) -> do
-          liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
-          put $ s {_hdlstateOverlayUpdated = True}
-          lassoMode (cxys |> cxy)
-        _ -> pure ()
+        _ :> (cx0, cy0) ->
+          if Seq.length cxys >= lassoUpdatePeriod
+            then do
+              liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
+              put $ s {_hdlstateOverlayUpdated = True}
+              let lassodata' = lassodata <> cxys
+              lassoMode lassodata' (singleton cxy)
+            else lassoMode lassodata (cxys |> cxy)
+        _ -> pure () -- this should not happen.
     PointerUp _ -> pure ()
-    _ -> lassoMode cxys
+    _ -> lassoMode lassodata cxys
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

@@ -116,17 +116,19 @@ eraserReady ev = do
     ToPenMode -> nextevent >>= penReady
     ToSelectMode -> nextevent >>= selectReady
     PointerDown (cx0, cy0) -> do
-      HoodleState svg _ _ _ _ _ _ <- get
+      HoodleState _ _ _ _ _ _ _ <- get
       erasingMode [] (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= eraserReady
 
 selectReady :: UserEvent -> MainCoroutine ()
 selectReady ev = do
-  liftIO $ putStrLnAndFlush "selectReady"
   case ev of
     ToPenMode -> nextevent >>= penReady
     ToEraserMode -> nextevent >>= eraserReady
+    PointerDown (cx0, cy0) -> do
+      HoodleState _ _ _ _ _ _ _ <- get
+      lassoMode (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= selectReady
 
@@ -186,6 +188,21 @@ erasingMode hstrks0 cxys = do
         let msg = DeleteStrokes hstrks0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> erasingMode hstrks0 cxys
+
+lassoMode :: Seq (Double, Double) -> MainCoroutine ()
+lassoMode cxys = do
+  ev <- nextevent
+  case ev of
+    PointerMove cxy@(cx, cy) -> do
+      s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
+      case viewr cxys of
+        _ :> (cx0, cy0) -> do
+          liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
+          put $ s {_hdlstateOverlayUpdated = True}
+          lassoMode (cxys |> cxy)
+        _ -> pure ()
+    PointerUp _ -> pure ()
+    _ -> lassoMode cxys
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

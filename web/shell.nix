@@ -12,6 +12,7 @@ let
   newhspkgs_ghcjs = haskell.packages.ghcjs.override {
     overrides = self: super: {
       coroutine-object = self.callCabal2nix "coroutine-object" ../coroutine-object {};
+      hoodle-util = self.callCabal2nix "hoodle-util" ../util {};
       comonad = haskell.lib.dontCheck super.comonad;
       semigroupoids = haskell.lib.dontCheck super.semigroupoids;
       QuickCheck = haskell.lib.dontCheck super.QuickCheck;
@@ -33,6 +34,7 @@ let
     coroutine-object
     ghcjs-base
     ghcjs-dom
+    hoodle-util
     stm
   ]);
 

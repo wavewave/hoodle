@@ -202,7 +202,9 @@ lassoMode lasso cxys = do
               put $ s {_hdlstateOverlayUpdated = True}
               dLasso <- liftIO $ transformPathFromCanvasToSVG svg (toList cxys)
               let lasso' = lasso <> Seq.fromList dLasso
-              liftIO $ putStrLnAndFlush $ show $ enclosedStrokes lasso' strks
+                  hstrks = enclosedStrokes lasso' strks
+              liftIO $
+                traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hstrks
               lassoMode lasso' (singleton cxy)
             else lassoMode lasso (cxys |> cxy)
         _ -> pure () -- this should not happen.

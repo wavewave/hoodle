@@ -1,12 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PackageImports #-}
-{-# LANGUAGE RecursiveDo #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 
 module Main where
 
@@ -23,7 +17,6 @@ import Coroutine
     MainCoroutine,
     MainObj,
     MainOp (DoEvent),
-    putStrLnAndFlush,
     simplelogger,
     world,
   )
@@ -37,10 +30,8 @@ import qualified Data.Text as T
 import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
-import GHCJS.Types (JSVal)
 import Handler (setupCallback)
-import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk)
-import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
+import Hoodle.HitTest.Type (BBoxed (..))
 import Hoodle.Web.Util (findHitStrokes, pathBBox)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
@@ -80,14 +71,14 @@ sysevent (EDataStrokes commits) = do
               js
       )
       commits
-  let i = maximum (map commitId commits)
+  let maxId = maximum (map commitId commits)
       dat' = foldl' f dat0 commits
         where
           f !acc (Add i xys) = acc ++ [BBoxed (RStroke i xys) (pathBBox xys)]
-          f !acc (Delete i js) = filter (\(BBoxed (RStroke j _) _) -> not (j `elem` js)) acc
+          f !acc (Delete _ js) = filter (\(BBoxed (RStroke j _) _) -> not (j `elem` js)) acc
   put $
     st
-      { _hdlstateDocState = DocState i dat',
+      { _hdlstateDocState = DocState maxId dat',
         _hdlstateOverlayUpdated = True
       }
 sysevent ERefresh = do
@@ -169,10 +160,10 @@ erasingMode :: [CommitId] -> Seq (Double, Double) -> MainCoroutine ()
 erasingMode hstrks0 cxys = do
   ev <- nextevent
   case ev of
-    PointerMove cxy@(cx, cy) -> do
-      s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
+    PointerMove cxy -> do
+      HoodleState svg _ _ _ (DocState _ strks) _ _ <- get
       case viewr cxys of
-        _ :> (cx0, cy0) -> do
+        _ :> _ -> do
           if Seq.length cxys >= updateEraseStatePeriod
             then do
               hstrks <- liftIO $ findHitStrokes svg cxys strks
@@ -183,7 +174,7 @@ erasingMode hstrks0 cxys = do
             else erasingMode hstrks0 (cxys |> cxy)
         _ -> pure ()
     PointerUp _ -> do
-      HoodleState svg _ _ sock _ _ _ <- get
+      HoodleState _ _ _ sock _ _ _ <- get
       when (not . null $ hstrks0) $ liftIO $ do
         let msg = DeleteStrokes hstrks0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock
@@ -194,7 +185,7 @@ lassoMode cxys = do
   ev <- nextevent
   case ev of
     PointerMove cxy@(cx, cy) -> do
-      s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
+      s@(HoodleState _ cvs offcvs _ (DocState _ _strks) _ _) <- get
       case viewr cxys of
         _ :> (cx0, cy0) -> do
           liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy

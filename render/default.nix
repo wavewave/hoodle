@@ -5,7 +5,7 @@
 }:
 mkDerivation {
   pname = "hoodle-render";
-  version = "0.6";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [
     base base64-bytestring bytestring cairo containers directory

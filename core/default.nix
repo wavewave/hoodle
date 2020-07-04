@@ -11,7 +11,7 @@
 }:
 mkDerivation {
   pname = "hoodle-core";
-  version = "0.16.0";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [
     aeson aeson-pretty array attoparsec base base64-bytestring binary

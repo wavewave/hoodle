@@ -1,8 +1,8 @@
 Name:		hoodle-core
-Version:	0.16.0
+Version:	1.0
 Synopsis:	Core library for hoodle
-Description: 	Hoodle is a pen notetaking program written in haskell. 
-                hoodle-core is the core library written in haskell and 
+Description: 	Hoodle is a pen notetaking program written in haskell.
+                hoodle-core is the core library written in haskell and
                 using gtk2hs
 Homepage:       http://ianwookim.org/hoodle
 License: 	BSD3
@@ -12,9 +12,6 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
 Tested-with:    GHC == 8.6
 Build-Type:     Simple
--- Custom
--- custom-setup
---   setup-depends: Cabal, base, directory, filepath, process
 Cabal-Version:  >= 2
 data-files:     resource/*.css
                 resource/*.png
@@ -34,79 +31,79 @@ Flag Hub
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
+  ghc-options: 	-funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
   ghc-prof-options: -caf-all -auto-all
 
-  Build-Depends:   base == 4.*, 
+  Build-Depends:   base == 4.*,
                    aeson>=0.7,
                    aeson-pretty > 0.7,
                    array,
                    attoparsec >= 0.10,
                    base64-bytestring >= 0.1,
                    binary,
-                   bytestring >= 0.9, 
+                   bytestring >= 0.9,
                    cairo >= 0.13.0.3,
                    cereal >= 0.3.5,
                    containers >= 0.4,
                    configurator >= 0.2,
-                   coroutine-object >= 0.2, 
+                   coroutine-object,
                    Diff >= 0.3,
                    directory > 1,
-                   errors >= 1.3, 
-                   filepath > 1, 
-                   fsnotify >= 0.0.7, 
-                   gd >= 3000.7,               
+                   errors >= 1.3,
+                   filepath > 1,
+                   fsnotify >= 0.0.7,
+                   gd >= 3000.7,
                    http-types,
                    lens >= 2.5,
-                   monad-loops >= 0.3, 
+                   monad-loops >= 0.3,
                    mtl > 2,
                    network-uri > 2.6,
                    pango > 0.12,
-                   poppler >= 0.12.2.2, 
-                   process >= 1.1, 
-                   pureMD5, 
-                   stm >= 2, 
+                   poppler >= 0.12.2.2,
+                   process >= 1.1,
+                   pureMD5,
+                   stm >= 2,
                    strict > 0.3,
                    svgcairo >= 0.12,
-                   system-filepath >= 0.4, 
+                   system-filepath >= 0.4,
                    template-haskell > 2,
                    text >= 0.10,
-                   time >= 1.2, 
+                   time >= 1.2,
                    transformers >= 0.3,
                    transformers-free >= 1.0,
                    unordered-containers >= 0.2,
-                   uuid >= 1.2.7, 
+                   uuid >= 1.2.7,
                    vector >= 0.10,
                    gtk3 >= 0.14,
                    --
-                   xournal-parser >= 0.5.0.2,
-                   hoodle-builder >= 0.4,
-                   hoodle-parser >= 0.4,
-                   hoodle-publish >= 0.2.1,
-                   hoodle-render >= 0.6,
-                   hoodle-types >= 0.4
+                   xournal-parser,
+                   hoodle-builder,
+                   hoodle-parser,
+                   hoodle-publish,
+                   hoodle-render,
+                   hoodle-types
 
   if flag(dyre)
     Build-depends: dyre >= 0.8.11
   if flag(hub)
-    Build-depends: 
-                   dbus >= 0.10, 
+    Build-depends:
+                   dbus >= 0.10,
                    http-client,
                    http-conduit,
-                   network > 2.6, 
-                   network-info, 
+                   network > 2.6,
+                   network-info,
                    network-simple >= 0.3,
                    persistent,
                    persistent-sqlite,
                    persistent-template,
                    resourcet,
-                   -- 
-                   case-insensitive, 
+                   --
+                   case-insensitive,
                    websockets,
                    handa-gdata >= 0.6.9.3
 
 
-  Exposed-Modules: 
+  Exposed-Modules:
                    Hoodle.Accessor
                    Hoodle.Config
                    Hoodle.Coroutine.Callback
@@ -132,12 +129,12 @@ Library
                    Hoodle.Coroutine.Select.ManipulateImage
                    Hoodle.Coroutine.TextInput
                    Hoodle.Coroutine.LaTeX
-                   Hoodle.Coroutine.VerticalSpace 
+                   Hoodle.Coroutine.VerticalSpace
                    Hoodle.Coroutine.Window
                    Hoodle.Device
                    Hoodle.GUI
                    Hoodle.GUI.Menu
-                   Hoodle.GUI.Reflect 
+                   Hoodle.GUI.Reflect
                    Hoodle.ModelAction.Adjustment
                    Hoodle.ModelAction.Clipboard
                    Hoodle.ModelAction.ContextMenu
@@ -145,7 +142,7 @@ Library
                    Hoodle.ModelAction.File
                    Hoodle.ModelAction.Layer
                    Hoodle.ModelAction.Page
-                   Hoodle.ModelAction.Pen 
+                   Hoodle.ModelAction.Pen
                    Hoodle.ModelAction.Select
                    Hoodle.ModelAction.Select.Transform
                    Hoodle.ModelAction.Text
@@ -154,24 +151,24 @@ Library
                    Hoodle.Script.Coroutine
                    Hoodle.Script.Hook
                    Hoodle.Type
-                   Hoodle.Type.Alias 
+                   Hoodle.Type.Alias
                    Hoodle.Type.Canvas
                    Hoodle.Type.Clipboard
                    Hoodle.Type.Coroutine
                    Hoodle.Type.Enum
-                   Hoodle.Type.Event 
+                   Hoodle.Type.Event
                    Hoodle.Type.HoodleState
-                   Hoodle.Type.PageArrangement 
+                   Hoodle.Type.PageArrangement
                    Hoodle.Type.Predefined
-                   Hoodle.Type.Undo 
+                   Hoodle.Type.Undo
                    Hoodle.Type.Window
-                   Hoodle.Type.Widget 
+                   Hoodle.Type.Widget
                    Hoodle.Util
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
                    Hoodle.Widget.Clock
                    Hoodle.Widget.Dispatch
-                   Hoodle.Widget.Layer 
+                   Hoodle.Widget.Layer
                    Hoodle.Widget.PanZoom
                    Hoodle.Widget.Scroll
   if flag(hub)
@@ -182,16 +179,16 @@ Library
                      Hoodle.Coroutine.Socket
                      Hoodle.Type.Hub
                      Hoodle.Type.Synchronization
-  Other-Modules: 
+  Other-Modules:
                    Paths_hoodle_core
-  c-sources: 
+  c-sources:
                    csrc/c_initdevice.c
   include-dirs:    csrc
-  install-includes: 
+  install-includes:
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
                    csrc/XInput.h
-  cc-options:      -fPIC -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG 
+  cc-options:      -fPIC -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG
   extra-libraries: X11 Xi dl pthread
   if flag(dyre)
     cpp-options: -DDYRE

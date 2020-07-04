@@ -1,5 +1,5 @@
 Name:		hoodle-publish
-Version:	0.2.1
+Version:	1.0
 Synopsis:	publish hoodle files as a static web site
 Description: 	This package provides a simple tool hoodle-publish which make a static web site from a directory containing hoodle files
 Homepage:       http://ianwookim.org/hoodle

@@ -3,7 +3,7 @@
 }:
 mkDerivation {
   pname = "hoodle-types";
-  version = "0.4";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [
     aeson base bytestring cereal containers microlens mtl strict text uuid

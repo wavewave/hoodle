@@ -1,7 +1,7 @@
 { mkDerivation, base, either, free, mtl, stdenv, transformers }:
-mkDerivation {
+1;5002;0cmkDerivation {
   pname = "coroutine-object";
-  version = "0.3.0";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [ base either free mtl transformers ];
   description = "Object-oriented programming realization using coroutine";

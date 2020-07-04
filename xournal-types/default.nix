@@ -3,7 +3,7 @@
 }:
 mkDerivation {
   pname = "xournal-types";
-  version = "0.5.1.0";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [
     base bytestring cereal containers microlens strict TypeCompose

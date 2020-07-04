@@ -3,7 +3,7 @@
 }:
 mkDerivation {
   pname = "hoodle";
-  version = "0.5";
+  version = "1.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;

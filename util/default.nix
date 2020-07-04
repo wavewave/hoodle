@@ -1,7 +1,7 @@
 { mkDerivation, base, stdenv }:
 mkDerivation {
   pname = "hoodle-util";
-  version = "0.6";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [ base ];
   description = "Utility functions for hoodle";

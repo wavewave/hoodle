@@ -5,7 +5,7 @@
 }:
 mkDerivation {
   pname = "xournal-parser";
-  version = "0.5.1";
+  version = "1.0";
   src = ./.;
   libraryHaskellDepends = [
     attoparsec attoparsec-conduit base bytestring conduit conduit-extra

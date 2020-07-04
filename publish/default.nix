@@ -1,12 +1,12 @@
 { mkDerivation, attoparsec, base, bytestring, cairo, cmdargs
-, containers, directory, directory-tree, filepath, gtk3
+1;5002;0c, containers, directory, directory-tree, filepath, gtk3
 , hoodle-parser, hoodle-render, hoodle-types, HTTP, io-streams
 , lens, mtl, network-uri, pdf-toolbox-core, pdf-toolbox-document
 , process, stdenv, transformers, unordered-containers, uuid
 }:
 mkDerivation {
   pname = "hoodle-publish";
-  version = "0.2.0";
+  version = "1.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;

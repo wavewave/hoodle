@@ -40,6 +40,7 @@ import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
 import Handler (setupCallback)
 import Hoodle.HitTest (doesLineHitStrk)
+import Hoodle.HitTest.Type (BBox (..), BBoxed (..))
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
@@ -48,7 +49,7 @@ import Message
     TextSerializable (serialize),
     commitId,
   )
-import State (DocState (..), HoodleState (..), SyncState (..))
+import State (DocState (..), HoodleState (..), RStroke (..), SyncState (..))
 
 -- | Handling system events until a new user event arrives
 nextevent :: MainCoroutine UserEvent
@@ -81,8 +82,8 @@ sysevent (EDataStrokes commits) = do
   let i = maximum (map commitId commits)
       dat' = foldl' f dat0 commits
         where
-          f !acc (Add i xys) = acc ++ [(i, xys)]
-          f !acc (Delete i js) = filter (\(j, _) -> not (j `elem` js)) acc
+          f !acc (Add i xys) = acc ++ [BBoxed (RStroke i xys) (pathBBox xys)]
+          f !acc (Delete i js) = filter (\(BBoxed (RStroke j _) _) -> not (j `elem` js)) acc
   put $
     st
       { _hdlstateDocState = DocState i dat',
@@ -148,10 +149,19 @@ drawingMode cxys = do
       liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
     _ -> drawingMode cxys
 
+pathBBox :: [(Double, Double)] -> BBox
+pathBBox path =
+  let xs = map fst path
+      ys = map snd path
+   in BBox
+        { bbox_upperleft = (minimum xs, minimum ys),
+          bbox_lowerright = (maximum xs, maximum ys)
+        }
+
 findHitStrokes ::
   JSVal ->
   Seq (Double, Double) ->
-  [(CommitId, [(Double, Double)])] ->
+  [BBoxed RStroke] ->
   IO [CommitId]
 findHitStrokes svg cxys strks = do
   xys_arr <-
@@ -159,8 +169,10 @@ findHitStrokes svg cxys strks = do
   xys <- fromJSValUncheckedListOf xys_arr
   let pairs = zip xys (tail xys)
       hitstrks = flip concatMap pairs $ \((x0, y0), (x, y)) ->
-        map fst $
-          filter (doesLineHitStrk ((x0, y0), (x, y)) . snd) strks
+        map rstrokeCommitId
+          $ filter (doesLineHitStrk ((x0, y0), (x, y)) . rstrokePath)
+          $ map bbxed_content
+          $ strks
   pure hitstrks
 
 updateEraseStatePeriod :: Int

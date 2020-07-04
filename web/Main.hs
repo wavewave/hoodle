@@ -188,8 +188,6 @@ erasingMode hstrks0 cxys = do
       s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
       case viewr cxys of
         _ :> (cx0, cy0) -> do
-          liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
-          put $ s {_hdlstateOverlayUpdated = True}
           if Seq.length cxys >= updateEraseStatePeriod
             then do
               hstrks <- liftIO $ findHitStrokes svg cxys strks

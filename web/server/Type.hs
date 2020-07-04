@@ -17,7 +17,7 @@ deriving instance ToJSON CommitId
 data Stroke
   = Stroke
       { strokeCommitId :: CommitId,
-        strokeCoordinates :: [(Double, Double)]
+        strokePath :: [(Double, Double)]
       }
   deriving (Generic)
 

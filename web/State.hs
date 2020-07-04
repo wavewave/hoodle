@@ -1,6 +1,7 @@
 module State where
 
 import GHCJS.Types (JSVal)
+import Hoodle.HitTest.Type (BBoxed)
 import qualified JavaScript.Web.WebSocket as WS
 import Message (CommitId (..))
 
@@ -9,10 +10,16 @@ data SyncState
       { _syncstateQueue :: [[(Double, Double)]]
       }
 
+data RStroke
+  = RStroke
+      { rstrokeCommitId :: CommitId,
+        rstrokePath :: [(Double, Double)]
+      }
+
 data DocState
   = DocState
       { _docstateLastCommit :: CommitId,
-        _docstateData :: [(CommitId, [(Double, Double)])]
+        _docstateData :: [BBoxed RStroke]
       }
 
 data HoodleState

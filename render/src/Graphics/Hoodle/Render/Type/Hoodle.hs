@@ -3,7 +3,6 @@
 
 module Graphics.Hoodle.Render.Type.Hoodle where
 
-import Control.Applicative
 import Control.Lens
 import Data.Foldable (toList)
 import Data.Hoodle.BBox

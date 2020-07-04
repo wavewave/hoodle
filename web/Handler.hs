@@ -5,7 +5,7 @@ module Handler where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
-import Coroutine (EventVar, putStrLnAndFlush)
+import Coroutine (EventVar)
 import qualified Data.JSString as JSS (unpack)
 import qualified Data.Text as T
 import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
@@ -17,6 +17,7 @@ import GHCJS.Foreign.Callback
     syncCallback1,
   )
 import GHCJS.Types (JSString, JSVal, jsval)
+import Hoodle.Web.Util (putStrLnAndFlush)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
 import Message

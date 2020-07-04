@@ -2,7 +2,10 @@
 
 module Hoodle.Web.Util
   ( pathBBox,
-    findHitStrokes,
+    intersectingStrokes,
+    enclosedStrokes,
+    putStrLnAndFlush,
+    transformPathFromCanvasToSVG,
   )
 where
 
@@ -11,10 +14,22 @@ import Data.Sequence (Seq)
 import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
-import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk)
+import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk, hitLassoPoint)
 import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
 import Message (CommitId)
 import State (RStroke (..))
+import System.IO (hFlush, hPutStrLn, stdout)
+
+putStrLnAndFlush :: String -> IO ()
+putStrLnAndFlush s = do
+  hPutStrLn stdout s
+  hFlush stdout
+
+transformPathFromCanvasToSVG :: JSVal -> [(Double, Double)] -> IO [(Double, Double)]
+transformPathFromCanvasToSVG svg cxys = do
+  path_arr <-
+    J.js_to_svg_point_array svg =<< toJSValListOf (toList cxys)
+  fromJSValUncheckedListOf path_arr
 
 -- | find bbox surrounding a path
 pathBBox :: [(Double, Double)] -> BBox
@@ -26,21 +41,33 @@ pathBBox path =
           bbox_lowerright = (maximum xs, maximum ys)
         }
 
-findHitStrokes ::
-  JSVal ->
-  Seq (Double, Double) ->
+intersectingStrokes ::
+  [(Double, Double)] ->
   [BBoxed RStroke] ->
-  IO [CommitId]
-findHitStrokes svg cxys strks = do
-  xys_arr <-
-    J.js_to_svg_point_array svg =<< toJSValListOf (toList cxys)
-  xys <- fromJSValUncheckedListOf xys_arr
+  [CommitId]
+intersectingStrokes xys strks =
   let bbox1 = pathBBox xys
-  let pairs = zip xys (tail xys)
+      pairs = zip xys (tail xys)
       hitstrks = flip concatMap pairs $ \((x0, y0), (x, y)) ->
         map rstrokeCommitId
           $ filter (doesLineHitStrk ((x0, y0), (x, y)) . rstrokePath)
           $ map bbxed_content
           $ filter (do2BBoxIntersect bbox1 . getBBox)
           $ strks
-  pure hitstrks
+   in hitstrks
+
+pathEnclosedByLasso :: [(Double, Double)] -> Seq (Double, Double) -> Bool
+pathEnclosedByLasso path lasso =
+  all (hitLassoPoint lasso) path
+
+enclosedStrokes ::
+  Seq (Double, Double) ->
+  [BBoxed RStroke] ->
+  [CommitId]
+enclosedStrokes lasso strks =
+  let bbox1 = pathBBox (toList lasso)
+   in map rstrokeCommitId
+        $ filter ((`pathEnclosedByLasso` lasso) . rstrokePath)
+        $ map bbxed_content
+        $ filter (do2BBoxIntersect bbox1 . getBBox)
+        $ strks

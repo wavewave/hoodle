@@ -25,14 +25,21 @@ import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
 import Data.List (foldl', nub, sort)
 import Data.Sequence (Seq, ViewR (..), empty, singleton, viewr, (|>))
-import qualified Data.Sequence as Seq (length)
+import qualified Data.Sequence as Seq (fromList, length)
 import qualified Data.Text as T
 import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
+import GHCJS.Types (JSVal)
 import Handler (setupCallback)
 import Hoodle.HitTest.Type (BBoxed (..))
-import Hoodle.Web.Util (findHitStrokes, pathBBox)
+import Hoodle.Web.Util
+  ( enclosedStrokes,
+    intersectingStrokes,
+    pathBBox,
+    putStrLnAndFlush,
+    transformPathFromCanvasToSVG,
+  )
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
@@ -137,10 +144,7 @@ drawingMode cxys = do
     PointerUp cxy -> do
       HoodleState svg _ _ sock _ _ _ <- get
       let cxys' = cxys |> cxy
-      path_arr <-
-        liftIO $
-          J.js_to_svg_point_array svg =<< toJSValListOf (toList cxys')
-      path <- liftIO $ fromJSValUncheckedListOf path_arr
+      path <- liftIO $ transformPathFromCanvasToSVG svg (toList cxys')
       modify'
         ( \s ->
             s
@@ -166,7 +170,8 @@ erasingMode hstrks0 cxys = do
         _ :> _ ->
           if Seq.length cxys >= eraseUpdatePeriod
             then do
-              hstrks <- liftIO $ findHitStrokes svg cxys strks
+              xys <- liftIO $ transformPathFromCanvasToSVG svg (toList cxys)
+              let hstrks = intersectingStrokes xys strks
               liftIO $
                 traverse_ (J.strokeChangeColor svg . ("stroke" ++) . show . unCommitId) hstrks
               let !hstrks' = nub $ sort (hstrks ++ hstrks0)
@@ -184,23 +189,25 @@ lassoUpdatePeriod :: Int
 lassoUpdatePeriod = 10
 
 lassoMode :: Seq (Double, Double) -> Seq (Double, Double) -> MainCoroutine ()
-lassoMode lassodata cxys = do
+lassoMode lasso cxys = do
   ev <- nextevent
   case ev of
     PointerMove cxy@(cx, cy) -> do
-      s@(HoodleState _ cvs offcvs _ (DocState _ _strks) _ _) <- get
+      s@(HoodleState svg cvs offcvs _ (DocState _ strks) _ _) <- get
       case viewr cxys of
         _ :> (cx0, cy0) ->
           if Seq.length cxys >= lassoUpdatePeriod
             then do
               liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
               put $ s {_hdlstateOverlayUpdated = True}
-              let lassodata' = lassodata <> cxys
-              lassoMode lassodata' (singleton cxy)
-            else lassoMode lassodata (cxys |> cxy)
+              dLasso <- liftIO $ transformPathFromCanvasToSVG svg (toList cxys)
+              let lasso' = lasso <> Seq.fromList dLasso
+              liftIO $ putStrLnAndFlush $ show $ enclosedStrokes lasso' strks
+              lassoMode lasso' (singleton cxy)
+            else lassoMode lasso (cxys |> cxy)
         _ -> pure () -- this should not happen.
     PointerUp _ -> pure ()
-    _ -> lassoMode lassodata cxys
+    _ -> lassoMode lasso cxys
 
 initmc :: MainObj ()
 initmc = ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)

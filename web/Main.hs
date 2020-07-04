@@ -39,8 +39,8 @@ import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
 import Handler (setupCallback)
-import Hoodle.HitTest (doesLineHitStrk)
-import Hoodle.HitTest.Type (BBox (..), BBoxed (..))
+import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk)
+import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (DeleteStrokes, NewStroke, SyncRequest),
@@ -167,11 +167,13 @@ findHitStrokes svg cxys strks = do
   xys_arr <-
     J.js_to_svg_point_array svg =<< toJSValListOf (toList cxys)
   xys <- fromJSValUncheckedListOf xys_arr
+  let bbox1 = pathBBox xys
   let pairs = zip xys (tail xys)
       hitstrks = flip concatMap pairs $ \((x0, y0), (x, y)) ->
         map rstrokeCommitId
           $ filter (doesLineHitStrk ((x0, y0), (x, y)) . rstrokePath)
           $ map bbxed_content
+          $ filter (do2BBoxIntersect bbox1 . getBBox)
           $ strks
   pure hitstrks
 

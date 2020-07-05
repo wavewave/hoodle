@@ -59,14 +59,6 @@ instance Bifunctor AlterList where
   bimap f g (x :- ys) = f x :- bimap g f ys
 
 -- |
-newtype NotHitted a = NotHitted {unNotHitted :: [a]}
-  deriving (Show, Functor)
-
--- |
-newtype Hitted a = Hitted {unHitted :: [a]}
-  deriving (Show, Functor)
-
--- |
 getA :: AlterList a b -> [a]
 getA Empty = []
 getA (x :- xs) = x : getB xs
@@ -75,6 +67,14 @@ getA (x :- xs) = x : getB xs
 getB :: AlterList a b -> [b]
 getB Empty = []
 getB (_x :- xs) = getA xs
+
+-- |
+newtype NotHitted a = NotHitted {unNotHitted :: [a]}
+  deriving (Show, Functor)
+
+-- |
+newtype Hitted a = Hitted {unHitted :: [a]}
+  deriving (Show, Functor)
 
 -- |
 interleave :: (a -> c) -> (b -> c) -> AlterList a b -> [c]

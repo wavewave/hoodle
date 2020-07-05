@@ -274,32 +274,18 @@ getMenuUI evar = do
   texta <- actionNewAndRegister "TEXTA" "Text" (Just "Text") (Just "mytext") (justMenu MenuText)
   textsrca <- actionNewAndRegister "TEXTSRCA" "Embed Text Source" (Just "Just a Stub") Nothing (justMenu MenuEmbedTextSource)
   editsrca <- actionNewAndRegister "EDITSRCA" "Edit text source" (Just "Just a Stub") Nothing (justMenu MenuEditEmbedTextSource)
-#ifdef HUB
   editnetsrca <- actionNewAndRegister "EDITNETSRCA" "Network edit text source" (Just "Just a Stub") Nothing (justMenu MenuEditNetEmbedTextSource)
-#else
-  editnetsrca <- actionNewAndRegister "EDITNETSRCA" "Network edit text source" (Just "Just a Stub") Nothing (justMenu MenuDefault)
-#endif
   textfromsrca <- actionNewAndRegister "TEXTFROMSRCA" "Text From Source" (Just "Just a Stub") Nothing (justMenu MenuTextFromSource)
 
 
   togglenetsrca <- Gtk.toggleActionNew ("TOGGLENETSRCA" :: String) "Toggle network edit text source" (Just "Just a Stub") Nothing
-#ifdef HUB
   togglenetsrca `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuToggleNetworkEditSource))
-#else
-  togglenetsrca `Gtk.on` Gtk.actionToggled $ do
-    eventHandler evar (UsrEv (Menu MenuDefault))
-#endif
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
-#ifdef HUB
   latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)  
-#else
-  latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuDefault)  
-#endif
   combinelatexa <- actionNewAndRegister "COMBINELATEXA" "Combine LaTeX texts to ..." (Just "Just a Stub") Nothing (justMenu MenuCombineLaTeX)  
   latexfromsrca <- actionNewAndRegister "LATEXFROMSRCA" "LaTeX From Source" (Just "Just a Stub") Nothing (justMenu MenuLaTeXFromSource)   
   updatelatexa <- actionNewAndRegister "UPDATELATEXA" "Update LaTeX" (Just "Just a Stub") Nothing (justMenu MenuUpdateLaTeX)   
-
 
   ---------------
   -- page menu --
@@ -423,8 +409,7 @@ getMenuUI evar = do
         , erasropta, hiltropta, txtfnta, defpena, defersra, defhiltra, deftxta
         , setdefopta
         , togpanzooma, togscra, toglayera, togclocka, newpagemoda, relauncha
-        , huba -- , hubsocketa
-        , addtaba, {- nexttaba, -} closetaba
+        , addtaba, closetaba
         , abouta 
         , defaulta         
         ] 
@@ -460,10 +445,7 @@ getMenuUI evar = do
 #ifndef DYRE
         , relauncha
 #endif
-#ifndef HUB
         , editnetsrca
-        , huba
-#endif
         ] 
       enabledActions = 
         [ opena, savea, saveasa, reloada, versiona, showreva, showida, quita

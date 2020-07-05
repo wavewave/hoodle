@@ -3,18 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.Coroutine.Default.Menu
--- Copyright   : (c) 2014-2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Hoodle.Coroutine.Default.Menu where
 
 import           Control.Applicative
@@ -56,9 +44,6 @@ import           Hoodle.Widget.Clock
 import           Hoodle.Widget.Layer
 import           Hoodle.Widget.PanZoom
 import           Hoodle.Widget.Scroll
-#ifdef HUB
-import           Hoodle.Coroutine.Hub
-#endif
 #ifdef DYRE
 import           Hoodle.Script
 #endif
@@ -179,16 +164,11 @@ menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles.curre
 menuEventProcess MenuHandwritingRecognitionDialog = 
     handwritingRecognitionDialog >>= mapM_ (\(b,txt) -> when b $ embedHoodlet (T.unpack txt)) 
 menuEventProcess MenuAddTab = addTab (LocalDir Nothing)
--- menuEventProcess MenuNextTab = nextTab
 menuEventProcess MenuCloseTab = closeTab
-#ifdef HUB
 menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource
 menuEventProcess MenuToggleNetworkEditSource = toggleNetworkEditSource
 menuEventProcess MenuLaTeXNetwork = 
     laTeXInputNetwork Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
-menuEventProcess MenuHub = hubUpload
--- menuEventProcess MenuHubSocket = socketConnect
-#endif
 menuEventProcess m = liftIO $ putStrLn $ "not implemented " ++ show m 
 
 -- | 

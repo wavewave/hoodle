@@ -25,10 +25,6 @@ Flag Dyre
   Description:     dynamic reconfiguration support
   Default:         False
 
-Flag Hub
-  Description:     communication with Hub
-  Default:         False
-
 Library
   hs-source-dirs: src
   ghc-options: 	-funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
@@ -57,11 +53,15 @@ Library
                    lens >= 2.5,
                    monad-loops >= 0.3,
                    mtl > 2,
+                   network > 2.6,
+                   network-info,
                    network-uri > 2.6,
+                   network-simple >= 0.3,
                    pango > 0.12,
                    poppler >= 0.12.2.2,
                    process >= 1.1,
                    pureMD5,
+                   resourcet,
                    stm >= 2,
                    strict > 0.3,
                    svgcairo >= 0.12,
@@ -83,26 +83,8 @@ Library
                    hoodle-render,
                    hoodle-types,
                    hoodle-util
-
   if flag(dyre)
     Build-depends: dyre >= 0.8.11
-  if flag(hub)
-    Build-depends:
-                   dbus >= 0.10,
-                   http-client,
-                   http-conduit,
-                   network > 2.6,
-                   network-info,
-                   network-simple >= 0.3,
-                   persistent,
-                   persistent-sqlite,
-                   persistent-template,
-                   resourcet,
-                   --
-                   case-insensitive,
-                   websockets,
-                   handa-gdata >= 0.6.9.3
-
 
   Exposed-Modules:
                    Hoodle.Accessor
@@ -122,6 +104,7 @@ Library
                    Hoodle.Coroutine.Link
                    Hoodle.Coroutine.Minibuffer
                    Hoodle.Coroutine.Mode
+                   Hoodle.Coroutine.Network
                    Hoodle.Coroutine.Page
                    Hoodle.Coroutine.Pen
                    Hoodle.Coroutine.Scroll
@@ -172,14 +155,6 @@ Library
                    Hoodle.Widget.Layer
                    Hoodle.Widget.PanZoom
                    Hoodle.Widget.Scroll
-  if flag(hub)
-    Exposed-Modules: Hoodle.Coroutine.Hub
-                     Hoodle.Coroutine.Hub.Common
-                     Hoodle.Coroutine.HubInternal
-                     Hoodle.Coroutine.Network
-                     Hoodle.Coroutine.Socket
-                     Hoodle.Type.Hub
-                     Hoodle.Type.Synchronization
   Other-Modules:
                    Paths_hoodle_core
   c-sources:
@@ -193,5 +168,4 @@ Library
   extra-libraries: X11 Xi dl pthread
   if flag(dyre)
     cpp-options: -DDYRE
-  if flag(hub)
-    cpp-options: -DHUB
+

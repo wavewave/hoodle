@@ -10,9 +10,6 @@ import qualified Data.Text as T
 import           Data.UUID (UUID)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
-#ifdef HUB
-import           Data.Time.Clock
-#endif
 import           Control.Monad.Trans.Crtn.Event 
 import           Data.Hoodle.BBox
 import           Data.Hoodle.Simple
@@ -21,10 +18,6 @@ import           Hoodle.Device
 import           Hoodle.Type.Enum
 import           Hoodle.Type.PageArrangement
 import           Hoodle.Util
-#ifdef HUB
-import           Hoodle.Type.Hub
-import           Hoodle.Type.Synchronization
-#endif
 
 -- | 
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent
@@ -97,17 +90,8 @@ data UserEvent = Initialized (Maybe FilePath)
                | Keyword (Maybe T.Text)
                | SwitchTab Int
                | CloseTab UUID
-               | UIEv UIEvent 
-#ifdef HUB
-               | DBusEv DBusEvent
+               | UIEv UIEvent
                | NetworkProcess NetworkEvent
-               | DisconnectedHub FilePath (FilePath,Maybe FilePath) HubInfo
-               | SyncInfoUpdated UUID FileSyncStatus
-               | FileSyncFromHub UUID FileSyncStatus
-               | GotSyncEvent Bool UUID FileSyncStatus
-               | Sync UTCTime 
-               | SyncFileFinished FileSyncStatus
-#endif
                deriving Show
                       
 instance Show (IORef a) where                      
@@ -231,13 +215,9 @@ data MenuEvent = MenuNew
                | MenuCloseTab
                | MenuAbout
                | MenuDefault
-#ifdef HUB
                | MenuEditNetEmbedTextSource
                | MenuToggleNetworkEditSource
                | MenuLaTeXNetwork
-               | MenuHub
---                | MenuHubSocket
-#endif
                deriving Show 
 
 -- |
@@ -257,9 +237,7 @@ data ContextMenuEvent = CMenuSaveSelectionAs ImgType
                       | CMenuMakeLinkToAnchor Anchor
                       | CMenuPangoConvert (Double,Double) T.Text
                       | CMenuLaTeXConvert (Double,Double) T.Text
-#ifdef HUB
                       | CMenuLaTeXConvertNetwork (Double,Double) T.Text
-#endif
                       | CMenuLaTeXUpdate (Double,Double) Dimension T.Text
                       | CMenuCropImage (BBoxed Image)
                       | CMenuRotate    RotateDir (BBoxed Image)
@@ -284,7 +262,6 @@ instance Show Gtk.DrawWindow where
 data MultiLineEvent = MultiLineChanged T.Text
                     deriving Show
 
-#ifdef HUB
 -- | event for network
 data NetworkEvent = NetworkDialog 
                   | NetworkInitialized ThreadId (MVar ())
@@ -292,17 +269,9 @@ data NetworkEvent = NetworkDialog
                   | NetworkCloseDialog
                   | NetworkClosed
                   deriving Show
-#endif
 
 instance Show (MVar ()) where
   show _ = "MVar"
-
-#ifdef HUB
-data DBusEvent = DBusNetworkInput T.Text
-               | ImageFileDropped FilePath
-               | GoToLink (T.Text,T.Text)
-               deriving Show
-#endif
 
 -- | 
 viewModeToUserEvent :: Gtk.RadioAction -> IO UserEvent

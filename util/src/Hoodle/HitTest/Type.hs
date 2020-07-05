@@ -10,7 +10,6 @@ module Hoodle.HitTest.Type
     Hitted (..),
     TAlterHitted,
     TEitherAlterHitted (..),
-    fmapAL,
     getA,
     getB,
     interleave,
@@ -19,6 +18,7 @@ module Hoodle.HitTest.Type
   )
 where
 
+import Data.Bifunctor (Bifunctor (..))
 import Prelude hiding (fst, snd)
 
 -- | bounding box type
@@ -54,18 +54,9 @@ data AlterList a b = Empty | a :- AlterList b a
 
 infixr 6 :-
 
--- |
-newtype NotHitted a = NotHitted {unNotHitted :: [a]}
-  deriving (Show, Functor)
-
--- |
-newtype Hitted a = Hitted {unHitted :: [a]}
-  deriving (Show, Functor)
-
--- |
-fmapAL :: (a -> c) -> (b -> d) -> AlterList a b -> AlterList c d
-fmapAL _ _ Empty = Empty
-fmapAL f g (x :- ys) = f x :- fmapAL g f ys
+instance Bifunctor AlterList where
+  bimap _ _ Empty = Empty
+  bimap f g (x :- ys) = f x :- bimap g f ys
 
 -- |
 getA :: AlterList a b -> [a]
@@ -76,6 +67,14 @@ getA (x :- xs) = x : getB xs
 getB :: AlterList a b -> [b]
 getB Empty = []
 getB (_x :- xs) = getA xs
+
+-- |
+newtype NotHitted a = NotHitted {unNotHitted :: [a]}
+  deriving (Show, Functor)
+
+-- |
+newtype Hitted a = Hitted {unHitted :: [a]}
+  deriving (Show, Functor)
 
 -- |
 interleave :: (a -> c) -> (b -> c) -> AlterList a b -> [c]

@@ -7,6 +7,7 @@ import Control.Lens ((.~), (^.), set, view)
 import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.State
+import Data.Bifunctor (first, second)
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
@@ -232,7 +233,7 @@ newSelectRectangle
             cpn = view currentPageNum cinfo
             bbox = BBox orig (x, y)
             hittestbbox = hltEmbeddedByBBox bbox itms
-            selectitms = fmapAL unNotHitted id hittestbbox
+            selectitms = first unNotHitted hittestbbox
             SelectState thdl = view hoodleModeState uhdl
             newpage = case epage of
               Left pagebbox -> makePageSelectMode pagebbox selectitms
@@ -528,7 +529,7 @@ selectPenColorChanged pcolor = do
   case unTEitherAlterHitted . view gitems $ slayer of
     Left _ -> return ()
     Right alist -> do
-      let alist' = fmapAL id (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
+      let alist' = second (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
           newpage = (glayers . selectedLayer .~ (GLayer (slayer ^. gbuffer) (TEitherAlterHitted newlayer))) tpage
       newthdl <- updateTempHoodleSelectM cid thdl newpage n
@@ -549,11 +550,7 @@ selectPenWidthChanged pwidth = do
   case (unTEitherAlterHitted . view gitems) slayer of
     Left _ -> return ()
     Right alist -> do
-      let alist' =
-            fmapAL
-              id
-              (Hitted . map (changeItemStrokeWidth pwidth) . unHitted)
-              alist
+      let alist' = second (Hitted . map (changeItemStrokeWidth pwidth) . unHitted) alist
           newlayer = Right alist'
           newpage = set (glayers . selectedLayer) (GLayer (view gbuffer slayer) (TEitherAlterHitted newlayer)) tpage
       newthdl <- updateTempHoodleSelectM cid thdl newpage n
@@ -605,13 +602,13 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev, otime) lasso tsel = nextev
           epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
           cpn = view currentPageNum cinfo
           hittestlasso1 = hltFilteredBy (hitLassoItem (nlasso |> orig)) itms
-          selectitms1 = fmapAL unNotHitted id hittestlasso1
+          selectitms1 = first unNotHitted hittestlasso1
           selecteditms1 = (concatMap unHitted . getB) selectitms1
           hittestlasso2 = takeLastFromHitted . flip hltFilteredBy itms $
             \itm ->
               (not . isStrkInRItem) itm
                 && isPointInBBox (getBBox itm) (x, y)
-          selectitms2 = fmapAL unNotHitted id hittestlasso2
+          selectitms2 = first unNotHitted hittestlasso2
           selectitms
             | (not . null) selecteditms1 = selectitms1
             | otherwise = selectitms2

@@ -5,7 +5,7 @@ module Graphics.Hoodle.Render.Type.HitTest
     Hitted (..), -- re-export
     TAlterHitted, -- re-export
     TEitherAlterHitted (..), -- re-export
-    fmapAL, -- re-export
+    -- fmapAL, -- re-export
     getA, -- re-export
     getB, -- re-export
     interleave, -- re-export
@@ -28,7 +28,7 @@ import Hoodle.HitTest.Type
     NotHitted (..),
     TAlterHitted,
     TEitherAlterHitted (..),
-    fmapAL,
+    -- fmapAL,
     getA,
     getB,
     interleave,

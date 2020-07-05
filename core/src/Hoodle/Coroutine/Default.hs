@@ -21,10 +21,8 @@ import qualified Data.List as L
 import           Data.Maybe
 import qualified Graphics.UI.Gtk as Gtk hiding (get,set)
 import           System.Process 
-#ifdef HUB
 import           Data.Time.Clock
 import           System.Directory
-#endif
 import           Control.Monad.Trans.Crtn.Driver
 import           Control.Monad.Trans.Crtn.Object
 import           Control.Monad.Trans.Crtn.Logger.Simple
@@ -67,13 +65,9 @@ import           Hoodle.Type.Widget
 import           Hoodle.Util
 import           Hoodle.Widget.Dispatch 
 import           Hoodle.Widget.PanZoom
-#ifdef HUB
 import           Hoodle.Coroutine.Dialog
-import           Hoodle.Coroutine.HubInternal
-import           Hoodle.Coroutine.Socket
 import           Hoodle.Coroutine.TextInput 
 import           Hoodle.Type.Predefined
-#endif
 --
 import Prelude hiding (mapM_)
 
@@ -106,9 +100,6 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
   (uhdl4,wconf') <- eventConnect st2 uhdl3 (view frameState uhdl3)
   notebook <- Gtk.notebookNew
   statusbar <- Gtk.statusbarNew
-#ifdef HUB
-  let sqlinfo =  (join . fmap sqliteInfo) mhook 
-#endif
   let st4 = (unitHoodles.currentUnit .~ uhdl4) st2
       st5 = st4 # over (unitHoodles.currentUnit) 
                        ( set undoTable (emptyUndo maxundo)  
@@ -117,9 +108,6 @@ initCoroutine devlst window mhook maxundo (xinputbool,usepz,uselyr,varcsr) = do
                        . set (hoodleFileControl.hoodleFileName) (LocalDir Nothing))
                 . set (settings.doesUseXInput) xinputbool 
                 . set (settings.doesUseVariableCursor) varcsr
-#ifdef HUB
-                . set (settings.sqliteFileName) sqlinfo
-#endif
                 . set hookSet mhook 
                 . set rootNotebook notebook
                 . set uiComponentSignalHandler uicompsighdlr 
@@ -196,12 +184,6 @@ guiProcess ev = do
     reflectNewPageModeUI
     viewModeChange ToContSinglePage
     pageZoomChange FitWidth
-#ifdef HUB
-    initSqliteDB
-    startLinkReceiver
-    socketConnect
-    syncFile
-#endif
     doCanvasConfigure cid cdim
     -- main loop
     sequence_ (repeat dispatchMode)
@@ -402,40 +384,7 @@ defaultEventProcess (CustomKeyEvent str) = do
 defaultEventProcess (SwitchTab i) = switchTab i
 defaultEventProcess (CloseTab uuid) = findTab uuid >>= mapM_  (\x-> switchTab x >> askIfSave closeTab)
 defaultEventProcess (OpenLink urlpath mid) = openLinkAction urlpath mid
-#ifdef HUB
-defaultEventProcess (OpenShared uuid) = openShared uuid
-defaultEventProcess (OpenTemp _uuid tmpfile) = getFileContent (TempDir tmpfile)
-                                              >> canvasZoomUpdateAll 
-                                              >> invalidateAll
 defaultEventProcess (NetworkProcess (NetworkReceived txt)) = networkReceived txt
-defaultEventProcess (DBusEv (ImageFileDropped fname)) = embedImage fname
-defaultEventProcess (DBusEv (DBusNetworkInput txt)) = dbusNetworkInput txt 
-defaultEventProcess (DBusEv (GoToLink (docid,anchorid))) = goToAnchorPos docid anchorid
-defaultEventProcess (DisconnectedHub tokfile (ofile,file) hinfo) = do
-    b <- okCancelMessageBox "authentication failure! do you want to start from the beginning?"
-    when b $ do
-      r' :: Either E.SomeException () <- liftIO (E.try (removeFile tokfile))
-      case r' of 
-        Left _ ->  msgShout "DisconnectedHub" >>  return ()
-        Right _ -> uploadWork (ofile,file) hinfo
-defaultEventProcess (Sync ctime) = do 
-  xst <- get
-  case view (unitHoodles.currentUnit.hoodleFileControl.lastSavedTime) xst of 
-    Nothing -> return ()
-    Just otime -> do 
-      let dtime = diffUTCTime ctime otime
-      if dtime < dtime_bound * 10 
-        then return () 
-        else 
-          doIOaction $ \evhandler -> do 
-            Gtk.postGUISync (evhandler (UsrEv FileReloadOrdered))
-            return (UsrEv ActionOrdered)
-defaultEventProcess (SyncInfoUpdated uhdluuid fstat) = updateSyncInfo uhdluuid fstat
-defaultEventProcess (SyncFileFinished fstat) = updateSyncInfoAll fstat
-defaultEventProcess (FileSyncFromHub uhdluuid fstat) = fileSyncFromHub uhdluuid fstat
-defaultEventProcess (GotSyncEvent isforced fileuuid uhdluuid) = gotSyncEvent isforced fileuuid uhdluuid
-#endif
-
 defaultEventProcess ev = -- for debugging
                          do msgShout "--- no default ---"
                             msgShout (show ev)

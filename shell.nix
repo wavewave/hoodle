@@ -26,6 +26,7 @@ let
              pdf-toolbox-document
              directory-tree
              HTTP xml-types xml-conduit TypeCompose
+             network-simple
            ]
       );
 

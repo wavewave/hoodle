@@ -1,5 +1,5 @@
 { mkDerivation, attoparsec, base, bytestring, cairo, cmdargs
-1;5002;0c, containers, directory, directory-tree, filepath, gtk3
+, containers, directory, directory-tree, filepath, gtk3
 , hoodle-parser, hoodle-render, hoodle-types, HTTP, io-streams
 , lens, mtl, network-uri, pdf-toolbox-core, pdf-toolbox-document
 , process, stdenv, transformers, unordered-containers, uuid

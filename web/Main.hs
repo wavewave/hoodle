@@ -8,7 +8,7 @@ module Main where
 import Control.Concurrent.MVar (newEmptyMVar, putMVar)
 import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.State (MonadState (get, put), modify')
+import Control.Monad.State (MonadState (get, put))
 import qualified Control.Monad.Trans.Crtn.Driver as D (driver)
 import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
@@ -21,7 +21,6 @@ import Coroutine
     world,
   )
 import Data.Foldable (toList, traverse_)
-import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
 import Data.List (nub, sort)
 import Data.Sequence (Seq, ViewR (..), empty, singleton, viewr, (|>))
@@ -30,10 +29,8 @@ import qualified Data.Text as T
 import Event (AllEvent (..), UserEvent (..))
 import qualified ForeignJS as J
 import Handler (setupCallback)
-import Hoodle.Web.Default
-  ( nextevent,
-    sysevent,
-  )
+import Hoodle.Web.Default (nextevent, sysevent)
+import Hoodle.Web.Pen (drawingMode)
 import Hoodle.Web.Util
   ( enclosedStrokes,
     intersectingStrokes,
@@ -41,11 +38,11 @@ import Hoodle.Web.Util
   )
 import qualified JavaScript.Web.WebSocket as WS
 import Message
-  ( C2SMsg (DeleteStrokes, NewStroke),
+  ( C2SMsg (DeleteStrokes),
     CommitId (..),
     TextSerializable (serialize),
   )
-import State (DocState (..), HoodleState (..), SyncState (..))
+import State (DocState (..), HoodleState (..))
 
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess (SysEv sev) = sysevent sev >> nextevent >>= penReady
@@ -82,33 +79,6 @@ selectReady ev = do
       lassoMode empty (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= selectReady
-
-drawingMode :: Seq (Double, Double) -> MainCoroutine ()
-drawingMode cxys = do
-  ev <- nextevent
-  case ev of
-    PointerMove cxy@(cx, cy) -> do
-      s@(HoodleState _ cvs offcvs _ _ _ _) <- get
-      case viewr cxys of
-        _ :> (cx0, cy0) -> liftIO $ J.js_overlay_point cvs offcvs cx0 cy0 cx cy
-        _ -> pure ()
-      put $ s {_hdlstateOverlayUpdated = True}
-      drawingMode (cxys |> cxy)
-    PointerUp cxy -> do
-      HoodleState svg _ _ sock _ _ _ <- get
-      let cxys' = cxys |> cxy
-      path <- liftIO $ transformPathFromCanvasToSVG svg (toList cxys')
-      modify'
-        ( \s ->
-            s
-              { _hdlstateSyncState = SyncState [path],
-                _hdlstateOverlayUpdated = True
-              }
-        )
-      let hsh = hash path
-          msg = NewStroke (hsh, path)
-      liftIO $ WS.send (JSS.pack . T.unpack . serialize $ msg) sock
-    _ -> drawingMode cxys
 
 eraseUpdatePeriod :: Int
 eraseUpdatePeriod = 10

@@ -1,4 +1,4 @@
-module Event where
+module Hoodle.Web.Type.Event where
 
 import Message (Commit, CommitId)
 

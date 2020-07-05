@@ -24,7 +24,7 @@ import Control.Monad.Trans.Crtn.World (WorldOp (..))
 import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Control.Monad.Trans.State (StateT (..))
-import Event (AllEvent (..))
+import Hoodle.Web.Type.Event (AllEvent (..))
 import Hoodle.Web.Util (putStrLnAndFlush)
 import State (HoodleState)
 

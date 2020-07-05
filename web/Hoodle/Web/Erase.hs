@@ -13,9 +13,9 @@ import Data.List (nub, sort)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Sequence as Seq (length)
 import qualified Data.Text as T
-import Event (UserEvent (..))
 import qualified ForeignJS as J
 import Hoodle.Web.Default (nextevent)
+import Hoodle.Web.Type.Event (UserEvent (..))
 import Hoodle.Web.Util
   ( intersectingStrokes,
     transformPathFromCanvasToSVG,

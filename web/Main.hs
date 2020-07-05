@@ -19,12 +19,12 @@ import Coroutine
     world,
   )
 import Data.Sequence (empty, singleton)
-import Event (AllEvent (..), UserEvent (..))
 import Handler (setupCallback)
 import Hoodle.Web.Default (nextevent, sysevent)
 import Hoodle.Web.Erase (erasingMode)
 import Hoodle.Web.Pen (drawingMode)
 import Hoodle.Web.Select (lassoMode)
+import Hoodle.Web.Type.Event (AllEvent (..), UserEvent (..))
 import State (HoodleState (..))
 
 guiProcess :: AllEvent -> MainCoroutine ()

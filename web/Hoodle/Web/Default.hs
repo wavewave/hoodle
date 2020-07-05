@@ -22,9 +22,9 @@ import Data.Foldable (traverse_)
 import qualified Data.JSString as JSS (pack)
 import Data.List (foldl')
 import qualified Data.Text as T
-import Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import qualified ForeignJS as J
 import Hoodle.HitTest.Type (BBoxed (..))
+import Hoodle.Web.Type.Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import Hoodle.Web.Util (pathBBox)
 import qualified JavaScript.Web.WebSocket as WS
 import Message

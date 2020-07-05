@@ -8,9 +8,9 @@ import Data.Hashable (hash)
 import qualified Data.JSString as JSS (pack)
 import Data.Sequence (Seq, ViewR (..), viewr, (|>))
 import qualified Data.Text as T
-import Event (UserEvent (..))
 import qualified ForeignJS as J
 import Hoodle.Web.Default (nextevent)
+import Hoodle.Web.Type.Event (UserEvent (..))
 import Hoodle.Web.Util (transformPathFromCanvasToSVG)
 import qualified JavaScript.Web.WebSocket as WS
 import Message

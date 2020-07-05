@@ -3,20 +3,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
 
------------------------------------------------------------------------------
--- |
--- Module      : Hoodle.GUI.Menu 
--- Copyright   : (c) 2011-2016 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
---
--- Construct hoodle menus 
---
------------------------------------------------------------------------------
-
 module Hoodle.GUI.Menu where
 
 -- from other packages
@@ -402,13 +388,6 @@ getMenuUI evar = do
 #else
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuDefault)
 #endif
-
-#ifdef HUB
-  huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuHub)
-#else
-  huba <- actionNewAndRegister "HUBA" "Hub" (Just "Just a Stub") Nothing (justMenu MenuDefault)
-#endif
-
 
   -- window menu
   addtaba <- actionNewAndRegister "ADDTABA" "Add new tab" (Just "Just a Stub") Nothing (justMenu MenuAddTab)

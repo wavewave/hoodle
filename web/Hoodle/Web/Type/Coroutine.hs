@@ -1,7 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Coroutine where
+module Hoodle.Web.Type.Coroutine where
 
 import Control.Concurrent.MVar (MVar)
 import Control.Monad (liftM, void)
@@ -25,8 +25,8 @@ import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Control.Monad.Trans.State (StateT (..))
 import Hoodle.Web.Type.Event (AllEvent (..))
+import Hoodle.Web.Type.State (HoodleState)
 import Hoodle.Web.Util (putStrLnAndFlush)
-import State (HoodleState)
 
 data MainOp i o where
   DoEvent :: MainOp AllEvent ()

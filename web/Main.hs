@@ -10,7 +10,13 @@ import Control.Monad.State (MonadState (get))
 import qualified Control.Monad.Trans.Crtn.Driver as D (driver)
 import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
-import Coroutine
+import Data.Sequence (empty, singleton)
+import Hoodle.Web.Default (nextevent, sysevent)
+import Hoodle.Web.Erase (erasingMode)
+import Hoodle.Web.Handler (setupCallback)
+import Hoodle.Web.Pen (drawingMode)
+import Hoodle.Web.Select (lassoMode)
+import Hoodle.Web.Type.Coroutine
   ( EventVar,
     MainCoroutine,
     MainObj,
@@ -18,14 +24,8 @@ import Coroutine
     simplelogger,
     world,
   )
-import Data.Sequence (empty, singleton)
-import Handler (setupCallback)
-import Hoodle.Web.Default (nextevent, sysevent)
-import Hoodle.Web.Erase (erasingMode)
-import Hoodle.Web.Pen (drawingMode)
-import Hoodle.Web.Select (lassoMode)
 import Hoodle.Web.Type.Event (AllEvent (..), UserEvent (..))
-import State (HoodleState (..))
+import Hoodle.Web.Type.State (HoodleState (..))
 
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess (SysEv sev) = sysevent sev >> nextevent >>= penReady

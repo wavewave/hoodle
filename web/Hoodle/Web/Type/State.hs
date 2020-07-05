@@ -1,4 +1,4 @@
-module State where
+module Hoodle.Web.Type.State where
 
 import GHCJS.Types (JSVal)
 import Hoodle.HitTest.Type (BBoxed)

@@ -11,13 +11,13 @@ where
 
 import Data.Foldable (toList)
 import Data.Sequence (Seq)
-import qualified ForeignJS as J
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
 import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk, hitLassoPoint)
 import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
+import qualified Hoodle.Web.ForeignJS as J
+import Hoodle.Web.Type.State (RStroke (..))
 import Message (CommitId)
-import State (RStroke (..))
 import System.IO (hFlush, hPutStrLn, stdout)
 
 putStrLnAndFlush :: String -> IO ()

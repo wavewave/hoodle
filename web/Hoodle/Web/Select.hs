@@ -4,19 +4,19 @@ module Hoodle.Web.Select where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.State (MonadState (get, put))
-import Coroutine (MainCoroutine)
 import Data.Foldable (toList, traverse_)
 import Data.Sequence (Seq, ViewR (..), singleton, viewr, (|>))
 import qualified Data.Sequence as Seq (fromList, length)
-import qualified ForeignJS as J
 import Hoodle.Web.Default (nextevent)
+import qualified Hoodle.Web.ForeignJS as J
+import Hoodle.Web.Type.Coroutine (MainCoroutine)
 import Hoodle.Web.Type.Event (UserEvent (..))
+import Hoodle.Web.Type.State (DocState (..), HoodleState (..))
 import Hoodle.Web.Util
   ( enclosedStrokes,
     transformPathFromCanvasToSVG,
   )
 import Message (CommitId (..))
-import State (DocState (..), HoodleState (..))
 
 lassoUpdatePeriod :: Int
 lassoUpdatePeriod = 10

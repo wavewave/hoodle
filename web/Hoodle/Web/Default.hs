@@ -14,17 +14,18 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.State (MonadState (get, put))
 import Control.Monad.Trans.Crtn (request)
 import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..))
-import Coroutine
-  ( MainCoroutine,
-    MainOp (DoEvent),
-  )
 import Data.Foldable (traverse_)
 import qualified Data.JSString as JSS (pack)
 import Data.List (foldl')
 import qualified Data.Text as T
-import qualified ForeignJS as J
 import Hoodle.HitTest.Type (BBoxed (..))
+import qualified Hoodle.Web.ForeignJS as J
+import Hoodle.Web.Type.Coroutine
+  ( MainCoroutine,
+    MainOp (DoEvent),
+  )
 import Hoodle.Web.Type.Event (AllEvent (..), SystemEvent (..), UserEvent (..))
+import Hoodle.Web.Type.State (DocState (..), HoodleState (..), RStroke (..))
 import Hoodle.Web.Util (pathBBox)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
@@ -34,7 +35,6 @@ import Message
     TextSerializable (serialize),
     commitId,
   )
-import State (DocState (..), HoodleState (..), RStroke (..))
 
 -- | Handling system events until a new user event arrives
 nextevent :: MainCoroutine UserEvent

@@ -1,14 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecursiveDo #-}
 
-module Handler where
+module Hoodle.Web.Handler where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
-import Coroutine (EventVar)
 import qualified Data.JSString as JSS (unpack)
 import qualified Data.Text as T
-import qualified ForeignJS as J
 import GHCJS.Foreign.Callback
   ( Callback,
     OnBlocked (ThrowWouldBlock),
@@ -16,7 +14,10 @@ import GHCJS.Foreign.Callback
     syncCallback1,
   )
 import GHCJS.Types (JSString, JSVal, jsval)
+import qualified Hoodle.Web.ForeignJS as J
+import Hoodle.Web.Type.Coroutine (EventVar)
 import Hoodle.Web.Type.Event (AllEvent (..), SystemEvent (..), UserEvent (..))
+import Hoodle.Web.Type.State (DocState (..), HoodleState (..), SyncState (..))
 import Hoodle.Web.Util (putStrLnAndFlush)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
@@ -25,7 +26,6 @@ import Message
     S2CMsg (DataStrokes, RegisterStroke),
     TextSerializable (deserialize),
   )
-import State (DocState (..), HoodleState (..), SyncState (..))
 
 onPointerDown ::
   EventVar ->

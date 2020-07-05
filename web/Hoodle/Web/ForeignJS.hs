@@ -1,6 +1,6 @@
 {-# LANGUAGE JavaScriptFFI #-}
 
-module ForeignJS where
+module Hoodle.Web.ForeignJS where
 
 import qualified Data.JSString as JSS
 import GHCJS.Foreign.Callback (Callback)

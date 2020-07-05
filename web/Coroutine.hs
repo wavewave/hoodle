@@ -25,13 +25,8 @@ import Control.Monad.Trans.Except (runExceptT)
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Control.Monad.Trans.State (StateT (..))
 import Event (AllEvent (..))
+import Hoodle.Web.Util (putStrLnAndFlush)
 import State (HoodleState)
-import System.IO (hFlush, hPutStrLn, stdout)
-
-putStrLnAndFlush :: String -> IO ()
-putStrLnAndFlush s = do
-  hPutStrLn stdout s
-  hFlush stdout
 
 data MainOp i o where
   DoEvent :: MainOp AllEvent ()

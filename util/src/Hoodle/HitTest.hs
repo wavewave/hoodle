@@ -10,10 +10,18 @@ module Hoodle.HitTest
     elimHitted,
     merge,
     getTotalBBox,
+
+    -- * lasso selection
+    angleBAC,
+    wrappingAngle,
+    mappingDegree,
+    hitLassoPoint,
   )
 where
 
 import Control.Monad.State (MonadState (get, put), State, evalState, modify)
+import Data.List (foldl')
+import Data.Sequence (Seq, ViewL (..), viewl)
 import Hoodle.HitTest.Type
   ( AlterList ((:-), Empty),
     BBox (..),
@@ -174,3 +182,45 @@ getTotalBBox :: (GetBBoxable a) => [a] -> Maybe BBox
 getTotalBBox = foldl f Nothing
   where
     f acc = merge acc . Just . getBBox
+
+--------------------------------------------------------
+-- Lasso selection hit test                           --
+--------------------------------------------------------
+
+angleBAC :: (Double, Double) -> (Double, Double) -> (Double, Double) -> Double
+angleBAC (bx, by) (ax, ay) (cx, cy) =
+  let theta1
+        | ax == bx && ay > by = pi / 2.0
+        | ax == bx && ay <= by = - pi / 2.0
+        | ax < bx && ay > by = atan ((ay - by) / (ax - bx)) + pi
+        | ax < bx && ay <= by = atan ((ay - by) / (ax - bx)) - pi
+        | otherwise = atan ((ay - by) / (ax - bx))
+      theta2
+        | cx == bx && cy > by = pi / 2.0
+        | cx == bx && cy <= by = - pi / 2.0
+        | cx < bx && cy > by = atan ((cy - by) / (cx - bx)) + pi
+        | cx < bx && cy <= by = atan ((cy - by) / (cx - bx)) - pi
+        | otherwise = atan ((cy - by) / (cx - bx))
+      dtheta = theta2 - theta1
+      result
+        | dtheta > pi = dtheta - 2.0 * pi
+        | dtheta < (- pi) = dtheta + 2.0 * pi
+        | otherwise = dtheta
+   in result
+
+wrappingAngle :: Seq (Double, Double) -> (Double, Double) -> Double
+wrappingAngle lst p =
+  case viewl lst of
+    EmptyL -> 0
+    x :< xs -> Prelude.snd $ foldl' f (x, 0) xs
+  where
+    f (q', theta) q =
+      let theta' = angleBAC p q' q
+       in theta' `seq` (q, theta' + theta)
+
+mappingDegree :: Seq (Double, Double) -> (Double, Double) -> Int
+mappingDegree lst = round . (/ (2.0 * pi)) . wrappingAngle lst
+
+-- |
+hitLassoPoint :: Seq (Double, Double) -> (Double, Double) -> Bool
+hitLassoPoint lst = odd . mappingDegree lst

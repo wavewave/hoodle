@@ -17,4 +17,5 @@ data UserEvent
   | PointerUp (Double, Double)
   | ToPenMode
   | ToEraserMode
+  | ToSelectMode
   deriving (Show)

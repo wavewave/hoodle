@@ -16,11 +16,12 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -fno-warn-orphans -funbox-strict-fields -fno-warn-unused-do-bind
+  ghc-options:  -O2 -Wall -fno-warn-orphans -fno-warn-unused-do-bind
   ghc-prof-options: -caf-all -auto-all
 
   Build-Depends: 
                  base == 4.*,
+                 containers,
                  mtl,
                  strict
 

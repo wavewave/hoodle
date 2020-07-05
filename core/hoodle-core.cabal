@@ -81,7 +81,8 @@ Library
                    hoodle-parser,
                    hoodle-publish,
                    hoodle-render,
-                   hoodle-types
+                   hoodle-types,
+                   hoodle-util
 
   if flag(dyre)
     Build-depends: dyre >= 0.8.11

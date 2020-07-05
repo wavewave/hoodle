@@ -1,5 +1,6 @@
 { mkDerivation, base, either, free, mtl, stdenv, transformers }:
-1;5002;0cmkDerivation {
+
+mkDerivation {
   pname = "coroutine-object";
   version = "1.0";
   src = ./.;

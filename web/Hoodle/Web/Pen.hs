@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Werror -Wall #-}
-
 module Hoodle.Web.Pen where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))

@@ -29,50 +29,26 @@ self: super: {
          license = stdenv.lib.licenses.gpl2;
        }) { popplerlib = poppler; gtk3lib = gtk3; };
 
-  coroutine-object = self.callPackage ./coroutine-object {};
+  coroutine-object = self.callCabal2nix "coroutine-object" ./coroutine-object {};
 
-  xournal-types    = self.callPackage ./xournal-types {};
+  xournal-types    = self.callCabal2nix "xournal-types" ./xournal-types {};
 
-  xournal-parser   = self.callPackage ./xournal-parser {
-                       xournal-types = self.xournal-types;
-                     };
+  xournal-parser   = self.callCabal2nix "xournal-parser" ./xournal-parser {};
 
-  hoodle-types     = self.callPackage ./types {};
+  hoodle-types     = self.callCabal2nix "hoodle-types" ./types {};
 
-  hoodle-builder   = self.callPackage ./builder {
-                       hoodle-types = self.hoodle-types;
-                     };
+  hoodle-builder   = self.callCabal2nix "hoodle-builder" ./builder {};
 
-  hoodle-parser    = self.callPackage ./parser {
-                       hoodle-types = self.hoodle-types;
-                       xournal-types = self.xournal-types;
-                     };
+  hoodle-parser    = self.callCabal2nix "hoodle-parser" ./parser {};
 
-  hoodle-util      = self.callPackage ./util {};
+  hoodle-util      = self.callCabal2nix "hoodle-util" ./util {};
 
-  hoodle-render    = self.callPackage ./render {
-                       hoodle-types = self.hoodle-types;
-                     };
+  hoodle-render    = self.callCabal2nix "hoodle-render" ./render {};
 
-  hoodle-publish   = self.callPackage ./publish {
-                       hoodle-types = self.hoodle-types;
-                       hoodle-render = self.hoodle-render;
-                     };
+  hoodle-publish   = self.callCabal2nix "hoodle-publish" ./publish {};
 
-  hoodle-core      = self.callPackage ./core {
-                       coroutine-object = self.coroutine-object;
-                       hoodle-types = self.hoodle-types;
-                       hoodle-parser = self.hoodle-parser;
-                       hoodle-builder = self.hoodle-builder;
-                       hoodle-render = self.hoodle-render;
-                       hoodle-publish = self.hoodle-publish;
-                       xournal-parser = self.xournal-parser;
-                       gtk3 = gtk3;
-                     };
-  hoodle           = self.callPackage ./hoodle {
-                       hoodle-core = self.hoodle-core;
-                     };
+  hoodle-core      = self.callCabal2nix "hoodle-core" ./core {};
 
-
+  hoodle           = self.callCabal2nix "hoodle" ./hoodle {};
 
 }

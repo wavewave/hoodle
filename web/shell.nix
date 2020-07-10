@@ -43,6 +43,7 @@ mkShell {
   name = "test-shell";
   buildInputs = [
     nodejs
+    cabal-install
     hsenv
     hsenv_ghcjs
     ormolu

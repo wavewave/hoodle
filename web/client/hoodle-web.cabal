@@ -18,9 +18,19 @@ category:            Graphics
 extra-source-files:  CHANGELOG.md
 
 executable hoodle-web
-  main-is:             Main.hs
-  -- other-modules:
-  other-extensions:    GeneralizedNewtypeDeriving, LambdaCase, OverloadedStrings, BangPatterns, GADTs, JavaScriptFFI, RecursiveDo, ScopedTypeVariables
+  main-is:           Main.hs
+  other-modules:
+                     Hoodle.Web.Default
+                     Hoodle.Web.Erase
+                     Hoodle.Web.ForeignJS
+                     Hoodle.Web.Handler
+                     Hoodle.Web.Pen
+                     Hoodle.Web.Select
+                     Hoodle.Web.Type.Coroutine
+                     Hoodle.Web.Type.Event
+                     Hoodle.Web.Type.State
+                     Hoodle.Web.Util
+
   build-depends:       base,
                        text,
                        mtl,
@@ -29,6 +39,7 @@ executable hoodle-web
                        hashable,
                        coroutine-object,
                        ghcjs-base,
-                       hoodle-util
+                       hoodle-util,
+                       hoodle-web-common
   -- hs-source-dirs:
   default-language:    Haskell2010

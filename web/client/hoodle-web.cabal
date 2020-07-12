@@ -32,14 +32,16 @@ executable hoodle-web
                      Hoodle.Web.Util
 
   build-depends:     base,
-                     text,
-                     mtl,
-                     transformers,
                      containers,
-                     hashable,
                      coroutine-object,
+                     hashable,
                      ghcjs-base,
                      hoodle-util,
-                     hoodle-web-common
+                     hoodle-web-common,
+                     microlens,
+                     microlens-th,
+                     text,
+                     mtl,
+                     transformers
   -- hs-source-dirs:
   default-language:  Haskell2010

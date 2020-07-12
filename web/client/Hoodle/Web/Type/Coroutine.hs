@@ -17,7 +17,6 @@ import Control.Monad.Trans.Crtn.Logger
     LogOp (..),
     LogServer,
     MonadLog (..),
-    writeLog,
   )
 import Control.Monad.Trans.Crtn.Object (Arg (..), CObjT, EStT, Res (..), SObjBT, SObjT)
 import Control.Monad.Trans.Crtn.World (WorldOp (..))

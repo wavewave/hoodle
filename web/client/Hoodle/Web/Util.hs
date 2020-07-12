@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Werror -Wall #-}
 
 module Hoodle.Web.Util
   ( pathBBox,

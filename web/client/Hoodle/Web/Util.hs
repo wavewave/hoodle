@@ -20,7 +20,8 @@ import GHCJS.Types (JSVal)
 import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk, hitLassoPoint)
 import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
 import qualified Hoodle.Web.ForeignJS as J
-import Hoodle.Web.Type.State (RStroke (..))
+import Hoodle.Web.Type.State (RStroke, rstrokeCommitId, rstrokePath)
+import Lens.Micro ((^.))
 import Message (CommitId (..))
 import System.IO (hFlush, hPutStrLn, stdout)
 
@@ -53,8 +54,8 @@ intersectingStrokes xys strks =
   let bbox1 = pathBBox xys
       pairs = zip xys (tail xys)
       hitstrks = flip concatMap pairs $ \((x0, y0), (x, y)) ->
-        map rstrokeCommitId
-          $ filter (doesLineHitStrk ((x0, y0), (x, y)) . rstrokePath)
+        map (^. rstrokeCommitId)
+          $ filter (doesLineHitStrk ((x0, y0), (x, y)) . (^. rstrokePath))
           $ map bbxed_content
           $ filter (do2BBoxIntersect bbox1 . getBBox)
           $ strks
@@ -70,8 +71,8 @@ enclosedStrokes ::
   [CommitId]
 enclosedStrokes lasso strks =
   let bbox1 = pathBBox (toList lasso)
-   in map rstrokeCommitId
-        $ filter ((`pathEnclosedByLasso` lasso) . rstrokePath)
+   in map (^. rstrokeCommitId)
+        $ filter ((`pathEnclosedByLasso` lasso) . (^. rstrokePath))
         $ map bbxed_content
         $ filter (do2BBoxIntersect bbox1 . getBBox)
         $ strks

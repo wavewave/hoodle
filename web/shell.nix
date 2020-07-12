@@ -24,6 +24,8 @@ let
 
   hsenv = haskellPackages.ghcWithPackages (p: with p; [
     acid-state
+    microlens
+    microlens-th
     monad-loops
     servant
     servant-server
@@ -35,6 +37,8 @@ let
     ghcjs-base
     ghcjs-dom
     hoodle-util
+    microlens
+    microlens-th
     stm
   ]);
 

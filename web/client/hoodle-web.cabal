@@ -19,6 +19,7 @@ extra-source-files:  CHANGELOG.md
 
 executable hoodle-web
   main-is:           Main.hs
+  ghc-options:       -Wall -Werror -O2
   other-modules:
                      Hoodle.Web.Default
                      Hoodle.Web.Erase

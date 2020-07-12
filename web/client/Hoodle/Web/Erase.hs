@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-{-# OPTIONS_GHC -Werror -Wall #-}
 
 module Hoodle.Web.Erase where
 
@@ -16,12 +15,18 @@ import Hoodle.Web.Default (nextevent)
 import qualified Hoodle.Web.ForeignJS as J
 import Hoodle.Web.Type.Coroutine (MainCoroutine)
 import Hoodle.Web.Type.Event (UserEvent (..))
-import Hoodle.Web.Type.State (DocState (..), HoodleState (..))
+import Hoodle.Web.Type.State
+  ( docstateData,
+    hdlstateDocState,
+    hdlstateSVGBox,
+    hdlstateWebSocket,
+  )
 import Hoodle.Web.Util
   ( intersectingStrokes,
     transformPathFromCanvasToSVG,
   )
 import qualified JavaScript.Web.WebSocket as WS
+import Lens.Micro ((<&>), (^.))
 import Message
   ( C2SMsg (DeleteStrokes),
     CommitId (..),
@@ -36,7 +41,9 @@ erasingMode hstrks0 cxys = do
   ev <- nextevent
   case ev of
     PointerMove cxy -> do
-      HoodleState svg _ _ _ (DocState _ strks) _ _ <- get
+      s <- get
+      let svg = s ^. hdlstateSVGBox
+          strks = s ^. hdlstateDocState . docstateData
       case viewr cxys of
         _ :> _ ->
           if Seq.length cxys >= eraseUpdatePeriod
@@ -50,7 +57,7 @@ erasingMode hstrks0 cxys = do
             else erasingMode hstrks0 (cxys |> cxy)
         _ -> pure ()
     PointerUp _ -> do
-      HoodleState _ _ _ sock _ _ _ <- get
+      sock <- get <&> (^. hdlstateWebSocket)
       when (not . null $ hstrks0) $ liftIO $ do
         let msg = DeleteStrokes hstrks0
         WS.send (JSS.pack . T.unpack . serialize $ msg) sock

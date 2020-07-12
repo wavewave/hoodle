@@ -1,7 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE LambdaCase #-}
-{-# OPTIONS_GHC -Wall -Werror #-}
 
 module Hoodle.Web.Default
   ( nextevent,
@@ -11,7 +10,7 @@ where
 
 import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Control.Monad.State (MonadState (get, put))
+import Control.Monad.State (MonadState (get), modify')
 import Control.Monad.Trans.Crtn (request)
 import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..))
 import Data.Foldable (for_)
@@ -25,9 +24,22 @@ import Hoodle.Web.Type.Coroutine
     MainOp (DoEvent),
   )
 import Hoodle.Web.Type.Event (AllEvent (..), SystemEvent (..), UserEvent (..))
-import Hoodle.Web.Type.State (DocState (..), HoodleState (..), RStroke (..))
+import Hoodle.Web.Type.State
+  ( DocState (DocState),
+    RStroke (RStroke),
+    docstateData,
+    docstateLastCommit,
+    hdlstateDocState,
+    hdlstateOverlayCanvas,
+    hdlstateOverlayOffCanvas,
+    hdlstateOverlayUpdated,
+    hdlstateSVGBox,
+    hdlstateWebSocket,
+  )
+-- import Hoodle.Web.Type.State (DocState (..), HoodleState (..), RStroke (..))
 import Hoodle.Web.Util (pathBBox, stringifyStrokeId)
 import qualified JavaScript.Web.WebSocket as WS
+import Lens.Micro ((.~), (^.))
 import Message
   ( C2SMsg (SyncRequest),
     Commit (Add, Delete),
@@ -46,12 +58,17 @@ nextevent = do
 -- | Handling a system event
 sysevent :: SystemEvent -> MainCoroutine ()
 sysevent (ERegisterStroke s') = do
-  HoodleState _ _ _ sock (DocState n _) _ _ <- get
+  s <- get
+  let sock = s ^. hdlstateWebSocket
+      n = s ^. hdlstateDocState . docstateLastCommit
   when (s' > n) $ liftIO $ do
     let msg = SyncRequest (n, s')
     WS.send (JSS.pack . T.unpack . serialize $ msg) sock
 sysevent (EDataStrokes commits) = do
-  st@(HoodleState svg _ offcvs _ (DocState _ dat0) _ _) <- get
+  s <- get
+  let svg = s ^. hdlstateSVGBox
+      offcvs = s ^. hdlstateOverlayOffCanvas
+      dat0 = s ^. hdlstateDocState . docstateData
   liftIO $ do
     J.js_clear_overlay offcvs
     for_ commits $ \case
@@ -62,13 +79,11 @@ sysevent (EDataStrokes commits) = do
         where
           f !acc (Add i xys) = acc ++ [BBoxed (RStroke i xys) (pathBBox xys)]
           f !acc (Delete _ js) = filter (\(BBoxed (RStroke j _) _) -> not (j `elem` js)) acc
-  put $
-    st
-      { _hdlstateDocState = DocState maxId dat',
-        _hdlstateOverlayUpdated = True
-      }
+  modify' ((hdlstateDocState .~ DocState maxId dat') . (hdlstateOverlayUpdated .~ True))
 sysevent ERefresh = do
-  s@(HoodleState _ cvs offcvs _ _ _ isUpdated) <- get
-  when isUpdated $ do
+  s <- get
+  let cvs = s ^. hdlstateOverlayCanvas
+      offcvs = s ^. hdlstateOverlayOffCanvas
+  when (s ^. hdlstateOverlayUpdated) $ do
     liftIO $ J.js_refresh cvs offcvs
-    put $ s {_hdlstateOverlayUpdated = False}
+    modify' (hdlstateOverlayUpdated .~ False)

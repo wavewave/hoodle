@@ -6,7 +6,6 @@
 module Main where
 
 import Control.Concurrent.MVar (newEmptyMVar, putMVar)
-import Control.Monad.State (MonadState (get))
 import qualified Control.Monad.Trans.Crtn.Driver as D (driver)
 import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
@@ -25,7 +24,6 @@ import Hoodle.Web.Type.Coroutine
     world,
   )
 import Hoodle.Web.Type.Event (AllEvent (..), UserEvent (..))
-import Hoodle.Web.Type.State (HoodleState (..))
 
 guiProcess :: AllEvent -> MainCoroutine ()
 guiProcess (SysEv sev) = sysevent sev >> nextevent >>= penReady
@@ -46,9 +44,7 @@ eraserReady ev = do
   case ev of
     ToPenMode -> nextevent >>= penReady
     ToSelectMode -> nextevent >>= selectReady
-    PointerDown (cx0, cy0) -> do
-      HoodleState _ _ _ _ _ _ _ <- get
-      erasingMode [] (singleton (cx0, cy0))
+    PointerDown (cx0, cy0) -> erasingMode [] (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= eraserReady
 
@@ -57,9 +53,7 @@ selectReady ev = do
   case ev of
     ToPenMode -> nextevent >>= penReady
     ToEraserMode -> nextevent >>= eraserReady
-    PointerDown (cx0, cy0) -> do
-      HoodleState _ _ _ _ _ _ _ <- get
-      lassoMode empty (singleton (cx0, cy0))
+    PointerDown (cx0, cy0) -> lassoMode empty (singleton (cx0, cy0))
     _ -> pure ()
   nextevent >>= selectReady
 

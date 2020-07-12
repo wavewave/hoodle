@@ -14,7 +14,7 @@ import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.State (MonadState (get, put))
 import Control.Monad.Trans.Crtn (request)
 import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..))
-import Data.Foldable (traverse_)
+import Data.Foldable (for_)
 import qualified Data.JSString as JSS (pack)
 import Data.List (foldl')
 import qualified Data.Text as T
@@ -26,12 +26,11 @@ import Hoodle.Web.Type.Coroutine
   )
 import Hoodle.Web.Type.Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import Hoodle.Web.Type.State (DocState (..), HoodleState (..), RStroke (..))
-import Hoodle.Web.Util (pathBBox)
+import Hoodle.Web.Util (pathBBox, stringifyStrokeId)
 import qualified JavaScript.Web.WebSocket as WS
 import Message
   ( C2SMsg (SyncRequest),
     Commit (Add, Delete),
-    CommitId (..),
     TextSerializable (serialize),
     commitId,
   )
@@ -55,15 +54,9 @@ sysevent (EDataStrokes commits) = do
   st@(HoodleState svg _ offcvs _ (DocState _ dat0) _ _) <- get
   liftIO $ do
     J.js_clear_overlay offcvs
-    traverse_
-      ( \case
-          Add i xys -> J.drawPath svg ("stroke" ++ show (unCommitId i)) xys
-          Delete _ js -> do
-            traverse_
-              (J.strokeRemove svg . ("stroke" ++) . show . unCommitId)
-              js
-      )
-      commits
+    for_ commits $ \case
+      Add i xys -> J.drawPath svg (stringifyStrokeId i) xys
+      Delete _ js -> for_ js (J.strokeRemove svg . stringifyStrokeId)
   let maxId = maximum (map commitId commits)
       dat' = foldl' f dat0 commits
         where

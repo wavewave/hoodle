@@ -4,6 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
 
@@ -16,11 +17,10 @@ import Control.Monad.Reader (ask)
 import Control.Monad.State (put)
 import Data.Acid (AcidState, Query, Update, makeAcidic, openLocalState, query, update)
 import Data.Foldable (toList)
-import Data.SafeCopy (SafeCopy, base, deriveSafeCopy)
+import Data.SafeCopy (base, deriveSafeCopy)
 import Data.Sequence (Seq, ViewR ((:>)), (|>))
-import qualified Data.Sequence as S (empty, filter, length, singleton, viewr)
+import qualified Data.Sequence as S (empty, filter, singleton, viewr)
 import Data.Text (Text)
-import qualified Data.Text as T
 import Message
   ( C2SMsg (..),
     Commit (..),
@@ -39,7 +39,6 @@ import Network.WebSockets
     sendTextData,
   )
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
-import System.IO (IOMode (..), hFlush, hPutStrLn, withFile)
 import Type (Doc (..), Stroke (..))
 
 getLast :: Seq a -> Maybe a
@@ -111,12 +110,19 @@ handler conn acid ref = forever $ do
           pure s'
       update acid $ WriteState s'
     SyncRequest (s, e) -> do
-      DocState commits _ <- atomically $ readTVar ref
-      let commits' =
-            toList $
-              S.filter (\c -> let i = commitId c in i > s && i <= e) commits
-          msg = DataStrokes commits'
-      sendTextData conn (serialize msg)
+      if s == 0
+        then do
+          DocState _ currDoc <- atomically $ readTVar ref
+          let commits = toList $ fmap (\(cid, _, strk) -> Add cid strk) currDoc
+              msg = DataStrokes commits
+          sendTextData conn (serialize msg)
+        else do
+          DocState commits _ <- atomically $ readTVar ref
+          let commits' =
+                toList $
+                  S.filter (\c -> let i = commitId c in i > s && i <= e) commits
+              msg = DataStrokes commits'
+          sendTextData conn (serialize msg)
 
 type API = "doc" :> Get '[JSON] Doc
 
@@ -132,6 +138,14 @@ server var = do
           $ toList (_docStateCurrentDoc s)
   pure doc
 
+pingPeriod :: Int
+pingPeriod = 1000000
+
+ping :: Connection -> IO ()
+ping conn = forever $ do
+  threadDelay pingPeriod
+  sendPing conn ("ping" :: Text)
+
 main :: IO ()
 main = do
   acid <- openLocalState (DocState S.empty S.empty)
@@ -140,10 +154,7 @@ main = do
   void $ forkIO $ runServer "192.168.1.42" 7080 $ \pending -> do
     conn <- acceptRequest pending
     putStrLn "websocket connected"
-    -- ping-pong every second
-    void $ forkIO $ forever $ do
-      threadDelay 1000000
-      sendPing conn ("ping" :: Text)
+    void $ forkIO $ ping conn
     -- synchronization
     void $ forkIO $ handler conn acid ref
     void $ flip iterateM_ 0 $ \r -> do

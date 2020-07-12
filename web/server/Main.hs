@@ -112,11 +112,13 @@ handler conn acid ref = forever $ do
     SyncRequest (s, e) -> do
       if s == 0
         then do
+          -- for initializing a client
           DocState _ currDoc <- atomically $ readTVar ref
           let commits = toList $ fmap (\(cid, _, strk) -> Add cid strk) currDoc
               msg = DataStrokes commits
           sendTextData conn (serialize msg)
         else do
+          -- for updating a already-initialized client
           DocState commits _ <- atomically $ readTVar ref
           let commits' =
                 toList $
@@ -138,9 +140,13 @@ server var = do
           $ toList (_docStateCurrentDoc s)
   pure doc
 
-pingPeriod :: Int
-pingPeriod = 1000000
+second :: Int
+second = 1000000
 
+pingPeriod :: Int
+pingPeriod = 1 * second
+
+-- | ping-pong every pingPeriod.
 ping :: Connection -> IO ()
 ping conn = forever $ do
   threadDelay pingPeriod

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Werror -Wall #-}
 
 module Hoodle.Web.Util
@@ -5,19 +6,22 @@ module Hoodle.Web.Util
     intersectingStrokes,
     enclosedStrokes,
     putStrLnAndFlush,
+    stringifyStrokeId,
     transformPathFromCanvasToSVG,
   )
 where
 
 import Data.Foldable (toList)
+import Data.Semigroup (Semigroup ((<>)))
 import Data.Sequence (Seq)
+import Data.String (IsString (..))
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
 import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk, hitLassoPoint)
 import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
 import qualified Hoodle.Web.ForeignJS as J
 import Hoodle.Web.Type.State (RStroke (..))
-import Message (CommitId)
+import Message (CommitId (..))
 import System.IO (hFlush, hPutStrLn, stdout)
 
 putStrLnAndFlush :: String -> IO ()
@@ -71,3 +75,6 @@ enclosedStrokes lasso strks =
         $ map bbxed_content
         $ filter (do2BBoxIntersect bbox1 . getBBox)
         $ strks
+
+stringifyStrokeId :: (IsString s, Semigroup s) => CommitId -> s
+stringifyStrokeId (CommitId i) = "stroke" <> fromString (show i)

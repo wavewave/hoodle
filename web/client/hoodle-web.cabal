@@ -31,15 +31,15 @@ executable hoodle-web
                      Hoodle.Web.Type.State
                      Hoodle.Web.Util
 
-  build-depends:       base,
-                       text,
-                       mtl,
-                       transformers,
-                       containers,
-                       hashable,
-                       coroutine-object,
-                       ghcjs-base,
-                       hoodle-util,
-                       hoodle-web-common
+  build-depends:     base,
+                     text,
+                     mtl,
+                     transformers,
+                     containers,
+                     hashable,
+                     coroutine-object,
+                     ghcjs-base,
+                     hoodle-util,
+                     hoodle-web-common
   -- hs-source-dirs:
-  default-language:    Haskell2010
+  default-language:  Haskell2010

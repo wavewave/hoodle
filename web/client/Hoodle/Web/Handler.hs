@@ -119,7 +119,8 @@ setupCallback evar = do
         let d = ME.getData msg
         case d of
           ME.ArrayBufferData arrbuf -> onMessage ev arrbuf
-          _ -> pure ()
+          ME.BlobData _ -> putStrLnAndFlush ("BlobData" :: String)
+          ME.StringData _ -> putStrLnAndFlush ("StringData" :: String)
   xstate <- mdo
     sock <-
       WS.connect
@@ -129,6 +130,7 @@ setupCallback evar = do
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage evar)
           }
+    WS.setBinaryType WS.ArrayBuffer sock
     pure $ HoodleState svg cvs offcvs sock (DocState 0 []) (SyncState []) True
   onpointerdown <- syncCallback1 ThrowWouldBlock (onPointerDown evar)
   J.js_addEventListener cvs "pointerdown" onpointerdown

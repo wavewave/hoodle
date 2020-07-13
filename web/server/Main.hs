@@ -16,6 +16,7 @@ import Control.Monad.Loops (iterateM_)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (put)
 import Data.Acid (AcidState, Query, Update, makeAcidic, openLocalState, query, update)
+import Data.Binary (decode, encode)
 import Data.Foldable (toList)
 import Data.SafeCopy (base, deriveSafeCopy)
 import Data.Sequence (Seq, ViewR ((:>)), (|>))
@@ -26,17 +27,17 @@ import Message
     Commit (..),
     CommitId (..),
     S2CMsg (..),
-    TextSerializable (deserialize, serialize),
     commitId,
   )
 import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets
   ( Connection,
+    DataMessage (Binary, Text),
     acceptRequest,
-    receiveData,
+    receiveDataMessage,
     runServer,
+    sendDataMessage,
     sendPing,
-    sendTextData,
   )
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
 import Type (Doc (..), Stroke (..))
@@ -76,55 +77,58 @@ handler ::
   TVar DocState ->
   IO ()
 handler conn acid ref = forever $ do
-  t :: Text <- receiveData conn
-  case deserialize t of
-    NewStroke (hsh, coords) -> do
-      s' <-
-        atomically $ do
-          DocState commits dat <- readTVar ref
-          let (commits', dat') = case getLast commits of
-                Just commitLast ->
-                  let r = commitId commitLast
-                      commit = Add (r + 1) coords
-                   in (commits |> commit, dat |> (r + 1, hsh, coords))
-                Nothing ->
-                  let commit = Add 1 coords
-                   in (S.singleton commit, S.singleton (1, hsh, coords))
-              s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
-          writeTVar ref s'
-          pure s'
-      update acid $ WriteState s'
-    DeleteStrokes is -> do
-      s' <-
-        atomically $ do
-          DocState commits dat <- readTVar ref
-          let dat' = S.filter (\(i, _, _) -> not (i `elem` is)) dat
-              commits' = case getLast commits of
-                Just commitLast ->
-                  let r = commitId commitLast
-                      commit = Delete (r + 1) is
-                   in commits |> commit
-                Nothing -> S.singleton (Delete 1 is)
-              s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
-          writeTVar ref s'
-          pure s'
-      update acid $ WriteState s'
-    SyncRequest (s, e) -> do
-      if s == 0
-        then do
-          -- for initializing a client
-          DocState _ currDoc <- atomically $ readTVar ref
-          let commits = toList $ fmap (\(cid, _, strk) -> Add cid strk) currDoc
-              msg = DataStrokes commits
-          sendTextData conn (serialize msg)
-        else do
-          -- for updating a already-initialized client
-          DocState commits _ <- atomically $ readTVar ref
-          let commits' =
-                toList $
-                  S.filter (\c -> let i = commitId c in i > s && i <= e) commits
-              msg = DataStrokes commits'
-          sendTextData conn (serialize msg)
+  dmsg <- receiveDataMessage conn
+  case dmsg of
+    Text _ _ -> pure ()
+    Binary lbs -> do
+      case decode lbs of
+        NewStroke (hsh, coords) -> do
+          s' <-
+            atomically $ do
+              DocState commits dat <- readTVar ref
+              let (commits', dat') = case getLast commits of
+                    Just commitLast ->
+                      let r = commitId commitLast
+                          commit = Add (r + 1) coords
+                       in (commits |> commit, dat |> (r + 1, hsh, coords))
+                    Nothing ->
+                      let commit = Add 1 coords
+                       in (S.singleton commit, S.singleton (1, hsh, coords))
+                  s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
+              writeTVar ref s'
+              pure s'
+          update acid $ WriteState s'
+        DeleteStrokes is -> do
+          s' <-
+            atomically $ do
+              DocState commits dat <- readTVar ref
+              let dat' = S.filter (\(i, _, _) -> not (i `elem` is)) dat
+                  commits' = case getLast commits of
+                    Just commitLast ->
+                      let r = commitId commitLast
+                          commit = Delete (r + 1) is
+                       in commits |> commit
+                    Nothing -> S.singleton (Delete 1 is)
+                  s' = DocState {_docStateCommits = commits', _docStateCurrentDoc = dat'}
+              writeTVar ref s'
+              pure s'
+          update acid $ WriteState s'
+        SyncRequest (s, e) -> do
+          if s == 0
+            then do
+              -- for initializing a client
+              DocState _ currDoc <- atomically $ readTVar ref
+              let commits = toList $ fmap (\(cid, _, strk) -> Add cid strk) currDoc
+                  msg = DataStrokes commits
+              sendDataMessage conn (Binary (encode msg))
+            else do
+              -- for updating a already-initialized client
+              DocState commits _ <- atomically $ readTVar ref
+              let commits' =
+                    toList $
+                      S.filter (\c -> let i = commitId c in i > s && i <= e) commits
+                  msg = DataStrokes commits'
+              sendDataMessage conn (Binary (encode msg))
 
 type API = "doc" :> Get '[JSON] Doc
 
@@ -171,6 +175,6 @@ main = do
             Just commit -> let r' = commitId commit in if (r' <= r) then retry else pure r'
             Nothing -> retry
       let msg = RegisterStroke r'
-      sendTextData conn (serialize msg)
+      sendDataMessage conn (Binary (encode msg))
       pure r'
   Warp.run 7070 $ serve api (server ref)

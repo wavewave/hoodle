@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hoodle.Web.Util
-  ( bytestringToArrayBuffer,
+  ( arrayBufferToByteString,
+    bytestringToArrayBuffer,
     pathBBox,
     intersectingStrokes,
     enclosedStrokes,
@@ -39,6 +40,10 @@ bytestringToArrayBuffer :: ByteString -> ArrayBuffer
 bytestringToArrayBuffer bs = js_bufferSlice offset len $ Buffer.getArrayBuffer buffer
   where
     (buffer, offset, len) = Buffer.fromByteString bs
+
+arrayBufferToByteString :: ArrayBuffer -> ByteString
+arrayBufferToByteString =
+  Buffer.toByteString 0 Nothing . Buffer.createFromArrayBuffer
 
 sendBinary :: (Binary a) => WS.WebSocket -> a -> IO ()
 sendBinary sock msg =

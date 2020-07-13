@@ -5,8 +5,8 @@ module Hoodle.Web.Handler where
 
 import Control.Monad (when)
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
-import qualified Data.JSString as JSS (unpack)
-import qualified Data.Text as T
+import Data.Binary (decode)
+import qualified Data.ByteString.Lazy as BL
 import GHCJS.Foreign.Callback
   ( Callback,
     OnBlocked (ThrowWouldBlock),
@@ -18,13 +18,11 @@ import qualified Hoodle.Web.ForeignJS as J
 import Hoodle.Web.Type.Coroutine (EventVar)
 import Hoodle.Web.Type.Event (AllEvent (..), SystemEvent (..), UserEvent (..))
 import Hoodle.Web.Type.State (DocState (..), HoodleState (..), SyncState (..))
-import Hoodle.Web.Util (putStrLnAndFlush)
+import Hoodle.Web.Util (arrayBufferToByteString, putStrLnAndFlush)
+import JavaScript.TypedArray.ArrayBuffer (ArrayBuffer)
 import qualified JavaScript.Web.MessageEvent as ME
 import qualified JavaScript.Web.WebSocket as WS
-import Message
-  ( S2CMsg (DataStrokes, RegisterStroke),
-    TextSerializable (deserialize),
-  )
+import Message (S2CMsg (DataStrokes, RegisterStroke))
 
 onPointerDown ::
   EventVar ->
@@ -64,11 +62,10 @@ onAnimationFrame evar rAF = do
   eventHandler evar $ SysEv $ ERefresh
   J.js_requestAnimationFrame rAF
 
-onMessage :: EventVar -> JSString -> IO ()
-onMessage evar s = do
-  let str = JSS.unpack s
-      txt = T.pack str
-  case deserialize txt of
+onMessage :: EventVar -> ArrayBuffer -> IO ()
+onMessage evar arrbuf = do
+  let lbs = BL.fromStrict $ arrayBufferToByteString arrbuf
+  case decode lbs of
     RegisterStroke s' -> do
       eventHandler evar $ SysEv $ ERegisterStroke s'
     DataStrokes dat -> do
@@ -121,7 +118,7 @@ setupCallback evar = do
       wsMessage ev msg = do
         let d = ME.getData msg
         case d of
-          ME.StringData s -> onMessage ev s
+          ME.ArrayBufferData arrbuf -> onMessage ev arrbuf
           _ -> pure ()
   xstate <- mdo
     sock <-

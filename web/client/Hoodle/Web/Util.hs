@@ -1,28 +1,50 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Hoodle.Web.Util
-  ( pathBBox,
+  ( bytestringToArrayBuffer,
+    pathBBox,
     intersectingStrokes,
     enclosedStrokes,
     putStrLnAndFlush,
+    sendBinary,
     stringifyStrokeId,
     transformPathFromCanvasToSVG,
   )
 where
 
+import Data.Binary (Binary, encode)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (toList)
 import Data.Semigroup (Semigroup ((<>)))
 import Data.Sequence (Seq)
 import Data.String (IsString (..))
+import qualified GHCJS.Buffer as Buffer
 import GHCJS.Marshal (FromJSVal (..), ToJSVal (..))
 import GHCJS.Types (JSVal)
 import Hoodle.HitTest (do2BBoxIntersect, doesLineHitStrk, hitLassoPoint)
 import Hoodle.HitTest.Type (BBox (..), BBoxed (..), GetBBoxable (getBBox))
 import qualified Hoodle.Web.ForeignJS as J
 import Hoodle.Web.Type.State (RStroke, rstrokeCommitId, rstrokePath)
+import JavaScript.TypedArray.ArrayBuffer (ArrayBuffer)
+import qualified JavaScript.Web.WebSocket as WS
 import Lens.Micro ((^.))
 import Message (CommitId (..))
 import System.IO (hFlush, hPutStrLn, stdout)
+
+foreign import javascript unsafe "$3.slice($1, $1 + $2)"
+  js_bufferSlice :: Int -> Int -> ArrayBuffer -> ArrayBuffer
+
+bytestringToArrayBuffer :: ByteString -> ArrayBuffer
+bytestringToArrayBuffer bs = js_bufferSlice offset len $ Buffer.getArrayBuffer buffer
+  where
+    (buffer, offset, len) = Buffer.fromByteString bs
+
+sendBinary :: (Binary a) => WS.WebSocket -> a -> IO ()
+sendBinary sock msg =
+  let bs = BL.toStrict $ encode msg
+      arrbuf = bytestringToArrayBuffer bs
+   in WS.sendArrayBuffer arrbuf sock
 
 putStrLnAndFlush :: String -> IO ()
 putStrLnAndFlush s = do

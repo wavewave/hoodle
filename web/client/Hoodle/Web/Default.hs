@@ -14,9 +14,7 @@ import Control.Monad.State (MonadState (get), modify')
 import Control.Monad.Trans.Crtn (request)
 import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..))
 import Data.Foldable (for_)
-import qualified Data.JSString as JSS (pack)
 import Data.List (foldl')
-import qualified Data.Text as T
 import Hoodle.HitTest.Type (BBoxed (..))
 import qualified Hoodle.Web.ForeignJS as J
 import Hoodle.Web.Type.Coroutine
@@ -36,14 +34,11 @@ import Hoodle.Web.Type.State
     hdlstateSVGBox,
     hdlstateWebSocket,
   )
--- import Hoodle.Web.Type.State (DocState (..), HoodleState (..), RStroke (..))
-import Hoodle.Web.Util (pathBBox, stringifyStrokeId)
-import qualified JavaScript.Web.WebSocket as WS
+import Hoodle.Web.Util (pathBBox, sendBinary, stringifyStrokeId)
 import Lens.Micro ((.~), (^.))
 import Message
   ( C2SMsg (SyncRequest),
     Commit (Add, Delete),
-    TextSerializable (serialize),
     commitId,
   )
 
@@ -61,9 +56,7 @@ sysevent (ERegisterStroke s') = do
   s <- get
   let sock = s ^. hdlstateWebSocket
       n = s ^. hdlstateDocState . docstateLastCommit
-  when (s' > n) $ liftIO $ do
-    let msg = SyncRequest (n, s')
-    WS.send (JSS.pack . T.unpack . serialize $ msg) sock
+  when (s' > n) $ liftIO $ sendBinary sock (SyncRequest (n, s'))
 sysevent (EDataStrokes commits) = do
   s <- get
   let svg = s ^. hdlstateSVGBox

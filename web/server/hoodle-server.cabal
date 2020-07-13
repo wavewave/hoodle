@@ -18,8 +18,9 @@ extra-source-files:  CHANGELOG.md
 executable server
   main-is:             Main.hs
   other-modules:       Type
-  build-depends:       base,
-                       aeson,
+  build-depends:       aeson,
+                       base,
+                       binary,
                        stm,
                        monad-loops,
                        mtl,

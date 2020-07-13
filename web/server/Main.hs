@@ -16,6 +16,7 @@ import Control.Monad.Loops (iterateM_)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (put)
 import Data.Acid (AcidState, Query, Update, makeAcidic, openLocalState, query, update)
+import Data.Binary (encode)
 import Data.Foldable (toList)
 import Data.SafeCopy (base, deriveSafeCopy)
 import Data.Sequence (Seq, ViewR ((:>)), (|>))
@@ -32,9 +33,11 @@ import Message
 import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets
   ( Connection,
+    DataMessage (Binary),
     acceptRequest,
     receiveData,
     runServer,
+    sendDataMessage,
     sendPing,
     sendTextData,
   )
@@ -116,7 +119,8 @@ handler conn acid ref = forever $ do
           DocState _ currDoc <- atomically $ readTVar ref
           let commits = toList $ fmap (\(cid, _, strk) -> Add cid strk) currDoc
               msg = DataStrokes commits
-          sendTextData conn (serialize msg)
+          -- sendTextData conn (serialize msg)
+          sendDataMessage conn (Binary (encode msg))
         else do
           -- for updating a already-initialized client
           DocState commits _ <- atomically $ readTVar ref
@@ -124,7 +128,8 @@ handler conn acid ref = forever $ do
                 toList $
                   S.filter (\c -> let i = commitId c in i > s && i <= e) commits
               msg = DataStrokes commits'
-          sendTextData conn (serialize msg)
+          -- sendTextData conn (serialize msg)
+          sendDataMessage conn (Binary (encode msg))
 
 type API = "doc" :> Get '[JSON] Doc
 

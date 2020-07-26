@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans -w #-}
 
 module Main where
 
@@ -161,7 +161,7 @@ main = do
   acid <- openLocalState (DocState S.empty S.empty)
   s <- query acid QueryState
   ref <- newTVarIO s
-  void $ forkIO $ runServer "192.168.1.42" 7080 $ \pending -> do
+  void $ forkIO $ runServer "127.0.0.1" 8888 $ \pending -> do
     conn <- acceptRequest pending
     putStrLn "websocket connected"
     void $ forkIO $ ping conn
@@ -177,4 +177,4 @@ main = do
       let msg = RegisterStroke r'
       sendDataMessage conn (Binary (encode msg))
       pure r'
-  Warp.run 7070 $ serve api (server ref)
+-- Warp.run 7070 $ serve api (server ref)

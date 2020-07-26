@@ -161,7 +161,7 @@ main = do
   acid <- openLocalState (DocState S.empty S.empty)
   s <- query acid QueryState
   ref <- newTVarIO s
-  void $ forkIO $ runServer "127.0.0.1" 8888 $ \pending -> do
+  void $ runServer "127.0.0.1" 8888 $ \pending -> do
     conn <- acceptRequest pending
     putStrLn "websocket connected"
     void $ forkIO $ ping conn

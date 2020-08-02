@@ -11,9 +11,12 @@ let
     };
   };
 
+  hoodle-static = ./static;
+
 in
 
 with newHsPkgs;
 {
   inherit hoodle-server hoodle-web-common;
+  inherit hoodle-static;
 }

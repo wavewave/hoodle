@@ -19,7 +19,7 @@ extra-source-files:  CHANGELOG.md
 
 executable hoodle-web
   main-is:           Main.hs
-  ghc-options:       -Wall -Werror -O2
+  ghc-options:       -Wall -Werror -fno-warn-missing-home-modules -O2
   other-modules:
                      Hoodle.Web.Default
                      Hoodle.Web.Erase
@@ -46,5 +46,4 @@ executable hoodle-web
                      mtl,
                      text,
                      transformers
-  -- hs-source-dirs:
   default-language:  Haskell2010

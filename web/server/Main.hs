@@ -40,6 +40,7 @@ import Network.WebSockets
     sendPing,
   )
 import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
+import System.Environment (getEnv)
 import Type (Doc (..), Stroke (..))
 
 getLast :: Seq a -> Maybe a
@@ -158,10 +159,14 @@ ping conn = forever $ do
 
 main :: IO ()
 main = do
+  hostAddress <- getEnv "HOSTADDRESS"
+  hostWSPort <- read <$> getEnv "WSPORT"
+  putStrLn ("HOSTADDRESS = " ++ hostAddress)
+  putStrLn ("WSPORT = " ++ show hostWSPort)
   acid <- openLocalState (DocState S.empty S.empty)
   s <- query acid QueryState
   ref <- newTVarIO s
-  void $ runServer "127.0.0.1" 8888 $ \pending -> do
+  void $ runServer hostAddress hostWSPort $ \pending -> do
     conn <- acceptRequest pending
     putStrLn "websocket connected"
     void $ forkIO $ ping conn

@@ -10,6 +10,9 @@ import GHCJS.Types (JSString, JSVal)
 foreign import javascript unsafe "console.log($1)"
   js_console_log :: JSVal -> IO ()
 
+foreign import javascript unsafe "$r = location.hostname"
+  js_hostname :: IO JSString
+
 foreign import javascript unsafe "preventDefaultTouchMove()"
   js_prevent_default_touch_move :: IO ()
 

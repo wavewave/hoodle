@@ -7,6 +7,7 @@ import Control.Monad (when)
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
 import Data.Binary (decode)
 import qualified Data.ByteString.Lazy as BL
+import Data.Semigroup ((<>))
 import GHCJS.Foreign.Callback
   ( Callback,
     OnBlocked (ThrowWouldBlock),
@@ -103,6 +104,7 @@ onModeChange m evar btns _ = do
 setupCallback :: EventVar -> IO HoodleState
 setupCallback evar = do
   putStrLn "ghcjs started"
+  hostname <- J.js_hostname
   J.js_prevent_default_touch_move
   svg <- J.js_svg_box
   cvs <- J.js_document_getElementById "overlay"
@@ -125,7 +127,7 @@ setupCallback evar = do
     sock <-
       WS.connect
         WS.WebSocketRequest
-          { WS.url = "ws://192.168.1.42:7080",
+          { WS.url = "ws://" <> hostname <> ":8888",
             WS.protocols = [],
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage evar)

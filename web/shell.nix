@@ -40,7 +40,7 @@ in
 mkShell {
   name = "test-shell";
   buildInputs = [
-    nodejs
+    nodePackages.http-server
     cabal-install
     hsenv
     hsenv_ghcjs

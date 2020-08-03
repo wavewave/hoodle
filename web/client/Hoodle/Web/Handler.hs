@@ -103,7 +103,7 @@ onModeChange m evar btns _ = do
 
 setupCallback :: EventVar -> IO HoodleState
 setupCallback evar = do
-  putStrLn "ghcjs started"
+  putStrLnAndFlush "ghcjs started"
   hostname <- J.js_hostname
   J.js_prevent_default_touch_move
   svg <- J.js_svg_box
@@ -114,7 +114,7 @@ setupCallback evar = do
   h <- J.js_get_height cvs
   J.js_set_width offcvs w
   J.js_set_height offcvs h
-  putStrLn "websocket start"
+  putStrLnAndFlush "websocket start"
   let wsClose _ =
         putStrLnAndFlush "connection closed"
       wsMessage ev msg = do
@@ -127,7 +127,7 @@ setupCallback evar = do
     sock <-
       WS.connect
         WS.WebSocketRequest
-          { WS.url = "ws://" <> hostname <> ":8888",
+          { WS.url = "ws://" <> hostname <> ":7070",
             WS.protocols = [],
             WS.onClose = Just wsClose,
             WS.onMessage = Just (wsMessage evar)

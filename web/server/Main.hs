@@ -4,7 +4,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
-{-# OPTIONS_GHC -fno-warn-orphans -w #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
 
@@ -29,7 +29,6 @@ import Message
     S2CMsg (..),
     commitId,
   )
-import qualified Network.Wai.Handler.Warp as Warp
 import Network.WebSockets
   ( Connection,
     DataMessage (Binary, Text),
@@ -39,7 +38,7 @@ import Network.WebSockets
     sendDataMessage,
     sendPing,
   )
-import Servant ((:>), Get, JSON, Proxy (..), Server, serve)
+import Servant ((:>), Get, JSON, Proxy (..), Server)
 import System.Environment (getEnv)
 import Type (Doc (..), Stroke (..))
 
@@ -182,4 +181,3 @@ main = do
       let msg = RegisterStroke r'
       sendDataMessage conn (Binary (encode msg))
       pure r'
--- Warp.run 7070 $ serve api (server ref)

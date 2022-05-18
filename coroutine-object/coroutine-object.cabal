@@ -8,7 +8,7 @@ Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Control
 Build-Type: 	Simple
-Cabal-Version:  >= 2
+Cabal-Version:  2.0
 data-files:      
 Library
   hs-source-dirs: src

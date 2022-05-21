@@ -21,7 +21,7 @@ import Data.Strict.Tuple
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.UUID.V4
-import Data.Vector ((!), fromList)
+import Data.Vector (fromList, (!))
 import Lens.Micro
 import Text.Printf
 import Prelude hiding (curry, fst, putStrLn, snd, uncurry)
@@ -41,22 +41,6 @@ instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
     SE.put x
       >> SE.put y
   get = (:!:) <$> SE.get <*> SE.get
-
--- $(deriveJSON defaultOptions {constructorTagModifier = const "Pair"} ''Pair)
-
-instance ToJSON (Pair Double Double) where
-  toJSON (x :!: y) = Array (fromList [fmtjson x, fmtjson y])
-    where
-      fmtjson = toJSON . (printf "%.2f" :: Double -> String)
-
-instance FromJSON (Pair Double Double) where
-  parseJSON (Array a) =
-    let String xtxt = a ! 0
-        String ytxt = a ! 1
-        x = read (T.unpack xtxt)
-        y = read (T.unpack ytxt)
-     in pure (x :!: y)
-  parseJSON _ = fail "error in reading pair of doubles"
 
 -- |
 data Dimension = Dim {dim_width :: !Double, dim_height :: !Double}
@@ -106,12 +90,11 @@ instance SE.Serialize Stroke where
       _ -> fail "err in Stroke parsing"
 
 -- | Image item
-data Image
-  = Image
-      { img_src :: ByteString,
-        img_pos :: (Double, Double),
-        img_dim :: !Dimension
-      }
+data Image = Image
+  { img_src :: ByteString,
+    img_pos :: (Double, Double),
+    img_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
 instance ToJSON Image where
@@ -134,14 +117,13 @@ instance SE.Serialize Image where
       >> SE.put img_dim
   get = Image <$> SE.get <*> SE.get <*> SE.get
 
-data SVG
-  = SVG
-      { svg_text :: Maybe ByteString,
-        svg_command :: Maybe ByteString,
-        svg_render :: ByteString,
-        svg_pos :: (Double, Double),
-        svg_dim :: !Dimension
-      }
+data SVG = SVG
+  { svg_text :: Maybe ByteString,
+    svg_command :: Maybe ByteString,
+    svg_render :: ByteString,
+    svg_pos :: (Double, Double),
+    svg_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
 --  $(deriveJSON defaultOptions {fieldLabelModifier = drop 4} ''SVG)
@@ -322,13 +304,12 @@ instance SE.Serialize Link where
           <*> SE.get
       _ -> fail "err in Link parsing"
 
-data Anchor
-  = Anchor
-      { anchor_id :: ByteString,
-        anchor_render :: ByteString,
-        anchor_pos :: (Double, Double),
-        anchor_dim :: !Dimension
-      }
+data Anchor = Anchor
+  { anchor_id :: ByteString,
+    anchor_render :: ByteString,
+    anchor_pos :: (Double, Double),
+    anchor_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
 $(deriveJSON defaultOptions {fieldLabelModifier = drop 7} ''Anchor)
@@ -421,26 +402,24 @@ data Layer = Layer {layer_items :: ![Item]}
 $(deriveJSON defaultOptions {fieldLabelModifier = drop 6} ''Layer)
 
 -- |
-data Page
-  = Page
-      { page_dim :: !Dimension,
-        page_bkg :: !Background,
-        page_layers :: ![Layer]
-      }
+data Page = Page
+  { page_dim :: !Dimension,
+    page_bkg :: !Background,
+    page_layers :: ![Layer]
+  }
   deriving (Show)
 
 $(deriveJSON defaultOptions {fieldLabelModifier = drop 5} ''Page)
 
 -- |
-data Hoodle
-  = Hoodle
-      { hoodle_id :: ByteString,
-        hoodle_title :: !Title,
-        hoodle_revisions :: [Revision],
-        hoodle_embeddedpdf :: Maybe ByteString,
-        hoodle_embeddedtext :: Maybe T.Text,
-        hoodle_pages :: ![Page]
-      }
+data Hoodle = Hoodle
+  { hoodle_id :: ByteString,
+    hoodle_title :: !Title,
+    hoodle_revisions :: [Revision],
+    hoodle_embeddedpdf :: Maybe ByteString,
+    hoodle_embeddedtext :: Maybe T.Text,
+    hoodle_pages :: ![Page]
+  }
   deriving (Show)
 
 $(deriveJSON defaultOptions {fieldLabelModifier = drop 7} ''Hoodle)

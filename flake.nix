@@ -34,7 +34,12 @@
                   self.callCabal2nix "pdf-toolbox" pdf-toolbox { };
                 "poppler" = haskellLib.overrideCabal
                   (self.callCabal2nix "poppler" poppler { }) {
-                    configureFlags = [ "-fgtk3" ];
+                    configureFlags = [
+                      "-fgtk3"
+                      # NOTE: multiple definition of (libc functions)
+                      # disable until find a fix
+                      "--disable-shared"
+                    ];
                     hardeningDisable = [ "fortify" ];
                     #librarySystemDepends = [ final.poppler_gi ];
                     setupHaskellDepends =

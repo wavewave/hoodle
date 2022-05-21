@@ -15,6 +15,19 @@
         "type": "github"
       }
     },
+    "gtk2hs": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1653102154,
+        "narHash": "sha256-NZjBzmF7dO0Zc3l03nfVMxLUEohwUrOAOdGQAKGXrf4=",
+        "path": "/home/wavewave/repo/src/gtk2hs",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/wavewave/repo/src/gtk2hs",
+        "type": "path"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1652559422,
@@ -31,10 +44,47 @@
         "type": "github"
       }
     },
+    "pdf-toolbox": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1593413245,
+        "narHash": "sha256-ynBfZJQsi27PHlNQxXB55edvs+9lPKW2E43R9aADJ9A=",
+        "owner": "wavewave",
+        "repo": "pdf-toolbox",
+        "rev": "df9182d2dabc7cfe90b13e43b6a43332f852f23f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "wavewave",
+        "repo": "pdf-toolbox",
+        "rev": "df9182d2dabc7cfe90b13e43b6a43332f852f23f",
+        "type": "github"
+      }
+    },
+    "poppler": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1593406620,
+        "narHash": "sha256-GxxtuKIMpfvR6AIIS4/bwlNJhnLysc9hl+P3rfQlbLg=",
+        "owner": "wavewave",
+        "repo": "poppler",
+        "rev": "0a9ea94415c80595f8ebd7bcb5069493da447996",
+        "type": "github"
+      },
+      "original": {
+        "owner": "wavewave",
+        "repo": "poppler",
+        "rev": "0a9ea94415c80595f8ebd7bcb5069493da447996",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "gtk2hs": "gtk2hs",
+        "nixpkgs": "nixpkgs",
+        "pdf-toolbox": "pdf-toolbox",
+        "poppler": "poppler"
       }
     }
   },

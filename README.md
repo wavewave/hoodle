@@ -19,5 +19,6 @@ $ result/bin/hoodle
 For developement, build in nix-shell and cabal:
 ```
 $ nix develop .#
-$ cabal v2-build hoodle 
+$ cabal v2-build hoodle
+$ cabal v2-run hoodle
 ```

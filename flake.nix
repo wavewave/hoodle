@@ -113,7 +113,7 @@
             };
 
           # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
-          # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1          
+          # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
         in packagesOnGHC "ghc901" // packagesOnGHC "ghc884";
 
         defaultPackage = packages.ghc884_all;
@@ -136,9 +136,13 @@
             in newPkgs.haskellPackages.shellFor {
               packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
               buildInputs = [
+                newPkgs.gnome.adwaita-icon-theme
                 newPkgs.pkg-config
                 newPkgs.haskell.packages.ghc8107.cabal-install
               ];
+              shellHook = ''
+                export XDG_DATA_DIRS=${newPkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${newPkgs.gsettings-desktop-schemas.name}:${newPkgs.gtk3}/share/gsettings-schemas/${newPkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS
+              '';
             };
         in {
           "default" = mkDevShell "ghc884";

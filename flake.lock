@@ -34,17 +34,17 @@
     "pdf-toolbox": {
       "flake": false,
       "locked": {
-        "lastModified": 1593413245,
-        "narHash": "sha256-ynBfZJQsi27PHlNQxXB55edvs+9lPKW2E43R9aADJ9A=",
+        "lastModified": 1653242554,
+        "narHash": "sha256-FWfsPW5OlOJ+rMYGw6upuI0oeiUNRPbrzlomU2pAnK0=",
         "owner": "wavewave",
         "repo": "pdf-toolbox",
-        "rev": "df9182d2dabc7cfe90b13e43b6a43332f852f23f",
+        "rev": "6205c87d2430857d73e68c7f615b2dcae3cecec3",
         "type": "github"
       },
       "original": {
         "owner": "wavewave",
+        "ref": "for-hoodle",
         "repo": "pdf-toolbox",
-        "rev": "df9182d2dabc7cfe90b13e43b6a43332f852f23f",
         "type": "github"
       }
     },

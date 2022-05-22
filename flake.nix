@@ -8,8 +8,7 @@
       flake = false;
     };
     pdf-toolbox = {
-      url =
-        "github:wavewave/pdf-toolbox/df9182d2dabc7cfe90b13e43b6a43332f852f23f";
+      url = "github:wavewave/pdf-toolbox/for-hoodle";
       flake = false;
     };
   };
@@ -22,8 +21,14 @@
             overrides =
               final.lib.composeExtensions (old.overrides or (_: _: { }))
               (self: super: {
-                "pdf-toolbox" =
-                  self.callCabal2nix "pdf-toolbox" pdf-toolbox { };
+                "pdf-toolbox-content" = self.callCabal2nix "pdf-toolbox-content"
+                  (pdf-toolbox + "/content") { };
+                "pdf-toolbox-core" =
+                  self.callCabal2nix "pdf-toolbox-core" (pdf-toolbox + "/core")
+                  { };
+                "pdf-toolbox-document" =
+                  self.callCabal2nix "pdf-toolbox-document"
+                  (pdf-toolbox + "/document") { };
                 "poppler" = let
                   p = self.callCabal2nix "poppler" poppler { };
                   p1 = haskellLib.appendConfigureFlags p [ "-fgtk3" ];
@@ -99,6 +104,12 @@
               "${ghcVer}_poppler" = newPkgs.haskellPackages.poppler;
               "${ghcVer}_pango" = newPkgs.haskellPackages.pango;
               "${ghcVer}_gi-poppler" = newPkgs.haskellPackages.gi-poppler;
+              "${ghcVer}_pdf-toolbox-content" =
+                newPkgs.haskellPackages.pdf-toolbox-content;
+              "${ghcVer}_pdf-toolbox-core" =
+                newPkgs.haskellPackages.pdf-toolbox-core;
+              "${ghcVer}_pdf-toolbox-document" =
+                newPkgs.haskellPackages.pdf-toolbox-document;
             };
 
         in packagesOnGHC "ghc901" // packagesOnGHC "ghc884";

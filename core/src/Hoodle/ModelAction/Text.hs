@@ -24,7 +24,7 @@ import Debug.Trace
 
 -- |
 getLinesFromText :: (Int, Int) -> T.Text -> T.Text
-getLinesFromText (i, e) = T.unlines . Prelude.drop (i -1) . Prelude.take e . T.lines
+getLinesFromText (i, e) = T.unlines . Prelude.drop (i - 1) . Prelude.take e . T.lines
 
 {-
 -- |

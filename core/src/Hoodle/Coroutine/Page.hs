@@ -81,7 +81,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
   let ehdl = hoodleModeStateEither hdlmodst
       pgs = either (view gpages) (view gselAll) ehdl
       totnumpages = M.size pgs
-      lpage = maybeError' "changePage" (M.lookup (totnumpages -1) pgs)
+      lpage = maybeError' "changePage" (M.lookup (totnumpages - 1) pgs)
   (isChanged, npgnum', npage', ehdl') <-
     if (npgnum >= totnumpages)
       then do
@@ -89,7 +89,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
         nbkg <- newBkg bsty cbkg
         npage <- set gbackground nbkg <$> (newPageFromOld lpage)
         geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles . currentUnit) =<< get
-        callRenderer_ $ updatePageCache geometry (PageNum (totnumpages -1), npage)
+        callRenderer_ $ updatePageCache geometry (PageNum (totnumpages - 1), npage)
         let npages = M.insert totnumpages npage pgs
         return
           ( True,

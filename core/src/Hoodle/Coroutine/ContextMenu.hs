@@ -229,7 +229,7 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
           liftIO $
             Cairo.withSVGSurface filename (lrx - ulx) (lry - uly) $ \s ->
               Cairo.renderWith s $ do
-                Cairo.translate (- ulx) (- uly)
+                Cairo.translate (-ulx) (-uly)
                 mapM_ (renderRItem cache cid) hititms
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine ()
@@ -247,7 +247,7 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
           liftIO $
             Cairo.withPDFSurface filename (lrx - ulx) (lry - uly) $ \s ->
               Cairo.renderWith s $ do
-                Cairo.translate (- ulx) (- uly)
+                Cairo.translate (-ulx) (-uly)
                 mapM_ (renderRItem cache cid) hititms
 
 -- |

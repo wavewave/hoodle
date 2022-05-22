@@ -57,7 +57,7 @@ menuEventProcess MenuQuit = do
   if view (unitHoodles . currentUnit . isSaved) xstate
     then liftIO $ Gtk.mainQuit
     else askQuitProgram
-menuEventProcess MenuPreviousPage = changePage (\x -> x -1)
+menuEventProcess MenuPreviousPage = changePage (\x -> x - 1)
 menuEventProcess MenuNextPage = changePage (+ 1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do
@@ -67,7 +67,7 @@ menuEventProcess MenuLastPage = do
         . view (unitHoodles . currentUnit . hoodleModeState)
       )
       <$> get
-  changePage (const (totalnumofpages -1))
+  changePage (const (totalnumofpages - 1))
 menuEventProcess MenuNewPageBefore = newPage Nothing PageBefore
 menuEventProcess MenuNewPageAfter = newPage Nothing PageAfter
 menuEventProcess MenuDeletePage = deleteCurrentPage

@@ -126,11 +126,11 @@ moveLayerWidget cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x0,
         cinfobox = getCanvasInfo cid uhdl
         nposx
           | xw + x - x0 < -50 = -50
-          | xw + x - x0 > cw -50 = cw -50
+          | xw + x - x0 > cw - 50 = cw - 50
           | otherwise = xw + x - x0
         nposy
           | yw + y - y0 < -50 = -50
-          | yw + y - y0 > ch -50 = ch -50
+          | yw + y - y0 > ch - 50 = ch - 50
           | otherwise = yw + y - y0
         nwpos = CvsCoord (nposx, nposy)
         changeact :: CanvasInfo a -> CanvasInfo a

@@ -68,7 +68,7 @@ popplerGetPageFromDoc doc pn = do
   if pn > n
     then return Nothing
     else do
-      pg <- Poppler.documentGetPage doc (pn -1)
+      pg <- Poppler.documentGetPage doc (pn - 1)
       return (Just pg)
 
 -- | draw ruling all
@@ -86,7 +86,7 @@ drawRuling w h style = do
           drawonerule
           [ predefined_RULING_TOPMARGIN,
             predefined_RULING_TOPMARGIN + predefined_RULING_SPACING
-            .. h -1
+            .. h - 1
           ]
   case style of
     "plain" -> return ()
@@ -111,8 +111,8 @@ drawRuling w h style = do
             Cairo.moveTo 0 y
             Cairo.lineTo w y
             Cairo.stroke
-      mapM_ drawonegraphvert [0, predefined_RULING_GRAPHSPACING .. w -1]
-      mapM_ drawonegraphhoriz [0, predefined_RULING_GRAPHSPACING .. h -1]
+      mapM_ drawonegraphvert [0, predefined_RULING_GRAPHSPACING .. w - 1]
+      mapM_ drawonegraphhoriz [0, predefined_RULING_GRAPHSPACING .. h - 1]
     _ -> return ()
 
 -- | draw ruling  in bbox
@@ -133,11 +133,11 @@ drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
       fullRuleYs =
         [ predefined_RULING_TOPMARGIN,
           predefined_RULING_TOPMARGIN + predefined_RULING_SPACING
-          .. h -1
+          .. h - 1
         ]
       ruleYs = filter (\y -> (y <= y2) && (y >= y1)) fullRuleYs
-      fullGraphXs = [0, predefined_RULING_GRAPHSPACING .. w -1]
-      fullGraphYs = [0, predefined_RULING_GRAPHSPACING .. h -1]
+      fullGraphXs = [0, predefined_RULING_GRAPHSPACING .. w - 1]
+      fullGraphYs = [0, predefined_RULING_GRAPHSPACING .. h - 1]
       graphXs = filter (\x -> (x <= x2) && (x >= x1)) fullGraphXs
       graphYs = filter (\y -> (y <= y2) && (y >= y1)) fullGraphYs
   let drawHorizRules = do

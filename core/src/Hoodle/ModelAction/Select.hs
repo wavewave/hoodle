@@ -70,10 +70,10 @@ isBBoxDeltaSmallerThan
         (x12', y12') = coordtrans (x12, y12)
         (x21', y21') = coordtrans (x21, y21)
         (x22', y22') = coordtrans (x22, y22)
-     in (x11' - x21' > (- delta) && x11' - x21' < delta)
-          && (y11' - y21' > (- delta) && y11' - y21' < delta)
-          && (x12' - x22' > (- delta) && x12' - x22' < delta)
-          && (y11' - y21' > (- delta) && y12' - y22' < delta)
+     in (x11' - x21' > (-delta) && x11' - x21' < delta)
+          && (y11' - y21' > (-delta) && y11' - y21' < delta)
+          && (x12' - x22' > (-delta) && x12' - x22' < delta)
+          && (y11' - y21' > (-delta) && y12' - y22' < delta)
     where
       coordtrans (x, y) =
         unCvsCoord . desktop2Canvas geometry . page2Desktop geometry $
@@ -241,14 +241,14 @@ getDiffBBox lst1 lst2 =
 -- |
 checkIfHandleGrasped :: BBox -> (Double, Double) -> Maybe Handle
 checkIfHandleGrasped (BBox (ulx, uly) (lrx, lry)) (x, y)
-  | isPointInBBox (BBox (ulx -5, uly -5) (ulx + 5, uly + 5)) (x, y) = Just HandleTL
-  | isPointInBBox (BBox (lrx -5, uly -5) (lrx + 5, uly + 5)) (x, y) = Just HandleTR
-  | isPointInBBox (BBox (ulx -5, lry -5) (ulx + 5, lry + 5)) (x, y) = Just HandleBL
-  | isPointInBBox (BBox (lrx -5, lry -5) (lrx + 5, lry + 5)) (x, y) = Just HandleBR
-  | isPointInBBox (BBox (0.5 * (ulx + lrx) -5, uly -5) (0.5 * (ulx + lrx) + 5, uly + 5)) (x, y) = Just HandleTM
-  | isPointInBBox (BBox (0.5 * (ulx + lrx) -5, lry -5) (0.5 * (ulx + lrx) + 5, lry + 5)) (x, y) = Just HandleBM
-  | isPointInBBox (BBox (ulx -5, 0.5 * (uly + lry) -5) (ulx + 5, 0.5 * (uly + lry) + 5)) (x, y) = Just HandleML
-  | isPointInBBox (BBox (lrx -5, 0.5 * (uly + lry) -5) (lrx + 5, 0.5 * (uly + lry) + 5)) (x, y) = Just HandleMR
+  | isPointInBBox (BBox (ulx - 5, uly - 5) (ulx + 5, uly + 5)) (x, y) = Just HandleTL
+  | isPointInBBox (BBox (lrx - 5, uly - 5) (lrx + 5, uly + 5)) (x, y) = Just HandleTR
+  | isPointInBBox (BBox (ulx - 5, lry - 5) (ulx + 5, lry + 5)) (x, y) = Just HandleBL
+  | isPointInBBox (BBox (lrx - 5, lry - 5) (lrx + 5, lry + 5)) (x, y) = Just HandleBR
+  | isPointInBBox (BBox (0.5 * (ulx + lrx) - 5, uly - 5) (0.5 * (ulx + lrx) + 5, uly + 5)) (x, y) = Just HandleTM
+  | isPointInBBox (BBox (0.5 * (ulx + lrx) - 5, lry - 5) (0.5 * (ulx + lrx) + 5, lry + 5)) (x, y) = Just HandleBM
+  | isPointInBBox (BBox (ulx - 5, 0.5 * (uly + lry) - 5) (ulx + 5, 0.5 * (uly + lry) + 5)) (x, y) = Just HandleML
+  | isPointInBBox (BBox (lrx - 5, 0.5 * (uly + lry) - 5) (lrx + 5, 0.5 * (uly + lry) + 5)) (x, y) = Just HandleMR
   | otherwise = Nothing
 
 getNewBBoxFromHandlePos :: Handle -> BBox -> (Double, Double) -> BBox

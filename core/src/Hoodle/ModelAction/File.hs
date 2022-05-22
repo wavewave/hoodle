@@ -185,7 +185,7 @@ makeNewHoodleWithPDF doesembed ofp = do
       n <- Poppler.documentGetNPages doc
 
       let createPageAct i = do
-            pg <- Poppler.documentGetPage doc (i -1)
+            pg <- Poppler.documentGetPage doc (i - 1)
             (w, h) <- PopplerPage.pageGetSize pg
             let dim = Dim w h
             return (createPage doesembed dim nfname i)

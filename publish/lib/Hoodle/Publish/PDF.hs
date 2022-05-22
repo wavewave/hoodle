@@ -128,7 +128,7 @@ writeTrailer = do
   let catalogRef = Ref catalogIndex 0
   lift $ writeObject catalogRef $ ODict $ Dict [("Type", OName "Catalog"), ("Pages", ORef rootRef)]
   n <- gets stNextFree
-  lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n -1)), ("Root", ORef catalogRef)])
+  lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n - 1)), ("Root", ORef catalogRef)])
 
 writeObjectChildren :: Object () -> Pdf (StateT AppState (PdfWriter IO)) (Object ())
 writeObjectChildren (ORef r) = do
@@ -323,7 +323,7 @@ writePdfFile _hdlfp dim (urlbase, specialurlbase) (rootpath, currpath) path nlnk
     when encrypted $ setUserPassword defaultUserPassword >> return ()
     root <- document >>= documentCatalog >>= catalogPageNode
     count <- pageNodeNKids root
-    forM_ [0 .. count -1] $ \i -> do
+    forM_ [0 .. count - 1] $ \i -> do
       page <- pageNodePageByNum root i
       mannots <- runMaybeT $ do
         lnks <- MaybeT . return $ lookup (i + 1) nlnks
@@ -334,7 +334,7 @@ writePdfFile _hdlfp dim (urlbase, specialurlbase) (rootpath, currpath) path nlnk
               then
                 let S.Dim _w h = dim
                  in [ Annot
-                        { annot_rect = (0, floor h, 100, floor h -100),
+                        { annot_rect = (0, floor h, 100, floor h - 100),
                           annot_border = (16, 16, 1),
                           annot_act = specialURIFunction specialurlbase muuid
                         }

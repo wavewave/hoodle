@@ -53,7 +53,7 @@ checkPointerInClock (_cid, cinfo, geometry) pcoord
   | b =
     let oxy@(CvsCoord (x, y)) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
         owxy@(CvsCoord (x0, y0)) = view (canvasWidgets . clockWidgetConfig . clockWidgetPosition) cinfo
-        obbox = BBox (x0 -50, y0 -50) (x0 + 50, y0 + 50)
+        obbox = BBox (x0 - 50, y0 - 50) (x0 + 50, y0 + 50)
         r
           | isPointInBBox obbox (x, y) = Just (Move (oxy, owxy))
           | otherwise = Nothing
@@ -128,11 +128,11 @@ moveClockWidget cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x0,
         cinfobox = getCanvasInfo cid uhdl
         nposx
           | xw + x - x0 < -50 = -50
-          | xw + x - x0 > cw -50 = cw -50
+          | xw + x - x0 > cw - 50 = cw - 50
           | otherwise = xw + x - x0
         nposy
           | yw + y - y0 < -50 = -50
-          | yw + y - y0 > ch -50 = ch -50
+          | yw + y - y0 > ch - 50 = ch - 50
           | otherwise = yw + y - y0
         nwpos = CvsCoord (nposx, nposy)
         changeact :: CanvasInfo a -> CanvasInfo a

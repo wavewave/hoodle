@@ -146,11 +146,11 @@ findPanXform (Dim w h) ((x0, y0), (x, y)) =
       ty = y - y0
       dx
         | tx > w = w
-        | tx < (- w) = - w
+        | tx < (-w) = -w
         | otherwise = tx
       dy
         | ty > h = h
-        | ty < (- h) = - h
+        | ty < (-h) = -h
         | otherwise = ty
    in ((dx - w), (dy - h))
 
@@ -254,11 +254,11 @@ movingRender mode cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x
           cinfobox = getCanvasInfo cid uhdl
           nposx
             | xw + x - x0 < -50 = -50
-            | xw + x - x0 > cw -50 = cw -50
+            | xw + x - x0 > cw - 50 = cw - 50
             | otherwise = xw + x - x0
           nposy
             | yw + y - y0 < -50 = -50
-            | yw + y - y0 > ch -50 = ch -50
+            | yw + y - y0 > ch - 50 = ch - 50
             | otherwise = yw + y - y0
           nwpos = CvsCoord (nposx, nposy)
           changeact :: CanvasInfo a -> CanvasInfo a
@@ -287,11 +287,11 @@ movingRender mode cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x
       let CanvasDimension (Dim cw ch) = canvasDim geometry
           nposx
             | xw + x - x0 < -50 = -50
-            | xw + x - x0 > cw -50 = cw -50
+            | xw + x - x0 > cw - 50 = cw - 50
             | otherwise = xw + x - x0
           nposy
             | yw + y - y0 < -50 = -50
-            | yw + y - y0 > ch -50 = ch -50
+            | yw + y - y0 > ch - 50 = ch - 50
             | otherwise = yw + y - y0
           nwpos =
             if b

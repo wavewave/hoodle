@@ -86,13 +86,13 @@ xformViewPortFitInSize (Dim w h) f (ViewPortBBox bbx) =
       ymargin = if 0.5 * ((y2 - y1) - h) > 0 then 0.5 * ((y2 - y1) - h) else 0
       (x1', x2')
         | x2 > w && w - (x2 - x1) > 0 = (w - (x2 - x1), w)
-        | x2 > w && w - (x2 - x1) <= 0 = (- xmargin, - xmargin + x2 - x1)
-        | x1 < (- xmargin) = (- xmargin, - xmargin + x2 - x1)
+        | x2 > w && w - (x2 - x1) <= 0 = (-xmargin, -xmargin + x2 - x1)
+        | x1 < (-xmargin) = (-xmargin, -xmargin + x2 - x1)
         | otherwise = (x1, x2)
       (y1', y2')
         | y2 > h && h - (y2 - y1) > 0 = (h - (y2 - y1), h)
-        | y2 > h && h - (y2 - y1) <= 0 = (- ymargin, - ymargin + y2 - y1)
-        | y1 < (- ymargin) = (- ymargin, - ymargin + y2 - y1)
+        | y2 > h && h - (y2 - y1) <= 0 = (-ymargin, -ymargin + y2 - y1)
+        | y1 < (-ymargin) = (-ymargin, -ymargin + y2 - y1)
         | otherwise = (y1, y2)
    in ViewPortBBox (BBox (x1', y1') (x2', y2'))
 
@@ -190,7 +190,7 @@ deskDimCont cnstrnt hdl =
       len = length pgs
       olst =
         maybeError' "deskDimCont" $
-          mapM (pageArrFuncCont cnstrnt hdl . PageNum) [0 .. len -1]
+          mapM (pageArrFuncCont cnstrnt hdl . PageNum) [0 .. len - 1]
       f (PageOrigin (x, y), PageDimension (Dim w h)) (Dim w' h') =
         let w'' = if w' < x + w then x + w else w'
             h'' = if h' < y + h then y + h else h'

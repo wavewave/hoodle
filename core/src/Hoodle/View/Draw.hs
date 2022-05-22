@@ -107,7 +107,7 @@ getCanvasViewPort geometry =
 getBBoxInPageCoord :: CanvasGeometry -> PageNum -> BBox -> BBox
 getBBoxInPageCoord geometry pnum bbox =
   let DeskCoord (x0, y0) = page2Desktop geometry (pnum, PageCoord (0, 0))
-   in moveBBoxByOffset (- x0, - y0) bbox
+   in moveBBoxByOffset (-x0, -y0) bbox
 
 -- |
 getViewableBBox ::
@@ -891,13 +891,13 @@ renderClockWidget mbbox cfg = do
   Cairo.setSourceRGBA 1 0 0 0.7
   Cairo.setLineWidth 0.5
   Cairo.moveTo x y
-  Cairo.lineTo (x + 45 * sin (div2rad 60 s)) (y -45 * cos (div2rad 60 s))
+  Cairo.lineTo (x + 45 * sin (div2rad 60 s)) (y - 45 * cos (div2rad 60 s))
   Cairo.stroke
   --
   Cairo.setSourceRGBA 0 0 0 1
   Cairo.setLineWidth 1.0
   Cairo.moveTo x y
-  Cairo.lineTo (x + 50 * sin (div2rad 60 m)) (y -50 * cos (div2rad 60 m))
+  Cairo.lineTo (x + 50 * sin (div2rad 60 m)) (y - 50 * cos (div2rad 60 m))
   Cairo.stroke
   --
   Cairo.setSourceRGBA 0 0 0 1
@@ -905,7 +905,7 @@ renderClockWidget mbbox cfg = do
   Cairo.moveTo x y
   Cairo.lineTo
     (x + 30 * sin (div2rad 12 h + div2rad 720 m))
-    (y -30 * cos (div2rad 12 h + div2rad 720 m))
+    (y - 30 * cos (div2rad 12 h + div2rad 720 m))
   Cairo.stroke
   --
   Cairo.resetClip

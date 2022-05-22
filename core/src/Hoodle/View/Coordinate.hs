@@ -198,7 +198,7 @@ getPagesInRange :: CanvasGeometry -> ViewPortBBox -> Hoodle EditMode -> [PageNum
 getPagesInRange geometry (ViewPortBBox bbox) hdl =
   let ivbbox = Intersect (Middle bbox)
       pagemap = view gpages hdl
-      pnums = map PageNum [0 .. (length . toList $ pagemap) -1]
+      pnums = map PageNum [0 .. (length . toList $ pagemap) - 1]
       pgcheck n pg =
         let Dim w h = view gdimension pg
             DeskCoord ul = page2Desktop geometry (PageNum n, PageCoord (0, 0))

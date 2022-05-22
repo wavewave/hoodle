@@ -128,7 +128,6 @@
                 newPkgs.gnome.adwaita-icon-theme
                 newPkgs.pkg-config
                 newPkgs.haskell.packages.ghc8107.cabal-install
-                newPkgs.haskell.packages.ghc8107.ormolu
               ];
               shellHook = ''
                 export XDG_DATA_DIRS=${newPkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${newPkgs.gsettings-desktop-schemas.name}:${newPkgs.gtk3}/share/gsettings-schemas/${newPkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS

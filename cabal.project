@@ -1,12 +1,12 @@
 packages:
-  ./coroutine-object/
-  ./xournal-types/
-  ./xournal-parser/
-  ./types/
-  ./util/
-  ./parser/
-  ./builder/
-  ./render/
-  ./publish/
-  ./core/
-  ./hoodle/
+  ./coroutine-object/coroutine-object.cabal
+  ./xournal-types/xournal-types.cabal
+  ./xournal-parser/xournal-parser.cabal
+  ./types/hoodle-types.cabal
+  ./util/hoodle-util.cabal
+  ./parser/hoodle-parser.cabal
+  ./builder/hoodle-builder.cabal
+  ./render/hoodle-render.cabal
+  ./publish/hoodle-publish.cabal
+  ./core/hoodle-core.cabal
+  ./hoodle/hoodle.cabal

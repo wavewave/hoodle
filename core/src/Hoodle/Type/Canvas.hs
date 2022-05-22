@@ -79,7 +79,7 @@ module Hoodle.Type.Canvas
 where
 
 import Control.Applicative ((<$>), (<*>))
-import Control.Lens (Lens, Simple, lens, set, view)
+import Control.Lens (Lens', lens, set, view)
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined
 import Data.Hoodle.Simple (Dimension (..))
@@ -98,15 +98,14 @@ data PenDraw = PenDraw {_points :: Seq (Double, Double)}
   deriving (Show)
 
 -- | lens for zoomMode
-points :: Simple Lens PenDraw (Seq (Double, Double))
+points :: Lens' PenDraw (Seq (Double, Double))
 points = lens _points (\f a -> f {_points = a})
 
 -- |
-data ViewInfo (a :: ViewMode)
-  = ViewInfo
-      { _zoomMode :: ZoomMode,
-        _pageArrangement :: PageArrangement a
-      }
+data ViewInfo (a :: ViewMode) = ViewInfo
+  { _zoomMode :: ZoomMode,
+    _pageArrangement :: PageArrangement a
+  }
 
 xfrmViewInfo ::
   (PageArrangement a -> PageArrangement b) ->
@@ -135,36 +134,34 @@ defaultViewInfoSinglePage =
     }
 
 -- | lens for zoomMode
-zoomMode :: Simple Lens (ViewInfo a) ZoomMode
+zoomMode :: Lens' (ViewInfo a) ZoomMode
 zoomMode = lens _zoomMode (\f a -> f {_zoomMode = a})
 
 -- |
-pageArrangement :: Simple Lens (ViewInfo a) (PageArrangement a)
+pageArrangement :: Lens' (ViewInfo a) (PageArrangement a)
 pageArrangement = lens _pageArrangement (\f a -> f {_pageArrangement = a})
 
-data MyScrollWindow
-  = MyScrollWindow
-      { _scrollCanvas :: Gtk.VBox,
-        _scrollHScrollbar :: Gtk.HScrollbar,
-        _scrollVScrollbar :: Gtk.VScrollbar
-      }
+data MyScrollWindow = MyScrollWindow
+  { _scrollCanvas :: Gtk.VBox,
+    _scrollHScrollbar :: Gtk.HScrollbar,
+    _scrollVScrollbar :: Gtk.VScrollbar
+  }
 
 -- |
-data CanvasInfo (a :: ViewMode)
-  = CanvasInfo
-      { _canvasId :: CanvasId,
-        _drawArea :: Gtk.DrawingArea,
-        _mDrawSurface :: Maybe Cairo.Surface,
-        _scrolledWindow :: MyScrollWindow, -- Gtk.ScrolledWindow
-        _viewInfo :: ViewInfo a,
-        _currentPageNum :: Int,
-        _horizAdjustment :: Gtk.Adjustment,
-        _vertAdjustment :: Gtk.Adjustment,
-        _horizAdjConnId :: Maybe (Gtk.ConnectId Gtk.Adjustment),
-        _vertAdjConnId :: Maybe (Gtk.ConnectId Gtk.Adjustment),
-        _canvasWidgets :: CanvasWidgets,
-        _notifiedItem :: Maybe (PageNum, BBox, RItem)
-      }
+data CanvasInfo (a :: ViewMode) = CanvasInfo
+  { _canvasId :: CanvasId,
+    _drawArea :: Gtk.DrawingArea,
+    _mDrawSurface :: Maybe Cairo.Surface,
+    _scrolledWindow :: MyScrollWindow, -- Gtk.ScrolledWindow
+    _viewInfo :: ViewInfo a,
+    _currentPageNum :: Int,
+    _horizAdjustment :: Gtk.Adjustment,
+    _vertAdjustment :: Gtk.Adjustment,
+    _horizAdjConnId :: Maybe (Gtk.ConnectId Gtk.Adjustment),
+    _vertAdjConnId :: Maybe (Gtk.ConnectId Gtk.Adjustment),
+    _canvasWidgets :: CanvasWidgets,
+    _notifiedItem :: Maybe (PageNum, BBox, RItem)
+  }
 
 -- |
 xfrmCvsInfo ::
@@ -206,58 +203,58 @@ defaultCvsInfoSinglePage =
     }
 
 -- |
-canvasId :: Simple Lens (CanvasInfo a) CanvasId
+canvasId :: Lens' (CanvasInfo a) CanvasId
 canvasId = lens _canvasId (\f a -> f {_canvasId = a})
 
 -- |
-drawArea :: Simple Lens (CanvasInfo a) Gtk.DrawingArea
+drawArea :: Lens' (CanvasInfo a) Gtk.DrawingArea
 drawArea = lens _drawArea (\f a -> f {_drawArea = a})
 
 -- |
-mDrawSurface :: Simple Lens (CanvasInfo a) (Maybe Cairo.Surface)
+mDrawSurface :: Lens' (CanvasInfo a) (Maybe Cairo.Surface)
 mDrawSurface = lens _mDrawSurface (\f a -> f {_mDrawSurface = a})
 
 -- |
-scrolledWindow :: Simple Lens (CanvasInfo a) MyScrollWindow
+scrolledWindow :: Lens' (CanvasInfo a) MyScrollWindow
 scrolledWindow = lens _scrolledWindow (\f a -> f {_scrolledWindow = a})
 
 -- |
-viewInfo :: Simple Lens (CanvasInfo a) (ViewInfo a)
+viewInfo :: Lens' (CanvasInfo a) (ViewInfo a)
 viewInfo = lens _viewInfo (\f a -> f {_viewInfo = a})
 
 -- |
-currentPageNum :: Simple Lens (CanvasInfo a) Int
+currentPageNum :: Lens' (CanvasInfo a) Int
 currentPageNum = lens _currentPageNum (\f a -> f {_currentPageNum = a})
 
 -- |
-horizAdjustment :: Simple Lens (CanvasInfo a) Gtk.Adjustment
+horizAdjustment :: Lens' (CanvasInfo a) Gtk.Adjustment
 horizAdjustment = lens _horizAdjustment (\f a -> f {_horizAdjustment = a})
 
 -- |
-vertAdjustment :: Simple Lens (CanvasInfo a) Gtk.Adjustment
+vertAdjustment :: Lens' (CanvasInfo a) Gtk.Adjustment
 vertAdjustment = lens _vertAdjustment (\f a -> f {_vertAdjustment = a})
 
 -- | ConnectId for horizontal scrollbar value change event
-horizAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (Gtk.ConnectId Gtk.Adjustment))
+horizAdjConnId :: Lens' (CanvasInfo a) (Maybe (Gtk.ConnectId Gtk.Adjustment))
 horizAdjConnId = lens _horizAdjConnId (\f a -> f {_horizAdjConnId = a})
 
 -- | ConnectId for vertical scrollbar value change event
-vertAdjConnId :: Simple Lens (CanvasInfo a) (Maybe (Gtk.ConnectId Gtk.Adjustment))
+vertAdjConnId :: Lens' (CanvasInfo a) (Maybe (Gtk.ConnectId Gtk.Adjustment))
 vertAdjConnId = lens _vertAdjConnId (\f a -> f {_vertAdjConnId = a})
 
 -- | composition lens
-adjustments :: Simple Lens (CanvasInfo a) (Gtk.Adjustment, Gtk.Adjustment)
+adjustments :: Lens' (CanvasInfo a) (Gtk.Adjustment, Gtk.Adjustment)
 adjustments = lens getter setter
   where
     getter = (,) <$> view horizAdjustment <*> view vertAdjustment
     setter f (h, v) = set horizAdjustment h . set vertAdjustment v $ f
 
 -- | lens for canavs widgets
-canvasWidgets :: Simple Lens (CanvasInfo a) CanvasWidgets
+canvasWidgets :: Lens' (CanvasInfo a) CanvasWidgets
 canvasWidgets = lens _canvasWidgets (\f a -> f {_canvasWidgets = a})
 
 -- | lens for notified item
-notifiedItem :: Simple Lens (CanvasInfo a) (Maybe (PageNum, BBox, RItem))
+notifiedItem :: Lens' (CanvasInfo a) (Maybe (PageNum, BBox, RItem))
 notifiedItem = lens _notifiedItem (\f a -> f {_notifiedItem = a})
 
 -- |
@@ -305,15 +302,15 @@ unboxBiAct fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
 unboxBiAct _fsingle fcont (CanvasContPage cinfo) = fcont cinfo
 
 -- |
-unboxGet :: (forall a. Simple Lens (CanvasInfo a) b) -> CanvasInfoBox -> b
+unboxGet :: (forall a. Lens' (CanvasInfo a) b) -> CanvasInfoBox -> b
 unboxGet f = forBoth' unboxBiAct (view f)
 
 -- |
-unboxSet :: (forall a. Simple Lens (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
+unboxSet :: (forall a. Lens' (CanvasInfo a) b) -> b -> CanvasInfoBox -> CanvasInfoBox
 unboxSet l b (CanvasSinglePage a) = CanvasSinglePage (set l b a)
 unboxSet l b (CanvasContPage a) = CanvasContPage (set l b a)
 
-unboxLens :: (forall a. Simple Lens (CanvasInfo a) b) -> Simple Lens CanvasInfoBox b
+unboxLens :: (forall a. Lens' (CanvasInfo a) b) -> Lens' CanvasInfoBox b
 unboxLens l = lens (unboxGet l) (flip (unboxSet l))
 
 -- |
@@ -333,70 +330,68 @@ data WidthColorStyle
   deriving (Show)
 
 -- | lens for penWidth
-penWidth :: Simple Lens WidthColorStyle Double
+penWidth :: Lens' WidthColorStyle Double
 penWidth = lens _penWidth (\f a -> f {_penWidth = a})
 
 -- | lens for penColor
-penColor :: Simple Lens WidthColorStyle PenColor
+penColor :: Lens' WidthColorStyle PenColor
 penColor = lens _penColor (\f a -> f {_penColor = a})
 
 -- |
-data PenHighlighterEraserSet
-  = PenHighlighterEraserSet
-      { _currPen :: WidthColorStyle,
-        _currHighlighter :: WidthColorStyle,
-        _currEraser :: WidthColorStyle,
-        _currText :: WidthColorStyle,
-        _currVerticalSpace :: WidthColorStyle
-      }
+data PenHighlighterEraserSet = PenHighlighterEraserSet
+  { _currPen :: WidthColorStyle,
+    _currHighlighter :: WidthColorStyle,
+    _currEraser :: WidthColorStyle,
+    _currText :: WidthColorStyle,
+    _currVerticalSpace :: WidthColorStyle
+  }
   deriving (Show)
 
 -- | lens for currPen
-currPen :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currPen :: Lens' PenHighlighterEraserSet WidthColorStyle
 currPen = lens _currPen (\f a -> f {_currPen = a})
 
 -- | lens for currHighlighter
-currHighlighter :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currHighlighter :: Lens' PenHighlighterEraserSet WidthColorStyle
 currHighlighter = lens _currHighlighter (\f a -> f {_currHighlighter = a})
 
 -- | lens for currEraser
-currEraser :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currEraser :: Lens' PenHighlighterEraserSet WidthColorStyle
 currEraser = lens _currEraser (\f a -> f {_currEraser = a})
 
 -- | lens for currText
-currText :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currText :: Lens' PenHighlighterEraserSet WidthColorStyle
 currText = lens _currText (\f a -> f {_currText = a})
 
 -- | lens for currText
-currVerticalSpace :: Simple Lens PenHighlighterEraserSet WidthColorStyle
+currVerticalSpace :: Lens' PenHighlighterEraserSet WidthColorStyle
 currVerticalSpace =
   lens
     _currVerticalSpace
     (\f a -> f {_currVerticalSpace = a})
 
 -- |
-data PenInfo
-  = PenInfo
-      { _penType :: PenType,
-        _penSet :: PenHighlighterEraserSet,
-        _variableWidthPen :: Bool
-      }
+data PenInfo = PenInfo
+  { _penType :: PenType,
+    _penSet :: PenHighlighterEraserSet,
+    _variableWidthPen :: Bool
+  }
   deriving (Show)
 
 -- | lens for penType
-penType :: Simple Lens PenInfo PenType
+penType :: Lens' PenInfo PenType
 penType = lens _penType (\f a -> f {_penType = a})
 
 -- | lens for penSet
-penSet :: Simple Lens PenInfo PenHighlighterEraserSet
+penSet :: Lens' PenInfo PenHighlighterEraserSet
 penSet = lens _penSet (\f a -> f {_penSet = a})
 
 -- | lens for variableWidthPen
-variableWidthPen :: Simple Lens PenInfo Bool
+variableWidthPen :: Lens' PenInfo Bool
 variableWidthPen = lens _variableWidthPen (\f a -> f {_variableWidthPen = a})
 
 -- |
-currentTool :: Simple Lens PenInfo WidthColorStyle
+currentTool :: Lens' PenInfo WidthColorStyle
 currentTool = lens chooser setter
   where
     chooser pinfo = case _penType pinfo of

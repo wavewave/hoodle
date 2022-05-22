@@ -10,7 +10,7 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
 Tested-with:    GHC == 8.6
 Build-Type: 	Simple
-Cabal-Version:  >= 2
+Cabal-Version:  2.0
 data-files:     CHANGES
 Source-repository head
   type: git

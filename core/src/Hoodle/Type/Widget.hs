@@ -34,7 +34,7 @@ module Hoodle.Type.Widget
   )
 where
 
-import Control.Lens (Lens, Simple, lens)
+import Control.Lens (Lens', lens)
 import Hoodle.Type.PageArrangement
 
 -- |
@@ -46,77 +46,73 @@ allWidgets :: [WidgetItem]
 allWidgets = [PanZoomWidget, LayerWidget, ClockWidget, ScrollWidget]
 
 -- |
-data PanZoomWidgetConfig
-  = PZWConfig
-      { _panZoomWidgetPosition :: CanvasCoordinate,
-        _panZoomWidgetTouchIsZoom :: Bool
-      }
+data PanZoomWidgetConfig = PZWConfig
+  { _panZoomWidgetPosition :: CanvasCoordinate,
+    _panZoomWidgetTouchIsZoom :: Bool
+  }
 
 -- |
-panZoomWidgetPosition :: Simple Lens PanZoomWidgetConfig CanvasCoordinate
+panZoomWidgetPosition :: Lens' PanZoomWidgetConfig CanvasCoordinate
 panZoomWidgetPosition = lens _panZoomWidgetPosition (\f a -> f {_panZoomWidgetPosition = a})
 
 -- |
-panZoomWidgetTouchIsZoom :: Simple Lens PanZoomWidgetConfig Bool
+panZoomWidgetTouchIsZoom :: Lens' PanZoomWidgetConfig Bool
 panZoomWidgetTouchIsZoom = lens _panZoomWidgetTouchIsZoom (\f a -> f {_panZoomWidgetTouchIsZoom = a})
 
 -- |
-data LayerWidgetConfig
-  = LWConfig
-      { _layerWidgetPosition :: CanvasCoordinate,
-        _layerWidgetShowContent :: Bool
-      }
+data LayerWidgetConfig = LWConfig
+  { _layerWidgetPosition :: CanvasCoordinate,
+    _layerWidgetShowContent :: Bool
+  }
 
 -- |
-layerWidgetPosition :: Simple Lens LayerWidgetConfig CanvasCoordinate
+layerWidgetPosition :: Lens' LayerWidgetConfig CanvasCoordinate
 layerWidgetPosition = lens _layerWidgetPosition (\f a -> f {_layerWidgetPosition = a})
 
 -- |
-layerWidgetShowContent :: Simple Lens LayerWidgetConfig Bool
+layerWidgetShowContent :: Lens' LayerWidgetConfig Bool
 layerWidgetShowContent = lens _layerWidgetShowContent (\f a -> f {_layerWidgetShowContent = a})
 
 -- |
-data ClockWidgetConfig
-  = ClkConfig
-      { _clockWidgetPosition :: CanvasCoordinate,
-        _clockWidgetTime :: (Int, Int, Int)
-      }
+data ClockWidgetConfig = ClkConfig
+  { _clockWidgetPosition :: CanvasCoordinate,
+    _clockWidgetTime :: (Int, Int, Int)
+  }
 
 -- | lens for position of clock widget
-clockWidgetPosition :: Simple Lens ClockWidgetConfig CanvasCoordinate
+clockWidgetPosition :: Lens' ClockWidgetConfig CanvasCoordinate
 clockWidgetPosition = lens _clockWidgetPosition (\f a -> f {_clockWidgetPosition = a})
 
 -- | lens for time for clock widget
-clockWidgetTime :: Simple Lens ClockWidgetConfig (Int, Int, Int)
+clockWidgetTime :: Lens' ClockWidgetConfig (Int, Int, Int)
 clockWidgetTime = lens _clockWidgetTime (\f a -> f {_clockWidgetTime = a})
 
 -- |
 data ScrollWidgetConfig = ScrWConfig
 
 -- |
-data CanvasWidgets
-  = CanvasWidgets
-      { _panZoomWidgetConfig :: PanZoomWidgetConfig,
-        _layerWidgetConfig :: LayerWidgetConfig,
-        _clockWidgetConfig :: ClockWidgetConfig,
-        _scrollWidgetConfig :: ScrollWidgetConfig,
-        _widgetConfig :: WidgetConfig
-      }
+data CanvasWidgets = CanvasWidgets
+  { _panZoomWidgetConfig :: PanZoomWidgetConfig,
+    _layerWidgetConfig :: LayerWidgetConfig,
+    _clockWidgetConfig :: ClockWidgetConfig,
+    _scrollWidgetConfig :: ScrollWidgetConfig,
+    _widgetConfig :: WidgetConfig
+  }
 
 -- |
-panZoomWidgetConfig :: Simple Lens CanvasWidgets PanZoomWidgetConfig
+panZoomWidgetConfig :: Lens' CanvasWidgets PanZoomWidgetConfig
 panZoomWidgetConfig = lens _panZoomWidgetConfig (\f a -> f {_panZoomWidgetConfig = a})
 
 -- |
-layerWidgetConfig :: Simple Lens CanvasWidgets LayerWidgetConfig
+layerWidgetConfig :: Lens' CanvasWidgets LayerWidgetConfig
 layerWidgetConfig = lens _layerWidgetConfig (\f a -> f {_layerWidgetConfig = a})
 
 -- |
-clockWidgetConfig :: Simple Lens CanvasWidgets ClockWidgetConfig
+clockWidgetConfig :: Lens' CanvasWidgets ClockWidgetConfig
 clockWidgetConfig = lens _clockWidgetConfig (\f a -> f {_clockWidgetConfig = a})
 
 -- |
-scrollWidgetConfig :: Simple Lens CanvasWidgets ScrollWidgetConfig
+scrollWidgetConfig :: Lens' CanvasWidgets ScrollWidgetConfig
 scrollWidgetConfig = lens _scrollWidgetConfig (\f a -> f {_scrollWidgetConfig = a})
 
 -- | default hoodle widgets
@@ -158,28 +154,27 @@ defaultClkConfig =
 defaultScrWConfig :: ScrollWidgetConfig
 defaultScrWConfig = ScrWConfig
 
-data WidgetConfig
-  = WidgetConfig
-      { _doesUsePanZoomWidget :: Bool,
-        _doesUseLayerWidget :: Bool,
-        _doesUseClockWidget :: Bool,
-        _doesUseScrollWidget :: Bool
-      }
+data WidgetConfig = WidgetConfig
+  { _doesUsePanZoomWidget :: Bool,
+    _doesUseLayerWidget :: Bool,
+    _doesUseClockWidget :: Bool,
+    _doesUseScrollWidget :: Bool
+  }
 
 -- | flag for pan zoom widget
-doesUsePanZoomWidget :: Simple Lens WidgetConfig Bool
+doesUsePanZoomWidget :: Lens' WidgetConfig Bool
 doesUsePanZoomWidget = lens _doesUsePanZoomWidget (\f a -> f {_doesUsePanZoomWidget = a})
 
 -- | flag for layer widget
-doesUseLayerWidget :: Simple Lens WidgetConfig Bool
+doesUseLayerWidget :: Lens' WidgetConfig Bool
 doesUseLayerWidget = lens _doesUseLayerWidget (\f a -> f {_doesUseLayerWidget = a})
 
 -- | flag for clock widget
-doesUseClockWidget :: Simple Lens WidgetConfig Bool
+doesUseClockWidget :: Lens' WidgetConfig Bool
 doesUseClockWidget = lens _doesUseClockWidget (\f a -> f {_doesUseClockWidget = a})
 
 -- | flag for scroll widget
-doesUseScrollWidget :: Simple Lens WidgetConfig Bool
+doesUseScrollWidget :: Lens' WidgetConfig Bool
 doesUseScrollWidget = lens _doesUseScrollWidget (\f a -> f {_doesUseScrollWidget = a})
 
 -- | default widget configuration
@@ -193,5 +188,5 @@ defaultWidgetConfig =
     }
 
 -- | widget config lens
-widgetConfig :: Simple Lens CanvasWidgets WidgetConfig
+widgetConfig :: Lens' CanvasWidgets WidgetConfig
 widgetConfig = lens _widgetConfig (\f a -> f {_widgetConfig = a})

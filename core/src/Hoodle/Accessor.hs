@@ -7,7 +7,7 @@ module Hoodle.Accessor where
 
 import Control.Applicative
 import Control.Concurrent.STM (readTVarIO)
-import Control.Lens ((.~), Lens, Simple, set, view)
+import Control.Lens (Lens', set, view, (.~))
 import Control.Monad hiding (forM_, mapM_)
 import Control.Monad.IO.Class
 import qualified Control.Monad.State as St hiding (forM_, mapM_)
@@ -127,7 +127,7 @@ getGeometry4CurrCvs uhdl = do
 lensSetToggleUIForFlag ::
   String ->
   -- | lens for flag
-  Simple Lens HoodleState Bool ->
+  Lens' HoodleState Bool ->
   HoodleState ->
   IO Bool
 lensSetToggleUIForFlag toggleid lensforflag xstate =
@@ -137,12 +137,14 @@ lensSetToggleUIForFlag toggleid lensforflag xstate =
 setToggleUIForFlag :: String -> Bool -> HoodleState -> IO Bool
 setToggleUIForFlag toggleid b xstate = do
   let ui = view gtkUIManager xstate
-  agr <- Gtk.uiManagerGetActionGroups ui >>= \x ->
-    case x of
-      [] -> error "No action group? "
-      y : _ -> return y
-  togglea <- Gtk.actionGroupGetAction agr toggleid >>= \(Just x) ->
-    return (Gtk.castToToggleAction x)
+  agr <-
+    Gtk.uiManagerGetActionGroups ui >>= \x ->
+      case x of
+        [] -> error "No action group? "
+        y : _ -> return y
+  togglea <-
+    Gtk.actionGroupGetAction agr toggleid >>= \(Just x) ->
+      return (Gtk.castToToggleAction x)
   Gtk.toggleActionSetActive togglea b
   return b
 

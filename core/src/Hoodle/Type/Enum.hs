@@ -2,7 +2,7 @@
 
 module Hoodle.Type.Enum where
 
-import Control.Lens (Lens, Simple, lens)
+import Control.Lens (Lens', lens)
 import qualified Data.ByteString.Char8 as B
 --
 import Data.Hoodle.Predefined
@@ -65,10 +65,9 @@ data SelectType
   deriving (Show, Eq, Ord)
 
 -- |
-data SelectInfo
-  = SelectInfo
-      { _selectType :: SelectType
-      }
+data SelectInfo = SelectInfo
+  { _selectType :: SelectType
+  }
   deriving (Show)
 
 data RotateDir = CW | CCW deriving (Show, Ord, Eq)
@@ -81,7 +80,7 @@ data NewPageModeType = NPPlain | NPLast | NPCycle deriving (Show, Ord, Eq)
 --
 
 -- |
-selectType :: Simple Lens SelectInfo SelectType
+selectType :: Lens' SelectInfo SelectType
 selectType = lens _selectType (\f a -> f {_selectType = a})
 
 -- |
@@ -103,8 +102,9 @@ penColorNameMap =
 
 penColorRGBAmap :: M.Map PenColor (Double, Double, Double, Double)
 penColorRGBAmap =
-  M.fromList $ map (\x -> (fst x, fromJustError "penColorRGBAmap" (M.lookup (snd x) predefined_pencolor))) $
-    M.toList penColorNameMap
+  M.fromList $
+    map (\x -> (fst x, fromJustError "penColorRGBAmap" (M.lookup (snd x) predefined_pencolor))) $
+      M.toList penColorNameMap
 
 convertPenColorToRGBA :: PenColor -> (Double, Double, Double, Double)
 convertPenColorToRGBA (ColorRGBA r g b a) = (r, g, b, a)

@@ -7,7 +7,7 @@ import Control.Concurrent.MVar (MVar)
 import Control.Monad (liftM, void)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Crtn ((<==|), CrtnT, request)
+import Control.Monad.Trans.Crtn (CrtnT, request, (<==|))
 import qualified Control.Monad.Trans.Crtn.Driver as D
   ( Driver,
     DrvOp,

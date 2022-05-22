@@ -1,6 +1,6 @@
 module Hoodle.Coroutine.Commit where
 
-import Control.Lens ((.~), set, view)
+import Control.Lens (set, view, (.~))
 import Control.Monad.State
 import Control.Monad.Trans
 import Hoodle.Accessor

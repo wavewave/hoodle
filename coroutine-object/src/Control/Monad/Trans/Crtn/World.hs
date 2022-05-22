@@ -9,7 +9,7 @@ import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Logger
 import Control.Monad.Trans.Crtn.Object
-import Prelude hiding ((.), id)
+import Prelude hiding (id, (.))
 
 -- |
 data WorldOp e m i o where

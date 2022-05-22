@@ -14,7 +14,7 @@ import Data.Hoodle.Util
 import qualified Data.Serialize as SE
 import Data.Strict.Tuple
 import Lens.Micro
-import Prelude hiding ((.), curry, fst, id, putStrLn, snd, uncurry)
+import Prelude hiding (curry, fst, id, putStrLn, snd, uncurry, (.))
 
 -- |
 type Title = S.ByteString
@@ -43,22 +43,20 @@ data Stroke
   deriving (Show, Eq, Ord)
 
 -- | Image item
-data Image
-  = Image
-      { img_src :: S.ByteString,
-        img_pos :: (Double, Double),
-        img_dim :: !Dimension
-      }
+data Image = Image
+  { img_src :: S.ByteString,
+    img_pos :: (Double, Double),
+    img_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
-data SVG
-  = SVG
-      { svg_text :: Maybe S.ByteString,
-        svg_command :: Maybe S.ByteString,
-        svg_render :: S.ByteString,
-        svg_pos :: (Double, Double),
-        svg_dim :: !Dimension
-      }
+data SVG = SVG
+  { svg_text :: Maybe S.ByteString,
+    svg_command :: Maybe S.ByteString,
+    svg_render :: S.ByteString,
+    svg_pos :: (Double, Double),
+    svg_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
 -- |
@@ -150,20 +148,18 @@ data Background
   deriving (Show)
 
 -- |
-data Hoodle
-  = Hoodle
-      { hoodle_title :: !Title,
-        hoodle_pages :: ![Page]
-      }
+data Hoodle = Hoodle
+  { hoodle_title :: !Title,
+    hoodle_pages :: ![Page]
+  }
   deriving (Show)
 
 -- |
-data Page
-  = Page
-      { page_dim :: !Dimension,
-        page_bkg :: !Background,
-        page_layers :: ![Layer]
-      }
+data Page = Page
+  { page_dim :: !Dimension,
+    page_bkg :: !Background,
+    page_layers :: ![Layer]
+  }
   deriving (Show)
 
 -- |

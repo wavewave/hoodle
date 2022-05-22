@@ -66,6 +66,7 @@ getPenConfig c = do
   (mvcursor :: Maybe String) <- C.lookup c "variablecursor"
   let vcursor = maybe False (parseBool "variablecursor") mvcursor
   return vcursor
+
 {-
 getNetworkInfo :: Config -> IO (Maybe HoodleClipClientConfiguration)
 getNetworkInfo c = do

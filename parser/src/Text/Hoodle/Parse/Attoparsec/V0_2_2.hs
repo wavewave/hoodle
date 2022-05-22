@@ -56,13 +56,12 @@ headercontent = headercontentWorker B.empty
 data StrokeWidth = SingleWidth Double | VarWidth [Double]
 
 -- |
-data XmlStroke
-  = XmlStroke
-      { xstrk_tool :: B.ByteString,
-        xstrk_color :: B.ByteString,
-        xstrk_width :: StrokeWidth,
-        xstrk_xydata :: [Pair Double Double]
-      }
+data XmlStroke = XmlStroke
+  { xstrk_tool :: B.ByteString,
+    xstrk_color :: B.ByteString,
+    xstrk_width :: StrokeWidth,
+    xstrk_xydata :: [Pair Double Double]
+  }
 
 -- |
 xmlstroketagopen :: Parser XmlStroke
@@ -291,11 +290,11 @@ link = do
   bstr <- renderCDATA
   trim
   link_footer
-  return . H.ItemLink
-    $ flip ($) mlid
-    $ maybe
-      (H.Link i typ loc mt mc bstr xy dim)
-      (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim)
+  return . H.ItemLink $
+    flip ($) mlid $
+      maybe
+        (H.Link i typ loc mt mc bstr xy dim)
+        (\lid -> H.LinkDocID i lid loc mt mc bstr xy dim)
 
 -- |
 trim :: Parser ()

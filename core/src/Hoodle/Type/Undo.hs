@@ -2,12 +2,11 @@ module Hoodle.Type.Undo where
 
 import Data.Hoodle.Zipper
 
-data UndoTable a
-  = UndoTable
-      { undo_allowednum :: Int,
-        undo_totalnum :: Int,
-        undo_zipper :: Maybe (SeqZipper a)
-      }
+data UndoTable a = UndoTable
+  { undo_allowednum :: Int,
+    undo_totalnum :: Int,
+    undo_zipper :: Maybe (SeqZipper a)
+  }
 
 emptyUndo :: Int -> UndoTable a
 emptyUndo n
@@ -26,7 +25,7 @@ addToUndo utable e =
         Nothing -> UndoTable an 1 . Just . singletonSZ $ e
         Just zs ->
           if tn < an
-            then-- FIXME: this causes undo_totalnum to be an overestimate and can
+            then -- FIXME: this causes undo_totalnum to be an overestimate and can
             --        cause the oldest undo item to be dropped unnecessarily.
               UndoTable an (length zs') . Just $ zs'
             else UndoTable an (length zs') . chopFirst $ zs'

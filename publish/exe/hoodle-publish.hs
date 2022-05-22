@@ -11,17 +11,16 @@ import Hoodle.Publish.PDF
 import System.Console.CmdArgs
 import System.Directory (removeFile)
 import System.Directory.Tree (AnchoredDirTree (..), build, flattenDir)
-import System.FilePath ((</>), makeRelative, replaceExtension)
+import System.FilePath (makeRelative, replaceExtension, (</>))
 
 --
 
-data HoodlePublish
-  = Publish
-      { urlbase :: String,
-        rootpath :: FilePath,
-        buildpath :: FilePath,
-        specialurlbase :: String
-      }
+data HoodlePublish = Publish
+  { urlbase :: String,
+    rootpath :: FilePath,
+    buildpath :: FilePath,
+    specialurlbase :: String
+  }
   deriving (Show, Data, Typeable)
 
 publish :: HoodlePublish

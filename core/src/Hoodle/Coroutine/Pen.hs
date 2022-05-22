@@ -93,8 +93,9 @@ createTempRender geometry x = do
             return sfc
         )
         mcvssfc
-  liftIO $ Cairo.renderWith srcsfc $ do
-    emphasisCanvasRender ColorRed geometry
+  liftIO $
+    Cairo.renderWith srcsfc $ do
+      emphasisCanvasRender ColorRed geometry
   tgtsfc <-
     liftIO $
       Cairo.createImageSurface

@@ -22,7 +22,7 @@ import Control.Monad.Trans.Either
 import Event
 import SampleActor
 --
-import Prelude hiding ((.), id)
+import Prelude hiding (id, (.))
 
 -- |
 world :: forall m. (MonadIO m) => SObjT (WorldOp Event m) m ()

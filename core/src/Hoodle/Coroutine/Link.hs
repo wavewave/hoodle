@@ -9,7 +9,7 @@ module Hoodle.Coroutine.Link where
 
 import Control.Applicative
 import Control.Concurrent (forkIO)
-import Control.Lens ((^.), _2, at, set, view)
+import Control.Lens (at, set, view, (^.), _2)
 import Control.Monad hiding (forM_)
 import Control.Monad.State (get, liftIO)
 import Control.Monad.Trans.Maybe

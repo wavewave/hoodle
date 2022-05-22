@@ -23,7 +23,7 @@ import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.HoodleState
 --
-import Prelude hiding ((.), id)
+import Prelude hiding (id, (.))
 
 layerAction ::
   (HoodleModeState -> Int -> Page EditMode -> MainCoroutine HoodleModeState) ->

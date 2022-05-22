@@ -38,7 +38,7 @@ import Network.WebSockets
     sendDataMessage,
     sendPing,
   )
-import Servant ((:>), Get, JSON, Proxy (..), Server)
+import Servant (Get, JSON, Proxy (..), Server, (:>))
 import System.Environment (getEnv)
 import Type (Doc (..), Stroke (..))
 
@@ -54,11 +54,10 @@ $(deriveSafeCopy 0 'base ''CommitId)
 
 $(deriveSafeCopy 0 'base ''Commit)
 
-data DocState
-  = DocState
-      { _docStateCommits :: Seq Commit,
-        _docStateCurrentDoc :: Seq (CommitId, Int, [(Double, Double)])
-      }
+data DocState = DocState
+  { _docStateCommits :: Seq Commit,
+    _docStateCurrentDoc :: Seq (CommitId, Int, [(Double, Double)])
+  }
   deriving (Show)
 
 $(deriveSafeCopy 0 'base ''DocState)
@@ -139,9 +138,9 @@ server :: TVar DocState -> Server API
 server var = do
   s <- liftIO $ atomically $ readTVar var
   let doc =
-        Doc
-          $ map (\(i, _, xys) -> Stroke i xys)
-          $ toList (_docStateCurrentDoc s)
+        Doc $
+          map (\(i, _, xys) -> Stroke i xys) $
+            toList (_docStateCurrentDoc s)
   pure doc
 
 second :: Int
@@ -165,19 +164,21 @@ main = do
   acid <- openLocalState (DocState S.empty S.empty)
   s <- query acid QueryState
   ref <- newTVarIO s
-  void $ runServer hostAddress hostWSPort $ \pending -> do
-    conn <- acceptRequest pending
-    putStrLn "websocket connected"
-    void $ forkIO $ ping conn
-    -- synchronization
-    void $ forkIO $ handler conn acid ref
-    void $ flip iterateM_ 0 $ \r -> do
-      r' <-
-        atomically $ do
-          DocState commits _ <- readTVar ref
-          case getLast commits of
-            Just commit -> let r' = commitId commit in if (r' <= r) then retry else pure r'
-            Nothing -> retry
-      let msg = RegisterStroke r'
-      sendDataMessage conn (Binary (encode msg))
-      pure r'
+  void $
+    runServer hostAddress hostWSPort $ \pending -> do
+      conn <- acceptRequest pending
+      putStrLn "websocket connected"
+      void $ forkIO $ ping conn
+      -- synchronization
+      void $ forkIO $ handler conn acid ref
+      void $
+        flip iterateM_ 0 $ \r -> do
+          r' <-
+            atomically $ do
+              DocState commits _ <- readTVar ref
+              case getLast commits of
+                Just commit -> let r' = commitId commit in if (r' <= r) then retry else pure r'
+                Nothing -> retry
+          let msg = RegisterStroke r'
+          sendDataMessage conn (Binary (encode msg))
+          pure r'

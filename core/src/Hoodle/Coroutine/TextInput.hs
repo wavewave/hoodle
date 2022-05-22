@@ -8,7 +8,7 @@ module Hoodle.Coroutine.TextInput where
 import Control.Applicative
 import Control.Concurrent (killThread)
 import qualified Control.Exception
-import Control.Lens ((%~), (.~), (^.), _2, _3, view)
+import Control.Lens (view, (%~), (.~), (^.), _2, _3)
 import Control.Monad.State hiding (forM_, mapM_)
 --
 import Control.Monad.Trans.Crtn
@@ -143,9 +143,10 @@ laTeXInput mpos str = do
       doIOaction (multiLineDialog str)
       multiLineLoop str
         >>= mapM_
-          ( \result -> liftIO (makeLaTeXSVG (x0, y0) Nothing result) >>= \case
-              Right r -> deleteSelection >> svgInsert (result, "latex") r
-              Left err -> okMessageBox err >> laTeXInput mpos result
+          ( \result ->
+              liftIO (makeLaTeXSVG (x0, y0) Nothing result) >>= \case
+                Right r -> deleteSelection >> svgInsert (result, "latex") r
+                Left err -> okMessageBox err >> laTeXInput mpos result
           )
     Nothing -> do
       modeChange ToViewAppendMode
@@ -187,10 +188,11 @@ laTeXInputNetwork mpos str =
     Just (x0, y0) -> do
       networkTextInput str
         >>= mapM_
-          ( \result -> liftIO (makeLaTeXSVG (x0, y0) Nothing result)
-              >>= \case
-                Right r -> deleteSelection >> svgInsert (result, "latex") r
-                Left err -> okMessageBox err >> laTeXInput mpos result
+          ( \result ->
+              liftIO (makeLaTeXSVG (x0, y0) Nothing result)
+                >>= \case
+                  Right r -> deleteSelection >> svgInsert (result, "latex") r
+                  Left err -> okMessageBox err >> laTeXInput mpos result
           )
     Nothing -> do
       modeChange ToViewAppendMode
@@ -246,7 +248,7 @@ makeLaTeXSVG (x0, y0) mdim txt = do
         (ow, oh) = RSVG.svgGetSize rsvg
         ow', oh' :: Double
         (ow', oh') = (fromIntegral ow, fromIntegral oh)
-        w , h :: Double
+        w, h :: Double
         (w, h) = maybe (ow', oh') (\(Dim w' _) -> (w', oh' * w' / ow')) mdim
     return (bstr, BBox (x0, y0) (x0 + w, y0 + h))
   setCurrentDirectory cdir

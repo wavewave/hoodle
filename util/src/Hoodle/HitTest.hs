@@ -23,7 +23,7 @@ import Control.Monad.State (MonadState (get, put), State, evalState, modify)
 import Data.List (foldl')
 import Data.Sequence (Seq, ViewL (..), viewl)
 import Hoodle.HitTest.Type
-  ( AlterList ((:-), Empty),
+  ( AlterList (Empty, (:-)),
     BBox (..),
     GetBBoxable (..),
     Hitted (..),

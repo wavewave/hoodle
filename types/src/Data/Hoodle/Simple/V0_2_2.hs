@@ -43,22 +43,20 @@ data Stroke
   deriving (Show, Eq, Ord)
 
 -- | Image item
-data Image
-  = Image
-      { img_src :: ByteString,
-        img_pos :: (Double, Double),
-        img_dim :: !Dimension
-      }
+data Image = Image
+  { img_src :: ByteString,
+    img_pos :: (Double, Double),
+    img_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
-data SVG
-  = SVG
-      { svg_text :: Maybe ByteString,
-        svg_command :: Maybe ByteString,
-        svg_render :: ByteString,
-        svg_pos :: (Double, Double),
-        svg_dim :: !Dimension
-      }
+data SVG = SVG
+  { svg_text :: Maybe ByteString,
+    svg_command :: Maybe ByteString,
+    svg_render :: ByteString,
+    svg_pos :: (Double, Double),
+    svg_dim :: !Dimension
+  }
   deriving (Show, Eq, Ord)
 
 data Link
@@ -231,23 +229,21 @@ data Revision
   deriving (Show)
 
 -- |
-data Hoodle
-  = Hoodle
-      { hoodle_id :: ByteString,
-        hoodle_title :: !Title,
-        hoodle_revisions :: [Revision],
-        hoodle_embeddedpdf :: Maybe ByteString,
-        hoodle_pages :: ![Page]
-      }
+data Hoodle = Hoodle
+  { hoodle_id :: ByteString,
+    hoodle_title :: !Title,
+    hoodle_revisions :: [Revision],
+    hoodle_embeddedpdf :: Maybe ByteString,
+    hoodle_pages :: ![Page]
+  }
   deriving (Show)
 
 -- |
-data Page
-  = Page
-      { page_dim :: !Dimension,
-        page_bkg :: !Background,
-        page_layers :: ![Layer]
-      }
+data Page = Page
+  { page_dim :: !Dimension,
+    page_bkg :: !Background,
+    page_layers :: ![Layer]
+  }
   deriving (Show)
 
 -- |

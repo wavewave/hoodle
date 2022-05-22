@@ -7,7 +7,7 @@ module Hoodle.Coroutine.File where
 import Control.Applicative
 import Control.Concurrent
 import qualified Control.Exception as E
-import Control.Lens ((.~), at, over, set, view)
+import Control.Lens (at, over, set, view, (.~))
 import Control.Monad.State hiding (forM_, mapM, mapM_)
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Except (ExceptT (..))
@@ -204,9 +204,10 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
           cache <- renderCache
           cpg <- getCurrentPageCurr
           let Dim w h = view gdimension cpg
-          liftIO $ Cairo.withSVGSurface filename w h $ \s ->
-            Cairo.renderWith s $
-              cairoRenderOption (InBBoxOption Nothing) cache cvsid (InBBox cpg, Nothing :: Maybe Xform4Page) >> return ()
+          liftIO $
+            Cairo.withSVGSurface filename w h $ \s ->
+              Cairo.renderWith s $
+                cairoRenderOption (InBBoxOption Nothing) cache cvsid (InBBox cpg, Nothing :: Maybe Xform4Page) >> return ()
 
 -- |
 fileLoad :: FileStore -> MainCoroutine ()
@@ -627,21 +628,22 @@ addOneRevisionBox cache cvsid vbox hdl rev = do
   hdir <- getHomeDirectory
   let vcsdir = hdir </> ".hoodle.d" </> "vcs"
   btn <- Gtk.buttonNewWithLabel ("view" :: String)
-  btn `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do
-    files <- liftIO $ getDirectoryContents vcsdir
-    let fstrinit =
-          "UUID_" ++ B.unpack (view hoodleID hdl)
-            ++ "_MD5Digest_"
-            ++ B.unpack (view revmd5 rev)
-        matched =
-          filter ((== "fdp") . take 3 . reverse)
-            . filter (\f -> fstrinit `List.isPrefixOf` f)
-            $ files
-    case matched of
-      x : _ ->
-        liftIO (createProcess (proc "evince" [vcsdir </> x]))
-          >> return ()
-      _ -> return ()
+  btn `Gtk.on` Gtk.buttonPressEvent $
+    Gtk.tryEvent $ do
+      files <- liftIO $ getDirectoryContents vcsdir
+      let fstrinit =
+            "UUID_" ++ B.unpack (view hoodleID hdl)
+              ++ "_MD5Digest_"
+              ++ B.unpack (view revmd5 rev)
+          matched =
+            filter ((== "fdp") . take 3 . reverse)
+              . filter (\f -> fstrinit `List.isPrefixOf` f)
+              $ files
+      case matched of
+        x : _ ->
+          liftIO (createProcess (proc "evince" [vcsdir </> x]))
+            >> return ()
+        _ -> return ()
   hbox <- Gtk.hBoxNew False 0
   Gtk.boxPackStart hbox cvs Gtk.PackNatural 0
   Gtk.boxPackStart hbox btn Gtk.PackGrow 0

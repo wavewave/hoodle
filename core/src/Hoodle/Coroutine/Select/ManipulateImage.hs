@@ -3,7 +3,7 @@
 
 module Hoodle.Coroutine.Select.ManipulateImage where
 
-import Control.Lens ((.~), _2, set, view)
+import Control.Lens (set, view, (.~), _2)
 import Control.Monad (when)
 import Control.Monad.State (get)
 import Control.Monad.Trans (liftIO)

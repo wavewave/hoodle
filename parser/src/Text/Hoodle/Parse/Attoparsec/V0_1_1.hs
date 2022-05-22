@@ -56,13 +56,12 @@ headercontent = headercontentWorker B.empty
 data StrokeWidth = SingleWidth Double | VarWidth [Double]
 
 -- |
-data XmlStroke
-  = XmlStroke
-      { xstrk_tool :: B.ByteString,
-        xstrk_color :: B.ByteString,
-        xstrk_width :: StrokeWidth,
-        xstrk_xydata :: [Pair Double Double]
-      }
+data XmlStroke = XmlStroke
+  { xstrk_tool :: B.ByteString,
+    xstrk_color :: B.ByteString,
+    xstrk_width :: StrokeWidth,
+    xstrk_xydata :: [Pair Double Double]
+  }
 
 -- |
 xmlstroketagopen :: Parser XmlStroke
@@ -445,6 +444,7 @@ backgroundheader = string "<background"
 -- |
 backgroundclose :: Parser B.ByteString
 backgroundclose = string "/>"
+
 {-
 iter_hoodle :: Iter.Iteratee B.ByteString IO Hoodle
 iter_hoodle = AI.parserToIteratee parser_hoodle
@@ -454,7 +454,6 @@ read_hoodle str = Iter.fileDriver iter_hoodle str
 
 read_xojgz :: String -> IO Hoodle
 read_xojgz str =  Iter.fileDriver (Iter.joinIM (ungzipXoj iter_hoodle)) str
-
 
 cat_hoodlegz :: String -> IO ()
 cat_hoodlegz str = Iter.fileDriver

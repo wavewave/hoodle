@@ -18,11 +18,10 @@ import Prelude hiding (fst, snd)
 import qualified Prelude as Prelude (fst, snd)
 
 -- | bounding box type
-data BBox
-  = BBox
-      { bbox_upperleft :: (Double, Double),
-        bbox_lowerright :: (Double, Double)
-      }
+data BBox = BBox
+  { bbox_upperleft :: (Double, Double),
+    bbox_lowerright :: (Double, Double)
+  }
   deriving (Show, Eq, Ord)
 
 -- |
@@ -31,11 +30,10 @@ instance Serialize BBox where
   get = liftM2 BBox get get
 
 -- |
-data StrokeBBox
-  = StrokeBBox
-      { strokebbox_stroke :: Stroke,
-        strokebbox_bbox :: BBox
-      }
+data StrokeBBox = StrokeBBox
+  { strokebbox_stroke :: Stroke,
+    strokebbox_bbox :: BBox
+  }
   deriving (Show, Eq, Ord)
 
 -- |

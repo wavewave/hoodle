@@ -60,6 +60,7 @@ pipeActionWith sender receiverf = do
   r <- checkPipe filename >> receiverf filename
   removeLink filename
   return r
+
 {-
 -- |
 pipeActionSystem :: String -> (B.ByteString -> IO a) -> IO a

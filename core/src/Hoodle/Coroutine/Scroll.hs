@@ -5,7 +5,7 @@
 module Hoodle.Coroutine.Scroll where
 
 import Control.Error.Util (hoistEither)
-import Control.Lens (_1, over, view)
+import Control.Lens (over, view, _1)
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Crtn
@@ -80,7 +80,8 @@ adjustScrollbarWithGeometryCvsId cid = do
 adjustScrollbarWithGeometryCurrent :: MainCoroutine ()
 adjustScrollbarWithGeometryCurrent =
   adjustScrollbarWithGeometryCvsId . view (currentCanvas . _1)
-    . view (unitHoodles . currentUnit) =<< get
+    . view (unitHoodles . currentUnit)
+    =<< get
 
 -- |
 hscrollBarMoved :: CanvasId -> Double -> MainCoroutine ()

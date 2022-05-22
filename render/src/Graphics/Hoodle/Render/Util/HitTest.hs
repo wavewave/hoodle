@@ -29,7 +29,7 @@ import Data.Hoodle.Simple
   )
 import Data.Strict.Tuple (Pair ((:!:)))
 import Graphics.Hoodle.Render.Type.HitTest
-  ( AlterList ((:-), Empty),
+  ( AlterList (Empty, (:-)),
     RItemHitted,
   )
 import Graphics.Hoodle.Render.Type.Item

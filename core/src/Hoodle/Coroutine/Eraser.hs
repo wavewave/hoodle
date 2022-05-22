@@ -1,6 +1,6 @@
 module Hoodle.Coroutine.Eraser where
 
-import Control.Lens ((.~), over, set, view)
+import Control.Lens (over, set, view, (.~))
 import Control.Monad.State
 import qualified Control.Monad.State as St
 import Data.Hoodle.Generic

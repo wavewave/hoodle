@@ -1,6 +1,6 @@
 module Hoodle.Widget.Layer where
 
-import Control.Lens ((.~), over, set, view)
+import Control.Lens (over, set, view, (.~))
 import Control.Monad.State
 import Data.Functor.Identity (Identity (..))
 import Data.Hoodle.BBox
@@ -56,8 +56,9 @@ startLayerWidget ::
   MainCoroutine ()
 startLayerWidget (cid, _cinfo, _geometry) Close = toggleLayer cid
 startLayerWidget (cid, _cinfo, _geometry) ToggleShowContent = do
-  modify $ over (unitHoodles . currentUnit) $
-    over (currentCanvasInfo . unboxLens (canvasWidgets . layerWidgetConfig . layerWidgetShowContent)) not
+  modify $
+    over (unitHoodles . currentUnit) $
+      over (currentCanvasInfo . unboxLens (canvasWidgets . layerWidgetConfig . layerWidgetShowContent)) not
   invalidate cid
 startLayerWidget (cid, cinfo, geometry) (Move (oxy, owxy)) = do
   xst <- get

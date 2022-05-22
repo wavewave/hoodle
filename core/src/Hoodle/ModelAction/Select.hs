@@ -162,10 +162,11 @@ hitInHandle tpage point =
 -- |
 toggleCutCopyDelete :: Gtk.UIManager -> Bool -> IO ()
 toggleCutCopyDelete ui b = do
-  agr <- Gtk.uiManagerGetActionGroups ui >>= \x ->
-    case x of
-      [] -> error "No action group?"
-      y : _ -> return y
+  agr <-
+    Gtk.uiManagerGetActionGroups ui >>= \x ->
+      case x of
+        [] -> error "No action group?"
+        y : _ -> return y
   Just deletea <- Gtk.actionGroupGetAction agr "DELETEA"
   Just copya <- Gtk.actionGroupGetAction agr "COPYA"
   Just cuta <- Gtk.actionGroupGetAction agr "CUTA"
@@ -175,10 +176,11 @@ toggleCutCopyDelete ui b = do
 -- |
 togglePaste :: Gtk.UIManager -> Bool -> IO ()
 togglePaste ui b = do
-  agr <- Gtk.uiManagerGetActionGroups ui >>= \x ->
-    case x of
-      [] -> error "No action group?"
-      y : _ -> return y
+  agr <-
+    Gtk.uiManagerGetActionGroups ui >>= \x ->
+      case x of
+        [] -> error "No action group?"
+        y : _ -> return y
   Just pastea <- Gtk.actionGroupGetAction agr "PASTEA"
   Gtk.actionSetSensitive pastea b
 
@@ -295,12 +297,11 @@ hitLassoItem lst (RItemAnchor anc _) =
 
 type TempSelection = TempRender [RItem]
 
-data ItmsNImg
-  = ItmsNImg
-      { itmNimg_itms :: [RItem],
-        itmNimg_mbbx :: Maybe BBox,
-        imageSurface :: Cairo.Surface
-      }
+data ItmsNImg = ItmsNImg
+  { itmNimg_itms :: [RItem],
+    itmNimg_mbbx :: Maybe BBox,
+    imageSurface :: Cairo.Surface
+  }
 
 -- |
 mkItmsNImg :: RenderCache -> CanvasId -> Page SelectMode -> IO ItmsNImg

@@ -13,7 +13,7 @@ import Data.Strict.Tuple
 import Graphics.Hoodle.Render.Type
 import Graphics.Hoodle.Render.Type.HitTest
 import Hoodle.Type.Alias
-import Prelude hiding ((.), id)
+import Prelude hiding (id, (.))
 
 -- |
 rItmsInActiveLyr :: Page SelectMode -> Either [RItem] (TAlterHitted RItem)

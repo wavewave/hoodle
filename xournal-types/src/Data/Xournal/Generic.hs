@@ -11,32 +11,29 @@ import Data.Functor
 import Data.IntMap hiding (map)
 import Data.Xournal.Simple
 import Lens.Micro
-import Prelude hiding ((.), id)
+import Prelude hiding (id, (.))
 
 -- |
-data GXournal s a
-  = GXournal
-      { gtitle :: ByteString,
-        gpages :: s a
-      }
+data GXournal s a = GXournal
+  { gtitle :: ByteString,
+    gpages :: s a
+  }
 
 -- |
-data GPage b s a
-  = GPage
-      { gdimension :: Dimension,
-        gbackground :: b,
-        glayers :: s a
-      }
+data GPage b s a = GPage
+  { gdimension :: Dimension,
+    gbackground :: b,
+    glayers :: s a
+  }
 
 -- |
 data GLayer s a = GLayer {gstrokes :: s a}
 
 -- |
-data GLayerBuf b s a
-  = GLayerBuf
-      { gbuffer :: b,
-        gbstrokes :: s a
-      }
+data GLayerBuf b s a = GLayerBuf
+  { gbuffer :: b,
+    gbstrokes :: s a
+  }
 
 -- |
 instance (Functor s) => Functor (GLayer s) where
@@ -59,12 +56,11 @@ class GCast a b where
   gcast :: a -> b
 
 -- |
-data GSelect a b
-  = GSelect
-      { gselectTitle :: ByteString,
-        gselectAll :: a,
-        gselectSelected :: b
-      }
+data GSelect a b = GSelect
+  { gselectTitle :: ByteString,
+    gselectAll :: a,
+    gselectSelected :: b
+  }
 
 -- |
 type TLayerSimple = GLayer [] Stroke

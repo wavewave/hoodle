@@ -110,11 +110,12 @@ getXYinSVG svg (x0, y0) = do
   pure (x, y)
 
 getPointerType :: JSVal -> IO PointerType
-getPointerType ev = js_pointer_type ev >>= \s -> do
-  case JSS.unpack s of
-    "touch" -> pure Touch
-    "pen" -> pure Pen
-    _ -> pure Mouse
+getPointerType ev =
+  js_pointer_type ev >>= \s -> do
+    case JSS.unpack s of
+      "touch" -> pure Touch
+      "pen" -> pure Pen
+      _ -> pure Mouse
 
 drawPath :: JSVal -> String -> [(Double, Double)] -> IO ()
 drawPath svg id' xys = do

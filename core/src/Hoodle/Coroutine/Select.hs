@@ -3,7 +3,7 @@
 module Hoodle.Coroutine.Select where
 
 import Control.Applicative
-import Control.Lens ((.~), (^.), set, view)
+import Control.Lens (set, view, (.~), (^.))
 import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.State
@@ -462,7 +462,8 @@ resizeSelect
                     let BBox (xo0, yo0) (xo1, yo1) = origbbox
                         BBox (x0, y0) (x1, y1) = newbbox'
                         r = (yo1 - yo0) / (xo1 - xo0)
-                     in if  | xo1 == xo0 -> newbbox'
+                     in if
+                            | xo1 == xo0 -> newbbox'
                             | handle == HandleTL -> BBox (x0, y1 + (x0 - x1) * r) (x1, y1)
                             | handle == HandleTR -> BBox (x0, y1 + (x0 - x1) * r) (x1, y1)
                             | handle == HandleBL -> BBox (x0, y0) (x1, y0 + (x1 - x0) * r)
@@ -495,7 +496,8 @@ resizeSelect
                   let BBox (xo0, yo0) (xo1, yo1) = origbbox
                       BBox (x0, y0) (x1, y1) = newbbox'
                       r = (yo1 - yo0) / (xo1 - xo0)
-                   in if  | xo1 == xo0 || yo1 == yo0 -> newbbox'
+                   in if
+                          | xo1 == xo0 || yo1 == yo0 -> newbbox'
                           | handle == HandleTL -> BBox (x0, y1 + (x0 - x1) * r) (x1, y1)
                           | handle == HandleTR -> BBox (x0, y1 + (x0 - x1) * r) (x1, y1)
                           | handle == HandleBL -> BBox (x0, y0) (x1, y0 + (x1 - x0) * r)

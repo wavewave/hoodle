@@ -27,7 +27,7 @@ import System.IO
 import Text.XML.Stream.Parse hiding (many)
 import Text.XML.Stream.Render
 import Text.Xournal.Parse.Zlib
-import Prelude hiding ((.), dropWhile, id)
+import Prelude hiding (dropWhile, id, (.))
 
 -- * utils
 
@@ -43,6 +43,7 @@ dropWhile p = do
         else return ()
 
 -- |
+
 {-
 lookAhead :: Monad m => Sink a m (Maybe a)
 lookAhead = continue loop where
@@ -52,6 +53,7 @@ lookAhead = continue loop where
 -}
 
 -- |
+
 {-
 trc :: (Show a) => String -> a -> b -> b
 trc str a b = trace (str ++ ":" ++ show a) b

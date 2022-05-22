@@ -7,7 +7,7 @@ module Hoodle.Coroutine.ContextMenu where
 
 import Control.Applicative
 import Control.Concurrent.STM (readTVarIO)
-import Control.Lens ((.~), (^.), set, view)
+import Control.Lens (set, view, (.~), (^.))
 import Control.Monad.State hiding (forM_, mapM_)
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
@@ -163,16 +163,17 @@ processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
   res <- handwritingRecognitionDialog
   forM_ res $ \(b, txt) -> do
-    when (not b) $ liftIO $ do
-      let str = T.unpack txt
-      homedir <- getHomeDirectory
-      let hoodled = homedir </> ".hoodle.d"
-          hoodletdir = hoodled </> "hoodlet"
-      b' <- doesDirectoryExist hoodletdir
-      when (not b') $
-        createDirectory hoodletdir
-      let fp = hoodletdir </> str <.> "hdlt"
-      L.writeFile fp (Hoodlet.builder itm)
+    when (not b) $
+      liftIO $ do
+        let str = T.unpack txt
+        homedir <- getHomeDirectory
+        let hoodled = homedir </> ".hoodle.d"
+            hoodletdir = hoodled </> "hoodlet"
+        b' <- doesDirectoryExist hoodletdir
+        when (not b') $
+          createDirectory hoodletdir
+        let fp = hoodletdir </> str <.> "hdlt"
+        L.writeFile fp (Hoodlet.builder itm)
 processContextMenu (CMenuConvertSelection itm) = do
   uhdl <- view (unitHoodles . currentUnit) <$> get
   let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
@@ -225,10 +226,11 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
           fileExtensionInvalid (".svg", "export")
             >> exportCurrentSelectionAsSVG hititms bbox
         else do
-          liftIO $ Cairo.withSVGSurface filename (lrx - ulx) (lry - uly) $ \s ->
-            Cairo.renderWith s $ do
-              Cairo.translate (- ulx) (- uly)
-              mapM_ (renderRItem cache cid) hititms
+          liftIO $
+            Cairo.withSVGSurface filename (lrx - ulx) (lry - uly) $ \s ->
+              Cairo.renderWith s $ do
+                Cairo.translate (- ulx) (- uly)
+                mapM_ (renderRItem cache cid) hititms
 
 exportCurrentSelectionAsPDF :: [RItem] -> BBox -> MainCoroutine ()
 exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
@@ -242,10 +244,11 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
           fileExtensionInvalid (".svg", "export")
             >> exportCurrentSelectionAsPDF hititms bbox
         else do
-          liftIO $ Cairo.withPDFSurface filename (lrx - ulx) (lry - uly) $ \s ->
-            Cairo.renderWith s $ do
-              Cairo.translate (- ulx) (- uly)
-              mapM_ (renderRItem cache cid) hititms
+          liftIO $
+            Cairo.withPDFSurface filename (lrx - ulx) (lry - uly) $ \s ->
+              Cairo.renderWith s $ do
+                Cairo.translate (- ulx) (- uly)
+                mapM_ (renderRItem cache cid) hititms
 
 -- |
 exportImage :: S.Image -> MainCoroutine ()
@@ -493,7 +496,8 @@ showContextMenu (pnum, (x, y)) = do
     makeMenu evhdlr mn currcid cid = when (currcid /= cid) $ do
       n <- get
       mi <- liftIO $ Gtk.menuItemNewWithLabel ("Show here in cvs" ++ show cid)
-      liftIO $ mi `Gtk.on` Gtk.menuItemActivate $
-        evhdlr (UsrEv (GotContextMenuSignal (CMenuCanvasView cid pnum x y)))
+      liftIO $
+        mi `Gtk.on` Gtk.menuItemActivate $
+          evhdlr (UsrEv (GotContextMenuSignal (CMenuCanvasView cid pnum x y)))
       liftIO $ Gtk.menuAttach mn mi 2 3 n (n + 1)
       put (n + 1)

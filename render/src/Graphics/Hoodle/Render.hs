@@ -72,13 +72,12 @@ import System.FilePath (takeExtension)
 --
 import Prelude hiding (concatMap, curry, mapM, mapM_, uncurry)
 
-data Xform4Page
-  = Xform4Page
-      { transx :: Double,
-        transy :: Double,
-        scalex :: Double,
-        scaley :: Double
-      }
+data Xform4Page = Xform4Page
+  { transx :: Double,
+    transy :: Double,
+    scalex :: Double,
+    scaley :: Double
+  }
   deriving (Show)
 
 ------------

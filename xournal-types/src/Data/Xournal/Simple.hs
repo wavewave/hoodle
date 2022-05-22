@@ -14,7 +14,7 @@ import qualified Data.Serialize as SE
 import Data.Strict.Tuple
 import Data.Xournal.Util
 import Lens.Micro
-import Prelude hiding ((.), curry, fst, id, putStrLn, snd, uncurry)
+import Prelude hiding (curry, fst, id, putStrLn, snd, uncurry, (.))
 
 -- |
 type Title = S.ByteString
@@ -85,12 +85,11 @@ data Xournal = Xournal {xoj_title :: !Title, xoj_pages :: ![Page]}
   deriving (Show)
 
 -- |
-data Page
-  = Page
-      { page_dim :: !Dimension,
-        page_bkg :: !Background,
-        page_layers :: ![Layer]
-      }
+data Page = Page
+  { page_dim :: !Dimension,
+    page_bkg :: !Background,
+    page_layers :: ![Layer]
+  }
   deriving (Show)
 
 -- |

@@ -6,17 +6,18 @@ A pen notetaking program written in haskell
 
 [![hoodle](https://img.youtube.com/vi/Z2wzpyxsVSU/0.jpg)](https://www.youtube.com/watch?v=Z2wzpyxsVSU)
 
-Build
------
+Build and run 
+-------------
 Hoodle development recommends using nix for the build.
-The build script has pinned nixpkgs at nixos 20.03 revision by default unless it is specified.
+The build requires Nix >= 2.4 which has the support for flakes.
+
 ```
-$ nix-build release.nix -A hoodle 
+$ nix build .#
+$ result/bin/hoodle
 ```
 
 For developement, build in nix-shell and cabal:
 ```
-$ nix-shell
+$ nix develop .#
 $ cabal v2-build hoodle 
-$ cabal v2-run hoodle
 ```

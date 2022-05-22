@@ -65,7 +65,7 @@
           })
         ];
 
-      in {
+      in rec {
         # This package set is only useful for CI build test.
         # In practice, users will create a development environment composed by overlays.
         packages = let
@@ -112,10 +112,11 @@
                 newPkgs.haskellPackages.pdf-toolbox-document;
             };
 
+          # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
+          # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1          
         in packagesOnGHC "ghc901" // packagesOnGHC "ghc884";
 
-        # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
-        # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
+        defaultPackage = packages.ghc884_all;
 
         overlays = fullOverlays;
 

@@ -99,18 +99,7 @@
                 paths = [ hsenv ];
               };
 
-            in individualPackages // {
-              "${ghcVer}_all" = allEnv;
-              "${ghcVer}_poppler" = newPkgs.haskellPackages.poppler;
-              "${ghcVer}_pango" = newPkgs.haskellPackages.pango;
-              "${ghcVer}_gi-poppler" = newPkgs.haskellPackages.gi-poppler;
-              "${ghcVer}_pdf-toolbox-content" =
-                newPkgs.haskellPackages.pdf-toolbox-content;
-              "${ghcVer}_pdf-toolbox-core" =
-                newPkgs.haskellPackages.pdf-toolbox-core;
-              "${ghcVer}_pdf-toolbox-document" =
-                newPkgs.haskellPackages.pdf-toolbox-document;
-            };
+            in individualPackages // { "${ghcVer}_all" = allEnv; };
 
           # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
           # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1

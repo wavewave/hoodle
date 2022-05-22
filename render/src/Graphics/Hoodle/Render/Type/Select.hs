@@ -26,20 +26,19 @@ type instance BufOf (GLayer b s a) = b
 
 type instance ItmOf RLayer = RItem
 
-data HLayersF s a
-  = HLayersF
-      { hlyrt_selectedLayer :: SLayerF a,
-        hlyrt_otherLayers :: s a
-      }
+data HLayersF s a = HLayersF
+  { hlyrt_selectedLayer :: SLayerF a,
+    hlyrt_otherLayers :: s a
+  }
 
 type HLayers = HLayersF ZipperSelect RLayer
 
 type HLayer = SLayerF RLayer
 
-selectedLayer :: Simple Lens HLayers HLayer
+selectedLayer :: Lens' HLayers HLayer
 selectedLayer = lens hlyrt_selectedLayer (\f a -> f {hlyrt_selectedLayer = a})
 
-otherLayers :: Simple Lens HLayers (ZipperSelect RLayer)
+otherLayers :: Lens' HLayers (ZipperSelect RLayer)
 otherLayers = lens hlyrt_otherLayers (\f a -> f {hlyrt_otherLayers = a})
 
 -- |

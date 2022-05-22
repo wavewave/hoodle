@@ -5,7 +5,6 @@
 
 module Graphics.Hoodle.Render.Type.Renderer where
 
-import Control.Applicative
 import Control.Concurrent.STM
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
@@ -66,13 +65,12 @@ type PDFCommandQueue = TVar (Seq (PDFCommandID, PDFCommand))
 
 type GenCommandQueue = TVar (Seq (GenCommandID, GenCommand))
 
-data RendererState
-  = RendererState
-      { rendererHandler :: RendererEvent -> IO (),
-        rendererPDFCmdQ :: PDFCommandQueue,
-        rendererGenCmdQ :: GenCommandQueue,
-        rendererCache :: TVar RenderCache
-      }
+data RendererState = RendererState
+  { rendererHandler :: RendererEvent -> IO (),
+    rendererPDFCmdQ :: PDFCommandQueue,
+    rendererGenCmdQ :: GenCommandQueue,
+    rendererCache :: TVar RenderCache
+  }
 
 getRenderCache :: RendererState -> IO RenderCache
 getRenderCache RendererState {..} = atomically (readTVar rendererCache)

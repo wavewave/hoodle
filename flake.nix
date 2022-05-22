@@ -4,7 +4,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
     poppler = {
-      url = "github:wavewave/poppler/0a9ea94415c80595f8ebd7bcb5069493da447996";
+      url = "github:wavewave/poppler/4e7fc8364f89a4757f67fa9715471b5e97cd86f0";
       flake = false;
     };
     pdf-toolbox = {
@@ -12,13 +12,8 @@
         "github:wavewave/pdf-toolbox/df9182d2dabc7cfe90b13e43b6a43332f852f23f";
       flake = false;
     };
-    gtk2hs = {
-      url =
-        "/home/wavewave/repo/src/gtk2hs"; # "github:wavewave/gtk2hs/pkgconfig-modversion";
-      flake = false;
-    };
   };
-  outputs = { self, nixpkgs, flake-utils, poppler, pdf-toolbox, gtk2hs }:
+  outputs = { self, nixpkgs, flake-utils, poppler, pdf-toolbox }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
       let
         haskellLib = (import nixpkgs { inherit system; }).haskell.lib;
@@ -27,27 +22,15 @@
             overrides =
               final.lib.composeExtensions (old.overrides or (_: _: { }))
               (self: super: {
-                "gtk2hs-buildtools" =
-                  self.callCabal2nix "gtk2hs-buildtools" (gtk2hs + "/tools")
-                  { };
                 "pdf-toolbox" =
                   self.callCabal2nix "pdf-toolbox" pdf-toolbox { };
-                "poppler" = haskellLib.overrideCabal
-                  (self.callCabal2nix "poppler" poppler { }) {
-                    configureFlags = [
-                      "-fgtk3"
-                      # NOTE: multiple definition of (libc functions)
-                      # disable until find a fix
-                      "--disable-shared"
-                    ];
-                    hardeningDisable = [ "fortify" ];
-                    #librarySystemDepends = [ final.poppler_gi ];
-                    setupHaskellDepends =
-                      [ self.base self.Cabal self.gtk2hs-buildtools ];
-                    libraryPkgconfigDepends =
-                      [ final.gtk3 final.pango final.poppler_gi ];
-                  };
-
+                "poppler" = let
+                  p = self.callCabal2nix "poppler" poppler { };
+                  p1 = haskellLib.appendConfigureFlags p [ "-fgtk3" ];
+                  p2 = haskellLib.overrideCabal p1 (drv: {
+                    libraryPkgconfigDepends = [ final.gtk3 final.poppler_0_61 ];
+                  });
+                in haskellLib.disableHardening p2 [ "fortify" ];
               });
           });
         };
@@ -110,18 +93,18 @@
                 name = "all-packages";
                 paths = [ hsenv ];
               };
-              mypoppler = newPkgs.haskellPackages.poppler;
 
             in individualPackages // {
               "${ghcVer}_all" = allEnv;
-              "${ghcVer}_poppler" = mypoppler;
+              "${ghcVer}_poppler" = newPkgs.haskellPackages.poppler;
+              "${ghcVer}_pango" = newPkgs.haskellPackages.pango;
+              "${ghcVer}_gi-poppler" = newPkgs.haskellPackages.gi-poppler;
             };
 
-        in packagesOnGHC "ghc8107";
-        # // packagesOnGHC "ghc884"
-        #  // packagesOnGHC "ghc901"
-        # // packagesOnGHC "ghc921"
-        # // packagesOnGHC "ghcHEAD";
+        in packagesOnGHC "ghc901" // packagesOnGHC "ghc884";
+
+        # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
+        # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
 
         overlays = fullOverlays;
 
@@ -138,14 +121,13 @@
                 config.allowBroken = true;
               };
 
+              hsenv = newPkgs.haskellPackages.ghcWithPackages
+                (p: [ p.gtk3 p.gtk2hs-buildtools p.pango ]);
+
             in newPkgs.haskellPackages.shellFor {
-              packages = ps:
-                [
-                  # ps.happy
-                ]; # ps: builtins.map (name: ps.${name}) hoodlePackageNames;
+              packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
               buildInputs = [
-                newPkgs.gtk3
-                newPkgs.poppler_gi
+                hsenv
                 newPkgs.pkg-config
                 newPkgs.haskellPackages.cabal-install
                 newPkgs.haskellPackages.happy
@@ -154,12 +136,12 @@
                 # haskell-language-server on GHC 9.2.1 is broken yet.
                 newPkgs.lib.optional (ghcVer != "ghc921")
                 [ newPkgs.haskell-language-server ];
-              withHoogle = false;
+              #withHoogle = false;
             };
         in {
-          "default" = mkDevShell "ghc8107";
-          "ghc8107" = mkDevShell "ghc8107";
-          "ghc921" = mkDevShell "ghc921";
+          "default" = mkDevShell "ghc884";
+          "ghc884" = mkDevShell "ghc884";
+          "ghc901" = mkDevShell "ghc901";
         };
       });
 }

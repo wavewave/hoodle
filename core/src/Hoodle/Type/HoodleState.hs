@@ -100,7 +100,7 @@ where
 
 import Control.Concurrent
 import Control.Concurrent.STM
-import Control.Lens (Lens, Simple, (^.), lens, set, view)
+import Control.Lens (Lens', lens, set, view, (^.))
 import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Queue
 import Data.Functor.Identity (Identity (..))
@@ -138,207 +138,205 @@ data IsOneTimeSelectMode
   | YesAfterSelect
   deriving (Show, Eq, Ord)
 
-data UnitHoodle
-  = UnitHoodle
-      { _unitKey :: Int,
-        _unitUUID :: UUID,
-        _unitButton :: Gtk.Button,
-        _hoodleModeState :: HoodleModeState,
-        _hoodleFileControl :: HoodleFileControl,
-        _cvsInfoMap :: CanvasInfoMap,
-        _currentCanvas :: (CanvasId, CanvasInfoBox),
-        _frameState :: WindowConfig,
-        _rootWindow :: Gtk.Widget,
-        _rootContainer :: Gtk.Box,
-        _isSaved :: Bool,
-        _undoTable :: UndoTable HoodleModeState,
-        _isOneTimeSelectMode :: IsOneTimeSelectMode
-      }
+data UnitHoodle = UnitHoodle
+  { _unitKey :: Int,
+    _unitUUID :: UUID,
+    _unitButton :: Gtk.Button,
+    _hoodleModeState :: HoodleModeState,
+    _hoodleFileControl :: HoodleFileControl,
+    _cvsInfoMap :: CanvasInfoMap,
+    _currentCanvas :: (CanvasId, CanvasInfoBox),
+    _frameState :: WindowConfig,
+    _rootWindow :: Gtk.Widget,
+    _rootContainer :: Gtk.Box,
+    _isSaved :: Bool,
+    _undoTable :: UndoTable HoodleModeState,
+    _isOneTimeSelectMode :: IsOneTimeSelectMode
+  }
 
-data HoodleState
-  = HoodleState
-      { _unitHoodles :: (Int, M.IntMap UnitHoodle),
-        _rootNotebook :: Gtk.Notebook,
-        _rootOfRootWindow :: Gtk.Window,
-        _currentPenDraw :: PenDraw,
-        _callBack :: AllEvent -> IO (),
-        _deviceList :: DeviceList,
-        _penInfo :: PenInfo,
-        -- | (pen color, pen width, use variable cursor)
-        _cursorInfo :: (PenColor, Double, Bool),
-        _selectInfo :: SelectInfo,
-        _gtkUIManager :: Gtk.UIManager,
-        _isFullScreen :: Bool,
-        _settings :: Settings,
-        _backgroundStyle :: BackgroundStyle,
-        _uiComponentSignalHandler :: UIComponentSignalHandler,
-        _lastTimeCanvasConfigure :: Maybe UTCTime,
-        _hookSet :: Maybe Hook,
-        _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent),
-        _tempLog :: String -> String,
-        _statusBar :: Maybe Gtk.Statusbar,
-        _renderCacheVar :: TVar RenderCache,
-        _pdfRenderQueue :: PDFCommandQueue,
-        _genRenderQueue :: GenCommandQueue,
-        _doesNotInvalidate :: Bool,
-        _nextPdfBkgPageNum :: Maybe Int
-      }
+data HoodleState = HoodleState
+  { _unitHoodles :: (Int, M.IntMap UnitHoodle),
+    _rootNotebook :: Gtk.Notebook,
+    _rootOfRootWindow :: Gtk.Window,
+    _currentPenDraw :: PenDraw,
+    _callBack :: AllEvent -> IO (),
+    _deviceList :: DeviceList,
+    _penInfo :: PenInfo,
+    -- | (pen color, pen width, use variable cursor)
+    _cursorInfo :: (PenColor, Double, Bool),
+    _selectInfo :: SelectInfo,
+    _gtkUIManager :: Gtk.UIManager,
+    _isFullScreen :: Bool,
+    _settings :: Settings,
+    _backgroundStyle :: BackgroundStyle,
+    _uiComponentSignalHandler :: UIComponentSignalHandler,
+    _lastTimeCanvasConfigure :: Maybe UTCTime,
+    _hookSet :: Maybe Hook,
+    _tempQueue :: Queue (Either (ActionOrder AllEvent) AllEvent),
+    _tempLog :: String -> String,
+    _statusBar :: Maybe Gtk.Statusbar,
+    _renderCacheVar :: TVar RenderCache,
+    _pdfRenderQueue :: PDFCommandQueue,
+    _genRenderQueue :: GenCommandQueue,
+    _doesNotInvalidate :: Bool,
+    _nextPdfBkgPageNum :: Maybe Int
+  }
 
 -- | current unit
-currentUnit :: Simple Lens (Int, M.IntMap UnitHoodle) UnitHoodle
+currentUnit :: Lens' (Int, M.IntMap UnitHoodle) UnitHoodle
 currentUnit = lens (\(k, m) -> fromJustError "currentUnit" (M.lookup k m)) (\(_, m) a -> (_unitKey a, M.insert (_unitKey a) a m))
 
 -- | lens for unitKey
-unitKey :: Simple Lens UnitHoodle Int
+unitKey :: Lens' UnitHoodle Int
 unitKey = lens _unitKey (\f a -> f {_unitKey = a})
 
 -- | lens for unitKey
-unitUUID :: Simple Lens UnitHoodle UUID
+unitUUID :: Lens' UnitHoodle UUID
 unitUUID = lens _unitUUID (\f a -> f {_unitUUID = a})
 
 -- | lens for unitKey
-unitButton :: Simple Lens UnitHoodle Gtk.Button
+unitButton :: Lens' UnitHoodle Gtk.Button
 unitButton = lens _unitButton (\f a -> f {_unitButton = a})
 
 -- | lens for hoodleModeState
-hoodleModeState :: Simple Lens UnitHoodle HoodleModeState
+hoodleModeState :: Lens' UnitHoodle HoodleModeState
 hoodleModeState = lens _hoodleModeState (\f a -> f {_hoodleModeState = a})
 
 -- |
-hoodleFileControl :: Simple Lens UnitHoodle HoodleFileControl
+hoodleFileControl :: Lens' UnitHoodle HoodleFileControl
 hoodleFileControl = lens _hoodleFileControl (\f a -> f {_hoodleFileControl = a})
 
 -- | lens for cvsInfoMap
-cvsInfoMap :: Simple Lens UnitHoodle CanvasInfoMap
+cvsInfoMap :: Lens' UnitHoodle CanvasInfoMap
 cvsInfoMap = lens _cvsInfoMap (\f a -> f {_cvsInfoMap = a})
 
 -- | lens for currentCanvas
-currentCanvas :: Simple Lens UnitHoodle (CanvasId, CanvasInfoBox)
+currentCanvas :: Lens' UnitHoodle (CanvasId, CanvasInfoBox)
 currentCanvas = lens _currentCanvas (\f a -> f {_currentCanvas = a})
 
 -- | lens for frameState
-frameState :: Simple Lens UnitHoodle WindowConfig
+frameState :: Lens' UnitHoodle WindowConfig
 frameState = lens _frameState (\f a -> f {_frameState = a})
 
 -- | lens for rootWindow
-rootWindow :: Simple Lens UnitHoodle Gtk.Widget
+rootWindow :: Lens' UnitHoodle Gtk.Widget
 rootWindow = lens _rootWindow (\f a -> f {_rootWindow = a})
 
 -- | lens for rootContainer
-rootContainer :: Simple Lens UnitHoodle Gtk.Box
+rootContainer :: Lens' UnitHoodle Gtk.Box
 rootContainer = lens _rootContainer (\f a -> f {_rootContainer = a})
 
 -- | lens for isSaved
-isSaved :: Simple Lens UnitHoodle Bool
+isSaved :: Lens' UnitHoodle Bool
 isSaved = lens _isSaved (\f a -> f {_isSaved = a})
 
 -- | lens for undoTable
-undoTable :: Simple Lens UnitHoodle (UndoTable HoodleModeState)
+undoTable :: Lens' UnitHoodle (UndoTable HoodleModeState)
 undoTable = lens _undoTable (\f a -> f {_undoTable = a})
 
 -- | lens for isOneTimeSelectMode
-isOneTimeSelectMode :: Simple Lens UnitHoodle IsOneTimeSelectMode
+isOneTimeSelectMode :: Lens' UnitHoodle IsOneTimeSelectMode
 isOneTimeSelectMode = lens _isOneTimeSelectMode (\f a -> f {_isOneTimeSelectMode = a})
 
 -- | lens for unitHoodles
-unitHoodles :: Simple Lens HoodleState (Int, M.IntMap UnitHoodle)
+unitHoodles :: Lens' HoodleState (Int, M.IntMap UnitHoodle)
 unitHoodles = lens _unitHoodles (\f a -> f {_unitHoodles = a})
 
 -- | lens for rootWindow
-rootNotebook :: Simple Lens HoodleState Gtk.Notebook
+rootNotebook :: Lens' HoodleState Gtk.Notebook
 rootNotebook = lens _rootNotebook (\f a -> f {_rootNotebook = a})
 
 -- | lens for rootOfRootWindow
-rootOfRootWindow :: Simple Lens HoodleState Gtk.Window
+rootOfRootWindow :: Lens' HoodleState Gtk.Window
 rootOfRootWindow = lens _rootOfRootWindow (\f a -> f {_rootOfRootWindow = a})
 
 -- | lens for currentPenDraw
-currentPenDraw :: Simple Lens HoodleState PenDraw
+currentPenDraw :: Lens' HoodleState PenDraw
 currentPenDraw = lens _currentPenDraw (\f a -> f {_currentPenDraw = a})
 
 -- | lens for callBack
-callBack :: Simple Lens HoodleState (AllEvent -> IO ())
+callBack :: Lens' HoodleState (AllEvent -> IO ())
 callBack = lens _callBack (\f a -> f {_callBack = a})
 
 -- | lens for deviceList
-deviceList :: Simple Lens HoodleState DeviceList
+deviceList :: Lens' HoodleState DeviceList
 deviceList = lens _deviceList (\f a -> f {_deviceList = a})
 
 -- | lens for penInfo
-penInfo :: Simple Lens HoodleState PenInfo
+penInfo :: Lens' HoodleState PenInfo
 penInfo = lens _penInfo (\f a -> f {_penInfo = a})
 
 -- | lens for cursorInfo
-cursorInfo :: Simple Lens HoodleState (PenColor, Double, Bool)
+cursorInfo :: Lens' HoodleState (PenColor, Double, Bool)
 cursorInfo = lens _cursorInfo (\f a -> f {_cursorInfo = a})
 
 -- | lens for selectInfo
-selectInfo :: Simple Lens HoodleState SelectInfo
+selectInfo :: Lens' HoodleState SelectInfo
 selectInfo = lens _selectInfo (\f a -> f {_selectInfo = a})
 
 -- | lens for gtkUIManager
-gtkUIManager :: Simple Lens HoodleState Gtk.UIManager
+gtkUIManager :: Lens' HoodleState Gtk.UIManager
 gtkUIManager = lens _gtkUIManager (\f a -> f {_gtkUIManager = a})
 
 -- | background style = plain, lined, ruled, graph
-backgroundStyle :: Simple Lens HoodleState BackgroundStyle
+backgroundStyle :: Lens' HoodleState BackgroundStyle
 backgroundStyle = lens _backgroundStyle (\f a -> f {_backgroundStyle = a})
 
 -- | lens for isFullScreen
-isFullScreen :: Simple Lens HoodleState Bool
+isFullScreen :: Lens' HoodleState Bool
 isFullScreen = lens _isFullScreen (\f a -> f {_isFullScreen = a})
 
 -- |
-settings :: Simple Lens HoodleState Settings
+settings :: Lens' HoodleState Settings
 settings = lens _settings (\f a -> f {_settings = a})
 
 -- |
-uiComponentSignalHandler :: Simple Lens HoodleState UIComponentSignalHandler
+uiComponentSignalHandler :: Lens' HoodleState UIComponentSignalHandler
 uiComponentSignalHandler = lens _uiComponentSignalHandler (\f a -> f {_uiComponentSignalHandler = a})
 
 -- | lens for lastTimeCanvasConfigure
-lastTimeCanvasConfigure :: Simple Lens HoodleState (Maybe UTCTime)
+lastTimeCanvasConfigure :: Lens' HoodleState (Maybe UTCTime)
 lastTimeCanvasConfigure = lens _lastTimeCanvasConfigure (\f a -> f {_lastTimeCanvasConfigure = a})
 
 -- | lens for hookSet
-hookSet :: Simple Lens HoodleState (Maybe Hook)
+hookSet :: Lens' HoodleState (Maybe Hook)
 hookSet = lens _hookSet (\f a -> f {_hookSet = a})
 
 -- | lens for tempQueue
-tempQueue :: Simple Lens HoodleState (Queue (Either (ActionOrder AllEvent) AllEvent))
+tempQueue :: Lens' HoodleState (Queue (Either (ActionOrder AllEvent) AllEvent))
 tempQueue = lens _tempQueue (\f a -> f {_tempQueue = a})
 
 -- | lens for tempLog
-tempLog :: Simple Lens HoodleState (String -> String)
+tempLog :: Lens' HoodleState (String -> String)
 tempLog = lens _tempLog (\f a -> f {_tempLog = a})
 
 -- |
-statusBar :: Simple Lens HoodleState (Maybe Gtk.Statusbar)
+statusBar :: Lens' HoodleState (Maybe Gtk.Statusbar)
 statusBar = lens _statusBar (\f a -> f {_statusBar = a})
 
 -- |
-renderCacheVar :: Simple Lens HoodleState (TVar RenderCache)
+renderCacheVar :: Lens' HoodleState (TVar RenderCache)
 renderCacheVar = lens _renderCacheVar (\f a -> f {_renderCacheVar = a})
 
 -- |
-pdfRenderQueue :: Simple Lens HoodleState PDFCommandQueue
+pdfRenderQueue :: Lens' HoodleState PDFCommandQueue
 pdfRenderQueue = lens _pdfRenderQueue (\f a -> f {_pdfRenderQueue = a})
 
 -- |
-genRenderQueue :: Simple Lens HoodleState GenCommandQueue
+genRenderQueue :: Lens' HoodleState GenCommandQueue
 genRenderQueue = lens _genRenderQueue (\f a -> f {_genRenderQueue = a})
 
 -- |
-doesNotInvalidate :: Simple Lens HoodleState Bool
+doesNotInvalidate :: Lens' HoodleState Bool
 doesNotInvalidate = lens _doesNotInvalidate (\f a -> f {_doesNotInvalidate = a})
 
 -- |
-nextPdfBkgPageNum :: Simple Lens HoodleState (Maybe Int)
+nextPdfBkgPageNum :: Lens' HoodleState (Maybe Int)
 nextPdfBkgPageNum = lens _nextPdfBkgPageNum (\f a -> f {_nextPdfBkgPageNum = a})
 
 {-
 -- |
-cursorInfo :: Simple Lens HoodleState (Maybe Cursor)
+cursorInfo :: Lens' HoodleState (Maybe Cursor)
 cursorInfo = lens _cursorInfo (\f a -> f { _cursorInfo = a })
 -}
 
@@ -347,113 +345,110 @@ data FileStore
   | TempDir FilePath
 
 -- |
-data HoodleFileControl
-  = HoodleFileControl
-      { _hoodleFileName :: FileStore, -- Maybe FilePath
-        _lastSavedTime :: Maybe UTCTime,
-        _syncMD5History :: [T.Text]
-      }
+data HoodleFileControl = HoodleFileControl
+  { _hoodleFileName :: FileStore, -- Maybe FilePath
+    _lastSavedTime :: Maybe UTCTime,
+    _syncMD5History :: [T.Text]
+  }
 
 -- | lens for currFileName
-hoodleFileName :: Simple Lens HoodleFileControl FileStore -- (Maybe FilePath)
+hoodleFileName :: Lens' HoodleFileControl FileStore -- (Maybe FilePath)
 hoodleFileName = lens _hoodleFileName (\f a -> f {_hoodleFileName = a})
 
 -- | lens for last saved time
-lastSavedTime :: Simple Lens HoodleFileControl (Maybe UTCTime)
+lastSavedTime :: Lens' HoodleFileControl (Maybe UTCTime)
 lastSavedTime = lens _lastSavedTime (\f a -> f {_lastSavedTime = a})
 
 -- | lens for last saved time
-syncMD5History :: Simple Lens HoodleFileControl [T.Text]
+syncMD5History :: Lens' HoodleFileControl [T.Text]
 syncMD5History = lens _syncMD5History (\f a -> f {_syncMD5History = a})
 
 -- |
-data UIComponentSignalHandler
-  = UIComponentSignalHandler
-      { _penModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
-        _pageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
-        _penPointSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
-        _penColorSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
-        _newPageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
-        _switchTabSignal :: Maybe (Gtk.ConnectId Gtk.Notebook)
-      }
+data UIComponentSignalHandler = UIComponentSignalHandler
+  { _penModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
+    _pageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
+    _penPointSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
+    _penColorSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
+    _newPageModeSignal :: Maybe (Gtk.ConnectId Gtk.RadioAction),
+    _switchTabSignal :: Maybe (Gtk.ConnectId Gtk.Notebook)
+  }
 
 -- | lens for penModeSignal
-penModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+penModeSignal :: Lens' UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penModeSignal = lens _penModeSignal (\f a -> f {_penModeSignal = a})
 
 -- | lens for pageModeSignal
-pageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+pageModeSignal :: Lens' UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 pageModeSignal = lens _pageModeSignal (\f a -> f {_pageModeSignal = a})
 
 -- | lens for penPointSignal
-penPointSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+penPointSignal :: Lens' UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penPointSignal = lens _penPointSignal (\f a -> f {_penPointSignal = a})
 
 -- | lens for penColorSignal
-penColorSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+penColorSignal :: Lens' UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 penColorSignal = lens _penColorSignal (\f a -> f {_penColorSignal = a})
 
 -- | lens for newPageModeSignal
-newPageModeSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
+newPageModeSignal :: Lens' UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.RadioAction))
 newPageModeSignal = lens _newPageModeSignal (\f a -> f {_newPageModeSignal = a})
 
 -- | lens for switchTabSignal
-switchTabSignal :: Simple Lens UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.Notebook))
+switchTabSignal :: Lens' UIComponentSignalHandler (Maybe (Gtk.ConnectId Gtk.Notebook))
 switchTabSignal = lens _switchTabSignal (\f a -> f {_switchTabSignal = a})
 
 -- | A set of Hoodle settings
-data Settings
-  = Settings
-      { _doesUseXInput :: Bool,
-        _doesUseTouch :: Bool,
-        _doesUsePopUpMenu :: Bool,
-        _doesEmbedImage :: Bool,
-        _doesEmbedPDF :: Bool,
-        _doesFollowLinks :: Bool,
-        _doesKeepAspectRatio :: Bool,
-        _doesUseVariableCursor :: Bool,
-        _newPageMode :: NewPageModeType,
-        _networkEditSourceInfo :: Maybe ThreadId
-      }
+data Settings = Settings
+  { _doesUseXInput :: Bool,
+    _doesUseTouch :: Bool,
+    _doesUsePopUpMenu :: Bool,
+    _doesEmbedImage :: Bool,
+    _doesEmbedPDF :: Bool,
+    _doesFollowLinks :: Bool,
+    _doesKeepAspectRatio :: Bool,
+    _doesUseVariableCursor :: Bool,
+    _newPageMode :: NewPageModeType,
+    _networkEditSourceInfo :: Maybe ThreadId
+  }
 
 -- | flag for XInput extension (needed for using full power of wacom)
-doesUseXInput :: Simple Lens Settings Bool
+doesUseXInput :: Lens' Settings Bool
 doesUseXInput = lens _doesUseXInput (\f a -> f {_doesUseXInput = a})
 
 -- | flag for touch
-doesUseTouch :: Simple Lens Settings Bool
+doesUseTouch :: Lens' Settings Bool
 doesUseTouch = lens _doesUseTouch (\f a -> f {_doesUseTouch = a})
 
 -- | flag for using popup menu
-doesUsePopUpMenu :: Simple Lens Settings Bool
+doesUsePopUpMenu :: Lens' Settings Bool
 doesUsePopUpMenu = lens _doesUsePopUpMenu (\f a -> f {_doesUsePopUpMenu = a})
 
 -- | flag for embedding image as base64 in hdl file
-doesEmbedImage :: Simple Lens Settings Bool
+doesEmbedImage :: Lens' Settings Bool
 doesEmbedImage = lens _doesEmbedImage (\f a -> f {_doesEmbedImage = a})
 
 -- | flag for embedding pdf background as base64 in hdl file
-doesEmbedPDF :: Simple Lens Settings Bool
+doesEmbedPDF :: Lens' Settings Bool
 doesEmbedPDF = lens _doesEmbedPDF (\f a -> f {_doesEmbedPDF = a})
 
 -- | flag for embedding pdf background as base64 in hdl file
-doesFollowLinks :: Simple Lens Settings Bool
+doesFollowLinks :: Lens' Settings Bool
 doesFollowLinks = lens _doesFollowLinks (\f a -> f {_doesFollowLinks = a})
 
 -- | flag for keeping aspect ratio
-doesKeepAspectRatio :: Simple Lens Settings Bool
+doesKeepAspectRatio :: Lens' Settings Bool
 doesKeepAspectRatio = lens _doesKeepAspectRatio (\f a -> f {_doesKeepAspectRatio = a})
 
 -- | flag for variable cursor
-doesUseVariableCursor :: Simple Lens Settings Bool
+doesUseVariableCursor :: Lens' Settings Bool
 doesUseVariableCursor = lens _doesUseVariableCursor (\f a -> f {_doesUseVariableCursor = a})
 
 -- | new page mode: plain | last | cycle
-newPageMode :: Simple Lens Settings NewPageModeType
+newPageMode :: Lens' Settings NewPageModeType
 newPageMode = lens _newPageMode (\f a -> f {_newPageMode = a})
 
 -- | network edit source mode
-networkEditSourceInfo :: Simple Lens Settings (Maybe ThreadId)
+networkEditSourceInfo :: Lens' Settings (Maybe ThreadId)
 networkEditSourceInfo = lens _networkEditSourceInfo (\f a -> f {_networkEditSourceInfo = a})
 
 -- |
@@ -584,7 +579,7 @@ setCanvasInfoMap cmap uhdl
             )
           $ mcinfobox
 
-currentCanvasInfo :: Simple Lens UnitHoodle CanvasInfoBox
+currentCanvasInfo :: Lens' UnitHoodle CanvasInfoBox
 currentCanvasInfo = lens getter setter
   where
     getter = snd . _currentCanvas

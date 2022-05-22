@@ -132,22 +132,12 @@
                 config.allowBroken = true;
               };
 
-              hsenv = newPkgs.haskellPackages.ghcWithPackages
-                (p: [ p.gtk3 p.gtk2hs-buildtools p.pango ]);
-
             in newPkgs.haskellPackages.shellFor {
               packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
               buildInputs = [
-                hsenv
                 newPkgs.pkg-config
-                newPkgs.haskellPackages.cabal-install
-                newPkgs.haskellPackages.happy
-                newPkgs.haskellPackages.hlint
-              ] ++
-                # haskell-language-server on GHC 9.2.1 is broken yet.
-                newPkgs.lib.optional (ghcVer != "ghc921")
-                [ newPkgs.haskell-language-server ];
-              #withHoogle = false;
+                newPkgs.haskell.packages.ghc8107.cabal-install
+              ];
             };
         in {
           "default" = mkDevShell "ghc884";

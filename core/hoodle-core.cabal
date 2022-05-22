@@ -87,6 +87,7 @@ Library
     Build-depends: dyre >= 0.8.11
 
   Exposed-Modules:
+                   Debug.Hoodle.Coroutine.Draw
                    Hoodle.Accessor
                    Hoodle.Config
                    Hoodle.Coroutine.Callback
@@ -148,6 +149,7 @@ Library
                    Hoodle.Type.Window
                    Hoodle.Type.Widget
                    Hoodle.Util
+                   Hoodle.Util.Verbatim
                    Hoodle.View.Coordinate
                    Hoodle.View.Draw
                    Hoodle.Widget.Clock

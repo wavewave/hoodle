@@ -43,11 +43,11 @@ hoodleStartMain :: ScriptConfig -> IO ()
 hoodleStartMain = 
 #ifdef DYRE
   Dyre.wrapMain $ Dyre.defaultParams 
-    { Dyre.projectName = "start"
-    , Dyre.configDir = Just dirHoodled
-    , Dyre.realMain = hoodleMain 
-    , Dyre.showError = showError 
-    , Dyre.ghcOpts = [ "-threaded" ]
+    { Dyre.projectName = "start",
+      Dyre.configDir = Just dirHoodled,
+      Dyre.realMain = hoodleMain,
+      Dyre.showError = showError,
+      Dyre.ghcOpts = [ "-threaded" ]
     } 
 #else
   hoodleMain

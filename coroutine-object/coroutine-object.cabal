@@ -9,7 +9,11 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Control
 Build-Type: 	Simple
 Cabal-Version:  2.0
-data-files:      
+data-files:      example/Event.hs
+                 example/Sample.hs
+                 example/SampleActor.hs
+                 example/Simple.hs
+                 example/coroutine-object.hs
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans

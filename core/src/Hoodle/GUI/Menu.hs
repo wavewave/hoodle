@@ -1,7 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 module Hoodle.GUI.Menu where
 
@@ -172,7 +171,7 @@ getMenuUI evar = do
   -- icons
   myiconfac <- Gtk.iconFactoryNew
   Gtk.iconFactoryAddDefault myiconfac
-  resDir <- getDataDir >>= return . (</> "resource")
+  resDir <- (</> "resource") <$> getDataDir
 
   css <- Gtk.cssProviderNew
   Gtk.cssProviderLoadFromPath css (resDir </> "hoodle.css")
@@ -548,8 +547,8 @@ getMenuUI evar = do
           newpagemoda
         ]
   --
-  mapM_ (\x -> Gtk.actionSetSensitive x True) enabledActions
-  mapM_ (\x -> Gtk.actionSetSensitive x False) disabledActions
+  mapM_ (`Gtk.actionSetSensitive` True) enabledActions
+  mapM_ (`Gtk.actionSetSensitive` False) disabledActions
   --
   --
   -- radio actions

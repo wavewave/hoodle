@@ -1,5 +1,3 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module Hoodle.Type.Clipboard where
 
 import Data.Hoodle.BBox

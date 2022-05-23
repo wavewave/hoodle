@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 
 module Hoodle.Coroutine.Select where
@@ -12,6 +13,7 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import qualified Data.IntMap as M
+import qualified Data.Maybe as Maybe (fromMaybe)
 import Data.Monoid
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Sq (empty)
@@ -57,7 +59,7 @@ dealWithOneTimeSelectMode ::
   MainCoroutine () ->
   MainCoroutine ()
 dealWithOneTimeSelectMode action terminator = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   case view isOneTimeSelectMode uhdl of
     NoOneTimeSelectMode -> action
     YesBeforeSelect ->
@@ -82,7 +84,7 @@ commonSelectStart typ pbtn cid = case typ of
   where
     selectaction cinfo pnum geometry (x, y) _ = do
       itms <- rItmsInCurrLyr
-      ctime <- liftIO $ getCurrentTime
+      ctime <- liftIO getCurrentTime
       let newSelectAction _page =
             dealWithOneTimeSelectMode
               ( do
@@ -140,12 +142,12 @@ commonSelectStart typ pbtn cid = case typ of
             case pbtn of
               PenButton1 -> startMoveSelect cid pnum geometry ((x, y), ctime) tpage
               PenButton3 -> do
-                waitSomeEvent (\e -> case e of PenUp _ _ -> True; _ -> False)
+                waitSomeEvent (\case PenUp _ _ -> True; _ -> False)
                 showContextMenu (pnum, (x, y))
               _ -> return ()
-          action (Right tpage) | otherwise = newSelectAction (hPage2RPage tpage)
+          action (Right tpage) = newSelectAction (hPage2RPage tpage)
           action (Left page) = newSelectAction page
-      uhdl <- view (unitHoodles . currentUnit) <$> get
+      uhdl <- gets (view (unitHoodles . currentUnit))
       let hdlmodst = view hoodleModeState uhdl
       let epage = getCurrentPageEitherFromHoodleModeState cinfo hdlmodst
       action epage
@@ -357,13 +359,9 @@ moveSelect
                   ntpage = makePageSelectMode page alist
                   coroutineaction = do
                     nthdl2 <- updateTempHoodleSelectM cvsid nthdl1 ntpage (unPageNum newpgn)
-                    -- let cibox = view currentCanvasInfo uhdl1
-                    --     ncibox = ( runIdentity
-                    --             . forBoth unboxBiXform (return . set currentPageNum (unPageNum newpgn)))
-                    --               cibox
                     liftIO (updatePageAll (SelectState nthdl2) uhdl1)
               return coroutineaction
-        uhdl2 <- maybe (return uhdl1) id maction
+        uhdl2 <- Maybe.fromMaybe (return uhdl1) maction
         pureUpdateUhdl (const uhdl2)
         commit_
         invalidateAllInBBox Nothing Efficient
@@ -523,7 +521,7 @@ resizeSelect
 -- |
 selectPenColorChanged :: PenColor -> MainCoroutine ()
 selectPenColorChanged pcolor = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let cid = getCurrentCanvasId uhdl
       SelectState thdl = view hoodleModeState uhdl
       Just (n, tpage) = view gselSelected thdl
@@ -533,7 +531,7 @@ selectPenColorChanged pcolor = do
     Right alist -> do
       let alist' = second (Hitted . map (changeItemStrokeColor pcolor) . unHitted) alist
           newlayer = Right alist'
-          newpage = (glayers . selectedLayer .~ (GLayer (slayer ^. gbuffer) (TEitherAlterHitted newlayer))) tpage
+          newpage = (glayers . selectedLayer .~ GLayer (slayer ^. gbuffer) (TEitherAlterHitted newlayer)) tpage
       newthdl <- updateTempHoodleSelectM cid thdl newpage n
       uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
       pureUpdateUhdl (const uhdl')
@@ -565,7 +563,7 @@ selectPenWidthChanged pwidth = do
 --   choose either starting new rectangular selection or move previously
 --   selected selection.
 selectLassoStart :: PenButton -> CanvasId -> PointerCoord -> MainCoroutine ()
-selectLassoStart p cid coord = commonSelectStart SelectLassoWork p cid coord >> return ()
+selectLassoStart p cid coord = void (commonSelectStart SelectLassoWork p cid coord)
 
 -- |
 newSelectLasso ::
@@ -597,7 +595,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev, otime) lasso tsel = nextev
       when willUpdate $ invalidateTemp (view canvasId cinfo) (tempSurfaceSrc tsel) (renderLasso geometry nlasso)
       newSelectLasso cinfo pnum geometry itms orig (ncoord, ntime) nlasso tsel
     upact cinfo pcoord = do
-      uhdl <- view (unitHoodles . currentUnit) <$> get
+      uhdl <- gets (view (unitHoodles . currentUnit))
       let (_, (x, y)) = runIdentity $ skipIfNotInSamePage pnum geometry pcoord (return (pcoord, prev)) return
           nlasso = lasso |> (x, y)
           hdlmodst = view hoodleModeState uhdl
@@ -628,7 +626,7 @@ newSelectLasso cvsInfo pnum geometry itms orig (prev, otime) lasso tsel = nextev
                   npage = set (glayers . selectedLayer) newlayer tpage
                in npage
           newthdl = set gselSelected (Just (cpn, newpage)) thdl
-      ui <- view gtkUIManager <$> get
+      ui <- gets (view gtkUIManager)
       liftIO $ toggleCutCopyDelete ui (isAnyHitted selectitms)
       uhdl' <- liftIO (updatePageAll (SelectState newthdl) uhdl)
       pureUpdateUhdl (const ((hoodleModeState .~ SelectState newthdl) uhdl'))

@@ -1,8 +1,6 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Hoodle.Coroutine.Pen where
 
@@ -134,7 +132,7 @@ commonPenStart ::
 commonPenStart action cid pcoord = do
   oxstate <- get
   let currcid = (getCurrentCanvasId . view (unitHoodles . currentUnit)) oxstate
-  ctime <- liftIO $ getCurrentTime
+  ctime <- liftIO getCurrentTime
   when (cid /= currcid) (changeCurrentCanvasId cid >> invalidateAll)
   nxstate <- get
   forBoth' unboxBiAct (f ctime) . getCanvasInfo cid . view (unitHoodles . currentUnit) $ nxstate
@@ -149,7 +147,7 @@ commonPenStart action cid pcoord = do
       maybeFlip pagecoord (return Nothing) $
         \(pgn, PageCoord (x, y)) -> do
           nCvsInfo <-
-            if (cpn /= pgn)
+            if cpn /= pgn
               then do
                 penPageSwitch pgn
                 -- temporary dirty fix
@@ -220,7 +218,7 @@ penProcess cid pnum geometry trdr ((x0, y0), z0) ctime = do
         let ylst = map (\(_, y, _) -> y) lst
          in abs (maximum ylst - minimum ylst)
   -- temporarily fix the range
-  if (deltax < 20 && deltay < 20 && ispressandhold && Prelude.length lst < 20)
+  if deltax < 20 && deltay < 20 && ispressandhold && Prelude.length lst < 20
     then return Nothing
     else do
       xst <- get
@@ -353,4 +351,4 @@ processWithDefTimeInterval ::
   -- | last updated time
   UTCTime ->
   m a
-processWithDefTimeInterval = processWithTimeInterval dtime_bound
+processWithDefTimeInterval = processWithTimeInterval dtimeBound

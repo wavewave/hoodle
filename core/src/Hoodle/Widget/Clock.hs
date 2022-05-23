@@ -42,7 +42,7 @@ import Hoodle.View.Draw
 --
 
 -- |
-data CWAction = Move (CanvasCoordinate, CanvasCoordinate)
+newtype CWAction = Move (CanvasCoordinate, CanvasCoordinate)
   deriving (Show)
 
 checkPointerInClock ::
@@ -137,9 +137,9 @@ moveClockWidget cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x0,
         nwpos = CvsCoord (nposx, nposy)
         changeact :: CanvasInfo a -> CanvasInfo a
         changeact cinfo =
-          set (canvasWidgets . clockWidgetConfig . clockWidgetPosition) nwpos $ cinfo
+          set (canvasWidgets . clockWidgetConfig . clockWidgetPosition) nwpos cinfo
         ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
-     in (unitHoodles . currentUnit .~ (setCanvasInfo (cid, ncinfobox) uhdl)) xst
+     in (unitHoodles . currentUnit .~ setCanvasInfo (cid, ncinfobox) uhdl) xst
   --
   xst2 <- get
   let uhdl = view (unitHoodles . currentUnit) xst2
@@ -168,5 +168,5 @@ toggleClock cid = do
               . getCanvasInfo cid
           )
             uhdl
-     in (unitHoodles . currentUnit .~ (setCanvasInfo (cid, ncinfobox) uhdl)) xst
+     in (unitHoodles . currentUnit .~ setCanvasInfo (cid, ncinfobox) uhdl) xst
   invalidateInBBox Nothing Efficient cid

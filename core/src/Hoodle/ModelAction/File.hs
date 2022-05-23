@@ -54,8 +54,8 @@ checkVersionAndMigrate bstr = do
   case parseOnly PA.checkHoodleVersion bstr of
     Left str -> error str
     Right v -> do
-      if (v <= "0.2.2")
-        then T.traverse MVHEAD.hoodle2Hoodle =<< (MV.migrate bstr)
+      if v <= "0.2.2"
+        then T.traverse MVHEAD.hoodle2Hoodle =<< MV.migrate bstr
         else return (parseOnly PA.hoodle bstr)
 
 -- | this is very temporary, need to be changed.
@@ -70,14 +70,14 @@ findFirstPDFFile xs =
       _ -> Nothing
 
 findAllPDFPages :: [Page] -> [Int]
-findAllPDFPages = catMaybes . map f
+findAllPDFPages = mapMaybe f
   where
     f p = case page_bkg p of
       BackgroundPdf _ _ _ n -> Just n
       _ -> Nothing
 
 replacePDFPages :: [Page] -> [Page]
-replacePDFPages xs = map f xs
+replacePDFPages = map f
   where
     f p =
       let bkg = page_bkg p
@@ -147,7 +147,7 @@ makeNewHoodleWithPDF doesembed ofp = do
     hClose h
     return s
   (nfp, nfname) <-
-    if (siz > sizelimit)
+    if siz > sizelimit
       then do
         putStrLn $ "size is " ++ show siz ++ ", which is larger than " ++ show sizelimit
         nfp' <- mkTmpFile "pdf"

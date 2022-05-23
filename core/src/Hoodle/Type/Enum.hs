@@ -65,7 +65,7 @@ data SelectType
   deriving (Show, Eq, Ord)
 
 -- |
-data SelectInfo = SelectInfo
+newtype SelectInfo = SelectInfo
   { _selectType :: SelectType
   }
   deriving (Show)

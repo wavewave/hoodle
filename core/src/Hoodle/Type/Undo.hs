@@ -14,7 +14,7 @@ emptyUndo n
   | otherwise = error "undo table must be larger than 0"
 
 singletonUndo :: Int -> a -> UndoTable a
-singletonUndo n e = addToUndo (emptyUndo n) e
+singletonUndo n = addToUndo (emptyUndo n)
 
 addToUndo :: UndoTable a -> a -> UndoTable a
 addToUndo utable e =

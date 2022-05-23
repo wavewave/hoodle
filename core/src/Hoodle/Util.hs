@@ -3,11 +3,12 @@
 module Hoodle.Util where
 
 import Control.Applicative
+import Control.Monad (void)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Maybe
 import Data.Attoparsec.ByteString.Char8
 import qualified Data.ByteString.Char8 as B
---
+import Data.Functor (($>))
 import Data.Hoodle.Simple
 import Data.Maybe
 import Data.Time.Clock
@@ -19,17 +20,10 @@ import System.Environment
 import System.FilePath
 import System.IO
 
---
--- import Debug.Trace
-
 (#) :: a -> (a -> b) -> b
 (#) = flip ($)
 
 infixr 0 #
-
--- safehead :: [a] -> Maybe a
--- safehead [] = Nothing
--- safehead (a:_) = a
 
 maybeFlip :: Maybe a -> b -> (a -> b) -> b
 maybeFlip m n j = maybe n j m
@@ -38,7 +32,7 @@ maybeRead :: Read a => String -> Maybe a
 maybeRead = fmap fst . listToMaybe . reads
 
 runMaybeT_ :: (Monad m) => MaybeT m a -> m ()
-runMaybeT_ m = runMaybeT m >> return ()
+runMaybeT_ m = void (runMaybeT m)
 
 fromJustError :: String -> Maybe a -> a
 fromJustError _ (Just x) = x
@@ -86,7 +80,7 @@ msgShout = liftIO . putStrLn
 
 -- |
 maybeError' :: String -> Maybe a -> a
-maybeError' str = maybe (error str) id
+maybeError' str = fromMaybe (error str)
 
 data UrlPath = FileUrl FilePath | HttpUrl String
   deriving (Show, Eq)
@@ -101,12 +95,11 @@ urlParse str =
     else
       let p = do
             b <-
-              ( try (string "file://" *> return F)
-                  <|> try (string "http://" *> return H)
-                  <|> try (string "https://" *> return HS)
-                  <|> (return N)
-                )
-            remaining <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
+              try (string "file://" $> F)
+                <|> try (string "http://" $> H)
+                <|> try (string "https://" $> HS)
+                <|> return N
+            remaining <- manyTill anyChar ((satisfy (inClass "\r\n") $> ()) <|> endOfInput)
             return (b, remaining)
           r = parseOnly p (B.pack str)
        in case r of

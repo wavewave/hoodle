@@ -9,7 +9,7 @@ import Control.Exception (SomeException (..), catch)
 import Control.Lens
 import Control.Monad hiding (forM_, mapM_)
 import Control.Monad.Trans
-import Data.Foldable (forM_, mapM_)
+import Data.Foldable (forM_, mapM_, traverse_)
 import Data.IORef
 import qualified Data.IntMap as M
 import Data.Maybe
@@ -39,7 +39,7 @@ startGUI mfname mhook = do
   Gtk.windowSetDefaultSize window 800 400
   cfg <- loadConfigFile
   devlst <- initDevice cfg
-  maxundo <- getMaxUndo cfg >>= maybe (return 50) (return . id)
+  maxundo <- getMaxUndo cfg >>= maybe (return 50) return
   xinputbool <- getXInputConfig cfg
   varcsr <- getPenConfig cfg
   (usepz, uselyr) <- getWidgetConfig cfg
@@ -62,7 +62,7 @@ startGUI mfname mhook = do
 
   setToggleUIForFlag "TOGGLENETSRCA" False st0
   --
-  let canvases = map (getDrawAreaFromBox) . M.elems . view (unitHoodles . currentUnit . cvsInfoMap) $ st0
+  let canvases = map getDrawAreaFromBox . M.elems . view (unitHoodles . currentUnit . cvsInfoMap) $ st0
   outerLayout ui vbox st0
   window `Gtk.on` Gtk.deleteEvent $ do
     liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
@@ -105,15 +105,13 @@ outerLayout ui vbox xst = do
   Gtk.dragSourceSet ebox [Gtk.Button1] [Gtk.ActionCopy]
   Gtk.dragSourceSetIconStock ebox Gtk.stockIndex
   Gtk.dragSourceAddTextTargets ebox
-  -- ebox `on` dragBegin $ \_dc -> do
-  --   liftIO $ putStrLn "dragging"
   ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do
     -- very dirty solution but..
     minfo <- liftIO $ do
       ref <- newIORef (Nothing :: Maybe String)
       view callBack xst (UsrEv (GetHoodleFileInfo ref))
       readIORef ref
-    traverse Gtk.selectionDataSetText minfo >> return ()
+    traverse_ Gtk.selectionDataSetText minfo
 
   --
   hbox <- Gtk.hBoxNew False 0

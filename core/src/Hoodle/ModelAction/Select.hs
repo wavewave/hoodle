@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Hoodle.ModelAction.Select where
@@ -12,6 +13,7 @@ import Data.Hoodle.Select
 import Data.Hoodle.Simple hiding (Hoodle, Page)
 import qualified Data.IntMap as M
 import qualified Data.Map as Map
+import Data.Maybe (isJust)
 import Data.Monoid
 import Data.Sequence (Seq, ViewL (..), viewl)
 import Data.Strict.Tuple
@@ -156,31 +158,29 @@ getULBBoxFromSelected tpage =
 hitInHandle :: Page SelectMode -> (Double, Double) -> Bool
 hitInHandle tpage point =
   case getULBBoxFromSelected tpage of
-    Middle bbox -> maybe False (const True) (checkIfHandleGrasped bbox point)
+    Middle bbox -> isJust (checkIfHandleGrasped bbox point)
     _ -> False
 
 -- |
 toggleCutCopyDelete :: Gtk.UIManager -> Bool -> IO ()
 toggleCutCopyDelete ui b = do
   agr <-
-    Gtk.uiManagerGetActionGroups ui >>= \x ->
-      case x of
-        [] -> error "No action group?"
-        y : _ -> return y
+    Gtk.uiManagerGetActionGroups ui >>= \case
+      [] -> error "No action group?"
+      y : _ -> return y
   Just deletea <- Gtk.actionGroupGetAction agr "DELETEA"
   Just copya <- Gtk.actionGroupGetAction agr "COPYA"
   Just cuta <- Gtk.actionGroupGetAction agr "CUTA"
   let copycutdeletea = [copya, cuta, deletea]
-  mapM_ (flip Gtk.actionSetSensitive b) copycutdeletea
+  mapM_ (`Gtk.actionSetSensitive` b) copycutdeletea
 
 -- |
 togglePaste :: Gtk.UIManager -> Bool -> IO ()
 togglePaste ui b = do
   agr <-
-    Gtk.uiManagerGetActionGroups ui >>= \x ->
-      case x of
-        [] -> error "No action group?"
-        y : _ -> return y
+    Gtk.uiManagerGetActionGroups ui >>= \case
+      [] -> error "No action group?"
+      y : _ -> return y
   Just pastea <- Gtk.actionGroupGetAction agr "PASTEA"
   Gtk.actionSetSensitive pastea b
 
@@ -196,7 +196,7 @@ changeStrokeWidth :: Double -> BBoxed Stroke -> BBoxed Stroke
 changeStrokeWidth pwidth str =
   let nstrsmpl = case bbxed_content str of
         Stroke t c _w d -> Stroke t c pwidth d
-        VWStroke t c d -> Stroke t c pwidth (map (\(x, y, _z) -> (x :!: y)) d)
+        VWStroke t c d -> Stroke t c pwidth (map (\(x, y, _z) -> x :!: y) d)
    in -- Img b w h -> Img b w h
       str {bbxed_content = nstrsmpl}
 
@@ -354,9 +354,9 @@ getNewCoordTime ::
 getNewCoordTime (prev, otime) (x, y) = do
   ntime <- getCurrentTime
   let dtime = diffUTCTime ntime otime
-      willUpdate = dtime > dtime_bound
+      willUpdate = dtime > dtimeBound
       (nprev, nntime) =
-        if dtime > dtime_bound
+        if dtime > dtimeBound
           then ((x, y), ntime)
           else (prev, otime)
   return (willUpdate, (nprev, nntime))

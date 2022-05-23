@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -8,10 +9,10 @@ import Control.Concurrent.STM
 import Control.Lens (view)
 import Control.Monad hiding (forM_)
 import Control.Monad.Trans
-import Data.Foldable (forM_)
+import Data.Foldable (forM_, traverse_)
 import Data.IORef (newIORef, readIORef)
 import qualified Data.IntMap as M
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import qualified Data.Text as T
 import Data.Traversable (traverse)
 import Data.UUID (UUID)
@@ -44,7 +45,7 @@ setTitleFromFileName xstate = do
 
 -- |
 newCanvasId :: CanvasInfoMap -> CanvasId
-newCanvasId cmap = let cids = M.keys cmap in (maximum cids) + 1
+newCanvasId cmap = let cids = M.keys cmap in maximum cids + 1
 
 -- | initialize CanvasInfo with creating windows and connect events
 initCanvasInfo :: HoodleState -> UnitHoodle -> CanvasId -> IO (CanvasInfo a)
@@ -91,13 +92,13 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
       m <- Gtk.eventModifier
       n <- Gtk.eventKeyName
       let keystr = show m ++ ":" ++ show n
-      liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
+      liftIO $ callback (UsrEv (CustomKeyEvent keystr))
   _bpevent <- canvas `Gtk.on` Gtk.buttonPressEvent $
     Gtk.tryEvent $ do
       liftIO $ Gtk.widgetGrabFocus canvas
       (mbtn, mp) <- getPointer dev
       forM_ mp $ \p -> do
-        let pbtn = maybe PenButton1 id mbtn
+        let pbtn = fromMaybe PenButton1 mbtn
         case pbtn of
           TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
           _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
@@ -105,7 +106,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
     Gtk.tryEvent $ do
       (mbtn, mp) <- getPointer dev
       forM_ mp $ \p -> do
-        let pbtn = maybe PenButton1 id mbtn
+        let pbtn = fromMaybe PenButton1 mbtn
         case pbtn of
           TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
           _ -> (liftIO . callback . UsrEv) (PenUp cid p)
@@ -116,7 +117,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
     Gtk.tryEvent $ do
       (mbtn, mp) <- getPointer dev
       forM_ mp $ \p -> do
-        let pbtn = maybe PenButton1 id mbtn
+        let pbtn = fromMaybe PenButton1 mbtn
         case pbtn of
           TouchButton -> (liftIO . callback . UsrEv) (TouchMove cid p)
           _ -> (liftIO . callback . UsrEv) (PenMove cid p)
@@ -129,10 +130,9 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
   Gtk.widgetAddEvents canvas [Gtk.PointerMotionMask, Gtk.Button1MotionMask, Gtk.KeyPressMask]
   agr <-
     liftIO
-      ( Gtk.uiManagerGetActionGroups ui >>= \x ->
-          case x of
-            [] -> error "No action group? "
-            y : _ -> return y
+      ( Gtk.uiManagerGetActionGroups ui >>= \case
+          [] -> error "No action group? "
+          y : _ -> return y
       )
   uxinputa <-
     liftIO
@@ -218,7 +218,7 @@ constructFrame' _callback template ouhdl (Node cid) = do
     Nothing -> do
       let cinfobox' = setCanvasId cid template
           cmap' = M.insert cid cinfobox' ocmap
-          uhdl' = maybe ouhdl id (setCanvasInfoMap cmap' ouhdl)
+          uhdl' = fromMaybe ouhdl (setCanvasInfoMap cmap' ouhdl)
       return (cinfobox', cmap', uhdl')
   ncinfobox <- forBoth unboxBiXform (reinitCanvasInfoStage1 uhdl) cinfobox
   let uhdl' = updateFromCanvasInfoAsCurrentCanvas ncinfobox uhdl
@@ -282,5 +282,5 @@ createTab callback notebook vboxcvs = do
       ref <- newIORef (Nothing :: Maybe String)
       callback (UsrEv (GetHoodleFileInfoFromTab uuid ref))
       readIORef ref
-    traverse Gtk.selectionDataSetText minfo >> return ()
+    traverse_ Gtk.selectionDataSetText minfo
   return (n, uuid, button)

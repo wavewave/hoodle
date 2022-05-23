@@ -5,7 +5,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Hoodle.Type.Canvas
   ( -- * data types
@@ -94,7 +93,7 @@ import Hoodle.Type.PageArrangement
 import Hoodle.Type.Widget
 
 -- |
-data PenDraw = PenDraw {_points :: Seq (Double, Double)}
+newtype PenDraw = PenDraw {_points :: Seq (Double, Double)}
   deriving (Show)
 
 -- | lens for zoomMode

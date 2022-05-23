@@ -1,9 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Hoodle.Type.Coroutine where
 
@@ -11,6 +9,7 @@ import Control.Applicative
 import Control.Concurrent
 import Control.Error.Util (hoistEither)
 import Control.Lens ((%~), (.~), (^.))
+import Control.Monad (void)
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans.Crtn
@@ -29,7 +28,7 @@ data MainOp i o where
   DoEvent :: MainOp AllEvent ()
 
 doEvent :: (Monad m) => AllEvent -> CObjT MainOp m ()
-doEvent ev = request (Arg DoEvent ev) >> return ()
+doEvent ev = void $ request (Arg DoEvent ev)
 
 -- |
 type MainCoroutine = MainObjB
@@ -49,7 +48,7 @@ type WorldObjB = SObjBT (WorldOp AllEvent DriverB) DriverB
 world :: HoodleState -> MainObj () -> WorldObj ()
 world xstate initmc = ReaderT staction
   where
-    staction req = runStateT erract xstate >> return ()
+    staction req = void (runStateT erract xstate)
       where
         erract = do
           r <- runExceptT (go initmc req)
@@ -61,15 +60,15 @@ world xstate initmc = ReaderT staction
       Arg (WorldOp AllEvent DriverB) ->
       EStT HoodleState WorldObjB ()
     go mcobj (Arg GiveEvent ev) = do
-      Right mcobj' <- liftM (fmap fst) (mcobj <==| doEvent ev)
+      Right mcobj' <- fmap (fmap fst) (mcobj <==| doEvent ev)
       req <- lift . lift $ request (Res GiveEvent ())
       go mcobj' req
     go mcobj (Arg FlushLog logobj) = do
-      logf <- (^. tempLog) <$> get
+      logf <- gets (^. tempLog)
       let msg = logf ""
-      if ((not . null) msg)
+      if (not . null) msg
         then do
-          Right logobj' <- lift . lift . lift $ liftM (fmap fst) (logobj <==| writeLog msg)
+          Right logobj' <- lift . lift . lift $ fmap (fmap fst) (logobj <==| writeLog msg)
           modify (tempLog .~ id)
           req <- lift . lift $ request (Res FlushLog logobj')
           go mcobj req
@@ -77,7 +76,7 @@ world xstate initmc = ReaderT staction
           req <- lift . lift $ request Ign
           go mcobj req
     go mcobj (Arg FlushQueue ()) = do
-      q <- (^. tempQueue) <$> get
+      q <- gets (^. tempQueue)
       let lst = fqueue q ++ reverse (bqueue q)
       modify (tempQueue .~ emptyQueue)
       req <- lift . lift $ request (Res FlushQueue lst)

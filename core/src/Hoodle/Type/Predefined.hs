@@ -6,8 +6,8 @@ import Data.Time.Clock
 millisec :: Integer
 millisec = 1000000000
 
-dtime_bound :: NominalDiffTime
-dtime_bound = realToFrac (picosecondsToDiffTime (50 * millisec))
+dtimeBound :: NominalDiffTime
+dtimeBound = realToFrac (picosecondsToDiffTime (50 * millisec))
 
 -- |
 predefinedWinReconfTimeBound :: NominalDiffTime

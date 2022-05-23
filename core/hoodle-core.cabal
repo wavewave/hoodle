@@ -127,7 +127,6 @@ Library
                    Hoodle.ModelAction.Select.Transform
                    Hoodle.ModelAction.Text
                    Hoodle.ModelAction.Window
-                   Hoodle.Renderer.Default
                    Hoodle.Script
                    Hoodle.Script.Coroutine
                    Hoodle.Script.Hook

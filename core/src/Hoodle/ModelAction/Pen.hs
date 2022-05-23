@@ -60,18 +60,18 @@ createNewStroke pinfo pdraw =
         _ -> error "error in createNewStroke"
 
       newstroke =
-        case pvwpen of
-          False ->
+        if pvwpen
+          then
+            VWStroke
+              { stroke_tool = ptool,
+                stroke_color = pcolname,
+                stroke_vwdata = map (\(x, y, z) -> (x, y, pwidth * z)) . toList $ pdraw
+              }
+          else
             Stroke
               { stroke_tool = ptool,
                 stroke_color = pcolname,
                 stroke_width = pwidth,
                 stroke_data = map (\(x, y, _) -> x :!: y) . toList $ pdraw
-              }
-          True ->
-            VWStroke
-              { stroke_tool = ptool,
-                stroke_color = pcolname,
-                stroke_vwdata = map (\(x, y, z) -> (x, y, pwidth * z)) . toList $ pdraw
               }
    in newstroke

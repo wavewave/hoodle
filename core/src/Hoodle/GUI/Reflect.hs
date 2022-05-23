@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -22,9 +23,9 @@ import Control.Monad.State as St
 import Data.Array.MArray
 import qualified Data.Foldable as F (forM_, mapM_)
 import qualified Data.Map as M (lookup)
+import Data.Maybe (fromMaybe)
 import Data.Word
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Accessor
 import Hoodle.Coroutine.Draw
 import Hoodle.GUI.Menu
@@ -57,7 +58,7 @@ changeCurrentCanvasId cid = do
 --   changed.
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine ()
 chkCvsIdNInvalidate cid = do
-  currcid <- liftM (getCurrentCanvasId . view (unitHoodles . currentUnit)) St.get
+  currcid <- gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
 
 -- | block signal for act
@@ -167,8 +168,10 @@ reflectUIRadio lnz name f = do
   update xst wpma mconnid
   where
     update xst wpma mconnid = do
-      (f xst)
-        # ( maybe (return ()) $ \v ->
+      f xst
+        # maybe
+          (return ())
+          ( \v ->
               doIOaction_ $ blockWhile mconnid (Gtk.set wpma [Gtk.radioActionCurrentValue Gtk.:= v])
           )
 
@@ -176,10 +179,9 @@ reflectUIRadio lnz name f = do
 reflectUIToggle :: Gtk.UIManager -> String -> Bool -> IO ()
 reflectUIToggle ui str b = do
   agr <-
-    Gtk.uiManagerGetActionGroups ui >>= \x ->
-      case x of
-        [] -> error "No action group?"
-        y : _ -> return y
+    Gtk.uiManagerGetActionGroups ui >>= \case
+      [] -> error "No action group?"
+      y : _ -> return y
   Just savea <- Gtk.actionGroupGetAction agr str -- ("SAVEA" :: String)
   Gtk.actionSetSensitive savea b
 
@@ -235,10 +237,10 @@ reflectCursor isforced = do
       let p2c = desktop2Canvas geometry . page2Desktop geometry
           CvsCoord (x0, _y0) = p2c (cpn, PageCoord (0, 0))
           CvsCoord (x1, _y1) = p2c (cpn, PageCoord (pwidth, pwidth))
-          cursize = (x1 - x0)
+          cursize = x1 - x0
           (r, g, b, a) = case pcolor of
             ColorRGBA r' g' b' a' -> (r', g', b', a')
-            _ -> maybe (0, 0, 0, 1) id (M.lookup pcolor penColorRGBAmap)
+            _ -> fromMaybe (0, 0, 0, 1) (M.lookup pcolor penColorRGBAmap)
       pb <- Gtk.pixbufNew Gtk.ColorspaceRgb True 8 maxCursorWidth maxCursorHeight
       let numPixels = maxCursorWidth * maxCursorHeight
       pbData <- (Gtk.pixbufGetPixels pb :: IO (Gtk.PixbufData Int Word8))
@@ -248,8 +250,8 @@ reflectCursor isforced = do
               | x < 0.0039 = 0
               | x > 0.996 = 255
               | otherwise = fromIntegral (floor (x * 256 - 1) `mod` 256 :: Int)
-        if (fromIntegral (i `mod` maxCursorWidth)) < cursize
-          && (fromIntegral (i `div` maxCursorWidth)) < cursize
+        if fromIntegral (i `mod` maxCursorWidth) < cursize
+          && fromIntegral (i `div` maxCursorWidth) < cursize
           then do
             writeArray pbData (4 * i) (cvt r)
             writeArray pbData (4 * i + 1) (cvt g)

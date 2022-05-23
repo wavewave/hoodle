@@ -19,11 +19,10 @@ loadConfigFile = do
   homepath <- getEnv "HOME"
   let dothoodle = homepath </> ".hoodle"
   b <- doesFileExist dothoodle
-  when (not b) $ do
+  unless b $ do
     writeFile dothoodle emptyConfigString
     threadDelay 1000000
-  config <- load [Required "$(HOME)/.hoodle"]
-  return config
+  load [Required "$(HOME)/.hoodle"]
 
 getMaxUndo :: Config -> IO (Maybe Int)
 getMaxUndo c = C.lookup c "maxundo"

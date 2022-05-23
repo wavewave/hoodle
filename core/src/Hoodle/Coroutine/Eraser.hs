@@ -78,7 +78,7 @@ eraserProcess cid pnum geometry itms (x0, y0) = do
               newhdlbbox = over gpages (IM.adjust (const newpagebbox) pgnum) currhdl
               newhdlmodst = ViewAppendState newhdlbbox
           uhdl' <- liftIO (updatePageAll newhdlmodst uhdl)
-          commit $ (unitHoodles . currentUnit .~ ((hoodleModeState .~ newhdlmodst) uhdl')) xstate
+          commit $ (unitHoodles . currentUnit .~ (hoodleModeState .~ newhdlmodst) uhdl') xstate
           invalidateInBBox Nothing Efficient cid
           nitms <- rItmsInCurrLyr
           eraserProcess cid pnum geometry nitms (x, y)

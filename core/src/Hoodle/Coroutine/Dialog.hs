@@ -8,6 +8,7 @@ import Control.Lens (view)
 import Control.Monad.Loops
 import Control.Monad.State
 import qualified Data.Foldable as F
+import Data.Functor ((<&>))
 import qualified Data.Text as T
 import qualified Graphics.UI.Gtk as Gtk
 --
@@ -40,7 +41,7 @@ okMessageBox msg = action >> waitSomeEvent (\case GotOk -> True; _ -> False) >> 
 
 -- |
 okCancelMessageBox :: String -> MainCoroutine Bool
-okCancelMessageBox msg = action >> waitSomeEvent p >>= return . q
+okCancelMessageBox msg = (action >> waitSomeEvent p) <&> q
   where
     p (OkCancel _) = True
     p _ = False
@@ -101,7 +102,7 @@ keywordDialog keylst = do
 
 -- |
 keywordDialog' :: [T.Text] -> (AllEvent -> IO ()) -> IO AllEvent
-keywordDialog' keys = \_evhandler -> do
+keywordDialog' keys _evhandler = do
   dialog <- Gtk.dialogNew
   upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
   vbox <- Gtk.vBoxNew False 0
@@ -112,7 +113,7 @@ keywordDialog' keys = \_evhandler -> do
   _btnCancel <- Gtk.dialogAddButton dialog ("Cancel" :: String) Gtk.ResponseCancel
   cbx <- Gtk.comboBoxNewText
   klst <- mapM (Gtk.comboBoxAppendText cbx) keys
-  when ((not . null) klst) $
+  unless (null klst) $
     Gtk.comboBoxSetActive cbx (head klst)
   Gtk.boxPackStart hbox cbx Gtk.PackGrow 2
   Gtk.widgetShowAll dialog
@@ -189,7 +190,7 @@ fileChooser choosertyp mfname = do
         Nothing -> getCurrentDirectory >>= Gtk.fileChooserSetCurrentFolder dialog
       F.mapM_ (Gtk.fileChooserSetCurrentName dialog) mfname
       --   !!!!!! really hackish solution !!!!!!
-      whileM_ (liftM (> 0) Gtk.eventsPending) (Gtk.mainIterationDo False)
+      whileM_ (fmap (> 0) Gtk.eventsPending) (Gtk.mainIterationDo False)
 
       res <- Gtk.dialogRun dialog
       mr <- case res of

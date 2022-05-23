@@ -1,5 +1,4 @@
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -8,10 +7,11 @@ module Hoodle.Coroutine.Page where
 
 import Control.Applicative
 import Control.Concurrent.STM
-import Control.Lens (set, view, (.~), (^.))
+import Control.Lens (set, view, (.~), (?~), (^.))
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Reader (ask)
+import Data.Either (fromRight)
 import qualified Data.Foldable as F
 import Data.Function (on)
 import Data.Hoodle.Generic
@@ -20,6 +20,7 @@ import Data.Hoodle.Simple (Dimension (..))
 import Data.Hoodle.Zipper
 import qualified Data.IntMap as M
 import Data.List (sortBy)
+import Data.Maybe (fromMaybe)
 import Graphics.Hoodle.Render.Type
 import Hoodle.Accessor
 import Hoodle.Coroutine.Commit
@@ -40,7 +41,7 @@ import Hoodle.View.Coordinate
 -- | change page of current canvas using a modify function
 changePage :: (Int -> Int) -> MainCoroutine ()
 changePage modifyfn =
-  (view backgroundStyle <$> get) >>= \bsty ->
+  gets (view backgroundStyle) >>= \bsty ->
     updateUhdl (changePageAction bsty)
       >> adjustScrollbarWithGeometryCurrent
       >> invalidateAllInBBox Nothing Efficient
@@ -50,7 +51,7 @@ changePage modifyfn =
         . (^. currentCanvasInfo)
         $ uhdl
     fsingle bsty uhdl cvsInfo = do
-      let xojst = view hoodleModeState $ uhdl
+      let xojst = view hoodleModeState uhdl
           npgnum = modifyfn (cvsInfo ^. currentPageNum)
           cid = view canvasId cvsInfo
       (b, npgnum', _, xojst') <- changePageInHoodleModeState bsty npgnum xojst
@@ -83,11 +84,11 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
       totnumpages = M.size pgs
       lpage = maybeError' "changePage" (M.lookup (totnumpages - 1) pgs)
   (isChanged, npgnum', npage', ehdl') <-
-    if (npgnum >= totnumpages)
+    if npgnum >= totnumpages
       then do
         let cbkg = view gbackground lpage
         nbkg <- newBkg bsty cbkg
-        npage <- set gbackground nbkg <$> (newPageFromOld lpage)
+        npage <- set gbackground nbkg <$> newPageFromOld lpage
         geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles . currentUnit) =<< get
         callRenderer_ $ updatePageCache geometry (PageNum (totnumpages - 1), npage)
         let npages = M.insert totnumpages npage pgs
@@ -127,7 +128,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
     fsingle uhdl cinfo = do
       geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo
       page <- getCurrentPageCvsId cid
-      let zmode = maybe (cinfo ^. viewInfo . zoomMode) id mzmode
+      let zmode = fromMaybe (cinfo ^. viewInfo . zoomMode) mzmode
           pdim = PageDimension $ page ^. gdimension
           xy =
             either
@@ -144,17 +145,14 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
       return . modifyCanvasInfo cid (const ncinfobox) $ uhdl
     fcont uhdl cinfo = do
       geometry <- liftIO $ getCvsGeomFrmCvsInfo cinfo
-      let zmode = maybe (view (viewInfo . zoomMode) cinfo) id mzmode
+      let zmode = fromMaybe (view (viewInfo . zoomMode) cinfo) mzmode
           cpn = PageNum $ view currentPageNum cinfo
           cdim = canvasDim geometry
           hdl = getHoodle uhdl
           origcoord = case mcoord of
             Just coord -> coord
             Nothing ->
-              either
-                (const (cpn, PageCoord (0, 0)))
-                id
-                (getCvsOriginInPage geometry)
+              fromRight (cpn, PageCoord (0, 0)) (getCvsOriginInPage geometry)
           narr = makeContinuousArrangement zmode cdim hdl origcoord
           ncinfobox =
             CanvasContPage
@@ -174,7 +172,7 @@ canvasZoomUpdateCvsId cid mzmode =
 -- |
 canvasZoomUpdateBufAll :: MainCoroutine ()
 canvasZoomUpdateBufAll = do
-  klst <- M.keys . view cvsInfoMap . view (unitHoodles . currentUnit) <$> get
+  klst <- gets (M.keys . view cvsInfoMap . view (unitHoodles . currentUnit))
   mapM_ updatefunc klst
   where
     updatefunc cid =
@@ -183,13 +181,13 @@ canvasZoomUpdateBufAll = do
 -- |
 canvasZoomUpdateAll :: MainCoroutine ()
 canvasZoomUpdateAll = do
-  klst <- M.keys . view cvsInfoMap . view (unitHoodles . currentUnit) <$> get
-  mapM_ (flip canvasZoomUpdateCvsId Nothing) klst
+  klst <- gets (M.keys . view cvsInfoMap . view (unitHoodles . currentUnit))
+  mapM_ (`canvasZoomUpdateCvsId` Nothing) klst
 
 -- |
 canvasZoomUpdate :: Maybe ZoomMode -> MainCoroutine ()
 canvasZoomUpdate mzmode = do
-  cid <- getCurrentCanvasId . view (unitHoodles . currentUnit) <$> get
+  cid <- gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
   canvasZoomUpdateCvsId cid mzmode
 
 -- |
@@ -213,7 +211,7 @@ pageZoomChangeRel rzmode = do
 -- |
 newPage :: Maybe Dimension -> AddDirection -> MainCoroutine ()
 newPage mdim dir =
-  (view backgroundStyle <$> get) >>= \bsty ->
+  gets (view backgroundStyle) >>= \bsty ->
     updateUhdl (npgBfrAct bsty)
       >> commit_
       >> canvasZoomUpdateAll
@@ -306,13 +304,13 @@ newBkg bsty bkg = do
       case mtotN of
         Nothing -> defbkg
         Just totN -> do
-          let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
+          let n1 = fromMaybe 1 (xst ^. nextPdfBkgPageNum)
           case findPDFBkg rhdl n1 of
             Nothing -> defbkg
             Just bkg' ->
               issueSurfaceID >>= \i -> do
-                let n' = if n1 >= totN then 1 else (n1 + 1)
-                put ((nextPdfBkgPageNum .~ Just n') xst)
+                let n' = if n1 >= totN then 1 else n1 + 1
+                put ((nextPdfBkgPageNum ?~ n') xst)
                 return bkg' {rbkg_surfaceid = i}
 
 findPDFBkg :: RHoodle -> Int -> Maybe RBackground
@@ -330,7 +328,7 @@ findPDFBkg rhdl n1 =
 newPageFromOld :: Page EditMode -> MainCoroutine (Page EditMode)
 newPageFromOld pg = do
   sfcid <- issueSurfaceID
-  return . (glayers .~ (fromNonEmptyList (emptyRLayer sfcid, []))) $ pg
+  return . (glayers .~ fromNonEmptyList (emptyRLayer sfcid, [])) $ pg
 
 updatePageCache :: CanvasGeometry -> (PageNum, Page EditMode) -> Renderer ()
 updatePageCache geometry (pnum, page) = do

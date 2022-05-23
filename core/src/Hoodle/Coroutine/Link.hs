@@ -132,7 +132,7 @@ notifyLink cid pcoord = do
                     hitted = takeHitted hlnks
                 case mnotifyitem of
                   Nothing ->
-                    if ((not . null) hitted)
+                    if (not . null) hitted
                       then Just <$> newNotify geometry pnum (head hitted) Nothing
                       else return Nothing
                   Just (opnum, obbx, _) -> do

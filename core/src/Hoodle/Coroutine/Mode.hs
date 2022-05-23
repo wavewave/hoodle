@@ -113,7 +113,9 @@ cont2SingPage uhdl cinfo = do
 
 sing2ContPage :: UnitHoodle -> CanvasInfo a -> MainCoroutine UnitHoodle
 sing2ContPage uhdl cinfo = do
-  cdim <- liftIO $ return . canvasDim =<< getGeometry4CurrCvs uhdl
+  cdim <-
+    liftIO $
+      canvasDim <$> getGeometry4CurrCvs uhdl
   let zmode = view (viewInfo . zoomMode) cinfo
       canvas = view drawArea cinfo
       cpn = PageNum . view currentPageNum $ cinfo

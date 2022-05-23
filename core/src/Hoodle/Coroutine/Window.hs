@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Hoodle.Coroutine.Window where
@@ -170,14 +169,15 @@ addTab filestore = do
       . (unitButton .~ btn)
       <$> liftIO emptyUnitHoodle
   modify . set (unitHoodles . currentUnit)
-    =<< ( liftIO $ do
-            (uhdl'', wdgt, _) <- constructFrame xst uhdl' wconf
-            let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
-            (uhdl4, _wconf) <- eventConnect xst uhdl3 (view frameState uhdl3)
-            registerFrameToContainer (xst ^. rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
-            Gtk.widgetShowAll notebook
-            return uhdl4
-        )
+    =<< liftIO
+      ( do
+          (uhdl'', wdgt, _) <- constructFrame xst uhdl' wconf
+          let uhdl3 = (rootWindow .~ wdgt) . (rootContainer .~ Gtk.castToBox vboxcvs) $ uhdl''
+          (uhdl4, _wconf) <- eventConnect xst uhdl3 (view frameState uhdl3)
+          registerFrameToContainer (xst ^. rootOfRootWindow) (Gtk.castToBox vboxcvs) wdgt
+          Gtk.widgetShowAll notebook
+          return uhdl4
+      )
 
   doIOaction_ $
     blockWhile (view (uiComponentSignalHandler . switchTabSignal) xst) $
@@ -194,7 +194,7 @@ addTab filestore = do
 -- |
 findTab :: UUID -> MainCoroutine (Maybe Int)
 findTab uuid = do
-  uhdlmap <- view (unitHoodles . _2) <$> get
+  uhdlmap <- gets (view (unitHoodles . _2))
   let assoc = (map (\x -> (view unitUUID x, view unitKey x)) . M.elems) uhdlmap
   return (L.lookup uuid assoc)
 
@@ -204,14 +204,14 @@ switchTab tabnum = do
   xst <- get
   let notebook = view rootNotebook xst
   doIOaction_ $ Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
-  uhdls <- view unitHoodles <$> get
+  uhdls <- gets (view unitHoodles)
 
   let current = fst uhdls
   when (tabnum /= current) $ do
     let uhdl = fromJustError "switchTab" (M.lookup tabnum (snd uhdls))
     liftIO $ Gtk.widgetSetSensitive (uhdls ^. (currentUnit . unitButton)) False
     liftIO $ Gtk.widgetSetSensitive (uhdl ^. unitButton) True
-    modify $ (unitHoodles . currentUnit .~ uhdl)
+    modify (unitHoodles . currentUnit .~ uhdl)
     updateUhdl $ \uhdl' -> liftIO (updatePageAll (view hoodleModeState uhdl') uhdl')
     invalidateAll
     liftIO $ reflectUIToggle (xst ^. gtkUIManager) "SAVEA" (not (uhdl ^. isSaved))
@@ -224,14 +224,14 @@ closeTab = do
   xst <- get
   let (currk, uhdlmap) = xst ^. unitHoodles
       uhdlmap' = M.delete currk uhdlmap
-      uhdllst'' = (map (\(x, y) -> (x, (unitKey .~ x) y)) . zip [0 ..] . M.elems) uhdlmap'
+      uhdllst'' = zipWith (\x y -> (x, (unitKey .~ x) y)) [0 ..] (M.elems uhdlmap')
       uhdlmap'' = M.fromList uhdllst''
       sz = M.size uhdlmap
-  if (sz > 1)
+  if sz > 1
     then do
       let notebook = xst ^. rootNotebook
       doIOaction_ $ Gtk.notebookRemovePage notebook currk
-      modify $ (unitHoodles .~ (0, uhdlmap''))
+      modify (unitHoodles .~ (0, uhdlmap''))
       canvasZoomUpdateAll
       switchTab 0
-    else liftIO $ Gtk.mainQuit
+    else liftIO Gtk.mainQuit

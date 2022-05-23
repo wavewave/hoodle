@@ -13,7 +13,6 @@ class (Show e,Eq e, SafeCopy e) => Eventable e where
 data Event = Event (UUID,ByteString)
            deriving (Show,Eq)
 
-
 {-
 data Event = Message String
            | Open

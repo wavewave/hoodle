@@ -4,25 +4,24 @@ import Data.Hoodle.Simple
 import Graphics.Hoodle.Render.Type.Hoodle
 
 -- |
-data Hook
-  = Hook
-      { saveAsHook :: Maybe (Hoodle -> IO ()),
-        afterSaveHook :: Maybe (FilePath -> Hoodle -> IO ()),
-        afterOpenHook :: Maybe (FilePath -> Hoodle -> IO ()),
-        afterUpdateClipboardHook :: Maybe ([Item] -> IO ()),
-        customContextMenuTitle :: Maybe String,
-        customContextMenuHook :: Maybe ([Item] -> IO ()),
-        customAutosavePage :: Maybe (RPage -> IO ()),
-        fileNameSuggestionHook :: Maybe (IO String),
-        recentFolderHook :: Maybe (IO FilePath),
-        embedPredefinedImageHook :: Maybe (IO FilePath),
-        embedPredefinedImage2Hook :: Maybe (IO FilePath),
-        embedPredefinedImage3Hook :: Maybe (IO FilePath),
-        lookupPathFromId :: Maybe (String -> IO (Maybe FilePath)),
-        warningEmbedImageSize :: Maybe Integer,
-        shrinkCmd4EmbedImage :: Maybe (Double -> FilePath -> FilePath -> IO ()),
-        getIPaddress :: Maybe (IO String)
-      }
+data Hook = Hook
+  { saveAsHook :: Maybe (Hoodle -> IO ()),
+    afterSaveHook :: Maybe (FilePath -> Hoodle -> IO ()),
+    afterOpenHook :: Maybe (FilePath -> Hoodle -> IO ()),
+    afterUpdateClipboardHook :: Maybe ([Item] -> IO ()),
+    customContextMenuTitle :: Maybe String,
+    customContextMenuHook :: Maybe ([Item] -> IO ()),
+    customAutosavePage :: Maybe (RPage -> IO ()),
+    fileNameSuggestionHook :: Maybe (IO String),
+    recentFolderHook :: Maybe (IO FilePath),
+    embedPredefinedImageHook :: Maybe (IO FilePath),
+    embedPredefinedImage2Hook :: Maybe (IO FilePath),
+    embedPredefinedImage3Hook :: Maybe (IO FilePath),
+    lookupPathFromId :: Maybe (String -> IO (Maybe FilePath)),
+    warningEmbedImageSize :: Maybe Integer,
+    shrinkCmd4EmbedImage :: Maybe (Double -> FilePath -> FilePath -> IO ()),
+    getIPaddress :: Maybe (IO String)
+  }
 
 defaultHook :: Hook
 defaultHook =

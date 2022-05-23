@@ -52,6 +52,7 @@ renderHltBBox (BBox (x1, y1) (x2, y2)) = do
   Cairo.setLineWidth 10
   Cairo.rectangle x1 y1 (x2 - x1) (y2 - y1)
   Cairo.stroke
+
 {-
 -- |
 renderHighlightedBBoxedItem :: (GetBBoxable a) => a -> Cairo.Render ()

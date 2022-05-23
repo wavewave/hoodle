@@ -59,7 +59,9 @@ singleDispatch ::
     World e (SObjBT (DrvOp e) m) (),
     [EvOrAct e]
   ) ->
-  SObjBT (DrvOp e) m
+  SObjBT
+    (DrvOp e)
+    m
     ( LogServer (SObjBT (DrvOp e) m) (),
       World e (SObjBT (DrvOp e) m) (),
       [EvOrAct e]
@@ -88,7 +90,9 @@ multiDispatch ::
     World e (SObjBT (DrvOp e) m) ()
   ) ->
   [EvOrAct e] ->
-  SObjBT (DrvOp e) m
+  SObjBT
+    (DrvOp e)
+    m
     ( LogServer (SObjBT (DrvOp e) m) (),
       World e (SObjBT (DrvOp e) m) (),
       [EvOrAct e]
@@ -103,7 +107,9 @@ multiDispatchTillEnd ::
     World e (SObjBT (DrvOp e) m) ()
   ) ->
   [EvOrAct e] ->
-  SObjBT (DrvOp e) m
+  SObjBT
+    (DrvOp e)
+    m
     ( LogServer (SObjBT (DrvOp e) m) (),
       World e (SObjBT (DrvOp e) m) ()
     )
@@ -120,6 +126,8 @@ multiDispatchTillEnd (logobj, worldobj) events =
 fire ::
   (Monad m, MonadLog m) =>
   e ->
-  EStT (Driver e m ()) m
+  EStT
+    (Driver e m ())
+    m
     (Maybe (ActionOrder e))
 fire = query . dispatch

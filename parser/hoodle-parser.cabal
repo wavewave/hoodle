@@ -13,8 +13,6 @@ Cabal-Version:  2.0
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle-parser
-
-
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
@@ -46,3 +44,16 @@ Library
                    Text.Hoodle.Parse.Util
                    Text.Hoodle.Parse.Zlib
                    Text.Hoodlet.Parse.Attoparsec
+
+executable parsetest
+  hs-source-dirs: examples
+  main-is: parsetest.hs
+  build-depends:
+      attoparsec,
+      base,
+      bytestring,
+      cairo,
+      hoodle-parser,
+      hoodle-render,
+      hoodle-types
+  default-language: Haskell2010

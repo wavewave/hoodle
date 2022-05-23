@@ -1,2 +1,1 @@
-module Debug.Hoodle.Coroutine.Draw where 
-  
+module Debug.Hoodle.Coroutine.Draw where

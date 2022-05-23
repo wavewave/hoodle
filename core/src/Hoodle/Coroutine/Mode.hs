@@ -3,7 +3,7 @@
 module Hoodle.Coroutine.Mode where
 
 import Control.Applicative
-import Control.Lens ((.~), set, view)
+import Control.Lens (set, view, (.~))
 import Control.Monad.State
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic

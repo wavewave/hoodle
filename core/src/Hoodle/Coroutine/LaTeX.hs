@@ -44,7 +44,8 @@ getLaTeXComponentsFromHdl hdl =
         | view _1 x > view _1 y = GT
         | view _1 x < view _1 y = LT
         | otherwise =
-          if  | view _2 x > view _2 y -> GT
+          if
+              | view _2 x > view _2 y -> GT
               | view _2 x < view _2 y -> LT
               | otherwise -> EQ
       latex_components = catMaybes mlatex_components

@@ -7,7 +7,7 @@ module Hoodle.Publish.PDF where
 
 import Control.Applicative
 import Control.Exception (SomeException (..), catch)
-import Control.Lens (_1, _2, _3, _4, view)
+import Control.Lens (view, _1, _2, _3, _4)
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
@@ -80,21 +80,19 @@ takeFile :: DirTree a -> Maybe a
 takeFile x | isFile x = (Just . file) x
 takeFile _ | otherwise = Nothing
 
-data Annot
-  = Annot
-      { annot_rect :: (Int, Int, Int, Int),
-        annot_border :: (Int, Int, Int),
-        annot_act :: AnnotActions
-      }
+data Annot = Annot
+  { annot_rect :: (Int, Int, Int, Int),
+    annot_border :: (Int, Int, Int),
+    annot_act :: AnnotActions
+  }
 
 data AnnotActions = OpenURI String | OpenApp String
 
-data AppState
-  = AppState
-      { stNextFree :: Int,
-        stPageRefs :: [Ref],
-        stRootNode :: Ref
-      }
+data AppState = AppState
+  { stNextFree :: Int,
+    stPageRefs :: [Ref],
+    stRootNode :: Ref
+  }
 
 initialAppState :: AppState
 initialAppState =
@@ -118,17 +116,19 @@ writeTrailer :: StateT AppState (PdfWriter IO) ()
 writeTrailer = do
   pageRefs <- gets stPageRefs
   rootRef <- gets stRootNode
-  lift $ writeObject rootRef $ ODict $
-    Dict
-      [ ("Type", OName "Pages"),
-        ("Count", ONumber $ NumInt $ length pageRefs),
-        ("Kids", OArray $ Array $ map ORef $ reverse pageRefs)
-      ]
+  lift $
+    writeObject rootRef $
+      ODict $
+        Dict
+          [ ("Type", OName "Pages"),
+            ("Count", ONumber $ NumInt $ length pageRefs),
+            ("Kids", OArray $ Array $ map ORef $ reverse pageRefs)
+          ]
   catalogIndex <- nextFreeIndex
   let catalogRef = Ref catalogIndex 0
   lift $ writeObject catalogRef $ ODict $ Dict [("Type", OName "Catalog"), ("Pages", ORef rootRef)]
   n <- gets stNextFree
-  lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n -1)), ("Root", ORef catalogRef)])
+  lift $ writeXRefTable 0 (Dict [("Size", (ONumber . NumInt) (n - 1)), ("Root", ORef catalogRef)])
 
 writeObjectChildren :: Object () -> Pdf (StateT AppState (PdfWriter IO)) (Object ())
 writeObjectChildren (ORef r) = do
@@ -230,25 +230,29 @@ writePdfPageWithAnnot (S.Dim w h) mannots pg@(Page _ pageDict) = do
   resources <- lookupDict "Resources" pageDict >>= deref >>= writeObjectChildren
   case mannots of
     Nothing ->
-      lift . lift . lift $ writeObject pageRef $ ODict $
-        Dict
-          [ ("Type", OName "Page"),
-            ("Contents", OArray $ Array $ map ORef contentRefs'),
-            ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0, 0, floor w, floor h]),
-            ("Resources", resources),
-            ("Parent", ORef parentRef)
-          ]
+      lift . lift . lift $
+        writeObject pageRef $
+          ODict $
+            Dict
+              [ ("Type", OName "Page"),
+                ("Contents", OArray $ Array $ map ORef contentRefs'),
+                ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0, 0, floor w, floor h]),
+                ("Resources", resources),
+                ("Parent", ORef parentRef)
+              ]
     Just anns -> do
       annrefs <- mapM writeAnnot anns
-      lift . lift . lift $ writeObject pageRef $ ODict $
-        Dict
-          [ ("Type", OName "Page"),
-            ("Contents", OArray $ Array $ map ORef contentRefs'),
-            ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0, 0, floor w, floor h]),
-            ("Resources", resources),
-            ("Parent", ORef parentRef),
-            ("Annots", (OArray . Array . map ORef) annrefs)
-          ]
+      lift . lift . lift $
+        writeObject pageRef $
+          ODict $
+            Dict
+              [ ("Type", OName "Page"),
+                ("Contents", OArray $ Array $ map ORef contentRefs'),
+                ("MediaBox", OArray $ Array $ map (ONumber . NumInt) [0, 0, floor w, floor h]),
+                ("Resources", resources),
+                ("Parent", ORef parentRef),
+                ("Annots", (OArray . Array . map ORef) annrefs)
+              ]
 
 -- |
 makeAnnot ::
@@ -319,7 +323,7 @@ writePdfFile _hdlfp dim (urlbase, specialurlbase) (rootpath, currpath) path nlnk
     when encrypted $ setUserPassword defaultUserPassword >> return ()
     root <- document >>= documentCatalog >>= catalogPageNode
     count <- pageNodeNKids root
-    forM_ [0 .. count -1] $ \i -> do
+    forM_ [0 .. count - 1] $ \i -> do
       page <- pageNodePageByNum root i
       mannots <- runMaybeT $ do
         lnks <- MaybeT . return $ lookup (i + 1) nlnks
@@ -330,7 +334,7 @@ writePdfFile _hdlfp dim (urlbase, specialurlbase) (rootpath, currpath) path nlnk
               then
                 let S.Dim _w h = dim
                  in [ Annot
-                        { annot_rect = (0, floor h, 100, floor h -100),
+                        { annot_rect = (0, floor h, 100, floor h - 100),
                           annot_border = (16, 16, 1),
                           annot_act = specialURIFunction specialurlbase muuid
                         }
@@ -383,9 +387,9 @@ renderHoodleToPDF hdl ofp = do
         let S.Dim w h = view S.dimension pg
          in pdfSurfaceSetSize sfc w h >> return pg
   withPDFSurface tempfile width height $ \s ->
-    renderWith s . flip runStateT ctxt
-      $ sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages
-      $ hdl
+    renderWith s . flip runStateT ctxt $
+      sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages $
+        hdl
   readProcessWithExitCode "pdftk" [tempfile, "cat", "output", ofp] ""
   return ()
 

@@ -22,18 +22,16 @@ import Data.Bifunctor (Bifunctor (..))
 import Prelude hiding (fst, snd)
 
 -- | bounding box type
-data BBox
-  = BBox
-      { bbox_upperleft :: (Double, Double),
-        bbox_lowerright :: (Double, Double)
-      }
+data BBox = BBox
+  { bbox_upperleft :: (Double, Double),
+    bbox_lowerright :: (Double, Double)
+  }
   deriving (Show, Eq, Ord)
 
-data BBoxed a
-  = BBoxed
-      { bbxed_content :: a,
-        bbxed_bbx :: BBox
-      }
+data BBoxed a = BBoxed
+  { bbxed_content :: a,
+    bbxed_bbx :: BBox
+  }
 
 deriving instance (Show a) => Show (BBoxed a)
 
@@ -87,10 +85,9 @@ interleave fa fb (x :- xs) = fa x : (interleave fb fa xs)
 type TAlterHitted a = AlterList [a] (Hitted a)
 
 -- |
-newtype TEitherAlterHitted a
-  = TEitherAlterHitted
-      { unTEitherAlterHitted :: Either [a] (TAlterHitted a)
-      }
+newtype TEitherAlterHitted a = TEitherAlterHitted
+  { unTEitherAlterHitted :: Either [a] (TAlterHitted a)
+  }
 
 -- |
 takeHitted :: AlterList x (Hitted a) -> [a]

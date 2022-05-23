@@ -75,12 +75,11 @@ onMessage evar arrbuf = do
 data Mode = ModePen | ModeEraser | ModeSelect
   deriving (Show)
 
-data ModeButtons
-  = ModeButtons
-      { _mbPen :: JSVal,
-        _mbEraser :: JSVal,
-        _mbSelect :: JSVal
-      }
+data ModeButtons = ModeButtons
+  { _mbPen :: JSVal,
+    _mbEraser :: JSVal,
+    _mbSelect :: JSVal
+  }
 
 onModeChange :: Mode -> EventVar -> ModeButtons -> JSVal -> IO ()
 onModeChange m evar btns _ = do

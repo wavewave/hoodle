@@ -82,39 +82,44 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
       vadj = _vertAdjustment cinfo
   Gtk.widgetSetCanFocus canvas True
   Gtk.widgetGrabFocus canvas
-  _confevent <- canvas `Gtk.on` Gtk.configureEvent $ Gtk.tryEvent $ do
-    (w, h) <- Gtk.eventSize
-    liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
-  _keyevent <- canvas `Gtk.on` Gtk.keyPressEvent $ Gtk.tryEvent $ do
-    m <- Gtk.eventModifier
-    n <- Gtk.eventKeyName
-    let keystr = show m ++ ":" ++ show n
-    liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
-  _bpevent <- canvas `Gtk.on` Gtk.buttonPressEvent $ Gtk.tryEvent $ do
-    liftIO $ Gtk.widgetGrabFocus canvas
-    (mbtn, mp) <- getPointer dev
-    forM_ mp $ \p -> do
-      let pbtn = maybe PenButton1 id mbtn
-      case pbtn of
-        TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
-        _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
-  _brevent <- canvas `Gtk.on` Gtk.buttonReleaseEvent $ Gtk.tryEvent $ do
-    (mbtn, mp) <- getPointer dev
-    forM_ mp $ \p -> do
-      let pbtn = maybe PenButton1 id mbtn
-      case pbtn of
-        TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
-        _ -> (liftIO . callback . UsrEv) (PenUp cid p)
+  _confevent <- canvas `Gtk.on` Gtk.configureEvent $
+    Gtk.tryEvent $ do
+      (w, h) <- Gtk.eventSize
+      liftIO $ callback (UsrEv (CanvasConfigure cid (fromIntegral w) (fromIntegral h)))
+  _keyevent <- canvas `Gtk.on` Gtk.keyPressEvent $
+    Gtk.tryEvent $ do
+      m <- Gtk.eventModifier
+      n <- Gtk.eventKeyName
+      let keystr = show m ++ ":" ++ show n
+      liftIO $ (callback (UsrEv (CustomKeyEvent keystr)))
+  _bpevent <- canvas `Gtk.on` Gtk.buttonPressEvent $
+    Gtk.tryEvent $ do
+      liftIO $ Gtk.widgetGrabFocus canvas
+      (mbtn, mp) <- getPointer dev
+      forM_ mp $ \p -> do
+        let pbtn = maybe PenButton1 id mbtn
+        case pbtn of
+          TouchButton -> liftIO (callback (UsrEv (TouchDown cid p)))
+          _ -> liftIO (callback (UsrEv (PenDown cid pbtn p)))
+  _brevent <- canvas `Gtk.on` Gtk.buttonReleaseEvent $
+    Gtk.tryEvent $ do
+      (mbtn, mp) <- getPointer dev
+      forM_ mp $ \p -> do
+        let pbtn = maybe PenButton1 id mbtn
+        case pbtn of
+          TouchButton -> (liftIO . callback . UsrEv) (TouchUp cid p)
+          _ -> (liftIO . callback . UsrEv) (PenUp cid p)
   _drawev <- canvas `Gtk.on` Gtk.draw $ do
     liftIO $ Gtk.widgetGrabFocus canvas
     (liftIO . callback . UsrEv) (UpdateCanvas cid)
-  canvas `Gtk.on` Gtk.motionNotifyEvent $ Gtk.tryEvent $ do
-    (mbtn, mp) <- getPointer dev
-    forM_ mp $ \p -> do
-      let pbtn = maybe PenButton1 id mbtn
-      case pbtn of
-        TouchButton -> (liftIO . callback . UsrEv) (TouchMove cid p)
-        _ -> (liftIO . callback . UsrEv) (PenMove cid p)
+  canvas `Gtk.on` Gtk.motionNotifyEvent $
+    Gtk.tryEvent $ do
+      (mbtn, mp) <- getPointer dev
+      forM_ mp $ \p -> do
+        let pbtn = maybe PenButton1 id mbtn
+        case pbtn of
+          TouchButton -> (liftIO . callback . UsrEv) (TouchMove cid p)
+          _ -> (liftIO . callback . UsrEv) (PenMove cid p)
   -- drag and drop setting
   Gtk.dragDestSet canvas [Gtk.DestDefaultMotion, Gtk.DestDefaultDrop] [Gtk.ActionCopy]
   Gtk.dragDestAddTextTargets canvas

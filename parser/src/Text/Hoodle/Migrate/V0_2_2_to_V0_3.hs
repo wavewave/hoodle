@@ -142,7 +142,8 @@ migrate :: B.ByteString -> IO (Either String NH.Hoodle)
 migrate bstr = do
   runExceptT $ do
     v <- hoistEither (parseOnly NP.checkHoodleVersion bstr)
-    if  | v <= "0.1.1" -> do
+    if
+        | v <= "0.1.1" -> do
           oh <- ExceptT (Text.Hoodle.Migrate.V0_1_1_to_V0_2_2.migrate bstr)
           let ttl = view OH.title oh
               pgs = (fmap page2Page . view OH.pages) oh
@@ -152,5 +153,6 @@ migrate bstr = do
             oh <- hoistEither (parseOnly OP.hoodle bstr)
             lift (hoodle2Hoodle oh)
         | otherwise -> hoistEither (parseOnly NP.hoodle bstr)
+
 -- pdf = view OH.embeddedPdf oh
 {- . set NH.embeddedPdf pdf -}

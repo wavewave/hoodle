@@ -56,7 +56,8 @@ erasingMode hstrks0 cxys = do
         _ -> pure ()
     PointerUp _ -> do
       sock <- get <&> (^. hdlstateWebSocket)
-      when (not . null $ hstrks0) $ liftIO $ do
-        let msg = DeleteStrokes hstrks0
-        sendBinary sock msg
+      when (not . null $ hstrks0) $
+        liftIO $ do
+          let msg = DeleteStrokes hstrks0
+          sendBinary sock msg
     _ -> erasingMode hstrks0 cxys

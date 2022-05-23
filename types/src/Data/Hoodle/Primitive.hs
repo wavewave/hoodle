@@ -1,6 +1,10 @@
-{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 -----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
 -- |
 -- Module      : Data.Hoodle.Primitive
 -- Copyright   : (c) 2013 Ian-Woo Kim
@@ -11,7 +15,4 @@
 -- Portability : GHC
 --
 -- primitive types for hoodle
--- 
------------------------------------------------------------------------------
-
 module Data.Hoodle.Primitive where

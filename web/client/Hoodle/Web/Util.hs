@@ -80,11 +80,11 @@ intersectingStrokes xys strks =
   let bbox1 = pathBBox xys
       pairs = zip xys (tail xys)
       hitstrks = flip concatMap pairs $ \((x0, y0), (x, y)) ->
-        map (^. rstrokeCommitId)
-          $ filter (doesLineHitStrk ((x0, y0), (x, y)) . (^. rstrokePath))
-          $ map bbxed_content
-          $ filter (do2BBoxIntersect bbox1 . getBBox)
-          $ strks
+        map (^. rstrokeCommitId) $
+          filter (doesLineHitStrk ((x0, y0), (x, y)) . (^. rstrokePath)) $
+            map bbxed_content $
+              filter (do2BBoxIntersect bbox1 . getBBox) $
+                strks
    in hitstrks
 
 pathEnclosedByLasso :: [(Double, Double)] -> Seq (Double, Double) -> Bool
@@ -97,11 +97,11 @@ enclosedStrokes ::
   [CommitId]
 enclosedStrokes lasso strks =
   let bbox1 = pathBBox (toList lasso)
-   in map (^. rstrokeCommitId)
-        $ filter ((`pathEnclosedByLasso` lasso) . (^. rstrokePath))
-        $ map bbxed_content
-        $ filter (do2BBoxIntersect bbox1 . getBBox)
-        $ strks
+   in map (^. rstrokeCommitId) $
+        filter ((`pathEnclosedByLasso` lasso) . (^. rstrokePath)) $
+          map bbxed_content $
+            filter (do2BBoxIntersect bbox1 . getBBox) $
+              strks
 
 stringifyStrokeId :: (IsString s, Semigroup s) => CommitId -> s
 stringifyStrokeId (CommitId i) = "stroke" <> fromString (show i)

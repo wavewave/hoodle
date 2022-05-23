@@ -51,7 +51,7 @@ makeSVGFromSelection cache cid hititms (BBox (ulx, uly) (lrx, lry)) = do
       (x, y) = (ulx, uly)
       (w, h) = (lrx - ulx, lry - uly)
   Cairo.withSVGSurface filename w h $ \s -> Cairo.renderWith s $ do
-    Cairo.translate (- ulx) (- uly)
+    Cairo.translate (-ulx) (-uly)
     mapM_ (renderRItem cache cid) hititms
   bstr <- B.readFile filename
   let svg = SVG Nothing Nothing bstr (x, y) (Dim w h)

@@ -108,5 +108,6 @@ migrate bstr = do
             pgs = (fmap page2Page . view OH.pages) oh
         set NH.title ttl . set NH.pages pgs <$> lift NH.emptyHoodle
       else hoistEither (parseOnly NP.hoodle bstr)
+
 -- pdf = view OH.embeddedPdf oh
 {- . set NH.embeddedPdf pdf -}

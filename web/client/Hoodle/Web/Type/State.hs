@@ -8,38 +8,34 @@ import qualified JavaScript.Web.WebSocket as WS
 import Lens.Micro.TH (makeLenses)
 import Message (CommitId (..))
 
-data SyncState
-  = SyncState
-      { _syncstateQueue :: [[(Double, Double)]]
-      }
+data SyncState = SyncState
+  { _syncstateQueue :: [[(Double, Double)]]
+  }
 
 makeLenses ''SyncState
 
-data RStroke
-  = RStroke
-      { _rstrokeCommitId :: CommitId,
-        _rstrokePath :: [(Double, Double)]
-      }
+data RStroke = RStroke
+  { _rstrokeCommitId :: CommitId,
+    _rstrokePath :: [(Double, Double)]
+  }
 
 makeLenses ''RStroke
 
-data DocState
-  = DocState
-      { _docstateLastCommit :: CommitId,
-        _docstateData :: [BBoxed RStroke]
-      }
+data DocState = DocState
+  { _docstateLastCommit :: CommitId,
+    _docstateData :: [BBoxed RStroke]
+  }
 
 makeLenses ''DocState
 
-data HoodleState
-  = HoodleState
-      { _hdlstateSVGBox :: JSVal,
-        _hdlstateOverlayCanvas :: JSVal,
-        _hdlstateOverlayOffCanvas :: JSVal,
-        _hdlstateWebSocket :: WS.WebSocket,
-        _hdlstateDocState :: DocState,
-        _hdlstateSyncState :: SyncState,
-        _hdlstateOverlayUpdated :: Bool
-      }
+data HoodleState = HoodleState
+  { _hdlstateSVGBox :: JSVal,
+    _hdlstateOverlayCanvas :: JSVal,
+    _hdlstateOverlayOffCanvas :: JSVal,
+    _hdlstateWebSocket :: WS.WebSocket,
+    _hdlstateDocState :: DocState,
+    _hdlstateSyncState :: SyncState,
+    _hdlstateOverlayUpdated :: Bool
+  }
 
 makeLenses ''HoodleState

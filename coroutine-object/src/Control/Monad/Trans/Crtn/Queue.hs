@@ -6,11 +6,10 @@ module Control.Monad.Trans.Crtn.Queue where
 -- queue
 ---------------------------
 
-data Queue a
-  = Queue
-      { fqueue :: [a],
-        bqueue :: [a]
-      }
+data Queue a = Queue
+  { fqueue :: [a],
+    bqueue :: [a]
+  }
 
 deriving instance (Show a) => Show (Queue a)
 

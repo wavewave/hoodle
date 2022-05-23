@@ -1,17 +1,16 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
 -- |
--- Module      : Hoodle.Renderer.Default 
+-- Module      : Hoodle.Renderer.Default
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
 --
 -- License     : BSD3
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
---
------------------------------------------------------------------------------
-
-module Hoodle.Renderer.Default where 
-
+module Hoodle.Renderer.Default where

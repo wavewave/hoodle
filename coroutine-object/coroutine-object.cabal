@@ -9,7 +9,6 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Control
 Build-Type: 	Simple
 Cabal-Version:  2.0
-data-files:      
 Library
   hs-source-dirs: src
   ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
@@ -32,7 +31,19 @@ Library
                    Control.Monad.Trans.Crtn.Queue 
                    Control.Monad.Trans.Crtn.World
 
-
-
-
- 
+executable coroutine-object-test
+  hs-source-dirs: example
+  main-is: coroutine-object-test.hs
+  other-modules:
+      Event
+      Sample
+      SampleActor
+      Simple
+  build-depends:
+      base,
+      free,
+      lens,
+      mtl,
+      transformers,
+      coroutine-object
+  default-language: Haskell2010

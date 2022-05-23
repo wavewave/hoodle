@@ -1,4 +1,7 @@
 -----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+
 -- |
 -- Module      : Main
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
@@ -7,14 +10,10 @@
 -- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
 -- Stability   : experimental
 -- Portability : GHC
---
------------------------------------------------------------------------------
-
 module Main where
 
-import Hoodle.Script 
+import Hoodle.Script
 import Hoodle.StartUp
 
-main :: IO () 
-main = hoodleStartMain defaultScriptConfig 
-
+main :: IO ()
+main = hoodleStartMain defaultScriptConfig

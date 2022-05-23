@@ -242,12 +242,12 @@ reflectCursor isforced = do
       pb <- Gtk.pixbufNew Gtk.ColorspaceRgb True 8 maxCursorWidth maxCursorHeight
       let numPixels = maxCursorWidth * maxCursorHeight
       pbData <- (Gtk.pixbufGetPixels pb :: IO (Gtk.PixbufData Int Word8))
-      F.forM_ [0 .. numPixels -1] $ \i -> do
+      F.forM_ [0 .. numPixels - 1] $ \i -> do
         let cvt :: Double -> Word8
             cvt x
               | x < 0.0039 = 0
               | x > 0.996 = 255
-              | otherwise = fromIntegral (floor (x * 256 -1) `mod` 256 :: Int)
+              | otherwise = fromIntegral (floor (x * 256 - 1) `mod` 256 :: Int)
         if (fromIntegral (i `mod` maxCursorWidth)) < cursize
           && (fromIntegral (i `div` maxCursorWidth)) < cursize
           then do

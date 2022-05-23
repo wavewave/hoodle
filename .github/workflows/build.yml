@@ -1,7 +1,7 @@
 name: "Build"
 on: [pull_request, push]
 jobs:
-  Build:
+  build:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository code
@@ -18,3 +18,9 @@ jobs:
     - name: build
       run: |
         nix build --print-build-logs .#
+  format:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      # ormolu 0.3.0.1
+      - uses: mrkkrp/ormolu-action@v4

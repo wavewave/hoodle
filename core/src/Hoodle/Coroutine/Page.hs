@@ -8,7 +8,7 @@ module Hoodle.Coroutine.Page where
 
 import Control.Applicative
 import Control.Concurrent.STM
-import Control.Lens ((.~), (^.), set, view)
+import Control.Lens (set, view, (.~), (^.))
 import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Reader (ask)
@@ -39,10 +39,11 @@ import Hoodle.View.Coordinate
 
 -- | change page of current canvas using a modify function
 changePage :: (Int -> Int) -> MainCoroutine ()
-changePage modifyfn = (view backgroundStyle <$> get) >>= \bsty ->
-  updateUhdl (changePageAction bsty)
-    >> adjustScrollbarWithGeometryCurrent
-    >> invalidateAllInBBox Nothing Efficient
+changePage modifyfn =
+  (view backgroundStyle <$> get) >>= \bsty ->
+    updateUhdl (changePageAction bsty)
+      >> adjustScrollbarWithGeometryCurrent
+      >> invalidateAllInBBox Nothing Efficient
   where
     changePageAction bsty uhdl =
       unboxBiAct (fsingle bsty uhdl) (fcont bsty uhdl)
@@ -80,7 +81,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
   let ehdl = hoodleModeStateEither hdlmodst
       pgs = either (view gpages) (view gselAll) ehdl
       totnumpages = M.size pgs
-      lpage = maybeError' "changePage" (M.lookup (totnumpages -1) pgs)
+      lpage = maybeError' "changePage" (M.lookup (totnumpages - 1) pgs)
   (isChanged, npgnum', npage', ehdl') <-
     if (npgnum >= totnumpages)
       then do
@@ -88,7 +89,7 @@ changePageInHoodleModeState bsty npgnum hdlmodst = do
         nbkg <- newBkg bsty cbkg
         npage <- set gbackground nbkg <$> (newPageFromOld lpage)
         geometry <- liftIO . getGeometry4CurrCvs . view (unitHoodles . currentUnit) =<< get
-        callRenderer_ $ updatePageCache geometry (PageNum (totnumpages -1), npage)
+        callRenderer_ $ updatePageCache geometry (PageNum (totnumpages - 1), npage)
         let npages = M.insert totnumpages npage pgs
         return
           ( True,
@@ -211,11 +212,12 @@ pageZoomChangeRel rzmode = do
 
 -- |
 newPage :: Maybe Dimension -> AddDirection -> MainCoroutine ()
-newPage mdim dir = (view backgroundStyle <$> get) >>= \bsty ->
-  updateUhdl (npgBfrAct bsty)
-    >> commit_
-    >> canvasZoomUpdateAll
-    >> invalidateAll
+newPage mdim dir =
+  (view backgroundStyle <$> get) >>= \bsty ->
+    updateUhdl (npgBfrAct bsty)
+      >> commit_
+      >> canvasZoomUpdateAll
+      >> invalidateAll
   where
     npgBfrAct bsty uhdl = forBoth' unboxBiAct (fsimple bsty uhdl) . view currentCanvasInfo $ uhdl
     fsimple :: BackgroundStyle -> UnitHoodle -> CanvasInfo a -> MainCoroutine UnitHoodle
@@ -307,10 +309,11 @@ newBkg bsty bkg = do
           let n1 = maybe 1 id (xst ^. nextPdfBkgPageNum)
           case findPDFBkg rhdl n1 of
             Nothing -> defbkg
-            Just bkg' -> issueSurfaceID >>= \i -> do
-              let n' = if n1 >= totN then 1 else (n1 + 1)
-              put ((nextPdfBkgPageNum .~ Just n') xst)
-              return bkg' {rbkg_surfaceid = i}
+            Just bkg' ->
+              issueSurfaceID >>= \i -> do
+                let n' = if n1 >= totN then 1 else (n1 + 1)
+                put ((nextPdfBkgPageNum .~ Just n') xst)
+                return bkg' {rbkg_surfaceid = i}
 
 findPDFBkg :: RHoodle -> Int -> Maybe RBackground
 findPDFBkg rhdl n1 =

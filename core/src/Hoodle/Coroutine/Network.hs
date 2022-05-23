@@ -18,7 +18,7 @@ import qualified Data.Binary as Bi
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.IORef
-import Data.Monoid ((<>), mconcat)
+import Data.Monoid (mconcat, (<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Traversable as Tr
@@ -36,35 +36,36 @@ import Network.Simple.TCP
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
 server evhandler ip txtorig = do
   ref <- newIORef txtorig
-  forever $ listen ip "4040" $ \(lsock, _) ->
-    accept lsock $ \(sock, addr) -> do
-      txt <- readIORef ref
-      let bstr = TE.encodeUtf8 txt
-          bstr_size :: Word32 = (fromIntegral . B.length) bstr
-          bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
-      putStrLn $ "TCP connection established from " ++ show addr
-      send sock (bstr_size_binary <> TE.encodeUtf8 txt)
-      unfoldM_ $ do
-        mbstr <- runMaybeT $ do
-          bstr' <- MaybeT (recv sock 4)
-          let getsize :: B.ByteString -> Word32
-              getsize = Bi.decode . LB.fromChunks . return
-              size = (fromIntegral . getsize) bstr'
-              go s bs = do
-                liftIO $ putStrLn ("requested size = " ++ show s)
-                bstr1 <- MaybeT (recv sock s)
-                let s' = B.length bstr1
-                liftIO $ putStrLn ("obtained size = " ++ show s')
-                if s <= s'
-                  then return (bs <> bstr1)
-                  else go (s - s') (bs <> bstr1)
-          go size B.empty
-        Tr.forM mbstr $ \bstr' -> do
-          let txt' = TE.decodeUtf8 bstr'
-          (evhandler . UsrEv . NetworkProcess . NetworkReceived) txt'
-          writeIORef ref txt'
-        return mbstr
-      putStrLn "FINISHED"
+  forever $
+    listen ip "4040" $ \(lsock, _) ->
+      accept lsock $ \(sock, addr) -> do
+        txt <- readIORef ref
+        let bstr = TE.encodeUtf8 txt
+            bstr_size :: Word32 = (fromIntegral . B.length) bstr
+            bstr_size_binary = (mconcat . LB.toChunks . Bi.encode) bstr_size
+        putStrLn $ "TCP connection established from " ++ show addr
+        send sock (bstr_size_binary <> TE.encodeUtf8 txt)
+        unfoldM_ $ do
+          mbstr <- runMaybeT $ do
+            bstr' <- MaybeT (recv sock 4)
+            let getsize :: B.ByteString -> Word32
+                getsize = Bi.decode . LB.fromChunks . return
+                size = (fromIntegral . getsize) bstr'
+                go s bs = do
+                  liftIO $ putStrLn ("requested size = " ++ show s)
+                  bstr1 <- MaybeT (recv sock s)
+                  let s' = B.length bstr1
+                  liftIO $ putStrLn ("obtained size = " ++ show s')
+                  if s <= s'
+                    then return (bs <> bstr1)
+                    else go (s - s') (bs <> bstr1)
+            go size B.empty
+          Tr.forM mbstr $ \bstr' -> do
+            let txt' = TE.decodeUtf8 bstr'
+            (evhandler . UsrEv . NetworkProcess . NetworkReceived) txt'
+            writeIORef ref txt'
+          return mbstr
+        putStrLn "FINISHED"
 
 networkTextInputBody ::
   T.Text ->

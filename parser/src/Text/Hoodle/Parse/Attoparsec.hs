@@ -61,13 +61,12 @@ headercontent = headercontentWorker B.empty
 data StrokeWidth = SingleWidth Double | VarWidth [Double]
 
 -- |
-data XmlStroke
-  = XmlStroke
-      { xstrk_tool :: B.ByteString,
-        xstrk_color :: B.ByteString,
-        xstrk_width :: StrokeWidth,
-        xstrk_xydata :: [Pair Double Double]
-      }
+data XmlStroke = XmlStroke
+  { xstrk_tool :: B.ByteString,
+    xstrk_color :: B.ByteString,
+    xstrk_width :: StrokeWidth,
+    xstrk_xydata :: [Pair Double Double]
+  }
 
 -- |
 xmlstroketagopen :: Parser XmlStroke
@@ -271,7 +270,8 @@ link_header = do
   typ <- B.pack <$> (string "type=\"" *> manyTill anyChar (try (char '"')))
   trim
   mlid <-
-    if  | typ == "simple" -> return Nothing
+    if
+        | typ == "simple" -> return Nothing
         | typ == "linkdocid" || typ == "anchor" ->
           Just
             <$> ( string "linkedid=\""
@@ -281,7 +281,8 @@ link_header = do
         | otherwise -> fail "unknown link type"
   trim
   loc <-
-    if  | typ == "simple" || typ == "linkdocid" || typ == "anchor" ->
+    if
+        | typ == "simple" || typ == "linkdocid" || typ == "anchor" ->
           ( string "location=\""
               *> takeTill (inClass "\"")
               <* char '"'
@@ -289,7 +290,8 @@ link_header = do
         | otherwise -> fail "unknown link type"
   trim
   maid <-
-    if  | typ == "anchor" ->
+    if
+        | typ == "anchor" ->
           Just
             <$> ( string "anchorid=\""
                     *> takeTill (inClass "\"")

@@ -17,22 +17,22 @@ import Control.Monad.Trans.Crtn.Logger
 import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.Queue
 import Control.Monad.Trans.Crtn.World
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 --
 import Event
 import SampleActor
 --
-import Prelude hiding ((.), id)
+import Prelude hiding (id, (.))
 
 -- |
-world :: forall m. (MonadIO m) => SObjT (WorldOp Event m) m ()
+world :: forall m. (MonadIO m, MonadFail m) => SObjT (WorldOp Event m) m ()
 world = ReaderT staction
   where
     staction req = do
       runStateT (go req) initWorld
       return ()
     go ::
-      (MonadIO m) =>
+      (MonadIO m, MonadFail m) =>
       Arg (WorldOp Event m) ->
       StateT (WorldAttrib (SObjBT (WorldOp Event m) m)) (SObjBT (WorldOp Event m) m) ()
     go (Arg GiveEvent ev) = do
@@ -40,10 +40,10 @@ world = ReaderT staction
       mobj <- (^. worldActor . objMessageBoard) <$> get
       aobj <- (^. worldActor . objAir) <$> get
       Right (dobj', mobj', aobj') <-
-        runEitherT $ do
-          d1 <- fst <$> EitherT (dobj <==| giveEventSub ev)
-          m1 <- fst <$> EitherT (mobj <==| giveEventSub ev)
-          a1 <- fst <$> EitherT (aobj <==| giveEventSub ev)
+        runExceptT $ do
+          d1 <- fst <$> ExceptT (dobj <==| giveEventSub ev)
+          m1 <- fst <$> ExceptT (mobj <==| giveEventSub ev)
+          a1 <- fst <$> ExceptT (aobj <==| giveEventSub ev)
           return (d1, m1, a1)
       modify
         ( (worldActor . objDoor .~ dobj')

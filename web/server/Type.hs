@@ -15,11 +15,10 @@ deriving instance FromJSON CommitId
 
 deriving instance ToJSON CommitId
 
-data Stroke
-  = Stroke
-      { strokeCommitId :: CommitId,
-        strokePath :: [(Double, Double)]
-      }
+data Stroke = Stroke
+  { strokeCommitId :: CommitId,
+    strokePath :: [(Double, Double)]
+  }
   deriving (Generic)
 
 instance FromJSON Stroke

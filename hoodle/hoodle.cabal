@@ -30,7 +30,7 @@ Executable hoodle
 Library
   hs-source-dirs: lib
   ghc-options: 	-Wall -Werror
-  ghc-prof-options: -fprot-auto -fprof-cafs
+  ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:   base == 4.*,
                    cmdargs >= 0.7,
                    configurator >= 0.2,

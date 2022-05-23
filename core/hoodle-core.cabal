@@ -161,7 +161,6 @@ Library
   install-includes:
                    csrc/c_initdevice.h
                    csrc/template-hsc-gtk2hs.h
-                   csrc/XInput.h
   cc-options:      -Wno-error -fPIC -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG
   extra-libraries: X11 Xi dl pthread
 

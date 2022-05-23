@@ -60,7 +60,7 @@ minibufDialog msg = do
   doIOaction (action dev doesUseX11Ext)
   minibufInit
   where
-    action dev _doesUseX11Ext = \evhandler -> do
+    action dev _doesUseX11Ext evhandler = do
       dialog <- Gtk.dialogNew
       msgLabel <- Gtk.labelNew (Just msg)
       cvs <- Gtk.drawingAreaNew

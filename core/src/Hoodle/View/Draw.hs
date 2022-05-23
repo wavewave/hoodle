@@ -380,7 +380,7 @@ drawContPageGen render = ContPageDraw func
               ndrawpgs <- mapM onepagerender drawpgs
               let npgs = foldr rfunc pgs ndrawpgs
                     where
-                      rfunc (k, pg) m = M.adjust (const pg) k m
+                      rfunc (k, pg) = M.adjust (const pg) k
               let nhdl = set gpages npgs hdl
               mapM_ (\cpg -> emphasisPageRender geometry (pnum, cpg)) mcpg
               mapM_ (emphasisNotifiedRender geometry) (view notifiedItem cinfo)
@@ -460,7 +460,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               ndrawpgs <- mapM onepagerender drawpgs
               let npgs = foldr rfunc pgs ndrawpgs
                     where
-                      rfunc (k, pg) m = M.adjust (const pg) k m
+                      rfunc (k, pg) = M.adjust (const pg) k
               let nthdl :: Hoodle SelectMode
                   nthdl = set gselAll npgs thdl
               r <- runMaybeT $ do

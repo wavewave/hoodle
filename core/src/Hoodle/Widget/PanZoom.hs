@@ -194,7 +194,7 @@ manipulatePZW
             when b $ upact pcoord
       _ -> again otime
     where
-      again t = manipulatePZW fullmode cid geometry (srcsfc, tgtsfc) owxy oxy t
+      again = manipulatePZW fullmode cid geometry (srcsfc, tgtsfc) owxy oxy
       moveact pcoord =
         processWithDefTimeInterval
           again
@@ -263,8 +263,7 @@ movingRender mode cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x
             | otherwise = yw + y - y0
           nwpos = CvsCoord (nposx, nposy)
           changeact :: CanvasInfo a -> CanvasInfo a
-          changeact cinfo =
-            set (canvasWidgets . panZoomWidgetConfig . panZoomWidgetPosition) nwpos cinfo
+          changeact = set (canvasWidgets . panZoomWidgetConfig . panZoomWidgetPosition) nwpos
           ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
           isTouchZoom = view (unboxLens (canvasWidgets . panZoomWidgetConfig . panZoomWidgetTouchIsZoom)) cinfobox
       pureUpdateUhdl $ setCanvasInfo (cid, ncinfobox)

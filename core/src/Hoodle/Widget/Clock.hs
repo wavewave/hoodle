@@ -136,8 +136,7 @@ moveClockWidget cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x0,
           | otherwise = yw + y - y0
         nwpos = CvsCoord (nposx, nposy)
         changeact :: CanvasInfo a -> CanvasInfo a
-        changeact cinfo =
-          set (canvasWidgets . clockWidgetConfig . clockWidgetPosition) nwpos cinfo
+        changeact = set (canvasWidgets . clockWidgetConfig . clockWidgetPosition) nwpos
         ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
      in (unitHoodles . currentUnit .~ setCanvasInfo (cid, ncinfobox) uhdl) xst
   --

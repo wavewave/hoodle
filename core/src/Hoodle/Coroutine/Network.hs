@@ -106,7 +106,7 @@ networkTextInputBody txt = do
 networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
 networkTextInput txt = do
   (ip, tid, done) <- networkTextInputBody txt
-  let ipdialog msg = \_evhandler -> do
+  let ipdialog msg _evhandler = do
         dialog <-
           Gtk.messageDialogNew
             Nothing

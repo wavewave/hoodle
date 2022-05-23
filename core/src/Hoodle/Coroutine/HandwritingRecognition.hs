@@ -94,7 +94,7 @@ showRecogTextDialog txts =
       GotRecogResult b txt -> return (Just (b, txt))
       _ -> return Nothing
   where
-    action = \evhandler -> do
+    action evhandler = do
       dialog <- Gtk.dialogNew
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
       vbox <- Gtk.vBoxNew False 0

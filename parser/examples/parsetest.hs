@@ -5,11 +5,7 @@
 import Control.Monad
 import Data.Attoparsec
 import qualified Data.ByteString as B
---
 import Data.Hoodle.Simple
---
-
--- import Text.Hoodle.Parse.Conduit
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type
 import Graphics.Rendering.Cairo
@@ -21,9 +17,8 @@ main :: IO ()
 main = do
   args <- getArgs
   when (length args /= 3) $ error "parsertest mode filename (mode = atto/sax) outputfile"
-  if args !! 0 == "atto"
-    then attoparsec (args !! 1) (args !! 2)
-    else return () -- sax (args !! 1)
+  when (head args == "atto") $
+    attoparsec (args !! 1) (args !! 2)
 
 -- | using attoparsec without any built-in xml support
 attoparsec :: FilePath -> FilePath -> IO ()

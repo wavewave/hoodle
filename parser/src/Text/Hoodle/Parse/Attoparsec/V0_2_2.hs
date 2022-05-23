@@ -3,6 +3,7 @@
 module Text.Hoodle.Parse.Attoparsec.V0_2_2 where
 
 import Control.Applicative
+import Control.Monad (void)
 import Data.Attoparsec.ByteString
 import Data.Attoparsec.ByteString.Char8
   ( anyChar,
@@ -14,6 +15,7 @@ import Data.Attoparsec.ByteString.Char8
   )
 import qualified Data.ByteString.Char8 as B hiding (map)
 import Data.Char
+import Data.Functor (($>), (<&>))
 import qualified Data.Hoodle.Simple.V0_2_2 as H
 import Data.Strict.Tuple
 import Prelude hiding (takeWhile)
@@ -23,10 +25,10 @@ skipSpaces :: Parser ()
 skipSpaces = satisfy isHorizontalSpace *> skipWhile isHorizontalSpace
 
 -- |
-trim_starting_space :: Parser ()
-trim_starting_space =
+trimStartingSpace :: Parser ()
+trimStartingSpace =
   do try endOfInput
-    <|> takeWhile (inClass " \n") *> return ()
+    <|> (takeWhile (inClass " \n") $> ())
 
 -- |
 langle :: Parser Char
@@ -44,9 +46,8 @@ xmlheader = string "<?" *> takeTill (inClass "?>") <* string "?>"
 headercontentWorker :: B.ByteString -> Parser B.ByteString
 headercontentWorker bstr = do
   h <- takeWhile1 (notInClass "?>")
-  ( (string "?>" >>= return . (bstr `B.append` h `B.append`))
-      <|> headercontentWorker (bstr `B.append` h)
-    )
+  (string "?>" <&> (bstr `B.append` h `B.append`))
+    <|> headercontentWorker (bstr `B.append` h)
 
 -- |
 headercontent :: Parser B.ByteString
@@ -89,20 +90,20 @@ strokewidth :: Parser StrokeWidth
 strokewidth = do
   char '"'
   wlst <- many $ do
-    trim_starting_space
+    trimStartingSpace
     w <- double
     skipSpace
     return w
   char '"'
   let msw
         | length wlst == 1 = return (SingleWidth (head wlst))
-        | length wlst == 0 = fail "no width"
+        | null wlst = fail "no width"
         | otherwise = return (VarWidth wlst)
   msw
 
 -- |
 xmlstroketagclose :: Parser ()
-xmlstroketagclose = string "</stroke>" >> return ()
+xmlstroketagclose = void $ string "</stroke>"
 
 -- |
 xmlstroke :: Parser XmlStroke
@@ -110,7 +111,7 @@ xmlstroke = do
   trim
   strokeinit <- xmlstroketagopen
   coordlist <- many $ do
-    trim_starting_space
+    trimStartingSpace
     x <- double
     skipSpace
     y <- double
@@ -172,8 +173,8 @@ img = do
   string "/>"
   (return . H.ItemImage) (H.Image fsrc (posx, posy) (H.Dim width height))
 
-svg_header :: Parser ((Double, Double), H.Dimension)
-svg_header = do
+svgHeader :: Parser ((Double, Double), H.Dimension)
+svgHeader = do
   trim
   string "<svgobject"
   trim
@@ -196,8 +197,8 @@ svg_header = do
   string ">"
   return ((posx, posy), H.Dim width height)
 
-svg_footer :: Parser ()
-svg_footer = string "</svgobject>" >> return ()
+svgFooter :: Parser ()
+svgFooter = void $ string "</svgobject>"
 
 textCDATA :: Parser B.ByteString
 textCDATA = do
@@ -220,29 +221,28 @@ renderCDATA = do
   string "</render>"
   return (B.pack str)
 
-svg_obj :: Parser H.Item
-svg_obj = do
-  (xy, dim) <- svg_header
+svgObj :: Parser H.Item
+svgObj = do
+  (xy, dim) <- svgHeader
   trim
   (mt, mc) <-
-    ( try
-        ( do
-            t <- textCDATA
-            trim
-            c <- commandCDATA
-            return (Just t, Just c)
-        )
-        <|> try (textCDATA >>= \t -> return (Just t, Nothing))
-        <|> return (Nothing, Nothing)
+    try
+      ( do
+          t <- textCDATA
+          trim
+          c <- commandCDATA
+          return (Just t, Just c)
       )
+      <|> try (textCDATA >>= \t -> return (Just t, Nothing))
+      <|> return (Nothing, Nothing)
   trim
   bstr <- renderCDATA
   trim
-  svg_footer
+  svgFooter
   (return . H.ItemSVG) (H.SVG mt mc bstr xy dim)
 
-link_header :: Parser (B.ByteString, B.ByteString, Maybe B.ByteString, B.ByteString, (Double, Double), H.Dimension)
-link_header = do
+linkHeader :: Parser (B.ByteString, B.ByteString, Maybe B.ByteString, B.ByteString, (Double, Double), H.Dimension)
+linkHeader = do
   trim
   string "<link"
   trim
@@ -268,28 +268,27 @@ link_header = do
   string ">"
   return (i, typ, mlid, loc, (posx, posy), H.Dim width height)
 
-link_footer :: Parser ()
-link_footer = string "</link>" >> return ()
+linkFooter :: Parser ()
+linkFooter = void $ string "</link>"
 
 link :: Parser H.Item
 link = do
-  (i, typ, mlid, loc, xy, dim) <- link_header
+  (i, typ, mlid, loc, xy, dim) <- linkHeader
   trim
   (mt, mc) <-
-    ( try
-        ( do
-            t <- textCDATA
-            trim
-            c <- commandCDATA
-            return (Just t, Just c)
-        )
-        <|> try (textCDATA >>= \t -> return (Just t, Nothing))
-        <|> return (Nothing, Nothing)
+    try
+      ( do
+          t <- textCDATA
+          trim
+          c <- commandCDATA
+          return (Just t, Just c)
       )
+      <|> try (textCDATA >>= \t -> return (Just t, Nothing))
+      <|> return (Nothing, Nothing)
   trim
   bstr <- renderCDATA
   trim
-  link_footer
+  linkFooter
   return . H.ItemLink $
     flip ($) mlid $
       maybe
@@ -298,7 +297,7 @@ link = do
 
 -- |
 trim :: Parser ()
-trim = trim_starting_space
+trim = trimStartingSpace
 
 -- |
 checkHoodleVersion :: Parser B.ByteString
@@ -322,10 +321,7 @@ hoodle = do
   trim
   revs <- many (revision <?> "revision")
   skipSpace
-  pdf <-
-    ( try (Just <$> embeddedpdf)
-        <|> return Nothing
-      )
+  pdf <- try (Just <$> embeddedpdf) <|> return Nothing
   pgs <- many1 (page <?> "page")
   trim
   hoodleclose
@@ -348,7 +344,7 @@ layer = do
   trim
   layerheader <?> "layer"
   trim
-  itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> link)
+  itms <- many (try (H.ItemStroke <$> onestroke) <|> try img <|> try svgObj <|> link)
   trim
   layerclose
   return $ H.Layer itms
@@ -375,27 +371,26 @@ revision = do
   string "revmd5=\""
   md5str <- manyTill anyChar (try (char '"'))
   skipSpace
-  ( try
-      ( do
-          string "revtxt=\""
-          txtstr <- manyTill anyChar (try (char '"'))
-          skipSpace
-          string "/>"
-          return (H.Revision (B.pack md5str) (B.pack txtstr))
-      )
-      <|> ( do
-              string "type=\"ink\""
-              skipSpace
-              char '>'
-              skipSpace
-              strks <- many1 onestroke
-              skipSpace
-              string "</revision>"
-              return (H.RevisionInk (B.pack md5str) strks)
-          )
+  try
+    ( do
+        string "revtxt=\""
+        txtstr <- manyTill anyChar (try (char '"'))
+        skipSpace
+        string "/>"
+        return (H.Revision (B.pack md5str) (B.pack txtstr))
     )
+    <|> ( do
+            string "type=\"ink\""
+            skipSpace
+            char '>'
+            skipSpace
+            strks <- many1 onestroke
+            skipSpace
+            string "</revision>"
+            return (H.RevisionInk (B.pack md5str) strks)
+        )
 
-embeddedpdf :: Parser (B.ByteString)
+embeddedpdf :: Parser B.ByteString
 embeddedpdf = do
   string "<embeddedpdf"
   trim
@@ -492,18 +487,19 @@ background = do
     "pdf" -> do
       trim <?> "trim0"
       (mdomain, mfilename) <-
-        ( try $ do
-            string "domain="
-            char '"'
-            domain <- alphabet
-            char '"'
-            trim <?> "trim1"
-            string "filename="
-            trim <?> "trim2"
-            char '"'
-            filename <- parseFileName <?> "filename parse"
-            char '"'
-            return (Just domain, Just filename)
+        try
+          ( do
+              string "domain="
+              char '"'
+              domain <- alphabet
+              char '"'
+              trim <?> "trim1"
+              string "filename="
+              trim <?> "trim2"
+              char '"'
+              filename <- parseFileName <?> "filename parse"
+              char '"'
+              return (Just domain, Just filename)
           )
           <|> return (Nothing, Nothing)
       trim <?> "trim3"

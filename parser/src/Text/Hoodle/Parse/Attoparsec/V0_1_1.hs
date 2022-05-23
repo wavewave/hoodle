@@ -3,6 +3,7 @@
 module Text.Hoodle.Parse.Attoparsec.V0_1_1 where
 
 import Control.Applicative
+import Control.Monad (void)
 import Data.Attoparsec.ByteString
 import Data.Attoparsec.ByteString.Char8
   ( anyChar,
@@ -14,6 +15,7 @@ import Data.Attoparsec.ByteString.Char8
   )
 import qualified Data.ByteString.Char8 as B hiding (map)
 import Data.Char
+import Data.Functor (($>), (<&>))
 import qualified Data.Hoodle.Simple.V0_1_1 as H
 import Data.Strict.Tuple
 import Prelude hiding (takeWhile)
@@ -23,10 +25,10 @@ skipSpaces :: Parser ()
 skipSpaces = satisfy isHorizontalSpace *> skipWhile isHorizontalSpace
 
 -- |
-trim_starting_space :: Parser ()
-trim_starting_space =
+trimStartingSpace :: Parser ()
+trimStartingSpace =
   do try endOfInput
-    <|> takeWhile (inClass " \n") *> return ()
+    <|> (takeWhile (inClass " \n") $> ())
 
 -- |
 langle :: Parser Char
@@ -44,9 +46,8 @@ xmlheader = string "<?" *> takeTill (inClass "?>") <* string "?>"
 headercontentWorker :: B.ByteString -> Parser B.ByteString
 headercontentWorker bstr = do
   h <- takeWhile1 (notInClass "?>")
-  ( (string "?>" >>= return . (bstr `B.append` h `B.append`))
-      <|> headercontentWorker (bstr `B.append` h)
-    )
+  (string "?>" <&> (bstr `B.append` h `B.append`))
+    <|> headercontentWorker (bstr `B.append` h)
 
 -- |
 headercontent :: Parser B.ByteString
@@ -89,20 +90,20 @@ strokewidth :: Parser StrokeWidth
 strokewidth = do
   char '"'
   wlst <- many $ do
-    trim_starting_space
+    trimStartingSpace
     w <- double
     skipSpace
     return w
   char '"'
   let msw
         | length wlst == 1 = return (SingleWidth (head wlst))
-        | length wlst == 0 = fail "no width"
+        | null wlst = fail "no width"
         | otherwise = return (VarWidth wlst)
   msw
 
 -- |
 xmlstroketagclose :: Parser ()
-xmlstroketagclose = string "</stroke>" >> return ()
+xmlstroketagclose = void $ string "</stroke>"
 
 -- |
 xmlstroke :: Parser XmlStroke
@@ -110,7 +111,7 @@ xmlstroke = do
   trim
   strokeinit <- xmlstroketagopen
   coordlist <- many $ do
-    trim_starting_space
+    trimStartingSpace
     x <- double
     skipSpace
     y <- double
@@ -172,8 +173,8 @@ img = do
   string "/>"
   (return . H.ItemImage) (H.Image fsrc (posx, posy) (H.Dim width height))
 
-svg_header :: Parser ((Double, Double), H.Dimension)
-svg_header = do
+svgHeader :: Parser ((Double, Double), H.Dimension)
+svgHeader = do
   trim
   string "<svgobject"
   trim
@@ -196,54 +197,53 @@ svg_header = do
   string ">"
   return ((posx, posy), H.Dim width height)
 
-svg_footer :: Parser ()
-svg_footer = string "</svgobject>" >> return ()
+svgFooter :: Parser ()
+svgFooter = void $ string "</svgobject>"
 
-svg_text :: Parser B.ByteString
-svg_text = do
+svgText :: Parser B.ByteString
+svgText = do
   string "<text>"
   str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
   string "</text>"
   return (B.pack str)
 
-svg_command :: Parser B.ByteString
-svg_command = do
+svgCommand :: Parser B.ByteString
+svgCommand = do
   string "<command>"
   str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
   string "</command>"
   return (B.pack str)
 
-svg_render :: Parser B.ByteString
-svg_render = do
+svgRender :: Parser B.ByteString
+svgRender = do
   string "<render>"
   str <- string "<![CDATA[" *> manyTill anyChar (try (string "]]>"))
   string "</render>"
   return (B.pack str)
 
-svg_obj :: Parser H.Item
-svg_obj = do
-  (xy, dim) <- svg_header
+svgObj :: Parser H.Item
+svgObj = do
+  (xy, dim) <- svgHeader
   trim
   (mt, mc) <-
-    ( try
-        ( do
-            t <- svg_text
-            trim
-            c <- svg_command
-            return (Just t, Just c)
-        )
-        <|> try (svg_text >>= \t -> return (Just t, Nothing))
-        <|> return (Nothing, Nothing)
+    try
+      ( do
+          t <- svgText
+          trim
+          c <- svgCommand
+          return (Just t, Just c)
       )
+      <|> try (svgText >>= \t -> return (Just t, Nothing))
+      <|> return (Nothing, Nothing)
   trim
-  bstr <- svg_render
+  bstr <- svgRender
   trim
-  svg_footer
+  svgFooter
   (return . H.ItemSVG) (H.SVG mt mc bstr xy dim)
 
 -- |
 trim :: Parser ()
-trim = trim_starting_space
+trim = trimStartingSpace
 
 -- |
 hoodle :: Parser H.Hoodle
@@ -255,9 +255,8 @@ hoodle = do
   trim
   t <- title <?> "title"
   trim
-  ( try (preview >> return ())
-      <|> return ()
-    )
+  try (void preview)
+    <|> return ()
   pgs <- many1 (page <?> "page")
   trim
   hoodleclose
@@ -280,10 +279,7 @@ layer = do
   trim
   layerheader <?> "layer"
   trim
-  -- s1 <- onestroke
-  -- s2 <- img
-  -- let strokes = [s1,s2]
-  itms <- many (try onestroke <|> try img <|> svg_obj)
+  itms <- many (try onestroke <|> try img <|> svgObj)
   trim
   layerclose
   return $ H.Layer itms
@@ -292,7 +288,7 @@ title :: Parser B.ByteString
 title = do
   trim
   titleheader
-  str <- takeTill (inClass "<") -- (many . satisfy . notInClass ) "<"
+  str <- takeTill (inClass "<")
   titleclose
   return str
 
@@ -389,18 +385,19 @@ background = do
     "pdf" -> do
       trim <?> "trim0"
       (mdomain, mfilename) <-
-        ( try $ do
-            string "domain="
-            char '"'
-            domain <- alphabet
-            char '"'
-            trim <?> "trim1"
-            string "filename="
-            trim <?> "trim2"
-            char '"'
-            filename <- parseFileName <?> "filename parse"
-            char '"'
-            return (Just domain, Just filename)
+        try
+          ( do
+              string "domain="
+              char '"'
+              domain <- alphabet
+              char '"'
+              trim <?> "trim1"
+              string "filename="
+              trim <?> "trim2"
+              char '"'
+              filename <- parseFileName <?> "filename parse"
+              char '"'
+              return (Just domain, Just filename)
           )
           <|> return (Nothing, Nothing)
       trim <?> "trim3"
@@ -432,11 +429,6 @@ alphanumsharp =
 parseFileName :: Parser B.ByteString
 parseFileName = takeTill (inClass ['"'])
 
--- takeWhilw1 (\w -> (w >= 65 && w <= 90)
---                   || (w >= 97 && w <= 122)
---                   || (w >= 48 && w <= 57)
---                   || (w == 35)
-
 -- |
 backgroundheader :: Parser B.ByteString
 backgroundheader = string "<background"
@@ -444,20 +436,3 @@ backgroundheader = string "<background"
 -- |
 backgroundclose :: Parser B.ByteString
 backgroundclose = string "/>"
-
-{-
-iter_hoodle :: Iter.Iteratee B.ByteString IO Hoodle
-iter_hoodle = AI.parserToIteratee parser_hoodle
-
-read_hoodle :: String -> IO Hoodle
-read_hoodle str = Iter.fileDriver iter_hoodle str
-
-read_xojgz :: String -> IO Hoodle
-read_xojgz str =  Iter.fileDriver (Iter.joinIM (ungzipXoj iter_hoodle)) str
-
-cat_hoodlegz :: String -> IO ()
-cat_hoodlegz str = Iter.fileDriver
-                      (Iter.joinIM (ungzipXoj printLinesUnterminated)) str
-
-onlyresult (Done _ r) = r
--}

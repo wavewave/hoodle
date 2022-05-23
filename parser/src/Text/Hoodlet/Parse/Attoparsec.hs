@@ -19,7 +19,7 @@ hoodlet = do
   trim
   hoodletheader <?> "hoodletheader"
   trim
-  itm <- try (H.ItemStroke <$> onestroke) <|> try img <|> try svg_obj <|> link
+  itm <- try (H.ItemStroke <$> onestroke) <|> try img <|> try svgObj <|> link
   trim
   string "</hoodlet>"
   return itm

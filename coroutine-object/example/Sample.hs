@@ -36,9 +36,9 @@ world = ReaderT staction
       Arg (WorldOp Event m) ->
       StateT (WorldAttrib (SObjBT (WorldOp Event m) m)) (SObjBT (WorldOp Event m) m) ()
     go (Arg GiveEvent ev) = do
-      dobj <- (^. worldActor . objDoor) <$> get
-      mobj <- (^. worldActor . objMessageBoard) <$> get
-      aobj <- (^. worldActor . objAir) <$> get
+      dobj <- gets (^. worldActor . objDoor)
+      mobj <- gets (^. worldActor . objMessageBoard)
+      aobj <- gets (^. worldActor . objAir)
       Right (dobj', mobj', aobj') <-
         runExceptT $ do
           d1 <- fst <$> ExceptT (dobj <==| giveEventSub ev)
@@ -53,11 +53,11 @@ world = ReaderT staction
       req <- lift (request (Res GiveEvent ()))
       go req
     go (Arg FlushLog (logobj :: LogServer m ())) = do
-      logf <- (^. worldState . tempLog) <$> get
+      logf <- gets (^. worldState . tempLog)
       let msg = logf ""
-      if ((not . null) msg)
+      if (not . null) msg
         then do
-          Right (logobj', _) <- (lift . lift) (logobj <==| writeLog ("[World] " ++ (logf "")))
+          Right (logobj', _) <- (lift . lift) (logobj <==| writeLog ("[World] " ++ logf ""))
           modify (worldState . tempLog .~ id)
           req <- lift (request (Res FlushLog logobj'))
           go req
@@ -65,7 +65,7 @@ world = ReaderT staction
           req <- lift (request Ign)
           go req
     go (Arg FlushQueue ()) = do
-      q <- (^. worldState . tempQueue) <$> get
+      q <- gets (^. worldState . tempQueue)
       let lst = fqueue q ++ reverse (bqueue q)
       modify (worldState . tempQueue .~ emptyQueue)
       req <- lift (request (Res FlushQueue lst))

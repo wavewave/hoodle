@@ -22,7 +22,7 @@ type World e m r = SObjT (WorldOp e m) m r
 
 -- |
 giveEvent :: (Monad m) => e -> CObjT (WorldOp e m) m ()
-giveEvent ev = request (Arg GiveEvent ev) >> return ()
+giveEvent ev = void $ request (Arg GiveEvent ev)
 
 -- |
 flushLog :: (Monad m) => LogServer m () -> CObjT (WorldOp e m) m (LogServer m ())

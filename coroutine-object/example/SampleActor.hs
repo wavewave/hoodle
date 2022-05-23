@@ -110,7 +110,7 @@ data SubOp i o where
 
 -- |
 giveEventSub :: (Monad m) => Event -> CObjT SubOp m ()
-giveEventSub ev = request (Arg GiveEventSub ev) >> return ()
+giveEventSub ev = void $ request (Arg GiveEventSub ev)
 
 -- | air object
 air :: forall m. (Monad m) => SObjT SubOp (StateT (WorldAttrib m) m) ()
@@ -146,20 +146,20 @@ door = ReaderT doorW
     doorW (Arg GiveEventSub ev) = do
       r <- case ev of
         Open -> do
-          b <- (^. worldState . isDoorOpen) <$> get
-          when (not b) $ do
+          b <- gets (^. worldState . isDoorOpen)
+          unless b $ do
             modify (worldState . isDoorOpen .~ True)
             modify (worldState . tempLog %~ (. (++ "door opened\n")))
           return True
         Close -> do
-          b <- (^. worldState . isDoorOpen) <$> get
+          b <- gets (^. worldState . isDoorOpen)
           when b $ do
             modify (worldState . isDoorOpen .~ False)
             modify (worldState . tempLog %~ (. (++ "door closed\n")))
-            modify (worldState . tempQueue %~ (enqueue (Right (Sound "bam!"))))
+            modify (worldState . tempQueue %~ enqueue (Right (Sound "bam!")))
           return True
         Render -> do
-          b <- (^. worldState . isDoorOpen) <$> get
+          b <- gets (^. worldState . isDoorOpen)
           modify (worldState . tempLog %~ (. (++ "current door state : " ++ show b ++ "\n")))
           return True
         _ -> return False
@@ -180,7 +180,7 @@ messageBoard = ReaderT msgbdW
           modify (worldState . message .~ msg)
           return True
         Render -> do
-          msg <- (^. worldState . message) <$> get
+          msg <- gets (^. worldState . message)
           modify
             ( worldState . tempLog
                 %~ (. (++ "current msg : " ++ msg ++ "\n"))

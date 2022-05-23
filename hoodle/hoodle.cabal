@@ -19,8 +19,8 @@ Source-repository head
 Executable hoodle
   Main-is: hoodle.hs
   hs-source-dirs: exe
-  ghc-options: 	-Wall -threaded -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options: 	-Wall -Werror -threaded -rtsopts
+  ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:
                  base == 4.*,
                  cmdargs >= 0.7,
@@ -29,8 +29,8 @@ Executable hoodle
 
 Library
   hs-source-dirs: lib
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options: 	-Wall -Werror
+  ghc-prof-options: -fprot-auto -fprof-cafs
   Build-Depends:   base == 4.*,
                    cmdargs >= 0.7,
                    configurator >= 0.2,

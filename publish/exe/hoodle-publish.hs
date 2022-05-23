@@ -4,7 +4,7 @@ module Main where
 
 import Control.Applicative ((<$>), (<*>))
 import Control.Monad (filterM)
-import Data.Maybe (catMaybes, isNothing)
+import Data.Maybe (catMaybes, isNothing, mapMaybe)
 import qualified Graphics.UI.Gtk as Gtk (initGUI)
 --
 import Hoodle.Publish.PDF
@@ -41,7 +41,7 @@ main = do
   Gtk.initGUI
   params <- cmdArgs mode
   (_r :/ r') <- build (rootpath params)
-  let files = catMaybes . map takeFile . flattenDir $ r'
+  let files = mapMaybe takeFile . flattenDir $ r'
       hdlfiles = filter isHdl files
       pairs =
         map
@@ -51,7 +51,7 @@ main = do
           hdlfiles
       swappedpairs = map (\(x, y) -> (y, x)) pairs
   (_b :/ b') <- build (buildpath params)
-  let files2 = catMaybes . map takeFile . flattenDir $ b'
+  let files2 = mapMaybe takeFile . flattenDir $ b'
       pdffiles = filter isPdf files2
       willbeerased = filter (\x -> isNothing (lookup x swappedpairs)) pdffiles
   mapM_ removeFile willbeerased

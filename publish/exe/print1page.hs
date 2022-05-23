@@ -1,28 +1,21 @@
-{-# LANGUAGE PackageImports #-}
-
 module Main where
 
 import Control.Monad
 import Control.Monad.State
 import Data.Attoparsec
 import qualified Data.ByteString as B
--- from hoodle-platform
 import Data.Hoodle.Simple
--- from this package
--- import Graphics.Hoodle.Render.SimpleNew
 import Graphics.Hoodle.Render
 import Graphics.Rendering.Cairo
 import System.Environment
 import Text.Hoodle.Parse.Attoparsec
-
--- import Graphics.Hoodle.Render.Generic
 
 -- |
 main :: IO ()
 main = do
   args <- getArgs
   when (length args /= 3) $ error "print1page mod infile outfile (mod = svg/pdf/png"
-  let mod = args !! 0
+  let mod = head args
       infile = args !! 1
       outfile = args !! 2
   mh <- attoparsec (args !! 1)
@@ -33,7 +26,7 @@ main = do
       let fstpage = head (hoodle_pages hoo)
           Dim w h = page_dim fstpage
           cairowork s = renderWith s $ do
-            flip runStateT ctxt (renderPageStateT fstpage)
+            runStateT (renderPageStateT fstpage) ctxt
             return ()
 
       let action

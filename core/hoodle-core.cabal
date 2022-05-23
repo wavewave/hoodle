@@ -126,12 +126,14 @@ Library
                    Hoodle.ModelAction.Eraser
                    Hoodle.ModelAction.File
                    Hoodle.ModelAction.Layer
+                   Hoodle.ModelAction.Network
                    Hoodle.ModelAction.Page
                    Hoodle.ModelAction.Pen
                    Hoodle.ModelAction.Select
                    Hoodle.ModelAction.Select.Transform
                    Hoodle.ModelAction.Text
                    Hoodle.ModelAction.Window
+                   Hoodle.Renderer.Default
                    Hoodle.Script
                    Hoodle.Script.Coroutine
                    Hoodle.Script.Hook

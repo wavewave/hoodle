@@ -22,7 +22,7 @@ import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Crtn.Queue
-import Control.Monad.Trans.Either
+import Control.Monad.Trans.Except
 --
 import Event
 --
@@ -37,19 +37,19 @@ data WorldState = WorldState
   }
 
 -- | isDoorOpen lens
-isDoorOpen :: Simple Lens WorldState Bool
+isDoorOpen :: Lens' WorldState Bool
 isDoorOpen = lens _isDoorOpen (\a b -> a {_isDoorOpen = b})
 
 -- | messageBoard lens
-message :: Simple Lens WorldState String
+message :: Lens' WorldState String
 message = lens _message (\a b -> a {_message = b})
 
 -- |
-tempLog :: Simple Lens WorldState (String -> String)
+tempLog :: Lens' WorldState (String -> String)
 tempLog = lens _tempLog (\a b -> a {_tempLog = b})
 
 -- |
-tempQueue :: Simple Lens WorldState (Queue (Either (ActionOrder Event) Event))
+tempQueue :: Lens' WorldState (Queue (Either (ActionOrder Event) Event))
 tempQueue = lens _tempQueue (\a b -> a {_tempQueue = b})
 
 -- |
@@ -66,15 +66,15 @@ data WorldActor m = WorldActor
   }
 
 -- | isDoorOpen lens
-objDoor :: Simple Lens (WorldActor m) (SObjT SubOp (StateT (WorldAttrib m) m) ())
+objDoor :: Lens' (WorldActor m) (SObjT SubOp (StateT (WorldAttrib m) m) ())
 objDoor = lens _objDoor (\a b -> a {_objDoor = b})
 
 -- | messageBoard lens
-objMessageBoard :: Simple Lens (WorldActor m) (SObjT SubOp (StateT (WorldAttrib m) m) ())
+objMessageBoard :: Lens' (WorldActor m) (SObjT SubOp (StateT (WorldAttrib m) m) ())
 objMessageBoard = lens _objMessageBoard (\a b -> a {_objMessageBoard = b})
 
 -- | air lens
-objAir :: Simple Lens (WorldActor m) (SObjT SubOp (StateT (WorldAttrib m) m) ())
+objAir :: Lens' (WorldActor m) (SObjT SubOp (StateT (WorldAttrib m) m) ())
 objAir = lens _objAir (\a b -> a {_objAir = b})
 
 -- |
@@ -93,11 +93,11 @@ data WorldAttrib m = WorldAttrib
   }
 
 -- | lens
-worldState :: Simple Lens (WorldAttrib m) WorldState
+worldState :: Lens' (WorldAttrib m) WorldState
 worldState = lens _worldState (\a b -> a {_worldState = b})
 
 -- | lens
-worldActor :: Simple Lens (WorldAttrib m) (WorldActor m)
+worldActor :: Lens' (WorldAttrib m) (WorldActor m)
 worldActor = lens _worldActor (\a b -> a {_worldActor = b})
 
 -- | initialization

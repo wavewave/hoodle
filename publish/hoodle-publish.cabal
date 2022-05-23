@@ -63,3 +63,17 @@ Executable hoodle-publish
                    filepath,
                    hoodle-publish,
                    gtk3 >= 0.14
+
+executable print1page
+  hs-source-dirs: exe
+  main-is: print1page.hs
+  build-depends:
+      attoparsec,
+      base,
+      bytestring,
+      cairo,
+      hoodle-parser,
+      hoodle-render,
+      hoodle-types,
+      mtl
+  default-language: Haskell2010

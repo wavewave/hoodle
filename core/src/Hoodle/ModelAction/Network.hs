@@ -1,7 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- THIS MODULE WILL BE REMOVED AFTER REVIEW.
+
 module Hoodle.ModelAction.Network where
 
+{-
 import Control.Monad
 import Data.Aeson.Encode as E
 import Data.Aeson.Parser
@@ -25,7 +28,9 @@ import Network.HTTP.Types hiding (statusCode)
 import System.Directory
 import System.FilePath
 import Unsafe.Coerce
+-}
 
+{-
 type Url = String
 
 nextUUID :: HoodleClipClientConfiguration -> IO UUID
@@ -185,3 +190,4 @@ getContentsFromNetworkClipboard ncconf = do
   r <- startCurrent ncconf
   let mclip = fmap (Clipboard . fmap gFromStroke . hoodleclip_strokes) r
   return mclip
+-}

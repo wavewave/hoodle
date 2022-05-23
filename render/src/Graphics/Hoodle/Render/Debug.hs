@@ -1,8 +1,15 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- NOTE: comment out this module for now.
+
 module Graphics.Hoodle.Render.Debug
-  ( -- * dummy rendering
+  (
+  )
+where
+
+{-
+    -- * dummy rendering
     renderRBkg_Dummy,
 
     -- * nopdf
@@ -18,9 +25,9 @@ module Graphics.Hoodle.Render.Debug
     -- * render using buf
     renderRBkg_Buf,
     renderRLayer_InBBoxBuf,
-  )
-where
+-}
 
+{-
 import Control.Lens
 import Control.Monad.State hiding (mapM, mapM_)
 import Data.Foldable
@@ -121,3 +128,4 @@ renderRPage_BBoxOnly cache page = do
       lyrs = view glayers page
   renderRBkg_NoPDF cache (bkg, dim, Nothing)
   mapM_ (renderRLayer_BBoxOnly cache) lyrs
+-}

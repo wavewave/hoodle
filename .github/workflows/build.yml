@@ -24,3 +24,14 @@ jobs:
       - uses: actions/checkout@v2
       # ormolu 0.3.0.1
       - uses: mrkkrp/ormolu-action@v4
+  hlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: rwe/actions-hlint-setup@v1
+        with:
+          version: '3.3.6'
+      - uses: rwe/actions-hlint-run@v2
+        with:
+          path: '["coroutine-object/", "xournal-types/", "xournal-parser/", "types/", "util/", "parser/", "builder/", "render/", "publish/", "core/", "hoodle/"]'
+          fail-on: status

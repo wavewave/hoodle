@@ -33,5 +33,5 @@ jobs:
           version: '3.3.6'
       - uses: rwe/actions-hlint-run@v2
         with:
-          path: '["coroutine-object/", "types/", "util/", "parser/", "builder/", "render/", "publish/", "core/", "hoodle/"]'
+          path: '["coroutine-object/", "types/", "util/", "parser/", "builder/", "render/", "publish/", "core/"]'
           fail-on: status

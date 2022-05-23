@@ -2,11 +2,8 @@
 
 module Hoodle.Script where
 
-import Hoodle.Script.Hook
-
-#ifdef DYRE
 import Config.Dyre.Relaunch
-#endif
+import Hoodle.Script.Hook
 
 -- |
 data ScriptConfig = ScriptConfig
@@ -24,9 +21,7 @@ showError :: ScriptConfig -> String -> ScriptConfig
 showError cfg msg = cfg {errorMsg = Just msg}
 
 -- |
-#ifdef DYRE
 relaunchApplication :: IO ()
 relaunchApplication = do
   putStrLn "relaunching hoodle!"
   relaunchMaster Nothing
-#endif

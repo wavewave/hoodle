@@ -366,11 +366,7 @@ getMenuUI evar = do
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
-#ifdef DYRE
   relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuRelaunch)
-#else
-  relauncha <- actionNewAndRegister "RELAUNCHA" "Relaunch Application" (Just "Just a Stub") Nothing (justMenu MenuDefault)
-#endif
 
   -- window menu
   addtaba <- actionNewAndRegister "ADDTABA" "Add new tab" (Just "Just a Stub") Nothing (justMenu MenuAddTab)
@@ -530,9 +526,7 @@ getMenuUI evar = do
           setdefopta,
           abouta,
           defaulta,
-#ifndef DYRE
           relauncha,
-#endif
           editnetsrca
         ]
       enabledActions =

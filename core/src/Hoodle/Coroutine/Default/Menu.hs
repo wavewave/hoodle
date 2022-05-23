@@ -33,6 +33,7 @@ import Hoodle.Coroutine.Select.Clipboard
 import Hoodle.Coroutine.TextInput
 import Hoodle.Coroutine.Window
 import Hoodle.GUI.Reflect
+import Hoodle.Script
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Enum
@@ -44,9 +45,6 @@ import Hoodle.Widget.Clock
 import Hoodle.Widget.Layer
 import Hoodle.Widget.PanZoom
 import Hoodle.Widget.Scroll
-#ifdef DYRE
-import           Hoodle.Script
-#endif
 --
 import Prelude hiding (mapM_)
 
@@ -129,9 +127,7 @@ menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings . 
 menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings . doesKeepAspectRatio) >> return ()
 menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings . doesUseVariableCursor) >> reflectCursor True >> return ()
 menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo . variableWidthPen) >> return ()
-#ifdef DYRE
 menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
-#endif
 menuEventProcess MenuColorPicker = colorPick
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuAddLink = addLink

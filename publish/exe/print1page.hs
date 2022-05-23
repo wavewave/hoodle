@@ -33,7 +33,7 @@ main = do
       let fstpage = head (hoodle_pages hoo)
           Dim w h = page_dim fstpage
           cairowork s = renderWith s $ do
-            flip runStateT ctxt (renderPage_StateT fstpage)
+            flip runStateT ctxt (renderPageStateT fstpage)
             return ()
 
       let action

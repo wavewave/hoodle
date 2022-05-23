@@ -388,7 +388,7 @@ renderHoodleToPDF hdl ofp = do
          in pdfSurfaceSetSize sfc w h >> return pg
   withPDFSurface tempfile width height $ \s ->
     renderWith s . flip runStateT ctxt $
-      sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages $
+      sequence1_ (lift showPage) . map (renderPageStateT <=< setsize s) . view S.pages $
         hdl
   readProcessWithExitCode "pdftk" [tempfile, "cat", "output", ofp] ""
   return ()

@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 module Graphics.Hoodle.Render.Type.Hoodle where
 
@@ -74,7 +73,7 @@ rHoodle2Hoodle =
 newtype InBBox a = InBBox {unInBBox :: a}
 
 -- |
-data InBBoxOption = InBBoxOption (Maybe BBox)
+newtype InBBoxOption = InBBoxOption (Maybe BBox)
 
 -- |
 newtype InBBoxBkgBuf a = InBBoxBkgBuf {unInBBoxBkgBuf :: a}

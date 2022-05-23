@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Graphics.Hoodle.Render
   ( -- * xform
@@ -20,12 +18,12 @@ module Graphics.Hoodle.Render
     renderRItem,
 
     -- * render in bbox
-    renderRLayer_InBBox,
-    renderRBkg_InBBox,
+    renderRLayerInBBox,
+    renderRBkgInBBox,
 
     -- * render using buf
-    renderRBkg_Buf,
-    renderRLayer_InBBoxBuf,
+    renderRBkgBuf,
+    renderRLayerInBBoxBuf,
 
     -- * buffer update
     updateLayerBuf,
@@ -34,20 +32,20 @@ module Graphics.Hoodle.Render
 
     -- * construct R-structure from non-R-structure
     cnstrctRLayer,
-    cnstrctRBkg_StateT,
-    cnstrctRPage_StateT,
+    cnstrctRBkgStateT,
+    cnstrctRPageStateT,
     cnstrctRHoodle,
 
     -- * some simple render with state
-    renderPage_StateT,
+    renderPageStateT,
     initRenderContext,
   )
 where
 
 import Control.Applicative
--- import           Control.Concurrent (putMVar)
 import Control.Concurrent.STM
 import Control.Lens (set, view)
+import Control.Monad (void)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.State hiding (mapM, mapM_)
 import Control.Monad.Trans.Reader
@@ -145,8 +143,8 @@ renderImg img@(Image src (x, y) (Dim w h)) = do
       Cairo.rectangle x y w h
       Cairo.stroke
     Just sfc -> do
-      ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
-      iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
+      ix <- fmap fromIntegral (Cairo.imageSurfaceGetWidth sfc)
+      iy <- fmap fromIntegral (Cairo.imageSurfaceGetHeight sfc)
       Cairo.save
       Cairo.translate x y
       Cairo.scale ((x2 - x) / ix) ((y2 - y) / iy)
@@ -273,7 +271,7 @@ renderRBkg ::
   CanvasId ->
   (RBackground, Dimension, Maybe Xform4Page) ->
   Cairo.Render (RBackground, Dimension, Maybe Xform4Page)
-renderRBkg = renderRBkg_Buf
+renderRBkg = renderRBkgBuf
 
 -- |
 renderRItem :: RenderCache -> CanvasId -> RItem -> Cairo.Render RItem
@@ -284,8 +282,8 @@ renderRItem _cache _cid itm@(RItemImage img msfc) = do
     Just sfc -> do
       let (x, y) = (img_pos . bbxed_content) img
           BBox (x1, y1) (x2, y2) = getBBox img
-      ix <- liftM fromIntegral (Cairo.imageSurfaceGetWidth sfc)
-      iy <- liftM fromIntegral (Cairo.imageSurfaceGetHeight sfc)
+      ix <- fmap fromIntegral (Cairo.imageSurfaceGetWidth sfc)
+      iy <- fmap fromIntegral (Cairo.imageSurfaceGetHeight sfc)
       Cairo.save
       Cairo.translate x y
       Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
@@ -347,26 +345,26 @@ renderRItem _ _ itm@(RItemAnchor ancbbx mrsvg) = do
 ------------
 
 -- | background drawing in bbox
-renderRBkg_InBBox ::
+renderRBkgInBBox ::
   RenderCache ->
   CanvasId ->
   Maybe BBox ->
   (RBackground, Dimension, Maybe Xform4Page) ->
   Cairo.Render (RBackground, Dimension, Maybe Xform4Page)
-renderRBkg_InBBox cache cid mbbox (b, dim, mx) = do
-  clipBBox (fmap (flip inflate 1) mbbox)
-  renderRBkg_Buf cache cid (b, dim, mx)
+renderRBkgInBBox cache cid mbbox (b, dim, mx) = do
+  clipBBox (fmap (`inflate` 1) mbbox)
+  renderRBkgBuf cache cid (b, dim, mx)
   Cairo.resetClip
   return (b, dim, mx)
 
 -- | render RLayer within BBox after hittest items
-renderRLayer_InBBox ::
+renderRLayerInBBox ::
   RenderCache ->
   CanvasId ->
   Maybe BBox ->
   (RLayer, Dimension, Maybe Xform4Page) ->
   Cairo.Render (RLayer, Dimension, Maybe Xform4Page)
-renderRLayer_InBBox = renderRLayer_InBBoxBuf
+renderRLayerInBBox = renderRLayerInBBoxBuf
 
 -----------------------
 -- draw using buffer --
@@ -377,21 +375,21 @@ adjustScale s mx =
   case mx of
     Nothing -> Cairo.scale (1 / s) (1 / s)
     Just xform ->
-      if (scalex xform / s > 0.999 && scalex xform / s < 1.001)
+      if scalex xform / s > 0.999 && scalex xform / s < 1.001
         then do
           Cairo.identityMatrix
           Cairo.translate (transx xform) (transy xform)
         else Cairo.scale (1 / s) (1 / s)
 
 -- | Background rendering using buffer
-renderRBkg_Buf ::
+renderRBkgBuf ::
   RenderCache ->
   CanvasId ->
   (RBackground, Dimension, Maybe Xform4Page) ->
   Cairo.Render (RBackground, Dimension, Maybe Xform4Page)
-renderRBkg_Buf cache _cid (b, dim, mx) = do
+renderRBkgBuf cache _cid (b, dim, mx) = do
   case HM.lookup (rbkg_surfaceid b) cache of
-    Nothing -> drawFallBackBkg dim >> return ()
+    Nothing -> void $ drawFallBackBkg dim
     Just (s, sfc) -> do
       Cairo.save
       adjustScale s mx
@@ -401,20 +399,19 @@ renderRBkg_Buf cache _cid (b, dim, mx) = do
   return (b, dim, mx)
 
 -- |
-renderRLayer_InBBoxBuf ::
+renderRLayerInBBoxBuf ::
   RenderCache ->
   CanvasId ->
   Maybe BBox ->
   (RLayer, Dimension, Maybe Xform4Page) ->
   Cairo.Render (RLayer, Dimension, Maybe Xform4Page)
-renderRLayer_InBBoxBuf cache _cid mbbox (lyr, dim, mx) = do
+renderRLayerInBBoxBuf cache _cid mbbox (lyr, dim, mx) = do
   case view gbuffer lyr of
     LyBuf sfcid -> do
       case HM.lookup sfcid cache of
         Nothing -> return (lyr, dim, mx)
         Just (s, sfc) -> do
-          clipBBox (fmap (flip inflate 2) mbbox)
-          -- clipBBox mbbox
+          clipBBox (fmap (`inflate` 2) mbbox)
           Cairo.save
           adjustScale s mx
           Cairo.setSourceSurface sfc 0 0
@@ -463,27 +460,27 @@ cnstrctRHoodle hdl = do
       (return Nothing)
       ( \src -> liftIO $ do
           cmdid <- issuePDFCommandID
-          docvar <- atomically newEmptyTMVar
+          docvar <- newEmptyTMVarIO
           atomically $ sendPDFCommand qpdf cmdid (GetDocFromDataURI src docvar)
           atomically $ takeTMVar docvar
       )
       pdf
   let getNumPgs doc = liftIO $ do
         cmdid <- issuePDFCommandID
-        nvar <- atomically newEmptyTMVar
+        nvar <- newEmptyTMVarIO
         atomically $ sendPDFCommand qpdf cmdid (GetNPages doc nvar)
         atomically $ takeTMVar nvar
   mnumpdfpgs <- sequenceA (getNumPgs <$> mdoc)
   -- liftIO $print mnumpdfpgs
   npgs <-
     evalStateT
-      (mapM cnstrctRPage_StateT pgs)
+      (mapM cnstrctRPageStateT pgs)
       (Just (Context "" "" Nothing mdoc))
   return $ GHoodle hid ttl revs (PDFData <$> pdf <*> mnumpdfpgs) txt (fromList npgs)
 
 -- |
-cnstrctRPage_StateT :: Page -> StateT (Maybe Context) Renderer RPage
-cnstrctRPage_StateT pg = do
+cnstrctRPageStateT :: Page -> StateT (Maybe Context) Renderer RPage
+cnstrctRPageStateT pg = do
   let bkg = view background pg
       dim = view dimension pg
       lyrs = view layers pg
@@ -491,7 +488,7 @@ cnstrctRPage_StateT pg = do
   sfcid <- issueSurfaceID
   let nlyrs_nonemptylst = if null nlyrs_lst then (emptyRLayer sfcid, []) else (head nlyrs_lst, tail nlyrs_lst)
       nlyrs = fromNonEmptyList nlyrs_nonemptylst
-  nbkg <- cnstrctRBkg_StateT dim bkg
+  nbkg <- cnstrctRBkgStateT dim bkg
   return $ GPage dim nbkg nlyrs
 
 -- |
@@ -506,12 +503,12 @@ cnstrctRLayer lyr = do
 -------------------------------------------------------
 
 -- |
-renderPage_StateT :: Page -> StateT Context Cairo.Render ()
-renderPage_StateT pg = do
+renderPageStateT :: Page -> StateT Context Cairo.Render ()
+renderPageStateT pg = do
   let bkg = view background pg
       dim = view dimension pg
       lyrs = view layers pg
-  renderBackground_StateT dim bkg
+  renderBackgroundStateT dim bkg
   lift (mapM_ renderLayer lyrs)
 
 -- |

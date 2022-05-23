@@ -39,11 +39,11 @@ data RBackground
         rbkg_surfaceid :: SurfaceID -- UUID
       }
 
-instance Show (RBackground) where
+instance Show RBackground where
   show _ = "RBackground"
 
 isRBkgSmpl :: RBackground -> Bool
-isRBkgSmpl (RBkgSmpl _ _ _) = True
+isRBkgSmpl RBkgSmpl {} = True
 isRBkgSmpl _ = False
 
 data RBkgOpt

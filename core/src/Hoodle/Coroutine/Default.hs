@@ -341,7 +341,7 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
   --
   liftIO $ putStrLn " defaultEventProcess: BackgroundStyleChanged HERE/ "
 
-  callRenderer $ GotRBackground <$> evalStateT (cnstrctRBkg_StateT dim (getnbkg' cbkg)) Nothing
+  callRenderer $ GotRBackground <$> evalStateT (cnstrctRBkgStateT dim (getnbkg' cbkg)) Nothing
   RenderEv (GotRBackground nbkg) <-
     waitSomeEvent (\case RenderEv (GotRBackground _) -> True; _ -> False)
 

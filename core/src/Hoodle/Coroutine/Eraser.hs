@@ -63,7 +63,7 @@ eraserProcess cid pnum geometry itms (x0, y0) = do
       let line = ((x0, y0), (x, y))
           hittestbbox = hltHittedByLineRough line itms
           (hittestitem, hitState) =
-            St.runState (hltItmsHittedByLineFrmSelected_StateT line hittestbbox) False
+            St.runState (hltItmsHittedByLineFrmSelectedStateT line hittestbbox) False
       if hitState
         then do
           page <- getCurrentPageCvsId cid

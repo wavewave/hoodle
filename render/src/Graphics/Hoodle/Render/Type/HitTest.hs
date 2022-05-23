@@ -46,7 +46,7 @@ type RItemHitted = AlterList (NotHitted RItem) (Hitted RItem)
 -- |
 takeFirstFromHitted :: RItemHitted -> RItemHitted
 takeFirstFromHitted Empty = Empty
-takeFirstFromHitted (a :- Empty) = (a :- Empty)
+takeFirstFromHitted (a :- Empty) = a :- Empty
 takeFirstFromHitted (a :- b :- xs) =
   let (b1, bs) = splitAt 1 (unHitted b)
       rs = concat $ interleave unNotHitted unHitted xs
@@ -55,7 +55,7 @@ takeFirstFromHitted (a :- b :- xs) =
 -- |
 takeLastFromHitted :: RItemHitted -> RItemHitted
 takeLastFromHitted Empty = Empty
-takeLastFromHitted (a :- Empty) = (a :- Empty)
+takeLastFromHitted (a :- Empty) = a :- Empty
 takeLastFromHitted (a :- b :- Empty) =
   let b' = unHitted b
    in if (not . null) b'

@@ -49,7 +49,7 @@ popplerGetDocFromDataURI dat = do
   case mdecoded of
     Nothing -> return Nothing
     Just decoded -> do
-      uuidstr <- liftM show nextRandom
+      uuidstr <- fmap show nextRandom
       tmpdir <- getTemporaryDirectory
       let tmpfile = tmpdir </> uuidstr <.> "pdf"
       C.writeFile tmpfile decoded
@@ -116,8 +116,8 @@ drawRuling w h style = do
     _ -> return ()
 
 -- | draw ruling  in bbox
-drawRuling_InBBox :: BBox -> Double -> Double -> ByteString -> Cairo.Render ()
-drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
+drawRulingInBBox :: BBox -> Double -> Double -> ByteString -> Cairo.Render ()
+drawRulingInBBox (BBox (x1, y1) (x2, y2)) w h style = do
   let drawonerule y = do
         Cairo.moveTo x1 y
         Cairo.lineTo x2 y
@@ -174,7 +174,7 @@ renderBkg (Background _typ col sty, Dim w h) = do
   Cairo.rectangle 0 0 w h
   Cairo.fill
   drawRuling w h sty
-renderBkg (BackgroundPdf _ _ _ _, Dim w h) = do
+renderBkg (BackgroundPdf {}, Dim w h) = do
   Cairo.setSourceRGBA 1 1 1 1
   Cairo.rectangle 0 0 w h
   Cairo.fill
@@ -184,11 +184,11 @@ renderBkg (BackgroundEmbedPdf _ _, Dim w h) = do
   Cairo.fill
 
 -- | this has some bugs. need to fix
-cnstrctRBkg_StateT ::
+cnstrctRBkgStateT ::
   Dimension ->
   Background ->
   StateT (Maybe Context) Renderer RBackground
-cnstrctRBkg_StateT _ bkg = do
+cnstrctRBkgStateT _ bkg = do
   (qpdf, _qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ) <$> lift ask
   sfcid <- issueSurfaceID
   case bkg of
@@ -198,7 +198,7 @@ cnstrctRBkg_StateT _ bkg = do
         (_pg, rbkg) <- case (md, mf) of
           (Just d, Just f) -> do
             cmdiddoc <- issuePDFCommandID
-            docvar <- liftIO (atomically newEmptyTMVar)
+            docvar <- liftIO newEmptyTMVarIO
             liftIO . atomically $ sendPDFCommand qpdf cmdiddoc (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar
             lift . put $ Just (Context d f (Just doc) Nothing)
@@ -211,7 +211,7 @@ cnstrctRBkg_StateT _ bkg = do
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) sfcid)
         return rbkg
       case r of
-        Nothing -> error "error in cnstrctRBkg_StateT"
+        Nothing -> error "error in cnstrctRBkgStateT"
         Just x -> return x
     BackgroundEmbedPdf _ pn -> do
       r <- runMaybeT $ do
@@ -220,18 +220,18 @@ cnstrctRBkg_StateT _ bkg = do
         pg <- pdfRequest qpdf doc pn
         return (RBkgEmbedPDF pn (Just pg) sfcid)
       case r of
-        Nothing -> error "error in cnstrctRBkg_StateT"
+        Nothing -> error "error in cnstrctRBkgStateT"
         Just x -> return x
   where
     pdfRequest q doc pn = do
       cmdidpg <- issuePDFCommandID
-      pgvar <- liftIO (atomically newEmptyTMVar)
+      pgvar <- liftIO newEmptyTMVarIO
       liftIO . atomically $ sendPDFCommand q cmdidpg (GetPageFromDoc doc pn pgvar)
       MaybeT . liftIO $ atomically $ takeTMVar pgvar
 
 -- | For simple hoodle background
-renderBackground_StateT :: Dimension -> Background -> StateT Context Cairo.Render ()
-renderBackground_StateT dim@(Dim w h) bkg = do
+renderBackgroundStateT :: Dimension -> Background -> StateT Context Cairo.Render ()
+renderBackgroundStateT dim@(Dim w h) bkg = do
   case bkg of
     Background _t _c _s -> lift (renderBkg (bkg, dim))
     BackgroundPdf _t md mf pn -> do
@@ -239,19 +239,19 @@ renderBackground_StateT dim@(Dim w h) bkg = do
         case (md, mf) of
           (Just d, Just f) -> do
             doc <- (MaybeT . liftIO . popplerGetDocFromFile) f
-            lift . put $ (Context d f (Just doc) Nothing)
+            lift . put $ Context d f (Just doc) Nothing
             pdfRenderDoc doc pn
           _ -> do
             Context _oldd _oldf olddoc _ <- lift get
             doc <- MaybeT . return $ olddoc
             pdfRenderDoc doc pn
-      maybe (error "renderBackground_StateT") (const (return ())) r
+      maybe (error "renderBackgroundStateT") (const (return ())) r
     BackgroundEmbedPdf _ pn -> do
       r <- runMaybeT $ do
         Context _ _ _ mdoc <- lift get
         doc <- (MaybeT . return) mdoc
         pdfRenderDoc doc pn
-      maybe (error "renderBackground_StateT") (const (return ())) r
+      maybe (error "renderBackgroundStateT") (const (return ())) r
   where
     pdfRender pg = do
       Cairo.setSourceRGBA 1 1 1 1

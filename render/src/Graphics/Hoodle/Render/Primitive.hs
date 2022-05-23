@@ -24,7 +24,7 @@ drawStrokeCurve [] = return ()
 -- |
 drawVWStrokeCurve :: [(Double, Double, Double)] -> Cairo.Render ()
 drawVWStrokeCurve [] = return ()
-drawVWStrokeCurve (_ : []) = return ()
+drawVWStrokeCurve [_] = return ()
 drawVWStrokeCurve ((xo, yo, _zo) : xs) = do
   Cairo.moveTo xo yo
   let ((xlast, ylast, _zlast) : rxs) = reverse xs

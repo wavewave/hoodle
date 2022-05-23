@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Hoodle.HitTest.Type
@@ -18,7 +19,9 @@ module Hoodle.HitTest.Type
   )
 where
 
+import Control.Monad (liftM2)
 import Data.Bifunctor (Bifunctor (..))
+import Data.Serialize (Serialize (..))
 import Prelude hiding (fst, snd)
 
 -- | bounding box type
@@ -38,6 +41,11 @@ deriving instance (Show a) => Show (BBoxed a)
 deriving instance (Eq a) => Eq (BBoxed a)
 
 deriving instance (Ord a) => Ord (BBoxed a)
+
+-- | orphan instance for BBox
+instance Serialize BBox where
+  put BBox {..} = put bbox_upperleft >> put bbox_lowerright
+  get = liftM2 BBox get get
 
 -- |
 class GetBBoxable a where

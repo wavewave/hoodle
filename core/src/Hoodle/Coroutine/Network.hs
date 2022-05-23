@@ -3,7 +3,6 @@
 
 module Hoodle.Coroutine.Network where
 
-import Control.Applicative
 import Control.Concurrent hiding (yield)
 import Control.Lens
 import Control.Monad
@@ -14,12 +13,9 @@ import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.Binary as Bi
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
-import Data.Foldable (forM_)
 import Data.IORef
-import Data.Monoid (mconcat, (<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import qualified Data.Traversable as Tr
 import Data.Word
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Coroutine.Draw
@@ -114,7 +110,7 @@ networkTextInput txt = do
             Gtk.MessageQuestion
             Gtk.ButtonsOkCancel
             msg
-        forkIO $ do
+        _ <- forkIO $ do
           readMVar done
           Gtk.dialogResponse dialog Gtk.ResponseOk
         res <- Gtk.dialogRun dialog

@@ -10,7 +10,7 @@ import qualified Data.Foldable as F (forM_)
 import Data.Hoodle.Predefined
 import Foreign.C.Types (CInt (..))
 import Foreign.ForeignPtr (withForeignPtr)
-import Foreign.Ptr (Ptr (..))
+import Foreign.Ptr (Ptr)
 import qualified Graphics.UI.Gtk as Gtk
 import qualified Graphics.UI.Gtk.General.CssProvider as Gtk
 import qualified Graphics.UI.Gtk.General.StyleContext as Gtk
@@ -160,7 +160,7 @@ actionNewAndRegisterRef evar name label tooltip stockId myevent = do
   case myevent of
     Nothing -> return a
     Just ev -> do
-      a `Gtk.on` Gtk.actionActivated $ do
+      _ <- a `Gtk.on` Gtk.actionActivated $ do
         eventHandler evar (UsrEv ev)
       return a
 
@@ -274,7 +274,7 @@ getMenuUI evar = do
   textfromsrca <- actionNewAndRegister "TEXTFROMSRCA" "Text From Source" (Just "Just a Stub") Nothing (justMenu MenuTextFromSource)
 
   togglenetsrca <- Gtk.toggleActionNew ("TOGGLENETSRCA" :: String) "Toggle network edit text source" (Just "Just a Stub") Nothing
-  togglenetsrca `Gtk.on` Gtk.actionToggled $ do
+  _ <- togglenetsrca `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuToggleNetworkEditSource))
   latexa <- actionNewAndRegister "LATEXA" "LaTeX" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeX)
   latexneta <- actionNewAndRegister "LATEXNETA" "LaTeX Network" (Just "Just a Stub") (Just "mylatex") (justMenu MenuLaTeXNetwork)
@@ -330,34 +330,34 @@ getMenuUI evar = do
   -- option menu --
   -----------------
   uxinputa <- Gtk.toggleActionNew ("UXINPUTA" :: String) "Use XInput" (Just "Just a Stub") Nothing
-  uxinputa `Gtk.on` Gtk.actionToggled $ do
+  _ <- uxinputa `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuUseXInput))
   handa <- Gtk.toggleActionNew ("HANDA" :: String) "Use Touch" (Just "Toggle touch") (Just "myhand")
-  handa `Gtk.on` Gtk.actionToggled $ do
+  _ <- handa `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuUseTouch))
   popmenua <- Gtk.toggleActionNew ("POPMENUA" :: String) "Use Popup Menu" (Just "Just a stub") Nothing
-  popmenua `Gtk.on` Gtk.actionToggled $ do
+  _ <- popmenua `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuUsePopUpMenu))
   ebdimga <- Gtk.toggleActionNew ("EBDIMGA" :: String) "Embed PNG/JPG Image" (Just "Just a stub") Nothing
-  ebdimga `Gtk.on` Gtk.actionToggled $ do
+  _ <- ebdimga `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuEmbedImage))
   ebdpdfa <- Gtk.toggleActionNew ("EBDPDFA" :: String) "Embed PDF" (Just "Just a stub") Nothing
-  ebdpdfa `Gtk.on` Gtk.actionToggled $ do
+  _ <- ebdpdfa `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuEmbedPDF))
   flwlnka <- Gtk.toggleActionNew ("FLWLNKA" :: String) "Follow Links" (Just "Just a stub") Nothing
-  flwlnka `Gtk.on` Gtk.actionToggled $ do
+  _ <- flwlnka `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuFollowLinks))
   keepratioa <- Gtk.toggleActionNew ("KEEPRATIOA" :: String) "Keep Aspect Ratio" (Just "Just a stub") Nothing
-  keepratioa `Gtk.on` Gtk.actionToggled $ do
+  _ <- keepratioa `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuKeepAspectRatio))
   vcursora <- Gtk.toggleActionNew ("VCURSORA" :: String) "Use Variable Cursor" (Just "Just a stub") Nothing
-  vcursora `Gtk.on` Gtk.actionToggled $ do
+  _ <- vcursora `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuUseVariableCursor))
   -- temporary implementation (later will be as submenus with toggle action. appropriate reflection)
   togclocka <- actionNewAndRegister "TOGCLOCKA" "Toggle Clock Widget" (Just "Just a stub") Nothing (justMenu MenuToggleClockWidget)
 
   pressrsensa <- Gtk.toggleActionNew ("PRESSRSENSA" :: String) "Pressure Sensitivity" (Just "Just a Stub") Nothing
-  pressrsensa `Gtk.on` Gtk.actionToggled $ do
+  _ <- pressrsensa `Gtk.on` Gtk.actionToggled $ do
     eventHandler evar (UsrEv (Menu MenuPressureSensitivity))
 
   newpagemoda <- actionNewAndRegister "NEWPAGEMODEA" "New page mode" Nothing Nothing Nothing
@@ -556,7 +556,7 @@ getMenuUI evar = do
   ui <- Gtk.uiManagerNew
 
   uiDecl <- readFile (resDir </> "menu.xml")
-  Gtk.uiManagerAddUiFromString ui uiDecl
+  _ <- Gtk.uiManagerAddUiFromString ui uiDecl
   Gtk.uiManagerInsertActionGroup ui agr 0
   Just ra2 <- Gtk.actionGroupGetAction agr ("PENFINEA" :: String)
   Gtk.set (Gtk.castToRadioAction ra2) [Gtk.radioActionCurrentValue Gtk.:= 2]

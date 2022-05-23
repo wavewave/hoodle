@@ -3,10 +3,7 @@
 
 module Hoodle.ModelAction.ContextMenu where
 
-import Control.Concurrent (forkIO, threadDelay)
-import Control.Exception
 import qualified Data.ByteString.Char8 as B
-import Data.Foldable (forM_)
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple
 import Data.UUID.V4
@@ -14,12 +11,10 @@ import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Type
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Type.Event
 import Hoodle.Util
 import System.Directory
 import System.FilePath
-import System.Process
 
 -- |
 menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO Gtk.MenuItem
@@ -28,7 +23,7 @@ menuOpenALink evhandler urlpath = do
         FileUrl fp -> fp
         HttpUrl url -> url
   menuitemlnk <- Gtk.menuItemNewWithLabel ("Open " ++ urlname :: String)
-  menuitemlnk `Gtk.on` Gtk.menuItemActivate $ evhandler (UsrEv (OpenLink urlpath Nothing))
+  _ <- menuitemlnk `Gtk.on` Gtk.menuItemActivate $ evhandler (UsrEv (OpenLink urlpath Nothing))
   return menuitemlnk
 
 -- |
@@ -37,8 +32,9 @@ menuCreateALink evhandler sitems =
   if not (any isLinkInRItem sitems)
     then do
       mi <- Gtk.menuItemNewWithLabel ("Create a link to..." :: String)
-      mi `Gtk.on` Gtk.menuItemActivate $
-        evhandler (UsrEv (GotContextMenuSignal CMenuCreateALink))
+      _ <-
+        mi `Gtk.on` Gtk.menuItemActivate $
+          evhandler (UsrEv (GotContextMenuSignal CMenuCreateALink))
       return (Just mi)
     else return Nothing
 

@@ -15,8 +15,8 @@ Source-repository head
   location: http://www.github.com/wavewave/hoodle-parser
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options: 	-Wall -Werror
+  ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends: base == 4.*,
                  attoparsec >= 0.10,
                  either >= 3.1,

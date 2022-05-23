@@ -5,9 +5,6 @@ module Text.Hoodle.Migrate.FromXournal
   )
 where
 
-import Control.Applicative
---
-
 import qualified Data.Hoodle.Simple as H
 import qualified Data.Xournal.Simple as X
 import Lens.Micro

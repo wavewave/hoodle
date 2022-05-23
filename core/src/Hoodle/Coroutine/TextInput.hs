@@ -8,7 +8,6 @@ import Control.Applicative
 import Control.Concurrent (killThread)
 import qualified Control.Exception
 import Control.Lens (view, (%~), (.~), (?~), (^.), _2, _3)
-import Control.Monad (void)
 import Control.Monad.State hiding (forM_, mapM_)
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event
@@ -23,9 +22,8 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import Data.Hoodle.Simple
-import Data.List (minimumBy, sortBy)
+import Data.List (minimumBy)
 import qualified Data.Maybe as Maybe (fromMaybe)
-import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as TIO
@@ -74,7 +72,7 @@ multiLineDialog str evhandler = do
   Gtk.containerAdd upper vbox
   textbuf <- Gtk.textBufferNew Nothing
   Gtk.textBufferSetByteString textbuf (TE.encodeUtf8 str)
-  textbuf `Gtk.on` Gtk.bufferChanged $ do
+  _ <- textbuf `Gtk.on` Gtk.bufferChanged $ do
     (s, e) <- (,) <$> Gtk.textBufferGetStartIter textbuf <*> Gtk.textBufferGetEndIter textbuf
     contents <- Gtk.textBufferGetByteString textbuf s e False
     (evhandler . UsrEv . MultiLine . MultiLineChanged) (TE.decodeUtf8 contents)
@@ -469,16 +467,16 @@ networkReceived txt = do
 
 -- | insert text
 textInputFromSource :: (Double, Double) -> MainCoroutine ()
-textInputFromSource (x0, y0) = do
-  runMaybeT $ do
-    txtsrc <- MaybeT $ gets ((^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit))
-    lift $ modify (tempQueue %~ enqueue linePosDialog)
-    (l1, l2) <- MaybeT linePosLoop
-    let txt = getLinesFromText (l1, l2) txtsrc
-    lift deleteSelection
-    liftIO (makePangoTextSVG (x0, y0) txt)
-      >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2), "pango")
-  return ()
+textInputFromSource (x0, y0) =
+  void $
+    runMaybeT $ do
+      txtsrc <- MaybeT $ gets ((^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit))
+      lift $ modify (tempQueue %~ enqueue linePosDialog)
+      (l1, l2) <- MaybeT linePosLoop
+      let txt = getLinesFromText (l1, l2) txtsrc
+      lift deleteSelection
+      liftIO (makePangoTextSVG (x0, y0) txt)
+        >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2), "pango")
 
 -- | common dialog with line position
 linePosDialog :: Either (ActionOrder AllEvent) AllEvent

@@ -2,15 +2,10 @@
 
 module Text.Hoodle.Migrate.V0_3_to_HEAD where
 
-import Control.Applicative
---
-
 import qualified Data.Hoodle.Simple as NH
 import qualified Data.Hoodle.Simple.V0_3 as OH
 import Lens.Micro
 import Lens.Micro.Extras (view)
-
---
 
 dim2Dim :: OH.Dimension -> NH.Dimension
 dim2Dim (OH.Dim w h) = NH.Dim w h

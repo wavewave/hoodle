@@ -45,7 +45,6 @@ where
 import Control.Applicative
 import Control.Concurrent.STM
 import Control.Lens (set, view)
-import Control.Monad (void)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.State hiding (mapM, mapM_)
 import Control.Monad.Trans.Reader
@@ -57,7 +56,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Predefined
 import Data.Hoodle.Simple
 import Data.Hoodle.Zipper
-import Data.Traversable (mapM, sequenceA)
+import Data.Traversable (mapM)
 import Graphics.Hoodle.Render.Background
 import Graphics.Hoodle.Render.Item
 import Graphics.Hoodle.Render.Primitive
@@ -166,7 +165,7 @@ renderSVG svg@(SVG _ _ bstr _ _) = do
     Cairo.save
     Cairo.translate x y
     Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
-    RSVG.svgRender rsvg
+    _ <- RSVG.svgRender rsvg
     Cairo.restore
     return ()
 
@@ -197,7 +196,7 @@ renderLink lnk =
             Cairo.save
             Cairo.translate x y
             Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
-            RSVG.svgRender rsvg
+            _ <- RSVG.svgRender rsvg
             Cairo.restore
             Cairo.resetClip
             return ()
@@ -229,7 +228,7 @@ renderAnchor anc =
             Cairo.save
             Cairo.translate x y
             Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
-            RSVG.svgRender rsvg
+            _ <- RSVG.svgRender rsvg
             Cairo.restore
             Cairo.resetClip
             return ()
@@ -303,7 +302,7 @@ renderRItem _ _ itm@(RItemSVG svgbbx mrsvg) = do
       Cairo.save
       Cairo.translate x y
       Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
-      RSVG.svgRender rsvg
+      _ <- RSVG.svgRender rsvg
       Cairo.restore
       return ()
   return itm
@@ -319,7 +318,7 @@ renderRItem _ _ itm@(RItemLink lnkbbx mrsvg) = do
       Cairo.save
       Cairo.translate x y
       Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
-      RSVG.svgRender rsvg
+      _ <- RSVG.svgRender rsvg
       Cairo.restore
       return ()
   return itm
@@ -335,7 +334,7 @@ renderRItem _ _ itm@(RItemAnchor ancbbx mrsvg) = do
       Cairo.save
       Cairo.translate x y
       Cairo.scale ((x2 - x1) / ix) ((y2 - y1) / iy)
-      RSVG.svgRender rsvg
+      _ <- RSVG.svgRender rsvg
       Cairo.restore
       return ()
   return itm
@@ -353,7 +352,7 @@ renderRBkgInBBox ::
   Cairo.Render (RBackground, Dimension, Maybe Xform4Page)
 renderRBkgInBBox cache cid mbbox (b, dim, mx) = do
   clipBBox (fmap (`inflate` 1) mbbox)
-  renderRBkgBuf cache cid (b, dim, mx)
+  _ <- renderRBkgBuf cache cid (b, dim, mx)
   Cairo.resetClip
   return (b, dim, mx)
 

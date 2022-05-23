@@ -7,7 +7,6 @@
 
 module Hoodle.Coroutine.Draw where
 
-import Control.Applicative
 import Control.Concurrent.STM (atomically, modifyTVar')
 import Control.Lens
 import Control.Monad
@@ -101,10 +100,10 @@ updateFlagFromToggleUI toggleid lensforflag = do
 
 -- |
 data DrawingFunctionSet = DrawingFunctionSet
-  { singleEditDraw :: DrawingFunction SinglePage EditMode,
-    singleSelectDraw :: DrawingFunction SinglePage SelectMode,
-    contEditDraw :: DrawingFunction ContinuousPage EditMode,
-    contSelectDraw :: DrawingFunction ContinuousPage SelectMode
+  { singleEditDraw :: DrawingFunction 'SinglePage EditMode,
+    singleSelectDraw :: DrawingFunction 'SinglePage SelectMode,
+    contEditDraw :: DrawingFunction 'ContinuousPage EditMode,
+    contSelectDraw :: DrawingFunction 'ContinuousPage SelectMode
   }
 
 -- |
@@ -112,10 +111,10 @@ invalidateGeneral ::
   CanvasId ->
   Maybe BBox ->
   DrawFlag ->
-  DrawingFunction SinglePage EditMode ->
-  DrawingFunction SinglePage SelectMode ->
-  DrawingFunction ContinuousPage EditMode ->
-  DrawingFunction ContinuousPage SelectMode ->
+  DrawingFunction 'SinglePage EditMode ->
+  DrawingFunction 'SinglePage SelectMode ->
+  DrawingFunction 'ContinuousPage EditMode ->
+  DrawingFunction 'ContinuousPage SelectMode ->
   MainCoroutine ()
 invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
   xst <- get
@@ -123,7 +122,7 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
   cache <- renderCache
   unboxBiAct (fsingle cache uhdl) (fcont cache uhdl) . getCanvasInfo cid $ uhdl
   where
-    fsingle :: RenderCache -> UnitHoodle -> CanvasInfo SinglePage -> MainCoroutine ()
+    fsingle :: RenderCache -> UnitHoodle -> CanvasInfo 'SinglePage -> MainCoroutine ()
     fsingle cache uhdl cvsInfo = do
       let cpn = PageNum . view currentPageNum $ cvsInfo
           isCurrentCvs = cid == getCurrentCanvasId uhdl
@@ -132,21 +131,21 @@ invalidateGeneral cid mbbox flag drawf drawfsel drawcont drawcontsel = do
           cvs = view drawArea cvsInfo
           msfc = view mDrawSurface cvsInfo
       case epage of
-        Left page -> do
-          liftIO
-            ( unSinglePageDraw drawf cache cvsid isCurrentCvs (cvs, msfc) (cpn, page)
-                <$> view viewInfo <*> pure mbbox <*> pure flag
-                $ cvsInfo
-            )
-          return ()
-        Right tpage -> do
-          liftIO
-            ( unSinglePageDraw drawfsel cache cvsid isCurrentCvs (cvs, msfc) (cpn, tpage)
-                <$> view viewInfo <*> pure mbbox <*> pure flag
-                $ cvsInfo
-            )
-          return ()
-    fcont :: RenderCache -> UnitHoodle -> CanvasInfo ContinuousPage -> MainCoroutine ()
+        Left page ->
+          void $
+            liftIO
+              ( unSinglePageDraw drawf cache cvsid isCurrentCvs (cvs, msfc) (cpn, page)
+                  <$> view viewInfo <*> pure mbbox <*> pure flag
+                  $ cvsInfo
+              )
+        Right tpage ->
+          void $
+            liftIO
+              ( unSinglePageDraw drawfsel cache cvsid isCurrentCvs (cvs, msfc) (cpn, tpage)
+                  <$> view viewInfo <*> pure mbbox <*> pure flag
+                  $ cvsInfo
+              )
+    fcont :: RenderCache -> UnitHoodle -> CanvasInfo 'ContinuousPage -> MainCoroutine ()
     fcont cache uhdl cvsInfo = do
       let hdlmodst = view hoodleModeState uhdl
           isCurrentCvs = cid == getCurrentCanvasId uhdl
@@ -274,8 +273,7 @@ waitSomeEvent p = do
 doIOaction_ :: IO a -> MainCoroutine ()
 doIOaction_ action = do
   doIOaction $ \_ -> action >> return (UsrEv ActionOrdered)
-  waitSomeEvent (\case ActionOrdered -> True; _ -> False)
-  return ()
+  void $ waitSomeEvent (\case ActionOrdered -> True; _ -> False)
 
 defaultHandler :: (AllEvent -> IO ()) -> RendererEvent -> IO ()
 defaultHandler evhandler (SurfaceUpdate s) =
@@ -294,5 +292,4 @@ callRenderer action = do
 callRenderer_ :: Renderer a -> MainCoroutine ()
 callRenderer_ action = do
   callRenderer $ action >> return GotNone
-  waitSomeEvent (\case RenderEv GotNone -> True; _ -> False)
-  return ()
+  void $ waitSomeEvent (\case RenderEv GotNone -> True; _ -> False)

@@ -3,7 +3,6 @@
 
 module Hoodle.Coroutine.Dialog where
 
-import Control.Applicative ((<$>), (<*>))
 import Control.Lens (view)
 import Control.Monad.Loops
 import Control.Monad.State
@@ -185,7 +184,7 @@ fileChooser choosertyp mfname = do
           [ ("OK", Gtk.ResponseOk),
             ("Cancel", Gtk.ResponseCancel)
           ]
-      case mrf of
+      _ <- case mrf of
         Just rf -> Gtk.fileChooserSetCurrentFolder dialog rf
         Nothing -> getCurrentDirectory >>= Gtk.fileChooserSetCurrentFolder dialog
       F.mapM_ (Gtk.fileChooserSetCurrentName dialog) mfname

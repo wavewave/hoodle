@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 
 module Text.Hoodlet.Parse.Attoparsec where
 

@@ -386,12 +386,11 @@ renderHoodleToPDF hdl ofp = do
   let setsize sfc pg =
         let S.Dim w h = view S.dimension pg
          in pdfSurfaceSetSize sfc w h >> return pg
-  withPDFSurface tempfile width height $ \s ->
+  _ <- withPDFSurface tempfile width height $ \s ->
     renderWith s . flip runStateT ctxt $
       sequence1_ (lift showPage) . map (renderPageStateT <=< setsize s) . view S.pages $
         hdl
-  readProcessWithExitCode "pdftk" [tempfile, "cat", "output", ofp] ""
-  return ()
+  void $ readProcessWithExitCode "pdftk" [tempfile, "cat", "output", ofp] ""
 
 isUpdated :: (FilePath, FilePath) -> IO Bool
 isUpdated (ofp, nfp) = do

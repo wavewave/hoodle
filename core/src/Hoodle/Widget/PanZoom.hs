@@ -3,8 +3,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Widget.PanZoom
 -- Copyright   : (c) 2013-2015 Ian-Woo Kim
@@ -17,19 +15,15 @@
 -- Pan-Zoom widget drawing and action
 module Hoodle.Widget.PanZoom where
 
--- from other packages
-import Control.Applicative
 import Control.Lens (over, set, view, (.~))
 import Control.Monad.Identity
 import Control.Monad.State
--- from hoodle-platform
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple
 import Data.List (delete)
 import Data.Time.Clock
 import Graphics.Hoodle.Render.Util.HitTest
 import qualified Graphics.Rendering.Cairo as Cairo
--- from this package
 import Hoodle.Accessor
 import Hoodle.Coroutine.Draw
 import Hoodle.Coroutine.Page
@@ -353,19 +347,22 @@ touchStart cid pcoord = forBoth' unboxBiAct chk =<< gets (getCanvasInfo cid . vi
             else do
               let devlst = view deviceList xst
               doIOaction $ \_ -> do
-                lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) xst
+                _ <- lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) xst
                 -- ad hoc
                 let touchstr = dev_touch_str devlst
-                when (touchstr /= "touch") $ do
-                  readProcess "xinput" ["disable", dev_touch_str devlst] ""
-                  return ()
+                when (touchstr /= "touch") $
+                  void $
+                    readProcess
+                      "xinput"
+                      ["disable", dev_touch_str devlst]
+                      ""
                 --
                 return (UsrEv ActionOrdered)
               void $ waitSomeEvent (\case TouchUp _ _ -> True; _ -> False)
 
 toggleTouch :: MainCoroutine ()
 toggleTouch = do
-  updateFlagFromToggleUI "HANDA" (settings . doesUseTouch)
+  _ <- updateFlagFromToggleUI "HANDA" (settings . doesUseTouch)
   xst <- get
   let devlst = view deviceList xst
       uhdl = view (unitHoodles . currentUnit) xst
@@ -373,10 +370,13 @@ toggleTouch = do
   when (view (settings . doesUseTouch) xst) $ do
     -- ad hoc
     let touchstr = dev_touch_str devlst
-    when (touchstr /= "touch") $ do
-      liftIO $ readProcess "xinput" ["enable", dev_touch_str devlst] ""
-      return ()
+    when (touchstr /= "touch") $
+      void $ liftIO $ readProcess "xinput" ["enable", dev_touch_str devlst] ""
     --
-    pureUpdateUhdl $ (currentCanvasInfo . unboxLens (canvasWidgets . widgetConfig . doesUsePanZoomWidget)) .~ True
+    pureUpdateUhdl $
+      ( currentCanvasInfo
+          . unboxLens (canvasWidgets . widgetConfig . doesUsePanZoomWidget)
+      )
+        .~ True
     invalidateInBBox Nothing Efficient cid
     return ()

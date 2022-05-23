@@ -9,7 +9,6 @@ import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Data.Double.Conversion.ByteString (toFixed)
-import Data.Foldable (foldMap)
 import Data.Hoodle.Simple.V0_2_2
 import Data.Strict.Tuple
 import Lens.Micro.Extras (view)

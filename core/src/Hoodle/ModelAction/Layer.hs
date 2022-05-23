@@ -2,8 +2,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Layer
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
@@ -54,7 +52,7 @@ layerChooseDialog layernumref cidx len = do
   buttonOk <- Gtk.dialogAddButton dialog Gtk.stockOk Gtk.ResponseOk
   _buttonCancel <- Gtk.dialogAddButton dialog Gtk.stockCancel Gtk.ResponseCancel
 
-  buttonOk `Gtk.on` Gtk.buttonActivated $ do
+  _ <- buttonOk `Gtk.on` Gtk.buttonActivated $ do
     txt <- Gtk.get layerentry Gtk.entryText
     maybe (return ()) (modifyIORef layernumref . const . pred) . maybeRead $ txt
   return dialog

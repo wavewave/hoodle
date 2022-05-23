@@ -17,8 +17,8 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options: 	-Wall -Werror
+  ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends: 
                    base == 4.*, 
                    bytestring >= 0.9, 

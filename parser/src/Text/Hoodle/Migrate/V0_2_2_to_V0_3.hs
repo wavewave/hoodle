@@ -4,7 +4,6 @@
 
 module Text.Hoodle.Migrate.V0_2_2_to_V0_3 where
 
-import Control.Applicative
 import Control.Error.Util (hoistEither)
 import Control.Monad.Trans
 import Control.Monad.Trans.Except

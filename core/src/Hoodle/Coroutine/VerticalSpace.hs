@@ -6,7 +6,7 @@ import Control.Applicative
 import Control.Category
 import Control.Lens (at, set, view, (.~))
 import Control.Monad hiding (mapM_)
-import Control.Monad.State (get, gets)
+import Control.Monad.State (gets)
 import Control.Monad.Trans (liftIO)
 import Data.Bifunctor (second)
 import Data.Foldable

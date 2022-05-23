@@ -18,11 +18,10 @@ Source-repository head
 
 Library
   hs-source-dirs:  lib
-  ghc-options: 	    -Wall  -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans 
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options: 	    -Wall -Werror
+  ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:   
                    base == 4.*, 
-                   --
                    attoparsec >= 0.10,
                    bytestring >= 0.9, 
                    cairo >= 0.13.0.3,
@@ -42,7 +41,6 @@ Library
                    transformers >= 0.3,
                    unordered-containers,
                    uuid >= 1.2.7,
-                   -- 
                    hoodle-parser >= 0.4,
                    hoodle-render >= 0.6,
                    hoodle-types >= 0.4
@@ -53,8 +51,8 @@ Library
 Executable hoodle-publish
   Main-is: hoodle-publish.hs
   hs-source-dirs: exe
-  ghc-options: 	-Wall -funbox-strict-fields -fno-warn-unused-do-bind -fno-warn-orphans
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options: 	-Wall -Werror -rtsopts
+  ghc-prof-options: -fprof-auto -fprof-cafs
 
   Build-Depends:   base == 4.*,
                    cmdargs,

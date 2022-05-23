@@ -16,11 +16,12 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options:  -O2 -Wall -fno-warn-orphans -fno-warn-unused-do-bind
-  ghc-prof-options: -caf-all -auto-all
+  ghc-options:  -Wall -Werror
+  ghc-prof-options: -fprof-auto -fprof-cafs
 
   Build-Depends: 
                  base == 4.*,
+                 cereal,
                  containers,
                  mtl,
                  strict

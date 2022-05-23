@@ -2,7 +2,8 @@ module Main where
 
 import Control.Monad
 import Control.Monad.State
-import Data.Attoparsec
+import Data.Attoparsec.ByteString (parse)
+import Data.Attoparsec.Types (IResult (Done))
 import qualified Data.ByteString as B
 import Data.Hoodle.Simple
 import Graphics.Hoodle.Render

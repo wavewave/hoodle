@@ -5,11 +5,9 @@
 
 module Hoodle.Type.Coroutine where
 
-import Control.Applicative
 import Control.Concurrent
 import Control.Error.Util (hoistEither)
 import Control.Lens ((%~), (.~), (^.))
-import Control.Monad (void)
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans.Crtn

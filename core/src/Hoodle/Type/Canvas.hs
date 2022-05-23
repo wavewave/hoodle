@@ -77,7 +77,6 @@ module Hoodle.Type.Canvas
   )
 where
 
-import Control.Applicative ((<$>), (<*>))
 import Control.Lens (Lens', lens, set, view)
 import Data.Hoodle.BBox
 import Data.Hoodle.Predefined
@@ -121,7 +120,7 @@ emptyPenDraw :: PenDraw
 emptyPenDraw = PenDraw empty
 
 -- | default view info with single page mode
-defaultViewInfoSinglePage :: ViewInfo SinglePage
+defaultViewInfoSinglePage :: ViewInfo 'SinglePage
 defaultViewInfoSinglePage =
   ViewInfo
     { _zoomMode = Original,
@@ -258,12 +257,12 @@ notifiedItem = lens _notifiedItem (\f a -> f {_notifiedItem = a})
 
 -- |
 data CanvasInfoBox where
-  CanvasSinglePage :: CanvasInfo SinglePage -> CanvasInfoBox
-  CanvasContPage :: CanvasInfo ContinuousPage -> CanvasInfoBox
+  CanvasSinglePage :: CanvasInfo 'SinglePage -> CanvasInfoBox
+  CanvasContPage :: CanvasInfo 'ContinuousPage -> CanvasInfoBox
 
 forBoth ::
-  ( (CanvasInfo SinglePage -> f (CanvasInfo SinglePage)) ->
-    (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) ->
+  ( (CanvasInfo 'SinglePage -> f (CanvasInfo 'SinglePage)) ->
+    (CanvasInfo 'ContinuousPage -> f (CanvasInfo 'ContinuousPage)) ->
     (CanvasInfoBox -> f CanvasInfoBox)
   ) ->
   (forall a. CanvasInfo a -> f (CanvasInfo a)) ->
@@ -272,8 +271,8 @@ forBoth ::
 forBoth m f = m f f
 
 forBoth' ::
-  ( (CanvasInfo SinglePage -> r) ->
-    (CanvasInfo ContinuousPage -> r) ->
+  ( (CanvasInfo 'SinglePage -> r) ->
+    (CanvasInfo 'ContinuousPage -> r) ->
     (CanvasInfoBox -> r)
   ) ->
   (forall a. CanvasInfo a -> r) ->
@@ -284,8 +283,8 @@ forBoth' m f = m f f
 -- | single page action and continuous page act
 unboxBiXform ::
   (Functor f) =>
-  (CanvasInfo SinglePage -> f (CanvasInfo SinglePage)) ->
-  (CanvasInfo ContinuousPage -> f (CanvasInfo ContinuousPage)) ->
+  (CanvasInfo 'SinglePage -> f (CanvasInfo 'SinglePage)) ->
+  (CanvasInfo 'ContinuousPage -> f (CanvasInfo 'ContinuousPage)) ->
   CanvasInfoBox ->
   f CanvasInfoBox
 unboxBiXform fsingle _fcont (CanvasSinglePage cinfo) = fmap CanvasSinglePage (fsingle cinfo)
@@ -293,8 +292,8 @@ unboxBiXform _fsingle fcont (CanvasContPage cinfo) = fmap CanvasContPage (fcont 
 
 -- | single page action and continuous page act
 unboxBiAct ::
-  (CanvasInfo SinglePage -> r) ->
-  (CanvasInfo ContinuousPage -> r) ->
+  (CanvasInfo 'SinglePage -> r) ->
+  (CanvasInfo 'ContinuousPage -> r) ->
   CanvasInfoBox ->
   r
 unboxBiAct fsingle _fcont (CanvasSinglePage cinfo) = fsingle cinfo
@@ -442,8 +441,8 @@ defaultPenInfo =
 -- |
 updateCanvasDimForSingle ::
   CanvasDimension ->
-  CanvasInfo SinglePage ->
-  IO (CanvasInfo SinglePage)
+  CanvasInfo 'SinglePage ->
+  IO (CanvasInfo 'SinglePage)
 updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = do
   let zmode = view (viewInfo . zoomMode) cinfo
       SingleArrangement _ pdim (ViewPortBBox bbox) =
@@ -470,8 +469,8 @@ updateCanvasDimForSingle cdim@(CanvasDimension (Dim w' h')) cinfo = do
 updateCanvasDimForContSingle ::
   PageDimension ->
   CanvasDimension ->
-  CanvasInfo ContinuousPage ->
-  IO (CanvasInfo ContinuousPage)
+  CanvasInfo 'ContinuousPage ->
+  IO (CanvasInfo 'ContinuousPage)
 updateCanvasDimForContSingle pdim cdim@(CanvasDimension (Dim w' h')) cinfo = do
   let zmode = view (viewInfo . zoomMode) cinfo
       ContinuousArrangement _ ddim func (ViewPortBBox bbox) =

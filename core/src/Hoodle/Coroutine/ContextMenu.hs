@@ -263,12 +263,12 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
 
 -- |
 exportImage :: S.Image -> MainCoroutine ()
-exportImage img = do
-  runMaybeT $ do
-    pngbstr <- (MaybeT . return . getByteStringIfEmbeddedPNG . S.img_src) img
-    fp <- MaybeT (fileChooser Gtk.FileChooserActionSave Nothing)
-    liftIO $ B.writeFile fp pngbstr
-  return ()
+exportImage img =
+  void $
+    runMaybeT $ do
+      pngbstr <- (MaybeT . return . getByteStringIfEmbeddedPNG . S.img_src) img
+      fp <- MaybeT (fileChooser Gtk.FileChooserActionSave Nothing)
+      liftIO $ B.writeFile fp pngbstr
 
 showContextMenu :: (PageNum, (Double, Double)) -> MainCoroutine ()
 showContextMenu (pnum, (x, y)) = do
@@ -297,18 +297,24 @@ showContextMenu (pnum, (x, y)) = do
           menuitem4 <- Gtk.menuItemNewWithLabel ("Copy" :: String)
           menuitem5 <- Gtk.menuItemNewWithLabel ("Delete" :: String)
           menuitem6 <- Gtk.menuItemNewWithLabel ("New File Linked Here" :: String)
-          menuitem1 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypSVG)))
-          menuitem2 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypPDF)))
-          menuitem3 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal CMenuCut))
-          menuitem4 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal CMenuCopy))
-          menuitem5 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal CMenuDelete))
-          menuitem6 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal CMenuAssocWithNewFile))
+          _ <-
+            menuitem1 `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypSVG)))
+          _ <-
+            menuitem2 `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypPDF)))
+          _ <-
+            menuitem3 `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal CMenuCut))
+          _ <-
+            menuitem4 `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal CMenuCopy))
+          _ <-
+            menuitem5 `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal CMenuDelete))
+          _ <-
+            menuitem6 `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal CMenuAssocWithNewFile))
           Gtk.menuAttach menu menuitem1 0 1 1 2
           Gtk.menuAttach menu menuitem2 0 1 2 3
           Gtk.menuAttach menu menuitem3 1 2 0 1
@@ -319,12 +325,13 @@ showContextMenu (pnum, (x, y)) = do
           case sitms of
             [sitm] -> do
               menuhdlt <- Gtk.menuItemNewWithLabel ("Make Hoodlet" :: String)
-              menuhdlt `Gtk.on` Gtk.menuItemActivate $
-                ( evhandler . UsrEv . GotContextMenuSignal
-                    . CMenuExportHoodlet
-                    . rItem2Item
-                )
-                  sitm
+              _ <-
+                menuhdlt `Gtk.on` Gtk.menuItemActivate $
+                  ( evhandler . UsrEv . GotContextMenuSignal
+                      . CMenuExportHoodlet
+                      . rItem2Item
+                  )
+                    sitm
               Gtk.menuAttach menu menuhdlt 0 1 8 9
               case sitm of
                 RItemLink lnkbbx _msfc -> do
@@ -342,68 +349,71 @@ showContextMenu (pnum, (x, y)) = do
                           ( \link -> do
                               let LinkDocID _ uuid _ _ _ _ _ _ = link
                               menuitemcvt <- Gtk.menuItemNewWithLabel ("Convert Link With ID" ++ show uuid :: String)
-                              menuitemcvt `Gtk.on` Gtk.menuItemActivate $
-                                ( evhandler
-                                    . UsrEv
-                                    . GotContextMenuSignal
-                                    . CMenuLinkConvert
-                                )
-                                  link
+                              _ <-
+                                menuitemcvt `Gtk.on` Gtk.menuItemActivate $
+                                  ( evhandler
+                                      . UsrEv
+                                      . GotContextMenuSignal
+                                      . CMenuLinkConvert
+                                  )
+                                    link
                               Gtk.menuAttach menu menuitemcvt 0 1 4 5
                           )
-                    LinkDocID i lid file txt cmd rdr pos dim -> do
-                      runMaybeT $ do
-                        hset <- (MaybeT . return . view hookSet) xstate
-                        f <- (MaybeT . return . lookupPathFromId) hset
-                        file' <- MaybeT (f (B.unpack lid))
-                        guard (B.unpack file /= file')
-                        let link =
-                              LinkDocID
-                                i
-                                lid
-                                (B.pack file')
-                                txt
-                                cmd
-                                rdr
-                                pos
-                                dim
-                        menuitemcvt <-
-                          liftIO $
-                            Gtk.menuItemNewWithLabel
-                              ("Correct Path to " ++ show file' :: String)
-                        liftIO
-                          ( menuitemcvt `Gtk.on` Gtk.menuItemActivate $
-                              ( evhandler
-                                  . UsrEv
-                                  . GotContextMenuSignal
-                                  . CMenuLinkConvert
+                    LinkDocID i lid file txt cmd rdr pos dim ->
+                      void $
+                        runMaybeT $ do
+                          hset <- (MaybeT . return . view hookSet) xstate
+                          f <- (MaybeT . return . lookupPathFromId) hset
+                          file' <- MaybeT (f (B.unpack lid))
+                          guard (B.unpack file /= file')
+                          let link =
+                                LinkDocID
+                                  i
+                                  lid
+                                  (B.pack file')
+                                  txt
+                                  cmd
+                                  rdr
+                                  pos
+                                  dim
+                          menuitemcvt <-
+                            liftIO $
+                              Gtk.menuItemNewWithLabel
+                                ("Correct Path to " ++ show file' :: String)
+                          _ <-
+                            liftIO
+                              ( menuitemcvt `Gtk.on` Gtk.menuItemActivate $
+                                  ( evhandler
+                                      . UsrEv
+                                      . GotContextMenuSignal
+                                      . CMenuLinkConvert
+                                  )
+                                    link
                               )
-                                link
-                          )
-                        liftIO $ Gtk.menuAttach menu menuitemcvt 0 1 4 5
-                      return ()
-                    LinkAnchor i lid file aid bstr pos dim -> do
-                      runMaybeT $ do
-                        hset <- (MaybeT . return . view hookSet) xstate
-                        f <- (MaybeT . return . lookupPathFromId) hset
-                        file' <- MaybeT (f (B.unpack lid))
-                        guard (B.unpack file /= file')
-                        let link = LinkAnchor i lid (B.pack file') aid bstr pos dim
-                        menuitemcvt <-
-                          liftIO $
-                            Gtk.menuItemNewWithLabel
-                              ("Correct Path to " ++ show file' :: String)
-                        liftIO
-                          ( menuitemcvt `Gtk.on` Gtk.menuItemActivate $
-                              ( evhandler
-                                  . UsrEv
-                                  . GotContextMenuSignal
-                                  . CMenuLinkConvert
+                          liftIO $ Gtk.menuAttach menu menuitemcvt 0 1 4 5
+                    LinkAnchor i lid file aid bstr pos dim ->
+                      void $
+                        runMaybeT $ do
+                          hset <- (MaybeT . return . view hookSet) xstate
+                          f <- (MaybeT . return . lookupPathFromId) hset
+                          file' <- MaybeT (f (B.unpack lid))
+                          guard (B.unpack file /= file')
+                          let link = LinkAnchor i lid (B.pack file') aid bstr pos dim
+                          menuitemcvt <-
+                            liftIO $
+                              Gtk.menuItemNewWithLabel
+                                ("Correct Path to " ++ show file' :: String)
+                          void $
+                            liftIO
+                              ( menuitemcvt `Gtk.on` Gtk.menuItemActivate $
+                                  ( evhandler
+                                      . UsrEv
+                                      . GotContextMenuSignal
+                                      . CMenuLinkConvert
+                                  )
+                                    link
                               )
-                                link
-                          )
-                        liftIO $ Gtk.menuAttach menu menuitemcvt 0 1 4 5
-                      return ()
+                          liftIO $ Gtk.menuAttach menu menuitemcvt 0 1 4 5
                 RItemSVG svgbbx _msfc -> do
                   let svg = bbxed_content svgbbx
                       BBox (x0, y0) (x1, y1) = getBBox svgbbx
@@ -412,41 +422,41 @@ showContextMenu (pnum, (x, y)) = do
                     case cmd of
                       "pango" -> do
                         menuitemedt <- Gtk.menuItemNewWithLabel ("Edit Text" :: String)
-                        menuitemedt `Gtk.on` Gtk.menuItemActivate $ do
+                        _ <- menuitemedt `Gtk.on` Gtk.menuItemActivate $ do
                           evhandler (UsrEv (GotContextMenuSignal (CMenuPangoConvert (x0, y0) txt)))
                         Gtk.menuAttach menu menuitemedt 0 1 4 5
                         return ()
                       "latex" -> do
                         menuitemedt <- Gtk.menuItemNewWithLabel ("Edit LaTeX" :: String)
-                        menuitemedt `Gtk.on` Gtk.menuItemActivate $ do
+                        _ <- menuitemedt `Gtk.on` Gtk.menuItemActivate $ do
                           evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvert (x0, y0) txt)))
                         Gtk.menuAttach menu menuitemedt 0 1 4 5
                         --
                         menuitemnet <- Gtk.menuItemNewWithLabel ("Edit LaTeX Network" :: String)
-                        menuitemnet `Gtk.on` Gtk.menuItemActivate $ do
+                        _ <- menuitemnet `Gtk.on` Gtk.menuItemActivate $ do
                           evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvertNetwork (x0, y0) txt)))
                         Gtk.menuAttach menu menuitemnet 0 1 5 6
                         --
                         let (txth, txtt) = T.splitAt 19 txt
                         when (txth == "embedlatex:keyword:") $ do
                           menuitemup <- Gtk.menuItemNewWithLabel ("Update LaTeX" :: String)
-                          menuitemup `Gtk.on` Gtk.menuItemActivate $ do
+                          _ <- menuitemup `Gtk.on` Gtk.menuItemActivate $ do
                             evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXUpdate (x0, y0) (Dim (x1 - x0) (y1 - y0)) txtt)))
                           Gtk.menuAttach menu menuitemup 0 1 6 7
                           return ()
                       _ -> return ()
                 RItemImage imgbbx _msfc -> do
                   menuitemcrop <- Gtk.menuItemNewWithLabel ("Crop Image" :: String)
-                  menuitemcrop `Gtk.on` Gtk.menuItemActivate $ do
+                  _ <- menuitemcrop `Gtk.on` Gtk.menuItemActivate $ do
                     (evhandler . UsrEv . GotContextMenuSignal . CMenuCropImage) imgbbx
                   menuitemrotcw <- Gtk.menuItemNewWithLabel ("Rotate Image CW" :: String)
-                  menuitemrotcw `Gtk.on` Gtk.menuItemActivate $ do
+                  _ <- menuitemrotcw `Gtk.on` Gtk.menuItemActivate $ do
                     (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CW imgbbx)
                   menuitemrotccw <- Gtk.menuItemNewWithLabel ("Rotate Image CCW" :: String)
-                  menuitemrotccw `Gtk.on` Gtk.menuItemActivate $ do
+                  _ <- menuitemrotccw `Gtk.on` Gtk.menuItemActivate $ do
                     (evhandler . UsrEv . GotContextMenuSignal) (CMenuRotate CCW imgbbx)
                   menuitemexport <- Gtk.menuItemNewWithLabel ("Export Image" :: String)
-                  menuitemexport `Gtk.on` Gtk.menuItemActivate $ do
+                  _ <- menuitemexport `Gtk.on` Gtk.menuItemActivate $ do
                     (evhandler . UsrEv . GotContextMenuSignal) (CMenuExport imgbbx)
                   --
                   Gtk.menuAttach menu menuitemcrop 0 1 4 5
@@ -457,14 +467,15 @@ showContextMenu (pnum, (x, y)) = do
                   return ()
                 RItemAnchor ancbbx _ -> do
                   menuitemmklnk <- Gtk.menuItemNewWithLabel ("Link to this anchor" :: String)
-                  menuitemmklnk `Gtk.on` Gtk.menuItemActivate $
-                    ( evhandler
-                        . UsrEv
-                        . GotContextMenuSignal
-                        . CMenuMakeLinkToAnchor
-                        . bbxed_content
-                    )
-                      ancbbx
+                  _ <-
+                    menuitemmklnk `Gtk.on` Gtk.menuItemActivate $
+                      ( evhandler
+                          . UsrEv
+                          . GotContextMenuSignal
+                          . CMenuMakeLinkToAnchor
+                          . bbxed_content
+                      )
+                        ancbbx
                   Gtk.menuAttach menu menuitemmklnk 0 1 4 5
                 _ -> return ()
             _ -> do
@@ -472,7 +483,7 @@ showContextMenu (pnum, (x, y)) = do
               case links of
                 [l] -> do
                   menuitemreplace <- Gtk.menuItemNewWithLabel ("replace link/anchor render" :: String)
-                  menuitemreplace `Gtk.on` Gtk.menuItemActivate $ do
+                  _ <- menuitemreplace `Gtk.on` Gtk.menuItemActivate $ do
                     cache <- readTVarIO (xstate ^. renderCacheVar)
                     let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) others
                     case ulbbox of
@@ -492,22 +503,25 @@ showContextMenu (pnum, (x, y)) = do
         Nothing -> return ()
         Just ttl -> do
           custommenu <- Gtk.menuItemNewWithLabel ttl
-          custommenu `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal CMenuCustom))
+          _ <-
+            custommenu `Gtk.on` Gtk.menuItemActivate $
+              evhandler (UsrEv (GotContextMenuSignal CMenuCustom))
           Gtk.menuAttach menu custommenu 0 1 0 1
       menuitem8 <- Gtk.menuItemNewWithLabel ("Autosave This Page Image" :: String)
-      menuitem8 `Gtk.on` Gtk.menuItemActivate $
-        evhandler (UsrEv (GotContextMenuSignal CMenuAutosavePage))
+      _ <-
+        menuitem8 `Gtk.on` Gtk.menuItemActivate $
+          evhandler (UsrEv (GotContextMenuSignal CMenuAutosavePage))
       Gtk.menuAttach menu menuitem8 1 2 4 5
-      runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0
+      _ <- runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0
       Gtk.widgetShowAll menu
       Gtk.menuPopup menu Nothing
       return (UsrEv ContextMenuCreated)
     makeMenu evhdlr mn currcid cid = when (currcid /= cid) $ do
       n <- get
       mi <- liftIO $ Gtk.menuItemNewWithLabel ("Show here in cvs" ++ show cid)
-      liftIO $
-        Gtk.on mi Gtk.menuItemActivate $
-          evhdlr (UsrEv (GotContextMenuSignal (CMenuCanvasView cid pnum x y)))
+      _ <-
+        liftIO $
+          Gtk.on mi Gtk.menuItemActivate $
+            evhdlr (UsrEv (GotContextMenuSignal (CMenuCanvasView cid pnum x y)))
       liftIO $ Gtk.menuAttach mn mi 2 3 n (n + 1)
       put (n + 1)

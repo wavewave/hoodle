@@ -5,7 +5,6 @@
 
 module Hoodle.Coroutine.Page where
 
-import Control.Applicative
 import Control.Concurrent.STM
 import Control.Lens (set, view, (.~), (?~), (^.))
 import Control.Monad

@@ -63,7 +63,7 @@ do2LinesIntersect ((x1, y1), (x2, y2)) ((x3, y3), (x4, y4)) =
 -- | Does a line hit a stroke (a sequence of points)?
 doesLineHitStrk :: ((Double, Double), (Double, Double)) -> [(Double, Double)] -> Bool
 doesLineHitStrk _ [] = False
-doesLineHitStrk _ (_ : []) = False
+doesLineHitStrk _ [_] = False
 doesLineHitStrk line1 ((x0, y0) : (x, y) : rest) =
   do2LinesIntersect line1 ((x0, y0), (x, y)) || doesLineHitStrk line1 ((x, y) : rest)
 
@@ -100,15 +100,15 @@ isBBox2InBBox1 b1 (BBox (ulx2, uly2) (lrx2, lry2)) =
 --------------------------------------------------------
 
 -- |
-hltFilteredBy_StateT ::
+hltFilteredByStateT ::
   -- | hit test condition
   (a -> Bool) ->
   -- | strokes to test
   [a] ->
   State Bool (AlterList (NotHitted a) (Hitted a))
-hltFilteredBy_StateT test itms = do
+hltFilteredByStateT test itms = do
   let (nhit, rest) = break test itms
-      (hit, rest') = break (not . test) rest
+      (hit, rest') = span test rest
   modify (|| (not . null) hit)
   if null rest'
     then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
@@ -122,7 +122,7 @@ hltFilteredBy ::
   -- | strokes to test
   [a] ->
   AlterList (NotHitted a) (Hitted a)
-hltFilteredBy test is = evalState (hltFilteredBy_StateT test is) False
+hltFilteredBy test is = evalState (hltFilteredByStateT test is) False
 
 -- |
 hltHittedByBBox ::
@@ -167,7 +167,7 @@ elimHitted (n :- h :- rest) = do
   bbox <- get
   let bbox2 = getTotalBBox (unHitted h)
   put (merge bbox bbox2)
-  return . (unNotHitted n ++) =<< elimHitted rest
+  (unNotHitted n ++) <$> elimHitted rest
 
 -- |
 merge :: Maybe BBox -> Maybe BBox -> Maybe BBox

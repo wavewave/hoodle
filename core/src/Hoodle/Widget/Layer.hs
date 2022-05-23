@@ -134,8 +134,7 @@ moveLayerWidget cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x0,
           | otherwise = yw + y - y0
         nwpos = CvsCoord (nposx, nposy)
         changeact :: CanvasInfo a -> CanvasInfo a
-        changeact cinfo =
-          set (canvasWidgets . layerWidgetConfig . layerWidgetPosition) nwpos $ cinfo
+        changeact = set (canvasWidgets . layerWidgetConfig . layerWidgetPosition) nwpos
         ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
     put $ (unitHoodles . currentUnit .~ setCanvasInfo (cid, ncinfobox) uhdl) xst
     --

@@ -111,7 +111,7 @@ changeSelectionByOffset (offx, offy) = changeSelectionBy (offsetFunc (offx, offy
 
 -- |
 offsetFunc :: (Double, Double) -> (Double, Double) -> (Double, Double)
-offsetFunc (offx, offy) = \(x, y) -> (x + offx, y + offy)
+offsetFunc (offx, offy) (x, y) = (x + offx, y + offy)
 
 -- | replace selection with one item
 replaceSelection :: RItem -> Page SelectMode -> Page SelectMode

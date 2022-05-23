@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Hoodle.Type.HoodleState
   ( HoodleState,
@@ -108,6 +107,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import qualified Data.IntMap as M
+import Data.Maybe (fromMaybe)
 import Data.Sequence
 import qualified Data.Text as T
 import Data.Time.Clock
@@ -476,9 +476,9 @@ emptyUnitHoodle = do
 emptyHoodleState :: IO HoodleState
 emptyHoodleState = do
   unit <- emptyUnitHoodle
-  tvarpdf <- atomically $ newTVar empty
-  tvargen <- atomically $ newTVar empty
-  tvarcache <- atomically $ newTVar HM.empty
+  tvarpdf <- newTVarIO empty
+  tvargen <- newTVarIO empty
+  tvarcache <- newTVarIO HM.empty
   return $
     HoodleState
       { _unitHoodles = (0, M.singleton 0 unit),
@@ -607,7 +607,7 @@ setCanvasInfo :: (CanvasId, CanvasInfoBox) -> UnitHoodle -> UnitHoodle
 setCanvasInfo (cid, cinfobox) uhdl =
   let cmap = view cvsInfoMap uhdl
       cmap' = M.insert cid cinfobox cmap
-   in maybe uhdl id $ setCanvasInfoMap cmap' uhdl
+   in fromMaybe uhdl $ setCanvasInfoMap cmap' uhdl
 
 -- | change current canvas. this is the master function
 updateFromCanvasInfoAsCurrentCanvas :: CanvasInfoBox -> UnitHoodle -> UnitHoodle
@@ -631,7 +631,7 @@ modifyCanvasInfo ::
   UnitHoodle ->
   UnitHoodle
 modifyCanvasInfo cid f uhdl =
-  maybe uhdl id . flip setCanvasInfoMap uhdl
+  fromMaybe uhdl . flip setCanvasInfoMap uhdl
     . M.adjust f cid
     . view cvsInfoMap
     $ uhdl

@@ -38,7 +38,7 @@ layerAction action = do
           cpn = view currentPageNum cvsInfo
           hdlmodst = view hoodleModeState uhdl
       newhdlmodst <- either (action hdlmodst cpn) (action hdlmodst cpn . hPage2RPage) epage
-      return =<< (liftIO (updatePageAll newhdlmodst . set hoodleModeState newhdlmodst $ uhdl))
+      liftIO (updatePageAll newhdlmodst . set hoodleModeState newhdlmodst $ uhdl)
 
 -- |
 makeNewLayer :: MainCoroutine ()
@@ -109,7 +109,7 @@ startGotoLayerAt =
       let uhdl = view (unitHoodles . currentUnit) xstate
           hdlmodst = view hoodleModeState uhdl
           epage = getCurrentPageEitherFromHoodleModeState cvsInfo hdlmodst
-          page = either id (hPage2RPage) epage
+          page = either id hPage2RPage epage
           lyrzipper = view glayers page
           cidx = currIndex lyrzipper
           len = lengthSZ lyrzipper

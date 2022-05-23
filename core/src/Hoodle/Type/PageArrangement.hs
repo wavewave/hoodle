@@ -1,9 +1,7 @@
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE NoMonoPatBinds #-}
 
 module Hoodle.Type.PageArrangement where
@@ -11,9 +9,10 @@ module Hoodle.Type.PageArrangement where
 import Control.Applicative
 import Control.Lens (Lens, Simple, lens, view)
 import Data.Foldable (toList)
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox hiding (fromMaybe)
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple (Dimension (..))
+import Data.Maybe (fromMaybe)
 import Hoodle.Type.Alias
 import Hoodle.Type.Predefined
 import Hoodle.Util
@@ -132,7 +131,7 @@ makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) (x, y) =
    in SingleArrangement cdim pdim (ViewPortBBox bbox)
 
 -- |
-data DesktopConstraint = DesktopWidthConstrained Double
+newtype DesktopConstraint = DesktopWidthConstrained Double
 
 -- |
 makeContinuousArrangement ::
@@ -151,9 +150,8 @@ makeContinuousArrangement
         cnstrnt = DesktopWidthConstrained (cw / sinvx)
         -- default to zero if error
         (PageOrigin (x0, y0), _) =
-          maybe
+          fromMaybe
             (PageOrigin (0, 0), PageDimension (Dim cw ch))
-            id
             (pageArrFuncCont cnstrnt hdl pnum)
         ddim@(DesktopDimension iddim) = deskDimCont cnstrnt hdl
         (x1, y1) = (xpos + x0, ypos + y0)
@@ -207,10 +205,10 @@ pageDimension = lens getter setter
   where
     getter :: PageArrangement a -> PageDimension
     getter (SingleArrangement _ pdim _) = pdim
-    getter (ContinuousArrangement _ _ _ _) = error $ "in pageDimension " -- partial
+    getter ContinuousArrangement {} = error "in pageDimension " -- partial
     setter :: PageArrangement a -> PageDimension -> PageArrangement a
     setter (SingleArrangement cdim _ vbbox) pdim = SingleArrangement cdim pdim vbbox
-    setter (ContinuousArrangement _ _ _ _) _pdim = error $ "in pageDimension " -- partial
+    setter ContinuousArrangement {} _pdim = error "in pageDimension " -- partial
 
 -- |
 canvasDimension :: Simple Lens (PageArrangement a) CanvasDimension

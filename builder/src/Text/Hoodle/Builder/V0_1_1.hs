@@ -97,7 +97,7 @@ buildItem (ItemSVG svg) = buildSVG svg
 
 -- |
 buildStroke :: Stroke -> Builder
-buildStroke stroke@(Stroke _ _ _ _) =
+buildStroke stroke@Stroke {} =
   fromByteString "<stroke tool=\""
     <> fromByteString (stroke_tool stroke)
     <> fromByteString "\" color=\""
@@ -107,7 +107,7 @@ buildStroke stroke@(Stroke _ _ _ _) =
     <> fromByteString "\">\n"
     <> mconcat (map build2D (stroke_data stroke))
     <> fromByteString "\n</stroke>\n"
-buildStroke stroke@(VWStroke _ _ _) =
+buildStroke stroke@VWStroke {} =
   fromByteString "<stroke tool=\""
     <> fromByteString (stroke_tool stroke)
     <> fromByteString "\" color=\""

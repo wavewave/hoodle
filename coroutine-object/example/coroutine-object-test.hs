@@ -1,7 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
 
 module Main where
 
@@ -20,7 +19,7 @@ test_tickingevent :: IO ()
 test_tickingevent = do
   dref <- newEmptyMVar :: IO (MVar (Maybe (Driver Event IO ())))
   let logger = simplelogger --  weblogger "http://127.0.0.1:7800"
-  putMVar dref . Just $ (driver logger world)
+  putMVar dref . Just $ driver logger world
   putStrLn "starting ticking"
   ticking dref 0
 

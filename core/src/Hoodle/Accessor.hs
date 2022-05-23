@@ -47,7 +47,7 @@ pureUpdateUhdl func = do
 
 -- |
 getPenType :: MainCoroutine PenType
-getPenType = view (penInfo . penType) <$> St.get
+getPenType = St.gets (view (penInfo . penType))
 
 -- |
 getCurrentPageCurr :: MainCoroutine (Page EditMode)
@@ -56,7 +56,7 @@ getCurrentPageCurr = do
   let uhdl = view (unitHoodles . currentUnit) xstate
       hdlmodst = view hoodleModeState uhdl
       cinfobox = view currentCanvasInfo uhdl
-  return $ forBoth' unboxBiAct (flip getCurrentPageFromHoodleModeState hdlmodst) cinfobox
+  return $ forBoth' unboxBiAct (`getCurrentPageFromHoodleModeState` hdlmodst) cinfobox
 
 -- |
 getCurrentPageCvsId :: CanvasId -> MainCoroutine (Page EditMode)
@@ -65,7 +65,7 @@ getCurrentPageCvsId cid = do
   let uhdl = view (unitHoodles . currentUnit) xstate
       hdlmodst = view hoodleModeState uhdl
       cinfobox = getCanvasInfo cid uhdl
-  return $ forBoth' unboxBiAct (flip getCurrentPageFromHoodleModeState hdlmodst) cinfobox
+  return $ forBoth' unboxBiAct (`getCurrentPageFromHoodleModeState` hdlmodst) cinfobox
 
 -- |
 getCurrentPageEitherFromHoodleModeState ::
@@ -85,7 +85,7 @@ getCurrentPageEitherFromHoodleModeState cinfo hdlmodst =
 
 -- |
 rItmsInCurrLyr :: MainCoroutine [RItem]
-rItmsInCurrLyr = return . view gitems . getCurrentLayer =<< getCurrentPageCurr
+rItmsInCurrLyr = view gitems . getCurrentLayer <$> getCurrentPageCurr
 
 -- |
 otherCanvas :: UnitHoodle -> [Int]
@@ -138,10 +138,9 @@ setToggleUIForFlag :: String -> Bool -> HoodleState -> IO Bool
 setToggleUIForFlag toggleid b xstate = do
   let ui = view gtkUIManager xstate
   agr <-
-    Gtk.uiManagerGetActionGroups ui >>= \x ->
-      case x of
-        [] -> error "No action group? "
-        y : _ -> return y
+    Gtk.uiManagerGetActionGroups ui >>= \case
+      [] -> error "No action group? "
+      y : _ -> return y
   togglea <-
     Gtk.actionGroupGetAction agr toggleid >>= \(Just x) ->
       return (Gtk.castToToggleAction x)
@@ -150,7 +149,7 @@ setToggleUIForFlag toggleid b xstate = do
 
 -- |
 renderCache :: MainCoroutine RenderCache
-renderCache = (view renderCacheVar <$> St.get) >>= liftIO . readTVarIO
+renderCache = liftIO . readTVarIO . view renderCacheVar =<< St.get
 
 -- |
 getHoodleFilePath :: UnitHoodle -> Maybe FilePath

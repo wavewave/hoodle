@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- THIS MODULE WILL BE REMOVED AFTER REVIEW.
 
 module Hoodle.ModelAction.Network where

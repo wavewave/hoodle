@@ -1,8 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Hoodle.Coroutine.Network where
 
@@ -17,6 +14,7 @@ import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.Binary as Bi
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
+import Data.Foldable (forM_)
 import Data.IORef
 import Data.Monoid (mconcat, (<>))
 import qualified Data.Text as T
@@ -60,7 +58,7 @@ server evhandler ip txtorig = do
                     then return (bs <> bstr1)
                     else go (s - s') (bs <> bstr1)
             go size B.empty
-          Tr.forM mbstr $ \bstr' -> do
+          forM_ mbstr $ \bstr' -> do
             let txt' = TE.decodeUtf8 bstr'
             (evhandler . UsrEv . NetworkProcess . NetworkReceived) txt'
             writeIORef ref txt'
@@ -85,10 +83,10 @@ networkTextInputBody txt = do
                 == 0
                 && f
                 == 0
-        ifcs <- liftIO $ getNetworkInterfaces
+        ifcs <- liftIO getNetworkInterfaces
         let ifcs2 =
               Prelude.filter (not . ismacnull . mac)
-                . Prelude.filter (((/=) 0) . ipv4num . ipv4)
+                . Prelude.filter ((0 /=) . ipv4num . ipv4)
                 $ ifcs
         return (if Prelude.null ifcs2 then "127.0.0.1" else (show . ipv4 . head) ifcs2)
   ip <- maybe ipfind liftIO mipscr
@@ -108,7 +106,7 @@ networkTextInputBody txt = do
 networkTextInput :: T.Text -> MainCoroutine (Maybe T.Text)
 networkTextInput txt = do
   (ip, tid, done) <- networkTextInputBody txt
-  let ipdialog msg = \_evhandler -> do
+  let ipdialog msg _evhandler = do
         dialog <-
           Gtk.messageDialogNew
             Nothing

@@ -45,45 +45,12 @@ import Hoodle.HitTest.Type
     GetBBoxable (..),
   )
 import Prelude hiding (fst, snd)
-import qualified Prelude as Prelude (fst, snd)
-
-{-
--- | bounding box type
-data BBox
-  = BBox
-      { bbox_upperleft :: (Double, Double),
-        bbox_lowerright :: (Double, Double)
-      }
-  deriving (Show, Eq, Ord)
--}
+import qualified Prelude (fst, snd)
 
 -- | orphan instance for BBox
 instance Serialize BBox where
   put BBox {..} = put bbox_upperleft >> put bbox_lowerright
   get = liftM2 BBox get get
-
-{-
-data BBoxed a
-  = BBoxed
-      { bbxed_content :: a,
-        bbxed_bbx :: BBox
-      }
-
-deriving instance (Show a) => Show (BBoxed a)
-
-deriving instance (Eq a) => Eq (BBoxed a)
-
-deriving instance (Ord a) => Ord (BBoxed a)
--}
-
-{-
--- |
-class GetBBoxable a where
-  getBBox :: a -> BBox
-
-instance GetBBoxable (BBoxed a) where
-  getBBox = bbxed_bbx
--}
 
 -- |
 class (Monad m) => MakeBBoxedable m a where
@@ -232,7 +199,7 @@ instance Semigroup UnionBBox where
   _ <> (Union Top) = Union Top
   (Union (Middle x)) <> (Union (Middle y)) = Union (Middle (x `unionBBox` y))
 
-instance Monoid (UnionBBox) where
+instance Monoid UnionBBox where
   mempty = Union Bottom
 
 -- |

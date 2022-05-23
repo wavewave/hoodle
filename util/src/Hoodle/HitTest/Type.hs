@@ -77,7 +77,7 @@ newtype Hitted a = Hitted {unHitted :: [a]}
 -- |
 interleave :: (a -> c) -> (b -> c) -> AlterList a b -> [c]
 interleave _fa _fb Empty = []
-interleave fa fb (x :- xs) = fa x : (interleave fb fa xs)
+interleave fa fb (x :- xs) = fa x : interleave fb fa xs
 
 ----
 

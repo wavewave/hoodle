@@ -50,9 +50,9 @@ handwritingRecognitionDialog :: MainCoroutine (Maybe (Bool, T.Text))
 handwritingRecognitionDialog = do
   r <- minibufDialog "Write hoodlet here"
   case r of
-    Left err -> liftIO $ putStrLn (show err) >> return Nothing
+    Left err -> liftIO (print err) >> return Nothing
     Right strks -> do
-      uuid <- liftIO $ nextRandom
+      uuid <- liftIO nextRandom
       tdir <- liftIO getTemporaryDirectory
       let bstr = (encode . mkAesonInk) strks
       let fp = tdir </> show uuid <.> "json"
@@ -63,7 +63,7 @@ handwritingRecognitionDialog = do
           r_parse <- runExceptT $ do
             v0 <- hoistEither (AP.parseOnly json (B.pack gresult))
             getArrayVal 0 v0 >>= \succstr ->
-              guard (succstr == (String "SUCCESS"))
+              guard (succstr == String "SUCCESS")
             v4 <-
               ( getArray <=< getArrayVal 1
                   <=< getArrayVal 0
@@ -94,7 +94,7 @@ showRecogTextDialog txts =
       GotRecogResult b txt -> return (Just (b, txt))
       _ -> return Nothing
   where
-    action = \evhandler -> do
+    action evhandler = do
       dialog <- Gtk.dialogNew
       upper <- fmap Gtk.castToContainer (Gtk.dialogGetContentArea dialog)
       vbox <- Gtk.vBoxNew False 0
@@ -143,15 +143,15 @@ mkAesonInk :: [Stroke] -> Value
 mkAesonInk strks =
   let strks_value = (Array . fromList . map mkAesonStroke) strks
       hm0 =
-        HM.insert "writing_area_width" (Number (fromInteger 500))
-          . HM.insert "writing_area_height" (Number (fromInteger 50))
+        HM.insert "writing_area_width" (Number 500)
+          . HM.insert "writing_area_height" (Number 50)
           $ HM.empty
 
       hm1 =
         HM.insert "writing_guide" (Object hm0)
           . HM.insert "pre_context" (A.String "")
-          . HM.insert "max_num_results" (Number (fromInteger 10))
-          . HM.insert "max_completions" (Number (fromInteger 0))
+          . HM.insert "max_num_results" (Number 10)
+          . HM.insert "max_completions" (Number 0)
           . HM.insert "ink" strks_value
           $ HM.empty
       hm2 =
@@ -162,7 +162,7 @@ mkAesonInk strks =
         HM.insert "app_version" (Number 0.4)
           . HM.insert "api_level" (A.String "537.36")
           . HM.insert "device" "hoodle"
-          . HM.insert "input_type" (Number (fromInteger 0))
+          . HM.insert "input_type" (Number 0)
           . HM.insert "options" (A.String "enable_pre_space")
           . HM.insert "requests" (Array (fromList [Object hm1, Object hm2]))
           $ HM.empty

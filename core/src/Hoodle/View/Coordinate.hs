@@ -65,7 +65,7 @@ makeCanvasGeometry cpn arr canvas = do
   (ws, hs) <-
     (,) <$> (fromIntegral <$> Gtk.screenGetWidth screen)
       <*> (fromIntegral <$> Gtk.screenGetHeight screen)
-  (x0, y0) <- return . ((,) <$> fromIntegral . fst <*> fromIntegral . snd) =<< Gtk.drawWindowGetOrigin win
+  (x0, y0) <- ((,) <$> fromIntegral . fst <*> fromIntegral . snd) <$> Gtk.drawWindowGetOrigin win
   let corig = CanvasOrigin (x0, y0)
       (deskdim, cvsvbbox, p2d, d2p) =
         case arr of
@@ -73,7 +73,7 @@ makeCanvasGeometry cpn arr canvas = do
             ( DesktopDimension . unPageDimension $ pdim,
               vbbox,
               DeskCoord . unPageCoord . snd,
-              \(DeskCoord coord) -> Just (cpn, (PageCoord coord))
+              \(DeskCoord coord) -> Just (cpn, PageCoord coord)
             )
           ContinuousArrangement _ ddim pfunc vbbox ->
             (ddim, vbbox, makePage2Desktop pfunc, makeDesktop2Page pfunc)
@@ -123,7 +123,7 @@ makeDesktop2Page pfunc (DeskCoord (x, y)) =
       filter condition
         . catMaybes
         . takeWhile isJust
-        . map ((\x' -> liftM (x',) (pfunc x')) . PageNum)
+        . map ((\x' -> fmap (x',) (pfunc x')) . PageNum)
         $ [0 ..]
 
 -- |

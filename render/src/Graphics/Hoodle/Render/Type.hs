@@ -1,6 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Graphics.Hoodle.Render.Type
   ( module Graphics.Hoodle.Render.Type.Background,

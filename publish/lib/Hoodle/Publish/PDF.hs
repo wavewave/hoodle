@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 
 module Hoodle.Publish.PDF where
 
@@ -24,6 +23,7 @@ import Data.Attoparsec.ByteString.Char8
   )
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
+import Data.Functor (($>))
 import qualified Data.Hoodle.Simple as S
 import Data.Int
 import Data.UUID (UUID, fromString)
@@ -56,12 +56,11 @@ urlParse str =
     else
       let p = do
             b <-
-              ( try (string "file://" *> return F)
-                  <|> try (string "http://" *> return H)
-                  <|> try (string "https://" *> return HS)
-                  <|> (return N)
-                )
-            remain <- manyTill anyChar ((satisfy (inClass "\r\n") *> return ()) <|> endOfInput)
+              try (string "file://" $> F)
+                <|> try (string "http://" $> H)
+                <|> try (string "https://" $> HS)
+                <|> return N
+            remain <- manyTill anyChar ((satisfy (inClass "\r\n") $> ()) <|> endOfInput)
             return (b, remain)
           r = parseOnly p (B.pack str)
        in case r of
@@ -77,8 +76,9 @@ isFile (File _ _) = True
 isFile _ = False
 
 takeFile :: DirTree a -> Maybe a
-takeFile x | isFile x = (Just . file) x
-takeFile _ | otherwise = Nothing
+takeFile x
+  | isFile x = (Just . file) x
+  | otherwise = Nothing
 
 data Annot = Annot
   { annot_rect :: (Int, Int, Int, Int),
@@ -160,7 +160,7 @@ writeStream s@(Stream dict _) = do
   len <- lookupDict "Length" dict >>= deref >>= fromObject >>= intValue
   ris <- getRIS
   Stream _ is <- rawStreamContent ris len s
-  content <- liftIO $ BSL.fromChunks `liftM` Streams.toList is
+  content <- liftIO $ BSL.fromChunks `fmap` Streams.toList is
   index <- (lift . lift) nextFreeIndex
   let ref = Ref index 0
   dict' <- writeObjectChildren (ODict dict) >>= fromObject
@@ -320,14 +320,14 @@ writePdfFile _hdlfp dim (urlbase, specialurlbase) (rootpath, currpath) path nlnk
   handle <- liftIO $ openBinaryFile path ReadMode
   res <- runPdfWithHandle handle knownFilters $ do
     encrypted <- isEncrypted
-    when encrypted $ setUserPassword defaultUserPassword >> return ()
+    when encrypted $ void $ setUserPassword defaultUserPassword
     root <- document >>= documentCatalog >>= catalogPageNode
     count <- pageNodeNKids root
     forM_ [0 .. count - 1] $ \i -> do
       page <- pageNodePageByNum root i
       mannots <- runMaybeT $ do
         lnks <- MaybeT . return $ lookup (i + 1) nlnks
-        liftM catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath, currpath)) $ lnks
+        fmap catMaybes . mapM (liftIO . makeAnnot dim urlbase (rootpath, currpath)) $ lnks
       -- hdlfp' <- liftIO $ canonicalizePath hdlfp
       let special =
             if i == 0
@@ -388,7 +388,7 @@ renderHoodleToPDF hdl ofp = do
          in pdfSurfaceSetSize sfc w h >> return pg
   withPDFSurface tempfile width height $ \s ->
     renderWith s . flip runStateT ctxt $
-      sequence1_ (lift showPage) . map (renderPage_StateT <=< setsize s) . view S.pages $
+      sequence1_ (lift showPage) . map (renderPageStateT <=< setsize s) . view S.pages $
         hdl
   readProcessWithExitCode "pdftk" [tempfile, "cat", "output", ofp] ""
   return ()
@@ -415,7 +415,7 @@ createPdf (urlbase, specialurlbase) rootpath (fn, ofn) = catch action (\(e :: So
       putStrLn fn
       let (odir, _) = splitFileName ofn
       b <- doesDirectoryExist odir
-      when (not b) $ system ("mkdir -p " ++ odir) >> return ()
+      unless b $ void $ system ("mkdir -p " ++ odir)
       let (currpath, _) = splitFileName fn
       Streams.withFileAsOutput ofn $ \ostr -> do
         bstr <- B.readFile fn
@@ -426,7 +426,7 @@ createPdf (urlbase, specialurlbase) rootpath (fn, ofn) = catch action (\(e :: So
                 npglnks = map ((,) <$> fst <*> getLinks . snd) npgs
                 dim = (view S.dimension . snd . head) npgs
                 muuid = (fromString . B.unpack . view S.hoodleID) hdl
-            tempfile <- (</>) <$> getTemporaryDirectory <*> liftM show nextRandom
+            tempfile <- (</>) <$> getTemporaryDirectory <*> fmap show nextRandom
             renderHoodleToPDF hdl tempfile
             --
             runPdfWriter ostr $ do

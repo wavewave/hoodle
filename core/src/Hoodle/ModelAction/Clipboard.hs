@@ -43,7 +43,7 @@ updateClipboard xstate itms
     let bstr = C8.unpack . B64.encode . Se.encode $ itms
     Gtk.clipboardSetText clipbd bstr
     togglePaste ui True
-    case (view hookSet xstate) of
+    case view hookSet xstate of
       Nothing -> return ()
       Just hset -> case afterUpdateClipboardHook hset of
         Nothing -> return ()

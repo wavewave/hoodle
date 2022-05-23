@@ -5,7 +5,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Hoodle.Type.Canvas
   ( -- * data types
@@ -94,7 +93,7 @@ import Hoodle.Type.PageArrangement
 import Hoodle.Type.Widget
 
 -- |
-data PenDraw = PenDraw {_points :: Seq (Double, Double)}
+newtype PenDraw = PenDraw {_points :: Seq (Double, Double)}
   deriving (Show)
 
 -- | lens for zoomMode
@@ -410,11 +409,11 @@ currentTool = lens chooser setter
 
 -- |
 defaultPenWCS :: WidthColorStyle
-defaultPenWCS = WidthColorStyle predefined_medium ColorBlack
+defaultPenWCS = WidthColorStyle predefinedMedium ColorBlack
 
 -- |
 defaultEraserWCS :: WidthColorStyle
-defaultEraserWCS = WidthColorStyle predefined_eraser_medium ColorWhite
+defaultEraserWCS = WidthColorStyle predefinedEraserMedium ColorWhite
 
 -- |
 defaultTextWCS :: WidthColorStyle
@@ -422,7 +421,7 @@ defaultTextWCS = defaultPenWCS
 
 -- |
 defaultHighligherWCS :: WidthColorStyle
-defaultHighligherWCS = WidthColorStyle predefined_highlighter_medium ColorYellow
+defaultHighligherWCS = WidthColorStyle predefinedHighlighterMedium ColorYellow
 
 -- |
 defaultPenInfo :: PenInfo

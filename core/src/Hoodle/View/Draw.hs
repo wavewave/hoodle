@@ -21,7 +21,7 @@ module Hoodle.View.Draw where
 
 import Control.Applicative
 import Control.Lens (at, set, view)
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Control.Monad.Trans
 import Control.Monad.Trans.Maybe
 import Data.Foldable hiding (elem)
@@ -117,7 +117,7 @@ getViewableBBox ::
   IntersectBBox
 getViewableBBox geometry mbbox =
   let ViewPortBBox vportbbox = getCanvasViewPort geometry
-   in (fromMaybe mbbox :: IntersectBBox) `mappend` (Intersect (Middle vportbbox))
+   in (fromMaybe mbbox :: IntersectBBox) `mappend` Intersect (Middle vportbbox)
 
 -- | double buffering within two image surfaces
 virtualDoubleBufferDraw ::
@@ -232,10 +232,10 @@ drawCurvebitGen pmode canvas geometry wdth (r, g, b, a) pnum pdraw ((x0, y0), z0
             Cairo.lineTo x y
             Cairo.stroke
       Pressure -> do
-        let wx0 = 0.5 * (fst predefinedPenShapeAspectXY) * wdth * z0
-            wy0 = 0.5 * (snd predefinedPenShapeAspectXY) * wdth * z0
-            wx = 0.5 * (fst predefinedPenShapeAspectXY) * wdth * z
-            wy = 0.5 * (snd predefinedPenShapeAspectXY) * wdth * z
+        let wx0 = 0.5 * fst predefinedPenShapeAspectXY * wdth * z0
+            wy0 = 0.5 * snd predefinedPenShapeAspectXY * wdth * z0
+            wx = 0.5 * fst predefinedPenShapeAspectXY * wdth * z
+            wy = 0.5 * snd predefinedPenShapeAspectXY * wdth * z
         Cairo.moveTo (x0 - wx0) (y0 - wy0)
         Cairo.lineTo (x0 + wx0) (y0 + wy0)
         Cairo.lineTo (x + wx) (y + wy)
@@ -360,9 +360,7 @@ drawContPageGen render = ContPageDraw func
         geometry <- makeCanvasGeometry pnum arr canvas
         let pgs = view gpages hdl
             mcpg = view (at (unPageNum pnum)) pgs
-        let drawpgs =
-              catMaybes . map f $
-                (getPagesInViewPortRange geometry hdl)
+        let drawpgs = mapMaybe f (getPagesInViewPortRange geometry hdl)
               where
                 f k =
                   maybe Nothing (\a -> Just (k, a))
@@ -382,7 +380,7 @@ drawContPageGen render = ContPageDraw func
               ndrawpgs <- mapM onepagerender drawpgs
               let npgs = foldr rfunc pgs ndrawpgs
                     where
-                      rfunc (k, pg) m = M.adjust (const pg) k m
+                      rfunc (k, pg) = M.adjust (const pg) k
               let nhdl = set gpages npgs hdl
               mapM_ (\cpg -> emphasisPageRender geometry (pnum, cpg)) mcpg
               mapM_ (emphasisNotifiedRender geometry) (view notifiedItem cinfo)
@@ -433,9 +431,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
             mcpg = view (at (unPageNum pnum)) pgs
             hdl = gSelect2GHoodle thdl
         geometry <- makeCanvasGeometry pnum arr canvas
-        let drawpgs =
-              catMaybes . map f $
-                (getPagesInViewPortRange geometry hdl)
+        let drawpgs = mapMaybe f (getPagesInViewPortRange geometry hdl)
               where
                 f k =
                   maybe Nothing (\a -> Just (k, a))
@@ -464,7 +460,7 @@ drawContPageSelGen rendergen rendersel = ContPageDraw func
               ndrawpgs <- mapM onepagerender drawpgs
               let npgs = foldr rfunc pgs ndrawpgs
                     where
-                      rfunc (k, pg) m = M.adjust (const pg) k m
+                      rfunc (k, pg) = M.adjust (const pg) k
               let nthdl :: Hoodle SelectMode
                   nthdl = set gselAll npgs thdl
               r <- runMaybeT $ do
@@ -506,10 +502,9 @@ drawSinglePageSel geometry = drawFuncSelGen rendercontent renderselect
       let pg' = hPage2RPage tpg
           xform = mkXform4Page geometry pnum
       case flag of
-        Clear -> cairoRenderOption (RBkgDrawPDF, DrawFull) cache cid (pg', Just xform) >> return ()
-        BkgEfficient -> cairoRenderOption (InBBoxOption mbbox) cache cid (InBBoxBkgBuf pg', Just xform) >> return ()
-        Efficient -> cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox pg', Just xform) >> return ()
-      return ()
+        Clear -> void $ cairoRenderOption (RBkgDrawPDF, DrawFull) cache cid (pg', Just xform)
+        BkgEfficient -> void $ cairoRenderOption (InBBoxOption mbbox) cache cid (InBBoxBkgBuf pg', Just xform)
+        Efficient -> void $ cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox pg', Just xform)
     renderselect _cache _cid (_pnum, tpg) mbbox _flag = do
       cairoHittedBoxDraw geometry tpg mbbox
       return ()
@@ -681,7 +676,7 @@ canvasImageSurface cache cid mmulti geometry hdl = do
       nvport = ViewPortBBox nbbx_desk
       Dim w_cvs h_cvs = bboxToDim nbbx_cvs
   let pgs = view gpages hdl
-      drawpgs = (catMaybes . map f . getPagesInRange geometry nvport) hdl
+      drawpgs = (mapMaybe f . getPagesInRange geometry nvport) hdl
         where
           f k = maybe Nothing (\a -> Just (k, a)) . M.lookup (unPageNum k) $ pgs
       onepagerender (pn, pg) = do
@@ -804,7 +799,7 @@ renderLayerContent mbbox (Dim w h) sfc (CvsCoord (x, y)) = do
   Cairo.setLineWidth 0.5
   Cairo.setSourceRGBA 0 0 0 1
   Cairo.stroke
-  Cairo.translate (x + 100) (y)
+  Cairo.translate (x + 100) y
   Cairo.scale sx sx
   Cairo.setSourceSurface sfc 0 0
   Cairo.paint

@@ -10,4 +10,4 @@ highlighterStart ::
   CanvasId ->
   PointerCoord ->
   MainCoroutine (Maybe (Maybe (Maybe ())))
-highlighterStart cid pcoord = penStart cid pcoord
+highlighterStart = penStart

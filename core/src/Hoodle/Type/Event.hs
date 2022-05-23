@@ -23,7 +23,7 @@ import Hoodle.Util
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent
   deriving (Show)
 
-instance Show (Cairo.Surface) where
+instance Show Cairo.Surface where
   show _ = "cairo surface"
 
 -- |
@@ -99,7 +99,7 @@ data UserEvent
 instance Show (IORef a) where
   show _ = "IORef"
 
-data UIEvent = UIGetFlag Bool
+newtype UIEvent = UIGetFlag Bool
   deriving (Show)
 
 data RenderEvent
@@ -261,7 +261,7 @@ instance Show Gtk.DrawWindow where
   show _ = "DrawWindow"
 
 -- | event for multiline text view/buffer
-data MultiLineEvent = MultiLineChanged T.Text
+newtype MultiLineEvent = MultiLineChanged T.Text
   deriving (Show)
 
 -- | event for network

@@ -67,4 +67,4 @@ redo = do
 
 -- |
 clearUndoHistory :: MainCoroutine ()
-clearUndoHistory = pureUpdateUhdl (undoTable .~ (emptyUndo 1))
+clearUndoHistory = pureUpdateUhdl (undoTable .~ emptyUndo 1)

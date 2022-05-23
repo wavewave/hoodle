@@ -53,18 +53,18 @@ menuEventProcess :: MenuEvent -> MainCoroutine ()
 menuEventProcess MenuQuit = do
   xstate <- get
   if view (unitHoodles . currentUnit . isSaved) xstate
-    then liftIO $ Gtk.mainQuit
+    then liftIO Gtk.mainQuit
     else askQuitProgram
 menuEventProcess MenuPreviousPage = changePage (\x -> x - 1)
 menuEventProcess MenuNextPage = changePage (+ 1)
 menuEventProcess MenuFirstPage = changePage (const 0)
 menuEventProcess MenuLastPage = do
   totalnumofpages <-
-    ( either (M.size . view gpages) (M.size . view gselAll)
-        . hoodleModeStateEither
-        . view (unitHoodles . currentUnit . hoodleModeState)
+    gets
+      ( either (M.size . view gpages) (M.size . view gselAll)
+          . hoodleModeStateEither
+          . view (unitHoodles . currentUnit . hoodleModeState)
       )
-      <$> get
   changePage (const (totalnumofpages - 1))
 menuEventProcess MenuNewPageBefore = newPage Nothing PageBefore
 menuEventProcess MenuNewPageAfter = newPage Nothing PageAfter
@@ -114,20 +114,22 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let cmap = view cvsInfoMap uhdl
-      canvases = map (getDrawAreaFromBox) . M.elems $ cmap
+      canvases = map getDrawAreaFromBox . M.elems $ cmap
   updateFlagFromToggleUI "UXINPUTA" (settings . doesUseXInput) >>= \b ->
     return ()
 menuEventProcess MenuUseTouch = toggleTouch
-menuEventProcess MenuUsePopUpMenu = updateFlagFromToggleUI "POPMENUA" (settings . doesUsePopUpMenu) >> return ()
-menuEventProcess MenuEmbedImage = updateFlagFromToggleUI "EBDIMGA" (settings . doesEmbedImage) >> return ()
-menuEventProcess MenuEmbedPDF = updateFlagFromToggleUI "EBDPDFA" (settings . doesEmbedPDF) >> return ()
-menuEventProcess MenuFollowLinks = updateFlagFromToggleUI "FLWLNKA" (settings . doesFollowLinks) >> return ()
-menuEventProcess MenuKeepAspectRatio = updateFlagFromToggleUI "KEEPRATIOA" (settings . doesKeepAspectRatio) >> return ()
-menuEventProcess MenuUseVariableCursor = updateFlagFromToggleUI "VCURSORA" (settings . doesUseVariableCursor) >> reflectCursor True >> return ()
-menuEventProcess MenuPressureSensitivity = updateFlagFromToggleUI "PRESSRSENSA" (penInfo . variableWidthPen) >> return ()
-menuEventProcess MenuRelaunch = liftIO $ relaunchApplication
+menuEventProcess MenuUsePopUpMenu = void $ updateFlagFromToggleUI "POPMENUA" (settings . doesUsePopUpMenu)
+menuEventProcess MenuEmbedImage = void $ updateFlagFromToggleUI "EBDIMGA" (settings . doesEmbedImage)
+menuEventProcess MenuEmbedPDF = void $ updateFlagFromToggleUI "EBDPDFA" (settings . doesEmbedPDF)
+menuEventProcess MenuFollowLinks = void $ updateFlagFromToggleUI "FLWLNKA" (settings . doesFollowLinks)
+menuEventProcess MenuKeepAspectRatio = void $ updateFlagFromToggleUI "KEEPRATIOA" (settings . doesKeepAspectRatio)
+menuEventProcess MenuUseVariableCursor =
+  void $
+    updateFlagFromToggleUI "VCURSORA" (settings . doesUseVariableCursor) >> reflectCursor True
+menuEventProcess MenuPressureSensitivity = void $ updateFlagFromToggleUI "PRESSRSENSA" (penInfo . variableWidthPen)
+menuEventProcess MenuRelaunch = liftIO relaunchApplication
 menuEventProcess MenuColorPicker = colorPick
 menuEventProcess MenuFullScreen = fullScreen
 menuEventProcess MenuAddLink = addLink

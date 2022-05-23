@@ -65,7 +65,7 @@ data SelectType
   deriving (Show, Eq, Ord)
 
 -- |
-data SelectInfo = SelectInfo
+newtype SelectInfo = SelectInfo
   { _selectType :: SelectType
   }
   deriving (Show)
@@ -103,7 +103,7 @@ penColorNameMap =
 penColorRGBAmap :: M.Map PenColor (Double, Double, Double, Double)
 penColorRGBAmap =
   M.fromList $
-    map (\x -> (fst x, fromJustError "penColorRGBAmap" (M.lookup (snd x) predefined_pencolor))) $
+    map (\x -> (fst x, fromJustError "penColorRGBAmap" (M.lookup (snd x) predefinedPencolor))) $
       M.toList penColorNameMap
 
 convertPenColorToRGBA :: PenColor -> (Double, Double, Double, Double)

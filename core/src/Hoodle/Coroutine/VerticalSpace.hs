@@ -6,7 +6,7 @@ import Control.Applicative
 import Control.Category
 import Control.Lens (at, set, view, (.~))
 import Control.Monad hiding (mapM_)
-import Control.Monad.State (get)
+import Control.Monad.State (get, gets)
 import Control.Monad.Trans (liftIO)
 import Data.Bifunctor (second)
 import Data.Foldable
@@ -63,12 +63,7 @@ splitPageByHLine y pg = (hitted, set glayers unhitted pg, hltedLayers)
               $ lyr
         )
         alllyrs
-    hitted =
-      ( concat
-          . fmap (concatMap unHitted . getB . findHittedItmsInALyr)
-          . toSeq
-      )
-        alllyrs
+    hitted = concatMap (concatMap unHitted . getB . findHittedItmsInALyr) . toSeq $ alllyrs
     bboxabove (BBox (_, y0) _) = y0 > y
 
 -- |
@@ -76,7 +71,7 @@ verticalSpaceStart :: CanvasId -> PointerCoord -> MainCoroutine ()
 verticalSpaceStart cid = commonPenStart verticalSpaceAction cid >=> const (return ())
   where
     verticalSpaceAction _cinfo pnum@(PageNum n) geometry (x, y) _ = do
-      hdl <- getHoodle . view (unitHoodles . currentUnit) <$> get
+      hdl <- gets (getHoodle . view (unitHoodles . currentUnit))
       cache <- renderCache
       cpg <- getCurrentPageCurr
       let (itms, npg, hltedLayers) = splitPageByHLine y cpg
@@ -118,7 +113,7 @@ addNewPageAndMoveBelow ::
   (PageNum, SeqZipper RItemHitted, BBox) ->
   MainCoroutine ()
 addNewPageAndMoveBelow (pnum, hltedLyrs, bbx) = do
-  bsty <- view backgroundStyle <$> get
+  bsty <- gets (view backgroundStyle)
   updateUhdl (npgact bsty) >> commit_ >> canvasZoomUpdateAll >> invalidateAll
   where
     npgact :: BackgroundStyle -> UnitHoodle -> MainCoroutine UnitHoodle
@@ -191,7 +186,7 @@ verticalSpaceProcess
   sfcs@(sfcbkg, sfcitm, sfctot)
   otime = do
     r <- nextevent
-    uhdl <- view (unitHoodles . currentUnit) <$> get
+    uhdl <- gets (view (unitHoodles . currentUnit))
     forBoth' unboxBiAct (f r) . getCanvasInfo cid $ uhdl
     where
       Dim w h = view gdimension pg

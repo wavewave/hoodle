@@ -11,7 +11,7 @@ import Control.Applicative
 import Control.Concurrent (forkIO)
 import Control.Lens (at, set, view, (^.), _2)
 import Control.Monad hiding (forM_)
-import Control.Monad.State (get, liftIO)
+import Control.Monad.State (get, gets, liftIO)
 import Control.Monad.Trans.Maybe
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (forM_)
@@ -71,7 +71,7 @@ openLinkAction urlpath mid = do
         Nothing ->
           addTab (LocalDir (Just fp))
             >> forM_ mid (uncurry goToAnchorPos)
-    HttpUrl url -> liftIO $ createProcess (proc "xdg-open" [url]) >> return ()
+    HttpUrl url -> liftIO $ void $ createProcess (proc "xdg-open" [url])
 
 -- |
 checkPreviouslyOpenedFile :: FilePath -> HoodleState -> IO (Maybe Int)
@@ -107,7 +107,7 @@ makeTextSVGFromStringAt str cid uhdl ccoord = do
 -- |
 notifyLink :: CanvasId -> PointerCoord -> MainCoroutine ()
 notifyLink cid pcoord = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   forBoth' unboxBiAct (f uhdl) (getCanvasInfo cid uhdl)
   where
     f :: forall b. UnitHoodle -> CanvasInfo b -> MainCoroutine ()
@@ -132,7 +132,7 @@ notifyLink cid pcoord = do
                     hitted = takeHitted hlnks
                 case mnotifyitem of
                   Nothing ->
-                    if ((not . null) hitted)
+                    if (not . null) hitted
                       then Just <$> newNotify geometry pnum (head hitted) Nothing
                       else return Nothing
                   Just (opnum, obbx, _) -> do
@@ -140,7 +140,7 @@ notifyLink cid pcoord = do
                     if pnum == opnum && isPointInBBox obbx (x, y)
                       then return Nothing
                       else
-                        if ((not . null) hitted)
+                        if (not . null) hitted
                           then Just <$> newNotify geometry pnum (head hitted) (Just obbx_desk)
                           else return (Just (Nothing, obbx_desk))
       forM_
@@ -184,19 +184,17 @@ gotLink mstr (x, y) = do
         Nothing -> return ()
         Just (FileUrl file) -> do
           let ext = takeExtension file
-          if ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG"
-            then do
-              let isembedded = view (settings . doesEmbedImage) xst
-              callRenderer $
-                return . GotRItem =<< cnstrctRItem
-                  =<< liftIO (makeNewItemImage isembedded file)
-              RenderEv (GotRItem nitm) <-
-                waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
-              geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
-              let ccoord = CvsCoord (fromIntegral x, fromIntegral y)
-                  mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord
-              insertItemAt mpgcoord nitm
-            else return ()
+          when (ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG") $ do
+            let isembedded = view (settings . doesEmbedImage) xst
+            callRenderer $
+              GotRItem
+                <$> (cnstrctRItem =<< liftIO (makeNewItemImage isembedded file))
+            RenderEv (GotRItem nitm) <-
+              waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
+            geometry <- liftIO $ getCanvasGeometryCvsId cid uhdl
+            let ccoord = CvsCoord (fromIntegral x, fromIntegral y)
+                mpgcoord = (desktop2Page geometry . canvas2Desktop geometry) ccoord
+            insertItemAt mpgcoord nitm
         Just (HttpUrl url) -> do
           case getSelectedItmsFromUnitHoodle uhdl of
             Nothing -> do
@@ -234,7 +232,7 @@ gotLink mstr (x, y) = do
             case ulbbox of
               Middle bbox -> do
                 svg <- liftIO $ makeSVGFromSelection cache cid hititms bbox
-                uuid <- liftIO $ nextRandom
+                uuid <- liftIO nextRandom
                 let uuidbstr' = B.pack (show uuid)
                 deleteSelection
                 linkInsert "simple" (uuidbstr', fp) fn (svg_render svg, bbox)
@@ -249,7 +247,7 @@ addLink = do
   case minput of
     Nothing -> return ()
     Just (str, fname) -> do
-      uuid <- liftIO $ nextRandom
+      uuid <- liftIO nextRandom
       let uuidbstr = B.pack (show uuid)
       rdr <- liftIO (makePangoTextSVG (0, 0) (T.pack str))
       linkInsert "simple" (uuidbstr, fname) str rdr
@@ -294,12 +292,12 @@ getAnchorMap hdl =
   where
     lookupAnchor (ItemAnchor a) = Just a
     lookupAnchor _ = Nothing
-    insertAnchor pgnum (Anchor {..}) = M.insert (TE.decodeUtf8 anchor_id) (pgnum, anchor_pos)
+    insertAnchor pgnum Anchor {..} = M.insert (TE.decodeUtf8 anchor_id) (pgnum, anchor_pos)
 
 -- |
 goToAnchorPos :: T.Text -> T.Text -> MainCoroutine ()
 goToAnchorPos docid anchorid = do
-  rhdl <- getHoodle . view (unitHoodles . currentUnit) <$> get
+  rhdl <- gets (getHoodle . view (unitHoodles . currentUnit))
   let hdl = rHoodle2Hoodle rhdl
   when (docid == (TE.decodeUtf8 . view ghoodleID) rhdl) $ do
     let anchormap = getAnchorMap hdl

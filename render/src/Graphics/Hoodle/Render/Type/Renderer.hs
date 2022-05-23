@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -28,7 +27,7 @@ data PDFCommand where
   GetDocFromFile :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
   GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
   GetPageFromDoc :: Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand
-  GetNPages :: !Poppler.Document -> (TMVar Int) -> PDFCommand
+  GetNPages :: !Poppler.Document -> TMVar Int -> PDFCommand
   RenderPageScaled :: SurfaceID -> Poppler.Page -> Dimension -> Dimension -> PDFCommand
 
 instance Show PDFCommand where
@@ -73,7 +72,7 @@ data RendererState = RendererState
   }
 
 getRenderCache :: RendererState -> IO RenderCache
-getRenderCache RendererState {..} = atomically (readTVar rendererCache)
+getRenderCache RendererState {..} = readTVarIO rendererCache
 
 type Renderer = ReaderT RendererState IO
 

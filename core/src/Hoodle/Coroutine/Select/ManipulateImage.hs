@@ -43,7 +43,7 @@ cropImage imgbbx = do
   let uhdl = view (unitHoodles . currentUnit) xst
       (cid, cinfobox) = view currentCanvas uhdl
       hdlmodst = view hoodleModeState uhdl
-      epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
+      epage = forBoth' unboxBiAct (`getCurrentPageEitherFromHoodleModeState` hdlmodst) cinfobox
   case hdlmodst of
     ViewAppendState _ -> return ()
     SelectState thdl -> do
@@ -52,10 +52,11 @@ cropImage imgbbx = do
         Right tpage -> initCropImage cid (thdl, tpage)
   where
     initCropImage cid (thdl, tpage) = do
-      r <- waitSomeEvent (\case PenDown _ _ _ -> True; _ -> False)
+      r <- waitSomeEvent (\case PenDown {} -> True; _ -> False)
       case r of
-        PenDown cid' _pbtn pcoord -> do
-          if (cid == cid') then startCropRect cid imgbbx (thdl, tpage) pcoord else return ()
+        PenDown cid' _pbtn pcoord ->
+          when (cid == cid') $
+            startCropRect cid imgbbx (thdl, tpage) pcoord
         _ -> return ()
 
 startCropRect ::
@@ -70,7 +71,7 @@ startCropRect cid imgbbx (thdl, tpage) pcoord0 = do
   geometry <- liftIO $ getGeometry4CurrCvs uhdl
   forM_ ((desktop2Page geometry . device2Desktop geometry) pcoord0) $ \(p0, c0) -> do
     tsel <- createTempRender geometry (p0, BBox (unPageCoord c0) (unPageCoord c0))
-    ctime <- liftIO $ getCurrentTime
+    ctime <- liftIO getCurrentTime
     nbbox <- newCropRect cid geometry tsel (unPageCoord c0) (unPageCoord c0, ctime)
     Cairo.surfaceFinish (tempSurfaceSrc tsel)
     Cairo.surfaceFinish (tempSurfaceTgt tsel)
@@ -82,7 +83,8 @@ startCropRect cid imgbbx (thdl, tpage) pcoord0 = do
       mimg' <- liftIO $ createCroppedImage img obbox nbbox
       forM_ mimg' $ \img' -> do
         --
-        callRenderer $ return . GotRItem =<< cnstrctRItem (ItemImage img')
+        callRenderer $
+          GotRItem <$> cnstrctRItem (ItemImage img')
         RenderEv (GotRItem rimg') <-
           waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
         --
@@ -130,10 +132,10 @@ createCroppedImage img (BBox (xo0, yo0) (xo1, yo1)) (BBox (xn0, yn0) (xn1, yn1))
     Just bstr -> do
       gdimg <- G.loadPngByteString bstr
       (w, h) <- G.imageSize gdimg
-      let w' = floor $ (fromIntegral w) * (xn1 - xn0) / (xo1 - xo0)
-          h' = floor $ (fromIntegral h) * (yn1 - yn0) / (yo1 - yo0)
-          x1 = floor $ (fromIntegral w) * (xn0 - xo0) / (xo1 - xo0)
-          y1 = floor $ (fromIntegral h) * (yn0 - yo0) / (yo1 - yo0)
+      let w' = floor $ fromIntegral w * (xn1 - xn0) / (xo1 - xo0)
+          h' = floor $ fromIntegral h * (yn1 - yn0) / (yo1 - yo0)
+          x1 = floor $ fromIntegral w * (xn0 - xo0) / (xo1 - xo0)
+          y1 = floor $ fromIntegral h * (yn0 - yo0) / (yo1 - yo0)
       ngdimg <- G.newImage (w', h')
       G.copyRegion (x1, y1) (w', h') gdimg (0, 0) ngdimg
       nbstr <- G.savePngByteString ngdimg
@@ -148,7 +150,7 @@ rotateImage dir imgbbx = do
   let (cid, cinfobox) = view currentCanvas uhdl
       hdlmodst = view hoodleModeState uhdl
       pnum = (PageNum . forBoth' unboxBiAct (view currentPageNum)) cinfobox
-      epage = forBoth' unboxBiAct (flip getCurrentPageEitherFromHoodleModeState hdlmodst) cinfobox
+      epage = forBoth' unboxBiAct (`getCurrentPageEitherFromHoodleModeState` hdlmodst) cinfobox
   case hdlmodst of
     ViewAppendState _ -> return ()
     SelectState thdl -> do
@@ -158,7 +160,8 @@ rotateImage dir imgbbx = do
           let img = bbxed_content imgbbx
           mimg' <- liftIO (createRotatedImage dir img (getBBox imgbbx))
           forM_ mimg' $ \img' -> do
-            callRenderer $ return . GotRItem =<< cnstrctRItem (ItemImage img')
+            callRenderer $
+              GotRItem <$> cnstrctRItem (ItemImage img')
             RenderEv (GotRItem rimg') <-
               waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
             let ntpage = replaceSelection rimg' tpage

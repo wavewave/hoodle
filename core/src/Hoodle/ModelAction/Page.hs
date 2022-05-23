@@ -17,16 +17,13 @@ module Hoodle.ModelAction.Page where
 
 import Control.Applicative
 import Control.Lens (set, view)
-import Control.Monad (liftM)
 import Data.Functor.Identity (Identity (..))
--- from hoodle-platform
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import qualified Data.IntMap as M
+import Data.Maybe (fromMaybe)
 import Data.Traversable (mapM)
 import qualified Graphics.UI.Gtk as Gtk (adjustmentGetValue)
--- from this package
-
 import Hoodle.Type.Alias
 import Hoodle.Type.Canvas
 import Hoodle.Type.Enum
@@ -56,7 +53,7 @@ updatePageAll hdlmodst uhdl = do
   let cmap = view cvsInfoMap uhdl
   cmap' <- mapM (updatePage hdlmodst . adjustPage hdlmodst) cmap
   return $
-    maybe uhdl id
+    fromMaybe uhdl
       . setCanvasInfoMap cmap'
       . set hoodleModeState hdlmodst
       $ uhdl
@@ -142,8 +139,8 @@ setPage :: UnitHoodle -> PageNum -> CanvasId -> IO CanvasInfoBox
 setPage uhdl pnum cid = do
   let cinfobox = getCanvasInfo cid uhdl
   unboxBiAct
-    (liftM CanvasSinglePage . setPageSingle uhdl pnum)
-    (liftM CanvasContPage . setPageCont uhdl pnum)
+    (fmap CanvasSinglePage . setPageSingle uhdl pnum)
+    (fmap CanvasContPage . setPageCont uhdl pnum)
     cinfobox
 
 -- | setPageSingle : in Single Page mode

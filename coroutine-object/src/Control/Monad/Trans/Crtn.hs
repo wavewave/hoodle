@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Control.Monad.Trans.Crtn where
@@ -104,7 +103,7 @@ s <==| c = do
       x <- runFreeT (runReaderT s rq)
       case x of
         Pure _r' -> return (Left ServerFinished)
-        Free (Rqst ans rf) -> (ReaderT rf) <==| (af ans)
+        Free (Rqst ans rf) -> ReaderT rf <==| af ans
 
 ----------------------
 -- some utility

@@ -34,13 +34,13 @@ menuOpenALink evhandler urlpath = do
 -- |
 menuCreateALink :: (AllEvent -> IO ()) -> [RItem] -> IO (Maybe Gtk.MenuItem)
 menuCreateALink evhandler sitems =
-  if (length . filter isLinkInRItem) sitems > 0
-    then return Nothing
-    else do
+  if not (any isLinkInRItem sitems)
+    then do
       mi <- Gtk.menuItemNewWithLabel ("Create a link to..." :: String)
       mi `Gtk.on` Gtk.menuItemActivate $
         evhandler (UsrEv (GotContextMenuSignal CMenuCreateALink))
       return (Just mi)
+    else return Nothing
 
 -- |
 makeSVGFromSelection :: RenderCache -> CanvasId -> [RItem] -> BBox -> IO SVG

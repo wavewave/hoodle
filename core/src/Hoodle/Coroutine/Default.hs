@@ -10,7 +10,7 @@ module Hoodle.Coroutine.Default where
 import Control.Applicative hiding (empty)
 import Control.Concurrent
 import qualified Control.Exception as E
-import Control.Lens (at, over, set, view, (.~), (^.), _2)
+import Control.Lens (at, over, set, view, (.~), (?~), (^.), _2)
 import Control.Monad.State hiding (mapM_)
 import Control.Monad.Trans.Crtn.Driver
 import Control.Monad.Trans.Crtn.Logger.Simple
@@ -18,6 +18,7 @@ import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Reader (ReaderT (..))
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (mapM_)
+import Data.Functor ((<&>))
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple (Background (..), Dimension (..))
 import Data.IORef
@@ -137,12 +138,12 @@ initCoroutine devlst window mhook maxundo (xinputbool, usepz, uselyr, varcsr) = 
   let st6 =
         ( (unitHoodles . currentUnit . unitUUID .~ uuid)
             . (unitHoodles . currentUnit . unitButton .~ btn)
-            . (uiComponentSignalHandler . switchTabSignal .~ Just sigid)
+            . (uiComponentSignalHandler . switchTabSignal ?~ sigid)
         )
           st5
       startingXstate = (unitHoodles . currentUnit . rootContainer .~ Gtk.castToBox vboxcvs) st6
       startworld = world startingXstate . ReaderT $ (\(Arg DoEvent ev) -> guiProcess ev)
-  putMVar evar . Just $ (driver simplelogger startworld)
+  putMVar evar . Just $ driver simplelogger startworld
   return (evar, startingXstate, ui, vbox)
 
 -- | initialization according to the setting
@@ -208,10 +209,8 @@ guiProcess ev = do
 -- |
 dispatchMode :: MainCoroutine ()
 dispatchMode =
-  do
-    (view (unitHoodles . currentUnit) <$> get)
-    >>= return . hoodleModeStateEither . view hoodleModeState
-    >>= either (const viewAppendMode) (const selectMode)
+  gets (view (unitHoodles . currentUnit))
+    >>= either (const viewAppendMode) (const selectMode) . hoodleModeStateEither . view hoodleModeState
 
 -- |
 viewAppendMode :: MainCoroutine ()
@@ -273,7 +272,7 @@ selectMode = do
   r1 <- nextevent
   case r1 of
     PenDown cid pbtn pcoord -> do
-      ptype <- liftM (view (selectInfo . selectType)) get
+      ptype <- gets (view (selectInfo . selectType))
       case ptype of
         SelectRectangleWork -> selectRectStart pbtn cid pcoord
         SelectLassoWork -> selectLassoStart pbtn cid pcoord
@@ -284,7 +283,7 @@ selectMode = do
       modify (penInfo . currentTool . penColor .~ c)
       selectPenColorChanged c
     PenWidthChanged v -> do
-      w <- flip int2Point v . view (penInfo . penType) <$> get
+      w <- gets (flip int2Point v . view (penInfo . penType))
       modify (penInfo . currentTool . penWidth .~ w)
       selectPenWidthChanged w
     _ -> defaultEventProcess r1
@@ -325,7 +324,7 @@ defaultEventProcess (PenWidthChanged v) = do
   reflectPenWidthUI
 defaultEventProcess (BackgroundStyleChanged bsty) = do
   modify (backgroundStyle .~ bsty)
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
       hdl = getHoodle uhdl
       pgs = view gpages hdl
@@ -336,12 +335,12 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
       dim = view gdimension cpage
       getnbkg' :: RBackground -> Background
       getnbkg' (RBkgSmpl c _ _) = Background "solid" c bstystr
-      getnbkg' (RBkgPDF _ _ _ _ _) = Background "solid" "white" bstystr
-      getnbkg' (RBkgEmbedPDF _ _ _) = Background "solid" "white" bstystr
+      getnbkg' RBkgPDF {} = Background "solid" "white" bstystr
+      getnbkg' RBkgEmbedPDF {} = Background "solid" "white" bstystr
   --
   liftIO $ putStrLn " defaultEventProcess: BackgroundStyleChanged HERE/ "
 
-  callRenderer $ GotRBackground <$> evalStateT (cnstrctRBkg_StateT dim (getnbkg' cbkg)) Nothing
+  callRenderer $ GotRBackground <$> evalStateT (cnstrctRBkgStateT dim (getnbkg' cbkg)) Nothing
   RenderEv (GotRBackground nbkg) <-
     waitSomeEvent (\case RenderEv (GotRBackground _) -> True; _ -> False)
 
@@ -354,14 +353,14 @@ defaultEventProcess (BackgroundStyleChanged bsty) = do
 defaultEventProcess (AssignNewPageMode nmod) = modify (settings . newPageMode .~ nmod)
 defaultEventProcess (GotContextMenuSignal ctxtmenu) = processContextMenu ctxtmenu
 defaultEventProcess (GetHoodleFileInfo ref) = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let hdl = getHoodle uhdl
       uuid = B.unpack (view ghoodleID hdl)
   case getHoodleFilePath uhdl of
     Nothing -> liftIO $ writeIORef ref Nothing
     Just fp -> liftIO $ writeIORef ref (Just (uuid ++ "," ++ fp))
 defaultEventProcess (GetHoodleFileInfoFromTab uuidtab ref) = do
-  uhdlmap <- view (unitHoodles . _2) <$> get
+  uhdlmap <- gets (view (unitHoodles . _2))
   let muhdl = (L.lookup uuidtab . map (\x -> (view unitUUID x, x)) . M.elems) uhdlmap
   case muhdl of
     Nothing -> liftIO $ writeIORef ref Nothing
@@ -376,7 +375,7 @@ defaultEventProcess FileReloadOrdered = fileReload
 defaultEventProcess (CustomKeyEvent str) = do
   if
       | str == "[]:\"Super_L\"" -> do
-        xst <- liftM (over (settings . doesUseTouch) not) get
+        xst <- gets (over (settings . doesUseTouch) not)
         put xst
         doIOaction_ $ lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) xst
         toggleTouch

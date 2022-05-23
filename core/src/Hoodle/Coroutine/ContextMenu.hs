@@ -62,7 +62,8 @@ import Prelude hiding (mapM_)
 
 processContextMenu :: ContextMenuEvent -> MainCoroutine ()
 processContextMenu (CMenuSaveSelectionAs ityp) = do
-  mhititms <- getSelectedItmsFromUnitHoodle . view (unitHoodles . currentUnit) <$> get
+  mhititms <-
+    gets (getSelectedItmsFromUnitHoodle . view (unitHoodles . currentUnit))
   forM_ mhititms $ \hititms ->
     let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms
      in case ulbbox of
@@ -75,7 +76,7 @@ processContextMenu CMenuCut = cutSelection
 processContextMenu CMenuCopy = copySelection
 processContextMenu CMenuDelete = deleteSelection
 processContextMenu (CMenuCanvasView cid pnum _x _y) = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let cmap = uhdl ^. cvsInfoMap
       mcinfobox = IM.lookup cid cmap
   case mcinfobox of
@@ -109,10 +110,11 @@ processContextMenu (CMenuLinkConvert nlnk) =
             Left _ -> return tpg
             Right (a :- _b :- as) -> do
               let nitm = ItemLink nlnk
-              callRenderer $ cnstrctRItem nitm >>= return . GotRItem
+              callRenderer $
+                GotRItem <$> cnstrctRItem nitm
               RenderEv (GotRItem nritm) <-
                 waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
-              let alist' = (a :- Hitted [nritm] :- as)
+              let alist' = a :- Hitted [nritm] :- as
                   layer' = GLayer buf . TEitherAlterHitted . Right $ alist'
               return (set (glayers . selectedLayer) layer' tpg)
             Right _ -> error "processContextMenu: activelayer"
@@ -125,7 +127,7 @@ processContextMenu CMenuCreateALink =
 processContextMenu CMenuAssocWithNewFile = do
   xst <- get
   let msuggestedact = xst ^. hookSet >>= fileNameSuggestionHook
-  (msuggested :: Maybe String) <- maybe (return Nothing) (liftM Just . liftIO) msuggestedact
+  (msuggested :: Maybe String) <- maybe (return Nothing) (fmap Just . liftIO) msuggestedact
   fileChooser Gtk.FileChooserActionSave msuggested
     >>= mapM_
       ( \fp -> do
@@ -134,7 +136,7 @@ processContextMenu CMenuAssocWithNewFile = do
             then okMessageBox "The file already exist!"
             else do
               doIOaction_ $ do
-                nhdl <- liftIO $ defaultHoodle
+                nhdl <- liftIO defaultHoodle
                 (L.writeFile fp . builder) nhdl
                 createProcess (proc "hoodle" [fp])
               linkSelectionWithFile fp
@@ -151,34 +153,37 @@ processContextMenu (CMenuMakeLinkToAnchor anc) = do
         TempDir _ -> Nothing
       loc = maybe "" B.pack mloc
       lnk = LinkAnchor uuidbstr docidbstr loc (anchor_id anc) "" (0, 0) (Dim 50 50)
-  callRenderer $ cnstrctRItem (ItemLink lnk) >>= return . GotRItem
+  callRenderer $
+    GotRItem <$> cnstrctRItem (ItemLink lnk)
   RenderEv (GotRItem newitem) <-
     waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
   insertItemAt Nothing newitem
 processContextMenu (CMenuPangoConvert (x0, y0) txt) = textInput (Just (x0, y0)) txt
 processContextMenu (CMenuLaTeXConvert (x0, y0) txt) = laTeXInput (Just (x0, y0)) txt
 processContextMenu (CMenuLaTeXConvertNetwork (x0, y0) txt) = laTeXInputNetwork (Just (x0, y0)) txt
-processContextMenu (CMenuLaTeXUpdate (x0, y0) dim key) = runMaybeT (laTeXInputKeyword (x0, y0) (Just dim) key) >> return ()
+processContextMenu (CMenuLaTeXUpdate (x0, y0) dim key) =
+  void $ runMaybeT (laTeXInputKeyword (x0, y0) (Just dim) key)
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
   res <- handwritingRecognitionDialog
   forM_ res $ \(b, txt) -> do
-    when (not b) $
+    unless b $
       liftIO $ do
         let str = T.unpack txt
         homedir <- getHomeDirectory
         let hoodled = homedir </> ".hoodle.d"
             hoodletdir = hoodled </> "hoodlet"
         b' <- doesDirectoryExist hoodletdir
-        when (not b') $
+        unless b' $
           createDirectory hoodletdir
         let fp = hoodletdir </> str <.> "hdlt"
         L.writeFile fp (Hoodlet.builder itm)
 processContextMenu (CMenuConvertSelection itm) = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let pgnum = view (currentCanvasInfo . unboxLens currentPageNum) uhdl
   deleteSelection
-  callRenderer $ return . GotRItem =<< cnstrctRItem itm
+  callRenderer $
+    GotRItem <$> cnstrctRItem itm
   RenderEv (GotRItem newitem) <- waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
   let BBox (x0, y0) _ = getBBox newitem
   insertItemAt (Just (PageNum pgnum, PageCoord (x0, y0))) newitem
@@ -199,7 +204,7 @@ processContextMenu CMenuCustom = do
 --  |
 linkSelectionWithFile :: FilePath -> MainCoroutine ()
 linkSelectionWithFile fname = do
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   let cid = getCurrentCanvasId uhdl
   forM_ (getSelectedItmsFromUnitHoodle uhdl) $ \hititms ->
     let ulbbox = (unUnion . mconcat . fmap (Union . Middle . getBBox)) hititms
@@ -207,7 +212,7 @@ linkSelectionWithFile fname = do
           Middle bbox -> do
             cache <- renderCache
             svg <- liftIO $ makeSVGFromSelection cache cid hititms bbox
-            uuid <- liftIO $ nextRandom
+            uuid <- liftIO nextRandom
             let uuidbstr = B.pack (show uuid)
             deleteSelection
             linkInsert "simple" (uuidbstr, fname) fname (svg_render svg, bbox)
@@ -219,7 +224,10 @@ exportCurrentSelectionAsSVG hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
   fileChooser Gtk.FileChooserActionSave Nothing >>= mapM_ action
   where
     action filename = do
-      (cache, cid) <- (,) <$> renderCache <*> (getCurrentCanvasId . view (unitHoodles . currentUnit) <$> get)
+      (cache, cid) <-
+        (,)
+          <$> renderCache
+          <*> gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
       -- this is rather temporary not to make mistake
       if takeExtension filename /= ".svg"
         then
@@ -237,7 +245,10 @@ exportCurrentSelectionAsPDF hititms bbox@(BBox (ulx, uly) (lrx, lry)) =
   fileChooser Gtk.FileChooserActionSave Nothing >>= mapM_ action
   where
     action filename = do
-      (cache, cid) <- (,) <$> renderCache <*> (getCurrentCanvasId . view (unitHoodles . currentUnit) <$> get)
+      (cache, cid) <-
+        (,)
+          <$> renderCache
+          <*> gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
       -- this is rather temporary not to make mistake
       if takeExtension filename /= ".pdf"
         then
@@ -271,7 +282,7 @@ showContextMenu (pnum, (x, y)) = do
             lst <- getSelectedItmsFromUnitHoodle uhdl
             if null lst then Nothing else Just lst
       doIOaction (action xstate mselitms cid cids)
-      >> waitSomeEvent (\e -> case e of ContextMenuCreated -> True; _ -> False)
+      >> waitSomeEvent (\case ContextMenuCreated -> True; _ -> False)
       >> return ()
   where
     action xstate msitms cid cids evhandler = do
@@ -291,13 +302,13 @@ showContextMenu (pnum, (x, y)) = do
           menuitem2 `Gtk.on` Gtk.menuItemActivate $
             evhandler (UsrEv (GotContextMenuSignal (CMenuSaveSelectionAs TypPDF)))
           menuitem3 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuCut)))
+            evhandler (UsrEv (GotContextMenuSignal CMenuCut))
           menuitem4 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuCopy)))
+            evhandler (UsrEv (GotContextMenuSignal CMenuCopy))
           menuitem5 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuDelete)))
+            evhandler (UsrEv (GotContextMenuSignal CMenuDelete))
           menuitem6 `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuAssocWithNewFile)))
+            evhandler (UsrEv (GotContextMenuSignal CMenuAssocWithNewFile))
           Gtk.menuAttach menu menuitem1 0 1 1 2
           Gtk.menuAttach menu menuitem2 0 1 2 3
           Gtk.menuAttach menu menuitem3 1 2 0 1
@@ -306,7 +317,7 @@ showContextMenu (pnum, (x, y)) = do
           Gtk.menuAttach menu menuitem6 1 2 3 4
           mapM_ (\mi -> Gtk.menuAttach menu mi 1 2 5 6) =<< menuCreateALink evhandler sitms
           case sitms of
-            sitm : [] -> do
+            [sitm] -> do
               menuhdlt <- Gtk.menuItemNewWithLabel ("Make Hoodlet" :: String)
               menuhdlt `Gtk.on` Gtk.menuItemActivate $
                 ( evhandler . UsrEv . GotContextMenuSignal
@@ -345,7 +356,7 @@ showContextMenu (pnum, (x, y)) = do
                         hset <- (MaybeT . return . view hookSet) xstate
                         f <- (MaybeT . return . lookupPathFromId) hset
                         file' <- MaybeT (f (B.unpack lid))
-                        guard ((B.unpack file) /= file')
+                        guard (B.unpack file /= file')
                         let link =
                               LinkDocID
                                 i
@@ -376,7 +387,7 @@ showContextMenu (pnum, (x, y)) = do
                         hset <- (MaybeT . return . view hookSet) xstate
                         f <- (MaybeT . return . lookupPathFromId) hset
                         file' <- MaybeT (f (B.unpack lid))
-                        guard ((B.unpack file) /= file')
+                        guard (B.unpack file /= file')
                         let link = LinkAnchor i lid (B.pack file') aid bstr pos dim
                         menuitemcvt <-
                           liftIO $
@@ -415,7 +426,6 @@ showContextMenu (pnum, (x, y)) = do
                         menuitemnet `Gtk.on` Gtk.menuItemActivate $ do
                           evhandler (UsrEv (GotContextMenuSignal (CMenuLaTeXConvertNetwork (x0, y0) txt)))
                         Gtk.menuAttach menu menuitemnet 0 1 5 6
-                        return ()
                         --
                         let (txth, txtt) = T.splitAt 19 txt
                         when (txth == "embedlatex:keyword:") $ do
@@ -460,7 +470,7 @@ showContextMenu (pnum, (x, y)) = do
             _ -> do
               let (links, others) = partition ((||) <$> isLinkInRItem <*> isAnchorInRItem) sitms
               case links of
-                l : [] -> do
+                [l] -> do
                   menuitemreplace <- Gtk.menuItemNewWithLabel ("replace link/anchor render" :: String)
                   menuitemreplace `Gtk.on` Gtk.menuItemActivate $ do
                     cache <- readTVarIO (xstate ^. renderCacheVar)
@@ -478,16 +488,16 @@ showContextMenu (pnum, (x, y)) = do
                       _ -> return ()
                   Gtk.menuAttach menu menuitemreplace 0 1 8 9
                 _ -> return ()
-      case (customContextMenuTitle =<< view hookSet xstate) of
+      case customContextMenuTitle =<< view hookSet xstate of
         Nothing -> return ()
         Just ttl -> do
           custommenu <- Gtk.menuItemNewWithLabel ttl
           custommenu `Gtk.on` Gtk.menuItemActivate $
-            evhandler (UsrEv (GotContextMenuSignal (CMenuCustom)))
+            evhandler (UsrEv (GotContextMenuSignal CMenuCustom))
           Gtk.menuAttach menu custommenu 0 1 0 1
       menuitem8 <- Gtk.menuItemNewWithLabel ("Autosave This Page Image" :: String)
       menuitem8 `Gtk.on` Gtk.menuItemActivate $
-        evhandler (UsrEv (GotContextMenuSignal (CMenuAutosavePage)))
+        evhandler (UsrEv (GotContextMenuSignal CMenuAutosavePage))
       Gtk.menuAttach menu menuitem8 1 2 4 5
       runStateT (mapM_ (makeMenu evhandler menu cid) cids) 0
       Gtk.widgetShowAll menu
@@ -497,7 +507,7 @@ showContextMenu (pnum, (x, y)) = do
       n <- get
       mi <- liftIO $ Gtk.menuItemNewWithLabel ("Show here in cvs" ++ show cid)
       liftIO $
-        mi `Gtk.on` Gtk.menuItemActivate $
+        Gtk.on mi Gtk.menuItemActivate $
           evhdlr (UsrEv (GotContextMenuSignal (CMenuCanvasView cid pnum x y)))
       liftIO $ Gtk.menuAttach mn mi 2 3 n (n + 1)
       put (n + 1)

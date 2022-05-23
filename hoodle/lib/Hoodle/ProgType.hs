@@ -19,7 +19,7 @@ import Data.Version
 import Paths_hoodle
 import System.Console.CmdArgs
 
-data Hoodle = Test
+newtype Hoodle = Test
   { xojfile :: Maybe FilePath
   }
   deriving (Show, Data, Typeable)

@@ -1,5 +1,4 @@
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 
@@ -8,9 +7,9 @@ module Hoodle.Coroutine.TextInput where
 import Control.Applicative
 import Control.Concurrent (killThread)
 import qualified Control.Exception
-import Control.Lens (view, (%~), (.~), (^.), _2, _3)
+import Control.Lens (view, (%~), (.~), (?~), (^.), _2, _3)
+import Control.Monad (void)
 import Control.Monad.State hiding (forM_, mapM_)
---
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Queue
@@ -24,7 +23,8 @@ import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import Data.Hoodle.Simple
-import Data.List (sortBy)
+import Data.List (minimumBy, sortBy)
+import qualified Data.Maybe as Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -37,7 +37,6 @@ import Graphics.Hoodle.Render.Type.Item
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Accessor
 import Hoodle.Coroutine.Commit
 import Hoodle.Coroutine.Dialog
@@ -64,7 +63,6 @@ import System.Exit (ExitCode (..))
 import System.FilePath
 import System.Process (readProcessWithExitCode)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
---
 import Prelude hiding (mapM_, readFile)
 
 -- | common dialog with multiline edit input box
@@ -178,7 +176,7 @@ autoPosText = do
   if null mcomponents
     then return Nothing
     else do
-      let y0 = (head . sortBy (flip compare) . map snd) mcomponents
+      let y0 = (minimumBy (flip compare) . map snd) mcomponents
       if y0 + 10 > pgh then return Nothing else return (Just (y0 + 10))
 
 -- |
@@ -265,10 +263,9 @@ svgInsert (txt, cmd) (svgbstr, BBox (x0, y0) (x1, y1)) = do
       currpage = getPageFromGHoodleMap pgnum hdl
       currlayer = getCurrentLayer currpage
   --
-  callRenderer
-    ( (return . GotRItem)
-        =<< (cnstrctRItem (ItemSVG (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr (x0, y0) (Dim (x1 - x0) (y1 - y0)))))
-    )
+  callRenderer $
+    GotRItem
+      <$> cnstrctRItem (ItemSVG (SVG (Just (TE.encodeUtf8 txt)) (Just (B.pack cmd)) svgbstr (x0, y0) (Dim (x1 - x0) (y1 - y0))))
   RenderEv (GotRItem newitem) <-
     waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
   --
@@ -276,7 +273,7 @@ svgInsert (txt, cmd) (svgbstr, BBox (x0, y0) (x1, y1)) = do
   let ntpg =
         makePageSelectMode
           currpage
-          (otheritems :- (Hitted [newitem]) :- Empty)
+          (otheritems :- Hitted [newitem] :- Empty)
   modeChange ToSelectMode
   updateUhdl $ \nuhdl -> do
     thdl <- case view hoodleModeState nuhdl of
@@ -331,7 +328,8 @@ linkInsert _typ (uuidbstr, fname) str (svgbstr, BBox (x0, y0) (x1, y1)) = do
           (Dim (x1 - x0) (y1 - y0))
   nlnk <- liftIO $ convertLinkFromSimpleToDocID lnk >>= maybe (return lnk) return
   --
-  callRenderer $ return . GotRItem =<< cnstrctRItem (ItemLink nlnk)
+  callRenderer $
+    GotRItem <$> cnstrctRItem (ItemLink nlnk)
   RenderEv (GotRItem newitem) <-
     waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
   --
@@ -340,11 +338,12 @@ linkInsert _typ (uuidbstr, fname) str (svgbstr, BBox (x0, y0) (x1, y1)) = do
 -- | anchor
 addAnchor :: MainCoroutine ()
 addAnchor = do
-  uuid <- liftIO $ nextRandom
+  uuid <- liftIO nextRandom
   let uuidbstr = B.pack (show uuid)
   let anc = Anchor uuidbstr "" (100, 100) (Dim 50 50)
   --
-  callRenderer $ return . GotRItem =<< cnstrctRItem (ItemAnchor anc)
+  callRenderer $
+    GotRItem <$> cnstrctRItem (ItemAnchor anc)
   RenderEv (GotRItem nitm) <-
     waitSomeEvent (\case RenderEv (GotRItem _) -> True; _ -> False)
   --
@@ -367,7 +366,7 @@ makePangoTextSVG (xo, yo) str = do
         Cairo.setSourceRGBA 0 0 0 1
         Gtk.updateLayout layout
         Gtk.showLayout layout
-  (layout, (BBox (x0, y0) (x1, y1))) <- pangordr
+  (layout, BBox (x0, y0) (x1, y1)) <- pangordr
   tdir <- getTemporaryDirectory
   let tfile = tdir </> "embedded.svg"
   Cairo.withSVGSurface tfile (x1 - x0) (y1 - y0) $ \s ->
@@ -378,11 +377,11 @@ makePangoTextSVG (xo, yo) str = do
 -- | combine all LaTeX texts into a text file
 combineLaTeXText :: MainCoroutine ()
 combineLaTeXText = do
-  hdl <- rHoodle2Hoodle . getHoodle . view (unitHoodles . currentUnit) <$> get
+  hdl <- gets (rHoodle2Hoodle . getHoodle . view (unitHoodles . currentUnit))
   let sorted = getLaTeXComponentsFromHdl hdl
       resulttxt = (T.intercalate "%%%%%%%%%%%%\n\n%%%%%%%%%%\n" . map (view (_2 . _3))) sorted
   mfilename <- fileChooser Gtk.FileChooserActionSave Nothing
-  forM_ mfilename (\filename -> liftIO (TIO.writeFile filename resulttxt) >> return ())
+  forM_ mfilename (\filename -> liftIO (TIO.writeFile filename resulttxt))
 
 insertItemAt ::
   Maybe (PageNum, PageCoordinate) ->
@@ -406,7 +405,7 @@ insertItemAt mpcoord ritm = do
   let pg = getPageFromGHoodleMap pgnum hdl
       lyr = getCurrentLayer pg
       oitms = view gitems lyr
-      ntpg = makePageSelectMode pg (oitms :- (Hitted nitms) :- Empty)
+      ntpg = makePageSelectMode pg (oitms :- Hitted nitms :- Empty)
   modeChange ToSelectMode
   updateUhdl $ \uhdl' -> do
     thdl <- case view hoodleModeState uhdl' of
@@ -427,15 +426,15 @@ embedTextSource = do
     txt <- liftIO $ TIO.readFile filename
     pureUpdateUhdl $ \uhdl ->
       let nhdlmodst = case uhdl ^. hoodleModeState of
-            ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
-            SelectState thdl -> (SelectState . (gselEmbeddedText .~ Just txt) $ thdl)
+            ViewAppendState hdl -> ViewAppendState . (gembeddedtext ?~ txt) $ hdl
+            SelectState thdl -> SelectState . (gselEmbeddedText ?~ txt) $ thdl
        in (hoodleModeState .~ nhdlmodst) uhdl
     commit_
 
 -- |
 editEmbeddedTextSource :: MainCoroutine ()
 editEmbeddedTextSource = do
-  hdl <- getHoodle . view (unitHoodles . currentUnit) <$> get
+  hdl <- gets (getHoodle . view (unitHoodles . currentUnit))
   let mtxt = hdl ^. gembeddedtext
   forM_ mtxt $ \txt -> do
     doIOaction (multiLineDialog txt)
@@ -444,15 +443,15 @@ editEmbeddedTextSource = do
       Just ntxt -> do
         pureUpdateUhdl $ \uhdl ->
           let nhdlmodst = case uhdl ^. hoodleModeState of
-                ViewAppendState hdl' -> (ViewAppendState . (gembeddedtext .~ Just ntxt) $ hdl')
-                SelectState thdl -> (SelectState . (gselEmbeddedText .~ Just ntxt) $ thdl)
+                ViewAppendState hdl' -> ViewAppendState . (gembeddedtext ?~ ntxt) $ hdl'
+                SelectState thdl -> SelectState . (gselEmbeddedText ?~ ntxt) $ thdl
            in (hoodleModeState .~ nhdlmodst) uhdl
         commit_
 
 -- |
 editNetEmbeddedTextSource :: MainCoroutine ()
 editNetEmbeddedTextSource = do
-  hdl <- getHoodle . view (unitHoodles . currentUnit) <$> get
+  hdl <- gets (getHoodle . view (unitHoodles . currentUnit))
   let mtxt = hdl ^. gembeddedtext
   forM_ mtxt $ \txt -> do
     networkTextInput txt >>= \case
@@ -463,8 +462,8 @@ networkReceived :: T.Text -> MainCoroutine ()
 networkReceived txt = do
   pureUpdateUhdl $ \uhdl ->
     let nhdlmodst = case uhdl ^. hoodleModeState of
-          ViewAppendState hdl -> (ViewAppendState . (gembeddedtext .~ Just txt) $ hdl)
-          SelectState thdl -> (SelectState . (gselEmbeddedText .~ Just txt) $ thdl)
+          ViewAppendState hdl -> ViewAppendState . (gembeddedtext ?~ txt) $ hdl
+          SelectState thdl -> SelectState . (gselEmbeddedText ?~ txt) $ thdl
      in (hoodleModeState .~ nhdlmodst) uhdl
   commit_
 
@@ -472,11 +471,11 @@ networkReceived txt = do
 textInputFromSource :: (Double, Double) -> MainCoroutine ()
 textInputFromSource (x0, y0) = do
   runMaybeT $ do
-    txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit) <$> get
+    txtsrc <- MaybeT $ gets ((^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit))
     lift $ modify (tempQueue %~ enqueue linePosDialog)
     (l1, l2) <- MaybeT linePosLoop
     let txt = getLinesFromText (l1, l2) txtsrc
-    lift $ deleteSelection
+    lift deleteSelection
     liftIO (makePangoTextSVG (x0, y0) txt)
       >>= lift . svgInsert ("embedtxt:simple:L" <> T.pack (show l1) <> "," <> T.pack (show l2), "pango")
   return ()
@@ -531,7 +530,7 @@ laTeXInputKeyword ::
   T.Text ->
   MaybeT MainCoroutine ()
 laTeXInputKeyword (x0, y0) mdim keyword = do
-  txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit) <$> get
+  txtsrc <- MaybeT $ gets ((^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit))
   subpart <- (MaybeT . return . M.lookup keyword . getKeywordMap) txtsrc
   let subpart' = laTeXHeader <> "\n" <> subpart <> laTeXFooter
   liftIO (makeLaTeXSVG (x0, y0) mdim subpart') >>= \case
@@ -545,14 +544,13 @@ laTeXInputKeyword (x0, y0) mdim keyword = do
 
 -- |
 laTeXInputFromSource :: (Double, Double) -> MainCoroutine ()
-laTeXInputFromSource (x0, y0) = do
-  runMaybeT $ do
-    txtsrc <- MaybeT $ (^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit) <$> get
+laTeXInputFromSource (x0, y0) =
+  void . runMaybeT $ do
+    txtsrc <- MaybeT $ gets ((^. gembeddedtext) . getHoodle . view (unitHoodles . currentUnit))
     let keylst = (map fst . M.toList . getKeywordMap) txtsrc
-    when ((not . null) keylst) $ do
+    unless (null keylst) $ do
       keyword <- MaybeT (keywordDialog keylst)
       laTeXInputKeyword (x0, y0) Nothing keyword
-  return ()
 
 -- |
 toggleNetworkEditSource :: MainCoroutine ()
@@ -565,12 +563,12 @@ toggleNetworkEditSource = do
   forM_ (xst ^. statusBar) $ \stbar ->
     if b
       then do
-        (ip, tid, _done) <- networkTextInputBody (maybe " " id mtxt)
+        (ip, tid, _done) <- networkTextInputBody (Maybe.fromMaybe " " mtxt)
         doIOaction_ $ do
-          let msg = ("networkedit " ++ ip ++ " 4040")
+          let msg = "networkedit " ++ ip ++ " 4040"
           ctxt <- Gtk.statusbarGetContextId stbar ("networkedit" :: String)
           Gtk.statusbarPush stbar ctxt msg
-        (put . ((settings . networkEditSourceInfo) .~ (Just tid))) xst
+        (put . ((settings . networkEditSourceInfo) ?~ tid)) xst
       else do
         case xst ^. (settings . networkEditSourceInfo) of
           Nothing -> return ()

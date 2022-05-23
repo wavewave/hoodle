@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 
 -----------------------------------------------------------------------------
@@ -67,7 +68,7 @@ checkPointerInPanZoom (_cid, cinfo, geometry) pcoord
         pbbox2 = BBox (x0 + 50, y0 + 10) (x0 + 90, y0 + 90)
         pbbox3 = BBox (x0, y0) (x0 + 10, y0 + 10)
         zbbox = BBox (x0 + 30, y0 + 30) (x0 + 70, y0 + 70)
-     in if (isPointInBBox obbox (x, y))
+     in if isPointInBBox obbox (x, y)
           then
             let mmode
                   | isPointInBBox zbbox (x, y) = Just (Zooming, (oxy, owxy))
@@ -75,7 +76,7 @@ checkPointerInPanZoom (_cid, cinfo, geometry) pcoord
                   | isPointInBBox pbbox2 (x, y) = Just (Panning True, (oxy, owxy))
                   | isPointInBBox pbbox3 (x, y) = Nothing
                   | otherwise = Just (Moving, (oxy, owxy))
-             in (Just mmode)
+             in Just mmode
           else Nothing
   | otherwise = Nothing
   where
@@ -152,7 +153,7 @@ findPanXform (Dim w h) ((x0, y0), (x, y)) =
         | ty > h = h
         | ty < (-h) = -h
         | otherwise = ty
-   in ((dx - w), (dy - h))
+   in (dx - w, dy - h)
 
 -- | manipulate Pan-Zoom widget until released when grabbing the widget
 manipulatePZW ::
@@ -177,23 +178,23 @@ manipulatePZW
   otime = do
     r <- nextevent
     case r of
-      PenMove _ pcoord -> if (tchmode /= PenMode) then again otime else moveact pcoord
+      PenMove _ pcoord -> if tchmode /= PenMode then again otime else moveact pcoord
       TouchMove _ pcoord ->
-        if (tchmode /= TouchMode)
+        if tchmode /= TouchMode
           then again otime
           else do
-            b <- liftM (view (settings . doesUseTouch)) get
+            b <- gets (view (settings . doesUseTouch))
             when b $ moveact pcoord
-      PenUp _ pcoord -> if (tchmode /= PenMode) then again otime else upact pcoord
+      PenUp _ pcoord -> if tchmode /= PenMode then again otime else upact pcoord
       TouchUp _ pcoord ->
-        if (tchmode /= TouchMode)
+        if tchmode /= TouchMode
           then again otime
           else do
-            b <- liftM (view (settings . doesUseTouch)) get
+            b <- gets (view (settings . doesUseTouch))
             when b $ upact pcoord
       _ -> again otime
     where
-      again t = manipulatePZW fullmode cid geometry (srcsfc, tgtsfc) owxy oxy t
+      again = manipulatePZW fullmode cid geometry (srcsfc, tgtsfc) owxy oxy
       moveact pcoord =
         processWithDefTimeInterval
           again
@@ -215,7 +216,7 @@ manipulatePZW
             case mpnpgxy of
               Nothing -> return ()
               Just pnpgxy -> do
-                uhdl <- view (unitHoodles . currentUnit) <$> get
+                uhdl <- gets (view (unitHoodles . currentUnit))
                 geom' <- liftIO $ getCanvasGeometryCvsId cid uhdl
                 let DeskCoord (xd, yd) = page2Desktop geom' pnpgxy
                     DeskCoord (xd0, yd0) = canvas2Desktop geom' ccoord
@@ -247,7 +248,7 @@ movingRender ::
   MainCoroutine ()
 movingRender mode cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x0, y0)) pcoord = do
   let CvsCoord (x, y) = (desktop2Canvas geometry . device2Desktop geometry) pcoord
-  uhdl <- view (unitHoodles . currentUnit) <$> get
+  uhdl <- gets (view (unitHoodles . currentUnit))
   case mode of
     Moving -> do
       let CanvasDimension (Dim cw ch) = canvasDim geometry
@@ -262,8 +263,7 @@ movingRender mode cid geometry (srcsfc, tgtsfc) (CvsCoord (xw, yw)) (CvsCoord (x
             | otherwise = yw + y - y0
           nwpos = CvsCoord (nposx, nposy)
           changeact :: CanvasInfo a -> CanvasInfo a
-          changeact cinfo =
-            set (canvasWidgets . panZoomWidgetConfig . panZoomWidgetPosition) nwpos $ cinfo
+          changeact = set (canvasWidgets . panZoomWidgetConfig . panZoomWidgetPosition) nwpos
           ncinfobox = (runIdentity . forBoth unboxBiXform (return . changeact)) cinfobox
           isTouchZoom = view (unboxLens (canvasWidgets . panZoomWidgetConfig . panZoomWidgetTouchIsZoom)) cinfobox
       pureUpdateUhdl $ setCanvasInfo (cid, ncinfobox)
@@ -321,7 +321,7 @@ togglePanZoom cid = do
 
 -- |
 touchStart :: CanvasId -> PointerCoord -> MainCoroutine ()
-touchStart cid pcoord = forBoth' unboxBiAct chk =<< (getCanvasInfo cid . view (unitHoodles . currentUnit) <$> get)
+touchStart cid pcoord = forBoth' unboxBiAct chk =<< gets (getCanvasInfo cid . view (unitHoodles . currentUnit))
   where
     chk :: CanvasInfo a -> MainCoroutine ()
     chk cinfo = do
@@ -334,7 +334,7 @@ touchStart cid pcoord = forBoth' unboxBiAct chk =<< (getCanvasInfo cid . view (u
           CvsCoord (x0, y0) = view (canvasWidgets . panZoomWidgetConfig . panZoomWidgetPosition) cinfo
           obbox = BBox (x0, y0) (x0 + 100, y0 + 100)
       xst <- get
-      if (isPointInBBox obbox (x, y))
+      if isPointInBBox obbox (x, y)
         then do
           pureUpdateUhdl $ \uhdl ->
             let changeact :: CanvasInfo a -> CanvasInfo a
@@ -361,7 +361,7 @@ touchStart cid pcoord = forBoth' unboxBiAct chk =<< (getCanvasInfo cid . view (u
                   return ()
                 --
                 return (UsrEv ActionOrdered)
-              waitSomeEvent (\e -> case e of TouchUp _ _ -> True; _ -> False) >> return ()
+              void $ waitSomeEvent (\case TouchUp _ _ -> True; _ -> False)
 
 toggleTouch :: MainCoroutine ()
 toggleTouch = do

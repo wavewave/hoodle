@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-
 -- NOTE: this module will be deprecated.
 
 module Graphics.Hoodle.Render.Util.HitTest
@@ -15,10 +13,10 @@ module Graphics.Hoodle.Render.Util.HitTest
     getTotalBBox, -- re-export
     --
     doesLineHitStrk,
-    hltFilteredBy_StateT,
+    hltFilteredByStateT,
     hltFilteredBy,
-    hltItmsHittedByLine_StateT,
-    hltItmsHittedByLineFrmSelected_StateT,
+    hltItmsHittedByLineStateT,
+    hltItmsHittedByLineFrmSelectedStateT,
   )
 where
 
@@ -61,14 +59,14 @@ doesLineHitStrk :: ((Double, Double), (Double, Double)) -> Stroke -> Bool
 doesLineHitStrk line1 str@(Stroke _t _c _w _d) = test (stroke_data str)
   where
     test [] = False
-    test ((_ :!: _) : []) = False
+    test [_] = False
     test ((x0 :!: y0) : (x :!: y) : rest) =
       do2LinesIntersect line1 ((x0, y0), (x, y))
         || test ((x :!: y) : rest)
 doesLineHitStrk line1 (VWStroke _t _c d) = test d
   where
     test [] = False
-    test ((_, _, _) : []) = False
+    test [(_, _, _)] = False
     test ((x0, y0, _) : (x, y, z) : rest) =
       do2LinesIntersect line1 ((x0, y0), (x, y))
         || test ((x, y, z) : rest)
@@ -78,15 +76,15 @@ doesLineHitStrk line1 (VWStroke _t _c d) = test d
 --------------------------------------------------------
 
 -- |
-hltFilteredBy_StateT ::
+hltFilteredByStateT ::
   -- | hit test condition
   (a -> Bool) ->
   -- | strokes to test
   [a] ->
   State Bool (AlterList (NotHitted a) (Hitted a))
-hltFilteredBy_StateT test itms = do
+hltFilteredByStateT test itms = do
   let (nhit, rest) = break test itms
-      (hit, rest') = break (not . test) rest
+      (hit, rest') = span test rest
   modify (|| (not . null) hit)
   if null rest'
     then return (NotHitted nhit :- Hitted hit :- NotHitted [] :- Empty)
@@ -100,26 +98,26 @@ hltFilteredBy ::
   -- | strokes to test
   [a] ->
   AlterList (NotHitted a) (Hitted a)
-hltFilteredBy test is = evalState (hltFilteredBy_StateT test is) False
+hltFilteredBy test is = evalState (hltFilteredByStateT test is) False
 
 -- |
-hltItmsHittedByLine_StateT ::
+hltItmsHittedByLineStateT ::
   ((Double, Double), (Double, Double)) ->
   [RItem] ->
   State Bool RItemHitted
-hltItmsHittedByLine_StateT line = hltFilteredBy_StateT test
+hltItmsHittedByLineStateT line = hltFilteredByStateT test
   where
     test (RItemStroke strk) = (doesLineHitStrk line . bbxed_content) strk
     test _ = False
 
 -- |
-hltItmsHittedByLineFrmSelected_StateT ::
+hltItmsHittedByLineFrmSelectedStateT ::
   ((Double, Double), (Double, Double)) ->
   RItemHitted ->
   State Bool (AlterList (NotHitted RItem) RItemHitted)
-hltItmsHittedByLineFrmSelected_StateT _ Empty =
+hltItmsHittedByLineFrmSelectedStateT _ Empty =
   error "something is wrong, invariant broken"
-hltItmsHittedByLineFrmSelected_StateT _ (n :- Empty) = return (n :- Empty)
-hltItmsHittedByLineFrmSelected_StateT line (n :- h :- rest) = do
-  h' <- hltItmsHittedByLine_StateT line (unHitted h)
-  (n :-) . (h' :-) <$> hltItmsHittedByLineFrmSelected_StateT line rest
+hltItmsHittedByLineFrmSelectedStateT _ (n :- Empty) = return (n :- Empty)
+hltItmsHittedByLineFrmSelectedStateT line (n :- h :- rest) = do
+  h' <- hltItmsHittedByLineStateT line (unHitted h)
+  (n :-) . (h' :-) <$> hltItmsHittedByLineFrmSelectedStateT line rest

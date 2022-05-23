@@ -49,8 +49,8 @@ nextevent = do
 -- | system event
 sysevent :: SystemEvent -> MainCoroutine ()
 sysevent ClockUpdateEvent = do
-  utctime <- liftIO $ getCurrentTime
-  zone <- liftIO $ getCurrentTimeZone
+  utctime <- liftIO getCurrentTime
+  zone <- liftIO getCurrentTimeZone
   let ltime = utcToLocalTime zone utctime
       ltimeofday = localTimeOfDay ltime
       (h, m, s) :: (Int, Int, Int) =
@@ -67,10 +67,10 @@ sysevent ClockUpdateEvent = do
     let cid = getCurrentCanvasId uhdl
     modify (tempQueue %~ enqueue (Right (UsrEv (UpdateCanvasEfficient cid))))
 sysevent (RenderCacheUpdate (uuid, ssfc)) = do
-  cachevar <- view renderCacheVar <$> get
+  cachevar <- gets (view renderCacheVar)
   liftIO $ atomically $ modifyTVar' cachevar (HM.insert uuid ssfc)
-  b <- (^. doesNotInvalidate) <$> get
-  when (not b) $ invalidateAll
+  b <- gets (^. doesNotInvalidate)
+  unless b invalidateAll
 sysevent ev = msgShout (show ev)
 
 -- | update flag in HoodleState when corresponding toggle UI changed
@@ -85,10 +85,9 @@ updateFlagFromToggleUI toggleid lensforflag = do
   let ui = view gtkUIManager xstate
   doIOaction $ \_ -> do
     agr <-
-      Gtk.uiManagerGetActionGroups ui >>= \x ->
-        case x of
-          [] -> error "No action group? "
-          y : _ -> return y
+      Gtk.uiManagerGetActionGroups ui >>= \case
+        [] -> error "No action group? "
+        y : _ -> return y
     togglea <-
       Gtk.actionGroupGetAction agr toggleid
         >>= maybe
@@ -287,12 +286,9 @@ defaultHandler evhandler (FinishCommandFor sfcid) =
 -- | order rendering routine
 callRenderer :: Renderer RenderEvent -> MainCoroutine ()
 callRenderer action = do
-  (tvarpdf, tvargen, tvarcache) <- ((,,) <$> (^. pdfRenderQueue) <*> (^. genRenderQueue) <*> (^. renderCacheVar)) <$> get
-  doIOaction $ \evhandler -> do
-    -- let handler (SurfaceUpdate s) =
-    --       Gtk.postGUIAsync . evhandler . SysEv . RenderCacheUpdate $ s
-    --     handler (FinishCommandFor sfcid) =
-    --       Gtk.postGUIAsync . evhandler . UsrEv . RenderEv . FinishCommand $ sfcid
+  (tvarpdf, tvargen, tvarcache) <-
+    gets ((,,) <$> (^. pdfRenderQueue) <*> (^. genRenderQueue) <*> (^. renderCacheVar))
+  doIOaction $ \evhandler ->
     UsrEv . RenderEv <$> runReaderT action (RendererState (defaultHandler evhandler) tvarpdf tvargen tvarcache)
 
 callRenderer_ :: Renderer a -> MainCoroutine ()

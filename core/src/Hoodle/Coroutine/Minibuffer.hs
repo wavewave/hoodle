@@ -8,13 +8,12 @@ import Control.Lens (view)
 import Control.Monad.State (get)
 import Control.Monad.Trans (liftIO)
 import Data.Foldable (Foldable (..), forM_, mapM_, toList)
---
 import Data.Hoodle.Simple
+import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, ViewL (..), empty, singleton, viewl, (|>))
 import Graphics.Hoodle.Render (renderStrk)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Coroutine.Draw
 import Hoodle.Device
 import Hoodle.ModelAction.Pen (createNewStroke)
@@ -23,7 +22,6 @@ import Hoodle.Type.Coroutine
 import Hoodle.Type.Enum
 import Hoodle.Type.Event
 import Hoodle.Type.HoodleState
---
 import Prelude hiding (length, mapM_)
 
 drawMiniBufBkg :: Cairo.Render ()
@@ -49,10 +47,9 @@ minibufDialog msg = do
   let ui = view gtkUIManager xst
   agr <-
     liftIO
-      ( Gtk.uiManagerGetActionGroups ui >>= \x ->
-          case x of
-            [] -> error "No action group? "
-            y : _ -> return y
+      ( Gtk.uiManagerGetActionGroups ui >>= \case
+          [] -> error "No action group? "
+          y : _ -> return y
       )
   uxinputa <-
     liftIO
@@ -63,7 +60,7 @@ minibufDialog msg = do
   doIOaction (action dev doesUseX11Ext)
   minibufInit
   where
-    action dev _doesUseX11Ext = \evhandler -> do
+    action dev _doesUseX11Ext evhandler = do
       dialog <- Gtk.dialogNew
       msgLabel <- Gtk.labelNew (Just msg)
       cvs <- Gtk.drawingAreaNew
@@ -81,7 +78,7 @@ minibufDialog msg = do
         Gtk.tryEvent $ do
           (mbtn, mp) <- getPointer dev
           forM_ mp $ \p -> do
-            let pbtn = maybe PenButton1 id mbtn
+            let pbtn = fromMaybe PenButton1 mbtn
             case pbtn of
               TouchButton -> return ()
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenDown pbtn p)
@@ -89,7 +86,7 @@ minibufDialog msg = do
         Gtk.tryEvent $ do
           (mbtn, mp) <- getPointer dev
           forM_ mp $ \p -> do
-            let pbtn = maybe PenButton1 id mbtn
+            let pbtn = fromMaybe PenButton1 mbtn
             case pbtn of
               TouchButton -> return ()
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenUp p)
@@ -97,7 +94,7 @@ minibufDialog msg = do
         Gtk.tryEvent $ do
           (mbtn, mp) <- getPointer dev
           forM_ mp $ \p -> do
-            let pbtn = maybe PenButton1 id mbtn
+            let pbtn = fromMaybe PenButton1 mbtn
             case pbtn of
               TouchButton -> return ()
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenMove p)

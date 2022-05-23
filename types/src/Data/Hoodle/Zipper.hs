@@ -1,10 +1,6 @@
-{-# LANGUAGE DeriveFoldable #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 
 -----------------------------------------------------------------------------
 
@@ -72,7 +68,7 @@ appendGoLast (SZ (y, (y1s, y2s))) x = SZ (x, ((y1s |> y) >< y2s, empty))
 
 -- |
 appendDropSecond :: SeqZipper a -> a -> SeqZipper a
-appendDropSecond (SZ (y, (y1s, y2s))) x = SZ (x, ((y1s |> y), empty))
+appendDropSecond (SZ (y, (y1s, y2s))) x = SZ (x, (y1s |> y, empty))
 
 -- |
 chopFirst :: SeqZipper a -> Maybe (SeqZipper a)

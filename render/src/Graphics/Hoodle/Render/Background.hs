@@ -49,7 +49,7 @@ popplerGetDocFromDataURI dat = do
   case mdecoded of
     Nothing -> return Nothing
     Just decoded -> do
-      uuidstr <- liftM show nextRandom
+      uuidstr <- fmap show nextRandom
       tmpdir <- getTemporaryDirectory
       let tmpfile = tmpdir </> uuidstr <.> "pdf"
       C.writeFile tmpfile decoded
@@ -75,34 +75,34 @@ popplerGetPageFromDoc doc pn = do
 drawRuling :: Double -> Double -> ByteString -> Cairo.Render ()
 drawRuling w h style = do
   let drawHorizRules = do
-        let (r, g, b, a) = predefined_RULING_COLOR
+        let (r, g, b, a) = predefinedRulingColor
         Cairo.setSourceRGBA r g b a
-        Cairo.setLineWidth predefined_RULING_THICKNESS
+        Cairo.setLineWidth predefinedRulingThickness
         let drawonerule y = do
               Cairo.moveTo 0 y
               Cairo.lineTo w y
               Cairo.stroke
         mapM_
           drawonerule
-          [ predefined_RULING_TOPMARGIN,
-            predefined_RULING_TOPMARGIN + predefined_RULING_SPACING
+          [ predefinedRulingTopMargin,
+            predefinedRulingTopMargin + predefinedRulingSpacing
             .. h - 1
           ]
   case style of
     "plain" -> return ()
     "lined" -> do
       drawHorizRules
-      let (r2, g2, b2, a2) = predefined_RULING_MARGIN_COLOR
+      let (r2, g2, b2, a2) = predefinedRulingMarginColor
       Cairo.setSourceRGBA r2 g2 b2 a2
-      Cairo.setLineWidth predefined_RULING_THICKNESS
-      Cairo.moveTo predefined_RULING_LEFTMARGIN 0
-      Cairo.lineTo predefined_RULING_LEFTMARGIN h
+      Cairo.setLineWidth predefinedRulingThickness
+      Cairo.moveTo predefinedRulingLeftMargin 0
+      Cairo.lineTo predefinedRulingLeftMargin h
       Cairo.stroke
     "ruled" -> drawHorizRules
     "graph" -> do
-      let (r3, g3, b3, a3) = predefined_RULING_COLOR
+      let (r3, g3, b3, a3) = predefinedRulingColor
       Cairo.setSourceRGBA r3 g3 b3 a3
-      Cairo.setLineWidth predefined_RULING_THICKNESS
+      Cairo.setLineWidth predefinedRulingThickness
       let drawonegraphvert x = do
             Cairo.moveTo x 0
             Cairo.lineTo x h
@@ -111,13 +111,13 @@ drawRuling w h style = do
             Cairo.moveTo 0 y
             Cairo.lineTo w y
             Cairo.stroke
-      mapM_ drawonegraphvert [0, predefined_RULING_GRAPHSPACING .. w - 1]
-      mapM_ drawonegraphhoriz [0, predefined_RULING_GRAPHSPACING .. h - 1]
+      mapM_ drawonegraphvert [0, predefinedRulingGraphSpacing .. w - 1]
+      mapM_ drawonegraphhoriz [0, predefinedRulingGraphSpacing .. h - 1]
     _ -> return ()
 
 -- | draw ruling  in bbox
-drawRuling_InBBox :: BBox -> Double -> Double -> ByteString -> Cairo.Render ()
-drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
+drawRulingInBBox :: BBox -> Double -> Double -> ByteString -> Cairo.Render ()
+drawRulingInBBox (BBox (x1, y1) (x2, y2)) w h style = do
   let drawonerule y = do
         Cairo.moveTo x1 y
         Cairo.lineTo x2 y
@@ -131,35 +131,35 @@ drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
         Cairo.lineTo x2 y
         Cairo.stroke
       fullRuleYs =
-        [ predefined_RULING_TOPMARGIN,
-          predefined_RULING_TOPMARGIN + predefined_RULING_SPACING
+        [ predefinedRulingTopMargin,
+          predefinedRulingTopMargin + predefinedRulingSpacing
           .. h - 1
         ]
       ruleYs = filter (\y -> (y <= y2) && (y >= y1)) fullRuleYs
-      fullGraphXs = [0, predefined_RULING_GRAPHSPACING .. w - 1]
-      fullGraphYs = [0, predefined_RULING_GRAPHSPACING .. h - 1]
+      fullGraphXs = [0, predefinedRulingGraphSpacing .. w - 1]
+      fullGraphYs = [0, predefinedRulingGraphSpacing .. h - 1]
       graphXs = filter (\x -> (x <= x2) && (x >= x1)) fullGraphXs
       graphYs = filter (\y -> (y <= y2) && (y >= y1)) fullGraphYs
   let drawHorizRules = do
-        let (r, g, b, a) = predefined_RULING_COLOR
+        let (r, g, b, a) = predefinedRulingColor
         Cairo.setSourceRGBA r g b a
-        Cairo.setLineWidth predefined_RULING_THICKNESS
+        Cairo.setLineWidth predefinedRulingThickness
         mapM_ drawonerule ruleYs
   case style of
     "plain" -> return ()
     "lined" -> do
       drawHorizRules
-      let (r2, g2, b2, a2) = predefined_RULING_MARGIN_COLOR
+      let (r2, g2, b2, a2) = predefinedRulingMarginColor
       Cairo.setSourceRGBA r2 g2 b2 a2
-      Cairo.setLineWidth predefined_RULING_THICKNESS
-      Cairo.moveTo predefined_RULING_LEFTMARGIN 0
-      Cairo.lineTo predefined_RULING_LEFTMARGIN h
+      Cairo.setLineWidth predefinedRulingThickness
+      Cairo.moveTo predefinedRulingLeftMargin 0
+      Cairo.lineTo predefinedRulingLeftMargin h
       Cairo.stroke
     "ruled" -> drawHorizRules
     "graph" -> do
-      let (r3, g3, b3, a3) = predefined_RULING_COLOR
+      let (r3, g3, b3, a3) = predefinedRulingColor
       Cairo.setSourceRGBA r3 g3 b3 a3
-      Cairo.setLineWidth predefined_RULING_THICKNESS
+      Cairo.setLineWidth predefinedRulingThickness
       mapM_ drawonegraphvert graphXs
       mapM_ drawonegraphhoriz graphYs
     _ -> return ()
@@ -167,14 +167,14 @@ drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
 -- | render background without any constraint
 renderBkg :: (Background, Dimension) -> Cairo.Render ()
 renderBkg (Background _typ col sty, Dim w h) = do
-  let c = M.lookup col predefined_bkgcolor
+  let c = M.lookup col predefinedBkgcolor
   case c of
     Just (r, g, b, _a) -> Cairo.setSourceRGB r g b
     Nothing -> Cairo.setSourceRGB 1 1 1
   Cairo.rectangle 0 0 w h
   Cairo.fill
   drawRuling w h sty
-renderBkg (BackgroundPdf _ _ _ _, Dim w h) = do
+renderBkg (BackgroundPdf {}, Dim w h) = do
   Cairo.setSourceRGBA 1 1 1 1
   Cairo.rectangle 0 0 w h
   Cairo.fill
@@ -184,11 +184,11 @@ renderBkg (BackgroundEmbedPdf _ _, Dim w h) = do
   Cairo.fill
 
 -- | this has some bugs. need to fix
-cnstrctRBkg_StateT ::
+cnstrctRBkgStateT ::
   Dimension ->
   Background ->
   StateT (Maybe Context) Renderer RBackground
-cnstrctRBkg_StateT _ bkg = do
+cnstrctRBkgStateT _ bkg = do
   (qpdf, _qgen) <- ((,) <$> rendererPDFCmdQ <*> rendererGenCmdQ) <$> lift ask
   sfcid <- issueSurfaceID
   case bkg of
@@ -198,7 +198,7 @@ cnstrctRBkg_StateT _ bkg = do
         (_pg, rbkg) <- case (md, mf) of
           (Just d, Just f) -> do
             cmdiddoc <- issuePDFCommandID
-            docvar <- liftIO (atomically newEmptyTMVar)
+            docvar <- liftIO newEmptyTMVarIO
             liftIO . atomically $ sendPDFCommand qpdf cmdiddoc (GetDocFromFile f docvar)
             doc <- MaybeT . liftIO $ atomically $ takeTMVar docvar
             lift . put $ Just (Context d f (Just doc) Nothing)
@@ -211,7 +211,7 @@ cnstrctRBkg_StateT _ bkg = do
             return (pg, RBkgPDF (Just oldd) oldf pn (Just pg) sfcid)
         return rbkg
       case r of
-        Nothing -> error "error in cnstrctRBkg_StateT"
+        Nothing -> error "error in cnstrctRBkgStateT"
         Just x -> return x
     BackgroundEmbedPdf _ pn -> do
       r <- runMaybeT $ do
@@ -220,18 +220,18 @@ cnstrctRBkg_StateT _ bkg = do
         pg <- pdfRequest qpdf doc pn
         return (RBkgEmbedPDF pn (Just pg) sfcid)
       case r of
-        Nothing -> error "error in cnstrctRBkg_StateT"
+        Nothing -> error "error in cnstrctRBkgStateT"
         Just x -> return x
   where
     pdfRequest q doc pn = do
       cmdidpg <- issuePDFCommandID
-      pgvar <- liftIO (atomically newEmptyTMVar)
+      pgvar <- liftIO newEmptyTMVarIO
       liftIO . atomically $ sendPDFCommand q cmdidpg (GetPageFromDoc doc pn pgvar)
       MaybeT . liftIO $ atomically $ takeTMVar pgvar
 
 -- | For simple hoodle background
-renderBackground_StateT :: Dimension -> Background -> StateT Context Cairo.Render ()
-renderBackground_StateT dim@(Dim w h) bkg = do
+renderBackgroundStateT :: Dimension -> Background -> StateT Context Cairo.Render ()
+renderBackgroundStateT dim@(Dim w h) bkg = do
   case bkg of
     Background _t _c _s -> lift (renderBkg (bkg, dim))
     BackgroundPdf _t md mf pn -> do
@@ -239,19 +239,19 @@ renderBackground_StateT dim@(Dim w h) bkg = do
         case (md, mf) of
           (Just d, Just f) -> do
             doc <- (MaybeT . liftIO . popplerGetDocFromFile) f
-            lift . put $ (Context d f (Just doc) Nothing)
+            lift . put $ Context d f (Just doc) Nothing
             pdfRenderDoc doc pn
           _ -> do
             Context _oldd _oldf olddoc _ <- lift get
             doc <- MaybeT . return $ olddoc
             pdfRenderDoc doc pn
-      maybe (error "renderBackground_StateT") (const (return ())) r
+      maybe (error "renderBackgroundStateT") (const (return ())) r
     BackgroundEmbedPdf _ pn -> do
       r <- runMaybeT $ do
         Context _ _ _ mdoc <- lift get
         doc <- (MaybeT . return) mdoc
         pdfRenderDoc doc pn
-      maybe (error "renderBackground_StateT") (const (return ())) r
+      maybe (error "renderBackgroundStateT") (const (return ())) r
   where
     pdfRender pg = do
       Cairo.setSourceRGBA 1 1 1 1

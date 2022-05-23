@@ -7,5 +7,5 @@ import System.IO
 checkIfBinary :: FilePath -> IO Bool
 checkIfBinary fname =
   withFile fname ReadMode $ \h -> do
-    b <- return . LB.any (== 0) . LB.take 100 =<< LB.hGetContents h
+    b <- LB.any (== 0) . LB.take 100 <$> LB.hGetContents h
     b `seq` return b

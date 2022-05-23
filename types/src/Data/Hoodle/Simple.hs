@@ -7,35 +7,37 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.Hoodle.Simple where
 
 import Control.Applicative
 import Data.Aeson.TH
-import Data.Aeson.Types hiding (Pair (..))
+import Data.Aeson.Types hiding (Pair)
 import Data.ByteString.Char8 hiding (drop, map)
-import Data.Char
 import Data.Hoodle.Util
 import qualified Data.Serialize as SE
 import Data.Strict.Tuple
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.UUID.V4
-import Data.Vector (fromList, (!))
 import Lens.Micro
-import Text.Printf
 import Prelude hiding (curry, fst, putStrLn, snd, uncurry)
 
 -- |
 type Title = ByteString
 
+-- | Orphan instance for ByteString
+-- __TODO__: Remove this
 instance ToJSON ByteString where
   toJSON = String . TE.decodeUtf8
 
+-- | Orphan instance for ByteString
+-- __TODO__: Remove this
 instance FromJSON ByteString where
   parseJSON v = TE.encodeUtf8 <$> parseJSON v
 
--- |
+-- | Orphan instance for Pair
 instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
   put (x :!: y) =
     SE.put x

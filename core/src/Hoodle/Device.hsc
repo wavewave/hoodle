@@ -7,7 +7,6 @@
 
 module Hoodle.Device where
 
-import Control.Applicative 
 import Control.Monad.Reader
 import Data.Configurator.Types
 import Data.Int

@@ -5,14 +5,11 @@
 module Hoodle.Coroutine.File where
 
 import Control.Applicative
-import Control.Concurrent
-import qualified Control.Exception as E
 import Control.Lens (at, over, set, view, (.~), (?~))
 import Control.Monad.State hiding (forM_, mapM, mapM_)
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Trans.Maybe (MaybeT (..))
-import Control.Monad.Trans.Reader
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
 import Data.ByteString.Char8 as B (pack, readFile, unpack)
 import qualified Data.ByteString.Lazy as L
@@ -24,8 +21,6 @@ import Data.Hoodle.Select
 import Data.Hoodle.Simple
 import qualified Data.List as List
 import Data.Maybe
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
 import Data.Time.Clock
 import Graphics.Hoodle.Render (Xform4Page (..), cnstrctRHoodle)
 import Graphics.Hoodle.Render.Generic
@@ -577,8 +572,7 @@ showRevisionDialog hdl revs = do
   cvsid <- gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
   cache <- renderCache
   doIOaction (action (cache, cvsid))
-  waitSomeEvent (\case GotOk -> True; _ -> False)
-  return ()
+  void $ waitSomeEvent (\case GotOk -> True; _ -> False)
   where
     action (cache, cvsid) _evhandler = do
       dialog <- Gtk.dialogNew
@@ -616,7 +610,7 @@ addOneRevisionBox :: RenderCache -> CanvasId -> Gtk.VBox -> Hoodle -> Revision -
 addOneRevisionBox cache cvsid vbox hdl rev = do
   cvs <- Gtk.drawingAreaNew
   Gtk.widgetSetSizeRequest cvs 250 25
-  cvs `Gtk.on` Gtk.draw $ do
+  _ <- cvs `Gtk.on` Gtk.draw $ do
     -- TODO: make a safe version
     drawwdw <-
       liftIO (Gtk.widgetGetWindow cvs) >>= \case
@@ -629,7 +623,7 @@ addOneRevisionBox cache cvsid vbox hdl rev = do
   hdir <- getHomeDirectory
   let vcsdir = hdir </> ".hoodle.d" </> "vcs"
   btn <- Gtk.buttonNewWithLabel ("view" :: String)
-  btn `Gtk.on` Gtk.buttonPressEvent $
+  _ <- btn `Gtk.on` Gtk.buttonPressEvent $
     Gtk.tryEvent $ do
       files <- liftIO $ getDirectoryContents vcsdir
       let fstrinit =

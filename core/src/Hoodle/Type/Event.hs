@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Hoodle.Type.Event where
 
@@ -23,6 +24,7 @@ import Hoodle.Util
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent
   deriving (Show)
 
+-- | orphan instance for Surface for convenience
 instance Show Cairo.Surface where
   show _ = "cairo surface"
 
@@ -96,6 +98,7 @@ data UserEvent
   | NetworkProcess NetworkEvent
   deriving (Show)
 
+-- | orphan instance for IORef for convenience
 instance Show (IORef a) where
   show _ = "IORef"
 
@@ -257,6 +260,7 @@ data MiniBufferEvent
   | MiniBufferPenMove PointerCoord
   deriving (Show)
 
+-- | orphan instance for DrawWindow for convenience
 instance Show Gtk.DrawWindow where
   show _ = "DrawWindow"
 
@@ -273,6 +277,7 @@ data NetworkEvent
   | NetworkClosed
   deriving (Show)
 
+-- | orphan instance for MVar for convenience
 instance Show (MVar ()) where
   show _ = "MVar"
 

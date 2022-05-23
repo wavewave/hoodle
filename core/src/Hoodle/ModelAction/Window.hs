@@ -4,17 +4,13 @@
 
 module Hoodle.ModelAction.Window where
 
-import Control.Concurrent
-import Control.Concurrent.STM
 import Control.Lens (view)
 import Control.Monad hiding (forM_)
 import Control.Monad.Trans
 import Data.Foldable (forM_, traverse_)
 import Data.IORef (newIORef, readIORef)
 import qualified Data.IntMap as M
-import Data.Maybe (fromMaybe, mapMaybe)
-import qualified Data.Text as T
-import Data.Traversable (traverse)
+import Data.Maybe (fromMaybe)
 import Data.UUID (UUID)
 import Data.UUID.V4
 import qualified Graphics.UI.Gtk as Gtk
@@ -113,7 +109,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
   _drawev <- canvas `Gtk.on` Gtk.draw $ do
     liftIO $ Gtk.widgetGrabFocus canvas
     (liftIO . callback . UsrEv) (UpdateCanvas cid)
-  canvas `Gtk.on` Gtk.motionNotifyEvent $
+  _ <- canvas `Gtk.on` Gtk.motionNotifyEvent $
     Gtk.tryEvent $ do
       (mbtn, mp) <- getPointer dev
       forM_ mp $ \p -> do
@@ -124,7 +120,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
   -- drag and drop setting
   Gtk.dragDestSet canvas [Gtk.DestDefaultMotion, Gtk.DestDefaultDrop] [Gtk.ActionCopy]
   Gtk.dragDestAddTextTargets canvas
-  canvas `Gtk.on` Gtk.dragDataReceived $ \_dc pos _i _ts -> do
+  _ <- canvas `Gtk.on` Gtk.dragDataReceived $ \_dc pos _i _ts -> do
     s <- Gtk.selectionDataGetText
     (liftIO . callback . UsrEv) (GotLink s pos)
   Gtk.widgetAddEvents canvas [Gtk.PointerMotionMask, Gtk.Button1MotionMask, Gtk.KeyPressMask]
@@ -134,7 +130,7 @@ connectDefaultEventCanvasInfo xstate _uhdl cinfo = do
           [] -> error "No action group? "
           y : _ -> return y
       )
-  uxinputa <-
+  _uxinputa <-
     liftIO
       ( Gtk.actionGroupGetAction agr ("UXINPUTA" :: String) >>= \(Just x) ->
           return (Gtk.castToToggleAction x)
@@ -229,10 +225,10 @@ constructFrame' callback template uhdl (HSplit wconf1 wconf2) = do
   (uhdl', win1, wconf1') <- constructFrame' callback template uhdl wconf1
   (uhdl'', win2, wconf2') <- constructFrame' callback template uhdl' wconf2
   hpane' <- Gtk.hPanedNew
-  hpane' `Gtk.on` Gtk.buttonPressEvent $ do
+  _ <- hpane' `Gtk.on` Gtk.buttonPressEvent $ do
     liftIO ((callback . UsrEv) PaneMoveStart)
     return False
-  hpane' `Gtk.on` Gtk.buttonReleaseEvent $ do
+  _ <- hpane' `Gtk.on` Gtk.buttonReleaseEvent $ do
     liftIO ((callback . UsrEv) PaneMoveEnd)
     return False
   Gtk.panedPack1 hpane' win1 True False
@@ -243,10 +239,10 @@ constructFrame' callback template uhdl (VSplit wconf1 wconf2) = do
   (uhdl', win1, wconf1') <- constructFrame' callback template uhdl wconf1
   (uhdl'', win2, wconf2') <- constructFrame' callback template uhdl' wconf2
   vpane' <- Gtk.vPanedNew
-  vpane' `Gtk.on` Gtk.buttonPressEvent $ do
+  _ <- vpane' `Gtk.on` Gtk.buttonPressEvent $ do
     liftIO ((callback . UsrEv) PaneMoveStart)
     return False
-  vpane' `Gtk.on` Gtk.buttonReleaseEvent $ do
+  _ <- vpane' `Gtk.on` Gtk.buttonReleaseEvent $ do
     liftIO ((callback . UsrEv) PaneMoveEnd)
     return False
   Gtk.panedPack1 vpane' win1 True False
@@ -276,8 +272,8 @@ createTab callback notebook vboxcvs = do
   mlabel <- Gtk.labelNew (Nothing :: Maybe String)
   n <- Gtk.notebookAppendPageMenu notebook vboxcvs hbox mlabel
   uuid <- nextRandom
-  button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab uuid))
-  ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do
+  _ <- button `Gtk.on` Gtk.buttonActivated $ callback (UsrEv (CloseTab uuid))
+  _ <- ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do
     minfo <- liftIO $ do
       ref <- newIORef (Nothing :: Maybe String)
       callback (UsrEv (GetHoodleFileInfoFromTab uuid ref))

@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Data.Hoodle.Simple.V0_3 where
 
@@ -225,7 +226,7 @@ instance SE.Serialize Item where
       4 -> ItemAnchor <$> SE.get
       _ -> fail "err in Item parsing"
 
--- |
+-- | Orphan instance for Pair
 instance (SE.Serialize a, SE.Serialize b) => SE.Serialize (Pair a b) where
   put (x :!: y) =
     SE.put x

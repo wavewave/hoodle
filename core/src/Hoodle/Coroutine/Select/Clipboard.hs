@@ -2,7 +2,6 @@
 
 module Hoodle.Coroutine.Select.Clipboard where
 
-import Control.Applicative
 import Control.Lens (set, view, (.~))
 import Control.Monad.State
 import Control.Monad.Trans.Maybe

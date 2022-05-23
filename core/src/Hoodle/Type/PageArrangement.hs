@@ -6,7 +6,6 @@
 
 module Hoodle.Type.PageArrangement where
 
-import Control.Applicative
 import Control.Lens (Lens, Simple, lens, view)
 import Data.Foldable (toList)
 import Data.Hoodle.BBox hiding (fromMaybe)
@@ -101,13 +100,13 @@ data PageArrangement (a :: ViewMode) where
     CanvasDimension ->
     PageDimension ->
     ViewPortBBox ->
-    PageArrangement SinglePage
+    PageArrangement 'SinglePage
   ContinuousArrangement ::
     CanvasDimension ->
     DesktopDimension ->
     (PageNum -> Maybe (PageOrigin, PageDimension)) ->
     ViewPortBBox ->
-    PageArrangement ContinuousPage
+    PageArrangement 'ContinuousPage
 
 -- |
 getRatioPageCanvas :: ZoomMode -> PageDimension -> CanvasDimension -> (Double, Double)
@@ -124,7 +123,7 @@ makeSingleArrangement ::
   PageDimension ->
   CanvasDimension ->
   (Double, Double) ->
-  PageArrangement SinglePage
+  PageArrangement 'SinglePage
 makeSingleArrangement zmode pdim cdim@(CanvasDimension (Dim w' h')) (x, y) =
   let (sinvx, sinvy) = getRatioPageCanvas zmode pdim cdim
       bbox = BBox (x, y) (x + w' / sinvx, y + h' / sinvy)
@@ -139,7 +138,7 @@ makeContinuousArrangement ::
   CanvasDimension ->
   Hoodle EditMode ->
   (PageNum, PageCoordinate) ->
-  PageArrangement ContinuousPage
+  PageArrangement 'ContinuousPage
 makeContinuousArrangement
   zmode
   cdim@(CanvasDimension (Dim cw ch))

@@ -5,7 +5,6 @@ module Hoodle.ModelAction.Select where
 
 import Control.Lens (set, view)
 import Data.Algorithm.Diff as A
-import Data.Foldable (foldl')
 import qualified Data.Function as F (on)
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
@@ -14,8 +13,7 @@ import Data.Hoodle.Simple hiding (Hoodle, Page)
 import qualified Data.IntMap as M
 import qualified Data.Map as Map
 import Data.Maybe (isJust)
-import Data.Monoid
-import Data.Sequence (Seq, ViewL (..), viewl)
+import Data.Sequence (Seq)
 import Data.Strict.Tuple
 import Data.Time.Clock
 import Graphics.Hoodle.Render

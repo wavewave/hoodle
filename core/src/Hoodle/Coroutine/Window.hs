@@ -3,17 +3,14 @@
 
 module Hoodle.Coroutine.Window where
 
-import Control.Applicative
 import Control.Lens (over, set, view, (.~), (^.), _2)
 import Control.Monad.State
---
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as M
 import qualified Data.List as L
 import Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Accessor
 import Hoodle.Coroutine.Draw
 import Hoodle.Coroutine.File
@@ -31,8 +28,6 @@ import Hoodle.Type.PageArrangement
 import Hoodle.Type.Undo
 import Hoodle.Type.Window
 import Hoodle.Util
-
---
 
 -- | canvas configure with general zoom update func
 canvasConfigureGenUpdate ::
@@ -184,7 +179,7 @@ addTab filestore = do
       Gtk.set notebook [Gtk.notebookPage Gtk.:= tabnum]
   getFileContent filestore
   updateUhdl $ \uhdl -> do
-    liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
+    _ <- liftIO (updatePageAll (view hoodleModeState uhdl) uhdl)
     unboxBiAct (sing2ContPage uhdl) (const (return uhdl)) . view currentCanvasInfo $ uhdl
   pageZoomChange FitWidth
   canvasZoomUpdateAll

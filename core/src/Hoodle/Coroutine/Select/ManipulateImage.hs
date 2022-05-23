@@ -11,7 +11,6 @@ import Data.ByteString.Base64 (encode)
 import Data.Foldable (forM_)
 import Data.Hoodle.BBox
 import Data.Hoodle.Simple
-import Data.Monoid ((<>))
 import Data.Time
 import qualified Graphics.GD.ByteString as G
 import Graphics.Hoodle.Render.Item

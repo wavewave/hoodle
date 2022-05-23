@@ -16,7 +16,6 @@ import Hoodle.Coroutine.Layer
 import Hoodle.Coroutine.Pen
 import Hoodle.Device
 import Hoodle.HitTest (hitLassoPoint)
-import Hoodle.ModelAction.Select
 import Hoodle.Type.Canvas
 import Hoodle.Type.Coroutine
 import Hoodle.Type.Enum

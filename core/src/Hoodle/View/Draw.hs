@@ -7,8 +7,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.View.Draw
 -- Copyright   : (c) 2011-2016 Ian-Woo Kim
@@ -773,17 +771,14 @@ drawLayerWidget ::
 drawLayerWidget hdl cinfo mbbox cvscoord = do
   let cpn = view currentPageNum cinfo
       lc = view (canvasWidgets . layerWidgetConfig) cinfo
-  runMaybeT $ do
-    pg <- MaybeT . return $ view (gpages . at cpn) hdl
-    let lyrs = view glayers pg
-        n = currIndex lyrs
-    -- l = current lyrs
-    lift $ renderLayerWidget (show n) mbbox cvscoord
-    when (view layerWidgetShowContent lc) $ do
-      liftIO $ putStrLn "drawLayerWidget: not implemented"
-  -- sfc <- MaybeT . return $ msfc
-  -- lift $ renderLayerContent mbbox (view gdimension pg) sfc cvscoord
-  return ()
+  void $
+    runMaybeT $ do
+      pg <- MaybeT . return $ view (gpages . at cpn) hdl
+      let lyrs = view glayers pg
+          n = currIndex lyrs
+      lift $ renderLayerWidget (show n) mbbox cvscoord
+      when (view layerWidgetShowContent lc) $ do
+        liftIO $ putStrLn "drawLayerWidget: not implemented"
 
 renderLayerContent ::
   Maybe BBox ->

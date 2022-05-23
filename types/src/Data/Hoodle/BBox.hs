@@ -37,7 +37,6 @@ import qualified Data.Foldable as F
 import Data.Hoodle.Simple
 import Data.Hoodle.Util
 import Data.Monoid
-import Data.Serialize
 import Data.Strict.Tuple
 import Hoodle.HitTest.Type
   ( BBox (..),
@@ -46,11 +45,6 @@ import Hoodle.HitTest.Type
   )
 import Prelude hiding (fst, snd)
 import qualified Prelude (fst, snd)
-
--- | orphan instance for BBox
-instance Serialize BBox where
-  put BBox {..} = put bbox_upperleft >> put bbox_lowerright
-  get = liftM2 BBox get get
 
 -- |
 class (Monad m) => MakeBBoxedable m a where

@@ -51,9 +51,9 @@ pipeActionWith sender receiverf = do
   filename <- mkTmpFileName
   existThenRemove filename
   createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
-  forkProcess $ do
+  _ <- forkProcess $ do
     fd <- openFd filename WriteOnly Nothing defaultFileFlags
-    dupTo fd stdOutput
+    _ <- dupTo fd stdOutput
     closeFd fd
     sender
     hFlush stdout

@@ -7,11 +7,10 @@ module Hoodle.GUI where
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Exception (SomeException (..), catch)
 import Control.Lens
-import Control.Monad hiding (forM_, mapM_)
+import Control.Monad hiding (forM_)
 import Control.Monad.Trans
-import Data.Foldable (forM_, mapM_, traverse_)
+import Data.Foldable (forM_, traverse_)
 import Data.IORef
-import qualified Data.IntMap as M
 import Data.Maybe
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
@@ -21,7 +20,6 @@ import Hoodle.Coroutine.Default
 import Hoodle.Device
 import Hoodle.ModelAction.Window
 import Hoodle.Script.Hook
-import Hoodle.Type.Canvas
 import Hoodle.Type.Event
 import Hoodle.Type.HoodleState
 import System.Directory
@@ -29,12 +27,12 @@ import System.Environment
 import System.FilePath
 import System.IO
 --
-import Prelude (Bool (..), String, error, flip, id, map, ($), (.))
+import Prelude (Bool (..), String, error, ($), (.))
 
 -- |
 startGUI :: Maybe FilePath -> Maybe Hook -> IO ()
 startGUI mfname mhook = do
-  Gtk.initGUI
+  _ <- Gtk.initGUI
   window <- Gtk.windowNew
   Gtk.windowSetDefaultSize window 800 400
   cfg <- loadConfigFile
@@ -45,31 +43,21 @@ startGUI mfname mhook = do
   (usepz, uselyr) <- getWidgetConfig cfg
   (tref, st0, ui, vbox) <- initCoroutine devlst window mhook maxundo (xinputbool, usepz, uselyr, varcsr)
   setTitleFromFileName st0
-  -- need for refactoring
-  {-
-  mapM_ (\(x,y :: Simple Lens Settings Bool ) -> lensSetToggleUIForFlag  x (settings.y) st0 )
-    [ ("UXINPUTA", doesUseXInput)
-    , ("HANDA"   , doesUseTouch)
-    , ("POPMENUA", doesUsePopUpMenu)
-    , ("EBDIMGA" , doesEmbedImage)
-    , ("EBDPDFA" , doesEmbedPDF)
-    ]   -}
-  lensSetToggleUIForFlag "UXINPUTA" (settings . doesUseXInput) st0
-  lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) st0
-  lensSetToggleUIForFlag "POPMENUA" (settings . doesUsePopUpMenu) st0
-  lensSetToggleUIForFlag "EBDIMGA" (settings . doesEmbedImage) st0
-  lensSetToggleUIForFlag "EBDPDFA" (settings . doesEmbedPDF) st0
+  void $ lensSetToggleUIForFlag "UXINPUTA" (settings . doesUseXInput) st0
+  void $ lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) st0
+  void $ lensSetToggleUIForFlag "POPMENUA" (settings . doesUsePopUpMenu) st0
+  void $ lensSetToggleUIForFlag "EBDIMGA" (settings . doesEmbedImage) st0
+  void $ lensSetToggleUIForFlag "EBDPDFA" (settings . doesEmbedPDF) st0
 
-  setToggleUIForFlag "TOGGLENETSRCA" False st0
+  _ <- setToggleUIForFlag "TOGGLENETSRCA" False st0
   --
-  let canvases = map getDrawAreaFromBox . M.elems . view (unitHoodles . currentUnit . cvsInfoMap) $ st0
   outerLayout ui vbox st0
-  window `Gtk.on` Gtk.deleteEvent $ do
+  _ <- window `Gtk.on` Gtk.deleteEvent $ do
     liftIO $ eventHandler tref (UsrEv (Menu MenuQuit))
     return True
   Gtk.widgetShowAll window
 
-  forkIO $ clock (eventHandler tref)
+  _ <- forkIO $ clock (eventHandler tref)
   let mainaction = eventHandler tref (UsrEv (Initialized mfname)) >> Gtk.mainGUI
   mainaction `catch` \(_e :: SomeException) -> do
     homepath <- getEnv "HOME"
@@ -105,7 +93,7 @@ outerLayout ui vbox xst = do
   Gtk.dragSourceSet ebox [Gtk.Button1] [Gtk.ActionCopy]
   Gtk.dragSourceSetIconStock ebox Gtk.stockIndex
   Gtk.dragSourceAddTextTargets ebox
-  ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do
+  _ <- ebox `Gtk.on` Gtk.dragDataGet $ \_dc _iid _ts -> do
     -- very dirty solution but..
     minfo <- liftIO $ do
       ref <- newIORef (Nothing :: Maybe String)

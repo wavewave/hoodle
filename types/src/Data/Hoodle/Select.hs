@@ -3,8 +3,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Data.Hoodle.Select
 -- Copyright   : (c) 2011,2012,2014 Ian-Woo Kim
@@ -15,10 +13,7 @@
 -- Portability : GHC
 module Data.Hoodle.Select where
 
--- from other packages
-import Control.Applicative
 import Data.ByteString
---
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple
 import qualified Data.Text as T

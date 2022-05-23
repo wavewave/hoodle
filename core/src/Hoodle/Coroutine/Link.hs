@@ -8,7 +8,6 @@
 module Hoodle.Coroutine.Link where
 
 import Control.Applicative
-import Control.Concurrent (forkIO)
 import Control.Lens (at, set, view, (^.), _2)
 import Control.Monad hiding (forM_)
 import Control.Monad.State (get, gets, liftIO)
@@ -22,7 +21,6 @@ import Data.Hoodle.Zipper
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import Data.Maybe (mapMaybe)
-import Data.Monoid (mconcat)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Data.UUID.V4 (nextRandom)

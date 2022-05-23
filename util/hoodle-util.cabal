@@ -21,6 +21,7 @@ Library
 
   Build-Depends: 
                  base == 4.*,
+                 cereal,
                  containers,
                  mtl,
                  strict

@@ -134,7 +134,7 @@ addOneTextBox _evhandler dialog vbox (n, (b, txt)) = do
     Gtk.widgetModifyBg btn Gtk.StateNormal (Gtk.Color 60000 60000 30000)
     Gtk.widgetModifyBg btn Gtk.StatePrelight (Gtk.Color 63000 63000 40000)
     Gtk.widgetModifyBg btn Gtk.StateActive (Gtk.Color 45000 45000 18000)
-  btn `Gtk.on` Gtk.buttonPressEvent $
+  _ <- btn `Gtk.on` Gtk.buttonPressEvent $
     Gtk.tryEvent $ do
       liftIO $ Gtk.dialogResponse dialog (Gtk.ResponseUser n)
   Gtk.boxPackStart vbox btn Gtk.PackNatural 0

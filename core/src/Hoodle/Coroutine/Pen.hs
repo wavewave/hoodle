@@ -4,7 +4,6 @@
 
 module Hoodle.Coroutine.Pen where
 
-import Control.Applicative ((<$>), (<*>))
 import Control.Lens (at, over, set, view)
 import Control.Monad hiding (forM_, mapM_)
 import Control.Monad.State hiding (forM_, mapM_)
@@ -149,7 +148,7 @@ commonPenStart action cid pcoord = do
           nCvsInfo <-
             if cpn /= pgn
               then do
-                penPageSwitch pgn
+                _ <- penPageSwitch pgn
                 -- temporary dirty fix
                 return (set currentPageNum (unPageNum pgn) cvsInfo)
               else return cvsInfo

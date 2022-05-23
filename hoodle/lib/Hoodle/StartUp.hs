@@ -37,13 +37,7 @@ hoodleMain ScriptConfig {..} = do
 hoodleStartMain :: ScriptConfig -> IO ()
 hoodleStartMain =
   Dyre.wrapMain $
-    Dyre.defaultParams
-      { Dyre.projectName = "start",
-        Dyre.configDir = Just dirHoodled,
-        Dyre.realMain = hoodleMain,
-        Dyre.showError = showError,
-        Dyre.ghcOpts = ["-threaded"]
-      }
+    Dyre.newParams "start" hoodleMain showError
 
 -- |
 dirHoodled :: IO FilePath

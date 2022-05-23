@@ -18,14 +18,12 @@ import Control.Monad.Trans.Crtn.Object
 import Control.Monad.Trans.Reader (ReaderT (..))
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (mapM_)
-import Data.Functor ((<&>))
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple (Background (..), Dimension (..))
 import Data.IORef
 import qualified Data.IntMap as M
 import qualified Data.List as L
 import Data.Maybe
-import Data.Time.Clock
 import Graphics.Hoodle.Render
 import Graphics.Hoodle.Render.Engine
 import Graphics.Hoodle.Render.Type
@@ -34,7 +32,6 @@ import Hoodle.Accessor
 import Hoodle.Coroutine.Callback
 import Hoodle.Coroutine.ContextMenu
 import Hoodle.Coroutine.Default.Menu
-import Hoodle.Coroutine.Dialog
 import Hoodle.Coroutine.Draw
 import Hoodle.Coroutine.Eraser
 import Hoodle.Coroutine.File
@@ -60,16 +57,13 @@ import Hoodle.Type.Enum
 import Hoodle.Type.Event
 import Hoodle.Type.HoodleState
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined
 import Hoodle.Type.Undo
 import Hoodle.Type.Widget
 import Hoodle.Type.Window
 import Hoodle.Util
 import Hoodle.Widget.Dispatch
 import Hoodle.Widget.PanZoom
-import System.Directory
 import System.Process
---
 import Prelude hiding (mapM_)
 
 -- |
@@ -165,10 +159,16 @@ initialize cvs isInitialized ev = do
               tvarpdf = xst1 ^. pdfRenderQueue
               tvargen = xst1 ^. genRenderQueue
           doIOaction $ \evhandler -> do
-            forkOn 2 $ pdfRendererMain (defaultHandler evhandler) tvarpdf
-            forkIO $ E.catch (genRendererMain cachevar (defaultHandler evhandler) tvargen) (\e -> print (e :: E.SomeException))
+            _ <-
+              forkOn 2 $
+                pdfRendererMain (defaultHandler evhandler) tvarpdf
+            _ <-
+              forkIO $
+                E.catch
+                  (genRendererMain cachevar (defaultHandler evhandler) tvargen)
+                  (\e -> print (e :: E.SomeException))
             return (UsrEv ActionOrdered)
-          waitSomeEvent (\case ActionOrdered -> True; _ -> False)
+          _ <- waitSomeEvent (\case ActionOrdered -> True; _ -> False)
 
           getFileContent (LocalDir mfname)
           --
@@ -258,12 +258,11 @@ disableTouch = do
   when (view (settings . doesUseTouch) xst) $ do
     let nxst = set (settings . doesUseTouch) False xst
     doIOaction_ $ do
-      lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) nxst
+      _ <- lensSetToggleUIForFlag "HANDA" (settings . doesUseTouch) nxst
       let touchstr = dev_touch_str devlst
       -- ad hoc
-      when (touchstr /= "touch") $ do
-        readProcess "xinput" ["disable", touchstr] ""
-        return ()
+      when (touchstr /= "touch") $
+        void $ readProcess "xinput" ["disable", touchstr] ""
     put nxst
 
 -- |

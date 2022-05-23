@@ -4,8 +4,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.View.Coordinate
 -- Copyright   : (c) 2012-2014 Ian-Woo Kim
@@ -16,26 +14,18 @@
 -- Portability : GHC
 module Hoodle.View.Coordinate where
 
-import Control.Applicative
 import Control.Lens (view)
-import Control.Monad
 import Data.Foldable (toList)
--- from hoodle-platform
-
 import Data.Hoodle.BBox
 import Data.Hoodle.Generic
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as M
 import Data.Maybe
-import Data.Monoid
 import qualified Graphics.UI.Gtk as Gtk
--- from this package
 import Hoodle.Device
 import Hoodle.Type.Alias
 import Hoodle.Type.Canvas
 import Hoodle.Type.PageArrangement
-
---
 
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 data CanvasGeometry = CanvasGeometry

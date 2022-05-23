@@ -108,7 +108,7 @@ cairoOptionPage ::
   Cairo.Render (GPage b s a, Maybe Xform4Page)
 cairoOptionPage (optb, opta) cache cid (p, mx) = do
   let (bkg, dim) = (view gbackground p, view gdimension p)
-  cairoRenderOption optb cache cid (bkg, dim, mx)
+  _ <- cairoRenderOption optb cache cid (bkg, dim, mx)
   mapM_ (cairoRenderOption opta cache cid) . fmap (,dim,mx) $ view glayers p
   return (p, mx)
 
@@ -129,7 +129,7 @@ instance RenderOptionable (InBBox RPage, Maybe Xform4Page) where
   type RenderOption (InBBox RPage, Maybe Xform4Page) = InBBoxOption
   cairoRenderOption (InBBoxOption mbbox) cache cid (InBBox page, mx) = do
     let (bkg, dim) = (view gbackground page, view gdimension page)
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (bkg, dim, mx)
+    _ <- cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (bkg, dim, mx)
     let lyrs = view glayers page
     nlyrs <- mapM (fmap unInBBox . cairoRenderOption (InBBoxOption mbbox) cache cid . InBBox) . fmap (,dim,mx) $ lyrs
     let npage = set glayers (fmap (view _1) nlyrs) page
@@ -141,7 +141,7 @@ instance RenderOptionable (InBBoxBkgBuf RPage, Maybe Xform4Page) where
   cairoRenderOption (InBBoxOption mbbox) cache cid (InBBoxBkgBuf page, mx) = do
     let bkg = view gbackground page
         dim = view gdimension page
-    cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (bkg, dim, mx)
+    _ <- cairoRenderOption (RBkgDrawPDFInBBox mbbox) cache cid (bkg, dim, mx)
     let lyrs = view glayers page
     nlyrs <- mapM (renderRLayerInBBox cache cid mbbox) . fmap (,dim,mx) $ lyrs
     let npage = set glayers (fmap (view _1) nlyrs) page

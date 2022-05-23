@@ -2,8 +2,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.File
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
@@ -19,8 +17,6 @@ import Data.Attoparsec.Text as A
 import Data.Char (isAlphaNum)
 import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
---
-import Debug.Trace
 
 -- |
 getLinesFromText :: (Int, Int) -> T.Text -> T.Text
@@ -37,7 +33,7 @@ getKeywordContent k txt = M.lookup k (getKeywordMap txt)
 -- |
 getKeywordMap :: T.Text -> M.HashMap T.Text T.Text
 getKeywordMap txt = case parseOnly (many keywordContents) txt of
-  Left err -> M.empty
+  Left _err -> M.empty
   Right lst -> M.fromList lst
 
 -- |

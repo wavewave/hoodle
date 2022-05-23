@@ -5,12 +5,10 @@
 
 module Hoodle.Coroutine.Default.Menu where
 
-import Control.Applicative
 import Control.Lens (set, view, (.~), _1)
 import Control.Monad.IO.Class
 import Control.Monad.State hiding (mapM_)
 import Data.Foldable (mapM_)
---
 import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import qualified Data.IntMap as M
@@ -18,7 +16,6 @@ import Data.Monoid
 import qualified Data.Text as T
 import Graphics.Hoodle.Render.Type
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Accessor
 import Hoodle.Coroutine.Commit
 import Hoodle.Coroutine.Draw
@@ -83,7 +80,6 @@ menuEventProcess MenuLaTeX =
   laTeXInput Nothing (laTeXHeader <> "\n\n" <> laTeXFooter)
 menuEventProcess MenuCombineLaTeX = combineLaTeXText
 menuEventProcess MenuLaTeXFromSource = laTeXInputFromSource (100, 100)
--- menuEventProcess MenuUpdateLaTeX = updateLaTeX
 menuEventProcess MenuUndo = undo
 menuEventProcess MenuRedo = redo
 menuEventProcess MenuOpen = askIfSave fileOpen
@@ -91,11 +87,9 @@ menuEventProcess MenuSave = fileSave
 menuEventProcess MenuSaveAs = fileSaveAs
 menuEventProcess MenuReload = fileReload
 menuEventProcess MenuExport = fileExport
--- menuEventProcess MenuStartSync = fileStartSync
 menuEventProcess MenuVersionSave = fileVersionSave
 menuEventProcess MenuShowRevisions = fileShowRevisions
 menuEventProcess MenuShowUUID = fileShowUUID
---
 menuEventProcess MenuCut = cutSelection
 menuEventProcess MenuCopy = copySelection
 menuEventProcess MenuPaste = pasteToSelection
@@ -114,11 +108,8 @@ menuEventProcess MenuPrevLayer = gotoPrevLayer
 menuEventProcess MenuGotoLayer = startGotoLayerAt
 menuEventProcess MenuDeleteLayer = deleteCurrentLayer
 menuEventProcess MenuUseXInput = do
-  uhdl <- gets (view (unitHoodles . currentUnit))
-  let cmap = view cvsInfoMap uhdl
-      canvases = map getDrawAreaFromBox . M.elems $ cmap
-  updateFlagFromToggleUI "UXINPUTA" (settings . doesUseXInput) >>= \b ->
-    return ()
+  _ <- updateFlagFromToggleUI "UXINPUTA" (settings . doesUseXInput)
+  return ()
 menuEventProcess MenuUseTouch = toggleTouch
 menuEventProcess MenuUsePopUpMenu = void $ updateFlagFromToggleUI "POPMENUA" (settings . doesUsePopUpMenu)
 menuEventProcess MenuEmbedImage = void $ updateFlagFromToggleUI "EBDIMGA" (settings . doesEmbedImage)
@@ -180,7 +171,7 @@ colorConvert (Gtk.Color r g b) = ColorRGBA (realToFrac r / 65536.0) (realToFrac 
 
 -- |
 colorPickerBox :: String -> MainCoroutine (Maybe PenColor)
-colorPickerBox msg = do
+colorPickerBox _msg = do
   xst <- get
   let pcolor = view (penInfo . currentTool . penColor) xst
   doIOaction (action pcolor) >> go

@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Control.Monad.Trans.Crtn.Logger where
@@ -33,6 +32,5 @@ type LogClient m r = CObjT LogOp m r
 
 -- |
 writeLog :: (Monad m) => String -> LogClient m ()
-writeLog msg = do
-  request (Arg WriteLog msg)
-  return ()
+writeLog msg =
+  void $ request (Arg WriteLog msg)

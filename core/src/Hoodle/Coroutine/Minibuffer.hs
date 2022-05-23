@@ -3,7 +3,6 @@
 
 module Hoodle.Coroutine.Minibuffer where
 
-import Control.Applicative ((<$>), (<*>))
 import Control.Lens (view)
 import Control.Monad.State (get)
 import Control.Monad.Trans (liftIO)
@@ -65,8 +64,8 @@ minibufDialog msg = do
       msgLabel <- Gtk.labelNew (Just msg)
       cvs <- Gtk.drawingAreaNew
       Gtk.widgetSetSizeRequest cvs 500 50
-      cvs `Gtk.on` Gtk.draw $ do
-        -- TODO: purify this
+      _ <- cvs `Gtk.on` Gtk.draw $ do
+        -- __TODO__: purify this
         drawwdw <-
           liftIO $
             Gtk.widgetGetWindow cvs >>= \case
@@ -74,7 +73,7 @@ minibufDialog msg = do
               _ -> error "minibufDialog: now canvas window"
         liftIO (Gtk.renderWithDrawWindow drawwdw drawMiniBufBkg)
         (liftIO . evhandler . UsrEv . MiniBuffer . MiniBufferInitialized) drawwdw
-      cvs `Gtk.on` Gtk.buttonPressEvent $
+      _ <- cvs `Gtk.on` Gtk.buttonPressEvent $
         Gtk.tryEvent $ do
           (mbtn, mp) <- getPointer dev
           forM_ mp $ \p -> do
@@ -82,7 +81,7 @@ minibufDialog msg = do
             case pbtn of
               TouchButton -> return ()
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenDown pbtn p)
-      cvs `Gtk.on` Gtk.buttonReleaseEvent $
+      _ <- cvs `Gtk.on` Gtk.buttonReleaseEvent $
         Gtk.tryEvent $ do
           (mbtn, mp) <- getPointer dev
           forM_ mp $ \p -> do
@@ -90,7 +89,7 @@ minibufDialog msg = do
             case pbtn of
               TouchButton -> return ()
               _ -> (liftIO . evhandler . UsrEv . MiniBuffer) (MiniBufferPenUp p)
-      cvs `Gtk.on` Gtk.motionNotifyEvent $
+      _ <- cvs `Gtk.on` Gtk.motionNotifyEvent $
         Gtk.tryEvent $ do
           (mbtn, mp) <- getPointer dev
           forM_ mp $ \p -> do

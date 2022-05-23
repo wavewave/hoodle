@@ -3,7 +3,6 @@
 
 module Hoodle.Coroutine.Select where
 
-import Control.Applicative
 import Control.Lens (set, view, (.~), (^.))
 import Control.Monad
 import Control.Monad.Identity
@@ -14,7 +13,6 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Select
 import qualified Data.IntMap as M
 import qualified Data.Maybe as Maybe (fromMaybe)
-import Data.Monoid
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Sq (empty)
 import Data.Time.Clock
@@ -142,7 +140,7 @@ commonSelectStart typ pbtn cid = case typ of
             case pbtn of
               PenButton1 -> startMoveSelect cid pnum geometry ((x, y), ctime) tpage
               PenButton3 -> do
-                waitSomeEvent (\case PenUp _ _ -> True; _ -> False)
+                _ <- waitSomeEvent (\case PenUp _ _ -> True; _ -> False)
                 showContextMenu (pnum, (x, y))
               _ -> return ()
           action (Right tpage) = newSelectAction (hPage2RPage tpage)
@@ -198,11 +196,11 @@ newSelectRectangle
                 xformfunc
                 case ulbbox of
                   Top -> do
-                    cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox page, Just xform)
+                    _ <- cairoRenderOption (InBBoxOption Nothing) cache cid (InBBox page, Just xform)
                     mapM_ renderSelectedItem hitteditms
                   Middle sbbox -> do
                     let redrawee = filter (do2BBoxIntersect sbbox . getBBox) hitteditms
-                    cairoRenderOption (InBBoxOption (Just sbbox)) cache cid (InBBox page, Just xform)
+                    _ <- cairoRenderOption (InBBoxOption (Just sbbox)) cache cid (InBBox page, Just xform)
                     clipBBox (Just sbbox)
                     mapM_ renderSelectedItem redrawee
                   Bottom -> return ()

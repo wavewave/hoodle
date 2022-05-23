@@ -55,7 +55,7 @@ moveViewPortBy rndr cid f =
   where
     moveact :: CanvasInfo a -> CanvasInfo a
     moveact cinfo =
-      let b@(BBox (x0, y0) _) =
+      let BBox (x0, y0) _ =
             (unViewPortBBox . view (viewInfo . pageArrangement . viewPortBBox)) cinfo
           DesktopDimension ddim =
             view (viewInfo . pageArrangement . desktopDimension) cinfo

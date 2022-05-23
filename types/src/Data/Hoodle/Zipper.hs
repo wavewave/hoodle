@@ -4,8 +4,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Data.Hoodle.Zipper
 -- Copyright   : (c) 2011-2013,2015 Ian-Woo Kim
@@ -20,12 +18,10 @@ module Data.Hoodle.Zipper where
 
 import Control.Applicative hiding (empty)
 import Data.Foldable
--- from this package
 import Data.Hoodle.Generic
 import Data.Monoid
 import Data.Sequence hiding (fromList)
 import Data.Traversable
---
 import Prelude hiding (length, splitAt, zipWith)
 
 -- |
@@ -68,7 +64,7 @@ appendGoLast (SZ (y, (y1s, y2s))) x = SZ (x, ((y1s |> y) >< y2s, empty))
 
 -- |
 appendDropSecond :: SeqZipper a -> a -> SeqZipper a
-appendDropSecond (SZ (y, (y1s, y2s))) x = SZ (x, (y1s |> y, empty))
+appendDropSecond (SZ (y, (y1s, _y2s))) x = SZ (x, (y1s |> y, empty))
 
 -- |
 chopFirst :: SeqZipper a -> Maybe (SeqZipper a)

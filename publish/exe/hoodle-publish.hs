@@ -2,9 +2,8 @@
 
 module Main where
 
-import Control.Applicative ((<$>), (<*>))
 import Control.Monad (filterM)
-import Data.Maybe (catMaybes, isNothing, mapMaybe)
+import Data.Maybe (isNothing, mapMaybe)
 import qualified Graphics.UI.Gtk as Gtk (initGUI)
 --
 import Hoodle.Publish.PDF
@@ -38,7 +37,7 @@ mode = modes [publish]
 -- |
 main :: IO ()
 main = do
-  Gtk.initGUI
+  _ <- Gtk.initGUI
   params <- cmdArgs mode
   (_r :/ r') <- build (rootpath params)
   let files = mapMaybe takeFile . flattenDir $ r'

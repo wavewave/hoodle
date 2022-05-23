@@ -3,7 +3,6 @@
 
 module Text.Hoodle.Migrate.V0_1_1_to_V0_2_2 where
 
-import Control.Applicative
 import Control.Error.Util (hoistEither)
 import Control.Monad.Trans
 import Control.Monad.Trans.Except

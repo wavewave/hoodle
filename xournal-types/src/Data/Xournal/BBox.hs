@@ -8,7 +8,6 @@ import Control.Applicative
 import Control.Monad
 import qualified Data.Foldable as F
 import Data.Monoid
-import Data.Semigroup (Semigroup (..))
 import Data.Serialize
 import Data.Strict.Tuple
 import Data.Xournal.Generic

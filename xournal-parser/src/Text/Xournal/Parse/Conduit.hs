@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# OPTIONS_GHC -fno-warn-deprecations #-}
 
 module Text.Xournal.Parse.Conduit where
 
@@ -17,7 +18,7 @@ import Data.Conduit.List as CL
 import Data.Conduit.Zlib
 import Data.List (foldl')
 import Data.Strict.Tuple (Pair (..))
-import qualified Data.Text as T -- hiding (foldl', zipWith)
+import qualified Data.Text as T
 import Data.Text.Encoding
 import Data.Text.Read
 import Data.XML.Types
@@ -25,7 +26,6 @@ import Data.Xournal.Simple
 import Lens.Micro (set)
 import System.IO
 import Text.XML.Stream.Parse hiding (many)
-import Text.XML.Stream.Render
 import Text.Xournal.Parse.Zlib
 import Prelude hiding (dropWhile, id, (.))
 
@@ -41,23 +41,6 @@ dropWhile p = do
       if p e
         then CL.drop 1 >> dropWhile p
         else return ()
-
--- |
-
-{-
-lookAhead :: Monad m => Sink a m (Maybe a)
-lookAhead = continue loop where
-  loop (Chunks []) = lookAhead
-  loop (Chunks (x:xs)) = yield (Just x) (Chunks (x:xs))
-  loop EOF = yield Nothing EOF
--}
-
--- |
-
-{-
-trc :: (Show a) => String -> a -> b -> b
-trc str a b = trace (str ++ ":" ++ show a) b
--}
 
 -- |
 flipap :: a -> (a -> b) -> b
@@ -396,8 +379,6 @@ parseXojFile fp = withFile fp ReadMode $ \ih -> parseXmlFile ih pXournal
 parseXojGzFile :: FilePath -> IO (Either String Xournal)
 parseXojGzFile fp = withFile fp ReadMode $ \h ->
   sourceHandle h =$= ungzip =$= parseBytes def $$ pXournal
-
---  run_ $ enumFile fp $$ EZ.ungzip =$ parseBytes def =$ pXournal
 
 -- |
 parseXournal :: FilePath -> IO (Either String Xournal)

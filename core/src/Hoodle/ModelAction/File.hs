@@ -4,8 +4,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.File
 -- Copyright   : (c) 2011-2015 Ian-Woo Kim
@@ -16,17 +14,13 @@
 -- Portability : GHC
 module Hoodle.ModelAction.File where
 
--- from other package
-import Control.Applicative
 import Control.Lens (set, view)
 import Data.Attoparsec.ByteString.Char8
 import Data.ByteString.Base64
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy.Char8 as L
--- from hoodle-platform
 import Data.Hoodle.Simple
 import Data.Maybe
-import Data.Monoid ((<>))
 import Data.Time.Clock
 import qualified Data.Traversable as T
 import Graphics.GD.ByteString
@@ -34,9 +28,6 @@ import Graphics.Hoodle.Render.Background
 import Graphics.Hoodle.Render.Type.Hoodle
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
--- import qualified Data.Hoodle.Simple.V0_3 as V0_3
-
--- from this package
 import Hoodle.Type.HoodleState
 import Hoodle.Util
 import System.Directory (canonicalizePath)
@@ -152,27 +143,28 @@ makeNewHoodleWithPDF doesembed ofp = do
         putStrLn $ "size is " ++ show siz ++ ", which is larger than " ++ show sizelimit
         nfp' <- mkTmpFile "pdf"
         let nfname' = C.pack nfp'
-        readProcess
-          "gs"
-          [ "-q",
-            "-dNOPAUSE",
-            "-dBATCH",
-            "-dSAFER",
-            "-sDEVICE=pdfwrite",
-            "-dCompatibilityLevel=1.3",
-            "-dPDFSETTINGS=/screen",
-            "-dEmbedAllFonts=true",
-            "-dSubsetFonts=true",
-            "-dColorImageDownsampleType=/Bicubic",
-            "-dColorImageResolution=72",
-            "-dGrayImageDownsampleType=/Bicubic",
-            "-dGrayImageResolution=72",
-            "-dMonoImageDownsampleType=/Bicubic",
-            "-dMonoImageResolution=72",
-            "-sOutputFile=" ++ nfp',
-            ofp
-          ]
-          ""
+        _ <-
+          readProcess
+            "gs"
+            [ "-q",
+              "-dNOPAUSE",
+              "-dBATCH",
+              "-dSAFER",
+              "-sDEVICE=pdfwrite",
+              "-dCompatibilityLevel=1.3",
+              "-dPDFSETTINGS=/screen",
+              "-dEmbedAllFonts=true",
+              "-dSubsetFonts=true",
+              "-dColorImageDownsampleType=/Bicubic",
+              "-dColorImageResolution=72",
+              "-dGrayImageDownsampleType=/Bicubic",
+              "-dGrayImageResolution=72",
+              "-dMonoImageDownsampleType=/Bicubic",
+              "-dMonoImageResolution=72",
+              "-sOutputFile=" ++ nfp',
+              ofp
+            ]
+            ""
         return (nfp', nfname')
       else return (ocanonicalfp, ofname)
 

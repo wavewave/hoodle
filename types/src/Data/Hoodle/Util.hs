@@ -1,16 +1,4 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
--- |
--- Module      : Data.Hoodle.Util
--- Copyright   : (c) 2011, 2012, 2015 Ian-Woo Kim
---
--- License     : BSD3
--- Maintainer  : Ian-Woo Kim <ianwookim@gmail.com>
--- Stability   : experimental
--- Portability : GHC
-module Data.Hoodle.Util where
+module Data.Hoodle.Util (fst3, snd3, trd3) where
 
 -- |
 fst3 :: (a, b, c) -> a

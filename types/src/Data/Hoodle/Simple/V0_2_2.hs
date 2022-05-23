@@ -6,13 +6,12 @@
 
 module Data.Hoodle.Simple.V0_2_2 where
 
-import Control.Applicative
-import Data.ByteString.Char8 hiding (map)
-import Data.Hoodle.Util
+import Data.ByteString.Char8 (ByteString, pack)
+import Data.Hoodle.Util (fst3, snd3)
 import qualified Data.Serialize as SE
-import Data.Strict.Tuple
-import Data.UUID.V4
-import Lens.Micro
+import Data.Strict.Tuple (Pair (..))
+import Data.UUID.V4 (nextRandom)
+import Lens.Micro (Lens', lens, set)
 import Prelude hiding (curry, fst, putStrLn, snd, uncurry)
 
 -- |

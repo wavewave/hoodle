@@ -11,17 +11,23 @@
 
 module Data.Hoodle.Simple where
 
-import Control.Applicative
-import Data.Aeson.TH
-import Data.Aeson.Types hiding (Pair)
-import Data.ByteString.Char8 hiding (drop, map)
-import Data.Hoodle.Util
+import Data.Aeson.TH (defaultOptions, deriveJSON, fieldLabelModifier)
+import Data.Aeson.Types
+  ( FromJSON (..),
+    ToJSON (..),
+    Value (..),
+    object,
+    (.:),
+    (.=),
+  )
+import Data.ByteString.Char8 (ByteString, pack)
+import Data.Hoodle.Util (fst3, snd3)
 import qualified Data.Serialize as SE
-import Data.Strict.Tuple
+import Data.Strict.Tuple (Pair (..))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Data.UUID.V4
-import Lens.Micro
+import Data.UUID.V4 (nextRandom)
+import Lens.Micro (Lens', lens, set)
 import Prelude hiding (curry, fst, putStrLn, snd, uncurry)
 
 -- |

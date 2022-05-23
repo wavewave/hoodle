@@ -29,14 +29,19 @@ module Data.Hoodle.BBox
   )
 where
 
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Identity
+import Control.Monad (guard)
+import Control.Monad.Identity (Identity)
 import qualified Data.Foldable as F
 import Data.Hoodle.Simple
-import Data.Hoodle.Util
-import Data.Monoid
-import Data.Strict.Tuple
+  ( Anchor (..),
+    Dimension (..),
+    Image (..),
+    Link (..),
+    SVG (..),
+    Stroke (..),
+  )
+import Data.Hoodle.Util (fst3, snd3, trd3)
+import Data.Strict.Tuple (Pair, fst, snd)
 import Hoodle.HitTest.Type
   ( BBox (..),
     BBoxed (..),

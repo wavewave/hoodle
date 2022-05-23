@@ -16,19 +16,14 @@
 -- Portability : GHC
 module Data.Hoodle.Generic where
 
--- from other packages
-import Control.Category
-import Data.ByteString.Char8 hiding (map, zip)
-import Data.Foldable
-import Data.Functor
--- from this package
-import Data.Hoodle.Simple
+import Control.Category (id, (.))
+import Data.ByteString.Char8 (ByteString, pack)
+import Data.Hoodle.Simple (Dimension, Revision)
 import qualified Data.IntMap as IM
 import qualified Data.Sequence as Seq
 import qualified Data.Text as T
-import Data.UUID.V4
-import Lens.Micro
---
+import Data.UUID.V4 (nextRandom)
+import Lens.Micro (Lens', lens)
 import Prelude hiding (id, (.))
 
 data PDFData = PDFData

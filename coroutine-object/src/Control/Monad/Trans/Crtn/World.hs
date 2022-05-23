@@ -5,6 +5,7 @@
 
 module Control.Monad.Trans.Crtn.World where
 
+import Control.Monad (void)
 import Control.Monad.Trans.Crtn
 import Control.Monad.Trans.Crtn.Event
 import Control.Monad.Trans.Crtn.Logger

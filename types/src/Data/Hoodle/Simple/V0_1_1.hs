@@ -1,9 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
 
 module Data.Hoodle.Simple.V0_1_1 where
 
@@ -163,7 +161,7 @@ data Page = Page
   deriving (Show)
 
 -- |
-data Layer = Layer {layer_items :: ![Item]}
+newtype Layer = Layer {layer_items :: [Item]}
   deriving (Show)
 
 -- |

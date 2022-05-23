@@ -89,7 +89,7 @@ renderStrk :: Stroke -> Cairo.Render ()
 renderStrk s@(Stroke _ _ w d) = do
   let opacity =
         if stroke_tool s == "highlighter"
-          then predefined_highlighter_opacity
+          then predefinedHighlighterOpacity
           else 1.0
   case getPenColor (stroke_color s) of
     Just (r, g, b, a) -> Cairo.setSourceRGBA r g b (a * opacity)
@@ -102,7 +102,7 @@ renderStrk s@(Stroke _ _ w d) = do
 renderStrk s@(VWStroke _ _ d) = do
   let opacity =
         if stroke_tool s == "highlighter"
-          then predefined_highlighter_opacity
+          then predefinedHighlighterOpacity
           else 1.0
   case getPenColor (stroke_color s) of
     Just (r, g, b, a) -> Cairo.setSourceRGBA r g b (a * opacity)

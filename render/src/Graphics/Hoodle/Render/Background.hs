@@ -75,34 +75,34 @@ popplerGetPageFromDoc doc pn = do
 drawRuling :: Double -> Double -> ByteString -> Cairo.Render ()
 drawRuling w h style = do
   let drawHorizRules = do
-        let (r, g, b, a) = predefined_RULING_COLOR
+        let (r, g, b, a) = predefinedRulingColor
         Cairo.setSourceRGBA r g b a
-        Cairo.setLineWidth predefined_RULING_THICKNESS
+        Cairo.setLineWidth predefinedRulingThickness
         let drawonerule y = do
               Cairo.moveTo 0 y
               Cairo.lineTo w y
               Cairo.stroke
         mapM_
           drawonerule
-          [ predefined_RULING_TOPMARGIN,
-            predefined_RULING_TOPMARGIN + predefined_RULING_SPACING
+          [ predefinedRulingTopMargin,
+            predefinedRulingTopMargin + predefinedRulingSpacing
             .. h - 1
           ]
   case style of
     "plain" -> return ()
     "lined" -> do
       drawHorizRules
-      let (r2, g2, b2, a2) = predefined_RULING_MARGIN_COLOR
+      let (r2, g2, b2, a2) = predefinedRulingMarginColor
       Cairo.setSourceRGBA r2 g2 b2 a2
-      Cairo.setLineWidth predefined_RULING_THICKNESS
-      Cairo.moveTo predefined_RULING_LEFTMARGIN 0
-      Cairo.lineTo predefined_RULING_LEFTMARGIN h
+      Cairo.setLineWidth predefinedRulingThickness
+      Cairo.moveTo predefinedRulingLeftMargin 0
+      Cairo.lineTo predefinedRulingLeftMargin h
       Cairo.stroke
     "ruled" -> drawHorizRules
     "graph" -> do
-      let (r3, g3, b3, a3) = predefined_RULING_COLOR
+      let (r3, g3, b3, a3) = predefinedRulingColor
       Cairo.setSourceRGBA r3 g3 b3 a3
-      Cairo.setLineWidth predefined_RULING_THICKNESS
+      Cairo.setLineWidth predefinedRulingThickness
       let drawonegraphvert x = do
             Cairo.moveTo x 0
             Cairo.lineTo x h
@@ -111,8 +111,8 @@ drawRuling w h style = do
             Cairo.moveTo 0 y
             Cairo.lineTo w y
             Cairo.stroke
-      mapM_ drawonegraphvert [0, predefined_RULING_GRAPHSPACING .. w - 1]
-      mapM_ drawonegraphhoriz [0, predefined_RULING_GRAPHSPACING .. h - 1]
+      mapM_ drawonegraphvert [0, predefinedRulingGraphSpacing .. w - 1]
+      mapM_ drawonegraphhoriz [0, predefinedRulingGraphSpacing .. h - 1]
     _ -> return ()
 
 -- | draw ruling  in bbox
@@ -131,35 +131,35 @@ drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
         Cairo.lineTo x2 y
         Cairo.stroke
       fullRuleYs =
-        [ predefined_RULING_TOPMARGIN,
-          predefined_RULING_TOPMARGIN + predefined_RULING_SPACING
+        [ predefinedRulingTopMargin,
+          predefinedRulingTopMargin + predefinedRulingSpacing
           .. h - 1
         ]
       ruleYs = filter (\y -> (y <= y2) && (y >= y1)) fullRuleYs
-      fullGraphXs = [0, predefined_RULING_GRAPHSPACING .. w - 1]
-      fullGraphYs = [0, predefined_RULING_GRAPHSPACING .. h - 1]
+      fullGraphXs = [0, predefinedRulingGraphSpacing .. w - 1]
+      fullGraphYs = [0, predefinedRulingGraphSpacing .. h - 1]
       graphXs = filter (\x -> (x <= x2) && (x >= x1)) fullGraphXs
       graphYs = filter (\y -> (y <= y2) && (y >= y1)) fullGraphYs
   let drawHorizRules = do
-        let (r, g, b, a) = predefined_RULING_COLOR
+        let (r, g, b, a) = predefinedRulingColor
         Cairo.setSourceRGBA r g b a
-        Cairo.setLineWidth predefined_RULING_THICKNESS
+        Cairo.setLineWidth predefinedRulingThickness
         mapM_ drawonerule ruleYs
   case style of
     "plain" -> return ()
     "lined" -> do
       drawHorizRules
-      let (r2, g2, b2, a2) = predefined_RULING_MARGIN_COLOR
+      let (r2, g2, b2, a2) = predefinedRulingMarginColor
       Cairo.setSourceRGBA r2 g2 b2 a2
-      Cairo.setLineWidth predefined_RULING_THICKNESS
-      Cairo.moveTo predefined_RULING_LEFTMARGIN 0
-      Cairo.lineTo predefined_RULING_LEFTMARGIN h
+      Cairo.setLineWidth predefinedRulingThickness
+      Cairo.moveTo predefinedRulingLeftMargin 0
+      Cairo.lineTo predefinedRulingLeftMargin h
       Cairo.stroke
     "ruled" -> drawHorizRules
     "graph" -> do
-      let (r3, g3, b3, a3) = predefined_RULING_COLOR
+      let (r3, g3, b3, a3) = predefinedRulingColor
       Cairo.setSourceRGBA r3 g3 b3 a3
-      Cairo.setLineWidth predefined_RULING_THICKNESS
+      Cairo.setLineWidth predefinedRulingThickness
       mapM_ drawonegraphvert graphXs
       mapM_ drawonegraphhoriz graphYs
     _ -> return ()
@@ -167,7 +167,7 @@ drawRuling_InBBox (BBox (x1, y1) (x2, y2)) w h style = do
 -- | render background without any constraint
 renderBkg :: (Background, Dimension) -> Cairo.Render ()
 renderBkg (Background _typ col sty, Dim w h) = do
-  let c = M.lookup col predefined_bkgcolor
+  let c = M.lookup col predefinedBkgcolor
   case c of
     Just (r, g, b, _a) -> Cairo.setSourceRGB r g b
     Nothing -> Cairo.setSourceRGB 1 1 1

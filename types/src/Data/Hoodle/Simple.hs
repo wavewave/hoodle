@@ -396,7 +396,7 @@ data Revision
 $(deriveJSON defaultOptions {fieldLabelModifier = drop 1} ''Revision)
 
 -- |
-data Layer = Layer {layer_items :: ![Item]}
+newtype Layer = Layer {layer_items :: [Item]}
   deriving (Show)
 
 $(deriveJSON defaultOptions {fieldLabelModifier = drop 6} ''Layer)
@@ -524,7 +524,7 @@ defaultPage =
 -- |
 defaultHoodle :: IO Hoodle
 defaultHoodle =
-  (set title "untitled" . set embeddedPdf Nothing . set pages [defaultPage])
+  set title "untitled" . set embeddedPdf Nothing . set pages [defaultPage]
     <$> emptyHoodle
 
 -- |

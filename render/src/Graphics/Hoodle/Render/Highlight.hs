@@ -15,7 +15,7 @@ import Prelude hiding (concatMap, curry, fst, mapM_, snd, uncurry)
 renderStrkHltd :: BBoxed Stroke -> Cairo.Render ()
 renderStrkHltd sbbox = do
   let s = bbxed_content sbbox
-  case M.lookup (stroke_color s) predefined_pencolor of
+  case M.lookup (stroke_color s) predefinedPencolor of
     Just (r, g, b, a) -> Cairo.setSourceRGBA r g b a
     Nothing -> Cairo.setSourceRGBA 0 0 0 1
   case s of

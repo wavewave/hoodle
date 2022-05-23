@@ -410,11 +410,11 @@ currentTool = lens chooser setter
 
 -- |
 defaultPenWCS :: WidthColorStyle
-defaultPenWCS = WidthColorStyle predefined_medium ColorBlack
+defaultPenWCS = WidthColorStyle predefinedMedium ColorBlack
 
 -- |
 defaultEraserWCS :: WidthColorStyle
-defaultEraserWCS = WidthColorStyle predefined_eraser_medium ColorWhite
+defaultEraserWCS = WidthColorStyle predefinedEraserMedium ColorWhite
 
 -- |
 defaultTextWCS :: WidthColorStyle
@@ -422,7 +422,7 @@ defaultTextWCS = defaultPenWCS
 
 -- |
 defaultHighligherWCS :: WidthColorStyle
-defaultHighligherWCS = WidthColorStyle predefined_highlighter_medium ColorYellow
+defaultHighligherWCS = WidthColorStyle predefinedHighlighterMedium ColorYellow
 
 -- |
 defaultPenInfo :: PenInfo

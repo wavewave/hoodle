@@ -5,11 +5,9 @@
 
 module Hoodle.GUI.Menu where
 
--- from other packages
 import Control.Lens (set)
 import Control.Monad
 import qualified Data.Foldable as F (forM_)
--- from hoodle-platform
 import Data.Hoodle.Predefined
 import Foreign.C.Types (CInt (..))
 import Foreign.ForeignPtr (withForeignPtr)
@@ -18,10 +16,8 @@ import qualified Graphics.UI.Gtk as Gtk
 import qualified Graphics.UI.Gtk.General.CssProvider as Gtk
 import qualified Graphics.UI.Gtk.General.StyleContext as Gtk
 import qualified Graphics.UI.GtkInternals as Gtk (unToolbar)
--- from this package
 import Hoodle.Coroutine.Callback
 import Hoodle.Type
---
 import Paths_hoodle_core
 import System.FilePath
 
@@ -675,24 +671,24 @@ penType2Int _ = 100
 
 -- |
 int2Point :: PenType -> Int -> Double
-int2Point PenWork 0 = predefined_veryfine
-int2Point PenWork 1 = predefined_fine
-int2Point PenWork 2 = predefined_medium
-int2Point PenWork 3 = predefined_thick
-int2Point PenWork 4 = predefined_verythick
-int2Point PenWork 5 = predefined_ultrathick
-int2Point HighlighterWork 0 = predefined_highlighter_veryfine
-int2Point HighlighterWork 1 = predefined_highlighter_fine
-int2Point HighlighterWork 2 = predefined_highlighter_medium
-int2Point HighlighterWork 3 = predefined_highlighter_thick
-int2Point HighlighterWork 4 = predefined_highlighter_verythick
-int2Point HighlighterWork 5 = predefined_highlighter_ultrathick
-int2Point EraserWork 0 = predefined_eraser_veryfine
-int2Point EraserWork 1 = predefined_eraser_fine
-int2Point EraserWork 2 = predefined_eraser_medium
-int2Point EraserWork 3 = predefined_eraser_thick
-int2Point EraserWork 4 = predefined_eraser_verythick
-int2Point EraserWork 5 = predefined_eraser_ultrathick
+int2Point PenWork 0 = predefinedVeryfine
+int2Point PenWork 1 = predefinedFine
+int2Point PenWork 2 = predefinedMedium
+int2Point PenWork 3 = predefinedThick
+int2Point PenWork 4 = predefinedVerythick
+int2Point PenWork 5 = predefinedUltrathick
+int2Point HighlighterWork 0 = predefinedHighlighterVeryfine
+int2Point HighlighterWork 1 = predefinedHighlighterFine
+int2Point HighlighterWork 2 = predefinedHighlighterMedium
+int2Point HighlighterWork 3 = predefinedHighlighterThick
+int2Point HighlighterWork 4 = predefinedHighlighterVerythick
+int2Point HighlighterWork 5 = predefinedHighlighterUltrathick
+int2Point EraserWork 0 = predefinedEraserVeryfine
+int2Point EraserWork 1 = predefinedEraserFine
+int2Point EraserWork 2 = predefinedEraserMedium
+int2Point EraserWork 3 = predefinedEraserThick
+int2Point EraserWork 4 = predefinedEraserVerythick
+int2Point EraserWork 5 = predefinedEraserUltrathick
 int2Point _ _ = error "No such point"
 
 similarTo :: Double -> Double -> Bool
@@ -703,26 +699,26 @@ similarTo v w = (v < w + eps) && (v > w - eps)
 -- |
 point2Int :: PenType -> Double -> Int
 point2Int PenWork v
-  | v `similarTo` predefined_veryfine = 0
-  | v `similarTo` predefined_fine = 1
-  | v `similarTo` predefined_medium = 2
-  | v `similarTo` predefined_thick = 3
-  | v `similarTo` predefined_verythick = 4
-  | v `similarTo` predefined_ultrathick = 5
+  | v `similarTo` predefinedVeryfine = 0
+  | v `similarTo` predefinedFine = 1
+  | v `similarTo` predefinedMedium = 2
+  | v `similarTo` predefinedThick = 3
+  | v `similarTo` predefinedVerythick = 4
+  | v `similarTo` predefinedUltrathick = 5
 point2Int HighlighterWork v
-  | v `similarTo` predefined_highlighter_fine = 1
-  | v `similarTo` predefined_highlighter_veryfine = 0
-  | v `similarTo` predefined_highlighter_medium = 2
-  | v `similarTo` predefined_highlighter_thick = 3
-  | v `similarTo` predefined_highlighter_verythick = 4
-  | v `similarTo` predefined_highlighter_ultrathick = 5
+  | v `similarTo` predefinedHighlighterFine = 1
+  | v `similarTo` predefinedHighlighterVeryfine = 0
+  | v `similarTo` predefinedHighlighterMedium = 2
+  | v `similarTo` predefinedHighlighterThick = 3
+  | v `similarTo` predefinedHighlighterVerythick = 4
+  | v `similarTo` predefinedHighlighterUltrathick = 5
 point2Int EraserWork v
-  | v `similarTo` predefined_eraser_veryfine = 0
-  | v `similarTo` predefined_eraser_fine = 1
-  | v `similarTo` predefined_eraser_medium = 2
-  | v `similarTo` predefined_eraser_thick = 3
-  | v `similarTo` predefined_eraser_verythick = 4
-  | v `similarTo` predefined_eraser_ultrathick = 5
+  | v `similarTo` predefinedEraserVeryfine = 0
+  | v `similarTo` predefinedEraserFine = 1
+  | v `similarTo` predefinedEraserMedium = 2
+  | v `similarTo` predefinedEraserThick = 3
+  | v `similarTo` predefinedEraserVerythick = 4
+  | v `similarTo` predefinedEraserUltrathick = 5
 point2Int _ _ = 0 -- for the time being
 
 -- |

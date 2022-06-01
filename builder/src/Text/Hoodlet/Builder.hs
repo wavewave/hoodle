@@ -2,14 +2,12 @@
 
 module Text.Hoodlet.Builder where
 
-import Blaze.ByteString.Builder
+import Blaze.ByteString.Builder (Builder, fromByteString, toLazyByteString)
 import qualified Data.ByteString.Lazy.Char8 as L
 --
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple (Item)
 --
-import Text.Hoodle.Builder
-
---
+import Text.Hoodle.Builder (buildItem)
 
 -- |
 builder :: Item -> L.ByteString

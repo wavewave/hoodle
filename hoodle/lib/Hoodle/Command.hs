@@ -1,7 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Command
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
@@ -12,9 +8,9 @@
 -- Portability : GHC
 module Hoodle.Command where
 
-import Hoodle.Job
-import Hoodle.ProgType
-import Hoodle.Script.Hook
+import Hoodle.Job (startJob)
+import Hoodle.ProgType (Hoodle (..))
+import Hoodle.Script.Hook (Hook (..))
 
 commandLineProcess :: Hoodle -> Maybe Hook -> IO ()
 commandLineProcess (Test mfname) mhook = do

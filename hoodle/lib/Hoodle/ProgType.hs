@@ -1,9 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ProgType
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
@@ -14,10 +10,26 @@
 -- Portability : GHC
 module Hoodle.ProgType where
 
-import Data.Version
+import Data.Version (showVersion)
 --
-import Paths_hoodle
+import Paths_hoodle (version)
 import System.Console.CmdArgs
+  ( Data,
+    Typeable,
+    args,
+    auto,
+    def,
+    explicit,
+    help,
+    helpArg,
+    modes,
+    name,
+    program,
+    summary,
+    typ,
+    versionArg,
+    (&=),
+  )
 
 data Hoodle = Test
   { xojfile :: Maybe FilePath
@@ -42,7 +54,7 @@ programCopyright = "(C) Ian-Woo Kim 2011-2013"
 test :: Hoodle
 test =
   Test
-    { xojfile = def &= typ "FILENAME" &= args -- &= argPos 0 &= opt "OPTIONAL"
+    { xojfile = def &= typ "FILENAME" &= args
     }
     &= auto
 

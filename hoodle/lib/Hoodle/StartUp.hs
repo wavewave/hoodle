@@ -1,10 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.StartUp
 -- Copyright   : (c) 2012, 2014 Ian-Woo Kim
@@ -16,12 +12,12 @@
 module Hoodle.StartUp where
 
 import qualified Config.Dyre as Dyre
-import Hoodle.Command
-import Hoodle.ProgType
-import Hoodle.Script
-import System.Console.CmdArgs
-import System.Environment
-import System.FilePath
+import Hoodle.Command (commandLineProcess)
+import Hoodle.ProgType (mode)
+import Hoodle.Script (ScriptConfig (..), showError)
+import System.Console.CmdArgs (cmdArgs)
+import System.Environment (getEnv)
+import System.FilePath ((</>))
 
 -- |
 hoodleMain :: ScriptConfig -> IO ()

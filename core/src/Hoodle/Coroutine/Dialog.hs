@@ -4,22 +4,33 @@
 module Hoodle.Coroutine.Dialog where
 
 import Control.Lens (view)
-import Control.Monad.Loops
-import Control.Monad.State
+import Control.Monad.Loops (whileM_)
+import Control.Monad.State (get, liftIO, unless)
 import qualified Data.Foldable as F
 import Data.Functor ((<&>))
 import qualified Data.Text as T
 import qualified Graphics.UI.Gtk as Gtk
---
 import Hoodle.Coroutine.Draw
+  ( invalidateInBBox,
+    nextevent,
+    waitSomeEvent,
+  )
 import qualified Hoodle.Script.Coroutine as S
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
-import Hoodle.Type.HoodleState
+  ( AllEvent (UsrEv),
+    UserEvent
+      ( FileChosen,
+        GotOk,
+        Keyword,
+        OkCancel,
+        TextInput,
+        UpdateCanvas
+      ),
+  )
+import Hoodle.Type.HoodleState (rootOfRootWindow)
 import System.Directory (getCurrentDirectory)
-
---
 
 -- |
 okMessageBox :: String -> MainCoroutine ()

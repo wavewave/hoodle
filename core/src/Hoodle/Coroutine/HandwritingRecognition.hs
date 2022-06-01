@@ -10,30 +10,43 @@ import Control.Lens (view, _1, _2)
 import Control.Monad (guard, when, (<=<))
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
-import Data.Aeson as A
+import Data.Aeson (Value (..), encode, json)
 import qualified Data.Attoparsec.ByteString.Char8 as AP
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable (mapM_)
 import qualified Data.HashMap.Strict as HM
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple (Stroke (..))
 import qualified Data.List as L (lookup)
-import Data.Maybe
+import Data.Maybe (mapMaybe)
 import Data.Strict.Tuple (Pair (..), fst, snd, zip)
 import qualified Data.Text as T
 import Data.Traversable (forM)
-import Data.UUID.V4
-import Data.Vector hiding (forM, head, map, mapM_, modify, null, take, zip, (++))
+import Data.UUID.V4 (nextRandom)
+import Data.Vector
+  ( Vector,
+    fromList,
+    toList,
+    (!?),
+  )
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Coroutine.Draw (waitSomeEvent)
-import Hoodle.Coroutine.Minibuffer
-import Hoodle.Type.Coroutine
+import Hoodle.Coroutine.Minibuffer (minibufDialog)
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
 import Hoodle.Type.Event
-import Hoodle.Util
+  ( AllEvent (UsrEv),
+    UserEvent (GotRecogResult, OkCancel),
+  )
+import Hoodle.Util (msgShout)
 import System.Directory
-import System.Exit
-import System.FilePath
-import System.Process
+  ( doesDirectoryExist,
+    doesFileExist,
+    getHomeDirectory,
+    getTemporaryDirectory,
+  )
+import System.Exit (ExitCode (ExitSuccess))
+import System.FilePath ((<.>), (</>))
+import System.Process (readProcessWithExitCode)
 --
 import Prelude hiding (fst, mapM_, snd, zip)
 
@@ -149,21 +162,21 @@ mkAesonInk strks =
 
       hm1 =
         HM.insert "writing_guide" (Object hm0)
-          . HM.insert "pre_context" (A.String "")
+          . HM.insert "pre_context" (String "")
           . HM.insert "max_num_results" (Number 10)
           . HM.insert "max_completions" (Number 0)
           . HM.insert "ink" strks_value
           $ HM.empty
       hm2 =
-        HM.insert "feedback" (A.String "∅[deleted]")
-          . HM.insert "select_type" (A.String "deleted")
+        HM.insert "feedback" (String "∅[deleted]")
+          . HM.insert "select_type" (String "deleted")
           $ HM.empty
       hm3 =
         HM.insert "app_version" (Number 0.4)
-          . HM.insert "api_level" (A.String "537.36")
+          . HM.insert "api_level" (String "537.36")
           . HM.insert "device" "hoodle"
           . HM.insert "input_type" (Number 0)
-          . HM.insert "options" (A.String "enable_pre_space")
+          . HM.insert "options" (String "enable_pre_space")
           . HM.insert "requests" (Array (fromList [Object hm1, Object hm2]))
           $ HM.empty
    in Object hm3

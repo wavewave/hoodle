@@ -17,9 +17,6 @@ type family Page a :: *
 
 type family Layer a :: *
 
--- type instance Layer EditMode = RLayer
--- type instance Layer SelectMode = HLayers
-
 type instance Page EditMode = RPage
 
 type instance Page SelectMode = HPage

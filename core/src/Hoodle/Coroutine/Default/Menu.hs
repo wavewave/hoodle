@@ -6,42 +6,137 @@
 module Hoodle.Coroutine.Default.Menu where
 
 import Control.Lens (set, view, (.~), _1)
-import Control.Monad.IO.Class
-import Control.Monad.State hiding (mapM_)
+import Control.Monad.IO.Class ()
+import Control.Monad.State (get, gets, liftIO, modify, void, when)
 import Data.Foldable (mapM_)
-import Data.Hoodle.Generic
-import Data.Hoodle.Select
+import Data.Hoodle.Generic (gbackground, gpages)
+import Data.Hoodle.Select (gselAll)
 import qualified Data.IntMap as M
-import Data.Monoid
+import Data.Monoid ()
 import qualified Data.Text as T
 import Graphics.Hoodle.Render.Type
+  ( RBackground (..),
+    isRBkgSmpl,
+  )
 import qualified Graphics.UI.Gtk as Gtk
-import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+import Hoodle.Accessor (pureUpdateUhdl)
+import Hoodle.Coroutine.Commit (redo, undo)
 import Hoodle.Coroutine.Draw
+  ( invalidateAll,
+    invalidateInBBox,
+    nextevent,
+    updateFlagFromToggleUI,
+  )
 import Hoodle.Coroutine.File
-import Hoodle.Coroutine.HandwritingRecognition
-import Hoodle.Coroutine.LaTeX
+  ( askIfSave,
+    askQuitProgram,
+    embedAllPDFBackground,
+    embedHoodlet,
+    embedPredefinedImage,
+    embedPredefinedImage2,
+    embedPredefinedImage3,
+    exportCurrentPageAsSVG,
+    fileAnnotatePDF,
+    fileExport,
+    fileLoadImageBackground,
+    fileLoadPNGorJPG,
+    fileLoadSVG,
+    fileOpen,
+    fileReload,
+    fileSave,
+    fileSaveAs,
+    fileShowRevisions,
+    fileShowUUID,
+    fileVersionSave,
+  )
+import Hoodle.Coroutine.HandwritingRecognition (handwritingRecognitionDialog)
+import Hoodle.Coroutine.LaTeX (laTeXFooter, laTeXHeader)
 import Hoodle.Coroutine.Layer
-import Hoodle.Coroutine.Link
-import Hoodle.Coroutine.Mode
+  ( deleteCurrentLayer,
+    gotoNextLayer,
+    gotoPrevLayer,
+    makeNewLayer,
+    startGotoLayerAt,
+  )
+import Hoodle.Coroutine.Link (addLink, listAnchors)
+import Hoodle.Coroutine.Mode (modeChange)
 import Hoodle.Coroutine.Page
+  ( changePage,
+    deleteCurrentPage,
+    newPage,
+    pageZoomChange,
+    pageZoomChangeRel,
+  )
 import Hoodle.Coroutine.Select.Clipboard
+  ( copySelection,
+    cutSelection,
+    deleteSelection,
+    pasteToSelection,
+  )
 import Hoodle.Coroutine.TextInput
+  ( addAnchor,
+    combineLaTeXText,
+    editEmbeddedTextSource,
+    editNetEmbeddedTextSource,
+    embedTextSource,
+    laTeXInput,
+    laTeXInputFromSource,
+    laTeXInputNetwork,
+    textInput,
+    textInputFromSource,
+    toggleNetworkEditSource,
+  )
 import Hoodle.Coroutine.Window
-import Hoodle.GUI.Reflect
-import Hoodle.Script
+  ( addTab,
+    closeTab,
+    deleteCanvas,
+    eitherSplit,
+    fullScreen,
+  )
+import Hoodle.GUI.Reflect (reflectCursor)
+import Hoodle.Script (relaunchApplication)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( currentTool,
+    penColor,
+    variableWidthPen,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
 import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( AddDirection (PageAfter, PageBefore),
+    DrawFlag (Efficient),
+    PenColor (ColorRGBA),
+    ZoomModeRel (..),
+    convertBackgroundStyleToByteString,
+    convertPenColorToRGBA,
+  )
+import Hoodle.Type.Event (AllEvent (..), MenuEvent (..), UserEvent (..))
 import Hoodle.Type.HoodleState
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.Window
-import Hoodle.Widget.Clock
-import Hoodle.Widget.Layer
-import Hoodle.Widget.PanZoom
-import Hoodle.Widget.Scroll
+  ( FileStore (LocalDir),
+    HoodleModeState (ViewAppendState),
+    backgroundStyle,
+    currentCanvas,
+    currentUnit,
+    doesEmbedImage,
+    doesEmbedPDF,
+    doesFollowLinks,
+    doesKeepAspectRatio,
+    doesUsePopUpMenu,
+    doesUseVariableCursor,
+    doesUseXInput,
+    getHoodle,
+    hoodleModeState,
+    hoodleModeStateEither,
+    isSaved,
+    penInfo,
+    settings,
+    unitHoodles,
+  )
+import Hoodle.Type.PageArrangement (ZoomMode (..))
+import Hoodle.Type.Window (SplitType (..))
+import Hoodle.Widget.Clock (toggleClock)
+import Hoodle.Widget.Layer (toggleLayer)
+import Hoodle.Widget.PanZoom (togglePanZoom, toggleTouch)
+import Hoodle.Widget.Scroll (toggleScroll)
 --
 import Prelude hiding (mapM_)
 

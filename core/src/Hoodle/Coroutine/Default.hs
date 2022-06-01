@@ -7,63 +7,221 @@
 
 module Hoodle.Coroutine.Default where
 
-import Control.Applicative hiding (empty)
 import Control.Concurrent
+  ( forkIO,
+    forkOn,
+    newEmptyMVar,
+    putMVar,
+  )
 import qualified Control.Exception as E
 import Control.Lens (at, over, set, view, (.~), (?~), (^.), _2)
-import Control.Monad.State hiding (mapM_)
-import Control.Monad.Trans.Crtn.Driver
-import Control.Monad.Trans.Crtn.Logger.Simple
-import Control.Monad.Trans.Crtn.Object
+import Control.Monad (void, when)
+import Control.Monad.State (evalStateT, get, gets, liftIO, modify, put)
+import Control.Monad.Trans.Crtn.Driver (driver)
+import Control.Monad.Trans.Crtn.Logger.Simple (simplelogger)
+import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (mapM_)
 import Data.Hoodle.Generic
+  ( gbackground,
+    gdimension,
+    ghoodleID,
+    gpages,
+  )
 import Data.Hoodle.Simple (Background (..), Dimension (..))
-import Data.IORef
+import Data.IORef (writeIORef)
 import qualified Data.IntMap as M
 import qualified Data.List as L
-import Data.Maybe
-import Graphics.Hoodle.Render
+import Graphics.Hoodle.Render (cnstrctRBkgStateT)
 import Graphics.Hoodle.Render.Engine
-import Graphics.Hoodle.Render.Type
+  ( genRendererMain,
+    pdfRendererMain,
+  )
+import Graphics.Hoodle.Render.Type (RBackground (..))
 import qualified Graphics.UI.Gtk as Gtk hiding (get, set)
 import Hoodle.Accessor
-import Hoodle.Coroutine.Callback
-import Hoodle.Coroutine.ContextMenu
-import Hoodle.Coroutine.Default.Menu
+  ( getHoodleFilePath,
+    getPenType,
+    lensSetToggleUIForFlag,
+    pureUpdateUhdl,
+  )
+import Hoodle.Coroutine.Callback (eventHandler)
+import Hoodle.Coroutine.ContextMenu (processContextMenu)
+import Hoodle.Coroutine.Default.Menu (menuEventProcess)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Eraser
+  ( callRenderer,
+    callRenderer_,
+    defaultHandler,
+    doIOaction_,
+    invalidate,
+    invalidateAll,
+    invalidateInBBox,
+    nextevent,
+    waitSomeEvent,
+  )
+import Hoodle.Coroutine.Eraser (eraserStart)
 import Hoodle.Coroutine.File
-import Hoodle.Coroutine.Highlighter
+  ( askIfSave,
+    fileReload,
+    getFileContent,
+  )
+---------
+import Hoodle.Coroutine.Highlighter (highlighterStart)
 import Hoodle.Coroutine.Link
+  ( gotLink,
+    notifyLink,
+    openLinkAction,
+  )
 import Hoodle.Coroutine.Mode
+  ( modeChange,
+    viewModeChange,
+  )
 import Hoodle.Coroutine.Page
-import Hoodle.Coroutine.Pen
+  ( changePage,
+    pageZoomChange,
+  )
+import Hoodle.Coroutine.Pen (penStart)
 import Hoodle.Coroutine.Scroll
+  ( hscrollBarMoved,
+    vscrollBarMoved,
+    vscrollStart,
+  )
 import Hoodle.Coroutine.Select
-import Hoodle.Coroutine.TextInput
-import Hoodle.Coroutine.VerticalSpace
+  ( selectLassoStart,
+    selectPenColorChanged,
+    selectPenWidthChanged,
+    selectRectStart,
+  )
+import Hoodle.Coroutine.TextInput (networkReceived)
+import Hoodle.Coroutine.VerticalSpace (verticalSpaceStart)
 import Hoodle.Coroutine.Window
+  ( closeTab,
+    doCanvasConfigure,
+    findTab,
+    paneMoveStart,
+    switchTab,
+  )
 import Hoodle.Device
+  ( DeviceList,
+    PenButton (..),
+    dev_touch_str,
+  )
 import Hoodle.GUI.Menu
+  ( getMenuUI,
+    int2Point,
+  )
 import Hoodle.GUI.Reflect
-import Hoodle.ModelAction.Page
+  ( reflectNewPageModeUI,
+    reflectPenColorUI,
+    reflectPenModeUI,
+    reflectPenWidthUI,
+    reflectUIToggle,
+    reflectViewModeUI,
+  )
+import Hoodle.ModelAction.Page (getPageFromGHoodleMap)
 import Hoodle.ModelAction.Window
-import Hoodle.Script.Hook
+  ( constructFrame,
+    createTab,
+    eventConnect,
+  )
+import Hoodle.Script.Hook (Hook)
 import Hoodle.Type.Canvas
+  ( CanvasId,
+    CanvasInfoBox (CanvasSinglePage),
+    canvasWidgets,
+    currentPageNum,
+    currentTool,
+    defaultCvsInfoSinglePage,
+    penColor,
+    penType,
+    penWidth,
+    unboxLens,
+    _canvasId,
+  )
 import Hoodle.Type.Coroutine
+  ( EventVar,
+    MainCoroutine,
+    MainOp (DoEvent),
+    doIOaction,
+    world,
+  )
 import Hoodle.Type.Enum
+  ( DrawFlag (Efficient),
+    PenColor (..),
+    PenType (..),
+    SelectType (..),
+    convertBackgroundStyleToByteString,
+    selectType,
+  )
 import Hoodle.Type.Event
+  ( AllEvent (..),
+    NetworkEvent (..),
+    RenderEvent (..),
+    UserEvent (..),
+  )
 import Hoodle.Type.HoodleState
+  ( FileStore (LocalDir),
+    HoodleModeState (ViewAppendState),
+    HoodleState,
+    IsOneTimeSelectMode (YesBeforeSelect),
+    backgroundStyle,
+    callBack,
+    currentCanvasInfo,
+    currentUnit,
+    cvsInfoMap,
+    deviceList,
+    doesUseTouch,
+    doesUseVariableCursor,
+    doesUseXInput,
+    emptyHoodleState,
+    frameState,
+    genRenderQueue,
+    getCurrentCanvasId,
+    getHoodle,
+    gtkUIManager,
+    hoodleFileControl,
+    hoodleFileName,
+    hoodleModeState,
+    hoodleModeStateEither,
+    hookSet,
+    isOneTimeSelectMode,
+    isSaved,
+    newPageMode,
+    pdfRenderQueue,
+    penInfo,
+    renderCacheVar,
+    resetHoodleModeStateBuffers,
+    rootContainer,
+    rootNotebook,
+    rootOfRootWindow,
+    rootWindow,
+    selectInfo,
+    settings,
+    statusBar,
+    switchTabSignal,
+    uiComponentSignalHandler,
+    undoTable,
+    unitButton,
+    unitHoodles,
+    unitUUID,
+    updateFromCanvasInfoAsCurrentCanvas,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Undo
+  ( CanvasDimension (..),
+    ZoomMode (FitWidth),
+  )
+import Hoodle.Type.Undo (emptyUndo)
 import Hoodle.Type.Widget
-import Hoodle.Type.Window
-import Hoodle.Util
-import Hoodle.Widget.Dispatch
-import Hoodle.Widget.PanZoom
-import System.Process
+  ( doesUseLayerWidget,
+    doesUsePanZoomWidget,
+    widgetConfig,
+  )
+import Hoodle.Type.Window (WindowConfig (Node))
+import Hoodle.Util (msgShout, (#))
+import Hoodle.Widget.Dispatch (widgetCheckPen)
+import Hoodle.Widget.PanZoom (toggleTouch, touchStart)
+import System.Process (readProcess)
 import Prelude hiding (mapM_)
 
 -- |

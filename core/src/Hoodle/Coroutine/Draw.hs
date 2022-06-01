@@ -8,34 +8,115 @@
 module Hoodle.Coroutine.Draw where
 
 import Control.Concurrent.STM (atomically, modifyTVar')
-import Control.Lens
-import Control.Monad
-import Control.Monad.State
-import Control.Monad.Trans.Crtn
-import Control.Monad.Trans.Crtn.Object
-import Control.Monad.Trans.Crtn.Queue
+import Control.Lens (Lens', set, view, (%~), (.~), (^.))
+import Control.Monad (unless, void, when)
+import Control.Monad.State (get, gets, liftIO, modify)
+import Control.Monad.Trans.Crtn (request)
+import Control.Monad.Trans.Crtn.Object (Arg (..), Res (..))
+import Control.Monad.Trans.Crtn.Queue (enqueue)
 import Control.Monad.Trans.Reader (runReaderT)
 import qualified Data.HashMap.Strict as HM
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox (BBox (..))
 import qualified Data.IntMap as M
 import Data.Time.Clock
+  ( getCurrentTime,
+  )
 import Data.Time.LocalTime
+  ( getCurrentTimeZone,
+    localTimeOfDay,
+    todHour,
+    todMin,
+    todSec,
+    utcToLocalTime,
+  )
 import Graphics.Hoodle.Render.Type
+  ( RenderCache,
+    Renderer,
+    RendererEvent (FinishCommandFor, SurfaceUpdate),
+    RendererState (..),
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
-import Hoodle.Type.Alias
+  ( applyActionToAllCVS,
+    getCanvasGeometryCvsId,
+    getCurrentPageEitherFromHoodleModeState,
+    pureUpdateUhdl,
+    renderCache,
+  )
+import Hoodle.Type.Alias (EditMode, SelectMode)
 import Hoodle.Type.Canvas
+  ( CanvasId,
+    CanvasInfo (..),
+    canvasId,
+    canvasWidgets,
+    currentPageNum,
+    drawArea,
+    forBoth',
+    mDrawSurface,
+    unboxBiAct,
+    unboxLens,
+    viewInfo,
+  )
 import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( MainCoroutine,
+    MainOp (DoEvent),
+    doIOaction,
+  )
+import Hoodle.Type.Enum (DrawFlag (Clear, Efficient))
 import Hoodle.Type.Event
+  ( AllEvent (SysEv, UsrEv),
+    RenderEvent (..),
+    SystemEvent (ClockUpdateEvent, RenderCacheUpdate),
+    UIEvent (UIGetFlag),
+    UserEvent
+      ( ActionOrdered,
+        RenderEv,
+        UIEv,
+        UpdateCanvas,
+        UpdateCanvasEfficient
+      ),
+  )
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    HoodleState,
+    UnitHoodle,
+    currentCanvasInfo,
+    currentUnit,
+    cvsInfoMap,
+    doesNotInvalidate,
+    genRenderQueue,
+    getCanvasInfo,
+    getCurrentCanvasId,
+    gtkUIManager,
+    hoodleModeState,
+    pdfRenderQueue,
+    renderCacheVar,
+    tempQueue,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( PageNum (..),
+    ViewMode (ContinuousPage, SinglePage),
+  )
 import Hoodle.Type.Widget
-import Hoodle.Util
+  ( clockWidgetConfig,
+    clockWidgetTime,
+    doesUseClockWidget,
+    widgetConfig,
+  )
+import Hoodle.Util (msgShout)
 import Hoodle.View.Draw
-
---
+  ( ContPageDraw (..),
+    DrawingFunction,
+    SinglePageDraw (..),
+    cairoXform4PageCoordinate,
+    drawContHoodle,
+    drawContHoodleSel,
+    drawSinglePage,
+    drawSinglePageSel,
+    mkXform4Page,
+  )
 
 -- | all event
 nextevent :: MainCoroutine UserEvent

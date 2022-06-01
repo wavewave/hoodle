@@ -1,16 +1,17 @@
 module Hoodle.Coroutine.Callback where
 
-import Control.Concurrent
-import Control.Exception (ErrorCall, PatternMatchFail, SomeException (..), catch)
---
-import Control.Monad.Trans.Crtn.Driver
+import Control.Concurrent (MVar)
+import Control.Exception
+  ( ErrorCall,
+    PatternMatchFail,
+    SomeException (..),
+    catch,
+  )
+import Control.Monad.Trans.Crtn.Driver (Driver)
 import qualified Control.Monad.Trans.Crtn.EventHandler as E
---
-import Hoodle.Util
-import System.Exit
-import System.IO
---
-import Prelude (Maybe (..), show) -- hiding (catch)
+import Hoodle.Util (errorlog)
+import System.Exit (exitFailure)
+import Prelude (IO, Maybe (..), show)
 
 eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()
 eventHandler evar ev = E.eventHandler evar ev `catch` allexceptionproc

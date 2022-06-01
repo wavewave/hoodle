@@ -62,6 +62,7 @@ newtype SinglePageDraw a = SinglePageDraw
   { unSinglePageDraw ::
       RenderCache ->
       CanvasId ->
+      -- isCurrentCanvas
       Bool ->
       (Gtk.DrawingArea, Maybe Cairo.Surface) ->
       (PageNum, Page a) ->
@@ -71,12 +72,10 @@ newtype SinglePageDraw a = SinglePageDraw
       IO (Page a)
   }
 
--- Bool = isCurrentCanvas
-
--- |
 newtype ContPageDraw a = ContPageDraw
   { unContPageDraw ::
       RenderCache ->
+      -- isCurrentCanvas
       Bool ->
       CanvasInfo 'ContinuousPage ->
       Maybe BBox ->
@@ -84,8 +83,6 @@ newtype ContPageDraw a = ContPageDraw
       DrawFlag ->
       IO (Hoodle a)
   }
-
--- Bool = isCurrentCanvas
 
 -- |
 type instance DrawingFunction 'SinglePage = SinglePageDraw

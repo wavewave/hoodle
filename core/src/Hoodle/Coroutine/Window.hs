@@ -4,30 +4,105 @@
 module Hoodle.Coroutine.Window where
 
 import Control.Lens (over, set, view, (.~), (^.), _2)
-import Control.Monad.State
-import Data.Hoodle.Generic
+import Control.Monad.State (get, gets, liftIO, modify, put, when)
+import Data.Hoodle.Generic (gdimension)
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as M
 import qualified Data.List as L
 import Data.UUID (UUID)
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
+  ( getCurrentPageCvsId,
+    pureUpdateUhdl,
+    updateUhdl,
+  )
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.File
-import Hoodle.Coroutine.Mode
+  ( doIOaction_,
+    invalidateAll,
+    invalidateInBBox,
+    nextevent,
+  )
+import Hoodle.Coroutine.File (getFileContent)
+import Hoodle.Coroutine.Mode (sing2ContPage)
 import Hoodle.Coroutine.Page
+  ( canvasZoomUpdateAll,
+    canvasZoomUpdateBufAll,
+    pageZoomChange,
+  )
 import Hoodle.GUI.Reflect
-import Hoodle.ModelAction.Page
+  ( blockWhile,
+    changeCurrentCanvasId,
+    reflectCursor,
+    reflectPenModeUI,
+    reflectUIToggle,
+  )
+import Hoodle.ModelAction.Page (updatePageAll)
 import Hoodle.ModelAction.Window
+  ( constructFrame,
+    constructFrame',
+    createTab,
+    eventConnect,
+    newCanvasId,
+    registerFrameToContainer,
+  )
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( CanvasId,
+    CanvasInfo (_canvasId),
+    CanvasInfoBox (CanvasContPage, CanvasSinglePage),
+    defaultCvsInfoSinglePage,
+    unboxBiAct,
+    updateCanvasDimForContSingle,
+    updateCanvasDimForSingle,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine, maybeError)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
+  ( UserEvent (CanvasConfigure, PaneMoveEnd, UpdateCanvas),
+  )
 import Hoodle.Type.HoodleState
+  ( FileStore,
+    callBack,
+    currentCanvasInfo,
+    currentUnit,
+    cvsInfoMap,
+    emptyUnitHoodle,
+    frameState,
+    getCanvasInfo,
+    getCurrentCanvasId,
+    gtkUIManager,
+    hoodleFileControl,
+    hoodleFileName,
+    hoodleModeState,
+    isFullScreen,
+    isSaved,
+    rootContainer,
+    rootNotebook,
+    rootOfRootWindow,
+    rootWindow,
+    setCanvasInfo,
+    setCanvasInfoMap,
+    switchTabSignal,
+    uiComponentSignalHandler,
+    undoTable,
+    unitButton,
+    unitHoodles,
+    unitKey,
+    unitUUID,
+    updateFromCanvasInfoAsCurrentCanvas,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Undo
+  ( CanvasDimension (..),
+    PageDimension (..),
+    ZoomMode (FitWidth),
+  )
+import Hoodle.Type.Undo (emptyUndo)
 import Hoodle.Type.Window
-import Hoodle.Util
+  ( SplitType,
+    WindowConfig (Node),
+    removeWindow,
+    splitWindow,
+  )
+import Hoodle.Util (fromJustError, msgShout)
 
 -- | canvas configure with general zoom update func
 canvasConfigureGenUpdate ::

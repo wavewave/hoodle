@@ -3,33 +3,96 @@
 module Hoodle.Coroutine.Select.Clipboard where
 
 import Control.Lens (set, view, (.~))
-import Control.Monad.State
-import Control.Monad.Trans.Maybe
+import Control.Monad.State (get, liftIO)
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.Foldable as F
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
+  ( GLayer (..),
+    gbuffer,
+    gitems,
+    glayers,
+  )
+import Data.Hoodle.Select (gselSelected)
 import Data.Hoodle.Simple (Item (..))
 import Data.Maybe (fromMaybe)
-import Graphics.Hoodle.Render
-import Graphics.Hoodle.Render.Item
+import Graphics.Hoodle.Render (updatePageBuf)
+import Graphics.Hoodle.Render.Item (cnstrctRItem)
 import Graphics.Hoodle.Render.Type
+  ( hPage2RPage,
+    mkHPage,
+    rItem2Item,
+    selectedLayer,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
+  ( AlterList (Empty, (:-)),
+    Hitted (..),
+    TEitherAlterHitted (..),
+    getA,
+    interleave,
+    takeHitted,
+  )
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( getCurrentPageEitherFromHoodleModeState,
+    getGeometry4CurrCvs,
+    renderCache,
+    updateUhdl,
+    updateXState,
+  )
+import Hoodle.Coroutine.Commit (commit, commit_)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Mode
-import Hoodle.Coroutine.Page
+  ( callRenderer,
+    callRenderer_,
+    invalidateAll,
+    waitSomeEvent,
+  )
+import Hoodle.Coroutine.Mode (modeChange)
+import Hoodle.Coroutine.Page (canvasZoomUpdateAll)
 import Hoodle.ModelAction.Clipboard
-import Hoodle.ModelAction.Page
+  ( callback4Clip,
+    updateClipboard,
+  )
+import Hoodle.ModelAction.Page (updatePageAll)
 import Hoodle.ModelAction.Select
-import Hoodle.ModelAction.Select.Transform
-import Hoodle.Type.Alias
+  ( adjustItemPosition4Paste,
+    toggleCutCopyDelete,
+    updateTempHoodleSelect,
+  )
+import Hoodle.ModelAction.Select.Transform (rItmsInActiveLyr)
+import Hoodle.Type.Alias (Hoodle, Page, SelectMode)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    canvasId,
+    currentPageNum,
+    forBoth',
+    unboxBiAct,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
 import Hoodle.Type.Event
+  ( AllEvent
+      ( UsrEv
+      ),
+    RenderEvent
+      ( GotRItems
+      ),
+    UserEvent
+      ( ActionOrdered,
+        GotClipboardContent,
+        RenderEv,
+        ToSelectMode,
+        ToViewAppendMode
+      ),
+  )
 import Hoodle.Type.HoodleState
-import Hoodle.Type.PageArrangement
+  ( HoodleModeState (SelectState),
+    currentCanvasInfo,
+    currentUnit,
+    getCurrentCanvasId,
+    gtkUIManager,
+    hoodleModeState,
+    unitHoodles,
+  )
+import Hoodle.Type.PageArrangement (PageNum (..))
 
 -- |
 updateTempHoodleSelectM ::

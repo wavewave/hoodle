@@ -4,10 +4,10 @@
 
 module Hoodle.Coroutine.File where
 
-import Control.Applicative
 import Control.Lens (at, over, set, view, (.~), (?~))
-import Control.Monad.State hiding (forM_, mapM, mapM_)
-import Control.Monad.Trans.Crtn
+import Control.Monad (guard, unless, void, when, (<=<))
+import Control.Monad.State (get, gets, lift, liftIO)
+import Control.Monad.Trans.Crtn (CrtnErr (Other))
 import Control.Monad.Trans.Except (ExceptT (..))
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
@@ -17,51 +17,183 @@ import Data.Digest.Pure.MD5 (md5)
 import Data.Foldable (forM_, mapM_)
 import Data.Functor ((<&>))
 import Data.Hoodle.Generic
+  ( gdimension,
+    ghoodleID,
+    gitems,
+    gpages,
+    grevisions,
+    gtitle,
+  )
 import Data.Hoodle.Select
+  ( gselRevisions,
+    gselTitle,
+  )
 import Data.Hoodle.Simple
+  ( Dimension (Dim),
+    Hoodle,
+    Image (..),
+    Item (..),
+    Revision (..),
+    SVG (..),
+    defaultHoodle,
+    hoodleID,
+    revmd5,
+    title,
+  )
 import qualified Data.List as List
-import Data.Maybe
-import Data.Time.Clock
+import Data.Maybe (fromJust, fromMaybe, maybeToList)
+import Data.Time.Clock (getCurrentTime)
 import Graphics.Hoodle.Render (Xform4Page (..), cnstrctRHoodle)
 import Graphics.Hoodle.Render.Generic
-import Graphics.Hoodle.Render.Item
+  ( cairoRender,
+    cairoRenderOption,
+  )
+import Graphics.Hoodle.Render.Item (cnstrctRItem)
 import Graphics.Hoodle.Render.Type
-import Graphics.Hoodle.Render.Type.HitTest
+  ( InBBox (..),
+    InBBoxOption (..),
+    RItem,
+    RenderCache,
+    rHoodle2Hoodle,
+  )
+import Graphics.Hoodle.Render.Type.HitTest (AlterList (..), Hitted (..))
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
+  ( applyActionToAllCVS,
+    getCurrentPageCurr,
+    getHoodleFilePath,
+    pureUpdateUhdl,
+    renderCache,
+    updateUhdl,
+  )
 import Hoodle.Coroutine.Commit
+  ( clearUndoHistory,
+    commit_,
+  )
 import Hoodle.Coroutine.Dialog
+  ( fileChooser,
+    okCancelMessageBox,
+    okMessageBox,
+    textInputDialog,
+  )
 import Hoodle.Coroutine.Draw
+  ( callRenderer,
+    callRenderer_,
+    doIOaction_,
+    invalidateAll,
+    waitSomeEvent,
+  )
 import Hoodle.Coroutine.Layer
+  ( makeNewLayer,
+  )
 import Hoodle.Coroutine.Minibuffer
-import Hoodle.Coroutine.Mode
+  ( minibufDialog,
+  )
+import Hoodle.Coroutine.Mode (modeChange)
 import Hoodle.Coroutine.Page
-import Hoodle.Coroutine.Scroll
-import Hoodle.Coroutine.Select.Clipboard
+  ( canvasZoomUpdateAll,
+    changePage,
+    newPage,
+  )
+import Hoodle.Coroutine.Scroll (adjustScrollbarWithGeometryCvsId)
+import Hoodle.Coroutine.Select.Clipboard (updateTempHoodleSelectM)
 import Hoodle.Coroutine.TextInput
-import Hoodle.GUI.Reflect
+  ( autoPosText,
+    insertItemAt,
+  )
+import Hoodle.GUI.Reflect (reflectUIToggle)
 import Hoodle.ModelAction.File
-import Hoodle.ModelAction.Layer
+  ( checkVersionAndMigrate,
+    embedPDFInHoodle,
+    makeNewHoodleWithPDF,
+    makeNewItemImage,
+    saveHoodle,
+  )
+import Hoodle.ModelAction.Layer (getCurrentLayer)
 import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.Select
-import Hoodle.ModelAction.Window
+  ( getPageFromGHoodleMap,
+    setPage,
+  )
+import Hoodle.ModelAction.Select (makePageSelectMode)
+import Hoodle.ModelAction.Window (setTitleFromFileName)
 import Hoodle.Publish.PDF (renderHoodleToPDF)
 import qualified Hoodle.Script.Coroutine as S
 import Hoodle.Script.Hook
+  ( fileNameSuggestionHook,
+    saveAsHook,
+    shrinkCmd4EmbedImage,
+    warningEmbedImageSize,
+  )
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
-import Hoodle.Type.Event hiding (TypSVG)
+  ( CanvasId,
+    currentPageNum,
+    unboxLens,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
+import Hoodle.Type.Enum (AddDirection (PageBefore))
+import Hoodle.Type.Event
+  ( AllEvent (UsrEv),
+    RenderEvent
+      ( GotRHoodle,
+        GotRItem
+      ),
+    UserEvent
+      ( ActionOrdered,
+        GotOk,
+        GotRevision,
+        GotRevisionInk,
+        RenderEv,
+        ToSelectMode,
+        ToViewAppendMode
+      ),
+  )
 import Hoodle.Type.HoodleState
-import Hoodle.Type.PageArrangement
-import Hoodle.Util
+  ( FileStore (LocalDir),
+    HoodleModeState (SelectState, ViewAppendState),
+    IsOneTimeSelectMode (YesAfterSelect),
+    currentCanvasInfo,
+    currentUnit,
+    doesEmbedImage,
+    doesEmbedPDF,
+    getCurrentCanvasId,
+    getHoodle,
+    gtkUIManager,
+    hoodleFileControl,
+    hoodleFileName,
+    hoodleModeState,
+    hookSet,
+    isOneTimeSelectMode,
+    isSaved,
+    lastSavedTime,
+    resetHoodleModeStateBuffers,
+    settings,
+    syncMD5History,
+    unitHoodles,
+  )
+import Hoodle.Type.PageArrangement (PageCoordinate (..), PageNum (..))
+import Hoodle.Util (mkTmpFile, msgShout)
 import System.Directory
+  ( createDirectory,
+    doesDirectoryExist,
+    doesFileExist,
+    getDirectoryContents,
+    getHomeDirectory,
+    renameFile,
+  )
 import System.FilePath
+  ( splitFileName,
+    takeExtension,
+    (<.>),
+    (</>),
+  )
 import System.IO (IOMode (..), hClose, hFileSize, openFile)
 import System.Process
-import Text.Hoodle.Builder
-import Text.Hoodle.Migrate.FromXournal
+  ( createProcess,
+    proc,
+  )
+import Text.Hoodle.Builder (builder)
+import Text.Hoodle.Migrate.FromXournal (mkHoodleFromXournal)
 import qualified Text.Hoodlet.Parse.Attoparsec as Hoodlet
 import qualified Text.Xournal.Parse.Conduit as XP
 --

@@ -3,29 +3,63 @@
 
 module Hoodle.Coroutine.Network where
 
-import Control.Concurrent hiding (yield)
-import Control.Lens
-import Control.Monad
-import Control.Monad.Loops
-import Control.Monad.State (get)
-import Control.Monad.Trans
+import Control.Concurrent
+  ( MVar,
+    ThreadId,
+    forkIO,
+    killThread,
+    newEmptyMVar,
+    putMVar,
+    readMVar,
+  )
+import Control.Lens (view)
+import Control.Monad (forM_, forever)
+import Control.Monad.Loops (unfoldM_)
+import Control.Monad.State (get, liftIO)
+import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.Binary as Bi
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as LB
-import Data.IORef
+import Data.IORef (newIORef, readIORef, writeIORef)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
-import Data.Word
+import Data.Word (Word32)
 import qualified Graphics.UI.Gtk as Gtk
-import Hoodle.Coroutine.Draw
-import Hoodle.Script.Hook
-import Hoodle.Type.Coroutine
+import Hoodle.Coroutine.Draw (invalidateInBBox, nextevent)
+import Hoodle.Script.Hook (getIPaddress)
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
 import Hoodle.Type.Enum
+  ( DrawFlag (Efficient),
+  )
 import Hoodle.Type.Event
+  ( AllEvent (UsrEv),
+    NetworkEvent
+      ( NetworkCloseDialog,
+        NetworkClosed,
+        NetworkInitialized,
+        NetworkReceived
+      ),
+    UserEvent
+      ( NetworkProcess,
+        OkCancel,
+        UpdateCanvas
+      ),
+  )
 import Hoodle.Type.HoodleState (hookSet)
 import Network.Info
+  ( IPv4 (..),
+    MAC (..),
+    NetworkInterface (ipv4, mac),
+    getNetworkInterfaces,
+  )
 import Network.Simple.TCP
+  ( HostPreference (Host),
+    accept,
+    listen,
+    recv,
+    send,
+  )
 
 server :: (AllEvent -> IO ()) -> HostPreference -> T.Text -> IO ()
 server evhandler ip txtorig = do

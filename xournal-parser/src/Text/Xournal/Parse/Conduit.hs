@@ -6,27 +6,41 @@
 
 module Text.Xournal.Parse.Conduit where
 
-import Control.Applicative
-import Control.Category
-import Control.Monad
-import Control.Monad.Catch
-import Control.Monad.Trans
+import Control.Applicative ()
+import Control.Category (id, (.))
+import Control.Monad ((>=>))
+import Control.Monad.Catch (MonadThrow)
+import Control.Monad.Trans (MonadIO (..))
 import qualified Data.ByteString as S
-import Data.Conduit
-import Data.Conduit.Binary hiding (dropWhile)
-import Data.Conduit.List as CL
-import Data.Conduit.Zlib
+import Data.Conduit (Sink, ($$), (=$=))
+import Data.Conduit.Binary (sourceHandle)
+import qualified Data.Conduit.List as CL
+import Data.Conduit.Zlib (ungzip)
 import Data.List (foldl')
 import Data.Strict.Tuple (Pair (..))
 import qualified Data.Text as T
-import Data.Text.Encoding
-import Data.Text.Read
+import Data.Text.Encoding (encodeUtf8)
+import Data.Text.Read (decimal, double)
 import Data.XML.Types
+  ( Content (..),
+    Event (..),
+    nameLocalName,
+  )
 import Data.Xournal.Simple
+  ( Background (..),
+    Dimension (..),
+    Layer (..),
+    Page (..),
+    Stroke (..),
+    Xournal (..),
+    s_color,
+    s_tool,
+  )
 import Lens.Micro (set)
-import System.IO
-import Text.XML.Stream.Parse hiding (many)
-import Text.Xournal.Parse.Zlib
+import System.IO (Handle, IOMode (..), withFile)
+import Text.XML.Stream.Parse (def, parseBytes)
+-- hiding (many)
+import Text.Xournal.Parse.Zlib (checkIfBinary)
 import Prelude hiding (dropWhile, id, (.))
 
 -- * utils
@@ -34,7 +48,7 @@ import Prelude hiding (dropWhile, id, (.))
 -- |
 dropWhile :: (Show a, Monad m) => (a -> Bool) -> Sink a m ()
 dropWhile p = do
-  x <- peek
+  x <- CL.peek
   case x of
     Nothing -> return ()
     Just e ->
@@ -113,7 +127,7 @@ drop2NextStartOrEnd ::
   Sink Event m (Either (T.Text, Event) T.Text)
 drop2NextStartOrEnd = do
   dropWhile (not . isEventStartEnd)
-  melm <- peek
+  melm <- CL.peek
   case melm of
     Just elm@(EventBeginElement name _) ->
       return (Left (nameLocalName name, elm))

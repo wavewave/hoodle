@@ -57,16 +57,17 @@ main = do
     dflags <- GHC.getSessionDynFlags
     let presult = runParser dflags contents srcfile Parser.parseModule
     case presult of
-      POk _ r -> do
+      POk _ r -> liftIO $ do
         let modu :: HsModule GhcPs
             modu = unLoc r
             implicitImports = filter (isImplicitImport . unLoc) $ hsmodImports modu
-        liftIO $ putStrLn "implicit imports"
-        liftIO $ putStrLn "----------------"
-        for_ implicitImports $ \imp ->
-          liftIO $ putStrLn $ showSDoc dflags (ppr imp)
-        liftIO $ putStrLn "----------------"
-        unless (null implicitImports) (liftIO exitFailure)
+        unless (null implicitImports) $ do
+          putStrLn "implicit imports"
+          putStrLn "----------------"
+          for_ implicitImports $ \imp ->
+            putStrLn $ showSDoc dflags (ppr imp)
+          putStrLn "----------------"
+          exitFailure
       _ -> do
         liftIO $ putStrLn "Parse Failed"
         liftIO exitFailure

@@ -22,6 +22,7 @@ import HsExtension (GhcPs)
 import HsImpExp (ImportDecl (..))
 import HsSyn (HsModule (..))
 import Lexer (P (unP), ParseResult (..), mkPState)
+import Module (moduleNameString)
 import qualified Options.Applicative as OA
 import Outputable (ppr, showSDoc)
 import qualified Parser
@@ -44,7 +45,8 @@ runParser flags str filename parser = unP parser parseState
     parseState = mkPState flags buffer location
 
 isImplicitImport :: ImportDecl GhcPs -> Bool
-isImplicitImport (ImportDecl {ideclQualified, ideclHiding})
+isImplicitImport (ImportDecl {ideclName, ideclQualified, ideclHiding})
+  | moduleNameString (unLoc ideclName) == "Prelude" = False
   | ideclQualified = False
   | Just (False, _) <- ideclHiding = False
   | otherwise = True

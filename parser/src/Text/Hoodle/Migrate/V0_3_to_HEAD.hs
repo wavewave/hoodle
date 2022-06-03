@@ -4,7 +4,7 @@ module Text.Hoodle.Migrate.V0_3_to_HEAD where
 
 import qualified Data.Hoodle.Simple as NH
 import qualified Data.Hoodle.Simple.V0_3 as OH
-import Lens.Micro
+import Lens.Micro (set)
 import Lens.Micro.Extras (view)
 
 dim2Dim :: OH.Dimension -> NH.Dimension

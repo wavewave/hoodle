@@ -3,14 +3,25 @@
 
 module Text.Hoodlet.Parse.Attoparsec where
 
-import Control.Applicative
-import Data.Attoparsec.ByteString
+import Control.Applicative ((<|>))
 import Data.Attoparsec.ByteString.Char8
+  ( Parser,
+    char,
+    string,
+    try,
+    (<?>),
+  )
 import qualified Data.ByteString.Char8 as B
---
 import qualified Data.Hoodle.Simple as H
---
 import Text.Hoodle.Parse.Attoparsec
+  ( hoodleversion,
+    img,
+    link,
+    onestroke,
+    svgObj,
+    trim,
+    xmlheader,
+  )
 
 -- |
 hoodlet :: Parser H.Item

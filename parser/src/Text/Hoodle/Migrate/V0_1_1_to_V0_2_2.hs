@@ -4,16 +4,14 @@
 module Text.Hoodle.Migrate.V0_1_1_to_V0_2_2 where
 
 import Control.Error.Util (hoistEither)
-import Control.Monad.Trans
-import Control.Monad.Trans.Except
-import Data.Attoparsec.ByteString
+import Control.Monad.Trans (lift)
+import Control.Monad.Trans.Except (runExceptT)
+import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.ByteString.Char8 as B
---
 import qualified Data.Hoodle.Simple.V0_1_1 as OH
 import qualified Data.Hoodle.Simple.V0_2_2 as NH
-import Lens.Micro
+import Lens.Micro (set)
 import Lens.Micro.Extras (view)
---
 import qualified Text.Hoodle.Parse.Attoparsec.V0_1_1 as OP
 import qualified Text.Hoodle.Parse.Attoparsec.V0_2_2 as NP
 

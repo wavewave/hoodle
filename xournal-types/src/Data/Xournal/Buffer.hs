@@ -2,10 +2,14 @@
 
 module Data.Xournal.Buffer where
 
-import Data.IntMap
-import Data.Xournal.BBox
+import Data.IntMap (IntMap)
+import Data.Xournal.BBox (StrokeBBox)
 import Data.Xournal.Generic
-import Data.Xournal.Select
+  ( GLayerBuf,
+    GPage,
+    GXournal,
+  )
+import Data.Xournal.Select (ZipperSelect)
 
 type TLayerBBoxBuf buf = GLayerBuf buf [] StrokeBBox
 

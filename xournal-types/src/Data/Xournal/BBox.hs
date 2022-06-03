@@ -4,15 +4,24 @@
 
 module Data.Xournal.BBox where
 
-import Control.Applicative
-import Control.Monad
+import Control.Monad (guard, liftM2)
 import qualified Data.Foldable as F
-import Data.Monoid
-import Data.Serialize
-import Data.Strict.Tuple
+import Data.Serialize (Serialize, get, put)
+import Data.Strict.Tuple (Pair, fst, snd)
 import Data.Xournal.Generic
+  ( GLayer,
+    GPage,
+    GStrokeable,
+    GXournal,
+    gFromStroke,
+    gToStroke,
+  )
 import Data.Xournal.Simple
-import Data.Xournal.Util
+  ( Background (..),
+    Dimension (..),
+    Stroke (..),
+  )
+import Data.Xournal.Util (fst3, snd3, trd3)
 import Prelude hiding (fst, snd)
 import qualified Prelude as Prelude (fst, snd)
 

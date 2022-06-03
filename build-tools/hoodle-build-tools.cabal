@@ -21,6 +21,15 @@ maintainer:         ianwookim@gmail.com
 -- category:
 extra-source-files: CHANGELOG.md
 
+library
+  hs-source-dirs:     src
+  Build-Depends:      base == 4.*,
+                      containers,
+                      ghc == 8.8.*,
+                      transformers
+  Exposed-Modules:
+                      Plugin.CheckImports
+
 executable checkImports
     main-is:          checkImports.hs
 

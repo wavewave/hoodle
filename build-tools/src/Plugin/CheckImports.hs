@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Plugin.CheckImports (plugin) where
@@ -9,8 +10,15 @@ import CoreMonad
     getModule,
     getOrigNameCache,
   )
+import Data.Char (isAlpha)
 import Data.Foldable (for_)
 import Data.IORef (readIORef)
+import Data.List (concat, foldl', intercalate, sort)
+import Data.Map (Map)
+import qualified Data.Map as M
+import Data.Monoid ((<>))
+import Data.Set (Set)
+import qualified Data.Set as S
 import DynFlags (DynFlags)
 import GHC (getModuleInfo)
 import GhcPlugins
@@ -27,11 +35,15 @@ import GhcPlugins
 import HsDecls (HsGroup (..))
 import HsExtension (GhcRn)
 import HscTypes (HsParsedModule (..), ModIface (..))
-import Module (lookupModuleEnv)
+import IOEnv (failWithM)
+import Module (ModuleName, lookupModuleEnv)
+import Name (Name, getName, localiseName)
 import Outputable (Outputable (ppr), showSDoc)
 import RdrName
   ( GlobalRdrElt (..),
     GlobalRdrEnv,
+    ImpDeclSpec (..),
+    ImportSpec (..),
     greLabel,
     pprGlobalRdrEnv,
     pprNameProvenance,
@@ -41,48 +53,37 @@ import TcRnTypes (IfM, TcGblEnv (..), TcM)
 plugin :: Plugin
 plugin =
   defaultPlugin
-    { parsedResultAction = parsedPlugin,
-      renamedResultAction = renamedAction,
-      typeCheckResultAction = typecheckPlugin,
-      interfaceLoadAction = interfaceLoadPlugin
-      -- installCoreToDos = install
+    { typeCheckResultAction = typecheckPlugin
     }
 
 printPpr :: (Outputable a, MonadIO m) => DynFlags -> a -> m ()
 printPpr dflags = liftIO . putStrLn . showSDoc dflags . ppr
 
-parsedPlugin ::
-  [CommandLineOption] ->
-  ModSummary ->
-  HsParsedModule ->
-  Hsc HsParsedModule
-parsedPlugin _ _ mod = do
-  liftIO $ putStrLn "my TEst"
-  dflags <- getDynFlags
-  printPpr dflags (hpm_module mod)
-  pure mod
+formatName :: DynFlags -> Name -> String
+formatName dflags name =
+  let str = showSDoc dflags . ppr . localiseName $ name
+   in case str of
+        (x : xs) ->
+          if isAlpha x
+            then str
+            else "(" <> str <> ")"
+        _ -> str
 
-renamedAction ::
-  [CommandLineOption] ->
-  TcGblEnv ->
-  HsGroup GhcRn ->
-  TcM (TcGblEnv, HsGroup GhcRn)
-renamedAction _ env grp = do
-  liftIO $ putStrLn "renamed action invoked"
-  dflags <- getDynFlags
-  printPpr dflags grp
-  printPpr dflags (hs_valds grp)
-  pure (env, grp)
+formatImportedNames :: [String] -> String
+formatImportedNames names =
+  case fmap (<> ",\n") $ sort names of
+    line0 : lines ->
+      let line0' = "  ( " <> line0
+          lines' = fmap ("    " <>) lines
+          footer = "  )"
+       in concat ([line0'] <> lines' <> [footer])
+    _ -> "  ()"
 
-interfaceLoadPlugin ::
-  [CommandLineOption] ->
-  ModIface ->
-  IfM lcl ModIface
-interfaceLoadPlugin _ iface = do
-  dflags <- getDynFlags
-  liftIO $ putStrLn "interface loaded"
-  printPpr dflags (mi_module iface)
-  return iface
+mkModuleNameMap :: GlobalRdrElt -> [(ModuleName, Name)]
+mkModuleNameMap gre = do
+  spec <- gre_imp gre
+  let modName = is_mod $ is_decl spec
+  pure (modName, gre_name gre)
 
 typecheckPlugin ::
   [CommandLineOption] ->
@@ -94,27 +95,17 @@ typecheckPlugin _ modsummary tc = do
   dflags <- getDynFlags
   let globalRdrEnv :: GlobalRdrEnv
       globalRdrEnv = tcg_rdr_env tc
-
   usedGREs :: [GlobalRdrElt] <-
     liftIO $ readIORef (tcg_used_gres tc)
-  for_ usedGREs $ \gre -> liftIO $ do
-    printPpr dflags (gre_name gre)
-    putStrLn $ showSDoc dflags $ pprNameProvenance gre
+  let moduleImportMap :: Map ModuleName (Set Name)
+      moduleImportMap =
+        foldl' (\(!m) (modu, name) -> M.insertWith S.union modu (S.singleton name) m) M.empty $
+          concatMap mkModuleNameMap usedGREs
+  for_ (M.toList moduleImportMap) $ \(modu, names) -> liftIO $ do
+    putStrLn "---------"
+    printPpr dflags modu
+    let imported = fmap (formatName dflags) $ S.toList names
+    putStrLn $ formatImportedNames imported
   printPpr dflags modsummary
+  failWithM "force fail"
   pure tc
-
-{-  env <- getHscEnv
-  dflags <- getDynFlags
-  let printPpr :: (Outputable a) => a -> CoreM ()
-      printPpr = putMsgS . showSDoc dflags . ppr
-  modu <- getModule
-  printPpr modu
-  nameCache <- getOrigNameCache
-  let moccEnv = lookupModuleEnv nameCache modu
-  case moccEnv of
-    Nothing -> putMsgS "Nothing"
-    Just occEnv -> printPpr occEnv
-  -- moduInfo <- getModuleInfo modu
-  -- printPpr moduInfo
-  pure todo
--}

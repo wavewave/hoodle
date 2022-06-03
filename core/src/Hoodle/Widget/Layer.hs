@@ -1,30 +1,81 @@
 module Hoodle.Widget.Layer where
 
 import Control.Lens (over, set, view, (.~))
-import Control.Monad.State
+import Control.Monad.State (get, liftIO, modify, put)
 import Data.Functor.Identity (Identity (..))
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
+import Data.Hoodle.BBox (BBox (..))
+import Data.Hoodle.Simple (Dimension (Dim))
 import Data.List (delete)
-import Data.Sequence
+import Data.Sequence (fromList)
 import Data.Time
-import Graphics.Hoodle.Render.Util.HitTest
+  ( UTCTime,
+    getCurrentTime,
+  )
+import Graphics.Hoodle.Render.Util.HitTest (isPointInBBox)
 import qualified Graphics.Rendering.Cairo as Cairo
 import Hoodle.Accessor
+  ( pureUpdateUhdl,
+    renderCache,
+  )
 import Hoodle.Coroutine.Draw
+  ( invalidate,
+    invalidateInBBox,
+    nextevent,
+  )
 import Hoodle.Coroutine.Layer
-import Hoodle.Coroutine.Pen
-import Hoodle.Device
+  ( gotoNextLayer,
+    gotoPrevLayer,
+  )
+import Hoodle.Coroutine.Pen (processWithDefTimeInterval)
+import Hoodle.Device (PointerCoord)
 import Hoodle.HitTest (hitLassoPoint)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( CanvasId,
+    CanvasInfo,
+    canvasWidgets,
+    forBoth,
+    forBoth',
+    unboxBiAct,
+    unboxBiXform,
+    unboxLens,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
+import Hoodle.Type.Event (UserEvent (PenMove, PenUp))
 import Hoodle.Type.HoodleState
+  ( currentCanvasInfo,
+    currentUnit,
+    getCanvasInfo,
+    getHoodle,
+    setCanvasInfo,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    CanvasDimension (..),
+  )
 import Hoodle.Type.Widget
+  ( WidgetItem (LayerWidget),
+    allWidgets,
+    doesUseLayerWidget,
+    layerWidgetConfig,
+    layerWidgetPosition,
+    layerWidgetShowContent,
+    widgetConfig,
+  )
 import Hoodle.View.Coordinate
+  ( CanvasGeometry,
+    canvasDim,
+    desktop2Canvas,
+    device2Desktop,
+  )
 import Hoodle.View.Draw
+  ( canvasImageSurface,
+    doubleBufferFlush,
+    drawLayerWidget,
+    drawWidgets,
+    virtualDoubleBufferDraw,
+  )
 
 -- |
 data LWAction = Close | ToggleShowContent | Move (CanvasCoordinate, CanvasCoordinate)

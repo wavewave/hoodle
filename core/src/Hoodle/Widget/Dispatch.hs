@@ -2,10 +2,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Widget.Dispatch
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
@@ -18,28 +14,61 @@ module Hoodle.Widget.Dispatch where
 
 import Control.Applicative ((<|>))
 import Control.Lens (view)
-import Control.Monad.State hiding (forM_)
-import Control.Monad.Trans.Maybe
+import Control.Monad (guard, (<=<))
+import Control.Monad.State (get, lift, liftIO)
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (forM_)
---
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
+import Data.Hoodle.BBox (bbxed_content)
+import Data.Hoodle.Simple (Link (..))
 import qualified Data.Text.Encoding as TE
-import Graphics.Hoodle.Render.Type.Item
-import Graphics.Hoodle.Render.Util.HitTest
---
-import Hoodle.Coroutine.Link
-import Hoodle.Device
+import Graphics.Hoodle.Render.Type.Item (RItem (..))
+import Graphics.Hoodle.Render.Util.HitTest (isPointInBBox)
+import Hoodle.Coroutine.Link (openLinkAction)
+import Hoodle.Device (PointerCoord (..))
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    CanvasInfo,
+    currentPageNum,
+    drawArea,
+    forBoth',
+    notifiedItem,
+    pageArrangement,
+    unboxBiAct,
+    viewInfo,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.HoodleState
+  ( HoodleState,
+    currentUnit,
+    doesFollowLinks,
+    getCanvasInfo,
+    settings,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Util
+  ( PageCoordinate (..),
+    PageNum (..),
+  )
+import Hoodle.Util (urlParse)
 import Hoodle.View.Coordinate
+  ( desktop2Page,
+    device2Desktop,
+    makeCanvasGeometry,
+  )
 import Hoodle.Widget.Clock
+  ( checkPointerInClock,
+    startClockWidget,
+  )
 import Hoodle.Widget.Layer
+  ( checkPointerInLayer,
+    startLayerWidget,
+  )
 import Hoodle.Widget.PanZoom
+  ( PanZoomTouch (PenMode),
+    checkPointerInPanZoom,
+    startPanZoomWidget,
+  )
 
 widgetCheckPen ::
   CanvasId ->

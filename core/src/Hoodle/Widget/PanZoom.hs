@@ -1,8 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Widget.PanZoom
 -- Copyright   : (c) 2013-2015 Ian-Woo Kim
@@ -16,31 +14,114 @@
 module Hoodle.Widget.PanZoom where
 
 import Control.Lens (over, set, view, (.~))
-import Control.Monad.Identity
-import Control.Monad.State
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
+import Control.Monad (void, when)
+import Control.Monad.Identity (Identity (..))
+import Control.Monad.State (get, gets, liftIO, modify)
+import Data.Hoodle.BBox (BBox (..))
+import Data.Hoodle.Simple (Dimension (..))
 import Data.List (delete)
 import Data.Time.Clock
-import Graphics.Hoodle.Render.Util.HitTest
+  ( UTCTime,
+    getCurrentTime,
+  )
+import Graphics.Hoodle.Render.Util.HitTest (isPointInBBox)
 import qualified Graphics.Rendering.Cairo as Cairo
 import Hoodle.Accessor
+  ( getCanvasGeometryCvsId,
+    lensSetToggleUIForFlag,
+    pureUpdateUhdl,
+    renderCache,
+  )
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Page
-import Hoodle.Coroutine.Pen
-import Hoodle.Coroutine.Scroll
+  ( invalidate,
+    invalidateAll,
+    invalidateInBBox,
+    nextevent,
+    updateFlagFromToggleUI,
+    waitSomeEvent,
+  )
+import Hoodle.Coroutine.Page (canvasZoomUpdateGenRenderCvsId)
+import Hoodle.Coroutine.Pen (processWithDefTimeInterval)
+import Hoodle.Coroutine.Scroll (moveViewPortBy)
 import Hoodle.Device
-import Hoodle.ModelAction.Page
+  ( PointerCoord,
+    dev_touch_str,
+  )
+import Hoodle.ModelAction.Page (zoomRatioFrmRelToCurr)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( CanvasId,
+    CanvasInfo,
+    canvasWidgets,
+    currentPageNum,
+    drawArea,
+    forBoth,
+    forBoth',
+    pageArrangement,
+    unboxBiAct,
+    unboxBiXform,
+    unboxLens,
+    viewInfo,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
+  ( AllEvent (UsrEv),
+    UserEvent
+      ( ActionOrdered,
+        PenMove,
+        PenUp,
+        TouchMove,
+        TouchUp
+      ),
+  )
 import Hoodle.Type.HoodleState
+  ( currentCanvas,
+    currentCanvasInfo,
+    currentUnit,
+    deviceList,
+    doesNotInvalidate,
+    doesUseTouch,
+    getCanvasInfo,
+    getHoodle,
+    setCanvasInfo,
+    settings,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    CanvasDimension (..),
+    DesktopCoordinate (..),
+    PageNum (..),
+    ZoomMode (Zoom),
+  )
 import Hoodle.Type.Widget
+  ( WidgetItem (PanZoomWidget),
+    allWidgets,
+    doesUsePanZoomWidget,
+    panZoomWidgetConfig,
+    panZoomWidgetPosition,
+    panZoomWidgetTouchIsZoom,
+    widgetConfig,
+  )
 import Hoodle.View.Coordinate
+  ( CanvasGeometry
+      ( canvas2Desktop,
+        canvasDim,
+        desktop2Canvas,
+        desktop2Page,
+        page2Desktop
+      ),
+    device2Desktop,
+    makeCanvasGeometry,
+  )
 import Hoodle.View.Draw
-import System.Process
+  ( canvasImageSurface,
+    doubleBufferFlush,
+    drawWidgets,
+    renderPanZoomWidget,
+    virtualDoubleBufferDraw,
+  )
+import System.Process (readProcess)
 
 --
 

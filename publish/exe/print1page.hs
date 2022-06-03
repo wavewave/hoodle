@@ -1,15 +1,26 @@
 module Main where
 
-import Control.Monad
-import Control.Monad.State
+import Control.Monad (when)
+import Control.Monad.State (runStateT)
 import Data.Attoparsec.ByteString (parse)
 import Data.Attoparsec.Types (IResult (Done))
 import qualified Data.ByteString as B
 import Data.Hoodle.Simple
+  ( Dimension (Dim),
+    Hoodle (..),
+    Page (..),
+  )
 import Graphics.Hoodle.Render
+  ( initRenderContext,
+    renderPageStateT,
+  )
 import Graphics.Rendering.Cairo
-import System.Environment
-import Text.Hoodle.Parse.Attoparsec
+  ( renderWith,
+    withPDFSurface,
+    withSVGSurface,
+  )
+import System.Environment (getArgs)
+import Text.Hoodle.Parse.Attoparsec (hoodle)
 
 -- |
 main :: IO ()

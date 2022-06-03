@@ -11,7 +11,7 @@ Category:       Application
 Tested-with:    GHC == 8.6
 Build-Type: 	Simple
 Cabal-Version:  2.0
-data-files:     
+data-files:
 Source-repository head
   type: git
   location: http://www.github.com/wavewave/hoodle
@@ -20,24 +20,24 @@ Library
   hs-source-dirs:  lib
   ghc-options: 	    -Wall -Werror
   ghc-prof-options: -fprof-auto -fprof-cafs
-  Build-Depends:   
-                   base == 4.*, 
+  Build-Depends:
+                   base == 4.*,
                    attoparsec >= 0.10,
-                   bytestring >= 0.9, 
+                   bytestring >= 0.9,
                    cairo >= 0.13.0.3,
                    containers >= 0.4,
                    directory > 1,
-                   directory-tree, 
-                   filepath > 1, 
+                   directory-tree,
+                   filepath > 1,
                    gtk3 >= 0.14,
                    HTTP,
-                   io-streams, 
+                   io-streams,
                    lens >= 2.5,
                    mtl > 2,
                    network-uri > 2.6,
-                   pdf-toolbox-core >= 0.0.3, 
-                   pdf-toolbox-document >= 0.0.3, 
-                   process >= 1.1, 
+                   pdf-toolbox-core >= 0.0.3,
+                   pdf-toolbox-document >= 0.0.3,
+                   process >= 1.1,
                    transformers >= 0.3,
                    unordered-containers,
                    uuid >= 1.2.7,
@@ -45,7 +45,7 @@ Library
                    hoodle-render >= 0.6,
                    hoodle-types >= 0.4
 
-  Exposed-modules: 
+  Exposed-modules:
                    Hoodle.Publish.PDF
 
 Executable hoodle-publish
@@ -57,7 +57,7 @@ Executable hoodle-publish
   Build-Depends:   base == 4.*,
                    cmdargs,
                    directory,
-                   directory-tree, 
+                   directory-tree,
                    filepath,
                    hoodle-publish,
                    gtk3 >= 0.14
@@ -74,4 +74,5 @@ executable print1page
       hoodle-render,
       hoodle-types,
       mtl
+
   default-language: Haskell2010

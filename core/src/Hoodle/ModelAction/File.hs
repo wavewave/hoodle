@@ -2,8 +2,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.File
 -- Copyright   : (c) 2011-2015 Ian-Woo Kim
@@ -15,25 +13,50 @@
 module Hoodle.ModelAction.File where
 
 import Control.Lens (set, view)
-import Data.Attoparsec.ByteString.Char8
-import Data.ByteString.Base64
+import Data.Attoparsec.ByteString.Char8 (parseOnly)
+import Data.ByteString.Base64 (encode)
 import qualified Data.ByteString.Char8 as C
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Hoodle.Simple
-import Data.Maybe
-import Data.Time.Clock
+  ( Background (..),
+    Dimension (..),
+    Hoodle,
+    Image (..),
+    Item (..),
+    Page (..),
+    embeddedPdf,
+    emptyHoodle,
+    emptyLayer,
+    pages,
+    title,
+  )
+import Data.Maybe (listToMaybe, mapMaybe)
+import Data.Time.Clock (getCurrentTime)
 import qualified Data.Traversable as T
 import Graphics.GD.ByteString
-import Graphics.Hoodle.Render.Background
-import Graphics.Hoodle.Render.Type.Hoodle
+  ( imageSize,
+    loadJpegFile,
+    loadPngFile,
+    savePngByteString,
+  )
+import Graphics.Hoodle.Render.Background (popplerGetDocFromFile)
+import Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import Hoodle.Type.HoodleState
-import Hoodle.Util
+  ( FileStore (LocalDir, TempDir),
+    UnitHoodle,
+    getHoodle,
+    hoodleFileControl,
+    hoodleFileName,
+    isSaved,
+    lastSavedTime,
+  )
+import Hoodle.Util (mkTmpFile)
 import System.Directory (canonicalizePath)
 import System.FilePath (takeExtension)
 import System.IO (IOMode (..), hClose, hFileSize, openFile)
-import System.Process
+import System.Process (readProcess)
 import Text.Hoodle.Builder (builder)
 import qualified Text.Hoodle.Migrate.V0_2_2_to_V0_3 as MV
 import qualified Text.Hoodle.Migrate.V0_3_to_HEAD as MVHEAD

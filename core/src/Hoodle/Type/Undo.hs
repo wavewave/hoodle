@@ -1,6 +1,14 @@
 module Hoodle.Type.Undo where
 
 import Data.Hoodle.Zipper
+  ( SeqZipper,
+    appendDropSecond,
+    chopFirst,
+    current,
+    moveLeft,
+    moveRight,
+    singletonSZ,
+  )
 
 data UndoTable a = UndoTable
   { undo_allowednum :: Int,

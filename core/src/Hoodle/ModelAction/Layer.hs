@@ -1,7 +1,5 @@
 {-# LANGUAGE CPP #-}
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Layer
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
@@ -12,20 +10,15 @@
 -- Portability : GHC
 module Hoodle.ModelAction.Layer where
 
--- from other packages
-import Control.Category
+import Control.Category ((.))
 import Control.Lens (over, view)
--- from hoodle-platform
-import Data.Hoodle.Generic
-import Data.Hoodle.Zipper
-import Data.IORef
-import Graphics.Hoodle.Render.Type
+import Data.Hoodle.Generic (glayers)
+import Data.Hoodle.Zipper (current, replace)
+import Data.IORef (IORef, modifyIORef)
+import Graphics.Hoodle.Render.Type (RLayer)
 import qualified Graphics.UI.Gtk as Gtk
---
-
-import Hoodle.Type.Alias
-import Hoodle.Util
---
+import Hoodle.Type.Alias (EditMode, Page)
+import Hoodle.Util (maybeRead)
 import Prelude hiding (id, (.))
 
 -- |

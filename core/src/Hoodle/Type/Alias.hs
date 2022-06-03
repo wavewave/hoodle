@@ -4,6 +4,11 @@
 module Hoodle.Type.Alias where
 
 import Graphics.Hoodle.Render.Type
+  ( HHoodle,
+    HPage,
+    RHoodle,
+    RPage,
+  )
 
 -- |
 data EditMode = EditMode

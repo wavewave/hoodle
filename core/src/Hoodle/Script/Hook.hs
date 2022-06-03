@@ -1,7 +1,7 @@
 module Hoodle.Script.Hook where
 
-import Data.Hoodle.Simple
-import Graphics.Hoodle.Render.Type.Hoodle
+import Data.Hoodle.Simple (Hoodle, Item)
+import Graphics.Hoodle.Render.Type.Hoodle (RPage)
 
 -- |
 data Hook = Hook

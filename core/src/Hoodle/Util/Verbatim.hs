@@ -1,6 +1,4 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
+-- {-# OPTIONS_GHC -fplugin Plugin.CheckImports #-}
 
 -- |
 -- Module      : Hoodle.Util.Verbatim
@@ -12,8 +10,8 @@
 -- Portability : GHC
 module Hoodle.Util.Verbatim where
 
-import Language.Haskell.TH.Lib
-import Language.Haskell.TH.Quote
+import Language.Haskell.TH.Lib (litE, stringL)
+import Language.Haskell.TH.Quote (QuasiQuoter (..))
 
 verbatim :: QuasiQuoter
 verbatim =

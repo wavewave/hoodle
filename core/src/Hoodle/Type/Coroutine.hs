@@ -5,21 +5,39 @@
 
 module Hoodle.Type.Coroutine where
 
-import Control.Concurrent
+import Control.Concurrent (MVar)
 import Control.Error.Util (hoistEither)
 import Control.Lens ((%~), (.~), (^.))
-import Control.Monad.Reader
-import Control.Monad.State
-import Control.Monad.Trans.Crtn
+import Control.Monad (void)
+import Control.Monad.Reader (ReaderT (..))
+import Control.Monad.State (gets, modify, runStateT)
+import Control.Monad.Trans (lift, liftIO)
+import Control.Monad.Trans.Crtn (CrtnErr (Other), request, (<==|))
 import qualified Control.Monad.Trans.Crtn.Driver as D
-import Control.Monad.Trans.Crtn.Logger
+import Control.Monad.Trans.Crtn.Logger (writeLog)
 import Control.Monad.Trans.Crtn.Object
+  ( Arg (..),
+    CObjT,
+    EStT,
+    Res (Ign, Res),
+    SObjBT,
+    SObjT,
+  )
 import Control.Monad.Trans.Crtn.Queue
-import Control.Monad.Trans.Crtn.World
+  ( bqueue,
+    emptyQueue,
+    enqueue,
+    fqueue,
+  )
+import Control.Monad.Trans.Crtn.World (WorldOp (FlushLog, FlushQueue, GiveEvent))
 import Control.Monad.Trans.Except (runExceptT)
-import Hoodle.Type.Event
+import Hoodle.Type.Event (AllEvent, mkIOaction)
 import Hoodle.Type.HoodleState
-import Hoodle.Util
+  ( HoodleState,
+    tempLog,
+    tempQueue,
+  )
+import Hoodle.Util (errorlog)
 
 -- |
 data MainOp i o where

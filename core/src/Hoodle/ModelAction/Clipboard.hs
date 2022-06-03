@@ -1,7 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Clipboard
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
@@ -14,23 +10,24 @@
 -- Clipboard io actions
 module Hoodle.ModelAction.Clipboard where
 
--- from other package
 import Control.Lens (view)
-import Control.Monad.Trans
+import Control.Monad.Trans (liftIO)
 import qualified Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as C8
--- from hoodle-platform
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple (Item)
 import qualified Data.Serialize as Se
 import qualified Graphics.UI.Gtk as Gtk
--- import           Graphics.Hoodle.Render.Type
--- from this package
-import Hoodle.ModelAction.Select
-import Hoodle.Script.Hook
+import Hoodle.ModelAction.Select (togglePaste)
+import Hoodle.Script.Hook (afterUpdateClipboardHook)
 import Hoodle.Type.Event
+  ( AllEvent (UsrEv),
+    UserEvent (GotClipboardContent),
+  )
 import Hoodle.Type.HoodleState
-
---
+  ( HoodleState,
+    gtkUIManager,
+    hookSet,
+  )
 
 -- |
 updateClipboard :: HoodleState -> [Item] -> IO HoodleState

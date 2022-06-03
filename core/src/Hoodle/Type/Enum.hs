@@ -4,11 +4,12 @@ module Hoodle.Type.Enum where
 
 import Control.Lens (Lens', lens)
 import qualified Data.ByteString.Char8 as B
---
 import Data.Hoodle.Predefined
+  ( predefinedPencolor,
+    rgbaToHEX,
+  )
 import qualified Data.Map as M
---
-import Hoodle.Util
+import Hoodle.Util (fromJustError)
 
 -- | drawing efficiency
 data DrawFlag = Clear | BkgEfficient | Efficient

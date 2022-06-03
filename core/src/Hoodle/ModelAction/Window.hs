@@ -5,22 +5,65 @@
 module Hoodle.ModelAction.Window where
 
 import Control.Lens (view)
-import Control.Monad hiding (forM_)
-import Control.Monad.Trans
+import Control.Monad ((<=<))
+import Control.Monad.Trans (liftIO)
 import Data.Foldable (forM_, traverse_)
 import Data.IORef (newIORef, readIORef)
 import qualified Data.IntMap as M
 import Data.Maybe (fromMaybe)
 import Data.UUID (UUID)
-import Data.UUID.V4
+import Data.UUID.V4 (nextRandom)
 import qualified Graphics.UI.Gtk as Gtk
-import Hoodle.Device
+import Hoodle.Device (PenButton (..), getPointer)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Event
+  ( CanvasId,
+    CanvasInfo (..),
+    CanvasInfoBox (CanvasSinglePage),
+    CanvasInfoMap,
+    MyScrollWindow (..),
+    ViewInfo,
+    canvasId,
+    defaultCanvasWidgets,
+    defaultCvsInfoSinglePage,
+    drawArea,
+    forBoth,
+    forBoth',
+    scrolledWindow,
+    unboxBiAct,
+    unboxBiXform,
+    _canvasId,
+    _currentPageNum,
+    _drawArea,
+    _horizAdjConnId,
+    _horizAdjustment,
+    _scrollCanvas,
+    _scrollVScrollbar,
+    _scrolledWindow,
+    _vertAdjConnId,
+    _vertAdjustment,
+    _viewInfo,
+  )
+import Hoodle.Type.Event (AllEvent (..), UserEvent (..))
 import Hoodle.Type.HoodleState
-import Hoodle.Type.Window
-import Hoodle.Util
-import System.FilePath
+  ( FileStore (LocalDir, TempDir),
+    HoodleState,
+    UnitHoodle,
+    callBack,
+    currentUnit,
+    cvsInfoMap,
+    deviceList,
+    gtkUIManager,
+    hoodleFileControl,
+    hoodleFileName,
+    rootOfRootWindow,
+    setCanvasId,
+    setCanvasInfoMap,
+    unitHoodles,
+    updateFromCanvasInfoAsCurrentCanvas,
+  )
+import Hoodle.Type.Window (WindowConfig (HSplit, Node, VSplit))
+import Hoodle.Util (maybeError')
+import System.FilePath (takeFileName)
 
 -- | set frame title according to file name
 setTitleFromFileName :: HoodleState -> IO ()

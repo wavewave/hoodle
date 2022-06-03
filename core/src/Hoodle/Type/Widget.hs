@@ -35,7 +35,7 @@ module Hoodle.Type.Widget
 where
 
 import Control.Lens (Lens', lens)
-import Hoodle.Type.PageArrangement
+import Hoodle.Type.PageArrangement (CanvasCoordinate (..))
 
 -- |
 data WidgetItem = PanZoomWidget | LayerWidget | ClockWidget | ScrollWidget

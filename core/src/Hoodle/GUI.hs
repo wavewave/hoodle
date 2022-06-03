@@ -6,26 +6,62 @@ module Hoodle.GUI where
 
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Exception (SomeException (..), catch)
-import Control.Lens
-import Control.Monad hiding (forM_)
-import Control.Monad.Trans
+import Control.Lens (view)
+import Control.Monad (forever, return, void, (>>), (>>=))
+import Control.Monad.Trans (liftIO)
 import Data.Foldable (forM_, traverse_)
-import Data.IORef
-import Data.Maybe
+import Data.IORef (newIORef, readIORef)
+import Data.Maybe (Maybe (..), maybe)
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
+  ( lensSetToggleUIForFlag,
+    setToggleUIForFlag,
+  )
 import Hoodle.Config
-import Hoodle.Coroutine.Callback
-import Hoodle.Coroutine.Default
-import Hoodle.Device
-import Hoodle.ModelAction.Window
-import Hoodle.Script.Hook
+  ( getMaxUndo,
+    getPenConfig,
+    getWidgetConfig,
+    getXInputConfig,
+    loadConfigFile,
+  )
+import Hoodle.Coroutine.Callback (eventHandler)
+import Hoodle.Coroutine.Default (initCoroutine)
+import Hoodle.Device (initDevice)
+import Hoodle.ModelAction.Window (setTitleFromFileName)
+import Hoodle.Script.Hook (Hook)
 import Hoodle.Type.Event
+  ( AllEvent (SysEv, UsrEv),
+    MenuEvent (MenuQuit),
+    SystemEvent (ClockUpdateEvent),
+    UserEvent
+      ( GetHoodleFileInfo,
+        Initialized,
+        Menu
+      ),
+  )
 import Hoodle.Type.HoodleState
-import System.Directory
-import System.Environment
-import System.FilePath
+  ( HoodleState,
+    callBack,
+    doesEmbedImage,
+    doesEmbedPDF,
+    doesUsePopUpMenu,
+    doesUseTouch,
+    doesUseXInput,
+    rootNotebook,
+    settings,
+    statusBar,
+  )
+import System.Directory (createDirectoryIfMissing)
+import System.Environment (getEnv)
+import System.FilePath ((</>))
 import System.IO
+  ( FilePath,
+    IO,
+    IOMode (WriteMode),
+    hClose,
+    hPutStrLn,
+    openFile,
+  )
 --
 import Prelude (Bool (..), String, error, ($), (.))
 

@@ -4,21 +4,41 @@
 
 module Hoodle.Type.Event where
 
-import Control.Concurrent
-import Control.Monad.Trans.Crtn.Event
-import Data.ByteString
-import Data.Hoodle.BBox
+import Control.Concurrent (MVar, ThreadId)
+import Control.Monad.Trans.Crtn.Event (ActionOrder (..))
+import Data.ByteString (ByteString)
+import Data.Hoodle.BBox (BBoxed)
 import Data.Hoodle.Simple
-import Data.IORef
+  ( Anchor,
+    Dimension,
+    Image,
+    Item,
+    Link,
+    Stroke,
+  )
+import Data.IORef (IORef)
 import qualified Data.Text as T
 import Data.UUID (UUID)
 import Graphics.Hoodle.Render.Type
+  ( CanvasId,
+    RBackground,
+    RHoodle,
+    RItem,
+    SurfaceID,
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
-import Hoodle.Device
+import Hoodle.Device (PenButton, PointerCoord)
 import Hoodle.Type.Enum
-import Hoodle.Type.PageArrangement
-import Hoodle.Util
+  ( BackgroundStyle,
+    NewPageModeType,
+    PenColor,
+    PenType,
+    RotateDir,
+    SelectType,
+  )
+import Hoodle.Type.PageArrangement (PageNum)
+import Hoodle.Util (UrlPath)
 
 -- |
 data AllEvent = UsrEv UserEvent | SysEv SystemEvent

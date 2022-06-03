@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.File
 -- Copyright   : (c) 2011-2014 Ian-Woo Kim
@@ -12,8 +10,18 @@
 -- Portability : GHC
 module Hoodle.ModelAction.Text where
 
-import Control.Applicative
-import Data.Attoparsec.Text as A
+import Control.Applicative (many, (<|>))
+import Data.Attoparsec.Text
+  ( Parser,
+    isEndOfLine,
+    manyTill,
+    notInClass,
+    parseOnly,
+    skipWhile,
+    string,
+    try,
+  )
+import qualified Data.Attoparsec.Text as A
 import Data.Char (isAlphaNum)
 import qualified Data.HashMap.Strict as M
 import qualified Data.Text as T
@@ -37,7 +45,7 @@ getKeywordMap txt = case parseOnly (many keywordContents) txt of
   Right lst -> M.fromList lst
 
 -- |
-keywordBegin :: A.Parser T.Text
+keywordBegin :: Parser T.Text
 keywordBegin =
   skipWhile (notInClass "%")
     *> ( try
@@ -50,17 +58,17 @@ keywordBegin =
        )
 
 -- |
-keywordEnd :: A.Parser ()
-keywordEnd = string "%h%k%end" >> skipWhile (notInClass "\r\n") >> endOfLine
+keywordEnd :: Parser ()
+keywordEnd = string "%h%k%end" >> skipWhile (notInClass "\r\n") >> A.endOfLine
 
 -- |
-oneline :: A.Parser T.Text
-oneline = A.takeWhile (not . isEndOfLine) <* endOfLine
+oneline :: Parser T.Text
+oneline = A.takeWhile (not . isEndOfLine) <* A.endOfLine
 
 -- |
 keywordContents ::
   -- | (keyword,contents)
-  A.Parser (T.Text, T.Text)
+  Parser (T.Text, T.Text)
 keywordContents = do
   k <- keywordBegin
   txt <- T.unlines <$> manyTill oneline keywordEnd

@@ -1,9 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Script.Coroutine
 -- Copyright   : (c) 2012-2015 Ian-Woo Kim
@@ -15,14 +11,12 @@
 module Hoodle.Script.Coroutine where
 
 import Control.Lens (view)
-import Control.Monad.State
-import Control.Monad.Trans.Maybe
--- from hoodle-platform
-import Data.Hoodle.Simple
--- from this package
+import Control.Monad.State (get, liftIO)
+import Control.Monad.Trans.Maybe (MaybeT (..))
+import Data.Hoodle.Simple (Hoodle)
 import qualified Hoodle.Script.Hook as H
-import Hoodle.Type.Coroutine
-import Hoodle.Type.HoodleState
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.HoodleState (hookSet)
 
 --
 

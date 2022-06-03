@@ -4,17 +4,29 @@
 module Hoodle.ModelAction.ContextMenu where
 
 import qualified Data.ByteString.Char8 as B
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
-import Data.UUID.V4
-import Graphics.Hoodle.Render
+import Data.Hoodle.BBox (BBox (..))
+import Data.Hoodle.Simple (Dimension (..), SVG (..))
+import Data.UUID.V4 (nextRandom)
+import Graphics.Hoodle.Render (renderRItem)
 import Graphics.Hoodle.Render.Type
+  ( CanvasId,
+    RItem,
+    RenderCache,
+    isLinkInRItem,
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Type.Event
-import Hoodle.Util
+  ( AllEvent (UsrEv),
+    ContextMenuEvent (..),
+    UserEvent (GotContextMenuSignal, OpenLink),
+  )
+import Hoodle.Util (UrlPath (FileUrl, HttpUrl))
 import System.Directory
-import System.FilePath
+  ( getTemporaryDirectory,
+    removeFile,
+  )
+import System.FilePath ((<.>), (</>))
 
 -- |
 menuOpenALink :: (AllEvent -> IO ()) -> UrlPath -> IO Gtk.MenuItem

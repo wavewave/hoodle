@@ -78,18 +78,37 @@ module Hoodle.Type.Canvas
 where
 
 import Control.Lens (Lens', lens, set, view)
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox (BBox (..))
 import Data.Hoodle.Predefined
+  ( predefinedEraserMedium,
+    predefinedHighlighterMedium,
+    predefinedMedium,
+  )
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as M
-import Data.Sequence
-import Graphics.Hoodle.Render.Type.Item
-import Graphics.Hoodle.Render.Type.Renderer
+import Data.Sequence (Seq, empty)
+import Graphics.Hoodle.Render.Type.Item (RItem)
+import Graphics.Hoodle.Render.Type.Renderer (CanvasId)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Type.Enum
+  ( PenColor (..),
+    PenType (..),
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasDimension (..),
+    PageArrangement (..),
+    PageDimension (..),
+    PageNum (..),
+    ViewMode (..),
+    ViewPortBBox (..),
+    ZoomMode (..),
+    getRatioPageCanvas,
+  )
 import Hoodle.Type.Widget
+  ( CanvasWidgets,
+    defaultCanvasWidgets,
+  )
 
 -- |
 newtype PenDraw = PenDraw {_points :: Seq (Double, Double)}

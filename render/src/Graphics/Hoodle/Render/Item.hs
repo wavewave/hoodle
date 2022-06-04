@@ -4,23 +4,34 @@
 
 module Graphics.Hoodle.Render.Item where
 
-import Control.Monad
-import Control.Monad.IO.Class
-import Control.Monad.Identity
+import Control.Monad (guard)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Identity (runIdentity)
 import qualified Data.ByteString as B
-import Data.ByteString.Base64
+import Data.ByteString.Base64 (decode)
 import qualified Data.ByteString.Char8 as C8
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox (makeBBoxed)
 import Data.Hoodle.Simple
-import Data.UUID.V4
+  ( Anchor (..),
+    Item (..),
+    Link (..),
+    SVG (..),
+  )
+import Data.UUID.V4 (nextRandom)
 import Graphics.GD.ByteString
-import Graphics.Hoodle.Render.Type.Item
-import Graphics.Hoodle.Render.Type.Renderer
+  ( loadJpegFile,
+    savePngByteString,
+  )
+import Graphics.Hoodle.Render.Type.Item (RItem (..))
+import Graphics.Hoodle.Render.Type.Renderer (Renderer)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
-import Hoodle.Util.Process
+import Hoodle.Util.Process (checkPipe)
 import System.Directory
-import System.FilePath
+  ( getTemporaryDirectory,
+    removeFile,
+  )
+import System.FilePath ((<.>), (</>))
 
 -- | construct renderable item
 cnstrctRItem :: Item -> Renderer RItem

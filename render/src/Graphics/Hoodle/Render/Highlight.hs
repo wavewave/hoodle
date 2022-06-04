@@ -2,12 +2,15 @@
 
 module Graphics.Hoodle.Render.Highlight where
 
-import Data.Hoodle.BBox
-import Data.Hoodle.Predefined
-import Data.Hoodle.Simple
+import Data.Hoodle.BBox (BBox (..), BBoxed (..), getBBox)
+import Data.Hoodle.Predefined (predefinedPencolor)
+import Data.Hoodle.Simple (Stroke (..))
 import qualified Data.Map as M
 import Graphics.Hoodle.Render.Primitive
-import Graphics.Hoodle.Render.Type.Item
+  ( drawStrokeCurve,
+    drawVWStrokeCurve,
+  )
+import Graphics.Hoodle.Render.Type.Item (RItem (..))
 import qualified Graphics.Rendering.Cairo as Cairo
 import Prelude hiding (concatMap, curry, fst, mapM_, snd, uncurry)
 

@@ -3,10 +3,10 @@
 
 module Graphics.Hoodle.Render.Type.Background where
 
-import Data.ByteString
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
-import Graphics.Hoodle.Render.Type.Renderer
+import Data.ByteString (ByteString)
+import Data.Hoodle.BBox (BBox)
+import Data.Hoodle.Simple (Background (..))
+import Graphics.Hoodle.Render.Type.Renderer (SurfaceID)
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 --
 import Prelude hiding (mapM_)

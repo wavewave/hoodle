@@ -3,29 +3,57 @@
 
 module Graphics.Hoodle.Render.Background where
 
-import Control.Applicative
 import Control.Concurrent.STM
-import Control.Monad.State hiding (mapM_)
-import Control.Monad.Trans.Maybe
+  ( atomically,
+    newEmptyTMVarIO,
+    takeTMVar,
+  )
+import Control.Monad (guard)
+import Control.Monad.State (StateT, get, lift, liftIO, put)
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import Control.Monad.Trans.Reader (ask)
-import Data.ByteString hiding (filter, putStrLn)
-import Data.ByteString.Base64
+import Data.ByteString (ByteString)
+import Data.ByteString.Base64 (decode)
 import qualified Data.ByteString.Char8 as C
-import Data.Foldable (mapM_)
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox (BBox (..))
 import Data.Hoodle.Predefined
+  ( predefinedBkgcolor,
+    predefinedRulingColor,
+    predefinedRulingGraphSpacing,
+    predefinedRulingLeftMargin,
+    predefinedRulingMarginColor,
+    predefinedRulingSpacing,
+    predefinedRulingThickness,
+    predefinedRulingTopMargin,
+  )
 import Data.Hoodle.Simple
+  ( Background (..),
+    Dimension (..),
+  )
 import qualified Data.Map as M
-import Data.Monoid
 import Data.UUID.V4 (nextRandom)
 import Graphics.Hoodle.Render.Type.Background
+  ( Context (..),
+    RBackground (..),
+  )
 import Graphics.Hoodle.Render.Type.Renderer
+  ( PDFCommand (GetDocFromFile, GetPageFromDoc),
+    Renderer,
+    issuePDFCommandID,
+    issueSurfaceID,
+    rendererGenCmdQ,
+    rendererPDFCmdQ,
+    sendPDFCommand,
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import System.Directory
+  ( getTemporaryDirectory,
+    removeFile,
+  )
 import System.FilePath ((<.>), (</>))
-import Prelude hiding (mapM_)
+import Prelude
 
 -- |
 popplerGetDocFromFile :: ByteString -> IO (Maybe Poppler.Document)

@@ -4,7 +4,17 @@
 module Graphics.Hoodle.Render.Type.Item where
 
 import Data.Hoodle.BBox
+  ( BBoxed (..),
+    GetBBoxable (..),
+  )
 import Data.Hoodle.Simple
+  ( Anchor (..),
+    Image (..),
+    Item (..),
+    Link (..),
+    SVG (..),
+    Stroke (..),
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 

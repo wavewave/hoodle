@@ -42,32 +42,109 @@ module Graphics.Hoodle.Render
   )
 where
 
-import Control.Applicative
 import Control.Concurrent.STM
+  ( atomically,
+    newEmptyTMVarIO,
+    takeTMVar,
+  )
 import Control.Lens (set, view)
+import Control.Monad (join, void)
 import Control.Monad.Identity (runIdentity)
-import Control.Monad.State hiding (mapM, mapM_)
-import Control.Monad.Trans.Reader
+import Control.Monad.State (StateT, evalStateT)
+import Control.Monad.Trans (lift, liftIO)
+import Control.Monad.Trans.Reader (ask)
 import qualified Data.ByteString.Char8 as C
-import Data.Foldable
 import qualified Data.HashMap.Strict as HM
 import Data.Hoodle.BBox
+  ( BBox (..),
+    BBoxed (..),
+    getBBox,
+    inflate,
+    makeBBoxed,
+  )
 import Data.Hoodle.Generic
+  ( GHoodle (..),
+    GPage (..),
+    PDFData (..),
+    fromList,
+    gbuffer,
+    gitems,
+    glayers,
+    gpages,
+  )
 import Data.Hoodle.Predefined
+  ( getPenColor,
+    predefinedHighlighterOpacity,
+  )
 import Data.Hoodle.Simple
-import Data.Hoodle.Zipper
-import Data.Traversable (mapM)
+  ( Anchor (..),
+    Dimension (..),
+    Hoodle (..),
+    Image (..),
+    Item (..),
+    Layer (..),
+    Link (..),
+    Page (..),
+    SVG (..),
+    Stroke (..),
+    background,
+    dimension,
+    embeddedPdf,
+    embeddedText,
+    hoodleID,
+    items,
+    layers,
+    pages,
+    revisions,
+    title,
+  )
+import Data.Hoodle.Zipper (fromNonEmptyList)
 import Graphics.Hoodle.Render.Background
+  ( cnstrctRBkgStateT,
+    popplerGetDocFromDataURI,
+    renderBackgroundStateT,
+    renderBkg,
+  )
 import Graphics.Hoodle.Render.Item
+  ( cnstrctRItem,
+    getByteStringIfEmbeddedPNG,
+    getJPGandCreateSurface,
+    saveTempPNGToCreateSurface,
+  )
 import Graphics.Hoodle.Render.Primitive
+  ( drawStrokeCurve,
+    drawVWStrokeCurve,
+  )
 import Graphics.Hoodle.Render.Type
-import Graphics.Hoodle.Render.Util
+  ( CanvasId,
+    Context (..),
+    GenCommand (LayerRedraw),
+    LyBuf (..),
+    PDFCommand (GetDocFromDataURI, GetNPages),
+    RBackground,
+    RHoodle,
+    RItem (..),
+    RLayer,
+    RPage,
+    RenderCache,
+    Renderer,
+    emptyRLayer,
+    issueGenCommandID,
+    issuePDFCommandID,
+    issueSurfaceID,
+    rbkg_surfaceid,
+    rendererGenCmdQ,
+    rendererPDFCmdQ,
+    sendGenCommand,
+    sendPDFCommand,
+  )
+import Graphics.Hoodle.Render.Util (clipBBox)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import System.Directory (doesFileExist)
 import System.FilePath (takeExtension)
 --
-import Prelude hiding (concatMap, curry, mapM, mapM_, uncurry)
+import Prelude hiding (concatMap, curry, uncurry)
 
 data Xform4Page = Xform4Page
   { transx :: Double,

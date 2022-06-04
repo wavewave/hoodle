@@ -4,8 +4,8 @@ module Graphics.Hoodle.Render.Primitive
   )
 where
 
-import Control.Monad
-import Data.Strict.Tuple hiding (fst, snd)
+import Control.Monad (foldM_)
+import Data.Strict.Tuple (Pair ((:!:)))
 import qualified Graphics.Rendering.Cairo as Cairo
 
 ------------------

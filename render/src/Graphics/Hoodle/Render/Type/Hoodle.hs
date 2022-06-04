@@ -2,16 +2,31 @@
 
 module Graphics.Hoodle.Render.Type.Hoodle where
 
-import Control.Lens
+import Control.Lens (view)
 import Data.Foldable (toList)
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox (BBox)
 import Data.Hoodle.Generic
-import Data.Hoodle.Simple
-import Data.Hoodle.Zipper
+  ( GHoodle,
+    GLayer (..),
+    GPage,
+    gbackground,
+    gdimension,
+    gembeddedpdf,
+    gembeddedtext,
+    ghoodleID,
+    gitems,
+    glayers,
+    gpages,
+    grevisions,
+    gtitle,
+    pdfBase64,
+  )
+import Data.Hoodle.Simple (Hoodle (..), Layer (..), Page (..))
+import Data.Hoodle.Zipper (ZipperSelect)
 import qualified Data.IntMap as IM
-import Graphics.Hoodle.Render.Type.Background
-import Graphics.Hoodle.Render.Type.Item
-import Graphics.Hoodle.Render.Type.Renderer
+import Graphics.Hoodle.Render.Type.Background (RBackground, rbkg2Bkg)
+import Graphics.Hoodle.Render.Type.Item (RItem, rItem2Item)
+import Graphics.Hoodle.Render.Type.Renderer (SurfaceID)
 
 ----------------------------
 -- normal state rendering --

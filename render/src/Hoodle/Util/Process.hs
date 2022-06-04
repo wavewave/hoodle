@@ -1,16 +1,30 @@
 module Hoodle.Util.Process where
 
-import Control.Concurrent
-import Control.Monad
-import Control.Monad.Loops
+import Control.Concurrent (threadDelay)
+import Control.Monad (when, (<=<))
+import Control.Monad.Loops (untilM_)
 import qualified Data.ByteString.Lazy as B
-import Data.UUID.V4
-import System.Directory
-import System.FilePath
-import System.IO
+import Data.UUID.V4 (nextRandom)
+import System.Directory (getTemporaryDirectory)
+import System.FilePath ((<.>), (</>))
+import System.IO (hFlush, stdout)
 import System.Posix.Files
+  ( createNamedPipe,
+    fileExist,
+    ownerReadMode,
+    ownerWriteMode,
+    removeLink,
+    unionFileModes,
+  )
 import System.Posix.IO
-import System.Posix.Process
+  ( OpenMode (WriteOnly),
+    closeFd,
+    defaultFileFlags,
+    dupTo,
+    openFd,
+    stdOutput,
+  )
+import System.Posix.Process (forkProcess)
 
 -- |
 checkPipe :: FilePath -> IO ()

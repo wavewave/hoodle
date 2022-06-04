@@ -4,13 +4,22 @@
 
 module Data.Xournal.Generic where
 
-import Control.Applicative
-import Control.Category
-import Data.ByteString hiding (map, zip)
-import Data.Functor
-import Data.IntMap hiding (map)
+import Control.Category (id, (.))
+import Data.ByteString.Char8 (ByteString)
+import Data.IntMap
+  ( IntMap,
+    elems,
+    fromList,
+  )
 import Data.Xournal.Simple
-import Lens.Micro
+  ( Background (..),
+    Dimension (..),
+    Layer (..),
+    Page (..),
+    Stroke (..),
+    Xournal (..),
+  )
+import Lens.Micro (Lens', lens, (^.))
 import Prelude hiding (id, (.))
 
 -- |

@@ -1,10 +1,6 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Page
 -- Copyright   : (c) 2011-2016 Ian-Woo Kim
@@ -15,25 +11,70 @@
 -- Portability : GHC
 module Hoodle.ModelAction.Page where
 
-import Control.Applicative
 import Control.Lens (set, view)
 import Data.Functor.Identity (Identity (..))
 import Data.Hoodle.Generic
+  ( GHoodle,
+    gdimension,
+    gpages,
+  )
 import Data.Hoodle.Select
+  ( gSelect2GHoodle,
+    gselAll,
+    gselSelected,
+  )
 import qualified Data.IntMap as M
 import Data.Maybe (fromMaybe)
-import Data.Traversable (mapM)
 import qualified Graphics.UI.Gtk as Gtk (adjustmentGetValue)
-import Hoodle.Type.Alias
+import Hoodle.Type.Alias (EditMode, Hoodle, Page)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Enum
+  ( CanvasId,
+    CanvasInfo,
+    CanvasInfoBox (CanvasContPage, CanvasSinglePage),
+    adjustments,
+    currentPageNum,
+    drawArea,
+    forBoth,
+    pageArrangement,
+    unboxBiAct,
+    unboxBiXform,
+    viewInfo,
+    xfrmCvsInfo,
+    xfrmViewInfo,
+    zoomMode,
+  )
+import Hoodle.Type.Enum (ZoomModeRel (ZoomIn, ZoomOut))
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    UnitHoodle,
+    cvsInfoMap,
+    getCanvasInfo,
+    getHoodle,
+    hoodleModeState,
+    hoodleModeStateEither,
+    setCanvasInfoMap,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined
-import Hoodle.Util
+  ( CanvasCoordinate (..),
+    DesktopCoordinate (..),
+    PageCoordinate (..),
+    PageDimension (..),
+    PageNum (..),
+    ViewMode (ContinuousPage, SinglePage),
+    makeContinuousArrangement,
+    makeSingleArrangement,
+  )
+import Hoodle.Type.Predefined (predefinedZoomStepFactor)
+import Hoodle.Util (maybeError')
 import Hoodle.View.Coordinate
---
-import Prelude hiding (mapM)
+  ( CanvasGeometry
+      ( canvasDim,
+        desktop2Canvas,
+        desktop2Page
+      ),
+    getCvsGeomFrmCvsInfo,
+    makeCanvasGeometry,
+  )
 
 -- |
 getPageMap :: HoodleModeState -> M.IntMap (Page EditMode)

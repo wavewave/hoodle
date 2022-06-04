@@ -1,9 +1,9 @@
 module Hoodle.Coroutine.Highlighter where
 
-import Hoodle.Coroutine.Pen
-import Hoodle.Device
-import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+import Hoodle.Coroutine.Pen (penStart)
+import Hoodle.Device (PointerCoord)
+import Hoodle.Type.Canvas (CanvasId)
+import Hoodle.Type.Coroutine (MainCoroutine)
 
 -- |
 highlighterStart ::

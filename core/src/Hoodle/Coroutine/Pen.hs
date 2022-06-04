@@ -5,40 +5,119 @@
 module Hoodle.Coroutine.Pen where
 
 import Control.Lens (at, over, set, view)
-import Control.Monad hiding (forM_, mapM_)
-import Control.Monad.State hiding (forM_, mapM_)
+import Control.Monad (when)
+import Control.Monad.State (MonadIO (liftIO), get)
 import Data.Foldable (toList)
 import Data.Functor.Identity (Identity (..))
 import Data.Hoodle.BBox
+  ( BBox,
+    getBBox,
+    makeBBoxed,
+  )
 import Data.Hoodle.Generic (gitems, gpages)
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as IM
-import Data.Maybe
-import Data.Ratio
-import Data.Sequence hiding (filter)
+import Data.Ratio ((%))
+import Data.Sequence
+  ( Seq (..),
+    ViewL (..),
+    empty,
+    viewl,
+    (|>),
+  )
 import Data.Time.Clock
+  ( NominalDiffTime,
+    UTCTime,
+    diffUTCTime,
+    getCurrentTime,
+  )
 import Graphics.Hoodle.Render (renderStrk, updateLayerBuf)
-import Graphics.Hoodle.Render.Type
+import Graphics.Hoodle.Render.Type (RHoodle, RItem (..))
 import qualified Graphics.Rendering.Cairo as Cairo
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( pureUpdateUhdl,
+    renderCache,
+  )
+import Hoodle.Coroutine.Commit (commit)
 import Hoodle.Coroutine.Draw
-import Hoodle.Device
-import Hoodle.GUI.Reflect
+  ( callRenderer_,
+    invalidateAll,
+    invalidateAllInBBox,
+    nextevent,
+  )
+import Hoodle.Device (PointerCoord (..))
+import Hoodle.GUI.Reflect (changeCurrentCanvasId)
 import Hoodle.ModelAction.Layer
+  ( adjustCurrentLayer,
+    getCurrentLayer,
+  )
 import Hoodle.ModelAction.Page
+  ( getPageFromGHoodleMap,
+    updatePageAll,
+  )
 import Hoodle.ModelAction.Pen
+  ( TempRender (..),
+    createNewStroke,
+    tempInfo,
+    tempSurfaceSrc,
+    tempSurfaceTgt,
+  )
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    CanvasInfo,
+    CanvasInfoBox,
+    PenInfo,
+    currentPageNum,
+    drawArea,
+    forBoth,
+    forBoth',
+    mDrawSurface,
+    pageArrangement,
+    unboxBiAct,
+    unboxBiXform,
+    unboxLens,
+    viewInfo,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( DrawFlag (Efficient),
+    PenColor (ColorRed),
+  )
+import Hoodle.Type.Event (UserEvent (PenMove, PenUp))
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (ViewAppendState),
+    HoodleState,
+    currentCanvasInfo,
+    currentUnit,
+    getCanvasInfo,
+    getCurrentCanvasId,
+    getHoodle,
+    penInfo,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined
-import Hoodle.Util
+  ( CanvasDimension (..),
+    PageCoordinate (..),
+    PageNum (..),
+  )
+import Hoodle.Type.Predefined (dtimeBound)
+import Hoodle.Util (maybeFlip)
 import Hoodle.View.Coordinate
+  ( CanvasGeometry
+      ( canvasDim,
+        desktop2Page
+      ),
+    device2Desktop,
+    makeCanvasGeometry,
+  )
 import Hoodle.View.Draw
---
+  ( cairoXform4PageCoordinate,
+    canvasImageSurface,
+    doubleBufferFlush,
+    emphasisCanvasRender,
+    mkXform4Page,
+    virtualDoubleBufferDraw,
+  )
 import Prelude hiding (mapM_)
 
 -- |

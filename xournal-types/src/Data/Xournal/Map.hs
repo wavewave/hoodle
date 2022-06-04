@@ -3,10 +3,14 @@
 
 module Data.Xournal.Map where
 
-import Data.IntMap
-import Data.Xournal.BBox
+import Data.IntMap (IntMap, empty)
+import Data.Xournal.BBox (TLayerBBox)
 import Data.Xournal.Generic
-import Data.Xournal.Simple
+  ( GPage,
+    GXournal (..),
+    TLayerSimple,
+  )
+import Data.Xournal.Simple (Background)
 
 type TPageMap = GPage Background IntMap TLayerSimple
 

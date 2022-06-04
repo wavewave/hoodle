@@ -5,7 +5,6 @@ module Graphics.Hoodle.Render.Type.HitTest
     Hitted (..), -- re-export
     TAlterHitted, -- re-export
     TEitherAlterHitted (..), -- re-export
-    -- fmapAL, -- re-export
     getA, -- re-export
     getB, -- re-export
     interleave, -- re-export
@@ -18,17 +17,15 @@ module Graphics.Hoodle.Render.Type.HitTest
   )
 where
 
-import Control.Applicative
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
-import Graphics.Hoodle.Render.Type.Item
+import Data.Hoodle.BBox (BBoxed)
+import Data.Hoodle.Simple (Stroke)
+import Graphics.Hoodle.Render.Type.Item (RItem)
 import Hoodle.HitTest.Type
   ( AlterList (..),
     Hitted (..),
     NotHitted (..),
     TAlterHitted,
     TEitherAlterHitted (..),
-    -- fmapAL,
     getA,
     getB,
     interleave,

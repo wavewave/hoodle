@@ -8,13 +8,16 @@ module Hoodle.Type.PageArrangement where
 
 import Control.Lens (Lens, Simple, lens, view)
 import Data.Foldable (toList)
-import Data.Hoodle.BBox hiding (fromMaybe)
+import Data.Hoodle.BBox (BBox (..))
 import Data.Hoodle.Generic
+  ( gdimension,
+    gpages,
+  )
 import Data.Hoodle.Simple (Dimension (..))
 import Data.Maybe (fromMaybe)
-import Hoodle.Type.Alias
-import Hoodle.Type.Predefined
-import Hoodle.Util
+import Hoodle.Type.Alias (EditMode, Hoodle)
+import Hoodle.Type.Predefined (predefinedPageSpacing)
+import Hoodle.Util (maybeError')
 
 -- | supported zoom modes
 data ZoomMode = Original | FitWidth | FitHeight | Zoom Double

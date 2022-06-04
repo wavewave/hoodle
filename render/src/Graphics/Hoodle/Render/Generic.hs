@@ -5,18 +5,43 @@
 
 module Graphics.Hoodle.Render.Generic where
 
-import Control.Applicative
-import Control.Lens
-import Control.Monad hiding (mapM, mapM_)
-import Data.Foldable
+import Control.Lens (set, view, _1)
 import Data.Hoodle.BBox
+  ( BBoxed (..),
+  )
 import Data.Hoodle.Generic
+  ( GPage,
+    gbackground,
+    gdimension,
+    glayers,
+  )
 import Data.Hoodle.Simple
-import Data.Traversable
+  ( Background,
+    Dimension,
+    Stroke,
+  )
 import Graphics.Hoodle.Render
+  ( Xform4Page,
+    renderBkg,
+    renderRBkg,
+    renderRBkgBuf,
+    renderRBkgInBBox,
+    renderRLayerInBBox,
+    renderRLayerInBBoxBuf,
+    renderStrk,
+  )
 import Graphics.Hoodle.Render.Type
+  ( CanvasId,
+    InBBox (..),
+    InBBoxBkgBuf (..),
+    InBBoxOption (..),
+    RBackground (..),
+    RBkgOpt (..),
+    RLayer,
+    RPage,
+    RenderCache,
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
-import Prelude hiding (mapM, mapM_)
 
 -- | temporary util
 passarg :: (Monad m) => (CanvasId -> a -> m ()) -> CanvasId -> a -> m a

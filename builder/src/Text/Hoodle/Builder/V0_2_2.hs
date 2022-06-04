@@ -4,13 +4,34 @@
 
 module Text.Hoodle.Builder.V0_2_2 where
 
-import Blaze.ByteString.Builder
+import Blaze.ByteString.Builder (Builder, fromByteString, toLazyByteString)
 import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
 import Data.Double.Conversion.ByteString (toFixed)
 import Data.Hoodle.Simple.V0_2_2
-import Data.Strict.Tuple
+  ( Background (..),
+    Dimension (..),
+    Hoodle (..),
+    Image (..),
+    Item (..),
+    Layer (..),
+    Link (..),
+    Page (..),
+    Revision (..),
+    SVG (..),
+    Stroke (..),
+    background,
+    dimension,
+    embeddedPdf,
+    hoodleID,
+    items,
+    layers,
+    pages,
+    revisions,
+    title,
+  )
+import Data.Strict.Tuple (Pair (..))
 import Lens.Micro.Extras (view)
 
 -- |

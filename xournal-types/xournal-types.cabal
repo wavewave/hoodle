@@ -26,7 +26,7 @@ Library
                    containers >= 0.4,
                    microlens >= 0.4,
                    strict > 0.3, 
-                   TypeCompose > 0.9 
+                   TypeCompose > 0.9
                  
   Exposed-Modules: 
                    Data.Xournal.Generic

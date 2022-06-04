@@ -2,8 +2,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TupleSections #-}
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.View.Coordinate
 -- Copyright   : (c) 2012-2014 Ian-Woo Kim
@@ -17,15 +15,46 @@ module Hoodle.View.Coordinate where
 import Control.Lens (view)
 import Data.Foldable (toList)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    IntersectBBox (Intersect),
+    ULMaybe (Bottom, Middle),
+  )
 import Data.Hoodle.Generic
+  ( gdimension,
+    gpages,
+  )
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as M
-import Data.Maybe
+import Data.Maybe (catMaybes, isJust)
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Device
-import Hoodle.Type.Alias
+  ( PointerCoord (..),
+    PointerType (Core, Eraser, Stylus, Touch),
+  )
+import Hoodle.Type.Alias (EditMode, Hoodle)
 import Hoodle.Type.Canvas
+  ( CanvasInfo,
+    currentPageNum,
+    drawArea,
+    pageArrangement,
+    viewInfo,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    CanvasDimension (..),
+    CanvasOrigin (..),
+    DesktopCoordinate (..),
+    DesktopDimension (..),
+    PageArrangement (..),
+    PageCoordinate (..),
+    PageDimension (..),
+    PageNum (..),
+    PageOrigin (..),
+    ScreenCoordinate (..),
+    ScreenDimension (..),
+    ViewPortBBox (..),
+    canvasDimension,
+  )
 
 -- | data structure for transformation among screen, canvas, desktop and page coordinates
 data CanvasGeometry = CanvasGeometry

@@ -4,61 +4,155 @@
 
 module Hoodle.Coroutine.TextInput where
 
-import Control.Applicative
+import Control.Applicative ()
 import Control.Concurrent (killThread)
 import qualified Control.Exception
 import Control.Lens (view, (%~), (.~), (?~), (^.), _2, _3)
-import Control.Monad.State hiding (forM_, mapM_)
-import Control.Monad.Trans.Crtn
-import Control.Monad.Trans.Crtn.Event
-import Control.Monad.Trans.Crtn.Queue
+import Control.Monad.State (get, gets, lift, liftIO, modify, put, unless, void)
+import Control.Monad.Trans.Crtn (CrtnErr (Other))
+import Control.Monad.Trans.Crtn.Event (ActionOrder)
+import Control.Monad.Trans.Crtn.Queue (enqueue)
 import Control.Monad.Trans.Except (ExceptT (..), runExceptT, throwE)
-import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Attoparsec.ByteString.Char8
+  ( decimal,
+    parseOnly,
+  )
 import qualified Data.ByteString.Char8 as B
 import Data.Foldable (forM_, mapM_)
 import qualified Data.HashMap.Strict as M
 import Data.Hoodle.BBox
+  ( BBox (..),
+    getBBox,
+  )
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
+  ( gembeddedtext,
+    gitems,
+  )
+import Data.Hoodle.Select (gselEmbeddedText)
 import Data.Hoodle.Simple
+  ( Anchor (..),
+    Dimension (..),
+    Image (..),
+    Item (..),
+    Link (..),
+    SVG (..),
+    dimension,
+    hoodleID,
+    items,
+    layers,
+  )
 import Data.List (minimumBy)
 import qualified Data.Maybe as Maybe (fromMaybe)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import qualified Data.Text.IO as TIO
 import Data.UUID.V4 (nextRandom)
-import Graphics.Hoodle.Render.Item
+import Graphics.Hoodle.Render.Item (cnstrctRItem)
 import Graphics.Hoodle.Render.Type.HitTest
+  ( AlterList (..),
+    Hitted (..),
+  )
 import Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle, rPage2Page)
-import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render.Type.Item (RItem (..))
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.SVG as RSVG
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( getCurrentPageCurr,
+    getGeometry4CurrCvs,
+    pureUpdateUhdl,
+    updateUhdl,
+  )
+import Hoodle.Coroutine.Commit (commit_)
 import Hoodle.Coroutine.Dialog
+  ( fileChooser,
+    keywordDialog,
+    longTextMessageBox,
+    okMessageBox,
+  )
 import Hoodle.Coroutine.Draw
+  ( callRenderer,
+    doIOaction_,
+    invalidateAll,
+    invalidateInBBox,
+    nextevent,
+    updateFlagFromToggleUI,
+    waitSomeEvent,
+  )
 import Hoodle.Coroutine.LaTeX
-import Hoodle.Coroutine.Mode
+  ( getLaTeXComponentsFromHdl,
+    laTeXFooter,
+    laTeXHeader,
+  )
+import Hoodle.Coroutine.Mode (modeChange)
 import Hoodle.Coroutine.Network
-import Hoodle.Coroutine.Page
+  ( networkTextInput,
+    networkTextInputBody,
+  )
+import Hoodle.Coroutine.Page (canvasZoomUpdateAll)
 import Hoodle.Coroutine.Select.Clipboard
-import Hoodle.ModelAction.Layer
-import Hoodle.ModelAction.Page
+  ( deleteSelection,
+    updateTempHoodleSelectM,
+  )
+import Hoodle.ModelAction.Layer (getCurrentLayer)
+import Hoodle.ModelAction.Page (getPageFromGHoodleMap)
 import Hoodle.ModelAction.Select
-import Hoodle.ModelAction.Select.Transform
+  ( adjustItemPosition4Paste,
+    makePageSelectMode,
+  )
+import Hoodle.ModelAction.Select.Transform (changeItemBy)
 import Hoodle.ModelAction.Text
+  ( getKeywordMap,
+    getLinesFromText,
+  )
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( currentPageNum,
+    unboxLens,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
+  ( AllEvent (..),
+    MultiLineEvent (..),
+    NetworkEvent (..),
+    RenderEvent (..),
+    UserEvent (..),
+    mkIOaction,
+  )
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    IsOneTimeSelectMode (YesAfterSelect),
+    currentCanvasInfo,
+    currentUnit,
+    doesUseXInput,
+    getCurrentCanvasId,
+    getHoodle,
+    hoodleModeState,
+    isOneTimeSelectMode,
+    networkEditSourceInfo,
+    settings,
+    statusBar,
+    tempQueue,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( PageCoordinate (..),
+    PageNum (..),
+  )
 import Hoodle.Util
+  ( UrlPath (FileUrl, HttpUrl),
+    msgShout,
+    urlParse,
+  )
 import System.Directory
+  ( doesFileExist,
+    getCurrentDirectory,
+    getTemporaryDirectory,
+    setCurrentDirectory,
+  )
 import System.Exit (ExitCode (..))
-import System.FilePath
+import System.FilePath ((<.>), (</>))
 import System.Process (readProcessWithExitCode)
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 import Prelude hiding (mapM_, readFile)

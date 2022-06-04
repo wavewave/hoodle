@@ -6,10 +6,15 @@
 module Control.Monad.Trans.Crtn.World where
 
 import Control.Monad (void)
-import Control.Monad.Trans.Crtn
-import Control.Monad.Trans.Crtn.Event
-import Control.Monad.Trans.Crtn.Logger
+import Control.Monad.Trans.Crtn (request)
+import Control.Monad.Trans.Crtn.Event (ActionOrder)
+import Control.Monad.Trans.Crtn.Logger (LogServer)
 import Control.Monad.Trans.Crtn.Object
+  ( Arg (..),
+    CObjT,
+    Res (..),
+    SObjT,
+  )
 import Prelude hiding (id, (.))
 
 -- |

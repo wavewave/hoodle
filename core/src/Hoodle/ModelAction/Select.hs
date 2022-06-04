@@ -4,38 +4,111 @@
 module Hoodle.ModelAction.Select where
 
 import Control.Lens (set, view)
-import Data.Algorithm.Diff as A
+import qualified Data.Algorithm.Diff as A
 import qualified Data.Function as F (on)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    BBoxed (..),
+    GetBBoxable (getBBox),
+    IntersectBBox (Intersect, unIntersect),
+    ULMaybe (Bottom, Middle),
+    UnionBBox (Union),
+    bbox4All,
+    fromMaybe,
+    toMaybe,
+  )
 import Data.Hoodle.Generic
+  ( GLayer (..),
+    gbuffer,
+    gdimension,
+    glayers,
+  )
 import Data.Hoodle.Select
-import Data.Hoodle.Simple hiding (Hoodle, Page)
+  ( gselAll,
+    gselSelected,
+  )
+import Data.Hoodle.Simple
+  ( Dimension (Dim),
+    Stroke (..),
+    color,
+    getXYtuples,
+  )
 import qualified Data.IntMap as M
 import qualified Data.Map as Map
 import Data.Maybe (isJust)
 import Data.Sequence (Seq)
-import Data.Strict.Tuple
+import Data.Strict.Tuple (Pair ((:!:)))
 import Data.Time.Clock
-import Graphics.Hoodle.Render
+  ( UTCTime,
+    diffUTCTime,
+    getCurrentTime,
+  )
+import Graphics.Hoodle.Render (renderRItem)
 import Graphics.Hoodle.Render.Type
+  ( CanvasId,
+    RItem (..),
+    RenderCache,
+    hPage2RPage,
+    mkHPage,
+    selectedLayer,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Util
-import Graphics.Hoodle.Render.Util.HitTest
+  ( Hitted (..),
+    TAlterHitted,
+    TEitherAlterHitted (..),
+    getA,
+    getB,
+    takeHitted,
+  )
+import Graphics.Hoodle.Render.Util (clipBBox)
+import Graphics.Hoodle.Render.Util.HitTest (isPointInBBox)
 import qualified Graphics.Rendering.Cairo as Cairo
 import Graphics.Rendering.Cairo.Matrix (invert, transformPoint)
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.HitTest (hitLassoPoint)
-import Hoodle.ModelAction.Layer
+import Hoodle.ModelAction.Layer (getCurrentLayer)
 import Hoodle.ModelAction.Pen
+  ( TempRender,
+    tempInfo,
+  )
 import Hoodle.ModelAction.Select.Transform
+  ( changeItemBy,
+    offsetFunc,
+    rItmsInActiveLyr,
+  )
 import Hoodle.Type.Alias
+  ( EditMode,
+    Hoodle,
+    Page,
+    SelectMode,
+  )
 import Hoodle.Type.Enum
+  ( PenColor,
+    penColorNameMap,
+  )
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    UnitHoodle,
+    hoodleModeState,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined
+  ( CanvasCoordinate (..),
+    CanvasDimension (..),
+    DesktopCoordinate (..),
+    PageCoordinate (..),
+    PageNum (..),
+    ViewPortBBox (..),
+  )
+import Hoodle.Type.Predefined (dtimeBound)
 import Hoodle.View.Coordinate
-
---
+  ( CanvasGeometry
+      ( canvasDim,
+        canvasViewPort,
+        desktop2Canvas,
+        desktop2Page,
+        page2Desktop
+      ),
+  )
 
 -- |
 data Handle
@@ -216,12 +289,12 @@ instance (GetBBoxable a) => Eq (CmpBBox a) where
   CmpBBox s1 == CmpBBox s2 = getBBox s1 == getBBox s2
 
 -- |
-isSame :: Diff a -> Bool
+isSame :: A.Diff a -> Bool
 isSame (A.Both _ _) = True
 isSame _ = False
 
 -- |
-separateFS :: [Diff a] -> ([a], [a])
+separateFS :: [A.Diff a] -> ([a], [a])
 separateFS = foldr f ([], [])
   where
     f (A.First x) (fs, ss) = (x : fs, ss)
@@ -229,11 +302,11 @@ separateFS = foldr f ([], [])
     f (A.Both _ _) (fs, ss) = (fs, ss)
 
 -- |
-getDiffBBox :: (GetBBoxable a) => [a] -> [a] -> [Diff a]
+getDiffBBox :: (GetBBoxable a) => [a] -> [a] -> [A.Diff a]
 getDiffBBox lst1 lst2 =
   let -- nlst1 = fmap CmpBBox lst1
       -- nlst2 = fmap CmpBBox lst2
-      diffresult = getDiffBy ((==) `F.on` CmpBBox) lst1 lst2
+      diffresult = A.getDiffBy ((==) `F.on` CmpBBox) lst1 lst2
    in diffresult -- map (\(x,y)->(x,unCmpBBox y)) diffresult
 
 -- |

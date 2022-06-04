@@ -8,29 +8,27 @@
 
 module Data.Xournal.Simple where
 
-import Control.Applicative
-import qualified Data.ByteString as S
-import Data.ByteString.Char8 hiding (map)
+import Data.ByteString.Char8 (ByteString)
 import qualified Data.Serialize as SE
-import Data.Strict.Tuple
-import Data.Xournal.Util
-import Lens.Micro
+import Data.Strict.Tuple (Pair ((:!:)))
+import Data.Xournal.Util (fst3, snd3)
+import Lens.Micro (Lens', lens)
 import Prelude hiding (curry, fst, id, putStrLn, snd, uncurry, (.))
 
 -- |
-type Title = S.ByteString
+type Title = ByteString
 
 -- |
 data Stroke
   = Stroke
-      { stroke_tool :: !S.ByteString,
-        stroke_color :: !S.ByteString,
+      { stroke_tool :: !ByteString,
+        stroke_color :: !ByteString,
         stroke_width :: !Double,
         stroke_data :: ![Pair Double Double]
       }
   | VWStroke
-      { stroke_tool :: S.ByteString,
-        stroke_color :: S.ByteString,
+      { stroke_tool :: ByteString,
+        stroke_color :: ByteString,
         stroke_vwdata :: [(Double, Double, Double)]
       }
   deriving (Show, Eq, Ord)
@@ -69,14 +67,14 @@ data Dimension = Dim {dim_width :: !Double, dim_height :: !Double}
 -- |
 data Background
   = Background
-      { bkg_type :: !S.ByteString,
-        bkg_color :: !S.ByteString,
-        bkg_style :: !S.ByteString
+      { bkg_type :: !ByteString,
+        bkg_color :: !ByteString,
+        bkg_style :: !ByteString
       }
   | BackgroundPdf
-      { bkg_type :: S.ByteString,
-        bkg_domain :: Maybe S.ByteString,
-        bkg_filename :: Maybe S.ByteString,
+      { bkg_type :: ByteString,
+        bkg_domain :: Maybe ByteString,
+        bkg_filename :: Maybe ByteString,
         bkg_pageno :: Int
       }
   deriving (Show)

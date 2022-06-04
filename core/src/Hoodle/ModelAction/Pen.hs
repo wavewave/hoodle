@@ -1,9 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Pen
 -- Copyright   : (c) 2011-2015 Ian-Woo Kim
@@ -16,15 +12,23 @@ module Hoodle.ModelAction.Pen where
 
 import Control.Lens (view)
 import Control.Monad (when)
-import Data.Foldable
--- from hoodle-platform
-import Data.Hoodle.Simple
-import Data.Sequence hiding (drop, take)
-import Data.Strict.Tuple hiding (uncurry)
+import Data.Foldable (toList)
+import Data.Hoodle.Simple (Stroke (..))
+import Data.Sequence (Seq)
+import Data.Strict.Tuple (Pair ((:!:)))
 import qualified Graphics.Rendering.Cairo as Cairo
--- from this package
 import Hoodle.Type.Canvas
+  ( PenInfo,
+    currentTool,
+    penColor,
+    penType,
+    penWidth,
+    variableWidthPen,
+  )
 import Hoodle.Type.Enum
+  ( PenType (HighlighterWork, PenWork),
+    convertPenColorToByteString,
+  )
 
 --
 

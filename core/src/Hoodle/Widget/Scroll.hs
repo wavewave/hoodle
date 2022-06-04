@@ -1,7 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Widget.Scroll
 -- Copyright   : (c) 2014 Ian-Woo Kim
@@ -15,14 +11,23 @@
 module Hoodle.Widget.Scroll where
 
 import Control.Lens ((%~))
---
-import Hoodle.Accessor
-import Hoodle.Coroutine.Draw
+import Hoodle.Accessor (pureUpdateUhdl)
+import Hoodle.Coroutine.Draw (invalidateInBBox)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( CanvasId,
+    canvasWidgets,
+    unboxLens,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.HoodleState
+  ( getCanvasInfo,
+    setCanvasInfo,
+  )
 import Hoodle.Type.Widget
+  ( doesUseScrollWidget,
+    widgetConfig,
+  )
 
 -- |
 toggleScroll :: CanvasId -> MainCoroutine ()

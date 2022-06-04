@@ -5,19 +5,24 @@
 module Graphics.Hoodle.Render.Type.Renderer where
 
 import Control.Concurrent.STM
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Reader
+  ( STM,
+    TMVar,
+    TVar,
+    readTVar,
+    readTVarIO,
+    writeTVar,
+  )
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Trans.Reader (ReaderT)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as HM
 import Data.Hashable (Hashable (..))
---
 import Data.Hoodle.Simple (Dimension (..))
-import Data.Sequence hiding (filter, null)
+import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq (filter)
-import Data.UUID
+import Data.UUID (UUID)
 import Data.UUID.V4 (nextRandom)
---
-import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render.Type.Item (RItem)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 

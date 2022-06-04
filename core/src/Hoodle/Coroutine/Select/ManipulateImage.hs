@@ -10,31 +10,73 @@ import Control.Monad.Trans (liftIO)
 import Data.ByteString.Base64 (encode)
 import Data.Foldable (forM_)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    BBoxed (..),
+    getBBox,
+  )
 import Data.Hoodle.Simple
-import Data.Time
+  ( Dimension (..),
+    Image (..),
+    Item (..),
+  )
+import Data.Time (UTCTime, getCurrentTime)
 import qualified Graphics.GD.ByteString as G
-import Graphics.Hoodle.Render.Item
+import Graphics.Hoodle.Render.Item (cnstrctRItem, getByteStringIfEmbeddedPNG)
 import Graphics.Hoodle.Render.Util.HitTest (isBBox2InBBox1)
 import qualified Graphics.Rendering.Cairo as Cairo
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( getCurrentPageEitherFromHoodleModeState,
+    getGeometry4CurrCvs,
+  )
+import Hoodle.Coroutine.Commit (commit)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Pen
-import Hoodle.Coroutine.Select.Clipboard
-import Hoodle.Device
-import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.Pen
-import Hoodle.ModelAction.Select
-import Hoodle.ModelAction.Select.Transform
+  ( callRenderer,
+    invalidateAllInBBox,
+    invalidateTemp,
+    nextevent,
+    waitSomeEvent,
+  )
+import Hoodle.Coroutine.Pen (createTempRender, penMoveAndUpOnly)
+import Hoodle.Coroutine.Select.Clipboard (updateTempHoodleSelectM)
+import Hoodle.Device (PointerCoord)
+import Hoodle.ModelAction.Page (updatePageAll)
+import Hoodle.ModelAction.Pen (TempRender (..))
+import Hoodle.ModelAction.Select (getNewCoordTime)
+import Hoodle.ModelAction.Select.Transform (replaceSelection)
 import qualified Hoodle.Type.Alias as A
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    currentPageNum,
+    forBoth',
+    unboxBiAct,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.Enum
+  ( DrawFlag (Efficient),
+    RotateDir (CCW, CW),
+  )
 import Hoodle.Type.Event
+  ( RenderEvent (..),
+    UserEvent (..),
+  )
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    currentCanvas,
+    currentUnit,
+    getCurrentCanvasId,
+    hoodleModeState,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( PageCoordinate (..),
+    PageNum (..),
+  )
 import Hoodle.View.Coordinate
-import Hoodle.View.Draw
+  ( CanvasGeometry,
+    desktop2Page,
+    device2Desktop,
+  )
+import Hoodle.View.Draw (renderBoxSelection)
 
 cropImage :: BBoxed Image -> MainCoroutine ()
 cropImage imgbbx = do

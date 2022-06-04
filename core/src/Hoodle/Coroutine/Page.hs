@@ -5,37 +5,124 @@
 
 module Hoodle.Coroutine.Page where
 
-import Control.Concurrent.STM
+import Control.Concurrent.STM (atomically)
 import Control.Lens (set, view, (.~), (?~), (^.))
-import Control.Monad
-import Control.Monad.State
+import Control.Monad (when)
+import Control.Monad.State (get, gets, liftIO, put)
 import Control.Monad.Trans.Reader (ask)
 import Data.Either (fromRight)
 import qualified Data.Foldable as F
 import Data.Function (on)
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
+  ( gbackground,
+    gbuffer,
+    gdimension,
+    gembeddedpdf,
+    gitems,
+    glayers,
+    gpages,
+    pdfNumPages,
+  )
+import Data.Hoodle.Select (gselAll)
 import Data.Hoodle.Simple (Dimension (..))
-import Data.Hoodle.Zipper
+import Data.Hoodle.Zipper (fromNonEmptyList)
 import qualified Data.IntMap as M
 import Data.List (sortBy)
 import Data.Maybe (fromMaybe)
 import Graphics.Hoodle.Render.Type
+  ( GenCommand (BkgSmplScaled, LayerScaled),
+    LyBuf (..),
+    PDFCommand (RenderPageScaled),
+    RBackground (..),
+    RHoodle,
+    RLayer,
+    Renderer,
+    RendererState (..),
+    emptyRLayer,
+    issueGenCommandID,
+    issuePDFCommandID,
+    issueSurfaceID,
+    sendGenCommand,
+    sendPDFCommand,
+  )
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( getCurrentPageCvsId,
+    getGeometry4CurrCvs,
+    updateUhdl,
+  )
+import Hoodle.Coroutine.Commit (commit_)
 import Hoodle.Coroutine.Draw
+  ( callRenderer_,
+    invalidateAll,
+    invalidateAllInBBox,
+    invalidateInBBox,
+  )
 import Hoodle.Coroutine.Scroll
-import Hoodle.ModelAction.Page
-import Hoodle.Type.Alias
+  ( adjustScrollbarWithGeometryCurrent,
+    adjustScrollbarWithGeometryCvsId,
+  )
+import Hoodle.ModelAction.Page (relZoomRatio, setPage, updatePageAll)
+import Hoodle.Type.Alias (EditMode, Hoodle, Page)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    CanvasInfo (..),
+    CanvasInfoBox (CanvasContPage, CanvasSinglePage),
+    canvasId,
+    currentPageNum,
+    drawArea,
+    forBoth',
+    pageArrangement,
+    unboxBiAct,
+    unboxLens,
+    viewInfo,
+    zoomMode,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.Enum
+  ( AddDirection (PageAfter, PageBefore),
+    BackgroundStyle,
+    DrawFlag (Efficient),
+    NewPageModeType (NPCycle, NPLast, NPPlain),
+    ZoomModeRel,
+    convertBackgroundStyleToByteString,
+  )
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    UnitHoodle,
+    backgroundStyle,
+    currentCanvasInfo,
+    currentUnit,
+    cvsInfoMap,
+    getCanvasInfo,
+    getCurrentCanvasId,
+    getHoodle,
+    hoodleModeState,
+    hoodleModeStateEither,
+    modifyCanvasInfo,
+    newPageMode,
+    nextPdfBkgPageNum,
+    settings,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Util
+  ( CanvasCoordinate (..),
+    PageCoordinate (..),
+    PageDimension (..),
+    PageNum (..),
+    ZoomMode (Zoom),
+    makeContinuousArrangement,
+    makeSingleArrangement,
+  )
+import Hoodle.Util (maybeError', msgShout)
 import Hoodle.View.Coordinate
-
---
+  ( CanvasGeometry,
+    canvasDim,
+    desktop2Canvas,
+    getCvsGeomFrmCvsInfo,
+    getCvsOriginInPage,
+    makeCanvasGeometry,
+    page2Desktop,
+  )
 
 -- | change page of current canvas using a modify function
 changePage :: (Int -> Int) -> MainCoroutine ()
@@ -119,7 +206,7 @@ canvasZoomUpdateGenRenderCvsId renderfunc cid mzmode mcoord = do
   geometry <- liftIO (getGeometry4CurrCvs uhdl)
   let cpn = view (unboxLens currentPageNum) . getCanvasInfo cid $ uhdl
   let plst = sortBy (compare `on` (\(n, _) -> abs (n - cpn))) . zip [0 ..] . F.toList $ hdl ^. gpages
-  forM_ plst $ \(pn, pg) -> callRenderer_ (updatePageCache geometry (PageNum pn, pg))
+  F.forM_ plst $ \(pn, pg) -> callRenderer_ (updatePageCache geometry (PageNum pn, pg))
   renderfunc
   where
     zoomUpdateAction uhdl =

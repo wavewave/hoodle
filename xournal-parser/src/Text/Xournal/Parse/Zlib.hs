@@ -1,7 +1,7 @@
 module Text.Xournal.Parse.Zlib where
 
 import qualified Data.ByteString.Lazy as LB
-import System.IO
+import System.IO (IOMode (..), withFile)
 
 -- | check if gzip or not
 checkIfBinary :: FilePath -> IO Bool

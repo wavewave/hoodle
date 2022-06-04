@@ -1,6 +1,9 @@
 module Hoodle.Type.Predefined where
 
 import Data.Time.Clock
+  ( NominalDiffTime,
+    picosecondsToDiffTime,
+  )
 
 -- |
 millisec :: Integer

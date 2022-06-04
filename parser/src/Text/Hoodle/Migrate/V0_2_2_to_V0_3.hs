@@ -5,14 +5,14 @@
 module Text.Hoodle.Migrate.V0_2_2_to_V0_3 where
 
 import Control.Error.Util (hoistEither)
-import Control.Monad.Trans
-import Control.Monad.Trans.Except
-import Data.Attoparsec.ByteString
+import Control.Monad.Trans (lift)
+import Control.Monad.Trans.Except (ExceptT (..), runExceptT)
+import Data.Attoparsec.ByteString (parseOnly)
 import qualified Data.ByteString.Char8 as B
 --
 import qualified Data.Hoodle.Simple.V0_2_2 as OH
 import qualified Data.Hoodle.Simple.V0_3 as NH
-import Lens.Micro
+import Lens.Micro (set)
 import Lens.Micro.Extras (view)
 --
 import qualified Text.Hoodle.Migrate.V0_1_1_to_V0_2_2

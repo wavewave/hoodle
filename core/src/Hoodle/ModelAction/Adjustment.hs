@@ -1,7 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Adjustment
 -- Copyright   : (c) 2011,2012,2014 Ian-Woo Kim
@@ -12,15 +8,19 @@
 -- Portability : GHC
 module Hoodle.ModelAction.Adjustment where
 
--- from other package
 import qualified Data.Foldable as F (mapM_)
--- from hoodle-platform
 import Data.Hoodle.BBox (BBox (..))
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Graphics.UI.Gtk as Gtk
--- from this package
 import Hoodle.Type.PageArrangement
+  ( DesktopDimension (..),
+    ViewPortBBox (..),
+  )
 import Hoodle.View.Coordinate
+  ( CanvasGeometry,
+    canvasViewPort,
+    desktopDim,
+  )
 
 -- | adjust values, upper limit and page size according to canvas geometry
 adjustScrollbarWithGeometry ::

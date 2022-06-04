@@ -4,13 +4,13 @@
 
 module Hoodle.Publish.PDF where
 
-import Control.Applicative
+import Control.Applicative ((<|>))
 import Control.Exception (SomeException (..), catch)
 import Control.Lens (view, _1, _2, _3, _4)
-import Control.Monad
-import Control.Monad.Trans
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State
+import Control.Monad (forM, forM_, unless, void, when, (<=<))
+import Control.Monad.Trans (lift, liftIO)
+import Control.Monad.Trans.Maybe (MaybeT (..))
+import Control.Monad.Trans.State (StateT (..), evalStateT, get, gets, modify, put)
 import Data.Attoparsec.ByteString.Char8
   ( anyChar,
     endOfInput,
@@ -25,22 +25,86 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (($>))
 import qualified Data.Hoodle.Simple as S
-import Data.Int
+import Data.Int (Int64)
 import Data.UUID (UUID, fromString)
-import Data.UUID.V4
+import Data.UUID.V4 (nextRandom)
 import Graphics.Hoodle.Render
+  ( initRenderContext,
+    renderPageStateT,
+  )
 import Graphics.Rendering.Cairo
-import Network.HTTP.Base
+  ( pdfSurfaceSetSize,
+    renderWith,
+    showPage,
+    withPDFSurface,
+  )
+import Network.HTTP.Base (urlEncode)
 import Network.URI (unEscapeString)
 import Pdf.Toolbox.Core
+  ( Array (..),
+    Dict (..),
+    Number (..),
+    Object (..),
+    PdfWriter,
+    Ref (..),
+    Str (..),
+    Stream (..),
+    deleteObject,
+    rawStreamContent,
+    runPdfWriter,
+    writeObject,
+    writePdfHeader,
+    writeXRefTable,
+  )
 import Pdf.Toolbox.Document
-import Pdf.Toolbox.Document.Internal.Types
+  ( Pdf,
+    catMaybes,
+    catalogPageNode,
+    defaultUserPassword,
+    deref,
+    document,
+    documentCatalog,
+    fromObject,
+    getRIS,
+    intValue,
+    isEncrypted,
+    isLeft,
+    knownFilters,
+    lookupDict,
+    lookupObject,
+    mapObject,
+    pageContents,
+    pageNodeNKids,
+    pageNodePageByNum,
+    runPdfWithHandle,
+    setUserPassword,
+    toStream,
+  )
+import Pdf.Toolbox.Document.Internal.Types (Page (..))
 import System.Directory
+  ( canonicalizePath,
+    doesDirectoryExist,
+    doesFileExist,
+    getModificationTime,
+    getTemporaryDirectory,
+    removeFile,
+  )
 import System.Directory.Tree (DirTree (..))
 import System.FilePath
+  ( makeRelative,
+    splitExtension,
+    splitFileName,
+    takeExtension,
+    (<.>),
+    (</>),
+  )
 import System.IO
+  ( IOMode (ReadMode),
+    hClose,
+    openBinaryFile,
+  )
 import qualified System.IO.Streams as Streams
-import System.Process
+import System.Process (readProcessWithExitCode, system)
 import Text.Hoodle.Parse.Attoparsec (hoodle)
 
 data UrlPath = FileUrl FilePath | HttpUrl String

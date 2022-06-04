@@ -3,8 +3,6 @@
 
 -----------------------------------------------------------------------------
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Data.Hoodle.Predefined
 -- Copyright   : (c) 2011-2013 Ian-Woo Kim
@@ -17,7 +15,7 @@ module Data.Hoodle.Predefined where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
-import Text.Printf
+import Text.Printf (printf)
 
 -- |
 predefinedPenShapeAspectXY :: (Double, Double)

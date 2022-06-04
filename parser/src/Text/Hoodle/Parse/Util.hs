@@ -1,11 +1,11 @@
 module Text.Hoodle.Parse.Util where
 
-import Control.Monad.IO.Class
-import Data.Attoparsec.ByteString.Char8
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Attoparsec.ByteString.Char8 (parseOnly)
 import qualified Data.ByteString.Char8 as B
 --
-import Data.Hoodle.Simple
-import System.Directory
+import Data.Hoodle.Simple (Hoodle)
+import System.Directory (doesFileExist)
 --
 import qualified Text.Hoodle.Parse.Attoparsec as PA
 

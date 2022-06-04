@@ -1,7 +1,7 @@
 module Hoodle.Type.Clipboard where
 
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
+import Data.Hoodle.BBox (BBoxed)
+import Data.Hoodle.Simple (Stroke)
 
 -- |
 newtype Clipboard = Clipboard {unClipboard :: [BBoxed Stroke]}

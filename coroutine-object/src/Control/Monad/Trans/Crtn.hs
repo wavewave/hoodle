@@ -5,9 +5,9 @@
 
 module Control.Monad.Trans.Crtn where
 
-import Control.Monad.Reader
-import Control.Monad.State
-import Control.Monad.Trans.Free
+import Control.Monad.Reader (ReaderT (..))
+import Control.Monad.State (StateT (..))
+import Control.Monad.Trans.Free (FreeF (Free, Pure), FreeT (..), wrap)
 
 ---------------------------
 -- general generator

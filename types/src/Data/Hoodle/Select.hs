@@ -13,11 +13,20 @@
 -- Portability : GHC
 module Data.Hoodle.Select where
 
-import Data.ByteString
+import Data.ByteString (ByteString)
 import Data.Hoodle.Generic
-import Data.Hoodle.Simple
+  ( GHoodle (..),
+    PDFData,
+    gembeddedpdf,
+    gembeddedtext,
+    ghoodleID,
+    gpages,
+    grevisions,
+    gtitle,
+  )
+import Data.Hoodle.Simple (Revision)
 import qualified Data.Text as T
-import Lens.Micro
+import Lens.Micro (Lens', lens)
 import Lens.Micro.Extras (view)
 
 -- |

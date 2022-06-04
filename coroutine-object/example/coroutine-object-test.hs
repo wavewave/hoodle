@@ -5,14 +5,23 @@
 module Main where
 
 import Control.Concurrent
-import Control.Monad.Trans.Crtn.Driver
-import Control.Monad.Trans.Crtn.Event
-import Control.Monad.Trans.Crtn.EventHandler
---
+  ( MVar,
+    newEmptyMVar,
+    putMVar,
+    threadDelay,
+  )
+import Control.Monad.Trans.Crtn.Driver (Driver, driver)
+import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
 import Event
-import Sample
-import SampleActor
-import Simple
+  ( Event
+      ( Close,
+        Message,
+        Open,
+        Render
+      ),
+  )
+import Sample (world)
+import Simple (simplelogger)
 
 -- |
 test_tickingevent :: IO ()

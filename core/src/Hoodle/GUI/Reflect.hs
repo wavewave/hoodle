@@ -4,10 +4,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.GUI.Reflect
 -- Copyright   : (c) 2013, 2014 Ian-Woo Kim
@@ -19,28 +15,90 @@
 module Hoodle.GUI.Reflect where
 
 import Control.Lens (Lens', view, (.~), (^.), _1, _2, _3)
-import Control.Monad.State as St
-import Data.Array.MArray
+import Control.Monad (when)
+import qualified Control.Monad.State as St
+import Control.Monad.Trans (liftIO)
+import Data.Array.MArray (writeArray)
 import qualified Data.Foldable as F (forM_, mapM_)
 import qualified Data.Map as M (lookup)
 import Data.Maybe (fromMaybe)
-import Data.Word
+import Data.Word (Word8)
 import qualified Graphics.UI.Gtk as Gtk
-import Hoodle.Accessor
+import Hoodle.Accessor (pureUpdateUhdl)
 import Hoodle.Coroutine.Draw
+  ( doIOaction_,
+    invalidateAll,
+  )
 import Hoodle.GUI.Menu
+  ( color2Int,
+    newPageMode2Int,
+    penType2Int,
+    point2Int,
+  )
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    currEraser,
+    currHighlighter,
+    currPen,
+    currentPageNum,
+    drawArea,
+    forBoth',
+    pageArrangement,
+    penColor,
+    penSet,
+    penType,
+    penWidth,
+    unboxBiAct,
+    viewInfo,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( PenColor (ColorRGBA),
+    PenType (..),
+    penColorRGBAmap,
+    selectType,
+  )
+import Hoodle.Type.Event (AllEvent (UsrEv), UserEvent (ActionOrdered))
 import Hoodle.Type.HoodleState
+  ( HoodleState,
+    UIComponentSignalHandler,
+    UnitHoodle,
+    currentCanvasInfo,
+    currentUnit,
+    cursorInfo,
+    doesUseVariableCursor,
+    getCurrentCanvasId,
+    gtkUIManager,
+    hoodleModeState,
+    hoodleModeStateEither,
+    newPageMode,
+    newPageModeSignal,
+    pageModeSignal,
+    penColorSignal,
+    penInfo,
+    penModeSignal,
+    penPointSignal,
+    selectInfo,
+    setCurrentCanvasId,
+    settings,
+    uiComponentSignalHandler,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    PageCoordinate (..),
+    PageNum (..),
+  )
 import Hoodle.Type.Predefined
-import Hoodle.Util
+  ( maxCursorHeight,
+    maxCursorWidth,
+  )
+import Hoodle.Util (msgShout, (#))
 import Hoodle.View.Coordinate
-
---
--- import Debug.Trace
+  ( desktop2Canvas,
+    makeCanvasGeometry,
+    page2Desktop,
+  )
 
 -- |
 changeCurrentCanvasId :: CanvasId -> MainCoroutine UnitHoodle
@@ -58,7 +116,7 @@ changeCurrentCanvasId cid = do
 --   changed.
 chkCvsIdNInvalidate :: CanvasId -> MainCoroutine ()
 chkCvsIdNInvalidate cid = do
-  currcid <- gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
+  currcid <- St.gets (getCurrentCanvasId . view (unitHoodles . currentUnit))
   when (currcid /= cid) (changeCurrentCanvasId cid >> invalidateAll)
 
 -- | block signal for act
@@ -197,7 +255,7 @@ reflectCursor isforced = do
       (ccolor, cwidth, cvar) = cinfo
   when (pcolor /= ccolor || pwidth /= cwidth || b /= cvar || isforced) $ do
     msgShout "reflectCursor: change cursor"
-    put . (cursorInfo . _1 .~ pcolor) . (cursorInfo . _2 .~ pwidth) . (cursorInfo . _3 .~ b) $ xst
+    St.put . (cursorInfo . _1 .~ pcolor) . (cursorInfo . _2 .~ pwidth) . (cursorInfo . _3 .~ b) $ xst
     doIOaction_ $
       if b
         then varyCursor xst

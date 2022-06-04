@@ -16,12 +16,23 @@
 -- representing selection of hoodle type
 module Data.Hoodle.Zipper where
 
-import Control.Applicative hiding (empty)
-import Data.Foldable
-import Data.Hoodle.Generic
-import Data.Monoid
-import Data.Sequence hiding (fromList)
-import Data.Traversable
+import Data.Foldable (foldr)
+import Data.Sequence
+  ( Seq,
+    ViewL (..),
+    ViewR (..),
+    empty,
+    fromList,
+    length,
+    singleton,
+    splitAt,
+    viewl,
+    viewr,
+    zipWith,
+    (<|),
+    (><),
+    (|>),
+  )
 import Prelude hiding (length, splitAt, zipWith)
 
 -- |

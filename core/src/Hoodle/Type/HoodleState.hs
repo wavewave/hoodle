@@ -97,34 +97,80 @@ module Hoodle.Type.HoodleState
   )
 where
 
-import Control.Concurrent
-import Control.Concurrent.STM
+import Control.Concurrent (ThreadId)
+import Control.Concurrent.STM (TVar, newTVarIO)
 import Control.Lens (Lens', lens, set, view, (^.))
-import Control.Monad.Trans.Crtn.Event
+import Control.Monad.Trans.Crtn.Event (ActionOrder)
 import Control.Monad.Trans.Crtn.Queue
+  ( Queue,
+    emptyQueue,
+  )
 import Data.Functor.Identity (Identity (..))
 import qualified Data.HashMap.Strict as HM
 import Data.Hoodle.Generic
+  ( emptyGHoodle,
+    gdimension,
+    gpages,
+  )
 import Data.Hoodle.Select
+  ( gSelect2GHoodle,
+    gselAll,
+  )
 import qualified Data.IntMap as M
 import Data.Maybe (fromMaybe)
-import Data.Sequence
+import Data.Sequence (empty)
 import qualified Data.Text as T
-import Data.Time.Clock
+import Data.Time.Clock (UTCTime)
 import Data.UUID (UUID)
-import Graphics.Hoodle.Render
+import Graphics.Hoodle.Render (updateHoodleBuf)
 import Graphics.Hoodle.Render.Type
+  ( GenCommandQueue,
+    HHoodle,
+    PDFCommandQueue,
+    RHoodle,
+    RenderCache,
+    Renderer,
+  )
 import qualified Graphics.UI.Gtk as Gtk hiding (Clipboard, get, set)
-import Hoodle.Device
-import Hoodle.Script.Hook
+import Hoodle.Device (DeviceList)
+import Hoodle.Script.Hook (Hook)
 import Hoodle.Type.Alias
+  ( EditMode,
+    Hoodle,
+    Page,
+    SelectMode,
+  )
 import Hoodle.Type.Canvas
+  ( CanvasId,
+    CanvasInfo,
+    CanvasInfoBox,
+    CanvasInfoMap,
+    PenDraw,
+    PenInfo,
+    canvasId,
+    currPen,
+    currentPageNum,
+    defaultPenInfo,
+    emptyPenDraw,
+    forBoth,
+    penColor,
+    penSet,
+    penWidth,
+    unboxBiXform,
+    unboxLens,
+  )
 import Hoodle.Type.Enum
-import Hoodle.Type.Event
-import Hoodle.Type.PageArrangement
-import Hoodle.Type.Undo
-import Hoodle.Type.Window
-import Hoodle.Util
+  ( BackgroundStyle (BkgStyleLined),
+    NewPageModeType (NPPlain),
+    PenColor,
+    SelectInfo (..),
+    SelectType (SelectLassoWork),
+  )
+import Hoodle.Type.Event (AllEvent)
+import Hoodle.Type.PageArrangement (PageDimension (..))
+import Hoodle.Type.Undo (UndoTable, emptyUndo)
+import Hoodle.Type.Window (WindowConfig)
+import Hoodle.Util (fromJustError, maybeError')
 
 -- |
 data HoodleModeState

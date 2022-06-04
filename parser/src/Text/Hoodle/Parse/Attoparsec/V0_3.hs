@@ -4,9 +4,24 @@
 
 module Text.Hoodle.Parse.Attoparsec.V0_3 where
 
-import Control.Applicative
+import Control.Applicative (many, (<|>))
 import Control.Monad (void)
 import Data.Attoparsec.ByteString
+  ( Parser,
+    endOfInput,
+    inClass,
+    many1,
+    manyTill,
+    notInClass,
+    satisfy,
+    skipWhile,
+    string,
+    takeTill,
+    takeWhile,
+    takeWhile1,
+    try,
+    (<?>),
+  )
 import Data.Attoparsec.ByteString.Char8
   ( anyChar,
     char,
@@ -15,11 +30,10 @@ import Data.Attoparsec.ByteString.Char8
     isHorizontalSpace,
     skipSpace,
   )
-import qualified Data.ByteString.Char8 as B hiding (map)
-import Data.Char
+import qualified Data.ByteString.Char8 as B
 import Data.Functor (($>), (<&>))
 import qualified Data.Hoodle.Simple.V0_3 as H
-import Data.Strict.Tuple
+import Data.Strict.Tuple (Pair ((:!:)))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Prelude hiding (takeWhile)

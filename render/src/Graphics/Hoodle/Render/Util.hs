@@ -3,7 +3,7 @@
 module Graphics.Hoodle.Render.Util where
 
 --
-import Data.Hoodle.BBox
+import Data.Hoodle.BBox (BBox (..))
 import qualified Graphics.Rendering.Cairo as Cairo
 
 -- |

@@ -2,16 +2,23 @@
 -- testing program for attoparsec and sax hoodle parser
 --
 
-import Control.Monad
+import Control.Monad (when)
 import Data.Attoparsec.ByteString (parse)
 import Data.Attoparsec.Types (IResult (Done))
 import qualified Data.ByteString as B
 import Data.Hoodle.Simple
-import Graphics.Hoodle.Render
-import Graphics.Hoodle.Render.Type
+  ( Dimension (..),
+    Hoodle (..),
+    Page (..),
+  )
+import Graphics.Hoodle.Render (renderPage)
 import Graphics.Rendering.Cairo
-import System.Environment
-import Text.Hoodle.Parse.Attoparsec
+  ( renderWith,
+    showPage,
+    withPDFSurface,
+  )
+import System.Environment (getArgs)
+import Text.Hoodle.Parse.Attoparsec (hoodle)
 
 -- |
 main :: IO ()

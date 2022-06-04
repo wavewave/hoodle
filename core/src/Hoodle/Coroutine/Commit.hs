@@ -1,15 +1,25 @@
 module Hoodle.Coroutine.Commit where
 
 import Control.Lens (set, view, (.~))
-import Control.Monad.State
-import Hoodle.Accessor
-import Hoodle.Coroutine.Draw
-import Hoodle.GUI.Reflect
-import Hoodle.ModelAction.Page
-import Hoodle.Type.Coroutine
+import Control.Monad.State (get, liftIO, put)
+import Hoodle.Accessor (pureUpdateUhdl, updateUhdl)
+import Hoodle.Coroutine.Draw (callRenderer_, invalidateAll)
+import Hoodle.GUI.Reflect (reflectUIToggle)
+import Hoodle.ModelAction.Page (updatePageAll)
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.HoodleState
-import Hoodle.Type.Undo
-import Hoodle.Util
+  ( HoodleState,
+    currentUnit,
+    getCurrentCanvasId,
+    gtkUIManager,
+    hoodleModeState,
+    isSaved,
+    resetHoodleModeStateBuffers,
+    undoTable,
+    unitHoodles,
+  )
+import Hoodle.Type.Undo (addToUndo, emptyUndo, getNextUndo, getPrevUndo)
+import Hoodle.Util (msgShout)
 
 -- | save state and add the current status in undo history
 commit :: HoodleState -> MainCoroutine ()

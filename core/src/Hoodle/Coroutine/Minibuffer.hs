@@ -7,20 +7,31 @@ import Control.Lens (view)
 import Control.Monad.State (get)
 import Control.Monad.Trans (liftIO)
 import Data.Foldable (Foldable (..), forM_, mapM_, toList)
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple (Stroke (..))
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, ViewL (..), empty, singleton, viewl, (|>))
 import Graphics.Hoodle.Render (renderStrk)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Coroutine.Draw
-import Hoodle.Device
+  ( invalidateInBBox,
+    nextevent,
+    waitSomeEvent,
+  )
+import Hoodle.Device (PenButton (..), PointerCoord (..), getPointer)
 import Hoodle.ModelAction.Pen (createNewStroke)
 import Hoodle.Type.Canvas (defaultPenInfo, defaultPenWCS, penWidth)
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
+  ( AllEvent (..),
+    MiniBufferEvent (..),
+    UserEvent (..),
+  )
 import Hoodle.Type.HoodleState
+  ( deviceList,
+    gtkUIManager,
+  )
 import Prelude hiding (length, mapM_)
 
 drawMiniBufBkg :: Cairo.Render ()

@@ -2,8 +2,8 @@
 
 module Hoodle.Script where
 
-import Config.Dyre.Relaunch
-import Hoodle.Script.Hook
+import Config.Dyre.Relaunch (relaunchMaster)
+import Hoodle.Script.Hook (Hook)
 
 -- |
 data ScriptConfig = ScriptConfig

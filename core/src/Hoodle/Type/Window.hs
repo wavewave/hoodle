@@ -1,6 +1,6 @@
 module Hoodle.Type.Window where
 
-import Hoodle.Type.Canvas
+import Hoodle.Type.Canvas (CanvasId)
 
 -- |
 data WindowConfig

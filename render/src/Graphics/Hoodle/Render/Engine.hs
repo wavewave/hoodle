@@ -8,15 +8,46 @@ module Graphics.Hoodle.Render.Engine
 where
 
 import Control.Concurrent.STM
+  ( TVar,
+    atomically,
+    putTMVar,
+    readTVar,
+    retry,
+    writeTVar,
+  )
 import Control.Monad (forever)
 import qualified Data.HashMap.Strict as HM
---
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple (Background (..), Dimension (..))
 import Data.Sequence (ViewL (..), viewl)
---
-import Graphics.Hoodle.Render
+import Graphics.Hoodle.Render (renderRItem)
 import Graphics.Hoodle.Render.Background
+  ( popplerGetDocFromDataURI,
+    popplerGetDocFromFile,
+    popplerGetPageFromDoc,
+    renderBkg,
+  )
 import Graphics.Hoodle.Render.Type
+  ( GenCommand
+      ( BkgSmplScaled,
+        LayerInit,
+        LayerRedraw,
+        LayerScaled
+      ),
+    GenCommandQueue,
+    PDFCommand
+      ( GetDocFromDataURI,
+        GetDocFromFile,
+        GetNPages,
+        GetPageFromDoc,
+        RenderPageScaled
+      ),
+    PDFCommandQueue,
+    RenderCache,
+    RendererEvent
+      ( FinishCommandFor,
+        SurfaceUpdate
+      ),
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 import qualified Graphics.UI.Gtk.Poppler.Page as Poppler

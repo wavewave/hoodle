@@ -5,9 +5,28 @@
 module Hoodle.GUI.Menu where
 
 import Control.Lens (set)
-import Control.Monad
+import Control.Monad (foldM, when)
 import qualified Data.Foldable as F (forM_)
 import Data.Hoodle.Predefined
+  ( predefinedEraserFine,
+    predefinedEraserMedium,
+    predefinedEraserThick,
+    predefinedEraserUltrathick,
+    predefinedEraserVeryfine,
+    predefinedEraserVerythick,
+    predefinedFine,
+    predefinedHighlighterFine,
+    predefinedHighlighterMedium,
+    predefinedHighlighterThick,
+    predefinedHighlighterUltrathick,
+    predefinedHighlighterVeryfine,
+    predefinedHighlighterVerythick,
+    predefinedMedium,
+    predefinedThick,
+    predefinedUltrathick,
+    predefinedVeryfine,
+    predefinedVerythick,
+  )
 import Foreign.C.Types (CInt (..))
 import Foreign.ForeignPtr (withForeignPtr)
 import Foreign.Ptr (Ptr)
@@ -15,10 +34,27 @@ import qualified Graphics.UI.Gtk as Gtk
 import qualified Graphics.UI.Gtk.General.CssProvider as Gtk
 import qualified Graphics.UI.Gtk.General.StyleContext as Gtk
 import qualified Graphics.UI.GtkInternals as Gtk (unToolbar)
-import Hoodle.Coroutine.Callback
+import Hoodle.Coroutine.Callback (eventHandler)
 import Hoodle.Type
-import Paths_hoodle_core
-import System.FilePath
+  ( AllEvent (..),
+    BackgroundStyle (..),
+    EventVar,
+    MenuEvent (..),
+    NewPageModeType (..),
+    PenColor (..),
+    PenType (..),
+    SelectType (..),
+    UIComponentSignalHandler,
+    UserEvent (..),
+    defaultUIComponentSignalHandler,
+    newPageModeSignal,
+    pageModeSignal,
+    penColorSignal,
+    penModeSignal,
+    viewModeToUserEvent,
+  )
+import Paths_hoodle_core (getDataDir)
+import System.FilePath ((</>))
 
 -- | This is because haskell gtk3 package miss gtk_toolbar_set_icon_size.
 --   Refer to leksah IDE.Find module.

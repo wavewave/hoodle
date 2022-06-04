@@ -5,25 +5,62 @@
 
 module Hoodle.Accessor where
 
-import Control.Applicative
 import Control.Concurrent.STM (readTVarIO)
 import Control.Lens (Lens', set, view, (.~))
-import Control.Monad hiding (forM_, mapM_)
-import Control.Monad.IO.Class
-import qualified Control.Monad.State as St hiding (forM_, mapM_)
-import Data.Foldable
+import Control.Monad.IO.Class (liftIO)
+import qualified Control.Monad.State as St
+import Data.Foldable (forM_)
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
+  ( ghoodleID,
+    gitems,
+  )
+import Data.Hoodle.Select (gselSelected)
 import qualified Data.IntMap as M
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Graphics.Hoodle.Render.Type
+  ( CanvasId,
+    RItem,
+    RenderCache,
+  )
 import qualified Graphics.UI.Gtk as Gtk
-import Hoodle.ModelAction.Layer
+import Hoodle.ModelAction.Layer (getCurrentLayer)
 import Hoodle.Type
-import Hoodle.Type.Alias
-import Hoodle.Type.PageArrangement
+  ( CanvasInfo,
+    FileStore (LocalDir, TempDir),
+    HoodleModeState (SelectState, ViewAppendState),
+    HoodleState,
+    MainCoroutine,
+    PenType,
+    UnitHoodle,
+    currentCanvasInfo,
+    currentPageNum,
+    currentUnit,
+    cvsInfoMap,
+    drawArea,
+    forBoth',
+    getCanvasInfo,
+    getCurrentPageFromHoodleModeState,
+    getHoodle,
+    gtkUIManager,
+    hoodleFileControl,
+    hoodleFileName,
+    hoodleModeState,
+    pageArrangement,
+    penInfo,
+    penType,
+    renderCacheVar,
+    unboxBiAct,
+    unboxLens,
+    unitHoodles,
+    viewInfo,
+  )
+import Hoodle.Type.Alias (EditMode, Page, SelectMode)
+import Hoodle.Type.PageArrangement (PageNum (..))
 import Hoodle.View.Coordinate
+  ( CanvasGeometry,
+    makeCanvasGeometry,
+  )
 import Prelude hiding (mapM_)
 
 -- | update state

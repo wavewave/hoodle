@@ -2,15 +2,27 @@
 
 module Graphics.Hoodle.Render.Type.Select where
 
-import Control.Lens
+import Control.Lens (Lens', lens, view)
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
-import Data.Hoodle.Zipper
-import Data.IntMap hiding (fromList, map)
-import Graphics.Hoodle.Render.Type.Background
+  ( GLayer (..),
+    GPage (..),
+    gbackground,
+    gbuffer,
+    gdimension,
+    gitems,
+    glayers,
+  )
+import Data.Hoodle.Select (GSelect)
+import Data.Hoodle.Zipper (ZipperSelect, current, replace)
+import Data.IntMap (IntMap)
+import Graphics.Hoodle.Render.Type.Background (RBackground)
 import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Type.Hoodle
-import Graphics.Hoodle.Render.Type.Item
+  ( Hitted (..),
+    TEitherAlterHitted (..),
+    interleave,
+  )
+import Graphics.Hoodle.Render.Type.Hoodle (RLayer, RPage)
+import Graphics.Hoodle.Render.Type.Item (RItem)
 
 ----------------------------
 -- select state rendering --

@@ -2,26 +2,47 @@
 
 module Hoodle.Coroutine.Layer where
 
-import Control.Category
+import Control.Category (id, (.))
 import Control.Lens (set, view)
-import Control.Monad.State
---
-import Data.Hoodle.Generic
+import Control.Monad.State (get, liftIO, modify)
+import Data.Hoodle.Generic (glayers)
 import Data.Hoodle.Zipper
-import Data.IORef
+  ( appendGoLast,
+    currIndex,
+    deleteCurrent,
+    lengthSZ,
+    moveLeft,
+    moveRight,
+    moveTo,
+  )
+import Data.IORef (newIORef, readIORef)
 import qualified Data.IntMap as M
 import Graphics.Hoodle.Render.Type
+  ( emptyRLayer,
+    hPage2RPage,
+    issueSurfaceID,
+  )
 import qualified Graphics.UI.Gtk as Gtk
---
-import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
-import Hoodle.Coroutine.Draw
-import Hoodle.ModelAction.Layer
-import Hoodle.ModelAction.Page
-import Hoodle.Type.Alias
+import Hoodle.Accessor (getCurrentPageEitherFromHoodleModeState)
+import Hoodle.Coroutine.Commit (commit)
+import Hoodle.Coroutine.Draw (invalidateAll)
+import Hoodle.ModelAction.Layer (layerChooseDialog)
+import Hoodle.ModelAction.Page (getPageMap, setPageMap, updatePageAll)
+import Hoodle.Type.Alias (EditMode, Page)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( currentPageNum,
+    forBoth',
+    unboxBiAct,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.HoodleState
+  ( HoodleModeState,
+    UnitHoodle,
+    currentCanvasInfo,
+    currentUnit,
+    hoodleModeState,
+    unitHoodles,
+  )
 --
 import Prelude hiding (id, (.))
 

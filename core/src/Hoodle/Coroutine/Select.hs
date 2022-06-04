@@ -4,47 +4,189 @@
 module Hoodle.Coroutine.Select where
 
 import Control.Lens (set, view, (.~), (^.))
-import Control.Monad
-import Control.Monad.Identity
-import Control.Monad.State
+import Control.Monad (void, when, (>=>))
+import Control.Monad.Identity (runIdentity)
+import Control.Monad.State (get, gets, liftIO)
 import Data.Bifunctor (first, second)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    ULMaybe (..),
+    UnionBBox (..),
+    getBBox,
+    inflate,
+  )
 import Data.Hoodle.Generic
+  ( GLayer (..),
+    gbuffer,
+    gitems,
+    glayers,
+  )
 import Data.Hoodle.Select
+  ( gselAll,
+    gselSelected,
+  )
 import qualified Data.IntMap as M
 import qualified Data.Maybe as Maybe (fromMaybe)
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Sq (empty)
 import Data.Time.Clock
-import Graphics.Hoodle.Render.Generic
+  ( UTCTime,
+    getCurrentTime,
+  )
+import Graphics.Hoodle.Render.Generic (cairoRenderOption)
 import Graphics.Hoodle.Render.Type
+  ( InBBox (..),
+    InBBoxOption (..),
+    RItem (..),
+    hPage2RPage,
+    isStrkInRItem,
+    mkHPage,
+    selectedLayer,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Util
+  ( AlterList (..),
+    Hitted (..),
+    NotHitted (..),
+    TEitherAlterHitted (..),
+    getB,
+    isAnyHitted,
+    takeHitted,
+    takeLastFromHitted,
+  )
+import Graphics.Hoodle.Render.Util (clipBBox)
 import Graphics.Hoodle.Render.Util.HitTest
+  ( do2BBoxIntersect,
+    hltEmbeddedByBBox,
+    hltFilteredBy,
+    isPointInBBox,
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.Rendering.Cairo.Matrix as Mat
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
-import Hoodle.Coroutine.ContextMenu
+  ( getCurrentPageCvsId,
+    getCurrentPageEitherFromHoodleModeState,
+    pureUpdateUhdl,
+    rItmsInCurrLyr,
+    renderCache,
+  )
+import Hoodle.Coroutine.Commit (commit_)
+import Hoodle.Coroutine.ContextMenu (showContextMenu)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Mode
+  ( invalidateAllInBBox,
+    invalidateTemp,
+    invalidateTempBasePage,
+    nextevent,
+    waitSomeEvent,
+  )
+import Hoodle.Coroutine.Mode (modeChange)
 import Hoodle.Coroutine.Pen
-import Hoodle.Coroutine.Select.Clipboard
+  ( commonPenStart,
+    createTempRender,
+    penMoveAndUpInterPage,
+    penMoveAndUpOnly,
+    skipIfNotInSamePage,
+    switchActionEnteringDiffPage,
+  )
+import Hoodle.Coroutine.Select.Clipboard (updateTempHoodleSelectM)
 import Hoodle.Device
-import Hoodle.ModelAction.Layer
-import Hoodle.ModelAction.Page
+  ( PenButton (PenButton1, PenButton3),
+    PointerCoord,
+  )
+import Hoodle.ModelAction.Layer (getCurrentLayer)
+import Hoodle.ModelAction.Page (updatePageAll)
 import Hoodle.ModelAction.Pen
+  ( TempRender,
+    tempInfo,
+    tempSurfaceSrc,
+    tempSurfaceTgt,
+    updateTempRender,
+  )
 import Hoodle.ModelAction.Select
+  ( Handle
+      ( HandleBL,
+        HandleBR,
+        HandleTL,
+        HandleTR
+      ),
+    ItmsNImg,
+    TempSelection,
+    changeItemStrokeColor,
+    changeItemStrokeWidth,
+    checkIfHandleGrasped,
+    deleteSelected,
+    drawTempSelectImage,
+    getDiffBBox,
+    getNewBBoxFromHandlePos,
+    getNewCoordTime,
+    getSelectedItms,
+    getULBBoxFromSelected,
+    hitInHandle,
+    hitInSelection,
+    hitLassoItem,
+    imageSurface,
+    makePageSelectMode,
+    mkItmsNImg,
+    scaleFromToBBox,
+    separateFS,
+    toggleCutCopyDelete,
+  )
 import Hoodle.ModelAction.Select.Transform
+  ( changeItemBy,
+    changeSelectionBy,
+    changeSelectionByOffset,
+    offsetFunc,
+  )
 import Hoodle.Type.Alias
+  ( Page,
+    SelectMode,
+  )
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    CanvasInfo,
+    canvasId,
+    currentPageNum,
+    forBoth',
+    unboxBiAct,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( DrawFlag (Efficient),
+    PenColor,
+    SelectType (SelectHandToolWork, SelectLassoWork, SelectRectangleWork),
+  )
+import Hoodle.Type.Event (UserEvent (PenUp, ToViewAppendMode))
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState),
+    IsOneTimeSelectMode
+      ( NoOneTimeSelectMode,
+        YesAfterSelect,
+        YesBeforeSelect
+      ),
+    UnitHoodle,
+    currentUnit,
+    getCanvasInfo,
+    getCurrentCanvasId,
+    gtkUIManager,
+    hoodleModeState,
+    isOneTimeSelectMode,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    DesktopCoordinate (..),
+    PageCoordinate (..),
+    PageNum (..),
+  )
 import Hoodle.View.Coordinate
+  ( CanvasGeometry (desktop2Canvas, page2Desktop),
+  )
 import Hoodle.View.Draw
+  ( cairoXform4PageCoordinate,
+    mkXform4Page,
+    renderBoxSelection,
+    renderLasso,
+    renderSelectedItem,
+  )
 
 --
 -- import           Prelude hiding ((.), id)

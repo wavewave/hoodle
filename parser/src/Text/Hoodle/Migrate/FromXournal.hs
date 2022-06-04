@@ -7,7 +7,7 @@ where
 
 import qualified Data.Hoodle.Simple as H
 import qualified Data.Xournal.Simple as X
-import Lens.Micro
+import Lens.Micro (set)
 
 -- |
 mkHoodleFromXournal :: X.Xournal -> IO H.Hoodle

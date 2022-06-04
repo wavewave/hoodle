@@ -2,45 +2,107 @@
 
 module Hoodle.Coroutine.VerticalSpace where
 
-import Control.Applicative
-import Control.Category
+import Control.Category ((.))
 import Control.Lens (at, set, view, (.~))
-import Control.Monad hiding (mapM_)
+import Control.Monad ((>=>))
 import Control.Monad.State (gets)
 import Control.Monad.Trans (liftIO)
 import Data.Bifunctor (second)
-import Data.Foldable
+import Data.Foldable (concat, concatMap, mapM_)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    ULMaybe (Middle),
+    UnionBBox (..),
+    getBBox,
+    toMaybe,
+  )
 import Data.Hoodle.Generic
+  ( gdimension,
+    gitems,
+    glayers,
+    gpages,
+  )
 import Data.Hoodle.Simple (Dimension (..))
 import Data.Hoodle.Zipper (SeqZipper, toSeq)
-import Data.Monoid
-import Data.Time.Clock
-import Graphics.Hoodle.Render
+import Data.Time.Clock (UTCTime, getCurrentTime)
+import Graphics.Hoodle.Render (renderRItem)
 import Graphics.Hoodle.Render.Type
+  ( RItem (..),
+    SurfaceID,
+    emptyRLayer,
+    issueSurfaceID,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Util.HitTest
+  ( Hitted (..),
+    NotHitted (..),
+    RItemHitted,
+    getA,
+    getB,
+    interleave,
+  )
+import Graphics.Hoodle.Render.Util.HitTest (hltFilteredBy)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( getCurrentPageCurr,
+    pureUpdateUhdl,
+    renderCache,
+    updateUhdl,
+  )
+import Hoodle.Coroutine.Commit (commit_)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Page
+  ( invalidateAll,
+    nextevent,
+  )
+import Hoodle.Coroutine.Page (addNewPageInHoodle, canvasZoomUpdateAll)
 import Hoodle.Coroutine.Pen
-import Hoodle.Device
-import Hoodle.ModelAction.Page
-import Hoodle.ModelAction.Select.Transform
-import Hoodle.Type.Alias
+  ( commonPenStart,
+    penMoveAndUpOnly,
+    processWithDefTimeInterval,
+  )
+import Hoodle.Device (PointerCoord)
+import Hoodle.ModelAction.Page (updatePageAll)
+import Hoodle.ModelAction.Select.Transform (changeItemBy)
+import Hoodle.Type.Alias (EditMode, Hoodle, Page)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
+  ( CanvasId,
+    CanvasInfo (..),
+    drawArea,
+    forBoth',
+    unboxBiAct,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
 import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( AddDirection (PageAfter),
+    BackgroundStyle,
+    VerticalSpaceMode (GoingDown, GoingUp, OverPage),
+  )
+import Hoodle.Type.Event (UserEvent)
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    UnitHoodle,
+    backgroundStyle,
+    currentUnit,
+    getCanvasInfo,
+    getHoodle,
+    hoodleModeState,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Type.Predefined
-import Hoodle.Util
+  ( CanvasCoordinate (..),
+    PageCoordinate (..),
+    PageNum (..),
+  )
+import Hoodle.Type.Predefined (predefinedLassoWidth)
+import Hoodle.Util (msgShout)
 import Hoodle.View.Coordinate
-import Hoodle.View.Draw
+  ( CanvasGeometry,
+    desktop2Canvas,
+    desktop2Page,
+    device2Desktop,
+    page2Desktop,
+  )
+import Hoodle.View.Draw (cairoXform4PageCoordinate, canvas2DesktopRatio, canvasImageSurface, mkXform4Page)
 --
 import Prelude hiding (concat, concatMap, id, mapM_, (.))
 

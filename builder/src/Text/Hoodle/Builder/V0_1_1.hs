@@ -3,23 +3,30 @@
 
 module Text.Hoodle.Builder.V0_1_1 where
 
-import Blaze.ByteString.Builder
+import Blaze.ByteString.Builder (Builder, fromByteString, toLazyByteString)
 import Blaze.ByteString.Builder.Char8 (fromChar, fromString)
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Lazy as L
-import Data.Double.Conversion.ByteString
+import Data.Double.Conversion.ByteString (toFixed)
 import Data.Hoodle.Simple.V0_1_1
-import Data.Strict.Tuple
+  ( Background (..),
+    Dimension (..),
+    Hoodle (..),
+    Image (..),
+    Item (..),
+    Layer (..),
+    Page (..),
+    SVG (..),
+    Stroke (..),
+    background,
+    dimension,
+    items,
+    layers,
+    pages,
+    title,
+  )
+import Data.Strict.Tuple (Pair (..))
 import Lens.Micro.Extras (view)
-
--- |
-
-{- toFixed :: Int -> Double -> S.ByteString
-toFixed 2 x = printf "%.2f" x
-              -- SC.pack . show . (*0.01) . fromIntegral . floor
-              --  $ x*100
-toFixed _ _ = error "undefined toFixed"
--}
 
 -- |
 builder :: Hoodle -> L.ByteString

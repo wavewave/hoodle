@@ -2,28 +2,97 @@
 
 module Hoodle.Coroutine.Mode where
 
-import Control.Applicative
 import Control.Lens (set, view, (.~))
-import Control.Monad.State
-import Data.Hoodle.BBox
-import Data.Hoodle.Generic
+import Control.Monad.State (liftIO)
+import Data.Hoodle.BBox (bbox_upperleft)
+import Data.Hoodle.Generic (gdimension)
 import Data.Hoodle.Select
+  ( gHoodle2GSelect,
+    gSelect2GHoodle,
+    gselAll,
+    gselSelected,
+  )
 import qualified Data.IntMap as M
-import Graphics.Hoodle.Render
-import Graphics.Hoodle.Render.Type
+import Graphics.Hoodle.Render (updatePageBuf)
+import Graphics.Hoodle.Render.Type (hPage2RPage)
 import qualified Graphics.UI.Gtk as Gtk (adjustmentGetValue)
 import Hoodle.Accessor
+  ( getCurrentPageCurr,
+    getGeometry4CurrCvs,
+    updateUhdl,
+    updateXState,
+  )
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Scroll
+  ( callRenderer_,
+    invalidateAll,
+    invalidateAllInBBox,
+  )
+import Hoodle.Coroutine.Scroll (adjustScrollbarWithGeometryCurrent)
 import Hoodle.GUI.Reflect
-import Hoodle.Type.Alias
+  ( reflectPenColorUI,
+    reflectPenModeUI,
+    reflectPenWidthUI,
+  )
+import Hoodle.Type.Alias (EditMode, Hoodle, SelectMode)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( CanvasInfo (..),
+    CanvasInfoBox (CanvasContPage, CanvasSinglePage),
+    ViewInfo (..),
+    adjustments,
+    canvasId,
+    canvasWidgets,
+    currentPageNum,
+    drawArea,
+    horizAdjConnId,
+    horizAdjustment,
+    mDrawSurface,
+    notifiedItem,
+    pageArrangement,
+    scrolledWindow,
+    unboxBiAct,
+    vertAdjConnId,
+    vertAdjustment,
+    viewInfo,
+    zoomMode,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
+  ( UserEvent
+      ( ToContSinglePage,
+        ToSelectMode,
+        ToSinglePage,
+        ToViewAppendMode
+      ),
+  )
 import Hoodle.Type.HoodleState
+  ( HoodleModeState (SelectState, ViewAppendState),
+    HoodleState,
+    UnitHoodle,
+    currentCanvasInfo,
+    currentUnit,
+    getCurrentCanvasId,
+    getHoodle,
+    hoodleModeState,
+    hoodleModeStateEither,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( DesktopCoordinate (..),
+    PageCoordinate (..),
+    PageDimension (..),
+    PageNum (..),
+    ViewPortBBox (..),
+    makeContinuousArrangement,
+    makeSingleArrangement,
+    viewPortBBox,
+  )
 import Hoodle.View.Coordinate
+  ( canvasDim,
+    desktop2Page,
+    makeCanvasGeometry,
+    page2Desktop,
+  )
 --
 import Prelude hiding (mapM, mapM_)
 

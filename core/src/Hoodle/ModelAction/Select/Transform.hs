@@ -2,17 +2,41 @@
 
 module Hoodle.ModelAction.Select.Transform where
 
-import Control.Category
+import Control.Category ((.))
 import Control.Lens (set, view)
 import Control.Monad.Identity (runIdentity)
 import Data.Bifunctor (second)
 import Data.Hoodle.BBox
+  ( BBoxed (..),
+    makeBBoxed,
+  )
 import Data.Hoodle.Generic
-import Data.Hoodle.Simple hiding (Hoodle, Page)
-import Data.Strict.Tuple
+  ( GLayer (..),
+    gbuffer,
+    gitems,
+    glayers,
+  )
+import Data.Hoodle.Simple
+  ( Anchor (..),
+    Dimension (Dim),
+    Image (..),
+    Link (..),
+    SVG (..),
+    Stroke (..),
+  )
+import Data.Strict.Tuple (Pair ((:!:)))
 import Graphics.Hoodle.Render.Type
+  ( RItem (..),
+    selectedLayer,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
-import Hoodle.Type.Alias
+  ( AlterList (..),
+    Hitted (..),
+    TAlterHitted,
+    TEitherAlterHitted (..),
+    getA,
+  )
+import Hoodle.Type.Alias (Page, SelectMode)
 import Prelude hiding (id, (.))
 
 -- |

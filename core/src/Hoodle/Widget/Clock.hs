@@ -1,7 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.Widget.Clock
 -- Copyright   : (c) 2013-2015 Ian-Woo Kim
@@ -15,31 +11,69 @@
 module Hoodle.Widget.Clock where
 
 import Control.Lens (over, set, view, (.~))
-import Control.Monad.State
+import Control.Monad.State (get, liftIO, modify)
 import Data.Functor.Identity (Identity (..))
---
-import Data.Hoodle.BBox
-import Data.Hoodle.Simple
+import Data.Hoodle.BBox (BBox (..))
+import Data.Hoodle.Simple (Dimension (Dim))
 import Data.List (delete)
 import Data.Time
-import Graphics.Hoodle.Render.Util.HitTest
+  ( UTCTime,
+    getCurrentTime,
+  )
+import Graphics.Hoodle.Render.Util.HitTest (isPointInBBox)
 import qualified Graphics.Rendering.Cairo as Cairo
---
-import Hoodle.Accessor
+import Hoodle.Accessor (renderCache)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.Pen
-import Hoodle.Device
+  ( invalidate,
+    invalidateInBBox,
+    nextevent,
+  )
+import Hoodle.Coroutine.Pen (processWithDefTimeInterval)
+import Hoodle.Device (PointerCoord)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( CanvasId,
+    CanvasInfo,
+    canvasWidgets,
+    forBoth,
+    forBoth',
+    unboxBiAct,
+    unboxBiXform,
+    unboxLens,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
+import Hoodle.Type.Event (UserEvent (PenMove, PenUp))
 import Hoodle.Type.HoodleState
+  ( currentUnit,
+    getCanvasInfo,
+    getCurrentCanvasId,
+    getHoodle,
+    setCanvasInfo,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    CanvasDimension (..),
+  )
 import Hoodle.Type.Widget
+  ( WidgetItem (ClockWidget),
+    allWidgets,
+    clockWidgetConfig,
+    clockWidgetPosition,
+    doesUseClockWidget,
+    widgetConfig,
+  )
 import Hoodle.View.Coordinate
+  ( CanvasGeometry (canvasDim, desktop2Canvas),
+    device2Desktop,
+  )
 import Hoodle.View.Draw
-
---
+  ( canvasImageSurface,
+    doubleBufferFlush,
+    drawWidgets,
+    renderClockWidget,
+    virtualDoubleBufferDraw,
+  )
 
 -- |
 newtype CWAction = Move (CanvasCoordinate, CanvasCoordinate)

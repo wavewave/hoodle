@@ -3,13 +3,13 @@
 
 module Hoodle.Config where
 
-import Control.Concurrent
-import Control.Monad
-import Data.Configurator as C
-import Data.Configurator.Types
-import System.Directory
-import System.Environment
-import System.FilePath
+import Control.Concurrent (threadDelay)
+import Control.Monad (unless)
+import qualified Data.Configurator as C
+import Data.Configurator.Types (Config, Worth (Required))
+import System.Directory (doesFileExist)
+import System.Environment (getEnv)
+import System.FilePath ((</>))
 
 emptyConfigString :: String
 emptyConfigString = "\n#config file for hoodle \n "
@@ -22,7 +22,7 @@ loadConfigFile = do
   unless b $ do
     writeFile dothoodle emptyConfigString
     threadDelay 1000000
-  load [Required "$(HOME)/.hoodle"]
+  C.load [Required "$(HOME)/.hoodle"]
 
 getMaxUndo :: Config -> IO (Maybe Int)
 getMaxUndo c = C.lookup c "maxundo"

@@ -7,7 +7,22 @@ import Data.Maybe (isNothing, mapMaybe)
 import qualified Graphics.UI.Gtk as Gtk (initGUI)
 --
 import Hoodle.Publish.PDF
+  ( createPdf,
+    isHdl,
+    isPdf,
+    isUpdated,
+    takeFile,
+  )
 import System.Console.CmdArgs
+  ( Data,
+    Typeable,
+    argPos,
+    cmdArgs,
+    def,
+    modes,
+    typ,
+    (&=),
+  )
 import System.Directory (removeFile)
 import System.Directory.Tree (AnchoredDirTree (..), build, flattenDir)
 import System.FilePath (makeRelative, replaceExtension, (</>))

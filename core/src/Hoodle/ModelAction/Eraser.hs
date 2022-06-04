@@ -1,7 +1,3 @@
------------------------------------------------------------------------------
-
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.ModelAction.Eraser
 -- Copyright   : (c) 2011, 2012 Ian-Woo Kim
@@ -12,11 +8,17 @@
 -- Portability : GHC
 module Hoodle.ModelAction.Eraser where
 
-import Control.Monad.State
--- from hoodle-platform
+import Control.Monad.State (State)
 import Data.Hoodle.BBox
+  ( BBox,
+    GetBBoxable,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Util.HitTest
+  ( AlterList (..),
+    Hitted (..),
+    NotHitted (..),
+  )
+import Graphics.Hoodle.Render.Util.HitTest (elimHitted)
 
 -- |
 eraseHitted ::

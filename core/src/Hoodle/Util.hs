@@ -2,23 +2,48 @@
 
 module Hoodle.Util where
 
-import Control.Applicative
+import Control.Applicative ((<|>))
 import Control.Monad (void)
-import Control.Monad.IO.Class
-import Control.Monad.Trans.Maybe
+import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Attoparsec.ByteString.Char8
+  ( anyChar,
+    endOfInput,
+    inClass,
+    manyTill,
+    parseOnly,
+    satisfy,
+    string,
+    try,
+  )
 import qualified Data.ByteString.Char8 as B
 import Data.Functor (($>))
 import Data.Hoodle.Simple
-import Data.Maybe
-import Data.Time.Clock
+  ( Dimension (..),
+    Hoodle (..),
+    Page (..),
+  )
+import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Time.Clock (getCurrentTime)
 import Data.Time.Format
+  ( defaultTimeLocale,
+    formatTime,
+  )
 import Data.UUID.V4 (nextRandom)
-import Network.URI
+import Network.URI (unEscapeString)
 import System.Directory
-import System.Environment
-import System.FilePath
+  ( createDirectoryIfMissing,
+    getTemporaryDirectory,
+  )
+import System.Environment (getEnv)
+import System.FilePath ((<.>), (</>))
 import System.IO
+  ( IOMode (AppendMode),
+    hClose,
+    hPutStr,
+    hPutStrLn,
+    openFile,
+  )
 
 (#) :: a -> (a -> b) -> b
 (#) = flip ($)

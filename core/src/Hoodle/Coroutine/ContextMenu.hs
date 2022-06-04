@@ -5,56 +5,175 @@
 
 module Hoodle.Coroutine.ContextMenu where
 
-import Control.Applicative
 import Control.Concurrent.STM (readTVarIO)
 import Control.Lens (set, view, (.~), (^.))
-import Control.Monad.State hiding (forM_, mapM_)
-import Control.Monad.Trans.Maybe
+import Control.Monad.State
+  ( get,
+    gets,
+    guard,
+    liftIO,
+    put,
+    runStateT,
+    unless,
+    void,
+    when,
+  )
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L
 import Data.Foldable (forM_, mapM_)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    BBoxed (..),
+    ULMaybe (Middle),
+    UnionBBox (..),
+    getBBox,
+  )
 import Data.Hoodle.Generic
-import Data.Hoodle.Select
-import Data.Hoodle.Simple (Anchor (..), Dimension (..), Item (..), Link (..), SVG (..), defaultHoodle)
+  ( GLayer (..),
+    gbuffer,
+    ghoodleID,
+    glayers,
+  )
+import Data.Hoodle.Select (gselSelected)
+import Data.Hoodle.Simple
+  ( Anchor (..),
+    Dimension (..),
+    Item (..),
+    Link (..),
+    SVG (..),
+    defaultHoodle,
+  )
 import qualified Data.Hoodle.Simple as S (Image (..))
 import qualified Data.IntMap as IM
 import Data.List (partition)
-import Data.Monoid
 import qualified Data.Text as T (splitAt, unpack)
 import qualified Data.Text.Encoding as TE
-import Data.UUID.V4
-import Graphics.Hoodle.Render
+import Data.UUID.V4 (nextRandom)
+import Graphics.Hoodle.Render (renderRItem)
 import Graphics.Hoodle.Render.Item
+  ( cnstrctRItem,
+    getByteStringIfEmbeddedPNG,
+  )
 import Graphics.Hoodle.Render.Type
+  ( RItem (..),
+    isAnchorInRItem,
+    isLinkInRItem,
+    rItem2Item,
+    selectedLayer,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
+  ( AlterList ((:-)),
+    Hitted (..),
+    TEitherAlterHitted (..),
+  )
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
-import Hoodle.Coroutine.Dialog
+  ( getCurrentPageCurr,
+    pureUpdateUhdl,
+    renderCache,
+  )
+import Hoodle.Coroutine.Commit (commit)
+import Hoodle.Coroutine.Dialog (fileChooser, okMessageBox)
 import Hoodle.Coroutine.Draw
-import Hoodle.Coroutine.File
+  ( callRenderer,
+    doIOaction_,
+    invalidateAll,
+    waitSomeEvent,
+  )
+import Hoodle.Coroutine.File (fileExtensionInvalid)
 import Hoodle.Coroutine.HandwritingRecognition
+  ( handwritingRecognitionDialog,
+  )
 import Hoodle.Coroutine.Scroll
+  ( adjustScrollbarWithGeometryCvsId,
+  )
 import Hoodle.Coroutine.Select.Clipboard
+  ( copySelection,
+    cutSelection,
+    deleteSelection,
+    updateTempHoodleSelectM,
+  )
 import Hoodle.Coroutine.Select.ManipulateImage
+  ( cropImage,
+    rotateImage,
+  )
 import Hoodle.Coroutine.TextInput
+  ( convertLinkFromSimpleToDocID,
+    insertItemAt,
+    laTeXInput,
+    laTeXInputKeyword,
+    laTeXInputNetwork,
+    linkInsert,
+    textInput,
+  )
 import Hoodle.ModelAction.ContextMenu
-import Hoodle.ModelAction.Page
+  ( makeSVGFromSelection,
+    menuCreateALink,
+    menuOpenALink,
+  )
+import Hoodle.ModelAction.Page (setPage, updatePageAll)
 import Hoodle.ModelAction.Select
+  ( getSelectedItms,
+    getSelectedItmsFromUnitHoodle,
+  )
 import Hoodle.ModelAction.Select.Transform
+  ( rItmsInActiveLyr,
+  )
 import Hoodle.Script.Hook
-import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( customAutosavePage,
+    customContextMenuHook,
+    customContextMenuTitle,
+    fileNameSuggestionHook,
+    lookupPathFromId,
+  )
+import Hoodle.Type.Canvas (currentPageNum, unboxLens)
+import Hoodle.Type.Coroutine (MainCoroutine, doIOaction)
+import Hoodle.Type.Enum (RotateDir (CCW, CW))
 import Hoodle.Type.Event
+  ( AllEvent (UsrEv),
+    ContextMenuEvent (..),
+    ImgType (TypPDF, TypSVG),
+    RenderEvent (GotRItem),
+    UserEvent
+      ( ContextMenuCreated,
+        GotContextMenuSignal,
+        RenderEv
+      ),
+  )
 import Hoodle.Type.HoodleState
+  ( FileStore (LocalDir, TempDir),
+    HoodleModeState (SelectState),
+    currentCanvas,
+    currentCanvasInfo,
+    currentUnit,
+    cvsInfoMap,
+    doesUsePopUpMenu,
+    getCurrentCanvasId,
+    getHoodle,
+    hoodleFileControl,
+    hoodleFileName,
+    hoodleModeState,
+    hoodleModeStateEither,
+    hookSet,
+    renderCacheVar,
+    settings,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.Util
+  ( PageCoordinate (..),
+    PageNum (..),
+  )
+import Hoodle.Util (either_, msgShout, urlParse)
 import System.Directory
-import System.FilePath
-import System.Process
+  ( createDirectory,
+    doesDirectoryExist,
+    doesFileExist,
+    getHomeDirectory,
+  )
+import System.FilePath (takeExtension, (<.>), (</>))
+import System.Process (createProcess, proc)
 import Text.Hoodle.Builder (builder)
 import qualified Text.Hoodlet.Builder as Hoodlet (builder)
 --

@@ -6,24 +6,70 @@ module Hoodle.Coroutine.Scroll where
 
 import Control.Error.Util (hoistEither)
 import Control.Lens (over, view, _1)
-import Control.Monad
-import Control.Monad.State
-import Control.Monad.Trans.Crtn
+import Control.Monad (forM_, when)
+import Control.Monad.State (get, lift, liftIO)
+import Control.Monad.Trans.Crtn (CrtnErr (Other))
 import Data.Functor.Identity (Identity (..))
 import Data.Hoodle.BBox
+  ( BBox (..),
+    moveBBoxULCornerTo,
+  )
 import Hoodle.Accessor
+  ( getCanvasGeometryCvsId,
+    pureUpdateUhdl,
+  )
 import Hoodle.Coroutine.Draw
+  ( doIOaction_,
+    invalidate,
+    invalidateInBBox,
+    nextevent,
+  )
 import Hoodle.GUI.Reflect
+  ( changeCurrentCanvasId,
+    chkCvsIdNInvalidate,
+  )
 import qualified Hoodle.ModelAction.Adjustment as A
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
+  ( CanvasId,
+    CanvasInfo (..),
+    adjustments,
+    currentPageNum,
+    forBoth,
+    horizAdjConnId,
+    pageArrangement,
+    unboxBiXform,
+    unboxLens,
+    vertAdjConnId,
+    viewInfo,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
 import Hoodle.Type.Event
+  ( UserEvent
+      ( VScrollBarEnd,
+        VScrollBarMoved,
+        VScrollBarStart
+      ),
+  )
 import Hoodle.Type.HoodleState
+  ( currentCanvas,
+    currentUnit,
+    getCanvasInfo,
+    setCanvasInfo,
+    unitHoodles,
+  )
 import Hoodle.Type.PageArrangement
-import Hoodle.View.Coordinate
-
---
+  ( DesktopCoordinate (..),
+    DesktopDimension (..),
+    PageNum (..),
+    ViewMode (ContinuousPage, SinglePage),
+    ViewPortBBox (..),
+    apply,
+    desktopDimension,
+    viewPortBBox,
+    xformViewPortFitInSize,
+  )
+import Hoodle.View.Coordinate (CanvasGeometry (desktop2Page))
 
 -- |
 updateCanvasInfo :: (forall a. CanvasInfo a -> CanvasInfo a) -> CanvasId -> MainCoroutine ()

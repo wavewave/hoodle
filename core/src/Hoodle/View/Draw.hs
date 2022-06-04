@@ -5,8 +5,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
------------------------------------------------------------------------------
-
 -- |
 -- Module      : Hoodle.View.Draw
 -- Copyright   : (c) 2011-2016 Ian-Woo Kim
@@ -17,40 +15,150 @@
 -- Portability : GHC
 module Hoodle.View.Draw where
 
-import Control.Applicative
 import Control.Lens (at, set, view)
 import Control.Monad (void, when)
-import Control.Monad.Trans
-import Control.Monad.Trans.Maybe
-import Data.Foldable hiding (elem)
--- from hoodle-platform
+import Control.Monad.Trans (MonadIO (liftIO), lift)
+import Control.Monad.Trans.Maybe (MaybeT (..))
+import Data.Foldable (concatMap, foldr, mapM_)
 import Data.Hoodle.BBox
+  ( BBox (..),
+    BBoxed (..),
+    IntersectBBox (Intersect),
+    ULMaybe
+      ( Bottom,
+        Middle,
+        Top
+      ),
+    UnionBBox (Union, unUnion),
+    bboxToDim,
+    fromMaybe,
+    getBBox,
+    moveBBoxByOffset,
+    toMaybe,
+    xformBBox,
+  )
 import Data.Hoodle.Generic
-import Data.Hoodle.Predefined
+  ( gdimension,
+    gitems,
+    glayers,
+    gpages,
+  )
+import Data.Hoodle.Predefined (predefinedPenShapeAspectXY)
 import Data.Hoodle.Select
+  ( gSelect2GHoodle,
+    gselAll,
+    gselSelected,
+  )
 import Data.Hoodle.Simple (Dimension (..), Stroke (..))
 import Data.Hoodle.Zipper (currIndex)
 import qualified Data.IntMap as M
-import Data.Maybe hiding (fromMaybe)
-import Data.Monoid
-import Data.Sequence
+import Data.Maybe (mapMaybe)
+import Data.Sequence (Seq (..), ViewL (..), viewl)
 import Graphics.Hoodle.Render
+  ( Xform4Page (..),
+    scalex,
+    scaley,
+    transx,
+    transy,
+  )
 import Graphics.Hoodle.Render.Generic
+  ( StrokeBBoxOption (DrawFull),
+    cairoRenderOption,
+  )
 import Graphics.Hoodle.Render.Highlight
+  ( renderRItemHltd,
+    renderStrkHltd,
+  )
 import Graphics.Hoodle.Render.Type
+  ( CanvasId,
+    InBBox (..),
+    InBBoxBkgBuf (..),
+    InBBoxOption (..),
+    RBkgOpt (RBkgDrawPDF),
+    RItem,
+    RenderCache,
+    hPage2RPage,
+    selectedLayer,
+  )
 import Graphics.Hoodle.Render.Type.HitTest
-import Graphics.Hoodle.Render.Util
+  ( Hitted (..),
+    TEitherAlterHitted (..),
+    getB,
+  )
+import Graphics.Hoodle.Render.Util (clipBBox)
 import qualified Graphics.Rendering.Cairo as Cairo
 import qualified Graphics.UI.Gtk as Gtk
--- from this package
-import Hoodle.Type.Alias
+import Hoodle.Type.Alias (EditMode (..), Hoodle, Page, SelectMode (..))
 import Hoodle.Type.Canvas
+  ( CanvasInfo,
+    ViewInfo,
+    canvasId,
+    canvasWidgets,
+    currentPageNum,
+    drawArea,
+    mDrawSurface,
+    notifiedItem,
+    pageArrangement,
+    viewInfo,
+  )
 import Hoodle.Type.Enum
+  ( DrawFlag (BkgEfficient, Clear, Efficient),
+    PenColor (..),
+    convertPenColorToRGBA,
+  )
 import Hoodle.Type.PageArrangement
+  ( CanvasCoordinate (..),
+    CanvasDimension (..),
+    DesktopCoordinate (..),
+    PageCoordinate (..),
+    PageNum (..),
+    ViewMode (ContinuousPage, SinglePage),
+    ViewPortBBox (..),
+  )
 import Hoodle.Type.Predefined
+  ( predefinedLassoColor,
+    predefinedLassoDash,
+    predefinedLassoHandleSize,
+    predefinedLassoWidth,
+  )
 import Hoodle.Type.Widget
-import Hoodle.Util
+  ( ClockWidgetConfig,
+    ScrollWidgetConfig,
+    WidgetItem
+      ( ClockWidget,
+        LayerWidget,
+        PanZoomWidget,
+        ScrollWidget
+      ),
+    allWidgets,
+    clockWidgetConfig,
+    clockWidgetPosition,
+    clockWidgetTime,
+    doesUseClockWidget,
+    doesUseLayerWidget,
+    doesUsePanZoomWidget,
+    doesUseScrollWidget,
+    layerWidgetConfig,
+    layerWidgetPosition,
+    layerWidgetShowContent,
+    panZoomWidgetConfig,
+    panZoomWidgetPosition,
+    panZoomWidgetTouchIsZoom,
+    scrollWidgetConfig,
+    widgetConfig,
+  )
+import Hoodle.Util (uncurry4)
 import Hoodle.View.Coordinate
+  ( CanvasGeometry
+      ( canvas2Desktop,
+        canvasDim,
+        desktop2Canvas,
+        page2Desktop
+      ),
+    getPagesInRange,
+    getPagesInViewPortRange,
+    makeCanvasGeometry,
+  )
 --
 import Prelude hiding (concatMap, foldr, mapM_)
 
@@ -62,6 +170,7 @@ newtype SinglePageDraw a = SinglePageDraw
   { unSinglePageDraw ::
       RenderCache ->
       CanvasId ->
+      -- isCurrentCanvas
       Bool ->
       (Gtk.DrawingArea, Maybe Cairo.Surface) ->
       (PageNum, Page a) ->
@@ -71,12 +180,10 @@ newtype SinglePageDraw a = SinglePageDraw
       IO (Page a)
   }
 
--- Bool = isCurrentCanvas
-
--- |
 newtype ContPageDraw a = ContPageDraw
   { unContPageDraw ::
       RenderCache ->
+      -- isCurrentCanvas
       Bool ->
       CanvasInfo 'ContinuousPage ->
       Maybe BBox ->
@@ -84,8 +191,6 @@ newtype ContPageDraw a = ContPageDraw
       DrawFlag ->
       IO (Hoodle a)
   }
-
--- Bool = isCurrentCanvas
 
 -- |
 type instance DrawingFunction 'SinglePage = SinglePageDraw

@@ -8,13 +8,28 @@
 
 module Data.Xournal.Select where
 
-import Control.Applicative hiding (empty)
-import Control.Compose
-import Data.Foldable hiding (length)
-import Data.Monoid
+import Control.Compose ((:.) (O))
+import Data.Foldable (toList)
 import Data.Sequence
-import Data.Traversable
+  ( Seq (..),
+    ViewL (..),
+    ViewR (..),
+    empty,
+    fromList,
+    length,
+    splitAt,
+    viewl,
+    viewr,
+    zipWith,
+    (<|),
+    (><),
+    (|>),
+  )
 import Data.Xournal.Generic
+  ( GListable,
+    gFromList,
+    gToList,
+  )
 import Prelude hiding (length, splitAt, zipWith)
 
 -- |

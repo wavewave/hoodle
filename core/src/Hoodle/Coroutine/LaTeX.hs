@@ -3,20 +3,16 @@
 
 module Hoodle.Coroutine.LaTeX where
 
-import Control.Lens
-import Control.Monad.State
-import Control.Monad.Trans.Maybe
+import Control.Lens (view, _1, _2)
+import Control.Monad.State (guard)
+import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Function (on)
---
-import Data.Hoodle.Simple
+import Data.Hoodle.Simple (Hoodle, Item (..), SVG (..), items, layers, pages)
 import Data.List (sortBy)
-import Data.Maybe
+import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
---
-import Hoodle.ModelAction.Text
-
---
+import Hoodle.ModelAction.Text (extractKeyword)
 
 hoistMaybe :: (Monad m) => Maybe a -> MaybeT m a
 hoistMaybe = MaybeT . return

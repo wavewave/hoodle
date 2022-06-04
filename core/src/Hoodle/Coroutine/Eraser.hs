@@ -1,28 +1,62 @@
 module Hoodle.Coroutine.Eraser where
 
 import Control.Lens (over, set, view, (.~))
-import Control.Monad.State
+import Control.Monad ((>=>))
+import Control.Monad.State (get, liftIO)
 import qualified Control.Monad.State as St
 import Data.Hoodle.Generic
+  ( gitems,
+    gpages,
+  )
 import qualified Data.IntMap as IM
-import Graphics.Hoodle.Render
-import Graphics.Hoodle.Render.Type.Item
+import Graphics.Hoodle.Render (updateLayerBuf)
+import Graphics.Hoodle.Render.Type.Item (RItem)
 import Graphics.Hoodle.Render.Util.HitTest
+  ( hltHittedByLineRough,
+    hltItmsHittedByLineFrmSelectedStateT,
+  )
 import Hoodle.Accessor
-import Hoodle.Coroutine.Commit
+  ( getCurrentPageCvsId,
+    rItmsInCurrLyr,
+  )
+import Hoodle.Coroutine.Commit (commit)
 import Hoodle.Coroutine.Draw
+  ( callRenderer_,
+    invalidateAll,
+    invalidateInBBox,
+    nextevent,
+  )
 import Hoodle.Coroutine.Pen
-import Hoodle.Device
-import Hoodle.ModelAction.Eraser
+  ( commonPenStart,
+    penMoveAndUpOnly,
+  )
+import Hoodle.Device (PointerCoord)
+import Hoodle.ModelAction.Eraser (eraseHitted)
 import Hoodle.ModelAction.Layer
-import Hoodle.ModelAction.Page
+  ( adjustCurrentLayer,
+    getCurrentLayer,
+  )
+import Hoodle.ModelAction.Page (updatePageAll)
 import Hoodle.Type.Canvas
-import Hoodle.Type.Coroutine
-import Hoodle.Type.Enum
-import Hoodle.Type.Event
+  ( CanvasId,
+    CanvasInfo (..),
+    currentPageNum,
+    forBoth',
+    unboxBiAct,
+  )
+import Hoodle.Type.Coroutine (MainCoroutine)
+import Hoodle.Type.Enum (DrawFlag (Efficient))
+import Hoodle.Type.Event (UserEvent)
 import Hoodle.Type.HoodleState
-import Hoodle.Type.PageArrangement
-import Hoodle.View.Coordinate
+  ( HoodleModeState (ViewAppendState, unView),
+    HoodleState,
+    currentUnit,
+    getCanvasInfo,
+    hoodleModeState,
+    unitHoodles,
+  )
+import Hoodle.Type.PageArrangement (PageNum (..))
+import Hoodle.View.Coordinate (CanvasGeometry)
 
 -- |
 eraserStart ::

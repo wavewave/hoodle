@@ -4,9 +4,14 @@
 
 module Control.Monad.Trans.Crtn.Logger where
 
-import Control.Monad.Reader
-import Control.Monad.Trans.Crtn
+import Control.Monad (void)
+import Control.Monad.Trans (MonadTrans (lift))
+import Control.Monad.Trans.Crtn (request)
 import Control.Monad.Trans.Crtn.Object
+  ( Arg (..),
+    CObjT,
+    SObjT,
+  )
 
 -------------------------
 -- Logging monad

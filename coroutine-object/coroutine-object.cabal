@@ -1,7 +1,7 @@
 Name:		coroutine-object
 Version:	1.0
-Synopsis:       Object-oriented programming realization using coroutine 
-Description: 	Object-oriented programming realization using coroutine 
+Synopsis:       Object-oriented programming realization using coroutine
+Description: 	Object-oriented programming realization using coroutine
 License: 	BSD3
 License-file:	LICENSE
 Author:		Ian-Woo Kim
@@ -13,22 +13,22 @@ Library
   hs-source-dirs: src
   ghc-options: 	-Wall -Werror
   ghc-prof-options: -fprof-auto -fprof-cafs
-  Build-Depends:   base >4 && <5, 
-                   mtl>2, 
+  Build-Depends:   base >4 && <5,
+                   mtl>2,
                    transformers >= 0.3,
                    free >= 4.0
 
-  Other-Modules:   
+  Other-Modules:
   exposed-modules:
                    Control.Monad.Trans.Crtn
                    Control.Monad.Trans.Crtn.Driver
-                   Control.Monad.Trans.Crtn.EventHandler 
-                   Control.Monad.Trans.Crtn.Event 
-                   Control.Monad.Trans.Crtn.IOActor 
+                   Control.Monad.Trans.Crtn.EventHandler
+                   Control.Monad.Trans.Crtn.Event
+                   Control.Monad.Trans.Crtn.IOActor
                    Control.Monad.Trans.Crtn.Logger
-                   Control.Monad.Trans.Crtn.Logger.Simple  
-                   Control.Monad.Trans.Crtn.Object 
-                   Control.Monad.Trans.Crtn.Queue 
+                   Control.Monad.Trans.Crtn.Logger.Simple
+                   Control.Monad.Trans.Crtn.Object
+                   Control.Monad.Trans.Crtn.Queue
                    Control.Monad.Trans.Crtn.World
 
 executable coroutine-object-test
@@ -46,4 +46,5 @@ executable coroutine-object-test
       mtl,
       transformers,
       coroutine-object
+
   default-language: Haskell2010

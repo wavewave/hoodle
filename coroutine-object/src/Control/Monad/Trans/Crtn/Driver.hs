@@ -4,14 +4,38 @@
 
 module Control.Monad.Trans.Crtn.Driver where
 
-import Control.Monad.Reader
+import Control.Monad.Reader (ReaderT (..))
+import Control.Monad.Trans (MonadIO)
 import Control.Monad.Trans.Crtn
+  ( request,
+    (<==|),
+  )
 import Control.Monad.Trans.Crtn.Event
+  ( ActionOrder,
+    EvOrAct,
+  )
 import Control.Monad.Trans.Crtn.Logger
+  ( LogServer,
+    MonadLog,
+  )
 import Control.Monad.Trans.Crtn.Object
+  ( Arg (..),
+    CObjT,
+    EStT,
+    Res (..),
+    SObjBT,
+    SObjT,
+    query,
+  )
 import Control.Monad.Trans.Crtn.World
-import Control.Monad.Trans.Except
-import Data.Foldable
+  ( World,
+    WorldOp,
+    flushLog,
+    flushQueue,
+    giveEvent,
+  )
+import Control.Monad.Trans.Except (ExceptT (..), runExceptT)
+import Data.Foldable (foldrM)
 
 -- | signature of IO event driver
 data DrvOp e i o where

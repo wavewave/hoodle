@@ -5,9 +5,15 @@
 -- | special actor for IO action
 module Control.Monad.Trans.Crtn.IOActor where
 
-import Control.Monad.Reader
-import Control.Monad.Trans.Crtn
+import Control.Monad.Reader (ReaderT (..))
+import Control.Monad.Trans (MonadIO (liftIO))
+import Control.Monad.Trans.Crtn (request)
 import Control.Monad.Trans.Crtn.Object
+  ( Arg (..),
+    CObjT,
+    Res (Ign, Res),
+    SObjT,
+  )
 
 -- | first is
 data IOOp e i o where

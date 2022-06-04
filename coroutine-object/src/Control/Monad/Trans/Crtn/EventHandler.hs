@@ -1,11 +1,15 @@
 module Control.Monad.Trans.Crtn.EventHandler where
 
 import Control.Concurrent.MVar
-import Control.Monad.State
-import Control.Monad.Trans.Crtn.Driver
-import Control.Monad.Trans.Crtn.Event
-import Control.Monad.Trans.Crtn.Logger
-import Control.Monad.Trans.Except
+  ( MVar,
+    putMVar,
+    takeMVar,
+  )
+import Control.Monad.State (runStateT)
+import Control.Monad.Trans.Crtn.Driver (Driver, fire)
+import Control.Monad.Trans.Crtn.Event (ActionOrder (..))
+import Control.Monad.Trans.Crtn.Logger (scribe)
+import Control.Monad.Trans.Except (runExceptT)
 
 -- |
 eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()

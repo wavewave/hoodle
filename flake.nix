@@ -110,9 +110,9 @@
 
           # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
           # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
-        in packagesOnGHC "ghc924";
+        in packagesOnGHC "ghc925";
 
-        defaultPackage = packages.ghc924_all;
+        defaultPackage = packages.ghc925_all;
 
         overlays = fullOverlays;
 
@@ -141,8 +141,9 @@
               '';
             };
         in rec {
-          "default" = ghc924;
-          "ghc924" = mkDevShell "ghc924";
+          "default" = ghc925;
+          "ghc925" = mkDevShell "ghc925";
+          "ghc944" = mkDevShell "ghc944";
         };
       });
 }

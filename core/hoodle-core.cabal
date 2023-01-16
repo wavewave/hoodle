@@ -93,7 +93,6 @@ Library
                    Hoodle.Coroutine.Draw
                    Hoodle.Coroutine.Eraser
                    Hoodle.Coroutine.File
-                   Hoodle.Coroutine.HandwritingRecognition
                    Hoodle.Coroutine.Highlighter
                    Hoodle.Coroutine.Layer
                    Hoodle.Coroutine.Link

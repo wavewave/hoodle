@@ -49,7 +49,6 @@ import Hoodle.Coroutine.File
     fileShowUUID,
     fileVersionSave,
   )
--- import Hoodle.Coroutine.HandwritingRecognition (handwritingRecognitionDialog)
 import Hoodle.Coroutine.LaTeX (laTeXFooter, laTeXHeader)
 import Hoodle.Coroutine.Layer
   ( deleteCurrentLayer,

@@ -84,9 +84,6 @@ import Hoodle.Coroutine.Draw
     waitSomeEvent,
   )
 import Hoodle.Coroutine.File (fileExtensionInvalid)
--- import Hoodle.Coroutine.HandwritingRecognition
---   ( handwritingRecognitionDialog,
---   )
 import Hoodle.Coroutine.Scroll
   ( adjustScrollbarWithGeometryCvsId,
   )

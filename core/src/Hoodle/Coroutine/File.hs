@@ -1,6 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches -fno-warn-incomplete-uni-patterns #-}
 
 module Hoodle.Coroutine.File where
 
@@ -117,7 +118,7 @@ import Hoodle.ModelAction.Page
   )
 import Hoodle.ModelAction.Select (makePageSelectMode)
 import Hoodle.ModelAction.Window (setTitleFromFileName)
-import Hoodle.Publish.PDF (renderHoodleToPDF)
+-- import Hoodle.Publish.PDF (renderHoodleToPDF)
 import qualified Hoodle.Script.Coroutine as S
 import Hoodle.Script.Hook
   ( fileNameSuggestionHook,
@@ -318,7 +319,8 @@ fileExport = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe (return ())
         then fileExtensionInvalid (".pdf", "export") >> fileExport
         else do
           hdl <- gets (rHoodle2Hoodle . getHoodle . view (unitHoodles . currentUnit))
-          liftIO (renderHoodleToPDF hdl filename)
+          -- liftIO (renderHoodleToPDF hdl filename)
+          liftIO $ putStrLn "renderHoodleToPDF is disabled for now."
 
 -- | need to be merged with ContextMenuEventSVG
 exportCurrentPageAsSVG :: MainCoroutine ()
@@ -645,7 +647,9 @@ mkRevisionHdlFile hdl = do
 
 mkRevisionPdfFile :: Hoodle -> String -> IO ()
 mkRevisionPdfFile hdl fname = do
-  hdir <- getHomeDirectory
+  putStrLn "mkRevisionPdfFile is disabled for now"
+
+{-  hdir <- getHomeDirectory
   tempfile <- mkTmpFile "pdf"
   renderHoodleToPDF hdl tempfile
   let nfilename = fname <.> "pdf"
@@ -653,6 +657,7 @@ mkRevisionPdfFile hdl fname = do
   b <- doesDirectoryExist vcsdir
   unless b $ createDirectory vcsdir
   renameFile tempfile (vcsdir </> nfilename)
+-}
 
 -- |
 fileVersionSave :: MainCoroutine ()

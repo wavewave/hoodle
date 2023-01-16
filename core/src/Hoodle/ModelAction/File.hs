@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-unused-matches #-}
 
 -- |
 -- Module      : Hoodle.ModelAction.File
@@ -39,10 +40,10 @@ import Graphics.GD.ByteString
     loadPngFile,
     savePngByteString,
   )
-import Graphics.Hoodle.Render.Background (popplerGetDocFromFile)
+-- import Graphics.Hoodle.Render.Background (popplerGetDocFromFile)
 import Graphics.Hoodle.Render.Type.Hoodle (rHoodle2Hoodle)
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+-- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import Hoodle.Type.HoodleState
   ( FileStore (LocalDir, TempDir),
     UnitHoodle,
@@ -191,13 +192,16 @@ makeNewHoodleWithPDF doesembed ofp = do
         return (nfp', nfname')
       else return (ocanonicalfp, ofname)
 
-  mdoc <- popplerGetDocFromFile nfname
+  -- mdoc <- popplerGetDocFromFile nfname
+  let mdoc = Nothing
   case mdoc of
     Nothing -> do
       putStrLn $ "no such file " ++ nfp
-      return Nothing
+      pure Nothing
     Just doc -> do
-      n <- Poppler.documentGetNPages doc
+      pure Nothing
+
+{-      n <- Poppler.documentGetNPages doc
 
       let createPageAct i = do
             pg <- Poppler.documentGetPage doc (i - 1)
@@ -214,6 +218,7 @@ makeNewHoodleWithPDF doesembed ofp = do
             return (set embeddedPdf (Just ebdsrc) hdl)
           else return hdl
       return (Just nhdl)
+-}
 
 -- |
 createPage ::

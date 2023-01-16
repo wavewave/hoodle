@@ -2,7 +2,8 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE NoMonoPatBinds #-}
+
+-- {-# LANGUAGE NoMonoPatBinds #-}
 
 module Hoodle.Type.PageArrangement where
 

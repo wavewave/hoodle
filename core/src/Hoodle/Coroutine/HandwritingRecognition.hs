@@ -5,6 +5,7 @@
 
 module Hoodle.Coroutine.HandwritingRecognition where
 
+{-
 import Control.Error.Util (failWith, hoistEither)
 import Control.Lens (view, _1, _2)
 import Control.Monad (guard, when, (<=<))
@@ -190,3 +191,4 @@ mkAesonStroke VWStroke {..} =
   let xs = map (Number . fromInteger . (floor :: Double -> Integer) . view _1) stroke_vwdata
       ys = map (Number . fromInteger . (floor :: Double -> Integer) . view _2) stroke_vwdata
    in Array (fromList [Array (fromList xs), Array (fromList ys)])
+-}

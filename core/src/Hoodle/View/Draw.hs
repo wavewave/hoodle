@@ -52,6 +52,7 @@ import Data.Hoodle.Select
 import Data.Hoodle.Simple (Dimension (..), Stroke (..))
 import Data.Hoodle.Zipper (currIndex)
 import qualified Data.IntMap as M
+import Data.Kind (Type)
 import Data.Maybe (mapMaybe)
 import Data.Sequence (Seq (..), ViewL (..), viewl)
 import Graphics.Hoodle.Render
@@ -163,7 +164,7 @@ import Hoodle.View.Coordinate
 import Prelude hiding (concatMap, foldr, mapM_)
 
 -- |
-type family DrawingFunction (v :: ViewMode) :: * -> *
+type family DrawingFunction (v :: ViewMode) :: Type -> Type
 
 -- |
 newtype SinglePageDraw a = SinglePageDraw

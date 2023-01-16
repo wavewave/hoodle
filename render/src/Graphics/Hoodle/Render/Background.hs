@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-unused-matches #-}
 
 module Graphics.Hoodle.Render.Background where
 
@@ -46,8 +47,8 @@ import Graphics.Hoodle.Render.Type.Renderer
     sendPDFCommand,
   )
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+-- import qualified Graphics.UI.Gtk.Poppler.Page as PopplerPage
 import System.Directory
   ( getTemporaryDirectory,
     removeFile,
@@ -56,11 +57,11 @@ import System.FilePath ((<.>), (</>))
 import Prelude
 
 -- |
-popplerGetDocFromFile :: ByteString -> IO (Maybe Poppler.Document)
-popplerGetDocFromFile fp =
-  Poppler.documentNewFromFile
-    (C.unpack ("file://localhost" `mappend` fp))
-    Nothing
+-- popplerGetDocFromFile :: ByteString -> IO (Maybe Poppler.Document)
+-- popplerGetDocFromFile fp =
+--   Poppler.documentNewFromFile
+--     (C.unpack ("file://localhost" `mappend` fp))
+--     Nothing
 
 -- |
 getByteStringIfEmbeddedPDF :: ByteString -> Maybe ByteString
@@ -71,33 +72,33 @@ getByteStringIfEmbeddedPDF bstr = do
   either (const Nothing) return (decode dat)
 
 -- |
-popplerGetDocFromDataURI :: ByteString -> IO (Maybe Poppler.Document)
-popplerGetDocFromDataURI dat = do
-  let mdecoded = getByteStringIfEmbeddedPDF dat
-  case mdecoded of
-    Nothing -> return Nothing
-    Just decoded -> do
-      uuidstr <- fmap show nextRandom
-      tmpdir <- getTemporaryDirectory
-      let tmpfile = tmpdir </> uuidstr <.> "pdf"
-      C.writeFile tmpfile decoded
-      mdoc <- popplerGetDocFromFile (C.pack tmpfile)
-      removeFile tmpfile
-      return mdoc
+-- popplerGetDocFromDataURI :: ByteString -> IO (Maybe Poppler.Document)
+-- popplerGetDocFromDataURI dat = do
+--   let mdecoded = getByteStringIfEmbeddedPDF dat
+--   case mdecoded of
+--     Nothing -> return Nothing
+--     Just decoded -> do
+--       uuidstr <- fmap show nextRandom
+--       tmpdir <- getTemporaryDirectory
+--       let tmpfile = tmpdir </> uuidstr <.> "pdf"
+--       C.writeFile tmpfile decoded
+--       mdoc <- popplerGetDocFromFile (C.pack tmpfile)
+--       removeFile tmpfile
+--       return mdoc
 
 -- |
-popplerGetPageFromDoc ::
-  Poppler.Document ->
-  -- | page number
-  Int ->
-  IO (Maybe Poppler.Page)
-popplerGetPageFromDoc doc pn = do
-  n <- Poppler.documentGetNPages doc
-  if pn > n
-    then return Nothing
-    else do
-      pg <- Poppler.documentGetPage doc (pn - 1)
-      return (Just pg)
+-- popplerGetPageFromDoc ::
+--   Poppler.Document ->
+--   -- | page number
+--   Int ->
+--   IO (Maybe Poppler.Page)
+-- popplerGetPageFromDoc doc pn = do
+--   n <- Poppler.documentGetNPages doc
+--   if pn > n
+--     then return Nothing
+--     else do
+--       pg <- Poppler.documentGetPage doc (pn - 1)
+--       return (Just pg)
 
 -- | draw ruling all
 drawRuling :: Double -> Double -> ByteString -> Cairo.Render ()
@@ -266,26 +267,33 @@ renderBackgroundStateT dim@(Dim w h) bkg = do
       r <- runMaybeT $ do
         case (md, mf) of
           (Just d, Just f) -> do
-            doc <- (MaybeT . liftIO . popplerGetDocFromFile) f
+            -- doc <- (MaybeT . liftIO . popplerGetDocFromFile) f
+            let doc = ()
             lift . put $ Context d f (Just doc) Nothing
-            pdfRenderDoc doc pn
+            -- pdfRenderDoc doc pn
+            pure ()
           _ -> do
             Context _oldd _oldf olddoc _ <- lift get
             doc <- MaybeT . return $ olddoc
-            pdfRenderDoc doc pn
+            -- pdfRenderDoc doc pn
+            pure ()
       maybe (error "renderBackgroundStateT") (const (return ())) r
     BackgroundEmbedPdf _ pn -> do
       r <- runMaybeT $ do
         Context _ _ _ mdoc <- lift get
         doc <- (MaybeT . return) mdoc
-        pdfRenderDoc doc pn
+        -- pdfRenderDoc doc pn
+        pure ()
       maybe (error "renderBackgroundStateT") (const (return ())) r
   where
-    pdfRender pg = do
-      Cairo.setSourceRGBA 1 1 1 1
-      Cairo.rectangle 0 0 w h
-      Cairo.fill
-      PopplerPage.pageRender pg
-    pdfRenderDoc doc pn =
-      (MaybeT . liftIO) (popplerGetPageFromDoc doc pn)
-        >>= lift . lift . pdfRender
+
+{-
+pdfRender pg = do
+  Cairo.setSourceRGBA 1 1 1 1
+  Cairo.rectangle 0 0 w h
+  Cairo.fill
+  PopplerPage.pageRender pg
+pdfRenderDoc doc pn =
+  (MaybeT . liftIO) (popplerGetPageFromDoc doc pn)
+    >>= lift . lift . pdfRender
+-}

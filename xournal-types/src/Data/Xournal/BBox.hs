@@ -6,6 +6,7 @@ module Data.Xournal.BBox where
 
 import Control.Monad (guard, liftM2)
 import qualified Data.Foldable as F
+import Data.Kind (Type)
 import Data.Serialize (Serialize, get, put)
 import Data.Strict.Tuple (Pair, fst, snd)
 import Data.Xournal.Generic
@@ -169,7 +170,7 @@ instance Monoid UnionBBox where
 
 -- |
 class Maybeable a where
-  type ElemType a :: *
+  type ElemType a :: Type
   toMaybe :: a -> Maybe (ElemType a)
   fromMaybe :: Maybe (ElemType a) -> a
 

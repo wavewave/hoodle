@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-unused-local-binds -fno-warn-unused-imports #-}
 
 module Graphics.Hoodle.Render
   ( -- * xform
@@ -101,7 +102,7 @@ import Data.Hoodle.Simple
 import Data.Hoodle.Zipper (fromNonEmptyList)
 import Graphics.Hoodle.Render.Background
   ( cnstrctRBkgStateT,
-    popplerGetDocFromDataURI,
+    -- popplerGetDocFromDataURI,
     renderBackgroundStateT,
     renderBkg,
   )
@@ -591,5 +592,6 @@ renderPageStateT pg = do
 initRenderContext :: Hoodle -> IO Context
 initRenderContext hdl = do
   let pdf = view embeddedPdf hdl
-  mdoc <- join <$> mapM popplerGetDocFromDataURI pdf
+  -- mdoc <- join <$> mapM popplerGetDocFromDataURI pdf
+  let mdoc = Nothing
   return (Context "" "" Nothing mdoc)

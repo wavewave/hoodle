@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
+
 module Graphics.Hoodle.Render.Primitive
   ( drawStrokeCurve,
     drawVWStrokeCurve,

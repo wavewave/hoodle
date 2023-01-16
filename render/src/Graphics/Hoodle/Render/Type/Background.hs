@@ -7,7 +7,7 @@ import Data.ByteString (ByteString)
 import Data.Hoodle.BBox (BBox)
 import Data.Hoodle.Simple (Background (..))
 import Graphics.Hoodle.Render.Type.Renderer (SurfaceID)
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 --
 import Prelude hiding (mapM_)
 
@@ -15,8 +15,8 @@ import Prelude hiding (mapM_)
 data Context = Context
   { ctxt_domain :: ByteString,
     ctxt_filename :: ByteString,
-    ctxt_doc :: Maybe Poppler.Document,
-    ctxt_embeddeddoc :: Maybe Poppler.Document
+    ctxt_doc :: Maybe (), -- Maybe Poppler.Document,
+    ctxt_embeddeddoc :: Maybe () -- Poppler.Document
   }
 
 -- |
@@ -30,12 +30,12 @@ data RBackground
       { rbkg_domain :: Maybe ByteString,
         rbkg_filename :: ByteString,
         rbkg_pageno :: Int,
-        rbkg_popplerpage :: Maybe Poppler.Page,
+        rbkg_popplerpage :: Maybe (), -- Maybe Poppler.Page,
         rbkg_surfaceid :: SurfaceID -- UUID
       }
   | RBkgEmbedPDF
       { rbkg_pageno :: Int,
-        rbkg_popplerpage :: Maybe Poppler.Page,
+        rbkg_popplerpage :: Maybe (), -- Maybe Poppler.Page,
         rbkg_surfaceid :: SurfaceID -- UUID
       }
 

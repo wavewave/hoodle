@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
 
 module Graphics.Hoodle.Render.Engine
   ( pdfRendererMain,
@@ -21,9 +22,9 @@ import Data.Hoodle.Simple (Background (..), Dimension (..))
 import Data.Sequence (ViewL (..), viewl)
 import Graphics.Hoodle.Render (renderRItem)
 import Graphics.Hoodle.Render.Background
-  ( popplerGetDocFromDataURI,
-    popplerGetDocFromFile,
-    popplerGetPageFromDoc,
+  ( -- popplerGetDocFromDataURI,
+    -- popplerGetDocFromFile,
+    -- popplerGetPageFromDoc,
     renderBkg,
   )
 import Graphics.Hoodle.Render.Type
@@ -49,8 +50,9 @@ import Graphics.Hoodle.Render.Type
       ),
   )
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
-import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
+
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+-- import qualified Graphics.UI.Gtk.Poppler.Page as Poppler
 
 -- | main pdf renderer engine. need to be in a single thread
 pdfRendererMain :: (RendererEvent -> IO ()) -> PDFCommandQueue -> IO ()
@@ -66,16 +68,20 @@ pdfRendererMain handler tvar = forever $ do
 
 pdfWorker :: (RendererEvent -> IO ()) -> PDFCommand -> IO ()
 pdfWorker _handler (GetDocFromFile fp tmvar) = do
-  mdoc <- popplerGetDocFromFile fp
+  -- mdoc <- popplerGetDocFromFile fp
+  let mdoc = Just ()
   atomically $ putTMVar tmvar mdoc
 pdfWorker _handler (GetDocFromDataURI str tmvar) = do
-  mdoc <- popplerGetDocFromDataURI str
+  -- mdoc <- popplerGetDocFromDataURI str
+  let mdoc = Just ()
   atomically $ putTMVar tmvar mdoc
 pdfWorker _handler (GetPageFromDoc doc pn tmvar) = do
-  mpg <- popplerGetPageFromDoc doc pn
+  -- mpg <- popplerGetPageFromDoc doc pn
+  let mpg = Just ()
   atomically $ putTMVar tmvar mpg
 pdfWorker _handler (GetNPages doc tmvar) = do
-  n <- Poppler.documentGetNPages doc
+  -- n <- Poppler.documentGetNPages doc
+  let n = 0
   atomically $ putTMVar tmvar n
 pdfWorker handler (RenderPageScaled sfcid page (Dim ow _oh) (Dim w h)) = do
   let s = w / ow
@@ -85,7 +91,8 @@ pdfWorker handler (RenderPageScaled sfcid page (Dim ow _oh) (Dim w h)) = do
     Cairo.rectangle 0 0 w h
     Cairo.fill
     Cairo.scale s s
-    Poppler.pageRender page
+    -- Poppler.pageRender page
+    pure ()
   handler (SurfaceUpdate (sfcid, (s, sfc)))
 
 -- | generic renderer engine

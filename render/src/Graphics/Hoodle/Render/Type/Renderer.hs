@@ -24,16 +24,17 @@ import Data.UUID (UUID)
 import Data.UUID.V4 (nextRandom)
 import Graphics.Hoodle.Render.Type.Item (RItem)
 import qualified Graphics.Rendering.Cairo as Cairo
-import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
+
+-- import qualified Graphics.UI.Gtk.Poppler.Document as Poppler
 
 newtype PDFCommandID = PDFCommandID UUID deriving (Show, Eq, Ord)
 
 data PDFCommand where
-  GetDocFromFile :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
-  GetDocFromDataURI :: B.ByteString -> TMVar (Maybe Poppler.Document) -> PDFCommand
-  GetPageFromDoc :: Poppler.Document -> !Int -> TMVar (Maybe Poppler.Page) -> PDFCommand
-  GetNPages :: !Poppler.Document -> TMVar Int -> PDFCommand
-  RenderPageScaled :: SurfaceID -> Poppler.Page -> Dimension -> Dimension -> PDFCommand
+  GetDocFromFile :: B.ByteString -> TMVar (Maybe () {- Poppler.Document -}) -> PDFCommand
+  GetDocFromDataURI :: B.ByteString -> TMVar (Maybe () {- Poppler.Document -}) -> PDFCommand
+  GetPageFromDoc :: () {- Poppler.Document -} -> !Int -> TMVar (Maybe () {- Poppler.Page -}) -> PDFCommand
+  GetNPages {- !Poppler.Document -} :: () -> TMVar Int -> PDFCommand
+  RenderPageScaled :: SurfaceID -> () {- Poppler.Page -} -> Dimension -> Dimension -> PDFCommand
 
 instance Show PDFCommand where
   show _ = "PDFCommand"

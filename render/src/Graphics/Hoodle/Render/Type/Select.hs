@@ -15,6 +15,7 @@ import Data.Hoodle.Generic
 import Data.Hoodle.Select (GSelect)
 import Data.Hoodle.Zipper (ZipperSelect, current, replace)
 import Data.IntMap (IntMap)
+import Data.Kind (Type)
 import Graphics.Hoodle.Render.Type.Background (RBackground)
 import Graphics.Hoodle.Render.Type.HitTest
   ( Hitted (..),
@@ -30,9 +31,9 @@ import Graphics.Hoodle.Render.Type.Item (RItem)
 
 type SLayerF a = GLayer (BufOf a) TEitherAlterHitted (ItmOf a)
 
-type family ItmOf a :: *
+type family ItmOf a :: Type
 
-type family BufOf a :: *
+type family BufOf a :: Type
 
 type instance BufOf (GLayer b s a) = b
 

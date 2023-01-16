@@ -32,7 +32,7 @@ Library
                  lens >= 2.5,
                  monad-loops >= 0.3,
                  mtl > 2,
-                 poppler >= 0.14,
+                 -- poppler >= 0.14,
                  stm,
                  strict >= 0.3,
                  svgcairo >= 0.12,

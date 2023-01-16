@@ -41,6 +41,7 @@ import Data.Hoodle.Simple
     Stroke (..),
   )
 import Data.Hoodle.Util (fst3, snd3, trd3)
+import Data.Kind (Type)
 import Data.Strict.Tuple (Pair, fst, snd)
 import Hoodle.HitTest.Type
   ( BBox (..),
@@ -202,7 +203,7 @@ instance Monoid UnionBBox where
 
 -- |
 class Maybeable a where
-  type ElemType a :: *
+  type ElemType a :: Type
   toMaybe :: a -> Maybe (ElemType a)
   fromMaybe :: Maybe (ElemType a) -> a
 

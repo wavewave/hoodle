@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "TypeCompose": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1650056496,
+        "narHash": "sha256-ex70Y6xf6uvDei30LMqvMYei9gOO/M8cekTnXRyzqX8=",
+        "owner": "conal",
+        "repo": "TypeCompose",
+        "rev": "daf13efa6e6b37960de98146bab4a061462fc22b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "conal",
+        "ref": "master",
+        "repo": "TypeCompose",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "locked": {
         "lastModified": 1652776076,
@@ -17,60 +34,25 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1653087707,
-        "narHash": "sha256-zfno3snrzZTWQ2B7K53QHrGZwrjnJLTRPalymrSsziU=",
+        "lastModified": 1673732096,
+        "narHash": "sha256-BX9KjMvyN00q5OfaQK80iQsmzCthosBGgkrs3F446q8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "cbd40c72b2603ab54e7208f99f9b35fc158bc009",
+        "rev": "76fed81234baa4c9be97af53a0a71d1bbcc5400c",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-21.11",
+        "ref": "master",
         "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "pdf-toolbox": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1653242554,
-        "narHash": "sha256-FWfsPW5OlOJ+rMYGw6upuI0oeiUNRPbrzlomU2pAnK0=",
-        "owner": "wavewave",
-        "repo": "pdf-toolbox",
-        "rev": "6205c87d2430857d73e68c7f615b2dcae3cecec3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "wavewave",
-        "ref": "for-hoodle",
-        "repo": "pdf-toolbox",
-        "type": "github"
-      }
-    },
-    "poppler": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1653150554,
-        "narHash": "sha256-zAurDl9tGhOL+MlDAzEi99rITxQTGnqTPXfPA+4HVl8=",
-        "owner": "wavewave",
-        "repo": "poppler",
-        "rev": "4e7fc8364f89a4757f67fa9715471b5e97cd86f0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "wavewave",
-        "repo": "poppler",
-        "rev": "4e7fc8364f89a4757f67fa9715471b5e97cd86f0",
         "type": "github"
       }
     },
     "root": {
       "inputs": {
+        "TypeCompose": "TypeCompose",
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs",
-        "pdf-toolbox": "pdf-toolbox",
-        "poppler": "poppler"
+        "nixpkgs": "nixpkgs"
       }
     }
   },

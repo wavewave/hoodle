@@ -339,7 +339,6 @@ getMenuUI evar = do
   linka <- actionNewAndRegister "LINKA" "Add Link" (Just "Add Link") (Just Gtk.stockIndex) (justMenu MenuAddLink)
   anchora <- actionNewAndRegister "ANCHORA" "Add Anchor" (Just "Add Anchor") Nothing (justMenu MenuAddAnchor)
   listanchora <- actionNewAndRegister "LISTANCHORA" "List Anchors" (Just "List Anchors") Nothing (justMenu MenuListAnchors)
-  handreca <- actionNewAndRegister "HANDRECA" "Hoodlet load via Handwriting Recognition" (Just "Just a Stub") (Just "myshapes") (justMenu MenuHandwritingRecognitionDialog)
 
   clra <- actionNewAndRegister "CLRA" "Color" (Just "Just a Stub") Nothing Nothing
   clrpcka <- actionNewAndRegister "CLRPCKA" "Color Picker.." (Just "Just a Stub") (Just Gtk.stockSelectColor) (justMenu MenuColorPicker)
@@ -484,7 +483,6 @@ getMenuUI evar = do
       linka,
       anchora,
       listanchora,
-      handreca,
       clra,
       clrpcka,
       penopta,

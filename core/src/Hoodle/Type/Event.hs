@@ -207,7 +207,6 @@ data MenuEvent
   | MenuAddLink
   | MenuAddAnchor
   | MenuListAnchors
-  | MenuHandwritingRecognitionDialog
   | MenuSelectRegion
   | MenuSelectRectangle
   | MenuVerticalSpace

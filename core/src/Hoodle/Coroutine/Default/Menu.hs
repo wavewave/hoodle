@@ -245,8 +245,6 @@ menuEventProcess MenuTogglePanZoomWidget = togglePanZoom . view (unitHoodles . c
 menuEventProcess MenuToggleLayerWidget = toggleLayer . view (unitHoodles . currentUnit . currentCanvas . _1) =<< get
 menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles . currentUnit . currentCanvas . _1) =<< get
 menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles . currentUnit . currentCanvas . _1) =<< get
-menuEventProcess MenuHandwritingRecognitionDialog = pure ()
--- handwritingRecognitionDialog >>= mapM_ (\(b, txt) -> when b $ embedHoodlet (T.unpack txt))
 menuEventProcess MenuAddTab = addTab (LocalDir Nothing)
 menuEventProcess MenuCloseTab = closeTab
 menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource

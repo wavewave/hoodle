@@ -1,3 +1,4 @@
+{- HLINT ignore -}
 {-# LANGUAGE DeriveDataTypeable #-}
 
 module Main where

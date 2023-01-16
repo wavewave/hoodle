@@ -285,15 +285,15 @@ renderBackgroundStateT dim@(Dim w h) bkg = do
         -- pdfRenderDoc doc pn
         pure ()
       maybe (error "renderBackgroundStateT") (const (return ())) r
-  where
 
 {-
-pdfRender pg = do
-  Cairo.setSourceRGBA 1 1 1 1
-  Cairo.rectangle 0 0 w h
-  Cairo.fill
-  PopplerPage.pageRender pg
-pdfRenderDoc doc pn =
-  (MaybeT . liftIO) (popplerGetPageFromDoc doc pn)
-    >>= lift . lift . pdfRender
+  where
+    pdfRender pg = do
+      Cairo.setSourceRGBA 1 1 1 1
+      Cairo.rectangle 0 0 w h
+      Cairo.fill
+      PopplerPage.pageRender pg
+    pdfRenderDoc doc pn =
+      (MaybeT . liftIO) (popplerGetPageFromDoc doc pn)
+        >>= lift . lift . pdfRender
 -}

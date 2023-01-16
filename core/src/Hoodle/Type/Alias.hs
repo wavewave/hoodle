@@ -3,6 +3,7 @@
 
 module Hoodle.Type.Alias where
 
+import Data.Kind (Type)
 import Graphics.Hoodle.Render.Type
   ( HHoodle,
     HPage,
@@ -16,11 +17,11 @@ data EditMode = EditMode
 -- |
 data SelectMode = SelectMode
 
-type family Hoodle a :: *
+type family Hoodle a :: Type
 
-type family Page a :: *
+type family Page a :: Type
 
-type family Layer a :: *
+type family Layer a :: Type
 
 type instance Page EditMode = RPage
 

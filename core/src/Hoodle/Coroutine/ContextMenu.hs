@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-uni-patterns #-}
 
 module Hoodle.Coroutine.ContextMenu where
 
@@ -83,9 +84,6 @@ import Hoodle.Coroutine.Draw
     waitSomeEvent,
   )
 import Hoodle.Coroutine.File (fileExtensionInvalid)
-import Hoodle.Coroutine.HandwritingRecognition
-  ( handwritingRecognitionDialog,
-  )
 import Hoodle.Coroutine.Scroll
   ( adjustScrollbarWithGeometryCvsId,
   )
@@ -284,7 +282,8 @@ processContextMenu (CMenuLaTeXUpdate (x0, y0) dim key) =
   void $ runMaybeT (laTeXInputKeyword (x0, y0) (Just dim) key)
 processContextMenu (CMenuCropImage imgbbox) = cropImage imgbbox
 processContextMenu (CMenuExportHoodlet itm) = do
-  res <- handwritingRecognitionDialog
+  -- res <- handwritingRecognitionDialog
+  let res = Nothing
   forM_ res $ \(b, txt) -> do
     unless b $
       liftIO $ do

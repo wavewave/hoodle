@@ -20,6 +20,7 @@ import Data.Hoodle.Simple
     Dimension,
     Stroke,
   )
+import Data.Kind (Type)
 import Graphics.Hoodle.Render
   ( Xform4Page,
     renderBkg,
@@ -75,7 +76,7 @@ instance Renderable (RLayer, Dimension, Maybe Xform4Page) where
 
 -- |
 class RenderOptionable a where
-  type RenderOption a :: *
+  type RenderOption a :: Type
   cairoRenderOption :: RenderOption a -> RenderCache -> CanvasId -> a -> Cairo.Render a
 
 -- |

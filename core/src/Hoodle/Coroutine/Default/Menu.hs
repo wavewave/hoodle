@@ -2,18 +2,18 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-incomplete-record-updates #-}
 
 module Hoodle.Coroutine.Default.Menu where
 
 import Control.Lens (set, view, (.~), _1)
 import Control.Monad.IO.Class ()
-import Control.Monad.State (get, gets, liftIO, modify, void, when)
+import Control.Monad.State (get, gets, liftIO, modify, void)
 import Data.Foldable (mapM_)
 import Data.Hoodle.Generic (gbackground, gpages)
 import Data.Hoodle.Select (gselAll)
 import qualified Data.IntMap as M
 import Data.Monoid ()
-import qualified Data.Text as T
 import Graphics.Hoodle.Render.Type
   ( RBackground (..),
     isRBkgSmpl,
@@ -49,7 +49,6 @@ import Hoodle.Coroutine.File
     fileShowUUID,
     fileVersionSave,
   )
-import Hoodle.Coroutine.HandwritingRecognition (handwritingRecognitionDialog)
 import Hoodle.Coroutine.LaTeX (laTeXFooter, laTeXHeader)
 import Hoodle.Coroutine.Layer
   ( deleteCurrentLayer,
@@ -246,8 +245,6 @@ menuEventProcess MenuTogglePanZoomWidget = togglePanZoom . view (unitHoodles . c
 menuEventProcess MenuToggleLayerWidget = toggleLayer . view (unitHoodles . currentUnit . currentCanvas . _1) =<< get
 menuEventProcess MenuToggleClockWidget = toggleClock . view (unitHoodles . currentUnit . currentCanvas . _1) =<< get
 menuEventProcess MenuToggleScrollWidget = toggleScroll . view (unitHoodles . currentUnit . currentCanvas . _1) =<< get
-menuEventProcess MenuHandwritingRecognitionDialog =
-  handwritingRecognitionDialog >>= mapM_ (\(b, txt) -> when b $ embedHoodlet (T.unpack txt))
 menuEventProcess MenuAddTab = addTab (LocalDir Nothing)
 menuEventProcess MenuCloseTab = closeTab
 menuEventProcess MenuEditNetEmbedTextSource = editNetEmbeddedTextSource

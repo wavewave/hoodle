@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 
 -- |
 -- Module      : Hoodle.Widget.PanZoom

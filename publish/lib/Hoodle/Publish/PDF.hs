@@ -1,9 +1,11 @@
+{- HLINT ignore -}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Hoodle.Publish.PDF where
 
+{-
 import Control.Applicative ((<|>))
 import Control.Exception (SomeException (..), catch)
 import Control.Lens (view, _1, _2, _3, _4)
@@ -23,9 +25,11 @@ import Data.Attoparsec.ByteString.Char8
   )
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy as BSL
+import Data.Either (isLeft)
 import Data.Functor (($>))
 import qualified Data.Hoodle.Simple as S
 import Data.Int (Int64)
+import Data.Maybe (catMaybes)
 import Data.UUID (UUID, fromString)
 import Data.UUID.V4 (nextRandom)
 import Graphics.Hoodle.Render
@@ -40,47 +44,44 @@ import Graphics.Rendering.Cairo
   )
 import Network.HTTP.Base (urlEncode)
 import Network.URI (unEscapeString)
-import Pdf.Toolbox.Core
+import Pdf.Core
   ( Array (..),
     Dict (..),
-    Number (..),
     Object (..),
-    PdfWriter,
+    -- PdfWriter,
     Ref (..),
-    Str (..),
+    -- Str (..),
     Stream (..),
-    deleteObject,
-    rawStreamContent,
-    runPdfWriter,
-    writeObject,
-    writePdfHeader,
-    writeXRefTable,
+    -- deleteObject,
+    -- rawStreamContent,
+    -- runPdfWriter,
+    -- writeObject,
+    -- writePdfHeader,
+    -- writeXRefTable,
   )
-import Pdf.Toolbox.Document
+import Pdf.Document
   ( Pdf,
-    catMaybes,
     catalogPageNode,
     defaultUserPassword,
     deref,
     document,
     documentCatalog,
-    fromObject,
-    getRIS,
-    intValue,
+    -- fromObject,
+    -- getRIS,
+    -- intValue,
     isEncrypted,
-    isLeft,
-    knownFilters,
-    lookupDict,
+    -- knownFilters,
+    -- lookupDict,
     lookupObject,
-    mapObject,
+    -- mapObject,
     pageContents,
     pageNodeNKids,
     pageNodePageByNum,
-    runPdfWithHandle,
+    -- runPdfWithHandle,
     setUserPassword,
-    toStream,
+    -- toStream,
   )
-import Pdf.Toolbox.Document.Internal.Types (Page (..))
+import Pdf.Document.Internal.Types (Page (..))
 import System.Directory
   ( canonicalizePath,
     doesDirectoryExist,
@@ -501,3 +502,4 @@ createPdf (urlbase, specialurlbase) rootpath (fn, ofn) = catch action (\(e :: So
                 writePdfFile fn dim (urlbase, specialurlbase) (rootpath, currpath) tempfile npglnks muuid
                 writeTrailer
             removeFile tempfile
+-}

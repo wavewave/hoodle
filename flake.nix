@@ -1,41 +1,48 @@
 {
   description = "Hoodle: pen notetaking program";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-21.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
     flake-utils.url = "github:numtide/flake-utils";
-    poppler = {
-      url = "github:wavewave/poppler/4e7fc8364f89a4757f67fa9715471b5e97cd86f0";
-      flake = false;
-    };
-    pdf-toolbox = {
-      url = "github:wavewave/pdf-toolbox/for-hoodle";
+    #poppler = {
+    #  url = "github:wavewave/poppler/4e7fc8364f89a4757f67fa9715471b5e97cd86f0";
+    #  flake = false;
+    #};
+    #pdf-toolbox = {
+    #  url = "github:wavewave/pdf-toolbox/for-hoodle";
+    #  flake = false;
+    #};
+    TypeCompose = {
+      url = "github:conal/TypeCompose/master";
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, flake-utils, poppler, pdf-toolbox }:
+  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
       let
         haskellLib = (import nixpkgs { inherit system; }).haskell.lib;
         overlay_deps = final: prev: {
+          #poppler_0_61 =
+          #  final.callPackage ./nix/poppler_0_61.nix { lcms = final.lcms2; };
           haskellPackages = prev.haskellPackages.override (old: {
             overrides =
               final.lib.composeExtensions (old.overrides or (_: _: { }))
               (self: super: {
-                "pdf-toolbox-content" = self.callCabal2nix "pdf-toolbox-content"
-                  (pdf-toolbox + "/content") { };
-                "pdf-toolbox-core" =
-                  self.callCabal2nix "pdf-toolbox-core" (pdf-toolbox + "/core")
-                  { };
-                "pdf-toolbox-document" =
-                  self.callCabal2nix "pdf-toolbox-document"
-                  (pdf-toolbox + "/document") { };
-                "poppler" = let
-                  p = self.callCabal2nix "poppler" poppler { };
-                  p1 = haskellLib.appendConfigureFlags p [ "-fgtk3" ];
-                  p2 = haskellLib.overrideCabal p1 (drv: {
-                    libraryPkgconfigDepends = [ final.gtk3 final.poppler_0_61 ];
-                  });
-                in haskellLib.disableHardening p2 [ "fortify" ];
+                "TypeCompose" =
+                  self.callCabal2nix "TypeCompose" inputs.TypeCompose { };
+                #"pdf-toolbox-content" = self.callCabal2nix "pdf-toolbox-content"
+                #  (inputs.pdf-toolbox + "/content") { };
+                #"pdf-toolbox-core" = self.callCabal2nix "pdf-toolbox-core"
+                #  (inputs.pdf-toolbox + "/core") { };
+                #"pdf-toolbox-document" =
+                #  self.callCabal2nix "pdf-toolbox-document"
+                #  (inputs.pdf-toolbox + "/document") { };
+                #"poppler" = let
+                #  p = self.callCabal2nix "poppler" inputs.poppler { };
+                #  p1 = haskellLib.appendConfigureFlags p [ "-fgtk3" ];
+                #  p2 = haskellLib.overrideCabal p1 (drv: {
+                #    libraryPkgconfigDepends = [ final.gtk3 final.poppler_0_61 ];
+                #  });
+                #in haskellLib.disableHardening p2 [ "fortify" ];
               });
           });
         };
@@ -103,9 +110,9 @@
 
           # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
           # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
-        in packagesOnGHC "ghc901" // packagesOnGHC "ghc884";
+        in packagesOnGHC "ghc924";
 
-        defaultPackage = packages.ghc884_all;
+        defaultPackage = packages.ghc924_all;
 
         overlays = fullOverlays;
 
@@ -133,10 +140,9 @@
                 export XDG_DATA_DIRS=${newPkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${newPkgs.gsettings-desktop-schemas.name}:${newPkgs.gtk3}/share/gsettings-schemas/${newPkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS
               '';
             };
-        in {
-          "default" = mkDevShell "ghc884";
-          "ghc884" = mkDevShell "ghc884";
-          "ghc901" = mkDevShell "ghc901";
+        in rec {
+          "default" = ghc924;
+          "ghc924" = mkDevShell "ghc924";
         };
       });
 }

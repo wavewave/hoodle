@@ -1,7 +1,9 @@
+{- HLINT ignore -}
 {-# LANGUAGE DeriveDataTypeable #-}
 
 module Main where
 
+{-
 import Control.Monad (filterM)
 import Data.Maybe (isNothing, mapMaybe)
 import qualified Graphics.UI.Gtk as Gtk (initGUI)
@@ -71,3 +73,7 @@ main = do
   mapM_ removeFile willbeerased
   updatedpairs <- filterM isUpdated pairs
   mapM_ (createPdf (urlbase params, specialurlbase params) (rootpath params)) updatedpairs
+-}
+
+main :: IO ()
+main = pure ()

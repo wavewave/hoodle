@@ -2,147 +2,129 @@
   description = "Hoodle: pen notetaking program";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/master";
+    # build failure due to failing linear_base from nixos 22.05 on.
+    nixpkgs_21_11.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
-    #poppler = {
-    #  url = "github:wavewave/poppler/4e7fc8364f89a4757f67fa9715471b5e97cd86f0";
-    #  flake = false;
-    #};
-    #pdf-toolbox = {
-    #  url = "github:wavewave/pdf-toolbox/for-hoodle";
-    #  flake = false;
-    #};
     TypeCompose = {
       url = "github:conal/TypeCompose/master";
       flake = false;
     };
   };
-  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs_21_11, flake-utils, ... }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
       let
-        haskellLib = (import nixpkgs { inherit system; }).haskell.lib;
-        overlay_deps = final: prev: {
-          #poppler_0_61 =
-          #  final.callPackage ./nix/poppler_0_61.nix { lcms = final.lcms2; };
-          haskellPackages = prev.haskellPackages.override (old: {
-            overrides =
-              final.lib.composeExtensions (old.overrides or (_: _: { }))
-              (self: super: {
-                "TypeCompose" =
-                  self.callCabal2nix "TypeCompose" inputs.TypeCompose { };
-                #"pdf-toolbox-content" = self.callCabal2nix "pdf-toolbox-content"
-                #  (inputs.pdf-toolbox + "/content") { };
-                #"pdf-toolbox-core" = self.callCabal2nix "pdf-toolbox-core"
-                #  (inputs.pdf-toolbox + "/core") { };
-                #"pdf-toolbox-document" =
-                #  self.callCabal2nix "pdf-toolbox-document"
-                #  (inputs.pdf-toolbox + "/document") { };
-                #"poppler" = let
-                #  p = self.callCabal2nix "poppler" inputs.poppler { };
-                #  p1 = haskellLib.appendConfigureFlags p [ "-fgtk3" ];
-                #  p2 = haskellLib.overrideCabal p1 (drv: {
-                #    libraryPkgconfigDepends = [ final.gtk3 final.poppler_0_61 ];
-                #  });
-                #in haskellLib.disableHardening p2 [ "fortify" ];
-              });
-          });
+        pkgs = import nixpkgs { inherit system; };
+        pkgs_21_11 = import nixpkgs_21_11 {
+          inherit system;
+          #config.allowBroken = true;
         };
+        haskellLib = pkgs.haskell.lib;
 
         parseCabalProject = import ./parse-cabal-project.nix;
         hoodlePackages = parseCabalProject ./cabal.project;
         hoodlePackageNames = builtins.map ({ name, ... }: name) hoodlePackages;
-        haskellOverlay = self: super:
-          builtins.listToAttrs (builtins.map ({ name, path }: {
+
+        # gtk
+        haskellOverlay = hself: hsuper:
+          {
+            "TypeCompose" =
+              hself.callCabal2nix "TypeCompose" inputs.TypeCompose { };
+          } // builtins.listToAttrs (builtins.map ({ name, path }: {
             inherit name;
-            value = self.callCabal2nix name (./. + "/${path}") { };
+            value = hself.callCabal2nix name (./. + "/${path}") { };
           }) hoodlePackages);
 
-        # see these issues and discussions:
-        # - https://github.com/NixOS/nixpkgs/issues/16394
-        # - https://github.com/NixOS/nixpkgs/issues/25887
-        # - https://github.com/NixOS/nixpkgs/issues/26561
-        # - https://discourse.nixos.org/t/nix-haskell-development-2020/6170
-        fullOverlays = [
-          overlay_deps
-          (final: prev: {
-            haskellPackages = prev.haskellPackages.override (old: {
-              overrides =
-                final.lib.composeExtensions (old.overrides or (_: _: { }))
-                haskellOverlay;
-            });
-          })
-        ];
+        hpkgsFor = compiler:
+          pkgs.haskell.packages.${compiler}.extend haskellOverlay;
+
+        mkPkgsFor = compiler:
+          let hpkgs = hpkgsFor compiler;
+          in pkgs.lib.genAttrs hoodlePackageNames (name: hpkgs.${name});
+
+        mkShellFor = compiler:
+          (hpkgsFor compiler).shellFor {
+            packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
+            buildInputs = [
+              pkgs.gnome.adwaita-icon-theme
+              pkgs.pkg-config
+              pkgs.haskell.packages.${compiler}.cabal-install
+            ];
+            shellHook = ''
+              export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS
+            '';
+          };
+        supportedCompilers = [ "ghc925" ];
+        defaultCompiler = "ghc925";
+
+        # web
+        haskellOverlayWebClient = hself: hsuper: {
+          coroutine-object =
+            hself.callCabal2nix "coroutine-object" ./coroutine-object { };
+          hoodle-util = hself.callCabal2nix "hoodle-util" ./util { };
+          comonad = haskellLib.dontCheck hsuper.comonad;
+          semigroupoids = haskellLib.dontCheck hsuper.semigroupoids;
+          QuickCheck = haskellLib.dontCheck hsuper.QuickCheck;
+          scientific = haskellLib.dontCheck hsuper.scientific;
+          tasty-quickcheck = haskellLib.dontCheck hsuper.tasty-quickcheck;
+          time-compat = haskellLib.dontCheck hsuper.time-compat;
+        };
+        hpkgsWebClient =
+          pkgs_21_11.haskell.packages.ghcjs.extend haskellOverlayWebClient;
+
+        mkWebShellFor = compiler:
+          let
+            hsenvWebServer =
+              pkgs_21_11.haskell.packages.${compiler}.ghcWithPackages (p: [
+                p.acid-state
+                p.microlens
+                p.microlens-th
+                p.monad-loops
+                p.servant
+                p.servant-server
+                p.websockets
+              ]);
+            hsenvWebClient = (hpkgsWebClient).ghcWithPackages (p:
+              [
+                #p.coroutine-object
+                #p.ghcjs-base
+                #p.ghcjs-dom
+                ##p.hoodle-util
+                #p.microlens
+                #p.microlens-th
+              ]);
+          in pkgs_21_11.mkShell {
+            name = "hoodle-web-shell";
+            buildInputs = [
+              pkgs_21_11.nodePackages.http-server
+              hsenvWebServer
+              hsenvWebClient
+              pkgs_21_11.cabal-install
+              pkgs_21_11.ormolu
+            ];
+          };
+
+        supportedCompilersWeb = [ "ghc8107" ];
+        defaultCompilerWeb = "ghc8107";
 
       in rec {
         # This package set is only useful for CI build test.
-        # In practice, users will create a development environment composed by overlays.
-        packages = let
-          packagesOnGHC = ghcVer:
-            let
-              overlayGHC = final: prev: {
-                haskellPackages = prev.haskell.packages.${ghcVer};
-              };
+        packages =
+          pkgs.lib.genAttrs supportedCompilers (compiler: mkPkgsFor compiler);
 
-              newPkgs = import nixpkgs {
-                overlays = [ overlayGHC ] ++ fullOverlays;
-                inherit system;
-                config.allowBroken = true;
-              };
+        defaultPackage = packages.${defaultCompiler}.hoodle;
 
-              individualPackages = builtins.listToAttrs (builtins.map
-                ({ name, ... }: {
-                  name = ghcVer + "_" + name;
-                  value = builtins.getAttr name newPkgs.haskellPackages;
-                }) hoodlePackages);
-
-              allEnv = let
-                hsenv = newPkgs.haskellPackages.ghcWithPackages (p:
-                  let
-                    deps =
-                      builtins.map ({ name, ... }: p.${name}) hoodlePackages;
-                  in deps);
-
-              in newPkgs.buildEnv {
-                name = "all-packages";
-                paths = [ hsenv ];
-              };
-
-            in individualPackages // { "${ghcVer}_all" = allEnv; };
-
-          # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
-          # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
-        in packagesOnGHC "ghc924";
-
-        defaultPackage = packages.ghc924_all;
-
-        overlays = fullOverlays;
+        inherit haskellOverlay;
 
         devShells = let
-          mkDevShell = ghcVer:
-            let
-              overlayGHC = final: prev: {
-                haskellPackages = prev.haskell.packages.${ghcVer};
-              };
-
-              newPkgs = import nixpkgs {
-                overlays = [ overlayGHC ] ++ fullOverlays;
-                inherit system;
-                config.allowBroken = true;
-              };
-
-            in newPkgs.haskellPackages.shellFor {
-              packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
-              buildInputs = [
-                newPkgs.gnome.adwaita-icon-theme
-                newPkgs.pkg-config
-                newPkgs.haskell.packages.ghc8107.cabal-install
-              ];
-              shellHook = ''
-                export XDG_DATA_DIRS=${newPkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${newPkgs.gsettings-desktop-schemas.name}:${newPkgs.gtk3}/share/gsettings-schemas/${newPkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS
-              '';
-            };
+          gtkShells = pkgs.lib.genAttrs supportedCompilers
+            (compiler: mkShellFor compiler);
+          webShells = pkgs.lib.genAttrs supportedCompilersWeb
+            (compiler: mkWebShellFor compiler);
         in rec {
-          "default" = ghc924;
-          "ghc924" = mkDevShell "ghc924";
+          default = gtk.${defaultCompiler};
+          gtk = gtkShells;
+          web = webShells;
         };
+
       });
 }

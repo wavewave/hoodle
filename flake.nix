@@ -26,9 +26,14 @@
           haskellPackages = prev.haskellPackages.override (old: {
             overrides =
               final.lib.composeExtensions (old.overrides or (_: _: { }))
-              (self: super: {
+              (hself: hsuper: {
+                # due to text < 1.3
+                "cairo" = haskellLib.doJailbreak hsuper.cairo;
+                "fgl" = hself.callHackage "fgl" "5.8.0.0" { };
+                # due to text < 1.3
+                "glib" = haskellLib.doJailbreak hsuper.glib;
                 "TypeCompose" =
-                  self.callCabal2nix "TypeCompose" inputs.TypeCompose { };
+                  hself.callCabal2nix "TypeCompose" inputs.TypeCompose { };
                 #"pdf-toolbox-content" = self.callCabal2nix "pdf-toolbox-content"
                 #  (inputs.pdf-toolbox + "/content") { };
                 #"pdf-toolbox-core" = self.callCabal2nix "pdf-toolbox-core"

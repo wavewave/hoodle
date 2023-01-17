@@ -113,7 +113,6 @@
        <menuitem action="LINKA" />
        <menuitem action="ANCHORA" />
        <menuitem action="LISTANCHORA" />
-       <menuitem action="HANDRECA" />
        <separator />               
        <menuitem action="SELREGNA" />
        <menuitem action="SELRECTA" />
@@ -205,7 +204,6 @@
     <toolitem action="NRMSIZEA" />
     <toolitem action="ZMINA" />
     <toolitem action="PGWDTHA" />                          
-    <toolitem action="HANDRECA" />
     <toolitem action="FSCRA" />
     <separator /> 
     <toolitem action="LINKA" />

@@ -1,8 +1,8 @@
 {
   description = "Hoodle: pen notetaking program";
   inputs = {
-    # hoodle-web is not buildable on the current master.
     nixpkgs.url = "github:NixOS/nixpkgs/master";
+    # build failure due to failing linear_base from nixos 22.05 on.
     nixpkgs_21_11.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
     TypeCompose = {

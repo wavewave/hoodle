@@ -29,6 +29,10 @@
         hpkgsFor = compiler:
           pkgs.haskell.packages.${compiler}.extend haskellOverlay;
 
+        mkPkgsFor = compiler:
+          let hpkgs = hpkgsFor compiler;
+          in pkgs.lib.genAttrs hoodlePackageNames (name: hpkgs.${name});
+
         mkShellFor = compiler:
           (hpkgsFor compiler).shellFor {
             packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
@@ -43,53 +47,21 @@
           };
 
         supportedCompilers = [ "ghc925" ];
+        defaultCompiler = "ghc925";
 
       in rec {
         # This package set is only useful for CI build test.
-        # In practice, users will create a development environment composed by overlays.
-        # packages = let
-        #   packagesOnGHC = ghcVer:
-        #     let
-        #       overlayGHC = final: prev: {
-        #         haskellPackages = prev.haskell.packages.${ghcVer};
-        #       };
+        packages =
+          pkgs.lib.genAttrs supportedCompilers (compiler: mkPkgsFor compiler);
 
-        #       newPkgs = import nixpkgs {
-        #         overlays = [ overlayGHC ] ++ fullOverlays;
-        #         inherit system;
-        #         config.allowBroken = true;
-        #       };
+        defaultPackage = packages.${defaultCompiler}.hoodle;
 
-        #       individualPackages = builtins.listToAttrs (builtins.map
-        #         ({ name, ... }: {
-        #           name = ghcVer + "_" + name;
-        #           value = builtins.getAttr name newPkgs.haskellPackages;
-        #         }) hoodlePackages);
-
-        #       allEnv = let
-        #         hsenv = newPkgs.haskellPackages.ghcWithPackages (p:
-        #           let
-        #             deps =
-        #               builtins.map ({ name, ... }: p.${name}) hoodlePackages;
-        #           in deps);
-
-        #       in newPkgs.buildEnv {
-        #         name = "all-packages";
-        #         paths = [ hsenv ];
-        #       };
-
-        #     in individualPackages // { "${ghcVer}_all" = allEnv; };
-
-        #   # NOTE: GHC 8.10.7 has a problem with poppler (multiple definition of libc functions)
-        #   # gi-poppler is buildable on nixpkgs without custom overlay up to GHC 9.0.1
-        # in packagesOnGHC "ghc924";
-
-        #defaultPackage = packages.ghc924_all;
+        inherit haskellOverlay;
 
         devShells = let
           shells = pkgs.lib.genAttrs supportedCompilers
             (compiler: mkShellFor compiler);
-        in { default = shells.ghc925; } // shells;
+        in { default = shells.${defaultCompiler}; } // shells;
 
       });
 }

@@ -7,7 +7,6 @@ import Control.Monad (when)
 import Control.Monad.Trans.Crtn.EventHandler (eventHandler)
 import Data.Binary (decode)
 import qualified Data.ByteString.Lazy as BL
-import Data.Semigroup ((<>))
 import GHCJS.Foreign.Callback
   ( Callback,
     OnBlocked (ThrowWouldBlock),

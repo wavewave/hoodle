@@ -1,22 +1,22 @@
 {
   description = "Hoodle: pen notetaking program";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/master";
     # hoodle-web is not buildable on the current master.
-    nixpkgs_20_03.url = "github:NixOS/nixpkgs/nixos-20.03";
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
+    nixpkgs_21_11.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
     TypeCompose = {
       url = "github:conal/TypeCompose/master";
       flake = false;
     };
   };
-  outputs = inputs@{ self, nixpkgs, nixpkgs_20_03, flake-utils, ... }:
+  outputs = inputs@{ self, nixpkgs, nixpkgs_21_11, flake-utils, ... }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        pkgs_20_03 = import nixpkgs_20_03 {
+        pkgs_21_11 = import nixpkgs_21_11 {
           inherit system;
-          config.allowBroken = true;
+          #config.allowBroken = true;
         };
         haskellLib = pkgs.haskell.lib;
 
@@ -69,12 +69,12 @@
           time-compat = haskellLib.dontCheck hsuper.time-compat;
         };
         hpkgsWebClient =
-          pkgs_20_03.haskell.packages.ghcjs.extend haskellOverlayWebClient;
+          pkgs_21_11.haskell.packages.ghcjs.extend haskellOverlayWebClient;
 
         mkWebShellFor = compiler:
           let
             hsenvWebServer =
-              pkgs_20_03.haskell.packages.${compiler}.ghcWithPackages (p: [
+              pkgs_21_11.haskell.packages.${compiler}.ghcWithPackages (p: [
                 p.acid-state
                 p.microlens
                 p.microlens-th
@@ -83,25 +83,28 @@
                 p.servant-server
                 p.websockets
               ]);
-            hsenvWebClient = (hpkgsWebClient).ghcWithPackages (p: [
-              p.coroutine-object
-              p.ghcjs-base
-              p.ghcjs-dom
-              #p.hoodle-util
-              p.microlens
-              p.microlens-th
-            ]);
-          in pkgs_20_03.mkShell {
+            hsenvWebClient = (hpkgsWebClient).ghcWithPackages (p:
+              [
+                #p.coroutine-object
+                #p.ghcjs-base
+                #p.ghcjs-dom
+                ##p.hoodle-util
+                #p.microlens
+                #p.microlens-th
+              ]);
+          in pkgs_21_11.mkShell {
             name = "hoodle-web-shell";
-            buildInputs = [ # hsenvWebServer
+            buildInputs = [
+              pkgs_21_11.nodePackages.http-server
+              hsenvWebServer
               hsenvWebClient
-              pkgs.cabal-install
-              pkgs.ormolu
+              pkgs_21_11.cabal-install
+              pkgs_21_11.ormolu
             ];
           };
 
-        supportedCompilersWeb = [ "ghc865" ];
-        defaultCompilerWeb = "ghc865";
+        supportedCompilersWeb = [ "ghc8107" ];
+        defaultCompilerWeb = "ghc8107";
 
       in rec {
         # This package set is only useful for CI build test.

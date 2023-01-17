@@ -17,7 +17,6 @@ import Data.Binary (Binary, encode)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (toList)
-import Data.Semigroup (Semigroup ((<>)))
 import Data.Sequence (Seq)
 import Data.String (IsString (..))
 import qualified GHCJS.Buffer as Buffer

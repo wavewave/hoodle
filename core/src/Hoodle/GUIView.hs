@@ -1,7 +1,9 @@
-{-# LANGUAGE CPP #-}
+-- {-# LANGUAGE CPP #-}
+-- {-# LANGUAGE GADTs #-}
+-- {-# LANGUAGE Rank2Types #-}
+-- {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -w #-}
 
 module Hoodle.GUIView (startGUIView) where
@@ -9,22 +11,25 @@ module Hoodle.GUIView (startGUIView) where
 import Control.Concurrent
   ( forkIO,
     forkOn,
+    newMVar,
     newEmptyMVar,
     putMVar,
+    takeMVar,
     threadDelay,
   )
 import Control.Exception (SomeException (..), catch)
 import Control.Lens (at, over, set, view, (.~), (?~), (^.), _2)
-import Control.Monad (forever, return, void, (>>), (>>=))
+import Control.Monad (forever, return, void, when, (>>), (>>=))
 import Control.Monad.Trans (liftIO)
 import Control.Monad.Trans.Crtn.Driver (driver)
 import Control.Monad.Trans.Crtn.Logger.Simple (simplelogger)
 import Control.Monad.Trans.Crtn.Object (Arg (..))
 import Control.Monad.Trans.Reader (ReaderT (..))
 import Data.Foldable (forM_, traverse_)
-import Data.IORef (newIORef, readIORef)
+import Data.IORef (newIORef, readIORef, writeIORef)
 import qualified Data.IntMap as M
 import Data.Maybe (Maybe (..), maybe)
+import Data.Time.Clock (diffUTCTime, getCurrentTime, secondsToNominalDiffTime)
 import qualified Graphics.UI.Gtk as Gtk
 import Hoodle.Accessor
   ( lensSetToggleUIForFlag,
@@ -147,6 +152,9 @@ import System.IO
     hPutStrLn,
     openFile,
   )
+import System.Directory (canonicalizePath)
+import System.FilePath (takeDirectory)
+import System.FSNotify qualified as FS
 
 -- |
 startGUIView :: Maybe FilePath -> IO ()
@@ -175,6 +183,9 @@ startGUIView mfname = do
     return True
   Gtk.widgetShowAll window
   eventHandler tref (UsrEv (Initialized mfname))
+  forM_ mfname $ \fname -> do
+    fname' <- canonicalizePath fname
+    fileWatcher fname'
   Gtk.mainGUI
   pure ()
 
@@ -260,3 +271,23 @@ outerLayoutForViewer ui vbox xst = do
   forM_ mstatusbar $ \statusbar -> Gtk.boxPackEnd vbox statusbar Gtk.PackNatural 0
   --
   Gtk.boxPackStart vbox notebook Gtk.PackGrow 0
+
+fileWatcher :: FilePath -> IO ()
+fileWatcher fp = do
+  let dir = takeDirectory fp
+  forkIO $ do
+    FS.withManager $ \mgr -> do
+      t0 <- getCurrentTime
+      ref <- newIORef t0
+      let pred (FS.Modified fp' _ _) = fp == fp'
+          pred _ = False
+          action ev@(FS.Modified _ t' _) = do
+            t <- readIORef ref
+            let delta = diffUTCTime t' t
+            when (delta > secondsToNominalDiffTime 1) $ do
+              print ev
+              writeIORef ref t'
+      FS.watchDir mgr dir pred action
+      forever (threadDelay 1_000_000)
+    pure ()
+  pure ()

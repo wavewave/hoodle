@@ -17,8 +17,8 @@ Source-repository head
   location: http://www.github.com/wavewave/hoodle
 
 Executable hoodle
-  Main-is: hoodle.hs
-  hs-source-dirs: exe
+  Main-is: Main.hs
+  hs-source-dirs: app/hoodle
   ghc-options: 	-Wall -Werror -threaded -rtsopts
   ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:
@@ -28,7 +28,7 @@ Executable hoodle
                  hoodle
 
 Library
-  hs-source-dirs: lib
+  hs-source-dirs: src
   ghc-options: 	-Wall -Werror
   ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:   base == 4.*,

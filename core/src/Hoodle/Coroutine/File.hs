@@ -225,19 +225,28 @@ getFileContent store@(LocalDir (Just fname)) = do
   let ext = takeExtension fname
   case ext of
     ".hdl" -> do
+      liftIO $ putStrLn "file1"
       bstr <- liftIO $ B.readFile fname
+      liftIO $ putStrLn "file2"
+      liftIO $ print fname
+      liftIO $ print bstr
       r <- liftIO $ checkVersionAndMigrate bstr
+      liftIO $ putStrLn "file3"
       case r of
         Left err -> liftIO $ putStrLn err
         Right h -> do
+          liftIO $ putStrLn "file4"
           constructNewHoodleStateFromHoodle h
+          liftIO $ putStrLn "file5"
           ctime <- liftIO getCurrentTime
+          liftIO $ putStrLn "file6"
           let mmd5 = Nothing
           pureUpdateUhdl
             ( (hoodleFileControl . hoodleFileName .~ store)
                 . (hoodleFileControl . lastSavedTime ?~ ctime)
                 . (hoodleFileControl . syncMD5History .~ maybeToList mmd5)
             )
+          liftIO $ putStrLn "file7"
           commit_
     ".xoj" -> do
       liftIO (XP.parseXojFile fname) >>= \case
@@ -348,19 +357,30 @@ exportCurrentPageAsSVG = fileChooser Gtk.FileChooserActionSave Nothing >>= maybe
 -- |
 fileLoad :: FileStore -> MainCoroutine ()
 fileLoad filestore = do
+  liftIO $ putStrLn "load1"
   getFileContent filestore
+  liftIO $ putStrLn "load2"
   updateUhdl $ \uhdl -> do
     ncvsinfo <- liftIO $ setPage uhdl 0 (getCurrentCanvasId uhdl)
     return . (currentCanvasInfo .~ ncvsinfo) . (isSaved .~ True) $ uhdl
+  liftIO $ putStrLn "load3"
   xst <- get
+  liftIO $ putStrLn "load4"
   let ui = view gtkUIManager xst
   liftIO $ reflectUIToggle ui "SAVEA" False
+  liftIO $ putStrLn "load5"
   liftIO $ setTitleFromFileName xst
+  liftIO $ putStrLn "load6"
   clearUndoHistory
+  liftIO $ putStrLn "load7"
   modeChange ToViewAppendMode
+  liftIO $ putStrLn "load8"
   canvasZoomUpdateAll
+  liftIO $ putStrLn "load9"
   resetHoodleBuffers
+  liftIO $ putStrLn "load10"
   invalidateAll
+  liftIO $ putStrLn "load11"
   applyActionToAllCVS adjustScrollbarWithGeometryCvsId
 
 -- |
@@ -425,13 +445,18 @@ fileSaveAs = do
 -- | main coroutine for open a file
 fileReload :: MainCoroutine ()
 fileReload = do
+  liftIO $ putStrLn "here1"
   uhdl <- gets (view (unitHoodles . currentUnit))
+  liftIO $ putStrLn "here2"
   let filestore = view (hoodleFileControl . hoodleFileName) uhdl
   if not (view isSaved uhdl)
     then do
+      liftIO $ putStrLn "here3"
       b <- okCancelMessageBox "Discard changes and reload the file?"
       when b (fileLoad filestore)
-    else fileLoad filestore
+    else do
+      liftIO $ putStrLn "here4"
+      fileLoad filestore
 
 -- |
 fileExtensionInvalid :: (String, String) -> MainCoroutine ()

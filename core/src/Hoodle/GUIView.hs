@@ -1,7 +1,3 @@
--- {-# LANGUAGE CPP #-}
--- {-# LANGUAGE GADTs #-}
--- {-# LANGUAGE Rank2Types #-}
--- {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GHC2021 #-}
 {-# LANGUAGE GADTs #-}
 {-# OPTIONS_GHC -w #-}
@@ -80,7 +76,6 @@ import Hoodle.Type.Event
     MenuEvent (MenuQuit),
     NetworkEvent (..),
     RenderEvent (..),
-    SystemEvent (ClockUpdateEvent),
     UserEvent (..),
   )
 import Hoodle.Type.HoodleState
@@ -185,7 +180,7 @@ startGUIView mfname = do
   eventHandler tref (UsrEv (Initialized mfname))
   forM_ mfname $ \fname -> do
     fname' <- canonicalizePath fname
-    fileWatcher fname'
+    fileWatcher (eventHandler tref) fname'
   Gtk.mainGUI
   pure ()
 
@@ -272,8 +267,8 @@ outerLayoutForViewer ui vbox xst = do
   --
   Gtk.boxPackStart vbox notebook Gtk.PackGrow 0
 
-fileWatcher :: FilePath -> IO ()
-fileWatcher fp = do
+fileWatcher :: (AllEvent -> IO ()) -> FilePath -> IO ()
+fileWatcher evhandler fp = do
   let dir = takeDirectory fp
   forkIO $ do
     FS.withManager $ \mgr -> do
@@ -281,11 +276,12 @@ fileWatcher fp = do
       ref <- newIORef t0
       let pred (FS.Modified fp' _ _) = fp == fp'
           pred _ = False
-          action ev@(FS.Modified _ t' _) = do
+          action ev@(FS.Modified fp' t' _) = do
             t <- readIORef ref
             let delta = diffUTCTime t' t
             when (delta > secondsToNominalDiffTime 1) $ do
               print ev
+              Gtk.postGUIAsync $ evhandler $ UsrEv $ FileReloadOrdered
               writeIORef ref t'
       FS.watchDir mgr dir pred action
       forever (threadDelay 1_000_000)

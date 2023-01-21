@@ -14,6 +14,7 @@
 module Hoodle.ModelAction.File where
 
 import Control.Lens (set, view)
+import Control.Monad.IO.Class (liftIO)
 import Data.Attoparsec.ByteString.Char8 (parseOnly)
 import Data.ByteString.Base64 (encode)
 import qualified Data.ByteString.Char8 as C
@@ -67,7 +68,9 @@ import qualified Text.Hoodle.Parse.Attoparsec as PA
 checkVersionAndMigrate :: C.ByteString -> IO (Either String Hoodle)
 checkVersionAndMigrate bstr = do
   case parseOnly PA.checkHoodleVersion bstr of
-    Left str -> error str
+    Left str -> do
+      liftIO $ putStrLn $ "checkVersionAndMigrate: " ++ show bstr
+      error str
     Right v -> do
       if v <= "0.2.2"
         then T.traverse MVHEAD.hoodle2Hoodle =<< MV.migrate bstr

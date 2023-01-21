@@ -49,8 +49,8 @@ Library
                    Hoodle.Publish.PDF
 
 Executable hoodle-publish
-  Main-is: hoodle-publish.hs
-  hs-source-dirs: app
+  Main-is: Main.hs
+  hs-source-dirs: app/hoodle-publish
   ghc-options: 	-Wall -Werror -rtsopts
   ghc-prof-options: -fprof-auto -fprof-cafs
 
@@ -63,8 +63,8 @@ Executable hoodle-publish
                    gtk3 >= 0.14
 
 executable print1page
-  hs-source-dirs: app
-  main-is: print1page.hs
+  hs-source-dirs: app/print1page
+  main-is: Main.hs
   build-depends:
       attoparsec,
       base,

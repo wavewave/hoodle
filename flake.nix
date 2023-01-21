@@ -51,6 +51,7 @@
             ];
             shellHook = ''
               export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS
+              export PS1="\n\e[1;33m[hoodle:\w]$ \e[m\0"
             '';
           };
         supportedCompilers = [ "ghc925" ];

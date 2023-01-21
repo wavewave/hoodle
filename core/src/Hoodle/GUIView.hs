@@ -178,9 +178,6 @@ startGUIView mfname = do
     return True
   Gtk.widgetShowAll window
   eventHandler tref (UsrEv (Initialized mfname))
-  forM_ mfname $ \fname -> do
-    fname' <- canonicalizePath fname
-    fileWatcher (eventHandler tref) fname'
   Gtk.mainGUI
   pure ()
 
@@ -266,27 +263,3 @@ outerLayoutForViewer ui vbox xst = do
   forM_ mstatusbar $ \statusbar -> Gtk.boxPackEnd vbox statusbar Gtk.PackNatural 0
   --
   Gtk.boxPackStart vbox notebook Gtk.PackGrow 0
-
-fileWatcher :: (AllEvent -> IO ()) -> FilePath -> IO ()
-fileWatcher evhandler fp = do
-  let dir = takeDirectory fp
-  forkIO $ do
-    FS.withManager $ \mgr -> do
-      t0 <- getCurrentTime
-      ref <- newIORef t0
-      let pred (FS.Modified fp' _ _) = fp == fp'
-          pred _ = False
-          action ev@(FS.Modified fp' t' _) = do
-            t <- readIORef ref
-            let delta = diffUTCTime t' t
-            when (delta > secondsToNominalDiffTime 1) $ do
-              print ev
-              -- this is a hack. wait enough for file to be saved.
-              threadDelay 1_000_000
-              t'' <- getCurrentTime
-              writeIORef ref t''
-              Gtk.postGUIAsync $ evhandler $ UsrEv $ FileReloadOrdered
-      FS.watchDir mgr dir pred action
-      forever (threadDelay 1_000_000)
-    pure ()
-  pure ()

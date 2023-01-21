@@ -281,8 +281,11 @@ fileWatcher evhandler fp = do
             let delta = diffUTCTime t' t
             when (delta > secondsToNominalDiffTime 1) $ do
               print ev
+              -- this is a hack. wait enough for file to be saved.
+              threadDelay 1_000_000
+              t'' <- getCurrentTime
+              writeIORef ref t''
               Gtk.postGUIAsync $ evhandler $ UsrEv $ FileReloadOrdered
-              writeIORef ref t'
       FS.watchDir mgr dir pred action
       forever (threadDelay 1_000_000)
     pure ()

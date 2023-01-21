@@ -113,6 +113,7 @@ Library
                    Hoodle.GUI
                    Hoodle.GUI.Menu
                    Hoodle.GUI.Reflect
+                   Hoodle.GUIView
                    Hoodle.ModelAction.Adjustment
                    Hoodle.ModelAction.Clipboard
                    Hoodle.ModelAction.ContextMenu

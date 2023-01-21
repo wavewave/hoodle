@@ -3,12 +3,8 @@
 
 module Main (main) where
 
-import Hoodle.Command (commandLineProcess)
-import Hoodle.ProgType (Hoodle (Test))
-import Hoodle.Script (defaultScriptConfig)
-import Hoodle.StartUp (hoodleMain)
+import Hoodle.GUIView (startGUIView)
 import Options.Applicative qualified as OA
--- import System.IO (FilePath)
 
 newtype Options = Options
   { filePath :: FilePath
@@ -35,4 +31,4 @@ main = do
 
   print opts
 
-  commandLineProcess (Test (Just (filePath opts))) Nothing
+  startGUIView (Just (filePath opts))

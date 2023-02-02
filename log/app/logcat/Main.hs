@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -w #-}
+
 module Main where
 
 import qualified Control.Exception as E

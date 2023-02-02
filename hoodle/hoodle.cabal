@@ -19,10 +19,11 @@ Source-repository head
 Executable hoodle
   Main-is:        Main.hs
   hs-source-dirs: app/hoodle
-  ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  ghc-options: 	  -Wall -Werror -threaded -rtsopts -eventlog
   Build-Depends:
                   base == 4.*,
                   cmdargs >= 0.7,
+                  eventlog-socket,
                   hoodle-core,
                   hoodle
 

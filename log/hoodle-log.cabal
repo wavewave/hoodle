@@ -22,5 +22,7 @@ Executable logcat
   ghc-options: 	  -Wall -Werror -threaded -rtsopts -eventlog
   Build-Depends:
                   base == 4.*,
+                  bytestring,
                   ghc-events,
-                  network
+                  network,
+                  pretty-simple

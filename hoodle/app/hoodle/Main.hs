@@ -15,12 +15,17 @@ import Control.Monad (forever)
 import GHC.Eventlog.Socket (flush, startWait)
 import Hoodle.Script (defaultScriptConfig)
 import Hoodle.StartUp (hoodleStartMain)
+import System.Mem (performGC)
 
 main :: IO ()
 main = do
   startWait "/tmp/eventlog.sock"
-  {- forkIO $
+  forkIO $
     forever $ do
       threadDelay 1000000
-      flush -}
+      flush
+  {- forkIO $
+    forever $ do
+      threadDelay 10000000
+      performGC -}
   hoodleStartMain defaultScriptConfig

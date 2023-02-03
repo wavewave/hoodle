@@ -32,7 +32,8 @@
         haskellOverlay = hself: hsuper:
           {
             "eventlog-socket" =
-              hself.callCabal2nix "eventlog-socket" inputs.ghc-eventlog-socket { };
+              hself.callCabal2nix "eventlog-socket" inputs.ghc-eventlog-socket
+              { };
             "TypeCompose" =
               hself.callCabal2nix "TypeCompose" inputs.TypeCompose { };
           } // builtins.listToAttrs (builtins.map ({ name, path }: {
@@ -40,8 +41,14 @@
             value = hself.callCabal2nix name (./. + "/${path}") { };
           }) hoodlePackages);
 
+        conf94 = hself: hsuper: {
+          cairo = haskellLib.doJailbreak hsuper.cairo;
+          glib = haskellLib.doJailbreak hsuper.glib;
+        };
+
         hpkgsFor = compiler:
-          pkgs.haskell.packages.${compiler}.extend haskellOverlay;
+          pkgs.haskell.packages.${compiler}.extend
+          (hself: hsuper: haskellOverlay hself hsuper // conf94 hself hsuper);
 
         mkPkgsFor = compiler:
           let hpkgs = hpkgsFor compiler;
@@ -60,7 +67,7 @@
               export PS1="\n[hoodle:\w]$ \0"
             '';
           };
-        supportedCompilers = [ "ghc925" ];
+        supportedCompilers = [ "ghc944" "ghc925" ];
         defaultCompiler = "ghc925";
 
         # web

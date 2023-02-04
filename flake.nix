@@ -1,7 +1,7 @@
 {
   description = "Hoodle: pen notetaking program";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/master";
+    nixpkgs.url = "github:wavewave/nixpkgs/libdeflate-fix-on-peti-master";
     # build failure due to failing linear_base from nixos 22.05 on.
     nixpkgs_21_11.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
@@ -18,10 +18,7 @@
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        pkgs_21_11 = import nixpkgs_21_11 {
-          inherit system;
-          #config.allowBroken = true;
-        };
+        pkgs_21_11 = import nixpkgs_21_11 { inherit system; };
         haskellLib = pkgs.haskell.lib;
 
         parseCabalProject = import ./parse-cabal-project.nix;
@@ -42,8 +39,46 @@
           }) hoodlePackages);
 
         conf94 = hself: hsuper: {
-          cairo = haskellLib.doJailbreak hsuper.cairo;
-          glib = haskellLib.doJailbreak hsuper.glib;
+          #cairo = haskellLib.doJailbreak hsuper.cairo;
+          #glib = haskellLib.doJailbreak (haskellLib.addPkgconfigDepend hsuper.glib pkgs.pcre2);
+
+          gio = let gio_t = haskellLib.addPkgconfigDepend hsuper.gio pkgs.pcre2;
+          in haskellLib.addExtraLibraries gio_t [
+            pkgs.util-linux.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.pcre
+          ];
+          gtk3 = let
+            gtk3_t =
+              haskellLib.addPkgconfigDepend (haskellLib.doJailbreak hsuper.gtk3)
+              pkgs.pcre2;
+          in haskellLib.addExtraLibraries gtk3_t [
+            pkgs.util-linux.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.pcre
+            pkgs.libthai
+            pkgs.libdatrie
+            pkgs.xorg.libXdmcp.dev
+            pkgs.libdeflate
+            pkgs.libxkbcommon.dev
+            pkgs.epoxy.dev
+            pkgs.xorg.libXtst
+          ];
+          #haskellLib.addPkgconfigDepends () [];
+          #[ pkgs.pcre2 pkgs.util-linux.dev pkgs.libselinux pkgs.libsepol pkgs.pcre ];
+          #pkgs.libthai pkgs.python3Packages.datrie ];
+          svgcairo = haskellLib.addPkgconfigDepends hsuper.svgcairo [
+            pkgs.pcre2
+            pkgs.util-linux.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.pcre
+            pkgs.librsvg.dev
+            pkgs.libdeflate
+            pkgs.xorg.libXdmcp.dev
+          ];
         };
 
         hpkgsFor = compiler:
@@ -57,6 +92,10 @@
         mkShellFor = compiler:
           (hpkgsFor compiler).shellFor {
             packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
+            #extraDependencies = ps: {
+            #  librarySystemDepends = [ pkgs.librsvg.dev ];
+            #  libraryHaskellDepends = [ ps.gtk3 ];
+            #};
             buildInputs = [
               pkgs.gnome.adwaita-icon-theme
               pkgs.pkg-config

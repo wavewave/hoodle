@@ -71,16 +71,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1675445720,
-        "narHash": "sha256-nspQU/WBVHwVGrC4scpgLIdThOUViNuMpCMClidQ0y8=",
-        "owner": "NixOS",
+        "lastModified": 1675468503,
+        "narHash": "sha256-PukCczucbzGkvJO9+VXE0ufIfU20j9sPNats6azzFUo=",
+        "owner": "wavewave",
         "repo": "nixpkgs",
-        "rev": "81041becce34013d476cf387675ef5cd32145fbc",
+        "rev": "21dcd6630adb9af9298a9a024731846a48b63e4a",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "master",
+        "owner": "wavewave",
+        "ref": "libdeflate-fix-on-peti-master",
         "repo": "nixpkgs",
         "type": "github"
       }

@@ -19,7 +19,10 @@ Source-repository head
 Executable hoodle
   Main-is:        Main.hs
   hs-source-dirs: app/hoodle
-  ghc-options: 	  -Wall -Werror -threaded -rtsopts -eventlog
+  if impl (ghc > 9.4.0)
+    ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  else
+    ghc-options:    -Wall -Werror -threaded -rtsopts -eventlog
   Build-Depends:
                   base == 4.*,
                   cmdargs >= 0.7,
@@ -30,7 +33,10 @@ Executable hoodle
 Executable hoodle-view
   Main-is:        Main.hs
   hs-source-dirs: app/hoodle-view
-  ghc-options:    -Wall -Werror -threaded -rtsopts
+  if impl (ghc > 9.4.0)
+    ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  else
+    ghc-options:    -Wall -Werror -threaded -rtsopts -eventlog
   Build-depends:
                   base == 4.*,
                   optparse-applicative,

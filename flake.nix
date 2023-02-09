@@ -144,10 +144,10 @@
 
       in rec {
         # This package set is only useful for CI build test.
-        packages =
+        packages.gtk =
           pkgs.lib.genAttrs supportedCompilers (compiler: mkPkgsFor compiler);
 
-        defaultPackage = packages.${defaultCompiler}.hoodle;
+        defaultPackage = packages.gtk.${defaultCompiler}.hoodle;
 
         inherit haskellOverlay;
 

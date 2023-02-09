@@ -31,6 +31,7 @@ import System.Console.CmdArgs
     (&=),
   )
 
+-- TODO: rename xojfile and Test. use optparse-applicative.
 data Hoodle = Test
   { xojfile :: Maybe FilePath
   }

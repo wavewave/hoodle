@@ -12,6 +12,10 @@
       url = "github:conal/TypeCompose/master";
       flake = false;
     };
+    ghc-eventlog-socket = {
+      url = "github:wavewave/ghc-eventlog-socket/flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs = inputs@{ self, nixpkgs, nixpkgs_21_11, flake-utils, ... }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
@@ -27,6 +31,8 @@
         # gtk
         haskellOverlay = hself: hsuper:
           {
+            "eventlog-socket" =
+              hself.callCabal2nix "eventlog-socket" inputs.ghc-eventlog-socket { };
             "TypeCompose" =
               hself.callCabal2nix "TypeCompose" inputs.TypeCompose { };
           } // builtins.listToAttrs (builtins.map ({ name, path }: {

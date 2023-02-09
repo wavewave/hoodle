@@ -3,3 +3,7 @@ packages:
   ../../util/
   ../common/
   ./
+
+constraints:
+  -- due to missing doubleToWord64 RTS function in GHC 8.10.
+  hashable < 1.4.2

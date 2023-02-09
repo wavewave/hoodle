@@ -43,7 +43,7 @@ Library
                    dyre >= 0.8.11,
                    errors >= 1.3,
                    filepath > 1,
-                   fsnotify >= 0.0.7,
+                   fsnotify >= 0.3,
                    gd >= 3000.7,
                    http-types,
                    lens >= 2.5,

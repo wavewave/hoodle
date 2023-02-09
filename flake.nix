@@ -39,9 +39,6 @@
           }) hoodlePackages);
 
         conf94 = hself: hsuper: {
-          #cairo = haskellLib.doJailbreak hsuper.cairo;
-          #glib = haskellLib.doJailbreak (haskellLib.addPkgconfigDepend hsuper.glib pkgs.pcre2);
-
           gio = let gio_t = haskellLib.addPkgconfigDepend hsuper.gio pkgs.pcre2;
           in haskellLib.addExtraLibraries gio_t [
             pkgs.util-linux.dev
@@ -66,9 +63,6 @@
             pkgs.epoxy.dev
             pkgs.xorg.libXtst
           ];
-          #haskellLib.addPkgconfigDepends () [];
-          #[ pkgs.pcre2 pkgs.util-linux.dev pkgs.libselinux pkgs.libsepol pkgs.pcre ];
-          #pkgs.libthai pkgs.python3Packages.datrie ];
           svgcairo = haskellLib.addPkgconfigDepends hsuper.svgcairo [
             pkgs.pcre2
             pkgs.util-linux.dev
@@ -91,11 +85,7 @@
 
         mkShellFor = compiler:
           (hpkgsFor compiler).shellFor {
-            packages = ps: builtins.map (name: ps.${name}) hoodlePackageNames;
-            #extraDependencies = ps: {
-            #  librarySystemDepends = [ pkgs.librsvg.dev ];
-            #  libraryHaskellDepends = [ ps.gtk3 ];
-            #};
+            packages = ps : builtins.map (name: ps.${name}) hoodlePackageNames;
             buildInputs = [
               pkgs.gnome.adwaita-icon-theme
               pkgs.pkg-config
@@ -106,7 +96,7 @@
               export PS1="\n[hoodle:\w]$ \0"
             '';
           };
-        supportedCompilers = [ "ghc944" "ghc925" ];
+        supportedCompilers = [ "ghcHEAD" "ghc944" "ghc925" ];
         defaultCompiler = "ghc925";
 
         # web

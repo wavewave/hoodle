@@ -1,7 +1,10 @@
 {
   description = "Hoodle: pen notetaking program";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/master";
+    # for ghc944, libdeflate needs to be packaged with pkg-config
+    # also, haskellPackages are updated for gtk.
+    # TODO: back to NixOS/nixpkgs/master when handled.
+    nixpkgs.url = "github:wavewave/nixpkgs/libdeflate-fix-on-peti-master";
     # build failure due to failing linear_base from nixos 22.05 on.
     nixpkgs_21_11.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
@@ -14,10 +17,7 @@
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
       let
         pkgs = import nixpkgs { inherit system; };
-        pkgs_21_11 = import nixpkgs_21_11 {
-          inherit system;
-          #config.allowBroken = true;
-        };
+        pkgs_21_11 = import nixpkgs_21_11 { inherit system; };
         haskellLib = pkgs.haskell.lib;
 
         parseCabalProject = import ./parse-cabal-project.nix;
@@ -34,8 +34,51 @@
             value = hself.callCabal2nix name (./. + "/${path}") { };
           }) hoodlePackages);
 
+        conf94 = hself: hsuper: {
+          gio = let gio_t = haskellLib.addPkgconfigDepend hsuper.gio pkgs.pcre2;
+          in haskellLib.addExtraLibraries gio_t [
+            pkgs.util-linux.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.pcre
+          ];
+          gtk3 = let
+            gtk3_t =
+              haskellLib.addPkgconfigDepend (haskellLib.doJailbreak hsuper.gtk3)
+              pkgs.pcre2;
+          in haskellLib.addExtraLibraries gtk3_t [
+            pkgs.util-linux.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.pcre
+            pkgs.libthai
+            pkgs.libdatrie
+            pkgs.xorg.libXdmcp.dev
+            pkgs.libdeflate
+            pkgs.libxkbcommon.dev
+            pkgs.epoxy.dev
+            pkgs.xorg.libXtst
+          ];
+          svgcairo = haskellLib.addPkgconfigDepends hsuper.svgcairo [
+            pkgs.pcre2
+            pkgs.util-linux.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.pcre
+            pkgs.librsvg.dev
+            pkgs.libdeflate
+            pkgs.xorg.libXdmcp.dev
+          ];
+        };
+
         hpkgsFor = compiler:
-          pkgs.haskell.packages.${compiler}.extend haskellOverlay;
+          let
+            hsoverlay = if compiler == "ghc944" then
+              hself: hsuper:
+              (haskellOverlay hself hsuper // conf94 hself hsuper)
+            else
+              haskellOverlay;
+          in pkgs.haskell.packages.${compiler}.extend hsoverlay;
 
         mkPkgsFor = compiler:
           let hpkgs = hpkgsFor compiler;
@@ -51,9 +94,10 @@
             ];
             shellHook = ''
               export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS
+              export PS1="\n[hoodle:\w]$ \0"
             '';
           };
-        supportedCompilers = [ "ghc925" ];
+        supportedCompilers = [ "ghc925" "ghc944" ];
         defaultCompiler = "ghc925";
 
         # web
@@ -83,15 +127,7 @@
                 p.servant-server
                 p.websockets
               ]);
-            hsenvWebClient = (hpkgsWebClient).ghcWithPackages (p:
-              [
-                #p.coroutine-object
-                #p.ghcjs-base
-                #p.ghcjs-dom
-                ##p.hoodle-util
-                #p.microlens
-                #p.microlens-th
-              ]);
+            hsenvWebClient = (hpkgsWebClient).ghcWithPackages (p: [ ]);
           in pkgs_21_11.mkShell {
             name = "hoodle-web-shell";
             buildInputs = [
@@ -108,10 +144,10 @@
 
       in rec {
         # This package set is only useful for CI build test.
-        packages =
+        packages.gtk =
           pkgs.lib.genAttrs supportedCompilers (compiler: mkPkgsFor compiler);
 
-        defaultPackage = packages.${defaultCompiler}.hoodle;
+        defaultPackage = packages.gtk.${defaultCompiler}.hoodle;
 
         inherit haskellOverlay;
 

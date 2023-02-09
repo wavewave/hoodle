@@ -2,6 +2,9 @@ name: "Build"
 on: [pull_request, push]
 jobs:
   build:
+    strategy:
+      matrix:
+        ghc: [ "ghc925", "ghc944" ]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository code
@@ -17,7 +20,7 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
     - name: build
       run: |
-        nix build --print-build-logs .#
+        nix build --print-build-logs .#gtk.${{ matrix.ghc }}.hoodle
   format:
     runs-on: ubuntu-20.04
     steps:

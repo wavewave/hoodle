@@ -27,7 +27,7 @@ Library
                  hoodle-types,
                  microlens >= 0.4,
                  mtl > 2,
-                 strict >= 0.3,
+                 strict >= 0.4,
                  text >= 0.11,
                  transformers >= 0.4.1,
                  xournal-types

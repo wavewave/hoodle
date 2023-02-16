@@ -146,6 +146,38 @@
         supportedCompilersWeb = [ "ghc8107" ];
         defaultCompilerWeb = "ghc8107";
 
+        #extraDependencies = ps: {
+            #  librarySystemDepends = [ pkgs.librsvg.dev ];
+
+        # ghc.nix shell
+        ghcNixShell = inputs.ghc_nix.outputs.devShells.${system}.default.overrideAttrs (attrs: {
+          buildInputs = attrs.buildInputs ++ [
+            pkgs.gd
+            pkgs.gtk3
+            pkgs.libdatrie
+            pkgs.libdeflate
+            pkgs.librsvg.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.libthai
+            pkgs.pcre
+            pkgs.pcre2
+            pkgs.util-linux.dev
+            pkgs.xorg.libXdmcp.dev
+            pkgs.pkgconfig
+          ];
+#            pkgs.util-linux.dev
+#
+#            pkgs.xorg.libXdmcp.dev
+#            pkgs.libxkbcommon.dev
+#            pkgs.epoxy.dev
+#            pkgs.xorg.libXtst
+
+          shellHook = ''
+            export PS1="\n[hoodle-ghc.nix:\w]$ \0"
+          '';
+        });
+
       in rec {
         # This package set is only useful for CI build test.
         packages.gtk =
@@ -164,7 +196,7 @@
           default = gtk.${defaultCompiler};
           gtk = gtkShells;
           web = webShells;
-          ghc_nix = inputs.ghc_nix.outputs.devShells.${system}.default;
+          ghc_nix = ghcNixShell;
         };
 
       });

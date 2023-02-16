@@ -146,12 +146,10 @@
         supportedCompilersWeb = [ "ghc8107" ];
         defaultCompilerWeb = "ghc8107";
 
-        #extraDependencies = ps: {
-            #  librarySystemDepends = [ pkgs.librsvg.dev ];
-
         # ghc.nix shell
         ghcNixShell = inputs.ghc_nix.outputs.devShells.${system}.default.overrideAttrs (attrs: {
           buildInputs = attrs.buildInputs ++ [
+            pkgs.epoxy.dev
             pkgs.gd
             pkgs.gtk3
             pkgs.libdatrie
@@ -164,15 +162,10 @@
             pkgs.pcre2
             pkgs.util-linux.dev
             pkgs.xorg.libXdmcp.dev
+            pkgs.libxkbcommon.dev
+            pkgs.xorg.libXtst
             pkgs.pkgconfig
           ];
-#            pkgs.util-linux.dev
-#
-#            pkgs.xorg.libXdmcp.dev
-#            pkgs.libxkbcommon.dev
-#            pkgs.epoxy.dev
-#            pkgs.xorg.libXtst
-
           shellHook = ''
             export PS1="\n[hoodle-ghc.nix:\w]$ \0"
           '';

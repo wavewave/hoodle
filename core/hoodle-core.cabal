@@ -69,7 +69,7 @@ Library
                    transformers >= 0.3,
                    unordered-containers >= 0.2,
                    uuid >= 1.2.7,
-                   vector >= 0.13,
+                   vector >= 0.10,
                    gtk3 >= 0.14,
                    --
                    xournal-parser,

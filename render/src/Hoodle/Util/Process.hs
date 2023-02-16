@@ -1,3 +1,5 @@
+-- TODO: This file should be moved to hoodle-util.
+{-# Language CPP #-}
 module Hoodle.Util.Process where
 
 import Control.Concurrent (threadDelay)
@@ -45,20 +47,6 @@ existThenRemove fp = fileExist fp >>= \b -> when b (removeLink fp)
 pipeAction :: IO () -> (B.ByteString -> IO a) -> IO a
 pipeAction sender receiver = pipeActionWith sender (receiver <=< B.readFile)
 
-{-  filename <- mkTmpFileName
-  existThenRemove filename
-  createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
-  forkProcess $ do
-    fd <- openFd filename WriteOnly Nothing defaultFileFlags
-    dupTo fd stdOutput
-    closeFd fd
-    sender
-    hFlush stdout
-  r <- receiver =<< B.readFile filename << checkPipe filename
-  removeLink filename
-  return r
--}
-
 -- |
 pipeActionWith :: IO () -> (FilePath -> IO a) -> IO a
 pipeActionWith sender receiverf = do
@@ -66,7 +54,11 @@ pipeActionWith sender receiverf = do
   existThenRemove filename
   createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
   _ <- forkProcess $ do
+#if MIN_VERSION_unix(2, 8, 0)
     fd <- openFd filename WriteOnly defaultFileFlags
+#else
+    fd <- openFd filename WriteOnly Nothing defaultFileFlags
+#endif
     _ <- dupTo fd stdOutput
     closeFd fd
     sender

@@ -4,10 +4,10 @@ packages:
   ./xournal-parser/xournal-parser.cabal
   ./types/hoodle-types.cabal
   ./util/hoodle-util.cabal
-  ./parser/hoodle-parser.cabal
+  -- ./parser/hoodle-parser.cabal
   ./builder/hoodle-builder.cabal
-  ./render/hoodle-render.cabal
-  ./publish/hoodle-publish.cabal
-  ./core/hoodle-core.cabal
-  ./hoodle/hoodle.cabal
-  -- ./build-tools/hoodle-build-tools.cabal
+  -- ./render/hoodle-render.cabal
+  -- ./publish/hoodle-publish.cabal
+  -- ./core/hoodle-core.cabal
+  -- ./hoodle/hoodle.cabal
+

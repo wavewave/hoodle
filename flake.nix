@@ -12,6 +12,10 @@
       url = "github:conal/TypeCompose/master";
       flake = false;
     };
+    ghc_nix = {
+      url = "github:wavewave/ghc.nix/wavewave/aarch64-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs = inputs@{ self, nixpkgs, nixpkgs_21_11, flake-utils, ... }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
@@ -160,6 +164,7 @@
           default = gtk.${defaultCompiler};
           gtk = gtkShells;
           web = webShells;
+          ghc_nix = inputs.ghc_nix.outputs.devShells.${system}.default;
         };
 
       });

@@ -60,6 +60,11 @@ data AlterList a b = Empty | a :- AlterList b a
 
 infixr 6 :-
 
+instance Functor (AlterList a) where
+  fmap _ Empty = Empty
+  fmap _ (x :- Empty) = x :- Empty
+  fmap f (x :- (y :- ys)) = x :- (f y :- fmap f ys)
+
 instance Bifunctor AlterList where
   bimap _ _ Empty = Empty
   bimap f g (x :- ys) = f x :- bimap g f ys

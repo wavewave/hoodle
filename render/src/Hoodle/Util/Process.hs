@@ -1,4 +1,5 @@
 -- TODO: This file should be moved to hoodle-util.
+{- ORMOLU_DISABLE -}
 {-# Language CPP #-}
 module Hoodle.Util.Process where
 
@@ -66,12 +67,3 @@ pipeActionWith sender receiverf = do
   r <- checkPipe filename >> receiverf filename
   removeLink filename
   return r
-
-{-
--- |
-pipeActionSystem :: String -> (B.ByteString -> IO a) -> IO a
-pipeActionSystem sendercmd receiver = do
-  filename <- mkTmpFileName
-  existThenRemove filename
-  createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
--}

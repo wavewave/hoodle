@@ -7,8 +7,9 @@
 module Hoodle.Coroutine.Default.Menu where
 
 import Control.Lens (set, view, (.~), _1)
-import Control.Monad.IO.Class ()
-import Control.Monad.State (get, gets, liftIO, modify, void)
+import Control.Monad (void)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.State (get, gets, modify)
 import Data.Foldable (mapM_)
 import Data.Hoodle.Generic (gbackground, gpages)
 import Data.Hoodle.Select (gselAll)

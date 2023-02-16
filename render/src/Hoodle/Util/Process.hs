@@ -66,7 +66,7 @@ pipeActionWith sender receiverf = do
   existThenRemove filename
   createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
   _ <- forkProcess $ do
-    fd <- openFd filename WriteOnly Nothing defaultFileFlags
+    fd <- openFd filename WriteOnly defaultFileFlags
     _ <- dupTo fd stdOutput
     closeFd fd
     sender

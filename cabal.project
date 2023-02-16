@@ -7,6 +7,6 @@ packages:
   ./parser/hoodle-parser.cabal
   ./builder/hoodle-builder.cabal
   ./render/hoodle-render.cabal
-  -- ./publish/hoodle-publish.cabal
-  -- ./core/hoodle-core.cabal
-  -- ./hoodle/hoodle.cabal
+  ./publish/hoodle-publish.cabal
+  ./core/hoodle-core.cabal
+  ./hoodle/hoodle.cabal

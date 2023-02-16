@@ -20,37 +20,37 @@ source-repository-package
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
-        tag: 0787e4183bb475c8e23e54537d69a3712b27e291
+        tag: 587e7f165657e066c55a84771af32a9ef2e5428d
         subdir: tools
 
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
-        tag: 0787e4183bb475c8e23e54537d69a3712b27e291
+        tag: 587e7f165657e066c55a84771af32a9ef2e5428d
         subdir: cairo
 
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
-        tag: 0787e4183bb475c8e23e54537d69a3712b27e291
+        tag: 587e7f165657e066c55a84771af32a9ef2e5428d
         subdir: gio
 
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
-        tag: 0787e4183bb475c8e23e54537d69a3712b27e291
+        tag: 587e7f165657e066c55a84771af32a9ef2e5428d
         subdir: glib
 
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
-        tag: 0787e4183bb475c8e23e54537d69a3712b27e291
+        tag: 587e7f165657e066c55a84771af32a9ef2e5428d
         subdir: gtk
 
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
-        tag: 0787e4183bb475c8e23e54537d69a3712b27e291
+        tag: 587e7f165657e066c55a84771af32a9ef2e5428d
         subdir: pango
 
 source-repository-package

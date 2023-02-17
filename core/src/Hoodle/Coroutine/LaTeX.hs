@@ -4,7 +4,7 @@
 module Hoodle.Coroutine.LaTeX where
 
 import Control.Lens (view, _1, _2)
-import Control.Monad.State (guard)
+import Control.Monad (guard)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import Data.Function (on)
 import Data.Hoodle.Simple (Hoodle, Item (..), SVG (..), items, layers, pages)

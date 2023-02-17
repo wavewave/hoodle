@@ -4,7 +4,9 @@
 module Hoodle.Coroutine.Window where
 
 import Control.Lens (over, set, view, (.~), (^.), _2)
-import Control.Monad.State (get, gets, liftIO, modify, put, when)
+import Control.Monad (when)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.State (get, gets, modify, put)
 import Data.Hoodle.Generic (gdimension)
 import Data.Hoodle.Simple (Dimension (..))
 import qualified Data.IntMap as M

@@ -43,6 +43,7 @@ Library
                    dyre >= 0.8.11,
                    errors >= 1.3,
                    filepath > 1,
+                   free >= 5.1,
                    fsnotify >= 0.3,
                    gd >= 3000.7,
                    http-types,
@@ -66,7 +67,6 @@ Library
                    text >= 0.10,
                    time >= 1.2,
                    transformers >= 0.3,
-                   transformers-free >= 1.0,
                    unordered-containers >= 0.2,
                    uuid >= 1.2.7,
                    vector >= 0.10,
@@ -161,4 +161,3 @@ Library
                    csrc/template-hsc-gtk2hs.h
   cc-options:      -Wno-error -fPIC -Wno-pointer-to-int-cast -std=gnu99 -DDEBUG
   extra-libraries: X11 Xi dl pthread
-

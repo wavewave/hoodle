@@ -9,7 +9,7 @@ Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Data
 Build-Type: 	Simple
 Cabal-Version:  2.0
-data-files:     
+data-files:
 Source-repository head
   type: git
   location: https://www.github.com/wavewave/hoodle-types
@@ -19,34 +19,31 @@ Library
   hs-source-dirs: src
   ghc-options: 	-Wall -Werror
   ghc-prof-options: -fprof-auto -fprof-cafs
-  Build-Depends: 
-                   base == 4.*, 
-                   aeson >= 0.8, 
-                   bytestring >= 0.9, 
-                   containers >= 0.4, 
+  Build-Depends:
+                   base == 4.*,
+                   aeson >= 0.8,
+                   bytestring >= 0.9,
+                   containers >= 0.4,
                    cereal > 0.3,
                    hoodle-util,
                    microlens >= 0.4,
-                   mtl > 2, 
-                   strict > 0.3, 
+                   mtl > 2,
+                   strict > 0.4,
                    text > 0.11,
                    uuid >= 1.2.6,
                    vector
-  Exposed-Modules: 
+  Exposed-Modules:
                    Data.Hoodle.BBox
                    Data.Hoodle.Generic
                    Data.Hoodle.Hashed
-                   Data.Hoodle.Predefined 
-                   Data.Hoodle.Primitive 
+                   Data.Hoodle.Predefined
+                   Data.Hoodle.Primitive
                    Data.Hoodle.Select
                    Data.Hoodle.Simple
                    Data.Hoodle.Simple.V0_1_1
                    Data.Hoodle.Simple.V0_2_2
                    Data.Hoodle.Simple.V0_3
                    Data.Hoodle.Util
-                   Data.Hoodle.Zipper 
+                   Data.Hoodle.Zipper
 
-  Other-Modules: 
-
- 
-		 
+  Other-Modules:

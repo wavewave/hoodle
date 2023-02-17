@@ -12,9 +12,8 @@ module SampleActor where
 import Control.Applicative
 import Control.Category
 import Control.Concurrent
--- import Control.Monad.Error
-
 import Control.Lens
+import Control.Monad (unless, void, when)
 import Control.Monad.Reader
 import Control.Monad.State
 --

@@ -5,8 +5,10 @@
 module Hoodle.Coroutine.Dialog where
 
 import Control.Lens (view)
+import Control.Monad (unless)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Loops (whileM_)
-import Control.Monad.State (get, liftIO, unless)
+import Control.Monad.State (get)
 import qualified Data.Foldable as F
 import Data.Functor ((<&>))
 import qualified Data.Text as T

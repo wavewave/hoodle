@@ -8,17 +8,9 @@ module Hoodle.Coroutine.ContextMenu where
 
 import Control.Concurrent.STM (readTVarIO)
 import Control.Lens (set, view, (.~), (^.))
-import Control.Monad.State
-  ( get,
-    gets,
-    guard,
-    liftIO,
-    put,
-    runStateT,
-    unless,
-    void,
-    when,
-  )
+import Control.Monad (guard, unless, void, when)
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.State (get, gets, put, runStateT)
 import Control.Monad.Trans.Maybe (MaybeT (..))
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Lazy.Char8 as L

@@ -1,3 +1,6 @@
+-- TODO: This file should be moved to hoodle-util.
+{- ORMOLU_DISABLE -}
+{-# Language CPP #-}
 module Hoodle.Util.Process where
 
 import Control.Concurrent (threadDelay)
@@ -45,20 +48,6 @@ existThenRemove fp = fileExist fp >>= \b -> when b (removeLink fp)
 pipeAction :: IO () -> (B.ByteString -> IO a) -> IO a
 pipeAction sender receiver = pipeActionWith sender (receiver <=< B.readFile)
 
-{-  filename <- mkTmpFileName
-  existThenRemove filename
-  createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
-  forkProcess $ do
-    fd <- openFd filename WriteOnly Nothing defaultFileFlags
-    dupTo fd stdOutput
-    closeFd fd
-    sender
-    hFlush stdout
-  r <- receiver =<< B.readFile filename << checkPipe filename
-  removeLink filename
-  return r
--}
-
 -- |
 pipeActionWith :: IO () -> (FilePath -> IO a) -> IO a
 pipeActionWith sender receiverf = do
@@ -66,7 +55,11 @@ pipeActionWith sender receiverf = do
   existThenRemove filename
   createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
   _ <- forkProcess $ do
+#if MIN_VERSION_unix(2, 8, 0)
+    fd <- openFd filename WriteOnly defaultFileFlags
+#else
     fd <- openFd filename WriteOnly Nothing defaultFileFlags
+#endif
     _ <- dupTo fd stdOutput
     closeFd fd
     sender
@@ -74,12 +67,3 @@ pipeActionWith sender receiverf = do
   r <- checkPipe filename >> receiverf filename
   removeLink filename
   return r
-
-{-
--- |
-pipeActionSystem :: String -> (B.ByteString -> IO a) -> IO a
-pipeActionSystem sendercmd receiver = do
-  filename <- mkTmpFileName
-  existThenRemove filename
-  createNamedPipe filename (unionFileModes ownerReadMode ownerWriteMode)
--}

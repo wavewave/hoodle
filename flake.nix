@@ -12,6 +12,10 @@
       url = "github:conal/TypeCompose/master";
       flake = false;
     };
+    ghc_nix = {
+      url = "github:wavewave/ghc.nix/wavewave/aarch64-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs = inputs@{ self, nixpkgs, nixpkgs_21_11, flake-utils, ... }:
     flake-utils.lib.eachSystem flake-utils.lib.allSystems (system:
@@ -142,6 +146,31 @@
         supportedCompilersWeb = [ "ghc8107" ];
         defaultCompilerWeb = "ghc8107";
 
+        # ghc.nix shell
+        ghcNixShell = inputs.ghc_nix.outputs.devShells.${system}.default.overrideAttrs (attrs: {
+          buildInputs = attrs.buildInputs ++ [
+            pkgs.epoxy.dev
+            pkgs.gd
+            pkgs.gtk3
+            pkgs.libdatrie
+            pkgs.libdeflate
+            pkgs.librsvg.dev
+            pkgs.libselinux
+            pkgs.libsepol
+            pkgs.libthai
+            pkgs.pcre
+            pkgs.pcre2
+            pkgs.util-linux.dev
+            pkgs.xorg.libXdmcp.dev
+            pkgs.libxkbcommon.dev
+            pkgs.xorg.libXtst
+            pkgs.pkgconfig
+          ];
+          shellHook = ''
+            export PS1="\n[hoodle-ghc.nix:\w]$ \0"
+          '';
+        });
+
       in rec {
         # This package set is only useful for CI build test.
         packages.gtk =
@@ -160,6 +189,7 @@
           default = gtk.${defaultCompiler};
           gtk = gtkShells;
           web = webShells;
+          ghc_nix = ghcNixShell;
         };
 
       });

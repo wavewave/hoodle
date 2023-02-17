@@ -11,9 +11,12 @@ import Control.Monad.Trans.Crtn.Event (ActionOrder (..))
 import Control.Monad.Trans.Crtn.Logger (scribe)
 import Control.Monad.Trans.Except (runExceptT)
 
+import Debug.Trace (traceEventIO)
+
 -- |
 eventHandler :: MVar (Maybe (Driver e IO ())) -> e -> IO ()
 eventHandler evar ev = do
+  traceEventIO "eventHandler is called"
   mnext <- takeMVar evar
   case mnext of
     Nothing -> return ()

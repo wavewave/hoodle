@@ -26,3 +26,15 @@ Executable logcat
                   ghc-events,
                   network,
                   pretty-simple
+
+Executable testApp
+  Main-is:        Main.hs
+  hs-source-dirs: app/testApp
+  c-sources:      app/testApp/cbit.c
+  includes:       app/testApp/cbit.h
+  ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  Build-Depends:
+                  base == 4.*,
+                  eventlog-socket,
+                  gtk3,
+                  transformers

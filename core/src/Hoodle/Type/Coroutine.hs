@@ -99,7 +99,7 @@ world xstate initmc = ReaderT staction
       go mcobj req
 
 -- |
-type Driver a = D.Driver AllEvent IO a -- SObjT MainOp IO a
+type Driver a = D.Driver AllEvent IO a
 
 -- |
 type DriverB = SObjBT (D.DrvOp AllEvent) IO

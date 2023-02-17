@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -w #-}
+{-# LANGUAGE NumericUnderscores #-}
 
 -- |
 -- Module      : Main
@@ -12,7 +13,8 @@ module Main where
 
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Monad (forever)
-import GHC.Eventlog.Socket (flush, startWait)
+import Debug.Trace (flushEventLog)
+import GHC.Eventlog.Socket (startWait)
 import Hoodle.Script (defaultScriptConfig)
 import Hoodle.StartUp (hoodleStartMain)
 
@@ -21,5 +23,6 @@ main = do
   startWait "/tmp/eventlog.sock"
   forkIO $
     forever $ do
-      threadDelay 1000000
+      threadDelay 5_000_000
+      flushEventLog
   hoodleStartMain defaultScriptConfig

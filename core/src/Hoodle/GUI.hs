@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -106,7 +107,7 @@ startGUI mfname mhook = do
 
 clock :: (AllEvent -> IO ()) -> IO ()
 clock evhandler = forever $ do
-  threadDelay 1000000
+  threadDelay 1_000_000
   Gtk.postGUIAsync (evhandler (SysEv ClockUpdateEvent))
 
 outerLayout :: Gtk.UIManager -> Gtk.VBox -> HoodleState -> IO ()

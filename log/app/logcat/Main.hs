@@ -159,7 +159,7 @@ dump sock = goHeader ""
     goEvents hdr bs0 = do
       bs1 <- recv sock 100000000
       let bs = bs0 <> bs1
-      print (BS.length bs)
+      putStrLn $ "bytes: " <> show (BS.length bs)
       let lbs = BL.fromStrict bs
       let (evs, merr) = readEvents hdr lbs
       putStrLn $ "number of events: " <> show (length evs)

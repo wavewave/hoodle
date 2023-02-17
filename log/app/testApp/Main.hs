@@ -36,9 +36,9 @@ main = do
   forever $ do
     threadDelay 5_000_000
     putStrLn "am i here"
-    for_ [1..100000] $ \_ ->
-      c_callTest
-    -- c_callTest2 wSimpleAction
+    for_ [1..10000] $ \_ ->
+      -- c_callTest
+      c_callTest2 wSimpleAction
 
   {- _ <- Gtk.initGUI
   window <- Gtk.windowNew

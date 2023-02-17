@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -10,9 +11,14 @@ import Control.Monad (forever)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.List (group, sort)
-import Data.Maybe (mapMaybe)
+import Data.Maybe (fromMaybe, mapMaybe)
 import GHC.Generics
-import GHC.RTS.Events.Incremental (readEvents, readHeader)
+import GHC.RTS.Events.Incremental
+  ( Decoder (..),
+    decodeEvents,
+    readEvents,
+    readHeader,
+  )
 import Network.Socket
   ( Family (AF_UNIX),
     SockAddr (SockAddrUnix),
@@ -24,6 +30,7 @@ import Network.Socket
     withSocketsDo,
   )
 import Network.Socket.ByteString (recv)
+import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
 import GHC.RTS.Events (Event (..), EventInfo (..))
 
@@ -154,19 +161,35 @@ dump sock = goHeader ""
       let e = readHeader lbs
       case e of
         Left err -> print err >> goHeader bs
-        Right (hdr, lbs') -> pPrint hdr >> goEvents hdr (BL.toStrict lbs')
+        Right (hdr, lbs') -> do
+          pPrint hdr
+          let dec0 = decodeEvents hdr
+          goEvents hdr dec0 (BL.toStrict lbs')
 
-    goEvents hdr bs0 = do
-      bs1 <- recv sock 100000000
-      let bs = bs0 <> bs1
-      putStrLn $ "bytes: " <> show (BS.length bs)
-      let lbs = BL.fromStrict bs
-      let (evs, merr) = readEvents hdr lbs
-      putStrLn $ "number of events: " <> show (length evs)
-      print (histo $ fmap (eventInfoToString . evSpec) evs)
-      -- mapM_ pPrint evs
-      print merr
-      goEvents hdr ""
+    go :: Decoder Event -> BS.ByteString -> IO (Maybe (Decoder Event), BS.ByteString)
+    go dec !bytes = do
+      case dec of
+        Produce ev dec' -> do
+          pPrint ev
+          hFlush stdout
+          go dec' bytes
+        Consume k ->
+          if BS.null bytes
+            then pure (Just dec, "")
+            else go (k bytes) ""
+        Done bytes' ->
+          pure (Nothing, bytes')
+        Error bytes' e -> do
+          pPrint e
+          hFlush stdout
+          -- reset if error happens.
+          pure (Nothing, "")
+
+    goEvents hdr dec !bytes = do
+      (mdec', bytes') <- go dec bytes
+      let dec' = fromMaybe (decodeEvents hdr) mdec'
+      bytes'' <- recv sock 1024
+      goEvents hdr dec' (bytes' <> bytes'')
 
 main :: IO ()
 main = do

@@ -13,7 +13,7 @@
       flake = false;
     };
     ghc_nix = {
-      url = "github:wavewave/ghc.nix/wavewave/aarch64-darwin";
+      url = "github:wavewave/ghc.nix/fix-hash-again";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -155,12 +155,12 @@
             pkgs.libdatrie
             pkgs.libdeflate
             pkgs.librsvg.dev
-            pkgs.libselinux
-            pkgs.libsepol
+            # pkgs.libselinux
+            # pkgs.libsepol
             pkgs.libthai
             pkgs.pcre
             pkgs.pcre2
-            pkgs.util-linux.dev
+            # pkgs.util-linux.dev
             pkgs.xorg.libXdmcp.dev
             pkgs.libxkbcommon.dev
             pkgs.xorg.libXtst

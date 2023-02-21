@@ -28,6 +28,24 @@
         hoodlePackages = parseCabalProject ./cabal.project;
         hoodlePackageNames = builtins.map ({ name, ... }: name) hoodlePackages;
 
+
+        gtkSystemDeps =
+          self: [
+            self.epoxy.dev
+            self.gd
+            self.gtk3
+            self.libdatrie
+            self.libdeflate
+            self.librsvg.dev
+            self.libthai
+            self.pcre
+            self.pcre2
+            self.xorg.libXdmcp.dev
+            self.libxkbcommon.dev
+            self.xorg.libXtst
+            self.pkgconfig
+          ] ++ self.lib.optional self.stdenv.isLinux [ self.libselinux self.libsepol self.util-linux.dev ];
+
         # gtk
         haskellOverlay = hself: hsuper:
           {
@@ -40,7 +58,8 @@
 
         conf94 = hself: hsuper: {
           gio = let gio_t = haskellLib.addPkgconfigDepend hsuper.gio pkgs.pcre2;
-          in haskellLib.addExtraLibraries gio_t [
+          in haskellLib.addExtraLibraries gio_t
+          [
             pkgs.util-linux.dev
             pkgs.libselinux
             pkgs.libsepol
@@ -148,24 +167,7 @@
 
         # ghc.nix shell
         ghcNixShell = inputs.ghc_nix.outputs.devShells.${system}.default.overrideAttrs (attrs: {
-          buildInputs = attrs.buildInputs ++ [
-            pkgs.epoxy.dev
-            pkgs.gd
-            pkgs.gtk3
-            pkgs.libdatrie
-            pkgs.libdeflate
-            pkgs.librsvg.dev
-            # pkgs.libselinux
-            # pkgs.libsepol
-            pkgs.libthai
-            pkgs.pcre
-            pkgs.pcre2
-            # pkgs.util-linux.dev
-            pkgs.xorg.libXdmcp.dev
-            pkgs.libxkbcommon.dev
-            pkgs.xorg.libXtst
-            pkgs.pkgconfig
-          ];
+          buildInputs = attrs.buildInputs ++ gtkSystemDeps pkgs;
           shellHook = ''
             export PS1="\n[hoodle-ghc.nix:\w]$ \0"
           '';

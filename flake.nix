@@ -8,6 +8,10 @@
     # build failure due to failing linear_base from nixos 22.05 on.
     nixpkgs_21_11.url = "github:NixOS/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
+    all-cabal-hashes = {
+      url = "github:commercialhaskell/all-cabal-hashes/hackage";
+      flake = false;
+    };
     TypeCompose = {
       url = "github:conal/TypeCompose/master";
       flake = false;
@@ -15,6 +19,8 @@
     ghc_nix = {
       url = "github:wavewave/ghc.nix/fix-hash-again";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-unstable.follows = "nixpkgs";
+      inputs.all-cabal-hashes.follows = "all-cabal-hashes";
     };
   };
   outputs = inputs@{ self, nixpkgs, nixpkgs_21_11, flake-utils, ... }:

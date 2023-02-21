@@ -67,12 +67,16 @@
     },
     "ghc_nix": {
       "inputs": {
-        "all-cabal-hashes": "all-cabal-hashes",
+        "all-cabal-hashes": [
+          "all-cabal-hashes"
+        ],
         "flake-compat": "flake-compat",
         "nixpkgs": [
           "nixpkgs"
         ],
-        "nixpkgs-unstable": "nixpkgs-unstable"
+        "nixpkgs-unstable": [
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1677005603,
@@ -105,22 +109,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-unstable": {
-      "locked": {
-        "lastModified": 1672997035,
-        "narHash": "sha256-DNaNjsGMRYefBTAxFIrVOB2ok477cj1FTpqnu/mKRf4=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "f1ffcf798e93b169321106a4aef79526a2b4bd0a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixpkgs-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs_21_11": {
       "locked": {
         "lastModified": 1659446231,
@@ -140,6 +128,7 @@
     "root": {
       "inputs": {
         "TypeCompose": "TypeCompose",
+        "all-cabal-hashes": "all-cabal-hashes",
         "flake-utils": "flake-utils",
         "ghc_nix": "ghc_nix",
         "nixpkgs": "nixpkgs",

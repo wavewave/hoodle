@@ -10,7 +10,7 @@ import Data.Foldable (for_)
 import Debug.Trace (flushEventLog, traceEventIO)
 import Foreign.Ptr (FunPtr)
 import GHC.Eventlog.Socket (startWait)
-import qualified Graphics.UI.Gtk as Gtk
+-- import qualified Graphics.UI.Gtk as Gtk
 
 foreign import ccall safe "cbit.h callTest" c_callTest :: IO ()
 
@@ -32,29 +32,9 @@ main = do
     forever $ do
       threadDelay 1_000_000
       flushEventLog
-  --forkIO $
   forever $ do
     threadDelay 5_000_000
     putStrLn "am i here"
-    for_ [1..10000] $ \_ ->
+    for_ [1..10_000] $ \_ ->
       -- c_callTest
       c_callTest2 wSimpleAction
-
-  {- _ <- Gtk.initGUI
-  window <- Gtk.windowNew
-  box <- Gtk.vBoxNew False 0
-  Gtk.containerAdd window box
-  cvs <- Gtk.drawingAreaNew
-  Gtk.boxPackStart box cvs Gtk.PackGrow 0
-  {- _ <- cvs `Gtk.on` Gtk.motionNotifyEvent $
-    Gtk.tryEvent $ do
-      liftIO $ traceEventIO "user event"
-  Gtk.widgetAddEvents cvs [Gtk.PointerMotionMask, Gtk.Button1MotionMask, Gtk.KeyPressMask]
-
-  _ <- cvs `Gtk.on` Gtk.buttonPressEvent $
-    Gtk.tryEvent $ do
-      liftIO $ traceEventIO "user event"
-  -}
-  Gtk.widgetShowAll window
-  Gtk.mainGUI
-  -}

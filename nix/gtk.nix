@@ -25,6 +25,7 @@
       hoodlePackages);
 
   conf94 = hself: hsuper: {
+    # gtk2hs
     gio = let
       gio_t = haskellLib.addPkgconfigDepend hsuper.gio pkgs.pcre2;
     in
@@ -64,6 +65,103 @@
       pkgs.libdeflate
       pkgs.xorg.libXdmcp.dev
     ];
+
+    # gi-gtk
+    haskell-gi-base = haskellLib.addPkgconfigDepends hsuper.haskell-gi-base [
+      pkgs.pcre2
+    ];
+    haskell-gi = haskellLib.addPkgconfigDepends hsuper.haskell-gi [
+      pkgs.pcre2
+    ];
+    gi-cairo = haskellLib.addPkgconfigDepends hsuper.gi-cairo [
+      pkgs.pcre2
+      pkgs.xorg.libXdmcp.dev
+    ];
+    gi-glib = haskellLib.addPkgconfigDepends hsuper.gi-glib [
+      pkgs.pcre2
+    ];
+    gi-gmodule = haskellLib.addPkgconfigDepends hsuper.gi-gmodule [
+      pkgs.pcre2
+    ];
+    gi-gobject = haskellLib.addPkgconfigDepends hsuper.gi-gobject [
+      pkgs.pcre2
+    ];
+    gi-atk = haskellLib.addPkgconfigDepends hsuper.gi-atk [
+      pkgs.pcre2
+    ];
+    gi-harfbuzz = haskellLib.addPkgconfigDepends hsuper.gi-harfbuzz [
+      pkgs.freetype
+      pkgs.pcre2
+    ];
+    gi-gio = let
+      gi-gio_t = haskellLib.addPkgconfigDepend hsuper.gi-gio pkgs.pcre2;
+    in
+      haskellLib.addExtraLibraries gi-gio_t
+      [
+        pkgs.util-linux.dev
+        pkgs.libselinux
+        pkgs.libsepol
+        pkgs.pcre
+      ];
+    gi-pango = let
+      gi-pango_t = haskellLib.addPkgconfigDepend hsuper.gi-pango pkgs.pcre2;
+    in
+      haskellLib.addExtraLibraries gi-pango_t
+      [
+        pkgs.util-linux.dev
+        pkgs.libselinux
+        pkgs.libsepol
+        pkgs.pcre
+        pkgs.fribidi
+        pkgs.libthai
+        pkgs.libdatrie
+        pkgs.xorg.libXdmcp.dev
+      ];
+    gi-gdkpixbuf = let
+      gi-gdkpixbuf_t =
+        haskellLib.addPkgconfigDepend hsuper.gi-gdkpixbuf pkgs.pcre2;
+    in
+      haskellLib.addExtraLibraries gi-gdkpixbuf_t
+      [
+        pkgs.util-linux.dev
+        pkgs.libselinux
+        pkgs.libsepol
+        pkgs.pcre
+        pkgs.libdeflate
+      ];
+    gi-gdk = let
+      gi-gdk_t = haskellLib.addPkgconfigDepend hsuper.gi-gdk pkgs.pcre2;
+    in
+      haskellLib.addExtraLibraries gi-gdk_t
+      [
+        pkgs.util-linux.dev
+        pkgs.libselinux
+        pkgs.libsepol
+        pkgs.pcre
+        pkgs.libthai
+        pkgs.libdatrie
+        pkgs.xorg.libXdmcp.dev
+        pkgs.libdeflate
+        pkgs.libxkbcommon.dev
+        pkgs.epoxy.dev
+      ];
+    gi-gtk = let
+      gi-gtk_t = haskellLib.addPkgconfigDepend hsuper.gi-gtk pkgs.pcre2;
+    in
+      haskellLib.addExtraLibraries gi-gtk_t
+      [
+        pkgs.util-linux.dev
+        pkgs.libselinux
+        pkgs.libsepol
+        pkgs.pcre
+        pkgs.libthai
+        pkgs.libdatrie
+        pkgs.xorg.libXdmcp.dev
+        pkgs.libdeflate
+        pkgs.libxkbcommon.dev
+        pkgs.epoxy.dev
+        pkgs.xorg.libXtst
+      ];
   };
 
   hpkgsFor = compiler: let

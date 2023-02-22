@@ -10,6 +10,7 @@
       ++ [
         pkgs.epoxy.dev
         pkgs.gd
+        pkgs.gobject-introspection
         pkgs.gtk3
         pkgs.libdatrie
         pkgs.libdeflate
@@ -22,7 +23,7 @@
         pkgs.xorg.libXtst
         pkgs.pkgconfig
       ]
-      ++ pkgs.lib.optional pkgs.stdenv.isLinux [pkgs.libselinux pkgs.libsepol pkgs.util-linux.dev];
+      ++ pkgs.lib.optional pkgs.stdenv.isLinux [pkgs.libselinux.dev pkgs.libsepol.dev pkgs.util-linux.dev];
 
     shellHook = ''
       export PS1="\n[hoodle-ghc.nix:\w]$ \0"

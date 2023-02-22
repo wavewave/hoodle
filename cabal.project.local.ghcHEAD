@@ -17,6 +17,8 @@ source-repository-package
         location: https://github.com/wavewave/ghc-eventlog-socket.git
         tag: ef3ac4b6c65f493ce1549d9f842e7a434a9db4a2
 
+-- gtk2hs
+
 source-repository-package
         type: git
         location: https://github.com/gtk2hs/gtk2hs.git
@@ -57,6 +59,19 @@ source-repository-package
         type: git
         location: https://github.com/dalpd/svgcairo.git
         tag: d1e0d7ae04c1edca83d5b782e464524cdda6ae85
+
+-- gi-gtk
+
+source-repository-package
+        type: git
+        location: https://github.com/wavewave/haskell-gi.git
+        tag: 63e1aa2694213f77c7d1ca50af899497205905ef
+        subdir: base
+
+source-repository-package
+        type: git
+        location: https://github.com/wavewave/haskell-gi.git
+        tag: 63e1aa2694213f77c7d1ca50af899497205905ef
 
 allow-newer:
   Cabal,

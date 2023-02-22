@@ -24,6 +24,7 @@ Executable logcat
                   base == 4.*,
                   bytestring,
                   ghc-events,
+                  gi-gtk,
                   network,
                   pretty-simple
 

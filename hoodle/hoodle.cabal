@@ -23,6 +23,8 @@ Executable hoodle
     ghc-options: -Wall -Werror -threaded -rtsopts
   else
     ghc-options: -Wall -Werror -threaded -rtsopts -eventlog
+  if flag(eventlog)
+    cpp-options: -DUSE_EVENTLOG
   ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:
                  base == 4.*,
@@ -52,3 +54,8 @@ Library
                    Hoodle.StartUp
   Other-Modules:
                    Paths_hoodle
+
+Flag eventlog
+    Description: eventlog socket communication
+    Manual: True
+    Default: False

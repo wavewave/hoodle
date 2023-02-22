@@ -15,7 +15,7 @@ source-repository-package
 source-repository-package
         type: git
         location: https://github.com/wavewave/ghc-eventlog-socket.git
-        tag: c8098d25e0218f98316aaaa9b93cffea81eeed96
+        tag: ef3ac4b6c65f493ce1549d9f842e7a434a9db4a2
 
 source-repository-package
         type: git

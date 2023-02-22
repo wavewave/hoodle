@@ -58,16 +58,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1676068536,
-        "narHash": "sha256-hBO8gBR7uuc5NpZc25zN2KWMyRrgdAKImT/xCSGRj88=",
+        "lastModified": 1677032363,
+        "narHash": "sha256-4DrlcJkYKlNkmyAhH45DI3E/mRy2GDQosLskISPqsB0=",
         "owner": "wavewave",
         "repo": "ghc-eventlog-socket",
-        "rev": "c8098d25e0218f98316aaaa9b93cffea81eeed96",
+        "rev": "ef3ac4b6c65f493ce1549d9f842e7a434a9db4a2",
         "type": "github"
       },
       "original": {
         "owner": "wavewave",
-        "ref": "flake",
+        "ref": "darwin-flake",
         "repo": "ghc-eventlog-socket",
         "type": "github"
       }

@@ -24,7 +24,7 @@
       inputs.all-cabal-hashes.follows = "hackage-index";
     };
     ghc-eventlog-socket = {
-      url = "github:wavewave/ghc-eventlog-socket/flake";
+      url = "github:wavewave/ghc-eventlog-socket/darwin-flake";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };

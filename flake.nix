@@ -26,6 +26,7 @@
     ghc-eventlog-socket = {
       url = "github:wavewave/ghc-eventlog-socket/flake";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
   };
   outputs = inputs @ {

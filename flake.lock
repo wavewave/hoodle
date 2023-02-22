@@ -35,16 +35,40 @@
     },
     "flake-utils": {
       "locked": {
-        "lastModified": 1652776076,
-        "narHash": "sha256-gzTw/v1vj4dOVbpBSJX4J0DwUR6LIyXo7/SuuTJp1kM=",
+        "lastModified": 1676283394,
+        "narHash": "sha256-XX2f9c3iySLCw54rJ/CZs+ZK6IQy7GXNY4nSOyu2QG4=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "04c1b180862888302ddfb2e3ad9eaa63afc60cf8",
+        "rev": "3db36a8b464d0c4532ba1c7dda728f4576d6d073",
         "type": "github"
       },
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "ghc-eventlog-socket": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1676068536,
+        "narHash": "sha256-hBO8gBR7uuc5NpZc25zN2KWMyRrgdAKImT/xCSGRj88=",
+        "owner": "wavewave",
+        "repo": "ghc-eventlog-socket",
+        "rev": "c8098d25e0218f98316aaaa9b93cffea81eeed96",
+        "type": "github"
+      },
+      "original": {
+        "owner": "wavewave",
+        "ref": "flake",
+        "repo": "ghc-eventlog-socket",
         "type": "github"
       }
     },
@@ -73,28 +97,6 @@
         "owner": "wavewave",
         "ref": "fix-hash-again",
         "repo": "ghc.nix",
-        "type": "github"
-      }
-    },        
-    "ghc-eventlog-socket": {
-      "inputs": {
-        "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1675384778,
-        "narHash": "sha256-TAdC3jUajMZx3KeSYfBt0733Slfhap98zsvu7iPtgMI=",
-        "owner": "wavewave",
-        "repo": "ghc-eventlog-socket",
-        "rev": "8c686a4de8f41f8d6432e13766c7431fb632e8b8",
-        "type": "github"
-      },
-      "original": {
-        "owner": "wavewave",        
-        "ref": "flake",
-        "repo": "ghc-eventlog-socket",
         "type": "github"
       }
     },
@@ -146,9 +148,9 @@
       "inputs": {
         "TypeCompose": "TypeCompose",
         "flake-utils": "flake-utils",
+        "ghc-eventlog-socket": "ghc-eventlog-socket",
         "ghc_nix": "ghc_nix",
         "hackage-index": "hackage-index",
-        "ghc-eventlog-socket": "ghc-eventlog-socket",
         "nixpkgs": "nixpkgs",
         "nixpkgs_21_11": "nixpkgs_21_11"
       }

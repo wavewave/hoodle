@@ -10,3 +10,4 @@ packages:
   ./publish/hoodle-publish.cabal
   ./core/hoodle-core.cabal
   ./hoodle/hoodle.cabal
+  ./log/hoodle-log.cabal

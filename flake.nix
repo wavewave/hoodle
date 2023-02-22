@@ -23,6 +23,10 @@
       inputs.nixpkgs-unstable.follows = "nixpkgs";
       inputs.all-cabal-hashes.follows = "hackage-index";
     };
+    ghc-eventlog-socket = {
+      url = "github:wavewave/ghc-eventlog-socket/flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs = inputs @ {
     self,
@@ -42,6 +46,8 @@
 
       haskellOverlay = hself: hsuper:
         {
+          "eventlog-socket" =
+            hself.callCabal2nix "eventlog-socket" inputs.ghc-eventlog-socket { };
           "TypeCompose" =
             hself.callCabal2nix "TypeCompose" inputs.TypeCompose {};
         }

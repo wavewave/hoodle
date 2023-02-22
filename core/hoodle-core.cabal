@@ -22,7 +22,7 @@ Source-repository head
 
 Library
   hs-source-dirs: src
-  ghc-options: 	-Wall -Werror
+  ghc-options: 	-j -Wall -Werror
   ghc-prof-options: -fprof-auto -fprof-cafs
 
   Build-Depends:   base == 4.*,

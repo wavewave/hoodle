@@ -197,11 +197,7 @@ wacomCoordConvert :: WidgetClass self => self
                      -> (Double,Double)
                      -> IO (Double,Double)
 wacomCoordConvert canvas (x,y)= do
-  -- #ifdef GTK3
   Just win <- widgetGetWindow canvas -- partial function for the time being
-  -- #else // GTK3
-  -- win <- widgetGetDrawWindow canvas
-  -- #endif // GTK3
   (x0,y0) <- drawWindowGetOrigin win
   screen <- widgetGetScreen canvas
   (ws,hs) <- (,) <$> screenGetWidth screen <*> screenGetHeight screen

@@ -19,10 +19,9 @@ Source-repository head
 Executable hoodle
   Main-is:        Main.hs
   hs-source-dirs: app/hoodle
-  if impl (ghc > 9.4.0)
-    ghc-options: -Wall -Werror -threaded -rtsopts
-  else
-    ghc-options: -Wall -Werror -threaded -rtsopts -eventlog
+  ghc-options: -j -Wall -Werror -threaded -rtsopts
+  if impl (ghc < 9.4.0)
+    ghc-options: -eventlog
   if flag(eventlog)
     cpp-options: -DUSE_EVENTLOG
   ghc-prof-options: -fprof-auto -fprof-cafs

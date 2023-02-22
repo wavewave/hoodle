@@ -19,7 +19,7 @@ Source-repository head
 Executable logcat
   Main-is:        Main.hs
   hs-source-dirs: app/logcat
-  ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  ghc-options: -j -Wall -Werror -threaded -rtsopts
   Build-Depends:
                   base == 4.*,
                   bytestring,

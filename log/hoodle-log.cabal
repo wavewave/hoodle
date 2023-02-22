@@ -1,0 +1,40 @@
+Name:		hoodle-log
+Version:	1.0
+Synopsis:	logging
+Description: 	logging
+Homepage:       http://ianwookim.org/hoodle
+License: 	GPL-3
+License-file:	LICENSE
+Author:		Ian-Woo Kim
+Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
+Category:       Application
+Tested-with:    GHC == 8.6
+Build-Type: 	Simple
+Cabal-Version:  2.0
+data-files:     CHANGES
+Source-repository head
+  type: git
+  location: http://www.github.com/wavewave/hoodle
+
+Executable logcat
+  Main-is:        Main.hs
+  hs-source-dirs: app/logcat
+  ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  Build-Depends:
+                  base == 4.*,
+                  bytestring,
+                  ghc-events,
+                  network,
+                  pretty-simple
+
+Executable testApp
+  Main-is:        Main.hs
+  hs-source-dirs: app/testApp
+  c-sources:      app/testApp/cbit.c
+  includes:       app/testApp/cbit.h
+  ghc-options: 	  -Wall -Werror -threaded -rtsopts
+  Build-Depends:
+                  base == 4.*,
+                  eventlog-socket,
+                  gtk3,
+                  transformers

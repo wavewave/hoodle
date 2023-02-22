@@ -35,16 +35,40 @@
     },
     "flake-utils": {
       "locked": {
-        "lastModified": 1652776076,
-        "narHash": "sha256-gzTw/v1vj4dOVbpBSJX4J0DwUR6LIyXo7/SuuTJp1kM=",
+        "lastModified": 1676283394,
+        "narHash": "sha256-XX2f9c3iySLCw54rJ/CZs+ZK6IQy7GXNY4nSOyu2QG4=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "04c1b180862888302ddfb2e3ad9eaa63afc60cf8",
+        "rev": "3db36a8b464d0c4532ba1c7dda728f4576d6d073",
         "type": "github"
       },
       "original": {
         "owner": "numtide",
         "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "ghc-eventlog-socket": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1677032363,
+        "narHash": "sha256-4DrlcJkYKlNkmyAhH45DI3E/mRy2GDQosLskISPqsB0=",
+        "owner": "wavewave",
+        "repo": "ghc-eventlog-socket",
+        "rev": "ef3ac4b6c65f493ce1549d9f842e7a434a9db4a2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "wavewave",
+        "ref": "darwin-flake",
+        "repo": "ghc-eventlog-socket",
         "type": "github"
       }
     },
@@ -124,6 +148,7 @@
       "inputs": {
         "TypeCompose": "TypeCompose",
         "flake-utils": "flake-utils",
+        "ghc-eventlog-socket": "ghc-eventlog-socket",
         "ghc_nix": "ghc_nix",
         "hackage-index": "hackage-index",
         "nixpkgs": "nixpkgs",

@@ -17,13 +17,19 @@ Source-repository head
   location: http://www.github.com/wavewave/hoodle
 
 Executable hoodle
-  Main-is: Main.hs
+  Main-is:        Main.hs
   hs-source-dirs: app/hoodle
-  ghc-options: 	-Wall -Werror -threaded -rtsopts
+  if impl (ghc > 9.4.0)
+    ghc-options: -Wall -Werror -threaded -rtsopts
+  else
+    ghc-options: -Wall -Werror -threaded -rtsopts -eventlog
+  if flag(eventlog)
+    cpp-options: -DUSE_EVENTLOG
   ghc-prof-options: -fprof-auto -fprof-cafs
   Build-Depends:
                  base == 4.*,
                  cmdargs >= 0.7,
+                 eventlog-socket,
                  hoodle-core,
                  hoodle
 
@@ -48,3 +54,8 @@ Library
                    Hoodle.StartUp
   Other-Modules:
                    Paths_hoodle
+
+Flag eventlog
+    Description: eventlog socket communication
+    Manual: True
+    Default: False

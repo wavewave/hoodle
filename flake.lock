@@ -20,11 +20,11 @@
     "flake-compat": {
       "flake": false,
       "locked": {
-        "lastModified": 1650374568,
-        "narHash": "sha256-Z+s0J8/r907g149rllvwhb4pKi8Wam5ij0st8PwAh+E=",
+        "lastModified": 1668681692,
+        "narHash": "sha256-Ht91NGdewz8IQLtWZ9LCeNXMSXHUss+9COoqu6JLmXU=",
         "owner": "edolstra",
         "repo": "flake-compat",
-        "rev": "b4a34015c698c7793d592d66adbab377907a2be8",
+        "rev": "009399224d5e398d03b22badca40a37ac85412a1",
         "type": "github"
       },
       "original": {
@@ -48,42 +48,44 @@
         "type": "github"
       }
     },
-    "flake-utils_2": {
-      "locked": {
-        "lastModified": 1667395993,
-        "narHash": "sha256-nuEHfE/LcWyuSWnS8t12N1wc105Qtau+/OdUAjtQ0rA=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "5aed5285a952e0b949eb3ba02c12fa4fcfef535f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
-      }
-    },
     "ghc_nix": {
       "inputs": {
+        "all-cabal-hashes": [
+          "hackage-index"
+        ],
         "flake-compat": "flake-compat",
         "nixpkgs": [
           "nixpkgs"
         ],
-        "nixpkgs-unstable": "nixpkgs-unstable"
+        "nixpkgs-unstable": [
+          "nixpkgs"
+        ]
       },
       "locked": {
-        "lastModified": 1675123856,
-        "narHash": "sha256-n80scdhxvRl1FARKTbQV7qTRyIlJmN1lNOEqF8opOBI=",
+        "lastModified": 1677005603,
+        "narHash": "sha256-0E6Cn7WZP7sCbcI6nsoEVLlWGfmLhuypHAfxioepy6Q=",
         "owner": "wavewave",
         "repo": "ghc.nix",
-        "rev": "add481377aacba94e609104e81bb49db055fc96c",
+        "rev": "9e2907537899555d6da52d6369d89f1f9fc37bd4",
         "type": "github"
       },
       "original": {
         "owner": "wavewave",
-        "ref": "wavewave/aarch64-darwin",
+        "ref": "fix-hash-again",
         "repo": "ghc.nix",
         "type": "github"
+      }
+    },
+    "hackage-index": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-otOPsRkyjy2UMRVYITrFj9bJdU8itceYw6Cl/qApvg0=",
+        "type": "file",
+        "url": "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/tarball/dc285e8b0968426833746d3f776657c436fb65e0"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/tarball/dc285e8b0968426833746d3f776657c436fb65e0"
       }
     },
     "nixpkgs": {
@@ -98,22 +100,6 @@
       "original": {
         "owner": "wavewave",
         "ref": "libdeflate-fix-on-peti-master",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-unstable": {
-      "locked": {
-        "lastModified": 1667055375,
-        "narHash": "sha256-xfSTHYxuKRiqF4dcuAFdti1OUvrC2lHpQqCHWUK5/JA=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "7f9be6a505a31f88499c5d20d11f98accf5ae6ba",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -139,6 +125,7 @@
         "TypeCompose": "TypeCompose",
         "flake-utils": "flake-utils",
         "ghc_nix": "ghc_nix",
+        "hackage-index": "hackage-index",
         "nixpkgs": "nixpkgs",
         "nixpkgs_21_11": "nixpkgs_21_11"
       }

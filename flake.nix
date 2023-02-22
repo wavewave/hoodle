@@ -53,31 +53,11 @@
         inherit haskellLib;
       };
 
-      # ghc.nix shell
-      ghcNixShell = inputs.ghc_nix.outputs.devShells.${system}.default.overrideAttrs (attrs: {
-        buildInputs =
-          attrs.buildInputs
-          ++ [
-            pkgs.epoxy.dev
-            pkgs.gd
-            pkgs.gtk3
-            pkgs.libdatrie
-            pkgs.libdeflate
-            pkgs.librsvg.dev
-            pkgs.libthai
-            pkgs.pcre
-            pkgs.pcre2
-            pkgs.xorg.libXdmcp.dev
-            pkgs.libxkbcommon.dev
-            pkgs.xorg.libXtst
-            pkgs.pkgconfig
-          ]
-          ++ pkgs.lib.optional pkgs.stdenv.isLinux [pkgs.libselinux pkgs.libsepol pkgs.util-linux.dev];
-
-        shellHook = ''
-          export PS1="\n[hoodle-ghc.nix:\w]$ \0"
-        '';
-      });
+      # ghc.nix
+      ghc_nix = import ./nix/ghc_nix.nix {
+        inherit (inputs) ghc_nix;
+        inherit system pkgs;
+      };
     in rec {
       # This package set is only useful for CI build test.
       packages.gtk =
@@ -94,6 +74,7 @@
         webShells =
           pkgs.lib.genAttrs web.supportedCompilersWeb
           (compiler: web.mkWebShellFor compiler);
+        ghcNixShell = ghc_nix.ghcNixShell;
       in rec {
         default = gtk.${gtk.defaultCompiler};
         gtk = gtkShells;

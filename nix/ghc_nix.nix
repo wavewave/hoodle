@@ -10,6 +10,7 @@
       ++ [
         pkgs.epoxy.dev
         pkgs.gd
+        pkgs.gobject-introspection
         pkgs.gtk3
         pkgs.libdatrie
         pkgs.libdeflate

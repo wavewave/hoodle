@@ -17,23 +17,6 @@
         "type": "github"
       }
     },
-    "all-cabal-hashes": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1677004134,
-        "narHash": "sha256-Gsce+Qfzv57YA+7SxxhryBHujnujNWmUf30Qgwfq7As=",
-        "owner": "commercialhaskell",
-        "repo": "all-cabal-hashes",
-        "rev": "d880fe28a83e5d40a84cb3a920bf3a44c4b29923",
-        "type": "github"
-      },
-      "original": {
-        "owner": "commercialhaskell",
-        "ref": "hackage",
-        "repo": "all-cabal-hashes",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -68,7 +51,7 @@
     "ghc_nix": {
       "inputs": {
         "all-cabal-hashes": [
-          "all-cabal-hashes"
+          "hackage-index"
         ],
         "flake-compat": "flake-compat",
         "nixpkgs": [
@@ -91,6 +74,18 @@
         "ref": "fix-hash-again",
         "repo": "ghc.nix",
         "type": "github"
+      }
+    },
+    "hackage-index": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-otOPsRkyjy2UMRVYITrFj9bJdU8itceYw6Cl/qApvg0=",
+        "type": "file",
+        "url": "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/tarball/dc285e8b0968426833746d3f776657c436fb65e0"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/tarball/dc285e8b0968426833746d3f776657c436fb65e0"
       }
     },
     "nixpkgs": {
@@ -128,9 +123,9 @@
     "root": {
       "inputs": {
         "TypeCompose": "TypeCompose",
-        "all-cabal-hashes": "all-cabal-hashes",
         "flake-utils": "flake-utils",
         "ghc_nix": "ghc_nix",
+        "hackage-index": "hackage-index",
         "nixpkgs": "nixpkgs",
         "nixpkgs_21_11": "nixpkgs_21_11"
       }

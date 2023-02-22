@@ -1,0 +1,64 @@
+cradle:
+  cabal:
+    - path: "./builder/src"
+      component: "lib:hoodle-builder"
+
+    - path: "./core/src"
+      component: "lib:hoodle-core"
+
+    - path: "./coroutine-object/src"
+      component: "lib:coroutine-object"
+
+    - path: "./coroutine-object/example/coroutine-object-test.hs"
+      component: "coroutine-object:exe:coroutine-object-test"
+
+    - path: "./coroutine-object/example/Event.hs"
+      component: "coroutine-object:exe:coroutine-object-test"
+
+    - path: "./coroutine-object/example/Sample.hs"
+      component: "coroutine-object:exe:coroutine-object-test"
+
+    - path: "./coroutine-object/example/SampleActor.hs"
+      component: "coroutine-object:exe:coroutine-object-test"
+
+    - path: "./coroutine-object/example/Simple.hs"
+      component: "coroutine-object:exe:coroutine-object-test"
+
+    - path: "./hoodle/app/hoodle/Main.hs"
+      component: "hoodle:exe:hoodle"
+
+    - path: "./hoodle/src"
+      component: "lib:hoodle"
+
+    - path: "./log/app/logcat/Main.hs"
+      component: "hoodle-log:exe:logcat"
+
+    - path: "./parser/src"
+      component: "lib:hoodle-parser"
+
+    - path: "./parser/examples/parsetest.hs"
+      component: "hoodle-parser:exe:parsetest"
+
+    - path: "./publish/src"
+      component: "lib:hoodle-publish"
+
+    - path: "./publish/app/hoodle-publish/Main.hs"
+      component: "hoodle-publish:exe:hoodle-publish"
+
+    - path: "./publish/app/print1page/Main.hs"
+      component: "hoodle-publish:exe:print1page"
+
+    - path: "./render/src"
+      component: "lib:hoodle-render"
+
+    - path: "./types/src"
+      component: "lib:hoodle-types"
+
+    - path: "./util/src"
+      component: "lib:hoodle-util"
+
+    - path: "./xournal-parser/src"
+      component: "lib:xournal-parser"
+
+    - path: "./xournal-types/src"
+      component: "lib:xournal-types"

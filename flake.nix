@@ -123,6 +123,8 @@
             pkgs.gnome.adwaita-icon-theme
             pkgs.pkg-config
             pkgs.haskell.packages.${compiler}.cabal-install
+            pkgs.haskell.packages.${compiler}.haskell-language-server
+            pkgs.haskell.packages.${compiler}.implicit-hie            
           ];
           shellHook = ''
             export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_ICON_DIRS:$XDG_DATA_DIRS

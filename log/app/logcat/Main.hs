@@ -11,6 +11,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.List (group, sort)
 import Data.Maybe (fromMaybe, mapMaybe)
 import GHC.Generics
+import GHC.RTS.Events (Event (..), EventInfo (..))
 import GHC.RTS.Events.Incremental
   ( Decoder (..),
     decodeEvents,
@@ -30,12 +31,11 @@ import Network.Socket
 import Network.Socket.ByteString (recv)
 import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
-import GHC.RTS.Events (Event (..), EventInfo (..))
 
 histo :: [String] -> [(String, Int)]
 histo = mapMaybe count . group . sort
   where
-    count ys@(x:xs) = Just (x, length ys)
+    count ys@(x : xs) = Just (x, length ys)
     count [] = Nothing
 
 eventInfoToString :: EventInfo -> String

@@ -1,6 +1,7 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE NumericUnderscores #-}
 {-# OPTIONS_GHC -w #-}
+
 module Main where
 
 import Control.Concurrent (forkIO, threadDelay)
@@ -10,7 +11,6 @@ import Data.Foldable (for_)
 import Debug.Trace (flushEventLog, traceEventIO)
 import Foreign.Ptr (FunPtr)
 import GHC.Eventlog.Socket (startWait)
--- import qualified Graphics.UI.Gtk as Gtk
 
 foreign import ccall safe "cbit.h callTest" c_callTest :: IO ()
 
@@ -35,6 +35,5 @@ main = do
   forever $ do
     threadDelay 5_000_000
     putStrLn "am i here"
-    for_ [1..10_000] $ \_ ->
-      -- c_callTest
+    for_ [1 .. 10_000] $ \_ ->
       c_callTest2 wSimpleAction

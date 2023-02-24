@@ -14,6 +14,7 @@ import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Data.Fixed (Fixed (MkFixed), Nano)
 import Data.Foldable (for_, toList)
 import Data.GI.Base (AttrOp ((:=)), new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
@@ -21,6 +22,7 @@ import qualified Data.List as L (foldl', lookup)
 import Data.Map (Map)
 import qualified Data.Map as Map (empty, toAscList)
 import Data.Maybe (fromMaybe)
+-- import Data.Ratio ((%))
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq (empty)
 import GHC.RTS.Events (Event (..))
@@ -118,24 +120,32 @@ dump sref sock = goHeader ""
       bytes'' <- recv sock 1024
       goEvents hdr dec' (bytes' <> bytes'')
 
-{-
--- NOT IMPLEMENTED YET
+drawEventMark :: Event -> R.Render ()
+drawEventMark ev = do
+  let sec = MkFixed (fromIntegral (evTime ev)) :: Nano
+      x :: Double
+      x = realToFrac sec * 10.0 + 10
+      evname = eventInfoToString (evSpec ev)
+      tag = fromMaybe 0 (L.lookup evname eventInfoEnumMap)
+      y = fromIntegral tag * 3.0
+  R.moveTo x y
+  R.lineTo x (y + 2)
+  R.stroke
+
 drawTimeline :: Seq Event -> R.Render ()
 drawTimeline evs = do
-  let x = fromIntegral (length evs) / 1000.0
   R.setSourceRGBA 0.16 0.18 0.19 1.0
-  R.setLineWidth (1.5 / 60)
-  R.rectangle x 10 50 50
-  R.fill
--}
+  R.setLineWidth 0.3
+  R.setLineCap R.LineCapRound
+  R.setLineJoin R.LineJoinRound
+  for_ evs $ \ev ->
+    drawEventMark ev
 
-drawHistBar :: (String, Int) -> R.Render ()
-drawHistBar (ev, value) = do
-  let xoffset = 10
-      yoffset = 0
-      tag = fromMaybe 0 (L.lookup ev eventInfoEnumMap)
+drawHistBar :: (Double, Double) -> (String, Int) -> R.Render ()
+drawHistBar (xoffset, yoffset) (ev, value) = do
+  let tag = fromMaybe 0 (L.lookup ev eventInfoEnumMap)
   R.setSourceRGBA 0.16 0.18 0.19 1.0
-  R.setLineWidth (1.5 / 60)
+  R.setLineWidth 1.0
   let y = yoffset + 10.0 * fromIntegral tag
       w = fromIntegral value / 100.0
   R.moveTo xoffset (y + 10.0)
@@ -149,11 +159,13 @@ drawHistBar (ev, value) = do
 drawLogcatState :: TVar LogcatState -> R.Render ()
 drawLogcatState sref = do
   s <- liftIO $ atomically $ readTVar sref
-  let -- evs = s ^. logcatEventStore
+  let evs = s ^. logcatEventStore
       hist = s ^. logcatEventHisto
-  -- drawTimeline evs
+  let xoffset = 10
+      yoffset = 100
+  drawTimeline evs
   for_ (Map.toAscList hist) $ \(ev, value) ->
-    drawHistBar (ev, value)
+    drawHistBar (xoffset, yoffset) (ev, value)
 
 tickTock :: Gtk.DrawingArea -> TVar LogcatState -> IO ()
 tickTock drawingArea sref = forever $ do
@@ -165,7 +177,6 @@ tickTock drawingArea sref = forever $ do
 main :: IO ()
 main = do
   sref <- newTVarIO emptyLogcatState
-
   _ <- Gtk.init Nothing
   mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
   drawingArea <- new Gtk.DrawingArea []
@@ -178,6 +189,7 @@ main = do
     #packStart vbox drawingArea True True 0
     pure vbox
   #add mainWindow layout
+  #setDefaultSize mainWindow 1440 768
   #showAll mainWindow
 
   _ <- forkIO $ tickTock drawingArea sref

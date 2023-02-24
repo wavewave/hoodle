@@ -23,7 +23,12 @@ Executable logcat
   Build-Depends:
                   base == 4.*,
                   bytestring,
+                  gi-cairo,
+                  gi-cairo-connector,
+                  gi-cairo-render,
+                  gi-gtk,
                   ghc-events,
+                  haskell-gi-base,
                   network,
                   pretty-simple
 

@@ -1,13 +1,19 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -w #-}
 
 module Main where
 
+import Control.Concurrent (forkIO)
 import qualified Control.Exception as E
 import Control.Monad (forever)
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Data.GI.Base (new, on, AttrOp ((:=)))
+import Data.GI.Base.ManagedPtr (withManagedPtr)
+import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (group, sort)
 import Data.Maybe (fromMaybe, mapMaybe)
 import GHC.Generics
@@ -18,6 +24,9 @@ import GHC.RTS.Events.Incremental
     readEvents,
     readHeader,
   )
+import qualified GI.Cairo.Render as R
+import GI.Cairo.Render.Connector (renderWithContext)
+import qualified GI.Gtk as GI
 import Network.Socket
   ( Family (AF_UNIX),
     SockAddr (SockAddrUnix),
@@ -149,8 +158,13 @@ eventInfoToString info =
     TickyCounterSample {} -> "TickyCounterSample"
     TickyBeginSample {} -> "TickyBeginSample"
 
-dump :: Socket -> IO ()
-dump sock = goHeader ""
+recordEvent :: IORef Int -> Event -> IO ()
+recordEvent ref ev = do
+  modifyIORef' ref (+1)
+  pPrint ev
+
+dump :: IORef Int -> Socket -> IO ()
+dump ref sock = goHeader ""
   where
     goHeader bs0 = do
       bs1 <- recv sock 1024
@@ -168,7 +182,7 @@ dump sock = goHeader ""
     go dec !bytes = do
       case dec of
         Produce ev dec' -> do
-          pPrint ev
+          recordEvent ref ev
           hFlush stdout
           go dec' bytes
         Consume k ->
@@ -191,11 +205,39 @@ dump sock = goHeader ""
 
 main :: IO ()
 main = do
+  ref <- newIORef 0
+
+  _ <- GI.init Nothing
+  mainWindow <- new GI.Window [ #type := GI.WindowTypeToplevel ]
+  drawingArea <- new GI.DrawingArea []
+  drawingArea `on` #draw $
+    renderWithContext $ do
+      R.setSourceRGBA 0.16 0.18 0.19 1.0
+      R.setLineWidth (1.5/60)
+      R.rectangle 10 10 50 50
+      R.fill
+      liftIO $ putStrLn "draw called"
+      liftIO $ do
+        n <- readIORef ref
+        print n
+      pure True
+  layout <- do
+    vbox <- new GI.Box [#orientation := GI.OrientationVertical, #spacing := 0]
+    #packStart vbox drawingArea True True 0
+    pure vbox
+  #add mainWindow layout
+  #showAll mainWindow
+
+  _ <- forkIO (receiver ref)
+  GI.main
+
+receiver :: IORef Int -> IO ()
+receiver ref =
   withSocketsDo $ do
     let file = "/tmp/eventlog.sock"
         open = do
           sock <- socket AF_UNIX Stream 0
           connect sock (SockAddrUnix file)
           pure sock
-    E.bracket open close dump
+    E.bracket open close (dump ref)
     pure ()

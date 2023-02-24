@@ -3,7 +3,6 @@
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -w #-}
 
 module Main where
 
@@ -15,20 +14,15 @@ import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.GI.Base (AttrOp ((:=)), new, on)
-import Data.GI.Base.ManagedPtr (withManagedPtr)
 import Data.GI.Gtk.Threading (postGUIASync)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
-import Data.List (group, sort)
-import Data.Maybe (fromMaybe, mapMaybe)
-import Data.Semigroup ((<>))
+import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq (empty)
-import GHC.Generics
-import GHC.RTS.Events (Event (..), EventInfo (..))
+import GHC.RTS.Events (Event (..))
 import GHC.RTS.Events.Incremental
   ( Decoder (..),
     decodeEvents,
-    readEvents,
     readHeader,
   )
 import qualified GI.Cairo.Render as R
@@ -47,7 +41,8 @@ import Network.Socket
 import Network.Socket.ByteString (recv)
 import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
-import Util (eventInfoToString, histo)
+
+-- import Util (eventInfoToString, histo)
 
 data LogcatState = LogcatState
   { _logcatEventStore :: Seq Event
@@ -91,7 +86,7 @@ dump sref sock = goHeader ""
             else go (k bytes) ""
         Done bytes' ->
           pure (Nothing, bytes')
-        Error bytes' e -> do
+        Error _bytes' e -> do
           pPrint e
           hFlush stdout
           -- reset if error happens.
@@ -125,7 +120,7 @@ main = do
   _ <- Gtk.init Nothing
   mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
   drawingArea <- new Gtk.DrawingArea []
-  drawingArea `on` #draw $
+  _ <- drawingArea `on` #draw $
     renderWithContext $ do
       myDraw sref
       pure True

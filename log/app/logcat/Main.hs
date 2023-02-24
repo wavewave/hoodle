@@ -14,10 +14,12 @@ import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import Data.Foldable (toList)
+import Data.Foldable (for_, toList)
 import Data.GI.Base (AttrOp ((:=)), new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
--- import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
+import qualified Data.List as L (foldl', lookup)
+import Data.Map (Map)
+import qualified Data.Map as Map (empty, toAscList)
 import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq (empty)
@@ -43,34 +45,41 @@ import Network.Socket
 import Network.Socket.ByteString (recv)
 import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
-import Util (eventInfoToString, histo)
+import Util.Event (eventInfoEnumMap, eventInfoToString)
+import Util.Histo (aggregateCount, histoAdd)
 
 data LogcatState = LogcatState
   { _logcatEventStore :: Seq Event,
     -- TODO: Queue should be a local state, not a global state, considering STM overhead.
     _logcatEventQueue :: Seq Event,
-    _logcatEventHisto :: [(String, Int)]
+    _logcatEventHisto :: Map String Int
   }
 
 makeLenses ''LogcatState
 
 emptyLogcatState :: LogcatState
-emptyLogcatState = LogcatState Seq.empty Seq.empty []
+emptyLogcatState = LogcatState Seq.empty Seq.empty Map.empty
 
 recordEvent :: TVar LogcatState -> Event -> IO ()
 recordEvent sref ev =
   atomically $ modifyTVar' sref (logcatEventQueue %~ (|> ev))
 
 flushEventQueue :: TVar LogcatState -> IO ()
-flushEventQueue sref = do
-  h <- atomically $ do
-    queue <- (^. logcatEventQueue) <$> readTVar sref
-    let h = histo $ fmap (eventInfoToString . evSpec) $ toList queue
+flushEventQueue sref =
+  atomically $ do
+    s <- readTVar sref
+    let queue = s ^. logcatEventQueue
+        hist = s ^. logcatEventHisto
+        diff = aggregateCount $ fmap (eventInfoToString . evSpec) $ toList queue
+        hist' = L.foldl' histoAdd hist diff
+
     modifyTVar' sref $
       (logcatEventStore %~ (<> queue))
         . (logcatEventQueue .~ Seq.empty)
-    pure h
-  print h
+        . (logcatEventHisto .~ hist')
+
+-- pure hist'
+-- print currHist
 
 dump :: TVar LogcatState -> Socket -> IO ()
 dump sref sock = goHeader ""
@@ -112,16 +121,42 @@ dump sref sock = goHeader ""
       bytes'' <- recv sock 1024
       goEvents hdr dec' (bytes' <> bytes'')
 
-myDraw :: TVar LogcatState -> R.Render ()
-myDraw sref = do
-  evs <-
-    liftIO $
-      (^. logcatEventStore) <$> atomically (readTVar sref)
+{-
+-- NOT IMPLEMENTED YET
+drawTimeline :: Seq Event -> R.Render ()
+drawTimeline evs = do
   let x = fromIntegral (length evs) / 1000.0
   R.setSourceRGBA 0.16 0.18 0.19 1.0
   R.setLineWidth (1.5 / 60)
   R.rectangle x 10 50 50
   R.fill
+-}
+
+drawHistBar :: (String, Int) -> R.Render ()
+drawHistBar (ev, value) = do
+  let xoffset = 10
+      yoffset = 0
+      tag = fromMaybe 0 (L.lookup ev eventInfoEnumMap)
+  R.setSourceRGBA 0.16 0.18 0.19 1.0
+  R.setLineWidth (1.5 / 60)
+  let y = yoffset + 10.0 * fromIntegral tag
+      w = fromIntegral value / 100.0
+  R.moveTo xoffset (y + 10.0)
+  R.setFontSize 8.0
+  R.textPath ev
+  R.rectangle (xoffset + 100) (y + 2) w 8
+  R.fill
+  R.moveTo (xoffset + 104 + w) (y + 10.0)
+  R.textPath (show value)
+
+drawLogcatState :: TVar LogcatState -> R.Render ()
+drawLogcatState sref = do
+  s <- liftIO $ atomically $ readTVar sref
+  let -- evs = s ^. logcatEventStore
+      hist = s ^. logcatEventHisto
+  -- drawTimeline evs
+  for_ (Map.toAscList hist) $ \(ev, value) ->
+    drawHistBar (ev, value)
 
 tickTock :: Gtk.DrawingArea -> TVar LogcatState -> IO ()
 tickTock drawingArea sref = forever $ do
@@ -139,7 +174,7 @@ main = do
   drawingArea <- new Gtk.DrawingArea []
   _ <- drawingArea `on` #draw $
     renderWithContext $ do
-      myDraw sref
+      drawLogcatState sref
       pure True
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]

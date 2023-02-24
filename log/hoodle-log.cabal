@@ -34,7 +34,8 @@ Executable logcat
                   haskell-gi-base,
                   lens > 5,
                   network,
-                  pretty-simple
+                  pretty-simple,
+                  stm
 
 Executable testApp
   Main-is:        Main.hs

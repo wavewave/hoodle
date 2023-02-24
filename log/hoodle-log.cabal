@@ -8,7 +8,7 @@ License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 8.6
+Tested-with:    GHC == 9.6
 Build-Type: 	Simple
 Cabal-Version:  2.0
 data-files:     CHANGES
@@ -18,6 +18,7 @@ Source-repository head
 
 Executable logcat
   Main-is:        Main.hs
+  other-modules:  Util
   hs-source-dirs: app/logcat
   ghc-options: -j -Wall -Werror -threaded -rtsopts
   Build-Depends:
@@ -27,6 +28,7 @@ Executable logcat
                   gi-cairo-connector >= 0.1.1,
                   gi-cairo-render >= 0.1.2,
                   gi-gtk,
+                  gi-gtk-hs,
                   ghc-events,
                   haskell-gi-base,
                   network,

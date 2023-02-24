@@ -3,7 +3,7 @@ Version:	1.0
 Synopsis:	logging
 Description: 	logging
 Homepage:       http://ianwookim.org/hoodle
-License: 	GPL-3
+License: 	MIT
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
@@ -32,6 +32,7 @@ Executable logcat
                   gi-gtk-hs,
                   ghc-events,
                   haskell-gi-base,
+                  lens > 5,
                   network,
                   pretty-simple
 

@@ -2,12 +2,14 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -w #-}
 
 module Main where
 
 import Control.Concurrent (forkIO, threadDelay)
 import qualified Control.Exception as E
+import Control.Lens (makeLenses, (%~))
 import Control.Monad (forever)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
@@ -48,15 +50,17 @@ import Text.Pretty.Simple (pPrint)
 import Util (eventInfoToString, histo)
 
 data LogcatState = LogcatState
-  { logcatEventStore :: Seq Event
+  { _logcatEventStore :: Seq Event
   }
+
+makeLenses ''LogcatState
 
 emptyLogcatState :: LogcatState
 emptyLogcatState = LogcatState Seq.empty
 
 recordEvent :: IORef LogcatState -> Event -> IO ()
 recordEvent sref ev = do
-  modifyIORef' sref (\(LogcatState store) -> LogcatState (store |> ev))
+  modifyIORef' sref (logcatEventStore %~ (|> ev))
   pPrint ev
 
 dump :: IORef LogcatState -> Socket -> IO ()

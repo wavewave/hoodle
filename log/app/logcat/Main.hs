@@ -78,9 +78,6 @@ flushEventQueue sref =
         . (logcatEventQueue .~ Seq.empty)
         . (logcatEventHisto .~ hist')
 
--- pure hist'
--- print currHist
-
 dump :: TVar LogcatState -> Socket -> IO ()
 dump sref sock = goHeader ""
   where

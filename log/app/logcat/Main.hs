@@ -18,6 +18,9 @@ import Data.GI.Gtk.Threading (postGUIASync)
 import Data.IORef (IORef, modifyIORef', newIORef, readIORef)
 import Data.List (group, sort)
 import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Semigroup ((<>))
+import Data.Sequence (Seq, (|>))
+import qualified Data.Sequence as Seq (empty)
 import GHC.Generics
 import GHC.RTS.Events (Event (..), EventInfo (..))
 import GHC.RTS.Events.Incremental
@@ -44,15 +47,20 @@ import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
 import Util (eventInfoToString, histo)
 
-data MyState = MyState Double
+data LogcatState = LogcatState
+  { logcatEventStore :: Seq Event
+  }
 
-recordEvent :: IORef Int -> Event -> IO ()
-recordEvent ref ev = do
-  modifyIORef' ref (+ 1)
+emptyLogcatState :: LogcatState
+emptyLogcatState = LogcatState Seq.empty
+
+recordEvent :: IORef LogcatState -> Event -> IO ()
+recordEvent sref ev = do
+  modifyIORef' sref (\(LogcatState store) -> LogcatState (store |> ev))
   pPrint ev
 
-dump :: IORef Int -> Socket -> IO ()
-dump ref sock = goHeader ""
+dump :: IORef LogcatState -> Socket -> IO ()
+dump sref sock = goHeader ""
   where
     goHeader bs0 = do
       bs1 <- recv sock 1024
@@ -70,7 +78,7 @@ dump ref sock = goHeader ""
     go dec !bytes = do
       case dec of
         Produce ev dec' -> do
-          recordEvent ref ev
+          recordEvent sref ev
           hFlush stdout
           go dec' bytes
         Consume k ->
@@ -91,36 +99,31 @@ dump ref sock = goHeader ""
       bytes'' <- recv sock 1024
       goEvents hdr dec' (bytes' <> bytes'')
 
-myDraw :: IORef Int -> IORef MyState -> R.Render ()
-myDraw ref ref' = do
-  MyState x <- liftIO $ readIORef ref'
+myDraw :: IORef LogcatState -> R.Render ()
+myDraw sref = do
+  LogcatState evs <- liftIO $ readIORef sref
+  let x = fromIntegral (length evs) / 1000.0
   R.setSourceRGBA 0.16 0.18 0.19 1.0
   R.setLineWidth (1.5 / 60)
-  R.rectangle x x 50 50
+  R.rectangle x 10 50 50
   R.fill
-  liftIO $ putStrLn "draw called"
-  liftIO $ do
-    n <- readIORef ref
-    print n
 
-tickTock :: Gtk.DrawingArea -> IORef MyState -> IO ()
-tickTock drawingArea ref' = forever $ do
-  threadDelay 50_000
-  modifyIORef' ref' (\(MyState x) -> MyState (x + 1))
+tickTock :: Gtk.DrawingArea -> IO ()
+tickTock drawingArea = forever $ do
+  threadDelay 1_000_000
   postGUIASync $
     #queueDraw drawingArea
 
 main :: IO ()
 main = do
-  ref <- newIORef 0
-  ref' <- newIORef (MyState 10)
+  sref <- newIORef emptyLogcatState
 
   _ <- Gtk.init Nothing
   mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
   drawingArea <- new Gtk.DrawingArea []
   drawingArea `on` #draw $
     renderWithContext $ do
-      myDraw ref ref'
+      myDraw sref
       pure True
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
@@ -129,17 +132,17 @@ main = do
   #add mainWindow layout
   #showAll mainWindow
 
-  _ <- forkIO $ tickTock drawingArea ref'
-  _ <- forkIO (receiver ref)
+  _ <- forkIO $ tickTock drawingArea
+  _ <- forkIO (receiver sref)
   Gtk.main
 
-receiver :: IORef Int -> IO ()
-receiver ref =
+receiver :: IORef LogcatState -> IO ()
+receiver sref =
   withSocketsDo $ do
     let file = "/tmp/eventlog.sock"
         open = do
           sock <- socket AF_UNIX Stream 0
           connect sock (SockAddrUnix file)
           pure sock
-    E.bracket open close (dump ref)
+    E.bracket open close (dump sref)
     pure ()

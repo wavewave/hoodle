@@ -24,6 +24,7 @@ Executable logcat
   Build-Depends:
                   base == 4.*,
                   bytestring,
+                  containers,
                   gi-cairo,
                   gi-cairo-connector >= 0.1.1,
                   gi-cairo-render >= 0.1.2,

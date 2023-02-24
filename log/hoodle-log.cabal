@@ -24,26 +24,13 @@ Executable logcat
                   base == 4.*,
                   bytestring,
                   gi-cairo,
-                  gi-cairo-connector,
-                  gi-cairo-render,
+                  gi-cairo-connector >= 0.1.1,
+                  gi-cairo-render >= 0.1.2,
                   gi-gtk,
                   ghc-events,
                   haskell-gi-base,
                   network,
                   pretty-simple
-
-Executable gtkApp
-  Main-is:        Main.hs
-  hs-source-dirs: app/gtkApp
-  ghc-options: -j -Wall -Werror -threaded -rtsopts
-  Build-Depends:
-                  base == 4.*,
-                  gi-cairo,
-                  gi-cairo-connector,
-                  gi-cairo-render,
-                  gi-gtk,
-                  haskell-gi-base,
-                  transformers
 
 Executable testApp
   Main-is:        Main.hs

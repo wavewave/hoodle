@@ -3,12 +3,12 @@ Version:	1.0
 Synopsis:	logging
 Description: 	logging
 Homepage:       http://ianwookim.org/hoodle
-License: 	GPL-3
+License: 	MIT
 License-file:	LICENSE
 Author:		Ian-Woo Kim
 Maintainer: 	Ian-Woo Kim <ianwookim@gmail.com>
 Category:       Application
-Tested-with:    GHC == 8.6
+Tested-with:    GHC == 9.6
 Build-Type: 	Simple
 Cabal-Version:  2.0
 data-files:     CHANGES
@@ -18,15 +18,25 @@ Source-repository head
 
 Executable logcat
   Main-is:        Main.hs
+  other-modules:  Util.Event
+                  Util.Histo
   hs-source-dirs: app/logcat
   ghc-options: -j -Wall -Werror -threaded -rtsopts
   Build-Depends:
                   base == 4.*,
                   bytestring,
-                  ghc-events,
+                  containers,
+                  gi-cairo,
+                  gi-cairo-connector >= 0.1.1,
+                  gi-cairo-render >= 0.1.2,
                   gi-gtk,
+                  gi-gtk-hs,
+                  ghc-events,
+                  haskell-gi-base,
+                  lens > 5,
                   network,
-                  pretty-simple
+                  pretty-simple,
+                  stm
 
 Executable testApp
   Main-is:        Main.hs

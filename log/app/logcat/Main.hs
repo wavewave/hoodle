@@ -1,23 +1,37 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -w #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main where
 
+import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVar)
 import qualified Control.Exception as E
+import Control.Lens (makeLenses, (%~), (.~), (^.))
 import Control.Monad (forever)
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import Data.List (group, sort)
-import Data.Maybe (fromMaybe, mapMaybe)
-import GHC.Generics
-import GHC.RTS.Events (Event (..), EventInfo (..))
+import Data.Foldable (for_, toList)
+import Data.GI.Base (AttrOp ((:=)), new, on)
+import Data.GI.Gtk.Threading (postGUIASync)
+import qualified Data.List as L (foldl', lookup)
+import Data.Map (Map)
+import qualified Data.Map as Map (empty, toAscList)
+import Data.Maybe (fromMaybe)
+import Data.Sequence (Seq, (|>))
+import qualified Data.Sequence as Seq (empty)
+import GHC.RTS.Events (Event (..))
 import GHC.RTS.Events.Incremental
   ( Decoder (..),
     decodeEvents,
-    readEvents,
     readHeader,
   )
+import qualified GI.Cairo.Render as R
+import GI.Cairo.Render.Connector (renderWithContext)
+import qualified GI.Gtk as Gtk
 import Network.Socket
   ( Family (AF_UNIX),
     SockAddr (SockAddrUnix),
@@ -31,126 +45,41 @@ import Network.Socket
 import Network.Socket.ByteString (recv)
 import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
+import Util.Event (eventInfoEnumMap, eventInfoToString)
+import Util.Histo (aggregateCount, histoAdd)
 
-histo :: [String] -> [(String, Int)]
-histo = mapMaybe count . group . sort
-  where
-    count ys@(x : xs) = Just (x, length ys)
-    count [] = Nothing
+data LogcatState = LogcatState
+  { _logcatEventStore :: Seq Event,
+    -- TODO: Queue should be a local state, not a global state, considering STM overhead.
+    _logcatEventQueue :: Seq Event,
+    _logcatEventHisto :: Map String Int
+  }
 
-eventInfoToString :: EventInfo -> String
-eventInfoToString info =
-  case info of
-    EventBlock {} -> "EventBlock"
-    UnknownEvent {} -> "UnknownEvent"
-    Startup {} -> "Startup"
-    Shutdown {} -> "Shutdown"
-    CreateThread {} -> "CreateThread"
-    RunThread {} -> "RunThread"
-    StopThread {} -> "StopThread"
-    ThreadRunnable {} -> "ThreadRunnable"
-    MigrateThread {} -> "MigrateThread"
-    WakeupThread {} -> "WakeupThread"
-    ThreadLabel {} -> "ThreadLabel"
-    CreateSparkThread {} -> "CreateSparkThread"
-    SparkCounters {} -> "SparkCounters"
-    SparkCreate {} -> "SparkCreate"
-    SparkDud {} -> "SparkDud"
-    SparkOverflow {} -> "SparkOverflow"
-    SparkRun {} -> "SparkRun"
-    SparkSteal {} -> "SparkSteal"
-    SparkFizzle {} -> "SparkFizzle"
-    SparkGC {} -> "SparkGC"
-    TaskCreate {} -> "TaskCreate"
-    TaskMigrate {} -> "TaskMigrate"
-    TaskDelete {} -> "TaskDelete"
-    RequestSeqGC {} -> "RequestSeqGC"
-    RequestParGC {} -> "RequestParGC"
-    StartGC {} -> "StartGC"
-    GCWork {} -> "GCWork"
-    GCIdle {} -> "GCIdle"
-    GCDone {} -> "GCDone"
-    EndGC {} -> "EndGC"
-    GlobalSyncGC {} -> "GlobalSyncGC"
-    GCStatsGHC {} -> "GCStatsGHC"
-    MemReturn {} -> "MemReturn"
-    HeapAllocated {} -> "HeapAllocated"
-    HeapSize {} -> "HeapSize"
-    BlocksSize {} -> "BlocksSize"
-    HeapLive {} -> "HeapLive"
-    HeapInfoGHC {} -> "HeapInfoGHC"
-    CapCreate {} -> "CapCreate"
-    CapDelete {} -> "CapDelete"
-    CapDisable {} -> "CapDisable"
-    CapEnable {} -> "CapEnable"
-    CapsetCreate {} -> "CapsetCreate"
-    CapsetDelete {} -> "CapsetDelete"
-    CapsetAssignCap {} -> "CapsetAssignCap"
-    CapsetRemoveCap {} -> "CapsetRemoveCap"
-    RtsIdentifier {} -> "RtsIdentifier"
-    ProgramArgs {} -> "ProgramArgs"
-    ProgramEnv {} -> "ProgramEnv"
-    OsProcessPid {} -> "OsProcessPid"
-    OsProcessParentPid {} -> "OsProcessParentPid"
-    WallClockTime {} -> "WallClockTime"
-    Message {} -> "Message"
-    UserMessage {} -> "UserMessage"
-    UserMarker {} -> "UserMarker"
-    Version {} -> "Version"
-    ProgramInvocation {} -> "ProgramInvocation"
-    CreateMachine {} -> "CreateMachine"
-    KillMachine {} -> "KillMachine"
-    CreateProcess {} -> "CreateProcess"
-    KillProcess {} -> "KillProcess"
-    AssignThreadToProcess {} -> "AssignThreadToProcess"
-    EdenStartReceive {} -> "EdenStartReceive"
-    EdenEndReceive {} -> "EdenEndReceive"
-    SendMessage {} -> "SendMessage"
-    ReceiveMessage {} -> "ReceiveMessage"
-    SendReceiveLocalMessage {} -> "SendReceiveLocalMessage"
-    InternString {} -> "InternString"
-    MerStartParConjunction {} -> "MerStartParConjunction"
-    MerEndParConjunction {} -> "MerEndParConjunction"
-    MerEndParConjunct {} -> "MerEndParConjunct"
-    MerCreateSpark {} -> "MerCreateSpark"
-    MerFutureCreate {} -> "MerFutureCreate"
-    MerFutureWaitNosuspend {} -> "MerFutureWaitNosuspend"
-    MerFutureWaitSuspended {} -> "MerFutureWaitSuspended"
-    MerFutureSignal {} -> "MerFutureSignal"
-    MerLookingForGlobalThread {} -> "MerLookingForGlobalThread"
-    MerWorkStealing {} -> "MerWorkStealing"
-    MerLookingForLocalSpark {} -> "MerLookingForLocalSpark"
-    MerReleaseThread {} -> "MerReleaseThread"
-    MerCapSleeping {} -> "MerCapSleeping"
-    MerCallingMain {} -> "MerCallingMain"
-    PerfName {} -> "PerfName"
-    PerfCounter {} -> "PerfCounter"
-    PerfTracepoint {} -> "PerfTracepoint"
-    HeapProfBegin {} -> "HeapProfBegin"
-    HeapProfCostCentre {} -> "HeapProfCostCentre"
-    InfoTableProv {} -> "InfoTableProv"
-    HeapProfSampleBegin {} -> "HeapProfSampleBegin"
-    HeapProfSampleEnd {} -> "HeapProfSampleEnd"
-    HeapBioProfSampleBegin {} -> "HeapBioProfSampleBegin"
-    HeapProfSampleCostCentre {} -> "HeapBioProfSampleCostCentre"
-    HeapProfSampleString {} -> "HeapProfSampleString"
-    ProfSampleCostCentre {} -> "ProfSampleCostCentre"
-    ProfBegin {} -> "ProfBegin"
-    UserBinaryMessage {} -> "UserBinaryMessage"
-    ConcMarkBegin {} -> "ConcMarkBegin"
-    ConcMarkEnd {} -> "ConcMarkEnd"
-    ConcSyncBegin {} -> "ConcSyncBegin"
-    ConcSyncEnd {} -> "ConcSyncEnd"
-    ConcSweepBegin {} -> "ConcSweepBegin"
-    ConcSweepEnd {} -> "ConcSweepEnd"
-    ConcUpdRemSetFlush {} -> "ConcUpdRemSetFlush"
-    NonmovingHeapCensus {} -> "NonmovingHeapCensus"
-    TickyCounterDef {} -> "TickyCounterDef"
-    TickyCounterSample {} -> "TickyCounterSample"
-    TickyBeginSample {} -> "TickyBeginSample"
+makeLenses ''LogcatState
 
-dump :: Socket -> IO ()
-dump sock = goHeader ""
+emptyLogcatState :: LogcatState
+emptyLogcatState = LogcatState Seq.empty Seq.empty Map.empty
+
+recordEvent :: TVar LogcatState -> Event -> IO ()
+recordEvent sref ev =
+  atomically $ modifyTVar' sref (logcatEventQueue %~ (|> ev))
+
+flushEventQueue :: TVar LogcatState -> IO ()
+flushEventQueue sref =
+  atomically $ do
+    s <- readTVar sref
+    let queue = s ^. logcatEventQueue
+        hist = s ^. logcatEventHisto
+        diff = aggregateCount $ fmap (eventInfoToString . evSpec) $ toList queue
+        hist' = L.foldl' histoAdd hist diff
+
+    modifyTVar' sref $
+      (logcatEventStore %~ (<> queue))
+        . (logcatEventQueue .~ Seq.empty)
+        . (logcatEventHisto .~ hist')
+
+dump :: TVar LogcatState -> Socket -> IO ()
+dump sref sock = goHeader ""
   where
     goHeader bs0 = do
       bs1 <- recv sock 1024
@@ -168,7 +97,7 @@ dump sock = goHeader ""
     go dec !bytes = do
       case dec of
         Produce ev dec' -> do
-          pPrint ev
+          recordEvent sref ev
           hFlush stdout
           go dec' bytes
         Consume k ->
@@ -177,7 +106,7 @@ dump sock = goHeader ""
             else go (k bytes) ""
         Done bytes' ->
           pure (Nothing, bytes')
-        Error bytes' e -> do
+        Error _bytes' e -> do
           pPrint e
           hFlush stdout
           -- reset if error happens.
@@ -189,13 +118,79 @@ dump sock = goHeader ""
       bytes'' <- recv sock 1024
       goEvents hdr dec' (bytes' <> bytes'')
 
+{-
+-- NOT IMPLEMENTED YET
+drawTimeline :: Seq Event -> R.Render ()
+drawTimeline evs = do
+  let x = fromIntegral (length evs) / 1000.0
+  R.setSourceRGBA 0.16 0.18 0.19 1.0
+  R.setLineWidth (1.5 / 60)
+  R.rectangle x 10 50 50
+  R.fill
+-}
+
+drawHistBar :: (String, Int) -> R.Render ()
+drawHistBar (ev, value) = do
+  let xoffset = 10
+      yoffset = 0
+      tag = fromMaybe 0 (L.lookup ev eventInfoEnumMap)
+  R.setSourceRGBA 0.16 0.18 0.19 1.0
+  R.setLineWidth (1.5 / 60)
+  let y = yoffset + 10.0 * fromIntegral tag
+      w = fromIntegral value / 100.0
+  R.moveTo xoffset (y + 10.0)
+  R.setFontSize 8.0
+  R.textPath ev
+  R.rectangle (xoffset + 100) (y + 2) w 8
+  R.fill
+  R.moveTo (xoffset + 104 + w) (y + 10.0)
+  R.textPath (show value)
+
+drawLogcatState :: TVar LogcatState -> R.Render ()
+drawLogcatState sref = do
+  s <- liftIO $ atomically $ readTVar sref
+  let -- evs = s ^. logcatEventStore
+      hist = s ^. logcatEventHisto
+  -- drawTimeline evs
+  for_ (Map.toAscList hist) $ \(ev, value) ->
+    drawHistBar (ev, value)
+
+tickTock :: Gtk.DrawingArea -> TVar LogcatState -> IO ()
+tickTock drawingArea sref = forever $ do
+  threadDelay 1_000_000
+  flushEventQueue sref
+  postGUIASync $
+    #queueDraw drawingArea
+
 main :: IO ()
 main = do
+  sref <- newTVarIO emptyLogcatState
+
+  _ <- Gtk.init Nothing
+  mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
+  drawingArea <- new Gtk.DrawingArea []
+  _ <- drawingArea `on` #draw $
+    renderWithContext $ do
+      drawLogcatState sref
+      pure True
+  layout <- do
+    vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
+    #packStart vbox drawingArea True True 0
+    pure vbox
+  #add mainWindow layout
+  #showAll mainWindow
+
+  _ <- forkIO $ tickTock drawingArea sref
+  _ <- forkIO $ receiver sref
+  Gtk.main
+
+receiver :: TVar LogcatState -> IO ()
+receiver sref =
   withSocketsDo $ do
     let file = "/tmp/eventlog.sock"
         open = do
           sock <- socket AF_UNIX Stream 0
           connect sock (SockAddrUnix file)
           pure sock
-    E.bracket open close dump
+    E.bracket open close (dump sref)
     pure ()

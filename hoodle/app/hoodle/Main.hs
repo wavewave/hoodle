@@ -18,7 +18,7 @@ main = do
   startWait "/tmp/eventlog.sock"
   _ <- forkIO $
     forever $ do
-      threadDelay 5_000_000
+      threadDelay 500_000
       flushEventLog
 #endif
   hoodleStartMain defaultScriptConfig

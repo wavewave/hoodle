@@ -2,7 +2,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -w #-}
 
 module Main where
 
@@ -14,8 +13,8 @@ import Control.Monad (forever)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.Fixed (Fixed (MkFixed))
-import Data.Foldable (for_, toList)
-import Data.GI.Base (AttrOp ((:=)), get, new, on)
+import Data.Foldable (toList)
+import Data.GI.Base (AttrOp ((:=)), new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
 import qualified Data.List as L (foldl')
 import Data.Maybe (fromMaybe)
@@ -29,7 +28,6 @@ import GHC.RTS.Events.Incremental
   )
 import qualified GI.Cairo.Render as R
 import GI.Cairo.Render.Connector (renderWithContext)
-import qualified GI.Gdk as Gdk
 import qualified GI.Gtk as Gtk
 import Network.Socket
   ( Family (AF_UNIX),
@@ -87,7 +85,6 @@ adjustTimelineOrigin s
     origin = s ^. logcatViewState . viewTimeOrigin
     ltime = s ^. logcatLastEventTime
     ltimePos = secToPixel origin ltime
-    viewportTimeLimit = pixelToSec origin canvasWidth
 
 flushEventQueue :: R.Surface -> TVar LogcatState -> IO ()
 flushEventQueue sfc sref = do

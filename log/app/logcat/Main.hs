@@ -151,6 +151,7 @@ drawTimeGrid :: R.Render ()
 drawTimeGrid = do
   let tmax = pixelToSec canvasWidth
       ts = [0, 1 .. tmax]
+      lblTs = [0, 10 .. tmax]
   R.setSourceRGBA 0 0 1 0.5
   R.setLineWidth 0.1
   R.setLineCap R.LineCapRound
@@ -159,6 +160,12 @@ drawTimeGrid = do
     let x = secToPixel t
     R.moveTo x 0
     R.lineTo x 150
+    R.stroke
+  R.setSourceRGBA 0 0 1 0.8
+  R.setFontSize 8
+  for_ lblTs $ \t -> do
+    R.moveTo (secToPixel t) 10
+    R.textPath (show (floor t :: Int) <> " s")
     R.stroke
 
 drawTimeline :: Seq Event -> R.Render ()
@@ -181,10 +188,12 @@ drawHistBar (xoffset, yoffset) (ev, value) = do
   R.moveTo xoffset (y + 10.0)
   R.setFontSize 8.0
   R.textPath ev
+  R.fill
   R.rectangle (xoffset + 100) (y + 2) w 8
   R.fill
   R.moveTo (xoffset + 104 + w) (y + 10.0)
   R.textPath (show value)
+  R.fill
 
 drawLogcatState :: TVar LogcatState -> R.Render ()
 drawLogcatState sref = do
@@ -197,6 +206,11 @@ drawLogcatState sref = do
   let xoffset = 10
       yoffset = 100
   drawTimeline evs
+  R.setSourceRGBA 0 0 1 0.8
+  R.setLineWidth 1
+  R.moveTo 0 150
+  R.lineTo canvasWidth 150
+  R.stroke
   for_ (Map.toAscList hist) $ \(ev, value) ->
     drawHistBar (xoffset, yoffset) (ev, value)
 

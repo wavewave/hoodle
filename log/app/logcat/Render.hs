@@ -49,7 +49,7 @@ timelineMargin :: Double
 timelineMargin = 300
 
 timelineScale :: Double
-timelineScale = 100
+timelineScale = 50
 
 secToPixel :: Nano -> Nano -> Double
 secToPixel origin sec =

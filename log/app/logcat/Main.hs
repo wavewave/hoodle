@@ -96,15 +96,11 @@ flushEventQueue sfc sref = do
         hist = s ^. logcatEventHisto
         diff = aggregateCount $ fmap (eventInfoToString . evSpec) $ toList queue
         hist' = L.foldl' histoAdd hist diff
-
     modifyTVar' sref $
       (logcatEventStore %~ (<> queue))
         . (logcatEventQueue .~ Seq.empty)
         . (logcatEventHisto .~ hist')
         . adjustTimelineOrigin
-
-  lastTime <- (^. logcatLastEventTime) <$> atomically (readTVar sref)
-  print lastTime
   R.renderWith sfc $ do
     drawLogcatState sref
 
@@ -167,33 +163,6 @@ main = do
     renderWithContext $ do
       flushDoubleBuffer sfc
       pure True
-  _ <- drawingArea `on` #buttonPressEvent $ \_btn -> do
-    {- putStrLn "--------------"
-    putStrLn "button pressed"
-    btnNum <- get btn #button
-    print btnNum -}
-    pure True
-  _ <- drawingArea `on` #motionNotifyEvent $ \_mtn -> do
-    {- putStrLn "--------------"
-    putStrLn "motion event"
-    mDev <- get mtn #device
-    for_ mDev $ \dev -> do
-      txt <- #getName dev
-      print txt -}
-    pure True
-  _ <- drawingArea `on` #buttonReleaseEvent $ \_btn -> do
-    {- putStrLn "---------------"
-    putStrLn "button released"
-    btnNum <- get btn #button
-    print btnNum -}
-    pure True
-  #addEvents
-    drawingArea
-    [ Gdk.EventMaskButtonPressMask,
-      Gdk.EventMaskButtonReleaseMask,
-      Gdk.EventMaskPointerMotionMask
-    ]
-
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
     #packStart vbox drawingArea True True 0

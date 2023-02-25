@@ -22,7 +22,6 @@ import qualified Data.List as L (foldl', lookup)
 import Data.Map (Map)
 import qualified Data.Map as Map (empty, toAscList)
 import Data.Maybe (fromMaybe)
--- import Data.Ratio ((%))
 import Data.Sequence (Seq, (|>))
 import qualified Data.Sequence as Seq (empty)
 import GHC.RTS.Events (Event (..))
@@ -66,8 +65,8 @@ recordEvent :: TVar LogcatState -> Event -> IO ()
 recordEvent sref ev =
   atomically $ modifyTVar' sref (logcatEventQueue %~ (|> ev))
 
-flushEventQueue :: TVar LogcatState -> IO ()
-flushEventQueue sref =
+flushEventQueue :: R.Surface -> TVar LogcatState -> IO ()
+flushEventQueue sfc sref = do
   atomically $ do
     s <- readTVar sref
     let queue = s ^. logcatEventQueue
@@ -79,6 +78,8 @@ flushEventQueue sref =
       (logcatEventStore %~ (<> queue))
         . (logcatEventQueue .~ Seq.empty)
         . (logcatEventHisto .~ hist')
+  R.renderWith sfc $ do
+    drawLogcatState sref
 
 dump :: TVar LogcatState -> Socket -> IO ()
 dump sref sock = goHeader ""
@@ -158,6 +159,9 @@ drawHistBar (xoffset, yoffset) (ev, value) = do
 
 drawLogcatState :: TVar LogcatState -> R.Render ()
 drawLogcatState sref = do
+  R.setSourceRGB 1 1 1
+  R.rectangle 0 0 1440 768
+  R.fill
   s <- liftIO $ atomically $ readTVar sref
   let evs = s ^. logcatEventStore
       hist = s ^. logcatEventHisto
@@ -167,10 +171,16 @@ drawLogcatState sref = do
   for_ (Map.toAscList hist) $ \(ev, value) ->
     drawHistBar (xoffset, yoffset) (ev, value)
 
-tickTock :: Gtk.DrawingArea -> TVar LogcatState -> IO ()
-tickTock drawingArea sref = forever $ do
+flushDoubleBuffer :: R.Surface -> R.Render ()
+flushDoubleBuffer sfc = do
+  R.setSourceSurface sfc 0 0
+  R.setOperator R.OperatorSource
+  R.paint
+
+tickTock :: Gtk.DrawingArea -> R.Surface -> TVar LogcatState -> IO ()
+tickTock drawingArea sfc sref = forever $ do
   threadDelay 1_000_000
-  flushEventQueue sref
+  flushEventQueue sfc sref
   postGUIASync $
     #queueDraw drawingArea
 
@@ -178,11 +188,13 @@ main :: IO ()
 main = do
   sref <- newTVarIO emptyLogcatState
   _ <- Gtk.init Nothing
+  -- NOTE: this should be closed with surfaceDestroy
+  sfc <- R.createImageSurface R.FormatARGB32 1440 768
   mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
   drawingArea <- new Gtk.DrawingArea []
   _ <- drawingArea `on` #draw $
     renderWithContext $ do
-      drawLogcatState sref
+      flushDoubleBuffer sfc
       pure True
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
@@ -192,7 +204,7 @@ main = do
   #setDefaultSize mainWindow 1440 768
   #showAll mainWindow
 
-  _ <- forkIO $ tickTock drawingArea sref
+  _ <- forkIO $ tickTock drawingArea sfc sref
   _ <- forkIO $ receiver sref
   Gtk.main
 

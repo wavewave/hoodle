@@ -18,7 +18,9 @@ Source-repository head
 
 Executable logcat
   Main-is:        Main.hs
-  other-modules:  Util.Event
+  other-modules:  Render
+                  Types
+                  Util.Event
                   Util.Histo
   hs-source-dirs: app/logcat
   ghc-options: -j -Wall -Werror -threaded -rtsopts

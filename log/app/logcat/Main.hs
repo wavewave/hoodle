@@ -7,7 +7,7 @@
 
 module Main where
 
-import Control (Control, stepControl, tick)
+import Control (Control, nextEvent, stepControl)
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVar)
@@ -16,6 +16,7 @@ import Control.Lens ((%~), (.~), (^.))
 import Control.Monad (forever, replicateM_)
 import Control.Monad.Extra (loopM)
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Reader (runReaderT)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.Fixed (Fixed (MkFixed))
@@ -157,7 +158,7 @@ tickTock drawingArea sfc sref = forever $ do
     #queueDraw drawingArea
 
 controlLoop :: Control ()
-controlLoop = replicateM_ 100 tick
+controlLoop = replicateM_ 100 nextEvent
 
 waitGUIEvent :: MVar () -> IO ()
 waitGUIEvent lock = takeMVar lock
@@ -216,7 +217,10 @@ main = do
 
   _ <- forkIO $ tickTock drawingArea sfc sref
   _ <- forkIO $ receiver sref
-  _ <- forkIO $ loopM (\c -> waitGUIEvent lock >> stepControl c) controlLoop
+  _ <-
+    forkIO $
+      flip runReaderT sref $
+        loopM (\c -> liftIO (waitGUIEvent lock) >> stepControl c) controlLoop
 
   Gtk.main
   R.surfaceFinish sfc

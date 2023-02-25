@@ -42,7 +42,8 @@ Executable logcat
                   lens > 5,
                   network,
                   pretty-simple,
-                  stm
+                  stm,
+                  transformers
 
 Executable testApp
   Main-is:        Main.hs

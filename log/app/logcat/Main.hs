@@ -121,11 +121,25 @@ dump sref sock = goHeader ""
       bytes'' <- recv sock 1024
       goEvents hdr dec' (bytes' <> bytes'')
 
+canvasWidth :: Double
+canvasWidth = 1440
+
+canvasHeight :: Double
+canvasHeight = 768
+
+secToPixel :: Nano -> Double
+secToPixel sec =
+  realToFrac sec * 10.0 + 10
+
+pixelToSec :: Double -> Nano
+pixelToSec px =
+  realToFrac ((px - 10.0) / 10.0)
+
 drawEventMark :: Event -> R.Render ()
 drawEventMark ev = do
   let sec = MkFixed (fromIntegral (evTime ev)) :: Nano
-      x :: Double
-      x = realToFrac sec * 10.0 + 10
+      --  x :: Double
+      x = secToPixel sec -- realToFrac sec * 10.0 + 10
       evname = eventInfoToString (evSpec ev)
       tag = fromMaybe 0 (L.lookup evname eventInfoEnumMap)
       y = fromIntegral tag * 3.0
@@ -133,8 +147,23 @@ drawEventMark ev = do
   R.lineTo x (y + 2)
   R.stroke
 
+drawTimeGrid :: R.Render ()
+drawTimeGrid = do
+  let tmax = pixelToSec canvasWidth
+      ts = [0, 1 .. tmax]
+  R.setSourceRGBA 0 0 1 0.5
+  R.setLineWidth 0.1
+  R.setLineCap R.LineCapRound
+  R.setLineJoin R.LineJoinRound
+  for_ ts $ \t -> do
+    let x = secToPixel t
+    R.moveTo x 0
+    R.lineTo x 150
+    R.stroke
+
 drawTimeline :: Seq Event -> R.Render ()
 drawTimeline evs = do
+  drawTimeGrid
   R.setSourceRGBA 0.16 0.18 0.19 1.0
   R.setLineWidth 0.3
   R.setLineCap R.LineCapRound
@@ -160,7 +189,7 @@ drawHistBar (xoffset, yoffset) (ev, value) = do
 drawLogcatState :: TVar LogcatState -> R.Render ()
 drawLogcatState sref = do
   R.setSourceRGB 1 1 1
-  R.rectangle 0 0 1440 768
+  R.rectangle 0 0 canvasWidth canvasHeight
   R.fill
   s <- liftIO $ atomically $ readTVar sref
   let evs = s ^. logcatEventStore
@@ -189,7 +218,7 @@ main = do
   sref <- newTVarIO emptyLogcatState
   _ <- Gtk.init Nothing
   -- NOTE: this should be closed with surfaceDestroy
-  sfc <- R.createImageSurface R.FormatARGB32 1440 768
+  sfc <- R.createImageSurface R.FormatARGB32 (floor canvasWidth) (floor canvasHeight)
   mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
   drawingArea <- new Gtk.DrawingArea []
   _ <- drawingArea `on` #draw $
@@ -201,12 +230,13 @@ main = do
     #packStart vbox drawingArea True True 0
     pure vbox
   #add mainWindow layout
-  #setDefaultSize mainWindow 1440 768
+  #setDefaultSize mainWindow (floor canvasWidth) (floor canvasHeight)
   #showAll mainWindow
 
   _ <- forkIO $ tickTock drawingArea sfc sref
   _ <- forkIO $ receiver sref
   Gtk.main
+  R.surfaceFinish sfc
 
 receiver :: TVar LogcatState -> IO ()
 receiver sref =

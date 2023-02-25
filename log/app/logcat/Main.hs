@@ -2,6 +2,7 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -w #-}
 
 module Main where
 
@@ -12,8 +13,9 @@ import Control.Lens ((%~), (.~), (^.))
 import Control.Monad (forever)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
-import Data.Foldable (toList)
-import Data.GI.Base (AttrOp ((:=)), new, on)
+import Data.Fixed (Fixed (MkFixed))
+import Data.Foldable (for_, toList)
+import Data.GI.Base (AttrOp ((:=)), get, new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
 import qualified Data.List as L (foldl')
 import Data.Maybe (fromMaybe)
@@ -54,7 +56,14 @@ import Util.Histo (aggregateCount, histoAdd)
 
 recordEvent :: TVar LogcatState -> Event -> IO ()
 recordEvent sref ev =
-  atomically $ modifyTVar' sref (logcatEventQueue %~ (|> ev))
+  atomically $ do
+    ltime <- (^. logcatLastEventTime) <$> readTVar sref
+    let sec = MkFixed (fromIntegral (evTime ev))
+        updateLastEventTime =
+          if sec > ltime
+            then logcatLastEventTime .~ sec
+            else id
+    modifyTVar' sref ((logcatEventQueue %~ (|> ev)) . updateLastEventTime)
 
 flushEventQueue :: R.Surface -> TVar LogcatState -> IO ()
 flushEventQueue sfc sref = do
@@ -69,6 +78,9 @@ flushEventQueue sfc sref = do
       (logcatEventStore %~ (<> queue))
         . (logcatEventQueue .~ Seq.empty)
         . (logcatEventHisto .~ hist')
+
+  lastTime <- (^. logcatLastEventTime) <$> atomically (readTVar sref)
+  print lastTime
   R.renderWith sfc $ do
     drawLogcatState sref
 
@@ -131,13 +143,33 @@ main = do
     renderWithContext $ do
       flushDoubleBuffer sfc
       pure True
-  _ <- drawingArea `on` #buttonPressEvent $ \_ -> do
+  _ <- drawingArea `on` #buttonPressEvent $ \_btn -> do
+    {- putStrLn "--------------"
     putStrLn "button pressed"
+    btnNum <- get btn #button
+    print btnNum -}
     pure True
-  _ <- drawingArea `on` #buttonReleaseEvent $ \_ -> do
+  _ <- drawingArea `on` #motionNotifyEvent $ \_mtn -> do
+    {- putStrLn "--------------"
+    putStrLn "motion event"
+    mDev <- get mtn #device
+    for_ mDev $ \dev -> do
+      txt <- #getName dev
+      print txt -}
+    pure True
+  _ <- drawingArea `on` #buttonReleaseEvent $ \_btn -> do
+    {- putStrLn "---------------"
     putStrLn "button released"
+    btnNum <- get btn #button
+    print btnNum -}
     pure True
-  #addEvents drawingArea [Gdk.EventMaskButtonPressMask, Gdk.EventMaskButtonReleaseMask]
+  #addEvents
+    drawingArea
+    [ Gdk.EventMaskButtonPressMask,
+      Gdk.EventMaskButtonReleaseMask,
+      Gdk.EventMaskPointerMotionMask
+    ]
+
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
     #packStart vbox drawingArea True True 0

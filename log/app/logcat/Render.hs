@@ -23,7 +23,12 @@ import Data.Maybe (fromMaybe)
 import Data.Sequence (Seq)
 import GHC.RTS.Events (Event (..))
 import qualified GI.Cairo.Render as R
-import Types (HasLogcatState (..), LogcatState)
+import Types
+  ( HasLogcatState (..),
+    HasViewState (..),
+    LogcatState,
+    ViewState,
+  )
 import Util.Event (eventInfoEnumMap, eventInfoToString)
 
 canvasWidth :: Double
@@ -32,19 +37,22 @@ canvasWidth = 1440
 canvasHeight :: Double
 canvasHeight = 768
 
-secToPixel :: Nano -> Double
-secToPixel sec =
-  realToFrac sec * 10.0 + 10
+-- timelineMargin :: Double
+-- timelineMargin = 300
 
-pixelToSec :: Double -> Nano
-pixelToSec px =
-  realToFrac ((px - 10.0) / 10.0)
+secToPixel :: Nano -> Nano -> Double
+secToPixel origin sec =
+  realToFrac (sec - origin) * 10.0 + 10
 
-drawEventMark :: Event -> R.Render ()
-drawEventMark ev = do
-  let sec = MkFixed (fromIntegral (evTime ev)) :: Nano
-      --  x :: Double
-      x = secToPixel sec -- realToFrac sec * 10.0 + 10
+pixelToSec :: Nano -> Double -> Nano
+pixelToSec origin px =
+  realToFrac ((px - 10.0) / 10.0) + origin
+
+drawEventMark :: ViewState -> Event -> R.Render ()
+drawEventMark vs ev = do
+  let origin = vs ^. viewTimeRange
+      sec = MkFixed (fromIntegral (evTime ev)) :: Nano
+      x = secToPixel origin sec
       evname = eventInfoToString (evSpec ev)
       tag = fromMaybe 0 (L.lookup evname eventInfoEnumMap)
       y = fromIntegral tag * 3.0
@@ -52,9 +60,10 @@ drawEventMark ev = do
   R.lineTo x (y + 2)
   R.stroke
 
-drawTimeGrid :: R.Render ()
-drawTimeGrid = do
-  let tmax = pixelToSec canvasWidth
+drawTimeGrid :: ViewState -> R.Render ()
+drawTimeGrid vs = do
+  let origin = vs ^. viewTimeRange
+      tmax = pixelToSec origin canvasWidth
       ts = [0, 1 .. tmax]
       lblTs = [0, 10 .. tmax]
   R.setSourceRGBA 0 0 1 0.5
@@ -62,26 +71,26 @@ drawTimeGrid = do
   R.setLineCap R.LineCapRound
   R.setLineJoin R.LineJoinRound
   for_ ts $ \t -> do
-    let x = secToPixel t
+    let x = secToPixel origin t
     R.moveTo x 0
     R.lineTo x 150
     R.stroke
   R.setSourceRGBA 0 0 1 0.8
   R.setFontSize 8
   for_ lblTs $ \t -> do
-    R.moveTo (secToPixel t) 10
+    R.moveTo (secToPixel origin t) 10
     R.textPath (show (floor t :: Int) <> " s")
     R.stroke
 
-drawTimeline :: Seq Event -> R.Render ()
-drawTimeline evs = do
-  drawTimeGrid
+drawTimeline :: ViewState -> Seq Event -> R.Render ()
+drawTimeline vs evs = do
+  drawTimeGrid vs
   R.setSourceRGBA 0.16 0.18 0.19 1.0
   R.setLineWidth 0.3
   R.setLineCap R.LineCapRound
   R.setLineJoin R.LineJoinRound
   for_ evs $ \ev ->
-    drawEventMark ev
+    drawEventMark vs ev
 
 drawHistBar :: (Double, Double) -> (String, Int) -> R.Render ()
 drawHistBar (xoffset, yoffset) (ev, value) = do
@@ -108,9 +117,10 @@ drawLogcatState sref = do
   s <- liftIO $ atomically $ readTVar sref
   let evs = s ^. logcatEventStore
       hist = s ^. logcatEventHisto
+      vs = s ^. logcatViewState
   let xoffset = 10
       yoffset = 100
-  drawTimeline evs
+  drawTimeline vs evs
   R.setSourceRGBA 0 0 1 0.8
   R.setLineWidth 1
   R.moveTo 0 150

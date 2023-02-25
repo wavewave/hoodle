@@ -10,11 +10,12 @@ import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVa
 import qualified Control.Exception as E
 import Control.Lens ((%~), (.~), (^.))
 import Control.Monad (forever)
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Data.Fixed (Fixed (MkFixed))
-import Data.Foldable (toList)
-import Data.GI.Base (AttrOp ((:=)), new, on)
+import Data.Foldable (for_, toList)
+import Data.GI.Base (AttrOp ((:=)), get, new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
 import qualified Data.List as L (foldl')
 import Data.Maybe (fromMaybe)
@@ -28,6 +29,7 @@ import GHC.RTS.Events.Incremental
   )
 import qualified GI.Cairo.Render as R
 import GI.Cairo.Render.Connector (renderWithContext)
+import qualified GI.Gdk as Gdk
 import qualified GI.Gtk as Gtk
 import Network.Socket
   ( Family (AF_UNIX),
@@ -153,9 +155,13 @@ main :: IO ()
 main = do
   sref <- newTVarIO emptyLogcatState
   _ <- Gtk.init Nothing
-  -- NOTE: this should be closed with surfaceDestroy
+  -- NOTE: this should be closed with surfaceFinish
   sfc <- R.createImageSurface R.FormatARGB32 (floor canvasWidth) (floor canvasHeight)
   mainWindow <- new Gtk.Window [#type := Gtk.WindowTypeToplevel]
+  _ <-
+    mainWindow `on` #destroy $ do
+      liftIO $ putStrLn "I am quitting"
+      Gtk.mainQuit
   drawingArea <- new Gtk.DrawingArea []
   _ <- drawingArea `on` #draw $
     renderWithContext $ do

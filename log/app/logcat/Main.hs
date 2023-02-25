@@ -12,6 +12,7 @@ import Control.Lens ((%~), (.~), (^.))
 import Control.Monad (forever)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import Data.Fixed (Fixed (MkFixed))
 import Data.Foldable (toList)
 import Data.GI.Base (AttrOp ((:=)), new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
@@ -44,16 +45,46 @@ import Render
     canvasWidth,
     drawLogcatState,
     flushDoubleBuffer,
+    pixelToSec,
+    secToPixel,
+    timelineMargin,
   )
 import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
-import Types (HasLogcatState (..), LogcatState, emptyLogcatState)
+import Types
+  ( HasLogcatState (..),
+    HasViewState (..),
+    LogcatState,
+    emptyLogcatState,
+  )
 import Util.Event (eventInfoToString)
 import Util.Histo (aggregateCount, histoAdd)
 
 recordEvent :: TVar LogcatState -> Event -> IO ()
 recordEvent sref ev =
-  atomically $ modifyTVar' sref (logcatEventQueue %~ (|> ev))
+  atomically $ do
+    ltime <- (^. logcatLastEventTime) <$> readTVar sref
+    let sec = MkFixed (fromIntegral (evTime ev))
+        updateLastEventTime =
+          if sec > ltime
+            then logcatLastEventTime .~ sec
+            else id
+    modifyTVar' sref ((logcatEventQueue %~ (|> ev)) . updateLastEventTime)
+
+-- | Adjust timeline viewport to ensure the last event is out of the right margin
+-- of the timeline. This checks if the last event falls under the margin, and if so,
+-- move the plot origin to make the last event at the center of the timeline.
+adjustTimelineOrigin :: LogcatState -> LogcatState
+adjustTimelineOrigin s
+  | ltimePos > canvasWidth - timelineMargin =
+    let currCenterTime = pixelToSec origin (canvasWidth * 0.5)
+        deltaTime = ltime - currCenterTime
+     in (logcatViewState . viewTimeOrigin %~ (\x -> x + deltaTime)) s
+  | otherwise = s
+  where
+    origin = s ^. logcatViewState . viewTimeOrigin
+    ltime = s ^. logcatLastEventTime
+    ltimePos = secToPixel origin ltime
 
 flushEventQueue :: R.Surface -> TVar LogcatState -> IO ()
 flushEventQueue sfc sref = do
@@ -63,11 +94,11 @@ flushEventQueue sfc sref = do
         hist = s ^. logcatEventHisto
         diff = aggregateCount $ fmap (eventInfoToString . evSpec) $ toList queue
         hist' = L.foldl' histoAdd hist diff
-
     modifyTVar' sref $
       (logcatEventStore %~ (<> queue))
         . (logcatEventQueue .~ Seq.empty)
         . (logcatEventHisto .~ hist')
+        . adjustTimelineOrigin
   R.renderWith sfc $ do
     drawLogcatState sref
 

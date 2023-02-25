@@ -47,10 +47,18 @@ import Render
     canvasWidth,
     drawLogcatState,
     flushDoubleBuffer,
+    pixelToSec,
+    secToPixel,
+    timelineMargin,
   )
 import System.IO (hFlush, stdout)
 import Text.Pretty.Simple (pPrint)
-import Types (HasLogcatState (..), LogcatState, emptyLogcatState)
+import Types
+  ( HasLogcatState (..),
+    HasViewState (..),
+    LogcatState,
+    emptyLogcatState,
+  )
 import Util.Event (eventInfoToString)
 import Util.Histo (aggregateCount, histoAdd)
 
@@ -65,6 +73,21 @@ recordEvent sref ev =
             else id
     modifyTVar' sref ((logcatEventQueue %~ (|> ev)) . updateLastEventTime)
 
+-- | When this function is applied, the last event should be outside of the
+--   right margin of the current timeline plot.
+adjustTimelineOrigin :: LogcatState -> LogcatState
+adjustTimelineOrigin s
+  | ltimePos > canvasWidth - timelineMargin =
+    let currCenterTime = pixelToSec origin (canvasWidth * 0.5)
+        deltaTime = ltime - currCenterTime
+     in (logcatViewState . viewTimeOrigin %~ (\x -> x + deltaTime)) s
+  | otherwise = s
+  where
+    origin = s ^. logcatViewState . viewTimeOrigin
+    ltime = s ^. logcatLastEventTime
+    ltimePos = secToPixel origin ltime
+    viewportTimeLimit = pixelToSec origin canvasWidth
+
 flushEventQueue :: R.Surface -> TVar LogcatState -> IO ()
 flushEventQueue sfc sref = do
   atomically $ do
@@ -78,6 +101,7 @@ flushEventQueue sfc sref = do
       (logcatEventStore %~ (<> queue))
         . (logcatEventQueue .~ Seq.empty)
         . (logcatEventHisto .~ hist')
+        . adjustTimelineOrigin
 
   lastTime <- (^. logcatLastEventTime) <$> atomically (readTVar sref)
   print lastTime

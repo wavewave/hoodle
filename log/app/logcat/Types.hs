@@ -23,7 +23,7 @@ import GHC.RTS.Events (Event (..))
 
 data ViewState = ViewState
   { -- | start point of the timeline view
-    _viewTimeRange :: Nano
+    _viewTimeOrigin :: Nano
   }
 
 makeClassy ''ViewState

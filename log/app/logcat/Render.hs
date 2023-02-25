@@ -1,13 +1,21 @@
 module Render
-  ( canvasWidth,
+  ( -- * GUI parameters
+    canvasWidth,
     canvasHeight,
+    timelineMargin,
+
+    -- * conversion function
     secToPixel,
     pixelToSec,
+
+    -- * draw functions
     drawEventMark,
     drawTimeGrid,
     drawTimeline,
     drawHistBar,
     drawLogcatState,
+
+    -- * flush double buffer
     flushDoubleBuffer,
   )
 where
@@ -37,20 +45,23 @@ canvasWidth = 1440
 canvasHeight :: Double
 canvasHeight = 768
 
--- timelineMargin :: Double
--- timelineMargin = 300
+timelineMargin :: Double
+timelineMargin = 300
+
+timelineScale :: Double
+timelineScale = 100
 
 secToPixel :: Nano -> Nano -> Double
 secToPixel origin sec =
-  realToFrac (sec - origin) * 10.0 + 10
+  realToFrac (sec - origin) * timelineScale + 10.0
 
 pixelToSec :: Nano -> Double -> Nano
 pixelToSec origin px =
-  realToFrac ((px - 10.0) / 10.0) + origin
+  realToFrac ((px - 10.0) / timelineScale) + origin
 
 drawEventMark :: ViewState -> Event -> R.Render ()
 drawEventMark vs ev = do
-  let origin = vs ^. viewTimeRange
+  let origin = vs ^. viewTimeOrigin
       sec = MkFixed (fromIntegral (evTime ev)) :: Nano
       x = secToPixel origin sec
       evname = eventInfoToString (evSpec ev)
@@ -62,7 +73,7 @@ drawEventMark vs ev = do
 
 drawTimeGrid :: ViewState -> R.Render ()
 drawTimeGrid vs = do
-  let origin = vs ^. viewTimeRange
+  let origin = vs ^. viewTimeOrigin
       tmax = pixelToSec origin canvasWidth
       ts = [0, 1 .. tmax]
       lblTs = [0, 10 .. tmax]

@@ -31,6 +31,7 @@ Executable logcat
                   gi-cairo,
                   gi-cairo-connector >= 0.1.1,
                   gi-cairo-render >= 0.1.2,
+                  gi-gdk,
                   gi-gtk,
                   gi-gtk-hs,
                   ghc-events,

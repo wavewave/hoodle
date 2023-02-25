@@ -27,6 +27,7 @@ import GHC.RTS.Events.Incremental
   )
 import qualified GI.Cairo.Render as R
 import GI.Cairo.Render.Connector (renderWithContext)
+import qualified GI.Gdk as Gdk
 import qualified GI.Gtk as Gtk
 import Network.Socket
   ( Family (AF_UNIX),
@@ -130,6 +131,13 @@ main = do
     renderWithContext $ do
       flushDoubleBuffer sfc
       pure True
+  _ <- drawingArea `on` #buttonPressEvent $ \_ -> do
+    putStrLn "button pressed"
+    pure True
+  _ <- drawingArea `on` #buttonReleaseEvent $ \_ -> do
+    putStrLn "button released"
+    pure True
+  #addEvents drawingArea [Gdk.EventMaskButtonPressMask, Gdk.EventMaskButtonReleaseMask]
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
     #packStart vbox drawingArea True True 0

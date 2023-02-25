@@ -2,14 +2,19 @@
 {-# LANGUAGE NumericUnderscores #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -w #-}
 
 module Main where
 
+import Control (Control, stepControl, tick)
 import Control.Concurrent (forkIO, threadDelay)
+import Control.Concurrent.MVar (MVar, newEmptyMVar, putMVar, takeMVar)
 import Control.Concurrent.STM (TVar, atomically, modifyTVar', newTVarIO, readTVar)
 import qualified Control.Exception as E
 import Control.Lens ((%~), (.~), (^.))
-import Control.Monad (forever)
+import Control.Monad (forever, replicateM_)
+import Control.Monad.Extra (loopM)
 import Control.Monad.IO.Class (liftIO)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
@@ -151,9 +156,16 @@ tickTock drawingArea sfc sref = forever $ do
   postGUIASync $
     #queueDraw drawingArea
 
+controlLoop :: Control ()
+controlLoop = replicateM_ 100 tick
+
+waitGUIEvent :: MVar () -> IO ()
+waitGUIEvent lock = takeMVar lock
+
 main :: IO ()
 main = do
   sref <- newTVarIO emptyLogcatState
+  lock :: MVar () <- newEmptyMVar
   _ <- Gtk.init Nothing
   -- NOTE: this should be closed with surfaceFinish
   sfc <- R.createImageSurface R.FormatARGB32 (floor canvasWidth) (floor canvasHeight)
@@ -168,6 +180,7 @@ main = do
       flushDoubleBuffer sfc
       pure True
   _ <- drawingArea `on` #buttonPressEvent $ \btn -> do
+    putMVar lock ()
     putStrLn "------------"
     putStrLn "button pressed"
     btnNum <- get btn #button
@@ -203,6 +216,8 @@ main = do
 
   _ <- forkIO $ tickTock drawingArea sfc sref
   _ <- forkIO $ receiver sref
+  _ <- forkIO $ loopM (\c -> waitGUIEvent lock >> stepControl c) controlLoop
+
   Gtk.main
   R.surfaceFinish sfc
 

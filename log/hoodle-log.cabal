@@ -18,7 +18,8 @@ Source-repository head
 
 Executable logcat
   Main-is:        Main.hs
-  other-modules:  Render
+  other-modules:  Control
+                  Render
                   Types
                   Util.Event
                   Util.Histo
@@ -28,6 +29,8 @@ Executable logcat
                   base == 4.*,
                   bytestring,
                   containers,
+                  extra,
+                  free,
                   gi-cairo,
                   gi-cairo-connector >= 0.1.1,
                   gi-cairo-render >= 0.1.2,

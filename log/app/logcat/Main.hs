@@ -73,8 +73,9 @@ recordEvent sref ev =
             else id
     modifyTVar' sref ((logcatEventQueue %~ (|> ev)) . updateLastEventTime)
 
--- | When this function is applied, the last event should be outside of the
---   right margin of the current timeline plot.
+-- | Adjust timeline viewport to ensure the last event is out of the right margin
+-- of the timeline. This checks if the last event falls under the margin, and if so,
+-- move the plot origin to make the last event at the center of the timeline.
 adjustTimelineOrigin :: LogcatState -> LogcatState
 adjustTimelineOrigin s
   | ltimePos > canvasWidth - timelineMargin =

@@ -7,6 +7,10 @@ repository head.hackage.ghc.haskell.org
        7541f32a4ccca4f97aea3b22f5e593ba2c0267546016b992dfadcd2fe944e55d
        f76d08be13e9a61a377a85e2fb63f4c5435d40f8feb3e12eb05905edb8cdea89
 
+index-state:
+  hackage.haskell.org 2023-02-27T18:52:07Z,
+  head.hackage.ghc.haskell.org 2023-02-16T05:32:02Z
+
 source-repository-package
         type: git
         location: https://github.com/conal/TypeCompose.git

@@ -16,10 +16,11 @@ source-repository-package
         location: https://github.com/conal/TypeCompose.git
         tag: daf13efa6e6b37960de98146bab4a061462fc22b
 
+-- branch: wavewave/darwin-flake
 source-repository-package
         type: git
         location: https://github.com/wavewave/ghc-eventlog-socket.git
-        tag: ef3ac4b6c65f493ce1549d9f842e7a434a9db4a2
+        tag: a7057098ce8b29fddf8cca8f46d291bd6d7fd2ed
 
 -- gtk2hs
 

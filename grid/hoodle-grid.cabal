@@ -20,6 +20,7 @@ Executable grid
   Main-is:        Main.hs
   hs-source-dirs: app
   ghc-options: -j -Wall -threaded -rtsopts
+  default-language: GHC2021
   Build-Depends:
                   base == 4.*,
                   gi-cairo,
@@ -28,4 +29,6 @@ Executable grid
                   gi-gdk,
                   gi-gtk,
                   gi-gtk-hs,
+                  gi-pango,
+                  gi-pangocairo,
                   haskell-gi-base

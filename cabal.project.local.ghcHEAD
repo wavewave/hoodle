@@ -74,14 +74,27 @@ source-repository-package
 
 source-repository-package
         type: git
-        location: https://github.com/wavewave/haskell-gi.git
-        tag: 63e1aa2694213f77c7d1ca50af899497205905ef
+        location: https://github.com/haskell-gi/haskell-gi.git
+        tag: 865310014727ded27752e763422b8b9ecd23d56c
         subdir: base
 
 source-repository-package
         type: git
+        location: https://github.com/haskell-gi/haskell-gi.git
+        tag: 865310014727ded27752e763422b8b9ecd23d56c
+
+-- gi-gtk: wavewave/GestureZoom-new-fix-temp
+source-repository-package
+        type: git
         location: https://github.com/wavewave/haskell-gi.git
-        tag: 63e1aa2694213f77c7d1ca50af899497205905ef
+        tag: 88f9aaffe381f550aebedbfff6cea7dfe38d6313
+        subdir: bindings/Gtk-3.0
+
+source-repository-package
+        type: git
+        location: https://github.com/haskell-gi/haskell-gi.git
+        tag: 865310014727ded27752e763422b8b9ecd23d56c
+        subdir: cairo/gi-cairo-render
 
 allow-newer:
   Cabal,

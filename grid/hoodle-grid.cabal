@@ -31,4 +31,5 @@ Executable grid
                   gi-gtk-hs,
                   gi-pango,
                   gi-pangocairo,
-                  haskell-gi-base
+                  haskell-gi-base,
+                  text

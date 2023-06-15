@@ -4,7 +4,7 @@
 module Main where
 
 import Data.Foldable (for_)
-import Data.GI.Base (AttrOp ((:=)), new, on)
+import Data.GI.Base (AttrOp ((:=)), after, get, new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
 import Data.IORef (newIORef, modifyIORef', readIORef)
 import Data.Maybe (fromMaybe)
@@ -43,6 +43,31 @@ data GridState = GridState
   , gridTempViewPort :: Maybe ViewPort
   }
   deriving (Show)
+
+-- | scroll
+transformScroll ::
+  Gdk.ScrollDirection ->
+  Double ->
+  (Double, Double) ->
+  ViewPort ->
+  ViewPort
+transformScroll dir scale (dx, dy) vp = vp'
+  where
+    ViewPort (x0, y0) (x1, y1) = vp
+    dx' = dx / scale
+    dy' = dy / scale
+
+    vp' = case dir of
+      Gdk.ScrollDirectionRight ->
+        ViewPort (x0 + dx', y0) (x1 + dx', y1)
+      Gdk.ScrollDirectionLeft ->
+        ViewPort (x0 - dx', y0) (x1 - dx', y1)
+      Gdk.ScrollDirectionDown ->
+        ViewPort (x0, y0 + dy') (x1, y1 + dy')
+      Gdk.ScrollDirectionUp ->
+        ViewPort (x0, y0 - dy') (x1, y1 - dy')
+      Gdk.ScrollDirectionSmooth ->
+        ViewPort (x0 + dx', y0 + dy') (x1 + dx', y1 + dy')
 
 -- | zoom
 transformZoom ::
@@ -137,13 +162,35 @@ main = do
   drawingArea <- new Gtk.DrawingArea []
   #addEvents
     drawingArea
-    [ Gdk.EventMaskTouchpadGestureMask
+    [ Gdk.EventMaskScrollMask
+    , Gdk.EventMaskTouchpadGestureMask
     ]
   _ <- drawingArea `on` #draw $
     RC.renderWithContext $ do
       s <- R.liftIO $ readIORef ref
       R.liftIO $ print s
       myDraw (pangoCtxt, descSans, descMono) s
+      pure True
+  _ <- drawingArea
+    `after` #scrollEvent
+    $ \ev -> do
+      x <- get ev #x
+      y <- get ev #y
+      dx <- get ev #deltaX
+      dy <- get ev #deltaY
+      dir <- get ev #direction
+      print (dir, x, y , dx, dy)
+      modifyIORef' ref $ \s ->
+        let cx0 = 0
+            cx1 = 640
+            vp@(ViewPort (vx0, _) (vx1, _)) = gridViewPort s
+            scale = (cx1 - cx0) / (vx1 - vx0)
+            vp' = transformScroll dir scale (dx, dy) vp
+         in s
+              { gridViewPort = vp'
+              , gridTempViewPort = Nothing
+              }
+      postGUIASync (#queueDraw drawingArea)
       pure True
   gzoom <- Gtk.gestureZoomNew drawingArea
   _ <- gzoom
@@ -172,6 +219,7 @@ main = do
               , gridTempViewPort = Nothing
               }
       postGUIASync (#queueDraw drawingArea)
+  #setPropagationPhase gzoom Gtk.PropagationPhaseBubble
   layout <- do
     vbox <- new Gtk.Box [#orientation := Gtk.OrientationVertical, #spacing := 0]
     #packStart vbox drawingArea True True 0

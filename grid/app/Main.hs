@@ -18,6 +18,15 @@ import GI.Gtk qualified as Gtk
 import GI.Pango qualified as P
 import GI.PangoCairo qualified as PC
 
+data ViewPort = ViewPort (Double, Double) (Double, Double)
+  deriving (Show)
+
+data GridState = GridState
+  { gridViewPort :: ViewPort
+  , gridTempViewPort :: Maybe ViewPort
+  }
+  deriving (Show)
+
 loremIpsum :: Text
 loremIpsum =
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit, \n\
@@ -29,20 +38,32 @@ loremIpsum =
   \ur sint occaecat cupidatat non proident, sunt in culpa qu\n\
   \i officia deserunt mollit anim id est laborum."
 
-xs :: [Double]
-xs = [0, 128 .. 1024]
+gridInViewPort :: ViewPort -> ([Double], [Double])
+gridInViewPort (ViewPort (x0, y0) (x1, y1)) = (xs, ys)
+  where
+    u0, u1 :: Int
+    u0 = floor (x0 / 128.0)
+    u1 = floor (x1 / 128.0)
+    v0, v1 :: Int
+    v0 = floor (y0 / 128.0)
+    v1 = floor (y1 / 128.0)
+    --
+    xs = fmap (fromIntegral . (128 *)) [u0 .. u1]
+    ys = fmap (fromIntegral . (128 *)) [v0 .. v1]
 
-ys :: [Double]
-ys = [0, 128 .. 1024]
-
-data ViewPort = ViewPort (Double, Double) (Double, Double)
-  deriving (Show)
-
-data GridState = GridState
-  { gridViewPort :: ViewPort
-  , gridTempViewPort :: Maybe ViewPort
-  }
-  deriving (Show)
+textPosInViewPort :: ViewPort -> [(Double, Double)]
+textPosInViewPort (ViewPort (x0, y0) (x1, y1)) =
+  [ (x, y) | x <- xs, y <- ys ]
+  where
+    u0, u1 :: Int
+    u0 = floor ((x0 - 120) / 512.0)
+    u1 = floor ((x1 - 120) / 512.0)
+    v0, v1 :: Int
+    v0 = floor ((y0 - 120) / 512.0)
+    v1 = floor ((y1 - 120) / 512.0)
+    --
+    xs = fmap (fromIntegral . (\x -> x * 512 + 120)) [u0 .. u1]
+    ys = fmap (fromIntegral . (\y -> y * 512 + 120)) [v0 .. v1]
 
 -- | scroll
 transformScroll ::
@@ -105,10 +126,15 @@ drawTextMultiline (ctxt, desc) (x, y) msgs = do
   for_ (zip [y, y + 12 .. ] msgs) $ \(y', msg) ->
     drawTextLine (ctxt, desc) (x, y') msg
 
-myText :: (P.Context, P.FontDescription, P.FontDescription) -> R.Render ()
-myText (pangoCtxt, descSans, descMono) = do
-  drawTextMultiline (pangoCtxt, descSans) (120, 120) (T.lines loremIpsum)
-  drawTextMultiline (pangoCtxt, descMono) (120, 240) (T.lines loremIpsum)
+myText ::
+  (P.Context, P.FontDescription, P.FontDescription) ->
+  ViewPort ->
+  R.Render ()
+myText (pangoCtxt, descSans, descMono) vp = do
+  let xys = textPosInViewPort vp
+  for_ xys $ \(x, y) -> do
+    drawTextMultiline (pangoCtxt, descSans) (x, y) (T.lines loremIpsum)
+    drawTextMultiline (pangoCtxt, descMono) (x, y+120) (T.lines loremIpsum)
 
 myDraw ::
   (P.Context, P.FontDescription, P.FontDescription) ->
@@ -117,7 +143,8 @@ myDraw ::
 myDraw (pangoCtxt, descSans, descMono) s = do
   let (cx0, cy0) = (0, 0)
       (cx1, cy1) = (640, 480)
-      ViewPort (vx0, vy0) (vx1, vy1) = fromMaybe (gridViewPort s) (gridTempViewPort s)
+      vp@(ViewPort (vx0, vy0) (vx1, vy1)) =
+        fromMaybe (gridViewPort s) (gridTempViewPort s)
       scaleX = (cx1 - cx0) / (vx1 - vx0)
       scaleY = (cy1 - cy0) / (vy1 - vy0)
   R.save
@@ -130,15 +157,16 @@ myDraw (pangoCtxt, descSans, descMono) s = do
   --
   R.setSourceRGBA 0 0 0 1.0
   R.setLineWidth 0.1
+  let (xs, ys) = gridInViewPort vp
   for_ xs $ \x -> do
-    R.moveTo x 0
-    R.lineTo x 1024
+    R.moveTo x vy0
+    R.lineTo x vy1
     R.stroke
   for_ ys $ \y -> do
-    R.moveTo 0 y
-    R.lineTo 1024 y
+    R.moveTo vx0 y
+    R.lineTo vx1 y
     R.stroke
-  myText (pangoCtxt, descSans, descMono)
+  myText (pangoCtxt, descSans, descMono) vp
 
 initFont :: IO (Maybe (P.Context, P.FontDescription, P.FontDescription))
 initFont = do

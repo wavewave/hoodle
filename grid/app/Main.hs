@@ -10,6 +10,11 @@ import Data.IORef (newIORef, modifyIORef', readIORef)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
+import Data.Time.Clock (
+  diffUTCTime,
+  getCurrentTime,
+  nominalDiffTimeToSeconds,
+ )
 import Data.Traversable (for)
 import GI.Cairo.Render qualified as R
 import GI.Cairo.Render.Connector as RC
@@ -17,6 +22,8 @@ import GI.Gdk qualified as Gdk
 import GI.Gtk qualified as Gtk
 import GI.Pango qualified as P
 import GI.PangoCairo qualified as PC
+import System.IO (hFlush, stdout)
+import Text.Printf (printf)
 
 data ViewPort = ViewPort (Double, Double) (Double, Double)
   deriving (Show)
@@ -195,9 +202,17 @@ main = do
     ]
   _ <- drawingArea `on` #draw $
     RC.renderWithContext $ do
+      start <- R.liftIO $ getCurrentTime
       s <- R.liftIO $ readIORef ref
-      R.liftIO $ print s
+      -- R.liftIO $ print s
       myDraw (pangoCtxt, descSans, descMono) s
+      end <- R.liftIO getCurrentTime
+      let diff :: Double
+          diff = realToFrac $ nominalDiffTimeToSeconds (diffUTCTime end start)
+      R.liftIO $ do
+        printf "Rendering time: %.5f seconds\n" diff
+        hFlush stdout
+
       pure True
   _ <- drawingArea
     `after` #scrollEvent
@@ -207,7 +222,7 @@ main = do
       dx <- get ev #deltaX
       dy <- get ev #deltaY
       dir <- get ev #direction
-      print (dir, x, y , dx, dy)
+      -- print (dir, x, y , dx, dy)
       modifyIORef' ref $ \s ->
         let cx0 = 0
             cx1 = 640

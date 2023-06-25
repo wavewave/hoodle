@@ -32,4 +32,5 @@ Executable grid
                   gi-pango,
                   gi-pangocairo,
                   haskell-gi-base,
-                  text
+                  text,
+                  time

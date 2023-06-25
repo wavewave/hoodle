@@ -6,15 +6,15 @@ module Main where
 import Data.Foldable (for_)
 import Data.GI.Base (AttrOp ((:=)), after, get, new, on)
 import Data.GI.Gtk.Threading (postGUIASync)
-import Data.IORef (newIORef, modifyIORef', readIORef)
+import Data.IORef (modifyIORef', newIORef, readIORef)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Time.Clock (
-  diffUTCTime,
-  getCurrentTime,
-  nominalDiffTimeToSeconds,
- )
+import Data.Time.Clock
+  ( diffUTCTime,
+    getCurrentTime,
+    nominalDiffTimeToSeconds,
+  )
 import Data.Traversable (for)
 import GI.Cairo.Render qualified as R
 import GI.Cairo.Render.Connector as RC
@@ -29,8 +29,8 @@ data ViewPort = ViewPort (Double, Double) (Double, Double)
   deriving (Show)
 
 data GridState = GridState
-  { gridViewPort :: ViewPort
-  , gridTempViewPort :: Maybe ViewPort
+  { gridViewPort :: ViewPort,
+    gridTempViewPort :: Maybe ViewPort
   }
   deriving (Show)
 
@@ -60,7 +60,7 @@ gridInViewPort (ViewPort (x0, y0) (x1, y1)) = (xs, ys)
 
 textPosInViewPort :: ViewPort -> [(Double, Double)]
 textPosInViewPort (ViewPort (x0, y0) (x1, y1)) =
-  [ (x, y) | x <- xs, y <- ys ]
+  [(x, y) | x <- xs, y <- ys]
   where
     u0, u1 :: Int
     u0 = floor ((x0 - 120) / 512.0)
@@ -130,7 +130,7 @@ drawTextMultiline ::
   [Text] ->
   R.Render ()
 drawTextMultiline (ctxt, desc) (x, y) msgs = do
-  for_ (zip [y, y + 12 .. ] msgs) $ \(y', msg) ->
+  for_ (zip [y, y + 12 ..] msgs) $ \(y', msg) ->
     drawTextLine (ctxt, desc) (x, y') msg
 
 myText ::
@@ -141,7 +141,7 @@ myText (pangoCtxt, descSans, descMono) vp = do
   let xys = textPosInViewPort vp
   for_ xys $ \(x, y) -> do
     drawTextMultiline (pangoCtxt, descSans) (x, y) (T.lines loremIpsum)
-    drawTextMultiline (pangoCtxt, descMono) (x, y+120) (T.lines loremIpsum)
+    drawTextMultiline (pangoCtxt, descMono) (x, y + 120) (T.lines loremIpsum)
 
 myDraw ::
   (P.Context, P.FontDescription, P.FontDescription) ->
@@ -197,11 +197,13 @@ main = do
   drawingArea <- new Gtk.DrawingArea []
   #addEvents
     drawingArea
-    [ Gdk.EventMaskScrollMask
-    , Gdk.EventMaskTouchpadGestureMask
+    [ Gdk.EventMaskScrollMask,
+      Gdk.EventMaskTouchpadGestureMask
     ]
-  _ <- drawingArea `on` #draw $
-    RC.renderWithContext $ do
+  _ <- drawingArea
+    `on` #draw
+    $ RC.renderWithContext
+    $ do
       start <- R.liftIO $ getCurrentTime
       s <- R.liftIO $ readIORef ref
       -- R.liftIO $ print s
@@ -230,8 +232,8 @@ main = do
             scale = (cx1 - cx0) / (vx1 - vx0)
             vp' = transformScroll dir scale (dx, dy) vp
          in s
-              { gridViewPort = vp'
-              , gridTempViewPort = Nothing
+              { gridViewPort = vp',
+                gridTempViewPort = Nothing
               }
       postGUIASync (#queueDraw drawingArea)
       pure True
@@ -258,8 +260,8 @@ main = do
         let vp = gridViewPort s
             mtvp = gridTempViewPort s
          in s
-              { gridViewPort = fromMaybe vp mtvp
-              , gridTempViewPort = Nothing
+              { gridViewPort = fromMaybe vp mtvp,
+                gridTempViewPort = Nothing
               }
       postGUIASync (#queueDraw drawingArea)
   #setPropagationPhase gzoom Gtk.PropagationPhaseBubble
